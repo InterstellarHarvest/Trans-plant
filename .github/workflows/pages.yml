@@ -1,0 +1,33 @@
+# Deploys the game to GitHub Pages. The one transform: the root
+# `sprites` entry is a SYMLINK to resources/sprites (kept in git so
+# local clones work), but Pages does not resolve symlinks — so the
+# artifact gets the real folder in its place.
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize sprites symlink for Pages
+        run: |
+          rm sprites
+          cp -R resources/sprites sprites
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

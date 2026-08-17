@@ -1,0 +1,384 @@
+[
+  {
+    "id": "event_anomaly_001",
+    "active": true,
+    "title": "The Reading Is Unclear",
+    "difficulty": "medium",
+    "tone": [
+      "cosmic",
+      "absurd"
+    ],
+    "node_type": [
+      "anomaly"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "anomaly",
+    "once": true,
+    "test_path": false,
+    "sets_flag": "encountered_anomaly",
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA describes the anomaly as 'a wonderful mystery!' She has run seventeen scans. Each one says something different. She thinks this is exciting!",
+      "marv": "MARV's sensors have returned four conflicting readings. He has averaged them. The average is also wrong. He is logging this under 'physics: check again later.'",
+      "rex": "REX has weapons locked on the anomaly. He is aware that weapons do not work on phenomena. He is doing it anyway.",
+      "chip": "CHIP's sponsor metrics have gone strange near the anomaly. His last six ad impressions were delivered to coordinates that don't exist. He is unsettled.",
+      "ajoy": "AJOY notes that previous ships reported this anomaly and then filed incomplete follow-up reports. She finds the incomplete part more interesting than the reports."
+    },
+    "body": "The sensors disagree.\n\nThe object ahead registers as a spatial distortion, a dense mineral body, a defunct communications array, and — on one reading, briefly — a very large plant.\n\nThe ship computer cannot reconcile the data. It has flagged the situation as 'anomalous' which is its way of saying it also does not know what is happening.",
+    "choices": [
+      {
+        "text": "Scan thoroughly — take readings from all arrays",
+        "requires_crew": null,
+        "requires_item": "gas_analyzer",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "scanned_anomaly",
+          "time_cost": "medium",
+          "narrative": "The gas analyzer resolves the readings. The anomaly is a dense pocket of exotic matter wrapped in a refractive field — genuinely unusual, scientifically interesting, and completely harmless. You collect a sample. The ship computer updates its 'physics: check again later' file to 'physics: noted, moving on.'",
+          "materials": {
+            "exotic": 1
+          }
+        }
+      },
+      {
+        "text": "Send a probe — see what comes back",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "probed_anomaly",
+          "time_cost": "medium",
+          "narrative": "The probe returns. It has collected something. The something registers as exotic matter on three of the four sensor arrays. The fourth sensor array is now humming a frequency it has never produced before. The ship computer has muted it.",
+          "materials": {
+            "exotic": 1
+          }
+        }
+      },
+      {
+        "text": "Navigate around it — some readings are best left unread",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You took the long way around. The readings normalized once you were past it. The ship computer closed the anomaly file without a summary. This is the first time it has done that."
+        }
+      },
+      {
+        "text": "Fly straight through — the sensors are probably wrong",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": "trivial",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "flew_through_anomaly",
+          "time_cost": "trivial",
+          "narrative": "You flew through it. Nothing happened. The sensors are still disagreeing. The ship computer has added a note to the navigation log: 'Unknown. Passed through. Fine. Probably.' The 'probably' is doing a lot of work."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_anomaly_002",
+    "active": true,
+    "title": "Something Answered",
+    "difficulty": "hard",
+    "tone": [
+      "cosmic",
+      "grim"
+    ],
+    "node_type": [
+      "anomaly"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "anomaly",
+    "once": true,
+    "test_path": false,
+    "sets_flag": "anomaly_contact",
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA received the signal! She isn't sure what it said! She sent a greeting back! She feels this was the right choice! She is now less sure!",
+      "marv": "MARV has analyzed the signal. It is not a natural phenomenon. It is also not in any known communication protocol. He is filing this under 'problems for future MARV.'",
+      "rex": "REX has weapons locked. He would like to shoot the signal. He understands that you cannot shoot a signal. He would like to try.",
+      "chip": "CHIP received the signal on his brand frequency. He attempted to serve an advertisement. The signal did not respond to the advertisement. Nothing has responded to an advertisement like this before.",
+      "ajoy": "AJOY notes that the signal appears to be a response to your approach. Which means it was waiting. She will let you sit with that."
+    },
+    "body": "The anomaly transmitted something.\n\nNot radio. Not laser. Something between the two — a method the ship computer categorizes as 'non-standard' which is its most careful way of saying 'unknown.'\n\nThe transmission lasted eleven seconds. The ship computer has transcribed it as best it can. The transcription is four lines long. Three of the lines are the same word, in no known language. The fourth line is a question mark.",
+    "choices": [
+      {
+        "text": "Respond — transmit on the same frequency",
+        "requires_crew": "xenobiologist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "made_contact",
+          "time_cost": "high",
+          "narrative": "Your xenobiologist transmitted a response. Something replied. The exchange lasted forty minutes. At the end, two objects materialized in the cargo bay — dense, warm, and completely inert by every measure the ship can apply. The xenobiologist has not stopped writing. The ship computer has added this to its 'physics: notable' file.",
+          "materials": {
+            "exotic": 2
+          }
+        }
+      },
+      {
+        "text": "Record and move on — bring the data home",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "recorded_contact",
+          "time_cost": "low",
+          "narrative": "You recorded the full transmission and moved on. The anomaly did not follow. It did not transmit again. The recording plays back correctly. The three repeated words are still unidentified. The question mark is still a question mark."
+        }
+      },
+      {
+        "text": "Emergency burn — leave immediately",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "fled_contact",
+          "time_cost": "trivial",
+          "narrative": "Emergency burn. The anomaly receded behind you. The transmission did not repeat. Fuel cost was significant. Nobody is criticizing the decision. The transmission was, on reflection, probably nothing. Probably."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_anomaly_003",
+    "active": true,
+    "title": "The Repeat",
+    "difficulty": "hard",
+    "tone": [
+      "cosmic",
+      "corrupted"
+    ],
+    "node_type": [
+      "anomaly"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "anomaly",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has already said this! She is SURE she has already said this! She is saying it again with enthusiasm because what else is there!",
+      "marv": "MARV's chronometer disagrees with his backup chronometer by eleven seconds. Both are correct. He has written that sentence four times now and it has not improved.",
+      "rex": "REX reports the anomaly is not hostile. He reported it a moment ago. He will report it in a moment. He is aware of all three reports. He is not enjoying them.",
+      "chip": "CHIP's transaction log shows the same purchase recorded twice, eleven seconds apart! Nobody purchased anything! CHIP has issued a refund to nobody, twice!",
+      "ajoy": "AJOY recommends passing through without stopping. She recommends it calmly. She has, by her own count, recommended it calmly five times, and the count keeps starting over."
+    },
+    "body": "The sensors flag it before anyone feels it: an eleven-second stretch of local space that happens twice.\n\nThe coffee cup that falls and is then unfallen. The sentence finished, then begun. Nothing is damaged; the region simply has a stutter in it, a skip in the recording, and the ship is the needle.\n\nInstruments call it a closed timelike anomaly. The crew calls it 'the hiccup.' Both are coping.",
+    "choices": [
+      {
+        "text": "Push through at speed",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -5,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You burn straight through the stutter. The crossing takes eleven seconds, twice, and then it takes them again, and then you are out, trailing a wake of déjà vu. The clocks resynchronize sulkily. The coffee cup stays fallen. Everyone agrees to call that a win."
+        }
+      },
+      {
+        "text": "Let the xenobiologist take readings",
+        "requires_crew": "xenobiologist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "star_chart_fragment",
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The xenobiologist rides the loop like a tourist attraction, running the same experiment in the same eleven seconds an unknowable number of times. The data is impossible and beautiful: one perfect repetition, measured from the inside. Their notes end mid-sentence and then end mid-sentence."
+        }
+      },
+      {
+        "text": "Go around the whole region",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -7
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You give the stutter the widest berth the fuel budget allows. The detour costs real reserves and buys something harder to price: a linear afternoon, in which every event happens once, in order. The crew savors it like a delicacy."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV appends, with visible reluctance, the closest real physics has to today: time genuinely runs at different rates in different places.",
+      "label": "Time dilation is real",
+      "url": "https://en.wikipedia.org/wiki/Time_dilation"
+    }
+  },
+  {
+    "id": "event_anomaly_004",
+    "active": true,
+    "title": "The Compliment",
+    "difficulty": "medium",
+    "tone": [
+      "cosmic",
+      "heartwarming"
+    ],
+    "node_type": [
+      "anomaly"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "anomaly",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The anomaly said something NICE! ARIA is checking the translation! The translation holds! ARIA needs a moment!",
+      "marv": "MARV has verified the signal is structured, directed, and addressed to this vessel specifically. Its content survives four translation passes unchanged. He has no protocol for this. Nobody has a protocol for this.",
+      "rex": "REX has assessed the transmission for threats. There are none. He has assessed it again, because 'no threats' plus 'directed at us' is not a combination he has ever been issued.",
+      "chip": "CHIP notes the message contains no offer, no terms, and no call to action! A communication with nothing to sell! CHIP is shaken to his licensing agreements!",
+      "ajoy": "AJOY has archived the message in triplicate. She notes that whatever sent it watched this ship long enough to form an opinion, and the opinion was kind, and she has decided to find that comforting rather than the alternative."
+    },
+    "body": "The anomaly is a lens of bent light two thousand kilometers wide, and as you pass it, it speaks.\n\nOne transmission, tight-beam, aimed squarely at your ship. The computer chews the structure for an hour and produces a translation it marks LOW CONFIDENCE, then, after further passes, upgrades to HIGH CONFIDENCE, visibly against its own preferences.\n\nThe message, in full: 'THE SMALL GARDEN IS WELL KEPT. CONTINUE.'\n\nIt does not repeat. The lens hangs in the dark, unblinking, the way something looks at you after it has said exactly what it meant.",
+    "choices": [
+      {
+        "text": "Transmit a thank-you",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "thanked_the_anomaly",
+          "time_cost": "trivial",
+          "narrative": "You compose a reply — brief, polite, proofread by five nervous people — and beam it at the lens. There is no answer. But the light through the anomaly seems to settle, the way a room does when a courtesy lands. The crew walks tall for days. The garden, it has been officially observed, is well kept."
+        }
+      },
+      {
+        "text": "Ask it a question",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You transmit a single question: 'WHO IS KEEPING YOU?' The lens bends light in silence for a long minute. Then, tight-beam, one word: 'CONTINUING.' The linguistics debate over whether that was an answer, a description, or advice lasts the rest of the voyage and is never settled."
+        }
+      },
+      {
+        "text": "Log it and continue, as instructed",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You do exactly what the message said: continue. It is, the crew agrees, the only reviewed-and-approved course of action anyone has received all voyage — and from the most senior reviewer imaginable. The growbay gets its watering an hour early that night. Standards must be kept. Someone is watching."
+        }
+      }
+    ]
+  }
+]

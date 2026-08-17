@@ -1,0 +1,2185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Crew Detail Modal Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="shared.css" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+
+:root {
+  /* Shared theme */
+  --teal: #56cfd7;
+  --orange: #e88830;
+  --cream: #e6d4a8;
+  --body:  #c5b28a;
+
+  /* Crew stat colors */
+  --hp: #85d260;   /* health-green at full (interpolates across red→yellow→green like growbay plant health) */
+  --mo: #5e9ec7;   /* morale blue — distinct from gold cruise bar, flagged to unify later */
+  --st: #d8c044;   /* strength yellow */
+
+  /* Modal chrome — slate+gold personnel dossier vibe */
+  --modal-backdrop: rgba(4,8,16,0.75);
+  --modal-bg-top: #141A28;
+  --modal-bg-bot: #0e1118;
+  --modal-border: #5E6168;     /* muted steel-gray — personnel dossier */
+  --modal-width:  720px;
+  --modal-height: 580px;
+
+  /* Header */
+  --header-title-color: #9092BB;  /* soft blue-lavender — personnel dossier title */
+  --header-title-size:  14px;
+  --header-meta-color:  #aab5c4;
+
+  /* Layout knobs */
+  --portrait-col-width: 200px;
+  --stats-col-width:    1fr;
+  --section-gap:        10px;
+  --body-padding:       14px 20px 10px;
+
+  /* Portrait glow — mirrors growbay pattern. Driven by HEALTH at runtime,
+     using the same green→yellow→red stops as the plant-health glow so the
+     bar fill and glow track the same hue. */
+  --glow-color: 133,210,96;    /* healthy green at full HEALTH */
+  --glow-alpha: 0.12;
+  --glow-spread: 60;
+
+  /* Bars */
+  --bar-height: 16px;
+  --bar-track-bg: rgba(10,14,20,0.6);
+  --bar-track-border: rgba(200,168,90,0.18);
+
+  /* Typography */
+  --mod-size: 16px;
+  --body-size: 12px;
+  --mono-size: 13px;
+  --aria-size: 18px;
+  --title-section-size: 8px;
+
+  /* Modifier / status colors */
+  --mod-positive: #6ea86e;
+  --mod-negative: #e0a850;
+  --mod-critical: #cc3333;
+  --mod-stub:     #4a4f5a;
+
+  /* Panel button sizing (color vars live in shared.css; red accent local) */
+  --pb-border: 3px;
+  --pb-padx: 12px;
+  --pb-pady: 6px;
+  --pb-size: 15px;
+  --pb-red-hi:  #c67878;
+  --pb-red-lo:  #3a1a1a;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'VT323', monospace;
+  background: #0e1118;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #d1d5db;
+}
+
+#demo-wrap { display: flex; gap: 20px; padding: 20px; align-items: flex-start; }
+#scale-root { width: 960px; height: 640px; transform-origin: top left; flex-shrink: 0; }
+
+#size-toggle {
+  position: fixed; top: 12px; right: 12px; z-index: 9999;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+}
+#size-toggle:hover { filter: brightness(1.2); }
+#size-toggle:active {
+  border-style: inset;
+  border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a;
+  transform: translate(1px, 1px);
+}
+body.fullsize { overflow: hidden; }
+body.fullsize #demo-wrap { padding: 0; gap: 0; width: 100vw; height: 100vh; justify-content: center; align-items: center; }
+body.fullsize #controls { display: none; }
+body.fullsize #scale-root { transform-origin: center center; }
+
+/* Game frame — NO gold frame (per new rule). Gradient only. */
+#game {
+  width: 960px; height: 640px;
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #0c0f22 0%, #070814 100%);
+}
+#crt-overlay {
+  pointer-events: none; position: absolute; inset: 0; z-index: 100;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 1px, transparent 1px, transparent 2px);
+}
+#stars-far, #stars-near { position: absolute; inset: 0; pointer-events: none; }
+
+/* Cruise ghost backdrop — dim header + footer just to convey
+   "we're on the cruise screen, this modal opens over it". */
+#cruise-ghost {
+  position: absolute; inset: 0;
+  z-index: 5;
+  filter: brightness(0.35);
+  pointer-events: none;
+}
+.cg-header {
+  position: absolute; left: 0; right: 0; top: 0;
+  height: 40px; padding: 0 16px;
+  background: linear-gradient(180deg, #141a28 0%, #10141e 100%);
+  border-bottom: 2px solid var(--gold);
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: 'Press Start 2P', cursive;
+}
+.cg-ship { font-size: 10px; letter-spacing: 2px; color: var(--gold); }
+.cg-day  { font-size: 8px;  letter-spacing: 1px; color: #aab5c4; }
+.cg-bottom {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 120px;
+  background: linear-gradient(180deg, #10141e 0%, #0a0e14 100%);
+  border-top: 1px solid rgba(200,168,90,0.2);
+}
+
+/* Modal backdrop + panel */
+#cd-backdrop {
+  position: absolute; inset: 0;
+  z-index: 10;
+  background: var(--modal-backdrop);
+  cursor: var(--cursor-hand, pointer);
+}
+
+#cd-modal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--modal-width);
+  height: var(--modal-height);
+  z-index: 20;
+  background: linear-gradient(180deg, var(--modal-bg-top) 0%, var(--modal-bg-bot) 100%);
+  border: 3px solid var(--modal-border);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(86,207,215,0.10),
+    inset 0 0 0 2px rgba(14,20,32,0.5),
+    0 8px 40px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.25s, transform 0.25s;
+}
+body:not(.modal-open) #cd-backdrop,
+body:not(.modal-open) #cd-modal {
+  opacity: 0;
+  pointer-events: none;
+}
+body:not(.modal-open) #cd-modal {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+/* Header */
+.cd-header {
+  flex-shrink: 0;
+  height: 42px;
+  padding: 0 16px;
+  border-bottom: 2px solid rgba(200,168,90,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.cd-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--header-title-size);
+  letter-spacing: 2px;
+  color: var(--header-title-color);
+  text-shadow: 0 0 8px rgba(200,168,90,0.25);
+  flex-shrink: 0;
+}
+.cd-subtitle {
+  flex: 1;
+  font-family: 'VT323', monospace;
+  font-size: 17px;
+  letter-spacing: 1px;
+  color: var(--cream);
+  text-align: center;
+}
+.cd-subtitle .crew-name {
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.cd-close {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  width: 26px; height: 26px;
+  border: 2px solid rgba(200,168,90,0.4);
+  background: rgba(14,20,32,0.6);
+  color: var(--gold);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.cd-close:hover { filter: brightness(1.25); border-color: var(--modal-border); }
+
+/* Body */
+.cd-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--body-padding);
+  gap: var(--section-gap);
+}
+
+/* Top row: portrait + identity/stats/bio */
+.cd-top {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: var(--portrait-col-width) 1fr;
+  gap: 16px;
+  min-height: 0;
+}
+
+/* Portrait slot — glow layer + 192-slot centered.
+   align-self:start pins the box to its natural height so the grid's
+   align-items:stretch (default) doesn't stretch it vertically when the
+   right column (identity + stats + bio) runs taller for crew with longer
+   bio/hint copy (e.g. captain). Without this, a taller right column made
+   the portrait-box grow and the bottom-aligned sprite sat lower inside the
+   extra empty space. */
+.cd-portrait-box {
+  position: relative;
+  width: 100%;
+  height: 208px;
+  align-self: start;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 8px 6px 6px;
+  overflow: visible;
+  border: 1px solid rgba(200,168,90,0.2);
+  border-radius: 3px;
+  background: rgba(10,14,20,0.4);
+}
+.cd-glow {
+  position: absolute;
+  inset: -20px;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse at 50% 55%,
+    rgba(var(--glow-color), var(--glow-alpha)) 0%,
+    rgba(14,20,32,0) calc(var(--glow-spread) * 1%)
+  );
+  transition: background 0.6s ease;
+  border-radius: 3px;
+}
+.cd-portrait {
+  position: relative;
+  z-index: 2;                  /* sits in FRONT of the spark field so blood */
+                               /* droplets emit from behind the character */
+  width: 192px;
+  height: 192px;
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  color: transparent;    /* fallback emoji hidden when sprite loaded */
+  font-size: 96px;
+}
+.cd-portrait.fallback {
+  /* When the 192px sprite is missing, keep slot visible with a centered
+     emoji. Background-image is cleared and we un-hide the emoji. */
+  color: var(--cream);
+  text-shadow: 0 0 14px rgba(200,168,90,0.35);
+  align-items: center;
+}
+
+/* Cycle-crew chevrons — sit inside the portrait box, vertically
+   centered, low-opacity gold. Brighten on hover. No background, no
+   border — just the glyph. */
+.cd-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 26px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--gold);
+  font-size: 18px;
+  opacity: 0.35;
+  cursor: var(--cursor-hand, pointer);
+  transition: opacity 0.15s, color 0.15s, filter 0.15s;
+  padding: 0;
+}
+.cd-nav.prev { left: 2px; }
+.cd-nav.next { right: 2px; }
+.cd-nav:hover { opacity: 1; filter: drop-shadow(0 0 4px rgba(200,168,90,0.55)); }
+.cd-nav:active { transform: translateY(-50%) scale(0.9); }
+
+/* Portrait departure animations. Both run inside .cd-portrait so the
+   sprite itself receives the transform + filter. Sparks render in a
+   sibling layer (.cd-spark-field) so they're unaffected by the portrait
+   fade/scale. */
+.cd-portrait.anim-dismiss {
+  animation: portrait-dismiss 1000ms ease-in-out forwards;
+}
+@keyframes portrait-dismiss {
+  0%   { filter: grayscale(0) brightness(1); opacity: 1; }
+  35%  { filter: grayscale(1) brightness(0.95); opacity: 1; }
+  100% { filter: grayscale(1) brightness(0.5); opacity: 0; }
+}
+.cd-portrait.anim-jettison {
+  animation: portrait-jettison 1500ms cubic-bezier(0.55, -0.15, 0.7, 0.25) forwards;
+  transform-origin: center center;
+}
+@keyframes portrait-jettison {
+  0%   { transform: scale(1)    rotate(0deg);    filter: brightness(1); opacity: 1; }
+  70%  { transform: scale(0.25) rotate(540deg);  filter: brightness(1.4); opacity: 1; }
+  88%  { transform: scale(0.05) rotate(900deg);  filter: brightness(2.0); opacity: 1; }
+  100% { transform: scale(0.02) rotate(900deg);  filter: brightness(0.4); opacity: 0; }
+}
+
+/* Spark field — container fills the portrait slot; sparks are spawned
+   as absolutely positioned children by spawnSparks(). Each spark rises
+   and fades. No-op when empty. */
+.cd-spark-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;                  /* behind the portrait (z-index:2) so blood */
+                               /* droplets emerge from behind the sprite */
+}
+
+/* Epitaph overlay — fires after a jettison. Sits over the whole modal
+   body (not the header/footer). Fades in once the portrait is gone,
+   waits for click / Enter / Esc, then fades out and advances the roster.
+   OT-style: one dry line, quiet framing, no chrome. */
+.cd-epitaph {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px;
+  background: rgba(4,6,10,0.86);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+  text-align: center;
+}
+.cd-epitaph.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.cd-epitaph-rule {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 4px;
+  color: #7a8898;
+}
+.cd-epitaph-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 14px;
+  letter-spacing: 3px;
+  color: var(--cream);
+  text-shadow: 0 0 8px rgba(230,212,168,0.2);
+}
+.cd-epitaph-line {
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  font-style: italic;
+  color: #c5b28a;
+  max-width: 520px;
+  line-height: 1.35;
+}
+.cd-epitaph-hint {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: #5a6570;
+  letter-spacing: 1px;
+  margin-top: 12px;
+}
+/* Blood droplets — frozen airlock ejecta. Deep crimson core with a
+   darker red halo. Size varies per-particle via --sz so the field has
+   a mix of fine mist and heavier droplets. Travel ~1000ms so they
+   outlast the portrait's shrink-and-spin and remain visible after
+   the sprite has collapsed. */
+.cd-spark {
+  position: absolute;
+  left: 50%;
+  bottom: 58%;           /* emit from torso/chest while sprite is still visible */
+  width: var(--sz, 4px);
+  height: var(--sz, 4px);
+  background: radial-gradient(circle at 35% 30%, #ff5560 0%, #c41822 45%, #5a0a12 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 3px rgba(180,20,30,0.9), 0 0 7px rgba(120,10,20,0.55);
+  opacity: 0;
+  animation: spark-rise 1000ms cubic-bezier(0.25, 0.5, 0.4, 1) forwards;
+}
+/* Final splat emits from the vertical center of the slot instead of
+   the chest line — by the time the splat fires, the sprite has shrunk
+   to a pinhole at center so anatomy-based emission points stop making
+   sense. Particles spray outward from where the sprite vanished. */
+.cd-spark.center { bottom: 50%; transform: translateY(50%); }
+@keyframes spark-rise {
+  0%   { transform: translate(0, 0) scale(1);    opacity: 1; }
+  70%  { opacity: 0.9; }
+  100% { transform: translate(var(--sx, 0), var(--sy, -60px)) scale(0.3); opacity: 0; }
+}
+
+/* Identity + stats + bio column */
+.cd-ident {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+.cd-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  line-height: 1.3;
+}
+.cd-role {
+  font-family: 'VT323', monospace;
+  font-size: var(--body-size);
+  color: var(--cream);
+  letter-spacing: 1px;
+}
+.cd-role .dot { color: #5a7a6a; }
+.cd-role .bg-tag { color: #9aa6b8; }
+
+/* Dashed-gold section divider (the records-panel look). */
+.cd-divider {
+  height: 0;
+  border-top: 1px dashed rgba(200,168,90,0.25);
+  margin: 2px 0;
+}
+
+/* Stats bars — each resource has its own dedicated color. */
+.cd-stats { display: flex; flex-direction: column; gap: 5px; }
+.cd-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cd-stat-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #7a8898;
+  width: 64px;          /* widened to fit full words (STRENGTH is the longest) */
+  flex-shrink: 0;
+}
+.cd-stat-track {
+  flex: 1;
+  height: var(--bar-height);
+  background: var(--bar-track-bg);
+  border: 1px solid var(--bar-track-border);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.cd-stat-fill {
+  height: 100%;
+  transition: width 0.4s ease, background 0.4s ease;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.cd-stat-row.hp .cd-stat-fill { background: var(--hp); }
+.cd-stat-row.mo .cd-stat-fill { background: var(--mo); }
+.cd-stat-row.st .cd-stat-fill { background: var(--st); }
+.cd-stat-value {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--cream);
+  letter-spacing: 1px;
+  width: 44px;
+  text-align: right;
+}
+
+/* Bio row */
+.cd-bio {
+  font-family: 'VT323', monospace;
+  font-size: var(--body-size);
+  color: var(--body);
+  font-style: italic;
+  line-height: 1.3;
+  letter-spacing: 0.5px;
+  padding: 6px 8px;
+  border-left: 2px solid rgba(200,168,90,0.2);
+}
+.cd-bio .hint {
+  display: block;
+  font-style: normal;
+  font-size: var(--mono-size);
+  color: #9aa6b8;
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+
+/* Status effects block — full-width panel under the top row.
+   Split into two side-by-side columns: ACTIVE on the left, MONITORED
+   on the right (where MONITORED is itself a 2-col dim-stub grid). A 1px
+   vertical gold rule separates them. */
+.cd-status {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  background: rgba(10,14,20,0.4);
+  border: 2px solid rgba(200,168,90,0.2);
+  border-radius: 2px;
+  display: grid;
+  grid-template-columns: 1fr 1px 1.2fr;
+  column-gap: 12px;
+  min-height: 62px;       /* holds layout when no statuses fire */
+}
+.cd-status-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.cd-status-col-divider {
+  background: rgba(200,168,90,0.2);
+  align-self: stretch;
+}
+.cd-status-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #7a8898;
+  margin-bottom: 2px;
+}
+.cd-status-active {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Locked to exactly 5 rows of footprint (5×16 line-height + 4×2 gap
+     = 88px). height (not max-height) so the panel doesn't shrink when
+     active items move back to MONITORED — the empty state shows a
+     single nominal row inside this same container, leaving the rest of
+     the 88px reserved as quiet space. Native scrollbar for now; port to
+     the custom gold-on-slate thumb (DESIGN_SYSTEM "Custom Scrollbar")
+     in a later pass. */
+  height: 88px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.cd-status-row {
+  font-family: 'VT323', monospace;
+  font-size: var(--mod-size);
+  line-height: 16px;       /* fixed so the 5-row scroll cap below is deterministic */
+  letter-spacing: 0.5px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cd-status-row.positive { color: var(--mod-positive); }
+.cd-status-row.negative { color: var(--mod-negative); }
+.cd-status-row.critical { color: var(--mod-critical); animation: mod-critical-pulse 1.5s ease-in-out infinite; }
+.cd-status-row.stub     { color: var(--mod-stub); font-style: italic; }
+.cd-status-row .s-name  { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cd-status-row .s-eff   { color: inherit; }
+.cd-status-row.stub .s-eff { color: var(--mod-stub); }
+@keyframes mod-critical-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.4); }
+}
+
+/* "No statuses" fallback — now rendered as a single row inside the
+   active list (not a sibling div), so the active panel keeps its
+   locked 88px footprint regardless of state. Styled inline via the
+   .cd-status-row.nominal modifier. */
+.cd-status-row.nominal { color: var(--mod-positive); }
+
+/* (The old horizontal dashed .cd-status-divider + .cd-status-subtitle
+   are retired — the two sections are now side-by-side with a vertical
+   rule between them. Both columns reuse .cd-status-title.) */
+
+/* Monitored = canonical statuses not firing; 2-col grid with 1px
+   center divider, matches growbay's MONITORED pattern. */
+#status-monitored {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 16px;       /* fixed row height — matches active list line-height */
+  align-content: start;       /* pack rows at the top instead of distributing across height */
+  gap: 2px 14px;
+  position: relative;
+  /* Locked to the same 88px footprint as the active list so the panel
+     doesn't shrink/grow as items shift between MONITORED and ACTIVE. */
+  height: 88px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+#status-monitored::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 0; bottom: 0;
+  width: 1px;
+  background: rgba(200,168,90,0.2);
+  pointer-events: none;
+}
+
+/* Skills row — passive + active side by side. */
+.cd-skills {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 12px;
+  min-height: 0;
+}
+.cd-skill-card {
+  padding: 8px 10px;
+  background: rgba(10,14,20,0.4);
+  border: 2px solid rgba(200,168,90,0.2);
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 96px;
+  cursor: help;
+  transition: border-color 0.12s;
+}
+.cd-skill-card:hover { border-color: rgba(200,168,90,0.45); }
+.cd-skill-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #7a8898;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.cd-skill-title .kind {
+  color: var(--gold);
+  letter-spacing: 2px;
+}
+.cd-skill-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--cream);
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+.cd-skill-desc {
+  font-family: 'VT323', monospace;
+  font-size: var(--body-size);
+  color: var(--body);
+  line-height: 1.3;
+  letter-spacing: 0.5px;
+}
+.cd-skill-meta {
+  font-family: 'VT323', monospace;
+  font-size: var(--mono-size);
+  color: #9aa6b8;
+  letter-spacing: 0.5px;
+  margin-top: auto;
+  line-height: 1.3;
+  min-height: 1.3em;           /* layout lock for conditional warn text */
+}
+.cd-skill-meta .warn {
+  color: var(--mod-critical);
+  display: inline-block;       /* lockable chunk, toggled by opacity */
+  transition: opacity 0.2s;
+}
+.cd-skill-meta .warn.hidden { opacity: 0; }
+
+/* Active skill card — USE button is absolutely pinned to the bottom-
+   right corner so growing it (via dev sliders) extends UP and LEFT
+   from that anchor WITHOUT enlarging the card itself. The card's
+   layout stays stable; a tall/wide button just overlays more of the
+   card's interior space. The action row keeps the "uses" text in
+   normal flow with right padding equal to the button's width so the
+   text never runs under the button. */
+.cd-active-card {
+  position: relative;
+}
+.cd-active-action {
+  display: flex;
+  align-items: flex-end;
+  margin-top: auto;
+  padding-right: calc(var(--use-btn-w, 64px) + 12px);
+}
+.cd-active-uses {
+  flex: 1;
+  min-width: 0;
+}
+.cd-active-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+}
+.cd-active-btn {
+  font-family: 'VT323', monospace;
+  font-size: var(--use-btn-size, 15px);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  /* Width/height tunable via dev sliders (--use-btn-w / --use-btn-h).
+     Padding kept as a minimum fallback if vars are unset. */
+  width: var(--use-btn-w, auto);
+  height: var(--use-btn-h, auto);
+  padding: 6px 12px;
+  background: linear-gradient(180deg, var(--pb-bg-top) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-bot) 100%);
+  border: var(--pb-border) outset;
+  border-color: var(--pb-gold-hi) var(--pb-gold-lo) var(--pb-gold-lo) var(--pb-gold-hi);
+  color: var(--pb-gold-hi);
+  border-radius: 0;
+  transition: filter 0.12s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+.cd-active-btn:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 12px rgba(200,168,90,0.35);
+}
+.cd-active-btn:active {
+  border-style: inset;
+  border-color: var(--pb-gold-lo) var(--pb-gold-hi) var(--pb-gold-hi) var(--pb-gold-lo);
+  transform: translate(1px, 1px);
+}
+.cd-active-btn.locked {
+  filter: grayscale(0.7) brightness(0.55);
+  cursor: var(--cursor-pointer, default);
+  pointer-events: none;
+  box-shadow: none;
+}
+.cd-active-uses {
+  font-family: 'VT323', monospace;
+  font-size: var(--mono-size);
+  color: #9aa6b8;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+.cd-active-uses strong { color: var(--cream); font-weight: normal; }
+.cd-active-uses.exhausted { color: var(--mod-negative); }
+.cd-active-uses.locked    { color: var(--mod-critical); }
+
+/* Footer — dismiss button on the left, ARIA quip fills the right. */
+.cd-footer {
+  flex-shrink: 0;
+  height: 54px;
+  padding: 8px 16px;
+  border-top: 2px solid rgba(200,168,90,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.cd-dismiss-btn {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: 6px 14px;
+  background: linear-gradient(180deg, #5a2828 0%, #2a1010 50%, #5a3030 100%);
+  border: 3px outset;
+  border-color: var(--pb-red-hi) var(--pb-red-lo) var(--pb-red-lo) var(--pb-red-hi);
+  color: #e6a8a8;
+  border-radius: 0;
+  transition: filter 0.12s;
+  flex-shrink: 0;
+}
+.cd-dismiss-btn:hover { filter: brightness(1.2); }
+.cd-dismiss-btn:active {
+  border-style: inset;
+  border-color: var(--pb-red-lo) var(--pb-red-hi) var(--pb-red-hi) var(--pb-red-lo);
+  transform: translate(1px, 1px);
+}
+/* Jettison variant — no safe dropoff available, button reads as hazard.
+   Deeper red, pulsing border warning, caution-striped left accent. */
+.cd-dismiss-btn.jettison {
+  background: linear-gradient(180deg, #7a1818 0%, #380808 50%, #7a1818 100%);
+  color: #ffcccc;
+  animation: jettison-pulse 1.6s ease-in-out infinite;
+}
+@keyframes jettison-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(204,51,51,0); }
+  50%      { box-shadow: 0 0 10px 1px rgba(204,51,51,0.45); }
+}
+.cd-aria {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.cd-aria-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  font-size: 16px;
+  color: var(--gold);
+  font-family: 'VT323', monospace;
+  line-height: 24px;
+  text-align: center;
+}
+.cd-aria-icon.has-sprite {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  color: transparent;
+  text-shadow: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.cd-aria-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+.cd-aria-text {
+  font-family: 'VT323', monospace;
+  font-size: var(--aria-size);
+  color: var(--body);
+  font-style: italic;
+  line-height: 1.3;
+}
+
+/* Confirm sub-modal (Dismiss flow) */
+#cd-confirm-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(4,8,16,0.6);
+  z-index: 30;
+  cursor: var(--cursor-hand, pointer);
+}
+#cd-confirm {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 31;
+  width: 420px;
+  background: linear-gradient(180deg, var(--modal-bg-top) 0%, var(--modal-bg-bot) 100%);
+  border: 3px solid var(--red);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+body:not(.confirm-open) #cd-confirm-backdrop,
+body:not(.confirm-open) #cd-confirm {
+  display: none;
+}
+.cd-confirm-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--red);
+}
+.cd-confirm-body {
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  color: var(--cream);
+  line-height: 1.3;
+  letter-spacing: 0.5px;
+}
+.cd-confirm-body em {
+  color: var(--body);
+  font-style: italic;
+  display: block;
+  margin-top: 6px;
+}
+.cd-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.cd-confirm-btn {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: 6px 14px;
+  background: linear-gradient(180deg, var(--pb-bg-top) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-bot) 100%);
+  border: 3px outset;
+  border-color: var(--pb-hi) var(--pb-lo) var(--pb-lo) var(--pb-hi);
+  color: var(--pb-text);
+}
+.cd-confirm-btn.danger {
+  border-color: var(--pb-red-hi) var(--pb-red-lo) var(--pb-red-lo) var(--pb-red-hi);
+  color: #e6a8a8;
+}
+.cd-confirm-btn:hover { filter: brightness(1.2); }
+.cd-confirm-btn:active {
+  border-style: inset;
+  border-color: var(--pb-lo) var(--pb-hi) var(--pb-hi) var(--pb-lo);
+  transform: translate(1px, 1px);
+}
+.cd-confirm-btn.danger:active {
+  border-color: var(--pb-red-lo) var(--pb-red-hi) var(--pb-red-hi) var(--pb-red-lo);
+}
+
+/* Sprite helper — used for portrait loading with emoji fallback. */
+.has-sprite { background-color: transparent; }
+
+/* Dev controls sidebar */
+#controls {
+  width: 380px; background: #161a22; border: 1px solid #2a3040;
+  border-radius: 6px;
+  padding: 16px; font-family: 'VT323', monospace; font-size: 16px; color: #8898a8;
+  max-height: 640px; overflow-y: auto; overflow-x: hidden; flex-shrink: 0;
+}
+#controls h2 { font-family: 'Press Start 2P', cursive; font-size: 8px; color: var(--gold); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase; }
+#controls h3 { font-family: 'Press Start 2P', cursive; font-size: 7px; color: #7a8898; letter-spacing: 1px; margin: 14px 0 8px; text-transform: uppercase; border-bottom: 1px solid #2a3040; padding-bottom: 4px; }
+.ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.ctrl-row label { font-size: 14px; color: #667; flex-shrink: 0; min-width: 110px; }
+.ctrl-row input[type="range"] { flex: 1; accent-color: var(--gold); height: 4px; }
+.ctrl-row .val { font-size: 13px; color: #7a8898; min-width: 60px; text-align: right; font-family: 'VT323', monospace; letter-spacing: 0.5px; }
+.ctrl-row .val.modified { color: var(--orange); font-weight: bold; }
+.sim-btn {
+  width: 100%; margin-top: 6px; padding: 8px;
+  font-family: 'VT323', monospace; font-size: 15px; letter-spacing: 1px; text-transform: uppercase;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset; border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold); cursor: var(--cursor-hand, pointer); border-radius: 2px;
+}
+.sim-btn:hover { filter: brightness(1.15); }
+.sim-btn:active { border-style: inset; border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a; transform: translate(1px,1px); }
+
+/* Scrollbars */
+::-webkit-scrollbar           { width: 6px; height: 6px; }
+::-webkit-scrollbar-track     { background: #0a0e14; border-radius: 0; }
+::-webkit-scrollbar-thumb     { background: #2a3a48; border-radius: 0; }
+::-webkit-scrollbar-corner    { background: #0a0e14; }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3a48 #0a0e14;
+}
+
+</style>
+</head>
+<body>
+
+<button id="size-toggle" onclick="toggleSize()">Actual Size</button>
+
+<div id="demo-wrap">
+
+<div id="scale-root">
+<div id="game">
+  <canvas id="stars-far"  width="960" height="640"></canvas>
+  <canvas id="stars-near" width="960" height="640"></canvas>
+
+  <!-- Cruise ghost backdrop -->
+  <div id="cruise-ghost">
+    <div class="cg-header">
+      <span class="cg-ship">THE VERDANT ARK</span>
+      <span class="cg-day">DAY 47 · 73 LEFT</span>
+    </div>
+    <div class="cg-bottom"></div>
+  </div>
+
+  <div id="crt-overlay"></div>
+
+  <!-- Modal backdrop -->
+  <div id="cd-backdrop" onclick="closeModal()"></div>
+
+  <!-- Crew detail modal -->
+  <div id="cd-modal">
+
+    <!-- Header -->
+    <div class="cd-header">
+      <span class="cd-title">CREW</span>
+      <div class="cd-subtitle">
+        <span class="crew-name" id="crew-name-banner">DR. OSEI</span>
+        <span class="dot"> · </span>
+        <span id="crew-role-banner">BOTANIST</span>
+      </div>
+      <button class="cd-close" onclick="closeModal()">X</button>
+    </div>
+
+    <!-- Body -->
+    <div class="cd-body">
+
+      <!-- Top: portrait + identity/stats/bio -->
+      <div class="cd-top">
+
+        <!-- Portrait column with HP-driven glow. Chevrons cycle through
+             the crew roster in-place — unobtrusive low-opacity arrows
+             that brighten on hover. Keyboard Left/Right also works. -->
+        <div class="cd-portrait-box">
+          <div class="cd-glow"></div>
+          <div class="cd-portrait fallback" id="crew-portrait">👩‍🌾</div>
+          <div class="cd-spark-field" id="cd-spark-field"></div>
+          <button class="cd-nav prev" id="cd-nav-prev" onclick="cycleCrew(-1)" aria-label="Previous crew">&#9664;</button>
+          <button class="cd-nav next" id="cd-nav-next" onclick="cycleCrew(1)"  aria-label="Next crew">&#9654;</button>
+        </div>
+
+        <!-- Identity column -->
+        <div class="cd-ident">
+          <div class="cd-name"      id="crew-name">DR. OSEI</div>
+          <div class="cd-role">
+            <span id="crew-role">Botanist</span>
+            <span class="dot"> · </span>
+            <span class="bg-tag" id="crew-bg">Crew</span>
+          </div>
+
+          <div class="cd-divider"></div>
+
+          <!-- Stats: HEALTH / MORALE / STRENGTH (spelled out, matches bars' hover tooltips) -->
+          <div class="cd-stats">
+            <div class="cd-stat-row hp">
+              <span class="cd-stat-label">HEALTH</span>
+              <div class="cd-stat-track"><div class="cd-stat-fill" id="stat-hp-fill" style="width:82%"></div></div>
+              <span class="cd-stat-value" id="stat-hp-val">82</span>
+            </div>
+            <div class="cd-stat-row mo">
+              <span class="cd-stat-label">MORALE</span>
+              <div class="cd-stat-track"><div class="cd-stat-fill" id="stat-mo-fill" style="width:65%"></div></div>
+              <span class="cd-stat-value" id="stat-mo-val">65</span>
+            </div>
+            <div class="cd-stat-row st">
+              <span class="cd-stat-label">STRENGTH</span>
+              <div class="cd-stat-track"><div class="cd-stat-fill" id="stat-st-fill" style="width:100%"></div></div>
+              <span class="cd-stat-value" id="stat-st-val">100</span>
+            </div>
+          </div>
+
+          <div class="cd-divider"></div>
+
+          <!-- Bio with narrative-hint sub-line -->
+          <div class="cd-bio" id="crew-bio">
+            Knows every plant. Has opinions about all of them.
+            <span class="hint" id="crew-hint">Argues with ARIA about soil chemistry. Loses, politely.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status effects band -->
+      <div class="cd-status">
+        <div class="cd-status-col">
+          <div class="cd-status-title">STATUS EFFECTS</div>
+          <!-- Active list is the primary surface. When empty, the nominal
+               line below is the only thing shown, sitting at the same top
+               position. When entries promote in, the active list renders
+               from the top and stacks down; the nominal line hides. -->
+          <div class="cd-status-active" id="status-active"></div>
+        </div>
+        <div class="cd-status-col-divider"></div>
+        <div class="cd-status-col">
+          <div class="cd-status-title">MONITORED</div>
+          <div id="status-monitored"></div>
+        </div>
+      </div>
+
+      <!-- Skills row: passive + active -->
+      <div class="cd-skills">
+
+        <!-- Passive card -->
+        <div class="cd-skill-card" id="passive-card">
+          <div class="cd-skill-title">
+            <span class="kind">PASSIVE</span>
+            <span>ALWAYS ON</span>
+          </div>
+          <div class="cd-skill-name" id="passive-name">CROP CARE</div>
+          <div class="cd-skill-desc" id="passive-desc">+15% growth · +15% yield on tended plants.</div>
+          <div class="cd-skill-meta" id="passive-meta">
+            <span class="warn hidden" id="passive-warn">Injury: effect halved.</span>
+          </div>
+        </div>
+
+        <!-- Active card -->
+        <div class="cd-skill-card cd-active-card" id="active-card">
+          <div class="cd-skill-title">
+            <span class="kind">ACTIVE</span>
+            <span id="active-cost-tag">COST: 1 STRENGTH</span>
+          </div>
+          <div class="cd-skill-name" id="active-name">GREENHOUSE PROTOCOL</div>
+          <div class="cd-skill-desc" id="active-desc">Restore 10 plant health on one bed. Once per leg.</div>
+          <div class="cd-active-action">
+            <span class="cd-active-uses" id="active-uses"><strong>1</strong> / 1 USES · RECHARGES AT STATION</span>
+            <button class="cd-active-btn" id="active-btn" onclick="useActive()">USE</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer: DISMISS + ARIA quip -->
+    <div class="cd-footer">
+      <button class="cd-dismiss-btn" id="dismiss-btn" onclick="openConfirm()">Dismiss Crew</button>
+      <div class="cd-aria">
+        <span class="cd-aria-icon has-sprite" style="background-image: url('sprites/interface/AI/aria.png')">📡</span>
+        <span class="cd-aria-name">ARIA:</span>
+        <span class="cd-aria-text" id="aria-text">She reorganized the seed vault. I am not to touch it.</span>
+      </div>
+    </div>
+
+    <!-- Epitaph overlay (jettison only). Fades in after the portrait
+         anim, waits for dismissal, then cycles the roster. -->
+    <div class="cd-epitaph" id="cd-epitaph" onclick="closeEpitaph()">
+      <div class="cd-epitaph-rule">── — ──</div>
+      <div class="cd-epitaph-name" id="epitaph-name">DR. OSEI</div>
+      <div class="cd-epitaph-line" id="epitaph-line">The vacuum accepts the donation without comment.</div>
+      <div class="cd-epitaph-rule">── — ──</div>
+      <div class="cd-epitaph-hint">Click anywhere, or press Enter.</div>
+    </div>
+
+  </div>
+
+  <!-- Confirm sub-modal — content and tone swap between Dismiss (safe)
+       and Jettison (airlock). Populated by openConfirm(). -->
+  <div id="cd-confirm-backdrop" onclick="closeConfirm()"></div>
+  <div id="cd-confirm">
+    <div class="cd-confirm-title" id="confirm-title">DISMISS CREW</div>
+    <div class="cd-confirm-body" id="confirm-body">
+      Dismiss <strong id="confirm-name">Dr. Osei</strong> from the crew? They are not coming back.
+      <em id="confirm-tail">A station recruiter will note the opening.</em>
+    </div>
+    <div class="cd-confirm-actions">
+      <button class="cd-confirm-btn" onclick="closeConfirm()">Cancel</button>
+      <button class="cd-confirm-btn danger" onclick="confirmDismiss()">Confirm</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Dev controls -->
+<div id="controls">
+  <h2>Crew Modal Demo Controls</h2>
+
+  <h3>Crew</h3>
+  <div class="ctrl-row"><label>Member</label>
+    <select id="c-crew" style="flex:1; background:#0e1118; color:var(--cream); border:1px solid #2a3040; padding:2px 4px; font-family:'VT323',monospace; font-size:14px;">
+      <option value="osei">Dr. Osei (Botanist)</option>
+      <option value="kazuki">Kazuki (Engineer)</option>
+      <option value="vasquez">Dr. Vasquez (Medic)</option>
+      <option value="reeves">Reeves (Pilot)</option>
+      <option value="reyes">Reyes (Chef)</option>
+      <option value="hargrove">Hargrove (Diplomat)</option>
+      <option value="tanaka">Dr. Tanaka (Xenobiologist)</option>
+      <option value="captain_optimist">Captain (Optimist)</option>
+    </select>
+  </div>
+
+  <h3>Stats</h3>
+  <div class="ctrl-row"><label>Health</label><input type="range" id="c-hp" min="0" max="100" value="82"><span class="val" id="v-hp">82</span></div>
+  <div class="ctrl-row"><label>Morale</label><input type="range" id="c-mo" min="0" max="100" value="65"><span class="val" id="v-mo">65</span></div>
+  <div class="ctrl-row"><label>Strength</label><input type="range" id="c-st" min="0" max="100" value="100"><span class="val" id="v-st">100</span></div>
+
+  <h3>Status Toggles</h3>
+  <div class="ctrl-row"><label>Wounded</label><input type="checkbox" id="c-wounded"></div>
+  <div class="ctrl-row"><label>Sick</label><input type="checkbox" id="c-sick"></div>
+  <div class="ctrl-row"><label>Infected</label><input type="checkbox" id="c-infected"></div>
+  <div class="ctrl-row"><label>Exhausted</label><input type="checkbox" id="c-exhausted"></div>
+  <div class="ctrl-row"><label>Malnourished</label><input type="checkbox" id="c-malnourished"></div>
+  <div class="ctrl-row"><label>Dehydrated</label><input type="checkbox" id="c-dehydrated"></div>
+  <div class="ctrl-row"><label>Traumatized</label><input type="checkbox" id="c-traumatized"></div>
+  <div class="ctrl-row"><label>Radiation</label><input type="checkbox" id="c-radiation"></div>
+  <div class="ctrl-row"><label>Pending crisis</label><input type="checkbox" id="c-pending"></div>
+
+  <h3>Active Skill</h3>
+  <div class="ctrl-row"><label>Uses remaining</label><input type="number" id="c-uses" min="0" max="1" value="1" style="width:50px; background:#0e1118; color:var(--cream); border:1px solid #2a3040; padding:2px 4px; font-family:'VT323',monospace; font-size:14px;"></div>
+  <button class="sim-btn" onclick="rechargeActive()">Recharge (station)</button>
+  <div class="ctrl-row"><label>USE width</label><input type="range" id="c-use-w" min="40" max="160" step="2" value="64"><span class="val" id="v-use-w">64</span></div>
+  <div class="ctrl-row"><label>USE height</label><input type="range" id="c-use-h" min="20" max="64" step="2" value="32"><span class="val" id="v-use-h">32</span></div>
+  <div class="ctrl-row"><label>USE text size</label><input type="range" id="c-use-size" min="10" max="28" step="1" value="15"><span class="val" id="v-use-size">15</span></div>
+
+  <h3>Ship Context</h3>
+  <div class="ctrl-row"><label>Location</label>
+    <select id="c-location" style="flex:1; background:#0e1118; color:var(--cream); border:1px solid #2a3040; padding:2px 4px; font-family:'VT323',monospace; font-size:14px;">
+      <option value="station">Station (safe)</option>
+      <option value="allied_ship">Allied ship (safe)</option>
+      <option value="habitable_world">Habitable world (safe)</option>
+      <option value="travel">In transit (no safe dropoff)</option>
+      <option value="derelict">Derelict (no safe dropoff)</option>
+      <option value="hostile">Hostile space (no safe dropoff)</option>
+      <option value="deep_void">Deep void (no safe dropoff)</option>
+    </select>
+  </div>
+
+  <h3>Modal Frame</h3>
+  <div class="ctrl-row"><label>Width</label><input type="range" id="c-modal-w" min="640" max="960" step="4" value="720"><span class="val" id="v-modal-w">720</span></div>
+  <div class="ctrl-row"><label>Height</label><input type="range" id="c-modal-h" min="480" max="680" step="4" value="580"><span class="val" id="v-modal-h">580</span></div>
+  <div class="ctrl-row"><label>Backdrop α</label><input type="range" id="c-backdrop" min="0" max="100" value="75"><span class="val" id="v-backdrop">75</span></div>
+  <div class="ctrl-row"><label>Title size</label><input type="range" id="c-title-size" min="10" max="20" value="14"><span class="val" id="v-title-size">14</span></div>
+  <div class="ctrl-row"><label>Border color</label><input type="color" id="c-modal-border" value="#5E6168"></div>
+  <div class="ctrl-row"><label>Title color</label><input type="color" id="c-title" value="#9092BB"></div>
+
+  <h3>Layout</h3>
+  <div class="ctrl-row"><label>Portrait col</label><input type="range" id="c-portrait-col" min="180" max="320" step="4" value="200"><span class="val" id="v-portrait-col">200</span></div>
+  <div class="ctrl-row"><label>Section gap</label><input type="range" id="c-section-gap" min="6" max="24" step="2" value="10"><span class="val" id="v-section-gap">10</span></div>
+  <div class="ctrl-row"><label>Glow alpha</label><input type="range" id="c-glow-alpha" min="0" max="50" value="12"><span class="val" id="v-glow-alpha">12</span></div>
+  <div class="ctrl-row"><label>Glow spread</label><input type="range" id="c-glow-spread" min="30" max="90" value="60"><span class="val" id="v-glow-spread">60</span></div>
+
+  <h3>Bars</h3>
+  <div class="ctrl-row"><label>Bar height</label><input type="range" id="c-bar-h" min="8" max="28" step="1" value="16"><span class="val" id="v-bar-h">16</span></div>
+  <div class="ctrl-row"><label>Health color</label><input type="color" id="c-hp-color" value="#85d260"></div>
+  <div class="ctrl-row"><label>Morale color</label><input type="color" id="c-mo-color" value="#5e9ec7"></div>
+  <div class="ctrl-row"><label>Strength color</label><input type="color" id="c-st-color" value="#d8c044"></div>
+
+  <h3>Typography</h3>
+  <div class="ctrl-row"><label>Status size</label><input type="range" id="c-mod-size" min="10" max="20" step="1" value="16"><span class="val" id="v-mod-size">16</span></div>
+  <div class="ctrl-row"><label>Body size</label><input type="range" id="c-body-size" min="12" max="20" step="1" value="12"><span class="val" id="v-body-size">12</span></div>
+  <div class="ctrl-row"><label>Mono size</label><input type="range" id="c-mono-size" min="11" max="18" step="1" value="13"><span class="val" id="v-mono-size">13</span></div>
+  <div class="ctrl-row"><label>ARIA size</label><input type="range" id="c-aria-size" min="12" max="22" step="1" value="18"><span class="val" id="v-aria-size">18</span></div>
+
+  <h3>Spacing</h3>
+  <div class="ctrl-row"><label>Body pad-V</label><input type="range" id="c-body-v" min="6" max="32" step="2" value="14"><span class="val" id="v-body-v">14</span></div>
+
+  <h3>Simulate</h3>
+  <button class="sim-btn" onclick="advanceDay()">Advance 1 Day</button>
+  <button class="sim-btn" onclick="resetCrew()">Reset Stats (100/75/100)</button>
+  <button class="sim-btn" onclick="reopenModal()">Reopen Modal</button>
+  <button class="sim-btn" onclick="resetStyleDefaults()">Reset Style Defaults</button>
+  <button class="sim-btn" onclick="playDismissAnim()">▶ Play Dismiss Anim</button>
+  <button class="sim-btn" onclick="playJettisonAnim()">▶ Play Jettison Anim</button>
+</div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const root = document.documentElement;
+
+  // ── Crew sprite atlas (shared icon/portrait helper) ─────────────
+  // Crew icons + portraits live PACKED inside spritesheet_<id>.png at
+  // fixed coords from the .json. Captain is the exception: separate
+  // captain.png + captain_icon.png files (no spritesheet — captain
+  // doesn't talk to themselves yet). Sheet uniform 376×294. Icon is
+  // 48×48 at (295,195) for everyone except reyes (icon at (295,146);
+  // portrait shorter at 80×143 instead of 80×192).
+  // CREW_ATLAS + helpers live in shared.js
+
+  // ── Viewport fit ─────────────────────────────────────────
+  function fitViewport() {
+    let s;
+    if (document.body.classList.contains('fullsize')) {
+      s = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+    } else {
+      const avail = Math.min(window.innerWidth - 440, window.innerWidth * 0.65);
+      const h = window.innerHeight - 40;
+      s = Math.min(avail / 960, h / 640, 1);
+    }
+    $('scale-root').style.transform = 'scale(' + s + ')';
+  }
+  fitViewport();
+  window.addEventListener('resize', fitViewport);
+  window.toggleSize = function() {
+    document.body.classList.toggle('fullsize');
+    $('size-toggle').textContent = document.body.classList.contains('fullsize') ? 'Demo Size' : 'Actual Size';
+    fitViewport();
+  };
+
+  // ── Parallax stars (decorative) ─────────────────────────
+  const farCvs = $('stars-far'), farCtx = farCvs.getContext('2d');
+  const nearCvs = $('stars-near'), nearCtx = nearCvs.getContext('2d');
+  const farStars = [], nearStars = [];
+  for (let i = 0; i < 90; i++) farStars.push({ x: Math.random()*960, y: Math.random()*640, r: Math.random()*1.1+0.3, phase: Math.random()*Math.PI*2 });
+  for (let i = 0; i < 14; i++) nearStars.push({ x: Math.random()*960, y: Math.random()*640, r: Math.random()*1.6+0.8, phase: Math.random()*Math.PI*2 });
+  function drawStars() {
+    if (PauseBus.paused) { requestAnimationFrame(drawStars); return; }
+    const now = performance.now()/1000;
+    farCtx.clearRect(0,0,960,640);
+    for (const s of farStars) {
+      farCtx.globalAlpha = 0.22 + Math.sin(now*1.5 + s.phase)*0.14;
+      farCtx.fillStyle = '#8899aa';
+      farCtx.beginPath(); farCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); farCtx.fill();
+    }
+    farCtx.globalAlpha = 1;
+    nearCtx.clearRect(0,0,960,640);
+    for (const s of nearStars) {
+      nearCtx.globalAlpha = 0.4 + Math.sin(now*0.8 + s.phase)*0.2;
+      nearCtx.fillStyle = '#c8d0d8';
+      nearCtx.beginPath(); nearCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); nearCtx.fill();
+    }
+    nearCtx.globalAlpha = 1;
+    requestAnimationFrame(drawStars);
+  }
+  drawStars();
+
+  // ══ Crew roster ═════════════════════════════════════════════
+  // Bible §7 lists passives/actives for Engineer, Medic, Pilot, Cook,
+  // Diplomat verbatim. Botanist, Xenobiologist, and Captain (Optimist)
+  // are improvised below in the same dry, concise OT/Adams voice —
+  // the passive/active shapes parallel the bible-canonical entries.
+  //   portrait = 192px sprite (may not exist → emoji fallback)
+  //   icon     = 48px headshot (exists for the whole roster)
+  //   emoji    = final fallback when both sprites are missing
+  const CREW = {
+    osei: {
+      id: 'osei', name: 'Dr. Osei', role: 'Botanist', bg: 'Crew',
+      crewId:   'osei',
+      emoji: '🌱',
+      bio: 'Knows every plant. Has opinions about all of them.',
+      passive: { name: 'Crop Care', desc: '+15% growth · +15% yield on tended plants.' },
+      active:  { name: 'Greenhouse Protocol', desc: 'Restore 10 plant health on one bed.',
+                 cost: '1 STRENGTH', uses_per_leg: 1 },
+      hint: 'Argues with ARIA about soil chemistry. Loses, politely.'
+    },
+    kazuki: {
+      id: 'kazuki', name: 'Kazuki', role: 'Engineer', bg: 'Crew',
+      crewId:   'kazuki',
+      emoji: '🔧',
+      bio: 'Fixes things. Eats twice as much. Nobody has asked why.',
+      passive: { name: 'Mechanical Instinct', desc: 'Hull repair events cost less time and resources.' },
+      active:  { name: 'Emergency Patch', desc: 'Prevent one hull damage event this leg.',
+                 cost: '1 STRENGTH', uses_per_leg: 1 },
+      hint: 'Required for mechanical events rated EXTREME effort.'
+    },
+    vasquez: {
+      id: 'vasquez', name: 'Dr. Vasquez', role: 'Medic', bg: 'Crew',
+      crewId:   'vasquez',
+      emoji: '🩺',
+      bio: 'Chronically anxious. Excellent at their job. Do not ask about their residency.',
+      passive: { name: 'Bedside Manner', desc: 'Crew health events resolve more favorably.' },
+      active:  { name: 'Treatment', desc: 'Heal one injured crew member.',
+                 cost: '1 STRENGTH', uses_per_leg: 1 },
+      hint: 'Without a medic, injured crew have fewer recovery paths.'
+    },
+    reeves: {
+      id: 'reeves', name: 'Reeves', role: 'Pilot', bg: 'Crew',
+      crewId:   'reeves',
+      emoji: '🛸',
+      bio: 'Overconfident. Statistically correct 78% of the time.',
+      passive: { name: 'Fuel Discipline', desc: 'Engine burn slightly reduced. Small per-leg savings.' },
+      active:  { name: 'Push Engines', desc: 'Skip a node at double fuel cost.',
+                 cost: '2 FUEL', uses_per_leg: 1 },
+      hint: 'Reduces drift in the calibration microgame.'
+    },
+    reyes: {
+      id: 'reyes', name: 'Reyes', role: 'Chef', bg: 'Crew',
+      crewId:   'reyes',
+      emoji: '🍳',
+      bio: 'The most important person on the ship. They know it.',
+      passive: { name: 'Pantry Logic', desc: 'Food lasts longer. Morale passive +1 per day.' },
+      active:  { name: 'Special Meal', desc: 'Restore 10 morale. Uses food resource.',
+                 cost: '1 FOOD', uses_per_leg: 1 },
+      hint: 'Unlocks food-based morale recovery events.'
+    },
+    hargrove: {
+      id: 'hargrove', name: 'Hargrove', role: 'Diplomat', bg: 'Crew',
+      crewId:   'hargrove',
+      emoji: '🤝',
+      bio: 'Absolutely useless in every situation except the one specific situation.',
+      passive: { name: 'Strategic Patience', desc: 'No effect on most days. Prepares for hostile events.' },
+      active:  { name: 'Negotiation', desc: 'Unlock peaceful resolution in pirate or hostile events.',
+                 cost: '1 STRENGTH', uses_per_leg: 1 },
+      hint: 'Required for the negotiation_wobble microgame to appear.'
+    },
+    tanaka: {
+      id: 'tanaka', name: 'Dr. Tanaka', role: 'Xenobiologist', bg: 'Crew',
+      crewId:   'tanaka',
+      emoji: '🔬',
+      // Improvised to match bible voice — parallels Academic/Medic tone.
+      bio: 'Thinks every anomaly is a new species. Often correct, to general inconvenience.',
+      passive: { name: 'Field Identification', desc: 'Unknown-flora events reveal one additional option.' },
+      active:  { name: 'Sample Analysis', desc: 'Reveal hidden outcome on one flora or anomaly event.',
+                 cost: '1 STRENGTH', uses_per_leg: 1 },
+      hint: 'Argues with Dr. Osei about whether the new thing is a plant.'
+    },
+    captain_optimist: {
+      id: 'captain_optimist', name: 'Captain', role: 'Captain', bg: 'Optimist', isCaptain: true,
+      crewId:   'captain',
+      emoji: '🧑‍✈️',
+      // Bible §7 lines 605–609: Optimist passive = "Morale events go
+      // slightly better"; Active = "Rally — restore 5 morale once per leg."
+      bio: 'Wrong about everything and yet somehow it works out.',
+      passive: { name: 'Optimist', desc: 'Morale events resolve slightly better for the crew.' },
+      active:  { name: 'Rally', desc: 'Restore 5 morale across the crew.',
+                 cost: '1 STRENGTH', uses_per_leg: 1 },
+      hint: 'If the captain background matches a crew role, specialist bonuses are halved.'
+    }
+  };
+
+  // ARIA quips — keyed per crew. Rotate per open. One-liners only.
+  const ARIA_QUIPS = {
+    osei: [
+      'She reorganized the seed vault. I am not to touch it.',
+      'Dr. Osei calls the plants by their full taxonomic names. It seems mutual.'
+    ],
+    kazuki: [
+      'Kazuki fixed the thing. Kazuki made the thing. We are ahead.',
+      'He has not explained the second sandwich. I have stopped asking.'
+    ],
+    vasquez: [
+      'Dr. Vasquez is calm in emergencies. I find this upsetting, in a good way.',
+      'Their hands do not shake. Everything else does.'
+    ],
+    reeves: [
+      'Reeves is confident. Reeves is, on balance, correct.',
+      'He has a story about this. Please do not encourage it.'
+    ],
+    reyes: [
+      'Reyes cooked. The crew is civil again.',
+      'The spice budget for one meal exceeded the monthly allowance.'
+    ],
+    hargrove: [
+      'Hargrove waits. Hargrove has been waiting. It is his job.',
+      'Two factions met. One of them left smiling.'
+    ],
+    tanaka: [
+      'Dr. Tanaka logged a new species. We are not at a destination yet.',
+      'She identified the ship. It is, apparently, habitat.'
+    ],
+    captain_optimist: [
+      'The captain is certain. This is correlated with outcomes only sometimes.',
+      'A plan was announced. The crew applauded. The plan was optimistic.'
+    ]
+  };
+  function pickAriaQuip() {
+    const arr = ARIA_QUIPS[STATE.crewId] || ARIA_QUIPS.osei;
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // Monitored statuses — canonical list, always rendered. Anything
+  // firing gets promoted into the ACTIVE list above and removed here.
+  // Mirrors growbay's MONITORED_THREATS pattern.
+  const MONITORED_STATUSES = [
+    { id: 'wounded',            name: 'Wounded',            kind: 'critical', effect: 'Active skill disabled · passive halved' },
+    { id: 'sick',               name: 'Sick',               kind: 'negative', effect: '−10% strength regen · morale −1/day' },
+    { id: 'infected',           name: 'Infected',           kind: 'critical', effect: 'Contagious · spreads without a Medic' },
+    { id: 'exhausted',          name: 'Exhausted',          kind: 'negative', effect: 'Strength actions cost double' },
+    { id: 'morale_crisis',      name: 'Morale crisis',      kind: 'critical', effect: 'Unstable · event rolls trend bad' },
+    { id: 'traumatized',        name: 'Traumatized',        kind: 'negative', effect: 'Morale cap ≤ 60 until processed' },
+    { id: 'malnourished',       name: 'Malnourished',       kind: 'negative', effect: 'HP regen halted · morale −1/day' },
+    { id: 'dehydrated',         name: 'Dehydrated',         kind: 'negative', effect: 'Strength −10/day · HP at risk' },
+    { id: 'radiation_exposure', name: 'Radiation exposure', kind: 'critical', effect: 'Accumulating damage · see Medic' },
+    { id: 'pending_crisis',     name: 'Pending crisis',     kind: 'critical', effect: 'Untreated by next station → follow-up event' }
+  ];
+
+  // ═════ State ═════════════════════════════════════════════════
+  // Driven by dev controls; no persistence.
+  const STATE = {
+    crewId: 'osei',
+    hp: 82, mo: 65, st: 100,
+    // Status toggles (dev-panel checkboxes). Also auto-promoted via
+    // stat thresholds — see computeStatusEffects below.
+    wounded: false, sick: false, infected: false, exhausted: false,
+    malnourished: false, dehydrated: false, traumatized: false,
+    radiation_exposure: false, pending_crisis: false,
+    // Active-skill uses remaining this leg (0 or 1).
+    uses: 1,
+    // Ship context — drives dismiss vs jettison. 'station' / 'allied_ship' /
+    // 'habitable_world' = safe dropoff (Dismiss). Anything else (travel,
+    // derelict, hostile, deep void) = no safe exit (Jettison, kills them).
+    location: 'station'
+  };
+
+  // Locations where a crew member can be left behind without dying.
+  // Everything else forces the player to choose between keeping them or
+  // opening the airlock.
+  const SAFE_DROPOFFS = new Set(['station', 'allied_ship', 'habitable_world']);
+  function canDismissSafely() { return SAFE_DROPOFFS.has(STATE.location); }
+
+  // ═════ Status promotion ════════════════════════════════════
+  // Returns { active: [...], monitored: [...] }.
+  //   active    = status effects currently firing (stat-driven OR toggle)
+  //   monitored = MONITORED_STATUSES not firing (dim stubs)
+  // Promotion rules per spec:
+  //   wounded          → toggle OR hp < 40
+  //   sick             → toggle
+  //   exhausted        → toggle OR st < 20
+  //   morale_crisis    → mo < 25
+  //   malnourished     → toggle
+  //   radiation        → toggle
+  function computeStatusEffects() {
+    const fired = new Set();
+    const active = [];
+
+    // Wounded — toggle OR low HP
+    if (STATE.wounded || STATE.hp < 40) {
+      fired.add('wounded');
+      active.push({
+        id: 'wounded', name: 'Wounded', kind: 'critical',
+        effect: 'Active skill disabled · passive halved'
+      });
+    }
+    if (STATE.sick) {
+      fired.add('sick');
+      active.push({
+        id: 'sick', name: 'Sick', kind: 'negative',
+        effect: '−10% stamina regen · morale −1/day'
+      });
+    }
+    if (STATE.exhausted || STATE.st < 20) {
+      fired.add('exhausted');
+      active.push({
+        id: 'exhausted', name: 'Exhausted', kind: 'negative',
+        effect: 'Strength actions cost double'
+      });
+    }
+    if (STATE.mo < 25) {
+      fired.add('morale_crisis');
+      active.push({
+        id: 'morale_crisis', name: 'Morale crisis', kind: 'critical',
+        effect: 'Unstable · event rolls trend bad'
+      });
+    }
+    if (STATE.malnourished) {
+      fired.add('malnourished');
+      active.push({
+        id: 'malnourished', name: 'Malnourished', kind: 'negative',
+        effect: 'HP regen halted · morale −1/day'
+      });
+    }
+    if (STATE.radiation_exposure) {
+      fired.add('radiation_exposure');
+      active.push({
+        id: 'radiation_exposure', name: 'Radiation exposure', kind: 'critical',
+        effect: 'Accumulating damage · see Medic'
+      });
+    }
+    // Infected — contagious; distinct from sick. Needs Medic treatment or
+    // it spreads to another crew per day.
+    if (STATE.infected) {
+      fired.add('infected');
+      active.push({
+        id: 'infected', name: 'Infected', kind: 'critical',
+        effect: 'Contagious · spreads without a Medic'
+      });
+    }
+    // Dehydrated — low crew water allocation for N days. In-game this
+    // reads from ship resource state; demo uses a toggle.
+    if (STATE.dehydrated) {
+      fired.add('dehydrated');
+      active.push({
+        id: 'dehydrated', name: 'Dehydrated', kind: 'negative',
+        effect: 'Strength −10/day · HP at risk'
+      });
+    }
+    // Traumatized — after witnessing a crewmate's death. Caps morale
+    // recovery until resolved by a station event.
+    if (STATE.traumatized) {
+      fired.add('traumatized');
+      active.push({
+        id: 'traumatized', name: 'Traumatized', kind: 'negative',
+        effect: 'Morale cap ≤ 60 until processed'
+      });
+    }
+    // Pending crisis — bible canon (§7 severity:delayed). Untreated by
+    // the next station triggers a follow-up crisis event.
+    if (STATE.pending_crisis) {
+      fired.add('pending_crisis');
+      active.push({
+        id: 'pending_crisis', name: 'Pending crisis', kind: 'critical',
+        effect: 'Untreated by next station → follow-up event'
+      });
+    }
+
+    // Monitored = canonical list MINUS anything firing.
+    const monitored = MONITORED_STATUSES.filter(s => !fired.has(s.id));
+    return { active, monitored };
+  }
+
+  // ═════ HEALTH-driven glow + bar color ══════════════════════
+  // Copy-paste of growbay's HEALTH_STOPS so the crew HEALTH bar fill
+  // and the portrait glow track the exact same hue across health %.
+  // 100 = deep green → 75 = healthy green → 50 = yellow → 25 = orange → 0 = red.
+  const GLOW_STOPS = [
+    { p: 0,   c: [204, 51,  51 ] },  // red
+    { p: 25,  c: [224, 120, 52 ] },  // orange
+    { p: 50,  c: [216, 192, 68 ] },  // yellow
+    { p: 75,  c: [133, 210, 96 ] },  // healthy green
+    { p: 100, c: [56,  138, 74 ] }   // deep green
+  ];
+  function glowRGB(pct) {
+    pct = Math.max(0, Math.min(100, pct));
+    for (let i = 0; i < GLOW_STOPS.length - 1; i++) {
+      const a = GLOW_STOPS[i], b = GLOW_STOPS[i + 1];
+      if (pct <= b.p) {
+        const t = (pct - a.p) / (b.p - a.p);
+        return [
+          Math.round(a.c[0] + (b.c[0] - a.c[0]) * t),
+          Math.round(a.c[1] + (b.c[1] - a.c[1]) * t),
+          Math.round(a.c[2] + (b.c[2] - a.c[2]) * t)
+        ];
+      }
+    }
+    return GLOW_STOPS[GLOW_STOPS.length - 1].c.slice();
+  }
+
+  // ═════ Portrait load — 192 → icon → emoji fallback chain ══
+  // Try the 192px portrait first. If it fails (file doesn't exist yet),
+  // fall back to the 48px icon stretched into the slot. If the icon
+  // also fails, show the emoji centered. Uses Image preload so the
+  // fallback decision is deterministic before we paint. Per-crew
+  // result is cached so switching back doesn't re-probe each time.
+  // Probe-based portrait loader. Spritesheet crew (everyone but
+  // captain) get their portrait cropped from the same sheet that
+  // carries the talk frames + icon — so a single probe of the sheet
+  // tells us whether sprite display is possible. Fall back to emoji
+  // if the sheet 404s. Captain probes its loose captain.png file.
+  function loadPortrait(crew) {
+    const el = $('crew-portrait');
+    probeCrewSprite(crew.crewId, ok => {
+      if (ok) {
+        el.classList.remove('fallback');
+        el.classList.add('has-sprite');
+        el.textContent = '';
+        applyCrewPortrait(el, crew.crewId, 192, 192);
+      } else {
+        el.classList.add('fallback');
+        el.classList.remove('has-sprite');
+        ['background-image','background-size','background-position'].forEach(p => el.style.removeProperty(p));
+        el.textContent = crew.emoji || '👤';
+      }
+    });
+  }
+
+  // ═════ Skill lock state ═════════════════════════════════════
+  // Active skill is locked when:
+  //   - crew is wounded  (hard disable; label ⇒ UNAVAILABLE)
+  //   - uses === 0       (soft disable; label ⇒ EXHAUSTED this leg)
+  // Passive is "weakened" (halved) when wounded — shown as a warn
+  // line inside the passive card.
+  function activeLockReason(activeStatuses) {
+    if (activeStatuses.some(s => s.id === 'wounded')) return 'wounded';
+    if (STATE.uses <= 0) return 'used';
+    return null;
+  }
+
+  // ═════ Render ═══════════════════════════════════════════════
+  function renderAll() {
+    const crew = CREW[STATE.crewId];
+
+    // Header + identity
+    $('crew-name-banner').textContent = crew.name.toUpperCase();
+    $('crew-role-banner').textContent = crew.role.toUpperCase();
+    $('crew-name').textContent        = crew.name.toUpperCase();
+    $('crew-role').textContent        = crew.role;
+    $('crew-bg').textContent          = crew.bg || 'Crew';
+    $('crew-bio').firstChild && ($('crew-bio').childNodes[0].nodeValue = '');
+    // Rebuild bio+hint — first text node is the bio sentence, then the
+    // .hint span carries the narrative_hint.
+    const bioEl = $('crew-bio');
+    bioEl.innerHTML = crew.bio +
+      '<span class="hint">' + crew.hint + '</span>';
+
+    // Portrait
+    loadPortrait(crew);
+
+    // Stats — bars + values
+    $('stat-hp-fill').style.width = STATE.hp + '%';
+    $('stat-hp-val').textContent  = STATE.hp;
+    $('stat-mo-fill').style.width = STATE.mo + '%';
+    $('stat-mo-val').textContent  = STATE.mo;
+    $('stat-st-fill').style.width = STATE.st + '%';
+    $('stat-st-val').textContent  = STATE.st;
+
+    // HEALTH-driven glow + bar fill — both track the same interpolated
+    // RGB so the portrait backdrop and the bar hue stay linked across
+    // 0-100% (mirrors the plant-health pattern in growbay).
+    const rgb = glowRGB(STATE.hp);
+    root.style.setProperty('--glow-color', rgb.join(','));
+    $('stat-hp-fill').style.background = 'rgb(' + rgb.join(',') + ')';
+
+    // Status effects
+    const { active, monitored } = computeStatusEffects();
+    const activeEl = $('status-active');
+    const monEl    = $('status-monitored');
+    activeEl.innerHTML = '';
+    monEl.innerHTML = '';
+    if (active.length === 0) {
+      // Nominal placeholder rendered as the first (and only) row inside
+      // the active list, so the column keeps its locked 88px footprint.
+      const row = document.createElement('div');
+      row.className = 'cd-status-row nominal';
+      row.innerHTML = '<span class="s-name">No active effects. Nominal.</span>';
+      activeEl.appendChild(row);
+    } else {
+      for (const s of active) {
+        const row = document.createElement('div');
+        row.className = 'cd-status-row ' + s.kind;
+        row.innerHTML = '<span class="s-name">' + s.name + '</span>' +
+                        '<span class="s-eff">' + s.effect + '</span>';
+        activeEl.appendChild(row);
+      }
+    }
+    for (const s of monitored) {
+      const row = document.createElement('div');
+      row.className = 'cd-status-row stub';
+      row.innerHTML = '<span class="s-name">· ' + s.name + '</span>' +
+                      '<span class="s-eff">—</span>';
+      monEl.appendChild(row);
+    }
+
+    // Passive card
+    $('passive-name').textContent = crew.passive.name.toUpperCase();
+    $('passive-desc').textContent = crew.passive.desc;
+    $('passive-card').title = crew.passive.name + '\n\n' + crew.passive.desc +
+      '\n\nAlways on. Halved if this crew is injured.';
+    // Warn line appears only while wounded.
+    const passiveWarn = $('passive-warn');
+    const isWounded = active.some(s => s.id === 'wounded');
+    passiveWarn.classList.toggle('hidden', !isWounded);
+
+    // Active card
+    $('active-name').textContent = crew.active.name.toUpperCase();
+    $('active-desc').textContent = crew.active.desc;
+    $('active-cost-tag').textContent = 'COST: ' + crew.active.cost;
+    $('active-card').title = crew.active.name + '\n\n' + crew.active.desc +
+      '\nCost: ' + crew.active.cost +
+      '\nUses: ' + crew.active.uses_per_leg + ' per leg · recharges at stations.' +
+      (isWounded ? '\n\nDisabled while wounded.' : '');
+
+    // Lock state on the USE button
+    const btn = $('active-btn');
+    const usesEl = $('active-uses');
+    const reason = activeLockReason(active);
+    btn.classList.remove('locked');
+    usesEl.classList.remove('exhausted', 'locked');
+    if (reason === 'wounded') {
+      btn.classList.add('locked');
+      btn.textContent = 'UNAVAILABLE';
+      usesEl.classList.add('locked');
+      usesEl.innerHTML = 'Injured — skill disabled until treated.';
+    } else if (reason === 'used') {
+      btn.classList.add('locked');
+      btn.textContent = 'USE · EXHAUSTED';
+      usesEl.classList.add('exhausted');
+      usesEl.innerHTML = '<strong>0</strong> / ' + crew.active.uses_per_leg +
+                         ' USES · RECHARGES AT STATION';
+    } else {
+      btn.textContent = 'USE';
+      usesEl.innerHTML = '<strong>' + STATE.uses + '</strong> / ' +
+                         crew.active.uses_per_leg + ' USES · RECHARGES AT STATION';
+    }
+
+    // ARIA quip — rotates per render; in-game would only rotate per open
+    $('aria-text').textContent = pickAriaQuip();
+
+    // Dismiss / Jettison button — label + class swap based on location.
+    // Safe dropoff → "Dismiss Crew" (normal red). Otherwise → "Jettison
+    // Crew" (deeper red, pulsing warn ring). Copy in the confirm modal
+    // branches the same way via openConfirm().
+    //
+    // Captain is the player — there is no "dismiss the captain" flow.
+    // The button is fully hidden (display:none), not just disabled,
+    // because even a greyed-out "Dismiss" reads as a teased option.
+    const dBtn = $('dismiss-btn');
+    if (crew.isCaptain) {
+      dBtn.style.display = 'none';
+    } else {
+      dBtn.style.display = '';
+      const safe = canDismissSafely();
+      dBtn.textContent = safe ? 'Dismiss Crew' : 'Jettison Crew';
+      dBtn.classList.toggle('jettison', !safe);
+    }
+  }
+
+  // ═════ Active skill use ═════════════════════════════════════
+  window.useActive = function() {
+    if (STATE.uses <= 0) return;
+    STATE.uses = 0;
+    $('c-uses').value = 0;
+    renderAll();
+    // In the real game, this would apply the skill's effect. Demo
+    // just confirms the interaction loop is wired.
+    const crew = CREW[STATE.crewId];
+    setTimeout(() => alert(crew.active.name + ' used. ' + crew.active.desc +
+      '\n\n(Demo: no state applied.)'), 50);
+  };
+  window.rechargeActive = function() {
+    STATE.uses = 1;
+    $('c-uses').value = 1;
+    renderAll();
+  };
+
+  // ═════ Dismiss / Jettison confirm flow ═════════════════════
+  // Button action branches by STATE.location. At a safe dropoff the
+  // modal frames it as a benign goodbye; anywhere else it becomes a
+  // jettison warning — the crew has no way off the ship other than
+  // the airlock.
+  window.openConfirm = function() {
+    const crew = CREW[STATE.crewId];
+    const title = $('confirm-title');
+    const body  = $('confirm-body');
+    if (canDismissSafely()) {
+      title.textContent = 'DISMISS CREW';
+      body.innerHTML = 'Dismiss <strong>' + crew.name + '</strong> from the crew? ' +
+                       'They are not coming back.<br><br>' +
+                       '<em>Current stop allows a safe goodbye.</em>';
+    } else {
+      title.textContent = 'JETTISON CREW';
+      body.innerHTML = 'No station. No friendly ship. Not even an obliging asteroid.<br><br>' +
+                       'The airlock, however, remains fully operational. ' +
+                       '<strong>' + crew.name + '</strong> will not.<br><br>' +
+                       '<em>The universe files no objection. It rarely does.</em>';
+    }
+    document.body.classList.add('confirm-open');
+  };
+  window.closeConfirm = function() { document.body.classList.remove('confirm-open'); };
+
+  // Ordered crew roster — drives cycleCrew() and the post-dismiss hop
+  // to the next member. Same order as the dev dropdown.
+  const CREW_ORDER = Object.keys(CREW);
+
+  // Cycle to the next/prev crew. Wraps. Used by the chevron arrows
+  // and by the post-dismiss/jettison flow.
+  window.cycleCrew = function(delta) {
+    const cur = CREW_ORDER.indexOf(STATE.crewId);
+    const next = (cur + delta + CREW_ORDER.length) % CREW_ORDER.length;
+    STATE.crewId = CREW_ORDER[next];
+    $('c-crew').value = STATE.crewId;
+    // Strip any lingering departure-animation state so the new crew
+    // renders at full opacity, no grayscale, no rotation.
+    $('crew-portrait').classList.remove('anim-dismiss', 'anim-jettison');
+    renderAll();
+  };
+
+  // Spark emitter — fires a burst of small rising particles from the
+  // center of the portrait slot. Used by the jettison animation.
+  // Each spark has random horizontal drift + rise distance via inline
+  // CSS vars the @keyframes animation reads.
+  // Blood-droplet emitter. Size varies per-particle so the field has
+  // a realistic mix of fine mist and heavier droplets. Travel direction
+  // is roughly upward but with wide horizontal scatter and some downward
+  // outliers — vacuum ejecta doesn't obey gravity, it obeys impulse.
+  function spawnSparks(count) {
+    const field = $('cd-spark-field');
+    if (!field) return;
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement('span');
+      s.className = 'cd-spark';
+      const sx = (Math.random() - 0.5) * 140;                   // ±70px horizontal scatter
+      const sy = -30 - Math.random() * 100;                      // 30–130px rise
+      const sz = 2 + Math.random() * 6;                          // 2–8px droplet size
+      const delay = Math.random() * 220;                         // staggered emission
+      s.style.setProperty('--sx', sx + 'px');
+      s.style.setProperty('--sy', sy + 'px');
+      s.style.setProperty('--sz', sz + 'px');
+      s.style.animationDelay = delay + 'ms';
+      field.appendChild(s);
+      setTimeout(() => s.remove(), 1100 + delay);
+    }
+  }
+
+  // Final splat — fires right after the sprite disappears. Bigger drops,
+  // wider scatter, longer lifetime so they outlast the sprite's exit
+  // and linger as the last visible thing before the epitaph fades in.
+  function spawnSplat(count) {
+    const field = $('cd-spark-field');
+    if (!field) return;
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement('span');
+      s.className = 'cd-spark center';                            // emit from vertical center
+      const sx = (Math.random() - 0.5) * 200;                     // ±100px wide scatter
+      // Vertical: mostly upward but with some downward outliers — the
+      // splat is an outward explosion from center, not a rising cloud.
+      const sy = (Math.random() - 0.35) * 180;                    // -63 to +117 biased upward
+      const sz = 4 + Math.random() * 10;                          // 4–14px chunkier drops
+      const delay = Math.random() * 180;
+      s.style.setProperty('--sx', sx + 'px');
+      s.style.setProperty('--sy', sy + 'px');
+      s.style.setProperty('--sz', sz + 'px');
+      s.style.animationDelay = delay + 'ms';
+      s.style.animationDuration = '1400ms';                       // linger
+      field.appendChild(s);
+      setTimeout(() => s.remove(), 1500 + delay);
+    }
+  }
+
+  // Departure flow — used by both the confirm modal and the dev-panel
+  // "Play Anim" buttons. Plays the chosen portrait animation; on
+  // jettison, shows the epitaph after a short pause and waits for the
+  // player to dismiss it before advancing the roster. On dismiss
+  // (safe), no epitaph — cycle to the next crew immediately after the
+  // fade completes.
+  //
+  // In production: this is where ship.crew would actually be mutated
+  // (crew removed from roster). For the demo we just cycle the picker.
+  function playDeparture(jettison) {
+    const crew = CREW[STATE.crewId];
+    const portraitEl = $('crew-portrait');
+    portraitEl.classList.remove('anim-dismiss', 'anim-jettison');
+    void portraitEl.offsetWidth;     // force reflow so anim restarts cleanly
+
+    if (jettison) {
+      portraitEl.classList.add('anim-jettison');
+      // Sprite spins + shrinks clean (no particles during). Once it
+      // disappears at 1500ms, the final splat fires — that's the only
+      // blood in the whole sequence, serving as the full-stop.
+      setTimeout(() => spawnSplat(18), 1500);
+      const animMs = 1500;
+      setTimeout(() => {
+        // Splat had ~500ms to breathe with nothing in front of it.
+        // Now fade in the epitaph.
+        openEpitaph(crew);
+      }, animMs + 500);
+    } else {
+      portraitEl.classList.add('anim-dismiss');
+      const animMs = 1000;
+      setTimeout(() => {
+        console.log('Dismissed ' + crew.name + '.');
+        portraitEl.classList.remove('anim-dismiss');
+        cycleCrew(1);
+      }, animMs + 60);
+    }
+  }
+
+  window.confirmDismiss = function() {
+    closeConfirm();
+    playDeparture(!canDismissSafely());
+  };
+
+  // ═════ Dev-panel direct animation triggers ═════════════════
+  // Bypass the confirm modal so we can iterate on the animations
+  // without clicking through the warning flow each time.
+  window.playDismissAnim  = function() { playDeparture(false); };
+  window.playJettisonAnim = function() { playDeparture(true);  };
+
+  // ═════ Epitaph pool + flow ═════════════════════════════════
+  // One-line, dry, Oregon-Trail register. In production these come
+  // from modules/flavor/epitaphs.json; demo hardcodes a handful.
+  const EPITAPHS = [
+    'The vacuum accepts the donation without comment.',
+    'Last seen drifting. Still drifting, one assumes.',
+    'Ejected. The universe absorbed this development calmly.',
+    'Removed from the manifest. And from most other things.',
+    'The ship is now slightly lighter. This is the only accurate statement.',
+    'At final report, no longer employed by anyone.',
+    'Has joined the long line of things that used to be indoors.'
+  ];
+  let pendingEpitaph = null;
+  window.openEpitaph = function(crew) {
+    pendingEpitaph = crew;
+    const line = EPITAPHS[Math.floor(Math.random() * EPITAPHS.length)];
+    $('epitaph-name').textContent = crew.name.toUpperCase();
+    // Split on sentence boundaries so multi-sentence epitaphs render
+    // each sentence on its own line (dry OT rhythm). Match '.', '!', '?'
+    // followed by whitespace; trailing terminators kept on each line.
+    const sentences = line.match(/[^.!?]+[.!?]+/g) || [line];
+    $('epitaph-line').innerHTML = sentences
+      .map(s => s.trim())
+      .filter(Boolean)
+      .join('<br>');
+    $('cd-epitaph').classList.add('visible');
+  };
+  window.closeEpitaph = function() {
+    if (!pendingEpitaph) return;
+    $('cd-epitaph').classList.remove('visible');
+    console.log('Jettisoned ' + pendingEpitaph.name + '. Epitaph fired.');
+    pendingEpitaph = null;
+    // Keep the portrait's jettison end-state (invisible, collapsed)
+    // locked in until cycleCrew swaps the sprite and clears the class.
+    // Without this, removing the anim class here reveals the old crew
+    // through the fading overlay — the player briefly sees the ghost
+    // of whoever they just ejected. Empty space → next crew reads
+    // cleaner.
+    setTimeout(() => cycleCrew(1), 400);
+  };
+
+  // ═════ Simulate buttons ════════════════════════════════════
+  window.advanceDay = function() {
+    // Demo no-op: nudges stamina down a bit so Advance Day shows the
+    // stat change pattern, without wiring a full day simulation.
+    STATE.st = Math.max(0, STATE.st - 8);
+    $('c-st').value = STATE.st;
+    renderAll();
+  };
+  window.resetCrew = function() {
+    STATE.hp = 100; STATE.mo = 75; STATE.st = 100;
+    STATE.wounded = false; STATE.sick = false; STATE.infected = false;
+    STATE.exhausted = false; STATE.malnourished = false;
+    STATE.dehydrated = false; STATE.traumatized = false;
+    STATE.radiation_exposure = false; STATE.pending_crisis = false;
+    STATE.uses = 1;
+    $('c-hp').value = 100; $('c-mo').value = 75; $('c-st').value = 100;
+    $('c-wounded').checked = false; $('c-sick').checked = false;
+    $('c-infected').checked = false; $('c-exhausted').checked = false;
+    $('c-malnourished').checked = false; $('c-dehydrated').checked = false;
+    $('c-traumatized').checked = false; $('c-radiation').checked = false;
+    $('c-pending').checked = false;
+    $('c-uses').value = 1;
+    renderAll();
+  };
+
+  // ═════ Controls wiring ══════════════════════════════════════
+  const STYLE_DEFAULTS = {
+    'c-modal-w': '720', 'c-modal-h': '580',
+    'c-backdrop': '75', 'c-title-size': '14',
+    'c-modal-border': '#5E6168', 'c-title': '#9092BB',
+    'c-portrait-col': '200', 'c-section-gap': '10',
+    'c-glow-alpha': '12', 'c-glow-spread': '60',
+    'c-bar-h': '16',
+    'c-hp-color': '#85d260', 'c-mo-color': '#5e9ec7', 'c-st-color': '#d8c044',
+    'c-mod-size': '16', 'c-body-size': '12', 'c-mono-size': '13',
+    'c-aria-size': '18', 'c-body-v': '14',
+    'c-use-w': '64', 'c-use-h': '32', 'c-use-size': '15'
+  };
+
+  function applyStyles() {
+    const setPx = (name, id) => {
+      const v = $(id).value;
+      root.style.setProperty(name, v + 'px');
+      const s = $('v-' + id.slice(2));
+      if (s) s.textContent = v;
+    };
+    setPx('--modal-width',  'c-modal-w');
+    setPx('--modal-height', 'c-modal-h');
+    root.style.setProperty('--modal-backdrop', 'rgba(4,8,16,' + ($('c-backdrop').value / 100) + ')');
+    $('v-backdrop').textContent = $('c-backdrop').value;
+    setPx('--header-title-size', 'c-title-size');
+    root.style.setProperty('--modal-border', $('c-modal-border').value);
+    root.style.setProperty('--header-title-color', $('c-title').value);
+
+    setPx('--portrait-col-width', 'c-portrait-col');
+    setPx('--section-gap',        'c-section-gap');
+    root.style.setProperty('--glow-alpha',  ($('c-glow-alpha').value / 100));
+    root.style.setProperty('--glow-spread', $('c-glow-spread').value);
+    $('v-glow-alpha').textContent  = $('c-glow-alpha').value;
+    $('v-glow-spread').textContent = $('c-glow-spread').value;
+
+    setPx('--bar-height', 'c-bar-h');
+    root.style.setProperty('--hp', $('c-hp-color').value);
+    root.style.setProperty('--mo', $('c-mo-color').value);
+    root.style.setProperty('--st', $('c-st-color').value);
+
+    setPx('--mod-size',  'c-mod-size');
+    setPx('--body-size', 'c-body-size');
+    setPx('--mono-size', 'c-mono-size');
+    setPx('--aria-size', 'c-aria-size');
+    setPx('--use-btn-w', 'c-use-w');
+    setPx('--use-btn-h', 'c-use-h');
+    setPx('--use-btn-size', 'c-use-size');
+
+    const pv = $('c-body-v').value;
+    root.style.setProperty('--body-padding', pv + 'px 20px ' + Math.max(6, pv - 4) + 'px');
+    $('v-body-v').textContent = pv;
+
+    // Modified-flag highlight on readouts
+    for (const [id, def] of Object.entries(STYLE_DEFAULTS)) {
+      const el = $(id); if (!el) continue;
+      const v = $('v-' + id.slice(2));
+      if (!v) continue;
+      v.classList.toggle('modified', String(el.value).toLowerCase() !== String(def).toLowerCase());
+    }
+  }
+
+  function apply() {
+    // State reads
+    STATE.crewId = $('c-crew').value;
+    STATE.hp     = parseInt($('c-hp').value);
+    STATE.mo     = parseInt($('c-mo').value);
+    STATE.st     = parseInt($('c-st').value);
+    STATE.wounded             = $('c-wounded').checked;
+    STATE.sick                = $('c-sick').checked;
+    STATE.infected            = $('c-infected').checked;
+    STATE.exhausted           = $('c-exhausted').checked;
+    STATE.malnourished        = $('c-malnourished').checked;
+    STATE.dehydrated          = $('c-dehydrated').checked;
+    STATE.traumatized         = $('c-traumatized').checked;
+    STATE.radiation_exposure  = $('c-radiation').checked;
+    STATE.pending_crisis      = $('c-pending').checked;
+    STATE.uses = Math.max(0, Math.min(1, parseInt($('c-uses').value) || 0));
+    STATE.location = $('c-location').value;
+
+    $('v-hp').textContent = STATE.hp;
+    $('v-mo').textContent = STATE.mo;
+    $('v-st').textContent = STATE.st;
+
+    applyStyles();
+    renderAll();
+  }
+
+  // Auto-wire: color-input hex readouts
+  document.querySelectorAll('#controls input[type="color"]').forEach(input => {
+    if (input.parentElement.querySelector('.val')) return;
+    const span = document.createElement('span');
+    span.className = 'val';
+    span.textContent = input.value.toUpperCase();
+    input.parentElement.appendChild(span);
+    input.addEventListener('input', () => { span.textContent = input.value.toUpperCase(); });
+  });
+
+  // Auto-wire: all inputs + selects rerun apply()
+  document.querySelectorAll('#controls input, #controls select').forEach(el =>
+    el.addEventListener('input', apply)
+  );
+  document.querySelectorAll('#controls input[type="checkbox"]').forEach(el =>
+    el.addEventListener('change', apply)
+  );
+
+  window.resetStyleDefaults = function() {
+    for (const [id, val] of Object.entries(STYLE_DEFAULTS)) {
+      const el = $(id); if (!el) continue;
+      el.value = val;
+    }
+    applyStyles();
+  };
+
+  // ═════ Modal open/close ═════════════════════════════════════
+  window.closeModal = function() { document.body.classList.remove('modal-open'); };
+  window.reopenModal = function() {
+    document.body.classList.add('modal-open');
+    renderAll();
+  };
+  window.addEventListener('keydown', (e) => {
+    // Epitaph overlay swallows every key — Enter/Escape/Space dismiss it.
+    if ($('cd-epitaph').classList.contains('visible')) {
+      if (e.key === 'Enter' || e.key === 'Escape' || e.key === ' ') {
+        closeEpitaph();
+        e.preventDefault();
+        return;
+      }
+      return;
+    }
+    if (e.key === 'Escape') {
+      if (document.body.classList.contains('confirm-open')) { closeConfirm(); return; }
+      if (document.body.classList.contains('modal-open'))   { closeModal();   return; }
+    }
+    // Arrow keys cycle the crew roster while the modal is open — only
+    // when the confirm sub-modal is NOT up (so left/right during the
+    // "are you sure?" prompt doesn't jump crew).
+    if (document.body.classList.contains('modal-open') &&
+        !document.body.classList.contains('confirm-open')) {
+      if (e.key === 'ArrowLeft')  { cycleCrew(-1); e.preventDefault(); }
+      if (e.key === 'ArrowRight') { cycleCrew(1);  e.preventDefault(); }
+    }
+  });
+
+  // ═════ Boot ═════════════════════════════════════════════════
+  // Pre-select a crew from the URL hash if cruise (or any other
+  // demo) handed off with #<crewId>. Falls through to the default
+  // ('osei') if the hash is empty or doesn't match a known crew.
+  // The dev sidebar's crew dropdown is updated to mirror so the
+  // dev controls stay in sync.
+  const hashCrew = (location.hash || '').replace(/^#/, '').toLowerCase();
+  if (hashCrew && CREW[hashCrew]) {
+    STATE.crewId = hashCrew;
+    const sel = $('c-crew');
+    if (sel) sel.value = hashCrew;
+  }
+  renderAll();
+  document.body.classList.add('modal-open');
+})();
+</script>
+</body>
+</html>

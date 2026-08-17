@@ -1,0 +1,176 @@
+[
+  {
+    "id": "event_launch_001",
+    "active": true,
+    "title": "The Paperwork",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_start"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": true,
+    "sets_flag": "departed",
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has already filed your paperwork! She also signed you up for the colony newsletter. You're welcome!",
+      "marv": "MARV has read the Terms and Conditions. All 4,000 pages. He advises against departure. He has filed the paperwork anyway.",
+      "rex": "REX has classified the departure paperwork as a bureaucratic threat. He has filed it under protest.",
+      "chip": "CHIP notes that your departure is sponsored by ColonyStart™ — 'Making New Worlds Feel Like Obligation Since 2340!'",
+      "ajoy": "AJOY has reviewed the waiver. It's comprehensive. Impressively so, actually. Almost as if they expect things to go wrong. But I'm sure that's just legal being thorough."
+    },
+    "body": "You are leaving Earth orbit. There is paperwork.\n\nThe colony authority requires a signed acknowledgment that you understand the risks, a waiver of liability for 'unforeseen botanical failure,' and a form confirming you have read the Terms and Conditions.\n\nYou have not read the Terms and Conditions.\n\nThe ship computer files these automatically. It notes that your crop is already growing. It does not say 'good luck' because it is a computer.\n\nIt does say 'departure confirmed' in a way that almost sounds like good luck.",
+    "choices": [
+      {
+        "text": "Sign everything without reading",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "signed_blind",
+          "time_cost": "trivial",
+          "narrative": "You signed. The computer noted your reading speed was 'impressive.' The crew pretends not to have noticed."
+        }
+      },
+      {
+        "text": "Actually read the Terms and Conditions",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "read_the_terms",
+          "time_cost": "low",
+          "narrative": "You read them. Section 47, paragraph 3: 'The colony authority is not responsible for emotional attachment to vegetation.' You are less optimistic now. You are better informed. These are not the same thing."
+        }
+      },
+      {
+        "text": "Ask the ship computer to summarize",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 0
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "asked_for_summary",
+          "time_cost": "trivial",
+          "narrative": "The computer summarizes: 'You are responsible for everything. The colony authority is responsible for nothing. Your crop is legally classified as cargo. You may not agree with this classification. This does not change the classification.'"
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_launch_002",
+    "active": true,
+    "title": "Departure Protocol",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_start"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": "departed",
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA reports all systems green! Some of them are actually green! The rest are close enough!",
+      "marv": "MARV has completed the pre-launch checklist. Everything is technically functional. He emphasizes 'technically.'",
+      "rex": "REX has completed threat assessment of the departure corridor. Threat level: low. He seems disappointed.",
+      "chip": "CHIP reminds you that your departure window is brought to you by QuickLaunch™ — 'Because Time Is Money, Especially Yours.'",
+      "ajoy": "AJOY notes the pre-launch checklist is complete. She also notes that the checklist doesn't cover most of the things that actually go wrong. But sure, the checklist is done."
+    },
+    "body": "The ship computer runs through a pre-launch checklist. Hull integrity: acceptable. Fuel reserves: adequate. Crew: present. Crop: growing.\n\nEvery item is technically fine. The tone of the computer's voice suggests 'technically fine' is doing a lot of heavy lifting.\n\nEarth is behind you now. The computer notes the departure time, the destination, and the estimated travel duration. There was a third number it calculated. It does not share it.",
+    "choices": [
+      {
+        "text": "Check the crop one last time before departure",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The crop is fine. You knew it was fine. Checking it made you feel better. The ship computer logs this as 'pre-departure botanical anxiety' which it assures you is common."
+        }
+      },
+      {
+        "text": "Review the route on the chart",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The route looks straightforward. The chart has been updated recently. Some of the annotations are helpful. Some are just the word 'no' written next to a waypoint. You do not investigate this."
+        }
+      },
+      {
+        "text": "Just go",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Departure confirmed. The stars don't move. You do."
+        }
+      }
+    ]
+  }
+]

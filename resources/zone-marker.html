@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hull Breach Zone Marker</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold:#c8a85a; --teal:#8cc890; --orange:#e88830; --red:#cc3333;
+  --cream:#e8d8a0; --slate:#2a3040; --deep:#0e1520; --void:#020408;
+  --body:#8898a8; --muted:#5a7a6a; --info:#35c6bf;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-user-select:none;user-select:none}
+html,body{background:var(--void);color:var(--body);font-family:'VT323',monospace;min-height:100vh}
+
+header{
+  background:linear-gradient(180deg,#141a28,#0a0e18);
+  border-bottom:2px solid var(--gold);
+  padding:14px 28px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+h1{font-family:'Press Start 2P',cursive;font-size:10px;letter-spacing:3px;color:var(--gold)}
+.subtitle{font-size:14px;color:var(--muted)}
+
+.layout{display:flex;gap:16px;padding:16px 28px;align-items:flex-start;flex-wrap:wrap}
+.left{flex:0 0 auto}
+.right{flex:1;min-width:320px;max-width:480px;display:flex;flex-direction:column;gap:12px}
+
+.tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.tab{
+  font-family:'Press Start 2P',cursive;font-size:6px;letter-spacing:1px;
+  padding:7px 11px;background:rgba(20,26,40,.8);border:1px solid var(--slate);
+  color:var(--body);cursor:pointer;border-radius:2px;
+}
+.tab:hover{border-color:var(--gold);color:var(--cream)}
+.tab.on{background:rgba(200,168,90,.12);border-color:var(--gold);color:var(--gold)}
+
+.stage{
+  position:relative;
+  border:1px solid var(--slate);
+  background:#000;
+  width:960px;height:640px;
+  cursor:crosshair;
+  overflow:hidden;
+}
+.stage img.bg{
+  position:absolute;inset:0;width:100%;height:100%;
+  pointer-events:none;display:block;
+}
+
+.crop-ov{
+  position:absolute;
+  border:1px dashed rgba(200,168,90,.55);
+  pointer-events:none;
+}
+.crop-ov.safe{border-color:rgba(140,200,144,.7)}
+.crop-ov .lbl{
+  position:absolute;top:-18px;left:0;
+  font-family:'Press Start 2P',cursive;font-size:6px;letter-spacing:1px;
+  color:var(--gold);background:rgba(0,0,0,.6);padding:2px 5px;
+}
+.crop-ov.safe .lbl{color:var(--teal)}
+
+/* Region rect */
+.region{
+  position:absolute;
+  background:rgba(53,198,191,.10);
+  border:2px solid var(--info);
+  cursor:move;
+}
+.region.draft{
+  background:rgba(200,168,90,.18);
+  border-color:var(--gold);border-style:dashed;
+}
+.region .num{
+  position:absolute;top:2px;left:4px;
+  font-family:'Press Start 2P',cursive;font-size:7px;color:var(--cream);
+  background:rgba(0,0,0,.55);padding:2px 5px;border-radius:2px;
+  pointer-events:none;
+}
+.region .dim{
+  position:absolute;bottom:2px;right:4px;
+  font-family:'VT323',monospace;font-size:13px;color:var(--info);
+  background:rgba(0,0,0,.55);padding:1px 5px;border-radius:2px;
+  pointer-events:none;
+}
+.region .h{
+  position:absolute;width:10px;height:10px;background:var(--gold);
+  border:1px solid #000;
+}
+.region .h.nw{left:-5px;top:-5px;cursor:nwse-resize}
+.region .h.ne{right:-5px;top:-5px;cursor:nesw-resize}
+.region .h.sw{left:-5px;bottom:-5px;cursor:nesw-resize}
+.region .h.se{right:-5px;bottom:-5px;cursor:nwse-resize}
+
+/* Preview hole markers */
+.phole{
+  position:absolute;width:32px;height:32px;
+  margin-left:-16px;margin-top:-16px;
+  background:url('sprites/minigames/hullbreach/breach_hole.png') no-repeat center/contain;
+  filter:drop-shadow(0 0 4px rgba(204,51,51,.85));
+  pointer-events:none;
+}
+.phole .ring{
+  position:absolute;left:50%;top:50%;
+  width:50px;height:50px;margin-left:-25px;margin-top:-25px;
+  border:1px dashed rgba(204,51,51,.4);border-radius:50%;
+}
+
+.coords{
+  position:absolute;bottom:6px;left:8px;
+  font-family:'VT323',monospace;font-size:14px;color:var(--gold);
+  background:rgba(0,0,0,.6);padding:3px 7px;border-radius:2px;
+  pointer-events:none;
+}
+
+.panel{
+  background:linear-gradient(180deg,rgba(20,26,40,.95),rgba(10,14,20,.95));
+  border:1px solid var(--slate);border-radius:3px;padding:12px 14px;
+}
+.panel h2{font-family:'Press Start 2P',cursive;font-size:7px;letter-spacing:2px;color:var(--cream);margin-bottom:9px}
+.panel .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;font-size:14px}
+.panel label{font-size:14px;color:var(--body);display:flex;align-items:center;gap:5px;cursor:pointer}
+.panel input[type=checkbox]{accent-color:var(--gold)}
+.panel input[type=number]{
+  width:54px;background:#000;border:1px solid var(--slate);color:var(--cream);
+  font-family:'VT323',monospace;font-size:14px;padding:2px 5px;border-radius:2px;
+}
+.btn{
+  font-family:'Press Start 2P',cursive;font-size:6px;letter-spacing:1px;
+  padding:6px 10px;background:rgba(200,168,90,.1);border:1px solid rgba(200,168,90,.4);
+  color:var(--gold);cursor:pointer;border-radius:2px;
+}
+.btn:hover{background:rgba(200,168,90,.22);border-color:var(--gold)}
+.btn.danger{background:rgba(204,51,51,.1);border-color:rgba(204,51,51,.4);color:var(--red)}
+.btn.danger:hover{background:rgba(204,51,51,.25)}
+.btn.info{background:rgba(53,198,191,.1);border-color:rgba(53,198,191,.4);color:var(--info)}
+.btn.info:hover{background:rgba(53,198,191,.22)}
+
+#json-out{
+  width:100%;min-height:200px;
+  font-family:'VT323',monospace;font-size:14px;
+  background:#000;border:1px solid var(--slate);border-radius:2px;
+  color:var(--cream);padding:10px;resize:vertical;
+}
+.legend{font-size:13px;color:var(--muted);line-height:1.55}
+.legend kbd{background:var(--slate);color:var(--cream);padding:1px 5px;border-radius:2px;font-family:'VT323',monospace;font-size:13px}
+.count-line{font-size:14px;color:var(--info)}
+.count-line.warn{color:var(--orange)}
+.count-line.bad{color:var(--red)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>HULL BREACH · ZONE MARKER</h1>
+  <div class="subtitle">drag to draw a region · drag body to move · drag corners to resize · shift-click to delete</div>
+</header>
+
+<div class="layout">
+  <div class="left">
+    <div class="tabs" id="tabs"></div>
+    <div class="stage" id="stage">
+      <img class="bg" id="bg" alt="">
+      <div class="coords" id="coords">–</div>
+    </div>
+  </div>
+
+  <div class="right">
+
+    <div class="panel">
+      <h2>CROP PREVIEW</h2>
+      <div class="row">
+        <label><input type="checkbox" id="ov-169" checked> 16:9</label>
+        <label><input type="checkbox" id="ov-43"> 4:3</label>
+        <label><input type="checkbox" id="ov-219"> 21:9</label>
+        <label><input type="checkbox" id="ov-safe" checked> always-safe</label>
+      </div>
+      <div class="legend">
+        Dashed boxes = visible area at that viewport aspect under <code>cover</code>.
+        Keep regions inside the teal <strong>always-safe</strong> box for the widest support.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>REGIONS</h2>
+      <div class="count-line" id="count">0 regions</div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn danger" id="clear-btn">CLEAR ALL</button>
+        <button class="btn" id="copy-btn">COPY JSON</button>
+      </div>
+      <div class="legend" style="margin-top:8px">
+        <kbd>drag</kbd> empty stage to draw a new region ·
+        <kbd>drag</kbd> body to move · <kbd>drag</kbd> corner handle to resize ·
+        <kbd>shift+click</kbd> a region to delete.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>PREVIEW SPAWN</h2>
+      <div class="row">
+        <label>holes: <input type="number" id="prev-n" min="3" max="6" value="4"></label>
+        <button class="btn info" id="prev-btn">SIMULATE</button>
+        <button class="btn" id="prev-clear">CLEAR</button>
+      </div>
+      <div class="legend">
+        Picks N random points inside your regions (≥ 50px spacing). Re-run to see distribution.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>JSON OUTPUT</h2>
+      <textarea id="json-out" spellcheck="false" readonly></textarea>
+      <div class="legend" style="margin-top:6px">
+        Coords are fractions of bg natural size (0–1). <code>regions[]</code> are rectangles where holes can spawn.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const BGS = ['breach_hull_bg.jpg','breach_hull_bg2.jpg','breach_hull_bg3.jpg'];
+const BG_DIR = 'sprites/minigames/hullbreach/';
+const NAT_W = 960, NAT_H = 640;
+const MIN_SPACING_PX = 50;
+const MIN_DRAFT_PX = 16; // discard accidental tiny rects
+const SAFE_RANGE = [21/9, 4/3];
+
+const stage = document.getElementById('stage');
+const bg = document.getElementById('bg');
+const coordsLbl = document.getElementById('coords');
+const tabsEl = document.getElementById('tabs');
+const jsonOut = document.getElementById('json-out');
+const countLbl = document.getElementById('count');
+
+const data = {}; BGS.forEach(b => data[b] = []); // each: [{x,y,w,h} fractional]
+let activeBg = BGS[0];
+let preview = []; // [{fx,fy}]
+
+// ── Tabs ──────────────────────────────────────────────────
+function renderTabs(){
+  tabsEl.innerHTML = '';
+  BGS.forEach(b => {
+    const t = document.createElement('button');
+    t.className = 'tab' + (b===activeBg?' on':'');
+    t.innerHTML = `${b} <span style="opacity:.6">(${data[b].length})</span>`;
+    t.onclick = () => { activeBg = b; preview = []; loadBg(); render(); };
+    tabsEl.appendChild(t);
+  });
+}
+function loadBg(){ bg.src = BG_DIR + activeBg; }
+
+// ── Stage interactions ────────────────────────────────────
+let mode = null; // 'draft' | 'move' | 'resize' | null
+let draft = null; // {x0,y0,x1,y1} px while drawing
+let act = null;   // {region, handle, startMouse, startRect}
+
+function frac(e){
+  const r = stage.getBoundingClientRect();
+  return {
+    fx: (e.clientX - r.left) / r.width,
+    fy: (e.clientY - r.top)  / r.height,
+    px: e.clientX - r.left,
+    py: e.clientY - r.top,
+    rectW: r.width, rectH: r.height
+  };
+}
+
+stage.addEventListener('mousedown', e => {
+  const f = frac(e);
+  // Check if clicking on a region or handle (handled by their listeners)
+  const targ = e.target;
+  if(targ.classList.contains('h')) return;
+  if(targ.closest('.region')) return;
+  // Empty area → start drafting a new region
+  mode = 'draft';
+  draft = {x0:f.px, y0:f.py, x1:f.px, y1:f.py};
+  render();
+});
+
+window.addEventListener('mousemove', e => {
+  const f = frac(e);
+  coordsLbl.textContent = `x:${f.fx.toFixed(3)} y:${f.fy.toFixed(3)}  (${Math.round(f.px)}, ${Math.round(f.py)})`;
+  if(mode === 'draft' && draft){
+    const fr = stage.getBoundingClientRect();
+    draft.x1 = Math.max(0, Math.min(fr.width, e.clientX - fr.left));
+    draft.y1 = Math.max(0, Math.min(fr.height, e.clientY - fr.top));
+    render();
+  } else if(mode === 'move' && act){
+    const fr = stage.getBoundingClientRect();
+    const dx = (e.clientX - act.startMouse.x) / fr.width;
+    const dy = (e.clientY - act.startMouse.y) / fr.height;
+    let nx = act.startRect.x + dx, ny = act.startRect.y + dy;
+    nx = Math.max(0, Math.min(1 - act.region.w, nx));
+    ny = Math.max(0, Math.min(1 - act.region.h, ny));
+    act.region.x = nx; act.region.y = ny;
+    render();
+  } else if(mode === 'resize' && act){
+    const fr = stage.getBoundingClientRect();
+    const dx = (e.clientX - act.startMouse.x) / fr.width;
+    const dy = (e.clientY - act.startMouse.y) / fr.height;
+    let {x,y,w,h} = act.startRect;
+    if(act.handle.includes('e')) w = Math.max(0.01, w + dx);
+    if(act.handle.includes('s')) h = Math.max(0.01, h + dy);
+    if(act.handle.includes('w')){ const nx = x + dx; w = Math.max(0.01, w - dx); x = (w<=0.01)? x : nx; }
+    if(act.handle.includes('n')){ const ny = y + dy; h = Math.max(0.01, h - dy); y = (h<=0.01)? y : ny; }
+    // Clamp
+    x = Math.max(0, x); y = Math.max(0, y);
+    w = Math.min(1 - x, w); h = Math.min(1 - y, h);
+    Object.assign(act.region, {x,y,w,h});
+    render();
+  }
+});
+
+window.addEventListener('mouseup', e => {
+  let needsRender = false;
+  if(mode === 'draft' && draft){
+    const fr = stage.getBoundingClientRect();
+    const x = Math.min(draft.x0, draft.x1), y = Math.min(draft.y0, draft.y1);
+    const w = Math.abs(draft.x1 - draft.x0), h = Math.abs(draft.y1 - draft.y0);
+    if(w >= MIN_DRAFT_PX && h >= MIN_DRAFT_PX){
+      data[activeBg].push({
+        x:+(x/fr.width).toFixed(4),
+        y:+(y/fr.height).toFixed(4),
+        w:+(w/fr.width).toFixed(4),
+        h:+(h/fr.height).toFixed(4),
+      });
+    }
+    needsRender = true;
+  } else if((mode === 'move' || mode === 'resize') && act){
+    act.region.x = +act.region.x.toFixed(4);
+    act.region.y = +act.region.y.toFixed(4);
+    act.region.w = +act.region.w.toFixed(4);
+    act.region.h = +act.region.h.toFixed(4);
+    needsRender = true;
+  }
+  mode = null; draft = null; act = null;
+  if(needsRender) render();
+});
+
+// ── Render ────────────────────────────────────────────────
+function render(){
+  [...stage.querySelectorAll('.region, .crop-ov, .phole, .draft-rect')].forEach(n => n.remove());
+
+  // Crop overlays
+  const opts = [
+    [document.getElementById('ov-169').checked, 16/9, '16:9'],
+    [document.getElementById('ov-43').checked,  4/3,  '4:3'],
+    [document.getElementById('ov-219').checked, 21/9, '21:9'],
+  ];
+  opts.forEach(([on,A,lbl]) => { if(on) addOverlay(coverVisibleFrac(NAT_W/NAT_H, A), lbl, false); });
+  if(document.getElementById('ov-safe').checked){
+    let xs=[0,1], ys=[0,1];
+    SAFE_RANGE.forEach(A => {
+      const r = coverVisibleFrac(NAT_W/NAT_H, A);
+      xs[0]=Math.max(xs[0], r.x); xs[1]=Math.min(xs[1], r.x+r.w);
+      ys[0]=Math.max(ys[0], r.y); ys[1]=Math.min(ys[1], r.y+r.h);
+    });
+    addOverlay({x:xs[0], y:ys[0], w:xs[1]-xs[0], h:ys[1]-ys[0]}, 'always-safe', true);
+  }
+
+  // Regions
+  const regs = data[activeBg];
+  regs.forEach((r, idx) => {
+    const el = document.createElement('div');
+    el.className = 'region';
+    el.style.left = (r.x*100)+'%'; el.style.top = (r.y*100)+'%';
+    el.style.width = (r.w*100)+'%'; el.style.height = (r.h*100)+'%';
+    const wpx = Math.round(r.w*NAT_W), hpx = Math.round(r.h*NAT_H);
+    el.innerHTML = `<div class="num">${idx+1}</div><div class="dim">${wpx}×${hpx}</div>
+      <div class="h nw"></div><div class="h ne"></div><div class="h sw"></div><div class="h se"></div>`;
+    el.addEventListener('mousedown', ev => {
+      ev.stopPropagation();
+      if(ev.shiftKey){ regs.splice(idx,1); render(); return; }
+      const handle = ev.target.classList.contains('h')
+        ? [...ev.target.classList].find(c => ['nw','ne','sw','se'].includes(c))
+        : null;
+      mode = handle ? 'resize' : 'move';
+      act = {
+        region: r,
+        handle: handle,
+        startMouse: {x:ev.clientX, y:ev.clientY},
+        startRect: {x:r.x, y:r.y, w:r.w, h:r.h}
+      };
+    });
+    stage.appendChild(el);
+  });
+
+  // Draft preview
+  if(draft){
+    const d = document.createElement('div');
+    d.className = 'region draft draft-rect';
+    const x = Math.min(draft.x0, draft.x1), y = Math.min(draft.y0, draft.y1);
+    const w = Math.abs(draft.x1 - draft.x0), h = Math.abs(draft.y1 - draft.y0);
+    d.style.left = x+'px'; d.style.top = y+'px';
+    d.style.width = w+'px'; d.style.height = h+'px';
+    stage.appendChild(d);
+  }
+
+  // Spawn preview
+  preview.forEach(p => {
+    const ph = document.createElement('div');
+    ph.className = 'phole';
+    ph.style.left = (p.fx*100)+'%'; ph.style.top = (p.fy*100)+'%';
+    ph.innerHTML = '<div class="ring"></div>';
+    stage.appendChild(ph);
+  });
+
+  // Counter (uses insetted usable area — ring must fit inside region)
+  const inX = (MIN_SPACING_PX/2) / NAT_W;
+  const inY = (MIN_SPACING_PX/2) / NAT_H;
+  const totalArea = regs.reduce((s,r)=>{
+    const uw = (r.w - 2*inX) * NAT_W;
+    const uh = (r.h - 2*inY) * NAT_H;
+    return s + Math.max(0, uw) * Math.max(0, uh);
+  }, 0);
+  const minArea = MIN_SPACING_PX * MIN_SPACING_PX;
+  const capacity = Math.floor(totalArea / minArea);
+  let cls = '', msg = `${regs.length} region${regs.length===1?'':'s'}`;
+  if(regs.length === 0){ cls = 'warn'; msg += ' · draw at least one'; }
+  else if(capacity < 6){ cls = 'warn'; msg += ` · capacity ~${capacity} (recommend ≥ 6)`; }
+  else { msg += ` · capacity ~${capacity} ✓`; }
+  countLbl.className = 'count-line ' + cls;
+  countLbl.textContent = msg;
+
+  jsonOut.value = JSON.stringify(buildJson(), null, 2);
+  renderTabs();
+}
+
+function addOverlay(rect, lbl, safe){
+  const ov = document.createElement('div');
+  ov.className = 'crop-ov' + (safe?' safe':'');
+  ov.style.left = (rect.x*100)+'%'; ov.style.top = (rect.y*100)+'%';
+  ov.style.width = (rect.w*100)+'%'; ov.style.height = (rect.h*100)+'%';
+  ov.innerHTML = `<div class="lbl">${lbl}</div>`;
+  stage.appendChild(ov);
+}
+
+function coverVisibleFrac(Ai, Av){
+  if(Av >= Ai){
+    const visH = Ai/Av; return {x:0, y:(1-visH)/2, w:1, h:visH};
+  } else {
+    const visW = Av/Ai; return {x:(1-visW)/2, y:0, w:visW, h:1};
+  }
+}
+
+function buildJson(){
+  const out = {};
+  BGS.forEach(b => { out[b] = { regions: data[b].map(r=>({x:r.x,y:r.y,w:r.w,h:r.h})) }; });
+  return out;
+}
+
+// ── Spawn simulation ──────────────────────────────────────
+function simulate(){
+  const regs = data[activeBg];
+  if(!regs.length){ preview = []; render(); return; }
+  const N = parseInt(document.getElementById('prev-n').value) || 4;
+  // Inset each region by hole-ring radius so the 50px ring stays inside (can touch border)
+  const inX = (MIN_SPACING_PX/2) / NAT_W;
+  const inY = (MIN_SPACING_PX/2) / NAT_H;
+  const usable = regs
+    .map(r => ({ x:r.x+inX, y:r.y+inY, w:r.w-2*inX, h:r.h-2*inY }))
+    .filter(r => r.w > 0 && r.h > 0);
+  if(!usable.length){ preview = []; render(); return; }
+  const placed = [];
+  let attempts = 0, maxAttempts = N * 50;
+  const areas = usable.map(r => r.w*NAT_W * r.h*NAT_H);
+  const total = areas.reduce((a,b)=>a+b,0);
+  while(placed.length < N && attempts < maxAttempts){
+    attempts++;
+    let t = Math.random()*total, idx = 0;
+    for(let i=0;i<areas.length;i++){ if((t -= areas[i]) <= 0){ idx = i; break; } }
+    const r = usable[idx];
+    const fx = r.x + Math.random()*r.w;
+    const fy = r.y + Math.random()*r.h;
+    let ok = true;
+    for(const p of placed){
+      const dx = (fx - p.fx)*NAT_W, dy = (fy - p.fy)*NAT_H;
+      if(Math.sqrt(dx*dx + dy*dy) < MIN_SPACING_PX){ ok = false; break; }
+    }
+    if(ok) placed.push({fx, fy});
+  }
+  preview = placed;
+  render();
+}
+
+// ── Buttons ───────────────────────────────────────────────
+document.getElementById('clear-btn').onclick = () => {
+  if(!data[activeBg].length) return;
+  if(confirm(`Clear all regions for ${activeBg}?`)) { data[activeBg] = []; preview = []; render(); }
+};
+document.getElementById('copy-btn').onclick = async () => {
+  await navigator.clipboard.writeText(jsonOut.value);
+  const b = document.getElementById('copy-btn');
+  const old = b.textContent; b.textContent = 'COPIED ✓';
+  setTimeout(()=>b.textContent = old, 1200);
+};
+document.getElementById('prev-btn').onclick = simulate;
+document.getElementById('prev-clear').onclick = () => { preview = []; render(); };
+['ov-169','ov-43','ov-219','ov-safe'].forEach(id => {
+  document.getElementById(id).addEventListener('change', render);
+});
+
+loadBg(); renderTabs(); render();
+</script>
+</body>
+</html>

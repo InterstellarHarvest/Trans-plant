@@ -1,0 +1,2821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Growbay Modal Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="shared.css" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+
+:root {
+  /* Shared theme */
+  --teal: #35c6bf;
+  --orange: #e88830;
+  --cream: #e8d8a0;
+  --body: #aab5c4;
+  --green-plant: #85d270;
+
+  /* Modal chrome */
+  --modal-backdrop: rgba(4,8,16,0.75);
+  --modal-bg-top: #141a28;
+  --modal-bg-bot: #0a0e18;
+  --modal-border: #608c64;
+  --modal-width: 760px;
+  --modal-height: 520px;
+
+  /* Header */
+  --header-title-color: #359e3f;
+  --header-title-size: 14px;
+  --header-meta-color: #aab5c4;
+
+  /* Tunable layout knobs (exposed via dev controls) */
+  --plant-col-width: 160px;
+  --crew-col-width:  180px;
+  --plant-scale: 1;
+  --bar-height: 24px;
+  --mod-size: 14px;
+  --strip-size: 15px;
+  --aria-size: 16px;
+  --body-padding: 12px 20px 6px;
+  --info-gap: 24px;
+  --scene-gap: 0px;   /* plant + crew feel adjacent — no visible gap */
+
+  /* Hero plant area — warm greenhouse glow behind the sprite.
+     HEALTHY state is composed from three tunable vars (color,
+     alpha, spread) exposed as dev controls. Stressed and critical
+     are fixed presets that override when health drops. */
+  --glow-color:  200,168,90;   /* RGB triplet consumed by rgba() — driven by plant health at runtime */
+  --glow-alpha:  0.15;
+  --glow-spread: 60;            /* % — distance where fade reaches 0 */
+  --glow-y:      40;             /* % — vertical center of the glow (50 = dead center, lower = higher) */
+
+  /* Bars — deliberately different hues from the water slider
+     (green #85d270 / blue #7dc8e8) so the eye doesn't confuse
+     growth/health with water allocation. Growth goes amber (warm
+     progress toward ripening); health stays green but a yellower,
+     more leaf-bright tone than the water's cooler green. */
+  --bar-track-bg: rgba(10,14,20,0.6);
+  --bar-track-border: rgba(200,168,90,0.18);
+  --bar-growth-fill: #587667;
+  --bar-health-fill: #a8d84f;
+  --bar-critical-fill: #cc3333;
+
+  /* Modifier list */
+  --mod-positive: #85d270;
+  --mod-negative: #e88830;
+  --mod-critical: #cc3333;
+  --mod-stub: #4a4f5a;
+
+  /* Panel button sizing (color vars live in shared.css; green accent local) */
+  --pb-border: 3px;
+  --pb-padx: 12px;
+  --pb-pady: 6px;
+  --pb-size: 15px;
+  --pb-green-hi: #7dc891;
+  --pb-green-lo: #28402d;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'VT323', monospace;
+  background: #0e1118;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #d1d5db;
+}
+
+#demo-wrap { display: flex; gap: 20px; padding: 20px; align-items: flex-start; }
+#scale-root { width: 960px; height: 640px; transform-origin: top left; flex-shrink: 0; }
+
+#size-toggle {
+  position: fixed; top: 12px; right: 12px; z-index: 9999;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: #c8a85a;
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+}
+#size-toggle:hover { filter: brightness(1.2); }
+#size-toggle:active {
+  border-style: inset;
+  border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a;
+  transform: translate(1px, 1px);
+}
+body.fullsize { overflow: hidden; }
+body.fullsize #demo-wrap { padding: 0; gap: 0; width: 100vw; height: 100vh; justify-content: center; align-items: center; }
+body.fullsize #controls { display: none; }
+body.fullsize #scale-root { transform-origin: center center; }
+
+/* Game frame */
+#game {
+  width: 960px; height: 640px;
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #0c0f22 0%, #070814 100%);
+}
+#crt-overlay {
+  pointer-events: none; position: absolute; inset: 0; z-index: 100; border-radius: 4px;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 1px, transparent 1px, transparent 2px);
+}
+#stars-far, #stars-near { position: absolute; inset: 0; pointer-events: none; }
+
+/* Cruise ghost backdrop */
+#cruise-ghost {
+  position: absolute; inset: 0;
+  z-index: 5;
+  filter: brightness(0.35);
+  pointer-events: none;
+}
+.cg-header {
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 40px;
+  padding: 0 16px;
+  background: linear-gradient(180deg, #141a28 0%, #10141e 100%);
+  border-bottom: 2px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Press Start 2P', cursive;
+}
+.cg-ship { font-size: 10px; letter-spacing: 2px; color: var(--gold); }
+.cg-day  { font-size: 8px; letter-spacing: 1px; color: #aab5c4; }
+.cg-bottom {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 120px;
+  background: linear-gradient(180deg, #10141e 0%, #0a0e14 100%);
+  border-top: 1px solid rgba(200,168,90,0.2);
+}
+
+/* Modal backdrop + panel */
+#gb-backdrop {
+  position: absolute; inset: 0;
+  z-index: 10;
+  background: var(--modal-backdrop);
+  cursor: var(--cursor-hand, pointer);
+}
+
+#gb-modal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--modal-width);
+  height: var(--modal-height);
+  z-index: 20;
+  background: linear-gradient(180deg, var(--modal-bg-top) 0%, var(--modal-bg-bot) 100%);
+  border: 3px solid var(--modal-border);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(86,207,215,0.18),
+    inset 0 0 0 2px rgba(14,20,32,0.5),
+    0 8px 40px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.25s, transform 0.25s;
+}
+body:not(.modal-open) #gb-backdrop,
+body:not(.modal-open) #gb-modal {
+  opacity: 0;
+  pointer-events: none;
+}
+body:not(.modal-open) #gb-modal {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+/* Header */
+.gb-header {
+  flex-shrink: 0;
+  height: 42px;
+  padding: 0 16px;
+  border-bottom: 2px solid rgba(86,207,215,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.gb-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--header-title-size);
+  letter-spacing: 2px;
+  color: var(--header-title-color);
+  text-shadow: 0 0 8px rgba(86,207,215,0.35);
+  flex-shrink: 0;
+}
+.gb-subtitle {
+  flex: 1;
+  font-family: 'VT323', monospace;
+  font-size: 17px;
+  letter-spacing: 1px;
+  color: var(--cream);
+  text-align: center;
+}
+.gb-subtitle .stage-name {
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.gb-close {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  width: 26px; height: 26px;
+  border: 2px solid rgba(86,207,215,0.4);
+  background: rgba(14,20,32,0.6);
+  color: var(--header-title-color);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.gb-close:hover { filter: brightness(1.25); border-color: var(--modal-border); }
+
+/* Body = top bars band + 3-col scene/info row (flex-column).
+   The bars band spans the full width; below it, plant + crew
+   share a warm "scene" container (no visible gap between them —
+   crew stands next to plant) and the right column holds the info. */
+.gb-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--body-padding);
+  gap: 14px;
+}
+
+/* Top band: bars span the full modal width, 24px tall (default).
+   Larger bars read at a distance and anchor the eye at the top. */
+.gb-bars-band {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Main row below the bars: scene on the left, info on the right. */
+.gb-main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  gap: 20px;
+}
+
+/* Sprite slot — fixed-height wrapper that bottom-aligns the sprite
+   inside. Both plant and crew columns use the same slot height so
+   the sprites visually "stand on the same floor" regardless of
+   their individual heights (plant 192, crew sheets 196–199). */
+.gb-sprite-slot {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: visible;
+}
+
+/* Scene = plant + crew side-by-side with a shared warm greenhouse
+   glow. The glow tints with plant health (JS-applied classes). */
+.gb-scene {
+  flex-shrink: 0;
+  display: flex;
+  gap: var(--scene-gap);
+  padding: 8px;
+  /* Scene is the positioning parent for .gb-glow. Overflow must
+     stay visible so the glow can bleed past the scene's own box
+     into adjacent UI space (ultimately clipped at the modal edge). */
+  position: relative;
+  overflow: visible;
+  border-radius: 6px;
+  /* No align-items — each column handles its own internal stacking
+     via the sprite-slot wrapper, which bottom-aligns its sprite so
+     plant + crew stand on the same visible floor. */
+}
+/* The greenhouse glow — absolutely positioned, sized larger than
+   the scene so the radial fade extends past the scene's edges and
+   into the surrounding modal space. Gets clipped at the outer
+   modal edge (which has overflow: hidden for the border-radius).
+   Stressed + critical states swap the background here, not on
+   the scene itself. */
+.gb-glow {
+  position: absolute;
+  inset: -50px;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse at 50% calc(var(--glow-y) * 1%),
+    rgba(var(--glow-color), var(--glow-alpha)) 0%,
+    rgba(14,20,32,0) calc(var(--glow-spread) * 1%)
+  );
+  transition: background 0.6s ease;
+}
+/* Columns render above the glow layer. */
+.gb-col-plant,
+.gb-col-crew { position: relative; z-index: 1; }
+
+/* Plant + crew columns — identical layout (sprite-slot on top,
+   labels/tender beneath, all centered). Only difference is width. */
+.gb-col-plant,
+.gb-col-crew {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.gb-col-plant { width: var(--plant-col-width); }
+.gb-col-crew  { width: var(--crew-col-width);  }
+
+/* Animated crew sprite — dimensions + position are set per-crew
+   from CREW_SHEETS. Background-image also set dynamically. Pixel-
+   art rendering; no interpolation. */
+.crew-sprite {
+  width: 76px;                   /* default; overridden per crew */
+  height: 197px;                 /* default; overridden per crew */
+  background-repeat: no-repeat;
+  background-position: 0 0;      /* set per-frame from JS */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  transform-origin: center bottom;
+  /* Subtle tilt so the crew looks attentive toward the plant.
+     Gets overridden if .crew-sprite.empty is set (no tender). */
+  transform: scaleX(1);
+}
+.crew-sprite.empty { opacity: 0; }   /* no tender assigned */
+/* Plant sprite — 109×192 native, rendered 1:1 from the Growbay
+   spritesheet. Background-position is set per-stage from JS
+   (STAGE_SPRITES lookup). The sprite's natural aspect is narrower
+   than square; the hero container centers it in its 260px column. */
+.plant-sprite {
+  width: 109px;
+  height: 192px;
+  background-image: url('sprites/growbay/spritesheet_growbay.png');
+  background-repeat: no-repeat;
+  background-position: 0 0;  /* overridden by JS per-stage */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  animation: plant-sway 4.4s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(133,210,112,0.2));
+  color: transparent;  /* any text content is just fallback / a11y */
+  /* transform drives display-size scaling via --plant-scale so the
+     source pixels stay native (109×192). 1 = native, >1 upscales. */
+  transform: scale(var(--plant-scale));
+  transform-origin: center bottom;
+}
+@keyframes plant-sway {
+  0%, 100% { transform: scale(var(--plant-scale)) translateY(0)    rotate(0deg); }
+  50%      { transform: scale(var(--plant-scale)) translateY(-4px) rotate(1deg); }
+}
+/* Stage-transition flash — amber pulse on the sprite when growth
+   crosses a stage threshold (25/50/75/100). One-shot via a class
+   that auto-removes after the keyframe ends. */
+.plant-sprite.stage-flash {
+  animation: plant-sway 4.4s ease-in-out infinite, stage-flash 1.4s ease-out;
+}
+@keyframes stage-flash {
+  0%   { filter: drop-shadow(0 0 0 rgba(255,172,0,0)) brightness(1); }
+  25%  { filter: drop-shadow(0 0 24px rgba(255,172,0,0.9)) brightness(1.4); }
+  100% { filter: drop-shadow(0 0 12px rgba(133,210,112,0.2)) brightness(1); }
+}
+.plant-stage-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-shadow: 0 0 6px rgba(200,168,90,0.35);
+  text-align: center;
+}
+.banner-day.overdue { color: var(--red); text-shadow: 0 0 4px rgba(204,51,51,0.35); }
+
+/* Info column to the right of the hero */
+.gb-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--info-gap);
+  overflow-y: auto;
+}
+
+/* Bar row — growth + health */
+.gb-bars { display: flex; flex-direction: column; gap: 8px; }
+.gb-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gb-bar-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #5a7a6a;
+  width: 54px;
+  flex-shrink: 0;
+}
+.gb-bar-track {
+  flex: 1;
+  height: var(--bar-height);
+  background: var(--bar-track-bg);
+  border: 1px solid var(--bar-track-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.gb-bar-fill {
+  height: 100%;
+  transition: width 0.4s ease, background 0.4s ease;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.gb-bar-row.growth .gb-bar-fill { background: var(--bar-growth-fill); }
+/* Health fill color is driven by JS via healthColor() —
+   interpolated across deep-green → green → yellow → orange → red
+   as the value drops. CSS var is just the page-load fallback. */
+.gb-bar-row.health .gb-bar-fill { background: var(--bar-health-fill); }
+.gb-bar-value {
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  color: var(--cream);
+  letter-spacing: 1px;
+  width: 48px;
+  text-align: right;
+}
+/* READY projection — centered under the HARVEST button inside the
+   plant-actions column. Reads as "this is when HARVEST unlocks". */
+.gb-ready-line {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--body);
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+.gb-ready-line strong { color: var(--cream); font-weight: normal; }
+.gb-ready-line.warn strong { color: var(--red); text-shadow: 0 0 4px rgba(204,51,51,0.35); }
+
+/* Modifier list — positive/negative effects on growth rate.
+   min-height holds the box at its worst-case row count so
+   promotion/demotion between ACTIVE and MONITORED never shifts
+   content below. Picked to accommodate ~9 data rows at 14px
+   font (default --mod-size). Increase if new threats are added
+   to MONITORED_THREATS. */
+.gb-modifiers {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  background: rgba(10,14,20,0.4);
+  border: 2px solid rgba(200,168,90,0.2);
+  min-height: 200px;
+}
+.gb-mod-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #5a7a6a;
+  margin-bottom: 4px;
+}
+/* Divider between ACTIVE and MONITORED sections — thin dashed
+   gold line, lets the two lists read as related but distinct. */
+.gb-mod-divider {
+  height: 0;
+  border-top: 1px dashed rgba(200,168,90,0.2);
+  margin: 6px 0 2px;
+}
+.gb-mod-subtitle {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #5a7a6a;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+/* Monitored list renders 2-up so more threats fit without scrolling.
+   Each cell is still a name/delta flex row (space-between). Active
+   list stays single-column — its rows benefit from the full width
+   for their longer delta strings ("+15% growth", "−30% growth"). */
+#mod-list-monitored {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 14px;
+  position: relative;
+}
+/* Vertical divider between the two columns — solid match to the
+   dashed ACTIVE/MONITORED separator above. */
+#mod-list-monitored::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: rgba(200,168,90,0.2);
+  pointer-events: none;
+}
+.gb-mod-row {
+  font-family: 'VT323', monospace;
+  font-size: var(--mod-size);
+  letter-spacing: 0.5px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gb-mod-row.positive { color: var(--mod-positive); }
+.gb-mod-row.negative { color: var(--mod-negative); }
+.gb-mod-row.critical { color: var(--mod-critical); animation: mod-critical-pulse 1.5s ease-in-out infinite; }
+.gb-mod-row.stub     { color: var(--mod-stub); font-style: italic; }
+.gb-mod-row .mod-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gb-mod-row .mod-delta { font-weight: normal; color: inherit; }
+.gb-mod-row.stub .mod-delta { color: var(--mod-stub); }
+@keyframes mod-critical-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.4); }
+}
+
+/* Next stage + water + tender — compact info strip */
+.gb-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: 'VT323', monospace;
+  font-size: var(--strip-size);
+  color: var(--body);
+}
+.gb-strip-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gb-strip-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #5a7a6a;
+  /* Widened + nowrap so longer labels like "NEXT STAGE" stay on
+     a single line instead of breaking. */
+  min-width: 80px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.gb-strip-value { flex: 1; color: var(--cream); line-height: 1; }
+.gb-strip-link {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: var(--teal);
+  cursor: var(--cursor-hand, pointer);
+  text-decoration: underline;
+  text-decoration-color: rgba(53,198,191,0.4);
+  text-underline-offset: 2px;
+}
+.gb-strip-link:hover { color: #7dd4ce; }
+
+/* ── Mini water slider ─────────────────────────────────────
+   Compact in-Growbay version of the Orders water slider. Shares
+   the same underlying ship state, so dragging here or in Orders
+   updates the same value. The ideal-tick marks where the current
+   crop wants the plant% to sit (wheat=50, tomato=65, etc.). Crew-
+   status badge warns when the crew side is underfed. */
+.gb-water-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 0 2px;
+}
+.gb-water-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.gb-water-track {
+  position: relative;
+  height: 14px;
+  background: rgba(10,14,20,0.6);
+  border: 1px solid #2a3040;
+  border-radius: 2px;
+  cursor: var(--cursor-hand, grab);
+  user-select: none;
+  touch-action: none;
+}
+.gb-water-track:active,
+.gb-water-track.previewing { cursor: var(--cursor-hand, pointer); }
+/* Subtle teal glow + outline while dragging — telegraphs that the
+   value is PREVIEWING and hasn't committed yet. Goes away on
+   pointerup (commit) or Escape (revert). */
+.gb-water-track.previewing {
+  box-shadow: 0 0 10px rgba(53,198,191,0.35);
+  border-color: rgba(53,198,191,0.55);
+}
+.gb-water-track.previewing::after {
+  content: 'previewing — release to commit';
+  position: absolute;
+  left: 50%;
+  top: -20px;
+  transform: translateX(-50%);
+  font-family: 'VT323', monospace;
+  font-size: 11px;
+  color: var(--teal);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 0 4px rgba(53,198,191,0.4);
+}
+.gb-water-fill-plant {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: linear-gradient(180deg, #85d270 0%, #5fa854 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
+  transition: width 0.15s ease;
+}
+.gb-water-fill-crew {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  background: linear-gradient(180deg, #7dc8e8 0%, #5fa8d0 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
+  transition: width 0.15s ease;
+}
+/* Gold downward triangle marking the crop's ideal plant% */
+.gb-water-ideal-tick {
+  position: absolute;
+  top: -8px;
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--gold);
+  transform: translateX(-50%);
+  pointer-events: none;
+  filter: drop-shadow(0 0 3px rgba(200,168,90,0.5));
+  transition: left 0.2s ease;
+}
+/* Cream/gold grab thumb */
+.gb-water-thumb {
+  position: absolute;
+  top: -3px; bottom: -3px;
+  width: 10px;
+  background: linear-gradient(180deg, #e8d8a0 0%, var(--gold) 50%, #8a7035 100%);
+  border: 1px solid #2a1f0a;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  box-shadow: 0 0 6px rgba(200,168,90,0.45);
+  transition: left 0.15s ease;
+}
+.gb-water-readout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: var(--body);
+  gap: 8px;
+}
+.gb-water-readout strong { color: var(--cream); font-weight: normal; }
+/* One side of the readout — pct + status badge grouped together. */
+.gb-water-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+/* Shared status-badge styling; per-state colors below. */
+.gb-water-plant-status,
+.gb-water-crew-status {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  padding: 3px 6px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+/* Good (green): plant MATCHED + crew NOMINAL */
+.gb-water-plant-status.matched,
+.gb-water-crew-status.nominal {
+  color: var(--mod-positive); background: rgba(133,210,112,0.12);
+}
+/* Mild warning (amber): plant DRY/SOAKED + crew THIRSTY */
+.gb-water-plant-status.dry,
+.gb-water-plant-status.soaked,
+.gb-water-crew-status.thirsty {
+  color: var(--mod-negative); background: rgba(232,136,48,0.12);
+}
+/* Severe (red, pulsing): plant PARCHED + crew CRITICAL */
+.gb-water-plant-status.parched,
+.gb-water-crew-status.critical {
+  color: var(--mod-critical); background: rgba(204,51,51,0.15);
+  animation: mod-critical-pulse 1.5s ease-in-out infinite;
+}
+
+/* Tender slot — portrait + name + bonus. Clickable to open picker. */
+.gb-tender-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid rgba(200,168,90,0.25);
+  background: rgba(10,14,20,0.5);
+  border-radius: 3px;
+  cursor: var(--cursor-hand, pointer);
+  transition: filter 0.12s, border-color 0.12s;
+  position: relative;
+}
+.gb-tender-slot:hover { filter: brightness(1.15); border-color: var(--gold); }
+.gb-tender-portrait {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(200,168,90,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  color: transparent;
+  image-rendering: pixelated;
+}
+.gb-tender-portrait.has-sprite { background-color: transparent; }
+.gb-tender-info { flex: 1; min-width: 110px; }
+/* Both lines wrap naturally when the tender slot is narrower than
+   the content — no nowrap, no ellipsis. The picker rows inherit
+   the same wrap behavior so long names break to a second line
+   instead of overflowing the popover. */
+.gb-tender-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  text-transform: uppercase;
+  line-height: 1.25;
+}
+.gb-tender-bonus {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: var(--mod-positive);
+  line-height: 1.2;
+}
+.gb-tender-bonus.no-bonus { color: #5a7a6a; font-style: italic; }
+.gb-tender-chevron {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  color: var(--gold);
+  opacity: 0.6;
+}
+
+/* Tender picker popover — opens horizontally to the right of the
+   trigger so the scene's short vertical space doesn't clip it.
+   Extends over the info column on the right (z-index lifts it
+   above). Fixed width since it's no longer tied to the trigger. */
+.gb-picker {
+  position: absolute;
+  left: calc(100% + 6px);
+  /* Center vertically against the trigger so overflow is split
+     evenly above and below instead of always growing downward. */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 240px;
+  z-index: 10;
+  background: var(--modal-bg-top);
+  border: 2px solid var(--gold);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.7);
+  display: none;
+}
+.gb-tender-slot.open .gb-picker { display: block; }
+.gb-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: var(--cursor-hand, pointer);
+  border-bottom: 1px solid rgba(200,168,90,0.08);
+}
+.gb-picker-row:last-child { border-bottom: 0; }
+.gb-picker-row:hover { background: rgba(200,168,90,0.08); }
+.gb-picker-row.current { background: rgba(200,168,90,0.1); }
+.gb-picker-row .gb-tender-portrait { width: 24px; height: 24px; font-size: 14px; }
+/* Name, role, and bonus all stack vertically in the info column
+   so each can wrap to a second line within the column width
+   without colliding with anything else in the row. */
+.gb-picker-row .gb-tender-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.gb-picker-name {
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  color: var(--cream);
+  line-height: 1.15;
+}
+.gb-picker-role {
+  font-family: 'VT323', monospace;
+  font-size: 12px;
+  color: #7a8898;
+  line-height: 1.1;
+}
+.gb-picker-bonus {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  color: var(--mod-positive);
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+.gb-picker-bonus.no-bonus { color: #5a7a6a; }
+
+/* Footer: ARIA quip + action row */
+.gb-footer {
+  flex-shrink: 0;
+  height: 55px;
+  padding: 10px 20px;
+  border-top: 2px solid rgba(86,207,215,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.gb-aria {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.gb-aria-avatar {
+  width: 26px; height: 26px;
+  background-size: cover;
+  background-position: center;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+.gb-aria-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+.gb-aria-text {
+  font-family: 'VT323', monospace;
+  font-size: var(--aria-size);
+  color: var(--body);
+  font-style: italic;
+  line-height: 1.3;
+}
+/* Left area below the header bars = scene + action row + ready
+   line, stacked. Actions sit under the plant/crew columns so they
+   read as "applied to the plant" rather than free-floating modal
+   chrome. */
+.gb-left-area {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* Actions inside each column — HARVEST (the plant's own action)
+   stacks below the day label inside the plant column; TREAT +
+   INSPECT (the tender's actions) sit inline below the tender card.
+   In-column placement means buttons hug their subject's content
+   regardless of the other column's height. Small top margin adds
+   a breathing-room gap. */
+.gb-plant-actions {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.gb-crew-actions {
+  margin-top: 6px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Panel buttons */
+.panel-btn {
+  font-family: 'VT323', monospace;
+  font-size: var(--pb-size);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: var(--pb-pady) var(--pb-padx);
+  background: linear-gradient(180deg, var(--pb-bg-top) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-bot) 100%);
+  border: var(--pb-border) outset;
+  border-color: var(--pb-hi) var(--pb-lo) var(--pb-lo) var(--pb-hi);
+  color: var(--pb-text);
+  border-radius: 0;
+  transition: filter 0.1s;
+}
+.panel-btn:hover { filter: brightness(1.15); }
+.panel-btn:active {
+  border-style: inset;
+  border-color: var(--pb-lo) var(--pb-hi) var(--pb-hi) var(--pb-lo);
+  transform: translate(1px, 1px);
+}
+.panel-btn.accent-gold {
+  border-color: var(--pb-gold-hi) var(--pb-gold-lo) var(--pb-gold-lo) var(--pb-gold-hi);
+  color: var(--pb-gold-hi);
+}
+.panel-btn.harvest {
+  border-color: var(--pb-green-hi) var(--pb-green-lo) var(--pb-green-lo) var(--pb-green-hi);
+  color: #c8f0a0;
+  background: linear-gradient(180deg, #3e5e3e 0%, #1a3520 50%, #4a6a4e 100%);
+  animation: harvest-ready 1.6s ease-in-out infinite;
+}
+.panel-btn.harvest.locked {
+  filter: grayscale(0.7) brightness(0.6);
+  cursor: var(--cursor-pointer, default);
+  pointer-events: none;
+  animation: none;
+}
+.panel-btn.locked {
+  filter: grayscale(0.7) brightness(0.6);
+  cursor: var(--cursor-pointer, default);
+  pointer-events: none;
+}
+@keyframes harvest-ready {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(133,210,112,0); }
+  50%      { box-shadow: 0 0 12px rgba(133,210,112,0.5); }
+}
+
+/* Harvest ceremony overlay — brief celebration on successful harvest. */
+.gb-harvest-burst {
+  position: absolute;
+  left: 50%; top: 40%;
+  transform: translate(-50%, -50%);
+  font-family: 'Press Start 2P', cursive;
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: #c8f0a0;
+  text-shadow: 0 0 12px rgba(133,210,112,0.7);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 25;
+}
+.gb-harvest-burst.fire {
+  animation: harvest-burst 1.4s ease-out forwards;
+}
+@keyframes harvest-burst {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  70%  { opacity: 1; transform: translate(-50%, calc(-50% - 20px)) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, calc(-50% - 40px)) scale(1); }
+}
+
+/* Dev controls sidebar */
+#controls {
+  width: 380px; background: #161a22; border: 1px solid #2a3040;
+  border-radius: 6px;
+  padding: 16px; font-family: 'VT323', monospace; font-size: 16px; color: #8898a8;
+  max-height: 640px; overflow-y: auto; overflow-x: hidden; flex-shrink: 0;
+}
+#controls h2 { font-family: 'Press Start 2P', cursive; font-size: 8px; color: var(--gold); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase; }
+#controls h3 { font-family: 'Press Start 2P', cursive; font-size: 7px; color: #5a7a6a; letter-spacing: 1px; margin: 14px 0 8px; text-transform: uppercase; border-bottom: 1px solid #2a3040; padding-bottom: 4px; }
+.ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.ctrl-row label { font-size: 14px; color: #667; flex-shrink: 0; min-width: 110px; }
+.ctrl-row input[type="range"] { flex: 1; accent-color: var(--gold); height: 4px; }
+.ctrl-row .val { font-size: 13px; color: #5a7a6a; min-width: 60px; text-align: right; font-family: 'VT323', monospace; letter-spacing: 0.5px; }
+.ctrl-row .val.modified { color: #e88830; font-weight: bold; }
+.sim-btn {
+  width: 100%; margin-top: 6px; padding: 8px;
+  font-family: 'VT323', monospace; font-size: 15px; letter-spacing: 1px; text-transform: uppercase;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset; border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold); cursor: var(--cursor-hand, pointer); border-radius: 2px;
+}
+.sim-btn:hover { filter: brightness(1.15); }
+.sim-btn:active { border-style: inset; border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a; transform: translate(1px,1px); }
+
+/* Scrollbars — same baseline as inventory demo. */
+::-webkit-scrollbar           { width: 6px; height: 6px; }
+::-webkit-scrollbar-track     { background: #0a0e14; border-radius: 0; }
+::-webkit-scrollbar-thumb     { background: #2a3a48; border-radius: 0; }
+::-webkit-scrollbar-corner    { background: #0a0e14; }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3a48 #0a0e14;
+}
+
+/* ═════ Inspect sub-view ═══════════════════════════════════════
+   Two presentation modes (selectable from dev panel):
+     swap  — replaces .gb-body inside the same modal frame
+     popup — smaller dialog floating over the modal
+   Both render the SAME content via renderInspectInto(). */
+.ins-swap-wrap { display: none; flex: 1; min-height: 0; padding: 10px 16px 8px; overflow-y: auto; }
+body.ins-mode-swap.ins-open #gb-modal .gb-body { display: none; }
+body.ins-mode-swap.ins-open #gb-modal .ins-swap-wrap { display: block; }
+
+.ins-popup-backdrop {
+  position: absolute; inset: 0; z-index: 30;
+  background: rgba(4,8,16,0.55);
+  display: none;
+  cursor: var(--cursor-hand, pointer);
+}
+.ins-popup {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px; max-width: calc(100% - 40px);
+  height: 440px; max-height: calc(100% - 40px);
+  z-index: 31;
+  background: linear-gradient(180deg, var(--modal-bg-top) 0%, var(--modal-bg-bot) 100%);
+  border: 3px solid var(--modal-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.85);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+body.ins-mode-popup.ins-open .ins-popup-backdrop { display: block; }
+body.ins-mode-popup.ins-open .ins-popup { display: flex; }
+.ins-popup-header {
+  flex-shrink: 0; height: 36px; padding: 0 14px;
+  border-bottom: 2px solid rgba(86,207,215,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex; align-items: center; gap: 12px;
+}
+.ins-popup-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 11px; letter-spacing: 2px;
+  color: var(--header-title-color);
+  flex: 1;
+}
+.ins-popup-close {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px; width: 22px; height: 22px;
+  border: 2px solid rgba(86,207,215,0.4);
+  background: rgba(14,20,32,0.6);
+  color: var(--header-title-color);
+  cursor: var(--cursor-hand, pointer);
+  display: flex; align-items: center; justify-content: center;
+}
+.ins-popup-close:hover { filter: brightness(1.25); border-color: var(--modal-border); }
+.ins-popup .ins-content { flex: 1; padding: 10px 12px; overflow-y: auto; }
+
+/* ‹ BACK affordance — appears in main header during swap mode. */
+.gb-back {
+  display: none;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 1px;
+  border: 2px solid rgba(86,207,215,0.4);
+  background: rgba(14,20,32,0.6);
+  color: var(--header-title-color);
+  padding: 6px 10px;
+  cursor: var(--cursor-hand, pointer);
+  flex-shrink: 0;
+}
+.gb-back:hover { filter: brightness(1.25); border-color: var(--modal-border); }
+body.ins-mode-swap.ins-open #gb-modal .gb-back { display: inline-flex; align-items: center; }
+
+/* Shared content layout — two-column grid; ARIA spans full width. */
+.ins-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+  align-content: start;
+}
+.ins-content > .ins-fullwidth { grid-column: 1 / -1; }
+/* Inspect's ARIA panel takes over the prominent ARIA role; hide the
+   growbay footer ARIA while inspect is open to avoid duplication. */
+body.ins-open #gb-modal .gb-footer { display: none; }
+.ins-section {
+  background: rgba(10,14,20,0.5);
+  border: 1px solid rgba(86,207,215,0.18);
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+.ins-section-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 2px;
+  color: #5a7a6a;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.ins-row {
+  display: flex; justify-content: space-between;
+  font-family: 'VT323', monospace;
+  font-size: 14px; color: var(--body);
+  line-height: 1.35; gap: 10px;
+}
+.ins-row .ins-key { color: #6a7a88; flex-shrink: 0; }
+.ins-row .ins-val { color: var(--cream); text-align: right; }
+.ins-blurb {
+  font-family: 'VT323', monospace;
+  font-size: 14px; color: var(--body);
+  font-style: italic;
+  margin-bottom: 4px;
+}
+.ins-stage-list { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+.ins-stage {
+  font-family: 'VT323', monospace;
+  font-size: 13px; color: #6a7a88;
+  display: flex; gap: 6px; align-items: baseline;
+}
+.ins-stage.current { color: var(--cream); }
+.ins-stage .ins-stage-marker { width: 8px; flex-shrink: 0; color: var(--gold); }
+.ins-stage .ins-stage-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; letter-spacing: 1px;
+  color: inherit; width: 70px; flex-shrink: 0;
+}
+.ins-stage .ins-stage-tip { flex: 1; line-height: 1.3; }
+
+/* Vital signs — labelled stat list, current state at a glance. */
+.ins-vitals { display: flex; flex-direction: column; gap: 3px; }
+.ins-vital {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 8px;
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  align-items: baseline;
+}
+.ins-vital .ins-v-key {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; letter-spacing: 1px;
+  color: #5a7a6a;
+}
+.ins-vital .ins-v-val { color: var(--cream); }
+.ins-vital .ins-v-val .ins-v-sub { color: #6a7a88; font-size: 12px; }
+.ins-vital .ins-v-val.overdue { color: var(--mod-critical); }
+.ins-vital .ins-v-val.stalled { color: var(--mod-negative); font-style: italic; }
+.ins-vital .ins-v-val .ins-v-marker { color: var(--gold); margin-right: 4px; }
+
+/* Species notes — lifted from bible §11 Notes column. */
+.ins-notes {
+  font-family: 'VT323', monospace;
+  font-size: 13px; color: var(--cream);
+  line-height: 1.35;
+  padding: 4px 6px;
+  margin: 4px 0 6px;
+  border-left: 2px solid rgba(86,207,215,0.35);
+  background: rgba(86,207,215,0.05);
+}
+
+/* Lifecycle ribbon — 4 stages laid out horizontally so the player
+   sees where in the species' arc the plant currently sits. */
+.ins-lifecycle {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+.ins-life-stage {
+  padding: 6px 8px;
+  border-right: 1px solid rgba(86,207,215,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ins-life-stage:last-child { border-right: none; }
+.ins-life-stage.current { background: rgba(53,158,63,0.12); }
+.ins-life-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; letter-spacing: 1px;
+  color: #5a7a6a;
+  display: flex; align-items: baseline; gap: 4px;
+}
+.ins-life-stage.current .ins-life-name { color: var(--gold); }
+.ins-life-stage.current .ins-life-name::before { content: '▸ '; color: var(--gold); }
+.ins-life-range {
+  font-family: 'VT323', monospace;
+  font-size: 12px; color: #6a7a88;
+}
+.ins-life-stage.current .ins-life-range { color: var(--cream); }
+.ins-life-tip {
+  font-family: 'VT323', monospace;
+  font-size: 12px; color: #6a7a88;
+  line-height: 1.3;
+}
+.ins-life-stage.current .ins-life-tip { color: var(--body); }
+
+/* Active threats — 2-column internal grid (mirrors the MONITORED
+   panel pattern from other surfaces). */
+.ins-threats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+}
+.ins-threat {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  border-left: 2px solid var(--mod-negative);
+  padding-left: 8px; line-height: 1.35;
+}
+.ins-threat.critical { border-left-color: var(--mod-critical); }
+.ins-threat-head {
+  display: flex; justify-content: space-between;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; letter-spacing: 1px;
+  color: var(--mod-negative);
+  margin-bottom: 2px;
+}
+.ins-threat.critical .ins-threat-head { color: var(--mod-critical); }
+.ins-threat-cause { color: var(--body); }
+.ins-threat-cause::before { content: '→ '; color: #5a7a6a; }
+.ins-threat-fix { color: var(--cream); }
+.ins-threat-fix::before { content: '✓ '; color: var(--mod-positive); }
+.ins-threats-empty {
+  font-family: 'VT323', monospace;
+  font-size: 13px; color: #6a7a88;
+  font-style: italic;
+}
+
+/* ARIA's read */
+.ins-aria-read {
+  font-family: 'VT323', monospace;
+  font-size: 14px; color: var(--body);
+  font-style: italic;
+  line-height: 1.4;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.ins-aria-avatar {
+  width: 32px; height: 32px;
+  background-image: url('sprites/interface/AI/aria.png');
+  background-size: cover; background-position: center;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+.ins-aria-name { color: var(--teal); font-style: normal; flex-shrink: 0; }
+
+</style>
+</head>
+<body>
+
+<button id="size-toggle" onclick="toggleSize()">Actual Size</button>
+
+<div id="demo-wrap">
+
+<div id="scale-root">
+<div id="game">
+  <canvas id="stars-far" width="960" height="640"></canvas>
+  <canvas id="stars-near" width="960" height="640"></canvas>
+
+  <!-- Cruise ghost backdrop -->
+  <div id="cruise-ghost">
+    <div class="cg-header">
+      <span class="cg-ship">THE VERDANT ARK</span>
+      <span class="cg-day">DAY 47 · 73 LEFT</span>
+    </div>
+    <div class="cg-bottom"></div>
+  </div>
+
+  <div id="crt-overlay"></div>
+
+  <!-- Modal backdrop. Click logic is layered: when Inspect is open,
+       a backdrop click closes Inspect first, leaving growbay up. -->
+  <div id="gb-backdrop" onclick="onBackdropClick()"></div>
+
+  <!-- Growbay modal -->
+  <div id="gb-modal">
+
+    <!-- Header -->
+    <div class="gb-header">
+      <span class="gb-title">GROWBAY</span>
+      <div class="gb-subtitle">
+        <span id="crop-display-name">WHEAT</span>
+        <span class="dot"> · </span>
+        <span class="stage-name" id="stage-label-box"><span id="stage-display">FLOWERING</span> STAGE</span>
+        <span class="dot"> · </span>
+        <span class="banner-day" id="banner-day" title="Days since planting. Base maturity is 90 days, but growth rate shifts with plant health and tending.">GROWTH DAY <span id="day-display">47</span> / <span id="maturity-display">90</span></span>
+      </div>
+      <button class="gb-back" onclick="closeInspect()">‹ BACK</button>
+      <button class="gb-close" onclick="closeModal()">X</button>
+    </div>
+
+    <!-- Body: bars band on top, scene+info row below -->
+    <div class="gb-body">
+
+      <!-- Top band: full-width bars. READY line moved to below the
+           HARVEST button — reads as "when this action becomes
+           available" instead of free-floating data. -->
+      <div class="gb-bars-band">
+        <div class="gb-bar-row growth">
+          <span class="gb-bar-label">GROWTH</span>
+          <div class="gb-bar-track"><div class="gb-bar-fill" id="growth-fill" style="width:62%"></div></div>
+          <span class="gb-bar-value" id="growth-val">62%</span>
+        </div>
+        <div class="gb-bar-row health" id="health-row">
+          <span class="gb-bar-label">HEALTH</span>
+          <div class="gb-bar-track"><div class="gb-bar-fill" id="health-fill" style="width:68%"></div></div>
+          <span class="gb-bar-value" id="health-val">68%</span>
+        </div>
+      </div>
+
+      <!-- Main row: left area (scene + actions under it) | info col -->
+      <div class="gb-main">
+
+        <!-- Left area — scene on top, plant actions + READY line
+             below. Actions sit directly under the plant/crew
+             columns so the buttons read as "applied to the plant." -->
+        <div class="gb-left-area">
+
+        <!-- Scene — shared warm backdrop. plant and crew each live
+             in their own column; labels + tender sit inside their
+             respective column directly under each sprite. Sprite-
+             slot wrappers bottom-align both sprites so they stand
+             on the same invisible floor regardless of their sizes. -->
+        <!-- Actions live INSIDE each column — HARVEST + READY under
+             the plant, TREAT + INSPECT under the crew. This couples
+             each button group to its actual subject's content height,
+             so buttons sit tightly below their content regardless of
+             the other column's height. -->
+        <div class="gb-scene" id="gb-scene">
+          <!-- Glow layer — bleeds 50px beyond the scene on every
+               side into the surrounding modal space. -->
+          <div class="gb-glow"></div>
+          <div class="gb-col-plant">
+            <div class="gb-sprite-slot">
+              <div class="plant-sprite" id="plant-sprite"></div>
+            </div>
+            <div class="plant-stage-label" id="plant-stage-label">FLOWERING</div>
+            <div class="gb-plant-actions">
+              <button class="panel-btn harvest locked" id="harvest-btn" onclick="doHarvest()">Harvest</button>
+              <div class="gb-ready-line" id="ready-line">
+                READY ON <strong id="ready-day">DAY 125</strong>
+              </div>
+            </div>
+          </div>
+          <div class="gb-col-crew">
+            <div class="gb-sprite-slot">
+              <div class="crew-sprite" id="crew-sprite"></div>
+            </div>
+            <div class="gb-tender-slot" id="tender-slot" onclick="toggleTenderPicker(event)">
+              <div class="gb-tender-info">
+                <div class="gb-tender-name" id="tender-name">DR. OSEI</div>
+                <div class="gb-tender-bonus" id="tender-bonus">+15% growth · +15% yield</div>
+              </div>
+              <span class="gb-tender-chevron">▸</span>
+              <div class="gb-picker" id="tender-picker"></div>
+            </div>
+            <div class="gb-crew-actions">
+              <button class="panel-btn locked" id="treat-btn" onclick="openTreat()">Treat</button>
+              <button class="panel-btn" onclick="openInspect()">Inspect</button>
+            </div>
+          </div>
+        </div>
+
+        </div><!-- /.gb-left-area -->
+
+        <!-- Info column: modifiers + next/water strip -->
+        <div class="gb-info">
+          <div class="gb-modifiers">
+            <div class="gb-mod-title">GROWTH MODIFIERS</div>
+            <div id="mod-list-active"></div>
+            <div class="gb-mod-divider"></div>
+            <div class="gb-mod-subtitle">MONITORED</div>
+            <div id="mod-list-monitored"></div>
+          </div>
+          <div class="gb-strip">
+            <div class="gb-strip-row">
+              <span class="gb-strip-label">NEXT STAGE</span>
+              <span class="gb-strip-value" id="next-stage-line">Flowering → Maturing in ~14 days</span>
+            </div>
+          </div>
+
+          <!-- Mini water slider — same underlying state as the Orders
+               modal. Crop-ideal tick marks the plant's preferred
+               allocation; crew status badge flags NOMINAL / THIRSTY /
+               CRITICAL so the player sees both sides of the tradeoff
+               before sliding. Commit-on-release: drag to preview,
+               release to apply. -->
+          <div class="gb-water-block">
+            <div class="gb-water-top">
+              <span class="gb-strip-label">WATER</span>
+            </div>
+            <div class="gb-water-track" id="gb-water-track" title="Drag to adjust">
+              <div class="gb-water-fill-plant" id="gb-water-fill-plant"></div>
+              <div class="gb-water-fill-crew"  id="gb-water-fill-crew"></div>
+              <div class="gb-water-ideal-tick" id="gb-water-ideal-tick" title="Crop's ideal"></div>
+              <div class="gb-water-thumb" id="gb-water-thumb"></div>
+            </div>
+            <div class="gb-water-readout">
+              <span class="gb-water-side">
+                <strong id="gb-water-plant-pct">50%</strong> plant
+                <span class="gb-water-plant-status matched" id="gb-water-plant-status">MATCHED</span>
+              </span>
+              <span class="gb-water-side">
+                <span class="gb-water-crew-status nominal" id="gb-water-crew-status">NOMINAL</span>
+                crew <strong id="gb-water-crew-pct">50%</strong>
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer: ARIA only. Action buttons moved up under the scene. -->
+    <div class="gb-footer">
+      <div class="gb-aria">
+        <span class="gb-aria-avatar has-sprite" style="background-image: url('sprites/interface/AI/aria.png')"></span>
+        <span class="gb-aria-name">ARIA:</span>
+        <span class="gb-aria-text" id="aria-text">The wheat looks introspective today. I do not read into it.</span>
+      </div>
+    </div>
+
+    <!-- Inspect — swap-in body. Replaces .gb-body when
+         body.ins-mode-swap.ins-open is set. -->
+    <div class="ins-swap-wrap">
+      <div class="ins-content" id="ins-content-swap"></div>
+    </div>
+
+    <!-- Inspect — popup over the modal. Visible when
+         body.ins-mode-popup.ins-open is set. -->
+    <div class="ins-popup-backdrop" onclick="closeInspect()"></div>
+    <div class="ins-popup">
+      <div class="ins-popup-header">
+        <span class="ins-popup-title">INSPECT</span>
+        <button class="ins-popup-close" onclick="closeInspect()">X</button>
+      </div>
+      <div class="ins-content" id="ins-content-popup"></div>
+    </div>
+
+    <!-- Harvest celebration burst -->
+    <div class="gb-harvest-burst" id="harvest-burst">+40 FOOD</div>
+
+  </div>
+</div>
+</div>
+
+<!-- Dev controls -->
+<div id="controls">
+  <h2>Growbay Demo Controls</h2>
+
+  <h3>Crop</h3>
+  <div class="ctrl-row"><label>Species</label>
+    <select id="c-crop" style="flex:1; background:#0e1118; color:var(--cream); border:1px solid #2a3040; padding:2px 4px; font-family:'VT323',monospace; font-size:14px;">
+      <option value="wheat">Wheat</option>
+      <option value="tomato">Tomato</option>
+      <option value="sweet_potato">Sweet Potato</option>
+      <option value="soybean">Soybean</option>
+      <option value="zinnia">Zinnia</option>
+    </select>
+  </div>
+
+  <h3>Plant State</h3>
+  <div class="ctrl-row"><label>Growth %</label><input type="range" id="c-growth" min="0" max="100" value="62"><span class="val" id="v-growth">62</span></div>
+  <div class="ctrl-row"><label>Health %</label><input type="range" id="c-health" min="0" max="100" value="68"><span class="val" id="v-health">68</span></div>
+  <div class="ctrl-row"><label>Crop day</label><input type="range" id="c-day" min="1" max="200" value="47"><span class="val" id="v-day">47</span></div>
+
+  <h3>Environment</h3>
+  <div class="ctrl-row"><label>Temp (°C)</label><input type="range" id="c-temp" min="5" max="40" value="22"><span class="val" id="v-temp">22</span></div>
+  <div class="ctrl-row"><label>Pest event</label><input type="checkbox" id="c-pest"></div>
+  <div class="ctrl-row"><label>Water plant%</label><input type="range" id="c-water" min="0" max="100" value="50"><span class="val" id="v-water">50</span></div>
+
+  <h3>Tender</h3>
+  <div class="ctrl-row"><label>Current</label>
+    <select id="c-tender" style="flex:1; background:#0e1118; color:var(--cream); border:1px solid #2a3040; padding:2px 4px; font-family:'VT323',monospace; font-size:14px;">
+      <option value="osei">Dr. Osei (Botanist)</option>
+      <option value="captain-botanist">Captain (Botanist bg)</option>
+      <option value="reyes">Reyes (Chef)</option>
+      <option value="kazuki">Kazuki (Engineer)</option>
+      <option value="hargrove">Hargrove (Diplomat)</option>
+      <option value="reeves">Reeves (Pilot)</option>
+      <option value="vasquez">Dr. Vasquez (Medic)</option>
+      <option value="none">— Nobody —</option>
+    </select>
+  </div>
+
+  <h3>Inspect</h3>
+  <div class="ctrl-row"><label>Mode</label>
+    <select id="c-ins-mode" style="flex:1; background:#0e1118; color:var(--cream); border:1px solid #2a3040; padding:2px 4px; font-family:'VT323',monospace; font-size:14px;" onchange="setInspectMode(this.value)">
+      <option value="swap">Swap-in (replaces body)</option>
+      <option value="popup">Popup (floats over)</option>
+    </select>
+  </div>
+  <button class="sim-btn" onclick="openInspect()">Open Inspect</button>
+
+  <h3>Modal Frame</h3>
+  <div class="ctrl-row"><label>Width</label><input type="range" id="c-modal-w" min="640" max="960" step="4" value="760"><span class="val" id="v-modal-w">760</span></div>
+  <div class="ctrl-row"><label>Height</label><input type="range" id="c-modal-h" min="480" max="640" step="4" value="520"><span class="val" id="v-modal-h">520</span></div>
+  <div class="ctrl-row"><label>Backdrop α</label><input type="range" id="c-backdrop" min="0" max="100" value="75"><span class="val" id="v-backdrop">75</span></div>
+  <div class="ctrl-row"><label>Title size</label><input type="range" id="c-title-size" min="10" max="20" value="14"><span class="val" id="v-title-size">14</span></div>
+  <div class="ctrl-row"><label>Border color</label><input type="color" id="c-modal-border" value="#608c64"></div>
+  <div class="ctrl-row"><label>Title color</label><input type="color" id="c-title" value="#359e3f"></div>
+
+  <h3>Scene (plant + crew)</h3>
+  <div class="ctrl-row"><label>Plant col</label><input type="range" id="c-plant-col-w" min="110" max="240" step="4" value="160"><span class="val" id="v-plant-col-w">160</span></div>
+  <div class="ctrl-row"><label>Crew col</label><input type="range" id="c-crew-col-w" min="80" max="220" step="4" value="180"><span class="val" id="v-crew-col-w">180</span></div>
+  <div class="ctrl-row"><label>Plant scale</label><input type="range" id="c-plant-scale" min="0.6" max="2" step="0.05" value="1"><span class="val" id="v-plant-scale">1.0</span></div>
+  <!-- Glow color is driven by plant health (mirrors health-bar). -->
+  <div class="ctrl-row"><label>Glow alpha</label><input type="range" id="c-glow-alpha" min="0" max="50" value="15"><span class="val" id="v-glow-alpha">15</span></div>
+  <div class="ctrl-row"><label>Glow spread</label><input type="range" id="c-glow-spread" min="30" max="90" value="60"><span class="val" id="v-glow-spread">60</span></div>
+  <div class="ctrl-row"><label>Glow Y</label><input type="range" id="c-glow-y" min="10" max="70" value="40"><span class="val" id="v-glow-y">40</span></div>
+
+  <h3>Bars + Text</h3>
+  <div class="ctrl-row"><label>Bar height</label><input type="range" id="c-bar-h" min="8" max="32" step="1" value="24"><span class="val" id="v-bar-h">24</span></div>
+  <div class="ctrl-row"><label>Growth color</label><input type="color" id="c-growth-color" value="#587667"></div>
+  <div class="ctrl-row"><label>Modifier size</label><input type="range" id="c-mod-size" min="10" max="20" step="1" value="14"><span class="val" id="v-mod-size">14</span></div>
+  <div class="ctrl-row"><label>Info strip size</label><input type="range" id="c-strip-size" min="11" max="20" step="1" value="15"><span class="val" id="v-strip-size">15</span></div>
+  <div class="ctrl-row"><label>ARIA size</label><input type="range" id="c-aria-size" min="12" max="22" step="1" value="16"><span class="val" id="v-aria-size">16</span></div>
+  <div class="ctrl-row"><label>Action size</label><input type="range" id="c-action-size" min="12" max="22" step="1" value="15"><span class="val" id="v-action-size">15</span></div>
+
+  <h3>Spacing</h3>
+  <div class="ctrl-row"><label>Body pad-V</label><input type="range" id="c-body-v" min="6" max="32" step="2" value="12"><span class="val" id="v-body-v">12</span></div>
+  <div class="ctrl-row"><label>Info col gap</label><input type="range" id="c-info-gap" min="4" max="28" step="2" value="24"><span class="val" id="v-info-gap">24</span></div>
+
+  <h3>Simulate</h3>
+  <button class="sim-btn" onclick="advanceDay(1)">Advance 1 Day</button>
+  <button class="sim-btn" onclick="advanceDay(7)">Advance 7 Days</button>
+  <button class="sim-btn" onclick="pushStageFlash()">Force Stage Flash</button>
+  <button class="sim-btn" onclick="triggerHarvest()">Force Harvest (sets growth=100)</button>
+  <button class="sim-btn" onclick="resetCrop()">Reset Crop (day=0, growth=0, health=100)</button>
+  <button class="sim-btn" onclick="reopenModal()">Reopen Modal</button>
+  <button class="sim-btn" onclick="resetStyleDefaults()">Reset Style Defaults</button>
+</div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const root = document.documentElement;
+
+  // ── Crew sprite atlas (shared icon/portrait helper) ─────────────
+  // Crew icons + portraits live PACKED inside spritesheet_<id>.png at
+  // fixed coords from the .json. Captain is the exception: separate
+  // captain.png + captain_icon.png files (no spritesheet — captain
+  // doesn't talk to themselves yet). Sheet uniform 376×294. Icon is
+  // 48×48 at (295,195) for everyone except reyes (icon at (295,146);
+  // portrait shorter at 80×143 instead of 80×192).
+  // CREW_ATLAS + helpers live in shared.js
+
+  // ── Viewport fit ─────────────────────────────────────────
+  function fitViewport() {
+    let s;
+    if (document.body.classList.contains('fullsize')) {
+      s = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+    } else {
+      const avail = Math.min(window.innerWidth - 440, window.innerWidth * 0.65);
+      const h = window.innerHeight - 40;
+      s = Math.min(avail / 960, h / 640, 1);
+    }
+    $('scale-root').style.transform = 'scale(' + s + ')';
+  }
+  fitViewport();
+  window.addEventListener('resize', fitViewport);
+  window.toggleSize = function() {
+    document.body.classList.toggle('fullsize');
+    $('size-toggle').textContent = document.body.classList.contains('fullsize') ? 'Demo Size' : 'Actual Size';
+    fitViewport();
+  };
+
+  // ── Parallax stars (decorative) ─────────────────────────
+  const farCvs = $('stars-far'), farCtx = farCvs.getContext('2d');
+  const nearCvs = $('stars-near'), nearCtx = nearCvs.getContext('2d');
+  const farStars = [], nearStars = [];
+  for (let i = 0; i < 90; i++)  farStars.push({ x: Math.random()*960, y: Math.random()*640, r: Math.random()*1.1+0.3, phase: Math.random()*Math.PI*2 });
+  for (let i = 0; i < 14; i++)  nearStars.push({ x: Math.random()*960, y: Math.random()*640, r: Math.random()*1.6+0.8, phase: Math.random()*Math.PI*2 });
+  function drawStars() {
+    if (PauseBus.paused) { requestAnimationFrame(drawStars); return; }
+    const now = performance.now()/1000;
+    farCtx.clearRect(0,0,960,640);
+    for (const s of farStars) {
+      farCtx.globalAlpha = 0.22 + Math.sin(now*1.5 + s.phase)*0.14;
+      farCtx.fillStyle = '#8899aa';
+      farCtx.beginPath(); farCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); farCtx.fill();
+    }
+    farCtx.globalAlpha = 1;
+    nearCtx.clearRect(0,0,960,640);
+    for (const s of nearStars) {
+      nearCtx.globalAlpha = 0.4 + Math.sin(now*0.8 + s.phase)*0.2;
+      nearCtx.fillStyle = '#c8d0d8';
+      nearCtx.beginPath(); nearCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); nearCtx.fill();
+    }
+    nearCtx.globalAlpha = 1;
+    requestAnimationFrame(drawStars);
+  }
+  drawStars();
+
+  // ══ Crop + ship state (demo mock) ═══════════════════════════
+  // In the real game these are populated from engine + crops.json.
+  // The demo hand-rolls enough shape to exercise the UI.
+
+  // Per-crop metadata — normally in modules/crops/crops.json. One
+  // wheat profile for this demo. yield_amount is a placeholder
+  // pending the economy-balance pass.
+  const CROP_META = {
+    wheat: {
+      name: 'Wheat',
+      blurb: 'Staple grain. Calorie-dense and shelf-stable.',
+      maturity_days: 90,
+      water_need: 50,           // 0–100 %; 50 means the Orders water
+                                // slider should be at 50% plant for max rate
+      ideal_temp: [18, 26],     // °C — outside this range, temp stress applies
+      yield_amount: 40,         // +FOOD on harvest (TBD in economy pass)
+      yield_label: 'Food',
+      sprite: 'sprites/interface/crops/wheat.png',
+      fallback_icon: '🌾',
+      stages: [
+        { max: 25,  name: 'SPROUTING',  tip: 'Seeds break dormancy. Cold or overwatering wipes the bed.' },
+        { max: 50,  name: 'VEGETATIVE', tip: 'Leaves and stems build. Fertilizer now multiplies final yield.' },
+        { max: 75,  name: 'FLOWERING',  tip: 'Heads form. Heat stress shrinks grain size.' },
+        { max: 100, name: 'MATURING',   tip: 'Grain hardens. Water demand drops; pests peak.' }
+      ]
+    },
+    tomato: {
+      name: 'Tomato',
+      blurb: 'Fresh fruit. High morale payload; finicky environment.',
+      maturity_days: 75,
+      water_need: 60,
+      ideal_temp: [20, 28],
+      yield_amount: 35,
+      yield_label: 'Food',
+      sprite: 'sprites/interface/crops/tomato.png',
+      fallback_icon: '🍅',
+      stages: [
+        { max: 25,  name: 'SPROUTING',  tip: 'Seedlings emerge. Cold is lethal — keep warm.' },
+        { max: 50,  name: 'VEGETATIVE', tip: 'Vines sprawl. Stake early or the growth pattern breaks.' },
+        { max: 75,  name: 'FLOWERING',  tip: 'Blossoms set. A heat wave now aborts fruit entirely.' },
+        { max: 100, name: 'MATURING',   tip: 'Fruit swells and colors. Blight risk peaks — inspect often.' }
+      ]
+    },
+    sweet_potato: {
+      name: 'Sweet Potato',
+      blurb: 'Reliable tuber. Slow but heavy yield; drought-tolerant.',
+      maturity_days: 120,
+      water_need: 40,
+      ideal_temp: [21, 30],
+      yield_amount: 50,
+      yield_label: 'Food',
+      sprite: 'sprites/interface/crops/sweet_potato.png',
+      fallback_icon: '🍠',
+      stages: [
+        { max: 25,  name: 'SPROUTING',  tip: 'Slips root. Needs warmth — a cold snap here is fatal.' },
+        { max: 50,  name: 'VEGETATIVE', tip: 'Vines spread above; tubers begin forming underground.' },
+        { max: 75,  name: 'FLOWERING',  tip: 'Surface looks calm — root action is where yield lives.' },
+        { max: 100, name: 'MATURING',   tip: 'Tubers bulk up. Overwatering now triggers root rot.' }
+      ]
+    },
+    soybean: {
+      name: 'Soybean',
+      blurb: 'Protein crop. Fixes its own nitrogen; versatile processing.',
+      maturity_days: 100,
+      water_need: 45,
+      ideal_temp: [20, 30],
+      yield_amount: 45,
+      yield_label: 'Food',
+      sprite: 'sprites/interface/crops/soybean.png',
+      fallback_icon: '🌱',
+      stages: [
+        { max: 25,  name: 'SPROUTING',  tip: 'Cotyledons break soil. Protect from cold and slugs.' },
+        { max: 50,  name: 'VEGETATIVE', tip: 'Canopy closes. Nitrogen-fixer — low fertilizer demand.' },
+        { max: 75,  name: 'FLOWERING',  tip: 'Pods form. Heat stress aborts pods; keep temp tight.' },
+        { max: 100, name: 'MATURING',   tip: 'Pods fill out. Water demand drops; pests peak.' }
+      ]
+    },
+    zinnia: {
+      name: 'Zinnia',
+      blurb: 'Ornamental bloom. No food value — crew morale payload.',
+      maturity_days: 60,
+      water_need: 35,
+      ideal_temp: [18, 28],
+      yield_amount: 30,
+      yield_label: 'Morale',
+      sprite: 'sprites/interface/crops/zinnia.png',
+      fallback_icon: '🌼',
+      stages: [
+        { max: 25,  name: 'SPROUTING',  tip: 'First true leaves. Damping-off is the early killer.' },
+        { max: 50,  name: 'VEGETATIVE', tip: 'Bushy growth. Pinch top (specialist bonus) for stronger stems.' },
+        { max: 75,  name: 'FLOWERING',  tip: 'Blooms open — morale boost begins. Powdery mildew rises.' },
+        { max: 100, name: 'MATURING',   tip: 'Peak bloom. Deadheading extends the harvest window.' }
+      ]
+    }
+  };
+  const CURRENT_CROP_ID = 'wheat';
+
+  // Growbay spritesheet frame coords — all frames are 109×192 and
+  // live in sprites/growbay/spritesheet_growbay.png. Imported verbatim
+  // from spritesheet_growbay.json so a future regenerate-and-drop-in
+  // workflow just means re-copying this block.
+  const STAGE_SPRITES = {
+    wheat:    { sprouting: { x: 445, y: 389 }, vegetative: { x: 556, y: 1   }, flowering: { x: 223, y: 389 }, maturing: { x: 334, y: 389 } },
+    tomato:   { sprouting: { x: 1,   y: 389 }, vegetative: { x: 112, y: 389 }, flowering: { x: 334, y: 195 }, maturing: { x: 445, y: 195 } },
+    potato:   { sprouting: { x: 223, y: 1   }, vegetative: { x: 334, y: 1   }, flowering: { x: 1,   y: 1   }, maturing: { x: 112, y: 1   } },
+    soybeans: { sprouting: { x: 112, y: 195 }, vegetative: { x: 223, y: 195 }, flowering: { x: 445, y: 1   }, maturing: { x: 1,   y: 195 } },
+    zinnia:   { sprouting: { x: 1,   y: 583 }, vegetative: { x: 112, y: 583 }, flowering: { x: 556, y: 195 }, maturing: { x: 556, y: 389 } }
+  };
+  // Item-id → sheet-key aliases (items.json uses sweet_potato /
+  // soybean, spritesheet uses potato / soybeans). Keeps sheet-side
+  // naming separate from gameplay id naming.
+  const SPRITE_ID_ALIAS = { sweet_potato: 'potato', soybean: 'soybeans' };
+
+  // Crew + tender roster — in the real game this comes from
+  // ship.crew. Ranking table per project memory:
+  //   Botanist specialist: +15% growth, +15% yield
+  //   Captain w/ Botanist bg: +7%/+7% (0.5× the specialist)
+  //   Chef: +5%/+5% (sympathetic)
+  //   Generic crew: +3%/0% (tending > nothing)
+  //   None: 0%/0% (base rate; no penalty)
+  const CREW = {
+    'osei':              { name: 'Dr. Osei',    role: 'Botanist',       crewId: 'osei',     growth: 15, yield: 15 },
+    'captain-botanist':  { name: 'Captain',     role: 'Botanist bg.',   crewId: 'captain',  growth: 7,  yield: 7 },
+    'reyes':             { name: 'Reyes',       role: 'Chef',           crewId: 'reyes',    growth: 5,  yield: 5 },
+    'kazuki':            { name: 'Kazuki',      role: 'Engineer',       crewId: 'kazuki',   growth: 3,  yield: 0 },
+    'hargrove':          { name: 'Hargrove',    role: 'Diplomat',       crewId: 'hargrove', growth: 3,  yield: 0 },
+    'reeves':            { name: 'Reeves',      role: 'Pilot',          crewId: 'reeves',   growth: 3,  yield: 0 },
+    'vasquez':           { name: 'Dr. Vasquez', role: 'Medic',          crewId: 'vasquez',  growth: 3,  yield: 0 },
+    'none':              { name: 'Nobody',      role: 'Untended',       crewId: null,       growth: 0,  yield: 0, emoji: '—' }
+  };
+
+  // Animated crew spritesheets — 9 animation frames + 1 idle frame
+  // per crew member, each sheet slightly different dimensions. Data
+  // imported verbatim from the per-crew JSON files.
+  //   w, h   = per-frame pixel dimensions (applied to .crew-sprite)
+  //   frames = [x,y] pairs for frames 0..8 (2s animation total)
+  //   idle   = [x,y] for the between-anim idle frame
+  const CREW_SHEETS = {
+    osei:     { sheet: 'sprites/growbay/spritesheet_growbay_osei.png',
+                w: 76, h: 197,
+                frames: [[1,1],[79,1],[157,1],[235,1],[313,1],[391,1],[1,200],[79,200],[157,200]],
+                idle:   [235,200] },
+    kazuki:   { sheet: 'sprites/growbay/spritesheet_growbay_kazuki.png',
+                w: 78, h: 198,
+                frames: [[1,1],[81,1],[161,1],[241,1],[321,1],[1,201],[81,201],[161,201],[241,201]],
+                idle:   [321,201] },
+    reyes:    { sheet: 'sprites/growbay/spritesheet_growbay_reyes.png',
+                w: 64, h: 198,
+                frames: [[1,1],[67,1],[133,1],[199,1],[265,1],[331,1],[1,201],[67,201],[133,201]],
+                idle:   [199,201] },
+    captain:  { sheet: 'sprites/growbay/spritesheet_growbay_captain.png',
+                w: 85, h: 198,
+                frames: [[1,1],[88,1],[175,1],[262,1],[1,201],[88,201],[175,201],[262,201],[349,1]],
+                idle:   [349,201] },
+    hargrove: { sheet: 'sprites/growbay/spritesheet_growbay_hargrove.png',
+                w: 67, h: 196,
+                frames: [[1,1],[70,1],[139,1],[208,1],[277,1],[346,1],[1,199],[70,199],[139,199]],
+                idle:   [208,199] },
+    reeves:   { sheet: 'sprites/growbay/spritesheet_growbay_reeves.png',
+                w: 70, h: 198,
+                frames: [[1,1],[73,1],[145,1],[217,1],[289,1],[361,1],[1,201],[73,201],[145,201]],
+                idle:   [217,201] },
+    vasquez:  { sheet: 'sprites/growbay/spritesheet_growbay_vasquez.png',
+                w: 74, h: 199,
+                frames: [[1,1],[77,1],[153,1],[229,1],[305,1],[381,1],[1,202],[77,202],[153,202]],
+                idle:   [229,202] }
+  };
+  // Crew id → sheet key. `captain-botanist` uses the generic
+  // captain sheet; anyone without a sheet falls back to empty.
+  const CREW_SHEET_KEY = {
+    osei: 'osei', kazuki: 'kazuki', reyes: 'reyes',
+    'captain-botanist': 'captain',
+    hargrove: 'hargrove', reeves: 'reeves', vasquez: 'vasquez',
+    none: null
+  };
+
+  // Ship / environment state — driven by demo controls.
+  const STATE = {
+    cropId: CURRENT_CROP_ID,
+    day: 47,                // crop day (days since planting)
+    growth: 62,             // % grown
+    health: 68,             // % healthy
+    temp: 22,               // °C (environment)
+    pest: false,            // pest event active
+    waterPlant: 50,         // Orders water slider %
+    tenderId: 'osei',
+    shipDay: 47,            // journey day — for projection display
+    arrivalDay: 120
+  };
+
+  // Previously-observed stage — used to fire stage-transition flash
+  // only when the plant actually crosses a boundary, not on every
+  // control-slider tick.
+  let lastStageIdx = -1;
+  // Previously-observed tender — used to restart the crew animation
+  // loop only when the tender actually changes, not on every render.
+  let lastTenderId = null;
+
+  // Canonical list of monitored threats — appears in the MONITORED
+  // section of the modifiers panel as a dim stub. When a threat
+  // fires (matching STATE), it's promoted to the ACTIVE section
+  // above and removed from MONITORED. Expanded as new threats
+  // get implemented; always comprehensive so players learn the
+  // full threat landscape before being bitten by it.
+  const MONITORED_THREATS = [
+    { id: 'disease',             name: 'Disease' },
+    { id: 'radiation',           name: 'Radiation' },
+    { id: 'cold_snap',           name: 'Cold snap' },
+    { id: 'heat_wave',           name: 'Heat wave' },
+    { id: 'root_rot',            name: 'Root rot' },
+    { id: 'pests',               name: 'Pests' },
+    { id: 'nutrient_starvation', name: 'Nutrient starvation' }
+  ];
+
+  // ═════ Modifier math ═════════════════════════════════════
+  // Returns { active: [...], monitored: [...] }.
+  //   active    = modifiers currently firing (positives + promoted threats)
+  //   monitored = MONITORED_THREATS entries that are NOT firing
+  // A threat fires → promoted to active, dropped from monitored.
+  function computeModifiers() {
+    const crop = CROP_META[STATE.cropId];
+    const tender = CREW[STATE.tenderId];
+    const active = [];
+    const promoted = new Set();
+
+    // POSITIVES — not threats, no MONITORED counterpart.
+    if (tender.growth > 0) {
+      active.push({ kind: 'positive', name: tender.name + ' tending', delta: '+' + tender.growth + '% growth' });
+    }
+
+    // WATER — the positive-match case is a positive mod; the
+    // under/over cases are threats that promote (root_rot).
+    const waterDelta = STATE.waterPlant - crop.water_need;
+    const waterAbs = Math.abs(waterDelta);
+    if (waterAbs <= 5) {
+      active.push({ kind: 'positive', name: 'Water matched', delta: '+0%' });
+    } else if (waterDelta < -5) {
+      // Underwatered stalls growth. Not a "named threat" in the
+      // monitored list; it's just a water-allocation consequence.
+      const penalty = Math.min(40, Math.round(waterAbs * 0.8));
+      active.push({ kind: 'negative', name: 'Underwatered', delta: '−' + penalty + '% growth' });
+    } else if (waterAbs > 25) {
+      active.push({ kind: 'negative', name: 'Root rot risk', delta: '−5% health' });
+      promoted.add('root_rot');
+    } else {
+      active.push({ kind: 'positive', name: 'Plant well-watered', delta: '+0%' });
+    }
+
+    // TEMPERATURE — promotes cold_snap or heat_wave depending on
+    // which side of the ideal range we're on.
+    const [tMin, tMax] = crop.ideal_temp;
+    if (STATE.temp < tMin - 4) {
+      active.push({ kind: 'critical', name: 'Cold snap CRITICAL', delta: '−30% growth' });
+      promoted.add('cold_snap');
+    } else if (STATE.temp < tMin) {
+      const off = tMin - STATE.temp;
+      active.push({ kind: 'negative', name: 'Cold stress', delta: '−' + (off * 4) + '% growth' });
+      promoted.add('cold_snap');
+    } else if (STATE.temp > tMax + 4) {
+      active.push({ kind: 'critical', name: 'Heat wave CRITICAL', delta: '−30% growth' });
+      promoted.add('heat_wave');
+    } else if (STATE.temp > tMax) {
+      const off = STATE.temp - tMax;
+      active.push({ kind: 'negative', name: 'Heat stress', delta: '−' + (off * 4) + '% growth' });
+      promoted.add('heat_wave');
+    }
+
+    // PESTS — toggle-driven in the demo.
+    if (STATE.pest) {
+      active.push({ kind: 'critical', name: 'Pest outbreak', delta: '−15% growth · −8% health' });
+      promoted.add('pests');
+    }
+
+    // MONITORED = canonical threats NOT currently firing.
+    const monitored = MONITORED_THREATS.filter(t => !promoted.has(t.id));
+
+    return { active, monitored };
+  }
+
+  // Health-factor for growth rate. In the real game this aggregates
+  // every modifier into a multiplier on the base daily growth rate.
+  // Demo approximates from health %.
+  function growthFactor() {
+    return STATE.health / 100;
+  }
+
+  function projectedReadyDay() {
+    const crop = CROP_META[STATE.cropId];
+    const dailyRate = (100 / crop.maturity_days) * growthFactor();
+    if (dailyRate <= 0.01) return Infinity;
+    const remaining = Math.max(0, 100 - STATE.growth);
+    const daysLeft = Math.ceil(remaining / dailyRate);
+    return STATE.shipDay + daysLeft;
+  }
+
+  function stageIndex(growth) {
+    const stages = CROP_META[STATE.cropId].stages;
+    for (let i = 0; i < stages.length; i++) {
+      if (growth <= stages[i].max) return i;
+    }
+    return stages.length - 1;
+  }
+  // stageIdx (0–3) maps to one of the four stage names the sheet
+  // uses. Kept separate from the CROP_META `stages[].name` so
+  // display labels and sprite keys can drift independently.
+  const STAGE_KEYS = ['sprouting', 'vegetative', 'flowering', 'maturing'];
+  function applyPlantSprite() {
+    const sheetKey = SPRITE_ID_ALIAS[STATE.cropId] || STATE.cropId;
+    const frames = STAGE_SPRITES[sheetKey];
+    if (!frames) return;
+    const frame = frames[STAGE_KEYS[stageIndex(STATE.growth)]];
+    if (!frame) return;
+    $('plant-sprite').style.backgroundPosition = '-' + frame.x + 'px -' + frame.y + 'px';
+  }
+  function stageName(growth) {
+    if (growth >= 100) return 'READY';
+    return CROP_META[STATE.cropId].stages[stageIndex(growth)].name;
+  }
+  // Species + stage tooltip — one string, applied to both the
+  // species name and the stage label in the banner. Current stage
+  // is marked with ▸ so the tooltip is stage-aware without needing
+  // separate variants.
+  function buildCropTooltip() {
+    const crop = CROP_META[STATE.cropId];
+    const curIdx = STATE.growth >= 100 ? crop.stages.length - 1 : stageIndex(STATE.growth);
+    const [tMin, tMax] = crop.ideal_temp;
+    const lines = [
+      crop.name.toUpperCase(),
+      crop.blurb,
+      '',
+      'Maturity: ' + crop.maturity_days + ' days  ·  Water: ' + crop.water_need + '%  ·  Temp: ' + tMin + '–' + tMax + '°C',
+      'Yield: +' + crop.yield_amount + ' ' + crop.yield_label,
+      '',
+      'STAGES'
+    ];
+    crop.stages.forEach((s, i) => {
+      const marker = i === curIdx ? '▸ ' : '  ';
+      const name = s.name.charAt(0) + s.name.slice(1).toLowerCase();
+      lines.push(marker + name.padEnd(12) + '— ' + s.tip);
+    });
+    return lines.join('\n');
+  }
+
+  function nextStageLine() {
+    const stages = CROP_META[STATE.cropId].stages;
+    const idx = stageIndex(STATE.growth);
+    if (STATE.growth >= 100) return 'Plant is READY to HARVEST!';
+    const nextMax = stages[idx].max;
+    const thisStage = stages[idx].name.toLowerCase();
+    const next = (idx < stages.length - 1) ? stages[idx + 1].name.toLowerCase() : 'ready';
+    const rate = (100 / CROP_META[STATE.cropId].maturity_days) * growthFactor();
+    if (rate <= 0.01) return 'Growth stalled — plant needs attention.';
+    const daysLeft = Math.ceil(Math.max(0, nextMax - STATE.growth) / rate);
+    return thisStage.charAt(0).toUpperCase() + thisStage.slice(1) +
+           ' → ' + next.charAt(0).toUpperCase() + next.slice(1) +
+           ' in ~' + daysLeft + ' days';
+  }
+
+  // Formats a crew's tender bonus as two independent lines (growth
+  // and yield as separate variables — parallels the growth-modifier
+  // list visually). Each line is omitted entirely when its value
+  // is 0, so a generic crew with 3%/0% shows only "+3% growth" and
+  // a botanist with 15%/15% shows both lines stacked. Both zero
+  // (untended) → single "no bonus" line. Returns HTML; callers use
+  // innerHTML (not textContent) to render the <br> separators.
+  function formatBonusLines(c) {
+    if (c.growth === 0 && c.yield === 0) return 'no bonus';
+    const lines = [];
+    if (c.growth !== 0) lines.push('+' + c.growth + '% growth');
+    if (c.yield  !== 0) lines.push('+' + c.yield  + '% yield');
+    return lines.join('<br>');
+  }
+
+  // ═════ Crew sprite animation ═══════════════════════════════
+  // Each tender has an idle frame and a 9-frame animation. Animation
+  // takes 2 seconds end-to-end (~222ms per frame). Scheduling:
+  // after every animation ends, wait a random 0–10 seconds before
+  // the next one. Average gap ≈ 5s; variance produces the user-
+  // described "two back-to-back OR a 10s pause" feel.
+  let crewWaitTimer = null;       // timeout for the random gap
+  let crewFrameTimer = null;      // timeout between frames within an animation
+  const CREW_ANIM_MS = 2000;
+  const CREW_FRAME_MS = Math.round(CREW_ANIM_MS / 9);
+
+  function sheetFor(crewId) {
+    const key = CREW_SHEET_KEY[crewId];
+    return key ? CREW_SHEETS[key] : null;
+  }
+
+  function setCrewFrame(crewId, which /* 'idle' | 0..8 */) {
+    const sprite = $('crew-sprite');
+    const sheet = sheetFor(crewId);
+    if (!sheet) {
+      sprite.classList.add('empty');
+      sprite.style.backgroundImage = '';
+      return;
+    }
+    sprite.classList.remove('empty');
+    sprite.style.backgroundImage = "url('" + sheet.sheet + "')";
+    sprite.style.width  = sheet.w + 'px';
+    sprite.style.height = sheet.h + 'px';
+    const coord = (which === 'idle') ? sheet.idle : sheet.frames[which];
+    sprite.style.backgroundPosition = '-' + coord[0] + 'px -' + coord[1] + 'px';
+  }
+
+  function stopCrewAnimation() {
+    if (crewWaitTimer)  { clearTimeout(crewWaitTimer);  crewWaitTimer = null; }
+    if (crewFrameTimer) { clearTimeout(crewFrameTimer); crewFrameTimer = null; }
+  }
+
+  function playAnimationOnce(crewId, onDone) {
+    let i = 0;
+    const tick = () => {
+      if (i >= 9) {
+        setCrewFrame(crewId, 'idle');
+        if (onDone) onDone();
+        return;
+      }
+      setCrewFrame(crewId, i);
+      i++;
+      crewFrameTimer = setTimeout(tick, CREW_FRAME_MS);
+    };
+    tick();
+  }
+
+  function startCrewAnimationLoop(crewId) {
+    stopCrewAnimation();
+    setCrewFrame(crewId, 'idle');
+    if (!sheetFor(crewId)) return;  // no sheet → stay empty
+    const loop = () => {
+      const delay = Math.random() * 10000;  // 0–10s gap between animations
+      crewWaitTimer = setTimeout(() => {
+        // If the tender changed while we were waiting, this id is
+        // stale — bail. The new tender restarts its own loop.
+        if (STATE.tenderId !== crewId) return;
+        playAnimationOnce(crewId, loop);
+      }, delay);
+    };
+    loop();
+  }
+
+  // ═════ ARIA quips — rotate per-open ═════════════════════════
+  const ARIA_QUIPS = {
+    healthy: [
+      'The wheat looks introspective today. I do not read into it.',
+      'Plant health: nominal. Plant mood: unreadable. Plant beautiful.',
+      'If a crop could smile, this crop would smile.'
+    ],
+    thirsty: [
+      'The wheat is thirsty. Also, slightly offended.',
+      'The plant gestures at the water allocation slider.'
+    ],
+    cold: [
+      'The plant is cold. I have told it I understand.'
+    ],
+    hot: [
+      'The plant is warm. Too warm. Advisably warm.'
+    ],
+    pests: [
+      'Something small is eating something large. The large thing is our plant.'
+    ],
+    ready: [
+      'Look at that. Look at THAT. It is ready.',
+      'The plant has completed its growth. The plant is waiting.'
+    ],
+    critical: [
+      'I cannot be the only one worried. Please verify.'
+    ]
+  };
+  function pickAriaQuip() {
+    // Priority: critical state > pest > hot/cold > thirsty > ready > healthy
+    const { active } = computeModifiers();
+    if (STATE.growth >= 100) return randPick(ARIA_QUIPS.ready);
+    if (active.some(m => m.kind === 'critical')) return randPick(ARIA_QUIPS.critical);
+    if (STATE.pest) return randPick(ARIA_QUIPS.pests);
+    const [tMin, tMax] = CROP_META[STATE.cropId].ideal_temp;
+    if (STATE.temp > tMax) return randPick(ARIA_QUIPS.hot);
+    if (STATE.temp < tMin) return randPick(ARIA_QUIPS.cold);
+    const crop = CROP_META[STATE.cropId];
+    if (STATE.waterPlant < crop.water_need - 10) return randPick(ARIA_QUIPS.thirsty);
+    return randPick(ARIA_QUIPS.healthy);
+  }
+  function randPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  // ═════ Tender picker ═══════════════════════════════════════
+  window.toggleTenderPicker = function(e) {
+    if (e) e.stopPropagation();
+    const slot = $('tender-slot');
+    if (slot.classList.contains('open')) { slot.classList.remove('open'); return; }
+    // Build picker rows from CREW roster
+    const picker = $('tender-picker');
+    picker.innerHTML = '';
+    for (const id of Object.keys(CREW)) {
+      const c = CREW[id];
+      const row = document.createElement('div');
+      row.className = 'gb-picker-row' + (STATE.tenderId === id ? ' current' : '');
+      row.onclick = (ev) => {
+        ev.stopPropagation();
+        STATE.tenderId = id;
+        $('c-tender').value = id;
+        slot.classList.remove('open');
+        renderAll();
+      };
+      const portrait = document.createElement('div');
+      portrait.className = 'gb-tender-portrait' + (c.crewId ? ' has-sprite' : '');
+      // Picker-row portraits are 24×24 (CSS rule .gb-picker-row .gb-tender-portrait).
+      if (c.crewId) portrait.style.cssText = crewIconCss(c.crewId, '24px');
+      else portrait.textContent = c.emoji || '🧑';
+      row.appendChild(portrait);
+      const info = document.createElement('div');
+      info.className = 'gb-tender-info';
+      const noBonus = c.growth === 0 && c.yield === 0;
+      const bonusCls = 'gb-picker-bonus' + (noBonus ? ' no-bonus' : '');
+      info.innerHTML = '<span class="gb-picker-name">' + c.name + '</span>' +
+                       '<span class="gb-picker-role">' + c.role + '</span>' +
+                       '<span class="' + bonusCls + '">' + formatBonusLines(c) + '</span>';
+      row.appendChild(info);
+      picker.appendChild(row);
+    }
+    slot.classList.add('open');
+  };
+  // Outside-click closes the picker
+  document.addEventListener('click', () => $('tender-slot').classList.remove('open'));
+
+  // ═════ Health bar color ═══════════════════════════════════
+  // Smoothly interpolate the health-bar fill color across five
+  // stops as the value falls from 100% to 0%. Provides a visual
+  // "green → yellow → red" progression without hard cutoffs.
+  //   100% deep-green (thriving)
+  //    75% healthy-green
+  //    50% yellow (caution)
+  //    25% orange (warning)
+  //     0% red (critical)
+  // Engine-side this could move to CSS via color-mix(); demo stays
+  // in JS so the math is visible + tunable.
+  const HEALTH_STOPS = [
+    { p: 0,   c: [204, 51,  51 ] },  // red
+    { p: 25,  c: [224, 120, 52 ] },  // orange
+    { p: 50,  c: [216, 192, 68 ] },  // yellow
+    { p: 75,  c: [133, 210, 96 ] },  // healthy green
+    { p: 100, c: [56,  138, 74 ] }   // deep green
+  ];
+  // Returns the interpolated [r,g,b] triplet for a given health %.
+  // healthColor() wraps this into an rgb() string; the glow consumes
+  // the raw triplet via a CSS custom property so the scene's warm
+  // backdrop tracks plant health in the same hues as the bar.
+  function healthRGB(pct) {
+    pct = Math.max(0, Math.min(100, pct));
+    for (let i = 0; i < HEALTH_STOPS.length - 1; i++) {
+      const a = HEALTH_STOPS[i], b = HEALTH_STOPS[i + 1];
+      if (pct <= b.p) {
+        const t = (pct - a.p) / (b.p - a.p);
+        return [
+          Math.round(a.c[0] + (b.c[0] - a.c[0]) * t),
+          Math.round(a.c[1] + (b.c[1] - a.c[1]) * t),
+          Math.round(a.c[2] + (b.c[2] - a.c[2]) * t)
+        ];
+      }
+    }
+    return HEALTH_STOPS[HEALTH_STOPS.length - 1].c.slice();
+  }
+  function healthColor(pct) { return 'rgb(' + healthRGB(pct).join(',') + ')'; }
+
+  // ═════ Mini water slider ═══════════════════════════════════
+  // Crew-status thresholds match the Orders-modal water logic —
+  // same underlying math, same thresholds, so the two surfaces
+  // describe the ship in the same terms.
+  function renderWaterMini() {
+    const plant = STATE.waterPlant;
+    const crew  = 100 - plant;
+    const crop  = CROP_META[STATE.cropId];
+    $('gb-water-fill-plant').style.width = plant + '%';
+    $('gb-water-fill-crew').style.width  = crew  + '%';
+    $('gb-water-thumb').style.left       = plant + '%';
+    $('gb-water-ideal-tick').style.left  = crop.water_need + '%';
+    $('gb-water-plant-pct').textContent  = plant + '%';
+    $('gb-water-crew-pct').textContent   = crew  + '%';
+
+    // Plant status — distance from the crop's ideal water allocation.
+    // Bands match the growth-modifier logic (matched within ±5,
+    // DRY below, SOAKED far above). PARCHED is the red-zone case.
+    const plantDelta = plant - crop.water_need;
+    let pLabel, pCls;
+    if      (plantDelta < -15) { pLabel = 'PARCHED'; pCls = 'parched'; }
+    else if (plantDelta <  -5) { pLabel = 'DRY';     pCls = 'dry';     }
+    else if (plantDelta >  25) { pLabel = 'SOAKED';  pCls = 'soaked';  }
+    else                       { pLabel = 'MATCHED'; pCls = 'matched'; }
+    const pEl = $('gb-water-plant-status');
+    pEl.textContent = pLabel;
+    pEl.className   = 'gb-water-plant-status ' + pCls;
+
+    // Crew status — same band thresholds as Orders modal.
+    const crewRatio = crew / (100 - crop.water_need);
+    let cLabel, cCls;
+    if (crewRatio < 0.4)      { cLabel = 'CRITICAL'; cCls = 'critical'; }
+    else if (crewRatio < 0.7) { cLabel = 'THIRSTY';  cCls = 'thirsty';  }
+    else                      { cLabel = 'NOMINAL';  cCls = 'nominal';  }
+    const cEl = $('gb-water-crew-status');
+    cEl.textContent = cLabel;
+    cEl.className   = 'gb-water-crew-status ' + cCls;
+  }
+
+  // Pointer drag on the water track — COMMIT-ON-RELEASE model.
+  //   down:   capture the current committed value as the revert target
+  //   move:   update STATE.waterPlant live so the player sees previews
+  //           (modifier list, crew status, tick fill all react live)
+  //   up:     commit — the preview value IS the new committed value
+  //   cancel: revert to the captured value (OS-triggered pointercancel)
+  //   Esc:    revert + end drag (eaten so the modal doesn't also close)
+  // The track also renders a subtle "previewing…" hint while dragging.
+  (function wireWaterDrag() {
+    const track = $('gb-water-track');
+    if (!track) return;
+    const MIN = 15, MAX = 85;
+    let dragging = false;
+    let revertTo = null;       // committed value captured at drag start
+
+    function pctFromEvent(e) {
+      const rect = track.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const p = Math.round(Math.max(0, Math.min(1, x)) * 100);
+      return Math.max(MIN, Math.min(MAX, p));
+    }
+    function beginDrag(e) {
+      dragging = true;
+      revertTo = STATE.waterPlant;
+      track.setPointerCapture(e.pointerId);
+      track.classList.add('previewing');
+      STATE.waterPlant = pctFromEvent(e);
+      $('c-water').value = STATE.waterPlant;
+      renderAll();
+    }
+    function endDrag(e, commit) {
+      if (!dragging) return;
+      dragging = false;
+      track.classList.remove('previewing');
+      if (track.hasPointerCapture && e && e.pointerId !== undefined && track.hasPointerCapture(e.pointerId)) {
+        track.releasePointerCapture(e.pointerId);
+      }
+      if (!commit) {
+        // Revert to the committed value we saved on pointerdown.
+        STATE.waterPlant = revertTo;
+        $('c-water').value = STATE.waterPlant;
+        renderAll();
+      }
+      revertTo = null;
+      // If we committed, STATE.waterPlant already holds the new value.
+    }
+
+    track.addEventListener('pointerdown', (e) => { e.preventDefault(); beginDrag(e); });
+    track.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      STATE.waterPlant = pctFromEvent(e);
+      $('c-water').value = STATE.waterPlant;
+      renderAll();
+    });
+    track.addEventListener('pointerup',     (e) => endDrag(e, true));
+    track.addEventListener('pointercancel', (e) => endDrag(e, false));
+
+    // Global Esc while dragging → revert. Captured before the modal's
+    // own Esc-close handler so a mid-drag cancel doesn't also close
+    // the whole Growbay.
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && dragging) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        endDrag({ pointerId: -1 }, false);
+      }
+    }, true);
+  })();
+
+  // ═════ Render ═══════════════════════════════════════════════
+  function renderAll() {
+    const crop = CROP_META[STATE.cropId];
+    const tender = CREW[STATE.tenderId];
+
+    // Subtitle / day line
+    $('crop-display-name').textContent = crop.name.toUpperCase();
+    $('stage-display').textContent = stageName(STATE.growth);
+    $('day-display').textContent = STATE.day;
+    $('maturity-display').textContent = crop.maturity_days;
+    $('banner-day').classList.toggle('overdue', STATE.day > crop.maturity_days && STATE.growth < 100);
+    $('banner-day').title = 'Days since planting. Base maturity is ' + crop.maturity_days +
+                            ' days, but growth rate shifts with plant health and tending.';
+
+    // Combined species + stage tooltip — applied to both hover
+    // targets in the banner so either word opens the same info.
+    const cropTip = buildCropTooltip();
+    $('crop-display-name').title = cropTip;
+    $('stage-label-box').title   = cropTip;
+
+    // Plant stage label
+    $('plant-stage-label').textContent = stageName(STATE.growth);
+
+    // Swap the plant sprite to the current crop + growth-stage frame
+    // from the Growbay spritesheet.
+    applyPlantSprite();
+
+    // Restart the crew animation loop when the tender changes.
+    // Otherwise leave it running (don't interrupt a playing anim
+    // on every slider tick).
+    if (STATE.tenderId !== lastTenderId) {
+      lastTenderId = STATE.tenderId;
+      startCrewAnimationLoop(STATE.tenderId);
+    }
+
+    // Stage-transition flash — only fire when the stage index
+    // actually changes (not on every slider tick within a stage).
+    const si = stageIndex(STATE.growth);
+    if (si !== lastStageIdx) {
+      if (lastStageIdx !== -1) pushStageFlash();  // no flash on the initial render
+      lastStageIdx = si;
+    }
+
+    // Bars
+    $('growth-fill').style.width = Math.min(100, STATE.growth) + '%';
+    $('growth-val').textContent  = Math.round(STATE.growth) + '%';
+    $('health-fill').style.width = Math.min(100, STATE.health) + '%';
+    $('health-val').textContent  = Math.round(STATE.health) + '%';
+    // Color shifts smoothly green → yellow → red along the full
+    // 100–0 range (see healthColor()). The same RGB is also pushed
+    // into --glow-color so the scene glow tracks plant health.
+    const hRGB = healthRGB(STATE.health);
+    $('health-fill').style.background = 'rgb(' + hRGB.join(',') + ')';
+    root.style.setProperty('--glow-color', hRGB.join(','));
+
+    // Projected ready day
+    const ready = projectedReadyDay();
+    const readyLine = $('ready-line');
+    if (STATE.growth >= 100) {
+      $('ready-day').textContent = 'NOW';
+      readyLine.classList.remove('warn');
+    } else if (ready === Infinity) {
+      $('ready-day').textContent = 'NEVER (at current rate)';
+      readyLine.classList.add('warn');
+    } else {
+      $('ready-day').textContent = 'DAY ' + ready;
+      readyLine.classList.toggle('warn', ready > STATE.arrivalDay);
+    }
+
+    // Scene glow color is now driven continuously by plant health
+    // (see --glow-color set above). No discrete stressed/critical
+    // classes — the health-RGB interpolation handles the transition
+    // smoothly through green → yellow → red in lockstep with the
+    // health bar.
+
+    // Modifier list — two sections. ACTIVE shows what's firing now
+    // (positives + promoted threats). MONITORED shows the canonical
+    // threat list with dim stubs for anything not firing, so players
+    // learn the full threat landscape without being bitten first.
+    const { active, monitored } = computeModifiers();
+    const activeEl = $('mod-list-active');
+    const monEl    = $('mod-list-monitored');
+    activeEl.innerHTML = '';
+    monEl.innerHTML = '';
+    for (const m of active) {
+      const row = document.createElement('div');
+      row.className = 'gb-mod-row ' + m.kind;
+      row.innerHTML = '<span class="mod-name">' + m.name + '</span>' +
+                      '<span class="mod-delta">' + m.delta + '</span>';
+      activeEl.appendChild(row);
+    }
+    for (const t of monitored) {
+      const row = document.createElement('div');
+      row.className = 'gb-mod-row stub';
+      row.innerHTML = '<span class="mod-name">· ' + t.name + '</span>' +
+                      '<span class="mod-delta">—</span>';
+      monEl.appendChild(row);
+    }
+
+    // Info strip
+    $('next-stage-line').textContent = nextStageLine();
+    renderWaterMini();
+
+    // Tender slot — the animated crew sprite now IS the portrait,
+    // so the tender slot only carries the name + bonus text below.
+    $('tender-name').textContent = tender.name.toUpperCase();
+    const tb = $('tender-bonus');
+    tb.innerHTML = formatBonusLines(tender);
+    tb.classList.toggle('no-bonus', tender.growth === 0 && tender.yield === 0);
+
+    // ARIA quip
+    $('aria-text').textContent = pickAriaQuip();
+
+    // Harvest button lock state
+    const hbtn = $('harvest-btn');
+    hbtn.classList.toggle('locked', STATE.growth < 100);
+
+    // Treat button — actionable only when an active threat exists
+    // (negative or critical modifier). Positives don't need treating.
+    const hasTreatable = active.some(m => m.kind === 'negative' || m.kind === 'critical');
+    $('treat-btn').classList.toggle('locked', !hasTreatable);
+  }
+
+  // ═════ Animations ═══════════════════════════════════════════
+  window.pushStageFlash = function() {
+    const sprite = $('plant-sprite');
+    sprite.classList.remove('stage-flash');
+    void sprite.offsetWidth;
+    sprite.classList.add('stage-flash');
+    setTimeout(() => sprite.classList.remove('stage-flash'), 1500);
+  };
+
+  // ═════ Harvest ceremony ═════════════════════════════════════
+  window.doHarvest = function() {
+    if (STATE.growth < 100) return;
+    const crop = CROP_META[STATE.cropId];
+    const tender = CREW[STATE.tenderId];
+    const baseYield = crop.yield_amount;
+    const bonusYield = Math.round(baseYield * tender.yield / 100);
+    const total = baseYield + bonusYield;
+
+    // Burst animation — amber number rises and fades
+    const burst = $('harvest-burst');
+    burst.textContent = '+' + total + ' FOOD';
+    burst.classList.remove('fire');
+    void burst.offsetWidth;
+    burst.classList.add('fire');
+
+    // Reset crop cycle — in the real game this hands yield to the
+    // food resource and replants the seed. Demo just resets state.
+    STATE.growth = 0;
+    STATE.day = 0;
+    STATE.health = 100;
+    $('c-growth').value = 0;
+    $('c-health').value = 100;
+    $('c-day').value = 1;
+    lastStageIdx = -1;  // allow the next stage transition to flash
+
+    setTimeout(() => renderAll(), 50);
+  };
+
+  window.triggerHarvest = function() {
+    STATE.growth = 100;
+    $('c-growth').value = 100;
+    renderAll();
+  };
+  window.resetCrop = function() {
+    STATE.growth = 0;
+    STATE.day = 0;
+    STATE.health = 100;
+    STATE.pest = false;
+    $('c-growth').value = 0;
+    $('c-health').value = 100;
+    $('c-day').value = 1;
+    $('c-pest').checked = false;
+    lastStageIdx = -1;
+    renderAll();
+  };
+  window.advanceDay = function(n) {
+    const crop = CROP_META[STATE.cropId];
+    for (let i = 0; i < n; i++) {
+      STATE.day++;
+      STATE.shipDay++;
+      if (STATE.growth < 100) {
+        const dailyRate = (100 / crop.maturity_days) * growthFactor();
+        STATE.growth = Math.min(100, STATE.growth + dailyRate);
+      }
+    }
+    $('c-growth').value = Math.round(STATE.growth);
+    $('c-day').value = STATE.day;
+    renderAll();
+  };
+
+  // ═════ Stub actions ═════════════════════════════════════════
+  window.openTreat = function() {
+    alert('TREAT modal (TODO).\n\nShows plant-applicable items from cargo: biocomponent, fertilizer, pesticide, repair-kit (on disease), etc. Pick one, apply effect.');
+  };
+  window.openOrders = function() {
+    alert('Jumps to Orders modal with WATER section pre-focused (TODO).');
+  };
+
+  // ═════ Inspect ═══════════════════════════════════════════════
+  // Per-crop "notes" — lifted from bible §11 (Crops table, Notes
+  // column). Distinct from the short blurb on CROP_META; this is
+  // the strategic / behavioural read.
+  const CROP_NOTES = {
+    wheat:        'The safe grain. Predictable yield, predictable risks.',
+    tomato:       'High morale payload, finicky environment. Drama-prone.',
+    sweet_potato: 'Biggest yield per cycle. Slow grower, drought-tolerant.',
+    soybean:      'Fixes its own nitrogen — light fertilizer demand.',
+    zinnia:       'No food value; crew mood payload. Fastest cycle.'
+  };
+
+  // Per-threat copy. Keys match the `name` field produced by
+  // computeModifiers().active for negative/critical entries.
+  const THREAT_INFO = {
+    'Underwatered':       { cause: 'Plant water below crop need.',         fix: 'Raise plant water in the WATER track.' },
+    'Cold stress':        { cause: 'Bay temperature below crop ideal.',    fix: 'TREAT with a heater or move to a warmer region.' },
+    'Cold snap CRITICAL': { cause: 'Temperature far below crop ideal.',    fix: 'Heater immediately. Plant near death.' },
+    'Heat stress':        { cause: 'Bay temperature above crop ideal.',    fix: 'TREAT with coolant or vent the bay.' },
+    'Heat wave CRITICAL': { cause: 'Temperature far above crop ideal.',    fix: 'Coolant immediately. Plant near death.' },
+    'Pest outbreak':      { cause: 'Pest event firing on the bay.',        fix: 'TREAT with pesticide.' },
+    'Root rot risk':      { cause: 'Plant overwatered (>25% above need).', fix: 'Drop plant water back toward the ideal tick.' }
+  };
+
+  // ARIA's longer-form Inspect read. Keyed by dominant threat class.
+  // Random-pick within the matched pool. Falls through to 'idle'.
+  const ARIA_INSPECT_QUIPS = {
+    cold: [
+      "The plant's metabolism is slowing. I model this as discomfort. The plant does not model anything. Lucky.",
+      "Cellular activity is depressed. Yours probably is too — different reason."
+    ],
+    heat: [
+      "Transpiration is high. The plant is sweating. Metaphorically. Mostly.",
+      "I am detecting heat stress. Also detecting that you knew this already."
+    ],
+    water_low: [
+      "The plant has the patience of geology and the body of a sponge. It is currently neither.",
+      "Stomata are closing. The leaves curl inward like a question I will not ask."
+    ],
+    water_high: [
+      "Roots are drowning. They were not consulted on the water allocation.",
+      "Excess water in the substrate. The plant is, in a quiet way, gargling."
+    ],
+    pest: [
+      "Something else lives here now. The plant has not signed a lease.",
+      "Pest pressure detected. The food chain is, briefly, a food chair."
+    ],
+    idle: [
+      "The plant looks introspective today. I do not read into it.",
+      "No active threats. Growth is proceeding within nominal envelopes.",
+      "I have nothing concerning to report. I will report it nonetheless."
+    ]
+  };
+  function ariaInspectClass(active) {
+    const has = needle => active.some(m => m.name.indexOf(needle) === 0);
+    if (has('Cold')) return 'cold';
+    if (has('Heat')) return 'heat';
+    if (has('Underwatered')) return 'water_low';
+    if (has('Root rot')) return 'water_high';
+    if (has('Pest')) return 'pest';
+    return 'idle';
+  }
+  function pickAriaInspect(active) {
+    const pool = ARIA_INSPECT_QUIPS[ariaInspectClass(active)];
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  // innerHTML is unavoidable for nested-grid markup; escape any
+  // user-facing string before interpolating it.
+  function ihEsc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Builds Inspect content into `container`. Same content for both
+  // shells (swap-in body and popup) — caller picks the container.
+  function renderInspectInto(container) {
+    const crop = CROP_META[STATE.cropId];
+    const { active } = computeModifiers();
+    const stages = crop.stages;
+    const curIdx = STATE.growth >= 100 ? stages.length - 1 : stageIndex(STATE.growth);
+    const [tMin, tMax] = crop.ideal_temp;
+
+    // ── Vital signs (left column) ─────────────────────────────
+    // Match the demo's actual growth math — base × health_factor —
+    // so the projection here equals what advanceDay() applies.
+    const baseRate = 100 / crop.maturity_days;
+    const curRate = baseRate * growthFactor();
+    const remaining = Math.max(0, 100 - STATE.growth);
+    const daysLeft = curRate > 0.01 ? Math.ceil(remaining / curRate) : Infinity;
+    const stageMin = curIdx === 0 ? 0 : stages[curIdx - 1].max;
+    const stageMax = stages[curIdx].max;
+    const stagePct = Math.round((STATE.growth - stageMin) / (stageMax - stageMin) * 100);
+    const overdue = STATE.day > crop.maturity_days && STATE.growth < 100;
+
+    const vital = (key, val, cls) =>
+      '<div class="ins-vital">' +
+        '<span class="ins-v-key">' + ihEsc(key) + '</span>' +
+        '<span class="ins-v-val' + (cls ? ' ' + cls : '') + '">' + val + '</span>' +
+      '</div>';
+
+    const vitalsHTML =
+      '<div class="ins-section">' +
+        '<div class="ins-section-title">VITAL SIGNS</div>' +
+        '<div class="ins-vitals">' +
+          vital('Stage', '<span class="ins-v-marker">▸</span>' + ihEsc(stages[curIdx].name) + ' <span class="ins-v-sub">(' + stagePct + '% through)</span>') +
+          vital('Growth', STATE.growth + '%') +
+          vital('Health', STATE.health + '%') +
+          vital('Rate', curRate.toFixed(2) + '%/day' + (curRate <= 0.01 ? ' <span class="ins-v-sub">(stalled)</span>' : '')) +
+          vital('Day', STATE.day + ' / ' + crop.maturity_days, overdue ? 'overdue' : '') +
+          vital('Ready on',
+            STATE.growth >= 100
+              ? '<span class="ins-v-marker">★</span>NOW'
+              : (daysLeft === Infinity
+                  ? 'stalled'
+                  : 'Day ' + (STATE.shipDay + daysLeft) + ' <span class="ins-v-sub">(~' + daysLeft + 'd)</span>'),
+            (daysLeft === Infinity ? 'stalled' : '')) +
+        '</div>' +
+      '</div>';
+
+    // ── Species (right column) — blurb, notes, spec table ─────
+    const speciesHTML =
+      '<div class="ins-section">' +
+        '<div class="ins-section-title">SPECIES — ' + ihEsc(crop.name.toUpperCase()) + '</div>' +
+        '<div class="ins-blurb">' + ihEsc(crop.blurb) + '</div>' +
+        (CROP_NOTES[STATE.cropId] ? '<div class="ins-notes">' + ihEsc(CROP_NOTES[STATE.cropId]) + '</div>' : '') +
+        '<div class="ins-row"><span class="ins-key">Maturity</span><span class="ins-val">' + crop.maturity_days + ' days</span></div>' +
+        '<div class="ins-row"><span class="ins-key">Water need</span><span class="ins-val">' + crop.water_need + '%</span></div>' +
+        '<div class="ins-row"><span class="ins-key">Ideal temp</span><span class="ins-val">' + tMin + '–' + tMax + '°C</span></div>' +
+        '<div class="ins-row"><span class="ins-key">Yield</span><span class="ins-val">+' + crop.yield_amount + ' ' + ihEsc(crop.yield_label) + '</span></div>' +
+      '</div>';
+
+    // ── Lifecycle ribbon (full-width) — all 4 stages side-by-side. ─
+    const lifecycleHTML =
+      '<div class="ins-section ins-fullwidth">' +
+        '<div class="ins-section-title">LIFECYCLE</div>' +
+        '<div class="ins-lifecycle">' +
+          stages.map((s, i) => {
+            const lo = i === 0 ? 0 : stages[i - 1].max;
+            return '<div class="ins-life-stage' + (i === curIdx ? ' current' : '') + '">' +
+                     '<div class="ins-life-name">' + ihEsc(s.name) + '</div>' +
+                     '<div class="ins-life-range">' + lo + '–' + s.max + '%</div>' +
+                     '<div class="ins-life-tip">' + ihEsc(s.tip) + '</div>' +
+                   '</div>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+
+    // ── Active threats (full-width, 2-col internal grid) ──────
+    const threats = active.filter(m => m.kind === 'negative' || m.kind === 'critical');
+    const threatRows = threats.map(t => {
+      const info = THREAT_INFO[t.name] || { cause: t.delta, fix: 'Apply matching treatment.' };
+      return '<div class="ins-threat' + (t.kind === 'critical' ? ' critical' : '') + '">' +
+               '<div class="ins-threat-head"><span>' + ihEsc(t.name) + '</span><span>' + ihEsc(t.delta) + '</span></div>' +
+               '<div class="ins-threat-cause">' + ihEsc(info.cause) + '</div>' +
+               '<div class="ins-threat-fix">' + ihEsc(info.fix) + '</div>' +
+             '</div>';
+    }).join('');
+    const threatsHTML =
+      '<div class="ins-section ins-fullwidth">' +
+        '<div class="ins-section-title">ACTIVE THREATS</div>' +
+        (threats.length === 0
+          ? '<div class="ins-threats-empty">Plant is in good shape — nothing biting it right now.</div>'
+          : '<div class="ins-threats">' + threatRows + '</div>') +
+      '</div>';
+
+    // 4 — ARIA's read (full-width, top of view — replaces the
+    // growbay footer ARIA quip which is hidden while inspect is open).
+    const ariaHTML =
+      '<div class="ins-section ins-aria ins-fullwidth">' +
+        '<div class="ins-section-title">ARIA\'S READ</div>' +
+        '<div class="ins-aria-read">' +
+          '<span class="ins-aria-avatar"></span>' +
+          '<span><span class="ins-aria-name">ARIA:</span> ' + ihEsc(pickAriaInspect(active)) + '</span>' +
+        '</div>' +
+      '</div>';
+
+    container.innerHTML = ariaHTML + vitalsHTML + speciesHTML + lifecycleHTML + threatsHTML;
+  }
+
+  // Mode = which shell to use. Dev-panel select drives this.
+  let inspectMode = 'swap';   // 'swap' | 'popup'
+  window.openInspect = function() {
+    const isSwap = inspectMode === 'swap';
+    document.body.classList.toggle('ins-mode-swap', isSwap);
+    document.body.classList.toggle('ins-mode-popup', !isSwap);
+    document.body.classList.add('ins-open');
+    renderInspectInto($(isSwap ? 'ins-content-swap' : 'ins-content-popup'));
+  };
+  window.closeInspect = function() {
+    document.body.classList.remove('ins-open');
+  };
+  window.setInspectMode = function(m) {
+    inspectMode = m;
+    if (document.body.classList.contains('ins-open')) {
+      // Re-open in the new shell.
+      closeInspect();
+      requestAnimationFrame(openInspect);
+    }
+  };
+
+  // ═════ Controls wiring ══════════════════════════════════════
+  // Style-knob defaults — used by Reset Defaults. Kept near apply()
+  // so adding a new control means one-line edits in two places.
+  const STYLE_DEFAULTS = {
+    'c-modal-w': '760', 'c-modal-h': '520',
+    'c-backdrop': '75', 'c-title-size': '14',
+    'c-modal-border': '#608c64', 'c-title': '#359e3f',
+    'c-plant-col-w': '160', 'c-crew-col-w': '180',
+    'c-plant-scale': '1',
+    'c-glow-alpha': '15', 'c-glow-spread': '60', 'c-glow-y': '40',
+    'c-bar-h': '24', 'c-growth-color': '#587667',
+    'c-mod-size': '14', 'c-strip-size': '15',
+    'c-aria-size': '16', 'c-action-size': '15',
+    'c-body-v': '12', 'c-info-gap': '24'
+  };
+
+  function applyStyles() {
+    const setPx = (name, id) => {
+      const v = $(id).value;
+      root.style.setProperty(name, v + 'px');
+      const s = $('v-' + id.slice(2));
+      if (s) s.textContent = v;
+    };
+    // Modal frame
+    setPx('--modal-width',  'c-modal-w');
+    setPx('--modal-height', 'c-modal-h');
+    root.style.setProperty('--modal-backdrop', 'rgba(4,8,16,' + ($('c-backdrop').value / 100) + ')');
+    $('v-backdrop').textContent = $('c-backdrop').value;
+    setPx('--header-title-size', 'c-title-size');
+    root.style.setProperty('--modal-border', $('c-modal-border').value);
+    root.style.setProperty('--header-title-color', $('c-title').value);
+
+    // Scene columns
+    setPx('--plant-col-width', 'c-plant-col-w');
+    setPx('--crew-col-width',  'c-crew-col-w');
+    const scale = parseFloat($('c-plant-scale').value);
+    root.style.setProperty('--plant-scale', scale);
+    $('v-plant-scale').textContent = scale.toFixed(2);
+
+    // Glow alpha / spread / Y — the color itself is health-driven
+    // at render time (see renderAll → --glow-color). Alpha is
+    // 0–50 (%) and divided to decimal; spread + Y are raw 0–100.
+    root.style.setProperty('--glow-alpha', ($('c-glow-alpha').value / 100));
+    root.style.setProperty('--glow-spread', $('c-glow-spread').value);
+    root.style.setProperty('--glow-y',      $('c-glow-y').value);
+    $('v-glow-alpha').textContent  = $('c-glow-alpha').value;
+    $('v-glow-spread').textContent = $('c-glow-spread').value;
+    $('v-glow-y').textContent      = $('c-glow-y').value;
+
+    // Bars + text sizes
+    setPx('--bar-height',  'c-bar-h');
+    root.style.setProperty('--bar-growth-fill', $('c-growth-color').value);
+    setPx('--mod-size',    'c-mod-size');
+    setPx('--strip-size',  'c-strip-size');
+    setPx('--aria-size',   'c-aria-size');
+    setPx('--pb-size',     'c-action-size');
+
+    // Spacing
+    const pv = $('c-body-v').value;
+    root.style.setProperty('--body-padding', pv + 'px 20px ' + Math.max(6, pv - 6) + 'px');
+    $('v-body-v').textContent = pv;
+    setPx('--info-gap', 'c-info-gap');
+
+    // Modified-flag highlight on readouts (same UX as other demos)
+    for (const [id, def] of Object.entries(STYLE_DEFAULTS)) {
+      const el = $(id); if (!el) continue;
+      const v = $('v-' + id.slice(2));
+      if (!v) continue;
+      v.classList.toggle('modified', String(el.value).toLowerCase() !== String(def).toLowerCase());
+    }
+  }
+
+  function apply() {
+    STATE.cropId      = $('c-crop').value;
+    // Scale the Crop-day slider to this crop's maturity (+50% overrun room).
+    const mat = CROP_META[STATE.cropId].maturity_days;
+    const dayMax = Math.round(mat * 1.5);
+    const daySlider = $('c-day');
+    if (parseInt(daySlider.max) !== dayMax) {
+      daySlider.max = dayMax;
+      if (parseInt(daySlider.value) > dayMax) daySlider.value = dayMax;
+    }
+    STATE.growth      = parseInt($('c-growth').value);
+    STATE.health      = parseInt($('c-health').value);
+    STATE.day         = parseInt($('c-day').value);
+    STATE.temp        = parseInt($('c-temp').value);
+    STATE.pest        = $('c-pest').checked;
+    STATE.waterPlant  = parseInt($('c-water').value);
+    STATE.tenderId    = $('c-tender').value;
+    $('v-growth').textContent = STATE.growth;
+    $('v-health').textContent = STATE.health;
+    $('v-day').textContent    = STATE.day;
+    $('v-temp').textContent   = STATE.temp + '°C';
+    $('v-water').textContent  = STATE.waterPlant;
+    applyStyles();
+    renderAll();
+  }
+  // Auto-add a hex readout next to every color input so the dev
+  // panel shows the current value (matches the other demos' style).
+  document.querySelectorAll('#controls input[type="color"]').forEach(input => {
+    if (input.parentElement.querySelector('.val')) return;
+    const span = document.createElement('span');
+    span.className = 'val';
+    span.textContent = input.value.toUpperCase();
+    input.parentElement.appendChild(span);
+    input.addEventListener('input', () => { span.textContent = input.value.toUpperCase(); });
+  });
+
+  document.querySelectorAll('#controls input, #controls select').forEach(el =>
+    el.addEventListener('input', apply)
+  );
+  document.querySelectorAll('#controls input[type="checkbox"]').forEach(el =>
+    el.addEventListener('change', apply)
+  );
+
+  window.resetStyleDefaults = function() {
+    for (const [id, val] of Object.entries(STYLE_DEFAULTS)) {
+      const el = $(id); if (!el) continue;
+      el.value = val;
+    }
+    applyStyles();
+  };
+
+  // ═════ Modal open/close ═════════════════════════════════════
+  window.closeModal = function() {
+    document.body.classList.remove('modal-open');
+    document.body.classList.remove('ins-open');
+  };
+  // Click on the area outside the growbay box. Inspect is a child
+  // surface of growbay, so when it's open, an outside-click peels
+  // it off first instead of closing both at once.
+  window.onBackdropClick = function() {
+    if (document.body.classList.contains('ins-open')) { closeInspect(); return; }
+    closeModal();
+  };
+  window.reopenModal = function() {
+    document.body.classList.add('modal-open');
+    renderAll();
+  };
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    // Inspect catches Escape first if open — close inspect, leave
+    // the underlying growbay modal up.
+    if (document.body.classList.contains('ins-open')) { closeInspect(); return; }
+    if (document.body.classList.contains('modal-open')) closeModal();
+  });
+
+  // ═════ Boot ═════════════════════════════════════════════════
+  renderAll();
+  document.body.classList.add('modal-open');
+})();
+</script>
+</body>
+</html>

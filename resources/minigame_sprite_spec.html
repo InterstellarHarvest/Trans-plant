@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Minigame & Sprite Spec</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+
+:root {
+  --gold:   #c8a85a;
+  --teal:   #8cc890;
+  --orange: #e88830;
+  --red:    #cc3333;
+  --cream:  #e8d8a0;
+  --slate:  #2a3040;
+  --deep:   #0e1520;
+  --void:   #020408;
+  --body:   #8898a8;
+  --muted:  #5a7a6a;
+  --info:   #35c6bf;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { background: var(--void); }
+
+body {
+  font-family: 'VT323', monospace;
+  background: linear-gradient(180deg, var(--deep) 0%, var(--void) 100%);
+  color: var(--body);
+  min-height: 100vh;
+  padding: 0 0 80px;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.doc-header {
+  background: linear-gradient(180deg, #141a28 0%, #0a0e18 100%);
+  border-bottom: 2px solid var(--gold);
+  padding: 28px 40px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.doc-header h1 {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-shadow: 0 0 10px rgba(200,168,90,0.4);
+  margin-bottom: 8px;
+}
+.doc-header .subtitle {
+  font-size: 16px;
+  color: var(--body);
+  letter-spacing: 1px;
+}
+.doc-header .subtitle span { color: var(--info); }
+
+/* ── Layout ──────────────────────────────────────────────── */
+.container { max-width: 1000px; margin: 0 auto; padding: 0 32px; }
+
+/* ── Section headings ────────────────────────────────────── */
+.section-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: 48px 0 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--slate);
+}
+h3 {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--cream);
+  margin-bottom: 10px;
+}
+
+/* ── Master prompt box ───────────────────────────────────── */
+.master-prompt {
+  background: rgba(10,14,20,0.8);
+  border: 1px solid rgba(200,168,90,0.4);
+  border-radius: 4px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.master-prompt .label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.prompt-text {
+  font-family: 'VT323', monospace;
+  font-size: 17px;
+  color: var(--cream);
+  line-height: 1.6;
+  background: rgba(14,21,32,0.6);
+  border: 1px solid var(--slate);
+  border-radius: 3px;
+  padding: 12px 14px;
+}
+
+/* ── Note callout ────────────────────────────────────────── */
+.note {
+  background: rgba(53,198,191,0.08);
+  border-left: 3px solid var(--info);
+  padding: 12px 16px;
+  font-size: 17px;
+  color: var(--info);
+  line-height: 1.6;
+  margin: 0 0 24px;
+  border-radius: 0 3px 3px 0;
+}
+
+/* ── Minigame card ───────────────────────────────────────── */
+.game-card {
+  background: rgba(20,26,40,0.7);
+  border: 1px solid var(--slate);
+  border-radius: 4px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.game-card-header {
+  background: rgba(10,14,20,0.9);
+  border-bottom: 1px solid var(--slate);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.game-icon { font-size: 18px; }
+.game-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--cream);
+}
+.game-trigger {
+  font-size: 14px;
+  color: var(--muted);
+  margin-left: auto;
+  font-style: italic;
+}
+.game-body { padding: 16px 18px; }
+.game-desc {
+  font-size: 17px;
+  color: var(--body);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.mechanic-box {
+  background: rgba(14,21,32,0.7);
+  border: 1px solid var(--slate);
+  border-radius: 3px;
+  padding: 10px 14px;
+  font-size: 16px;
+  color: var(--body);
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+.mechanic-box strong { color: var(--cream); font-weight: normal; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.tag {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  letter-spacing: 1px;
+  padding: 4px 8px;
+  border-radius: 2px;
+  border: 1px solid;
+}
+.tag.timing  { border-color: rgba(200,168,90,0.5); color: var(--gold); }
+.tag.spatial { border-color: rgba(140,200,144,0.5); color: var(--teal); }
+.tag.skill   { border-color: rgba(53,198,191,0.5); color: var(--info); }
+.tag.pattern { border-color: rgba(204,51,51,0.5); color: var(--red); }
+
+.first-step {
+  border-left: 3px solid rgba(53,198,191,0.5);
+  background: rgba(53,198,191,0.06);
+  padding: 10px 14px;
+  border-radius: 0 3px 3px 0;
+}
+.first-step .fs-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  letter-spacing: 1.5px;
+  color: var(--info);
+  margin-bottom: 7px;
+}
+.first-step p {
+  font-size: 16px;
+  color: rgba(53,198,191,0.85);
+  line-height: 1.55;
+}
+
+/* ── Sprite spec card ────────────────────────────────────── */
+.sprite-card {
+  background: rgba(20,26,40,0.7);
+  border: 1px solid var(--slate);
+  border-radius: 4px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.sprite-card-header {
+  background: rgba(10,14,20,0.9);
+  border-bottom: 1px solid var(--slate);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sprite-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.sprite-table td {
+  padding: 9px 18px;
+  border-bottom: 1px solid rgba(42,48,64,0.7);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.sprite-table tr:last-child td { border-bottom: none; }
+.sprite-table td:first-child {
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  color: var(--cream);
+  white-space: nowrap;
+  width: 36%;
+}
+.sprite-table td:nth-child(2) {
+  width: 10%;
+  padding-left: 4px;
+  white-space: nowrap;
+}
+.sprite-table td:nth-child(3) { width: 54%; color: var(--body); }
+.sprite-table .dim { color: var(--info); font-size: 13px; }
+
+.badge {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  letter-spacing: .5px;
+  padding: 3px 7px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.badge.bg     { background: rgba(232,136,48,0.15); border: 1px solid rgba(232,136,48,0.4); color: var(--orange); }
+.badge.sprite { background: rgba(53,198,191,0.12); border: 1px solid rgba(53,198,191,0.4); color: var(--info); }
+.badge.css    { background: rgba(140,200,144,0.12); border: 1px solid rgba(140,200,144,0.4); color: var(--teal); }
+.badge.anim   { background: rgba(200,168,90,0.12); border: 1px solid rgba(200,168,90,0.4); color: var(--gold); }
+.badge.reuse  { background: rgba(90,122,106,0.12); border: 1px dashed rgba(90,122,106,0.5); color: var(--muted); }
+
+.prompt-section {
+  border-top: 1px solid var(--slate);
+  padding: 14px 18px;
+  background: rgba(8,12,18,0.5);
+}
+.prompt-section .prompt-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.prompt-section .prompt-text {
+  font-size: 15px;
+  color: var(--cream);
+  line-height: 1.65;
+}
+
+/* ── AI quip block ───────────────────────────────────────── */
+.ai-block {
+  background: rgba(20,26,40,0.7);
+  border: 1px solid var(--slate);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.ai-block-header {
+  background: rgba(10,14,20,0.9);
+  border-bottom: 1px solid var(--slate);
+  padding: 12px 18px;
+  font-size: 15px;
+  color: var(--cream);
+}
+.ai-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.ai-table td {
+  padding: 8px 18px;
+  border-bottom: 1px solid rgba(42,48,64,0.6);
+  vertical-align: top;
+  line-height: 1.5;
+  color: var(--body);
+}
+.ai-table tr:last-child td { border-bottom: none; }
+.ai-table td:first-child { width: 15%; color: var(--cream); font-family: 'VT323', monospace; }
+.ai-table td:nth-child(2) { width: 15%; color: var(--muted); }
+
+/* ── Divider ─────────────────────────────────────────────── */
+hr {
+  border: none;
+  border-top: 1px solid var(--slate);
+  margin: 40px 0;
+}
+
+/* ── Tag legend ──────────────────────────────────────────── */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  font-size: 15px;
+  margin-top: 20px;
+}
+.legend-item { display: flex; align-items: center; gap: 7px; color: var(--body); }
+
+/* ── Two-col grid for certain sections ───────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+  <div class="container">
+    <h1>Trans-plant</h1>
+    <div class="subtitle">Minigame Design Spec &amp; <span>Sprite Brief</span></div>
+  </div>
+</div>
+
+<div class="container">
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 1 — MINIGAME DESIGN
+════════════════════════════════════════════════════════════ -->
+
+<div class="section-title">Part 1 — Minigame Design</div>
+
+<p style="font-size:17px;line-height:1.6;margin-bottom:20px;">
+  All minigames fire as a pop-up modal. The modal content swaps per game type.
+  Mouse-only. Target duration 10–20 seconds. Outcome maps to three tiers (perfect / good / poor)
+  which feed the AI quip resolver. All CSS/JS where possible; sprites for backgrounds and key interactive elements.
+</p>
+
+<!-- AI quip structure -->
+<h3>AI Quip Data Structure</h3>
+<div class="note">
+  Every minigame shares the same quip resolver. Five AI personalities × three result tiers per game.
+  The resolver picks by <code>state.activeAi</code>. Structure mirrors the existing encounter demo
+  <code>ai_flavor</code> fields — same function, new data pool.
+</div>
+<div class="ai-block">
+  <div class="ai-block-header">MINIGAME_QUIPS — data shape (one entry per minigame id)</div>
+  <table class="ai-table">
+    <tr>
+      <td>key</td>
+      <td>tier</td>
+      <td>Five keys per tier: <strong>aria</strong> · upbeat and wrong &nbsp;|&nbsp; <strong>marv</strong> · bleak and accurate &nbsp;|&nbsp; <strong>rex</strong> · military misread &nbsp;|&nbsp; <strong>chip</strong> · sponsored interruption &nbsp;|&nbsp; <strong>ajoy</strong> · cryptic philosophical</td>
+    </tr>
+    <tr>
+      <td>mining</td>
+      <td>perfect</td>
+      <td>e.g. marv: <em>"Optimal mineral yield. I'm surprised. Don't read into that."</em></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>good</td>
+      <td>e.g. marv: <em>"Adequate haul. The rocks are adequately depleted."</em></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>poor</td>
+      <td>e.g. marv: <em>"You struck three hollow rocks. I had not considered this outcome. I have now."</em></td>
+    </tr>
+    <tr>
+      <td colspan="3" style="color:var(--muted);font-style:italic;font-size:14px;">
+        Repeat block for: salvage · forage · scan · breach · engine · brace · combat · derelict · harvest · plant_diag · medical · fabricator
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="legend">
+  <span style="font-family:'Press Start 2P',cursive;font-size:7px;color:var(--muted);letter-spacing:1px;">TAG KEY</span>
+  <span class="legend-item"><span class="tag timing">timing</span> click or hold within a time window</span>
+  <span class="legend-item"><span class="tag spatial">spatial</span> position or drag matters</span>
+  <span class="legend-item"><span class="tag skill">skill</span> mouse precision / cursor control</span>
+  <span class="legend-item"><span class="tag pattern">pattern</span> sequence / memory recall</span>
+</div>
+
+<!-- ── Stop menu games ───────────────────────────────────── -->
+<div class="section-title" style="margin-top:36px;">Stop Menu — Active World Verbs</div>
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">⛏</span>
+    <span class="game-name">Mining</span>
+    <span class="game-trigger">MINE verb · asteroid / ice field</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">An asteroid drifts slowly across the screen. Ore veins pulse faintly. Click each node before it scrolls off. Richer veins take two clicks. Some rocks are hollow — click yields a puff of gas and MARV sighing.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> drift-and-click. Node difficulty scales with crew engineer skill. Hollow rocks are visually indistinguishable until struck. ~12 seconds total.</div>
+    <div class="tags">
+      <span class="tag timing">timing</span>
+      <span class="tag spatial">spatial</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>Build a single scrolling canvas layer with 5–7 circular ore nodes at randomized y-positions. Click removes node and adds yield to a running counter displayed top-center. No skill gating yet — just the core mechanic.</p>
+    </div>
+  </div>
+</div>
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">🔧</span>
+    <span class="game-name">Salvage</span>
+    <span class="game-trigger">SALVAGE verb · debris field</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">Wreckage drifts past. Some pieces are useful (glowing faintly). Some are dangerous (sharp, red-tinted). Drag useful debris into a cargo rectangle before it exits frame. Drag a sharp bit and hull takes a nick.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> drag-to-bin before timeout. 3–5 pieces per wave, 2 waves. Useful/dangerous ratio skews by crew morale. ~15 seconds total.</div>
+    <div class="tags">
+      <span class="tag spatial">spatial</span>
+      <span class="tag timing">timing</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>One wave of 4 items drifting left-to-right. Drag-drop target is a fixed rect on the right edge. Wire click-and-drag with mousemove. No dangerous items in v1 — just the drag mechanic and a "salvaged X" result.</p>
+    </div>
+  </div>
+</div>
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">🌿</span>
+    <span class="game-name">Forage / Hunt / Gather</span>
+    <span class="game-trigger">FORAGE verb · region-relabeled</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">A simple ecosystem snapshot: plants or small fauna appear at random positions, blink, and disappear. Click them. The ship computer logs each successful capture with mild disapproval. Alien variants include decoys that cost O2 to examine.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> whack-a-mole variant. Click targets in ~1.5s windows before they vanish. Alien region: one decoy per session costs O2 if clicked. ~10 seconds total.</div>
+    <div class="tags">
+      <span class="tag timing">timing</span>
+      <span class="tag skill">skill</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>6 target slots on a grid. Each slot activates for 1400ms at random, cycling through all slots over 10s. Click score → food yield. No decoys in v1. Display MARV commentary based on final score (≥5: "Acceptable." &lt;3: "I had lower expectations. I was wrong.").</p>
+    </div>
+  </div>
+</div>
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">📡</span>
+    <span class="game-name">Scan</span>
+    <span class="game-trigger">SCAN verb · deep space / nebula / anomaly</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">A signal blip wanders slowly on a circular radar screen. Drag the dish reticle to align with it and hold. Signal locks in 1.5 seconds of sustained alignment. Blip occasionally jumps. Anomaly region: blip moves erratically and screams.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> drag-to-align and hold. Alignment meter fills during overlap, drains when off. Lock = full meter held for 1.5s. One jump mid-session. ~10 seconds total.</div>
+    <div class="tags">
+      <span class="tag spatial">spatial</span>
+      <span class="tag timing">timing</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>Circular canvas, 300px. Blip = 12px circle wandering at 0.3px/frame on a curved path. Reticle = crosshair following cursor, clamped to disc area. Fill a progress bar when blip is inside a 24px radius of reticle. Win on bar full.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Forced events ──────────────────────────────────────── -->
+<div class="section-title">Forced Events — Crisis Resolution</div>
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">💥</span>
+    <span class="game-name">Patch Breach</span>
+    <span class="game-trigger">PATCH BREACH · FOAM IT verbs · hull breach event</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">A hull schematic appears with 3–5 breach points, each leaking atmosphere (animated particle stream). Click a breach then drag a patch panel to cover it. FOAM IT variant: hold mouse to spray foam in an arc across the crack outline — aim matters.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> click-select then drag-to-cover (Patch) or click-hold-draw (Foam). Atmosphere leak meter drains steadily. Seal all breaches before meter hits zero. ~12 seconds total.</div>
+    <div class="tags">
+      <span class="tag spatial">spatial</span>
+      <span class="tag timing">timing</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>3 static breach circles on a hull silhouette rect. Clicking one selects it (highlight ring). A patch panel appears; drag it onto the breach. Breach closes on overlap. No atmosphere meter yet — wire meter drain in v2.</p>
+    </div>
+  </div>
+</div>
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">⚡</span>
+    <span class="game-name">Field Repair — Engine</span>
+    <span class="game-trigger">FIELD REPAIR verb · engine fault event</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">The drive coil diagram lights up 3–5 components in a sequence. You must click them in the correct order from memory. MARV recites the sequence once, deadpan, then refuses to repeat it. Wrong click = spark + partial damage.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> Simon Says sequence recall. Sequence shown for 2 seconds, then repeated by clicking labeled nodes. 3 wrong clicks = limp mode forced. ~15 seconds total.</div>
+    <div class="tags">
+      <span class="tag pattern">pattern</span>
+      <span class="tag timing">timing</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>5 labeled engine nodes in a fixed layout. Highlight sequence plays at 600ms per node (4-node sequence). Player then clicks in order. Track correct/incorrect clicks, flash node red on wrong. Display final result text. No damage stakes yet.</p>
+    </div>
+  </div>
+</div>
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">☀</span>
+    <span class="game-name">Brace for Solar Flare</span>
+    <span class="game-trigger">BRACE FOR IMPACT verb · solar flare event</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">A shield integrity bar decays in real time. Hold the mouse button on a large BRACE button. Each second held costs morale but maintains the shield. Releasing drops shield integrity. Releasing early ends with significantly more hull damage.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> hold mouse to resist. Duration determines damage taken. Flare lasts 8–12 seconds. Visual feedback: screen pulses orange, shield flickers at low integrity. ~10 seconds total.</div>
+    <div class="tags">
+      <span class="tag timing">timing</span>
+      <span class="tag skill">skill</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>One large button, mousedown starts timer, mouseup or timer expiry ends. Integrity bar fills on hold, depletes at 8px/sec when released. Flare timer: 10 seconds. Outcome = shield % held at flare expiry. Wire result text ("You held." / "You let go at 60%.").</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Encounter events ───────────────────────────────────── -->
+<div class="section-title">Encounter Events</div>
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">🎯</span>
+    <span class="game-name">Combat</span>
+    <span class="game-trigger">pirate fight / bluff-called / ramming outcomes</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">Enemy ship occupies the encounter viewport. Targeting reticles drift toward it — click when aligned to fire. Enemy volley telegraphed by a glowing arc; move cursor off the arc zone to dodge. MARV provides running commentary that actively worsens morale.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> click to fire (reticle over target) + move cursor to dodge (off glowing arc zones). 3 volley rounds. Hit ratio + dodges avoided = outcome. ~15 seconds total.</div>
+    <div class="tags">
+      <span class="tag timing">timing</span>
+      <span class="tag spatial">spatial</span>
+      <span class="tag skill">skill</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>Enemy ship = static rect center screen. One drifting reticle circle (auto-move, sinusoidal). Click when center is inside enemy rect = hit (flash). One telegraphed arc (orange zone, 1.5s warning). Cursor inside arc = hit taken. 3 rounds. Count hits/taken, display result.</p>
+    </div>
+  </div>
+</div>
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">🛸</span>
+    <span class="game-name">Derelict Exploration</span>
+    <span class="game-trigger">ENGINE ROOM · CARGO BAY choices in derelict encounter</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">A pixel-art interior scene. Useful items (supplies, components) are partially hidden in clutter. Click them to claim. One hazard item (corroded container, crackling panel) is mixed in. Finding all items before the O2 timer empties is optional — but rewarding.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> click-to-find hidden object hunt. 4 useful items, 1 hazard. Hazard clicked = O2 cost. O2 drains regardless. Optional completion bonus. ~20 seconds total.</div>
+    <div class="tags">
+      <span class="tag spatial">spatial</span>
+      <span class="tag skill">skill</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>Static background rect representing a room. 4 "item" circles at fixed positions, visually styled as clutter details. Click highlights them. Track found count. No O2 timer or hazard in v1 — just the find-and-click loop with a score result at 20s.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Growbay / ship systems ─────────────────────────────── -->
+<div class="section-title">Growbay &amp; Ship Systems</div>
+
+<div class="two-col">
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">🌾</span>
+    <span class="game-name">Harvest</span>
+    <span class="game-trigger">mature crop · growbay screen</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">Mature pods glow along the plant's stems. Click each one to harvest it. Click too early and it pops (reduced yield). Click too late and it drops (lost). The ship computer rates your timing with the tone of someone who has seen better yields.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> rhythm / timing click. Each pod enters a "ready" window for ~1.2s. Click inside window = full yield. Before = early pop (50%). Missed = lost. 8–10 pods total. ~12 seconds.</div>
+    <div class="tags">
+      <span class="tag timing">timing</span>
+      <span class="tag skill">skill</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>8 pod circles on a static plant silhouette. Each pod animates: gray → glowing → dark, staggered timers. Click during glow = full. Before = early. No click = dropped. Tally yield. Display MARV grade.</p>
+    </div>
+  </div>
+</div>
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">🔬</span>
+    <span class="game-name">Plant Disease Diagnosis</span>
+    <span class="game-trigger">crop health critical · growbay alert</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">A plant silhouette appears with multiple clickable zones. Some zones show subtle discoloration or wilting. Click affected zones to identify them. Diagnosis determines which treatment item is requested from inventory.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> spot-the-difference identification. 2–3 affected zones among 6 total. Click a healthy zone = wrong (costs time). Identify all affected to unlock correct treatment. ~12 seconds total.</div>
+    <div class="tags">
+      <span class="tag skill">skill</span>
+      <span class="tag spatial">spatial</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>Plant SVG with 6 named clickable zones. 2 zones pre-marked "affected" in data. Clicking affected → green highlight. Clicking healthy → red. Win: both found without 3 wrong clicks.</p>
+    </div>
+  </div>
+</div>
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">💊</span>
+    <span class="game-name">Medical Treatment</span>
+    <span class="game-trigger">crew health critical · derelict injury</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">A crew health panel shows 4 treatment supplies in random positions. The correct sequence must be clicked in order. Mix up the sequence and the treatment is ineffective but not dangerous — mostly just embarrassing.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> sequence recall with supply items as nodes. Sequence of 3 items shown for 2.5 seconds. Player must click correct order. 1 retry if wrong. Outcome scales with speed + accuracy. ~12 seconds total.</div>
+    <div class="tags">
+      <span class="tag pattern">pattern</span>
+      <span class="tag timing">timing</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>4 supply cards in fixed positions. Correct sequence highlighted at 700ms per card. Player clicks in sequence. Track correct/wrong. Single pass, no retry in v1. Outcome text keyed to perfect/partial/fail.</p>
+    </div>
+  </div>
+</div>
+
+<div class="game-card">
+  <div class="game-card-header">
+    <span class="game-icon">🏭</span>
+    <span class="game-name">Fabricator Queue</span>
+    <span class="game-trigger">FAB verb · time-critical print jobs</span>
+  </div>
+  <div class="game-body">
+    <div class="game-desc">The fabricator needs materials loaded into slots to start a print job. Drag resource icons from a tray into the correct recipe slots before the queue timer advances. Wrong material causes the fabricator LED to turn ominous amber.</div>
+    <div class="mechanic-box"><strong>Core loop:</strong> drag-match resource icons to labeled slots. 3–4 slot recipe. Wrong type bounces back. Queue timer pressure optional for non-critical jobs. ~15 seconds total.</div>
+    <div class="tags">
+      <span class="tag spatial">spatial</span>
+      <span class="tag skill">skill</span>
+    </div>
+    <div class="first-step">
+      <div class="fs-label">First implementation step</div>
+      <p>3 recipe slots (labeled by resource type) and a tray of 5 icons (including 2 wrong types). Drag-drop: correct type snaps and locks, wrong type returns. All 3 correct = print job queued. No timer in v1.</p>
+    </div>
+  </div>
+</div>
+
+</div><!-- /.two-col -->
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 2 — SPRITE BRIEFS
+════════════════════════════════════════════════════════════ -->
+
+<hr>
+<div class="section-title">Part 2 — Sprite Briefs</div>
+
+<p style="font-size:17px;line-height:1.6;margin-bottom:20px;">
+  All sprites are PNG with transparent background unless marked <span class="badge bg">bg</span> (full-bleed jpg).
+  Sizes are canvas dimensions at 1× — CSS handles scaling. Prepend the master prompt to every individual prompt.
+</p>
+
+<h3>Master style prompt</h3>
+<div class="master-prompt">
+  <div class="label">Prepend to all sprite prompts</div>
+  <div class="prompt-text">16-bit pixel art, chunky hard-edged pixels, no anti-aliasing, no dithering except for deliberate retro texture, dark sci-fi color palette: void blue-black background #020408, deep slate #2a3040, warm gold accent #c8a85a, sage green #8cc890, signal orange #e88830, warm cream #e8d8a0 for highlights. 1-2px solid outlines on all objects. Transparent background unless specified. SNES era sprite quality. Style reference: FTL Faster Than Light, Terraria, early Stardew Valley. No gradients except hard 2-stop pixel dithering. Sprite canvas size specified per asset. --</div>
+</div>
+
+<div class="note">
+  <strong>Reuse check:</strong> Before generating new sprites, check demo-inventory, demo-growbay, and demo-cruise for existing resource icons and plant stage art — several are likely derivable from what already exists.
+</div>
+
+<div class="section-title" style="margin-top:32px;">Mining</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">⛏</span>
+    <span class="game-name">Mining</span>
+    <span class="badge bg">bg</span>
+    <span class="game-trigger">MINE verb · asteroid / ice field</span>
+  </div>
+  <div class="prompt-section" style="background:rgba(200,168,90,0.06); border:1px solid rgba(200,168,90,0.35); padding:10px 12px;">
+    <strong>Sprite plan retired.</strong> The drift-and-click vein concept
+    (ore_node / ore_node_rich / ore_hollow / mine_bg.jpg / dust_puff) was
+    cut. The shipped mining mode (<code>demo-mining.html</code>) is a
+    splitting-shooter that reuses the existing <strong>81-asteroid grid</strong>
+    in <code>sprites/asteroids/</code> — no new asteroid art needed. Tiers
+    (SMALL/STANDARD/LARGE/RICH/HOLLOW) are differentiated at runtime by
+    size + brightness + a CSS sparkle for RICH and a CSS pulse for the
+    wind-up before LARGE/RICH split. HOLLOWs are visually identical to
+    LARGE until the player clicks them — that deception is the point.
+    All particle effects (loot puff, hollow dust puff, flash ring,
+    +N floater) are CSS-only, no spritesheets.
+  </div>
+  <table class="sprite-table">
+    <tr><td colspan="3"><strong>Backgrounds:</strong> <code>sprites/minigames/mining/bg.jpg</code> and <code>bg{2..6}.jpg</code> — <span class="dim">640×405</span>. Painted inside the bridge viewport cutout (NOT full bleed). Stars-only / nebula-only is fine; the asteroid sprites layer on top.</td></tr>
+    <tr><td colspan="3"><strong>Asteroids:</strong> <code>sprites/asteroids/r{1..9}_c{1..9}.png</code> — existing 81-sprite grid. <em>No new asteroid art needed.</em></td></tr>
+    <tr><td colspan="3"><strong>Bridge frame:</strong> <code>sprites/backgrounds/our_ship/bridge.png</code> + <code>sprites/backgrounds/space/deep/{1..7}.jpg</code> — same compose used by combat mode.</td></tr>
+  </table>
+</div>
+
+<div class="section-title">Salvage</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">🔧</span>
+    <span class="game-name">Salvage</span>
+    <span class="badge bg">bg</span>
+    <span class="badge sprite">sprites</span>
+    <span class="game-trigger">SALVAGE verb · debris field</span>
+  </div>
+  <table class="sprite-table">
+    <tr><td>salvage_bg.jpg <span class="dim">960×640</span></td><td><span class="badge bg">bg</span></td><td>Debris field. Sparse drifting metal fragments against void. Warm orange glow from distant explosion plume far right.</td></tr>
+    <tr><td>salvage_coil.png <span class="dim">32×32</span></td><td><span class="badge sprite">sprite</span></td><td>Drive coil component. Teal glow ring. Useful item.</td></tr>
+    <tr><td>salvage_crate.png <span class="dim">32×32</span></td><td><span class="badge sprite">sprite</span></td><td>Small metal supply crate, scratched, cream-colored, subtle teal edge glow.</td></tr>
+    <tr><td>salvage_circuit.png <span class="dim">32×32</span></td><td><span class="badge sprite">sprite</span></td><td>Circuit board fragment, glowing gold/green trace lines. Also usable as fab res_circuit.</td></tr>
+    <tr><td>salvage_tank.png <span class="dim">32×32</span></td><td><span class="badge sprite">sprite</span></td><td>Small pressurized tank, silver, blue label strip.</td></tr>
+    <tr><td>salvage_hazard.png <span class="dim">32×32</span></td><td><span class="badge sprite">sprite</span></td><td>Jagged torn metal shard, red-orange rust tint, sharp edges. Must read as dangerous vs. useful items.</td></tr>
+    <tr><td>cargo_bin.png <span class="dim">80×60</span></td><td><span class="badge sprite">sprite</span></td><td>Cargo bay opening, dark interior, gold frame border, open mouth facing left. Drop target.</td></tr>
+  </table>
+  <div class="prompt-section">
+    <div class="prompt-label">Prompt (append to master)</div>
+    <div class="prompt-text">Space debris field, scattered metal wreckage slowly drifting, deep void background with distant star field. Foreground debris: scorched hull plates, broken struts, floating containers. Warm orange glow from one distant explosion plume far right. Useful item sprites: small drive coil with teal glow ring, scratched supply crate with cream panels, green circuit board fragment with lit traces, small silver pressurized tank. Hazard sprite: torn jagged metal shard, rust-orange tint, visibly sharp. Cargo bay drop target: rectangular bay opening, dark interior visible, gold pixel-art frame border, viewed at slight angle.</div>
+  </div>
+</div>
+
+<div class="section-title">Forage / Hunt / Gather</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">🌿</span>
+    <span class="game-name">Forage / Hunt / Gather</span>
+    <span class="badge bg">bg</span>
+    <span class="badge sprite">sprites</span>
+    <span class="game-trigger">FORAGE verb · region-relabeled</span>
+  </div>
+  <table class="sprite-table">
+    <tr><td>forage_bg_planet.jpg <span class="dim">960×640</span></td><td><span class="badge bg">bg</span></td><td>Alien habitable terrain: low rock formations, sparse yellow-green vegetation, pale sky. GATHER variant.</td></tr>
+    <tr><td>forage_bg_asteroid.jpg <span class="dim">960×640</span></td><td><span class="badge bg">bg</span></td><td>Rocky asteroid surface close-up, micro-organisms in crevices. HUNT variant.</td></tr>
+    <tr><td>forage_target_a.png <span class="dim">32×32</span></td><td><span class="badge sprite">sprite</span></td><td>Alien fungus bulb. Pale cream cap, teal spores. 2-frame blink sheet.</td></tr>
+    <tr><td>forage_target_b.png <span class="dim">32×32</span></td><td><span class="badge sprite">sprite</span></td><td>Space mouse-like creature. Grey fur, large dark eyes, compact. 2-frame blink sheet.</td></tr>
+    <tr><td>forage_target_c.png <span class="dim">32×32</span></td><td><span class="badge sprite">sprite</span></td><td>Floating seed pod. Translucent, gold filaments. Gentle 2-frame pulse.</td></tr>
+    <tr><td>forage_decoy.png <span class="dim">32×32</span></td><td><span class="badge sprite">sprite</span></td><td>Nearly identical to forage_target_a. Subtle purple shift instead of teal. Faint eye-like marking. Must require close attention to distinguish.</td></tr>
+  </table>
+  <div class="prompt-section">
+    <div class="prompt-label">Prompt (append to master)</div>
+    <div class="prompt-text">Two background scenes: [1] alien habitable planet surface: low rocky terrain, clumps of pale yellow-green alien grass and stubby plants, mauve sky, rocks with lichen. [2] asteroid surface close-up: grey porous rock, tiny bioluminescent micro-organisms in crevices, dark space above. Creature sprites (32×32 each): small round fungus bulb with cream cap and teal spore gills; compact space creature like a tiny mouse, grey fur, huge dark eyes, hunched posture; translucent floating seed pod with gold filament threads. Decoy sprite: nearly identical to the fungus bulb but with subtly wrong purple-tinted cap instead of cream, and faint unsettling eye-like marking.</div>
+  </div>
+</div>
+
+<div class="section-title">Scan</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">📡</span>
+    <span class="game-name">Scan</span>
+    <span class="badge css">mostly css</span>
+    <span class="badge sprite">sprites</span>
+    <span class="game-trigger">SCAN verb · deep space / nebula / anomaly</span>
+  </div>
+  <table class="sprite-table">
+    <tr><td>scan_blip.png <span class="dim">32×16 sheet</span></td><td><span class="badge sprite">sprite</span></td><td>16×16 per frame, 2-frame sheet. Signal blip dot: small pulsing circle, teal, pixel ring. Idle and active states.</td></tr>
+    <tr><td>scan_dish.png <span class="dim">40×40</span></td><td><span class="badge sprite">sprite</span></td><td>Satellite dish facing right. Gold/amber frame struts, teal emitter dot at focal point. Drag cursor visual.</td></tr>
+    <tr><td>—</td><td><span class="badge css">css</span></td><td>Radar circle, sweep line, alignment meter, lock flash: all CSS/JS.</td></tr>
+  </table>
+  <div class="prompt-section">
+    <div class="prompt-label">Prompt (append to master)</div>
+    <div class="prompt-text">Two small sprites only. [1] Signal blip: 16×16 pixel art, small circular dot, teal color, concentric pixel ring suggesting a radar ping. Two frames: dim idle state, bright active pulse state. [2] Satellite dish: 40×40 pixel art, chunky retro sci-fi design, parabolic dish facing right, gold/amber frame struts, teal emitter dot at focal point. Clean readable silhouette. Both transparent background.</div>
+  </div>
+</div>
+
+<div class="section-title">Patch Breach</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">💥</span>
+    <span class="game-name">Patch Breach</span>
+    <span class="badge bg">bg</span>
+    <span class="badge sprite">sprites</span>
+    <span class="badge anim">effects</span>
+    <span class="game-trigger">PATCH BREACH · FOAM IT verbs · hull breach event</span>
+  </div>
+  <table class="sprite-table">
+    <tr><td>breach_hull_bg.jpg <span class="dim">960×640</span></td><td><span class="badge bg">bg</span></td><td>Ship interior wall: metal plating, rivets, cable conduits. Emergency red lighting. No breach holes — overlaid as sprites.</td></tr>
+    <tr><td>breach_crack.png <span class="dim">96×48 sheet</span></td><td><span class="badge sprite">sprite</span></td><td>48×48 per frame, 2-frame sheet. Jagged hull crack with white/cyan atmosphere particles streaming outward. Idle anim: particles flow.</td></tr>
+    <tr><td>breach_patch.png <span class="dim">96×48 sheet</span></td><td><span class="badge sprite">sprite</span></td><td>48×48 per frame, 2-frame sheet. Metal patch panel with four corner bolts. Frame 1: clean. Frame 2: welding glow along edges.</td></tr>
+    <tr><td>foam_nozzle.png <span class="dim">32×32</span></td><td><span class="badge sprite">sprite</span></td><td>Foam applicator nozzle tip. Replaces cursor during FOAM IT variant.</td></tr>
+    <tr><td>atmo_particle.png <span class="dim">8×8</span></td><td><span class="badge anim">effect</span></td><td>Single atmosphere particle: white/pale blue dot. CSS-animated, spawned repeatedly from breach position.</td></tr>
+  </table>
+  <div class="prompt-section">
+    <div class="prompt-label">Prompt (append to master)</div>
+    <div class="prompt-text">Ship interior bulkhead wall: heavy riveted metal plating, exposed cable conduits, emergency red lighting strips casting harsh shadows. Background only — no breach damage. Overlay sprites: hull crack (48×48) jagged split through a metal plate, pale atmosphere particles streaming outward as wisps; metal patch panel (48×48) square plate with corner bolt holes, gold pixel trim, second state shows fresh weld glow along all four edges. Foam applicator nozzle (32×32) handheld device tip, gun-grey, foam residue at nozzle end. Atmosphere particle (8×8) single soft white-cyan dot.</div>
+  </div>
+</div>
+
+<div class="section-title">Field Repair — Engine</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">⚡</span>
+    <span class="game-name">Field Repair — Engine</span>
+    <span class="badge bg">bg</span>
+    <span class="badge sprite">sprites</span>
+    <span class="badge anim">effects</span>
+    <span class="game-trigger">FIELD REPAIR verb · engine fault event</span>
+  </div>
+  <table class="sprite-table">
+    <tr><td>engine_room_bg.jpg <span class="dim">960×640</span></td><td><span class="badge bg">bg</span></td><td>Engine room interior: drive coil housing center, engineering consoles left/right, fault sparks visible. Amber/orange warning lighting.</td></tr>
+    <tr><td>engine_node_a.png <span class="dim">144×48 sheet</span></td><td><span class="badge sprite">sprite</span></td><td>48×48 per frame, 3-frame sheet. Drive coil segment: circular cross-section, copper windings. States: idle (dark) · active (teal glow) · error (red spark).</td></tr>
+    <tr><td>engine_node_b.png <span class="dim">144×48 sheet</span></td><td><span class="badge sprite">sprite</span></td><td>Same format. Fuel injector port: angular nozzle form.</td></tr>
+    <tr><td>engine_node_c.png <span class="dim">144×48 sheet</span></td><td><span class="badge sprite">sprite</span></td><td>Same format. Coolant valve: T-shaped valve handle.</td></tr>
+    <tr><td>engine_node_d.png <span class="dim">144×48 sheet</span></td><td><span class="badge sprite">sprite</span></td><td>Same format. Relay switch: lever-style, chunky.</td></tr>
+    <tr><td>engine_node_e.png <span class="dim">144×48 sheet</span></td><td><span class="badge sprite">sprite</span></td><td>Same format. Power conduit connector: hexagonal port with cable.</td></tr>
+    <tr><td>spark_burst.png <span class="dim">96×32 sheet</span></td><td><span class="badge anim">effect</span></td><td>32×32 per frame, 3-frame. Electric arc burst, yellow-white. Plays on wrong-click.</td></tr>
+  </table>
+  <div class="prompt-section">
+    <div class="prompt-label">Prompt (append to master)</div>
+    <div class="prompt-text">Ship engine room interior: massive cylindrical drive coil housing center-frame, engineering consoles with lit screens left and right, heavy cable bundles along floor. Amber fault warning lights flickering. Small electrical sparks near one panel. Node sprites (48×48 each, 5 unique designs, 3-frame spritesheets): drive coil segment (circular, copper windings), fuel injector port (angular nozzle), coolant valve (T-shape valve handle), relay switch (lever-style), power conduit connector (hexagonal port with cable). Each in three states: unlit/idle, active teal glow, error state with red spark overlay. Spark burst effect: electric arc, yellow-white, 32×32, 3 animation frames.</div>
+  </div>
+</div>
+
+<div class="section-title">Solar Flare — Brace</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">☀</span>
+    <span class="game-name">Solar Flare — Brace</span>
+    <span class="badge bg">bg</span>
+    <span class="badge sprite">sprites</span>
+    <span class="badge css">mostly css</span>
+    <span class="game-trigger">BRACE FOR IMPACT verb · solar flare event</span>
+  </div>
+  <table class="sprite-table">
+    <tr><td>flare_bg.jpg <span class="dim">960×640</span></td><td><span class="badge bg">bg</span></td><td>Deep space: enormous solar flare entering from left edge, orange-red plasma tendrils reaching toward camera. Stars washed out. Dramatic but not overwhelming — game UI overlaid on top.</td></tr>
+    <tr><td>shield_hex.png <span class="dim">960×640</span></td><td><span class="badge sprite">sprite</span></td><td>Full-screen transparent PNG. Teal hexagonal energy shield grid, semi-transparent, cells slightly glowing at edges. CSS opacity controlled by JS on integrity loss.</td></tr>
+    <tr><td>—</td><td><span class="badge css">css</span></td><td>BRACE button, shield integrity bar, screen orange pulse, countdown timer: all CSS/JS.</td></tr>
+  </table>
+  <div class="prompt-section">
+    <div class="prompt-label">Prompt (append to master)</div>
+    <div class="prompt-text">Deep space view: massive solar flare visible entering from left edge, orange-red plasma jets and radiation tendrils reaching across frame. Stars visible but washed pale by radiation. Background only — no ship elements, no UI. Hex shield overlay: 960×640 transparent PNG, teal hexagonal energy shield grid at low opacity, like a force field — clean geometric hex pattern, slightly glowing at cell edges, transparent interior. Suitable for layering over the flare background at varying opacity levels.</div>
+  </div>
+</div>
+
+<div class="section-title">Combat</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">🎯</span>
+    <span class="game-name">Combat</span>
+    <span class="badge bg">bg</span>
+    <span class="badge sprite">sprites</span>
+    <span class="badge anim">effects</span>
+    <span class="game-trigger">pirate fight / bluff-called / ramming outcomes</span>
+  </div>
+  <table class="sprite-table">
+    <tr><td>combat_bg.jpg <span class="dim">960×640</span></td><td><span class="badge bg">bg</span></td><td>Deep space, distant stars, slight motion blur suggesting speed. Enemy ship overlaid separately.</td></tr>
+    <tr><td>enemy_pirate.png <span class="dim">200×120</span></td><td><span class="badge sprite">sprite</span></td><td>Pirate vessel: asymmetric, cobbled from multiple hull types, aftermarket weapons bolted on, rust patches, red skull-and-wrench marking. Facing left. Idle frame only — damage via CSS filters.</td></tr>
+    <tr><td>combat_reticle.png <span class="dim">96×48 sheet</span></td><td><span class="badge sprite">sprite</span></td><td>48×48 per frame, 2-frame sheet. Targeting crosshair: four quadrant brackets only (not full ring), center gap. Frame 1: open/idle. Frame 2: tightened/locked.</td></tr>
+    <tr><td>explosion.png <span class="dim">256×64 sheet</span></td><td><span class="badge anim">effect</span></td><td>64×64 per frame, 4-frame sheet. Classic pixel art explosion burst. Orange/yellow/cream radiating rings with debris fragments.</td></tr>
+    <tr><td>hit_spark.png <span class="dim">72×24 sheet</span></td><td><span class="badge anim">effect</span></td><td>24×24 per frame, 3-frame sheet. Small yellow-white spark impact. For player ship hits.</td></tr>
+  </table>
+  <div class="prompt-section">
+    <div class="prompt-label">Prompt (append to master)</div>
+    <div class="prompt-text">Space combat assets. [BG] Deep space starfield with subtle motion blur. [ENEMY SHIP 200×120] pirate vessel: asymmetric hull cobbled from mismatched salvage, aftermarket laser cannons bolted on, rust patches, red skull-and-wrench marking, facing left. [RETICLE 48×48] targeting crosshair — four quadrant corner brackets only (not a full ring), inner gap at center, two states: open brackets (idle) and tightened brackets (lock-on). [EXPLOSION 64×64 4-frame] classic pixel art explosion burst, orange-yellow-cream radiating rings with debris fragments. [HIT SPARK 24×24 3-frame] small yellow-white spark impact.</div>
+  </div>
+</div>
+
+<div class="section-title">Derelict Exploration</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">🛸</span>
+    <span class="game-name">Derelict Exploration</span>
+    <span class="badge bg">bg</span>
+    <span class="badge sprite">sprites</span>
+    <span class="game-trigger">ENGINE ROOM · CARGO BAY choices in derelict encounter</span>
+  </div>
+  <table class="sprite-table">
+    <tr><td>derelict_room_bg.jpg <span class="dim">960×640</span></td><td><span class="badge bg">bg</span></td><td>Derelict interior: emergency red lighting only, scattered clutter — fallen containers, loose cables, overturned furniture. Items suggested but not prominent — player hunts for them.</td></tr>
+    <tr><td>derelict_medkit.png <span class="dim">24×24</span></td><td><span class="badge sprite">sprite</span></td><td>Med kit, partially behind a crate. Sage green cross on cream lid. Dim, partially obscured.</td></tr>
+    <tr><td>derelict_fuelcell.png <span class="dim">24×24</span></td><td><span class="badge sprite">sprite</span></td><td>Orange-capped fuel cell cylinder. Partially visible behind debris.</td></tr>
+    <tr><td>derelict_component.png <span class="dim">24×24</span></td><td><span class="badge sprite">sprite</span></td><td>Circuit component, teal glow trace, sitting among wires.</td></tr>
+    <tr><td>derelict_foodcan.png <span class="dim">24×24</span></td><td><span class="badge sprite">sprite</span></td><td>Food ration can, cream label, barely visible behind crate edge.</td></tr>
+    <tr><td>derelict_hazard.png <span class="dim">24×24</span></td><td><span class="badge sprite">sprite</span></td><td>Corroded conduit panel, crackling red sparks, faint radiation symbol. Glowing dangerous, not warm.</td></tr>
+    <tr><td>find_ring.png <span class="dim">96×32 sheet</span></td><td><span class="badge anim">effect</span></td><td>32×32 per frame, 3-frame sheet. Teal circle ring pulse. Plays on successful find-click.</td></tr>
+  </table>
+  <div class="prompt-section">
+    <div class="prompt-label">Prompt (append to master)</div>
+    <div class="prompt-text">Abandoned derelict ship interior: dark corridor/cargo area, emergency lighting in dim red strips casting long shadows, scattered clutter including fallen supply crates, loose bundled cables, overturned storage lockers, dust and debris on floor. Items partially hidden in clutter: [1] medical kit with sage green cross on cream lid, peeking from behind a crate; [2] orange-capped fuel cell cylinder, half-visible under debris; [3] teal-traced circuit component among loose wires; [4] cream-labeled food ration can, edge barely visible; [5] HAZARD corroded conduit panel with red-orange electrical sparks and faint radiation triangle symbol. All items 24×24 isolated sprites, dim lighting context. Find-ring: 32×32 brief teal circle ring, 3-frame fade-out pulse.</div>
+  </div>
+</div>
+
+<div class="section-title">Harvest</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">🌾</span>
+    <span class="game-name">Harvest</span>
+    <span class="badge bg">bg</span>
+    <span class="badge sprite">sprites</span>
+    <span class="badge anim">effects</span>
+    <span class="game-trigger">HARVEST action on mature crop · growbay screen</span>
+  </div>
+  <table class="sprite-table">
+    <tr><td>harvest_bg.jpg <span class="dim">960×640</span></td><td><span class="badge reuse">reuse?</span></td><td>Growbay close-up, plant stems and leaves, grow lights overhead. Check demo-growbay assets first.</td></tr>
+    <tr><td>pod_unripe.png <span class="dim">24×24</span></td><td><span class="badge sprite">sprite</span></td><td>Pod: small, green-grey, no glow. Idle state before window opens.</td></tr>
+    <tr><td>pod_ready.png <span class="dim">24×24</span></td><td><span class="badge sprite">sprite</span></td><td>Same pod shape: plump, golden-teal glow, clearly ripe. The clickable window state.</td></tr>
+    <tr><td>pod_dropped.png <span class="dim">24×24</span></td><td><span class="badge sprite">sprite</span></td><td>Pod dropped: dark, shriveled. Too-late state.</td></tr>
+    <tr><td>harvest_pop.png <span class="dim">96×32 sheet</span></td><td><span class="badge anim">effect</span></td><td>32×32 per frame, 3-frame. Teal and gold sparkle/pop. Plays on successful harvest click.</td></tr>
+  </table>
+  <div class="prompt-section">
+    <div class="prompt-label">Prompt (append to master)</div>
+    <div class="prompt-text">Growbay harvest assets. Background: close-up hydroponic grow bay, plant stems and broad leaves, grow lights overhead casting warm sage green and teal light. Pod sprites (24×24 each, 3 states): [1] Unripe — small compact green-grey seed pod on a short stem, no glow, muted. [2] Ready — same pod shape but plumper, golden-teal luminous glow, clearly at peak ripeness. [3] Dropped — same shape, shriveled, dark brown-grey, no glow, visibly spent. Harvest pop effect: 32×32, 3-frame burst animation, small teal and gold sparkle/pop when pod is collected.</div>
+  </div>
+</div>
+
+<div class="section-title">Plant Diagnosis &amp; Medical Treatment</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">🔬</span>
+    <span class="game-name">Plant Diagnosis · Medical Treatment</span>
+    <span class="badge sprite">sprites</span>
+    <span class="badge css">zones via css</span>
+    <span class="game-trigger">crop health critical · crew health event</span>
+  </div>
+  <table class="sprite-table">
+    <tr><td>diag_plant.png <span class="dim">400×500</span></td><td><span class="badge sprite">sprite</span></td><td>Full plant silhouette with 6 visually distinct zones: leaf cluster (upper left), leaf cluster (upper right), stem (mid), root crown (lower mid), pod cluster (right), soil interface (bottom). Clean silhouette for CSS clickzone overlays.</td></tr>
+    <tr><td>diag_disease_wilt.png <span class="dim">48×48</span></td><td><span class="badge sprite">sprite</span></td><td>Yellow-brown wilt overlay. Semi-transparent, no outline. Layered over zone in CSS.</td></tr>
+    <tr><td>diag_disease_mold.png <span class="dim">48×48</span></td><td><span class="badge sprite">sprite</span></td><td>Grey-blue fuzzy mold patch with darker spots. Semi-transparent.</td></tr>
+    <tr><td>diag_disease_rust.png <span class="dim">48×48</span></td><td><span class="badge sprite">sprite</span></td><td>Orange-brown circular rust spot pattern. Semi-transparent.</td></tr>
+    <tr><td>med_supply_bandage.png <span class="dim">48×48</span></td><td><span class="badge sprite">sprite</span></td><td>Bandage roll: cream fabric wrap, small cross visible.</td></tr>
+    <tr><td>med_supply_syringe.png <span class="dim">48×48</span></td><td><span class="badge sprite">sprite</span></td><td>Syringe: glass body, teal plunger, needle tip.</td></tr>
+    <tr><td>med_supply_bottle.png <span class="dim">48×48</span></td><td><span class="badge sprite">sprite</span></td><td>Amber medicine bottle with simple label.</td></tr>
+    <tr><td>med_supply_scanner.png <span class="dim">48×48</span></td><td><span class="badge sprite">sprite</span></td><td>Handheld medical scanner: gun-grey grip, small teal diagnostic screen.</td></tr>
+  </table>
+  <div class="prompt-section">
+    <div class="prompt-label">Prompt (append to master)</div>
+    <div class="prompt-text">Plant diagnosis and medical supplies. [PLANT 400×500] silhouette illustration of a leafy crop plant: two upper leaf clusters, main stem, lower root crown, side pod cluster, soil line. Clean clear zones, healthy sage green with gold stem. [DISEASE OVERLAYS 48×48 each] three patch overlays: yellowing wilt (pale yellow-brown fade); grey mold (soft grey-blue fuzzy patch, darker spots); rust spots (orange-brown circular rust markings). All semi-transparent, no outlines, meant to overlay plant zones. [MEDICAL SUPPLIES 48×48 each] bandage roll (cream fabric, small cross visible); syringe (glass body, teal plunger, needle tip); amber medicine bottle with label; handheld medical scanner (gun-grey grip, teal diagnostic screen).</div>
+  </div>
+</div>
+
+<div class="section-title">Fabricator Queue</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">🏭</span>
+    <span class="game-name">Fabricator Queue</span>
+    <span class="badge sprite">sprites</span>
+    <span class="badge reuse">check existing</span>
+    <span class="badge css">ui: css</span>
+    <span class="game-trigger">FAB verb · time-critical print jobs</span>
+  </div>
+  <table class="sprite-table">
+    <tr><td>res_ore.png <span class="dim">32×32</span></td><td><span class="badge reuse">reuse?</span></td><td>Ore chunk icon. Check demo-inventory first.</td></tr>
+    <tr><td>res_water.png <span class="dim">32×32</span></td><td><span class="badge reuse">reuse?</span></td><td>Water cell icon. Check demo-inventory first.</td></tr>
+    <tr><td>res_polymer.png <span class="dim">32×32</span></td><td><span class="badge sprite">sprite</span></td><td>Polymer sheet: flat pale-cream panel, semi-translucent pixel art.</td></tr>
+    <tr><td>res_circuit.png <span class="dim">32×32</span></td><td><span class="badge reuse">reuse?</span></td><td>Circuit board icon. Derive from salvage_circuit.png if visual style matches.</td></tr>
+    <tr><td>res_biomass.png <span class="dim">32×32</span></td><td><span class="badge sprite">sprite</span></td><td>Biomass: small dark green-brown organic clump. Clearly biological among the metallics.</td></tr>
+    <tr><td>—</td><td><span class="badge css">css</span></td><td>Recipe slots, LED indicator, queue progress bar, bounce-back animation: all CSS/JS.</td></tr>
+  </table>
+  <div class="prompt-section">
+    <div class="prompt-label">Prompt (append to master)</div>
+    <div class="prompt-text">Fabricator resource icon sprites, 32×32 each, isolated transparent background. Five material types: [1] Ore chunk — irregular amber-brown mineral lump with gold vein lines; [2] Water cell — compact transparent blue cartridge with water visible; [3] Polymer sheet — thin flat cream-white sheet, slightly translucent, geometric clean form; [4] Circuit board — small green board with gold trace lines, mounted components; [5] Biomass — small irregular dark green-brown organic clump, clearly biological among the mechanical. All icons chunky and readable at 32×32. Consistent SNES pixel art style throughout.</div>
+  </div>
+</div>
+
+<div class="section-title">Shared — Generate Once, Reuse Everywhere</div>
+<div class="sprite-card">
+  <div class="sprite-card-header">
+    <span class="game-icon">✨</span>
+    <span class="game-name">Shared Modal Chrome</span>
+    <span class="badge sprite">sprites</span>
+    <span class="badge css">mostly css</span>
+  </div>
+  <table class="sprite-table">
+    <tr><td>modal_bg_tile.png <span class="dim">64×64</span></td><td><span class="badge sprite">sprite</span></td><td>Tileable dark metal plate texture. Subtle rivet/panel lines. CSS background-image tiled behind all minigame modals.</td></tr>
+    <tr><td>result_excellent.png <span class="dim">480×64</span></td><td><span class="badge sprite">sprite</span></td><td>"EXCELLENT" — gold letters on dark background, gold border trim. Press Start 2P pixel font baked in.</td></tr>
+    <tr><td>result_adequate.png <span class="dim">480×64</span></td><td><span class="badge sprite">sprite</span></td><td>"ADEQUATE" — teal letters on dark background, teal border. Same format.</td></tr>
+    <tr><td>result_insufficient.png <span class="dim">480×64</span></td><td><span class="badge sprite">sprite</span></td><td>"INSUFFICIENT" — red letters on dark background, red border. Same format.</td></tr>
+  </table>
+  <div class="prompt-section">
+    <div class="prompt-label">Prompt (append to master)</div>
+    <div class="prompt-text">Shared UI assets. [TILE 64×64] tileable dark metal panel texture: subtle raised rivet positions, faint panel join lines, near-black with blue-grey tint, seamlessly tileable. [RESULT BANNERS 480×64 each] three pixel art result banners in Press Start 2P pixel font style: [1] "EXCELLENT" in gold letters on dark background with gold border trim; [2] "ADEQUATE" in teal letters on dark background with teal border; [3] "INSUFFICIENT" in red letters on dark background with red border. All same format, pixel font, chunky retro style.</div>
+  </div>
+</div>
+
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<div style="margin-top:60px; padding: 20px 0; border-top: 1px solid var(--slate); display:flex; justify-content:space-between; align-items:center;">
+  <div style="font-family:'Press Start 2P',cursive; font-size:7px; letter-spacing:2px; color:var(--muted);">TRANS-PLANT · MINIGAME &amp; SPRITE SPEC</div>
+  <div style="font-size:15px; color:var(--muted);">Generated with Claude · Verdant Ark project</div>
+</div>
+
+</div><!-- /.container -->
+</body>
+</html>

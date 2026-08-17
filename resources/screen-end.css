@@ -1,0 +1,188 @@
+/* screen-end.css — Phase 6 two-screen cinematic+report ending/failure
+   flow. Ported from resources/demo-endings.html, IDs renamed to the
+   end-* prefix and re-scoped under #screen-end (960x640 game window,
+   see index.html's #game). Painted by engine/js/screens/endings.js. */
+
+#screen-end {
+  background: #020408;
+  overflow: hidden;
+  --cine-x: 480px;
+  --cine-y: 320px;
+  --cine-title-size: 28px;
+}
+
+#end-scene {
+  position: absolute; inset: 0; z-index: 1;
+  background-position: center; background-size: cover; background-repeat: no-repeat;
+  opacity: 0; transition: opacity 360ms ease-out;
+}
+#end-scene.show { opacity: 1; }
+#end-vignette {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.65) 92%, rgba(0,0,0,0.85) 100%);
+}
+
+/* ── Screen 1: cinematic ─────────────────────────────────────── */
+#end-cinematic {
+  position: absolute; inset: 0; z-index: 10;
+  display: none;
+  pointer-events: none;
+}
+#end-cinematic.show { display: block; pointer-events: auto; }
+#end-cine-group {
+  position: absolute;
+  left: var(--cine-x); top: var(--cine-y);
+  transform: translate(-50%, -50%);
+  /* max-content keeps the group at its intrinsic width regardless of
+     where left: positions it — without this an absolutely-positioned
+     no-width element shrinks to the space between left and the
+     container's right edge, wrapping the title as --cine-x moves. */
+  width: max-content; max-width: 920px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 24px;
+}
+#end-cine-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--cine-title-size);
+  letter-spacing: 4px;
+  color: var(--cream);
+  text-shadow: 0 0 18px rgba(0,0,0,0.85), 0 2px 0 rgba(0,0,0,0.9);
+  text-align: center;
+  white-space: pre-line;
+  line-height: 1.25;
+}
+#end-cine-body {
+  display: none;
+  font-family: 'VT323', monospace;
+  font-size: 22px; line-height: 1.4;
+  color: #e8d8a0;
+  text-align: center;
+  max-width: 560px;
+  text-shadow: 0 0 14px rgba(0,0,0,0.95), 0 2px 0 rgba(0,0,0,0.85);
+}
+#end-cine-quote {
+  display: none;
+  font-family: 'VT323', monospace;
+  font-size: 18px; line-height: 1.35; font-style: italic;
+  color: #aab5c4;
+  text-align: center;
+  max-width: 540px;
+  text-shadow: 0 0 14px rgba(0,0,0,0.95), 0 2px 0 rgba(0,0,0,0.85);
+}
+#end-cine-btn {
+  font-size: 10px; letter-spacing: 2px;
+  box-shadow: 0 0 18px rgba(0,0,0,0.6);
+}
+
+/* ── Screen 2: report card ───────────────────────────────────── */
+#end-report {
+  position: absolute; inset: 0; z-index: 14;
+  background: rgba(2,4,8,0.78);
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 30px;
+}
+#end-report.show { display: flex; }
+#end-report-card {
+  background: linear-gradient(180deg, #1a2030, #0e1320);
+  border: 2px solid rgba(200,168,90,0.6);
+  border-radius: 4px;
+  padding: 26px 28px 22px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  width: 100%; max-width: 600px;
+  box-shadow: 0 0 28px rgba(0,0,0,0.55), 0 6px 32px rgba(0,0,0,0.55);
+}
+#end-report-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 16px; letter-spacing: 2px;
+  color: var(--cream);
+  text-align: center;
+  white-space: pre-line;
+  line-height: 1.35;
+}
+#end-report-body {
+  width: 100%; text-align: center;
+  font-family: 'VT323', monospace;
+  font-size: 19px; line-height: 1.45;
+  color: #e8d8a0;
+  padding: 0 8px;
+  white-space: pre-wrap;
+}
+#end-report-quote {
+  width: 100%; text-align: center;
+  font-family: 'VT323', monospace;
+  font-size: 17px; line-height: 1.4; font-style: italic;
+  color: #aab5c4;
+  padding: 0 16px;
+}
+#end-report-score {
+  width: 100%;
+  margin-top: 4px;
+  padding: 14px 12px 12px;
+  border-top: 1px dashed rgba(200,168,90,0.25);
+  display: flex; flex-direction: column; gap: 11px;
+}
+.end-score-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; letter-spacing: 1.4px;
+  color: var(--gold);
+  text-align: center; text-transform: uppercase;
+  margin-bottom: 2px;
+}
+#end-report-score .score-row { display: flex; align-items: center; gap: 10px; font-family: 'VT323', monospace; font-size: 15px; color: #aab5c4; }
+#end-report-score .label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; letter-spacing: 1.2px;
+  color: #aab5c4;
+  width: 76px; text-align: right;
+}
+#end-report-score .val { font-family: 'VT323', monospace; font-size: 15px; color: #d8c890; min-width: 44px; }
+.crew-pips { display: flex; gap: 6px; }
+.crew-pip { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(200,168,90,0.65); }
+.crew-pip.filled { background: var(--gold); box-shadow: 0 0 5px rgba(200,168,90,0.45); }
+.crew-pip.empty  { background: transparent; opacity: 0.55; }
+.res-bars { display: flex; gap: 6px; flex: 1; }
+.res-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.res-bar-label { font-family: 'Press Start 2P', cursive; font-size: 6px; letter-spacing: 0.8px; color: #7a8898; }
+.res-bar { width: 100%; height: 12px; background: rgba(10,14,20,0.7); border: 1px solid rgba(95,168,208,0.2); position: relative; overflow: hidden; }
+.res-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 50%; background: var(--gold); }
+.res-bar-fill.fuel  { background: #e88830; }
+.res-bar-fill.food  { background: #8cc890; }
+.res-bar-fill.water { background: #5fa8d0; }
+.res-bar-fill.hull  { background: #b4b091; }
+.day-line { font-family: 'VT323', monospace; font-size: 16px; color: #aab5c4; text-align: center; letter-spacing: 1px; }
+.day-line .day-num { color: var(--cream); }
+.day-line .day-cmp { color: var(--gold); }
+.day-line .day-cmp.late  { color: #cc6c4c; }
+.day-line .day-cmp.early { color: var(--teal); }
+
+#end-report-actions { display: flex; gap: 12px; margin-top: 4px; }
+
+/* ── Tier / failure colour table — drives title colour + card border.
+   Failure ids share the table via a --fail- prefix (see
+   engine/js/screens/endings.js's setTierColours()). ─────────────── */
+#screen-end {
+  --tier-legendary-color:    #c8a85a;
+  --tier-legendary-border:   rgba(200,168,90,0.85);
+  --tier-good-color:         #8cc890;
+  --tier-good-border:        rgba(140,200,144,0.7);
+  --tier-rough-color:        #a08c5a;
+  --tier-rough-border:       rgba(160,140,100,0.55);
+  --tier-pyrrhic-color:      #a03c3c;
+  --tier-pyrrhic-border:     rgba(160,60,60,0.65);
+  --tier-hollow-color:       #7a8a7a;
+  --tier-hollow-border:      rgba(122,138,122,0.55);
+
+  --fail-no_fuel-color:       #8090b0;
+  --fail-no_fuel-border:      rgba(100,120,160,0.6);
+  --fail-crew_gone-color:     #8888aa;
+  --fail-crew_gone-border:    rgba(100,100,140,0.5);
+  --fail-hull_zero-color:     #cc3333;
+  --fail-hull_zero-border:    rgba(204,51,51,0.8);
+  --fail-mutiny-color:        #b45a28;
+  --fail-mutiny-border:       rgba(180,90,40,0.65);
+  --fail-time_expired-color:  #7890a0;
+  --fail-time_expired-border: rgba(120,140,160,0.5);
+  --fail-crop_dead-color:     #7a9c6a;
+  --fail-crop_dead-border:    rgba(120,156,106,0.6);
+}

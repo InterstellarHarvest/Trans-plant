@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Orders Modal Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="shared.css" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+
+:root {
+  /* Shared theme */
+  --teal: #35c6bf;
+  --orange: #e88830;
+  --cream: #e8d8a0;
+  --deep: #0e1520;
+  --void: #020408;
+  --body: #aab5c4;
+
+  /* Modal backdrop + panel */
+  --modal-backdrop: rgba(4,8,16,0.75);
+  --modal-bg-top: #141a28;
+  --modal-bg-bot: #0a0e18;
+  --modal-border: #435384;
+  --modal-shadow: rgba(0,0,0,0.8);
+  --modal-width: 797px;
+  --modal-height: 560px;
+  --section-gap: 28px;
+
+  /* Modal chrome */
+  --modal-title-color: #56cfd7;
+  --modal-title-size: 16px;
+  --section-label-color: #c8a85a;
+  --section-label-size: 10px;
+  --section-current-color: #35c6bf;
+  --section-current-size: 12px;
+
+  /* Stepped pills */
+  --pill-bg: rgba(20,28,40,0.7);
+  --pill-border: #2a3040;
+  --pill-text: #7a8898;
+  --pill-selected-bg: linear-gradient(180deg, #b4b091 0%, #7a7a65 100%);
+  --pill-selected-border: #c8a85a;
+  --pill-selected-text: #0e1520;
+  --pill-selected-glow: rgba(200,168,90,0.35);
+
+  /* Preview stats */
+  --preview-label-color: #5a7a6a;
+  --preview-value-color: #d0c890;
+  --preview-size: 14px;
+  --preview-delta-good: #8cc890;
+  --preview-delta-bad: #cc3333;
+
+  /* Water slider */
+  --water-plant-color: #85d270;
+  --water-crew-color: #7dc8e8;
+  --water-track-bg: rgba(20,28,40,0.8);
+  --water-thumb-color: #c8a85a;
+
+  /* AI commentary */
+  --ai-name-color: #c8a85a;
+  --ai-text-color: #aab5c4;
+  --ai-size: 16px;
+
+  /* Panel button sizing (color vars live in shared.css) */
+  --pb-border: 3px;
+  --pb-padx: 12px;
+  --pb-pady: 6px;
+  --pb-rad: 0px;
+  --pb-size: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'VT323', monospace;
+  background: #0e1118;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #d1d5db;
+}
+
+#demo-wrap { display: flex; gap: 20px; padding: 20px; align-items: flex-start; }
+#scale-root { width: 960px; height: 640px; transform-origin: top left; flex-shrink: 0; }
+
+/* Actual-size toggle */
+#size-toggle {
+  position: fixed; top: 12px; right: 12px; z-index: 9999;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: #c8a85a;
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+}
+#size-toggle:hover { filter: brightness(1.2); }
+#size-toggle:active {
+  border-style: inset;
+  border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a;
+  transform: translate(1px, 1px);
+}
+
+body.fullsize { overflow: hidden; }
+body.fullsize #demo-wrap { padding: 0; gap: 0; width: 100vw; height: 100vh; justify-content: center; align-items: center; }
+body.fullsize #controls { display: none; }
+body.fullsize #scale-root { transform-origin: center center; }
+
+/* Game frame */
+#game {
+  width: 960px; height: 640px;
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #0c0f22 0%, #070814 100%);
+}
+
+#crt-overlay {
+  pointer-events: none; position: absolute; inset: 0; z-index: 100; border-radius: 4px;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 1px, transparent 1px, transparent 2px);
+}
+
+#stars-far, #stars-near { position: absolute; inset: 0; pointer-events: none; }
+
+/* Cruise-screen ghost backdrop. Serves two roles:
+   (1) while the modal is open — dimmed, mostly-obscured context;
+   (2) when the modal is closed — restored to full brightness so the
+   demo shows the new settings applied to the cruise readout. */
+#cruise-ghost {
+  position: absolute; inset: 0;
+  z-index: 5;
+  transition: filter 0.3s;
+}
+body.modal-open #cruise-ghost { filter: brightness(0.35); }
+
+.cg-header {
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 40px;
+  padding: 0 16px;
+  background: linear-gradient(180deg, #141a28 0%, #10141e 100%);
+  border-bottom: 2px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Press Start 2P', cursive;
+}
+.cg-ship { font-size: 10px; letter-spacing: 2px; color: var(--gold); text-shadow: 0 0 6px rgba(200,168,90,0.3); }
+.cg-day  { font-size: 8px; letter-spacing: 1px; color: #aab5c4; }
+
+/* Cruise readout strip — what the player sees below the scene when
+   the modal is closed. Each cell is clickable to "reopen" the modal
+   focused on that setting (in the real game, this is the cruise
+   screen's own readout row). */
+.cg-readout {
+  position: absolute;
+  left: 0; right: 0; top: 42px;
+  height: 36px;
+  background: rgba(14,20,32,0.85);
+  border-bottom: 1px solid rgba(200,168,90,0.15);
+  display: flex;
+  align-items: center;
+}
+.cg-cell {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: var(--cursor-hand, pointer);
+  border-right: 1px solid rgba(200,168,90,0.15);
+  transition: background 0.15s;
+  padding: 0 10px;
+}
+.cg-cell:last-child { border-right: 0; }
+.cg-cell:hover { background: rgba(200,168,90,0.08); }
+body.modal-open .cg-cell { cursor: var(--cursor-pointer, default); }
+body.modal-open .cg-cell:hover { background: transparent; }
+.cg-cell-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #5a7a6a;
+}
+.cg-cell-val {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: #d0c890;
+  letter-spacing: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Bottom bar ghost — just a dark band for the crew/crop/action row. */
+.cg-bottom {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 120px;
+  background: linear-gradient(180deg, #10141e 0%, #0a0e14 100%);
+  border-top: 1px solid rgba(200,168,90,0.2);
+}
+
+/* Helper banner visible only when the modal is closed — a hint
+   that clicking a readout reopens the demo. */
+.cg-hint {
+  position: absolute;
+  left: 50%; top: 120px;
+  transform: translateX(-50%);
+  z-index: 6;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #5a7a6a;
+  text-shadow: 0 0 6px #000;
+  padding: 6px 12px;
+  background: rgba(14,21,32,0.85);
+  border: 1px solid rgba(200,168,90,0.3);
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+body:not(.modal-open) .cg-hint { opacity: 1; }
+
+/* ── Modal ──────────────────────────────────────────────────────── */
+#orders-backdrop {
+  position: absolute; inset: 0;
+  z-index: 10;
+  background: var(--modal-backdrop);
+  cursor: var(--cursor-hand, pointer);
+  transition: opacity 0.25s;
+}
+
+#orders-modal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  width: var(--modal-width);
+  height: var(--modal-height);
+  z-index: 20;
+  background: linear-gradient(180deg, var(--modal-bg-top) 0%, var(--modal-bg-bot) 100%);
+  border: 3px solid var(--modal-border);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(200,168,90,0.2),
+    inset 0 0 0 2px rgba(14,20,32,0.5),
+    0 8px 40px var(--modal-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.25s, transform 0.25s;
+}
+/* Closed state — fully hidden, no pointer events. Animated out
+   with a gentle scale + fade so the modal snap-back feels
+   intentional when reopening. */
+body:not(.modal-open) #orders-backdrop,
+body:not(.modal-open) #orders-modal {
+  opacity: 0;
+  pointer-events: none;
+}
+body:not(.modal-open) #orders-modal {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+.orders-header {
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 2px solid rgba(200,168,90,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.orders-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--modal-title-size);
+  letter-spacing: 3px;
+  color: var(--modal-title-color);
+  text-shadow: 0 0 8px rgba(200,168,90,0.35);
+}
+.orders-close {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  width: 28px; height: 28px;
+  border: 2px solid rgba(200,168,90,0.4);
+  background: rgba(14,20,32,0.6);
+  color: var(--modal-title-color);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+}
+.orders-close:hover { filter: brightness(1.25); border-color: var(--modal-border); }
+
+.orders-body {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-gap, 16px);
+}
+
+/* Section wrapper: label row + pill row + preview row */
+.orders-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.section-header {
+  display: flex;
+  /* center (not baseline) + fixed min-height. The header holds the
+     label, the inline tier-desc, and the warn at different font
+     sizes; baseline alignment reads as uneven and lets an animated
+     child subtly recompute the row baseline. Fixed height also
+     prevents any vertical jitter when the warn toggles. */
+  align-items: center;
+  gap: 10px;
+  min-height: 22px;
+}
+.section-icon {
+  font-size: 16px;
+  color: var(--section-label-color);
+}
+
+/* ── Sprite icon slots ────────────────────────────────────────────
+   Every in-UI icon that will eventually become a pixel-art sprite
+   wears the .icon class + a kind modifier (.icon-engines, .icon-plant,
+   etc.). Emoji stays as the text content so the UI reads right while
+   we're still using placeholders. When a real sprite is drawn, just
+   uncomment that class's `background` + `color: transparent` block —
+   the emoji disappears visually and the sprite takes its place with
+   zero markup change. Recommended source resolutions:
+     • Section icons (engines / rations / water):   20×20 @ 1× display
+     • Inline side icons (plant / crew):             16×16 @ 1× display
+*/
+.icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  vertical-align: middle;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.icon.icon-inline { width: 16px; height: 16px; line-height: 16px; }
+
+/* Sprite assets live next to this file in resources/. Placeholder
+   emoji is still in the HTML for fallback; color:transparent hides
+   it when a sprite background is present. Will be moved into a
+   spritesheet with background-position offsets later. */
+.icon.icon-engines { background-image: url('sprites/interface/engines.png'); color: transparent; text-shadow: none; }
+.icon.icon-rations { background-image: url('sprites/interface/rations.png'); color: transparent; text-shadow: none; }
+.icon.icon-water   { background-image: url('sprites/interface/water.png');   color: transparent; text-shadow: none; }
+.icon.icon-plant   { background-image: url('sprites/interface/plant.png');   color: transparent; text-shadow: none; }
+.icon.icon-crew    { background-image: url('sprites/interface/crew.png');    color: transparent; text-shadow: none; }
+.section-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--section-label-size);
+  letter-spacing: 2px;
+  color: var(--section-label-color);
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+}
+.section-current {
+  flex: 1;
+  font-family: 'VT323', monospace;
+  font-size: var(--section-current-size);
+  color: var(--section-current-color);
+  text-align: right;
+}
+.section-current .delta {
+  font-size: 11px;
+  margin-left: 6px;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+.section-current .delta.good { color: var(--preview-delta-good); background: rgba(140,200,144,0.12); }
+.section-current .delta.bad  { color: var(--preview-delta-bad);  background: rgba(204,51,51,0.12); }
+
+/* Stepped pills */
+.pill-row {
+  display: flex;
+  gap: 6px;
+}
+.pill {
+  flex: 1;
+  padding: 9px 6px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  background: var(--pill-bg);
+  border: 2px solid var(--pill-border);
+  color: var(--pill-text);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 3px;
+  transition: filter 0.1s, transform 0.08s;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+}
+.pill:hover { filter: brightness(1.2); }
+.pill:active { transform: translate(1px, 1px); }
+.pill.selected {
+  background: var(--pill-selected-bg);
+  border-color: var(--pill-selected-border);
+  color: var(--pill-selected-text);
+  box-shadow: 0 0 10px var(--pill-selected-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+}
+/* Saved-current marker: a small glowing teal pill above the pill
+   that matches the saved state. No text — the glow tells you which
+   is the currently-applied setting. */
+.pill { position: relative; }
+.pill.saved-current::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  width: 24px;
+  height: 4px;
+  background: #35c6bf;
+  border-radius: 3px;
+  box-shadow: 0 0 8px #35c6bf, 0 0 2px #35c6bf;
+  animation: sc-pulse 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes sc-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.4); }
+}
+.pill.saved-current {
+  border-color: rgba(53,198,191,0.5);
+}
+
+/* Preview stats row */
+.section-preview {
+  display: flex;
+  gap: 14px;
+  padding: 6px 10px;
+  background: rgba(10,14,20,0.5);
+  border-left: 2px solid rgba(200,168,90,0.25);
+  border-radius: 0 3px 3px 0;
+}
+.preview-stat {
+  font-family: 'VT323', monospace;
+  font-size: var(--preview-size);
+  color: var(--preview-label-color);
+  letter-spacing: 0.5px;
+  /* Lock the line-box so inline children (delta pill, warn badge,
+     text-shadow on <strong>) can't push the row up or down by a
+     subpixel. Every inline child below has line-height ≤ 18px so
+     the row stays at this height regardless of what's visible. */
+  line-height: 18px;
+  min-height: 18px;
+}
+.preview-stat strong {
+  color: var(--preview-value-color);
+  font-weight: normal;
+  margin-left: 4px;
+}
+.preview-stat .delta {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
+  font-size: 13px;
+  line-height: 14px;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+.preview-stat .delta.good    { color: var(--preview-delta-good); background: rgba(140,200,144,0.12); }
+.preview-stat .delta.bad     { color: var(--preview-delta-bad);  background: rgba(204,51,51,0.12); }
+.preview-stat .delta.neutral { color: var(--preview-label-color); background: rgba(122,136,152,0.12); }
+
+/* Warning state on a preview stat — fires when a projection crosses
+   an absolute threshold (e.g. fuel won't last until arrival), not
+   just when it differs from the saved choice. Value turns red and a
+   ⚠ badge is appended. This is the "you're picking DOOM" flag. */
+.preview-stat.warn strong {
+  color: var(--preview-delta-bad);
+  text-shadow: 0 0 6px rgba(204,51,51,0.35);
+}
+/* The ⚠ glyph renders taller than VT323 digits because emoji have
+   different line-box metrics. Locking line-height + inline-block
+   prevents the stat row from growing a pixel or two when the badge
+   appears. Always in the DOM (see statLine()); opacity flips with
+   the parent `.warn` class so the row's layout box never changes. */
+.warn-badge {
+  display: inline-block;
+  color: var(--preview-delta-bad);
+  font-size: 13px;
+  line-height: 1;
+  vertical-align: middle;
+  margin-left: 5px;
+  text-shadow: 0 0 6px rgba(204,51,51,0.55);
+  font-weight: bold;
+  letter-spacing: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.preview-stat.warn .warn-badge { opacity: 1; }
+
+/* Section-header warning indicator — mirrors the per-stat ⚠ up at
+   the section label so the section reads as unsafe at a glance.
+   Always in the DOM with the glyph pre-rendered; `.on` flips it
+   visible. We use opacity (not visibility/display) so the warn's
+   layout box is always reserved — otherwise the header grows by
+   a pixel or two when the warn appears, shifting everything below. */
+.section-warn {
+  display: inline-block;
+  font-family: 'Press Start 2P', cursive;
+  color: var(--preview-delta-bad);
+  font-size: 10px;
+  line-height: 1;
+  margin-left: 6px;
+  text-shadow: 0 0 6px rgba(204,51,51,0.6);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.section-warn.on {
+  opacity: 1;
+  animation: section-warn-pulse 1.4s ease-in-out infinite;
+}
+@keyframes section-warn-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.5); }
+}
+
+/* Plain-language tier description — one-sentence summary of what
+   the currently-previewed tier feels like. Lives inline in the
+   section header next to the label; flex:1 so it fills the row
+   and pushes the warn badge to the far right. Ellipsis catches
+   any overflow on narrow modal widths. */
+.tier-desc {
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  color: var(--body);
+  font-style: italic;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Water allocation — custom two-way slider */
+.water-allocation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+.water-side {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--section-label-color);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 86px;
+}
+.water-side.crew { justify-content: flex-end; }
+.water-side .emoji { font-size: 16px; }
+.water-side .pct {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: var(--preview-value-color);
+  min-width: 30px;
+  text-align: right;
+}
+.water-track {
+  flex: 1;
+  /* Matches the pill button height (9px top+bot padding + 8px font
+     + 2px borders ≈ 30px) so the three sections feel like the same
+     control family, not a slider hanging below chunky buttons. */
+  height: 30px;
+  background: var(--water-track-bg);
+  border: 2px solid #2a3040;
+  border-radius: 3px;
+  position: relative;
+  cursor: var(--cursor-hand, grab);
+  overflow: visible; /* let thumb poke out above/below for grabbability */
+}
+.water-track:active { cursor: var(--cursor-hand, grabbing); }
+.water-fill-plant {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--water-plant-color) 100%, transparent) 0%,
+    color-mix(in srgb, var(--water-plant-color) 70%, transparent) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: width 0.2s ease;
+}
+.water-fill-crew {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--water-crew-color) 100%, transparent) 0%,
+    color-mix(in srgb, var(--water-crew-color) 70%, transparent) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: width 0.2s ease;
+}
+/* Grab handle: chunky, beveled, pokes above and below the track so
+   it clearly invites dragging. Three grip lines suggest texture. */
+.water-thumb {
+  position: absolute;
+  top: -6px;
+  width: 18px;
+  height: calc(100% + 12px);
+  background: linear-gradient(180deg, #e0d5a0 0%, var(--water-thumb-color) 50%, #8a7035 100%);
+  border: 2px solid #2a1f0a;
+  transform: translateX(-50%);
+  pointer-events: none;
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    inset 0 -1px 0 rgba(0,0,0,0.3),
+    0 0 10px rgba(200,168,90,0.5),
+    0 2px 4px rgba(0,0,0,0.6);
+  z-index: 2;
+}
+/* Grip lines on the thumb to signal "this is a handle". */
+.water-thumb::before {
+  content: '';
+  position: absolute;
+  inset: 25% 5px;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0.35) 0px, rgba(0,0,0,0.35) 1px,
+      rgba(255,255,255,0.25) 1px, rgba(255,255,255,0.25) 2px,
+      transparent 2px, transparent 4px);
+}
+.water-midmark {
+  position: absolute;
+  top: 2px; bottom: 2px;
+  left: 50%;
+  width: 1px;
+  background: rgba(255,255,255,0.25);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+/* Saved-current marker on the slider — downward-pointing triangle
+   because water is a continuous scale (not a fixed tier like engines
+   or rations). The tip of the triangle points exactly at the saved
+   allocation value on the track. */
+.water-saved-mark {
+  position: absolute;
+  top: -16px;
+  width: 0; height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid #35c6bf;
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: sc-pulse-triangle 1.8s ease-in-out infinite;
+  transition: left 0.2s;
+  z-index: 3;
+}
+@keyframes sc-pulse-triangle {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(53,198,191,0.7)); }
+  50%      { filter: drop-shadow(0 0 10px rgba(53,198,191,1)); }
+}
+/* .water-need-note replaced by the shared .tier-desc class. */
+
+/* AI commentary line */
+.orders-ai {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  background: rgba(10,14,20,0.5);
+  border-top: 1px solid rgba(200,168,90,0.15);
+  border-bottom: 1px solid rgba(200,168,90,0.15);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+/* AI avatar — same circle treatment as the cruise demo's event log
+   header so the two surfaces read as the same companion voice. The
+   .has-sprite modifier swaps the emoji fallback for a PNG portrait
+   (specified inline via background-image so each AI can wire its
+   own sprite without a per-AI CSS rule). Emoji remains as text
+   content for a11y / fallback; color: transparent hides it when
+   the sprite loads. */
+.ai-avatar {
+  font-size: 16px;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--ai-name-color);
+  border-radius: 50%;
+  background-color: rgba(200,168,90,0.1);
+  flex-shrink: 0;
+  line-height: 1;
+  overflow: hidden;
+}
+.ai-avatar.has-sprite {
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: transparent;
+  border: 0;
+  border-radius: 0;
+  color: transparent;
+  text-shadow: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.ai-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--ai-name-color);
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+  flex-shrink: 0;
+}
+.ai-text {
+  font-family: 'VT323', monospace;
+  font-size: var(--ai-size);
+  color: var(--ai-text-color);
+  line-height: 1.3;
+}
+
+/* Footer: action buttons */
+.orders-footer {
+  flex-shrink: 0;
+  height: 60px;
+  padding: 0 20px;
+  background: linear-gradient(180deg, rgba(14,20,32,0.7) 0%, rgba(10,14,20,0.7) 100%);
+  border-top: 2px solid rgba(200,168,90,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* .panel-btn lives in shared.css */
+
+/* Controls panel */
+#controls {
+  width: 380px; background: #161a22; border: 1px solid #2a3040;
+  border-radius: 6px;
+  padding: 16px; font-family: 'VT323', monospace; font-size: 16px; color: #8898a8;
+  max-height: 640px; overflow-y: auto; overflow-x: hidden; flex-shrink: 0;
+}
+#controls h2 { font-family: 'Press Start 2P', cursive; font-size: 8px; color: var(--gold); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase; }
+#controls h3 { font-family: 'Press Start 2P', cursive; font-size: 7px; color: #5a7a6a; letter-spacing: 1px; margin: 14px 0 8px; text-transform: uppercase; border-bottom: 1px solid #2a3040; padding-bottom: 4px; }
+.ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.ctrl-row label { font-size: 14px; color: #667; flex-shrink: 0; min-width: 100px; }
+.ctrl-row input[type="range"] { flex: 1; accent-color: var(--gold); height: 4px; }
+.ctrl-row input[type="color"] { width: 32px; height: 24px; border: 1px solid #2a3040; border-radius: 3px; background: #0e1118; cursor: var(--cursor-hand, pointer); padding: 0; }
+.ctrl-row .val { font-size: 13px; color: #5a7a6a; min-width: 60px; text-align: right; font-family: 'VT323', monospace; letter-spacing: 0.5px; }
+.ctrl-row .val.modified { color: #e88830; font-weight: bold; }
+.sim-btn {
+  width: 100%; margin-top: 6px; padding: 8px;
+  font-family: 'VT323', monospace; font-size: 15px; letter-spacing: 1px; text-transform: uppercase;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset; border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold); cursor: var(--cursor-hand, pointer); border-radius: 2px;
+}
+.sim-btn:hover { filter: brightness(1.15); }
+.sim-btn:active { border-style: inset; border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a; transform: translate(1px,1px); }
+
+/* ::-webkit-scrollbar baseline lives in shared.css */
+
+</style>
+</head>
+<body>
+
+<button id="size-toggle" onclick="toggleSize()">Actual Size</button>
+
+<div id="demo-wrap">
+
+<div id="scale-root">
+<div id="game">
+  <canvas id="stars-far" width="960" height="640"></canvas>
+  <canvas id="stars-near" width="960" height="640"></canvas>
+  <div id="cruise-ghost">
+    <div class="cg-header">
+      <span class="cg-ship">THE VERDANT ARK</span>
+      <span class="cg-day">DAY 47 &middot; 73 LEFT</span>
+    </div>
+    <div class="cg-readout">
+      <div class="cg-cell" onclick="openModal()">
+        <span class="cg-cell-label">ENGINES</span>
+        <span class="cg-cell-val">&#9889; <span id="ghost-engines">RIDICULOUS SPEED</span></span>
+      </div>
+      <div class="cg-cell" onclick="openModal()">
+        <span class="cg-cell-label">RATIONS</span>
+        <span class="cg-cell-val">&#127869; <span id="ghost-rations">STANDARD</span></span>
+      </div>
+      <div class="cg-cell" onclick="openModal()">
+        <span class="cg-cell-label">WATER</span>
+        <span class="cg-cell-val">
+          &#127793; <span id="ghost-water-plant">50%</span> / <span id="ghost-water-crew">50%</span> &#128101;
+        </span>
+      </div>
+    </div>
+    <div class="cg-bottom"></div>
+  </div>
+  <div class="cg-hint">&#8627; CLICK A READOUT TO REOPEN ORDERS</div>
+  <div id="crt-overlay"></div>
+
+  <div id="orders-backdrop" onclick="closeModal('cancel')"></div>
+
+  <div id="orders-modal" role="dialog" aria-labelledby="orders-title-el">
+    <div class="orders-header">
+      <span class="orders-title" id="orders-title-el">ORDERS</span>
+    </div>
+
+    <div class="orders-body">
+
+      <!-- ── ENGINES ─────────────────────────────────────────── -->
+      <section class="orders-section" id="section-engines">
+        <div class="section-header">
+          <span class="section-icon icon icon-engines">&#9889;</span>
+          <span class="section-label">ENGINES</span>
+          <span class="tier-desc" id="engines-desc"></span>
+          <span class="section-warn" id="engines-warn">&#9888;</span>
+        </div>
+        <div class="pill-row" id="engines-pills">
+          <button class="pill" data-idx="0">LIGHT SPEED</button>
+          <button class="pill selected" data-idx="1">RIDICULOUS</button>
+          <button class="pill" data-idx="2">LUDICROUS</button>
+          <button class="pill" data-idx="3">PLAID</button>
+        </div>
+        <div class="section-preview" id="engines-preview"></div>
+      </section>
+
+      <!-- ── RATIONS ─────────────────────────────────────────── -->
+      <section class="orders-section" id="section-rations">
+        <div class="section-header">
+          <span class="section-icon icon icon-rations">&#127869;</span>
+          <span class="section-label">RATIONS</span>
+          <span class="tier-desc" id="rations-desc"></span>
+          <span class="section-warn" id="rations-warn">&#9888;</span>
+        </div>
+        <div class="pill-row" id="rations-pills">
+          <button class="pill" data-idx="0">VENDING MACHINE</button>
+          <button class="pill selected" data-idx="1">STANDARD</button>
+          <button class="pill" data-idx="2">PIG OUT</button>
+        </div>
+        <div class="section-preview" id="rations-preview"></div>
+      </section>
+
+      <!-- ── WATER ───────────────────────────────────────────── -->
+      <section class="orders-section" id="section-water">
+        <div class="section-header">
+          <span class="section-icon icon icon-water">&#128167;</span>
+          <span class="section-label">WATER ALLOCATION</span>
+          <span class="tier-desc" id="water-desc"></span>
+          <span class="section-warn" id="water-warn">&#9888;</span>
+        </div>
+        <div class="water-allocation">
+          <div class="water-side">
+            <span class="emoji icon icon-inline icon-plant">&#127793;</span><span>PLANT</span><span class="pct" id="water-plant-pct">50%</span>
+          </div>
+          <div class="water-track" id="water-track" title="Drag to allocate">
+            <div class="water-fill-plant" id="water-fill-plant" style="width:50%"></div>
+            <div class="water-fill-crew"  id="water-fill-crew"  style="width:50%"></div>
+            <div class="water-midmark"></div>
+            <div class="water-saved-mark" id="water-saved-mark" style="left:50%"></div>
+            <div class="water-thumb" id="water-thumb" style="left:50%"></div>
+          </div>
+          <div class="water-side crew">
+            <span class="pct" id="water-crew-pct">50%</span><span>CREW</span><span class="emoji icon icon-inline icon-crew">&#128101;</span>
+          </div>
+        </div>
+        <div class="section-preview" id="water-preview"></div>
+      </section>
+
+    </div>
+
+    <div class="orders-ai">
+      <span class="ai-avatar has-sprite" style="background-image: url('sprites/interface/AI/aria.png')">&#9728;</span>
+      <span class="ai-name">ARIA:</span>
+      <span class="ai-text" id="ai-text">Steady as she goes. An acceptable compromise.</span>
+    </div>
+
+    <div class="orders-footer">
+      <button class="panel-btn" onclick="closeModal('cancel')">&#10005; CANCEL</button>
+      <button class="panel-btn accent-gold" onclick="closeModal('apply')">&#10003; APPLY</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ CONTROLS ═══ -->
+<div id="controls">
+  <h2>Orders Modal Controls</h2>
+
+  <h3>Modal Frame</h3>
+  <div class="ctrl-row"><label>Backdrop α</label><input type="range" id="c-backdrop" min="0" max="100" value="75"><span class="val" id="v-backdrop">75</span></div>
+  <div class="ctrl-row"><label>Modal BG top</label><input type="color" id="c-modal-top" value="#141a28"></div>
+  <div class="ctrl-row"><label>Modal BG bot</label><input type="color" id="c-modal-bot" value="#0a0e18"></div>
+  <div class="ctrl-row"><label>Border</label><input type="color" id="c-modal-border" value="#435384"></div>
+  <div class="ctrl-row"><label>Width</label><input type="range" id="c-modal-w" min="560" max="820" value="797"><span class="val" id="v-modal-w">797</span></div>
+  <div class="ctrl-row"><label>Height</label><input type="range" id="c-modal-h" min="440" max="600" value="560"><span class="val" id="v-modal-h">560</span></div>
+  <div class="ctrl-row"><label>Section gap</label><input type="range" id="c-section-gap" min="0" max="40" value="28"><span class="val" id="v-section-gap">28</span></div>
+
+  <h3>Title / Section Labels</h3>
+  <div class="ctrl-row"><label>Title color</label><input type="color" id="c-title" value="#56cfd7"></div>
+  <div class="ctrl-row"><label>Title size</label><input type="range" id="c-title-size" min="10" max="20" value="16"><span class="val" id="v-title-size">16</span></div>
+  <div class="ctrl-row"><label>Section color</label><input type="color" id="c-sec-label" value="#c8a85a"></div>
+  <div class="ctrl-row"><label>Section size</label><input type="range" id="c-sec-size" min="7" max="14" value="10"><span class="val" id="v-sec-size">10</span></div>
+  <div class="ctrl-row"><label>Current color</label><input type="color" id="c-sec-cur" value="#35c6bf"></div>
+
+  <h3>Pills</h3>
+  <div class="ctrl-row"><label>Pill BG</label><input type="color" id="c-pill-bg" value="#141c28"></div>
+  <div class="ctrl-row"><label>Pill border</label><input type="color" id="c-pill-border" value="#2a3040"></div>
+  <div class="ctrl-row"><label>Pill text</label><input type="color" id="c-pill-text" value="#7a8898"></div>
+  <div class="ctrl-row"><label>Selected border</label><input type="color" id="c-pill-sel-border" value="#c8a85a"></div>
+  <div class="ctrl-row"><label>Selected text</label><input type="color" id="c-pill-sel-text" value="#0e1520"></div>
+
+  <h3>Preview Stats</h3>
+  <div class="ctrl-row"><label>Label color</label><input type="color" id="c-prev-label" value="#5a7a6a"></div>
+  <div class="ctrl-row"><label>Value color</label><input type="color" id="c-prev-value" value="#d0c890"></div>
+  <div class="ctrl-row"><label>Size</label><input type="range" id="c-prev-size" min="11" max="20" value="14"><span class="val" id="v-prev-size">14</span></div>
+
+  <h3>Water Slider</h3>
+  <div class="ctrl-row"><label>Plant color</label><input type="color" id="c-water-plant" value="#85d270"></div>
+  <div class="ctrl-row"><label>Crew color</label><input type="color" id="c-water-crew" value="#7dc8e8"></div>
+  <div class="ctrl-row"><label>Thumb color</label><input type="color" id="c-water-thumb" value="#c8a85a"></div>
+
+  <h3>AI Line</h3>
+  <div class="ctrl-row"><label>Name color</label><input type="color" id="c-ai-name" value="#c8a85a"></div>
+  <div class="ctrl-row"><label>Text color</label><input type="color" id="c-ai-text" value="#aab5c4"></div>
+  <div class="ctrl-row"><label>Size</label><input type="range" id="c-ai-size" min="12" max="22" value="16"><span class="val" id="v-ai-size">16</span></div>
+
+  <h3>Simulate</h3>
+  <button class="sim-btn" onclick="resetModal()">Reset + Reopen Modal</button>
+  <button class="sim-btn" onclick="resetDefaults()">Reset Defaults</button>
+</div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const root = document.documentElement;
+
+  // ── Viewport fit ─────────────────────────────────────────────
+  function fitViewport() {
+    let s;
+    if (document.body.classList.contains('fullsize')) {
+      s = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+    } else {
+      const avail = Math.min(window.innerWidth - 440, window.innerWidth * 0.65);
+      const h = window.innerHeight - 40;
+      s = Math.min(avail / 960, h / 640, 1);
+    }
+    $('scale-root').style.transform = 'scale(' + s + ')';
+  }
+  fitViewport();
+  window.addEventListener('resize', fitViewport);
+
+  window.toggleSize = function() {
+    document.body.classList.toggle('fullsize');
+    $('size-toggle').textContent = document.body.classList.contains('fullsize') ? 'Demo Size' : 'Actual Size';
+    fitViewport();
+  };
+
+  // ── Parallax stars (decorative backdrop) ─────────────────────
+  const farCvs = $('stars-far'), farCtx = farCvs.getContext('2d');
+  const nearCvs = $('stars-near'), nearCtx = nearCvs.getContext('2d');
+  let farStars = [], nearStars = [];
+  function makeStars(arr, count, type) {
+    arr.length = 0;
+    for (let i = 0; i < count; i++) arr.push({
+      x: Math.random()*960, y: Math.random()*640,
+      r: type==='far' ? Math.random()*1.1+0.3 : Math.random()*1.6+0.8,
+      phase: Math.random()*Math.PI*2,
+      drift: Math.random()*0.6+0.4
+    });
+  }
+  makeStars(farStars, 100, 'far');
+  makeStars(nearStars, 16, 'near');
+  function drawStars() {
+    if (PauseBus.paused) { requestAnimationFrame(drawStars); return; }
+    const now = performance.now()/1000;
+    farCtx.clearRect(0,0,960,640);
+    for (const s of farStars) {
+      farCtx.globalAlpha = 0.25 + Math.sin(now*1.5 + s.phase)*0.18;
+      farCtx.fillStyle = '#8899aa';
+      farCtx.beginPath(); farCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); farCtx.fill();
+    }
+    farCtx.globalAlpha = 1;
+    nearCtx.clearRect(0,0,960,640);
+    for (const s of nearStars) {
+      nearCtx.globalAlpha = 0.4 + Math.sin(now*0.8 + s.phase)*0.2;
+      nearCtx.fillStyle = '#c8d0d8';
+      nearCtx.beginPath(); nearCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); nearCtx.fill();
+    }
+    nearCtx.globalAlpha = 1;
+    requestAnimationFrame(drawStars);
+  }
+  drawStars();
+
+  // ── Settings model ────────────────────────────────────────────
+  // Stepped tiers carry their own effect numbers so the preview
+  // block can react live. When the engine is wired to the JSON
+  // modules, these lookup tables move into map_rules.json / crops.json.
+  const PACE = [
+    { name: 'LIGHT SPEED',      etaMult: 1.35, fuelMult: 0.6, drainMult: 0.6 },
+    { name: 'RIDICULOUS SPEED', etaMult: 1.0,  fuelMult: 1.0, drainMult: 1.0 },
+    { name: 'LUDICROUS SPEED',  etaMult: 0.78, fuelMult: 1.6, drainMult: 1.4 },
+    { name: 'PLAID',            etaMult: 0.55, fuelMult: 2.4, drainMult: 2.0 }
+  ];
+  // Ordered left (least) → right (most), matching the engines row.
+  const RATIONS = [
+    { name: 'VENDING MACHINE', foodPerDay: 2, morale: 'FALLING' },
+    { name: 'STANDARD',        foodPerDay: 4, morale: 'STEADY'  },
+    { name: 'PIG OUT',         foodPerDay: 6, morale: 'RISING'  }
+  ];
+  const BASE_ETA = 94;          // days from current position to arrival
+  const CROP_WATER_NEED = 50;   // wheat = ~50%; would come from crops.json
+  const CROP_NAME = 'wheat';
+
+  // ── Projection model ──────────────────────────────────────────
+  // The original demo showed multipliers (1.6x fuel burn) which
+  // are abstract. We project every setting into a *day number* the
+  // player already cares about: the day of arrival, the day the
+  // fuel empties, the day the food empties, the day the crop
+  // matures, the day the crew hits critical. Setting + stock + rate
+  // → day. Comparing those days to the projected arrival day is
+  // what drives the ⚠ warnings.
+  const CURRENT_DAY       = 47;      // matches the ghost cruise backdrop
+  const FUEL_STOCK        = 100;     // arbitrary units; 100 days at RIDICULOUS
+  const FOOD_STOCK        = 400;     // rations on hand
+  const BASE_FUEL_PER_DAY = 1.0;     // baseline burn at RIDICULOUS
+  const CROP_GROWTH_PCT   = 13;      // current growth % (matches cruise demo)
+  const CROP_MATURITY_DAYS = 90;     // days to mature at 100% water match
+  const CREW_HYDRATION    = 100;     // starting stat; drains when under-watered
+
+  function projectedArrivalDay(paceIdx) {
+    return CURRENT_DAY + Math.round(BASE_ETA * PACE[paceIdx].etaMult);
+  }
+  function fuelEmptyDay(paceIdx) {
+    return CURRENT_DAY + Math.floor(FUEL_STOCK / (BASE_FUEL_PER_DAY * PACE[paceIdx].fuelMult));
+  }
+  function foodEmptyDay(rationsIdx) {
+    return CURRENT_DAY + Math.floor(FOOD_STOCK / RATIONS[rationsIdx].foodPerDay);
+  }
+  function cropMatureDay(plantPct) {
+    const ratio = Math.min(1, plantPct / CROP_WATER_NEED);
+    if (ratio === 0) return Infinity;
+    const dailyRate = (100 / CROP_MATURITY_DAYS) * ratio;
+    const daysLeft = Math.ceil(Math.max(0, 100 - CROP_GROWTH_PCT) / dailyRate);
+    return CURRENT_DAY + daysLeft;
+  }
+  // Crew drain rate (hydration points / day). Clamped at zero when
+  // crew share matches or exceeds the 50% they need. Tiers match the
+  // OK/THIRSTY/CRITICAL labels the original demo used.
+  function crewDrainRate(plantPct) {
+    const crewPct = 100 - plantPct;
+    const ratio = Math.min(1, crewPct / (100 - CROP_WATER_NEED));
+    if (ratio >= 1)   return 0;
+    if (ratio >= 0.7) return 1;
+    if (ratio >= 0.4) return 3;
+    return 6;
+  }
+  function crewCriticalDay(plantPct) {
+    const rate = crewDrainRate(plantPct);
+    if (rate === 0) return Infinity;
+    return CURRENT_DAY + Math.ceil(CREW_HYDRATION / rate);
+  }
+
+  // Plain-language tier descriptions — one sentence each, in the
+  // same order as PACE / RATIONS arrays. Water is continuous so
+  // it gets a small function below instead of a fixed list.
+  const PACE_DESCS = [
+    'Crawl to arrival. Burn little. Crew rests.',
+    'The default. Steady fuel. Crew fine.',
+    'Faster. Burn harder. Crew tires.',
+    'Arrive fastest. Bleed fuel and crew. Not a drill.'
+  ];
+  const RATIONS_DESCS = [
+    'Half rations. Morale sinks. Food lasts.',
+    'Full rations. Morale holds steady.',
+    'Double rations. Morale lifts. Food empties fast.'
+  ];
+  function waterDesc(plantPct) {
+    const plantRatio = plantPct / CROP_WATER_NEED;
+    const crewRatio  = (100 - plantPct) / (100 - CROP_WATER_NEED);
+    if (plantRatio < 0.5)  return 'Plant parches. Crew bathes. Growth crawls.';
+    if (plantRatio < 0.85) return 'Plant thirsty. Crop slows.';
+    if (crewRatio  < 0.5)  return 'Plant thrives. Crew goes dry.';
+    if (crewRatio  < 0.85) return 'Plant well-fed. Crew watches the taps.';
+    return 'Matched. Plant and crew both fine.';
+  }
+
+  // Committed (what's saved on the cruise screen) vs. preview
+  // (what the player is editing in the modal right now).
+  const saved    = { pace: 1, rations: 1, water: 50 };
+  const preview  = { pace: 1, rations: 1, water: 50 };
+
+  // AI quips keyed by section — selected line updates as the
+  // player changes settings. Demo voice is ARIA (relentless optimist).
+  const AI_QUIPS = {
+    pace: [
+      'Slow is safe. Safety is a warm hug.',                                         // LIGHT
+      'Steady as she goes. An acceptable compromise.',                               // RIDICULOUS
+      'Bold. I support boldness, even when it is alarming.',                          // LUDICROUS
+      'PLAID selected. Fuel consumption up 140%. I am personally excited about this.' // PLAID
+    ],
+    rations: [
+      'Vending Machine mode. A proud tradition of thin men.',
+      'Everyone gets exactly enough. The galaxy\'s most tolerable compromise.',
+      'Pig out! The cook disapproves but the crew does not.'
+    ],
+    water_matched: 'The plant\'s mood is exactly what one would hope for a plant\'s mood to be.',
+    water_plant_starving: 'Wheat is thirsty. Also, slightly offended.',
+    water_crew_starving:  'Crew is thirsty. Also, audibly complaining.'
+  };
+
+  // ── Live updates ──────────────────────────────────────────────
+  // ── Stat row HTML ────────────────────────────────────────────
+  // Single HTML template so every preview stat reads the same way:
+  // LABEL · VALUE [±Nd] [⚠]. The delta pill and warn badge are
+  // optional; `deltaClass` picks the delta color (good/bad/neutral).
+  function statLine(label, value, deltaStr, deltaClass, warn) {
+    // warn-badge is ALWAYS rendered so the row's layout is the same
+    // whether the warning fires or not. The `.warn` class on the
+    // parent toggles opacity in CSS — no vertical shift, no reflow.
+    return '<div class="preview-stat' + (warn ? ' warn' : '') + '">' +
+      label + ' \u00b7 <strong>' + value + '</strong>' +
+      (deltaStr ? ' <span class="delta ' + (deltaClass || 'neutral') + '">' + deltaStr + '</span>' : '') +
+      ' <span class="warn-badge">\u26A0</span>' +
+      '</div>';
+  }
+  // Day-count delta formatter. Returns "+Nd", "-Nd", or null when
+  // unchanged. Also computes the good/bad color based on direction
+  // intent: when `laterIsBetter` is true, a later day is 'good'.
+  function dayDelta(cur, base, laterIsBetter) {
+    if (cur === base) return { text: null, cls: null };
+    const d = cur - base;
+    const text = (d > 0 ? '+' : '') + d + 'd';
+    const cls = (d > 0) === laterIsBetter ? 'good' : 'bad';
+    return { text, cls };
+  }
+
+  function renderEngines() {
+    const p  = PACE[preview.pace];
+    const sv = PACE[saved.pace];
+    const arrival     = projectedArrivalDay(preview.pace);
+    const savedArr    = projectedArrivalDay(saved.pace);
+    const fuelEmpty   = fuelEmptyDay(preview.pace);
+    const savedFuel   = fuelEmptyDay(saved.pace);
+
+    // Arrival: sooner is better (the whole point of a faster pace).
+    const arrDelta  = dayDelta(arrival,   savedArr,  false);
+    // Fuel empty: later is better (more runway).
+    const fuelDelta = dayDelta(fuelEmpty, savedFuel, true);
+
+    // Crew drain: label instead of raw multiplier. Direction delta
+    // for "did it get worse/better from the saved state."
+    const crewLabel      = p.drainMult < 1 ? 'EASING' : (p.drainMult > 1 ? 'RISING' : 'STEADY');
+    let crewDeltaText = null, crewDeltaCls = null;
+    if (p.drainMult !== sv.drainMult) {
+      crewDeltaText = p.drainMult > sv.drainMult ? '\u25B2' : '\u25BC';
+      crewDeltaCls  = p.drainMult > sv.drainMult ? 'bad' : 'good';
+    }
+
+    // Warning: fuel will run out before we arrive. The single most
+    // dangerous pace/stock mismatch; flagged per-stat and bubbled
+    // to the section header.
+    const fuelWarn = fuelEmpty < arrival;
+
+    $('engines-preview').innerHTML =
+      statLine('ARRIVAL',    'DAY ' + arrival,   arrDelta.text,  arrDelta.cls, false) +
+      statLine('FUEL EMPTY', 'DAY ' + fuelEmpty, fuelDelta.text, fuelDelta.cls, fuelWarn) +
+      statLine('CREW DRAIN', crewLabel,          crewDeltaText,  crewDeltaCls, false);
+
+    $('engines-desc').textContent = PACE_DESCS[preview.pace];
+    $('engines-warn').classList.toggle('on', fuelWarn);
+
+    document.querySelectorAll('#engines-pills .pill').forEach((el, i) => {
+      el.classList.toggle('selected', i === preview.pace);
+      el.classList.toggle('saved-current', i === saved.pace);
+    });
+  }
+
+  function renderRations() {
+    const r   = RATIONS[preview.rations];
+    const sv  = RATIONS[saved.rations];
+    const foodEmpty  = foodEmptyDay(preview.rations);
+    const savedEmpty = foodEmptyDay(saved.rations);
+    // Warning compares against the PREVIEW's arrival day — if the
+    // player speeds up the ship they might avoid a food shortage
+    // that would've been real at the saved pace.
+    const arrival    = projectedArrivalDay(preview.pace);
+
+    const foodDelta = dayDelta(foodEmpty, savedEmpty, true);
+
+    // Food/day is a neutral stat — more isn't strictly better or
+    // worse, it's a tradeoff. Show the delta uncolored.
+    let fpdText = null;
+    if (r.foodPerDay !== sv.foodPerDay) {
+      const d = r.foodPerDay - sv.foodPerDay;
+      fpdText = (d > 0 ? '+' : '') + d;
+    }
+
+    // Morale direction: going UP is good, DOWN is bad. We compare
+    // the ordering of the morale labels (FALLING < STEADY < RISING).
+    const moraleOrder = { FALLING: 0, STEADY: 1, RISING: 2 };
+    let moraleDelta = null, moraleCls = null;
+    if (r.morale !== sv.morale) {
+      const up = moraleOrder[r.morale] > moraleOrder[sv.morale];
+      moraleDelta = up ? '\u25B2' : '\u25BC';
+      moraleCls   = up ? 'good'   : 'bad';
+    }
+
+    const foodWarn = foodEmpty < arrival;
+
+    $('rations-preview').innerHTML =
+      statLine('FOOD EMPTY', 'DAY ' + foodEmpty, foodDelta.text, foodDelta.cls, foodWarn) +
+      statLine('FOOD / DAY', r.foodPerDay,       fpdText,        'neutral',     false) +
+      statLine('MORALE',     r.morale,           moraleDelta,    moraleCls,     false);
+
+    $('rations-desc').textContent = RATIONS_DESCS[preview.rations];
+    $('rations-warn').classList.toggle('on', foodWarn);
+
+    document.querySelectorAll('#rations-pills .pill').forEach((el, i) => {
+      el.classList.toggle('selected', i === preview.rations);
+      el.classList.toggle('saved-current', i === saved.rations);
+    });
+  }
+
+  function renderWater() {
+    const plant = preview.water;
+    const crew  = 100 - plant;
+    $('water-plant-pct').textContent = plant + '%';
+    $('water-crew-pct').textContent  = crew + '%';
+    $('water-fill-plant').style.width = plant + '%';
+    $('water-fill-crew').style.width  = crew  + '%';
+    $('water-thumb').style.left       = plant + '%';
+    $('water-saved-mark').style.left  = saved.water + '%';
+
+    const arrival     = projectedArrivalDay(preview.pace);
+    const mature      = cropMatureDay(plant);
+    const savedMature = cropMatureDay(saved.water);
+    const crewDay     = crewCriticalDay(plant);
+    const savedCrewD  = crewCriticalDay(saved.water);
+
+    // Plant mature: sooner is better. Render Infinity as "NEVER".
+    const matureStr = (mature === Infinity) ? 'NEVER' : ('DAY ' + mature);
+    const matureDelta = dayDelta(
+      mature === Infinity ? 9999 : mature,
+      savedMature === Infinity ? 9999 : savedMature,
+      false
+    );
+    const plantWarn = mature > arrival;
+
+    // Crew: when ratio >= 1.0 the label is NOMINAL (no day). Any
+    // drain >0 turns it into a day projection.
+    const drain      = crewDrainRate(plant);
+    const savedDrain = crewDrainRate(saved.water);
+    const crewLabel  = drain === 0
+      ? 'NOMINAL'
+      : ('CRITICAL DAY ' + crewDay);
+
+    let crewDeltaText = null, crewDeltaCls = null;
+    if (drain !== savedDrain) {
+      // Rising drain (plant taking more water) is bad for crew.
+      crewDeltaText = drain > savedDrain ? '\u25B2' : '\u25BC';
+      crewDeltaCls  = drain > savedDrain ? 'bad'   : 'good';
+    } else if (drain > 0 && crewDay !== savedCrewD) {
+      // Same tier but different day somehow — show the day shift.
+      const d = dayDelta(crewDay, savedCrewD, true);
+      crewDeltaText = d.text; crewDeltaCls = d.cls;
+    }
+
+    const crewWarn = crewDay < arrival;
+
+    $('water-preview').innerHTML =
+      statLine('PLANT MATURES', matureStr, matureDelta.text, matureDelta.cls, plantWarn) +
+      statLine('CREW',          crewLabel, crewDeltaText,    crewDeltaCls,    crewWarn);
+
+    $('water-desc').textContent = waterDesc(plant);
+    $('water-warn').classList.toggle('on', plantWarn || crewWarn);
+  }
+
+  // AI commentary line. Accepts an optional override so hovered
+  // pills can temporarily swap the quip without committing the
+  // preview. Override keys: { pace, rations, water }.
+  function renderAi(override) {
+    let line;
+    if (override && 'pace' in override) {
+      line = AI_QUIPS.pace[override.pace];
+    } else if (override && 'rations' in override) {
+      line = AI_QUIPS.rations[override.rations];
+    } else {
+      const plant = preview.water;
+      const crewRatio  = (100 - plant) / (100 - CROP_WATER_NEED);
+      const plantRatio = plant / CROP_WATER_NEED;
+      if (crewRatio < 0.6)                          line = AI_QUIPS.water_crew_starving;
+      else if (plantRatio < 0.7)                    line = AI_QUIPS.water_plant_starving;
+      else if (preview.pace !== saved.pace)         line = AI_QUIPS.pace[preview.pace];
+      else if (preview.rations !== saved.rations)   line = AI_QUIPS.rations[preview.rations];
+      else                                          line = AI_QUIPS.water_matched;
+    }
+    $('ai-text').textContent = line;
+  }
+
+  function renderAll() {
+    renderEngines();
+    renderRations();
+    renderWater();
+    renderAi();
+  }
+
+  // ── Pill interactions ────────────────────────────────────────
+  // Click commits the tier to preview. Hover speaks the AI line for
+  // that tier without committing, so the player can "audition" a
+  // choice. mouseleave snaps the AI back to the real preview state.
+  document.querySelectorAll('#engines-pills .pill').forEach(el => {
+    const idx = parseInt(el.getAttribute('data-idx'));
+    el.addEventListener('click', () => {
+      preview.pace = idx;
+      renderAll();
+    });
+    el.addEventListener('mouseenter', () => {
+      if (idx !== preview.pace) renderAi({ pace: idx });
+    });
+    el.addEventListener('mouseleave', () => renderAi());
+  });
+  document.querySelectorAll('#rations-pills .pill').forEach(el => {
+    const idx = parseInt(el.getAttribute('data-idx'));
+    el.addEventListener('click', () => {
+      preview.rations = idx;
+      renderAll();
+    });
+    el.addEventListener('mouseenter', () => {
+      if (idx !== preview.rations) renderAi({ rations: idx });
+    });
+    el.addEventListener('mouseleave', () => renderAi());
+  });
+
+  // ── Water slider interactions (click + drag) ─────────────────
+  const track = $('water-track');
+  const MIN_WATER = 15; // floor; can't starve either side to zero
+  const MAX_WATER = 85;
+  let dragging = false;
+
+  function pctFromEvent(e) {
+    const rect = track.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const pct = Math.round(Math.max(0, Math.min(1, x)) * 100);
+    return Math.max(MIN_WATER, Math.min(MAX_WATER, pct));
+  }
+  track.addEventListener('mousedown', (e) => {
+    dragging = true;
+    preview.water = pctFromEvent(e);
+    renderAll();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    preview.water = pctFromEvent(e);
+    renderAll();
+  });
+  window.addEventListener('mouseup', () => { dragging = false; });
+
+  // ── Modal open/close ─────────────────────────────────────────
+  // The ghost cruise readout behind the modal reflects `saved` state.
+  // When the modal closes (apply or cancel), the readout updates (if
+  // applied) and the player sees the new settings in context.
+  function renderGhost() {
+    $('ghost-engines').textContent = PACE[saved.pace].name;
+    $('ghost-rations').textContent = RATIONS[saved.rations].name;
+    $('ghost-water-plant').textContent = saved.water + '%';
+    $('ghost-water-crew').textContent = (100 - saved.water) + '%';
+  }
+  window.openModal = function() {
+    // Opening always starts with preview = saved (fresh slate).
+    preview.pace = saved.pace;
+    preview.rations = saved.rations;
+    preview.water = saved.water;
+    document.body.classList.add('modal-open');
+    renderAll();
+  };
+  window.closeModal = function(result) {
+    if (result === 'apply') {
+      saved.pace = preview.pace;
+      saved.rations = preview.rations;
+      saved.water = preview.water;
+    }
+    // Cancel is implicit: preview is discarded; saved unchanged.
+    document.body.classList.remove('modal-open');
+    renderGhost();
+  };
+  window.resetModal = function() {
+    // Sim: reset the whole demo state (as if new run).
+    saved.pace = 1; saved.rations = 1; saved.water = 50;
+    preview.pace = 1; preview.rations = 1; preview.water = 50;
+    renderGhost();
+    openModal();
+  };
+
+  // ESC to cancel
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal('cancel');
+  });
+
+  // ── Apply styles from controls panel ─────────────────────────
+  function apply() {
+    const setVar = (name, val) => root.style.setProperty(name, val);
+    const setPx  = (name, id)  => {
+      const v = $(id).value;
+      setVar(name, v + 'px');
+      const r = $('v-' + id.slice(2));
+      if (r) r.textContent = v;
+    };
+
+    // Modal frame
+    setVar('--modal-backdrop', 'rgba(4,8,16,' + ($('c-backdrop').value / 100) + ')');
+    $('v-backdrop').textContent = $('c-backdrop').value;
+    setVar('--modal-bg-top', $('c-modal-top').value);
+    setVar('--modal-bg-bot', $('c-modal-bot').value);
+    setVar('--modal-border', $('c-modal-border').value);
+    setPx('--modal-width', 'c-modal-w');
+    setPx('--modal-height','c-modal-h');
+    setPx('--section-gap', 'c-section-gap');
+
+    // Title / section
+    setVar('--modal-title-color', $('c-title').value);
+    setPx('--modal-title-size',  'c-title-size');
+    setVar('--section-label-color', $('c-sec-label').value);
+    setPx('--section-label-size',  'c-sec-size');
+    setVar('--section-current-color', $('c-sec-cur').value);
+
+    // Pills
+    setVar('--pill-bg',     $('c-pill-bg').value);
+    setVar('--pill-border', $('c-pill-border').value);
+    setVar('--pill-text',   $('c-pill-text').value);
+    setVar('--pill-selected-border', $('c-pill-sel-border').value);
+    setVar('--pill-selected-text',   $('c-pill-sel-text').value);
+
+    // Preview
+    setVar('--preview-label-color', $('c-prev-label').value);
+    setVar('--preview-value-color', $('c-prev-value').value);
+    setPx('--preview-size',         'c-prev-size');
+
+    // Water
+    setVar('--water-plant-color', $('c-water-plant').value);
+    setVar('--water-crew-color',  $('c-water-crew').value);
+    setVar('--water-thumb-color', $('c-water-thumb').value);
+
+    // AI line
+    setVar('--ai-name-color', $('c-ai-name').value);
+    setVar('--ai-text-color', $('c-ai-text').value);
+    setPx('--ai-size',        'c-ai-size');
+  }
+
+  const DEFAULTS = {
+    'c-backdrop': '75',
+    'c-modal-top': '#141a28', 'c-modal-bot': '#0a0e18', 'c-modal-border': '#435384',
+    'c-modal-w': '797', 'c-modal-h': '560', 'c-section-gap': '28',
+    'c-title': '#56cfd7', 'c-title-size': '16',
+    'c-sec-label': '#c8a85a', 'c-sec-size': '10', 'c-sec-cur': '#35c6bf',
+    'c-pill-bg': '#141c28', 'c-pill-border': '#2a3040', 'c-pill-text': '#7a8898',
+    'c-pill-sel-border': '#c8a85a', 'c-pill-sel-text': '#0e1520',
+    'c-prev-label': '#5a7a6a', 'c-prev-value': '#d0c890', 'c-prev-size': '14',
+    'c-water-plant': '#85d270', 'c-water-crew': '#7dc8e8', 'c-water-thumb': '#c8a85a',
+    'c-ai-name': '#c8a85a', 'c-ai-text': '#aab5c4', 'c-ai-size': '16'
+  };
+
+  document.querySelectorAll('#controls input[type="color"]').forEach(input => {
+    if (input.parentElement.querySelector('.val')) return;
+    const span = document.createElement('span');
+    span.className = 'val';
+    span.textContent = input.value.toUpperCase();
+    input.parentElement.appendChild(span);
+    input.addEventListener('input', () => { span.textContent = input.value.toUpperCase(); });
+  });
+
+  function markModified() {
+    for (const [id, defVal] of Object.entries(DEFAULTS)) {
+      const el = $(id);
+      if (!el) continue;
+      const span = el.parentElement.querySelector('.val');
+      if (!span) continue;
+      span.classList.toggle('modified', String(el.value).toLowerCase() !== String(defVal).toLowerCase());
+    }
+  }
+
+  document.querySelectorAll('#controls input').forEach(el => el.addEventListener('input', () => {
+    apply();
+    markModified();
+  }));
+
+  window.resetDefaults = function() {
+    for (const [id, val] of Object.entries(DEFAULTS)) {
+      const el = $(id);
+      if (!el) continue;
+      el.value = val;
+      if (el.type === 'color') {
+        const span = el.parentElement.querySelector('.val');
+        if (span) span.textContent = val.toUpperCase();
+      }
+    }
+    apply();
+    markModified();
+  };
+
+  apply();
+  markModified();
+  renderAll();
+  renderGhost();
+  // Demo opens with the modal shown — real cruise flow would open
+  // only when the player clicks a cruise readout cell.
+  document.body.classList.add('modal-open');
+
+})();
+</script>
+</body>
+</html>

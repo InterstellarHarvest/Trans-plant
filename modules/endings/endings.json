@@ -1,0 +1,281 @@
+[
+  {
+    "id": "ending_colonyfiled_001",
+    "active": true,
+    "title": "Colony Report Filed",
+    "ending_score": "any",
+    "tone": [
+      "mundane",
+      "corporate"
+    ],
+    "test_path": true,
+    "event_presentation": "fullscreen",
+    "body_template": "Arrival is procedural. The colony authority sends a form.\n\nThe form asks: crew count, resource status, crop viability, hull integrity. The ship computer fills it in. The form does not ask how you feel.\n\n{score_paragraph}\n\n{crop_paragraph}\n\n{crew_paragraph}\n\nColony Report #{report_number}, filed.",
+    "score_paragraphs": {
+      "legendary": "The colony authority's assessment reads: 'Exceptional. Full crew. Surplus reserves. Crop thriving. Ahead of schedule.' There is a footnote of commendation. It is one sentence. It is the only sentence in the entire report that sounds like it was written by a person.",
+      "good": "The colony authority's assessment reads: 'Satisfactory. Crew intact. Reserves adequate. Crop viable.' There is no footnote. Satisfactory does not get footnotes. Satisfactory is its own reward.",
+      "rough": "The colony authority's assessment reads: 'Arrived. Crew status: reduced. Reserves: depleted. Crop viability: marginal.' The word 'marginal' is doing significant work. The report's euphemism density suggests the assessor has done this before.",
+      "pyrrhic": "The colony authority's assessment reads: 'One survivor. Crop: alive. Reserves: none. Hull: concerning.' There is a footnote. It reads: 'The survivor has been offered counseling. The survivor has declined counseling. The survivor has named a mountain after a former crew member. This is noted.'",
+      "hollow": "The colony authority's assessment reads: 'Crew: arrived. Crop: deceased.' There is a long pause in the form where the assessor clearly considered what to write next. What they wrote was: 'The mission objective was not achieved. The crew is alive. These facts coexist.' There is a footnote of condolence. It is clearly a template."
+    },
+    "crop_paragraphs": {
+      "thriving": "The crop is transferred to the colony growhouse. It is healthy. It will grow. The botanist, if present, watches the transfer with the expression of someone who has kept something alive across an impossible distance and is now letting go.",
+      "sick": "The crop is transferred to the colony growhouse. It is alive but struggling. The colony agronomist reviews the data and says, 'We can work with this.' They do not say it with confidence. They say it with determination, which is different.",
+      "dead": "There is no crop to transfer. The growbay is empty. The colony agronomist reviews the data and closes the file. The form has a field for crop status. The ship computer entered 'N/A.' This is technically accurate and completely insufficient."
+    },
+    "crew_paragraphs": {
+      "full": "The crew disembarks. All of them. This is statistically unusual and the colony authority notes it.",
+      "partial": "The surviving crew disembarks. There are empty spaces where people used to stand. Nobody fills them. The colony authority notes the headcount. The headcount is a number. The number does not capture what was lost.",
+      "solo": "You disembark alone. The colony authority expected more of you. They mean this in the mathematical sense. You are one person. They expected at least two."
+    },
+    "zinnia_modifier": {
+      "condition": "crop_type == zinnia AND crop_health > 0",
+      "additional_paragraph": "The zinnias are transferred last. They are orange. They are completely useless. The colony agronomist looks at them for a long time. 'These aren't food,' they say. 'No,' you say. They look at you. They look at the flowers. 'Good,' they say, quietly. The zinnias are planted in the central courtyard. They will be the first thing the colony sees every morning. They were never the mission. They were always the point."
+    }
+  },
+  {
+    "id": "ending_youmadeit_001",
+    "active": true,
+    "title": "You Made It",
+    "ending_score": "any",
+    "tone": [
+      "heartwarming",
+      "grim"
+    ],
+    "test_path": false,
+    "event_presentation": "fullscreen",
+    "body_template": "The destination appears on sensors. The ship computer announces arrival with the same tone it uses for everything.\n\n{crew_reaction}\n\n{score_paragraph}\n\nThe colony report is one sentence. It is the truest thing in the game.",
+    "score_paragraphs": {
+      "legendary": "You arrived with everything. Full crew. Surplus resources. A crop so healthy the colony agronomist used the word 'magnificent,' which they have never used before and will never use again. The ship computer logs the arrival. For the first time, it does not add a qualifier.",
+      "good": "You arrived with most of what you left with. Some resources are thin. The hull has stories to tell. The crop is alive and will grow. The ship computer logs the arrival as 'mission complete.' Two words. They are enough.",
+      "rough": "You arrived. The colony report will use words like 'resilient' and 'resourceful' to describe what happened, because the accurate words are too honest for official documentation. The crop survived. Barely. You survived. Also barely.",
+      "pyrrhic": "You arrived. You, specifically. The ship is held together by patches and stubbornness. The crop is alive because you refused to let it die. Everything else is a list of things that were lost. The colony report does not capture this. Nothing will.",
+      "hollow": "You arrived. The crop did not. The colony authority sends a form expressing condolences. It is clearly a template. You fill out the arrival paperwork. Under 'mission status' the ship computer has entered one word: 'incomplete.' It is the kindest thing it could have said."
+    }
+  },
+  {
+    "id": "ending_legendary_002",
+    "active": true,
+    "title": "The Textbook Case",
+    "ending_score": "legendary",
+    "tone": [
+      "corporate",
+      "heartwarming"
+    ],
+    "test_path": false,
+    "event_presentation": "fullscreen",
+    "body_template": "Within a month of your arrival, the colony training office requests permission to use your voyage logs as instructional material.\n\nThey want the fuel curves. They want the crew rotation schedules. They want, specifically, the growbay maintenance intervals, which the reviewing agronomist has annotated with the single word 'correct' eleven times.\n\n{crop_paragraph}\n\n{crew_paragraph}\n\nThe request form has a box for compensation. You leave it blank. The training office interprets this as generosity. It was actually disbelief. You were making it up the whole way, same as everyone.\n\nThe course runs every spring. Nobody who takes it believes the logs are real.",
+    "crop_paragraphs": {
+      "thriving": "The crop arrives in condition the intake form describes as 'reference standard.' Future shipments will be measured against yours. Somewhere, a plant you kept alive across the void has become a unit of measurement.",
+      "sick": "The crop arrives weakened but alive, and recovers within a season under colony care. The logs record every setback and every correction. The training office finds the recovery arc more instructive than perfection would have been.",
+      "dead": "The crop did not survive. The logs record everything you tried. The training office includes the loss in the curriculum anyway, over your objection, under the module heading 'Sometimes.'"
+    },
+    "crew_paragraphs": {
+      "full": "The whole crew disembarks together, in dress uniforms nobody remembers packing. There is a photograph. Everyone in it looks surprised to be in it.",
+      "partial": "The crew that remains disembarks together. The logs list everyone who started the journey. The training office asked to redact the losses for 'course clarity.' You declined. The course is clearer for it.",
+      "solo": "You disembark alone, carrying logs that list every name. The training office offers condolences, then asks — gently, professionally — whether the names can stay in the curriculum. They stay. Every spring, a classroom reads them."
+    }
+  },
+  {
+    "id": "ending_good_001",
+    "active": true,
+    "title": "Settled In",
+    "ending_score": "good",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "test_path": false,
+    "event_presentation": "fullscreen",
+    "body_template": "Six weeks after arrival, you catch yourself complaining about the weather.\n\nNot the radiation shielding. Not the recycler capacity. The weather — the ordinary, scheduled, dome-managed weather, which was drizzling when you wanted to walk to the depot.\n\nThis, the colony's oldest resident tells you, is the actual moment of arrival. Not the docking. Not the paperwork. The first time the new place is ordinary enough to complain about.\n\n{crop_paragraph}\n\n{crew_paragraph}\n\nThe ship sits in long-term berth, getting visited less each month. It doesn't mind. Ships don't mind things. But you visit anyway, now and then, and sit in the captain's chair, and complain to it about the weather.",
+    "crop_paragraphs": {
+      "thriving": "The crop took to colony soil like it had been homesick for it. First harvest came early. You were there. Everyone was there. It tasted like the reason for everything.",
+      "sick": "The crop needed a season in the recovery greenhouse, and got it, and made it. The colony agronomist calls it 'the stubborn batch.' It is served at gatherings with the story attached.",
+      "dead": "The greenhouse you were meant to fill stands planted with colony stock instead. It grows fine. You still bring your coffee out there some mornings, out of a habit you never technically got to form."
+    },
+    "crew_paragraphs": {
+      "full": "The crew scattered into colony life the way crews do — two streets apart, pretending it's coincidence, showing up at the same table every eighth day without ever once scheduling it.",
+      "partial": "The crew that made it holds a quiet anniversary every year. It is not on the colony calendar. It is on yours, in ink, and no weather has ever moved it.",
+      "solo": "You came alone, and the colony absorbed you gently, the way settlements built by survivors know how to do. Nobody asks. Everybody knows. The table at the commissary always has one extra chair, and nobody comments on it."
+    }
+  },
+  {
+    "id": "ending_rough_001",
+    "active": true,
+    "title": "Arrival, Comma, Technically",
+    "ending_score": "rough",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "test_path": false,
+    "event_presentation": "fullscreen",
+    "body_template": "The dock inspector walks the length of your ship twice, writing continuously.\n\nThe inspection form has a field labeled 'general condition.' The inspector has written, after visible deliberation: 'arrived.' Asked to elaborate, they gesture at the ship, which chooses that moment to shed a piece of exterior plating onto the dock. It rings like a bell. Nobody moves to pick it up.\n\n{crop_paragraph}\n\n{crew_paragraph}\n\nThe colony accepts you the way harbors accept weather-beaten ships: without ceremony, without judgment, and with an immediate work order. You made it. The word 'it' is doing some work in that sentence. So did you. So did everyone.\n\nThe plating stays where it fell for three days. Someone eventually plants flowers in it.",
+    "crop_paragraphs": {
+      "thriving": "The crop, against every probability the voyage threw at it, arrives healthy. The dock inspector looks at the pristine growbay, then at the rest of the ship, then back. 'Priorities,' they write, in the margin. It is not a criticism.",
+      "sick": "The crop arrives in roughly the ship's condition: alive, diminished, and visibly owed an apology. The colony greenhouse takes it in like a veteran's hospital. Prognosis: eventual.",
+      "dead": "The growbay arrives empty. The inspector notes it without comment, which is its own kind of mercy. The empty bay is repurposed within the week. You don't watch."
+    },
+    "crew_paragraphs": {
+      "full": "Everyone made it. Everyone. The dock medic examines the whole crew and finds nothing wrong that a year of sleep won't fix, and writes 'ALL PRESENT' on the intake form with an underline that borders on emotional.",
+      "partial": "Those who remain walk down the ramp slowly, in the manner of people who have been counting each other for months and cannot stop. The intake form asks for a crew total. You write the number. The number is smaller than it was. The form does not ask about that, and it is suddenly very hard to forgive a piece of paper.",
+      "solo": "You walk down the ramp alone. The dock crew — strangers, all of them — form up without a word and unload your ship themselves, and will not let you lift a thing. Harbors know. Harbors have always known."
+    }
+  },
+  {
+    "id": "ending_pyrrhic_001",
+    "active": true,
+    "title": "One",
+    "ending_score": "pyrrhic",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "test_path": false,
+    "event_presentation": "fullscreen",
+    "body_template": "The colony sends a full docking crew to meet the ship. Standard procedure for a colony vessel: eight handlers, cargo team, medical.\n\nOne person walks down the ramp.\n\nThe docking crew stands there with their equipment and their checklists and their eight sets of hands, and for a long moment nobody knows what the procedure is, because there isn't one. Then the oldest handler steps forward and takes your bag. That's all. Takes your bag, and walks beside you, and doesn't say anything, all the way to intake.\n\n{crop_paragraph}\n\n{crew_paragraph}\n\nThe colony gives you a house at the settlement's edge, where the dome glass meets the dark. You asked for it. From the window you can see the landing field, and the ship, and past it, the sky you came out of.\n\nYou made it. That was the mission. Nobody tells you what the mission cost was supposed to be.",
+    "crop_paragraphs": {
+      "thriving": "The crop arrives alive. Alive, and green, and utterly indifferent to arithmetic. You kept it that way through everything. The colony plants it in the central plot, and it grows, and every leaf of it is a receipt for what the keeping cost.",
+      "sick": "The crop arrives barely alive — same as you, the intake medic does not say, out of professionalism. It recovers slowly, in colony soil, on colony time. You visit it daily. Neither of you is in a hurry anymore.",
+      "dead": "The crop is gone too. The cargo manifest reads empty and the crew manifest reads one, and the intake officer processes both pages very quietly and then goes home early. The colony plants a garden anyway, at the settlement's edge, near a house by the dome glass. Nobody calls it a memorial. Everybody waters it."
+    },
+    "crew_paragraphs": {
+      "full": "—",
+      "partial": "—",
+      "solo": "The names are in the log. The colony offers to carve them somewhere official. You ask for something smaller: the crew roster, framed, hung in the commissary where the noise is. They would have liked the noise. Official things are quiet, and quiet was never the point of any of them."
+    }
+  },
+  {
+    "id": "ending_hollow_001",
+    "active": true,
+    "title": "The Garden, Anyway",
+    "ending_score": "hollow",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "test_path": false,
+    "event_presentation": "fullscreen",
+    "body_template": "The colony meets you at the dock with a cargo lift for the growbay transfer. You have to tell them there is nothing to transfer.\n\n{crew_paragraph}\n\nThe intake officer processes the arrival with unexpected gentleness, stamps the manifest, and says the thing you did not know you needed stamped into the record: 'The crew arrived. That was also the mission. It was always also the mission.'\n\nThat first season, the colony plants its own stock in the plot reserved for your crop. Nobody calls it a replacement. Everybody tends it a little more carefully than agronomy requires.\n\nYou visit the plot most mornings. The colony pretends not to notice. The plants, in the manner of plants, notice everything and say nothing, and grow.",
+    "crew_paragraphs": {
+      "full": "The whole crew stands at the empty growbay's glass one last time before disembarking. Nobody says anything useful. Everybody says something.",
+      "partial": "The remaining crew disembarks together, carrying what the voyage left them. The empty growbay stays lit until the very last of you is off the ship. Then, and only then, someone reaches back in and gets the switch.",
+      "solo": "You disembark alone, past the growbay, without looking in. The colony assigns you quarters with a window facing the fields. You did not request it. Someone in the housing office read your manifest and made a decision. People are like that, it turns out. It helps."
+    }
+  },
+  {
+    "id": "ending_legendary_003",
+    "active": true,
+    "title": "The Name On The Map",
+    "ending_score": "legendary",
+    "tone": [
+      "heartwarming",
+      "absurd"
+    ],
+    "test_path": false,
+    "event_presentation": "fullscreen",
+    "body_template": "They name the landing valley after your ship. You find out from a road sign.\n\nNobody asks your permission for this, because that is not how naming works out here — a surveyor writes it on a chart because everyone was already calling it that, and then it is simply true, the way mountains are true.\n\n{crop_paragraph}\n\n{crew_paragraph}\n\nYears on, a schoolchild will ask you what the crossing was like, and you will open your mouth to tell them about the fear, and instead you will hear yourself describing the way the stars looked from the bridge with the cabin lights off. Both answers are honest. You picked the truer one.",
+    "crop_paragraphs": {
+      "thriving": "The first harvest was so good it unbalanced the colony's five-year plan. The agronomists had planned for survival. Nobody had filed paperwork for abundance. The forms took a season to catch up. The dinners did not wait for the forms.",
+      "sick": "The crop arrived bruised and recovered famous. 'The batch that almost didn't' outsells every other strain at the seed exchange, because settlers are sentimental in exactly one direction: toward the survivors.",
+      "dead": "The crop didn't make it, and the valley got named anyway, and you have never once known what to do with that arithmetic. The colony's first greenhouse keeps one empty bed, planted with nothing, labeled with everything."
+    },
+    "crew_paragraphs": {
+      "full": "All of you, at the dedication, in a line, in clothes nobody owned a year ago. The photographer said 'closer.' You were already closer than any crew has ever stood.",
+      "partial": "At the dedication they read the names of the ones who didn't stand there with you. The valley holds the sound better than any hall. You checked. You went back alone and checked.",
+      "solo": "You stood at the dedication alone and the colony stood behind you, several hundred strong, which is a strange way to learn the plural of alone."
+    }
+  },
+  {
+    "id": "ending_good_002",
+    "active": true,
+    "title": "The Second Ship",
+    "ending_score": "good",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "test_path": false,
+    "event_presentation": "fullscreen",
+    "body_template": "Eight months after you land, the second colony ship arrives, and you discover you have become the person who stands at the dock giving advice.\n\nDon't trust berth seven. Water the north beds at dusk. The recycler tech takes bribes in coffee, not credits. You hear yourself say these things with the easy authority of somebody's grandmother, and you wonder when exactly the crossing stopped being the thing you were doing and became the thing you had done.\n\n{crop_paragraph}\n\n{crew_paragraph}\n\nThe new arrivals look at you the way you once looked at the void: like something vast that has to be crossed to get to the rest of their lives. You hand them a crate and tell them where the kitchen is. It is, you have decided, the whole job of having arrived.",
+    "crop_paragraphs": {
+      "thriving": "Your crop seeds half the new ship's greenhouse allotment. Your plants, their soil, everybody's harvest. Agriculture, it turns out, is just generosity with a root system.",
+      "sick": "The crop pulled through in time to greet the second ship as a going concern. Only you and the greenhouse log know how close 'going' came to 'gone,' and the log is discreet.",
+      "dead": "You meet the second ship's botanist at the dock and hand over your growbay logs — every mistake annotated, every warning underlined. Their crop will live partly because yours didn't. It is not enough. It is not nothing."
+    },
+    "crew_paragraphs": {
+      "full": "The crew claims a table at the commissary the day the second ship docks, on the theory that veterans get a table. Nobody disputes it. The table is now load-bearing tradition.",
+      "partial": "The crew that made it teaches the new arrivals without ever mentioning the ones who taught them. Some curricula are carried, not spoken.",
+      "solo": "You came off the ship alone, and now you meet every new ship at the dock. Nobody assigned you the job. Absences make certain assignments themselves."
+    }
+  },
+  {
+    "id": "ending_rough_002",
+    "active": true,
+    "title": "Repairs Ongoing",
+    "ending_score": "rough",
+    "tone": [
+      "mundane",
+      "grim"
+    ],
+    "test_path": false,
+    "event_presentation": "fullscreen",
+    "body_template": "The colony intake officer has a form for ships that arrive in your condition. You know this because she reaches for it before you finish docking.\n\nStatus: arrived. Condition: see attached. Attachments: several.\n\n{crop_paragraph}\n\n{crew_paragraph}\n\nThe ship goes into the repair yard and stays there so long the yard crew starts calling it by a nickname, which is how you learn that broken things, if they hang around long enough, get adopted. You visit on rest days with tools you barely know how to hold anymore. Some weeks you fix a panel. Some weeks you just sit in the hull and listen to it tick as it cools. Both count as repairs. The yard boss told you that, and the yard boss does not say kind things carelessly.",
+    "crop_paragraphs": {
+      "thriving": "Improbably, indecently, the crop is fine. It rode out everything in its climate-sealed bay like aristocracy sleeping through a revolution. The colony gets its harvest. You get to be the story where the plants did better than the people.",
+      "sick": "The crop limps into the colony greenhouse under quarantine flags and pulls through on the far side of a hard season. You and it have matching recovery arcs. You do not find this as funny as the agronomist does.",
+      "dead": "The growbay is scrubbed and empty by the time the inspectors board. 'Cause of loss' has a dropdown menu. None of the options say what it felt like."
+    },
+    "crew_paragraphs": {
+      "full": "Everyone made it, which the intake officer notes twice, because ships that look like yours don't usually get to check that box. The crew celebrates by sleeping for a week.",
+      "partial": "Not everyone made it, and the colony's memorial wall takes the names with a courtesy that surprises you: hand-carved, unhurried, spelled right the first time.",
+      "solo": "You dock alone and the intake officer stops reaching for forms. Some manifests explain themselves. She stamps you through and tells you where the quiet bar is."
+    }
+  },
+  {
+    "id": "ending_pyrrhic_002",
+    "active": true,
+    "title": "Cost, Itemized",
+    "ending_score": "pyrrhic",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "test_path": false,
+    "event_presentation": "fullscreen",
+    "body_template": "The colony gives you a hero's welcome, and you stand in it like rain you can't feel.\n\nThey are not wrong to cheer. Something did arrive. The ledger just reads differently from the inside: every cheer has a name it should have gone to instead.\n\n{crop_paragraph}\n\n{crew_paragraph}\n\nA year on, the colony administrator asks if you'd captain a supply run. Short hop. Milk run. You say no, and then you say it again in your quarters that night, to nobody, to make sure it's still true. The stars outside the window are the same stars. That's the thing about the crossing nobody warns you about: it ends, and they don't.",
+    "crop_paragraphs": {
+      "thriving": "The crop thrives. Of course it thrives. You have started to suspect the universe balances its books across the wrong columns on purpose.",
+      "sick": "The crop survives the way you survived: technically, expensively, tended by strangers who were gentler than the void had any reason to allow.",
+      "dead": "Neither the crop nor the rest of it made the crossing whole. What stepped off the ship was a ledger and a witness. The colony, to its lasting credit, wanted the witness more."
+    },
+    "crew_paragraphs": {
+      "full": "The crew survived, which is the sentence you say when people ask, because the true sentence — the crew survived and will spend years learning what it cost them — doesn't fit in a welcome hall.",
+      "partial": "The names go on the wall. You go to the wall. This is the arrangement now, weekly, then monthly, then on the days when the weather is the kind they liked.",
+      "solo": "One chair on the shuttle down. The colony filled the hall to meet it anyway, and for a moment — brief, involuntary, forgivable — you hated every full family in the crowd. Then a child handed you bread. It passes. It comes back. It passes."
+    }
+  },
+  {
+    "id": "ending_hollow_002",
+    "active": true,
+    "title": "Seeds, Anyway",
+    "ending_score": "hollow",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "test_path": false,
+    "event_presentation": "fullscreen",
+    "body_template": "You arrive with an empty growbay and a full seed vault, which is a distinction the colony's charter office does not have a stamp for.\n\nThe mission was a plant. The mission was always a plant. What docked instead was a crew that kept a dead garden's lights on for the whole silent last leg because turning them off felt like a second funeral.\n\n{crew_paragraph}\n\nThe colony agronomist goes through your vault seed by seed, and near the bottom finds the sample packets you forgot you stowed on day one — viable, every one. She looks up and says the sentence that reorganizes your whole ledger:\n\n'So it's a late crop. Late crops are still crops.'\n\nThey break ground on the new bed that spring. You are there. You are, professionally speaking, no longer sure what you are — pilot, mourner, gardener, all three on rotation. The shoots come up green and ignorant of everything it cost to get them dirt. That's the point of shoots. You water them anyway. You water them especially.",
+    "crop_paragraphs": {
+      "thriving": "",
+      "sick": "",
+      "dead": ""
+    },
+    "crew_paragraphs": {
+      "full": "The whole crew shows for the ground-breaking, unasked, with borrowed tools. Grief, it turns out, composts. Nobody says this out loud. Everybody digs.",
+      "partial": "The crew that made it plants the first row in the names of the ones that didn't. The rows after that are just rows. That's how it's supposed to work. That's how you keep going.",
+      "solo": "You plant the first bed alone, then look up to find half the colony leaning on the greenhouse glass, watching, the way people watch a thing they've decided to protect."
+    }
+  }
+]

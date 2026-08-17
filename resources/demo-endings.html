@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Endings Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+
+:root {
+  --teal:  #8cc890;
+  --orange:#e88830;
+  --cream: #e8d8a0;
+  --slate: #2a3040;
+  --deep:  #0e1520;
+  --void:  #020408;
+  --body:  #8898a8;
+
+  /* Tier palette — drives title text colour + stats card border.
+     Failure ids share the table (no_fuel, mutiny, etc. are also keys). */
+  --tier-legendary-color:    #c8a85a;
+  --tier-legendary-border:   rgba(200,168,90,0.85);
+  --tier-good-color:         #8cc890;
+  --tier-good-border:        rgba(140,200,144,0.7);
+  --tier-rough-color:        #a08c5a;
+  --tier-rough-border:       rgba(160,140,100,0.55);
+  --tier-pyrrhic-color:      #a03c3c;
+  --tier-pyrrhic-border:     rgba(160,60,60,0.65);
+
+  --fail-no_fuel-color:      #8090b0;
+  --fail-no_fuel-border:     rgba(100,120,160,0.6);
+  --fail-crew_gone-color:    #8888aa;
+  --fail-crew_gone-border:   rgba(100,100,140,0.5);
+  --fail-hull_zero-color:    #cc3333;
+  --fail-hull_zero-border:   rgba(204,51,51,0.8);
+  --fail-mutiny-color:       #b45a28;
+  --fail-mutiny-border:      rgba(180,90,40,0.65);
+  --fail-time_expired-color: #7890a0;
+  --fail-time_expired-border:rgba(120,140,160,0.5);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'VT323', monospace;
+  background: #0e1118;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #d1d5db;
+}
+
+#demo-wrap { display: flex; gap: 20px; padding: 20px; align-items: flex-start; }
+#scale-root { width: 960px; height: 640px; transform-origin: top left; flex-shrink: 0; }
+
+#size-toggle {
+  position: fixed; top: 12px; right: 12px; z-index: 9999;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+}
+#size-toggle:hover { filter: brightness(1.2); }
+#size-toggle:active {
+  border-style: inset;
+  border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a;
+  transform: translate(1px, 1px);
+}
+body.fullsize { overflow: hidden; }
+body.fullsize #demo-wrap { padding: 0; gap: 0; width: 100vw; height: 100vh; justify-content: center; align-items: center; }
+body.fullsize #controls { display: none; }
+body.fullsize #scale-root { transform-origin: center center; }
+
+#game {
+  width: 960px; height: 640px;
+  position: relative; overflow: hidden;
+  background: #020408;
+}
+#crt-overlay {
+  pointer-events: none; position: absolute; inset: 0; z-index: 100;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 1px, transparent 1px, transparent 2px);
+}
+
+/* ── Background layers ─────────────────────────────────────
+   Star canvas sits at the bottom (always visible behind everything).
+   Scene jpg layered on top — full-bleed, covers stars when present.
+   Failure fallback: stars only (no scene image), so the scene layer
+   is hidden and the dark gradient + stars do the work. */
+#stars {
+  position: absolute; inset: 0; z-index: 1;
+  background: radial-gradient(ellipse at center, #0a1322 0%, #020408 80%);
+}
+#scene {
+  position: absolute; inset: 0; z-index: 2;
+  background-position: center; background-size: cover; background-repeat: no-repeat;
+  opacity: 0; transition: opacity 360ms ease-out;
+}
+#scene.show { opacity: 1; }
+
+/* ── Screen 1: Cinematic ───────────────────────────────────
+   Full-bleed scene + a positionable title/button group. The group
+   sits inside #cinematic at an absolute position driven by CSS
+   vars (--cine-x / --cine-y) which the dev panel sliders update
+   live so the placement can be tuned per-bg. translate(-50%,-50%)
+   keeps the slider value semantic: "centre of the group". */
+#cinematic {
+  position: absolute; inset: 0; z-index: 10;
+  pointer-events: none;
+  --cine-x: 480px;
+  --cine-y: 540px;
+}
+#cinematic.show { pointer-events: auto; }
+#cinematic.hide { display: none; }
+#cinematic .vignette {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.65) 92%, rgba(0,0,0,0.85) 100%);
+  pointer-events: none;
+}
+.cine-group {
+  position: absolute;
+  left: var(--cine-x);
+  top:  var(--cine-y);
+  transform: translate(-50%, -50%);
+  /* max-content keeps the group at its intrinsic width regardless of
+     where left: positions it. Without this, an absolutely-positioned
+     element with no width shrinks to the space between `left` and the
+     containing block's right edge — which makes the title wrap to
+     multiple lines as the X slider moves right. */
+  width: max-content;
+  max-width: 920px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: var(--cine-gap, 24px);
+  pointer-events: auto;
+}
+#cine-title {
+  position: relative;
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--cine-title-size, 28px);
+  letter-spacing: 4px;
+  color: var(--cream);
+  text-shadow: 0 0 18px rgba(0,0,0,0.85), 0 2px 0 rgba(0,0,0,0.9);
+  text-align: center;
+  /* pre-line renders \n in the title string as a real line break,
+     so TITLES entries can be authored as 'MOSTLY\nMADE IT' and split
+     across two lines without needing innerHTML/<br>. */
+  white-space: pre-line;
+  line-height: 1.25;
+  animation: cine-title-rise 700ms cubic-bezier(0.2,0.6,0.3,1) both;
+}
+@keyframes cine-title-rise {
+  0%   { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+/* Body text shown ONLY on cinematic for no-report failures
+   (hull_zero, crew_gone) — otherwise the body would never reach
+   the player. Hidden for endings that route to a report card. */
+#cine-body {
+  position: relative;
+  font-family: 'VT323', monospace;
+  font-size: 22px; line-height: 1.4;
+  color: #e8d8a0;
+  text-align: center;
+  max-width: 560px;
+  text-shadow: 0 0 14px rgba(0,0,0,0.95), 0 2px 0 rgba(0,0,0,0.85);
+  animation: cine-title-rise 700ms cubic-bezier(0.2,0.6,0.3,1) 120ms both;
+}
+#cine-quote {
+  position: relative;
+  font-family: 'VT323', monospace;
+  font-size: 18px; line-height: 1.35;
+  font-style: italic;
+  color: #aab5c4;
+  text-align: center;
+  max-width: 540px;
+  text-shadow: 0 0 14px rgba(0,0,0,0.95), 0 2px 0 rgba(0,0,0,0.85);
+  animation: cine-title-rise 800ms cubic-bezier(0.2,0.6,0.3,1) 200ms both;
+}
+
+#cine-btn {
+  position: relative;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px; letter-spacing: 2px;
+  padding: 12px 22px;
+  background: linear-gradient(180deg, #1a2030 0%, #0a0e18 100%);
+  color: var(--cream);
+  border: 2px solid rgba(232,216,160,0.6);
+  border-radius: 3px;
+  cursor: var(--cursor-hand, pointer);
+  text-transform: uppercase;
+  text-align: center;
+  box-shadow: 0 0 18px rgba(0,0,0,0.6);
+  animation: cine-btn-rise 900ms cubic-bezier(0.2,0.6,0.3,1) 200ms both;
+}
+@keyframes cine-btn-rise {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+#cine-btn:hover { background: linear-gradient(180deg, #232b3e 0%, #10162a 100%); filter: brightness(1.15); }
+#cine-btn:active { transform: translateY(1px); }
+
+/* ── Screen 2: Report card ─────────────────────────────────
+   Dimmed bg, centred card, rise+fade animation. Tier colour drives
+   the border + title. Score panel inside the card lays out the
+   crew pips + 4 resource bars + day line. */
+#report-overlay {
+  position: absolute; inset: 0; z-index: 14;
+  background: rgba(2,4,8,0.78);
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 30px;
+  font-family: 'VT323', monospace;
+}
+#report-overlay.show { display: flex; animation: end-fade-in 380ms ease-out both; }
+@keyframes end-fade-in {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+.endings-card {
+  background: linear-gradient(180deg, #1a2030, #0e1320);
+  border: 2px solid rgba(200,168,90,0.6);
+  border-radius: 4px;
+  padding: 26px 28px 22px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  width: 100%; max-width: 600px;
+  box-shadow: 0 0 28px rgba(0,0,0,0.55), 0 6px 32px rgba(0,0,0,0.55);
+  animation: endings-card-rise 520ms cubic-bezier(0.2, 0.6, 0.3, 1) both;
+}
+@keyframes endings-card-rise {
+  0%   { opacity: 0; transform: translateY(18px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.endings-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 16px; letter-spacing: 2px;
+  color: var(--cream);
+  text-align: center;
+  white-space: pre-line;
+  line-height: 1.35;
+}
+.endings-body {
+  width: 100%; text-align: center;
+  font-size: 19px; line-height: 1.45;
+  color: #e8d8a0;
+  padding: 0 8px;
+}
+.endings-quote {
+  width: 100%; text-align: center;
+  font-size: 17px; line-height: 1.4;
+  font-style: italic;
+  color: #aab5c4;
+  padding: 0 16px;
+}
+
+/* Score breakdown — appears below quote on endings that report it.
+   Top row: pips + mini-bars + day-line all stacked. */
+.endings-score {
+  width: 100%;
+  margin-top: 4px;
+  padding: 14px 12px 12px;
+  border-top: 1px dashed rgba(200,168,90,0.25);
+  display: flex; flex-direction: column; gap: 11px;
+}
+.endings-score-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; letter-spacing: 1.4px;
+  color: var(--gold);
+  text-align: center;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.score-row {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 15px; color: #aab5c4;
+}
+.score-row .label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; letter-spacing: 1.2px;
+  color: #aab5c4;
+  width: 76px;
+  text-align: right;
+}
+.score-row .val {
+  font-size: 15px; color: #d8c890;
+  min-width: 44px;
+}
+.crew-pips { display: flex; gap: 6px; }
+.crew-pip {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(200,168,90,0.65);
+}
+.crew-pip.filled { background: var(--gold); box-shadow: 0 0 5px rgba(200,168,90,0.45); }
+.crew-pip.empty  { background: transparent; opacity: 0.55; }
+.res-bars { display: flex; gap: 6px; flex: 1; }
+.res-bar-wrap {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.res-bar-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px; letter-spacing: 0.8px;
+  color: #7a8898;
+}
+.res-bar {
+  width: 100%; height: 12px;
+  background: rgba(10,14,20,0.7);
+  border: 1px solid rgba(95,168,208,0.2);
+  position: relative;
+  overflow: hidden;
+}
+.res-bar-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 50%;
+  background: var(--gold);
+}
+.res-bar-fill.fuel  { background: #e88830; }
+.res-bar-fill.food  { background: #8cc890; }
+.res-bar-fill.water { background: #5fa8d0; }
+.res-bar-fill.hull  { background: #b4b091; }
+.day-line {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: #aab5c4;
+  text-align: center;
+  letter-spacing: 1px;
+}
+.day-line .day-num { color: var(--cream); }
+.day-line .day-cmp { color: var(--gold); }
+.day-line .day-cmp.late { color: #cc6c4c; }
+.day-line .day-cmp.early { color: var(--teal); }
+
+.endings-actions { display: flex; gap: 12px; margin-top: 4px; }
+.endings-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px; letter-spacing: 1.5px;
+  padding: 11px 20px;
+  background: linear-gradient(180deg, #2a3040 0%, #141820 100%);
+  color: var(--cream);
+  border: 2px solid rgba(200,168,90,0.45);
+  border-radius: 3px;
+  cursor: var(--cursor-hand, pointer);
+  text-transform: uppercase;
+}
+.endings-btn:hover { filter: brightness(1.2); border-color: var(--gold); }
+.endings-btn:active { transform: translate(1px, 1px); }
+
+/* ── Dev controls sidebar ──────────────────────────────────
+   Same pattern as demo-fabricator: 380px column on the right
+   with section headers and slider/select rows. */
+#controls {
+  width: 380px; background: #161a22; border: 1px solid #2a3040;
+  border-radius: 6px;
+  padding: 16px; font-family: 'VT323', monospace; font-size: 16px; color: #8898a8;
+  max-height: 640px; overflow-y: auto; overflow-x: hidden; flex-shrink: 0;
+}
+#controls h2 {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; color: var(--gold);
+  letter-spacing: 2px; margin-bottom: 14px;
+  text-transform: uppercase;
+}
+#controls h3 {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; color: #7a8898;
+  letter-spacing: 1px; margin: 14px 0 8px;
+  text-transform: uppercase;
+  border-bottom: 1px solid #2a3040; padding-bottom: 4px;
+}
+.ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.ctrl-row label { font-size: 14px; color: #667; flex-shrink: 0; min-width: 110px; }
+.ctrl-row input[type="range"] { flex: 1; accent-color: var(--gold); height: 4px; }
+.ctrl-row select, .ctrl-row input[type="number"] {
+  flex: 1;
+  background: #0e1118; color: var(--cream);
+  border: 1px solid #2a3040; padding: 3px 6px;
+  font-family: 'VT323', monospace; font-size: 14px;
+}
+.ctrl-row .val {
+  font-size: 13px; color: #7a8898;
+  min-width: 44px; text-align: right;
+  font-family: 'VT323', monospace; letter-spacing: 0.5px;
+}
+.sim-btn {
+  width: 100%; margin-top: 6px; padding: 8px;
+  font-family: 'VT323', monospace; font-size: 15px;
+  letter-spacing: 1px; text-transform: uppercase;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset; border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold); cursor: var(--cursor-hand, pointer); border-radius: 2px;
+}
+.sim-btn:hover { filter: brightness(1.15); }
+.sim-btn:active {
+  border-style: inset;
+  border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a;
+  transform: translate(1px, 1px);
+}
+.sim-btn.primary { color: var(--cream); border-color: var(--gold) #5a4a1a #5a4a1a var(--gold); }
+
+/* Copy editor — stacked label/input pairs under each picker. */
+.ed-stack { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.ed-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px; letter-spacing: 1px;
+  color: #7a8898; text-transform: uppercase;
+  margin-top: 4px;
+}
+.ed-input {
+  width: 100%;
+  background: #0e1118; color: var(--cream);
+  border: 1px solid #2a3040; padding: 5px 7px;
+  font-family: 'VT323', monospace; font-size: 15px;
+  line-height: 1.35;
+  resize: vertical;
+}
+.ed-input:focus { outline: none; border-color: var(--gold); }
+
+::-webkit-scrollbar           { width: 6px; height: 6px; }
+::-webkit-scrollbar-track     { background: #0a0e14; }
+::-webkit-scrollbar-thumb     { background: #2a3a48; border-radius: 0; }
+::-webkit-scrollbar-corner    { background: #0a0e14; }
+* { scrollbar-width: thin; scrollbar-color: #2a3a48 #0a0e14; }
+
+</style>
+</head>
+<body>
+
+<button id="size-toggle" onclick="toggleSize()">Actual Size</button>
+
+<div id="demo-wrap">
+
+<div id="scale-root">
+<div id="game">
+  <div id="stars"><canvas id="stars-canvas" width="960" height="640"></canvas></div>
+  <div id="scene"></div>
+  <div id="crt-overlay"></div>
+
+  <!-- Screen 1: cinematic -->
+  <div id="cinematic" class="show">
+    <div class="vignette"></div>
+    <div class="cine-group" id="cine-group">
+      <div id="cine-title">MADE IT</div>
+      <div id="cine-body" style="display:none;"></div>
+      <div id="cine-quote" style="display:none;"></div>
+      <button id="cine-btn">View Report</button>
+    </div>
+  </div>
+
+  <!-- Screen 2: report card -->
+  <div id="report-overlay">
+    <div class="endings-card" id="endings-card">
+      <div class="endings-title" id="endings-title">MADE IT</div>
+      <div class="endings-body"  id="endings-body">—</div>
+      <div class="endings-quote" id="endings-quote" style="display:none;">—</div>
+      <div class="endings-score" id="endings-score">
+        <div class="endings-score-label">Run Report</div>
+        <div class="score-row">
+          <span class="label">Crew</span>
+          <div class="crew-pips" id="crew-pips"></div>
+          <span class="val" id="crew-val">3 / 3</span>
+        </div>
+        <div class="score-row">
+          <span class="label">Resources</span>
+          <div class="res-bars" id="res-bars"></div>
+        </div>
+        <div class="day-line" id="day-line">
+          DAY <span class="day-num">47</span> OF 120 ·
+          <span class="day-cmp early">73 DAYS EARLY</span>
+        </div>
+      </div>
+      <div class="endings-actions">
+        <button class="endings-btn" onclick="backToCinematic()">Back</button>
+        <button class="endings-btn" onclick="newRun()">New Run</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Dev controls -->
+<div id="controls">
+  <h2>Endings Demo Controls</h2>
+
+  <h3>Ending</h3>
+  <div class="ctrl-row">
+    <label>Category</label>
+    <select id="c-category">
+      <option value="arrival">Arrival</option>
+      <option value="failure">Failure (mid-trip)</option>
+    </select>
+  </div>
+
+  <div id="arrival-controls">
+    <div class="ctrl-row">
+      <label>Destination</label>
+      <select id="c-destination">
+        <option value="lunar">Lunar (Moon)</option>
+        <option value="mars">Mars</option>
+        <option value="interstellar">Interstellar (Far Garden)</option>
+      </select>
+    </div>
+    <div class="ctrl-row">
+      <label>Cargo</label>
+      <select id="c-cargo">
+        <option value="potato">Potato</option>
+        <option value="soybean">Soybean</option>
+        <option value="tomato">Tomato</option>
+        <option value="wheat">Wheat</option>
+        <option value="zinnia">Zinnia</option>
+        <option value="noplant">No plants</option>
+      </select>
+    </div>
+    <div class="ctrl-row">
+      <label>Quality tier</label>
+      <select id="c-tier">
+        <option value="auto">Auto (from stats)</option>
+        <option value="legendary">Legendary</option>
+        <option value="good">Good</option>
+        <option value="rough">Rough</option>
+        <option value="pyrrhic">Pyrrhic</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="failure-controls" style="display:none;">
+    <div class="ctrl-row">
+      <label>Failure</label>
+      <select id="c-failure">
+        <option value="no_fuel">No fuel — stranded</option>
+        <option value="mutiny">Mutiny — morale 0</option>
+        <option value="time_expired">Time expired</option>
+        <option value="hull_zero">Hull breach — one screen</option>
+        <option value="crew_gone">All crew dead — one screen</option>
+      </select>
+    </div>
+  </div>
+
+  <h3>Score Sliders</h3>
+  <div class="ctrl-row"><label>Crew alive</label>
+    <input type="range" id="c-crew" min="0" max="3" value="3"><span class="val" id="v-crew">3</span></div>
+  <div class="ctrl-row"><label>Fuel %</label>
+    <input type="range" id="c-fuel" min="0" max="100" value="62"><span class="val" id="v-fuel">62</span></div>
+  <div class="ctrl-row"><label>Food %</label>
+    <input type="range" id="c-food" min="0" max="100" value="48"><span class="val" id="v-food">48</span></div>
+  <div class="ctrl-row"><label>Water %</label>
+    <input type="range" id="c-water" min="0" max="100" value="55"><span class="val" id="v-water">55</span></div>
+  <div class="ctrl-row"><label>Hull %</label>
+    <input type="range" id="c-hull" min="0" max="100" value="80"><span class="val" id="v-hull">80</span></div>
+  <div class="ctrl-row"><label>Day (par 120)</label>
+    <input type="range" id="c-days" min="40" max="160" value="113"><span class="val" id="v-days">113</span></div>
+
+  <h3>Cinematic Placement</h3>
+  <div class="ctrl-row"><label>Group X</label>
+    <input type="range" id="c-cine-x" min="40" max="920" value="480"><span class="val" id="v-cine-x">480</span></div>
+  <div class="ctrl-row"><label>Group Y</label>
+    <input type="range" id="c-cine-y" min="40" max="600" value="540"><span class="val" id="v-cine-y">540</span></div>
+  <div class="ctrl-row"><label>Title size</label>
+    <input type="range" id="c-cine-title-size" min="14" max="44" value="28"><span class="val" id="v-cine-title-size">28</span></div>
+  <div class="ctrl-row"><label>Title↔Btn gap</label>
+    <input type="range" id="c-cine-gap" min="6" max="60" value="24"><span class="val" id="v-cine-gap">24</span></div>
+
+  <h3>Edit Failure Copy</h3>
+  <div class="ctrl-row">
+    <label>Failure</label>
+    <select id="ed-fail-pick">
+      <option value="no_fuel">no_fuel</option>
+      <option value="mutiny">mutiny</option>
+      <option value="time_expired">time_expired</option>
+      <option value="hull_zero">hull_zero</option>
+      <option value="crew_gone">crew_gone</option>
+    </select>
+  </div>
+  <div class="ed-stack">
+    <label class="ed-label">Title</label>
+    <input type="text" id="ed-fail-title" class="ed-input">
+    <label class="ed-label">Body</label>
+    <textarea id="ed-fail-body" class="ed-input" rows="3"></textarea>
+    <label class="ed-label">Quote (blank = omit)</label>
+    <textarea id="ed-fail-quote" class="ed-input" rows="2"></textarea>
+  </div>
+
+  <h3>Edit Tier Copy</h3>
+  <div class="ctrl-row">
+    <label>Tier</label>
+    <select id="ed-tier-pick">
+      <option value="legendary">legendary</option>
+      <option value="good">good</option>
+      <option value="rough">rough</option>
+      <option value="pyrrhic">pyrrhic</option>
+    </select>
+  </div>
+  <div class="ed-stack">
+    <label class="ed-label">Title</label>
+    <input type="text" id="ed-tier-title" class="ed-input">
+    <label class="ed-label">Quote (blank = omit)</label>
+    <textarea id="ed-tier-quote" class="ed-input" rows="2"></textarea>
+  </div>
+
+  <h3>Render</h3>
+  <button class="sim-btn primary" onclick="showEnding()">Show Ending</button>
+  <button class="sim-btn" onclick="backToCinematic()">Back to Cinematic</button>
+  <button class="sim-btn" onclick="dumpCopy()">Dump Copy to Console</button>
+</div>
+
+</div>
+
+<script src="shared.js"></script>
+<script>
+(function() {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const PAR_DAYS = 120;
+  const SCENE_BASE = 'sprites/backgrounds/endgame';
+
+  // Trail id (canonical from setup demo) → bg folder + file prefix.
+  // Folder/prefix diverge for interstellar (folder uses the
+  // destination's display name as snake_case, prefix is shorter).
+  // Lunar + mars are uniform across all three.
+  const DEST_PATHS = {
+    lunar:        { folder: 'lunar',      prefix: 'lunar'     },
+    mars:         { folder: 'mars',       prefix: 'mars'      },
+    interstellar: { folder: 'far_garden', prefix: 'fargarden' },
+  };
+
+  // Per-destination placement of the cinematic title/button group.
+  // Coordinates are in the 960x640 internal game-window space, so
+  // they scale with the viewport when the demo is resized. Tuned
+  // per-bg to dodge each scene's focal point.
+  const DEST_PLACEMENT = {
+    lunar:        { x: 390, y: 500 },
+    mars:         { x: 244, y: 444 },
+    interstellar: { x: 365, y: 530 },
+  };
+
+  // Failure endings always render dead-centre — they don't have
+  // destination art with focal points to dodge, so the title/button
+  // group sits in the middle of the 960×640 frame. The X/Y sliders
+  // don't write back when category is failure.
+  const FAILURE_CENTRE = { x: 480, y: 320 };
+  // Failures use a larger title than arrivals — the message has to
+  // carry the whole screen on its own (no scene art beneath it).
+  const FAILURE_TITLE_SIZE = 36;
+
+  // ── Viewport fit ─────────────────────────────────────────
+  function fitViewport() {
+    let s;
+    if (document.body.classList.contains('fullsize')) {
+      s = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+    } else {
+      const avail = Math.min(window.innerWidth - 440, window.innerWidth * 0.65);
+      const h = window.innerHeight - 40;
+      s = Math.min(avail / 960, h / 640, 1);
+    }
+    $('scale-root').style.transform = 'scale(' + s + ')';
+  }
+  window.toggleSize = function() {
+    document.body.classList.toggle('fullsize');
+    $('size-toggle').textContent =
+      document.body.classList.contains('fullsize') ? 'Demo Size' : 'Actual Size';
+    fitViewport();
+  };
+  window.addEventListener('resize', fitViewport);
+  fitViewport();
+
+  // ── Star drift (ambient) ─────────────────────────────────
+  // Adapted from demo-cruise#drawStars but stripped to a slow steady
+  // parallax — no acceleration, no speed controls. Two layers for depth.
+  const starCv = $('stars-canvas');
+  const starCtx = starCv.getContext('2d');
+  const STAR_W = 960, STAR_H = 640;
+  const starLayers = [
+    { count: 80,  speed: 0.06, size: 1, alpha: 0.55, xs: [], ys: [] },
+    { count: 40,  speed: 0.14, size: 2, alpha: 0.85, xs: [], ys: [] },
+  ];
+  for (const L of starLayers) {
+    for (let i = 0; i < L.count; i++) {
+      L.xs.push(Math.random() * STAR_W);
+      L.ys.push(Math.random() * STAR_H);
+    }
+  }
+  let starLast = 0;
+  function drawStars(now) {
+    if (PauseBus.paused) { starLast = now; requestAnimationFrame(drawStars); return; }
+    let dt = (now - starLast) / 16.6667;
+    if (dt > 3) dt = 3;
+    starLast = now;
+    starCtx.clearRect(0, 0, STAR_W, STAR_H);
+    for (const L of starLayers) {
+      starCtx.fillStyle = 'rgba(255,255,255,' + L.alpha + ')';
+      const half = L.size / 2;
+      for (let i = 0; i < L.count; i++) {
+        let x = L.xs[i] + L.speed * dt;
+        if (x > STAR_W) { x = 0; L.ys[i] = Math.random() * STAR_H; }
+        L.xs[i] = x;
+        starCtx.fillRect((x - half) | 0, (L.ys[i] - half) | 0, L.size, L.size);
+      }
+    }
+    requestAnimationFrame(drawStars);
+  }
+  requestAnimationFrame(drawStars);
+
+  // ── Content tables ───────────────────────────────────────
+  // Titles per tier — same across destinations (the destination
+  // shows in the bg; the tier picks the tone of the headline).
+  const TITLES = {
+    legendary: 'MADE IT',
+    good:      'MOSTLY\nMADE IT',
+    rough:     'BARELY\nMADE IT',
+    pyrrhic:   "NOBODY'S\nSURE",
+  };
+
+  // Crop-aware arrival bodies, indexed [destination][crop].
+  // Dry, specific, one sentence each. "{day}" placeholder is
+  // substituted at render time.
+  const ARRIVAL_BODY = {
+    lunar: {
+      potato:  'The first lunar potato came up in week three. The colony admin filed it as "vegetable, edible, sentimental value high."',
+      soybean: 'Soybeans took to the regolith faster than anyone modelled. The protein situation, for once, is unconcerning.',
+      tomato:  'The dome smells like tomatoes now. Reports are split on whether that is good.',
+      wheat:   'Lunar wheat: shorter stalks, denser heads, slightly metallic. The bakery opens Thursday.',
+      zinnia:  'Nobody can eat them. They came up anyway. Three colonists have started visiting them daily.',
+      noplant: 'You arrived. The greenhouse is empty. Colony admin is asking, very politely, what happened.',
+    },
+    mars: {
+      potato:  'Martian potatoes turn out grey-skinned and large. Nobody will discuss the taste in print.',
+      soybean: 'The soy beds went in before the second dust storm. They held. Most of them.',
+      tomato:  'A vine reached the second tier of the dome before anyone thought to prune it.',
+      wheat:   'Mars wheat: enough for one harvest festival, possibly two. The bread is dense and serious.',
+      zinnia:  'A row of zinnias against the regolith wall. Photogenic. Several careers were started.',
+      noplant: 'You arrived on Mars without the cargo. The press release says "phase one complete." It is being workshopped.',
+    },
+    interstellar: {
+      potato:  'Far Garden potatoes are blue-fleshed and slightly sweet. Nobody warned the chef.',
+      soybean: 'Soybeans under a different star. The cell counts are weird but the yield is the yield.',
+      tomato:  'A tomato grew large enough that two colonists shared it. There is a photograph.',
+      wheat:   'The first interstellar wheat harvest. Three children were named after it. This is not a metaphor.',
+      zinnia:  "Far Garden's first flowers. They opened at the wrong time of day and nobody minded.",
+      noplant: 'You arrived. Far Garden remains a garden in name only. The optimist who named it is unavailable for comment.',
+    },
+  };
+
+  // Tier-flavoured quotes — optional italic line under the body.
+  // Set to null to omit the quote for that tier.
+  const TIER_QUOTE = {
+    legendary: "“Ahead of schedule. Full crew. Standing ovation we weren't sure how to receive.” — Captain's log",
+    good:      "“It was a journey. We made it. There will be a debrief.” — Captain's log",
+    rough:     "“Calling it a success would be generous. We are being generous.” — Colony report",
+    pyrrhic:   "They named a hill after Jenkins. Jenkins was not a hill person.",
+  };
+
+  // Failure ending content — title, body, optional quote, plus
+  // whether the report screen is reachable from this ending.
+  const FAILURES = {
+    no_fuel: {
+      title: 'ADRIFT',
+      body:  'Tanks dry. Engines cold. You triggered the emergency beacon at 04:12 ship-time. Nobody answers in under a year.',
+      quote: "“Rationing protocol C. Begin journal entries for the historians.” — Captain's log",
+      report: true,
+    },
+    mutiny: {
+      title: 'OFFICIAL\nCOMPLAINT',
+      body:  'The crew filed the forms. You filed a complaint. The ship is no longer yours and the destination is no longer relevant.',
+      quote: '“We regret to inform Command that the chain of command has been informally restructured.”',
+      report: true,
+    },
+    time_expired: {
+      title: 'WE REGRET\nTO\nINFORM',
+      body:  'You arrived eventually. The planet had been re-flagged, the contract reassigned, the welcoming committee long since gone home.',
+      quote: '“We extend our sincerest apologies for the inconvenience of your entire voyage.” — Colony Office, form letter',
+      report: true,
+    },
+    hull_zero: {
+      title: 'BREACH',
+      body:  'The hull came apart between heartbeats.',
+      quote: null,
+      report: false,
+    },
+    crew_gone: {
+      title: 'AUTOPILOT',
+      body:  'The ship arrived on schedule. The dock crew opened the airlock to silence and the smell of long-cold coffee. Nobody is sure whether this counts.',
+      quote: null,
+      report: false,
+    },
+  };
+
+  // ── Tier derivation ──────────────────────────────────────
+  // Composite score from end-state numbers. Mirrors the bible §17
+  // intuition: high crew + high resource surplus + under-par days
+  // = legendary, scraping by + over par = pyrrhic. Numbers are
+  // tunable; the table below isn't load-bearing for the demo.
+  function deriveTier(stats) {
+    const resAvg = (stats.fuel + stats.food + stats.water + stats.hull) / 4;
+    const dayDelta = PAR_DAYS - stats.days;  // positive = early
+    // Score: crew weighted heavily, then resources, then schedule
+    // Crew weight is 100/3 ≈ 33.3 so a full 3-crew run contributes
+    // ~100 to score — keeps thresholds below from needing a rewrite.
+    const score = (stats.crew * 33.3) + (resAvg * 0.6) + (dayDelta * 0.5);
+    if (score >= 130) return 'legendary';
+    if (score >= 85)  return 'good';
+    if (score >= 40)  return 'rough';
+    return 'pyrrhic';
+  }
+
+  // ── Read controls into a stats object ────────────────────
+  function readStats() {
+    return {
+      crew:  parseInt($('c-crew').value),
+      fuel:  parseInt($('c-fuel').value),
+      food:  parseInt($('c-food').value),
+      water: parseInt($('c-water').value),
+      hull:  parseInt($('c-hull').value),
+      days:  parseInt($('c-days').value),
+    };
+  }
+
+  // ── Render: bg, title, body, quote, score ────────────────
+  function setSceneBg(category, ending) {
+    const scene = $('scene');
+    if (category === 'arrival') {
+      const p = DEST_PATHS[ending.destination];
+      scene.style.backgroundImage = `url("${SCENE_BASE}/${p.folder}/${p.prefix}_${ending.cargo}.jpg")`;
+      scene.classList.add('show');
+    } else {
+      scene.style.backgroundImage = '';
+      scene.classList.remove('show');
+    }
+  }
+
+  function setTierColours(toneId) {
+    // toneId is either a tier name or a failure id; the CSS vars
+    // table has entries for both, so this lookup unifies them.
+    let color, border;
+    if (TITLES[toneId] !== undefined) {  // tier
+      color  = getComputedStyle(document.documentElement).getPropertyValue('--tier-' + toneId + '-color').trim();
+      border = getComputedStyle(document.documentElement).getPropertyValue('--tier-' + toneId + '-border').trim();
+    } else {  // failure id
+      color  = getComputedStyle(document.documentElement).getPropertyValue('--fail-' + toneId + '-color').trim();
+      border = getComputedStyle(document.documentElement).getPropertyValue('--fail-' + toneId + '-border').trim();
+    }
+    $('cine-title').style.color = color;
+    $('endings-title').style.color = color;
+    $('endings-card').style.borderColor = border;
+  }
+
+  function renderScorePanel(stats, show) {
+    const panel = $('endings-score');
+    if (!show) { panel.style.display = 'none'; return; }
+    panel.style.display = 'flex';
+
+    // Crew pips — max 3 (captain + up to 2 chosen crew per setup demo).
+    const pips = $('crew-pips');
+    pips.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const p = document.createElement('div');
+      p.className = 'crew-pip ' + (i < stats.crew ? 'filled' : 'empty');
+      pips.appendChild(p);
+    }
+    $('crew-val').textContent = stats.crew + ' / 3';
+
+    // Resource bars
+    const bars = $('res-bars');
+    bars.innerHTML = '';
+    const res = [
+      { key: 'fuel',  label: 'FUEL',  pct: stats.fuel  },
+      { key: 'food',  label: 'FOOD',  pct: stats.food  },
+      { key: 'water', label: 'H2O',   pct: stats.water },
+      { key: 'hull',  label: 'HULL',  pct: stats.hull  },
+    ];
+    for (const r of res) {
+      const wrap = document.createElement('div');
+      wrap.className = 'res-bar-wrap';
+      wrap.innerHTML =
+        '<div class="res-bar-label">' + r.label + '</div>' +
+        '<div class="res-bar"><div class="res-bar-fill ' + r.key + '" style="width:' + r.pct + '%"></div></div>';
+      bars.appendChild(wrap);
+    }
+
+    // Day line
+    const delta = PAR_DAYS - stats.days;
+    let cmp, cmpClass;
+    if (delta > 0)      { cmp = delta + ' DAYS EARLY'; cmpClass = 'early'; }
+    else if (delta < 0) { cmp = (-delta) + ' DAYS LATE'; cmpClass = 'late'; }
+    else                { cmp = 'ON TIME'; cmpClass = ''; }
+    $('day-line').innerHTML =
+      'DAY <span class="day-num">' + stats.days + '</span> OF ' + PAR_DAYS + ' · ' +
+      '<span class="day-cmp ' + cmpClass + '">' + cmp + '</span>';
+  }
+
+  // ── Top-level: build ending from current controls ────────
+  function buildEnding() {
+    const cat = $('c-category').value;
+    const stats = readStats();
+    if (cat === 'arrival') {
+      const destination = $('c-destination').value;
+      const cargo = $('c-cargo').value;
+      let tier = $('c-tier').value;
+      if (tier === 'auto') tier = deriveTier(stats);
+      const body = ARRIVAL_BODY[destination][cargo].replace('{day}', stats.days);
+      return {
+        category: 'arrival',
+        destination, cargo, tier,
+        title: TITLES[tier],
+        body,
+        quote: TIER_QUOTE[tier],
+        toneId: tier,
+        showReport: true,
+      };
+    } else {
+      const failId = $('c-failure').value;
+      const f = FAILURES[failId];
+      return {
+        category: 'failure',
+        failId,
+        title: f.title,
+        body:  f.body,
+        quote: f.quote,
+        toneId: failId,
+        showReport: f.report,
+      };
+    }
+  }
+
+  // ── Render to screen 1 (cinematic) ───────────────────────
+  function renderCinematic(ending) {
+    setSceneBg(ending.category, ending);
+    setTierColours(ending.toneId);
+    $('cine-title').textContent = ending.title;
+    // Title size: failures lock to FAILURE_TITLE_SIZE; arrivals use
+    // the slider value (default 28). Sliders are still nudgeable
+    // during failure for one-off testing, but a re-render snaps back.
+    const titleSize = ending.category === 'failure'
+      ? FAILURE_TITLE_SIZE
+      : parseInt($('c-cine-title-size').value);
+    $('cinematic').style.setProperty('--cine-title-size', titleSize + 'px');
+
+    // Button + body visibility swap based on whether this ending has
+    // a stats report. With report: button reads VIEW REPORT, body
+    // stays hidden (shown on the report card instead). Without report
+    // (hull_zero, crew_gone): button reads NEW RUN and the body +
+    // optional quote are shown on the cinematic so the copy reaches
+    // the player at all.
+    const btn = $('cine-btn');
+    const bodyEl  = $('cine-body');
+    const quoteEl = $('cine-quote');
+    if (ending.showReport) {
+      btn.textContent = 'View Report';
+      btn.onclick = showReport;
+      bodyEl.style.display  = 'none';
+      quoteEl.style.display = 'none';
+    } else {
+      btn.textContent = 'New Run';
+      btn.onclick = newRun;
+      bodyEl.textContent = ending.body || '';
+      bodyEl.style.display = ending.body ? 'block' : 'none';
+      if (ending.quote) {
+        quoteEl.textContent = ending.quote;
+        quoteEl.style.display = 'block';
+      } else {
+        quoteEl.style.display = 'none';
+      }
+    }
+    btn.style.display = '';
+
+    $('cinematic').classList.remove('hide');
+    $('cinematic').classList.add('show');
+    $('report-overlay').classList.remove('show');
+
+    // Restart title-rise animation by re-triggering
+    const t = $('cine-title');
+    t.style.animation = 'none'; void t.offsetWidth;
+    t.style.animation = '';
+    const b = $('cine-btn');
+    b.style.animation = 'none'; void b.offsetWidth;
+    b.style.animation = '';
+  }
+
+  // ── Render to screen 2 (report card) ─────────────────────
+  function renderReport(ending, stats) {
+    $('endings-title').textContent = ending.title;
+    $('endings-body').textContent  = ending.body;
+    const qEl = $('endings-quote');
+    if (ending.quote) { qEl.style.display = 'block'; qEl.textContent = ending.quote; }
+    else              { qEl.style.display = 'none'; }
+    renderScorePanel(stats, ending.showReport);
+    $('report-overlay').classList.add('show');
+
+    // Re-trigger card rise
+    const c = $('endings-card');
+    c.style.animation = 'none'; void c.offsetWidth;
+    c.style.animation = '';
+  }
+
+  // Currently-staged ending (so VIEW REPORT can flip to it
+  // without re-reading controls if user adjusted sliders).
+  let currentEnding = null;
+  let currentStats = null;
+
+  window.showEnding = function() {
+    currentEnding = buildEnding();
+    currentStats = readStats();
+    renderCinematic(currentEnding);
+  };
+  window.showReport = function() {
+    if (!currentEnding) { currentEnding = buildEnding(); currentStats = readStats(); }
+    renderReport(currentEnding, currentStats);
+  };
+  window.backToCinematic = function() {
+    $('report-overlay').classList.remove('show');
+    if (currentEnding) renderCinematic(currentEnding);
+  };
+  window.newRun = function() {
+    // For the demo: just close the report and re-stage the same
+    // cinematic. In-engine this would route back to title.
+    backToCinematic();
+  };
+
+  // ── Wire dev panel reactivity ────────────────────────────
+  // Category switch shows/hides subcontrols, loads the appropriate
+  // placement (per-destination or centred), and re-renders.
+  $('c-category').addEventListener('change', e => {
+    const arr = e.target.value === 'arrival';
+    $('arrival-controls').style.display = arr ? '' : 'none';
+    $('failure-controls').style.display = arr ? 'none' : '';
+    if (arr) loadDestPlacement($('c-destination').value);
+    else     loadFailurePlacement();
+    if (currentEnding) showEnding();
+  });
+
+  // Slider value chips — keep span values in sync. Live-update
+  // the score panel if the report screen is currently visible.
+  const sliderIds = ['crew','fuel','food','water','hull','days'];
+  for (const k of sliderIds) {
+    const el = $('c-' + k);
+    const out = $('v-' + k);
+    el.addEventListener('input', () => {
+      out.textContent = el.value;
+      if ($('report-overlay').classList.contains('show') && currentEnding && currentEnding.showReport) {
+        currentStats = readStats();
+        renderScorePanel(currentStats, true);
+      }
+    });
+  }
+
+  // Live ending re-stage when arrival/failure picker fields change
+  for (const id of ['c-destination','c-cargo','c-tier','c-failure']) {
+    $(id).addEventListener('change', () => {
+      if (currentEnding) showEnding();
+    });
+  }
+
+  // Cinematic placement sliders — wire to CSS custom properties on
+  // the #cinematic root so the title/button group moves live without
+  // re-rendering anything else. X/Y also write back to DEST_PLACEMENT
+  // for the currently-selected destination, so per-bg tuning sticks
+  // when you switch destinations.
+  function bindPlacement(sliderId, valId, varName, unit, onApply) {
+    const el = $(sliderId), out = $(valId);
+    // userTriggered guards onApply so the initial sync (which exists
+    // only to copy the slider's HTML default into the chip + CSS var)
+    // doesn't write the default back into a placement table that's
+    // about to be overwritten by loadDestPlacement. Only real user
+    // input fires onApply.
+    const apply = (userTriggered) => {
+      out.textContent = el.value;
+      $('cinematic').style.setProperty(varName, el.value + unit);
+      if (userTriggered && onApply) onApply(el.value);
+    };
+    el.addEventListener('input', () => apply(true));
+    apply(false);
+  }
+  // Only write slider changes back to DEST_PLACEMENT when category
+  // is arrival — failures don't have per-id placements, they always
+  // snap to FAILURE_CENTRE on the next render.
+  bindPlacement('c-cine-x', 'v-cine-x', '--cine-x', 'px', v => {
+    if ($('c-category').value === 'arrival') {
+      const d = $('c-destination').value;
+      if (DEST_PLACEMENT[d]) DEST_PLACEMENT[d].x = parseInt(v);
+    }
+  });
+  bindPlacement('c-cine-y', 'v-cine-y', '--cine-y', 'px', v => {
+    if ($('c-category').value === 'arrival') {
+      const d = $('c-destination').value;
+      if (DEST_PLACEMENT[d]) DEST_PLACEMENT[d].y = parseInt(v);
+    }
+  });
+  bindPlacement('c-cine-title-size', 'v-cine-title-size', '--cine-title-size', 'px');
+  bindPlacement('c-cine-gap',        'v-cine-gap',        '--cine-gap',   'px');
+
+  // Push an {x, y} placement to both the CSS vars and the sliders.
+  function applyPlacement(p) {
+    if (!p) return;
+    $('c-cine-x').value = p.x; $('v-cine-x').textContent = p.x;
+    $('c-cine-y').value = p.y; $('v-cine-y').textContent = p.y;
+    $('cinematic').style.setProperty('--cine-x', p.x + 'px');
+    $('cinematic').style.setProperty('--cine-y', p.y + 'px');
+  }
+  function loadDestPlacement(dest) { applyPlacement(DEST_PLACEMENT[dest]); }
+  function loadFailurePlacement()  { applyPlacement(FAILURE_CENTRE); }
+  // Destination change loads that dest's placement, then the earlier
+  // change-listener re-renders. Failure change snaps placement back
+  // to centre (in case the X/Y sliders were nudged while testing).
+  $('c-destination').addEventListener('change', () => loadDestPlacement($('c-destination').value));
+  $('c-failure').addEventListener('change', () => loadFailurePlacement());
+  // Apply initial placement for the boot-default destination.
+  loadDestPlacement($('c-destination').value);
+
+  // ── Copy editor wiring ──────────────────────────────────
+  // Picker loads current values into the inputs; input events
+  // write back into the data tables. If the edited ending is the
+  // one currently on screen, we re-render so changes show live.
+  function loadFailureIntoEditor() {
+    const id = $('ed-fail-pick').value;
+    const f = FAILURES[id];
+    $('ed-fail-title').value = f.title;
+    $('ed-fail-body').value  = f.body;
+    $('ed-fail-quote').value = f.quote || '';
+  }
+  function loadTierIntoEditor() {
+    const t = $('ed-tier-pick').value;
+    $('ed-tier-title').value = TITLES[t];
+    $('ed-tier-quote').value = TIER_QUOTE[t] || '';
+  }
+  function maybeRerender(matchPredicate) {
+    if (!currentEnding) return;
+    if (!matchPredicate(currentEnding)) return;
+    // Rebuild from controls (this re-reads the edited copy) and re-render
+    // whatever screen is currently visible.
+    const reportOpen = $('report-overlay').classList.contains('show');
+    currentEnding = buildEnding();
+    if (reportOpen) renderReport(currentEnding, currentStats);
+    else            renderCinematic(currentEnding);
+  }
+
+  // Editor pickers also stage the corresponding ending so edits
+  // visibly land. Picking a failure switches category→failure +
+  // sets the main failure dropdown; picking a tier switches
+  // category→arrival + sets the tier override.
+  $('ed-fail-pick').addEventListener('change', () => {
+    loadFailureIntoEditor();
+    const id = $('ed-fail-pick').value;
+    $('c-category').value = 'failure';
+    $('c-failure').value = id;
+    $('arrival-controls').style.display = 'none';
+    $('failure-controls').style.display = '';
+    loadFailurePlacement();
+    showEnding();
+  });
+  $('ed-tier-pick').addEventListener('change', () => {
+    loadTierIntoEditor();
+    const t = $('ed-tier-pick').value;
+    $('c-category').value = 'arrival';
+    $('c-tier').value = t;
+    $('arrival-controls').style.display = '';
+    $('failure-controls').style.display = 'none';
+    loadDestPlacement($('c-destination').value);
+    showEnding();
+  });
+
+  $('ed-fail-title').addEventListener('input', () => {
+    const id = $('ed-fail-pick').value;
+    FAILURES[id].title = $('ed-fail-title').value;
+    maybeRerender(e => e.category === 'failure' && e.failId === id);
+  });
+  $('ed-fail-body').addEventListener('input', () => {
+    const id = $('ed-fail-pick').value;
+    FAILURES[id].body = $('ed-fail-body').value;
+    maybeRerender(e => e.category === 'failure' && e.failId === id);
+  });
+  $('ed-fail-quote').addEventListener('input', () => {
+    const id = $('ed-fail-pick').value;
+    const v = $('ed-fail-quote').value.trim();
+    FAILURES[id].quote = v.length ? v : null;
+    maybeRerender(e => e.category === 'failure' && e.failId === id);
+  });
+
+  $('ed-tier-title').addEventListener('input', () => {
+    const t = $('ed-tier-pick').value;
+    TITLES[t] = $('ed-tier-title').value;
+    maybeRerender(e => e.category === 'arrival' && e.tier === t);
+  });
+  $('ed-tier-quote').addEventListener('input', () => {
+    const t = $('ed-tier-pick').value;
+    const v = $('ed-tier-quote').value.trim();
+    TIER_QUOTE[t] = v.length ? v : null;
+    maybeRerender(e => e.category === 'arrival' && e.tier === t);
+  });
+
+  // Initial population
+  loadFailureIntoEditor();
+  loadTierIntoEditor();
+
+  // Dump current copy state to console as a JS literal — handy for
+  // pasting edits back into the source file once tuning settles.
+  window.dumpCopy = function() {
+    console.log('// FAILURES =', JSON.stringify(FAILURES, null, 2));
+    console.log('// TITLES =', JSON.stringify(TITLES, null, 2));
+    console.log('// TIER_QUOTE =', JSON.stringify(TIER_QUOTE, null, 2));
+    console.log('// DEST_PLACEMENT =', JSON.stringify(DEST_PLACEMENT, null, 2));
+  };
+
+  // ── Boot: stage the default ending ───────────────────────
+  showEnding();
+
+})();
+</script>
+
+</body>
+</html>

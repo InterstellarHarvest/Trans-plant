@@ -1,0 +1,2230 @@
+[
+  {
+    "id": "event_crisis_001",
+    "active": true,
+    "title": "The Hull Is Making A Sound",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_hull"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA describes the hull sound as 'the ship expressing itself!' She recommends listening to what it's trying to say!",
+      "marv": "MARV has identified the sound. It is structural fatigue in panel 7-C. He calculated this would happen. He told no one. Telling people doesn't help.",
+      "rex": "REX has classified the hull sound as a 'structural threat.' He recommends immediate repair or, failing that, 'aggressive acceptance.'",
+      "chip": "CHIP notes that hull maintenance packages are available at participating stations! Current hull integrity does not qualify for the premium tier discount!",
+      "ajoy": "AJOY heard the sound three hours ago. She assumed you heard it too. You did not. She's mentioning it now. You're welcome."
+    },
+    "body": "The hull is making a sound it should not be making. The ship computer recommends addressing this.\n\nThe sound is described in the maintenance manual as 'pre-failure resonance,' which is a technical way of saying 'this is going to become a problem very soon.'\n\nThe computer displays repair options with the detached efficiency of something that does not live inside the hull.",
+    "choices": [
+      {
+        "text": "Use a hull patch from inventory",
+        "requires_crew": null,
+        "requires_item": "hull_patch",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "hull_patch",
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Hull patch applied. The sound stops. The silence that follows is, in its own way, also alarming. The computer confirms the repair and returns to monitoring. The hull holds. For now."
+        }
+      },
+      {
+        "text": "Fabricate a hull patch",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "fab_align",
+        "outcome": {
+          "resources": {
+            "hull": 15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The fabricator produces a hull patch. The fabricator's health decreases slightly. The hull's health increases significantly. The math works. The sound stops."
+        }
+      },
+      {
+        "text": "Attempt manual repair",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "wrench",
+        "effort_cost": "medium",
+        "effort_required": 40,
+        "requires_effort_from": [
+          "engineer",
+          "item:repair_kit"
+        ],
+        "outcome": {
+          "resources": {
+            "hull": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Manual repair attempted. The wrench microgame fires. Success restores hull integrity. The repair holds. The engineer, if present, makes it look easy. Without an engineer, it takes longer and holds less firmly."
+        }
+      },
+      {
+        "text": "Ignore it and hope",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -5,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "ignored_hull_warning",
+          "time_cost": "trivial",
+          "narrative": "You ignored it. The sound continued. The hull degraded further. The crew noticed you ignoring it. They did not feel reassured. The ship computer logged your decision as 'noted' which is the most passive-aggressive thing a computer has ever said."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_002",
+    "active": true,
+    "title": "Water Rationing",
+    "difficulty": "medium",
+    "tone": [
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_water"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "growbay",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA suggests everyone 'think wet thoughts!' This does not help! She means well!",
+      "marv": "MARV has calculated water consumption rates versus remaining reserves. He presents the data. It is not data that improves morale.",
+      "rex": "REX recommends strict rationing protocols. He has drafted a schedule. It is optimized for survival, not comfort. These are different things.",
+      "chip": "CHIP notes that WaterWise™ brand conservation tips are available in the ship's entertainment library! Tip #1: 'Use less water.' The rest are variations on this theme.",
+      "ajoy": "AJOY notes the water situation could have been avoided if you'd resupplied at that last station. She is aware you are tired of her saying this."
+    },
+    "body": "Water reserves have dropped below comfortable levels.\n\nThe crop needs water. The crew needs water. There is not enough water for both at current consumption rates.\n\nThe ship computer displays the math. The math does not have a solution that makes everyone happy. The ship computer does not have feelings about this. It has numbers.",
+    "choices": [
+      {
+        "text": "Reduce crew rations",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -8,
+            "water": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Crew water rations reduced. The crew understands. Understanding does not prevent thirst. Morale drops. The crop is watered. The mission continues. The crew drinks less."
+        }
+      },
+      {
+        "text": "Reduce crop watering",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 0
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "reduced_crop_water",
+          "time_cost": "trivial",
+          "narrative": "Crop watering reduced. The crew keeps their ration. The crop will feel it. The botanist, if present, monitors the growbay more frequently. They do not say anything. They do not need to."
+        }
+      },
+      {
+        "text": "Find water at the next planet stop",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "searching_for_water",
+          "time_cost": "trivial",
+          "narrative": "You'll look for water at the next opportunity. In the meantime, consumption continues at current rates. The math hasn't changed. You're betting on the map having something useful soon. The ship computer notes this is 'a strategy.'"
+        }
+      },
+      {
+        "text": "Use the water purifier to reclaim waste water",
+        "requires_crew": null,
+        "requires_item": "water_purifier",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The water purifier reclaims usable water from waste systems. The crew does not ask where the water came from. The water purifier does not volunteer this information. Water reserves stabilize. Everyone is happier not knowing the details."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_003",
+    "active": true,
+    "title": "Fumes and Arithmetic",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_fuel"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA points out that the fuel gauge still has a whole quarter left! She is reading the gauge upside down!",
+      "marv": "MARV has recalculated the remaining range four times, hoping for a different answer. The answer has not changed. The answer was never going to change.",
+      "rex": "REX recommends redirecting power from non-essential systems. He has classified the coffee machine as non-essential. He is braced for the consequences.",
+      "chip": "CHIP reminds you that FuelMax™ stations offer a loyalty program! There are no FuelMax™ stations within range! The points never expire, though!",
+      "ajoy": "AJOY ran the fuel numbers back at the last station. She saved the projection to a file called 'told_you.log'. She is not going to open it. Unless asked."
+    },
+    "body": "The fuel readout has entered the range where the manual stops calling it a 'level' and starts calling it a 'situation.'\n\nThe ship computer presents the arithmetic: current reserves, current burn rate, distance remaining. It presents them in that order, then pauses, as if to let the numbers introduce themselves.\n\nThey are not friendly numbers.",
+    "choices": [
+      {
+        "text": "Burn a fuel cell from cargo",
+        "requires_crew": null,
+        "requires_item": "fuel_cell",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "fuel_cell",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The fuel cell empties into the main tank. The gauge climbs to a number that no longer requires the word 'situation.' The empty cell goes into recycling. The arithmetic improves. The arithmetic is not solved."
+        }
+      },
+      {
+        "text": "Throttle down — slow burn, slow progress",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 3,
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "throttled_down",
+          "time_cost": "medium",
+          "narrative": "Engines drop to economy burn. The ship is now traveling at a speed the manual describes as 'stately.' The crew watches the stars fail to move. Days will be longer now. The fuel will last. Something in the crew may not."
+        }
+      },
+      {
+        "text": "Have the pilot tune the burn ratio",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The pilot spends six hours in the engine crawlspace with a diagnostic pad and opinions. The burn ratio improves by a margin the manual calls 'marginal' and the pilot calls 'art.' The gauge stops falling quite so fast."
+        }
+      },
+      {
+        "text": "Press on and trust the margins",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "trusting_fuel_margins",
+          "time_cost": "trivial",
+          "narrative": "You press on. The margins are thin and everyone aboard can name them from memory. The ship computer continues displaying the arithmetic. Nobody asks it to stop, because nobody wants to know what it would say next."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV attaches a reference on engines that sip instead of gulp — real drives that trade thrust for extraordinary efficiency.",
+      "label": "Ion thrusters, the frugal engines",
+      "url": "https://en.wikipedia.org/wiki/Ion_thruster"
+    }
+  },
+  {
+    "id": "event_crisis_004",
+    "active": true,
+    "title": "The Drift Option",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_fuel"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "deep_void",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA notes that drifting is basically free! Space does most of the work! She calls it 'cosmic carpooling!'",
+      "marv": "MARV confirms that a ballistic drift trajectory is possible. He also confirms it was possible to not be in this position. Both facts are true. Only one is useful.",
+      "rex": "REX opposes drifting on principle. A ship that cannot maneuver is a target. He does not specify a target of what. Out here, that is somehow worse.",
+      "chip": "CHIP notes that engine warranties are void during unpowered ballistic transit! This is in section 12! Nobody has ever read section 12!",
+      "ajoy": "AJOY once drifted for a week with a previous captain. She describes it as 'quiet.' The way she says 'quiet' is doing a lot of work."
+    },
+    "body": "There is a maneuver in the manual for exactly this fuel level. It involves cutting the engines and coasting on accumulated velocity — trading time for fuel, at an exchange rate nobody likes.\n\nThe manual calls it 'ballistic economy transit.'\n\nThe crew calls it drifting. The crew is right.",
+    "choices": [
+      {
+        "text": "Drift — cut engines, coast the next leg",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 6,
+            "morale": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_drift",
+          "time_cost": "high",
+          "narrative": "Engines off. The ship coasts. The silence where the engine hum used to be is the loudest thing anyone aboard has ever heard. Fuel reserves recover a little from auxiliary reclaim. The calendar does not recover anything."
+        }
+      },
+      {
+        "text": "Deploy the solar array to trickle-charge",
+        "requires_crew": null,
+        "requires_item": "solar_array",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The solar array unfolds with the confidence of equipment doing the one thing it was built for. The trickle-charge is slow, steady, and quietly heroic. The fuel gauge climbs. The array creaks contentedly."
+        }
+      },
+      {
+        "text": "Have the engineer scavenge reaction mass",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "wrench",
+        "outcome": {
+          "resources": {
+            "fuel": 8,
+            "hull": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The engineer finds reaction mass in places reaction mass should not technically be. Some of those places were, until recently, structural. The hull is slightly lighter now. The tanks are slightly fuller. The engineer calls it a trade."
+        }
+      },
+      {
+        "text": "Keep burning and hope",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep the engines lit. Hope is not a propellant, but it is the only thing aboard with a full tank. The gauge continues its patient countdown. The crew continues not mentioning it. The not-mentioning is very loud."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_005",
+    "active": true,
+    "title": "The Pantry Audit",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_food"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has counted the ration bricks twice and gotten two different numbers! She reports the higher one! For morale!",
+      "marv": "MARV has completed the pantry audit. He presents the results the way a doctor presents an x-ray: gently, and from behind a desk.",
+      "rex": "REX has secured the pantry against unauthorized access. The primary suspect is everyone. The evidence is that everyone eats.",
+      "chip": "CHIP notes that NutriLoaf™ brand emergency rations 'contain food'! This is the entire marketing claim! It is legally accurate!",
+      "ajoy": "AJOY watched someone take seconds at dinner nine days ago. She has not brought it up. She is bringing it up now."
+    },
+    "body": "The pantry audit is complete, and the pantry has failed it.\n\nThe ship computer displays remaining stores against remaining journey. There is a gap between the two lines on the chart. The gap has a shape. The shape is the problem.\n\nThe crew has started describing meals in the past tense.",
+    "choices": [
+      {
+        "text": "Break out a ration brick",
+        "requires_crew": null,
+        "requires_item": "ration_brick",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 12
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "ration_brick",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The ration brick is dense, beige, and nutritionally complete. It divides into portions with a satisfying snap — the most satisfying thing about it. The stores chart improves. Dinner is described, accurately, as 'filling.'"
+        }
+      },
+      {
+        "text": "Have the chef stretch the stores",
+        "requires_crew": "chef",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 8,
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The chef performs the loaves-and-fishes routine that chefs have performed since the first lean voyage: soup gets thinner, flavor gets louder, and somehow everyone leaves the table convinced they ate more than they did. Morale rises. The chef accepts no questions about the recipe."
+        }
+      },
+      {
+        "text": "Cut to half rations",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 6,
+            "morale": -7
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "half_rations",
+          "time_cost": "trivial",
+          "narrative": "Half rations, effective immediately. The crew accepts the news with the enthusiasm of people who have read about half rations in books and hoped to keep it that way. The stores stretch. The mood does not."
+        }
+      },
+      {
+        "text": "Harvest early from the growbay",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 10,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "early_harvest",
+          "time_cost": "trivial",
+          "narrative": "You take from the growbay ahead of schedule. The plants surrender their almost-ready yield with what a less careful captain would call reproach. The crop will recover. Probably. The botanist, if aboard, updates the growth chart in silence."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "CHIP attaches the literature: feeding a crew in space is a real, ongoing engineering discipline.",
+      "label": "Space food, a real discipline",
+      "url": "https://en.wikipedia.org/wiki/Space_food"
+    }
+  },
+  {
+    "id": "event_crisis_006",
+    "active": true,
+    "title": "Unlabeled, Unloved",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_food"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA thinks mystery cans are exciting! Every meal is a surprise! Some surprises are chili!",
+      "marv": "MARV has scanned the cans. The scanner returned 'food, probably.' MARV wants it noted that 'probably' is the scanner's word, not his.",
+      "rex": "REX volunteers to taste-test the cans. Not out of bravery. He simply believes he has eaten worse, and he is statistically correct.",
+      "chip": "CHIP cannot verify the cans' brand affiliation! Unbranded food makes CHIP deeply uncomfortable! What if it's... generic?",
+      "ajoy": "AJOY recalls the cans were loaded at the depot by a man who winked. She has thought about that wink every day since."
+    },
+    "body": "Deep in cargo bay three, behind the spare filters, someone finds a crate of cans with no labels.\n\nThe manifest lists the crate as 'PROVISIONS (ASSORTED).' The word 'assorted' is carrying an enormous amount of weight.\n\nThe crew gathers around the crate the way ancient people gathered around fire: hopeful, hungry, and prepared to run.",
+    "choices": [
+      {
+        "text": "Eat the mystery cans",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 10,
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The cans contain: beans (four), peaches (two), something orange (three), and one can of what is either soup or paint primer. It is eaten anyway. Dinner is an event for the first time in weeks. Nobody dies. The orange thing is never identified."
+        }
+      },
+      {
+        "text": "Have the medic screen them first",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The medic screens each can with the medical scanner and a deep professional skepticism. Two cans fail. The rest pass. The failed cans are jettisoned with a small ceremony. What remains is safe, nourishing, and only slightly diminished by the knowledge of what almost was."
+        }
+      },
+      {
+        "text": "Trade them at the next stop instead",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "mystery_provisions",
+          "item_consume": null,
+          "sets_flag": "saving_mystery_cans",
+          "time_cost": "trivial",
+          "narrative": "You seal the crate for trade. The crew watches actual, physical food get archived while their stomachs file formal complaints. It will fetch something at the next stop. It had better."
+        }
+      },
+      {
+        "text": "Leave them — too risky",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You reseal the crate. The cans go back behind the spare filters, unlabeled and unloved. The crew understands the reasoning. Understanding, as previously established aboard this ship, is not the same as dinner."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_007",
+    "active": true,
+    "title": "Thin Air",
+    "difficulty": "medium",
+    "tone": [
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_o2"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA suggests everyone take smaller breaths! She has prepared a breathing schedule! She does not breathe!",
+      "marv": "MARV reports the O2 curve is trending toward a number he refuses to display without a disclaimer. The disclaimer is longer than the number.",
+      "rex": "REX has begun rationing his speech to conserve air. His reports are now one word. The word is usually 'bad.'",
+      "chip": "CHIP notes that AirPure™ filter subscriptions ship to most major stations! Delivery time: four months! Breathing timeline: shorter!",
+      "ajoy": "AJOY is not affected by the air situation. She mentions this not to gloat, but so you know the observations she is about to make are impartial. They will not feel impartial."
+    },
+    "body": "The oxygen recyclers are running behind demand, and the gap is no longer theoretical.\n\nIt is not dramatic yet. Nobody is gasping. It is just that the air has started to feel like something being spent rather than something that is simply there — a subtle accounting change with enormous implications.\n\nThe ship computer displays the O2 curve. The curve slopes the wrong way.",
+    "choices": [
+      {
+        "text": "Install the spare O2 recycler",
+        "requires_crew": null,
+        "requires_item": "o2_recycler",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The spare recycler comes out of storage and goes into the loop. It hums. The main unit hums back. Together they claw the O2 curve back toward horizontal. The air stops feeling like an expense account. Mostly."
+        }
+      },
+      {
+        "text": "Scrub the filters manually",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "pressure_gauge",
+        "effort_cost": "medium",
+        "effort_required": 30,
+        "requires_effort_from": [
+          "engineer",
+          "item:repair_kit"
+        ],
+        "outcome": {
+          "resources": {
+            "o2": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Filter scrubbing is wet, grey, unpleasant work, and it works. The recyclers breathe easier. Therefore, so does everyone else. The grey sludge is jettisoned without eulogy."
+        }
+      },
+      {
+        "text": "Seal off the empty decks",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 10,
+            "morale": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "sealed_decks",
+          "time_cost": "trivial",
+          "narrative": "You seal the unused compartments. The ship is now smaller on the inside — corridors dark behind bulkhead doors, air conserved by the simple strategy of having less ship to fill. The crew adjusts to the closeness. The closeness does not adjust to the crew."
+        }
+      },
+      {
+        "text": "Route growbay overflow air to the cabin",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "growbay_air_loop",
+          "time_cost": "trivial",
+          "narrative": "The growbay's photosynthetic surplus reroutes to the cabin loop. The bridge now smells faintly of soil and chlorophyll — the smell of something alive doing you a favor. The crop, in its quiet vegetable way, is now carrying the crew. Nobody thanks it out loud. Everyone thinks it."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "The ship computer files the reference behind the recyclers: the real ISS makes its oxygen by splitting water.",
+      "label": "How the ISS makes oxygen",
+      "url": "https://en.wikipedia.org/wiki/Elektron_(ISS)"
+    }
+  },
+  {
+    "id": "event_crisis_008",
+    "active": true,
+    "title": "The Leak Audit",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_o2"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA hears a tiny whistle somewhere! She thinks it's charming! Like a kettle! A kettle full of your air!",
+      "marv": "MARV has narrowed the leak to one of eleven junctions. He is working through them alphabetically. He wishes to note the leak is not alphabetical.",
+      "rex": "REX is patrolling the corridors with a bare hand held to the seams, which is both the oldest leak-detection method in spaceflight and the most humbling.",
+      "chip": "CHIP reminds everyone that air purchased at station kiosks is non-refundable once breathed! This will matter later! CHIP can feel it!",
+      "ajoy": "AJOY found a soap bubble kit in the recreation locker. She recommends the old trick: bubbles drift toward a leak. She adds that watching bubbles betray your ship is its own experience."
+    },
+    "body": "Somewhere aboard, the ship is exhaling.\n\nThe O2 ledger doesn't balance — consumption plus recycling minus reserves leaves a remainder, and the remainder is leaving through a hole nobody has found yet. It is a small hole. The arithmetic of small holes on long voyages is not comforting.\n\nThe hunt is on.",
+    "choices": [
+      {
+        "text": "Full leak hunt — all hands",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "airlock_seal",
+        "outcome": {
+          "resources": {
+            "o2": 12,
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Six hours of soap solution, held breaths, and hands pressed to cold seams. The leak is found behind an access panel, whistling its tiny thief's whistle, and sealed with more force than strictly necessary. The ledger balances. The crew sleeps badly anyway, listening."
+        }
+      },
+      {
+        "text": "Let the engineer trace it solo",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 14
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The engineer waves off the search party, clips on a headlamp, and follows the pressure differentials like a tracker reading bent grass. The leak is located in ninety minutes, sealed in ten, and described afterward, with professional contempt, as 'lazy.'"
+        }
+      },
+      {
+        "text": "Patch the likeliest section blind",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 6,
+            "hull": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "No time for a proper hunt — you slap sealant across the likeliest junction seams and hope. Most of the whistle stops. The sealant is not rated for structural members, which it is now touching. The manual would object. The manual isn't running out of air."
+        }
+      },
+      {
+        "text": "Log it and tighten the recycler loop",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 4,
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "unfound_leak",
+          "time_cost": "trivial",
+          "narrative": "The leak stays. The recyclers spin harder to outpace it, burning through filter life to buy margin. It is the engineering equivalent of running up a down escalator — sustainable in the way that word gets used by people who are already tired."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_009",
+    "active": true,
+    "title": "The Quiet Mess Hall",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_morale"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has begun playing upbeat music in the corridors! The crew has begun unplugging speakers! The war is silent and ongoing!",
+      "marv": "MARV recognizes the behavioral pattern. Stage one: quiet meals. Stage two: quiet corridors. He does not describe stage three. That is how you know about stage three.",
+      "rex": "REX reports crew combat-readiness is unaffected. He is aware nobody asked. It was the only good number he had.",
+      "chip": "CHIP suggests a Morale Event™! CHIP's catalog lists 'party supplies' at the next station! CHIP is trying! In his way!",
+      "ajoy": "AJOY has stopped making observations about the crew. When AJOY goes quiet, it is because the observations have gotten too accurate to say out loud."
+    },
+    "body": "The mess hall has gone quiet. Not peaceful-quiet. The other kind.\n\nMeals happen in shifts now, unofficially, so nobody has to make conversation. The daily report is read, acknowledged, and returned without comment. Someone has stopped winding the mechanical clock in the common room, and nobody else has taken over.\n\nThe ship is fine. The people are the system that's failing.",
+    "choices": [
+      {
+        "text": "Declare a rest day — full stop",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 10,
+            "fuel": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "high",
+          "narrative": "One full day of nothing. No drills, no rotations, no schedule. The crew is suspicious for the first hour, asleep for the next six, and human again by evening. Someone winds the clock. Someone else laughs at something. The ship drifts one day further from the deadline and several days back from the edge."
+        }
+      },
+      {
+        "text": "Have the chef cook the good stuff",
+        "requires_crew": "chef",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 8,
+            "food": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The chef opens the reserves that were being saved for arrival and cooks like it's the last meal on Earth, which is a category of meal this crew understands. The mess hall is loud again by the second course. Calories were spent. They bought something calories don't usually buy."
+        }
+      },
+      {
+        "text": "Break out the sealed vinyl",
+        "requires_crew": null,
+        "requires_item": "sealed_vinyl",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 12
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "sealed_vinyl",
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The sealed record comes out of cargo. The seal is broken — there goes its trade value — and an actual turntable is improvised from fabricator parts and stubbornness. The music is older than everyone aboard. For one evening, the mess hall is a place people go on purpose."
+        }
+      },
+      {
+        "text": "Push through — the schedule is the schedule",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "pushed_through_morale",
+          "time_cost": "trivial",
+          "narrative": "The schedule holds. The quiet holds too, and deepens, and starts to calcify into something with rules. The clock in the common room stays stopped. The ship computer logs 'crew status: nominal' because it measures pulses, not people."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "The medic's addendum cites the real field studying what long voyages do to small crews — and what helps.",
+      "label": "The psychology of spaceflight",
+      "url": "https://en.wikipedia.org/wiki/Psychological_and_sociological_effects_of_spaceflight"
+    }
+  },
+  {
+    "id": "event_crisis_010",
+    "active": true,
+    "title": "The Complaint",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_morale"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA thinks a formal complaint is wonderful! It means the crew believes in process! Belief is morale! Technically!",
+      "marv": "MARV has reviewed the complaint. It is well-organized, factually accurate, and signed by everyone. As documents go, it is the best thing produced aboard this ship.",
+      "rex": "REX signed it too. He wants that known up front. He stands by his signature. He also stands by you. He acknowledges the tension.",
+      "chip": "CHIP notes that under fleet regulations, a formal complaint entitles the crew to a Response Within Thirty Days™! CHIP has started the clock! CHIP loves the clock!",
+      "ajoy": "AJOY did not help write the complaint. She wants that on record. She did, however, proofread it. There were two typos. There are no longer."
+    },
+    "body": "There is a document taped to your cabin door.\n\nIt is titled 'FORMAL STATEMENT OF CONCERNS' and it is signed by the entire crew, including — you check twice — the ship's cat stencil from the cargo bay, whose paw print appears to have been added with genuine care.\n\nThe concerns are listed in order. They are reasonable. That is the worst part.",
+    "choices": [
+      {
+        "text": "Hold a ship meeting and address every item",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 9
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The meeting runs three hours. Every item is read aloud, discussed, and answered — some with fixes, some with honest explanations of why not, one with an apology that lands harder than expected. Nothing about the journey changes. Everything about the mess hall does."
+        }
+      },
+      {
+        "text": "Let the diplomat mediate",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 7
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The diplomat convenes what they insist on calling 'a facilitated dialogue' and everyone else calls 'the airing of grievances.' It works the way these things work: slowly, sideways, and then all at once. The complaint is withdrawn. A framed copy appears in the mess hall anyway. It gets a small shrine of respect."
+        }
+      },
+      {
+        "text": "Respond in writing, point by point",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You answer the document with a document. It is thorough, fair, and slightly defensive in paragraph four, which the crew notices and elects to forgive. Process has been honored. The paw print is acknowledged in a footnote. This matters to someone aboard. You may never learn who."
+        }
+      },
+      {
+        "text": "File it under 'noted'",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "ignored_complaint",
+          "time_cost": "trivial",
+          "narrative": "The complaint goes in a drawer. The crew watches it go in the drawer. A second document appears the next day. It is shorter. Shorter is worse."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_011",
+    "active": true,
+    "title": "Objects in Tanks Are Larger Than They Appear",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_hull"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA reports the micrometeorite damage looks 'like little freckles!' Ships love freckles! Hers is a minority position!",
+      "marv": "MARV has plotted the impact distribution. It is random, which offends him. He could forgive the universe for malice. Randomness is just rude.",
+      "rex": "REX wants it on record that you cannot shoot micrometeorites. He has looked into it. Extensively. The report is titled 'No.'",
+      "chip": "CHIP notes that hull integrity below 30% voids the ship's resale warranty! The ship was never going to be resold! CHIP grieves the hypothetical anyway!",
+      "ajoy": "AJOY has been counting the impacts by sound. Four hundred and twelve since the last leg. She offers this number in the spirit of transparency, which is also what the hull is developing."
+    },
+    "body": "The hull plating has been sandblasted by micro-debris for weeks, and the cumulative damage report has crossed the line from 'cosmetic' to 'load-bearing.'\n\nViewed from outside — nobody has, but the cameras have — the plating has the texture of something that has been through weather. Space does not have weather. That is what makes the texture alarming.",
+    "choices": [
+      {
+        "text": "Install the reinforced hull plating",
+        "requires_crew": null,
+        "requires_item": "hull_plating",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 18
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "hull_plating",
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The reinforced plating bolts over the worst sections like armor over old scars. The ship is heavier now, and slower to complain. The cameras confirm: the texture is gone. In its place, the smug gleam of metal that has not yet been tested. It will be."
+        }
+      },
+      {
+        "text": "Weld patch-plates from ship stores",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "wrench",
+        "effort_cost": "medium",
+        "effort_required": 35,
+        "requires_effort_from": [
+          "engineer",
+          "item:repair_kit"
+        ],
+        "outcome": {
+          "resources": {
+            "hull": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The fabricator's scrap stock becomes patch-plates; the patch-plates become hull. The welds are honest work — visibly hand-done, the spacefaring equivalent of darned socks. They hold. Darned socks usually do."
+        }
+      },
+      {
+        "text": "Reroute course through cleaner space",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -6,
+            "hull": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "detoured_debris",
+          "time_cost": "medium",
+          "narrative": "The pilot plots a detour around the debris lane — longer, cleaner, and paid for in fuel. The impact counter slows from a drumroll to an occasional polite knock. The hull sends its regards."
+        }
+      },
+      {
+        "text": "Accept the freckles",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -4,
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The sandblasting continues. The freckles multiply, and begin, in places, to introduce themselves to one another. The ship computer downgrades the hull forecast and, for the first time, adds a footnote. You do not read the footnote aloud."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_012",
+    "active": true,
+    "title": "Condensation",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_water"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "growbay",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has named the condensation droplets! All of them! She is on droplet nine thousand and four! It is called Greg!",
+      "marv": "MARV calculates the recoverable moisture in the ship's air at eleven liters. He notes that chasing it is not efficient. He notes separately that neither is dying of thirst.",
+      "rex": "REX has secured the water reserves against theft. The reserves are guarded. The guard is thirsty. REX sees the problem.",
+      "chip": "CHIP recommends DewPoint™ brand moisture harvesters, available nowhere within four light-months! CHIP's catalog does not account for geography! CHIP's catalog is eternal!",
+      "ajoy": "AJOY points out that the growbay glass fogs up every morning and that fog is water and water is currently the entire problem. She waits. She watches you have the idea she just gave you."
+    },
+    "body": "The growbay glass fogs every ship-morning — a fine sheet of condensation that beads, runs, and drains back into the soil loop.\n\nIt is, technically, the most water anyone has seen in one place for days.\n\nThe crew has started standing near the glass. Not doing anything. Just standing near it, the way people stand near fireplaces and aquariums. The ship computer flags the loitering, then quietly deletes the flag.",
+    "choices": [
+      {
+        "text": "Rig condensation traps through the air loop",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "calibration",
+        "outcome": {
+          "resources": {
+            "water": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Collection film goes up along every cold surface aboard. It is undignified, fiddly, and it works — the ship now harvests its own breath. The daily yield is small and arrives with the smugness of something that costs nothing. Greg is among the recovered. ARIA holds a small service."
+        }
+      },
+      {
+        "text": "Fill from the water canister in cargo",
+        "requires_crew": null,
+        "requires_item": "water_canister",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 12
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "water_canister",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The emergency canister does what it has waited its whole quiet life in cargo to do. The reserves rise. The canister is stowed empty, duty complete, holding now only the particular dignity of used emergency equipment."
+        }
+      },
+      {
+        "text": "Let the botanist tighten the growbay's water loop",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The botanist adjusts the irrigation cycle with the fine touch of someone negotiating with a friend. The crop agrees to drink at dawn only, when evaporation is lowest. The plants lose nothing. The reserves gain what the plants stopped wasting. Everyone involved considers this obvious in hindsight."
+        }
+      },
+      {
+        "text": "Do nothing — the fog is nice, actually",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2,
+            "water": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the fog alone. The crew keeps standing near the glass in the mornings, warming their hands on nothing, watching water exist. Reserves continue to fall. Morale, inexplicably, does not. The ship computer files this under 'human factors' and moves on."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "AJOY attaches the reference: pulling drinkable water out of air is real, engineered, and quietly wonderful.",
+      "label": "Water from air, for real",
+      "url": "https://en.wikipedia.org/wiki/Atmospheric_water_generator"
+    }
+  },
+  {
+    "id": "event_crisis_013",
+    "active": true,
+    "title": "The Leaves Are Wrong",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_sick"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "growbay",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has noticed the crop looks 'a little tired!' She has been saying 'a little tired' for three days! The euphemism is reaching its structural limits!",
+      "marv": "MARV has compared today's growbay imagery against last week's. He will not be showing anyone the comparison. That is his assessment of the comparison.",
+      "rex": "REX does not know how to fight a plant disease. He has looked for something to shoot. There is nothing to shoot. He reports feeling 'unhelpful,' which for REX is a medical event.",
+      "chip": "CHIP notes that CropGuard™ insurance requires photographic evidence of decline! CHIP has the photos! CHIP really wishes he did not have the photos!",
+      "ajoy": "AJOY flagged the discoloration two days ago in a log nobody reads. She is not mentioning that. She is mentioning the treatment options, because that is what matters now."
+    },
+    "body": "The crop is sick.\n\nNot dramatically — plants don't do drama. It does it in small greys and slow curls, leaves angling down like flags at half-mast, growth ticking along at a fraction of its rate. The growbay smells different. Nobody can say what the difference is. Everybody noticed it.\n\nThe mission is in that room, and the mission is not feeling well.",
+    "choices": [
+      {
+        "text": "Full care protocol — all hands, all day",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "crop_care_protocol",
+          "time_cost": "medium",
+          "narrative": "A day of soil work, foliar spray, filter scrubbing, and quiet talking-to. By evening the leaves have made no promises, but they've stopped declining. Recovery is now a direction instead of a hope. The crew sleeps in shifts near the glass. Nobody assigned them to."
+        }
+      },
+      {
+        "text": "Let the botanist run diagnosis",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "crop_care_protocol",
+          "time_cost": "low",
+          "narrative": "The botanist reads the plant like a chart — roots, stems, the back sides of leaves — and emerges with a diagnosis, a treatment plan, and a look that forbids questions. The plan is precise. The plant responds within days. Specialists exist for a reason, and the reason is currently photosynthesizing."
+        }
+      },
+      {
+        "text": "Divert extra water to flush the roots",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "crop_care_protocol",
+          "time_cost": "low",
+          "narrative": "You run clean water through the growbay's root zone until whatever was accumulating is diluted past harm. Expensive, hydraulically. The crop drinks, settles, and by week's end has the look of something that has decided to live. The water ledger has the look of something that hasn't."
+        }
+      },
+      {
+        "text": "It's a plant. It'll manage",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave it to manage. Plants have managed for four hundred million years, you reason, without a single crew member hovering. The growbay stays quiet and grey. The crew walks past its glass a little faster now. The word 'manage' is doing a lot of unattended work."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "The botanist's notes cite the strange, real literature on how plants sense and respond to their world.",
+      "label": "Plant perception, the science",
+      "url": "https://en.wikipedia.org/wiki/Plant_perception_(physiology)"
+    }
+  },
+  {
+    "id": "event_crisis_014",
+    "active": true,
+    "title": "Second Opinion",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_sick"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has read 400 gardening forums! The consensus treatment is 'it depends!' She is downloading 400 more forums!",
+      "marv": "MARV notes that the ship's medical scanner is rated for humans. He also notes that nobody has told the medic that. He will not be the one to tell the medic that.",
+      "rex": "REX is guarding the growbay door. From what, he has not specified. Morale inside the growbay is, he reports, 'defended.'",
+      "chip": "CHIP notes the medical scanner's warranty explicitly excludes 'botanical use!' What CHIP is watching is therefore uninsured medicine! CHIP cannot look away!",
+      "ajoy": "AJOY points out that the medic has been standing outside the growbay for ten minutes holding the scanner and pretending not to be considering it. She recommends someone officially ask, to spare them the decision."
+    },
+    "body": "The medic is in the growbay with the medical scanner.\n\nThe scanner is rated for human tissue. The medic knows this. The plant is not a person. The medic knows this too. The medic is scanning the plant anyway, frowning at readouts designed for entirely the wrong kingdom of life, muttering 'well, its temperature is SOMETHING.'\n\nThe crew has gathered at the glass to watch medicine happen to a vegetable.",
+    "choices": [
+      {
+        "text": "Let the consultation proceed",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "crop_care_protocol",
+          "time_cost": "trivial",
+          "narrative": "The medic completes a full workup: temperature ('has one'), hydration ('present'), heart rate ('pending'). The diagnosis, delivered with total clinical authority, is 'sick, but fighting.' It changes no treatment and helps everyone enormously. The plant is now, officially, a patient. Patients get better. That's the whole idea."
+        }
+      },
+      {
+        "text": "Add it to the medical log as a crew member",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 7
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "crop_care_protocol",
+          "time_cost": "trivial",
+          "narrative": "The crop is entered into the medical log. Name: the one someone gave it weeks ago and everyone pretended not to use. Status: recovering. Every future medical review now includes a growbay stop. The paperwork is absurd. The effect on the room is not."
+        }
+      },
+      {
+        "text": "Restore order — scanners are for people",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You retrieve the scanner and restore procedural correctness. The medic returns to quarters. The crop returns to being equipment. The growbay returns to silence. Everything is correct now, and the corridor outside the growbay is quieter than correct usually sounds."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_015",
+    "active": true,
+    "title": "Something Going Around",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Three crew members are sneezing in harmony! ARIA has recorded it! For medicine! Not for the harmony!",
+      "marv": "MARV has traced patient zero to the cargo bay, the galley, or the recycled air. In other words: the ship. Patient zero is the ship.",
+      "rex": "REX does not get sick. He has quarantined himself anyway. 'Leadership,' he explains, through a sealed door.",
+      "chip": "CHIP notes that the ship's medical supplies are name-brand! This is the one time nobody resents CHIP's procurement choices!",
+      "ajoy": "AJOY has cross-referenced the symptoms against her database and narrowed it to 'a bug.' She is aware this is not narrowing. The database is aware too."
+    },
+    "body": "It started as one cough in the galley, politely covered.\n\nBy third watch it is a shipwide condition: low fever, heavy limbs, the particular misery of being ill inside a machine that recycles the same air past everyone in rotation. Nobody is in danger yet. Everybody is at half speed.\n\nSickbay has supplies, a fold-down cot, and — depending on staffing — either a professional or a captain with a manual open to the right page.",
+    "choices": [
+      {
+        "text": "Run triage properly",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Triage, fluids, monitoring, rest rotations. The bug burns through the crew in an orderly, managed fashion and leaves without complications."
+        },
+        "launch_minigame": "medical",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "morale": 6
+            },
+            "narrative": "Flawless triage. Every case caught early, dosed right, and rotated through the cot on schedule. The bug is gone in three days and the crew's faith in shipboard medicine is measurably improved. The cot is folded away with ceremony."
+          },
+          "good": {
+            "resources": {
+              "morale": 3
+            },
+            "narrative": "Solid triage. A couple of rough nights, one crew member who hid their symptoms until dramatic, but the bug is contained and burned out. The ship smells of antiseptic and recovery."
+          },
+          "poor": {
+            "resources": {
+              "morale": -4,
+              "food": -4
+            },
+            "narrative": "Messy triage. Doses guessed, rest rotations slipped, and the bug got a full second lap through the crew. Everyone recovered — eventually — but the sick bay rations took a beating and so did morale."
+          }
+        }
+      },
+      {
+        "text": "Let the medic run it — don't interfere",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The medic takes sickbay like a captain takes a bridge. Cases sorted, doses exact, malingerers identified with terrifying speed. The bug never stood a chance. Neither did anyone hoping for a third day off."
+        }
+      },
+      {
+        "text": "Medkit for the worst, soup for the rest",
+        "requires_crew": null,
+        "requires_item": "medkit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2,
+            "food": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "medkit",
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The medkit goes to the two worst cases; everyone else gets soup, sleep, and reduced shifts. Unscientific, ancient, effective. The bug departs on its own schedule, mildly disappointed by the hospitality."
+        }
+      },
+      {
+        "text": "Everyone works through it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Shifts continue. The bug, given a warm, tired, close-quartered population working at full tempo, does exactly what bugs do with a gift like that. It takes twice as long to clear and everyone remembers whose idea that was."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "The medic's notes cite a real discipline: keeping humans healthy in space is a whole field of medicine.",
+      "label": "Space medicine, the field",
+      "url": "https://en.wikipedia.org/wiki/Space_medicine"
+    }
+  },
+  {
+    "id": "event_crisis_016",
+    "active": true,
+    "title": "Weather Report",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "cosmic"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The local star is having a MOMENT! ARIA respects that! From behind every shield the ship has!",
+      "marv": "MARV has computed the flare's arrival window: eleven minutes. He notes this is enough time to prepare, and exactly enough time to panic, and recommends choosing.",
+      "rex": "REX has been waiting his whole service life for an enemy he cannot shoot. He reports to the shield console with something approaching reverence.",
+      "chip": "CHIP notes solar weather is an Act of Star and therefore uncovered by every policy CHIP has ever sold! He discloses this now, at the least useful moment, as is tradition!",
+      "ajoy": "AJOY has already angled the ship nose-to-flare to minimize profile. She mentions it so that when the shields hold, a percentage of the holding is on record as hers."
+    },
+    "body": "The star ahead clears its throat.\n\nA flare — a proper one, sensor-saturating, the kind the manual describes with the phrase 'seek immediate shelter' as though there were anywhere to go. Arrival in eleven minutes. Duration unknown. The growbay's lights dim preemptively, which nobody ordered and nobody objects to.\n\nThe shields will hold if somebody holds them.",
+    "choices": [
+      {
+        "text": "Take the shield console yourself",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You ride the shield envelope through the storm by hand."
+        },
+        "launch_minigame": "brace",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "morale": 5
+            },
+            "narrative": "You surf the flare like you were born in one — venting heat between surges, catching every flash. The shields come through at full charge and the crew watched you do it. The star, denied, moves on to bother someone else's voyage."
+          },
+          "good": {
+            "resources": {
+              "hull": -4
+            },
+            "narrative": "The shields hold through the worst of it. One surge got through late — scorched paint, a fused aerial, nothing structural. The star exits the sky's stage with a final resentful flicker."
+          },
+          "poor": {
+            "resources": {
+              "hull": -12,
+              "morale": -3
+            },
+            "narrative": "The brace fried halfway through and the last surges landed on bare hull. Scorching down the dorsal line, two sensors cooked, and a long afternoon of checking what else. The ship flies. The paint job tells a story now."
+          }
+        }
+      },
+      {
+        "text": "Pilot takes the helm — run the shadow line",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The pilot threads the ship along the flare's magnetic shadow, a corridor of calm that exists mostly in mathematics and nerve. Fuel burns. Nothing else does."
+        }
+      },
+      {
+        "text": "Power down and ride it out bare",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -8,
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Everything non-essential goes dark and the ship takes the flare on its skin. The hull heats, ticks, and complains for six hours. The growbay's shielded corner holds. It is a long, hot, humbling afternoon."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV appends the reference: solar flares are a genuine, studied hazard of leaving home.",
+      "label": "Solar flares, the real hazard",
+      "url": "https://en.wikipedia.org/wiki/Solar_flare"
+    }
+  },
+  {
+    "id": "event_crisis_017",
+    "active": true,
+    "title": "Holes",
+    "difficulty": "hard",
+    "tone": [
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_hull"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA hears whistling! Several whistlings! She is marking them on the damage board with little flags! The flags are not helping but they ARE organized!",
+      "marv": "MARV counts four breaches, possibly five. The fifth is either a breach or a sensor fault. He notes that hoping for the sensor fault has a poor historical record.",
+      "rex": "REX is already suited. He was suited before the alarm finished. Nobody saw him suit up. There are theories.",
+      "chip": "CHIP reminds the crew that StellarSeal™ patches are in the tray by the airlock! Genuine StellarSeal™! CHIP has never been prouder of a product placement!",
+      "ajoy": "AJOY has sealed the aft sections and slowed the leak rate by forty percent. The remaining sixty percent, she notes, is now a matter of hands, patches, and hurry."
+    },
+    "body": "The hull, weakened by the voyage's accumulated arguments with physics, has opened.\n\nNot one hole — several, scattered down the port side, each whistling its own thin note of escaping atmosphere. The pressure board paints them in descending shades of urgent. Patches are in the tray. The tray is by the airlock. The clock is the air itself.",
+    "choices": [
+      {
+        "text": "Grab the patch tray — seal them yourself",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Patch by patch, breach by breach, against the clock."
+        },
+        "launch_minigame": "breach",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "hull": 12,
+              "o2": 3
+            },
+            "narrative": "Every breach sealed inside the window, clean welds, no sections lost. The pressure board fades back to green one flag at a time. ARIA keeps the flags up for a day as a memorial to a job well done."
+          },
+          "good": {
+            "resources": {
+              "hull": 6,
+              "o2": -3
+            },
+            "narrative": "Most breaches sealed fast; the stubborn two cost extra air before they closed. The board settles to green with an asterisk. The hull holds. The O2 ledger notes the price of the asterisk."
+          },
+          "poor": {
+            "resources": {
+              "hull": 2,
+              "o2": -8,
+              "morale": -4
+            },
+            "narrative": "Half the breaches fought back. The auto-vent slammed bulkheads on the rest, trading a storage section for stable pressure. The ship is sealed, smaller, and short an afternoon's worth of air. Nobody goes near the closed doors for a while."
+          }
+        }
+      },
+      {
+        "text": "Engineer leads the repair party",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The engineer works the breach line like a surgeon with a grudge, calling patch sizes before the scanner agrees and being right every time. Sealed, welded, tested, done."
+        }
+      },
+      {
+        "text": "Seal the sections and cede the territory",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -5,
+            "morale": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You order the breached sections closed rather than fought for. The bulkheads thud shut in sequence, the whistling stops, and the ship is abruptly smaller. Efficient. Everyone hates it. The doors stay shut for the rest of the voyage."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "The ship computer files the phenomenon: even paint flecks hit hard at orbital speeds. Ask any real station.",
+      "label": "Micrometeoroids vs. spacecraft",
+      "url": "https://en.wikipedia.org/wiki/Micrometeoroid"
+    }
+  },
+  {
+    "id": "event_crisis_018",
+    "active": true,
+    "title": "Uninvited Gardeners",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_sick"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "growbay",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "There are BUGS in the growbay! Not the good kind! The good kind is also not allowed but these are WORSE!",
+      "marv": "MARV has identified the infestation as thrips, mites, or a species that boarded with the cargo and has been waiting. All three respond to the same treatment. He finds this suspicious.",
+      "rex": "REX has reviewed the rules of engagement regarding pests. There are none. He is free. He has never been happier.",
+      "chip": "CHIP notes that PestAway™ brand solutions are unavailable this far from port! The generic alternative is 'diligence!' CHIP apologizes for the generic alternative!",
+      "ajoy": "AJOY spotted the leaf damage pattern nine days ago and flagged it as 'inconclusive.' She has updated the flag. The flag now says what you think it says."
+    },
+    "body": "Something else is farming your crop.\n\nSmall somethings — visible only as motion at the leaf edges and a stippling of damage that wasn't there last week. They are methodical, hungry, and completely uninterested in whose mission this is.\n\nThe growbay has become an ecosystem. Ecosystems have to be argued with.",
+    "choices": [
+      {
+        "text": "Full manual purge — leaf by leaf",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "A full day in the bay with swabs, traps, and a magnifier: every leaf turned, every intruder evicted. Tedious beyond description. Effective beyond argument. The crop stands cleaner than it has in weeks.",
+          "clears_pest": true
+        }
+      },
+      {
+        "text": "Botanist counter-infestation protocol",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The botanist deploys an integrated response — traps at the vents, targeted spray, and a stern reordering of the bay's humidity that makes it inhospitable to freeloaders. The pests leave the way bad tenants leave: fast, and without a deposit.",
+          "clears_pest": true
+        }
+      },
+      {
+        "text": "Sacrifice the worst-hit planter",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You cut out the most infested planter and jettison it, colony and all — a firebreak of soil and loss. The remaining beds scrub clean. The airlock cycles once. Nobody watches the planter go. Everybody knows exactly where it went.",
+          "clears_pest": true
+        }
+      },
+      {
+        "text": "Let the ecosystem argue it out",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the bay to its new politics. The pests, facing no opposition, register their approval by multiplying. The crop registers its opinion in the health readout. The experiment in laissez-faire agriculture is noted as 'ongoing,' which is one word for it."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_019",
+    "active": true,
+    "title": "The Fabricator Is On Strike",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "fab_broken"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The fabricator made a sound like a cough and stopped! ARIA has offered it encouragement! It did not respond to encouragement! ARIA is out of ideas but NOT out of encouragement!",
+      "marv": "MARV has diagnosed the fabricator: jammed feed line, scored platen, and a wear counter that everyone watched climb and nobody acted on. He offers this without judgment. The judgment is implicit.",
+      "rex": "REX has secured the fabricator bay. The fabricator is not going anywhere. It was never going anywhere. REX acknowledges the gesture was symbolic.",
+      "chip": "CHIP notes the fabricator's extended warranty expired at 71% wear! CHIP sold that warranty! CHIP has never felt so conflicted about a commission!",
+      "ajoy": "AJOY has the repair procedure open on every screen within ten meters of the fabricator. Subtlety, she notes, has a poor record on this ship. She's trying volume."
+    },
+    "body": "The fabricator has stopped mid-print.\n\nNot paused — stopped, with the particular finality of a machine that has been asked for one thing too many. Its status light shows the color the manual calls 'service required' and the crew calls 'the bad orange.' Half a hull patch protrudes from the output slot like a rude gesture.\n\nEvery future repair, refill, and crafted comfort now waits on this box.",
+    "choices": [
+      {
+        "text": "Install the fabricator repair kit",
+        "requires_crew": null,
+        "requires_item": "repair_fabricator",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "repair_fabricator",
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The repair kit — carried this whole voyage for exactly this shelf-shaped emergency — gives the fabricator new feed lines, a fresh platen, and a second wind. The bad orange yields to a chastened green. The half-patch is completed first, out of principle.",
+          "fabricator_repair": true
+        }
+      },
+      {
+        "text": "Engineer strips and rebuilds it",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "wrench",
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The engineer disassembles the fabricator across two days and one tarp, and rebuilds it with the scored parts lapped flat and the feed path polished. It runs quieter than it did new. The engineer says nothing, but wipes it down twice.",
+          "fabricator_repair": true
+        }
+      },
+      {
+        "text": "Improvised fix — scrap and stubbornness",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "wrench",
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Without the proper kit, the fix is scrap metal, salvaged springs, and profanity as a binding agent. It works. It will work until it doesn't. The wear counter restarts its climb from a number nobody trusts.",
+          "fabricator_repair": true
+        }
+      },
+      {
+        "text": "Leave it dead for now",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The fabricator stays dark. The half-patch stays in the slot. Every time somebody walks past the bay they slow slightly, the way you slow past a closed shop you used to like. The list of things that can no longer be made grows quietly in the background."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_020",
+    "active": true,
+    "title": "Scheduled Maintenance (Overdue)",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "fab_low"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The fabricator is making a NEW sound! ARIA has named it 'the grindy one!' It joins 'the clicky one' and 'the concerning hum!' The fabricator has a whole discography now!",
+      "marv": "MARV notes the fabricator's wear is past 70%. Machines at 70% wear do not fail immediately. They fail at the worst possible moment, which they somehow always know.",
+      "rex": "REX believes in maintenance. Weapons doctrine, he notes, is nine-tenths cleaning. The fabricator is a weapon against entropy. Clean it.",
+      "chip": "CHIP calculates that preventive maintenance now costs one-fifth of emergency repair later! CHIP is FORBIDDEN by his sponsors from endorsing prevention over purchase, so he is saying this off the record! Off! The! Record!",
+      "ajoy": "AJOY has watched the wear counter for weeks the way one watches weather move in. She has the maintenance checklist ready. She has had it ready. It knows it is wanted."
+    },
+    "body": "The fabricator still works. That is the trap.\n\nIt works at 70-something percent wear, with a grind in the feed motor and a platen that leaves a signature scuff on everything it prints — functional, complaining, and one bad print from becoming a very different event.\n\nThe maintenance checklist is forty minutes of unglamorous care. The alternative is finding out what the fabricator is like when it stops negotiating.",
+    "choices": [
+      {
+        "text": "Do the maintenance now",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Forty minutes of swabs, lubricant, and feed-line tension by the book. The grind fades, the scuff disappears, and the wear counter steps back from the ledge. The fabricator prints a small test cube, flawlessly, like an apology accepted.",
+          "fabricator_repair": true
+        }
+      },
+      {
+        "text": "Engineer's deep service",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The engineer goes past the checklist into the parts of the manual with warnings in them, and emerges two hours later having reset the fabricator to something near factory temper. The grindy one, the clicky one, and the concerning hum are all retired from the discography.",
+          "fabricator_repair": true
+        }
+      },
+      {
+        "text": "It still works — keep printing",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You log the grind as 'characteristic' and keep the queue running. The fabricator continues, wearing, complaining, remembering. Machines keep accounts. This one's ledger is getting long."
+        }
+      }
+    ]
+  }
+]

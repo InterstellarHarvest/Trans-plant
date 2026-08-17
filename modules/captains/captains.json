@@ -1,0 +1,271 @@
+{
+  "_meta": {
+    "description": "Captain backgrounds. The player IS the captain. They chose what to study, and that background gives them a discounted version of a crew specialist's skills. A captain-botanist is NOT as good as a crew botanist — skill_modifier 0.5 means half the effort contribution, half the passive bonus, and narrative unlocks are fewer or less effective. This makes crew selection meaningful: you complement your weaknesses, not double down on strengths. Or you double down. That's also a valid, terrible choice.",
+    "skill_modifier": "0.5 = captain gets half the effort_contribution value, half the passive effect, and reduced active skill uses (where applicable). This is the 'studied it in school but didn't make it a career' discount.",
+    "crew_cap": "Captain + 0, 1, or 2 crew. Ship supports max 3 humans. 0 crew is possible with a warning. Stowaway events can push past this if someone is jettisoned."
+  },
+
+  "captains": [
+    {
+      "id": "captain_botanist",
+      "active": true,
+      "background": "botanist",
+      "title": "Studied Botany",
+      "flavor": "You know plants. Not as well as Dr. Osei, but well enough to tell when something is wrong. Usually.",
+      "skill_modifier": 0.5,
+      "passive_effect": {
+        "description": "Crop health events slightly improved. Crop water consumption reduced 7% (vs. crew botanist's 15%).",
+        "crop_water_modifier": 0.93,
+        "effort_contribution": {
+          "repair_types": ["biological_events", "crop_events"],
+          "value": 12
+        }
+      },
+      "narrative_unlocks": [
+        "Basic plant identification — less detail than crew botanist",
+        "Can stabilize sick crop in emergencies (less effective than Greenhouse Protocol)"
+      ],
+      "starting_bonus": {
+        "crop_health": 5,
+        "description": "Crop starts at 85 instead of 80 — you prepped the growbay properly"
+      },
+      "selection_flavor": "You studied botany. Your parents asked what you'd do with that degree. This. This is what."
+    },
+
+    {
+      "id": "captain_engineer",
+      "active": true,
+      "background": "engineer",
+      "title": "Studied Engineering",
+      "flavor": "You can fix things. Not as fast as Kazuki, and you eat a normal amount.",
+      "skill_modifier": 0.5,
+      "passive_effect": {
+        "description": "Hull repair events slightly improved. Fabricator wear reduced 10% (vs. crew engineer's 20%).",
+        "fabricator_wear_modifier": 0.9,
+        "effort_contribution": {
+          "repair_types": ["hull_events", "mechanical_events"],
+          "value": 12
+        }
+      },
+      "narrative_unlocks": [
+        "Basic mechanical repair options",
+        "Can attempt improvised fabricator repair (lower success chance than crew engineer)"
+      ],
+      "starting_bonus": {
+        "hull": 5,
+        "description": "Hull starts at 105 instead of 100 — you reinforced the weak points before launch"
+      },
+      "selection_flavor": "You studied engineering. The ship makes sounds it shouldn't. You recognize most of them."
+    },
+
+    {
+      "id": "captain_medic",
+      "active": true,
+      "background": "medic",
+      "title": "Studied Medicine",
+      "flavor": "You passed the exam. You are not a doctor. Do not call yourself a doctor. Dr. Vasquez will know.",
+      "skill_modifier": 0.5,
+      "passive_effect": {
+        "description": "Injury outcomes slightly improved. 15% chance lethal downgrades to injury (vs. medic's 30%).",
+        "severity_modifier": {
+          "lethal_to_injury_chance": 0.15
+        },
+        "effort_contribution": {
+          "repair_types": ["medical_events"],
+          "value": 12
+        }
+      },
+      "narrative_unlocks": [
+        "Basic first aid options — not full treatment",
+        "Can identify symptoms (but not always correctly)"
+      ],
+      "starting_bonus": {
+        "medical_supplies": 1,
+        "description": "Start with a basic medical kit — one free injury heal"
+      },
+      "selection_flavor": "You studied medicine. Halfway. The residency was... there were circumstances. You're fine."
+    },
+
+    {
+      "id": "captain_pilot",
+      "active": true,
+      "background": "pilot",
+      "title": "Studied Piloting",
+      "flavor": "You can fly the ship. This is expected of a captain. You are slightly better at it than expected.",
+      "skill_modifier": 0.5,
+      "passive_effect": {
+        "description": "Fuel efficiency improved 5% (vs. crew pilot's 10%). Calibration microgame slightly easier.",
+        "fuel_burn_modifier": 0.95,
+        "effort_contribution": {
+          "repair_types": ["navigation_events"],
+          "value": 12
+        }
+      },
+      "narrative_unlocks": [
+        "Basic evasion options in combat",
+        "Can read navigation charts without crew pilot (but less accurately)"
+      ],
+      "starting_bonus": {
+        "fuel": 5,
+        "description": "Fuel starts at 105 — you calculated the most efficient departure window"
+      },
+      "selection_flavor": "You studied piloting. You are statistically correct 68% of the time. Reeves would say that's amateur."
+    },
+
+    {
+      "id": "captain_chef",
+      "active": true,
+      "background": "chef",
+      "title": "Studied Culinary Arts",
+      "flavor": "You can cook. Not like Reyes, but you can make algae rations taste like something other than regret.",
+      "skill_modifier": 0.5,
+      "passive_effect": {
+        "description": "Food consumption reduced 7% (vs. crew chef's 15%). Morale +0.5 from meals.",
+        "food_consumption_modifier": 0.93,
+        "morale_passive": 0.5,
+        "effort_contribution": {
+          "repair_types": ["food_events", "morale_events"],
+          "value": 12
+        }
+      },
+      "narrative_unlocks": [
+        "Basic edibility judgment — less reliable than crew chef",
+        "Can prepare a decent meal in crisis (smaller morale boost)"
+      ],
+      "starting_bonus": {
+        "food": 5,
+        "description": "Food starts at 105 — you packed well"
+      },
+      "selection_flavor": "You studied culinary arts. In space, this means you know 47 ways to prepare algae. Forty-six of them are bad."
+    },
+
+    {
+      "id": "captain_xenobiologist",
+      "active": true,
+      "background": "xenobiologist",
+      "title": "Studied Xenobiology",
+      "flavor": "You studied aliens. You have never met one. This could go either way.",
+      "skill_modifier": 0.5,
+      "passive_effect": {
+        "description": "Anomaly events slightly safer. Basic biological analysis available.",
+        "effort_contribution": {
+          "repair_types": ["biological_events", "alien_events"],
+          "value": 12
+        }
+      },
+      "narrative_unlocks": [
+        "Basic alien encounter options (less effective than crew xenobiologist)",
+        "Can identify some biological specimens (with less certainty)"
+      ],
+      "starting_bonus": {
+        "item": "spectrometer",
+        "description": "Start with a spectrometer — it was part of your thesis"
+      },
+      "selection_flavor": "You studied xenobiology. Your thesis was theoretical. Everything is about to become very applied."
+    },
+
+    {
+      "id": "captain_diplomat",
+      "active": true,
+      "background": "diplomat",
+      "title": "Studied Diplomacy",
+      "flavor": "You studied diplomacy. This means you are very good at making people feel heard while doing nothing.",
+      "skill_modifier": 0.5,
+      "passive_effect": {
+        "description": "Station interactions slightly improved. Negotiation events slightly better.",
+        "effort_contribution": {
+          "repair_types": ["negotiation_events", "station_events"],
+          "value": 12
+        }
+      },
+      "narrative_unlocks": [
+        "Basic negotiation options (less effective than crew diplomat)",
+        "Station merchants are slightly friendlier"
+      ],
+      "starting_bonus": {
+        "credits": 15,
+        "description": "You start with extra credits — you know people"
+      },
+      "selection_flavor": "You studied diplomacy. Your crew does not find this reassuring."
+    },
+
+    {
+      "id": "captain_merchant",
+      "active": true,
+      "background": "merchant",
+      "title": "Business Background",
+      "flavor": "You ran a business. Whether it was successful is a matter of perspective. You have inventory management instincts.",
+      "skill_modifier": 0.5,
+      "passive_effect": {
+        "description": "Station prices reduced 10%. Barter options occasionally available in events.",
+        "station_price_modifier": 0.9,
+        "effort_contribution": {
+          "repair_types": ["trade_events"],
+          "value": 12
+        }
+      },
+      "narrative_unlocks": [
+        "Barter options in some events",
+        "Can appraise loot-only items for trade value"
+      ],
+      "starting_bonus": {
+        "credits": 30,
+        "description": "You start with significantly more credits — you liquidated assets"
+      },
+      "selection_flavor": "You ran a business. You are going to run this mission like a business. The crew has feelings about this."
+    },
+
+    {
+      "id": "captain_academic",
+      "active": true,
+      "background": "academic",
+      "title": "Academic Background",
+      "flavor": "You have a PhD. In what is not immediately relevant. You argue with ship AIs.",
+      "skill_modifier": 0.5,
+      "passive_effect": {
+        "description": "Scientific instrument events have additional options. Research reveals hidden event info.",
+        "effort_contribution": {
+          "repair_types": ["research_events", "anomaly_events"],
+          "value": 12
+        }
+      },
+      "narrative_unlocks": [
+        "Research options that reveal hidden event outcomes before choosing",
+        "Argues with the ship AI constantly — sometimes productively",
+        "Scientific instrument events have one extra option"
+      ],
+      "starting_bonus": {
+        "item": "gas_analyzer",
+        "description": "Start with a gas analyzer — grant funding covered it"
+      },
+      "selection_flavor": "You have a PhD. Your grant funding was cut. You are in space. These events are related."
+    },
+
+    {
+      "id": "captain_veteran",
+      "active": true,
+      "background": "veteran",
+      "title": "Military Background",
+      "flavor": "You served. Where is classified. What you did is classified. Your therapist is classified.",
+      "skill_modifier": 0.5,
+      "passive_effect": {
+        "description": "Combat minigames start with a screen-clear. Morale drops from combat events reduced.",
+        "combat_bonus": "screen_clear_start",
+        "effort_contribution": {
+          "repair_types": ["combat_events"],
+          "value": 12
+        }
+      },
+      "narrative_unlocks": [
+        "Tactical assessment — reveals enemy pattern in combat minigame",
+        "Refers to every new planet as 'basically Kandahar'",
+        "Combat event options with slightly better odds"
+      ],
+      "starting_bonus": {
+        "item": "pressure_suit",
+        "description": "Start with a pressure suit — you kept yours"
+      },
+      "selection_flavor": "You served. You don't talk about it. Your crew will ask exactly once."
+    }
+  ]
+}

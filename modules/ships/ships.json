@@ -1,0 +1,44 @@
+{
+  "_meta": {
+    "description": "Ship definitions. One ship in the base game — the colony transport. Upgradeable via items in cargo (ship upgrades activate passively while held). Ship stats are set at trail selection, not here. This file is the ship's identity layer: name pool, description, base hull rating, cargo capacity baseline, and sprite reference. The engine reads this at game start to initialize the ship object.",
+    "design_note": "There is one ship. The player does not choose it. They are already on it. The ship has a name — generated from name_pool at run start — which the ship computer refers to it by for the entire run. The name is always slightly wrong for what the ship actually is."
+  },
+
+  "ships": [
+    {
+      "id": "ship_colony_transport_001",
+      "active": true,
+      "name": "Colony Transport (Class C)",
+      "description": "A standard colony-class deep space transport. Rated for long haul. Currently being used for a long haul. The ship computer considers this a reasonable use of the vessel and has said so, in the ship's log, twice.",
+      "flavor": "Not fast. Not glamorous. Structurally sound in most weather conditions, though 'weather' is doing some work in a vacuum. The growbay takes up 30% of usable interior space. This is intentional. The colony authority prioritized the plants. This was probably the right call.",
+
+      "base_stats": {
+        "hull_max": 100,
+        "cargo_capacity_base": 8,
+        "fuel_capacity": 100,
+        "crew_capacity": 3
+      },
+
+      "sprite": "sprites/ships/default.png",
+
+      "name_pool": [
+        "The Considered Decision",
+        "Second Thoughts",
+        "The Working Title",
+        "Provisional Name Pending",
+        "The Best Available Option",
+        "The Greenfield",
+        "Adequate",
+        "The Optimistic Filing",
+        "Forward Motion",
+        "The Committed Course",
+        "Last Resort (Pre-emptive)",
+        "The Reasonable Bet"
+      ],
+
+      "log_description": "Colony transport, Class C. Growbay rated for 5 crop types. Hull: standard deep space spec. FTL capable: yes. FTL reliable: ask at next station.",
+
+      "computer_voice_note": "The ship computer was installed by the colony authority. It has opinions about the crop. It has fewer opinions about the crew. It has logged both facts."
+    }
+  ]
+}

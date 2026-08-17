@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Salvage · Devtool</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<script src="shared.js"></script>
+<style>
+:root {
+  --gold:#c8a85a; --teal:#8cc890; --orange:#e88830; --red:#cc3333;
+  --cream:#e8d8a0; --slate:#2a3040; --deep:#0e1520; --void:#020408;
+  --body:#8898a8; --muted:#5a7a6a; --info:#35c6bf;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-user-select:none;user-select:none}
+html,body{background:var(--void);color:var(--body);font-family:'VT323',monospace;min-height:100vh}
+
+header{
+  background:linear-gradient(180deg,#141a28,#0a0e18);
+  border-bottom:2px solid var(--gold);
+  padding:14px 28px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+h1{font-family:'Press Start 2P',cursive;font-size:10px;letter-spacing:3px;color:var(--gold)}
+.subtitle{font-size:14px;color:var(--muted)}
+
+.maintabs{display:flex;gap:0;padding:0 28px;border-bottom:1px solid var(--slate);background:#0a0e18}
+.maintab{
+  font-family:'Press Start 2P',cursive;font-size:7px;letter-spacing:2px;
+  padding:11px 18px;background:transparent;border:none;border-bottom:2px solid transparent;
+  color:var(--body);cursor:pointer;
+}
+.maintab:hover{color:var(--cream)}
+.maintab.on{color:var(--gold);border-bottom-color:var(--gold)}
+
+.layout{display:flex;gap:16px;padding:16px 28px;align-items:flex-start;flex-wrap:wrap}
+.left{flex:0 0 auto}
+.right{flex:1;min-width:340px;max-width:520px;display:flex;flex-direction:column;gap:12px}
+
+.bgtabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.bgtab{
+  font-family:'Press Start 2P',cursive;font-size:6px;letter-spacing:1px;
+  padding:7px 11px;background:rgba(20,26,40,.8);border:1px solid var(--slate);
+  color:var(--body);cursor:pointer;border-radius:2px;
+}
+.bgtab:hover{border-color:var(--gold);color:var(--cream)}
+.bgtab.on{background:rgba(200,168,90,.12);border-color:var(--gold);color:var(--gold)}
+
+.stage{
+  position:relative;
+  border:1px solid var(--slate);
+  background:#000;
+  width:960px;height:640px;
+  overflow:hidden;
+}
+.stage img.bg{
+  position:absolute;inset:0;width:100%;height:100%;
+  pointer-events:none;display:block;
+}
+
+/* ── Bay tab ──────────────────────────────────────── */
+.stage.bay-tab{cursor:crosshair}
+.bay-rect{
+  position:absolute;
+  border:2px solid var(--info);
+  background:rgba(53,198,191,.08);
+  cursor:move;
+}
+.bay-rect.draft{
+  border-color:var(--gold);border-style:dashed;
+  background:rgba(200,168,90,.12);cursor:crosshair;
+}
+.bay-rect .num{
+  position:absolute;top:2px;left:4px;
+  font-family:'Press Start 2P',cursive;font-size:7px;color:var(--cream);
+  background:rgba(0,0,0,.55);padding:2px 5px;border-radius:2px;
+  pointer-events:none;
+}
+.bay-rect .dim{
+  position:absolute;bottom:2px;right:4px;
+  font-family:'VT323',monospace;font-size:13px;color:var(--info);
+  background:rgba(0,0,0,.55);padding:1px 5px;border-radius:2px;
+  pointer-events:none;
+}
+.bay-rect .h{
+  position:absolute;width:10px;height:10px;background:var(--gold);
+  border:1px solid #000;
+}
+.bay-rect .h.nw{left:-5px;top:-5px;cursor:nwse-resize}
+.bay-rect .h.ne{right:-5px;top:-5px;cursor:nesw-resize}
+.bay-rect .h.sw{left:-5px;bottom:-5px;cursor:nesw-resize}
+.bay-rect .h.se{right:-5px;bottom:-5px;cursor:nwse-resize}
+
+/* Configurable glow div — separate from the rect, gated by trigger. */
+.bay-glow{
+  position:absolute;pointer-events:none;
+  opacity:0;transition:opacity .25s;
+}
+.bay-glow.show{opacity:1}
+
+/* ── Beam tab ─────────────────────────────────────── */
+.stage.beam-tab{background:#0a1218}
+.beam-canvas{
+  position:absolute;inset:0;width:100%;height:100%;
+  pointer-events:none;
+}
+.beam-item{
+  position:absolute;width:80px;height:80px;
+  background:no-repeat center/contain;
+  filter:drop-shadow(0 0 6px rgba(53,198,191,.4));
+  pointer-events:auto;
+  cursor:grab;
+}
+.beam-item.held{
+  filter:drop-shadow(0 0 10px rgba(200,168,90,.95)) brightness(1.2);
+  outline:2px solid var(--gold);outline-offset:2px;
+}
+
+/* ── Coords readout (shared) ──────────────────────── */
+.coords{
+  position:absolute;bottom:6px;left:8px;
+  font-family:'VT323',monospace;font-size:14px;color:var(--gold);
+  background:rgba(0,0,0,.6);padding:3px 7px;border-radius:2px;
+  pointer-events:none;
+}
+
+/* ── Right-side panels ────────────────────────────── */
+.panel{
+  background:linear-gradient(180deg,rgba(20,26,40,.95),rgba(10,14,20,.95));
+  border:1px solid var(--slate);border-radius:3px;padding:12px 14px;
+}
+.panel h2{font-family:'Press Start 2P',cursive;font-size:7px;letter-spacing:2px;color:var(--cream);margin-bottom:9px}
+.panel .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;font-size:14px}
+.panel label{font-size:14px;color:var(--body);display:flex;align-items:center;gap:5px;cursor:pointer;min-width:0}
+.panel label .name{display:inline-block;min-width:78px;color:var(--muted)}
+.panel input[type=checkbox]{accent-color:var(--gold)}
+.panel input[type=number]{
+  width:64px;background:#000;border:1px solid var(--slate);color:var(--cream);
+  font-family:'VT323',monospace;font-size:14px;padding:2px 5px;border-radius:2px;
+}
+.panel input[type=range]{flex:1;min-width:80px;accent-color:var(--gold)}
+.panel input[type=color]{
+  width:34px;height:22px;background:#000;border:1px solid var(--slate);
+  cursor:pointer;padding:0;border-radius:2px;
+}
+.panel select{
+  background:#000;border:1px solid var(--slate);color:var(--cream);
+  font-family:'VT323',monospace;font-size:14px;padding:2px 6px;border-radius:2px;
+}
+.panel .val{font-family:'VT323',monospace;font-size:13px;color:var(--info);min-width:32px;text-align:right}
+.btn{
+  font-family:'Press Start 2P',cursive;font-size:6px;letter-spacing:1px;
+  padding:6px 10px;background:rgba(200,168,90,.1);border:1px solid rgba(200,168,90,.4);
+  color:var(--gold);cursor:pointer;border-radius:2px;
+}
+.btn:hover{background:rgba(200,168,90,.22);border-color:var(--gold)}
+.btn.danger{background:rgba(204,51,51,.1);border-color:rgba(204,51,51,.4);color:var(--red)}
+.btn.danger:hover{background:rgba(204,51,51,.25)}
+.btn.info{background:rgba(53,198,191,.1);border-color:rgba(53,198,191,.4);color:var(--info)}
+.btn.info:hover{background:rgba(53,198,191,.22)}
+
+#json-out{
+  width:100%;min-height:140px;
+  font-family:'VT323',monospace;font-size:13px;
+  background:#000;border:1px solid var(--slate);border-radius:2px;
+  color:var(--cream);padding:10px;resize:vertical;
+}
+.legend{font-size:13px;color:var(--muted);line-height:1.55}
+.legend kbd{background:var(--slate);color:var(--cream);padding:1px 5px;border-radius:2px;font-family:'VT323',monospace;font-size:13px}
+
+.tab-pane{display:none}
+.tab-pane.on{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.tab-pane > .left, .tab-pane > .right{margin:0}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SALVAGE · DEVTOOL</h1>
+  <div class="subtitle">bay glow + tractor beam designer</div>
+</header>
+
+<div class="maintabs">
+  <button class="maintab on" data-pane="bay">BAY · DROP ZONE + GLOW</button>
+  <button class="maintab" data-pane="beam">TRACTOR BEAM + CURSOR</button>
+</div>
+
+<!-- ════════ BAY TAB ════════ -->
+<div class="tab-pane on" id="pane-bay">
+  <div class="left">
+    <div class="bgtabs" id="bg-tabs"></div>
+    <div class="stage bay-tab" id="bay-stage">
+      <img class="bg" id="bay-bg" alt="">
+      <div class="bay-glow" id="bay-glow"></div>
+      <div class="coords" id="bay-coords">–</div>
+    </div>
+  </div>
+
+  <div class="right">
+
+    <div class="panel">
+      <h2>DROP ZONE</h2>
+      <div class="legend">
+        Drag empty stage to draw the bay rect · drag body to move ·
+        drag corners to resize · <kbd>shift+click</kbd> to delete.
+        One rect, applies across all bgs (ship is identical-position in every scene).
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn danger" id="bay-clear">CLEAR RECT</button>
+        <span class="legend" id="bay-status">no rect drawn</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>GLOW DESIGN</h2>
+
+      <div class="row">
+        <label><span class="name">trigger</span>
+          <select id="g-trigger">
+            <option value="always">always on (subtle)</option>
+            <option value="dragging" selected>only while dragging item</option>
+            <option value="hover">on cursor hover</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label><span class="name">style</span>
+          <select id="g-style">
+            <option value="outer">outer glow (around bay)</option>
+            <option value="inner" selected>inner glow (inside bay)</option>
+            <option value="both">both</option>
+            <option value="border">pulsing border</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="row">
+        <label><span class="name">color</span></label>
+        <input type="color" id="g-color" value="#c8a85a">
+        <label style="margin-left:10px"><span class="name" style="min-width:50px">opacity</span></label>
+        <input type="range" id="g-opacity" min="0" max="100" value="60">
+        <span class="val" id="g-opacity-v">60</span>
+      </div>
+
+      <div class="row">
+        <label><span class="name">blur (px)</span></label>
+        <input type="range" id="g-blur" min="0" max="60" value="20">
+        <span class="val" id="g-blur-v">20</span>
+      </div>
+      <div class="row">
+        <label><span class="name">spread (px)</span></label>
+        <input type="range" id="g-spread" min="0" max="40" value="6">
+        <span class="val" id="g-spread-v">6</span>
+      </div>
+      <div class="row">
+        <label><span class="name">border (px)</span></label>
+        <input type="range" id="g-border" min="0" max="8" value="2">
+        <span class="val" id="g-border-v">2</span>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <label><input type="checkbox" id="g-pulse" checked> pulse animation</label>
+      </div>
+      <div class="row">
+        <label><span class="name">period (s)</span></label>
+        <input type="range" id="g-period" min="5" max="40" value="18" step="1">
+        <span class="val" id="g-period-v">1.8</span>
+      </div>
+      <div class="row">
+        <label><span class="name">pulse min</span></label>
+        <input type="range" id="g-min" min="0" max="100" value="40">
+        <span class="val" id="g-min-v">40</span>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <button class="btn info" id="g-simulate">SIMULATE DRAG</button>
+        <span class="legend">previews the trigger state for 3s</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>BAY JSON</h2>
+      <textarea id="bay-json" spellcheck="false" readonly></textarea>
+      <div class="row" style="margin-top:6px">
+        <button class="btn" id="bay-copy">COPY</button>
+      </div>
+      <div class="legend" style="margin-top:6px">
+        Coords are fractions of stage (0–1). Same rect applies to every bg.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════ BEAM TAB ════════ -->
+<div class="tab-pane" id="pane-beam">
+  <div class="left">
+    <div class="bgtabs" id="beam-bg-tabs"></div>
+    <div class="stage beam-tab" id="beam-stage">
+      <img class="bg" id="beam-bg" alt="">
+      <canvas class="beam-canvas" id="beam-canvas" width="960" height="640"></canvas>
+      <div class="coords" id="beam-coords">–</div>
+    </div>
+    <div class="legend" style="padding:6px 0;max-width:960px">
+      click+hold anywhere on the stage to fire the beam · beam shoots from the
+      emitter (gold cross) to your cursor while held · release to disengage ·
+      <kbd>shift+click</kbd> drops the emitter at that point
+    </div>
+  </div>
+
+  <div class="right">
+
+    <div class="panel">
+      <h2>HUD CURSOR (shared.js)</h2>
+      <div class="row">
+        <label><span class="name">size</span></label>
+        <input type="range" id="c-size" min="16" max="40" value="24" step="2">
+        <span class="val" id="c-size-v">24</span>
+      </div>
+      <div class="row">
+        <label><span class="name">thickness</span></label>
+        <input type="range" id="c-thickness" min="2" max="10" value="6" step="1">
+        <span class="val" id="c-thickness-v">6</span>
+      </div>
+      <div class="row">
+        <label><span class="name">gap</span></label>
+        <input type="range" id="c-gap" min="0" max="8" value="3" step="1">
+        <span class="val" id="c-gap-v">3</span>
+      </div>
+      <div class="row">
+        <label><span class="name">color1</span></label>
+        <input type="color" id="c-color1" value="#35c6bf">
+        <label style="margin-left:6px"><span class="name" style="min-width:46px">color2</span></label>
+        <input type="color" id="c-color2" value="#c8a85a">
+      </div>
+      <div class="row">
+        <label><span class="name">opacity</span></label>
+        <input type="range" id="c-opacity" min="20" max="100" value="100">
+        <span class="val" id="c-opacity-v">100</span>
+      </div>
+      <div class="row">
+        <label><input type="checkbox" id="c-outline" checked> outline</label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>EMITTER (ship tractor point)</h2>
+      <div class="row">
+        <label><span class="name">x (% W)</span></label>
+        <input type="range" id="e-x" min="0" max="100" value="50" step="1">
+        <span class="val" id="e-x-v">50</span>
+      </div>
+      <div class="row">
+        <label><span class="name">y (% H)</span></label>
+        <input type="range" id="e-y" min="0" max="100" value="92" step="1">
+        <span class="val" id="e-y-v">92</span>
+      </div>
+      <div class="legend">
+        Where the beam fires FROM. In the real game this is a pixel on
+        the ship art baked into each bg. Slide to match.
+        <kbd>shift+click</kbd> on the stage to drop the emitter at that point.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>TRACTOR BEAM</h2>
+      <div class="row">
+        <label><span class="name">chunk (px)</span></label>
+        <input type="range" id="b-chunk" min="2" max="10" value="4" step="1">
+        <span class="val" id="b-chunk-v">4</span>
+      </div>
+      <div class="row">
+        <label><span class="name">width (px)</span></label>
+        <input type="range" id="b-width" min="4" max="32" value="14" step="2">
+        <span class="val" id="b-width-v">14</span>
+      </div>
+      <div class="row">
+        <label><span class="name">core %</span></label>
+        <input type="range" id="b-core" min="20" max="80" value="40">
+        <span class="val" id="b-core-v">40</span>
+      </div>
+      <div class="row">
+        <label><span class="name">opacity</span></label>
+        <input type="range" id="b-opacity" min="20" max="100" value="65">
+        <span class="val" id="b-opacity-v">65</span>
+      </div>
+      <div class="row">
+        <label><span class="name">band period</span></label>
+        <input type="range" id="b-period" min="3" max="20" value="8" step="1">
+        <span class="val" id="b-period-v">8</span>
+      </div>
+      <div class="row">
+        <label><span class="name">band width</span></label>
+        <input type="range" id="b-band" min="1" max="8" value="2" step="1">
+        <span class="val" id="b-band-v">2</span>
+      </div>
+      <div class="row">
+        <label><span class="name">scroll</span></label>
+        <input type="range" id="b-scroll" min="0" max="100" value="40">
+        <span class="val" id="b-scroll-v">40</span>
+      </div>
+      <div class="row">
+        <label><span class="name">jitter</span></label>
+        <input type="range" id="b-jitter" min="0" max="6" value="1" step="1">
+        <span class="val" id="b-jitter-v">1</span>
+      </div>
+      <div class="row">
+        <label><span class="name">taper %</span></label>
+        <input type="range" id="b-taper" min="0" max="95" value="70" step="1">
+        <span class="val" id="b-taper-v">70</span>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <label><input type="checkbox" id="b-match" checked> use cursor colors</label>
+      </div>
+      <div class="row" id="b-color-row" style="display:none">
+        <label><span class="name">color1</span></label>
+        <input type="color" id="b-color1" value="#35c6bf">
+        <label style="margin-left:6px"><span class="name" style="min-width:46px">color2</span></label>
+        <input type="color" id="b-color2" value="#c8a85a">
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>BEAM + CURSOR JSON</h2>
+      <textarea id="beam-json" spellcheck="false" readonly></textarea>
+      <div class="row" style="margin-top:6px">
+        <button class="btn" id="beam-copy">COPY</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const NAT_W = 960, NAT_H = 640;
+const SALVAGE_DIR = 'sprites/minigames/salvage/';
+const BGS = [
+  'salvage_bg_space.jpg',
+  'salvage_bg_deepspace.jpg',
+  'salvage_bg_asteroid.jpg',
+  'salvage_bg_planet.jpg',
+];
+const ITEM_SPRITES = [
+  'salvage_circuit.png','salvage_circuit2.png',
+  'salvage_coil.png','salvage_tank.png','salvage_tank2.png',
+  'salvage_crate_s.png','salvage_crate_l.png',
+];
+
+// ════════ Tab switching ════════
+const panes = { bay: document.getElementById('pane-bay'),
+                beam: document.getElementById('pane-beam') };
+let activePane = 'bay';
+document.querySelectorAll('.maintab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.maintab').forEach(x => x.classList.remove('on'));
+    Object.values(panes).forEach(p => p.classList.remove('on'));
+    t.classList.add('on');
+    const id = t.dataset.pane;
+    panes[id].classList.add('on');
+    activePane = id;
+    if (id === 'beam') startBeamLoop(); else stopBeamLoop();
+  };
+});
+
+// ════════════════════════════════════════════════════════════
+// ░░░░░░░░░░░░░░░░░░░░  BAY TAB  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+// ════════════════════════════════════════════════════════════
+
+const bayStage   = document.getElementById('bay-stage');
+const bayBg      = document.getElementById('bay-bg');
+const bayCoords  = document.getElementById('bay-coords');
+const bayGlow    = document.getElementById('bay-glow');
+const bgTabs     = document.getElementById('bg-tabs');
+const bayStatus  = document.getElementById('bay-status');
+const bayJson    = document.getElementById('bay-json');
+
+let activeBg = BGS[0];
+let bay = null;             // { x, y, w, h } fractional 0–1
+let triggerSimUntil = 0;    // wallclock; while now < this, force "active"
+
+function renderBgTabs() {
+  bgTabs.innerHTML = '';
+  BGS.forEach(b => {
+    const t = document.createElement('button');
+    t.className = 'bgtab' + (b === activeBg ? ' on' : '');
+    t.textContent = b.replace('salvage_bg_', '').replace('.jpg', '');
+    t.onclick = () => { activeBg = b; bayBg.src = SALVAGE_DIR + activeBg; renderBgTabs(); };
+    bgTabs.appendChild(t);
+  });
+}
+
+function bayFrac(e) {
+  const r = bayStage.getBoundingClientRect();
+  return {
+    fx: (e.clientX - r.left) / r.width,
+    fy: (e.clientY - r.top)  / r.height,
+    px: e.clientX - r.left,
+    py: e.clientY - r.top,
+    rectW: r.width, rectH: r.height,
+  };
+}
+
+let bayMode = null;   // 'draft' | 'move' | 'resize'
+let bayDraft = null;  // {x0,y0,x1,y1} px
+let bayAct = null;    // {handle, startMouse, startRect}
+
+bayStage.addEventListener('mousedown', e => {
+  const targ = e.target;
+  if (targ.classList.contains('h')) return;
+  if (targ.closest('.bay-rect')) return;
+  if (bay) return; // Only one rect — clear first if redrawing.
+  const f = bayFrac(e);
+  bayMode = 'draft';
+  bayDraft = { x0: f.px, y0: f.py, x1: f.px, y1: f.py };
+  renderBay();
+});
+
+window.addEventListener('mousemove', e => {
+  if (activePane !== 'bay') return;
+  const f = bayFrac(e);
+  bayCoords.textContent = 'x:' + f.fx.toFixed(3) + ' y:' + f.fy.toFixed(3) +
+    '  (' + Math.round(f.px) + ', ' + Math.round(f.py) + ')';
+
+  if (bayMode === 'draft' && bayDraft) {
+    const r = bayStage.getBoundingClientRect();
+    bayDraft.x1 = Math.max(0, Math.min(r.width,  e.clientX - r.left));
+    bayDraft.y1 = Math.max(0, Math.min(r.height, e.clientY - r.top));
+    renderBay();
+  } else if (bayMode === 'move' && bayAct && bay) {
+    const r = bayStage.getBoundingClientRect();
+    const dx = (e.clientX - bayAct.startMouse.x) / r.width;
+    const dy = (e.clientY - bayAct.startMouse.y) / r.height;
+    let nx = bayAct.startRect.x + dx, ny = bayAct.startRect.y + dy;
+    nx = Math.max(0, Math.min(1 - bay.w, nx));
+    ny = Math.max(0, Math.min(1 - bay.h, ny));
+    bay.x = nx; bay.y = ny;
+    renderBay();
+  } else if (bayMode === 'resize' && bayAct && bay) {
+    const r = bayStage.getBoundingClientRect();
+    const dx = (e.clientX - bayAct.startMouse.x) / r.width;
+    const dy = (e.clientY - bayAct.startMouse.y) / r.height;
+    let { x, y, w, h } = bayAct.startRect;
+    if (bayAct.handle.indexOf('e') !== -1) w = Math.max(0.02, w + dx);
+    if (bayAct.handle.indexOf('s') !== -1) h = Math.max(0.02, h + dy);
+    if (bayAct.handle.indexOf('w') !== -1) { const nx = x + dx; w = Math.max(0.02, w - dx); x = (w <= 0.02) ? x : nx; }
+    if (bayAct.handle.indexOf('n') !== -1) { const ny = y + dy; h = Math.max(0.02, h - dy); y = (h <= 0.02) ? y : ny; }
+    x = Math.max(0, x); y = Math.max(0, y);
+    w = Math.min(1 - x, w); h = Math.min(1 - y, h);
+    bay.x = x; bay.y = y; bay.w = w; bay.h = h;
+    renderBay();
+  }
+});
+
+window.addEventListener('mouseup', () => {
+  if (activePane !== 'bay') return;
+  if (bayMode === 'draft' && bayDraft) {
+    const r = bayStage.getBoundingClientRect();
+    const x  = Math.min(bayDraft.x0, bayDraft.x1);
+    const y  = Math.min(bayDraft.y0, bayDraft.y1);
+    const w  = Math.abs(bayDraft.x1 - bayDraft.x0);
+    const h  = Math.abs(bayDraft.y1 - bayDraft.y0);
+    if (w >= 24 && h >= 24) {
+      bay = {
+        x: +(x / r.width ).toFixed(4),
+        y: +(y / r.height).toFixed(4),
+        w: +(w / r.width ).toFixed(4),
+        h: +(h / r.height).toFixed(4),
+      };
+    }
+  } else if ((bayMode === 'move' || bayMode === 'resize') && bay) {
+    bay.x = +bay.x.toFixed(4);
+    bay.y = +bay.y.toFixed(4);
+    bay.w = +bay.w.toFixed(4);
+    bay.h = +bay.h.toFixed(4);
+  }
+  bayMode = null; bayDraft = null; bayAct = null;
+  renderBay();
+});
+
+function renderBay() {
+  [...bayStage.querySelectorAll('.bay-rect')].forEach(n => n.remove());
+
+  if (bayDraft) {
+    const d = document.createElement('div');
+    d.className = 'bay-rect draft';
+    const x = Math.min(bayDraft.x0, bayDraft.x1);
+    const y = Math.min(bayDraft.y0, bayDraft.y1);
+    const w = Math.abs(bayDraft.x1 - bayDraft.x0);
+    const h = Math.abs(bayDraft.y1 - bayDraft.y0);
+    d.style.left = x + 'px'; d.style.top = y + 'px';
+    d.style.width = w + 'px'; d.style.height = h + 'px';
+    bayStage.appendChild(d);
+  }
+
+  if (bay) {
+    const el = document.createElement('div');
+    el.className = 'bay-rect';
+    el.style.left   = (bay.x * 100) + '%';
+    el.style.top    = (bay.y * 100) + '%';
+    el.style.width  = (bay.w * 100) + '%';
+    el.style.height = (bay.h * 100) + '%';
+    const wpx = Math.round(bay.w * NAT_W), hpx = Math.round(bay.h * NAT_H);
+    el.innerHTML =
+      '<div class="num">BAY</div>' +
+      '<div class="dim">' + wpx + '×' + hpx + '</div>' +
+      '<div class="h nw"></div><div class="h ne"></div>' +
+      '<div class="h sw"></div><div class="h se"></div>';
+    el.addEventListener('mousedown', ev => {
+      ev.stopPropagation();
+      if (ev.shiftKey) { bay = null; renderBay(); return; }
+      const handle = ev.target.classList.contains('h')
+        ? [...ev.target.classList].find(c => ['nw','ne','sw','se'].indexOf(c) !== -1)
+        : null;
+      bayMode = handle ? 'resize' : 'move';
+      bayAct = {
+        handle: handle,
+        startMouse: { x: ev.clientX, y: ev.clientY },
+        startRect: { x: bay.x, y: bay.y, w: bay.w, h: bay.h },
+      };
+    });
+    bayStage.appendChild(el);
+  }
+
+  bayStatus.textContent = bay
+    ? 'rect: ' + Math.round(bay.w * NAT_W) + '×' + Math.round(bay.h * NAT_H) + 'px'
+    : 'no rect drawn';
+
+  applyGlow();
+  bayJson.value = JSON.stringify(bayJsonOut(), null, 2);
+}
+
+// ── Glow design + apply ─────────────────────────────────────
+function readGlow() {
+  return {
+    trigger : document.getElementById('g-trigger').value,
+    style   : document.getElementById('g-style').value,
+    color   : document.getElementById('g-color').value,
+    opacity : +document.getElementById('g-opacity').value,
+    blur    : +document.getElementById('g-blur').value,
+    spread  : +document.getElementById('g-spread').value,
+    border  : +document.getElementById('g-border').value,
+    pulse   : document.getElementById('g-pulse').checked,
+    period  : +document.getElementById('g-period').value / 10, // 5..40 → 0.5..4.0s
+    pulseMin: +document.getElementById('g-min').value,
+  };
+}
+
+function hexToRgb(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return [200,168,90];
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function applyGlow() {
+  if (!bay) { bayGlow.classList.remove('show'); bayGlow.style.boxShadow = 'none'; return; }
+  const g = readGlow();
+  bayGlow.style.left   = (bay.x * 100) + '%';
+  bayGlow.style.top    = (bay.y * 100) + '%';
+  bayGlow.style.width  = (bay.w * 100) + '%';
+  bayGlow.style.height = (bay.h * 100) + '%';
+
+  const [r, gC, b] = hexToRgb(g.color);
+  const a = g.opacity / 100;
+  const inner = '0 0 ' + g.blur + 'px ' + g.spread + 'px rgba(' + r + ',' + gC + ',' + b + ',' + a + ') inset';
+  const outer = '0 0 ' + g.blur + 'px ' + g.spread + 'px rgba(' + r + ',' + gC + ',' + b + ',' + a + ')';
+  let shadow;
+  if (g.style === 'inner')      shadow = inner;
+  else if (g.style === 'outer') shadow = outer;
+  else if (g.style === 'both')  shadow = inner + ', ' + outer;
+  else                          shadow = 'none';
+  bayGlow.style.boxShadow = shadow;
+  bayGlow.style.border = (g.style === 'border')
+    ? g.border + 'px solid rgba(' + r + ',' + gC + ',' + b + ',' + a + ')'
+    : 'none';
+
+  bayGlow.style.animation = '';
+  if (g.pulse) {
+    const min = g.pulseMin / 100;
+    bayGlow.style.setProperty('--pulse-min', min);
+    bayGlow.style.animation = 'bayPulse ' + g.period.toFixed(2) + 's ease-in-out infinite';
+  }
+
+  const triggered = (g.trigger === 'always') ||
+                    (Date.now() < triggerSimUntil) ||
+                    (g.trigger === 'hover' && bayHover);
+  bayGlow.classList.toggle('show', triggered);
+}
+
+// Inject pulse keyframe (animates opacity, which composes nicely
+// with the trigger gate above).
+(function injectPulseKf() {
+  const css = '@keyframes bayPulse { 0%,100% { opacity:1 } 50% { opacity: var(--pulse-min, 0.4) } }';
+  const s = document.createElement('style');
+  s.textContent = css;
+  document.head.appendChild(s);
+})();
+
+let bayHover = false;
+bayStage.addEventListener('mouseenter', () => { bayHover = true;  applyGlow(); });
+bayStage.addEventListener('mouseleave', () => { bayHover = false; applyGlow(); });
+
+// Live-rerender on glow control changes.
+['g-trigger','g-style','g-color','g-opacity','g-blur','g-spread','g-border','g-pulse','g-period','g-min']
+  .forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => { syncGlowVals(); applyGlow(); bayJson.value = JSON.stringify(bayJsonOut(), null, 2); });
+    el.addEventListener('change', () => { syncGlowVals(); applyGlow(); bayJson.value = JSON.stringify(bayJsonOut(), null, 2); });
+  });
+
+function syncGlowVals() {
+  document.getElementById('g-opacity-v').textContent = document.getElementById('g-opacity').value;
+  document.getElementById('g-blur-v').textContent    = document.getElementById('g-blur').value;
+  document.getElementById('g-spread-v').textContent  = document.getElementById('g-spread').value;
+  document.getElementById('g-border-v').textContent  = document.getElementById('g-border').value;
+  document.getElementById('g-period-v').textContent  = (+document.getElementById('g-period').value / 10).toFixed(1);
+  document.getElementById('g-min-v').textContent     = document.getElementById('g-min').value;
+}
+syncGlowVals();
+
+document.getElementById('g-simulate').onclick = () => {
+  triggerSimUntil = Date.now() + 3000;
+  applyGlow();
+  setTimeout(applyGlow, 3050);
+};
+
+document.getElementById('bay-clear').onclick = () => { bay = null; renderBay(); };
+document.getElementById('bay-copy').onclick = (e) => copyText(bayJson, e.currentTarget);
+
+function bayJsonOut() {
+  return {
+    bay: bay ? { x: bay.x, y: bay.y, w: bay.w, h: bay.h } : null,
+    glow: readGlow(),
+  };
+}
+
+renderBgTabs();
+bayBg.src = SALVAGE_DIR + activeBg;
+renderBay();
+
+// ════════════════════════════════════════════════════════════
+// ░░░░░░░░░░░░░░░░░░░  BEAM TAB  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+// ════════════════════════════════════════════════════════════
+
+const beamStage  = document.getElementById('beam-stage');
+const beamBg     = document.getElementById('beam-bg');
+const beamCanvas = document.getElementById('beam-canvas');
+const beamCoords = document.getElementById('beam-coords');
+const beamBgTabs = document.getElementById('beam-bg-tabs');
+const beamJson   = document.getElementById('beam-json');
+const bctx       = beamCanvas.getContext('2d');
+
+let activeBeamBg = BGS[1];  // start on deepspace
+function renderBeamBgTabs() {
+  beamBgTabs.innerHTML = '';
+  BGS.forEach(b => {
+    const t = document.createElement('button');
+    t.className = 'bgtab' + (b === activeBeamBg ? ' on' : '');
+    t.textContent = b.replace('salvage_bg_', '').replace('.jpg', '');
+    t.onclick = () => { activeBeamBg = b; beamBg.src = SALVAGE_DIR + activeBeamBg; renderBeamBgTabs(); };
+    beamBgTabs.appendChild(t);
+  });
+}
+renderBeamBgTabs();
+beamBg.src = SALVAGE_DIR + activeBeamBg;
+
+// Canvas buffer is fixed at NAT_W × NAT_H via HTML attrs (width/height
+// on the <canvas> tag). CSS scales display to fill the stage; the small
+// 1-px box-sizing discrepancy isn't visible. We deliberately do NOT
+// re-size via JS — getBoundingClientRect() returns 0×0 while the pane
+// is display:none, which would zero the buffer and break drawing.
+
+// ── Beam state ──────────────────────────────────────────────
+// Emitter is a fixed point on the stage (the ship's tractor source,
+// painted into the bg). User positions it via sliders or shift+click.
+// While the mouse is held, the beam fires from emitter → cursor.
+let mouse = { x: 0, y: 0, inside: false };
+let firing = false;
+let scrollPhase = 0;
+let rafId = null;
+
+function emitterPx() {
+  const r = beamStage.getBoundingClientRect();
+  const fx = +document.getElementById('e-x').value / 100;
+  const fy = +document.getElementById('e-y').value / 100;
+  return { x: fx * r.width, y: fy * r.height };
+}
+
+beamStage.addEventListener('mousemove', e => {
+  const r = beamStage.getBoundingClientRect();
+  mouse.x = e.clientX - r.left;
+  mouse.y = e.clientY - r.top;
+  mouse.inside = true;
+  const em = emitterPx();
+  beamCoords.textContent = 'cursor: ' + Math.round(mouse.x) + ',' + Math.round(mouse.y) +
+    '  · emitter: ' + Math.round(em.x) + ',' + Math.round(em.y) +
+    (firing ? '  · FIRING' : '');
+});
+beamStage.addEventListener('mouseleave', () => { mouse.inside = false; });
+
+beamStage.addEventListener('mousedown', e => {
+  e.preventDefault();
+  const r = beamStage.getBoundingClientRect();
+  const fx = (e.clientX - r.left) / r.width;
+  const fy = (e.clientY - r.top)  / r.height;
+  // Shift+click drops the emitter at that point instead of firing.
+  if (e.shiftKey) {
+    document.getElementById('e-x').value = Math.round(fx * 100);
+    document.getElementById('e-y').value = Math.round(fy * 100);
+    document.getElementById('e-x-v').textContent = Math.round(fx * 100);
+    document.getElementById('e-y-v').textContent = Math.round(fy * 100);
+    refreshBeamJson();
+    return;
+  }
+  firing = true;
+});
+window.addEventListener('mouseup', () => { firing = false; });
+
+// Live-rerender JSON when emitter sliders change.
+['e-x','e-y'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    document.getElementById(id + '-v').textContent = document.getElementById(id).value;
+    refreshBeamJson();
+  });
+});
+
+// ── HUD cursor wiring ───────────────────────────────────────
+function readCursor() {
+  return {
+    size      : +document.getElementById('c-size').value,
+    thickness : +document.getElementById('c-thickness').value,
+    gap       : +document.getElementById('c-gap').value,
+    color1    : document.getElementById('c-color1').value,
+    color2    : document.getElementById('c-color2').value,
+    opacity   : +document.getElementById('c-opacity').value,
+    outline   : document.getElementById('c-outline').checked,
+  };
+}
+
+function applyCursor() {
+  const c = readCursor();
+  const ctxOverride = {
+    family: 'reticle', cursor: 'hud',
+    size: c.size, thickness: c.thickness, gap: c.gap,
+    color1: c.color1, color2: c.color2,
+    outline: c.outline, dot: false, scale: 2,
+  };
+  // Stash a one-off context entry so generateCursor can use it.
+  CURSOR_CONTEXTS['salvage_tractor'] = ctxOverride;
+  // generateCursor caches by tag+overrides; bust by adding a unique override key.
+  const css = generateCursor('salvage_tractor', {
+    color1: c.color1, color2: c.color2,
+    thickness: c.thickness, outline: c.outline, opacity: c.opacity,
+  });
+  beamStage.style.cursor = css;
+  document.getElementById('c-size-v').textContent      = c.size;
+  document.getElementById('c-thickness-v').textContent = c.thickness;
+  document.getElementById('c-gap-v').textContent       = c.gap;
+  document.getElementById('c-opacity-v').textContent   = c.opacity;
+}
+
+['c-size','c-thickness','c-gap','c-color1','c-color2','c-opacity','c-outline']
+  .forEach(id => {
+    document.getElementById(id).addEventListener('input', () => { applyCursor(); refreshBeamJson(); });
+    document.getElementById(id).addEventListener('change', () => { applyCursor(); refreshBeamJson(); });
+  });
+
+// ── Beam controls ───────────────────────────────────────────
+const bMatch = document.getElementById('b-match');
+const bColorRow = document.getElementById('b-color-row');
+bMatch.addEventListener('change', () => {
+  bColorRow.style.display = bMatch.checked ? 'none' : 'flex';
+  refreshBeamJson();
+});
+
+['b-chunk','b-width','b-core','b-opacity','b-period','b-band','b-scroll','b-jitter','b-taper','b-color1','b-color2']
+  .forEach(id => {
+    document.getElementById(id).addEventListener('input', refreshBeamVals);
+    document.getElementById(id).addEventListener('change', refreshBeamVals);
+  });
+
+function refreshBeamVals() {
+  ['chunk','width','core','opacity','period','band','scroll','jitter','taper'].forEach(k => {
+    const el = document.getElementById('b-' + k);
+    document.getElementById('b-' + k + '-v').textContent = el.value;
+  });
+  refreshBeamJson();
+}
+refreshBeamVals();
+
+function readBeam() {
+  const cur = readCursor();
+  const useCursor = document.getElementById('b-match').checked;
+  return {
+    chunk    : +document.getElementById('b-chunk').value,
+    width    : +document.getElementById('b-width').value,
+    corePct  : +document.getElementById('b-core').value / 100,
+    opacity  : +document.getElementById('b-opacity').value / 100,
+    period   : +document.getElementById('b-period').value,
+    band     : +document.getElementById('b-band').value,
+    scroll   : +document.getElementById('b-scroll').value / 100,
+    jitter   : +document.getElementById('b-jitter').value,
+    taper    : +document.getElementById('b-taper').value / 100,
+    color1   : useCursor ? cur.color1 : document.getElementById('b-color1').value,
+    color2   : useCursor ? cur.color2 : document.getElementById('b-color2').value,
+  };
+}
+
+// ── Beam draw ───────────────────────────────────────────────
+function drawEmitterMarker() {
+  // Small chunky-pixel cross marking the emitter location.
+  // Always visible (gold cross) so the user knows where the beam fires
+  // from even when not firing.
+  const em = emitterPx();
+  const cur = readCursor();
+  bctx.save();
+  bctx.imageSmoothingEnabled = false;
+  bctx.fillStyle = cur.color2;
+  bctx.globalAlpha = 0.9;
+  const x = Math.round(em.x), y = Math.round(em.y);
+  bctx.fillRect(x - 1, y - 7, 3, 15);  // vertical bar
+  bctx.fillRect(x - 7, y - 1, 15, 3);  // horizontal bar
+  bctx.fillStyle = cur.color1;
+  bctx.globalAlpha = 1;
+  bctx.fillRect(x - 1, y - 1, 3, 3);   // bright center dot
+  bctx.restore();
+}
+
+function drawBeam() {
+  const w = beamCanvas.width, h = beamCanvas.height;
+  bctx.clearRect(0, 0, w, h);
+  drawEmitterMarker();
+  if (!firing) return;
+
+  // Beam: emitter (fixed source on ship) → cursor (moving target).
+  const em = emitterPx();
+  const x1 = em.x, y1 = em.y;
+  const x2 = mouse.x, y2 = mouse.y;
+
+  const b = readBeam();
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len < 4) return;
+  const angle = Math.atan2(dy, dx);
+
+  bctx.save();
+  bctx.imageSmoothingEnabled = false;
+  bctx.translate(x1, y1);
+  bctx.rotate(angle);
+
+  const chunk = b.chunk;
+  const numChunks = Math.ceil(len / chunk);
+  const coreFull = Math.max(2, Math.round(b.width * b.corePct));
+
+  for (let i = 0; i < numChunks; i++) {
+    const x = i * chunk;
+    const phaseI = (i + scrollPhase * b.period) % b.period;
+    const isBand = phaseI < b.band;
+    const j = b.jitter ? Math.round(Math.sin(i * 1.7 + scrollPhase * 6) * b.jitter) : 0;
+
+    // Taper: linear width falloff from emitter (t=0, full width) to cursor
+    // (t=1, width * (1 - taper)). Pinpoint at cursor when taper → 1.
+    const t = numChunks > 1 ? i / (numChunks - 1) : 0;
+    const scale = 1 - b.taper * t;
+    const wOuter = Math.max(1, b.width * scale);
+    const wCore  = Math.max(1, coreFull * scale);
+
+    // Outer (color2)
+    bctx.fillStyle = b.color2;
+    bctx.globalAlpha = b.opacity * (isBand ? 0.85 : 0.45);
+    bctx.fillRect(Math.round(x), Math.round(-wOuter / 2 + j), chunk, Math.round(wOuter));
+
+    // Core (color1)
+    bctx.fillStyle = b.color1;
+    bctx.globalAlpha = b.opacity * (isBand ? 1.0 : 0.7);
+    bctx.fillRect(Math.round(x), Math.round(-wCore / 2 + j), chunk, Math.round(wCore));
+  }
+
+  bctx.globalAlpha = 1;
+  bctx.restore();
+}
+
+function startBeamLoop() {
+  if (rafId) return;
+  applyCursor();
+  refreshBeamJson();
+  const loop = () => {
+    const b = readBeam();
+    scrollPhase = (scrollPhase + b.scroll * 0.15) % 1000;
+    drawBeam();
+    rafId = requestAnimationFrame(loop);
+  };
+  loop();
+}
+function stopBeamLoop() {
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+  bctx.clearRect(0, 0, beamCanvas.width, beamCanvas.height);
+}
+
+// ── Beam JSON ───────────────────────────────────────────────
+function refreshBeamJson() {
+  const c = readCursor();
+  const b = readBeam();
+  const emitter = {
+    fx: +document.getElementById('e-x').value / 100,
+    fy: +document.getElementById('e-y').value / 100,
+  };
+  beamJson.value = JSON.stringify({
+    emitter: emitter,
+    cursor: c,
+    beam: b,
+  }, null, 2);
+}
+document.getElementById('beam-copy').onclick = (e) => copyText(beamJson, e.currentTarget);
+
+// ── Shared ──────────────────────────────────────────────────
+async function copyText(textarea, btn) {
+  await navigator.clipboard.writeText(textarea.value);
+  const old = btn.textContent;
+  btn.textContent = 'COPIED ✓';
+  setTimeout(() => btn.textContent = old, 1200);
+}
+</script>
+</body>
+</html>

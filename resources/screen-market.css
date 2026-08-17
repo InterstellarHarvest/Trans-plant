@@ -1,0 +1,67 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SCREEN-MARKET — market modal positioning + market-mode reflow.
+   Restoration item 2, ported from demo-encounter.html's encounter-only
+   market CSS (the "red area" layout). ALL selectors are scoped under
+   #overlay-market or #screen-encounter.market-mode — the
+   screen-mining.css leak taught us demo CSS ported to shared pages
+   MUST be scoped; never bare selectors.
+   The visual chrome (.market-row, .market-footer, .sinister theme,
+   .market-log-line, etc.) lives in resources/shared.css under
+   .market-* / .enc-market — shared with the demos, not duplicated here.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Portrait geometry vars are scoped to #screen-encounter in
+   screen-encounter-art.css; the overlay is a sibling, so re-declare
+   the same values here for the modal/log to track. (Market never
+   opens in combat mode, so the combat --subj-top shift is moot.) */
+#overlay-market {
+  --subj-size: 240px;
+  --subj-top: 100px;
+}
+
+/* Modal panel — starts just past the portrait column: portrait is
+   left:40 + var(--subj-size) wide. 12px gutter separates the regions
+   (demo-encounter .enc-market positioning, verbatim). */
+#overlay-market .enc-market {
+  left:   calc(40px + var(--subj-size) + 12px);
+  top:    60px;
+  right:  14px;
+  bottom: 14px;
+}
+
+/* Running transaction log — the demo reshapes its #enc-dialog into
+   this column via .market-mode; the engine gives the log its own
+   element (#market-log) with the same geometry: aligned to the
+   portrait's left edge and width, flush underneath it. Chrome copied
+   from the engine's .enc-dialog + the demo's market-mode reshape. */
+#overlay-market #market-log {
+  position: absolute;
+  left:   40px;
+  top:    calc(var(--subj-top) + var(--subj-size) + 36px);
+  width:  var(--subj-size);
+  bottom: 14px;
+  background: rgba(8,12,18,0.82);
+  border: 1px solid rgba(200,168,90,0.3);
+  border-radius: 3px;
+  padding: 10px 12px;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: var(--cream, #f4e4be);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  white-space: normal;
+  z-index: 5;
+}
+#overlay-market #market-log.hidden { display: none; }
+
+/* Market-mode reflow on the host encounter screen (demo convention:
+   MarketModal adds .market-mode to hostEl while mounted). Choices +
+   narrative give way to the modal; the engine's own dialog strip
+   hides too since #market-log replaces it visually. */
+#screen-encounter.market-mode .enc-choices,
+#screen-encounter.market-mode .enc-narrative,
+#screen-encounter.market-mode .enc-dialog {
+  display: none;
+}

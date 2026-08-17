@@ -1,0 +1,105 @@
+{
+  "_meta": {
+    "description": "Fixed Lunar test path — 8 nodes, 1 fork. Used for engine testing. In production, the engine generates maps procedurally per map_rules.json. This file is the hand-built equivalent for the first playable build.",
+    "path_structure": "Launch → Station → Planet → Fork(Asteroid | Derelict) → reconnect → Shipboard → Station(final) → Arrival"
+  },
+
+  "trail": "lunar",
+  "map_name": "The Goldilocks Run",
+  "destination": "Proxima Colony",
+  "base_days": 120,
+
+  "nodes": [
+    {
+      "position": 0,
+      "id": "node_launch",
+      "node_type": "station",
+      "name": "Earth Orbital Station Kepler-9",
+      "description": "Departure point. The paperwork has been filed.",
+      "event_id": "event_launch_001",
+      "connects_to": ["node_station_1"]
+    },
+    {
+      "position": 1,
+      "id": "node_station_1",
+      "node_type": "station",
+      "name": "Waypoint Zeta-4",
+      "description": "The last honest station. Fair prices. Genuine concern.",
+      "event_id": "event_station_001",
+      "connects_to": ["node_planet_1"]
+    },
+    {
+      "position": 2,
+      "id": "node_planet_1",
+      "node_type": "planet",
+      "name": "Soil Sample Paradise",
+      "description": "Rocky, mineral-rich, profoundly boring. The ship computer approves.",
+      "event_id": "event_planet_001",
+      "connects_to": ["node_fork_1"]
+    },
+    {
+      "position": 3,
+      "id": "node_fork_1",
+      "node_type": "fork",
+      "name": "Route Decision",
+      "description": "Two paths forward. Both have merit. Neither is ideal.",
+      "event_id": "event_general_001",
+      "connects_to": {
+        "alpha": ["node_asteroid_1"],
+        "beta": ["node_derelict_1"]
+      },
+      "branch_flavors": {
+        "alpha": "lucrative",
+        "beta": "derelict_heavy"
+      }
+    },
+    {
+      "position": 4,
+      "id": "node_asteroid_1",
+      "node_type": "asteroid_field",
+      "name": "The Rocks",
+      "description": "Unremarkable. Mineral-bearing. Tedious.",
+      "event_id": "event_asteroid_001",
+      "branch": "alpha",
+      "connects_to": ["node_reconnect"]
+    },
+    {
+      "position": 4,
+      "id": "node_derelict_1",
+      "node_type": "derelict",
+      "name": "The Optimistic Projection",
+      "description": "Intact. Powered down. Growing something.",
+      "event_id": "event_derelict_001",
+      "branch": "beta",
+      "connects_to": ["node_reconnect"]
+    },
+    {
+      "position": 5,
+      "id": "node_reconnect",
+      "node_type": "nebula",
+      "name": "Dustfield Crossing",
+      "description": "Paths converge through a thin nebula. Shipboard events may fire here.",
+      "event_id": null,
+      "shipboard_event_chance": 0.8,
+      "connects_to": ["node_station_final"]
+    },
+    {
+      "position": 6,
+      "id": "node_station_final",
+      "node_type": "station",
+      "name": "The Last Resort (Branded)",
+      "description": "Final station. Premium prices. Mysterious trader in the corner.",
+      "event_id": "event_station_003",
+      "connects_to": ["node_arrival"]
+    },
+    {
+      "position": 7,
+      "id": "node_arrival",
+      "node_type": "station",
+      "name": "Proxima Colony",
+      "description": "Destination. The form is ready.",
+      "event_id": "ending_colonyfiled_001",
+      "connects_to": []
+    }
+  ]
+}

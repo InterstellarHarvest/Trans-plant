@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — NPC Animation Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="shared.css" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+:root {
+  /* Shared theme — matches encounter / cruise / etc. */
+  --teal: #8cc890;
+  --cream: #e8d8a0;
+  --deep: #0e1520;
+  --void: #020408;
+
+  /* Talking-head box — same dimensions as the encounter's subject frame. */
+  --subj-size: 260px;
+  --subj-border: #545F5C;
+  --subj-border-w: 2px;
+  --subj-corner: #c8a85a;
+  --subj-glow: rgba(200,168,90,0.25);
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--void);
+  color: var(--cream);
+  font-family: 'VT323', monospace;
+  min-height: 100vh;
+}
+
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px 80px;
+}
+
+header.page-header {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(2,4,8,0.92);
+  border-bottom: 1px solid rgba(200,168,90,0.25);
+  padding: 14px 32px;
+  margin: 0 -32px 32px;
+  backdrop-filter: blur(4px);
+}
+header.page-header h1 {
+  margin: 0;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+header.page-header .header-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; margin-top: 8px;
+}
+header.page-header .sub {
+  font-size: 14px;
+  color: rgba(232,216,160,0.7);
+}
+.size-toggle {
+  display: flex; gap: 0;
+  border: 1px solid rgba(200,168,90,0.3);
+}
+.size-toggle button {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 7px 10px;
+  background: linear-gradient(180deg, #2a3040 0%, #141820 100%);
+  border: 0;
+  border-right: 1px solid rgba(200,168,90,0.2);
+  color: var(--cream);
+  cursor: var(--cursor-hand, pointer);
+  transition: color 0.15s, background 0.15s;
+}
+.size-toggle button:last-child { border-right: 0; }
+.size-toggle button:hover { color: var(--gold); }
+.size-toggle button.active {
+  color: var(--gold);
+  background: linear-gradient(180deg, #3a3a28 0%, #1e1c10 100%);
+}
+
+.section { margin-top: 48px; }
+.section-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 16px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  border-bottom: 2px solid rgba(200,168,90,0.4);
+  padding-bottom: 8px;
+  margin-bottom: 28px;
+}
+.subsection-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--teal);
+  margin: 36px 0 18px;
+  padding: 4px 0 4px 12px;
+  border-left: 3px solid var(--teal);
+}
+.species-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--cream);
+  opacity: 0.6;
+  margin: 22px 0 14px 4px;
+}
+
+/* Auto-fit grid with FIXED column width keyed off --subj-size. Using a
+   fixed column (not 1fr) keeps the gap between cards visually consistent
+   across all size presets — without it, smaller cards would float in huge
+   stretched columns. justify-content centers the leftover space. */
+.npc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, calc(var(--subj-size) + 36px));
+  gap: 36px 24px;
+  justify-content: center;
+  justify-items: center;
+}
+
+.npc-card {
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* Talking-head box — copied from demo-encounter.html .enc-subject so the
+   visual is faithful: 1:1 frame, dim inner fill, gold glow, corner tabs. */
+.npc-frame {
+  position: relative;
+  width: var(--subj-size); height: var(--subj-size);
+  border: var(--subj-border-w) solid var(--subj-border);
+  background: rgba(10,14,20,0.5);
+  box-shadow: 0 0 20px var(--subj-glow), inset 0 0 20px rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.npc-frame::before, .npc-frame::after {
+  content: ''; position: absolute; width: 14px; height: 14px;
+  border-color: var(--subj-corner); border-style: solid;
+}
+.npc-frame::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+.npc-frame::after  { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+/* Sheet-driven head sprite. --sheet-w / --sheet-h carry the spritesheet's
+   native dimensions in pixels (NPC sheets vary: 392×294 is most common
+   but some are 389×294, 396×294, 408×312, 392×392, 383×294, 390×294).
+   Each frame is 96×96 native; head element is 96% of the 260px box,
+   so display scale = 0.96/96 = 0.01 per --subj-size unit. */
+.npc-head {
+  width: 96%; height: 96%;
+  background-image: var(--sheet-url);
+  background-size: calc(var(--sheet-w) * var(--subj-size) * 0.01)
+                   calc(var(--sheet-h) * var(--subj-size) * 0.01);
+  background-position:
+    calc(var(--frame-x) * var(--subj-size) * -0.01)
+    calc(var(--frame-y) * var(--subj-size) * -0.01);
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.npc-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--cream);
+  background: rgba(10,14,20,0.85);
+  border: 1px solid var(--subj-border);
+  padding: 4px 10px;
+  margin-top: 6px;
+  white-space: nowrap;
+}
+
+.npc-buttons {
+  display: flex; gap: 8px;
+  margin-top: 12px;
+}
+.npc-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  padding: 8px 14px;
+  background: linear-gradient(180deg, #2a3040 0%, #141820 100%);
+  border: 1px solid rgba(95,168,208,0.3);
+  color: var(--cream);
+  cursor: var(--cursor-hand, pointer);
+  transition: border-color 0.15s, color 0.15s, opacity 0.15s, box-shadow 0.15s;
+}
+.npc-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.npc-btn:disabled {
+  opacity: 0.35;
+  cursor: var(--cursor-pointer, default);
+}
+.npc-btn.play.active {
+  border-color: var(--teal);
+  color: var(--teal);
+  opacity: 1;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(140,200,144,0); }
+  50%      { box-shadow: 0 0 10px rgba(140,200,144,0.55); }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="page-header">
+    <h1>NPC ANIMATION DEMO</h1>
+    <div class="header-row">
+      <div class="sub">Talking-head spritesheets · PLAY loops the talk cycle, STOP settles on the idle frame</div>
+      <div class="size-toggle" id="size-toggle">
+        <button data-size="96">1×</button>
+        <button data-size="192">2×</button>
+        <button data-size="260" class="active">IN-GAME</button>
+        <button data-size="384">4×</button>
+      </div>
+    </div>
+  </header>
+  <div id="root"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+ *  NPC MANIFEST  ·  REGENERATE WHEN ADDING NEW CHARACTERS
+ *  ──────────────────────────────────────────────────────────────────
+ *  Last regen: 2026-04-29  ·  94 entries
+ *
+ *  Each entry maps one sprites/npc/.../<n>/{spritesheet.png,spritesheet.json}
+ *  on disk. Frame coords (idle + talk[]) are baked from the JSON files
+ *  so this demo runs on file:// without async fetches.
+ *
+ *  TO ADD NEW CHARACTERS:
+ *    1. Drop spritesheet.png + spritesheet.json into a new sub-folder
+ *       under sprites/npc/<category>/<species>/<n>/
+ *       or  sprites/npc/station_crew/<role>/<species>/<n>/
+ *    2. Ask Claude: "rerun the NPC manifest in demo-npc.html"
+ *       Claude reads every JSON under sprites/npc/ and rewrites the
+ *       NPC_DATA array below in full.
+ *
+ *  DO NOT hand-edit individual entries — frame coords come straight
+ *  from TexturePacker output and may shift if a sheet is repacked.
+ *
+ *  Field shorthand: c=category, r=role (station_crew only), sp=species,
+ *  n=variant number, d=folder, sw/sh=sheet dims, i=idle [x,y],
+ *  t=talk frames [[x,y]…] in animation order.
+ * ════════════════════════════════════════════════════════════════════ */
+const NPC_DATA = [
+  // ── trader ──
+  {c:'trader',r:null,sp:'human',n:'1',d:'sprites/npc/trader/human/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'human',n:'2',d:'sprites/npc/trader/human/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'human',n:'3',d:'sprites/npc/trader/human/3',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'insect',n:'1',d:'sprites/npc/trader/insect/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'insect',n:'2',d:'sprites/npc/trader/insect/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'insect',n:'3',d:'sprites/npc/trader/insect/3',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'reptile',n:'1',d:'sprites/npc/trader/reptile/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'reptile',n:'2',d:'sprites/npc/trader/reptile/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'robot',n:'1',d:'sprites/npc/trader/robot/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'robot',n:'2',d:'sprites/npc/trader/robot/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'robot',n:'3',d:'sprites/npc/trader/robot/3',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'rock',n:'1',d:'sprites/npc/trader/rock/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'rock',n:'2',d:'sprites/npc/trader/rock/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'unknown',n:'1',d:'sprites/npc/trader/unknown/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'unknown',n:'2',d:'sprites/npc/trader/unknown/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'unknown',n:'3',d:'sprites/npc/trader/unknown/3',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'water',n:'1',d:'sprites/npc/trader/water/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'trader',r:null,sp:'water',n:'2',d:'sprites/npc/trader/water/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  // ── drifter ──
+  {c:'drifter',r:null,sp:'human',n:'1',d:'sprites/npc/drifter/human/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'drifter',r:null,sp:'insect',n:'1',d:'sprites/npc/drifter/insect/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'drifter',r:null,sp:'reptile',n:'1',d:'sprites/npc/drifter/reptile/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'drifter',r:null,sp:'robot',n:'1',d:'sprites/npc/drifter/robot/1',sw:389,sh:294,i:[1,1],t:[[96,1],[194,1],[96,99],[194,99],[1,197],[99,197],[197,197],[292,1],[292,99]]},
+  {c:'drifter',r:null,sp:'rock',n:'1',d:'sprites/npc/drifter/rock/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'drifter',r:null,sp:'unknown',n:'1',d:'sprites/npc/drifter/unknown/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'drifter',r:null,sp:'unknown',n:'2',d:'sprites/npc/drifter/unknown/2',sw:408,sh:312,i:[1,1],t:[[103,1],[205,1],[1,105],[103,105],[205,105],[1,209],[103,209],[205,209],[307,1]]},
+  {c:'drifter',r:null,sp:'water',n:'1',d:'sprites/npc/drifter/water/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  // ── pirate ──
+  {c:'pirate',r:null,sp:'human',n:'1',d:'sprites/npc/pirate/human/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'human',n:'2',d:'sprites/npc/pirate/human/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'human',n:'3',d:'sprites/npc/pirate/human/3',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'insect',n:'1',d:'sprites/npc/pirate/insect/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'insect',n:'2',d:'sprites/npc/pirate/insect/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'reptile',n:'1',d:'sprites/npc/pirate/reptile/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'reptile',n:'2',d:'sprites/npc/pirate/reptile/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'reptile',n:'3',d:'sprites/npc/pirate/reptile/3',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'robot',n:'1',d:'sprites/npc/pirate/robot/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'robot',n:'2',d:'sprites/npc/pirate/robot/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'robot',n:'3',d:'sprites/npc/pirate/robot/3',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'rock',n:'1',d:'sprites/npc/pirate/rock/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'rock',n:'2',d:'sprites/npc/pirate/rock/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'unknown',n:'1',d:'sprites/npc/pirate/unknown/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'pirate',r:null,sp:'water',n:'1',d:'sprites/npc/pirate/water/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  // ── station_crew/captain ──
+  {c:'station_crew',r:'captain',sp:'human',n:'1',d:'sprites/npc/station_crew/captain/human/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'captain',sp:'insect',n:'1',d:'sprites/npc/station_crew/captain/insect/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'captain',sp:'reptile',n:'1',d:'sprites/npc/station_crew/captain/reptile/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'captain',sp:'reptile',n:'2',d:'sprites/npc/station_crew/captain/reptile/2',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'captain',sp:'robot',n:'1',d:'sprites/npc/station_crew/captain/robot/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'captain',sp:'rock',n:'1',d:'sprites/npc/station_crew/captain/rock/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'captain',sp:'unknown',n:'1',d:'sprites/npc/station_crew/captain/unknown/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'captain',sp:'water',n:'1',d:'sprites/npc/station_crew/captain/water/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  // ── station_crew/security ──
+  {c:'station_crew',r:'security',sp:'human',n:'1',d:'sprites/npc/station_crew/security/human/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'security',sp:'human',n:'2',d:'sprites/npc/station_crew/security/human/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'security',sp:'insect',n:'1',d:'sprites/npc/station_crew/security/insect/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'security',sp:'reptile',n:'1',d:'sprites/npc/station_crew/security/reptile/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'security',sp:'robot',n:'1',d:'sprites/npc/station_crew/security/robot/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'security',sp:'rock',n:'1',d:'sprites/npc/station_crew/security/rock/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'security',sp:'unknown',n:'1',d:'sprites/npc/station_crew/security/unknown/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'security',sp:'water',n:'1',d:'sprites/npc/station_crew/security/water/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  // ── station_crew/engineer ──
+  {c:'station_crew',r:'engineer',sp:'human',n:'1',d:'sprites/npc/station_crew/engineer/human/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'engineer',sp:'human',n:'2',d:'sprites/npc/station_crew/engineer/human/2',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'engineer',sp:'insect',n:'1',d:'sprites/npc/station_crew/engineer/insect/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'engineer',sp:'reptile',n:'1',d:'sprites/npc/station_crew/engineer/reptile/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'engineer',sp:'robot',n:'1',d:'sprites/npc/station_crew/engineer/robot/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'engineer',sp:'rock',n:'1',d:'sprites/npc/station_crew/engineer/rock/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'engineer',sp:'unknown',n:'1',d:'sprites/npc/station_crew/engineer/unknown/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'engineer',sp:'unknown',n:'2',d:'sprites/npc/station_crew/engineer/unknown/2',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'engineer',sp:'water',n:'1',d:'sprites/npc/station_crew/engineer/water/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  // ── station_crew/medic ──
+  {c:'station_crew',r:'medic',sp:'human',n:'1',d:'sprites/npc/station_crew/medic/human/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'medic',sp:'human',n:'2',d:'sprites/npc/station_crew/medic/human/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'medic',sp:'insect',n:'1',d:'sprites/npc/station_crew/medic/insect/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'medic',sp:'reptile',n:'1',d:'sprites/npc/station_crew/medic/reptile/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'medic',sp:'robot',n:'1',d:'sprites/npc/station_crew/medic/robot/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'medic',sp:'rock',n:'1',d:'sprites/npc/station_crew/medic/rock/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'medic',sp:'unknown',n:'1',d:'sprites/npc/station_crew/medic/unknown/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'medic',sp:'unknown',n:'2',d:'sprites/npc/station_crew/medic/unknown/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'medic',sp:'unknown',n:'3',d:'sprites/npc/station_crew/medic/unknown/3',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'medic',sp:'water',n:'1',d:'sprites/npc/station_crew/medic/water/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  // ── station_crew/botanist ──
+  {c:'station_crew',r:'botanist',sp:'human',n:'1',d:'sprites/npc/station_crew/botanist/human/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'botanist',sp:'human',n:'2',d:'sprites/npc/station_crew/botanist/human/2',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'botanist',sp:'insect',n:'1',d:'sprites/npc/station_crew/botanist/insect/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'botanist',sp:'reptile',n:'1',d:'sprites/npc/station_crew/botanist/reptile/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'botanist',sp:'robot',n:'1',d:'sprites/npc/station_crew/botanist/robot/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'botanist',sp:'rock',n:'1',d:'sprites/npc/station_crew/botanist/rock/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'botanist',sp:'unknown',n:'1',d:'sprites/npc/station_crew/botanist/unknown/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'botanist',sp:'unknown',n:'2',d:'sprites/npc/station_crew/botanist/unknown/2',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'botanist',sp:'unknown',n:'3',d:'sprites/npc/station_crew/botanist/unknown/3',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  {c:'station_crew',r:'botanist',sp:'water',n:'1',d:'sprites/npc/station_crew/botanist/water/1',sw:392,sh:294,i:[1,1],t:[[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197],[295,1]]},
+  // ── station_crew/janitor ──
+  {c:'station_crew',r:'janitor',sp:'human',n:'1',d:'sprites/npc/station_crew/janitor/human/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'janitor',sp:'insect',n:'1',d:'sprites/npc/station_crew/janitor/insect/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'janitor',sp:'reptile',n:'1',d:'sprites/npc/station_crew/janitor/reptile/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'janitor',sp:'reptile',n:'2',d:'sprites/npc/station_crew/janitor/reptile/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'janitor',sp:'robot',n:'1',d:'sprites/npc/station_crew/janitor/robot/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'janitor',sp:'robot',n:'2',d:'sprites/npc/station_crew/janitor/robot/2',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'janitor',sp:'rock',n:'1',d:'sprites/npc/station_crew/janitor/rock/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+  {c:'station_crew',r:'janitor',sp:'water',n:'1',d:'sprites/npc/station_crew/janitor/water/1',sw:392,sh:294,i:[295,1],t:[[1,1],[99,1],[197,1],[1,99],[99,99],[197,99],[1,197],[99,197],[197,197]]},
+];
+
+/* ────────────────────────────────────────────────────────────────────
+ *  ANIMATION  ·  matches the encounter demo's crew talking-head pattern.
+ *  2000ms loop = 500ms idle hold + 1500ms cycling 9 talk frames (~167ms).
+ *  Each card holds its own RAF id in ANIM, so any number can play at once.
+ *  Reload = all stopped (no persistence by design).
+ * ──────────────────────────────────────────────────────────────────── */
+const TALK_LOOP_MS  = 2000;
+const TALK_PAUSE_MS = 500;
+const FRAME_MS      = (TALK_LOOP_MS - TALK_PAUSE_MS) / 9;
+
+const SECTION_LABELS = { trader: 'TRADERS', drifter: 'DRIFTERS', pirate: 'PIRATES' };
+const STATION_ROLE_LABELS = {
+  captain: 'CAPTAIN', security: 'SECURITY', engineer: 'ENGINEER',
+  medic: 'MEDIC', botanist: 'BOTANIST', janitor: 'JANITOR'
+};
+const STATION_ROLE_ORDER = ['captain', 'security', 'engineer', 'medic', 'botanist', 'janitor'];
+const TOP_CATEGORY_ORDER = ['trader', 'drifter', 'pirate'];
+
+function speciesUpper(s) { return s.toUpperCase(); }
+
+function nameOf(npc) {
+  const role = npc.r ? STATION_ROLE_LABELS[npc.r] : SECTION_LABELS[npc.c].replace(/S$/, '');
+  return role + ' · ' + speciesUpper(npc.sp) + ' ' + npc.n;
+}
+
+const ANIM = new Map();   // cardId -> requestAnimationFrame handle
+
+function startTalking(id, npc, head, playBtn, stopBtn) {
+  if (ANIM.has(id)) return;
+  const start = performance.now();
+  playBtn.classList.add('active');
+  playBtn.disabled = true;
+  stopBtn.disabled = false;
+  function tick(now) {
+    if (!ANIM.has(id)) return;
+    if (PauseBus.paused) { ANIM.set(id, requestAnimationFrame(tick)); return; }
+    const elapsed = (now - start) % TALK_LOOP_MS;
+    let coords;
+    if (elapsed < TALK_PAUSE_MS) {
+      coords = npc.i;
+    } else {
+      const fIdx = Math.min(npc.t.length - 1, Math.floor((elapsed - TALK_PAUSE_MS) / FRAME_MS));
+      coords = npc.t[fIdx];
+    }
+    head.style.setProperty('--frame-x', coords[0]);
+    head.style.setProperty('--frame-y', coords[1]);
+    ANIM.set(id, requestAnimationFrame(tick));
+  }
+  ANIM.set(id, requestAnimationFrame(tick));
+}
+
+function stopTalking(id, npc, head, playBtn, stopBtn) {
+  if (ANIM.has(id)) cancelAnimationFrame(ANIM.get(id));
+  ANIM.delete(id);
+  head.style.setProperty('--frame-x', npc.i[0]);
+  head.style.setProperty('--frame-y', npc.i[1]);
+  playBtn.classList.remove('active');
+  playBtn.disabled = false;
+  stopBtn.disabled = true;
+}
+
+function buildCard(npc, idx) {
+  const id = 'npc-' + idx;
+  const card = document.createElement('div');
+  card.className = 'npc-card';
+  card.innerHTML =
+    '<div class="npc-frame"><div class="npc-head"></div></div>' +
+    '<div class="npc-name">' + nameOf(npc) + '</div>' +
+    '<div class="npc-buttons">' +
+      '<button class="npc-btn play">PLAY</button>' +
+      '<button class="npc-btn stop" disabled>STOP</button>' +
+    '</div>';
+  const head    = card.querySelector('.npc-head');
+  const playBtn = card.querySelector('.npc-btn.play');
+  const stopBtn = card.querySelector('.npc-btn.stop');
+  head.style.setProperty('--sheet-url', "url('" + npc.d + "/spritesheet.png')");
+  head.style.setProperty('--sheet-w', npc.sw);
+  head.style.setProperty('--sheet-h', npc.sh);
+  head.style.setProperty('--frame-x', npc.i[0]);
+  head.style.setProperty('--frame-y', npc.i[1]);
+  playBtn.addEventListener('click', () => startTalking(id, npc, head, playBtn, stopBtn));
+  stopBtn.addEventListener('click', () => stopTalking(id, npc, head, playBtn, stopBtn));
+  return card;
+}
+
+// Group cards by species under a parent container. Returns the next free
+// card index after the appended grids. Each species gets its own .npc-grid
+// preceded by a .species-title header.
+function appendSpeciesGroups(parent, list, startIdx, headerClass) {
+  const speciesSeen = [];
+  const bySpecies = new Map();
+  for (const npc of list) {
+    if (!bySpecies.has(npc.sp)) { bySpecies.set(npc.sp, []); speciesSeen.push(npc.sp); }
+    bySpecies.get(npc.sp).push(npc);
+  }
+  let idx = startIdx;
+  for (const species of speciesSeen) {
+    const variants = bySpecies.get(species);
+    const title = document.createElement('div');
+    title.className = headerClass;
+    title.textContent = speciesUpper(species) + (variants.length > 1 ? ' (' + variants.length + ')' : '');
+    parent.appendChild(title);
+    const grid = document.createElement('div');
+    grid.className = 'npc-grid';
+    variants.forEach((npc, i) => grid.appendChild(buildCard(npc, idx + i)));
+    idx += variants.length;
+    parent.appendChild(grid);
+  }
+  return idx;
+}
+
+function render() {
+  const root = document.getElementById('root');
+  let cardIdx = 0;
+
+  // Top-level NPC categories: section → species sub-headers → grids
+  for (const cat of TOP_CATEGORY_ORDER) {
+    const list = NPC_DATA.filter(n => n.c === cat);
+    if (!list.length) continue;
+    const section = document.createElement('section');
+    section.className = 'section';
+    section.innerHTML = '<div class="section-title">' + SECTION_LABELS[cat] + '</div>';
+    cardIdx = appendSpeciesGroups(section, list, cardIdx, 'subsection-title');
+    root.appendChild(section);
+  }
+
+  // Station crew: section → role sub-headers → species sub-sub-headers → grids
+  const crew = NPC_DATA.filter(n => n.c === 'station_crew');
+  if (crew.length) {
+    const section = document.createElement('section');
+    section.className = 'section';
+    section.innerHTML = '<div class="section-title">STATION CREW</div>';
+    for (const role of STATION_ROLE_ORDER) {
+      const list = crew.filter(n => n.r === role);
+      if (!list.length) continue;
+      const roleTitle = document.createElement('div');
+      roleTitle.className = 'subsection-title';
+      roleTitle.textContent = STATION_ROLE_LABELS[role];
+      section.appendChild(roleTitle);
+      cardIdx = appendSpeciesGroups(section, list, cardIdx, 'species-title');
+    }
+    root.appendChild(section);
+  }
+}
+
+// Size toggle — sets --subj-size on :root; the grid columns + frame
+// dimensions all key off it so layout re-flows automatically. Sizes are
+// anchored to the sprite's native 96×96 frame: 1× = 96 (pixel-perfect),
+// 2× = 192, 4× = 384. IN-GAME = 260px matches the encounter demo's
+// --subj-size and is the default on reload.
+function wireSizeToggle() {
+  const buttons = document.querySelectorAll('#size-toggle button');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const size = parseInt(btn.dataset.size, 10);
+      document.documentElement.style.setProperty('--subj-size', size + 'px');
+      buttons.forEach(b => b.classList.toggle('active', b === btn));
+    });
+  });
+}
+
+render();
+wireSizeToggle();
+</script>
+</body>
+</html>

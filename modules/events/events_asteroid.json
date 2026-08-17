@@ -1,0 +1,412 @@
+[
+  {
+    "id": "event_asteroid_001",
+    "active": true,
+    "title": "The Rocks",
+    "difficulty": "easy",
+    "tone": [
+      "mundane"
+    ],
+    "node_type": [
+      "asteroid_field"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "asteroid_field",
+    "once": false,
+    "test_path": true,
+    "test_path_position": 4,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA describes the asteroid field as 'a mineral wonderland!' The asteroids do not care about ARIA's enthusiasm.",
+      "marv": "MARV notes asteroid mining is 'statistically one of the safer activities available to you.' From MARV, this is almost reassuring. Almost.",
+      "rex": "REX has armed the forward array. For mining. He insists the weapons lock is a 'mining configuration.' Nobody believes him.",
+      "chip": "CHIP notes that mineral yields from this field may qualify for the MineReward™ loyalty program! Redemption requires surviving the mining process!",
+      "ajoy": "AJOY observes you could have hired a dedicated mining crew at the last station. But this is also a valid approach. A slower, riskier approach. But valid."
+    },
+    "body": "An unremarkable asteroid field. The rocks drift slowly. The minerals are in there somewhere.\n\nThe ship computer notes that asteroid mining is 'statistically one of the safer activities available to you,' which says more about your other activities than about mining.",
+    "choices": [
+      {
+        "text": "Mine with the portable drill",
+        "requires_crew": null,
+        "requires_item": "portable_drill",
+        "requires_flag": null,
+        "microgame_type": "drill_target",
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The drill bites into rock. Minerals extracted. The drill was worth the cargo space. The ship computer logs the yield with something approaching satisfaction.",
+          "materials": {
+            "minerals": 2,
+            "metal": 1
+          }
+        }
+      },
+      {
+        "text": "Mine with standard equipment",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "drill_target",
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Standard mining equipment works. Slowly. You extract minerals and some scrap. The computer notes the yield is 'adequate.' Back to adequate.",
+          "materials": {
+            "minerals": 1,
+            "scrap": 1
+          }
+        }
+      },
+      {
+        "text": "Quick pass — grab what's easy and go",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "A quick pass yields scrap metal from the field's outer edge. Minimal effort, minimal reward. The rocks don't mind.",
+          "materials": {
+            "scrap": 1
+          }
+        }
+      },
+      {
+        "text": "Skip — save time, move on",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You pass through the field without stopping. The rocks continue to drift. They will be here when the next ship comes. Or they won't. Rocks are unpredictable on geological timescales."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_asteroid_002",
+    "active": true,
+    "title": "The Contested Claim",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "grim"
+    ],
+    "node_type": [
+      "asteroid_field"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "asteroid_field",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA is sure the other ship is friendly! Most ships are friendly! She has no data to support this!",
+      "marv": "MARV has identified the other ship. It is not friendly. He will let events confirm this.",
+      "rex": "REX has locked weapons. This is technically the correct response. REX is gratified.",
+      "chip": "CHIP notes that claim disputes are covered under Section 14 of the Mining Rights Act. The other ship does not appear to have read Section 14.",
+      "ajoy": "AJOY notes you could have checked the claim registry before entering the field. It's public information. Just saying."
+    },
+    "body": "The asteroid field has a faded corporate mining claim staked on the largest rock. The claim expired six months ago. Mining it is technically legal.\n\nA ship on long-range sensors suggests someone disagrees about the 'technically' part.",
+    "choices": [
+      {
+        "text": "Mine fast — grab what you can before they arrive",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "drill_target",
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "mined_contested",
+          "time_cost": "low",
+          "narrative": "You mined fast. The other ship arrived as you were leaving. They hailed you. You did not answer. The minerals are in your hold. The moral high ground is not.",
+          "materials": {
+            "minerals": 1,
+            "metal": 2
+          }
+        }
+      },
+      {
+        "text": "Negotiate — explain the claim expired",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "negotiation_wobble",
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "negotiated_claim",
+          "time_cost": "medium",
+          "narrative": "Your diplomat explained the legal situation. The other captain listened. There was a long pause. Then they proposed splitting the field. You got the better half. Diplomacy works. Occasionally.",
+          "materials": {
+            "minerals": 2,
+            "exotic": 1
+          }
+        }
+      },
+      {
+        "text": "Leave — not worth the confrontation",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You left the field. The other ship did not pursue. The minerals remain in their rocks. The rocks remain in their field. Nothing changed except your fuel reserves."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_asteroid_003",
+    "active": true,
+    "title": "Claim Jumper's Dilemma",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "grim"
+    ],
+    "node_type": [
+      "asteroid_field"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "asteroid_field",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "An abandoned mining rig! Finders keepers is a real law, right? ARIA is asking! ARIA genuinely does not know!",
+      "marv": "MARV has checked the claim registry. The claim expired eight years ago. The claimant's renewal notice is still taped to the rig. MARV finds the tape more binding than the law.",
+      "rex": "REX has secured the rig. It was not resisting. He notes prior tenants left in a hurry: half a meal, one boot. He does not speculate about the boot. Out loud.",
+      "chip": "CHIP confirms the claim is legally lapsed! Salvage rights apply! CHIP loves it when the law and the loot agree!",
+      "ajoy": "AJOY notes the rig's drill head is worth more than everything else on it combined, and that removing it properly takes six careful hours, and that improperly takes one exciting one."
+    },
+    "body": "An automated mining rig clings to the largest rock in the cluster, dark and pitted, drill head buried mid-bite. The claim beacon still transmits, faithfully, a claim that expired eight years ago.\n\nSomeone sank real money into this rig and then stopped coming back for it. The rocks don't know why. The registry doesn't say. The rig just waits, holding its last bite of asteroid like a dog nobody came home to.",
+    "choices": [
+      {
+        "text": "Strip the rig for materials",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "wrench",
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "drive_coil",
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Six hours of honest disassembly. The rig comes apart into metal stock, scrap, and one beautifully preserved drive coil. The claim beacon is left transmitting on its little backup cell — it seemed wrong to silence it. It'll outlast everyone involved in this decision."
+        }
+      },
+      {
+        "text": "Restart the rig and take one load",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The engineer coaxes the old rig through one last shift. It drills like it never stopped — eight hours, one full hopper of ore, and a shutdown sequence it performs with what reads as relief. You bank the load and power it down properly, the way somebody should have, eight years ago."
+        }
+      },
+      {
+        "text": "Check the habitation pod first",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "read_the_note",
+          "time_cost": "low",
+          "narrative": "The pod tells a short story: half a meal, one boot, a departure faster than boots. And on the console, a note, handwritten: 'Gone to flag down the med-ship. Rig's yours if I'm not back. —K.' Eight years. You take nothing. The claim beacon transmits all the way out of sensor range."
+        }
+      },
+      {
+        "text": "Respect the claim and move on",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Expired or not, it's somebody's rig. You log its position for the registry — 'equipment intact, claimant absent' — and leave it holding its bite of rock. The law had an opinion. The tape on the renewal notice had a better one."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV notes that mining rocks like these is a real proposal, with real math, and realer skepticism.",
+      "label": "Asteroid mining, seriously proposed",
+      "url": "https://en.wikipedia.org/wiki/Asteroid_mining"
+    }
+  },
+  {
+    "id": "event_asteroid_004",
+    "active": true,
+    "title": "The Singing Rock",
+    "difficulty": "easy",
+    "tone": [
+      "cosmic",
+      "absurd"
+    ],
+    "node_type": [
+      "asteroid_field"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "asteroid_field",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "One of the asteroids is HUMMING! ARIA has matched the pitch! They're in harmony now! This is the best field ever!",
+      "marv": "MARV identifies the hum as piezoelectric resonance from compressed quartz veins. He delivers this explanation to a crew that has clearly already decided it's magic. He logs 'magic (piezoelectric).'",
+      "rex": "REX confirmed the humming rock is not a beacon, a lure, or a mine. It is a rock, humming. He has filed it under 'no action required' with unusual reluctance.",
+      "chip": "CHIP notes that novelty audio recordings sell well at stations! The rock's performance is unlicensed! The rock cannot sign! CHIP sees an opportunity in that!",
+      "ajoy": "AJOY has recorded forty minutes of the hum. Played at half speed, she notes, it resolves into something very like a chord progression. She is not going to play it at half speed again."
+    },
+    "body": "One of the asteroids is humming.\n\nA low, steady tone, right at the edge of the sensors' hearing — solar heat working a quartz vein, physics doing an impression of a voice. The tone rises a little as the rock turns its face to the star, and falls as it turns away. Sunrise and sunset, rendered as a note.\n\nThe crew has been listening on the open channel for twenty minutes. Nobody has suggested moving on. You are, technically, behind schedule. The rock is, technically, singing.",
+    "choices": [
+      {
+        "text": "Drift alongside and listen a while",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You match the rock's slow tumble and let it sing to the hull for an hour. No analysis, no sampling, no yield. Days later, crew members are still humming the note while they work — the field's one song, carried on in five imperfect covers."
+        }
+      },
+      {
+        "text": "Core a sample of the quartz",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "drill_target",
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The drill takes a clean core of the singing vein. The tone drops a quarter-step and does not recover. The sample is scientifically excellent and worth real money, and the away team returns quieter than they left. Fair trade is a matter of ongoing internal debate.",
+          "materials": {
+            "exotic": 1
+          }
+        }
+      },
+      {
+        "text": "Record it for the ship's library",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Forty minutes of asteroid, recorded clean, filed in the ship's library between the emergency drills and someone's audiobooks. It becomes the unofficial soundtrack of third watch. The rock, uncredited, achieves the widest audience of its four-billion-year career."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV files the explanation for the singing: compressed quartz making electricity. The effect is real, and it is called piezoelectricity.",
+      "label": "Piezoelectricity: rocks that sing",
+      "url": "https://en.wikipedia.org/wiki/Piezoelectricity"
+    }
+  }
+]

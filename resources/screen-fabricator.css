@@ -1,0 +1,823 @@
+/* FABRICATOR OVERLAY — lifted from resources/demo-fabricator.html (Phase 4).
+   Dev-only chrome (controls sidebar, size-toggle, demo-wrap/scale-root
+   fixed frame, duplicate crt-overlay/stars) stripped. #fb-modal
+   self-centers (left/top 50% + transform), no overlay-active override
+   needed. */
+
+
+:root {
+  /* Shared theme */
+  --teal: #56cfd7;
+  --orange: #e88830;
+  --cream: #e6d4a8;
+  --body:  #c5b28a;
+
+  /* Modal chrome — industrial / utility palette. Cool steel border,
+     cyan machine-control title. Distinct from crew's slate+lavender
+     and growbay's warm-green panels. */
+  --modal-backdrop: rgba(4,8,16,0.75);
+  --modal-bg-top: #141A28;
+  --modal-bg-bot: #0e1118;
+  --modal-border: #6A5E4E;           /* warm bronze */
+  --modal-width:  880px;
+  --modal-height: 600px;
+
+  /* Header */
+  --header-title-color: #CFBB88;     /* warm cream-gold, matches border */
+  --header-title-size:  16px;
+
+  /* Fabricator-specific knobs */
+  --recipe-list-width: 400px;        /* left column width inside body */
+  --fab-slot-size:     220px;        /* sprite slot on the right (height; width = 2×) */
+  --section-gap:       10px;
+  --body-padding:      12px 16px 10px;
+
+  /* Wear colors */
+  --wear-ok:   #85d260;
+  --wear-warn: #d8c044;
+  --wear-bad:  #cc3333;
+
+  /* Typography */
+  --body-size:        16px;   /* recipe list items (left column) */
+  --title-size:       10px;   /* section labels: INPUTS, TIME, WEAR */
+  --mono-size:        18px;   /* body text under each label (inputs/output/meta) */
+  --detail-name-size: 11px;   /* recipe name in the detail-panel header */
+  --meta-row-gap:     5px;    /* vertical gap between TIME and WEAR rows */
+
+  /* Unlock-accent colors (left-edge bar) */
+  --lock-crew:     var(--teal);
+  --lock-purchase: var(--gold);
+
+  /* Panel buttons (color vars live in shared.css; cyan accent local) */
+  --pb-cyan-hi:#7fd4dc;
+  --pb-cyan-lo:#1a3a40;
+}
+
+#fb-backdrop {
+  position: absolute; inset: 0;
+  z-index: 10;
+  background: var(--modal-backdrop);
+  cursor: var(--cursor-hand, pointer);
+}
+
+#fb-modal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--modal-width);
+  height: var(--modal-height);
+  z-index: 20;
+  background: linear-gradient(180deg, var(--modal-bg-top) 0%, var(--modal-bg-bot) 100%);
+  border: 3px solid var(--modal-border);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(95,168,208,0.10),
+    inset 0 0 0 2px rgba(14,20,32,0.5),
+    0 8px 40px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.25s, transform 0.25s;
+}
+body:not(.modal-open) #fb-backdrop,
+body:not(.modal-open) #fb-modal {
+  opacity: 0;
+  pointer-events: none;
+}
+body:not(.modal-open) #fb-modal {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+/* Header */
+.fb-header {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 14px;
+  border-bottom: 2px solid rgba(95,168,208,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.fb-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--header-title-size);
+  letter-spacing: 2px;
+  color: var(--header-title-color);
+  text-shadow: 0 0 8px rgba(95,168,208,0.25);
+  flex-shrink: 0;
+}
+.fb-header-spacer { flex: 1; }
+.fb-day-counter {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: var(--cream);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.fb-day-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+.fb-day { color: var(--gold); letter-spacing: 1px; font-weight: bold; }
+.fb-day.ticking { animation: day-pulse 0.6s ease-out; }
+@keyframes day-pulse {
+  0%   { color: var(--teal); text-shadow: 0 0 6px rgba(95,168,208,0.8); }
+  100% { color: var(--gold); text-shadow: none; }
+}
+.fb-day-sep { color: #5a7a8a; }
+.fb-arrival { color: #aab5c4; letter-spacing: 1px; }
+.fb-close {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  width: 26px; height: 26px;
+  border: 2px solid rgba(95,168,208,0.4);
+  background: rgba(14,20,32,0.6);
+  color: var(--header-title-color);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.fb-close:hover { filter: brightness(1.25); border-color: var(--modal-border); }
+
+/* Body */
+.fb-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--body-padding);
+  gap: var(--section-gap);
+}
+
+/* Crew fab assist strip removed from visible UI. The bonus still
+   factors into `actualDays()`; the breakdown surfaces only as a
+   hover tooltip on the TIME row in the detail panel. Keeps the
+   modal's top inches of real estate clean. */
+
+/* ── Main split: recipes (left) + fab unit + detail (right) ──── */
+.fb-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--recipe-list-width) 1fr;
+  gap: 12px;
+  min-height: 0;
+}
+
+/* ── Recipe list column ─────────────────────────────────────── */
+.fb-recipes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
+}
+/* Recipe list wrapper — single bordered box holding the banner (sort/
+   filter dropdowns) + the scrollable list. Everything about the list
+   lives inside one outlined surface. */
+.fb-list-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid rgba(95,168,208,0.2);
+  border-radius: 3px;
+  overflow: visible;               /* dropdown flyouts escape vertically */
+}
+.fb-list-banner {
+  display: flex;
+  gap: 6px;
+  padding: 4px 6px;
+  background: rgba(14,20,32,0.65);
+  border-bottom: 1px solid rgba(95,168,208,0.15);
+  flex-shrink: 0;
+}
+
+/* Custom dropdown — no native <select> per design-system rule.
+   Trigger shows `Sort: Time ▾`; click opens a flyout of options. */
+.fb-dd { position: relative; flex: 1; min-width: 0; }
+.fb-dd-trigger {
+  width: 100%;
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: 3px 8px;
+  background: linear-gradient(180deg, var(--pb-bg-top) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-bot) 100%);
+  border: 1px solid rgba(95,168,208,0.25);
+  color: var(--pb-text);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  transition: border-color 0.12s, filter 0.12s;
+}
+.fb-dd-trigger:hover { filter: brightness(1.2); border-color: rgba(200,168,90,0.4); }
+.fb-dd.open .fb-dd-trigger { border-color: var(--gold); }
+.fb-dd-trigger .caret {
+  color: var(--gold);
+  font-size: 11px;
+  transition: transform 0.15s;
+}
+.fb-dd.open .fb-dd-trigger .caret { transform: rotate(180deg); }
+.fb-dd-trigger .dd-label { color: #7a8898; margin-right: 4px; }
+.fb-dd-trigger .dd-value { color: var(--cream); flex: 1; text-align: left; }
+
+.fb-dd-menu {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  display: none;
+  flex-direction: column;
+  background: #14181f;
+  border: 1px solid var(--gold);
+  border-radius: 2px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.55);
+  z-index: 20;
+  overflow: hidden;
+}
+.fb-dd.open .fb-dd-menu { display: flex; }
+.fb-dd-menu button {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 5px 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(95,168,208,0.08);
+  color: var(--cream);
+  cursor: var(--cursor-hand, pointer);
+  transition: background 0.1s, color 0.1s;
+}
+.fb-dd-menu button:last-child { border-bottom: none; }
+.fb-dd-menu button:hover { background: rgba(200,168,90,0.18); }
+.fb-dd-menu button.active {
+  color: var(--gold);
+  background: rgba(200,168,90,0.1);
+}
+
+.fb-recipe-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: rgba(6,10,16,0.5);
+  padding: 4px;
+  min-height: 0;
+}
+
+.fb-recipe-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 10px;
+  margin-bottom: 3px;
+  background: rgba(14,20,32,0.5);
+  border: 1px solid rgba(95,168,208,0.12);
+  border-left: 3px solid transparent;
+  border-radius: 2px;
+  cursor: var(--cursor-hand, pointer);
+  transition: border-color 0.12s, background 0.12s;
+  min-height: 30px;
+  font-family: 'VT323', monospace;
+  font-size: var(--body-size);
+  letter-spacing: 0.5px;
+  color: var(--cream);
+}
+.fb-recipe-row:hover { border-color: rgba(200,168,90,0.4); background: rgba(20,28,42,0.6); }
+.fb-recipe-row.selected {
+  border-color: var(--gold);
+  background: rgba(30,40,56,0.7);
+  box-shadow: inset 0 0 0 1px rgba(200,168,90,0.25);
+}
+.fb-recipe-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fb-recipe-days {
+  flex-shrink: 0;
+  color: var(--teal);
+  font-size: 13px;
+  letter-spacing: 1px;
+  min-width: 40px;
+  text-align: right;
+}
+/* Locked rows (crew or purchase) render DIMMED so they sit visually
+   below the available recipes rather than competing with them. No
+   accent bar, no color treatment — just greyed. A muted lock icon
+   + unlock-note text in place of the days column tells the player
+   WHY it's locked. */
+.fb-recipe-row.locked-crew,
+.fb-recipe-row.locked-purchase {
+  opacity: 0.4;
+  filter: grayscale(0.7);
+  cursor: var(--cursor-pointer, default);
+  border-left-color: transparent;
+}
+.fb-recipe-row.locked-crew:hover,
+.fb-recipe-row.locked-purchase:hover {
+  border-color: rgba(95,168,208,0.12);
+  background: rgba(14,20,32,0.5);
+  opacity: 0.55;              /* slight lift on hover — still clearly subordinate */
+}
+.fb-recipe-row.locked-crew .fb-recipe-days,
+.fb-recipe-row.locked-purchase .fb-recipe-days {
+  color: #7a8898;
+  font-style: italic;
+  font-size: 12px;
+  min-width: auto;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Click a locked row → very brief brightness pulse (acknowledges the
+   click without promoting the row visually). */
+.fb-recipe-row.pulse { animation: lock-pulse 0.4s ease-out; }
+@keyframes lock-pulse {
+  0%, 100% { filter: grayscale(0.7); }
+  50%      { filter: grayscale(0.3) brightness(1.2); }
+}
+.fb-recipe-row .lock-glyph {
+  color: #7a8898;
+  font-size: 12px;
+  margin-right: -4px;
+}
+.fb-recipe-row.locked-purchase .dollar { color: #8a9ba8; }
+
+/* Missing-materials is NOT dimmed (explicit rule). Only the detail-panel
+   input list turns its counts red when stock < required. */
+
+/* ── Fab unit + detail (right column) ───────────────────────── */
+.fb-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.fb-unit {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* Fab sprite slot — backed by sprites/fabricator/spritesheet_fabricator.png.
+   Each frame is 256w × 128h, cut out of a 516×390 sheet. Slot height is
+   `--fab-slot-size`; width is 2× that (frame aspect is 2:1). Scale factor
+   from frame-pixel-space to slot-space = slot_h / 128, applied uniformly
+   to both axes of background-size so the 2:1 frame tiling stays true. */
+.fb-unit-slot {
+  width: calc(var(--fab-slot-size) * 2);
+  height: var(--fab-slot-size);
+  position: relative;
+  background-image: url('sprites/fabricator/spritesheet_fabricator.png');
+  background-repeat: no-repeat;
+  background-size: calc(var(--fab-slot-size) * 516 / 128) calc(var(--fab-slot-size) * 390 / 128);
+  background-position: 0 0;    /* set in JS via setFabFrame() */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  transition: filter 0.3s;
+}
+.fb-unit-slot.state-done {
+  animation: fab-done-flash 0.6s ease-out;
+}
+@keyframes fab-done-flash {
+  0%   { filter: brightness(1.8) drop-shadow(0 0 12px rgba(133,210,96,0.8)); }
+  100% { filter: brightness(1); }
+}
+.fb-unit-slot.state-broken {
+  filter: grayscale(0.2) brightness(0.85);
+}
+
+/* Wear-bar overlay — pinned to the painted gauge rectangle at
+   (39,110)→(89,117) on the 256×128 frame. Uses % so it scales with
+   the slot. Style mirrors the cargo/cruise segmented gauges: 10
+   segments with per-tier colors, DEPLETES L→R as wear climbs (100%
+   wear = zero segments lit = bar invisible, which is the point, since
+   the broken sprite has OUT-OF-SERVICE text painted in the same spot). */
+.fb-wear-overlay {
+  position: absolute;
+  left: 15.23%;             /* 39  / 256 */
+  top: 85.94%;              /* 110 / 128 */
+  width: 20.70%;            /* 53  / 256 */
+  height: 6.25%;            /* 8   / 128 (was 10; -2px off the bottom) */
+  display: flex;
+  gap: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.fb-wear-overlay.hidden { display: none; }
+.fb-wear-seg {
+  flex: 1;
+  background: var(--seg-color);
+  opacity: var(--wear-seg-unlit-alpha, 0.15);
+  transition: opacity 0.2s;
+}
+.fb-wear-seg.lit { opacity: 1; box-shadow: 0 0 2px var(--seg-color); }
+/* Per-segment tier colors (L→R): leftmost 2 = red (the critical last
+   segments to go), then orange, yellow, yellow-green, rightmost 2 =
+   green. Gradient of health as wear climbs. */
+.fb-wear-seg:nth-child(1), .fb-wear-seg:nth-child(2) { --seg-color: #c23030; }
+.fb-wear-seg:nth-child(3), .fb-wear-seg:nth-child(4) { --seg-color: #e0661a; }
+.fb-wear-seg:nth-child(5), .fb-wear-seg:nth-child(6) { --seg-color: #d0a020; }
+.fb-wear-seg:nth-child(7), .fb-wear-seg:nth-child(8) { --seg-color: #b4bf40; }
+.fb-wear-seg:nth-child(9), .fb-wear-seg:nth-child(10){ --seg-color: #78c560; }
+
+/* Output-item overlay — pinned to the painted output-bay rectangle at
+   (181,32)→(236,76) on the 256×128 frame. When a craft finishes, the
+   item sprite fades in here with a gentle float + pulse and waits for
+   a click. Clicking "claims" (moves to cargo in production; demo just
+   hides + logs). Auto-claims when a new craft starts. */
+.fb-output-slot {
+  position: absolute;
+  left: 70.70%;             /* 181 / 256 */
+  top: 25.00%;              /*  32 / 128 */
+  width: 21.48%;            /* 55 / 256 */
+  height: 40%;           /* 44 / 128 */
+  background-image: var(--output-sprite, none);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 80% 80%;       /* sprite sits within the bay with padding */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: var(--cursor-hand, pointer);
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px rgba(133,210,96,0.55));
+  transition: opacity 0.4s ease;
+}
+.fb-output-slot.ready {
+  opacity: 1;
+  pointer-events: auto;
+  animation: fb-output-float 2.2s ease-in-out infinite;
+}
+.fb-output-slot.ready:hover {
+  filter: drop-shadow(0 0 8px rgba(133,210,96,0.9)) brightness(1.15);
+}
+/* Click-to-claim animation: quick pop, rise, and fade — reads as
+   "grabbed and sent to cargo". Overrides the .ready float animation
+   while playing. */
+.fb-output-slot.claimed {
+  animation: fb-output-claim 360ms cubic-bezier(0.3, 0, 0.4, 1) forwards;
+  pointer-events: none;
+}
+@keyframes fb-output-claim {
+  0%   { transform: translateY(0)     scale(1);    opacity: 1;
+         filter: drop-shadow(0 0 4px rgba(133,210,96,0.55)); }
+  25%  { transform: translateY(-3px)  scale(1.22); opacity: 1;
+         filter: drop-shadow(0 0 12px rgba(133,210,96,1)) brightness(1.3); }
+  100% { transform: translateY(-26px) scale(0.8);  opacity: 0;
+         filter: drop-shadow(0 0 2px rgba(133,210,96,0.2)); }
+}
+/* Emoji fallback centered in the slot when no sprite path is set. */
+.fb-output-slot .fb-output-emoji {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: calc(var(--fab-slot-size) * 0.22);
+  color: var(--cream);
+  text-shadow: 0 0 6px rgba(133,210,96,0.6);
+  pointer-events: none;
+}
+@keyframes fb-output-float {
+  0%, 100% { transform: translateY(0)     scale(1);    }
+  50%      { transform: translateY(-3px)  scale(1.04); }
+}
+
+/* Detail panel — fills remaining height under fab-unit */
+.fb-detail {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+  background: rgba(10,14,20,0.4);
+  border: 2px solid rgba(95,168,208,0.25);
+  border-radius: 3px;
+  gap: 6px;
+  overflow: hidden;
+}
+/* Detail panel header: item sprite + recipe name on one row. */
+.fb-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+}
+.fb-detail-sprite {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  background-image: var(--detail-sprite, none);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  font-size: 26px;
+  text-align: center;
+  line-height: 40px;
+  color: var(--cream);
+}
+.fb-detail-sprite.has-sprite { color: transparent; }
+.fb-detail-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--detail-name-size);
+  letter-spacing: 2px;
+  color: var(--gold);
+  line-height: 1.3;
+  min-height: 14px;
+}
+.fb-detail-desc {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--body);
+  font-style: italic;
+  line-height: 1.25;
+  letter-spacing: 0.5px;
+  min-height: 17px;
+}
+.fb-detail-divider {
+  height: 0;
+  border-top: 1px dashed rgba(95,168,208,0.25);
+  margin: 2px 0;
+}
+.fb-detail-section {
+  display: flex;
+  flex-direction: column;
+}
+.fb-detail-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--title-size);
+  letter-spacing: 1px;
+  color: #7a8898;
+}
+.fb-inputs {
+  /* 2-column grid — row-first fill order (default for CSS grid) so 2
+     materials take one row, 3 materials take a row-and-a-half, 4 fit
+     two rows evenly. */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 14px;
+  font-family: 'VT323', monospace;
+  font-size: var(--mono-size);
+  letter-spacing: 0.5px;
+  color: var(--cream);
+  padding-bottom: 5px;
+}
+.fb-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 18px;
+}
+.fb-input-row.missing .fb-input-count { color: var(--red); font-weight: bold; }
+.fb-input-icon { width: 18px; text-align: center; color: var(--cream); }
+.fb-input-count {
+  color: var(--cream);
+  font-family: 'VT323', monospace;
+  min-width: 44px;
+}
+.fb-input-name { flex: 1; color: var(--body); }
+.fb-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--meta-row-gap, 2px);
+  font-family: 'VT323', monospace;
+  font-size: var(--mono-size);
+  color: var(--body);
+  letter-spacing: 0.5px;
+}
+.fb-meta .row { display: flex; gap: 10px; align-items: baseline; line-height: 18px; }
+.fb-meta .label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--title-size);
+  color: #7a8898;
+  letter-spacing: 1px;
+  width: 50px;
+  flex-shrink: 0;
+}
+/* Crew engineering bonus — inline on the TIME row, right of the
+   actual-days value. Teal. No underline; help cursor signals the
+   hover-tooltip (recipe-specific time savings). */
+.fb-meta .bonus {
+  color: var(--teal);
+  cursor: help;
+  margin-left: 6px;
+  transition: color 0.15s, filter 0.15s;
+}
+.fb-meta .bonus:hover {
+  color: #8fe0e6;
+  filter: brightness(1.15);
+}
+.fb-meta .base    { color: #9aa6b8; }
+.fb-meta .actual  { color: var(--cream); }
+.fb-meta .wear-add { color: var(--wear-warn); }
+
+/* Warning lines — deadline overrun + wear-threshold. Red for the
+   serious ones, amber for "service soon". Both are purely informative;
+   they don't block the CRAFT button. */
+.fb-meta .fb-warn {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  padding: 2px 0 2px 60px;       /* align with value column (past label) */
+  line-height: 1.2;
+}
+.fb-meta .fb-warn.overrun   { color: var(--red); }
+.fb-meta .fb-warn.overrun strong { color: #ff9999; }
+.fb-meta .fb-warn.wear-crit { color: var(--red); }
+.fb-meta .fb-warn.wear-warn { color: var(--wear-warn); }
+
+/* CRAFT button (big, pulsing cyan when ready) */
+.fb-craft-wrap {
+  margin-top: auto;
+  display: flex;
+  justify-content: stretch;
+}
+.fb-craft-btn {
+  width: 100%;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: 12px 10px;
+  background: linear-gradient(180deg, #2a6066 0%, #143038 50%, #2a6066 100%);
+  border: 3px outset;
+  border-color: var(--pb-cyan-hi) var(--pb-cyan-lo) var(--pb-cyan-lo) var(--pb-cyan-hi);
+  color: #e6fafe;
+  border-radius: 0;
+  transition: filter 0.12s, box-shadow 0.2s;
+  animation: craft-ready-pulse 1.8s ease-in-out infinite;
+}
+@keyframes craft-ready-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(95,168,208,0.35), inset 0 0 0 1px rgba(127,212,220,0.2); }
+  50%      { box-shadow: 0 0 18px rgba(95,168,208,0.65), inset 0 0 0 1px rgba(127,212,220,0.4); }
+}
+.fb-craft-btn:hover { filter: brightness(1.15); }
+.fb-craft-btn:active {
+  border-style: inset;
+  border-color: var(--pb-cyan-lo) var(--pb-cyan-hi) var(--pb-cyan-hi) var(--pb-cyan-lo);
+  transform: translate(1px, 1px);
+}
+.fb-craft-btn.locked {
+  filter: grayscale(0.8) brightness(0.55);
+  cursor: var(--cursor-pointer, default);
+  pointer-events: none;
+  animation: none;
+  box-shadow: none;
+}
+
+/* ── Progress strip (bottom) — always visible; dims when idle ─── */
+.fb-progress {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(14,24,34,0.5);
+  border: 1px solid rgba(95,168,208,0.15);
+  border-radius: 3px;
+  height: 40px;
+  opacity: 0.6;
+  transition: opacity 0.25s, background 0.25s, border-color 0.25s;
+}
+.fb-progress.active {
+  opacity: 1;
+  background: rgba(14,24,34,0.65);
+  border-color: rgba(95,168,208,0.3);
+}
+/* Idle state: hide the "CRAFTING " prefix and grey the item label. */
+.fb-progress:not(.active) .fb-progress-label .prefix { display: none; }
+.fb-progress:not(.active) .fb-progress-label .item { color: #7a8898; }
+.fb-progress:not(.active) .fb-progress-days { color: #7a8898; }
+.fb-progress-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--teal);
+  flex-shrink: 0;
+}
+.fb-progress-label .item {
+  color: var(--cream);
+  letter-spacing: 2px;
+}
+.fb-progress-track {
+  flex: 1;
+  height: 18px;
+  background: rgba(10,14,20,0.7);
+  border: 1px solid rgba(95,168,208,0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.fb-progress-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, var(--teal) 0%, #8fe0e6 100%);
+  /* No transition — width is updated every rAF frame for smooth fill;
+     a CSS transition would fight the per-frame writes and add lag. */
+  box-shadow: 0 0 8px rgba(95,168,208,0.5);
+}
+.fb-progress-days {
+  flex-shrink: 0;
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: var(--cream);
+  letter-spacing: 1px;
+  min-width: 52px;
+  text-align: right;
+}
+/* Cancel button — red, compact, only visible while a craft is active. */
+.fb-progress-cancel {
+  flex-shrink: 0;
+  font-family: 'VT323', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: var(--cursor-hand, pointer);
+  padding: 3px 10px;
+  background: linear-gradient(180deg, #5a2828 0%, #2a1010 50%, #5a3030 100%);
+  border: 1px solid rgba(204,51,51,0.5);
+  color: #e6a8a8;
+  border-radius: 2px;
+  transition: filter 0.12s;
+}
+.fb-progress-cancel:hover { filter: brightness(1.2); }
+.fb-progress:not(.active) .fb-progress-cancel { display: none; }
+
+/* Celebration badge — floats up when a craft completes. */
+.fb-badge {
+  position: absolute;
+  left: 50%;
+  bottom: 60px;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  background: linear-gradient(180deg, rgba(133,210,96,0.95) 0%, rgba(90,160,70,0.95) 100%);
+  border: 2px solid #c5f2a4;
+  border-radius: 3px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #0a2010;
+  text-shadow: 0 0 4px rgba(255,255,255,0.35);
+  box-shadow: 0 0 16px rgba(133,210,96,0.55);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+.fb-badge.fire { animation: badge-float 1400ms ease-out forwards; }
+@keyframes badge-float {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  15%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  85%  { opacity: 1; transform: translateX(-50%) translateY(-40px); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-60px); }
+}
+
+/* Spark field over fab unit for break-event */
+.fb-spark-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fb-spark {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 5px; height: 5px;
+  background: radial-gradient(circle, #fff6a8 0%, #e88830 50%, #cc3333 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(232,136,48,0.8);
+  opacity: 0;
+  animation: fb-spark-rise 800ms ease-out forwards;
+}
+@keyframes fb-spark-rise {
+  0%   { opacity: 1; transform: translate(0,0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--sx, 0), var(--sy, -40px)) scale(0.2); }
+}
+
+/* Sprite helper */
+.has-sprite { background-color: transparent; }
+
+/* Dev controls sidebar */
+::-webkit-scrollbar-corner    { background: #0a0e14; }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3a48 #0a0e14;
+}
+

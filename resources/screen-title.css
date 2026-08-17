@@ -1,0 +1,144 @@
+/* ============================================================
+   screen-title — migrated from demo-title.html (dev-controls
+   panel and scale-root harness stripped; everything scoped under
+   #screen-title so it can't leak into other screens).
+   ============================================================ */
+
+:root {
+  --prompt-y: 380px;
+  --pulse-speed: 2s;
+  --vignette: 0.55;
+}
+
+#screen-title { cursor: var(--cursor-hand, pointer); }
+
+/* ── Poster layer (shown before click) ──────────────────────────── */
+#screen-title #poster {
+  position: absolute; inset: 0;
+  background-image: url('sprites/interface/poster-title.jpg');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  z-index: 20;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+#screen-title #poster-vignette {
+  position: absolute; inset: 0; pointer-events: none; z-index: 21;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,var(--vignette)) 100%);
+  transition: opacity 0.6s ease;
+}
+
+#screen-title #prompt-wrap {
+  position: absolute;
+  left: 0; right: 0; top: var(--prompt-y);
+  text-align: center;
+  z-index: 60;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+#screen-title #prompt {
+  display: inline-block;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #e8d8a0;
+  text-shadow:
+    0 0 8px rgba(200,168,90,0.5),
+    0 2px 4px rgba(0,0,0,0.9),
+    1px 1px 0 #000;
+  animation: title-prompt-pulse var(--pulse-speed) infinite ease-in-out;
+}
+@keyframes title-prompt-pulse {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 1;    }
+}
+
+/* Clicked-through state: poster fades out, revealing the title content. */
+#screen-title.poster-dismissed #poster { opacity: 0; transform: scale(1.04); pointer-events: none; }
+#screen-title.poster-dismissed #poster-vignette { opacity: 0; }
+#screen-title.poster-dismissed #prompt-wrap { opacity: 0; transform: translateY(8px); pointer-events: none; }
+
+/* ── Background layers ──────────────────────────────────────────── */
+#screen-title #bg-void {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, #020408 0%, #0e1520 100%);
+}
+#screen-title #stars-far, #screen-title #stars-near { position: absolute; inset: 0; pointer-events: none; }
+
+/* ── Title content ──────────────────────────────────────────────── */
+#screen-title #title-content {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 10;
+}
+
+#screen-title #title-tagline, #screen-title #title-tagline-2, #screen-title #title-tagline-3 {
+  font-family: 'VT323', monospace;
+  text-align: center;
+  z-index: 1;
+  max-width: 620px;
+  line-height: 1.3;
+  min-height: 1.3em;
+}
+
+/* ── Buttons — warm retro style ──────────────────────────────────── */
+#screen-title .title-buttons {
+  display: flex; flex-direction: column;
+  gap: 14px; align-items: center;
+  z-index: 1; margin-top: 14px;
+  opacity: 0; transition: opacity 0.6s ease;
+}
+#screen-title .title-buttons.visible { opacity: 1; }
+
+#screen-title .retro-btn {
+  font-family: 'VT323', monospace;
+  font-size: 22px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: 10px 32px;
+  transition: all 0.12s;
+  position: relative;
+  background: linear-gradient(180deg, #e8d8a0 0%, #d8c888 100%);
+  color: #2a3040;
+  border: 3px solid #c8a85a;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 2px rgba(200,168,90,0.3), 0 2px 4px rgba(0,0,0,0.4);
+  text-shadow: none;
+}
+#screen-title .retro-btn:hover {
+  filter: brightness(1.12);
+  box-shadow: inset 0 0 0 2px rgba(200,168,90,0.4), 0 2px 10px rgba(200,168,90,0.25);
+}
+#screen-title .retro-btn:active {
+  transform: translate(1px, 1px);
+  filter: brightness(0.95);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+#screen-title .retro-btn.accent {
+  background: linear-gradient(180deg, #8cc890 0%, #70b898 100%);
+  border-color: #c8a85a;
+  color: #1a2030;
+  box-shadow: inset 0 0 0 2px rgba(140,200,144,0.3), 0 2px 4px rgba(0,0,0,0.4);
+}
+#screen-title .retro-btn.accent:hover {
+  box-shadow: inset 0 0 0 2px rgba(140,200,144,0.4), 0 2px 10px rgba(140,200,144,0.25);
+}
+#screen-title .retro-btn.accent::before {
+  content: '';
+  position: absolute;
+  left: 8px; right: 8px; top: 4px; bottom: 4px;
+  background: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.08) 3px, rgba(255,255,255,0.08) 4px);
+  border-radius: 4px;
+  pointer-events: none;
+}
+#screen-title .retro-btn.disabled { opacity: 0.3; cursor: var(--cursor-pointer, default); pointer-events: none; }
+
+#screen-title .retro-btn .btn-led {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  box-shadow: 0 0 4px currentColor;
+}
