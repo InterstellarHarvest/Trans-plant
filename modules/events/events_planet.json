@@ -1,0 +1,418 @@
+[
+  {
+    "id": "event_planet_001",
+    "active": true,
+    "title": "Soil Sample Paradise",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "planet"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "planet_surface",
+    "once": true,
+    "test_path": true,
+    "test_path_position": 2,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA describes the planet as 'beautiful' which is generous for a featureless rock. She means it, though.",
+      "marv": "MARV has analyzed the soil. It is, he concedes, 'adequate.' From MARV this is practically a sonnet.",
+      "rex": "REX has completed a threat assessment of the dirt. Threat level: negligible. He seems personally offended by how safe it is.",
+      "chip": "CHIP notes that soil analysis services are available at participating stations for a reasonable fee. You already have a soil sampler. CHIP does not acknowledge this.",
+      "ajoy": "AJOY observes the soil quality is excellent. She also observes you could have landed 200 meters east for even better readings. But this is fine too. It's fine."
+    },
+    "body": "A rocky planet with surprisingly rich subsurface minerals and topsoil deposits.\n\nThe surface is featureless, windless, and profoundly boring. The ship computer describes it as 'optimal,' which is the nicest thing it has ever said about anything.\n\nThe soil sampler, if you have one, reveals nutrient profiles that would make an agronomist weep. Without one, the assessment is 'probably useful dirt.'",
+    "choices": [
+      {
+        "text": "Collect soil samples for the growbay",
+        "requires_crew": null,
+        "requires_item": "soil_sampler",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "soil_sampled",
+          "time_cost": "low",
+          "narrative": "The soil sampler confirms: rich in nitrogen, phosphorus, and trace minerals. Biocomponents extracted. Your crop will benefit. The ship computer logs the data and notes this planet would make an 'acceptable secondary colony site.' High praise.",
+          "materials": {
+            "biocomponent": 1
+          }
+        }
+      },
+      {
+        "text": "Collect soil samples without proper equipment",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You collected dirt. It might be useful dirt. Without a sampler, you can't be sure. The ship computer logs it as 'unverified soil, provenance: optimistic.' The crop will have to take its chances."
+        }
+      },
+      {
+        "text": "Survey for water sources",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Subsurface ice detected and extracted. The water purifier, if present, confirms it's clean. Without a purifier, the computer rates it 'probably potable.' The crew drinks it anyway."
+        }
+      },
+      {
+        "text": "Let the botanist assess the soil",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "botanist_soil_assessment",
+          "time_cost": "low",
+          "narrative": "The botanist kneels in the dirt for seventeen minutes. They stand up. 'This is good soil,' they say, with the quiet intensity of someone who has waited their entire career to say this on another planet. Biocomponents collected. Crop health will benefit.",
+          "materials": {
+            "biocomponent": 1
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_planet_002",
+    "active": true,
+    "title": "The Green One",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "cosmic"
+    ],
+    "node_type": [
+      "planet"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "planet_surface",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA describes the vegetation as 'lush and inviting!' She has not analyzed it. She does not feel this is necessary.",
+      "marv": "MARV cannot confirm the vegetation is 'vegetation in the way you are hoping.' He has been specific about this.",
+      "rex": "REX has classified the plant life as 'unknown organic, possibly hostile.' He classifies most things as possibly hostile.",
+      "chip": "CHIP notes that planetary exploration insurance is available! Coverage includes 'unforeseen botanical encounters!' The deductible is significant!",
+      "ajoy": "AJOY notes the atmosphere reads as breathable. She also notes that 'breathable' and 'safe' are different words for a reason. But go ahead."
+    },
+    "body": "Scans show a planet with breathable atmosphere and what appears to be vegetation. The ship computer notes it cannot confirm the vegetation is 'vegetation in the way you are hoping.'\n\nLanding reveals green, growing things. They move slightly in a wind that isn't blowing. The soil is dark and rich. The air smells like rain on a planet that has no weather system.",
+    "choices": [
+      {
+        "text": "Use the gas analyzer before approaching",
+        "requires_crew": null,
+        "requires_item": "gas_analyzer",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "analyzed_green_planet",
+          "time_cost": "low",
+          "narrative": "The analyzer confirms: atmosphere is safe. The vegetation is non-toxic and approximately edible. 'Approximately' is doing some work here but the food supplies are grateful. The plants continue to move in non-existent wind. The analyzer has no explanation for this."
+        }
+      },
+      {
+        "text": "Send a crew member to investigate",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 10
+          },
+          "crew_effect": null,
+          "severity": "injury",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Your crew member reports the vegetation is edible. They also report a mild rash. The two facts are related. Food gathered, but the cost was measured in dignity and antihistamines."
+        }
+      },
+      {
+        "text": "Observe from the ship and leave",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You watched from orbit. The plants waved. You left. Some opportunities are better observed than experienced."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_planet_003",
+    "active": true,
+    "title": "It Rains Here",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "planet"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "planet_surface",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "RAIN! Real rain! ARIA is routing exterior microphone audio to all decks! You're welcome! You're all so welcome!",
+      "marv": "MARV confirms the precipitation is ordinary water. He is aware that nobody aboard is treating it as ordinary. He has stopped correcting them.",
+      "rex": "REX has assessed the rain. The rain is not a threat. He remains outside anyway. For thoroughness.",
+      "chip": "CHIP notes that rain is complimentary on this world! Free water falling from the sky! CHIP cannot monetize weather and finds this planet frankly anarchic!",
+      "ajoy": "AJOY opened the topside vents four minutes before anyone thought to ask. The tanks are already filling. She mentions this in the interest of accuracy."
+    },
+    "body": "It is raining on this planet.\n\nNot toxic rain, not ammonia drizzle, not anything that requires a suit rating. Water. Falling out of the sky, for free, onto the hull, in a steady drumming rhythm that half the crew has not heard since Earth.\n\nWork has, unofficially, stopped. Three crew members are standing in the open cargo ramp with their hands out. Nobody is stopping them. What would be the point of anything, if you stopped them.",
+    "choices": [
+      {
+        "text": "Open the tanks and collect",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The collection tanks drink the sky for six hours. Free water, gravity-delivered, no invoice. The drumming on the hull follows everyone into sleep, and for once every dream aboard is the same dream."
+        }
+      },
+      {
+        "text": "Give the crew an hour in it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 8,
+            "water": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "One hour, boots off, in honest rain. The crew comes back soaked and eleven years younger. The tanks catch what they catch. The mission can spare an hour. The mission needed the hour more than anyone knew."
+        }
+      },
+      {
+        "text": "Collect samples for the growbay",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The botanist bottles rainwater like vintage, muttering about mineral profiles. The crop gets watered with genuine sky-water that evening. Whether plants can tell the difference is scientifically unresolved. The botanist says they can. The botanist says it dares anyone to test them on it."
+        }
+      },
+      {
+        "text": "Stay on schedule — it's just weather",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep the ramp shut and the schedule intact. The rain drums on the hull for the whole stop, audible on every deck, a long soft knock from a visitor nobody let in. The schedule is preserved. Something else isn't."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "ARIA adds, for anyone curious, that recycling every drop is exactly how real space stations survive.",
+      "label": "How the ISS recycles its water",
+      "url": "https://en.wikipedia.org/wiki/ISS_ECLSS"
+    }
+  },
+  {
+    "id": "event_planet_004",
+    "active": true,
+    "title": "The Previous Tenants",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "cosmic"
+    ],
+    "node_type": [
+      "planet"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "planet_surface",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Ruins! ARIA loves history! History is just gossip that fossilized! She wants to know EVERYTHING!",
+      "marv": "MARV has dated the structures at nine hundred years, give or take. He notes that whoever built them planned for ten thousand. He does not extend the observation. It extends itself.",
+      "rex": "REX has swept the ruins. No threats. No remains. No signs of struggle. He finds the absence of evidence more informative than evidence, and less restful.",
+      "chip": "CHIP has scanned for surviving brand signage! Nothing! An entire civilization with zero corporate sponsorship! CHIP calls it a cautionary tale!",
+      "ajoy": "AJOY has photographed everything for the archive. She notes the doorways are all human-height. She notes nobody knows what that means. She notes she'll be thinking about it during her idle cycles for some time."
+    },
+    "body": "There was a settlement here.\n\nStone foundations in ordered rows, a water channel cut with real skill, the stump of something that was probably a tower. Nine centuries old, by the weathering. Built by hands — some kind of hands — that expected to stay.\n\nNo bones. No tools. No mess. Whoever lived here left the way you leave a rented room: swept, squared, and completely.\n\nThe crop in your growbay suddenly feels heavier than it did this morning.",
+    "choices": [
+      {
+        "text": "Survey the ruins properly",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "logbook_fragment",
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "A full day of measurement and photography. The settlement's layout is sensible, efficient, almost familiar — a plan any colonist would recognize. The final log entry writes itself and then sits there, cursor blinking: 'They did everything right.' You file it anyway."
+        }
+      },
+      {
+        "text": "Check the old water channel",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The channel still runs, nine hundred years on — spring-fed, stone-lined, engineered by someone who understood water like a language. You fill the tanks from the far end. It feels less like salvage and more like borrowing from a neighbor who isn't home. You leave the channel exactly as found."
+        }
+      },
+      {
+        "text": "Let the xenobiologist read the site",
+        "requires_crew": "xenobiologist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The xenobiologist spends six hours in the ruins and comes back changed in the direction of thoughtful. Their report: the builders left deliberately, in good order, in one season. 'It wasn't a disaster,' they say. 'They just went somewhere.' Somehow that's the version that helps."
+        }
+      },
+      {
+        "text": "Leave it alone",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You lift off without touching the ruins. Some places have finished their story, and walking through them mid-sentence would be a kind of interruption. The tower stump watches you go. That is a strange thing to write in a log, so you don't. But it did."
+        }
+      }
+    ]
+  }
+]

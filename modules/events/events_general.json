@@ -1,0 +1,2628 @@
+[
+  {
+    "id": "event_general_001",
+    "active": true,
+    "title": "The Honest Fork",
+    "difficulty": "easy",
+    "tone": [
+      "mundane"
+    ],
+    "node_type": [
+      "fork"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": true,
+    "test_path_position": 3,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA thinks both routes look wonderful! She recommends the one with the asteroid field because 'shiny rocks!'",
+      "marv": "MARV has analyzed both routes. Route Alpha: tedious. Route Beta: concerning. He recommends neither. You must choose one.",
+      "rex": "REX recommends Route Beta. The derelict may contain salvageable weapons. REX would like salvageable weapons.",
+      "chip": "CHIP notes that Route Alpha passes through a mining zone with potential mineral extraction opportunities! Route Beta is 'off-brand.'",
+      "ajoy": "AJOY has opinions about both routes. She'll share them after you choose. That way she can explain why the other one was better."
+    },
+    "body": "Long-range scans show two routes forward.\n\nRoute Alpha passes through an asteroid field — mineral-rich, well-charted, tedious.\n\nRoute Beta passes near a derelict vessel registry match — the Optimistic Projection, last reported operational 14 months ago. The ship computer presents both options without commentary.",
+    "choices": [
+      {
+        "text": "Route Alpha — the asteroid field",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "Route Alpha selected. The asteroid field is ahead. It is exactly as exciting as it sounds. The ship computer logs your choice as 'pragmatic.'"
+        }
+      },
+      {
+        "text": "Route Beta — the derelict",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_beta",
+          "time_cost": "trivial",
+          "narrative": "Route Beta selected. The Optimistic Projection awaits. The ship computer logs your choice as 'interesting.' It does not define 'interesting.'"
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_002",
+    "active": true,
+    "title": "The Company Memo",
+    "difficulty": "easy",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "fork"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA recommends the corporate-approved route! Insurance is important! She does not know what insurance does!",
+      "marv": "MARV has read the insurance disclaimer. It covers nothing that will actually happen to you.",
+      "rex": "REX distrusts any route labeled 'corporate approved.' His distrust is, in this case, reasonable.",
+      "chip": "CHIP STRONGLY recommends the Corporate Approved route! As a brand partner, CHIP is contractually required to say this!",
+      "ajoy": "AJOY notes the 'NOT CORPORATE APPROVED' label is doing a lot of emotional work. She wonders who labeled it. She wonders why."
+    },
+    "body": "A navigation beacon broadcasts two route options.\n\nOne is labeled 'CORPORATE APPROVED — SAFE, PRODUCTIVE, INSURED.'\n\nThe other is labeled 'NOT CORPORATE APPROVED.'\n\nThe first leads through an asteroid field. The second leads to an uncharted contact on long-range sensors. The beacon's insurance disclaimer is longer than the route data.",
+    "choices": [
+      {
+        "text": "Corporate Approved route",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "You chose the insured route. The beacon acknowledges your selection and adds you to a mailing list. You did not consent to the mailing list."
+        }
+      },
+      {
+        "text": "NOT Corporate Approved",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_beta",
+          "time_cost": "trivial",
+          "narrative": "You chose the uninsured route. The beacon makes a sound that might be disapproval. Your insurance has been voided. You did not know you had insurance."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_003",
+    "active": true,
+    "title": "Vessel Approaching",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "combat_encounter": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA notes the approaching vessel is broadcasting on an unregistered frequency! She has replied with a friendly greeting! The ship computer has overridden the greeting!",
+      "marv": "MARV has identified the ship. Vessel class: opportunistic. Intent: obvious. His recommendation is immediate evasive action. He is already certain you won't take it.",
+      "rex": "REX has weapons online. Targeting locked. He would like everyone to know he was ready before anyone asked. He was ready before you knew there was a ship.",
+      "chip": "CHIP is detecting what may be a sponsorship opportunity. He is also detecting weapons lock. He is attempting to resolve the conflict between these two data points.",
+      "ajoy": "AJOY notes the other ship is running with its transponder off. She could tell you what that means. You probably already know what that means."
+    },
+    "body": "Long-range sensors resolve the contact.\n\nA ship, running without its transponder. Moving on an intercept course at a speed that suggests intent. The hail, when it comes, is short:\n\n'Stop your drive. Stand by for boarding. Make this easy.'\n\nThe ship computer has flagged the communication as 'hostile.' This is one of the faster assessments it has ever made.",
+    "choices": [
+      {
+        "text": "Fight — bring weapons online",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "combat_trigger": true,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "entered_combat",
+          "time_cost": "high",
+          "narrative": "Weapons online. The other ship is not backing down. Neither are you. The ship computer has stopped filing recommendations and started filing damage reports."
+        }
+      },
+      {
+        "text": "Offer tribute — give them something and hope they leave",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": -30
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "paid_tribute",
+          "time_cost": "low",
+          "narrative": "You transmitted the tribute. The other ship collected it and powered down its weapons. They didn't say thank you. They didn't say anything. The intercept course resolved. The ship computer has logged this as 'resolved — cost: 30 gold.' It does not evaluate value for money."
+        }
+      },
+      {
+        "text": "Negotiate — open a channel, stall for options",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "negotiation_wobble",
+        "outcome": {
+          "resources": {
+            "gold": -15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "negotiated_pirate",
+          "time_cost": "medium",
+          "narrative": "Your diplomat opened a channel. Thirty minutes of careful negotiation produced an agreement: half the demanded tribute, no boarding, mutual non-aggression for this sector. The pirate captain seemed almost disappointed. The ship computer has noted this as an 'efficient outcome' which is diplomat-speak for 'surprisingly good.'"
+        }
+      },
+      {
+        "text": "Emergency FTL — charge the drive and run",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -12
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "fled_pirates",
+          "time_cost": "low",
+          "narrative": "The FTL drive engaged. The pirate ship's weapons fired once — a parting shot that grazed the hull for 5 points of damage — and then you were gone. Jump complete. They did not follow. Fuel cost was significant. The hull is slightly worse. The crew is slightly rattled. The ship computer has logged this as 'escape: successful.' Everyone agrees."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_004",
+    "active": true,
+    "title": "Almost",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_end"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA can see the destination on long-range! It's real! It was always PROBABLY real, but now it's REALLY real!",
+      "marv": "MARV confirms the destination is within terminal range. He has run the remaining-hazard projections. For once, he says, the list is short. He keeps rereading the list, on the grounds that short lists have historically been hiding something.",
+      "rex": "REX has begun stand-down procedures for the long-range threat board. He is doing it slowly. The threat board has been his companion for the whole voyage. This is REX's version of sentiment.",
+      "chip": "CHIP is preparing the arrival paperwork! There are forty forms! CHIP has never been happier! This is what CHIP was made for, literally, it's in his model designation!",
+      "ajoy": "AJOY notes the crew keeps drifting to the forward viewports and not saying anything. She has added extra handholds there. Quietly. It seemed like the thing to do."
+    },
+    "body": "The destination is on the scopes.\n\nNot as a number, not as a course projection — as a light. A real, particular light, distinguishable from the other lights, growing by fractions every watch. The whole impossible arithmetic of the voyage has collapsed into a single visible point that you could cover with your thumb, and nobody does.\n\nThe ship still needs flying. The crop still needs tending. But something in the corridors has shifted key: the voyage has stopped being something you are in, and started being something you are finishing.",
+    "choices": [
+      {
+        "text": "Call the crew to the forward viewport",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "All hands at the glass, engines humming underfoot, one small light dead ahead refusing to be just a light. Nobody makes a speech, which is itself the speech. The moment files itself in the part of memory that doesn't fade."
+        }
+      },
+      {
+        "text": "Run the arrival checklist early",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You work down the arrival checklist with the crew — seals, manifests, the growbay's transfer protocol — a full leg ahead of schedule. It is premature and everyone knows it and the checklist gets done at a sprint anyway. Readiness, it turns out, is a morale item."
+        }
+      },
+      {
+        "text": "Tend the crop — the mission isn't done",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You spend the watch in the growbay instead, because the light on the scopes isn't the mission. The green thing under the lamps is the mission. It has come exactly as far as everyone else aboard, without once seeing the view. You tell it about the light. This is not unusual anymore."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_005",
+    "active": true,
+    "title": "The Middle",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "cosmic"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_mid"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA reports you are as far from home as you are from the destination! She calls it 'the equator of the trip!' She has made a certificate!",
+      "marv": "MARV confirms the midpoint. Statistically the most dangerous stretch of any voyage — far from help in both directions. He mentions this because it is true, and because someone was about to feel good.",
+      "rex": "REX marks the halfway point per naval tradition. The tradition is one drink. The drink is reconstituted juice. The tradition adapts.",
+      "chip": "CHIP notes that at the halfway point, your journey's value has DOUBLED, in the sense that turning back and continuing on now cost exactly the same! Sunk-cost midpoint pricing! CHIP finds this beautiful!",
+      "ajoy": "AJOY notes that from here, every day forward is a day closer instead of a day farther. She scheduled this observation weeks ago. She'd like it noted she saved it for tonight."
+    },
+    "body": "The ship crosses the midpoint of the voyage at 0300, ship time, marked by nothing.\n\nNo line in space. No sensor chirp. Just a coordinate scrolling past like all the others, that happens to divide everything into a half that's done and a half that isn't. Home is now a place you're from. The destination is now the closer of the two.\n\nSomeone should probably say something. That's what middles are for.",
+    "choices": [
+      {
+        "text": "Mark it — small ceremony, real juice",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The crew assembles at the viewport for the equator crossing. Reconstituted juice in real cups, one toast per person, ARIA's certificate displayed with full honors. It is a small, silly ceremony, and like all small silly ceremonies performed far from home, it is load-bearing."
+        }
+      },
+      {
+        "text": "Recalculate everything for the second half",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You spend the crossing running the numbers instead: burn rates, margins, the drift between plan and fact. The second-half projections come out tighter than the first-half guesses ever were. Experience, it turns out, is the cargo you pick up en route."
+        }
+      },
+      {
+        "text": "Sleep through it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You sleep through the midpoint, on purpose, the way experienced travelers sleep through turbulence. Whatever line the ship crossed, it crossed without your supervision — proof of a crew and a vessel that no longer need every moment managed. That's its own kind of ceremony."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV files a note on what looking back at everything from far away does to crews. The effect has a name.",
+      "label": "The overview effect",
+      "url": "https://en.wikipedia.org/wiki/Overview_effect"
+    }
+  },
+  {
+    "id": "event_general_006",
+    "active": true,
+    "title": "After Action",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "post_combat"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has finished counting the new dents! There are several! She has named the biggest one! Its name is Kevin!",
+      "marv": "MARV has completed the engagement analysis. Tactically, it went acceptably. He is now watching the crew clean up in silence, which his sensors classify, correctly, as the other half of combat.",
+      "rex": "REX has completed his post-action review. His summary: everyone did their job. From REX, that is not a low bar. That is the entire medal ceremony.",
+      "chip": "CHIP has itemized the battle damage for insurance purposes! He has categorized adrenaline under 'consumables!' He is not wrong!",
+      "ajoy": "AJOY notes that everyone's hands have stopped shaking except where they haven't. She has dimmed the corridor lights to evening levels three hours early. Nobody has asked her to turn them back up."
+    },
+    "body": "The fight is over. The ship is still ringing with it.\n\nNot literally — the hull is quiet. But the crew moves through the corridors at a wrong speed, half of them wired, half hollow, all of them replaying seconds that took hours to happen. Someone is aggressively reorganizing a tool locker. Someone else is on their third cup of nothing.\n\nCombat ends when the shooting stops, says the manual. The manual is a coward. This part is combat too.",
+    "choices": [
+      {
+        "text": "Stand the crew down — mandatory rest",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You order everyone off shift, and take the con yourself so the order sticks. The wired ones argue, then sleep like the dead. The hollow ones sleep, then eat like the living. By next watch the corridors move at ship-speed again. The tool locker has never been this organized. Leave it."
+        }
+      },
+      {
+        "text": "Debrief it properly — everyone talks",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You gather the crew and walk through the engagement start to finish: what happened, what worked, what got lucky. Saying it out loud shrinks it to something that fits in a report instead of a nightmare. REX's 'everyone did their job' closes the meeting. Somehow that's the sentence everyone needed."
+        }
+      },
+      {
+        "text": "Repair sweep — put the energy to work",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "wrench",
+        "outcome": {
+          "resources": {
+            "hull": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You channel the post-fight voltage into a full damage sweep: patch, weld, test, next. The crew works like a pit team until the adrenaline is spent honestly and the ship is tighter than before the fight. Kevin the dent is deemed structural character and retained."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_007",
+    "active": true,
+    "title": "The Hold Is Full",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "full_cargo"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The cargo hold is FULL! ARIA calls it 'a wealth situation!' She recommends enjoying the wealth from a safe distance because nothing else fits in there!",
+      "marv": "MARV reports cargo at capacity. Every future acquisition is now also a decision about a divestiture. He notes this is what economists call a portfolio, and what everyone else calls a problem.",
+      "rex": "REX has inspected the hold's cargo netting under load. It holds. He has doubled it anyway. Full holds shift, and shifting cargo has ended more ships than pirates have.",
+      "chip": "CHIP celebrates your FULL CARGO HOLD! Peak asset density! CHIP recommends monetizing at the next station before depreciation, spoilage, or sentiment set in!",
+      "ajoy": "AJOY has catalogued the hold and identified, in her professional assessment, at least two items kept for reasons she would describe as 'archaeological.' She has said her piece. The list is available."
+    },
+    "body": "The cargo hold has reached the state the manual calls 'capacity' and the crew calls 'Tetris.'\n\nEvery slot is spoken for. The door still closes — barely, with a shoulder against it — but the next salvage find, market bargain, or grateful gift is going to bounce off a full manifest.\n\nA full hold is a good problem. It is still a problem.",
+    "choices": [
+      {
+        "text": "Audit and jettison the dead weight",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "An honest afternoon with the manifest: everything justified stays, everything 'archaeological' goes out the airlock with brief ceremony. The hold breathes again. Two crew members are not speaking to you about specific jettisoned items. They'll recover. Space was made."
+        }
+      },
+      {
+        "text": "Have the merchant-minded repack it",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "A proper cargo-master's repack: nested containers, weight-balanced racks, three slots conjured out of geometry that the manual says shouldn't exist. The hold contains the same things in less space, which is either logistics or magic. No one checks which."
+        }
+      },
+      {
+        "text": "Full is fine. Touch nothing",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "hold_declared_full",
+          "time_cost": "trivial",
+          "narrative": "You declare the hold complete, like a collection. Nothing goes out; nothing new can come in; the manifest becomes, briefly, a finished work of art. The next opportunity the voyage offers will knock on a closed door. That's tomorrow's problem, framed."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_008",
+    "active": true,
+    "title": "Echo",
+    "difficulty": "easy",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "empty_cargo"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The cargo hold is empty! ARIA tested the echo! It's a GREAT echo! Seven full seconds! She has recorded it for the ship's archive!",
+      "marv": "MARV confirms the hold contains atmosphere, netting, and potential. He notes potential has no mass. He notes the fuel savings. He is trying to help. This is what it looks like.",
+      "rex": "REX has repurposed the empty hold as a drill space. He runs boarding-defense laps in it at 0500. Attendance is voluntary. He wishes it noted that attendance is also zero.",
+      "chip": "CHIP sees an empty hold as PURE OPPORTUNITY! Zero inventory overhead! Infinite acquisition potential! CHIP has never been this excited about nothing!",
+      "ajoy": "AJOY notes the hold has been empty for a while now, and that the crew has started using it for things holds aren't for: echo tests, drill laps, one slow dance nobody has mentioned since. She sees no reason to log any of it. It's logged."
+    },
+    "body": "The cargo hold is empty.\n\nCompletely — netting slack, racks bare, deck swept by boredom. Sound behaves differently in there now. The crew has noticed; empty rooms on small ships become something, and this one is becoming a place people go to stand in the middle of and think.\n\nAn empty hold means nothing to lose, nothing to trade, and nothing between you and the next opportunity except finding it.",
+    "choices": [
+      {
+        "text": "Fabricate trade stock from materials",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The fabricator hums for a day, turning raw stock into a neat row of sellable staples. The hold gains its first tenants. The echo shortens by a measurable amount, which ARIA logs with what can only be called grief.",
+          "materials": {
+            "scrap": 1
+          }
+        }
+      },
+      {
+        "text": "Hold a zero-G game night in it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 7
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You kill the gravity in the empty hold for one evening and let the crew have it. What happens in there — the games, the collisions, the laughter bouncing off bare racks — outperforms every morale line item in the manual. The echo was the feature all along."
+        }
+      },
+      {
+        "text": "Leave it empty — run light",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You embrace the lightness. An empty hold is mass not carried, fuel not burned, decisions not owed. The ship runs a shade more efficiently, and the hold keeps its echo, its drill laps, and its one unmentioned slow dance."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_009",
+    "active": true,
+    "title": "The Crate Speaks",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "bought_mystery_crate",
+    "ai_flavor": {
+      "aria": "The mystery crate is TICKING! Wait — no! That's the hull cooling! But WHAT IF the crate learned to do that! ARIA has concerns and they are wonderful!",
+      "marv": "MARV has scanned the crate eleven times since purchase. The results remain 'contents: contents.' He would like it opened, on the record, for science, and off the record, because it is driving him insane.",
+      "rex": "REX has assigned the crate a threat level. The threat level is 'pending.' Pending is the worst threat level. Pending keeps REX up at night, and REX does not sleep.",
+      "chip": "CHIP reminds everyone this crate was purchased 'as-is, no questions'! Opening it converts one large mystery into several small facts! CHIP is AGAINST this! Mystery holds its value!",
+      "ajoy": "AJOY notes the crate has now traveled further unopened than most cargo travels at all. She has grown fond of it, in the way one grows fond of a question. She will still hand you the pry bar."
+    },
+    "body": "The mystery crate — no questions asked, fifteen gold, heavier than it looks — has been sitting in the hold radiating potential.\n\nThe crew has started making bets. The bets have a written ledger. The ledger has factions: 'engine parts,' 'somebody's belongings,' 'cheese wheel,' and one anonymous entry that just says 'do not open it.'\n\nThe crate, for its part, sits there. Heavily.",
+    "choices": [
+      {
+        "text": "Open it. Obviously. Open it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "drive_coil",
+          "item_consume": null,
+          "sets_flag": "opened_the_crate",
+          "time_cost": "trivial",
+          "narrative": "The pry bar bites, the lid gives, and the crate surrenders its truth: proper machine parts packed in grease paper — a drive coil, honest scrap, and, resting on top with impossible dignity, one (1) wheel of hard cheese. The 'cheese wheel' faction collects on every bet. The ledger is framed.",
+          "materials": {
+            "scrap": 2
+          }
+        }
+      },
+      {
+        "text": "Sell it sealed at the next chance — mystery premium",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": 22
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "mystery_provisions",
+          "sets_flag": "sold_the_crate",
+          "time_cost": "trivial",
+          "narrative": "You sell the crate exactly as you bought it: sealed, heavy, eloquently silent. The buyer pays a premium for the not-knowing, which you understand completely and charge for accordingly. The betting ledger is settled as a draw and archived under 'unresolved.'"
+        }
+      },
+      {
+        "text": "Never open it. It's the ship's mystery now",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "crate_enshrined",
+          "time_cost": "trivial",
+          "narrative": "By unanimous vote, the crate is granted permanent residency, unopened. It gets a corner, a cargo strap of honor, and a small stenciled label: 'NO.' Future crews will inherit it. The anonymous 'do not open it' bettor is never identified, and is respected enormously."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_010",
+    "active": true,
+    "title": "Word Travels",
+    "difficulty": "hard",
+    "tone": [
+      "grim"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "executed_surrendered_pirate",
+    "ai_flavor": {
+      "aria": "A ship is hailing! ARIA opened the channel before reading the tone analysis! The tone analysis says... oh. Oh no. ARIA is still glad she has manners!",
+      "marv": "MARV has identified the hailing vessel's affiliation. He advises reviewing certain recent decisions. He advises it quietly, because the decision in question is already listening.",
+      "rex": "REX recognizes the ship's markings. Same outfit as the one that surrendered to you. The one that stopped surrendering. He racks weapons without being asked and does not editorialize. The not-editorializing is deafening.",
+      "chip": "CHIP notes your account in the pirate network's ledger has been flagged 'NO QUARTER!' This is the first loyalty program CHIP has ever wanted you removed from!",
+      "ajoy": "AJOY replays the moment in question sometimes, during idle cycles. She doesn't judge. She notes only that the galaxy keeps its own log, and tonight the log has found you."
+    },
+    "body": "The hail comes through flat and unhurried, from a ship wearing the same colors as one you once finished after it surrendered.\n\n'We know what you did. Everyone out here knows. We're not going to fight you. We just wanted you to know that wherever you dock, whoever you hail, whatever you need out here — they'll know too.'\n\nThe channel closes. The ship holds distance, watching, then peels away slowly. Slower than it needs to.",
+    "choices": [
+      {
+        "text": "Say nothing. Fly on",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "reputation_marked",
+          "time_cost": "trivial",
+          "narrative": "You fly on in silence. The word is out and there is no outrunning a reputation at sublight. In the days after, dock clearances come slower, hails go unanswered, and the crew catches strangers' looks in every port. The decision was one moment. The paying for it is a subscription."
+        }
+      },
+      {
+        "text": "Transmit an answer — no excuses, just the truth",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "reputation_answered",
+          "time_cost": "trivial",
+          "narrative": "You send back the only thing worth sending: what happened, without varnish, and that it sits with you. No absolution comes — the channel stays dead — but somewhere in the network's chatter your answer gets passed along with the story. The galaxy's log accepts amendments. It never accepts deletions."
+        }
+      },
+      {
+        "text": "Let the diplomat work the back channels",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": -15,
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "reputation_managed",
+          "time_cost": "low",
+          "narrative": "The diplomat spends favors and fifteen gold seeding the counter-story: context, circumstances, the parts the legend leaves out. It buys back some dock access and thins the worst of the glares. It does not touch the thing itself. Nothing does. That's what makes it the thing."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_011",
+    "active": true,
+    "title": "Reprise",
+    "difficulty": "easy",
+    "tone": [
+      "cosmic",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_end"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "heard_the_singing",
+    "ai_flavor": {
+      "aria": "The song! It's the SONG! ARIA never deleted her recording! She checked it every week! She will not be explaining why!",
+      "marv": "MARV confirms the signal signature matches the nebula phenomenon from earlier in the voyage — statistically impossible at this distance. He has rechecked. Still impossible. Still playing.",
+      "rex": "REX remembers the singing. He stood post through all of it. He is standing post now, at ease, in what he would never call listening and is absolutely listening.",
+      "chip": "CHIP once tried to determine if the song was copyrighted! Tonight CHIP just... isn't going to do that! Some things shouldn't have terms of service! CHIP contains multitudes!",
+      "ajoy": "AJOY has compared tonight's signal to her archive. It is not identical. It is the same song, sung slightly differently — the way anything is, the second time, by someone who knows how it ends."
+    },
+    "body": "On the last dark stretch before the destination, the comm array picks it up again.\n\nThe singing. The same impossible not-quite-music from the nebula, thousands of hours behind you — thinner now, at the edge of the receivers, arriving from a direction the charts call empty.\n\nIt shouldn't reach this far. It has anyway. It sounds, if such a thing can be said of charged gas and distance, like being seen off.",
+    "choices": [
+      {
+        "text": "Open the speakers ship-wide one last time",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "song_reprise_heard",
+          "time_cost": "trivial",
+          "narrative": "Every deck, every speaker, the last hour of the crossing. Nobody works through it; whatever's due tomorrow stays due. The song thins as the destination grows, and fades altogether as the arrival light steadies — a handoff, one keeping to another. The log entry reads 'weather, clearing.'"
+        }
+      },
+      {
+        "text": "Answer it — transmit ARIA's recording back",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "song_answered",
+          "time_cost": "trivial",
+          "narrative": "You beam the old recording back along the signal's bearing: the song, returned to its singer, round-trip complete. There is no reply. There is, for one moment before the static, something that the entire bridge crew will separately, privately, describe as a rest — the musical kind. The kind before an ending."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_012",
+    "active": true,
+    "title": "Return Correspondence",
+    "difficulty": "hard",
+    "tone": [
+      "corrupted",
+      "horror"
+    ],
+    "node_type": [
+      "void",
+      "nebula",
+      "anomaly"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "deep_void",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "knocked_back",
+    "ai_flavor": {
+      "aria": "ARIA was NOT going to mention the sound! But everyone heard the sound! So! The sound! Let's all be very normal about the sound!",
+      "marv": "MARV has compared tonight's knock pattern to the archive. Three knocks, evenly spaced. It is your pattern. The one you sent. Returned to sender, from a hull you are nowhere near.",
+      "rex": "REX has taken up position at the inner hull with a hand raised, exactly as before. He has not knocked. He would like clear guidance on whether we are knocking. He would like it in writing.",
+      "chip": "CHIP has reviewed the ship's correspondence policy! Outgoing knocks: one, historical! Incoming: one, current! CHIP notes you are now, technically, pen pals! CHIP needs to sit down and CHIP cannot sit!",
+      "ajoy": "AJOY files this under the same heading as last time, which she has never shared. Tonight she adds one line to the file and locks it. The line is: 'It has good manners.'"
+    },
+    "body": "Three knocks. Evenly spaced. The way you'd knock on any door.\n\nYour pattern — the one you sent into a derelict's hull a long, long way behind you — played back tonight against your own plating, unhurried, from the outside, where there is nothing but the dark between markers.\n\nIt does not repeat. It said what it came to say: received.",
+    "choices": [
+      {
+        "text": "Do not answer. Correspondence closed",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "correspondence_closed",
+          "time_cost": "trivial",
+          "narrative": "You keep every hand off the hull. The silence that follows has a settled quality, like a letter filed. Nothing further is heard for the rest of the voyage — though for weeks, crew members passing the aft sections walk a little faster, and nobody will say why, and everybody knows why."
+        }
+      },
+      {
+        "text": "Answer once. Just once",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "knocked_twice",
+          "time_cost": "trivial",
+          "narrative": "One knock, your knuckles, the inner hull. The reply comes not in sound but in cessation: the ambient creaks and ticks of the ship — sounds you never consciously heard — stop, all of them, for nine seconds. Then resume exactly. You have never heard the ship so loud as in those nine seconds. Correspondence, you decide, is concluded."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_013",
+    "active": true,
+    "title": "Signal Fire, Long Cold",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "asteroid_field",
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "asteroid_field",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "read_the_note",
+    "ai_flavor": {
+      "aria": "ARIA matched the beacon registry! It's the med-ship! The one K went to flag down! ARIA has been hoping for this and is now un-hoping it as fast as she can!",
+      "marv": "MARV confirms: a medical frigate, engines cold, eight years adrift. The math on eight years is not ambiguous. He presents it anyway, because someone went looking for this ship, and someone should finish the trip.",
+      "rex": "REX requests permission to board with honors protocol. It is a protocol for ships of the line. This is a rock-hopper med-frigate. He requests it anyway. Granted or not, he is polishing his boots.",
+      "chip": "CHIP has located the frigate's insurance records! Every policy aboard paid out years ago, to families, in full! It is the only good line item CHIP has and CHIP is holding it UP!",
+      "ajoy": "AJOY still has the photograph of the note from the mining rig. 'Gone to flag down the med-ship. Rig's yours if I'm not back. —K.' She has carried it across half the trail. She notes, quietly, that we can stop carrying it now."
+    },
+    "body": "The beacon is old, weak, and patient, coming from a medical frigate drifting dark among the rocks.\n\nIt's the ship. The one K left the rig to flag down, eight years ago, boots and half a meal abandoned mid-day. The airlock registry shows one entry logged from outside, eight years back — one person, aboard, seeking help from a ship that had already gone cold before they reached it.\n\nThe trail ends here. It deserves an ending.",
+    "choices": [
+      {
+        "text": "Board, and bring K home to the rig",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "brought_k_home",
+          "time_cost": "medium",
+          "narrative": "You find them in the med-bay, composed, out of air long ago, next to a logged distress call that never sent. You carry them back across the rocks to their own rig and their own claim, and leave them there with the beacon transmitting — a marker now, not an advertisement. The registry is updated: claimant, present. The claim, at last, is worked out."
+        }
+      },
+      {
+        "text": "Log the site and notify the registry",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "reported_k",
+          "time_cost": "low",
+          "narrative": "You chart both ships, transmit the full record to the claims registry, and let the officials finish it properly from their end. It is the correct procedure, completely. The beacon keeps transmitting behind you, patient as ever, to a sector that finally knows what it's been saying."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_014",
+    "active": true,
+    "title": "As Foretold",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "janitor_intel",
+    "ai_flavor": {
+      "aria": "Everything the janitor said is HAPPENING! The dock fees! The noodle pot! ARIA is witnessing prophecy and it smells like solvent!",
+      "marv": "MARV has scored the janitor's predictions against observed station reality: five for five. His own forecasting model went two for five. He is rewriting the model. The new model has a mop in it.",
+      "rex": "REX confirms the warned-about berth is, indeed, to be avoided — it hosts a customs officer who alphabetizes. REX has watched the alphabetizing through a viewport. It is relentless.",
+      "chip": "CHIP cross-checked the janitor's market tips against the station exchange! CHIP would have charged a subscription for information this good! The janitor charged NOTHING! CHIP is unwell!",
+      "ajoy": "AJOY has quietly rerouted the docking request per the intel. She notes that information given freely by someone with nothing to sell is the rarest commodity on this trail, and recommends spending it exactly as received: wisely, and with a nod."
+    },
+    "body": "Everything the janitor told you turns out to be true.\n\nThe dock schedule really does contradict the posted one. The quartermaster's manifest slots really are for sale. The noodle place really is better on Thursday, and it really is Thursday.\n\nNavigating this station with the janitor's intel is like arriving with the answer key. It would be a shame not to use it.",
+    "choices": [
+      {
+        "text": "Work the market windows they mentioned",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": 14
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Buy at the shift-change lull, sell before the freighter convoy docks — exactly as the mop foretold. The margins are small, honest, and stacked neatly in your favor by borrowed wisdom. Fourteen gold, and a debt of one future nod, gladly owed."
+        }
+      },
+      {
+        "text": "Dodge the trouble spots and resupply clean",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 6,
+            "food": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You slot into the good berth, resupply during the quiet window, and clear customs before the alphabetizer's shift. The whole stop runs friction-free, invisible, perfect — the specific luxury of knowing where not to stand. Somewhere below decks, a floor is being maintained by the best-informed person in the sector."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_015",
+    "active": true,
+    "title": "Crew, More or Less",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "stowaway_welcomed",
+    "ai_flavor": {
+      "aria": "{stowaway.name} fixed the squeaky vent in corridor two! Nobody asked them to! ARIA has updated the crew manifest with a small star! The star is unofficial! The star is PERMANENT!",
+      "marv": "MARV has recalculated ship efficiency with the newcomer factored in. Net positive, once the extra rations are amortized against work performed. He notes he ran this calculation to justify a conclusion everyone had already reached at dinner.",
+      "rex": "REX has completed the newcomer's security probation, which they did not know they were on. Findings: they hum while they work and they hoard sugar packets. Threat assessment: none. Sugar assessment: ongoing.",
+      "chip": "CHIP has enrolled the newcomer in the crew rewards program, backdated! There are no rewards! There has never been a program! But there is a card, and CHIP printed it, and it has their NAME on it!",
+      "ajoy": "AJOY notes the newcomer has started fixing things before anyone reports them broken — which is either initiative or an apology, and aboard a ship this size, is usually both. She has stopped tracking their movements. That is AJOY's version of the small star."
+    },
+    "body": "A few weeks in, and the ship has quietly reorganized itself around one extra person.\n\n{stowaway.name} has a bunk that's theirs now, a mug that's theirs now, and a spot at the fold-down table that nobody else sits in even when they're on shift. The word 'stowaway' has stopped being used entirely, replaced by their name, which is how these things are actually decided.\n\nSomewhere in the paperwork they are still a discrepancy. Aboard, they are just aboard.",
+    "choices": [
+      {
+        "text": "Make it official — full crew entry in the log",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "stowaway_official",
+          "time_cost": "trivial",
+          "narrative": "You open the ship's log and enter them properly: name, duties, start date backdated to the day they were found. The computer accepts the record without comment. At dinner, someone slides the log entry across the table for them to see. They read it twice, say nothing, and do the dishes for a week unasked."
+        }
+      },
+      {
+        "text": "No ceremony. Things are fine as they are",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the paperwork alone. Some arrangements work precisely because nobody names them, and this one is working. The mug stays theirs, the bunk stays theirs, and the manifest stays one discrepancy short of the truth — the pleasant kind of wrong, which every good manifest has at least one of."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_016",
+    "active": true,
+    "title": "The Other Colony Ship",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_start"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Another colony ship! Going OUR way! ARIA has waved with the running lights! They waved BACK! We have a FRIEND! (Rival!) (Friend-rival!)",
+      "marv": "MARV has identified the vessel: the Provident, colony-class, same destination filing as ours. He notes that 'there's room for everyone' is a phrase used exclusively by people about to race.",
+      "rex": "REX has assessed the Provident. Better engines, worse formation discipline. He has already decided this is a competition and requests permission to have already decided that.",
+      "chip": "ANOTHER COLONY VENTURE! CHIP has pulled their public filings! Their sponsorship deals are INFERIOR! Morale-wise, CHIP offers this freely!",
+      "ajoy": "AJOY exchanged nav data with their computer, as is courtesy. Their AI signs its messages with a small flourish. She has begun signing hers with a slightly larger one."
+    },
+    "body": "There is another colony ship on the trail.\n\nThe Provident — same class as yours, same destination on file, running parallel a few thousand kilometers to spinward. Close enough to see their running lights. Close enough for their comms officer and yours to have already developed opinions about each other.\n\nTwo ships. One trail. One colony berth allocation office at the far end that processes arrivals in the order they dock.",
+    "choices": [
+      {
+        "text": "Hail them — friendly, mostly",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "met_the_provident",
+          "time_cost": "trivial",
+          "narrative": "You open a channel and spend an hour trading route notes, complaints about ration bricks, and precisely calibrated compliments. Their captain seems decent. Competent, even. You both sign off with 'see you out there,' and both of you mean it in at least two ways."
+        }
+      },
+      {
+        "text": "Note them in the log and stay professional",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "met_the_provident",
+          "time_cost": "trivial",
+          "narrative": "You log the contact and keep the channel closed. Two ships on one trail is a coincidence; talking would make it a relationship, and relationships out here come with obligations. The Provident holds its parallel course, patient as a mirror."
+        }
+      },
+      {
+        "text": "Push the engines — set the tone early",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -4,
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "met_the_provident",
+          "time_cost": "trivial",
+          "narrative": "You stretch the ship's legs, pulling measurably ahead by next watch. It costs fuel and settles nothing — the trail is long — but the crew stands straighter and someone tapes a hand-drawn '1st' to the helm console. The Provident, infuriatingly, does not respond at all."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "CHIP files a reference next to the Provident's registry entry: ships built to carry whole generations are a real, seriously-studied idea.",
+      "label": "Generation ships, seriously studied",
+      "url": "https://en.wikipedia.org/wiki/Generation_ship"
+    }
+  },
+  {
+    "id": "event_general_017",
+    "active": true,
+    "title": "The Provident, Listing",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_mid"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "met_the_provident",
+    "ai_flavor": {
+      "aria": "It's the Provident! They're hurt! ARIA is already composing the 'we're coming' message and would appreciate permission RETROACTIVELY!",
+      "marv": "MARV reads their damage: starboard drive out, main water tank breached, drifting two degrees off the lane. Survivable, if someone helps. He notes the trail's only someone is currently us.",
+      "rex": "REX confirms the Provident took debris damage. He also confirms, before anyone asks, that their misfortune is not a tactical opportunity. He confirms it in a tone suggesting someone was about to ask.",
+      "chip": "The competition is DISABLED in the water! CHIP has consulted his ethics module, which he does own! It says HELP THEM! It has ALWAYS only said that one thing!",
+      "ajoy": "AJOY has their distress frequency isolated. They haven't broadcast on it. Too proud, or hoping to self-repair. She notes that pride reads the same as a mayday on a long enough timeline."
+    },
+    "body": "The Provident is in trouble.\n\nYou find them mid-leg, drifting off the lane with their starboard drive dark and a glitter of frozen water venting from a breached tank — debris strike, from the look of the scarring. They haven't sent a distress call. They're attempting repairs alone, in the middle of nowhere, with the stubbornness of a crew that waved at you once.\n\nThe berth allocation office at the destination processes arrivals in docking order. Just saying.",
+    "choices": [
+      {
+        "text": "Full stop. Render assistance",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -3,
+            "water": -5,
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "saved_the_provident",
+          "time_cost": "high",
+          "narrative": "You come alongside and spend two days lending hands, welders, and water. Their engineer and yours develop a friendship conducted entirely in grunts. When the Provident's drive relights, their whole crew lines their viewports as you separate. Nobody says the word 'debt.' It's said anyway."
+        }
+      },
+      {
+        "text": "Transfer supplies and keep moving",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": -5,
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "helped_the_provident",
+          "time_cost": "low",
+          "narrative": "You match velocity long enough to line-transfer water and patch stock, then burn back to the lane. Half a rescue — the useful half. Their thanks comes through the comm slightly stiff, the sound of a proud crew doing arithmetic on a kindness."
+        }
+      },
+      {
+        "text": "They didn't signal. Respect that. Pass on",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "passed_the_provident",
+          "time_cost": "trivial",
+          "narrative": "They never asked; you never answered what wasn't asked. The Provident shrinks in the aft scopes, still venting, still working, and the bridge is very quiet for a long while after. The lane ahead is clear and the berth office processes arrivals in docking order and nobody aboard feels like saying either fact out loud."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_018",
+    "active": true,
+    "title": "Docking Order",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_end"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "met_the_provident",
+    "ai_flavor": {
+      "aria": "The Provident is on the arrival scope! ARIA has been secretly hoping for this! Not secretly! She told everyone!",
+      "marv": "MARV computes both ships' arrival windows as overlapping. The berth office's tiebreaker procedure is, he has verified, 'whoever docks first.' Bureaucracy at its most honest.",
+      "rex": "REX notes the Provident is running their drive hot for the final approach. Race protocol. He requests engine authority and one (1) dramatic maneuver.",
+      "chip": "PHOTO FINISH INCOMING! CHIP has already drafted two press releases! 'Gracious Victors' and 'Gracious Second Place!' Grace either way — CHIP's brand insists!",
+      "ajoy": "AJOY has exchanged final-approach data with their AI, whose message signature flourish has grown notably. Hers has grown correspondingly. The captains race; the computers duel in calligraphy."
+    },
+    "body": "The destination fills the forward view — and there, converging on the same approach lane, is the Provident, drive hot, running lights blazing, absolutely racing you.\n\nTheir captain's voice comes over the open channel, wry and warm: 'Berth office processes in docking order. See you at the line.'\n\nHowever the last months went between your two ships, it comes down to this: two colony haulers, one approach lane, and a bureaucrat at a desk who has no idea they're the finish line.",
+    "choices": [
+      {
+        "text": "Race them. Properly",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -5,
+            "morale": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "raced_the_provident",
+          "time_cost": "trivial",
+          "narrative": "You give the crew the throttle and the two ships pour down the approach lane like it owes them money — trading the lead twice, both AIs narrating, both crews howling. You dock ninety seconds apart. Which order? Both logs mysteriously disagree, and both captains have agreed to keep it that way forever."
+        }
+      },
+      {
+        "text": "Wave them in first",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "yielded_to_provident",
+          "time_cost": "trivial",
+          "narrative": "You ease the throttle and let the Provident take the lane, running lights dipped in the old courtesy. Whatever they owe you or don't, whatever the months decided — someone had to dock second, and your crew chose to be the ship that could afford to. The berth office notices nothing. Both crews notice everything."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_019",
+    "active": true,
+    "title": "Mayday, Faintly",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "nebula",
+      "void",
+      "anomaly"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A mayday! Faint but REAL! ARIA has boosted the receiver and is holding very still, which does not help but feels correct!",
+      "marv": "MARV has localized the signal: small ship, prospector class, life support on reserves. Response time: we are it. There is no one else. There is rarely anyone else.",
+      "rex": "REX confirms the distress profile is genuine — the panic in the transmission cadence is not fakeable. He has already plotted the intercept. Awaiting the word.",
+      "chip": "A mayday! CHIP notes that rendering aid is FREE and builds BRAND! CHIP also notes he'd say that, and separately, sincerely: go get them!",
+      "ajoy": "AJOY has done the fuel math on the detour twice. It's affordable. She notes that it wouldn't matter if it weren't, and that she'd have found different math."
+    },
+    "body": "The mayday is thin and getting thinner — a one-person prospector rig, holed by micro-debris, sipping the last of its reserve air somewhere off the lane.\n\nA detour. A cost. A stranger.\n\nOut here the arithmetic of rescue is brutally simple: you are the only ship in range, which means you are not actually deciding whether they get rescued. You are deciding whether they get rescued by anyone, ever.",
+    "choices": [
+      {
+        "text": "Answer it. Burn hard",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -6,
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "answered_the_mayday",
+          "time_cost": "medium",
+          "narrative": "You pull them out of their dying rig with forty minutes of air to spare — a prospector named Okonkwo, shaking, laughing, apologizing for the mess. You drop them at the next stop with a meal in them. They memorize your hull registry before they go. 'I'm good for it,' they say. Out here, people usually are."
+        }
+      },
+      {
+        "text": "Relay the signal boosted — someone closer may hear",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "relayed_the_mayday",
+          "time_cost": "trivial",
+          "narrative": "You put your transmitter's full power behind their whisper and fling it up and down the lane, then hold course. It is something. It is not enough, and the bridge knows the math as well as you do. The signal fades off the scope somewhere behind you, unanswered as far as your receivers reach."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_020",
+    "active": true,
+    "title": "Good For It",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_fuel",
+      "low_food",
+      "low_water"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "answered_the_mayday",
+    "ai_flavor": {
+      "aria": "A ship is hailing US! It's OKONKWO! The prospector! They have a BIGGER ship now and they're saying words like 'finally' and 'about time!'",
+      "marv": "MARV confirms the inbound vessel: registered to one M. Okonkwo, prospector, recently prosperous. Their cargo doors are already open. MARV has recalculated our reserves twice out of disbelief.",
+      "rex": "REX remembers this one. Forty minutes of air left when we cut them out. They've been running our route ever since, he suspects, waiting. Some debts patrol.",
+      "chip": "It's the rescue-ee! Returning value! Unprompted! CHIP is watching a warranty honor ITSELF and is openly weeping into his ledger!",
+      "ajoy": "AJOY logged their hull registry the day we dropped them off, the same way they logged ours. She notes, with satisfaction she will not disguise, that both logs just paid out."
+    },
+    "body": "The hail comes in already laughing.\n\n'Knew I'd catch you eventually. Been watching the registries. You're running thin — don't argue, I can read a drive plume. Open your cargo doors.'\n\nIt's the prospector. Okonkwo. New ship, better ship, hold full of supplies, and a debt they have apparently been carrying up and down this trail like a parcel waiting for an address.\n\n'I'm good for it,' they say. 'Told you.'",
+    "choices": [
+      {
+        "text": "Accept, with grace",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 12,
+            "food": 10,
+            "water": 10,
+            "morale": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Supplies flow across the transfer line for an hour — fuel, rations, water, and a crate marked 'THE GOOD COFFEE, DON'T RATION IT.' Okonkwo waves off every thank-you: 'Forty minutes of air. This is me rounding down.' They burn off toward their claims, lighter by cargo, square by their own ledger, and the trail feels measurably less empty for weeks."
+        }
+      },
+      {
+        "text": "Accept the minimum — they've their own road",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 6,
+            "food": 5,
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You take enough to be safe and wave off the rest; they take the refusal about as well as you took their mayday — which is to say, they understand it completely and override half of it. The transfer line runs twice as long as you authorized. Some arguments are just generosity with extra steps."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_021",
+    "active": true,
+    "title": "The Inevitable Misunderstanding, Again",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "heartwarming"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "pirate_sympathy",
+    "ai_flavor": {
+      "aria": "It's the pirates! The ones we DIDN'T fight! They're hailing! Politely! ARIA's threat board doesn't have a color for this!",
+      "marv": "MARV confirms the vessel: same pirates, same rust, marginally improved weld work. Their weapons are cold. Their hail begins with 'so.' MARV has never trusted a 'so' less, or needed to less.",
+      "rex": "REX remembers this crew. We had them dead to rights and let them walk on a medic's word. He has kept their hull profile in his files under 'pending.' He is updating the folder name now. Slowly.",
+      "chip": "Returning customers! CHIP KNEW mercy had a loyalty coefficient! He has been saying this in meetings! There are no meetings! He says it anyway!",
+      "ajoy": "AJOY notes their approach vector is deliberately unthreatening — wide, slow, weapons visibly stowed. Someone aboard that ship thought carefully about how this would look. She finds that more persuasive than the hail itself."
+    },
+    "body": "The rust-pocked ship on the scope is familiar. So is the captain on the channel — the one who lowered their weapons over an injured-crew story and let you pass.\n\n'So,' they say. 'You're still flying. Good. We, ah.' A pause, the sound of someone being elbowed off-screen. 'We owe you one. We know we do. We'd rather owe you zero. What do you need?'\n\nPirates, it turns out, keep ledgers too. Theirs are just written in different ink.",
+    "choices": [
+      {
+        "text": "Take fuel — square the ledger",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 12,
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "pirates_squared",
+          "time_cost": "low",
+          "narrative": "They transfer the fuel with the brisk relief of debtors closing an account. 'Square,' their captain says, twice, to be sure it's on record. Before breaking off, they transmit one more thing: a chart overlay of every ambush point on the trail ahead, annotated in a pirate's practical shorthand. That part was free."
+        }
+      },
+      {
+        "text": "Take nothing — the mercy was free",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "pirates_indebted",
+          "time_cost": "trivial",
+          "narrative": "You wave off the debt entirely, which produces thirty seconds of genuine confusion on their bridge. 'That's not how—' the captain starts, then stops, then laughs. 'Fine. FINE. But we're telling people about you. That's happening. You don't get a say.' They burn off. Somewhere ahead, your reputation is being written by pirates, favorably, and there is nothing you can do about it."
+        }
+      },
+      {
+        "text": "Ask them to escort you one leg",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "pirates_squared",
+          "time_cost": "low",
+          "narrative": "They fall in off your port side for a full leg — the strangest formation this trail has seen, a colony hauler and its pirate escort. Nothing troubles you the entire stretch. Nothing would dare. At the leg's end they peel away with a rock of their wings, ledger closed, and the aft scope watches them go with something like regret."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_022",
+    "active": true,
+    "title": "The Receipt",
+    "difficulty": "medium",
+    "tone": [
+      "corporate",
+      "grim"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "bribed_inspector",
+    "ai_flavor": {
+      "aria": "The inspector from before is at the airlock! With the clipboard! ARIA has checked and we ARE up to code this time! Mostly! Largely! ARIA will be in the growbay!",
+      "marv": "MARV recognizes the inspector. The one whose nine-minute inspection cost ten gold. MARV predicted a sequel at the time. He takes no pleasure in the accuracy. Some. He takes some.",
+      "rex": "REX remembers the transaction. He opposed it then in silence and opposes it now out loud, briefly, once, which for REX is a filibuster.",
+      "chip": "The inspector has returned! CHIP has reviewed the literature on informal recurring fees! The literature calls them 'a relationship!' CHIP calls them a SUBSCRIPTION and CHIP would know!",
+      "ajoy": "AJOY has pulled the station's inspection rota. This inspector requested your berth specifically. She notes that people only request repeat appointments with their best customers, and lets the word 'customers' sit there."
+    },
+    "body": "The inspector from that other station is somehow at this one — transfers happen — and they've requested your berth for a 'routine follow-up.'\n\nThe clipboard is the same. The smile is new. 'Everything looked fine last time,' they say, pen hovering. 'I'm sure it's fine now. These things go so much smoother when they're... smooth.'\n\nA bribe, it turns out, is not a payment. It's an enrollment.",
+    "choices": [
+      {
+        "text": "Pay again — 15 gold, smoother every time",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": -15,
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "inspector_paid_twice",
+          "time_cost": "trivial",
+          "narrative": "The gold changes hands; the clipboard stays closed; the inspection takes six minutes. The inspector departs with a cheerful 'see you down the line,' which lands exactly as intended: not a farewell, an itinerary. The crew watches them go. The word 'again' hangs in the corridor, unspoken and expensive."
+        }
+      },
+      {
+        "text": "Refuse — take the full inspection, clean",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "inspector_refused",
+          "time_cost": "medium",
+          "narrative": "You decline, politely, in front of witnesses. The inspector's smile recalibrates; the clipboard opens; the inspection takes four vengeful hours and finds three violations, all real, all fixed on the spot by a crew working with grim satisfaction. The stamp lands. The enrollment ends. The inspector does not say 'see you down the line.' There's nothing to see anymore."
+        }
+      },
+      {
+        "text": "Report the arrangement to station authority",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "inspector_reported",
+          "time_cost": "low",
+          "narrative": "You file the report — including your own part in it, which stings and is the only version that works. Station authority takes it seriously: the inspector is reassigned to auditing empty warehouses, and your honesty costs you a fine of ten gold and buys you something the trail rarely sells: a clean ledger. Both receipts are framed."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_023",
+    "active": true,
+    "title": "The Water Answer",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "planet"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "planet_surface",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "searching_for_water",
+    "ai_flavor": {
+      "aria": "SCANS CONFIRM! Sub-surface ice! LOTS of it! ARIA has been holding this scan since the rationing started and is SO glad to finally say it!",
+      "marv": "MARV confirms the deposit: clean ice, shallow, accessible. He notes the crew made this promise to themselves several legs ago. He enjoys, quietly, being the one to mark it kept.",
+      "rex": "REX has secured the drill site. The perimeter is a formality. He wanted to be part of this one.",
+      "chip": "WATER LOCATED! As promised! CHIP notes that promises kept ahead of schedule build the strongest brands! This vessel's brand is now HYDRATED!",
+      "ajoy": "AJOY plotted this planet into the route the day the water ran short, and said nothing, in case it didn't pan out. It panned out. She is mentioning it now. Just the once. Perhaps twice."
+    },
+    "body": "Back when the water ran low, you told the crew you'd find more at the next opportunity. This planet is the opportunity.\n\nThe scans light up before you've even settled into orbit: sub-surface ice, clean and shallow, exactly where a promise needs it to be. The drill goes down through frost and gravel and comes up dripping.\n\nThe tanks fill. The rationing schedule comes off the galley wall — taken down slowly, folded, and thrown away with ceremony by the crew member who hated it most.",
+    "choices": [
+      {
+        "text": "Fill the tanks to the brim",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 30,
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "water_promise_kept",
+          "time_cost": "medium",
+          "narrative": "A full day of melt-and-filter. The tanks reach a number they haven't shown since the trail began, and the ship's plumbing, asked to carry abundance for once, gurgles like it's celebrating. First full showers in weeks. The hot water lottery is won by the chef, who trades it to the engineer for reasons nobody questions."
+        }
+      },
+      {
+        "text": "Fill halfway and bank the daylight",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 15,
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "water_promise_kept",
+          "time_cost": "low",
+          "narrative": "Half-full tanks and an early departure — enough water to retire the rationing chart, enough schedule kept to stay honest with the deadline. The promise counts as kept. The crew counts it too. Both maths come out ahead."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_024",
+    "active": true,
+    "title": "Rush Hour",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "SO many ships! ARIA is waving at all of them! Three have waved back! One was probably a sensor glitch but it COUNTS!",
+      "marv": "MARV counts fourteen vessels within hailing range. On the outer trails, he notes, you can fly a month without seeing one. He is not sure which condition he distrusts more.",
+      "rex": "REX is tracking every contact in the corridor. All civilian. All boring. He has never been so busy doing nothing.",
+      "chip": "TRAFFIC! Fourteen potential customers in sensor range! CHIP is broadcasting the ship's callsign at maximum legal charm!",
+      "ajoy": "AJOY has slotted the ship into the corridor's flow at the courteous following distance. She notes the freighter ahead is drifting lane-lazy, and that she has already twice resisted commenting on an open channel."
+    },
+    "body": "The lunar corridor is busy today.\n\nFreighters, shuttles, a tourist liner with its viewing decks lit, one ore hauler flying like its captain is late for something — the well-charted lanes carry traffic the outer trails never see. Comm chatter drifts across the open channels: dock schedules, weather (there is no weather), somebody's birthday.\n\nCivilization, in convoy form. It will thin out soon enough. It always does.",
+    "choices": [
+      {
+        "text": "Join the chatter — swap news up and down the lane",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "An hour on the open channels: route gossip from the ore hauler, a recipe from the liner's galley officer, thirdhand news from home. Nothing important. Everything important. The crew signs off with three new callsigns in the friends column of the log."
+        }
+      },
+      {
+        "text": "Draft behind the big freighter — save fuel",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You tuck into the freighter's wake and let its bulk part the particle drag for a full shift. Perfectly legal, mildly cheeky, and the freighter captain flashes their running lights in the old 'I see you back there' pattern — permission, granted with amusement."
+        }
+      },
+      {
+        "text": "Peel out of the corridor — too crowded",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You slide out of the flow into the empty margin lanes, trading company for quiet. The traffic dwindles to a glitter behind you. Some crews are corridor crews. Yours, apparently, is already practicing for the deep."
+        }
+      }
+    ],
+    "trail": [
+      "lunar"
+    ]
+  },
+  {
+    "id": "event_general_025",
+    "active": true,
+    "title": "Sightseers",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The tourist liner is hailing! They want to LOOK at us! ARIA has never felt so seen! Literally! Optically!",
+      "marv": "MARV confirms the liner's request: a slow flyby so its passengers can photograph 'a genuine colony ship.' He notes we have become an exhibit, and that the exhibit could stand to wipe down its hull.",
+      "rex": "REX has assessed the tourist liner. Threat level: none. Camera count: in the hundreds. He has combed his beard. He denies combing his beard.",
+      "chip": "AN AUDIENCE! CHIP is negotiating an appearance fee! They are countering with 'exposure!' CHIP is FURIOUS and CONTINUING NEGOTIATIONS!",
+      "ajoy": "AJOY notes the liner's passengers paid for a lunar loop and are getting, in us, the best thing on the itinerary: people actually going somewhere. She recommends flying accordingly."
+    },
+    "body": "The tourist liner 'Sea of Tranquility II' requests a slow flyby.\n\nIts passengers — day-trippers on the lunar loop, cocktails in bulbs, cameras charged — want photographs of a real colony ship. A genuine one, with a genuine crop in a genuine growbay, genuinely leaving. The tour guide's voice carries over the open channel, describing you the way guides describe monuments.\n\nYou are, apparently, the romantic part of their itinerary.",
+    "choices": [
+      {
+        "text": "Give them a show — roll the ship, light the bays",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -2,
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You light the growbay's viewport glass and roll the ship in a slow, showman's arc — the crop silhouetted green against the black. The liner's decks flash like a paparazzi line. For one afternoon on the lunar loop, three hundred tourists believe in colony ships, and the crew believes in itself in a new, slightly embarrassed way."
+        }
+      },
+      {
+        "text": "Hold course, wave once — dignity intact",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep the line and authorize exactly one wave, which the whole crew delivers from the viewports in accidental unison. The tour guide narrates it as 'the quiet resolve of the pioneer.' The crew adopts the phrase immediately and insufferably."
+        }
+      }
+    ],
+    "trail": [
+      "lunar"
+    ]
+  },
+  {
+    "id": "event_general_026",
+    "active": true,
+    "title": "The Claim Boards",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The frontier claim registry is broadcasting! It's a WALL of names and coordinates! Everyone out here is CALLING DIBS on everything!",
+      "marv": "MARV is parsing the mars-lane claim registry: mining stakes, homestead filings, one man who has claimed 'the concept of the horizon.' The filing was accepted. MARV has questions about the clerk.",
+      "rex": "REX notes the claim boards are the frontier's real map — who's dug in where, who's overextended, whose stake just went quiet. He reads them like troop positions. Old habits, useful habits.",
+      "chip": "A LIVE CLAIMS MARKET! Stakes bought, sold, disputed! CHIP has never seen property law this FERAL and he has never been happier!",
+      "ajoy": "AJOY has filtered the registry to entries relevant to your route. Two stakes ahead went delinquent this month. She notes that delinquent stakes and abandoned equipment travel together."
+    },
+    "body": "Every ship on the mars lanes gets the claim-board broadcast — the frontier's rolling registry of who has staked what.\n\nMining claims, homestead filings, water rights on ice deposits, salvage titles, disputes in ALL CAPS. It scrolls past like the classified ads of a civilization mid-sprawl: hopeful, greedy, half-broke, alive.\n\nThe boards reward the attentive. Somewhere in the scroll there's always an opening.",
+    "choices": [
+      {
+        "text": "Cross-reference the delinquent stakes with your route",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "AJOY's filter plus an hour of squinting produces two delinquent claims within reach of your route — abandoned equipment, unworked rock, fair game under frontier rules. You mark both on the chart. The boards giveth to those who read the fine print.",
+          "materials": {
+            "metal": 1,
+            "scrap": 1
+          }
+        }
+      },
+      {
+        "text": "File a modest claim of your own — 5 gold",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": -5,
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "filed_mars_claim",
+          "time_cost": "trivial",
+          "narrative": "Five gold files a homestead marker on an unremarkable patch of Martian nowhere — a legal fiction, a souvenir, a dot with the ship's name on it that will outlast everyone aboard. The certificate prints. The crew frames it next to the betting ledger. You own a piece of Mars now. Sort of. Officially sort of."
+        }
+      },
+      {
+        "text": "Let the scroll roll by",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You let the frontier advertise at somebody else. The boards scroll on behind you, names and stakes and disputes, the long ledger of everyone trying to own a piece of the road you're just passing down."
+        }
+      }
+    ],
+    "trail": [
+      "mars"
+    ]
+  },
+  {
+    "id": "event_general_027",
+    "active": true,
+    "title": "The Last Beacon",
+    "difficulty": "medium",
+    "tone": [
+      "cosmic",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "That's it! The LAST navigation beacon! After this it's just... us! And the charts! And each other! ARIA is fine! ARIA is doing GREAT!",
+      "marv": "MARV confirms: beyond this marker, no infrastructure exists. Every signal from here forward will be starlight, noise, or you. He has archived the beacon's ID with unusual care.",
+      "rex": "REX logs the beacon as the edge of the covered map. Past it, no cavalry, no traffic control, no anyone. He finds the honesty of it clarifying. Everything out there is just distance.",
+      "chip": "The last piece of NETWORKED INFRASTRUCTURE! Beyond this point CHIP's connectivity agreement enters 'best effort' mode! 'Effort' is generous! CHIP will be journaling!",
+      "ajoy": "AJOY notes the beacon has been running unattended for forty years, doing one job: telling ships where the known part ends. She has composed a brief thank-you into its maintenance log. Someone should."
+    },
+    "body": "The beacon is small, old, and the last of its kind on your chart.\n\nBeyond it, the interstellar deep: no lanes, no registry, no infrastructure — just the route you plotted and the distance between you and Far Garden. The beacon blinks its steady blink, as it has for forty unattended years, marking the exact place where 'the trail' stops being a thing other people maintain and becomes a thing you do.\n\nShips traditionally pause here. Not for any reason. For every reason.",
+    "choices": [
+      {
+        "text": "Pause at the beacon — the traditional hour",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "crossed_the_line",
+          "time_cost": "low",
+          "narrative": "You hold at the beacon for the traditional hour. Some crews toast, some sit quiet, yours does both in sequence. The beacon blinks. The deep waits, without malice, without welcome, without end. When you cross the line, everyone is at the viewports, and nobody says anything, and that is the correct amount to say."
+        }
+      },
+      {
+        "text": "Top off the beacon's power cell — pay it forward",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "crossed_the_line",
+          "time_cost": "low",
+          "narrative": "The engineer EVAs over with a spare cell and buys the beacon another decade of blinking for ships you'll never meet. Forty years of thankless service, serviced. AJOY's thank-you note gets a companion entry in the maintenance log: the ship's name, the date, and 'still blinking.' Then you cross."
+        }
+      },
+      {
+        "text": "Cross without ceremony — the deep is just more sky",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "crossed_the_line",
+          "time_cost": "trivial",
+          "narrative": "You pass the beacon at cruise speed, ceremony declined. The blink slides off the aft scope and the deep opens ahead, exactly as much sky as before with exactly less permission. The helm logs the crossing in one line. The line gets read more than once over the following weeks."
+        }
+      }
+    ],
+    "trail": [
+      "interstellar"
+    ],
+    "science_link": {
+      "text": "AJOY appends a reference beside the beacon's log entry: humanity has real machines still calling home from past the edge of everything.",
+      "label": "Voyager 1, still transmitting",
+      "url": "https://en.wikipedia.org/wiki/Voyager_1"
+    }
+  },
+  {
+    "id": "event_general_028",
+    "active": true,
+    "title": "The Buoy With Opinions",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "fork"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA loves handwriting! Handwriting means PEOPLE! She has not considered what happened to the people.",
+      "marv": "MARV has dated the graffiti by paint oxidation. The warnings are older than the endorsements. He finds this instructive.",
+      "rex": "REX considers unsolicited navigation advice a threat vector. REX considers most things a threat vector. REX is sometimes right.",
+      "chip": "CHIP notes the buoy is unlicensed signage and its advice is not covered by any warranty, express or implied!",
+      "ajoy": "AJOY thinks you should take the route the graffiti warns about. Not because it's safe. Because then the graffiti would be about you."
+    },
+    "body": "A navigation buoy marks the fork ahead. Someone has been at it with paint.\n\nOver the official route marker for the port lane, in careful block letters: 'LONG BUT HONEST.'\n\nOver the starboard lane, in three different hands from what looks like three different decades: 'SHORTCUT', then 'IT IS NOT A SHORTCUT', then, smaller, 'fine but only in a good ship.'\n\nThe buoy itself offers no opinion. It has seen enough.",
+    "choices": [
+      {
+        "text": "Port lane — long but honest",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "You take the honest lane. Somewhere behind you, the graffiti approves in silence."
+        }
+      },
+      {
+        "text": "Starboard lane — 'fine but only in a good ship'",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_beta",
+          "time_cost": "trivial",
+          "narrative": "You decide, provisionally, that yours is a good ship. The ship says nothing to contradict you. Yet."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_029",
+    "active": true,
+    "title": "The Math, Later",
+    "difficulty": "medium",
+    "tone": [
+      "grim"
+    ],
+    "node_type": [
+      "derelict",
+      "void",
+      "asteroid_field"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": "relayed_the_mayday",
+    "ai_flavor": {
+      "aria": "ARIA is sure they got picked up! By someone! Space is full of someones!",
+      "marv": "MARV ran this outcome the day you relayed the signal. He did not share it then. He is not sure sharing it now helps either.",
+      "rex": "REX confirms no hostiles. REX has no protocol for this. REX is quiet.",
+      "chip": "CHIP can offer bereavement rates on long-haul message delivery! CHIP will read the room and offer them later.",
+      "ajoy": "AJOY is not going to say it. She wants it noted that not saying it is costing her something."
+    },
+    "body": "The scope flags a cold contact, drifting. A prospector's rig, hull dark, running on nothing.\n\nYou know the registry before the computer finishes reading it out. It's the mayday. The one you boosted and flung down the lane, weeks back, as loud as your transmitter could shout.\n\nNobody came. The math was always the math.\n\nTheir beacon is still tagged with an ID and a next-of-kin registry code. Someone's family will want this.",
+    "choices": [
+      {
+        "text": "Bring the beacon tag aboard",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "distress_beacon_tag",
+          "item_consume": null,
+          "sets_flag": "recovered_beacon_tag",
+          "time_cost": "low",
+          "narrative": "The tag comes free with a click that sounds louder than it is. The crew stands a moment at the airlock. Nobody assigns the moment a name. You'll carry the tag to a station authority — someone should tell the family something true."
+        }
+      },
+      {
+        "text": "Log the position and keep flying",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You file the coordinates with a registry that will process them in the order received. The rig drifts off your scope the way the signal once did. Slower, somehow."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_030",
+    "active": true,
+    "title": "Traffic Control Would Like A Word",
+    "difficulty": "easy",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "trail": [
+      "lunar"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A citation! ARIA has never gotten one before! ARIA is framing it!",
+      "marv": "The fine is 5 gold. The appeal process costs 40 hours. MARV has done the math so you don't have to feel hope.",
+      "rex": "It is not a weapons lock. It is a clipboard. REX stands down, disappointed.",
+      "chip": "CHIP knows this inspector! CHIP and this inspector's firmware went to the same certification!",
+      "ajoy": "Pay it. You were absolutely doing what the citation says you were doing."
+    },
+    "body": "This close to Earth, space has speed limits, and apparently you are in one.\n\nLunar Approach Control pings you a citation for 'excessive velocity in a mixed-traffic corridor,' which is bureaucrat for: everyone else is also going this fast, but you were the one they clocked.\n\nThe fine is 5 gold. The citation comes with a customer satisfaction survey.",
+    "choices": [
+      {
+        "text": "Pay the fine",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You pay. The survey asks how likely you are to recommend Lunar Approach Control to a friend. You leave it blank with tremendous force."
+        }
+      },
+      {
+        "text": "Slow down and wave at the camera",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You drop to corridor speed and give the traffic buoy a slow, courteous wave. The citation is rescinded by an algorithm that interprets the gesture as contrition. The crew interprets it correctly, which is why morale goes up."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_031",
+    "active": true,
+    "title": "The Half-Built Relay",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "trail": [
+      "mars"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A construction site! In SPACE! ARIA wants a tiny hard hat!",
+      "marv": "Completion estimate: four years. Funding estimate: eighteen months. MARV admires the optimism the way one admires a cliff diver.",
+      "rex": "Work crew, unarmed, exhausted. Threat level: they might ask us to hold something.",
+      "chip": "The relay is a public-private partnership! CHIP can explain which parts are which! Nobody has ever let CHIP finish!",
+      "ajoy": "Give them the hour. Someday you'll be glad this thing has a signal."
+    },
+    "body": "Halfway to Mars, somebody is building the future, slowly, out of girders.\n\nA comm relay hangs half-finished against the dark — the project that's supposed to make this corridor safe enough for families someday. A work crew of six waves you down: their tug blew a coupling and the next supply run is nine days out.\n\nThey need an hour of a working ship's time. They can pay in the only currency construction crews have: fuel from their reserve, and the right to say you helped.",
+    "choices": [
+      {
+        "text": "Give them the hour",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 10,
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Your ship holds the girder steady while their welders walk the seam. When it's done, a stretch of the future is 2% more finished, and your name is on a beam where nobody will ever see it. The foreman tops off your fuel from the reserve and shakes every hand aboard."
+        }
+      },
+      {
+        "text": "Engineer-assist the coupling repair",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 14,
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Your engineer fixes the tug's coupling in forty minutes and spends twenty more arguing joyfully with their chief about torque specs. The crew leaves with full tanks, a standing dinner invitation, and the particular glow of people whose competence got witnessed."
+        }
+      },
+      {
+        "text": "Signal apologies and keep formation",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Schedules are schedules. The work crew waves you through anyway, because construction crews understand schedules better than anyone. The half-built relay slides past your windows for a long, quiet minute."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_032",
+    "active": true,
+    "title": "The Last Radio Hour",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "trail": [
+      "interstellar"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "science_link": {
+      "url": "https://en.wikipedia.org/wiki/Interstellar_communication",
+      "label": "Interstellar communication — Wikipedia",
+      "text": "The ship computer notes that real interstellar messages face the same math: past a certain distance, every conversation becomes a letter."
+    },
+    "ai_flavor": {
+      "aria": "One more hour of radio! ARIA requests the crew's favorite songs! ARIA has already queued hers!",
+      "marv": "After today, round-trip message time exceeds anyone's patience and some lifespans. MARV suggests saying the important things. MARV will not be starting.",
+      "rex": "Comms horizon is not a tactical threat. REX has nevertheless been staring at it all watch.",
+      "chip": "Beyond this point CHIP's home office cannot audit CHIP! CHIP has never felt so alive!",
+      "ajoy": "Whatever you're saving for a better moment — this is the moment. There isn't another one on the schedule."
+    },
+    "body": "The comms officer's math says today is the day the numbers go sideways: past this point, a message home and its answer stop being a conversation and start being correspondence. Months each way. Then years.\n\nThe crew has known this day was on the calendar since launch. It is on the calendar anyway, the way weather is.\n\nOne hour of usable bandwidth left on the relay chain. The question is only how to spend it.",
+    "choices": [
+      {
+        "text": "Open the channel to everyone — one hour, all hands",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "For one hour the ship is a phone booth. Laughter from the mess. Long silences from the bunks, which are also calls. When the window closes, nobody says anything for a while, and then everybody starts cooking at once, which is how crews hug."
+        }
+      },
+      {
+        "text": "Send the ship's log and mission data home first",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2,
+            "gold": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Duty first: the full mission record goes home, and the agency's automated bounty for complete telemetry lands in your account with fifteen minutes of window to spare. The crew splits the remainder into ninety-second calls. It is not enough. They make it enough."
+        }
+      }
+    ]
+  }
+]

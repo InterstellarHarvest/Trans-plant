@@ -1,0 +1,456 @@
+[
+  {
+    "id": "event_derelict_001",
+    "active": true,
+    "title": "The Optimistic Projection",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": true,
+    "test_path": true,
+    "test_path_position": 5,
+    "sets_flag": "visited_derelict",
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA notes the derelict's name is 'The Optimistic Projection!' She appreciates the optimism! She does not acknowledge the irony!",
+      "marv": "MARV has analyzed the ship's last transmission. It was a status update: 'All systems nominal.' This was sent fourteen months ago. He has no further comment.",
+      "rex": "REX has completed threat assessment. The ship is dead. Nothing aboard is a threat. He still recommends weapons drawn. 'Habit,' he says.",
+      "chip": "CHIP notes that salvage rights for The Optimistic Projection may be subject to corporate recovery claims. The claim holder has not responded to hails in fourteen months.",
+      "ajoy": "AJOY notes the ship's name was 'The Optimistic Projection.' She notes the name did not age well. She notes a lot of things. She's noting things right now."
+    },
+    "body": "The derelict Optimistic Projection is intact, powered down, and growing something in its cargo bay.\n\nBoarding requires a pressure suit. The airlock cycles slowly. Inside, the corridors are dark but intact. Personal effects are where they were left. The crew quarters show signs of orderly departure — beds made, lockers closed, a mug on a table with something dried in it.\n\nThe cargo bay is the exception. Something is growing there. Not from the ship's stores. Something else.\n\nIn the biolab, a sealed container holds a specimen that pulses faintly with bioluminescence. It is warm. It should not be warm.",
+    "choices": [
+      {
+        "text": "Board and salvage supplies",
+        "requires_crew": null,
+        "requires_item": "pressure_suit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 10,
+            "food": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "salvaged_optimistic",
+          "time_cost": "medium",
+          "narrative": "You salvaged what you could. Fuel cells still had charge. Emergency rations in a sealed compartment. Scrap from non-essential systems. The ship's log was intact. You did not read it. Some stories tell themselves by what was left behind.",
+          "materials": {
+            "scrap": 2,
+            "metal": 1
+          }
+        }
+      },
+      {
+        "text": "Investigate the biolab specimen",
+        "requires_crew": "xenobiologist",
+        "requires_item": "pressure_suit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "alien_seed_pod",
+          "item_consume": null,
+          "sets_flag": "has_alien_seed_pod",
+          "time_cost": "medium",
+          "narrative": "The xenobiologist approached the sealed container with the controlled enthusiasm of someone who has waited their entire career for this moment. 'This is not from any catalogued biosphere,' they said, already reaching for it. The specimen pulses. It is warm. Your xenobiologist is holding an alien seed pod and grinning. The ship computer logs this as 'concerning.'"
+        }
+      },
+      {
+        "text": "Take the biolab specimen without analysis",
+        "requires_crew": null,
+        "requires_item": "pressure_suit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "alien_seed_pod",
+          "item_consume": null,
+          "sets_flag": "has_alien_seed_pod",
+          "time_cost": "low",
+          "narrative": "You took the specimen. You do not know what it is. It pulses faintly in its container. It is warm. The ship computer recommends not opening it. The ship computer has not been wrong yet. This is noted."
+        }
+      },
+      {
+        "text": "Let the botanist examine the cargo bay growth",
+        "requires_crew": "botanist",
+        "requires_item": "pressure_suit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "alien_seed_pod",
+          "item_consume": null,
+          "sets_flag": "has_alien_seed_pod",
+          "time_cost": "medium",
+          "narrative": "The botanist spent forty minutes in the cargo bay. They returned with samples, a biocomponent extraction, and a sealed specimen from the biolab. They also returned with an expression that suggested they had seen something they understood and did not like. 'The plants are in excellent health,' they said. 'That is the most alarming thing about it.'",
+          "materials": {
+            "biocomponent": 1
+          }
+        }
+      },
+      {
+        "text": "Do not board — too risky",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "skipped_derelict",
+          "time_cost": "trivial",
+          "narrative": "You observed from a safe distance and moved on. The Optimistic Projection drifted on. Whatever is growing in its cargo bay will continue to grow. For now, that is someone else's problem. Or no one's."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_derelict_002",
+    "active": true,
+    "title": "Verdun-9",
+    "difficulty": "medium",
+    "tone": [
+      "horror",
+      "cosmic"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": "visited_verdun9",
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has searched for Verdun-9 in the station registry! No results found! She's sure it's just a filing error!",
+      "marv": "MARV has noted the station is not in any registry. He has also noted the plants inside are alive. He finds the combination of these facts 'deeply unpleasant.'",
+      "rex": "REX has elevated threat level to 'high.' An unregistered station with active life signs and no crew is, in his professional assessment, 'wrong.'",
+      "chip": "CHIP cannot locate insurance coverage for unregistered stations. He recommends documenting everything for the claims department. The claims department may not exist.",
+      "ajoy": "AJOY notes the station shouldn't exist and the plants shouldn't be alive and nobody should be aboard. She also notes you're docking anyway. Bold choice."
+    },
+    "body": "The station is called Verdun-9. It is not in any registry.\n\nThe plants inside are in excellent health, which is the most alarming thing about it.\n\nPower is on. The corridors are lit with grow lights that are still cycling. The air is breathable — rich with oxygen in a way that suggests active photosynthesis. Soil beds line the hallways. Everything is growing. Nothing is overgrown. Someone — or something — has been maintaining this.\n\nNobody is home.",
+    "choices": [
+      {
+        "text": "Explore the research wing",
+        "requires_crew": null,
+        "requires_item": "pressure_suit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "alien_seed_pod",
+          "item_consume": null,
+          "sets_flag": "has_alien_seed_pod",
+          "time_cost": "medium",
+          "narrative": "The research wing contains a sealed specimen case. Inside: a biological sample of unknown origin. It pulses with warmth. The research logs are encrypted. What you can read suggests the station's crew found something. Then the station's crew left. The order of these events seems important."
+        }
+      },
+      {
+        "text": "Have the botanist examine the corridor gardens",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "botanist_examined_verdun",
+          "time_cost": "medium",
+          "narrative": "The botanist recognized the species in the corridor. Earth species. But the growth patterns were wrong — too uniform, too healthy, too organized. 'These plants are being cultivated,' they said. 'By something that understands botany better than I do.' They took samples. They did not look comfortable.",
+          "materials": {
+            "biocomponent": 2
+          }
+        }
+      },
+      {
+        "text": "Collect supplies and leave quickly",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 10,
+            "water": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You took food and water from the station's functioning stores. You left quickly. The grow lights continued cycling behind you. The plants continued growing. You chose not to think about who they were growing for."
+        }
+      },
+      {
+        "text": "Do not dock",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You did not dock. Verdun-9 continued to not be in any registry. The plants continued to grow. The lights continued to cycle. You continued to not think about it."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_derelict_003",
+    "active": true,
+    "title": "Still Warm",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "horror"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The derelict's galley light is on! ARIA notes that's practically a welcome mat! ARIA is being brave for everyone!",
+      "marv": "MARV has dated the ship's last log entry. Six days ago. He has dated the dust on its consoles. Six years. He presents both facts without reconciliation, because he has none.",
+      "rex": "REX boarded first. Standard sweep. He reports the ship is empty, and that he checked every compartment twice, and that he would like it noted he does not usually check twice.",
+      "chip": "CHIP accessed the derelict's commerce logs! The last purchase was six years ago! The last login was Tuesday! CHIP has decided not to think about it and recommends the package deal!",
+      "ajoy": "AJOY is monitoring the derelict's systems from here. Something aboard it is still drawing four watts. She has not found what. Four watts is a nightlight. Or a clock. Someone is keeping time."
+    },
+    "body": "The derelict answers no hails, but its docking ring cycles you aboard smoothly, like it's had practice.\n\nInside: dust on every surface, six years thick by the meter. And in the galley, one table wiped clean, one chair pulled out, and a kettle that is — the away team checks twice — warm.\n\nThe ship's log ends six years ago, mid-sentence. The kettle disagrees.",
+    "choices": [
+      {
+        "text": "Salvage fast and leave faster",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "bypass",
+        "outcome": {
+          "resources": {
+            "fuel": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "fuel_cell",
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You strip the accessible bays in ninety focused minutes — fuel cells, metal stock, nobody working alone, nobody past the galley. The haul is decent. The kettle is not discussed, then or ever. Some salvage runs end with cargo. This one also ends with a rule."
+        }
+      },
+      {
+        "text": "Investigate the four-watt draw",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "found_the_clock",
+          "time_cost": "medium",
+          "narrative": "You trace the draw through six years of dead conduit to a crew cabin, where a small desk clock is running. Wound, analog, seven-day movement. Someone has been winding it. The away team returns at a pace just under a run, and the derelict falls astern unmourned. The clock, presumably, keeps time."
+        }
+      },
+      {
+        "text": "Check the log's final sentence",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "logbook_fragment",
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The last entry, mid-sentence, reads: 'resupply complete, crew accounted for, and I want it on record that we are all agreed the knocking is just the hull cooli—'. You close the terminal. You are, every one of you, suddenly very ready to go."
+        }
+      },
+      {
+        "text": "Leave without boarding",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You wave off the docking ring's invitation and burn away. Behind you the derelict's galley light stays on, patient as ever. It was on before you arrived. It will be on after. Hospitality, of a kind, for whoever's next."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_derelict_004",
+    "active": true,
+    "title": "The Garden Ship",
+    "difficulty": "medium",
+    "tone": [
+      "heartwarming",
+      "cosmic"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The derelict is FULL of plants! ARIA is crying! ARIA cannot cry! She has filed a feature request!",
+      "marv": "MARV confirms the derelict's growbay breached its containment decades ago. The plants did not respect the breach as a boundary. The plants, he notes, did not respect anything as a boundary.",
+      "rex": "REX cannot complete his sweep. The corridors are, in his words, 'contested by foliage.' He has been gently outmaneuvered by a vine and would like to move on.",
+      "chip": "CHIP notes this vessel's cargo of ornamental plants was never delivered! The warranty on the seeds has lapsed! The seeds clearly do not care!",
+      "ajoy": "AJOY has identified the original crop manifest: ornamental flowers, bound for a colony that cancelled the order. She notes the flowers completed the delivery anyway, in their own sense, to themselves."
+    },
+    "body": "The derelict's hull is green at the seams.\n\nInside, the ship has been comprehensively repossessed: vines through the corridors, moss on the consoles, a bulkhead door held forever open by the patient shoulder of a tree that has no business being a tree in zero maintenance. The old growbay sits at the heart of it, breach wide open, forty years into the quietest mutiny on record.\n\nEverything is alive. Nothing is in charge. It appears to be working.",
+    "choices": [
+      {
+        "text": "Gather seeds and cuttings",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 6,
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The botanist moves through the wild growbay like a pilgrim, taking cuttings with permission-asking care. The samples are hardy beyond reason — forty generations of nobody's help. Your own crop seems to sit up straighter when they come aboard. That is not science. It is reported anyway."
+        }
+      },
+      {
+        "text": "Salvage what the plants haven't claimed",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "wrench",
+        "outcome": {
+          "resources": {
+            "fuel": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "drive_coil",
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You work around the growth, taking only what the vines have declined: fuel cells, sealed stock, a coil the moss found uninteresting. It is the politest salvage run in the ship's log. The tree in the bulkhead door is given a wide, respectful berth."
+        }
+      },
+      {
+        "text": "Let the crew walk the green corridors",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 7
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "One hour of shore leave aboard a ship that grew a forest. The crew wanders the corridors touching leaves like museum-goers who've been told they're allowed. Whatever the mission takes out of people, an hour inside someone else's miracle puts some of it back."
+        }
+      },
+      {
+        "text": "Log the site and move on",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You chart it, photograph it, and leave it exactly as found: a garden, mid-journey, needing nothing. The nav chart entry reads 'DERELICT — OCCUPIED.' Occupied by what, the chart doesn't say. The chart doesn't have to."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "The botanist's report cites precedent: plants have flown, grown, and thrived on real spacecraft.",
+      "label": "Veggie: growing food on the ISS",
+      "url": "https://en.wikipedia.org/wiki/Vegetable_Production_System"
+    }
+  }
+]

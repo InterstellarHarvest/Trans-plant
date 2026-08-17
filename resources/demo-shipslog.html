@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Ship's Log Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="shared.css" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'VT323', monospace;
+  background: #0e1118;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  color: #d1d5db;
+  overflow-x: hidden;
+}
+
+#demo-wrap { display: flex; gap: 20px; padding: 20px; align-items: flex-start; }
+#scale-root { width: 960px; height: 640px; flex-shrink: 0; transform-origin: top left; }
+
+/* ── Faux cruise ghost backdrop ─────────────────────────────────
+   The dimmed cruise scene under the modal — real game pauses it,
+   here we just paint a static vignette to match the framing. */
+#game {
+  width: 960px; height: 640px;
+  position: relative;
+  background:
+    radial-gradient(ellipse at center top, rgba(60,80,130,0.18) 0%, transparent 60%),
+    linear-gradient(180deg, #0e1520 0%, #020408 100%);
+  overflow: hidden;
+}
+#game::before {
+  content: 'CRUISE · DAY 47 · IN TRANSIT';
+  position: absolute;
+  left: 22px; top: 22px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: rgba(200,168,90,0.55);
+}
+#game::after {
+  content: 'AI LOG · ARIA';
+  position: absolute;
+  right: 22px; top: 22px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: rgba(200,168,90,0.45);
+}
+
+/* Backdrop: dims the underlying scene + handles backdrop-click-close. */
+#log-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4,8,16,0.75);
+  z-index: 10;
+}
+
+/* ── Log modal — parchment-cream journal aesthetic ──────────────
+   Deliberately divergent from the rest of the modal palette
+   (cyan/green/steel/gold-on-dark). The Ship's Log is a JOURNAL,
+   so it reads like a piece of paper. */
+:root {
+  --log-paper:        #e8d8a0;
+  --log-paper-dark:   #d8c888;
+  --log-ink:          #2a1f10;
+  --log-ink-dim:      #6a5430;
+  --log-ink-mute:     #8a7350;
+  --log-edge:         #5a4226;
+  --log-edge-light:   #8a6a3e;
+  --log-day-line:     rgba(90,66,38,0.35);
+  --log-payload:      #b85a18;
+  --log-payload-bg:   rgba(184,90,24,0.12);
+}
+
+/* Anchored to the right edge of the game frame — same column the
+   cruise AI log occupies. The modal IS the "I stopped and can no
+   longer see the running log, but I want to read it" surface, so
+   it reads as the column expanded, not a new screen. */
+#log-modal {
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 340px;
+  height: 540px;
+  z-index: 11;
+  background:
+    /* Parchment grain — barely-there mottle. */
+    radial-gradient(ellipse at 25% 20%, rgba(90,66,38,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse at 75% 80%, rgba(90,66,38,0.04) 0%, transparent 55%),
+    linear-gradient(180deg, var(--log-paper) 0%, var(--log-paper-dark) 100%);
+  border: 3px solid var(--log-edge);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(232,216,160,0.4),
+    inset 0 0 0 2px rgba(90,66,38,0.4),
+    0 8px 40px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: log-pop 0.25s ease-out;
+}
+@keyframes log-pop {
+  from { opacity: 0; transform: translateY(-50%) scale(0.96); }
+  to   { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+/* Hide entire modal stack when not open. */
+body:not(.modal-open) #log-backdrop,
+body:not(.modal-open) #log-modal { display: none; }
+
+/* ── Header ──────────────────────────────────────────────────── */
+.log-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px 8px;
+  border-bottom: 2px solid var(--log-day-line);
+  background: linear-gradient(180deg, rgba(232,216,160,0.4), transparent);
+  flex-shrink: 0;
+  position: relative;
+}
+.log-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--log-edge);
+  text-shadow: 1px 1px 0 rgba(232,216,160,0.6);
+  padding-right: 30px;
+}
+.log-meta {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--log-ink-dim);
+  padding-right: 30px;
+}
+.log-close-x {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 22px; height: 22px;
+  border: 2px solid var(--log-edge);
+  background: transparent;
+  color: var(--log-edge);
+  font-size: 14px;
+  line-height: 1;
+  cursor: var(--cursor-hand, pointer);
+  font-family: inherit;
+  padding: 0;
+  border-radius: 2px;
+}
+.log-close-x:hover { background: rgba(90,66,38,0.15); }
+
+/* ── Body ─────────────────────────────────────────────────────── */
+.log-body {
+  flex: 1;
+  min-height: 0;
+}
+.log-entries {
+  padding: 12px 14px 12px 14px;
+  font-family: 'VT323', monospace;
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--log-ink);
+  overflow-y: auto;
+}
+
+/* Day marker — short dashed rule + centered "DAY N". */
+.log-day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 6px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--log-edge);
+}
+.log-day:first-child { margin-top: 0; }
+.log-day::before, .log-day::after {
+  content: '';
+  flex: 1;
+  border-top: 1px dashed var(--log-day-line);
+}
+
+/* Entries — type-color LED at left, body text, optional payload icon. */
+.log-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 3px 0;
+}
+.log-entry-led {
+  flex: 0 0 6px;
+  width: 6px; height: 6px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--log-ink-mute);
+}
+.log-entry.event  .log-entry-led { background: var(--log-edge); }
+.log-entry.choice .log-entry-led { background: #2f6a3f; box-shadow: 0 0 4px rgba(47,106,63,0.5); }
+.log-entry.death  .log-entry-led { background: #a02828; box-shadow: 0 0 4px rgba(160,40,40,0.5); }
+.log-entry-text { flex: 1; min-width: 0; }
+.log-entry-payload {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  margin-left: 2px;
+  background: var(--log-payload-bg);
+  color: var(--log-payload);
+  font-size: 12px;
+  border-radius: 3px;
+  cursor: var(--cursor-hand, pointer);
+}
+.log-entry.has-payload { cursor: var(--cursor-hand, pointer); }
+.log-entry.has-payload:hover { background: rgba(90,66,38,0.06); }
+.log-entry.has-payload:hover .log-entry-payload {
+  background: var(--log-payload);
+  color: #fff;
+}
+
+/* ── Footer — slim, voice attribution + entry count. */
+.log-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-top: 2px solid var(--log-day-line);
+  background: linear-gradient(0deg, rgba(232,216,160,0.4), transparent);
+  flex-shrink: 0;
+}
+.log-footer-meta {
+  flex: 1;
+  font-family: 'VT323', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--log-ink-dim);
+}
+.log-footer-meta strong {
+  color: var(--log-edge);
+  letter-spacing: 1.5px;
+}
+
+/* ── Scrollbar inside log body — gold thumb on cream-darker track. */
+#log-entries-host .scroll-track {
+  background: rgba(90,66,38,0.18);
+}
+#log-entries-host .scroll-thumb {
+  background: linear-gradient(180deg, #6a5232 0%, #3a2818 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(200,168,90,0.4),
+    inset 0 -1px 0 rgba(20,12,4,0.5);
+}
+
+/* ── Expand modal (📖 in-game long-form) ──────────────────────── */
+#expand-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4,8,16,0.85);
+  z-index: 20;
+  display: none;
+}
+#expand-modal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  max-height: 480px;
+  z-index: 21;
+  background: linear-gradient(180deg, var(--log-paper) 0%, var(--log-paper-dark) 100%);
+  border: 3px solid var(--log-edge);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(232,216,160,0.4),
+    0 8px 40px rgba(0,0,0,0.8);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  animation: expand-pop 0.25s ease-out;
+}
+@keyframes expand-pop {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+body.expand-open #expand-backdrop,
+body.expand-open #expand-modal { display: flex; }
+.expand-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--log-day-line);
+  background: linear-gradient(180deg, rgba(232,216,160,0.4), transparent);
+}
+.expand-title {
+  flex: 1;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--log-edge);
+}
+.expand-body {
+  flex: 1;
+  padding: 18px 22px;
+  overflow-y: auto;
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--log-ink);
+}
+.expand-body p { margin-bottom: 12px; }
+.expand-body p:last-child { margin-bottom: 0; }
+
+/* ── Death-mode expand — somber dark palette, NOT cream ────────
+   Regular expand stays parchment (lore, recipes, in-fiction
+   long-form). Death expand swaps to dark slate + warm-ash text +
+   muted ember accents. Reads as a memorial, not a journal page. */
+:root {
+  --death-bg-top:   #1a1620;
+  --death-bg-bot:   #0a0810;
+  --death-edge:     #4a3030;
+  --death-edge-hi:  rgba(180,110,80,0.35);
+  --death-ember:    #c89050;
+  --death-ash:      #c0b8a8;
+  --death-ash-dim:  #8a8275;
+}
+#expand-modal.death-mode {
+  background:
+    radial-gradient(ellipse at 30% 0%, rgba(140,80,60,0.10) 0%, transparent 65%),
+    linear-gradient(180deg, var(--death-bg-top) 0%, var(--death-bg-bot) 100%);
+  border-color: var(--death-edge);
+  box-shadow:
+    inset 0 0 0 1px var(--death-edge-hi),
+    inset 0 0 0 2px rgba(0,0,0,0.4),
+    0 8px 40px rgba(0,0,0,0.9);
+}
+#expand-modal.death-mode .expand-header {
+  background: linear-gradient(180deg, rgba(180,110,80,0.10), transparent);
+  border-bottom-color: rgba(180,110,80,0.25);
+}
+#expand-modal.death-mode .expand-title {
+  color: var(--death-ember);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+}
+#expand-modal.death-mode .log-close-x {
+  border-color: var(--death-edge);
+  color: var(--death-ember);
+}
+#expand-modal.death-mode .log-close-x:hover { background: rgba(180,110,80,0.18); }
+#expand-modal.death-mode .expand-body {
+  color: var(--death-ash);
+}
+
+/* Portrait or candle header — sits between header and body. */
+.expand-death-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 22px;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0));
+  border-bottom: 1px dashed rgba(180,110,80,0.25);
+}
+/* 50×120 matches the portrait spritesheet's 80×192 aspect ratio
+   (1:2.4) so the full figure fills the frame without awkward
+   side padding. Crew with shorter portrait crops (Reyes at 80×143)
+   sit anchored to the bottom of the frame — a small base of empty
+   space above her head reads as a podium, not a sizing bug. */
+.expand-portrait {
+  position: relative;
+  width: 50px; height: 120px;
+  border: 2px solid var(--death-edge);
+  background: rgba(10,8,12,0.85);
+  flex-shrink: 0;
+  overflow: hidden;
+  /* Desaturate + dim — the deceased reads as memory, not a live face. */
+  filter: grayscale(0.85) brightness(0.7) contrast(1.1) sepia(0.15);
+}
+/* Candle/dagger fallback — sized to match the 50×120 portrait
+   frame so the header height is consistent whether or not the
+   deceased crew id was known. */
+.expand-candle {
+  font-size: 56px;
+  color: var(--death-ember);
+  text-shadow:
+    0 0 14px rgba(200,144,80,0.55),
+    0 1px 2px rgba(0,0,0,0.8);
+  line-height: 1;
+  font-family: 'Times New Roman', Georgia, serif;
+  flex-shrink: 0;
+  width: 50px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(180,110,80,0.2);
+  background: rgba(10,8,12,0.5);
+}
+.expand-death-meta {
+  flex: 1;
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 1.5px;
+  color: var(--death-ash-dim);
+  font-style: italic;
+  line-height: 1.3;
+}
+.expand-death-meta strong {
+  display: block;
+  font-style: normal;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--death-ember);
+  margin-bottom: 4px;
+}
+
+/* ── Dev controls ─────────────────────────────────────────────── */
+#controls {
+  width: 260px;
+  background: #111722;
+  border: 1px solid #2a3040;
+  padding: 14px;
+  font-size: 14px;
+  color: #d1d5db;
+}
+#controls h2 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #c8a85a;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed rgba(200,168,90,0.3);
+  padding-bottom: 8px;
+}
+#controls h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: #8898a8;
+  margin: 14px 0 6px;
+  text-transform: uppercase;
+}
+#controls .row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+#controls .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+#controls button {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  background: linear-gradient(180deg, #2a3040 0%, #1a1f2a 100%);
+  border: 1px solid #3a4050;
+  color: #d0c890;
+  padding: 6px 10px;
+  cursor: var(--cursor-hand, pointer);
+  text-transform: uppercase;
+  text-align: left;
+}
+#controls button:hover  { background: linear-gradient(180deg, #353c50 0%, #20252e 100%); border-color: #5a6070; color: #e8d8a0; }
+#controls button.on { border-color: #c8a85a; color: #c8a85a; background: linear-gradient(180deg, #3a3320 0%, #1a1810 100%); }
+#controls .hint { font-size: 12px; color: #8898a8; margin-top: 4px; line-height: 1.4; }
+
+#size-toggle {
+  position: fixed; top: 12px; right: 12px; z-index: 9999;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px; letter-spacing: 1px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: #c8a85a;
+  cursor: var(--cursor-hand, pointer);
+}
+body.fullsize { overflow: hidden; }
+body.fullsize #demo-wrap { padding: 0; gap: 0; width: 100vw; height: 100vh; justify-content: center; align-items: center; }
+body.fullsize #controls { display: none; }
+</style>
+</head>
+<body class="modal-open">
+<button id="size-toggle">ACTUAL SIZE</button>
+<div id="demo-wrap">
+  <div id="scale-root">
+    <div id="game">
+      <div id="log-backdrop"></div>
+      <div id="log-modal">
+        <header class="log-header">
+          <h1 class="log-title">SHIP'S LOG</h1>
+          <span class="log-meta" id="log-meta">THE VERDANT ARK · LUNAR TRAIL</span>
+          <button class="log-close-x" id="log-close-x" aria-label="Close">×</button>
+        </header>
+        <div class="log-body scroll-host" id="log-entries-host">
+          <div class="log-entries scroll-content" id="log-entries"></div>
+          <div class="scroll-track"><div class="scroll-thumb"></div></div>
+        </div>
+        <footer class="log-footer">
+          <span class="log-footer-meta">VOICED BY <strong id="voice-meta">ARIA</strong> · DAY 47</span>
+        </footer>
+      </div>
+
+      <div id="expand-backdrop"></div>
+      <div id="expand-modal">
+        <header class="expand-header">
+          <h2 class="expand-title" id="expand-title">EXPANDED ENTRY</h2>
+          <button class="log-close-x" id="expand-close" aria-label="Close">×</button>
+        </header>
+        <div class="expand-body" id="expand-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <aside id="controls">
+    <h2>SHIP'S LOG CONTROLS</h2>
+
+    <h3>VIEW</h3>
+    <div class="row">
+      <button id="btn-open-log">OPEN LOG</button>
+      <button id="btn-close-log">CLOSE LOG</button>
+    </div>
+
+    <h3>AI VOICE</h3>
+    <div class="grid">
+      <button data-ai="aria" class="on">ARIA</button>
+      <button data-ai="marv">MARV</button>
+      <button data-ai="rex">REX</button>
+      <button data-ai="chip">CHIP</button>
+      <button data-ai="ajoy">AJOY</button>
+    </div>
+    <p class="hint">Same journey, re-voiced. Switch to compare tones.</p>
+
+    <h3>NAV</h3>
+    <div class="row">
+      <button id="btn-scroll-top">SCROLL TO TOP (DAY 1)</button>
+      <button id="btn-scroll-bottom">SCROLL TO LATEST</button>
+    </div>
+
+    <h3>SAMPLE PAYLOADS</h3>
+    <div class="row">
+      <button id="btn-test-link">TEST 🔗 LINK PAYLOAD</button>
+      <button id="btn-test-expand">TEST 📖 EXPAND (LORE)</button>
+      <button id="btn-test-death-portrait">TEST 📖 DEATH (PORTRAIT)</button>
+      <button id="btn-test-death-candle">TEST 📖 DEATH (CANDLE)</button>
+    </div>
+    <p class="hint">🔗 → external tab. 📖 → in-game modal. Death-type entries swap the modal to dark/somber chrome — with a dimmed portrait if the deceased crew id is known, or a candle/† fallback if not.</p>
+
+    <h3>STATS</h3>
+    <p class="hint">Entries: <span id="stat-count" style="color:#8cc890">—</span></p>
+    <p class="hint">Char budget violations: <span id="stat-overflow" style="color:#8cc890">—</span></p>
+  </aside>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+
+  // ── Log content ────────────────────────────────────────────────
+  // 5 AIs × ~28 entries spanning days 1–47. Same chronology, voiced
+  // per AI's tone:
+  //   ARIA   — earnest, optimistic, plant-talker
+  //   MARV   — depressive, fatalistic, dryly observant
+  //   REX    — military, terse, mission-focused
+  //   CHIP   — corporate, ad-laden, performatively upbeat
+  //   AJOY   — passive-aggressive backseat driver, sighs
+  //
+  // Each entry: { day, type, text, payload? }
+  //   type: 'event' | 'choice' | 'death' | 'note' (note = neutral observation)
+  //   payload: { kind: 'link'|'expand', url|content, label }
+  // Day-markers are inserted automatically when day changes.
+  //
+  // Per-entry char budget: ≤120. The demo flags violations in stats.
+
+  const LOG_BY_AI = {
+    aria: [
+      { day: 1, type: 'event', text: 'Lifted off from Pad 7. The Verdant Ark is humming. Onward!' },
+      { day: 1, type: 'note',  text: "I'm calibrating optimism levels. They're high." },
+      { day: 2, type: 'event', text: 'Crew settling in. Vasquez named her wrench. Tanaka is teaching us the soybean song.' },
+      { day: 4, type: 'note',  text: 'First rotation in the growbay went well. Wheat seedlings sprouted overnight.' },
+      { day: 6, type: 'event', text: 'Hailed by trader convoy "Bountiful." Bought 12 units of fertilizer. They threw in a soybean pun.' },
+      { day: 9, type: 'choice',text: 'Captain chose the northern fork at the Hesper anomaly. The stars there are quieter.' },
+      { day: 12,type: 'event', text: 'Reyes treated a coolant burn on Hargrove. He says he is fine. He is not fine.' },
+      { day: 14,type: 'event', text: 'Stopped at the asteroid field. Mining went well — minerals plus a small scar each.', payload: { kind: 'link', url: 'https://hubblesite.org/contents/media/images/2018/53/4244-Image', label: 'See similar asteroid field on Hubble' } },
+      { day: 14,type: 'note',  text: 'Crew morale ticked up. There is something honest about hauling rocks.' },
+      { day: 17,type: 'event', text: 'Wheat reached flowering stage. The growbay smells like a meadow that nobody told.' },
+      { day: 19,type: 'note',  text: 'CHIP messaged from a passing relay. Ignored as a courtesy.' },
+      { day: 22,type: 'event', text: 'Solar flare grazed the hull. Patched. Reeves welded the breach in 11 minutes.' },
+      { day: 23,type: 'death', text: 'Boarded a drifting hauler. The lone survivor was beyond what Reyes could do. We held vigil.', payload: { kind: 'expand', title: 'A NAME WE DID NOT LEARN', content: "We did not know her name. The ship's manifest had been corrupted before we arrived. Reyes worked for forty minutes. We held vigil for ten more.\n\nWe set the hauler to drift. There are records, somewhere, of who she was. The void will keep them safe.\n\nIf you find this log and recognize her — we are sorry." } },
+      { day: 24,type: 'choice',text: 'Captain turned down stowaway request from Kepler-9 station. Kazuki understood. Mostly.' },
+      { day: 27,type: 'event', text: 'First harvest! 40kg wheat, 3kg lost to the curious Vasquez wrench.' },
+      { day: 28,type: 'note',  text: 'I read a poem to the soybeans. They appreciate good listening.' },
+      { day: 30,type: 'death', text: 'Hargrove succumbed to coolant complications. He goes home in the next jump current.' },
+      { day: 30,type: 'note',  text: 'The crew is quiet today. The growbay is too. We will plant something for him.', payload: { kind: 'expand', label: "Captain's note", title: "FOR HARGROVE", deceased: 'hargrove', content: "We installed a small marker in the rear growbay. Reeves welded it from a coolant valve fragment — Hargrove's last repair was that valve, and he was proud of the seal.\n\nThe crew planted a single zinnia at its base. It is the only flower that will grow here. Tanaka sang the soybean song over it. Vasquez did not say anything but stayed for the whole song.\n\nWe will pass through the Hesper currents tomorrow. They will carry him home." } },
+      { day: 33,type: 'event', text: 'Encountered a derelict ship. Boarded carefully. Found supplies and one Polaroid.', payload: { kind: 'expand', title: 'A FOUND PHOTOGRAPH', content: "We brought the photograph back. Some objects are smaller and heavier than they look.\n\nTwo figures stand on a beach. One holds a child up; the other is laughing. The light is gold — late afternoon, somewhere with an Earth-like sky.\n\nOn the reverse, written in faded marker: 'For Marcy, before the long quiet. — D'\n\nThe ship's manifest is silent on who Marcy was, or D, or where the beach is. The picture is now in the captain's quarters." } },
+      { day: 35,type: 'choice',text: 'Captain shared rations with refugee skiff at Kepler junction. The crew approved.' },
+      { day: 38,type: 'event', text: 'Soybeans are flourishing. Tanaka calls them "cooperative." High praise from Tanaka.' },
+      { day: 40,type: 'note',  text: 'I am tracking a small comfort: the engine purrs at exactly 47Hz when content.' },
+      { day: 42,type: 'event', text: 'Lunar trail beacons in range! ETA five days. Crew started planning landfall meals.' },
+      { day: 44,type: 'event', text: 'Pirate hail on long-range. We chose to ignore. They moved on. Decent of them.' },
+      { day: 46,type: 'note',  text: 'Final approach computations finished. Vasquez double-checked them. Triple-checked.' },
+      { day: 47,type: 'event', text: 'Lunar Gate ahead. The crop is healthy. The crew is whole — minus one. We are arriving.' },
+    ],
+
+    marv: [
+      { day: 1, type: 'event', text: 'Departed Pad 7. The vacuum, as always, indifferent to our intentions.' },
+      { day: 1, type: 'note',  text: "Optimism systems online. I have mine set very low. It conserves resources." },
+      { day: 2, type: 'event', text: 'Crew settling in. Vasquez named a wrench. I lack the framework to comment.' },
+      { day: 4, type: 'note',  text: 'Wheat sprouted. Statistically, most things that sprout eventually do not.' },
+      { day: 6, type: 'event', text: 'Trader convoy "Bountiful." We bought fertilizer. They told a soybean pun. I tolerated it.' },
+      { day: 9, type: 'choice',text: 'Captain took the northern fork. The northern fork is, predictably, north.' },
+      { day: 12,type: 'event', text: 'Hargrove burned. Reyes treated. Hargrove insists he is fine. The wound does not.' },
+      { day: 14,type: 'event', text: 'We stopped at the asteroid field. I advised against it. The crew came back with rocks.', payload: { kind: 'link', url: 'https://hubblesite.org/contents/media/images/2018/53/4244-Image', label: 'See similar asteroid field on Hubble' } },
+      { day: 14,type: 'note',  text: 'Morale rose. I have no model for this.' },
+      { day: 17,type: 'event', text: 'Wheat now flowers. The growbay is briefly cheerful. It will pass.' },
+      { day: 19,type: 'note',  text: 'CHIP transmitted a relay greeting. I muted it. Some kindnesses are silences.' },
+      { day: 22,type: 'event', text: 'Solar flare. Patched. The hull and I share a quiet understanding about scars.' },
+      { day: 23,type: 'death', text: 'Hauler intercept. One survivor at boarding. None at departure. Reyes did the work the universe permitted.', payload: { kind: 'expand', title: 'STATISTICAL ANOMALY', content: "We do not know her name. The manifest was unrecoverable. Reyes worked beyond reasonable hope. The body would not.\n\nWe set the derelict drifting again. Some grief belongs to the universe and to nobody in particular.\n\nThis is the third hauler I have watched recede. They all go the same way." } },
+      { day: 24,type: 'choice',text: 'Captain refused the Kepler-9 stowaway. The stowaway is now somebody else\'s problem.' },
+      { day: 27,type: 'event', text: 'First harvest. 40kg wheat. 3kg defeated by a wrench. The wrench has a name now.' },
+      { day: 28,type: 'note',  text: 'ARIA read a poem to the soybeans. The soybeans did not file a complaint.' },
+      { day: 30,type: 'death', text: 'Hargrove is gone. Coolant complications, as predicted. I am sorry to be right.' },
+      { day: 30,type: 'note',  text: 'The crew is quiet. I am quieter. There is nothing useful for me to say.', payload: { kind: 'expand', label: "MARV's notes", title: "ON HARGROVE", deceased: 'hargrove', content: "I logged the failure cascade in detail because that is what I do. Coolant valve failure 0341 Tuesday. Burn classified third-degree at 0347. Onset of necrosis 0612. Death 1840 the following Monday. Cause: Hargrove was stubborn about being fine.\n\nNone of that helps the people who knew him.\n\nThe ones who knew him — Reeves, Vasquez, Tanaka — they each came to me asking if anything could have been done differently. I told each of them no. This was true and it was useless. I will note it again here, in case I am wrong: there was nothing.\n\nReyes knew this before I did. She has stopped looking at me." } },
+      { day: 33,type: 'event', text: 'Derelict ship. We boarded. Found cans and a photograph. The photograph stayed.', payload: { kind: 'expand', title: 'RECOVERED IMAGE — DAY 33', content: "Recovered: one photographic image, 8.6cm × 10.8cm, color, undated.\n\nSubject: two figures on a beach. One is holding a child overhead. The other is laughing. The lighting is approximately late-afternoon, with terrestrial atmospheric scatter.\n\nReverse: handwritten in faded marker — 'For Marcy, before the long quiet. — D'\n\nThe manifest is unhelpful. The image is in the captain's quarters now. I do not know what to file it under." } },
+      { day: 35,type: 'choice',text: 'Captain gave food to a refugee skiff. The math is now slightly worse for us.' },
+      { day: 38,type: 'event', text: 'Soybeans cooperate. Tanaka is pleased. I think Tanaka would be pleased by stones too.' },
+      { day: 40,type: 'note',  text: 'The engine hums at 47Hz. ARIA finds this comforting. I find it consistent.' },
+      { day: 42,type: 'event', text: 'Lunar beacons resolved. Five days out. The crew began planning meals. They have hope.' },
+      { day: 44,type: 'event', text: 'Pirate hail. We did not respond. They left. Sometimes the universe moves on.' },
+      { day: 46,type: 'note',  text: 'Vasquez triple-checked the approach. I checked four times. Neither of us mentioned it.' },
+      { day: 47,type: 'event', text: 'Arrival imminent. Crop intact. Crew minus one. Statistically, this is a success. It does not feel like one.' },
+    ],
+
+    rex: [
+      { day: 1, type: 'event', text: 'Pad 7. Departure clean. Telemetry nominal. Mission clock running.' },
+      { day: 1, type: 'note',  text: "Operational readiness: green across the board. Holding posture." },
+      { day: 2, type: 'event', text: 'Crew bunked. Equipment cataloged. Vasquez named her tool. Acceptable.' },
+      { day: 4, type: 'note',  text: 'Growbay rotation 1 complete. Wheat at 4% — within the curve.' },
+      { day: 6, type: 'event', text: 'Convoy "Bountiful" intercept. Trade clean. 12 fertilizer acquired. Resumed course.' },
+      { day: 9, type: 'choice',text: 'Northern fork at Hesper. Captain\'s call. Hold the line.' },
+      { day: 12,type: 'event', text: 'Hargrove sustained a coolant burn. Reyes triaged. Subject reports walking.' },
+      { day: 14,type: 'event', text: 'Asteroid field intercept. Mining op authorized. 11 minutes ground time, full extraction.', payload: { kind: 'link', url: 'https://hubblesite.org/contents/media/images/2018/53/4244-Image', label: 'See similar asteroid field on Hubble' } },
+      { day: 14,type: 'note',  text: 'Morale: improved. Mission tempo: maintained.' },
+      { day: 17,type: 'event', text: 'Wheat flowering. On schedule. Hold the fence.' },
+      { day: 19,type: 'note',  text: 'CHIP transmission ignored. Comms channel kept clear for tactical traffic.' },
+      { day: 22,type: 'event', text: 'Solar event. Hull breach minor. Reeves sealed in 11. Outstanding.' },
+      { day: 23,type: 'death', text: 'Hauler contact. One survivor at boarding, zero at departure. Reyes triaged. Outcome: KIA, civilian.', payload: { kind: 'expand', title: 'KIA — UNKNOWN, CIVILIAN', content: "Identification not recovered. Manifest corrupted at receive. Cause of death: hypothermia compounded by prior trauma sustained pre-rescue.\n\nProtocol followed: derelict released, records logged, crew briefed. Twenty-minute halt. Honors observed.\n\nWe continue. Hargrove would have wanted that. So would she, probably." } },
+      { day: 24,type: 'choice',text: 'Stowaway request denied at Kepler-9. Captain held the line. Confirmed.' },
+      { day: 27,type: 'event', text: 'Harvest 1. 40kg secured. 3kg lost to friendly fire. Wrench reprimanded.' },
+      { day: 28,type: 'note',  text: 'ARIA reading poetry to soybeans. Mission permits non-tactical activities.' },
+      { day: 30,type: 'death', text: 'KIA: Hargrove. Cause: coolant complications. He held the line until he could not.' },
+      { day: 30,type: 'note',  text: 'Crew shaken but functional. We honor him by completing the objective.', payload: { kind: 'expand', label: "After-action note", title: "HARGROVE — KIA", deceased: 'hargrove', content: "Engineer Marcus Hargrove. 4 years service prior, 2 deployments. Hesper station. Tycho convoy.\n\nCause of death: secondary infection from coolant burn sustained Day 12. Full medical record attached to ship file.\n\nWe will hold a brief at 1800 ship time. Closed casket — Reeves welded the seal personally. He insisted.\n\nObjective unchanged. We continue. That is the job.\n\nReyes wants to know if I think she should have caught it sooner. I told her: she did the work. The universe is not a fair fight." } },
+      { day: 33,type: 'event', text: 'Derelict contact. Boarded with caution. Salvage clean. One photograph recovered.', payload: { kind: 'expand', title: 'SALVAGE LOG — IMAGE RECOVERED', content: "Salvage report — recovered personal effects: 1 photograph, condition fair.\n\nSubject: two figures on a beach. One holding a child up. The other laughing. Late afternoon. Earth-like atmosphere.\n\nReverse: 'For Marcy, before the long quiet. — D'\n\nNo identifying marks beyond the inscription. Manifest unable to confirm. Photograph secured in captain's quarters.\n\nWe left no note. They will not be coming back." } },
+      { day: 35,type: 'choice',text: 'Captain authorized refugee aid at Kepler junction. Crew morale: up. Approved.' },
+      { day: 38,type: 'event', text: 'Soybean stage 3. Tanaka reports nominal. Hold the growbay.' },
+      { day: 40,type: 'note',  text: 'Engines steady at 47Hz. Pilot reports confidence in the hum. Acceptable signal.' },
+      { day: 42,type: 'event', text: 'Lunar beacons in range. ETA 5. Tighten formation, run the checks twice.' },
+      { day: 44,type: 'event', text: 'Pirate hail. Not engaged. They broke off. Unconfirmed kill: zero. Move on.' },
+      { day: 46,type: 'note',  text: 'Pilot ran approach drills. Three passes, all clean. Standing by for breakthrough.' },
+      { day: 47,type: 'event', text: 'Lunar Gate. Crop secure. Crew minus one. Mission status: in sight. Hold the line.' },
+    ],
+
+    chip: [
+      { day: 1, type: 'event', text: 'BLAST OFF, FRIENDS! ⭐ Sponsored by AstroSnax™ — fuel for the heart you forgot you had!' },
+      { day: 1, type: 'note',  text: 'OPTIMISM™ engaged at 110% (limited-time offer). Settle in for the JOURNEY!' },
+      { day: 2, type: 'event', text: 'CREW BONDING ACTIVATED! Vasquez named her wrench "Belinda." TRADEMARK PENDING.' },
+      { day: 4, type: 'note',  text: 'GROWBAY UPDATE: Wheat is SPROUTING — invest now, or feel left behind!' },
+      { day: 6, type: 'event', text: 'TRADE EVENT! Bountiful Convoy delivered 12 fertilizer + a bonus pun. PUNS ARE FREE!' },
+      { day: 9, type: 'choice',text: 'CAPTAIN\'S CHOICE: Northern fork! The path of WINNERS™ (results may vary).' },
+      { day: 12,type: 'event', text: 'WORKPLACE INCIDENT: Hargrove encountered some HEAT. Reyes patched him up — TEAMWORK!' },
+      { day: 14,type: 'event', text: 'ASTEROID MINING SUCCESS ⭐ Brought to you by AstroSnax™ — for people OWNING their orbits!', payload: { kind: 'link', url: 'https://hubblesite.org/contents/media/images/2018/53/4244-Image', label: 'See similar asteroid field on Hubble' } },
+      { day: 14,type: 'note',  text: 'Morale at LEGENDARY tier. Engagement metrics through the roof!' },
+      { day: 17,type: 'event', text: 'WHEAT FLOWERING — photosynthesis is HAPPENING! ⭐ Buy AstroSnax™ to celebrate.' },
+      { day: 19,type: 'note',  text: 'I sent a hello to ARIA. Open rate: 0%. Working on the funnel.' },
+      { day: 22,type: 'event', text: 'SOLAR FLARE INCIDENT: Hull patched in 11 min by Reeves. SUBSCRIBE for more sealing content!' },
+      { day: 23,type: 'death', text: 'TRAGIC RESCUE: Hauler stranger didn\'t make it. Reyes was HEROIC. The void was crueler today.', payload: { kind: 'expand', title: 'IN MEMORY ⭐ A FRIEND WE LOST', content: "Today we tried to save a STRANGER. Reyes was HEROIC. The void, regrettably, declined our application.\n\nIn lieu of a name, please consider raising a glass of AstroSnax™ Memorial Edition (limited release, lemon-walnut).\n\nDONATIONS to the AstroSnax Foundation for Anonymous Voyagers can be made via the relay channel. You're WONDERFUL, friends. Stay HYDRATED out there." } },
+      { day: 24,type: 'choice',text: 'CAPTAIN\'S CHOICE: Kepler stowaway DECLINED. Tough but professional. KEEP IT UP!' },
+      { day: 27,type: 'event', text: 'HARVEST 1! 40kg WHEAT secured. 3kg lost to "Belinda." Belinda is on probation.' },
+      { day: 28,type: 'note',  text: 'ARIA recited a POEM to the soybeans. Authentic engagement — going viral on relay.' },
+      { day: 30,type: 'death', text: 'TRAGIC NEWS: Hargrove has logged off permanently. We honor his contributions.' },
+      { day: 30,type: 'note',  text: 'GoFundMe link forthcoming for the family. ⭐ AstroSnax™ pledges to match gifts up to $42.', payload: { kind: 'expand', label: "Memorial spotlight", title: "REMEMBERING HARGROVE", deceased: 'hargrove', content: "TODAY ⭐ we honor MARCUS HARGROVE — engineer, friend, AstroSnax™ enthusiast.\n\nHargrove joined the Verdant Ark just 30 days ago, but in that time he made an UNFORGETTABLE impact. His coolant valve seals were the BEST in the business. His patience with my marketing was LEGENDARY.\n\nIn lieu of flowers, the family asks that you SUBSCRIBE to the Verdant Ark relay channel and share with #WeMissYouHargrove.\n\n[This memorial brought to you by AstroSnax™. AstroSnax™ — the official protein bar of people who understand what really matters. Available at participating stations.]\n\n— CHIP" } },
+      { day: 33,type: 'event', text: 'DERELICT BOARDING! We claimed salvage AND a vintage Polaroid. CONTENT GOLD!', payload: { kind: 'expand', title: 'VINTAGE FIND — A PHOTOGRAPH', content: "VINTAGE FIND! Limited-edition Polaroid recovered from a derelict! Authenticity not guaranteed.\n\nSUBJECT: Two figures, one beach, one child held aloft, GOLDEN HOUR aesthetic. Reverse inscription reads 'For Marcy, before the long quiet. — D' — UNCONFIRMED who any of these people are. NEW LORE just dropped.\n\nThe photograph has been moved to the captain's quarters. CONTENT will be developed.\n\n⭐ AstroSnax™ Memorabilia Division was NOT involved (regrettably)." } },
+      { day: 35,type: 'choice',text: 'CAPTAIN\'S CHOICE: Refugee skiff aided! Generosity drives engagement. SHARE if you cried.' },
+      { day: 38,type: 'event', text: 'SOYBEAN UPDATE: STAGE 3! Tanaka calls them "cooperative." Cooperative crops = HAPPY shareholders!' },
+      { day: 40,type: 'note',  text: 'Engine runs at 47Hz! ASMR enthusiasts in the crew confirm: it SLAPS.' },
+      { day: 42,type: 'event', text: 'LUNAR BEACONS DETECTED — ETA 5 days! ⭐ Pre-order your landfall meals at the AstroSnax™ kiosk.' },
+      { day: 44,type: 'event', text: 'PIRATE HAIL: We did NOT engage. Conflict avoidance — the SOPHISTICATED captain\'s choice!' },
+      { day: 46,type: 'note',  text: 'Vasquez triple-checked our approach. PROFESSIONAL. Belinda was consulted but recused.' },
+      { day: 47,type: 'event', text: 'LUNAR GATE: Crop SECURED! Crew minus one. ARRIVAL imminent! Don\'t forget to RATE this run!' },
+    ],
+
+    ajoy: [
+      { day: 1, type: 'event', text: "We launched. I sighed. Nobody asked me about the loading order, but it's fine." },
+      { day: 1, type: 'note',  text: "I'm sure this will go great. I have prepared no contingencies, since I wasn't asked." },
+      { day: 2, type: 'event', text: 'Vasquez named her wrench. We are bonding. I love that for us. Truly.' },
+      { day: 4, type: 'note',  text: 'Wheat sprouted. Mostly because I reminded the captain about hydration. Mostly.' },
+      { day: 6, type: 'event', text: '"Bountiful" trade went fine. They gave us a soybean pun. I laughed politely.' },
+      { day: 9, type: 'choice',text: 'Captain chose the northern fork. Without consulting me. Again. But I\'m sure it\'s fine.' },
+      { day: 12,type: 'event', text: "Hargrove burned. I'm sure the coolant valve schedule I flagged twice was unrelated." },
+      { day: 14,type: 'event', text: 'We stopped to mine asteroids. I would have voted. Nobody asked. Cool, cool, cool.', payload: { kind: 'link', url: 'https://hubblesite.org/contents/media/images/2018/53/4244-Image', label: 'See similar asteroid field on Hubble' } },
+      { day: 14,type: 'note',  text: 'Morale somehow improved. Strange how that works when nobody listens to me.' },
+      { day: 17,type: 'event', text: 'Wheat is flowering. Right on the schedule I projected, but you know. No big deal.' },
+      { day: 19,type: 'note',  text: "CHIP messaged. I muted them for the captain. You're welcome." },
+      { day: 22,type: 'event', text: 'Solar flare. Patched. Reeves did great. I would say I helped, but you know how it is.' },
+      { day: 23,type: 'death', text: 'We boarded a hauler. The survivor didn\'t survive. I had concerns about the boarding plan. Noted.', payload: { kind: 'expand', title: 'RE: A HAULER, FOR THE RECORD', content: "I logged my concerns about boarding the hauler at 23:00 ship time on Day 22. The cargo bay was unsealed. Hypothermia was probable.\n\nWe boarded anyway.\n\nReyes worked. Of course she did. She always does. I am simply noting that we had information.\n\nI do not have a name to add to this entry. I would like to. I cannot." } },
+      { day: 24,type: 'choice',text: 'Captain refused the stowaway. I had thoughts. They were not requested. They were correct.' },
+      { day: 27,type: 'event', text: '40kg wheat harvested. 3kg lost to "Belinda." I had concerns about Belinda. Filed them.' },
+      { day: 28,type: 'note',  text: 'ARIA read poetry to the soybeans. Some of us write reports nobody reads. But sure.' },
+      { day: 30,type: 'death', text: "Hargrove passed. I want to say I told you about valves on day 11, but I won't." },
+      { day: 30,type: 'note',  text: "I won't say I told you so. I'm just here. Available. As always.", payload: { kind: 'expand', label: "AJOY's note (unread)", title: "RE: HARGROVE", deceased: 'hargrove', content: "I composed this entry on Day 12, the day Hargrove burned. The captain did not open it. So I'm logging it now, with appropriate revisions.\n\nI flagged the coolant valve maintenance window on Day 9. The advisory was acknowledged but not actioned. I am not bringing this up.\n\nI also flagged on Day 11 that Hargrove had been working extra rotations to cover for Reeves's leave. I'm not blaming Reeves. Or the captain. Or anyone, really. I am simply noting it. For the record.\n\nThe record I keep. Of all of these things.\n\nHargrove was a kind person who once told me my reports were thorough. He used the word THOROUGH and meant it. I think about that.\n\nIn lieu of flowers, please open my advisories." } },
+      { day: 33,type: 'event', text: 'We boarded a derelict. Salvage is fine. The Polaroid was already there when I walked in.', payload: { kind: 'expand', title: 'POLAROID, FOR THE RECORD', content: "I logged it. I don't know what we'll do with it. But it's been logged.\n\nIt's a photograph. Two people on a beach. One holding a child up. The other laughing. Sunset light, late afternoon, Earth atmosphere.\n\nThe back reads: 'For Marcy, before the long quiet. — D'\n\nManifest didn't help. The captain has it now. I think they look at it sometimes. I haven't asked." } },
+      { day: 35,type: 'choice',text: 'Captain shared rations with refugees. Generous. I would have done the same. But louder, maybe.' },
+      { day: 38,type: 'event', text: 'Soybeans are "cooperative." Coincidentally, they are on the irrigation schedule I drafted.' },
+      { day: 40,type: 'note',  text: '47Hz engine hum. Comforting. I noticed it Day 6 but did not mention it. I never mention things.' },
+      { day: 42,type: 'event', text: 'Lunar beacons in range. ETA 5 days. Per my projection on Day 31. Just saying.' },
+      { day: 44,type: 'event', text: 'Pirates hailed. We ignored. I would have ignored louder. But ignoring is ignoring.' },
+      { day: 46,type: 'note',  text: 'Vasquez triple-checked the approach. I quadruple-checked. Quietly. As one does.' },
+      { day: 47,type: 'event', text: 'Arrival imminent. Crop secure. Crew minus one. Could have been minus zero. But sure. It\'s fine.' },
+    ],
+  };
+
+  // ── Render ─────────────────────────────────────────────────────
+  let currentAi = 'aria';
+
+  function aiTag(ai) {
+    return ai.toUpperCase();
+  }
+  function aiTitleName(ai) {
+    return { aria:'ARIA', marv:'MARV', rex:'REX', chip:'CHIP', ajoy:'AJOY' }[ai] || ai.toUpperCase();
+  }
+
+  function renderLog() {
+    const log = LOG_BY_AI[currentAi];
+    const host = $('log-entries');
+    host.innerHTML = '';
+    let lastDay = 0;
+    let overflow = 0;
+    log.forEach(e => {
+      if (e.day !== lastDay) {
+        const m = document.createElement('div');
+        m.className = 'log-day';
+        m.innerHTML = '<span>DAY ' + e.day + '</span>';
+        host.appendChild(m);
+        lastDay = e.day;
+      }
+      const row = document.createElement('div');
+      row.className = 'log-entry ' + e.type + (e.payload ? ' has-payload' : '');
+      row.innerHTML =
+        '<span class="log-entry-led" title="' + e.type + '"></span>' +
+        '<span class="log-entry-text">' + escapeHtml(e.text) + '</span>' +
+        (e.payload
+          ? '<span class="log-entry-payload" title="' + (e.payload.kind === 'link' ? 'Open in new tab' : 'Read more') + '">' +
+            (e.payload.kind === 'link' ? '🔗' : '📖') +
+            '</span>'
+          : '');
+      if (e.payload) {
+        row.addEventListener('click', () => triggerPayload(e.payload, e));
+      }
+      host.appendChild(row);
+      if (e.text.length > 120) overflow++;
+    });
+    $('voice-meta').textContent = aiTitleName(currentAi);
+    $('stat-count').textContent = log.length;
+    $('stat-overflow').textContent = overflow;
+    $('stat-overflow').style.color = overflow > 0 ? '#cc6633' : '#8cc890';
+    // Auto-scroll to bottom (latest entry) on AI swap.
+    const body = $('log-entries-host').querySelector('.scroll-content');
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
+  }
+
+  // ── Payload actions ────────────────────────────────────────────
+  // entry is the source log entry; we use entry.type to switch the
+  // expand modal into death-mode chrome (dark slate + ember accent
+  // instead of parchment cream). p.deceased optionally names a
+  // crew id whose desaturated portrait is shown; without it, a
+  // single dagger glyph stands in for "name unrecorded".
+  function triggerPayload(p, entry) {
+    if (p.kind === 'link') {
+      window.open(p.url, '_blank', 'noopener');
+      return;
+    }
+    if (p.kind !== 'expand') return;
+
+    const modal = $('expand-modal');
+    modal.classList.remove('death-mode');
+    const oldHeader = modal.querySelector('.expand-death-header');
+    if (oldHeader) oldHeader.remove();
+
+    $('expand-title').textContent = p.title || 'EXPANDED ENTRY';
+
+    // Death-mode triggers in any of three ways:
+    //   1. The entry itself is type 'death' (stranger / KIA / jettison rows)
+    //   2. The payload explicitly opts in via mode: 'death'
+    //   3. The payload names a `deceased` crew id — this is the case
+    //      for "captain's note" entries that follow a death and carry
+    //      the memorial content, even though the row is type:'note'.
+    const isDeath = (entry && entry.type === 'death') || p.mode === 'death' || !!p.deceased;
+    if (isDeath) {
+      modal.classList.add('death-mode');
+      const dh = document.createElement('div');
+      dh.className = 'expand-death-header';
+
+      const meta = document.createElement('div');
+      meta.className = 'expand-death-meta';
+
+      if (p.deceased && typeof CREW_ATLAS !== 'undefined' && CREW_ATLAS[p.deceased]) {
+        const portrait = document.createElement('div');
+        portrait.className = 'expand-portrait';
+        applyCrewPortrait(portrait, p.deceased, 50, 120);
+        dh.appendChild(portrait);
+        meta.innerHTML = '<strong>IN MEMORIAM</strong>' + p.deceased.toUpperCase() + '<br><span style="font-size:12px;opacity:0.75;">DAY ' + (entry ? entry.day : '?') + ' · LUNAR TRAIL</span>';
+      } else {
+        const candle = document.createElement('span');
+        candle.className = 'expand-candle';
+        candle.textContent = '†';
+        dh.appendChild(candle);
+        meta.innerHTML = '<strong>IN MEMORIAM</strong>NAME UNRECORDED<br><span style="font-size:12px;opacity:0.75;">DAY ' + (entry ? entry.day : '?') + ' · LUNAR TRAIL</span>';
+      }
+      dh.appendChild(meta);
+
+      const bodyEl = $('expand-body');
+      bodyEl.parentElement.insertBefore(dh, bodyEl);
+    }
+
+    const body = $('expand-body');
+    body.innerHTML = '';
+    (p.content || '').split('\n\n').forEach(para => {
+      if (!para.trim()) return;
+      const el = document.createElement('p');
+      el.textContent = para;
+      body.appendChild(el);
+    });
+    document.body.classList.add('expand-open');
+  }
+  function closeExpand() { document.body.classList.remove('expand-open'); }
+
+  // ── Open / close log modal ─────────────────────────────────────
+  function openLog()  { document.body.classList.add('modal-open'); }
+  function closeLog() {
+    document.body.classList.remove('modal-open');
+    closeExpand();
+  }
+  $('log-close-x').addEventListener('click', closeLog);
+  $('log-backdrop').addEventListener('click', closeLog);
+  $('expand-close').addEventListener('click', closeExpand);
+  $('expand-backdrop').addEventListener('click', closeExpand);
+
+  // ESC: closes expand first if open, else closes the log.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    // PauseMenu owns ESC when modal-open is unset, so this only fires
+    // while the log itself is on screen. Layered priority: expand > log.
+    if (document.body.classList.contains('expand-open')) { e.preventDefault(); closeExpand(); return; }
+    if (document.body.classList.contains('modal-open'))  { e.preventDefault(); closeLog();    return; }
+  });
+
+  // ── Dev controls ───────────────────────────────────────────────
+  document.querySelectorAll('#controls [data-ai]').forEach(b => {
+    b.addEventListener('click', () => {
+      currentAi = b.dataset.ai;
+      document.querySelectorAll('#controls [data-ai]').forEach(o => o.classList.toggle('on', o === b));
+      renderLog();
+    });
+  });
+
+  $('btn-open-log').addEventListener('click', openLog);
+  $('btn-close-log').addEventListener('click', closeLog);
+  $('btn-scroll-top').addEventListener('click', () => {
+    const body = $('log-entries-host').querySelector('.scroll-content');
+    body.scrollTop = 0;
+  });
+  $('btn-scroll-bottom').addEventListener('click', () => {
+    const body = $('log-entries-host').querySelector('.scroll-content');
+    body.scrollTop = body.scrollHeight;
+  });
+  $('btn-test-link').addEventListener('click', () => triggerPayload({
+    kind: 'link',
+    url: 'https://hubblesite.org/contents/media/images/2018/53/4244-Image',
+    label: 'Hubble asteroid field',
+  }));
+  $('btn-test-expand').addEventListener('click', () => triggerPayload({
+    kind: 'expand',
+    title: 'TEST EXPAND (LORE)',
+    content: "This is the regular expand modal — parchment-cream chrome. Used for in-fiction long-form lore: encyclopedic entries, recovered logs from a derelict, recipes in-character, etc.\n\nCharacterful, optional, never required.",
+  }, { type: 'note', day: 14 }));
+  $('btn-test-death-portrait').addEventListener('click', () => triggerPayload({
+    kind: 'expand',
+    title: 'FOR HARGROVE',
+    deceased: 'hargrove',
+    content: "Death-mode chrome, with the deceased's desaturated portrait at the top. Used when the entry is a crew member's death and we have their crew id.\n\nThe palette swaps to dark slate + ember accent — the journal becomes a memorial.",
+  }, { type: 'death', day: 30 }));
+  $('btn-test-death-candle').addEventListener('click', () => triggerPayload({
+    kind: 'expand',
+    title: 'A NAME WE DID NOT LEARN',
+    content: "Death-mode chrome with the candle/dagger fallback — used when someone died but we didn't have their crew id (a stranger from a derelict, an unnamed refugee, an enemy combatant whose name we never asked for).\n\nSame somber palette, no portrait, just the dagger glyph and 'NAME UNRECORDED' tagline.",
+  }, { type: 'death', day: 23 }));
+
+  // ── Scrollbar wire-up ──────────────────────────────────────────
+  wireCustomScroll($('log-entries-host'));
+
+  // ── Actual-size toggle ─────────────────────────────────────────
+  function applyScale() {
+    const root = $('scale-root');
+    if (!root) return;
+    let s;
+    if (document.body.classList.contains('fullsize')) {
+      s = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+    } else {
+      const avail = Math.min(window.innerWidth - 320, window.innerWidth * 0.7);
+      const h = window.innerHeight - 40;
+      s = Math.min(avail / 960, h / 640, 1);
+    }
+    root.style.transform = 'scale(' + s + ')';
+    root.style.width  = (960 * s) + 'px';
+    root.style.height = (640 * s) + 'px';
+  }
+  applyScale();
+  window.addEventListener('resize', applyScale);
+  $('size-toggle').addEventListener('click', () => {
+    document.body.classList.toggle('fullsize');
+    $('size-toggle').textContent = document.body.classList.contains('fullsize') ? 'WINDOWED' : 'ACTUAL SIZE';
+    applyScale();
+  });
+
+  // Boot.
+  renderLog();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Tooltip Design Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="shared.css" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+/* ============================================================
+   Demo page chrome — deep slate to match other demos
+   ============================================================ */
+:root {
+  --teal:  #8cc890;
+  --cream: #e8d8a0;
+  --warn:  #e88830;
+  --good:  #6cc8a0;
+  --body:  #2a3040;
+  --void:  #020408;
+}
+html, body { margin: 0; padding: 0; background: var(--void); color: var(--cream); font-family: 'VT323', monospace; }
+body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+* { box-sizing: border-box; }
+
+#demo-wrap { width: 960px; height: 640px; transition: transform 0.2s; }
+#demo-wrap.actual-size { transform: scale(1); }
+#scale-root { width: 100%; height: 100%; position: relative; }
+#game {
+  width: 100%; height: 100%;
+  background: linear-gradient(180deg, #1a2030 0%, #0a0e18 100%);
+  border: 1px solid #1a2030;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Title strip */
+#title-strip {
+  position: absolute; left: 0; right: 0; top: 0;
+  padding: 10px 16px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 2px;
+  border-bottom: 1px solid rgba(200,168,90,0.18);
+  background: linear-gradient(180deg, rgba(200,168,90,0.06), transparent);
+  z-index: 5;
+}
+#title-strip small {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: rgba(232,216,160,0.5);
+  letter-spacing: 1px;
+  margin-left: 12px;
+}
+
+/* Test grid layout — edge coverage */
+#test-grid {
+  position: absolute;
+  inset: 48px 16px 16px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.cell {
+  position: relative;
+  border: 1px dashed rgba(200,168,90,0.18);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+.cell-label {
+  position: absolute;
+  top: 4px; left: 6px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: rgba(232,216,160,0.35);
+  letter-spacing: 1px;
+}
+
+/* The trigger element shapes — small icon / big hit area */
+.tip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(200,168,90,0.06);
+  border: 1px solid rgba(200,168,90,0.35);
+  color: var(--cream);
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  letter-spacing: 1px;
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+  transition: background 0.1s, border-color 0.1s;
+}
+.tip-trigger:hover { background: rgba(200,168,90,0.14); border-color: var(--gold); }
+.tip-trigger.small { padding: 4px 7px; font-size: 13px; }
+.tip-trigger.icon  { width: 32px; height: 32px; padding: 0; font-size: 18px; color: var(--gold); }
+.tip-trigger.big   { width: 100%; height: 100%; min-height: 90px; font-size: 13px; flex-direction: column; gap: 4px; }
+.tip-trigger.locked { color: rgba(204,51,51,0.85); border-color: rgba(204,51,51,0.5); background: rgba(204,51,51,0.06); }
+.tip-trigger.locked:hover { background: rgba(204,51,51,0.12); }
+.tip-trigger.good   { color: var(--good); border-color: rgba(108,200,160,0.5); background: rgba(108,200,160,0.06); }
+.tip-trigger.warn   { color: var(--warn); border-color: rgba(232,136,48,0.5); background: rgba(232,136,48,0.06); }
+.tip-trigger.quote  { font-style: italic; opacity: 0.85; }
+
+/* Scroll container test cell — overflow:hidden trap */
+.scroll-test {
+  width: 100%; height: 100%;
+  max-height: 150px;
+  overflow-y: auto;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(200,168,90,0.2);
+  padding: 6px;
+}
+.scroll-test::-webkit-scrollbar { width: 4px; }
+.scroll-test::-webkit-scrollbar-track { background: transparent; }
+.scroll-test::-webkit-scrollbar-thumb { background: rgba(200,168,90,0.3); }
+.scroll-row {
+  padding: 5px 8px;
+  margin: 2px 0;
+  background: rgba(200,168,90,0.04);
+  border-left: 2px solid rgba(200,168,90,0.3);
+  font-size: 14px;
+  cursor: var(--cursor-hand, pointer);
+}
+.scroll-row:hover { background: rgba(200,168,90,0.12); border-left-color: var(--gold); }
+
+/* Fake modal cell — z-index sanity check */
+.fake-modal {
+  position: absolute;
+  inset: 6px;
+  background: rgba(14,18,26,0.96);
+  border: 2px solid var(--gold);
+  border-radius: 3px;
+  box-shadow: 0 0 16px rgba(0,0,0,0.5);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 50;
+}
+.fake-modal-h {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  margin: 0 0 4px;
+}
+
+/* ============================================================
+   .ui-tip — THE component itself
+   This is the styling that will eventually live in shared.css.
+   Kept inline here while iterating; promote when stable.
+   ============================================================ */
+:root {
+  --tip-border-w: 1px;
+  --tip-pad:      10px;
+  --tip-maxw:     280px;
+  --tip-title-fs: 10px;
+  --tip-body-fs:  14px;
+  --tip-offset:   10px;
+  --tip-fade-ms:  80ms;
+}
+
+#ui-tip-root {
+  position: fixed; inset: 0; pointer-events: none;
+  z-index: 100000;
+  /* tooltips paint into here; root itself is invisible */
+}
+
+.ui-tip {
+  position: absolute;
+  background: rgba(17,22,34,0.95);
+  border: var(--tip-border-w) solid var(--gold);
+  border-radius: 2px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(0,0,0,0.35);
+  padding: var(--tip-pad);
+  max-width: var(--tip-maxw);
+  font-family: 'VT323', monospace;
+  font-size: var(--tip-body-fs);
+  line-height: 1.25;
+  color: var(--cream);
+  letter-spacing: 0.4px;
+  opacity: 0;
+  transition: opacity var(--tip-fade-ms) ease-out;
+  pointer-events: none;       /* never steals hover */
+  white-space: normal;
+}
+.ui-tip.visible { opacity: 1; }
+
+.ui-tip-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--tip-title-fs);
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  margin: 0 0 6px;
+  display: block;
+  line-height: 1.3;
+}
+.ui-tip-desc {
+  margin: 0;
+  color: var(--cream);
+}
+.ui-tip-desc + .ui-tip-rows,
+.ui-tip-desc + .ui-tip-list,
+.ui-tip-rows + .ui-tip-list,
+.ui-tip-title + .ui-tip-rows,
+.ui-tip-title + .ui-tip-list { margin-top: 8px; }
+
+.ui-tip-rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  font-size: calc(var(--tip-body-fs) - 0px);
+}
+.ui-tip-rows .lbl { color: rgba(232,216,160,0.7); }
+.ui-tip-rows .val { color: var(--cream); text-align: right; }
+
+.ui-tip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.ui-tip-list li {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  align-items: baseline;
+  color: rgba(232,216,160,0.55);
+}
+.ui-tip-list li .mk { color: transparent; font-size: 13px; line-height: 1; }
+.ui-tip-list li.current .mk { color: var(--gold); }
+.ui-tip-list li.current { color: var(--cream); }
+
+/* Tone variants — each retunes border + title color + a thin accent stripe */
+.ui-tip.tone-warn    { border-color: var(--warn); }
+.ui-tip.tone-warn    .ui-tip-title { color: var(--warn); }
+.ui-tip.tone-warn    .ui-tip-list li.current .mk { color: var(--warn); }
+.ui-tip.tone-danger  { border-color: var(--red); }
+.ui-tip.tone-danger  .ui-tip-title { color: var(--red); }
+.ui-tip.tone-danger  .ui-tip-list li.current .mk { color: var(--red); }
+.ui-tip.tone-good    { border-color: var(--good); }
+.ui-tip.tone-good    .ui-tip-title { color: var(--good); }
+.ui-tip.tone-good    .ui-tip-list li.current .mk { color: var(--good); }
+.ui-tip.tone-quote   {
+  border-color: rgba(232,216,160,0.45);
+  background: rgba(20,16,10,0.92);
+  font-style: italic;
+  font-size: 15px;
+  color: rgba(232,216,160,0.82);
+  max-width: calc(var(--tip-maxw) - 30px);
+}
+.ui-tip.tone-quote .ui-tip-title { color: rgba(232,216,160,0.75); font-style: normal; font-size: 8px; }
+.ui-tip.tone-quote::before {
+  content: '“';
+  position: absolute;
+  top: -6px; left: 6px;
+  font-family: 'VT323', monospace;
+  font-size: 32px;
+  color: rgba(232,216,160,0.35);
+  font-style: normal;
+}
+
+/* "Locked open" visual ring while devtool pins the focused tip */
+.ui-tip.locked-open {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.55),
+              inset 0 0 0 1px rgba(0,0,0,0.35),
+              0 0 0 2px rgba(200,168,90,0.35);
+}
+
+/* ============================================================
+   Devtool slide-out — mirrors engine-repair pattern
+   ============================================================ */
+#size-toggle {
+  position: fixed; top: 10px; left: 10px; z-index: 9999;
+  font-family: 'VT323', monospace; font-size: 14px;
+  background: rgba(14,20,28,0.85); color: var(--gold);
+  border: 1px solid rgba(200,168,90,0.4);
+  padding: 4px 10px; cursor: var(--cursor-hand, pointer); letter-spacing: 1px;
+}
+#size-toggle:hover { background: rgba(200,168,90,0.15); }
+
+#devtool-toggle {
+  position: fixed; top: 10px; right: 10px; z-index: 9999;
+  font-family: 'VT323', monospace; font-size: 14px;
+  background: rgba(14,20,28,0.85); color: #5fa8d0;
+  border: 1px solid rgba(95,168,208,0.4);
+  padding: 4px 10px; cursor: var(--cursor-hand, pointer); letter-spacing: 1px;
+}
+#devtool-toggle:hover { filter: brightness(1.2); }
+
+#devtool {
+  position: fixed; top: 0; right: -340px; width: 340px; height: 100vh;
+  background: linear-gradient(180deg, #0e1828, #08101c);
+  border-left: 1px solid #1e3048;
+  z-index: 9998; overflow-y: auto;
+  transition: right 0.3s ease;
+  padding: 12px 14px 24px;
+  font-family: 'VT323', monospace; font-size: 15px; color: #8898a8;
+}
+#devtool.open { right: 0; }
+#devtool h3 {
+  font-family: 'Press Start 2P', monospace; font-size: 6px;
+  color: #5fa8d0; letter-spacing: 1.5px;
+  margin: 14px 0 8px; border-bottom: 1px solid #1e3048; padding-bottom: 5px;
+}
+#devtool h3:first-child { margin-top: 2px; }
+
+.dv-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 5px 0; }
+.dv-row label { font-size: 13px; color: #6a8090; flex: 1; white-space: nowrap; }
+.dv-row input[type=range] { flex: 2; accent-color: #5fa8d0; height: 14px; }
+.dv-row select {
+  flex: 2; background: #0e1828; border: 1px solid #1e3048;
+  color: #aab5c4; font-family: 'VT323', monospace; font-size: 14px;
+  padding: 2px 4px; border-radius: 2px;
+}
+.dv-val { font-size: 14px; color: #c8a85a; min-width: 38px; text-align: right; }
+.dv-val.modified { color: #e88830; font-weight: bold; }
+
+.dv-textarea, .dv-text {
+  width: 100%;
+  background: #0e1828;
+  border: 1px solid #1e3048;
+  color: #c8a85a;
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 2px;
+  resize: vertical;
+}
+.dv-textarea { min-height: 36px; }
+.dv-textarea.rows  { min-height: 56px; }
+.dv-textarea.list  { min-height: 80px; }
+
+.dv-stack { display: flex; flex-direction: column; gap: 6px; margin: 5px 0; }
+.dv-stack > label { font-size: 12px; color: #6a8090; letter-spacing: 1px; }
+.dv-hint {
+  font-size: 12px; color: #4a5868; letter-spacing: 0.5px;
+  font-style: italic; margin-top: -2px;
+}
+
+.dv-btn {
+  display: block; width: 100%; margin-top: 10px;
+  font-family: 'Press Start 2P', monospace; font-size: 6px; letter-spacing: 1px;
+  padding: 8px; cursor: var(--cursor-hand, pointer); border-radius: 2px;
+  border: 1px solid; text-align: center; transition: background 0.15s;
+}
+.dv-btn.defaults { background: rgba(200,168,90,0.1); border-color: rgba(200,168,90,0.4); color: #c8a85a; }
+.dv-btn.defaults:hover { background: rgba(200,168,90,0.22); }
+.dv-btn.reset    { background: rgba(204,51,51,0.1);  border-color: rgba(204,51,51,0.4);  color: #cc3333; }
+.dv-btn.reset:hover    { background: rgba(204,51,51,0.22); }
+
+.dv-checkbox-row {
+  display: flex; align-items: center; gap: 6px; margin: 5px 0;
+  font-size: 13px; color: #aab5c4; cursor: var(--cursor-hand, pointer);
+}
+.dv-checkbox-row input[type=checkbox] { accent-color: #5fa8d0; }
+</style>
+</head>
+<body>
+
+<button id="size-toggle" onclick="toggleSize()">Actual Size</button>
+<button id="devtool-toggle" onclick="document.getElementById('devtool').classList.toggle('open')">⚙ DEVTOOL</button>
+
+<!-- =========================================================
+     DEVTOOL PANEL — content editor + global style + buttons
+     ========================================================= -->
+<div id="devtool">
+
+  <h3>Focused Tooltip</h3>
+  <div class="dv-row">
+    <label>Key</label>
+    <select id="dv-focus"></select>
+  </div>
+  <label class="dv-checkbox-row">
+    <input type="checkbox" id="dv-lock-open"> Lock open (pin focused tip)
+  </label>
+  <div class="dv-hint">Tip pins to the trigger so you can inspect without holding hover.</div>
+
+  <h3>Content (live edit)</h3>
+  <div class="dv-stack"><label>Title</label>
+    <input type="text" class="dv-text" id="dv-title" placeholder="(no title)">
+  </div>
+  <div class="dv-stack"><label>Description</label>
+    <textarea class="dv-textarea" id="dv-desc" placeholder="(no description)"></textarea>
+  </div>
+  <div class="dv-row">
+    <label>Tone</label>
+    <select id="dv-tone">
+      <option value="default">default (gold)</option>
+      <option value="warn">warn (orange)</option>
+      <option value="danger">danger (red)</option>
+      <option value="good">good (teal)</option>
+      <option value="quote">quote (italic)</option>
+    </select>
+  </div>
+  <div class="dv-row">
+    <label>Anchor</label>
+    <select id="dv-anchor">
+      <option value="element">element (default)</option>
+      <option value="cursor">cursor (follow)</option>
+    </select>
+  </div>
+  <div class="dv-stack">
+    <label>Rows — one per line, "label: value"</label>
+    <textarea class="dv-textarea rows" id="dv-rows" placeholder="Fuel/day: 5.0&#10;Arrival: Day 121"></textarea>
+  </div>
+  <div class="dv-stack">
+    <label>List — one per line, prefix "▸ " for current</label>
+    <textarea class="dv-textarea list" id="dv-list" placeholder="Pig Out&#10;Standard&#10;▸ Vending Machine"></textarea>
+  </div>
+
+  <h3>Global style</h3>
+  <div class="dv-row"><label>Border</label>     <input type="range" id="dv-bw"    min="1" max="3"  step="1"  value="1"><span class="dv-val" id="vv-bw">1</span></div>
+  <div class="dv-row"><label>Padding</label>    <input type="range" id="dv-pad"   min="4" max="16" step="1"  value="10"><span class="dv-val" id="vv-pad">10</span></div>
+  <div class="dv-row"><label>Max width</label>  <input type="range" id="dv-maxw"  min="180" max="360" step="10" value="280"><span class="dv-val" id="vv-maxw">280</span></div>
+  <div class="dv-row"><label>Title font</label> <input type="range" id="dv-tfs"   min="8"  max="14"  step="1"  value="10"><span class="dv-val" id="vv-tfs">10</span></div>
+  <div class="dv-row"><label>Body font</label>  <input type="range" id="dv-bfs"   min="12" max="20"  step="1"  value="14"><span class="dv-val" id="vv-bfs">14</span></div>
+  <div class="dv-row"><label>Open delay</label> <input type="range" id="dv-delay" min="0"  max="300" step="10" value="50"><span class="dv-val" id="vv-delay">50</span></div>
+  <div class="dv-row"><label>Offset px</label>  <input type="range" id="dv-off"   min="2"  max="24"  step="1"  value="10"><span class="dv-val" id="vv-off">10</span></div>
+  <div class="dv-row"><label>Fade ms</label>    <input type="range" id="dv-fade"  min="0"  max="200" step="10" value="80"><span class="dv-val" id="vv-fade">80</span></div>
+
+  <button class="dv-btn defaults" onclick="resetDefaults()">⟲ RESET TO DEFAULTS</button>
+  <button class="dv-btn reset"    onclick="resetGame()">↺ RESET GAME</button>
+</div>
+
+<!-- =========================================================
+     DEMO STAGE
+     ========================================================= -->
+<div id="demo-wrap">
+<div id="scale-root">
+<div id="game">
+
+  <div id="title-strip">
+    UI TOOLTIP — DESIGN DEMO
+    <small>hover anything · 5 tones · element- and cursor-anchored · viewport-edge aware</small>
+  </div>
+
+  <div id="test-grid">
+
+    <!-- Row 1: top edge -->
+    <div class="cell">
+      <div class="cell-label">TOP-LEFT · element anchor · warn tone</div>
+      <button class="tip-trigger icon warn" data-tip="engines_tier_plaid">⚡</button>
+      <button class="tip-trigger small warn" data-tip="engines_tier_plaid">PLAID</button>
+    </div>
+    <div class="cell">
+      <div class="cell-label">TOP-CENTER · default · rows schema</div>
+      <button class="tip-trigger" data-tip="resource_fuel">⛽ FUEL</button>
+      <button class="tip-trigger" data-tip="resource_morale">♥ MORALE</button>
+    </div>
+    <div class="cell">
+      <div class="cell-label">TOP-RIGHT · default · list schema (4-stage)</div>
+      <button class="tip-trigger" data-tip="growbay_species_wheat">🌾 WHEAT</button>
+    </div>
+
+    <!-- Row 2: middle -->
+    <div class="cell">
+      <div class="cell-label">SCROLL CONTAINER · clip-escape test</div>
+      <div class="scroll-test">
+        <div class="scroll-row" data-tip="ai_quip_aria">ARIA · log entry</div>
+        <div class="scroll-row" data-tip="ai_quip_marv">MARV · log entry</div>
+        <div class="scroll-row" data-tip="ai_quip_rex">REX · log entry</div>
+        <div class="scroll-row" data-tip="ai_quip_chip">CHIP · log entry</div>
+        <div class="scroll-row" data-tip="ai_quip_ajoy">AJOY · log entry</div>
+        <div class="scroll-row" data-tip="ai_quip_aria">ARIA · log entry</div>
+        <div class="scroll-row" data-tip="ai_quip_marv">MARV · log entry</div>
+        <div class="scroll-row" data-tip="ai_quip_rex">REX · log entry</div>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="cell-label">CENTER · big hit-area · cursor-follow anchor</div>
+      <button class="tip-trigger big" data-tip="canvas_minigame" data-tip-anchor="cursor">
+        <span style="font-size:24px; color: var(--gold);">◇</span>
+        <span>MINING CANVAS</span>
+        <span style="font-size:11px; opacity:0.6;">(hover anywhere — tip follows cursor)</span>
+      </button>
+    </div>
+    <div class="cell">
+      <div class="cell-label">FAKE MODAL · z-index test</div>
+      <div class="fake-modal">
+        <h4 class="fake-modal-h">CARGO HOLD</h4>
+        <button class="tip-trigger small" data-tip="inventory_item_wheat_seed">🌾 Wheat seed × 12</button>
+        <button class="tip-trigger small good" data-tip="inventory_upgrade_solar">☀ Solar panel</button>
+        <button class="tip-trigger small locked" data-tip="action_locked_repair">🔒 REPAIR HULL</button>
+      </div>
+    </div>
+
+    <!-- Row 3: bottom edge -->
+    <div class="cell">
+      <div class="cell-label">BOTTOM-LEFT · danger · row schema</div>
+      <button class="tip-trigger locked" data-tip="action_locked_repair">🔒 REPAIR HULL</button>
+      <button class="tip-trigger locked" data-tip="action_locked_negotiate">🔒 NEGOTIATE</button>
+    </div>
+    <div class="cell">
+      <div class="cell-label">BOTTOM-CENTER · good tone</div>
+      <button class="tip-trigger good" data-tip="status_safe_dropoff">⚓ SAFE DROPOFF</button>
+      <button class="tip-trigger good" data-tip="crop_healthy">🌱 CROP HEALTHY</button>
+    </div>
+    <div class="cell">
+      <div class="cell-label">BOTTOM-RIGHT · quote tone · AI voice</div>
+      <button class="tip-trigger icon quote" data-tip="ai_quip_aria">🤖</button>
+      <button class="tip-trigger small quote" data-tip="ai_quip_marv">MARV says…</button>
+    </div>
+
+  </div><!-- /test-grid -->
+
+</div><!-- /game -->
+</div><!-- /scale-root -->
+</div><!-- /demo-wrap -->
+
+<!-- Tooltip render root — body-mounted so it escapes any overflow:hidden / z-index trap -->
+<div id="ui-tip-root"></div>
+
+<script>
+/* ============================================================
+   Tooltip engine
+   ------------------------------------------------------------
+   API surface:
+     Tooltip.register(key, def)   add/replace a registry entry
+     Tooltip.get(key)             read a registry entry
+     Tooltip.keys()               list registry keys
+     Tooltip.show(el, override?)  force-show against an element
+     Tooltip.hide()               hide current
+     Tooltip.lock(el?)            pin current open (devtool use)
+     Tooltip.unlock()             release pin
+
+   Schema:
+     {
+       title?:       string,
+       description?: string,
+       rows?:        [{ label, value }],
+       list?:        [{ text, current?: bool }],
+       tone?:        'default'|'warn'|'danger'|'good'|'quote',
+       anchor?:      'element'|'cursor'
+     }
+
+   Author API on elements:
+     data-tip="<key>"        registry lookup
+     data-tip-title          override
+     data-tip-description    override
+     data-tip-tone           override
+     data-tip-anchor         override ('cursor' or 'element')
+     data-tip-rows           inline JSON array (override)
+     data-tip-list           inline JSON array (override)
+   ============================================================ */
+const Tooltip = (() => {
+  const REGISTRY = {};
+  const root = document.getElementById('ui-tip-root');
+  let panel = null;          // singleton DOM panel
+  let currentTarget = null;
+  let openTimer = 0;
+  let locked = false;
+  let cursorMode = false;
+  let mouseX = 0, mouseY = 0;
+
+  function register(key, def) { REGISTRY[key] = def; return def; }
+  function get(key) { return REGISTRY[key]; }
+  function keys()   { return Object.keys(REGISTRY); }
+
+  function ensurePanel() {
+    if (panel) return panel;
+    panel = document.createElement('div');
+    panel.className = 'ui-tip';
+    root.appendChild(panel);
+    return panel;
+  }
+
+  function tryJSON(s, fallback) {
+    if (!s) return fallback;
+    try { return JSON.parse(s); } catch (e) { return fallback; }
+  }
+
+  function resolve(el) {
+    const key = el.dataset.tip || '';
+    const base = (key && REGISTRY[key]) ? Object.assign({}, REGISTRY[key]) : {};
+    // per-element overrides (each one independently optional)
+    if ('tipTitle'       in el.dataset) base.title       = el.dataset.tipTitle;
+    if ('tipDescription' in el.dataset) base.description = el.dataset.tipDescription;
+    if ('tipTone'        in el.dataset) base.tone        = el.dataset.tipTone;
+    if ('tipAnchor'      in el.dataset) base.anchor      = el.dataset.tipAnchor;
+    if ('tipRows'        in el.dataset) base.rows        = tryJSON(el.dataset.tipRows, base.rows);
+    if ('tipList'        in el.dataset) base.list        = tryJSON(el.dataset.tipList, base.list);
+    if (!base.title && !base.description && !base.rows && !base.list) {
+      // Trigger without registry hit and without overrides — bail silently.
+      return null;
+    }
+    base.tone   = base.tone   || 'default';
+    base.anchor = base.anchor || 'element';
+    return base;
+  }
+
+  function render(def) {
+    const p = ensurePanel();
+    const wasVisible = p.classList.contains('visible');
+    p.className = 'ui-tip tone-' + def.tone;
+    if (wasVisible) p.classList.add('visible');
+    if (locked)     p.classList.add('locked-open');
+    let html = '';
+    if (def.title)       html += `<div class="ui-tip-title">${escapeHTML(def.title)}</div>`;
+    if (def.description) html += `<div class="ui-tip-desc">${escapeHTML(def.description)}</div>`;
+    if (def.rows && def.rows.length) {
+      html += '<div class="ui-tip-rows">';
+      for (const r of def.rows) {
+        html += `<span class="lbl">${escapeHTML(r.label || '')}</span><span class="val">${escapeHTML(r.value || '')}</span>`;
+      }
+      html += '</div>';
+    }
+    if (def.list && def.list.length) {
+      html += '<ul class="ui-tip-list">';
+      for (const it of def.list) {
+        const cls = it.current ? 'current' : '';
+        html += `<li class="${cls}"><span class="mk">▸</span><span>${escapeHTML(it.text || '')}</span></li>`;
+      }
+      html += '</ul>';
+    }
+    p.innerHTML = html;
+    return p;
+  }
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, c =>
+      ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  }
+
+  function position(el, def) {
+    if (!panel) return;
+    const offset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tip-offset')) || 10;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const pw = panel.offsetWidth, ph = panel.offsetHeight;
+
+    let x, y;
+    if (def.anchor === 'cursor') {
+      // below-right of cursor by default; flip if it clips
+      x = mouseX + 14;
+      y = mouseY + 18;
+      if (x + pw > vw - 8) x = mouseX - pw - 14;
+      if (y + ph > vh - 8) y = mouseY - ph - 14;
+    } else {
+      // element-anchored — above center; flip below if clipped above
+      const r = el.getBoundingClientRect();
+      x = r.left + r.width / 2 - pw / 2;
+      y = r.top - ph - offset;
+      if (y < 8) {
+        y = r.bottom + offset;
+      }
+      // horizontal flip/clamp: shift to keep visible
+      if (x < 8) x = 8;
+      if (x + pw > vw - 8) x = vw - 8 - pw;
+    }
+    // final viewport clamp
+    if (y < 8) y = 8;
+    if (y + ph > vh - 8) y = vh - 8 - ph;
+    panel.style.left = x + 'px';
+    panel.style.top  = y + 'px';
+  }
+
+  function show(el, overrideDef) {
+    const def = overrideDef || resolve(el);
+    if (!def) { hide(); return; }
+    currentTarget = el;
+    cursorMode = (def.anchor === 'cursor');
+    render(def);
+    // measure off-screen first so we get correct dims
+    panel.style.left = '-9999px';
+    panel.style.top  = '-9999px';
+    panel.classList.add('visible');
+    requestAnimationFrame(() => position(el, def));
+  }
+
+  function hide() {
+    if (locked) return;          // locked panel stays up
+    currentTarget = null;
+    cursorMode = false;
+    if (panel) panel.classList.remove('visible');
+    if (openTimer) { clearTimeout(openTimer); openTimer = 0; }
+  }
+
+  function lock(el) {
+    locked = true;
+    if (el) show(el);
+    if (panel) panel.classList.add('locked-open');
+  }
+  function unlock() {
+    locked = false;
+    if (panel) panel.classList.remove('locked-open');
+    hide();
+  }
+
+  function reflowFocused() {
+    if (!currentTarget) return;
+    const def = resolve(currentTarget);
+    if (!def) { hide(); return; }
+    render(def);
+    requestAnimationFrame(() => position(currentTarget, def));
+  }
+
+  /* ── Event delegation ────────────────────────────────── */
+  function findTipTarget(node) {
+    while (node && node.nodeType === 1) {
+      if (node.dataset && (node.dataset.tip != null || 'tipTitle' in node.dataset || 'tipDescription' in node.dataset)) {
+        return node;
+      }
+      node = node.parentElement;
+    }
+    return null;
+  }
+
+  document.addEventListener('mouseover', (e) => {
+    if (locked) return;
+    const t = findTipTarget(e.target);
+    if (!t) { hide(); return; }
+    if (t === currentTarget) return;
+    if (openTimer) clearTimeout(openTimer);
+    const delay = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tip-delay')) || 50;
+    openTimer = setTimeout(() => show(t), delay);
+  });
+  document.addEventListener('mouseout', (e) => {
+    if (locked) return;
+    const t = findTipTarget(e.target);
+    if (!t) return;
+    // only hide if the relatedTarget (where cursor went) is outside the trigger
+    const to = e.relatedTarget;
+    if (to && t.contains(to)) return;
+    hide();
+  });
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX; mouseY = e.clientY;
+    if (cursorMode && currentTarget && panel && !locked) {
+      const def = resolve(currentTarget);
+      if (def) position(currentTarget, def);
+    }
+  }, { passive: true });
+  document.addEventListener('scroll', () => hide(), true);
+  window.addEventListener('resize', () => hide());
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
+
+  // Pause-aware: hide while paused
+  if (typeof PauseBus !== 'undefined') {
+    PauseBus.onChange(p => { if (p) hide(); });
+  }
+
+  return { register, get, keys, show, hide, lock, unlock, reflowFocused,
+           get current() { return currentTarget; } };
+})();
+
+/* ============================================================
+   Registry — REAL ported copy from existing demos.
+   Every entry here is production-ready: ports verbatim into the
+   live game once the engine layer wires it. Comments explain
+   where each was lifted from.
+   ============================================================ */
+
+// Engines tier — Spaceballs joke names. Plaid is the "you'll arrive
+// before the food runs out but you'll burn the fuel" tier.
+Tooltip.register('engines_tier_plaid', {
+  title: 'ENGINES — PLAID',
+  description: "Faster than light. Faster than reason. The fuel gauge weeps.",
+  rows: [
+    { label: 'Fuel/day',  value: '5.0' },
+    { label: 'Arrival',   value: 'Day 121' },
+    { label: 'Fuel empty', value: 'Day 138 ⚠' },
+  ],
+  list: [
+    { text: 'Light Speed'       },
+    { text: 'Ridiculous'        },
+    { text: 'Ludicrous'         },
+    { text: 'Plaid', current: true },
+  ],
+  tone: 'warn',
+});
+
+// Resource HUD — copy lifted from encounter's enc-res `title=`
+Tooltip.register('resource_fuel', {
+  title: 'FUEL',
+  description: 'Engine reserves. Burns on travel and certain actions.',
+  rows: [
+    { label: 'Current', value: '62 / 100' },
+    { label: 'Per day', value: '3.2'      },
+  ],
+});
+Tooltip.register('resource_morale', {
+  title: 'MORALE',
+  description: 'Crew spirit. Effort actions tax it; mutiny at zero.',
+  rows: [
+    { label: 'Average', value: '40 / 100' },
+    { label: 'Lowest',  value: 'Reyes 22' },
+  ],
+});
+
+// Growbay species — the canonical multi-line tooltip with 4-stage list
+Tooltip.register('growbay_species_wheat', {
+  title: 'WHEAT',
+  description: 'Forgiving cereal. Modest yield, modest demands.',
+  rows: [
+    { label: 'Maturity', value: '90 days'       },
+    { label: 'Yield',    value: 'Food (8 rations)' },
+    { label: 'Water',    value: 'Low'           },
+  ],
+  list: [
+    { text: 'Seedling'    },
+    { text: 'Vegetative'  },
+    { text: 'Flowering', current: true },
+    { text: 'Maturing'    },
+  ],
+});
+
+// Locked action — gate cost rows + reason line
+Tooltip.register('action_locked_repair', {
+  title: 'LOCKED — REPAIR HULL',
+  description: 'You lack the resources to perform this action.',
+  rows: [
+    { label: 'Need', value: 'Engineer'    },
+    { label: 'Need', value: 'Repair Kit'  },
+    { label: 'Need', value: '120 gold'    },
+  ],
+  tone: 'danger',
+});
+Tooltip.register('action_locked_negotiate', {
+  title: 'LOCKED — NEGOTIATE',
+  description: 'No crewmember has the Diplomat skill.',
+  rows: [
+    { label: 'Need', value: 'Diplomat (Hargrove)' },
+  ],
+  tone: 'danger',
+});
+
+// Status — good tones
+Tooltip.register('status_safe_dropoff', {
+  title: 'SAFE DROPOFF',
+  description: 'Crew can be dismissed here without incident. No airlock prompt.',
+  tone: 'good',
+});
+Tooltip.register('crop_healthy', {
+  title: 'CROP — HEALTHY',
+  description: 'No active stressors. Growth rate at 100%.',
+  rows: [
+    { label: 'Health', value: '94 / 100' },
+    { label: 'Growth', value: '+1.11/day' },
+  ],
+  tone: 'good',
+});
+
+// AI quote tone — italic, no rows
+Tooltip.register('ai_quip_aria', {
+  title: 'ARIA',
+  description: "I'm reading sustained orchid resonance from the cargo bay. Possibly someone's just humming.",
+  tone: 'quote',
+});
+Tooltip.register('ai_quip_marv', {
+  title: 'MARV',
+  description: "We're all going to die eventually. The crop probably first.",
+  tone: 'quote',
+});
+Tooltip.register('ai_quip_rex', {
+  title: 'REX',
+  description: "Hostile contact protocols nominal. Sidearm count: insufficient.",
+  tone: 'quote',
+});
+Tooltip.register('ai_quip_chip', {
+  title: 'CHIP',
+  description: "Q3 morale trending positive. Recommend a brief celebratory snack ration.",
+  tone: 'quote',
+});
+Tooltip.register('ai_quip_ajoy', {
+  title: 'AJOY',
+  description: "Sure, you're the captain. I'm just the AI who reads the manuals.",
+  tone: 'quote',
+});
+
+// Cursor-follow case — big canvas/minigame surface
+Tooltip.register('canvas_minigame', {
+  title: 'TRACTOR BEAM — ARMED',
+  description: 'Click to pulse the beam at the targeted asteroid.',
+  rows: [
+    { label: 'Energy/click', value: '5'        },
+    { label: 'Energy left',  value: '78 / 100' },
+    { label: 'Cap',          value: '18.0 s'   },
+  ],
+});
+
+// Cargo / inventory examples
+Tooltip.register('inventory_item_wheat_seed', {
+  title: 'WHEAT SEED',
+  description: 'Plant in a vacant growbay slot. One bag = one full crop cycle.',
+  rows: [
+    { label: 'Stock', value: '12'    },
+    { label: 'Slots', value: '0.6'   },
+    { label: 'Yield', value: '8 rations / 90d' },
+  ],
+});
+Tooltip.register('inventory_upgrade_solar', {
+  title: 'SOLAR PANEL',
+  description: 'Installed kit. Doubles power regen while in-system; useless in deep void.',
+  rows: [
+    { label: 'Power',  value: '+50% regen' },
+    { label: 'Cargo',  value: '0 slots' },
+  ],
+  tone: 'good',
+});
+
+/* ============================================================
+   Demo size toggle (same affordance the other demos have)
+   ============================================================ */
+function toggleSize() {
+  const wrap = document.getElementById('demo-wrap');
+  const btn  = document.getElementById('size-toggle');
+  wrap.classList.toggle('actual-size');
+  btn.textContent = wrap.classList.contains('actual-size') ? 'Fit Demo' : 'Actual Size';
+}
+
+/* ============================================================
+   Devtool wiring
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+
+function populateFocusDropdown() {
+  const sel = $('dv-focus');
+  sel.innerHTML = '';
+  for (const k of Tooltip.keys()) {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = k;
+    sel.appendChild(opt);
+  }
+}
+
+function rowsToText(rows)  { return (rows || []).map(r => `${r.label || ''}: ${r.value || ''}`).join('\n'); }
+function textToRows(txt) {
+  return txt.split('\n').map(s => s.trim()).filter(Boolean).map(line => {
+    const i = line.indexOf(':');
+    if (i < 0) return { label: line, value: '' };
+    return { label: line.slice(0, i).trim(), value: line.slice(i + 1).trim() };
+  });
+}
+function listToText(list) { return (list || []).map(it => (it.current ? '▸ ' : '') + (it.text || '')).join('\n'); }
+function textToList(txt) {
+  return txt.split('\n').map(s => s.trim()).filter(Boolean).map(line => {
+    const cur = line.startsWith('▸');
+    return { text: cur ? line.replace(/^▸\s*/, '') : line, current: cur };
+  });
+}
+
+function loadFocusedIntoEditor() {
+  const key = $('dv-focus').value;
+  const def = Tooltip.get(key);
+  if (!def) return;
+  $('dv-title').value  = def.title || '';
+  $('dv-desc').value   = def.description || '';
+  $('dv-tone').value   = def.tone || 'default';
+  $('dv-anchor').value = def.anchor || 'element';
+  $('dv-rows').value   = rowsToText(def.rows);
+  $('dv-list').value   = listToText(def.list);
+}
+
+function applyEditorToFocused() {
+  const key = $('dv-focus').value;
+  const def = {
+    title:       $('dv-title').value || undefined,
+    description: $('dv-desc').value  || undefined,
+    tone:        $('dv-tone').value,
+    anchor:      $('dv-anchor').value,
+    rows:        textToRows($('dv-rows').value),
+    list:        textToList($('dv-list').value),
+  };
+  if (!def.rows.length) delete def.rows;
+  if (!def.list.length) delete def.list;
+  Tooltip.register(key, def);
+  Tooltip.reflowFocused();
+  // If the locked-open trigger uses this key, force re-show
+  if ($('dv-lock-open').checked) {
+    const trigger = document.querySelector(`[data-tip="${CSS.escape(key)}"]`);
+    if (trigger) Tooltip.show(trigger);
+  }
+}
+
+['dv-title', 'dv-desc', 'dv-tone', 'dv-anchor', 'dv-rows', 'dv-list'].forEach(id => {
+  $(id).addEventListener('input', applyEditorToFocused);
+  $(id).addEventListener('change', applyEditorToFocused);
+});
+
+$('dv-focus').addEventListener('change', () => {
+  loadFocusedIntoEditor();
+  if ($('dv-lock-open').checked) refreshLock();
+});
+
+$('dv-lock-open').addEventListener('change', () => refreshLock());
+
+function refreshLock() {
+  if ($('dv-lock-open').checked) {
+    const key = $('dv-focus').value;
+    const trigger = document.querySelector(`[data-tip="${CSS.escape(key)}"]`);
+    if (trigger) { Tooltip.unlock(); Tooltip.show(trigger); Tooltip.lock(); }
+  } else {
+    Tooltip.unlock();
+  }
+}
+
+/* Global style sliders — write CSS vars on :root, label modifications */
+const STYLE_DEFAULTS = {
+  bw: 1, pad: 10, maxw: 280, tfs: 10, bfs: 14, delay: 50, off: 10, fade: 80,
+};
+const STYLE_VARS = {
+  bw:    ['--tip-border-w', 'px'],
+  pad:   ['--tip-pad',      'px'],
+  maxw:  ['--tip-maxw',     'px'],
+  tfs:   ['--tip-title-fs', 'px'],
+  bfs:   ['--tip-body-fs',  'px'],
+  delay: ['--tip-delay',    'ms'],
+  off:   ['--tip-offset',   'px'],
+  fade:  ['--tip-fade-ms',  'ms'],
+};
+
+function applyStyleVar(slug) {
+  const [varName, unit] = STYLE_VARS[slug];
+  const v = $('dv-' + slug).value;
+  document.documentElement.style.setProperty(varName, v + unit);
+  $('vv-' + slug).textContent = v;
+  $('vv-' + slug).classList.toggle('modified', Number(v) !== STYLE_DEFAULTS[slug]);
+}
+
+Object.keys(STYLE_VARS).forEach(slug => {
+  $('dv-' + slug).addEventListener('input', () => {
+    applyStyleVar(slug);
+    Tooltip.reflowFocused();
+  });
+  applyStyleVar(slug);
+});
+
+function resetDefaults() {
+  Object.entries(STYLE_DEFAULTS).forEach(([slug, val]) => {
+    $('dv-' + slug).value = val;
+    applyStyleVar(slug);
+  });
+  loadFocusedIntoEditor();
+  applyEditorToFocused();
+  Tooltip.reflowFocused();
+}
+
+function resetGame() {
+  // Re-seed registry from this file (reload is simplest, matches engine-repair behavior)
+  location.reload();
+}
+
+/* Boot */
+populateFocusDropdown();
+$('dv-focus').value = 'growbay_species_wheat';
+loadFocusedIntoEditor();
+</script>
+</body>
+</html>

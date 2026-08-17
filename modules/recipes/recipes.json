@@ -1,0 +1,130 @@
+{
+  "_meta": {
+    "description": "Fabricator recipes. The fabricator converts raw materials into useful items. Each recipe has a wear cost (deterministic, declared per recipe) and is subject to the fabricator's misfire curve. Phase 1 ships with a starter set — recipe book grows as content is written.",
+    "misfire_curve": "Derived from fabricator health. See tag_registry fabricator_state. 100hp=0%, 80hp=2%, 60hp=8%, 40hp=18%, 20hp=35%, 10hp=55%, 0hp=80%.",
+    "misfire_outcomes": "~85% waste (materials consumed, nothing produced). ~15% produces fab_surplus item. Below 20% health, misfires can break the fabricator entirely.",
+    "microgame_option": "Player can play the fab_align microgame instead of blind fabrication. Success = guaranteed output (no misfire). Failure = normal misfire roll applies."
+  },
+  "recipes": [
+    {
+      "id": "recipe_hull_patch",
+      "active": true,
+      "name": "Hull Patch",
+      "output": {
+        "item_id": "hull_patch",
+        "count": 1
+      },
+      "inputs": [
+        {
+          "material_id": "metal",
+          "count": 3
+        },
+        {
+          "material_id": "scrap",
+          "count": 2
+        }
+      ],
+      "wear_cost": 1,
+      "description": "Basic hull repair material. The ship needs these more than it should.",
+      "unlocked_by_default": true,
+      "craft_days": 1
+    },
+    {
+      "id": "recipe_repair_kit",
+      "active": true,
+      "name": "Field Repair Kit",
+      "output": {
+        "item_id": "repair_kit",
+        "count": 1
+      },
+      "inputs": [
+        {
+          "material_id": "metal",
+          "count": 5
+        },
+        {
+          "material_id": "scrap",
+          "count": 3
+        }
+      ],
+      "wear_cost": 2,
+      "description": "General-purpose repair supplies. More expensive than buying at a station, but stations aren't always there.",
+      "unlocked_by_default": true,
+      "craft_days": 3
+    },
+    {
+      "id": "recipe_crop_treatment",
+      "active": true,
+      "name": "Crop Treatment Solution",
+      "output": {
+        "item_id": "crop_treatment",
+        "count": 1
+      },
+      "inputs": [
+        {
+          "material_id": "biocomponent",
+          "count": 2
+        },
+        {
+          "material_id": "minerals",
+          "count": 1
+        }
+      ],
+      "wear_cost": 1,
+      "description": "Nutrient solution for sick crops. The botanist approves. The fabricator is indifferent.",
+      "unlocked_by_default": true,
+      "gameplay_effect": "Restores 20 crop health when used. One use.",
+      "craft_days": 2
+    },
+    {
+      "id": "recipe_fuel_cell",
+      "active": true,
+      "name": "Emergency Fuel Cell",
+      "output": {
+        "item_id": "fuel_cell",
+        "count": 1
+      },
+      "inputs": [
+        {
+          "material_id": "minerals",
+          "count": 4
+        },
+        {
+          "material_id": "exotic",
+          "count": 1
+        }
+      ],
+      "wear_cost": 3,
+      "description": "Improvised fuel. Not as good as station fuel. Better than drifting.",
+      "unlocked_by_default": false,
+      "requires_item": "repair_fabricator",
+      "gameplay_effect": "Restores 15 fuel when used. One use. Requires Field Repair Fabricator upgrade.",
+      "craft_days": 4
+    },
+    {
+      "id": "recipe_o2_canister",
+      "active": true,
+      "name": "O2 Canister",
+      "output": {
+        "item_id": "o2_canister",
+        "count": 1
+      },
+      "inputs": [
+        {
+          "material_id": "minerals",
+          "count": 3
+        },
+        {
+          "material_id": "metal",
+          "count": 2
+        }
+      ],
+      "wear_cost": 2,
+      "description": "Compressed oxygen. The process is louder than it needs to be.",
+      "unlocked_by_default": false,
+      "requires_item": "repair_fabricator",
+      "gameplay_effect": "Restores 10 O2 when used. One use. Requires Field Repair Fabricator upgrade.",
+      "craft_days": 1
+    }
+  ]
+}

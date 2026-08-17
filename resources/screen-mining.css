@@ -1,0 +1,769 @@
+/* MINING MINIGAME OVERLAY — lifted from resources/demo-mining.html (Phase 4).
+   Dev-only chrome (size-toggle, demo-wrap/scale-root fixed frame, page body
+   reset) stripped. #encounter-screen renamed to #mining-root to avoid
+   colliding with the real screen-encounter's id. Reuses shared.css /
+   index.html's own bare .enc-backdrop/.enc-ai-bar/.enc-narrative/.enc-choices
+   rules where they overlap (harmless if redeclared here identically).
+   Resource row uses the engine's real .hud component (#hud-mining) instead
+   of the demo's decorative hardcoded .enc-res row. */
+
+#overlay-mining.active { display: block; }
+
+
+:root {
+  --teal: #8cc890;
+  --orange: #e88830;
+  --cream: #e8d8a0;
+  --slate: #2a3040;
+  --deep: #0e1520;
+  --void: #020408;
+  --body: #8898a8;
+
+  --bg-empty: #020408;
+
+  /* Narrative */
+  --narr-height: 110px;
+  --narr-bg: rgba(8,12,18,0.82);
+  --narr-border: rgba(95,168,208,0.35);
+
+  /* AI bar */
+  --ai-bg: rgba(10,14,20,0.72);
+  --ai-border: rgba(200,168,90,0.25);
+  --ai-name-color: #c8a85a;
+  --ai-text-color: #aab5c4;
+  --res-size: 13px;
+  --ai-size: 14px;
+
+  /* Resource HUD */
+  --res-bg: rgba(8,12,18,0.7);
+  --res-border: rgba(95,168,208,0.2);
+  --res-fuel:  #e88830;
+  --res-food:  #8cc890;
+  --res-o2:    #5fa8d0;
+  --res-hull:  #b4b091;
+  --res-mor:   #5e9ec7;
+
+  /* Choices — narrow column for mining (only BEGIN/EXIT MINING fits here,
+     no need for the encounter shell's 320px text-heavy width). */
+  --choices-w: 125px;
+  --choice-bg-top: #2a3040;
+  --choice-bg-bot: #141820;
+  --choice-border: rgba(95,168,208,0.3);
+  --choice-text: #d0c890;
+  --choice-risky: #cc3333;
+  --leave-bg-top: #3a2a2a;
+  --leave-bg-bot: #1a1010;
+  --leave-border: rgba(204,51,51,0.4);
+
+  /* Typography */
+  --title-size: 14px;
+  --body-size: 18px;
+  --choice-size: 15px;
+  --sub-size: 12px;
+}
+
+
+}
+#crt-overlay {
+  pointer-events: none; position: absolute; inset: 0; z-index: 100;
+  background: repeating-linear-gradient(0deg,
+    rgba(0,0,0,0.06), rgba(0,0,0,0.06) 1px, transparent 1px, transparent 2px);
+}
+
+/* ── Encounter shell (subset; subject machinery removed) ──────── */
+#mining-root {
+  position: absolute; inset: 0; z-index: 10;
+  background-color: var(--bg-empty);
+}
+/* Layered backdrop stack (back→front), matches encounter/combat:
+     - .enc-backdrop-base   z=0, deep-space behind any transparency
+     - .enc-backdrop        z=2, primary scene (bridge.png with viewport cutout)
+     - .enc-vignette        z=3, scene-edge dark gradient.
+   Mining doesn't use bgSprite (z=1) — the .mining-stage div sits at the
+   same coords and paints the random minigames/mining bg + hosts the game. */
+#mining-root .enc-backdrop-base {
+  position: absolute; inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+#mining-root .enc-backdrop {
+  position: absolute; inset: 0;
+  image-rendering: pixelated;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: background 0.4s;
+}
+#mining-root .enc-vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  z-index: 3;
+  background: radial-gradient(ellipse at center,
+    transparent 45%, rgba(0,0,0,0.55) 100%);
+}
+
+/* Resource HUD */
+#mining-root .enc-resources {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--res-bg);
+  border: 1px solid var(--res-border);
+  border-radius: 3px;
+  font-family: 'VT323', monospace;
+  font-size: var(--res-size);
+  letter-spacing: 0.5px;
+  z-index: 12;
+}
+#mining-root .enc-res {
+  display: flex; align-items: center; gap: 4px;
+  color: var(--cream);
+}
+#mining-root .enc-res .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--r-color);
+  box-shadow: 0 0 4px var(--r-color);
+}
+#mining-root .enc-res.fuel { --r-color: var(--res-fuel); }
+#mining-root .enc-res.food { --r-color: var(--res-food); }
+#mining-root .enc-res.o2   { --r-color: var(--res-o2); }
+#mining-root .enc-res.hull { --r-color: var(--res-hull); }
+#mining-root .enc-res.mor  { --r-color: var(--res-mor); }
+
+/* AI bar */
+#mining-root .enc-ai-bar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 200px;
+  padding: 6px 12px;
+  background: var(--ai-bg);
+  border: 1px solid var(--ai-border);
+  border-radius: 3px;
+  font-family: 'VT323', monospace;
+  font-size: var(--ai-size);
+  letter-spacing: 0.5px;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  z-index: 12;
+}
+#mining-root .enc-ai-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--ai-name-color);
+  flex-shrink: 0;
+}
+/* In mining mode the .enc-ai-text slot carries the live status string
+   ("N ROCKS · N MATERIALS"), not an italic quip — quips moved to the
+   bottom narrative panel. */
+#mining-root .enc-ai-text {
+  color: var(--cream);
+  font-family: 'VT323', monospace;
+  letter-spacing: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: opacity 0.25s;
+}
+#mining-root .enc-ai-text.fading { opacity: 0; }
+/* MINING MODE + SECTOR chips — right-aligned on the AI bar. */
+#mining-root .enc-ai-bar .mining-mode-tag,
+#mining-root .enc-ai-bar .sector-tag {
+  font-family: 'Press Start 2P', monospace; font-size: 8px;
+  letter-spacing: 0.5px;
+  padding: 2px 6px; border: 1px solid; border-radius: 2px;
+  white-space: nowrap;
+}
+#mining-root .enc-ai-bar .mining-mode-tag {
+  color: var(--gold); border-color: rgba(200,168,90,0.45);
+  background: rgba(200,168,90,0.08);
+  margin-left: auto;
+}
+#mining-root .enc-ai-bar .sector-tag {
+  /* Color is set inline per-roll via JS (matches the rolled modifier). */
+  margin-left: 6px;
+}
+
+/* ── Mining HUD — energy bar strip just above the viewport rect ─
+   Spans the viewport width (160 → 800 in game-frame coords) so the
+   bar is the dominant pre-action read. */
+.mining-hud {
+  position: absolute;
+  left: 160px;
+  top: 51px;
+  width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(8,12,18,0.78);
+  border: 1px solid rgba(95,168,208,0.3);
+  border-radius: 3px;
+  padding: 6px 12px;
+  z-index: 12;
+  font-family: 'VT323', monospace;
+}
+.mining-hud .row { display: flex; align-items: center; gap: 12px; height: 18px; }
+.mining-hud .lbl {
+  font-family: 'Press Start 2P', monospace; font-size: 9px;
+  color: var(--cream); letter-spacing: 1px; width: 60px;
+}
+.mining-hud .bar {
+  flex: 1; height: 12px;
+  background: #0a0e16; border: 1px solid rgba(95,168,208,0.3);
+  border-radius: 1px; position: relative; overflow: hidden;
+}
+/* Tick marks at 25/50/75 (overlaid above the fill). Same gradient
+   trick salvage uses on .sal-energy-wrap::after. */
+.mining-hud .bar::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg,
+    transparent 24%, rgba(0,0,0,.55) 24%, rgba(0,0,0,.55) 26%, transparent 26%,
+    transparent 49%, rgba(0,0,0,.55) 49%, rgba(0,0,0,.55) 51%, transparent 51%,
+    transparent 74%, rgba(0,0,0,.55) 74%, rgba(0,0,0,.55) 76%, transparent 76%);
+}
+.mining-hud .fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  transition: width 0.18s ease, background 0.25s ease;
+  background: linear-gradient(90deg, #6acf72, #b4d04e);
+}
+.mining-hud .fill.warn { background: linear-gradient(90deg, #d4a830, #e88830); }
+.mining-hud .fill.crit { background: linear-gradient(90deg, #cc3333, #e85530); }
+.mining-hud .num {
+  font-family: 'Press Start 2P', monospace; font-size: 9px;
+  color: var(--cream); letter-spacing: 1px; min-width: 38px; text-align: right;
+}
+
+/* Narrative */
+#mining-root .enc-narrative {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  height: var(--narr-height);
+  background: var(--narr-bg);
+  border: 2px solid var(--narr-border);
+  border-radius: 3px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  z-index: 12;
+}
+#mining-root .enc-narr-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--title-size);
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+}
+#mining-root .enc-narr-body {
+  font-family: 'VT323', monospace;
+  font-size: var(--body-size);
+  line-height: 1.3;
+  letter-spacing: 0.5px;
+  color: var(--cream);
+  font-style: italic;          /* AI quip register */
+  overflow-y: auto;
+  white-space: pre-line;
+  transition: opacity 0.25s;
+}
+#mining-root .enc-narr-body.fading { opacity: 0; }
+
+/* Choices */
+#mining-root .enc-choices {
+  position: absolute;
+  right: 14px;
+  top: 60px;
+  bottom: calc(var(--narr-height) + 24px);
+  width: var(--choices-w);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  z-index: 12;
+  /* Empty column area is click-through so asteroids in the overlap
+     region (right ~174px of the stage) stay reachable. Buttons
+     re-enable pointer events on themselves below. */
+  pointer-events: none;
+}
+#mining-root .enc-choice { pointer-events: auto; }
+#mining-root .enc-choice {
+  --strip-c: var(--gold);
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, var(--choice-bg-top) 0%, var(--choice-bg-bot) 100%);
+  border: 2px solid var(--choice-border);
+  border-left: 3px solid var(--strip-c);
+  border-radius: 2px;
+  color: var(--choice-text);
+  font-family: 'VT323', monospace;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.12s, filter 0.12s, transform 0.08s;
+}
+#mining-root .enc-choice:hover { border-color: var(--strip-c); filter: brightness(1.12); }
+#mining-root .enc-choice:active { transform: translateY(1px); }
+#mining-root .enc-choice-body {
+  font-size: var(--choice-size);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+#mining-root .enc-choice-sub {
+  font-size: var(--sub-size);
+  color: var(--body);
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+  margin-top: 4px;
+}
+#mining-root .enc-choice.leave {
+  --strip-c: var(--red);
+  margin-top: 6px;
+  background: linear-gradient(180deg, var(--leave-bg-top) 0%, var(--leave-bg-bot) 100%);
+  border: 3px solid var(--leave-border);
+  color: #e8a0a0;
+}
+#mining-root .enc-choice.leave .enc-choice-body { color: #e8a0a0; }
+/* Disabled state — used on BEGIN MINING until a crew is selected. */
+#mining-root .enc-choice.disabled {
+  filter: grayscale(0.7) brightness(0.6);
+  cursor: default;
+  pointer-events: none;
+}
+#mining-root .enc-choice.disabled .enc-choice-sub { color: #8a7a55; }
+
+/* ────────────────────────────────────────────────────────────────
+   Mining stage — the clickable rect inside the encounter viewport.
+   Sits at (160,93) × 640×405 (matches the bridge.png viewport
+   cutout coords used by .enc-backdrop-sprite in encounter). The
+   reticle cursor is scoped to this element so the rest of the
+   chrome keeps its default hand cursor.
+   ──────────────────────────────────────────────────────────────── */
+.mining-stage {
+  position: absolute;
+  left: 160px;
+  top: 93px;
+  width: 640px;
+  height: 405px;
+  z-index: 11;            /* above backdrop, below HUD */
+  overflow: hidden;
+  user-select: none;
+  display: none;
+  background-color: #000;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+.mining-stage.active { display: block; }
+
+.mine-asteroid {
+  position: absolute;
+  pointer-events: auto;
+  image-rendering: pixelated;
+  --scl: 1;
+  --rot: 0deg;
+  --bri: 1;
+  transform: translate(-50%, -50%) scale(var(--scl)) rotate(var(--rot));
+  filter: brightness(var(--bri));
+  transition: filter 0.08s;
+}
+.mine-asteroid.rich {
+  animation: rich-sparkle 1.4s infinite ease-in-out;
+}
+@keyframes rich-sparkle {
+  0%, 100% { filter: brightness(1.1) drop-shadow(0 0 4px rgba(200,168,90,0.6)); }
+  50%      { filter: brightness(1.3) drop-shadow(0 0 12px rgba(232,216,160,0.95)); }
+}
+.mine-asteroid.cracking {
+  animation: rock-crack 0.18s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Wind-up — short brightness pulse before LARGE/RICH split. Telegraphs
+   the imminent fragmentation. Composes after .rich's sparkle keyframes
+   (which set filter); explicitly overrides for the 120ms duration. */
+@keyframes mine-windup {
+  0%   { filter: brightness(1.0); }
+  45%  { filter: brightness(2.2); }
+  75%  { filter: brightness(1.6); }
+  100% { filter: brightness(1.0); }
+}
+.mine-asteroid.winding {
+  animation: mine-windup 0.12s ease-out;
+  pointer-events: none;
+}
+.mine-asteroid.rich.winding { animation: mine-windup 0.12s ease-out; }
+@keyframes rock-crack {
+  from { filter: brightness(1.6); }
+  to   { filter: brightness(1) opacity(0); transform: translate(-50%, -50%) scale(calc(var(--scl) * 1.15)) rotate(var(--rot)); }
+}
+
+/* Particles + floater + flash ring */
+.mine-particle {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  pointer-events: none;
+  margin: -3px 0 0 -3px;
+}
+.mine-particle.loot {
+  background: #f0dca8;
+  box-shadow: 0 0 8px #e8a830, 0 0 14px rgba(232,136,48,0.5);
+}
+.mine-particle.loot.spark {
+  width: 4px; height: 4px;
+  margin: -2px 0 0 -2px;
+  background: #ffffff;
+  box-shadow: 0 0 6px #f0dca8, 0 0 12px #e8a830;
+}
+.mine-particle.hollow {
+  width: 5px; height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  background: #8a8a78;
+  opacity: 0.7;
+}
+
+/* Click-feedback ring — pops at the cursor on every click (hit or
+   miss). Substitutes for cursor recoil since CSS cursor data-urls
+   can't be animated. Smaller and faster than the loot flash ring. */
+.mine-click-ring {
+  position: absolute;
+  width: 6px; height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  border: 2px solid #c8a85a;
+  box-shadow: 0 0 4px rgba(200,168,90,0.65);
+  pointer-events: none;
+  animation: click-ring-pop 0.28s forwards ease-out;
+}
+@keyframes click-ring-pop {
+  from { transform: scale(0.35); opacity: 1; border-width: 3px; }
+  to   { transform: scale(2.6);  opacity: 0; border-width: 1px; }
+}
+
+/* Shockwave flash ring expanding from the rock's position. */
+.mine-flash-ring {
+  position: absolute;
+  width: 24px; height: 24px;
+  margin: -12px 0 0 -12px;
+  border-radius: 50%;
+  border: 3px solid #f0dca8;
+  box-shadow: 0 0 18px rgba(240,220,168,0.85), inset 0 0 8px rgba(232,136,48,0.6);
+  pointer-events: none;
+  animation: flash-ring 0.5s forwards ease-out;
+}
+@keyframes flash-ring {
+  from { transform: scale(0.4); opacity: 1; border-width: 4px; }
+  to   { transform: scale(3.2); opacity: 0; border-width: 1px; }
+}
+
+.mine-floater {
+  position: absolute;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(240,220,168,0.95), 0 0 14px rgba(232,136,48,0.6);
+  pointer-events: none;
+  animation: floater-rise 1.0s forwards ease-out;
+  white-space: nowrap;
+}
+@keyframes floater-rise {
+  from { transform: translate(-50%, 0)    scale(0.7); opacity: 0; }
+  20%  { transform: translate(-50%, -8px) scale(1.15); opacity: 1; }
+  to   { transform: translate(-50%, -42px) scale(1);   opacity: 0; }
+}
+
+/* ── Haul card overlay — appears over the dimmed stage on run end. */
+.haul-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0,0,0,0.55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.haul-overlay.visible { display: flex; }
+.haul-card {
+  width: 560px;
+  max-width: 90%;
+  background: linear-gradient(180deg, #1a1f2a 0%, #0e1118 100%);
+  border: 2px solid var(--gold);
+  border-radius: 4px;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.7);
+}
+.haul-tier {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 14px;
+  letter-spacing: 3px;
+  text-align: center;
+  padding: 6px 0;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+}
+.haul-tier.tier-perfect      { color: #e8d8a0; background: rgba(200,168,90,0.15); }
+.haul-tier.tier-adequate     { color: #8cc890; background: rgba(140,200,144,0.10); }
+.haul-tier.tier-insufficient { color: #cc8a8a; background: rgba(204,85,85,0.10); }
+
+.haul-ai {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  font-style: italic;
+  color: var(--cream);
+  line-height: 1.3;
+  padding: 4px 0;
+}
+.haul-ai .ai-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  margin-right: 8px;
+  font-style: normal;
+}
+
+.haul-inv-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+.haul-inv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 8px;
+}
+.haul-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  background: rgba(10,14,20,0.6);
+  border: 1px solid rgba(95,168,208,0.25);
+  border-radius: 2px;
+}
+.haul-tile img {
+  width: 40px; height: 40px;
+  image-rendering: pixelated;
+}
+.haul-tile .haul-tile-count {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--cream);
+}
+.haul-tile .haul-tile-name {
+  font-family: 'VT323', monospace;
+  font-size: 10px;
+  color: var(--body);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.haul-empty {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--body);
+  font-style: italic;
+  text-align: center;
+  padding: 14px 0;
+}
+.haul-hollow-tally {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: #8a8a78;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+.haul-stats {
+  display: flex;
+  justify-content: space-around;
+  gap: 8px;
+  padding: 8px 4px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(95,168,208,0.18);
+}
+.haul-stats .stat {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-width: 56px;
+}
+.haul-stats .lbl {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--body);
+}
+.haul-stats .val {
+  font-family: 'VT323', monospace;
+  font-size: 17px;
+  color: var(--cream);
+  letter-spacing: 1px;
+}
+.haul-session-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-align: center;
+  margin-top: 4px;
+  opacity: 0.85;
+}
+.haul-stats.session {
+  margin-top: 2px;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(200,168,90,0.25);
+}
+.haul-stats.session .val { color: var(--gold); font-size: 15px; }
+
+.haul-buttons { display: flex; justify-content: center; margin-top: 4px; }
+.haul-btn {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 8px 28px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+}
+.haul-btn:hover { filter: brightness(1.15); }
+.haul-btn:active {
+  border-style: inset;
+  border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a;
+  transform: translate(1px,1px);
+}
+
+/* ── Crew picker — armed-state crew-assist chips stacked in the
+   choice column above BEGIN MINING. Removed when active. */
+.crew-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 6px 4px;
+  background: rgba(8,12,18,0.6);
+  border: 1px solid rgba(95,168,208,0.22);
+  border-radius: 3px;
+  pointer-events: auto;
+}
+.crew-picker-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  padding: 2px 0 4px;
+  text-align: center;
+}
+.crew-chip {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: rgba(20,28,42,0.5);
+  border: 1px solid rgba(95,168,208,0.22);
+  border-radius: 2px;
+  cursor: var(--cursor-hand, pointer);
+  text-align: left;
+  color: var(--cream);
+  font-family: 'VT323', monospace;
+  transition: border-color 0.12s, filter 0.12s;
+}
+.crew-chip:hover { border-color: rgba(200,168,90,0.55); filter: brightness(1.12); }
+.crew-chip.selected {
+  border-color: var(--gold);
+  background: rgba(200,168,90,0.12);
+}
+.crew-chip .portrait {
+  width: 28px; height: 28px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(95,168,208,0.22);
+  border-radius: 2px;
+}
+.crew-chip .meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.crew-chip .name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--cream);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.crew-chip .bias {
+  font-family: 'VT323', monospace;
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 0.5px;
+}
+
+/* ── Screen shake — applied to .mining-stage only. Chrome stays
+   put, the viewport content jolts. Intensity scales with tier. */
+@keyframes mining-shake-small {
+  0%,100% { transform: translate(0,0); }
+  25%     { transform: translate(-1px, 1px); }
+  50%     { transform: translate(1px, -1px); }
+  75%     { transform: translate(-1px, 0); }
+}
+@keyframes mining-shake-medium {
+  0%,100% { transform: translate(0,0); }
+  10%     { transform: translate(-3px, 2px); }
+  25%     { transform: translate(3px, -2px); }
+  45%     { transform: translate(-2px, 2px); }
+  65%     { transform: translate(2px, -1px); }
+  85%     { transform: translate(-1px, 1px); }
+}
+@keyframes mining-shake-big {
+  0%,100% { transform: translate(0,0); }
+  8%      { transform: translate(-5px, 4px); }
+  20%     { transform: translate(5px, -4px); }
+  35%     { transform: translate(-5px, 3px); }
+  50%     { transform: translate(4px, -3px); }
+  65%     { transform: translate(-3px, 2px); }
+  80%     { transform: translate(2px, -2px); }
+  92%     { transform: translate(-1px, 1px); }
+}
+.mining-stage.shake-small  { animation: mining-shake-small  0.18s ease-out; }
+.mining-stage.shake-medium { animation: mining-shake-medium 0.30s ease-out; }
+.mining-stage.shake-big    { animation: mining-shake-big    0.40s ease-out; }
+
+/* Time-up flash (reserved for hard-cap end) */
+.mine-flash {
+  position: absolute; inset: 0;
+  z-index: 40;
+  background: rgba(200,168,90,0.18);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 22px;
+  letter-spacing: 4px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--cream);
+  text-shadow: 0 0 12px rgba(200,168,90,0.7);
+  pointer-events: none;
+  animation: flash-fade 1.4s forwards;
+}
+@keyframes flash-fade {
+  0%   { opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+

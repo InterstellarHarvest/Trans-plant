@@ -1,0 +1,182 @@
+{
+  "_meta": {
+    "description": "Map generation rules per trail difficulty. Single starting point, branches and reconnections, single destination. All paths lead to the final node. Harder branches offer better rewards but more risk. FTL/StS-style galactic map — visually distinct per trail.",
+    "visual_note": "Lunar maps are blue-gray and close, rocky. Mars maps are warm amber, dusty. Interstellar maps are deep indigo to black with distant stars. The visual should tell you the difficulty before you read a label."
+  },
+
+  "trails": {
+    "lunar": {
+      "id": "trail_lunar",
+      "name": "Lunar Trail",
+      "destination": "Proxima Colony",
+      "description": "Short hop. Established route. The sensible choice. You will not tell stories about this trip.",
+      "total_nodes": 10,
+      "forks": 1,
+      "base_days": 120,
+      "starting_resources": {
+        "fuel": 100,
+        "food": 100,
+        "water": 100,
+        "o2": 100,
+        "hull": 100,
+        "morale": 75,
+        "credits": "captain_dependent"
+      },
+      "cargo_capacity": 8,
+      "branch_len_min": 1,
+      "branch_len_max": 2,
+      "node_weights_start": {
+        "station": 6,
+        "planet": 4,
+        "derelict": 0,
+        "asteroid_field": 1,
+        "anomaly": 0,
+        "nebula": 1,
+        "void": 0
+      },
+      "node_weights": {
+        "station": 3,
+        "planet": 2,
+        "derelict": 1,
+        "asteroid_field": 1,
+        "anomaly": 0,
+        "nebula": 1,
+        "void": 0
+      },
+      "event_difficulty_weights": {
+        "easy": 60,
+        "medium": 30,
+        "hard": 10,
+        "ultra": 0
+      },
+      "visual_palette": {
+        "background": "blue-gray, rocky, close objects",
+        "star_density": "medium",
+        "drift_objects": "satellites, small asteroids, station debris"
+      },
+      "selection_flavor": "Three months. Established corridors. Station every few jumps. You'll be fine. Probably."
+    },
+
+    "mars": {
+      "id": "trail_mars",
+      "name": "Mars Trail",
+      "destination": "New Meridian",
+      "description": "The middle road. Long enough for things to go wrong. Short enough that you might recover.",
+      "total_nodes": 13,
+      "forks": 2,
+      "base_days": 240,
+      "starting_resources": {
+        "fuel": 100,
+        "food": 100,
+        "water": 100,
+        "o2": 100,
+        "hull": 100,
+        "morale": 70,
+        "credits": "captain_dependent"
+      },
+      "cargo_capacity": 10,
+      "branch_len_min": 2,
+      "branch_len_max": 3,
+      "node_weights_start": {
+        "station": 5,
+        "planet": 3,
+        "derelict": 1,
+        "asteroid_field": 2,
+        "anomaly": 0,
+        "nebula": 1,
+        "void": 0
+      },
+      "node_weights": {
+        "station": 2,
+        "planet": 2,
+        "derelict": 2,
+        "asteroid_field": 1,
+        "anomaly": 1,
+        "nebula": 1,
+        "void": 0
+      },
+      "event_difficulty_weights": {
+        "easy": 30,
+        "medium": 40,
+        "hard": 25,
+        "ultra": 5
+      },
+      "visual_palette": {
+        "background": "warm amber, dusty, medium distance",
+        "star_density": "medium-high",
+        "drift_objects": "dust clouds, derelict fragments, old probes"
+      },
+      "selection_flavor": "Eight months. Some charted territory. Some not. The map has helpful annotations like 'here be problems.'"
+    },
+
+    "interstellar": {
+      "id": "trail_interstellar",
+      "name": "Interstellar Trail",
+      "destination": "Far Garden",
+      "description": "The long road. Charts run out halfway. Something happens in the void. Nobody talks about what.",
+      "total_nodes": 15,
+      "forks": 3,
+      "base_days": 400,
+      "starting_resources": {
+        "fuel": 100,
+        "food": 100,
+        "water": 100,
+        "o2": 100,
+        "hull": 100,
+        "morale": 60,
+        "credits": "captain_dependent"
+      },
+      "cargo_capacity": 12,
+      "branch_len_min": 2,
+      "branch_len_max": 3,
+      "node_weights_start": {
+        "station": 4,
+        "planet": 3,
+        "derelict": 1,
+        "asteroid_field": 2,
+        "anomaly": 0,
+        "nebula": 2,
+        "void": 0
+      },
+      "node_weights": {
+        "station": 2,
+        "planet": 1,
+        "derelict": 2,
+        "asteroid_field": 1,
+        "anomaly": 2,
+        "nebula": 1,
+        "void": 2
+      },
+      "event_difficulty_weights": {
+        "easy": 10,
+        "medium": 30,
+        "hard": 40,
+        "ultra": 20
+      },
+      "corrupted_events_start_at_node": 8,
+      "visual_palette": {
+        "background": "deep indigo to black, distant stars, vast emptiness",
+        "star_density": "low, decreasing",
+        "drift_objects": "nothing for long stretches, then something that shouldn't be there"
+      },
+      "selection_flavor": "Fourteen months. The charts stop being useful around month six. The destination is called Far Garden. It was named by an optimist."
+    }
+  },
+
+  "placement_rules": {
+    "no_repeat_node_types": "No two identical node_type values in a row",
+    "void_restriction": "void nodes only appear after node 5 on interstellar maps",
+    "final_node_rule": "Final node before destination is always a station",
+    "anomaly_restriction": "anomaly nodes do not appear in first two legs",
+    "fork_differentiation": "Each branch in a fork must have a different branch_flavor",
+    "station_guarantee": "At least one station in the first third of any map",
+    "reconnection": "Forked branches reconnect within 2-3 nodes — paths diverge, then merge"
+  },
+
+  "pity_counter": {
+    "description": "After 4 consecutive events tagged difficulty: hard or ultra, the engine temporarily weights toward easy/medium for the next 2 events.",
+    "consecutive_threshold": 4,
+    "relief_duration": 2,
+    "notes": "Pure engine logic. Not encoded in module tags. Prevents death spirals."
+  }
+}

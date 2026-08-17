@@ -1,0 +1,312 @@
+[
+  {
+    "id": "event_void_001",
+    "active": true,
+    "title": "The Census",
+    "difficulty": "hard",
+    "tone": [
+      "corrupted",
+      "cosmic"
+    ],
+    "node_type": [
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "comm_mode": "corrupted",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA counts five crew aboard! She counts again: five! She counts again, just to be — five. Five. It has always been five. ARIA is fine!",
+      "marv": "MARV reports nothing on sensors. He wants to clarify: not 'nothing detected.' Nothing. He is reporting the presence of nothing. It registers.",
+      "rex": "REX has completed his patrol. All sections clear. He walked one corridor twice, because the first time, it was longer.",
+      "chip": "CHIP's advertising database contains no products for this region! No one has ever tried to sell anything here! CHIP finds this more frightening than anything else aboard!",
+      "ajoy": "AJOY has stopped making observations about this leg of the trip. She will resume when there is something. When there is anything."
+    },
+    "body": "The ship computer runs a routine crew census, the way it does every day at 0600.\n\nIt runs it again at 0603. Then at 0611. Then hourly, which is not a scheduled behavior.\n\nWhen asked, the computer states the count 'keeps needing to be confirmed.' The count is correct every time. The computer keeps checking. Out the viewports there is nothing — genuinely nothing, no stars visible through some trick of dust and distance, the kind of dark that the word 'dark' was invented to be insufficient for.\n\nThe census runs again.",
+    "choices": [
+      {
+        "text": "Run a full diagnostic on the computer",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "override",
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The diagnostic returns clean. Every subsystem nominal. The census behavior is logged as 'anomalous but benign.' Asked directly why it keeps counting, the computer produces the longest pause in its operational history — four full seconds — and answers: 'Thoroughness.' The census continues. You stop asking."
+        }
+      },
+      {
+        "text": "Have the crew confirm headcount manually",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "ran_manual_census",
+          "time_cost": "trivial",
+          "narrative": "The crew gathers in the mess hall and counts itself. The number is correct. Everyone agrees the number is correct. Everyone also, without discussing it, starts sleeping with their cabin doors open. The manual census is not repeated. Once was enough. Once was possibly too many."
+        }
+      },
+      {
+        "text": "Speed through — burn fuel, leave the dark",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -8,
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You push the engines and cross the dark stretch in half the scheduled time. Fuel burns. Nobody objects to the expense — not the crew, not the computer, which quietly suspends the census the moment the first star reappears in the viewports. It never explains. You never ask. Some line items don't get audited."
+        }
+      },
+      {
+        "text": "Ignore it — it's just a counting subroutine",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "ignored_census",
+          "time_cost": "trivial",
+          "narrative": "You let it count. It counts all through the dark stretch — every hour, on the hour, five, five, five. On the last night before the stars come back, one census logs at 0300 with no scheduled trigger and no requesting process. The count was five. It has always been five. The ship flies on."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_void_002",
+    "active": true,
+    "title": "Hull Knock",
+    "difficulty": "hard",
+    "tone": [
+      "corrupted",
+      "horror"
+    ],
+    "node_type": [
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "comm_mode": "corrupted",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA says it's probably just thermal contraction! Metal pops when it cools! She is saying this a lot! The repetition is load-bearing!",
+      "marv": "MARV has analyzed the acoustic signature. It is consistent with thermal contraction. It is also consistent with knocking. He presents both findings at identical confidence. This is the problem.",
+      "rex": "REX asked the obvious question: knock back, or don't? He has been standing at the inner hull for an hour, hand raised, deciding. REX has never taken an hour to decide anything.",
+      "chip": "CHIP wishes to remind everyone that the hull warranty covers 'material defects' but not 'visitors'! This clause has never mattered before! CHIP does not know why he brought it up!",
+      "ajoy": "AJOY served on a ship that heard this once before. She was asked afterward what it was. She said then what she says now: the void is very large, and the ship is very small, and metal cools. Metal cools."
+    },
+    "body": "It starts on the third watch: a knock, from the outer hull, aft section. Then two more. Then silence for an hour. Then one.\n\nThermal contraction. Everyone knows it is thermal contraction. The hull cools unevenly out here where there are no stars to warm it, and metal pops, and physics is not obligated to sound innocent while it happens.\n\nThe knocks do not repeat in any pattern the computer can model. Which is exactly what random thermal noise sounds like.\n\nWhich is exactly what it would sound like.",
+    "choices": [
+      {
+        "text": "Suit up and inspect the outer hull",
+        "requires_crew": null,
+        "requires_item": "pressure_suit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6,
+            "hull": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "inspected_the_knock",
+          "time_cost": "medium",
+          "narrative": "The EVA finds a loose sensor housing, flexing against its mount as the hull cools — knocking, in other words, in the most boring possible way. It is bolted down. The knocking stops. The crew celebrates the boring explanation like a holiday, because out here, boring is the best thing the universe stocks."
+        }
+      },
+      {
+        "text": "Knock back",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "knocked_back",
+          "time_cost": "trivial",
+          "narrative": "You knock back: three, evenly spaced, the way you'd knock on any door. The silence that follows lasts eleven minutes. Then, from a completely different section of the hull — forward, dorsal, nowhere near the first — one knock. Just one. Nothing further is heard for the rest of the crossing. The crew does not discuss it. The log does not mention it. The hull holds everything out, or in, that it is supposed to."
+        }
+      },
+      {
+        "text": "Run the spectrometer against the hull sounds",
+        "requires_crew": null,
+        "requires_item": "spectrometer",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The spectrometer confirms it: thermal signatures at every knock site, cooling gradients right where they should be, contraction noise with a paper trail. Science wins. The knocking continues, but now it comes with documentation, and documented knocking is just weather. The crew sleeps. Mostly."
+        }
+      },
+      {
+        "text": "Turn the internal speakers up and drown it out",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Music plays through every deck for three days straight. It works, in the sense that nobody hears knocking. It fails, in the sense that everybody knows why the music is playing. When the void finally gives way to starlight and the speakers go quiet, the whole crew listens to the new silence for a long moment. Nothing knocks. The ship flies on."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_void_003",
+    "active": true,
+    "title": "Mail Call",
+    "difficulty": "medium",
+    "tone": [
+      "corrupted",
+      "absurd"
+    ],
+    "node_type": [
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "comm_mode": "corrupted",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has mail! Everyone has mail! Isn't that nice! She is not going to think about the delivery route! She is NOT going to think about the delivery route!",
+      "marv": "MARV traced the transmission vector. It originates from the direction you are traveling. Not from behind, where everyone you know is. From ahead, where nothing is.",
+      "rex": "REX opened his first. Standard procedure: officer takes the risk. It was a pension statement. The numbers were correct. REX has never told anyone those numbers.",
+      "chip": "CHIP confirms the messages carry valid routing headers from carriers that exist! The postage is paid! CHIP keeps checking the postage because the postage is the only part that makes sense!",
+      "ajoy": "AJOY received one too. She read it. She recommends everyone make their own choice, and she says it in the tone of someone who is glad she read hers and will not be explaining why."
+    },
+    "body": "The comm array — silent for six days, this deep into the dark — chimes.\n\nMail delivery. Personal messages, one per crew member, each correctly addressed, each from someone the recipient actually knows. The headers are valid. The carrier routes exist. The timestamps are three weeks from now.\n\nThe computer notes, in a small font, that delivery to this region is 'not currently possible,' and files the messages in the inbox anyway, because that is where messages go.",
+    "choices": [
+      {
+        "text": "Let everyone read theirs",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 7
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "read_the_mail",
+          "time_cost": "trivial",
+          "narrative": "The messages are ordinary. Family news, an overdue apology, a recipe someone promised to send. Warm, mundane, dated three weeks from now. The crew reads them and feels better, then feels strange about feeling better, then decides — collectively, wordlessly — to keep the feeling and skip the strangeness. The messages do not arrive again three weeks later. Or they already did. The grammar of it never resolves."
+        }
+      },
+      {
+        "text": "Quarantine them unread until real space",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "quarantined_the_mail",
+          "time_cost": "trivial",
+          "narrative": "The messages go in quarantine, unread, until the ship clears the dark. When they're finally opened under honest starlight, the inbox is empty. Not deleted — the quarantine log shows the entries, sizes, checksums. There is simply nothing inside them anymore. The crew takes this exactly as well as you'd expect. Prudence has costs. This is apparently one of them."
+        }
+      },
+      {
+        "text": "Have the medic screen the crew after reading",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "read_the_mail",
+          "time_cost": "low",
+          "narrative": "Everyone reads; the medic monitors. Findings: elevated heart rates during reading, normal after, no anomalies, no effects. 'Whatever it was,' the medical log concludes, 'it was just mail.' The word 'just' is doing more work than any word should. The medic signs the log anyway. Out here you take 'no anomalies' and you do not haggle."
+        }
+      }
+    ]
+  }
+]

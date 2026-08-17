@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Pause Menu Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="shared.css" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'VT323', monospace;
+  background: #0e1118;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  color: #d1d5db;
+  overflow-x: hidden;
+}
+
+#demo-wrap { display: flex; gap: 20px; padding: 20px; align-items: flex-start; }
+
+#scale-root { width: 960px; height: 640px; flex-shrink: 0; transform-origin: top left; }
+
+/* Faux game background — pause overlay dims this 92%, so player sees
+   a faint sense of "still on a journey" behind the terminal. */
+#game {
+  width: 960px; height: 640px;
+  position: relative;
+  background:
+    radial-gradient(ellipse at center, rgba(60,80,130,0.18) 0%, transparent 70%),
+    linear-gradient(180deg, #0e1520 0%, #020408 100%);
+  overflow: hidden;
+}
+#game::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(140,200,144,0.3) 0.5px, transparent 1px),
+    radial-gradient(circle at 78% 64%, rgba(53,198,191,0.3) 0.5px, transparent 1px),
+    radial-gradient(circle at 45% 80%, rgba(232,216,160,0.4) 0.5px, transparent 1px);
+  background-size: 320px 240px, 280px 220px, 360px 200px;
+}
+#game::after {
+  content: 'CRUISE · DAY 47 · IN TRANSIT';
+  position: absolute;
+  left: 22px; top: 22px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: rgba(200,168,90,0.6);
+}
+#game-tag {
+  position: absolute;
+  right: 22px; bottom: 22px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: rgba(140,160,180,0.45);
+}
+
+/* Dev controls sidebar — must sit above the pause overlay so the
+   menu can be tweaked without dismissing it. */
+#controls {
+  width: 260px;
+  background: #111722;
+  border: 1px solid #2a3040;
+  padding: 14px;
+  font-size: 14px;
+  position: relative;
+  z-index: 100001;
+  color: #d1d5db;
+}
+#controls h2 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #c8a85a;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed rgba(200,168,90,0.3);
+  padding-bottom: 8px;
+}
+#controls h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: #8898a8;
+  margin: 14px 0 6px;
+  text-transform: uppercase;
+}
+#controls .row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+#controls .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+
+#controls button {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  background: linear-gradient(180deg, #2a3040 0%, #1a1f2a 100%);
+  border: 1px solid #3a4050;
+  color: #d0c890;
+  padding: 6px 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+  text-align: left;
+}
+#controls button:hover  { background: linear-gradient(180deg, #353c50 0%, #20252e 100%); border-color: #5a6070; color: #e8d8a0; }
+#controls button:active { transform: translate(1px,1px); }
+#controls button.on     { border-color: #c8a85a; color: #c8a85a; background: linear-gradient(180deg, #3a3320 0%, #1a1810 100%); }
+#controls .hint { font-size: 12px; color: #8898a8; margin-top: 4px; line-height: 1.4; }
+#controls .stat { font-size: 13px; color: #8cc890; }
+#controls .stat.off { color: #8898a8; }
+
+#controls .tune-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 50px;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 3px;
+}
+#controls .tune-row label {
+  font-size: 10px;
+  font-family: 'Press Start 2P', monospace;
+  letter-spacing: 1px;
+  color: #8898a8;
+}
+#controls .tune-row input[type="color"] {
+  height: 22px;
+  width: 100%;
+  background: #0c121c;
+  border: 1px solid #3a4050;
+  cursor: pointer;
+  grid-column: 2 / 4;
+}
+#controls .tune-row input[type="range"] { width: 100%; }
+#controls .tune-num { font-size: 12px; color: #c8a85a; text-align: right; }
+
+#size-toggle {
+  position: fixed; top: 12px; right: 12px; z-index: 100002;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px; letter-spacing: 1px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: #c8a85a;
+  cursor: pointer;
+}
+#size-toggle:active { border-style: inset; border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a; transform: translate(1px,1px); }
+
+body.fullsize { overflow: hidden; }
+body.fullsize #demo-wrap { padding: 0; gap: 0; width: 100vw; height: 100vh; justify-content: center; align-items: center; }
+body.fullsize #controls { display: none; }
+</style>
+</head>
+<body>
+<button id="size-toggle">ACTUAL SIZE</button>
+<div id="demo-wrap">
+  <div id="scale-root">
+    <div id="game">
+      <span id="game-tag">FAUX BACKDROP · TUNE THE TERMINAL</span>
+    </div>
+  </div>
+
+  <aside id="controls">
+    <h2>PAUSE MENU CONTROLS</h2>
+
+    <h3>VIEW</h3>
+    <div class="row">
+      <button id="btn-open">OPEN MENU</button>
+      <button id="btn-close">CLOSE MENU</button>
+    </div>
+
+    <h3>SECTION JUMP</h3>
+    <div class="grid">
+      <button data-jump="resume">RESUME</button>
+      <button data-jump="settings">SETTINGS</button>
+      <button data-jump="save">SAVE</button>
+      <button data-jump="load">LOAD</button>
+      <button data-jump="log">SHIP'S LOG</button>
+      <button data-jump="help">HELP</button>
+      <button data-jump="quit">QUIT</button>
+    </div>
+
+    <h3>STAY-OPEN MODE</h3>
+    <div class="row">
+      <button id="btn-stay">STAY OPEN: OFF</button>
+      <p class="hint">Off: ESC closes normally. On: ESC re-opens immediately, so you can iterate without re-toggling.</p>
+    </div>
+
+    <h3>SAVE SLOTS</h3>
+    <div class="row">
+      <button id="btn-fill-slots">POPULATE SLOTS 1·2·3</button>
+      <button id="btn-clear-slots">CLEAR ALL SLOTS</button>
+    </div>
+
+    <h3>SETTINGS</h3>
+    <div class="row">
+      <button id="btn-reset-settings">RESET SETTINGS</button>
+      <p class="hint">Clears <code style="color:#c8a85a">transplant:settings</code> and re-bakes default cursors.</p>
+    </div>
+
+    <h3>TUNE — COLOR</h3>
+    <div class="tune-row"><label>AMBER</label><input type="color" data-var="--pause-amber" value="#c8a85a"></div>
+    <div class="tune-row"><label>AMBER BRIGHT</label><input type="color" data-var="--pause-amber-bright" value="#e8d8a0"></div>
+    <div class="tune-row"><label>AMBER DIM</label><input type="color" data-var="--pause-amber-dim" value="#6e5a30"></div>
+    <div class="tune-row"><label>SCREEN BG</label><input type="color" data-var="--pause-bg" value="#0a0a15"></div>
+    <div class="tune-row"><label>BEZEL</label><input type="color" data-var="--pause-bezel" value="#1a2030"></div>
+    <div class="tune-row"><label>DANGER</label><input type="color" data-var="--pause-danger" value="#cc3333"></div>
+
+    <h3>TUNE — SIZE</h3>
+    <div class="tune-row"><label>SIDEBAR W</label><input type="range" min="160" max="320" value="200" data-var="--pause-sidebar-w" data-suffix="px"><span class="tune-num">200px</span></div>
+    <div class="tune-row"><label>BODY FS</label><input type="range" min="12" max="26" value="18" data-var="--pause-content-fs" data-suffix="px"><span class="tune-num">18px</span></div>
+    <div class="tune-row"><label>SIDEBAR FS</label><input type="range" min="14" max="28" value="20" data-var="--pause-item-fs" data-suffix="px"><span class="tune-num">20px</span></div>
+    <div class="tune-row"><label>HEADER FS</label><input type="range" min="9" max="20" value="12" data-var="--pause-h-fs" data-suffix="px"><span class="tune-num">12px</span></div>
+    <div class="tune-row"><label>TOPBAR FS</label><input type="range" min="7" max="20" value="14" data-var="--pause-topbar-fs" data-suffix="px"><span class="tune-num">14px</span></div>
+    <div class="tune-row"><label>HEADER LSP</label><input type="range" min="0" max="6" step="0.5" value="1.5" data-var="--pause-h-letter" data-suffix="px"><span class="tune-num">1.5px</span></div>
+    <div class="tune-row"><label>BEZEL PAD</label><input type="range" min="0" max="20" value="5" data-var="--pause-bezel-pad" data-suffix="px"><span class="tune-num">5px</span></div>
+    <div class="tune-row"><label>ICON SIZE</label><input type="range" min="16" max="48" value="38" data-var="--pause-icon-size" data-suffix="px"><span class="tune-num">38px</span></div>
+
+    <h3>TUNE — FX</h3>
+    <div class="tune-row"><label>BG DIM</label><input type="range" min="0.5" max="1" step="0.01" value="0.92" data-var="--pause-dim-alpha"><span class="tune-num">0.92</span></div>
+
+    <div class="row" style="margin-top:8px;"><button id="btn-tune-reset">RESET TUNING</button><button id="btn-tune-copy">COPY VALUES</button></div>
+
+    <h3>STATE</h3>
+    <p class="hint">Paused: <span id="stat-paused" class="stat off">false</span></p>
+    <p class="hint">Open: <span id="stat-open" class="stat off">false</span></p>
+    <p class="hint">Body modal-open: <span id="stat-modal" class="stat off">false</span></p>
+  </aside>
+</div>
+
+<script>
+(() => {
+  // Open the pause menu on boot — this demo IS the pause menu.
+  if (PauseMenu && !PauseMenu.isOpen()) PauseMenu.open();
+
+  const $ = id => document.getElementById(id);
+
+  // Stay-open mode: when ESC closes the menu, immediately re-open it.
+  // Does the same for the RESUME button. Useful when iterating styles.
+  let stayOpen = false;
+  PauseBus.onChange(p => {
+    if (!p && stayOpen) requestAnimationFrame(() => PauseMenu.open());
+    refreshStats();
+  });
+
+  $('btn-open').addEventListener('click', () => PauseMenu.open());
+  $('btn-close').addEventListener('click', () => {
+    const prev = stayOpen; stayOpen = false;
+    PauseMenu.close();
+    stayOpen = prev;  // restore — this close was intentional
+  });
+
+  // Section quick-jump — drives the same DOM the menu would.
+  document.querySelectorAll('[data-jump]').forEach(b => {
+    b.addEventListener('click', () => {
+      if (!PauseMenu.isOpen()) PauseMenu.open();
+      const sectionBtn = document.querySelector('#pause-overlay .pause-item[data-section="' + b.dataset.jump + '"]');
+      if (sectionBtn) sectionBtn.click();
+    });
+  });
+
+  // Stay-open toggle.
+  $('btn-stay').addEventListener('click', () => {
+    stayOpen = !stayOpen;
+    $('btn-stay').textContent = 'STAY OPEN: ' + (stayOpen ? 'ON' : 'OFF');
+    $('btn-stay').classList.toggle('on', stayOpen);
+    if (stayOpen && !PauseMenu.isOpen()) PauseMenu.open();
+  });
+
+  // Save slots.
+  $('btn-fill-slots').addEventListener('click', () => {
+    const labels = ['LUNAR · DAY 12', 'MARS · DAY 47', 'INTERSTELLAR · DAY 134'];
+    [1,2,3].forEach((n,i) => {
+      try { localStorage.setItem('transplant:save:' + n, JSON.stringify({ ts: Date.now() - (i*86400000), label: labels[i] })); } catch (e) {}
+    });
+    if (PauseMenu.isOpen()) {
+      const sel = document.querySelector('#pause-overlay .pause-item.selected');
+      if (sel && (sel.dataset.section === 'save' || sel.dataset.section === 'load')) sel.click();
+    }
+  });
+  $('btn-clear-slots').addEventListener('click', () => {
+    [1,2,3].forEach(n => { try { localStorage.removeItem('transplant:save:' + n); } catch (e) {} });
+    if (PauseMenu.isOpen()) {
+      const sel = document.querySelector('#pause-overlay .pause-item.selected');
+      if (sel && (sel.dataset.section === 'save' || sel.dataset.section === 'load')) sel.click();
+    }
+  });
+
+  // Reset settings.
+  $('btn-reset-settings').addEventListener('click', () => {
+    try { localStorage.removeItem('transplant:settings'); } catch (e) {}
+    refreshCursorVars();
+    if (PauseMenu.isOpen()) {
+      const sel = document.querySelector('#pause-overlay .pause-item.selected');
+      if (sel && sel.dataset.section === 'settings') sel.click();
+    }
+  });
+
+  // Tune controls — write to :root CSS vars; show numeric value.
+  const tuneRoot = document.documentElement;
+  document.querySelectorAll('#controls .tune-row input').forEach(input => {
+    const v = input.dataset.var;
+    const suffix = input.dataset.suffix || '';
+    const numEl = input.parentElement.querySelector('.tune-num');
+    function apply(val) {
+      tuneRoot.style.setProperty(v, val + suffix);
+      if (numEl) numEl.textContent = val + suffix;
+    }
+    input.addEventListener('input', () => apply(input.value));
+  });
+  $('btn-tune-reset').addEventListener('click', () => {
+    document.querySelectorAll('#controls .tune-row input').forEach(input => {
+      const v = input.dataset.var;
+      tuneRoot.style.removeProperty(v);
+      input.value = input.defaultValue;
+      const numEl = input.parentElement.querySelector('.tune-num');
+      if (numEl) numEl.textContent = input.defaultValue + (input.dataset.suffix || '');
+    });
+  });
+  $('btn-tune-copy').addEventListener('click', () => {
+    const lines = [];
+    document.querySelectorAll('#controls .tune-row input').forEach(input => {
+      const cur = tuneRoot.style.getPropertyValue(input.dataset.var) || (input.value + (input.dataset.suffix || ''));
+      lines.push('  ' + input.dataset.var + ': ' + cur.trim() + ';');
+    });
+    const block = ':root {\n' + lines.join('\n') + '\n}';
+    navigator.clipboard.writeText(block).then(
+      () => { $('btn-tune-copy').textContent = 'COPIED ✓'; setTimeout(() => $('btn-tune-copy').textContent = 'COPY VALUES', 1200); },
+      () => { console.log(block); $('btn-tune-copy').textContent = 'SEE CONSOLE'; }
+    );
+  });
+
+  // Live state readout.
+  function refreshStats() {
+    const paused = PauseBus.paused;
+    const open = PauseMenu.isOpen();
+    const mo = document.body.classList.contains('modal-open');
+    const sp = $('stat-paused'); sp.textContent = paused; sp.classList.toggle('off', !paused);
+    const so = $('stat-open');   so.textContent = open;   so.classList.toggle('off', !open);
+    const sm = $('stat-modal');  sm.textContent = mo;     sm.classList.toggle('off', !mo);
+  }
+  refreshStats();
+  document.addEventListener('keyup', refreshStats);
+
+  // Actual-size toggle — scales the 960×640 stage to fill viewport
+  // when on, or fit alongside the dev sidebar when off.
+  function applyScale() {
+    const root = $('scale-root');
+    if (!root) return;
+    let s;
+    if (document.body.classList.contains('fullsize')) {
+      s = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+    } else {
+      const avail = Math.min(window.innerWidth - 320, window.innerWidth * 0.7);
+      const h = window.innerHeight - 40;
+      s = Math.min(avail / 960, h / 640, 1);
+    }
+    root.style.transform = 'scale(' + s + ')';
+    // Reserve scaled flow size so dev sidebar stays put.
+    root.style.width  = (960 * s) + 'px';
+    root.style.height = (640 * s) + 'px';
+  }
+  applyScale();
+  window.addEventListener('resize', applyScale);
+  $('size-toggle').addEventListener('click', () => {
+    document.body.classList.toggle('fullsize');
+    $('size-toggle').textContent = document.body.classList.contains('fullsize') ? 'WINDOWED' : 'ACTUAL SIZE';
+    applyScale();
+  });
+})();
+</script>
+</body>
+</html>

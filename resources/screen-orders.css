@@ -1,0 +1,429 @@
+/* ────────────────────────────────────────────────────────────────
+   STANDING ORDERS MODAL — Restoration item 5.
+   Chrome ported from resources/demo-orders.html (its :root control
+   defaults baked in as fixed values). Every selector is scoped under
+   #overlay-orders; classnames are od-prefixed so nothing collides
+   with cruise/growbay chrome. Behavior: engine/js/screens/orders.js.
+   ──────────────────────────────────────────────────────────────── */
+
+#overlay-orders { z-index: 70; }
+
+#od-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(4,8,16,0.75);
+  cursor: var(--cursor-hand, pointer);
+}
+
+#od-modal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 797px;
+  height: 560px;
+  background: linear-gradient(180deg, #141a28 0%, #0a0e18 100%);
+  border: 3px solid #435384;
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(200,168,90,0.2),
+    inset 0 0 0 2px rgba(14,20,32,0.5),
+    0 8px 40px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#overlay-orders .od-header {
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 2px solid rgba(200,168,90,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#overlay-orders .od-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 16px;
+  letter-spacing: 3px;
+  color: #56cfd7;
+  text-shadow: 0 0 8px rgba(200,168,90,0.35);
+}
+
+#overlay-orders .od-body {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Section wrapper: label row + pill row + preview row */
+#overlay-orders .od-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+#overlay-orders .od-section-header {
+  /* center + fixed min-height (demo note: baseline alignment reads
+     as uneven across the mixed font sizes and lets the warn badge
+     jitter the row). */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 22px;
+}
+#overlay-orders .od-section-icon {
+  font-size: 16px;
+  color: #c8a85a;
+}
+
+/* Sprite icon slots — emoji fallback stays in the markup; the sprite
+   background hides it (demo convention). */
+#overlay-orders .icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  vertical-align: middle;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+#overlay-orders .icon.icon-inline { width: 16px; height: 16px; line-height: 16px; }
+#overlay-orders .icon.icon-engines { background-image: url('../sprites/interface/engines.png'); color: transparent; text-shadow: none; }
+#overlay-orders .icon.icon-rations { background-image: url('../sprites/interface/rations.png'); color: transparent; text-shadow: none; }
+#overlay-orders .icon.icon-water   { background-image: url('../sprites/interface/water.png');   color: transparent; text-shadow: none; }
+#overlay-orders .icon.icon-plant   { background-image: url('../sprites/interface/plant.png');   color: transparent; text-shadow: none; }
+#overlay-orders .icon.icon-crew    { background-image: url('../sprites/interface/crew.png');    color: transparent; text-shadow: none; }
+
+#overlay-orders .od-section-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #c8a85a;
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+}
+
+/* Plain-language tier description — inline in the header, fills the
+   row and pushes the warn badge right. */
+#overlay-orders .od-tier-desc {
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  color: #aab5c4;
+  font-style: italic;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Section-header warning — always in the DOM, opacity-flipped so the
+   header never changes height when it fires. */
+#overlay-orders .od-section-warn {
+  display: inline-block;
+  font-family: 'Press Start 2P', cursive;
+  color: #cc3333;
+  font-size: 10px;
+  line-height: 1;
+  margin-left: 6px;
+  text-shadow: 0 0 6px rgba(204,51,51,0.6);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+#overlay-orders .od-section-warn.on {
+  opacity: 1;
+  animation: od-warn-pulse 1.4s ease-in-out infinite;
+}
+@keyframes od-warn-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.5); }
+}
+
+/* Stepped pills */
+#overlay-orders .od-pill-row {
+  display: flex;
+  gap: 6px;
+}
+#overlay-orders .od-pill {
+  flex: 1;
+  position: relative;
+  padding: 9px 6px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  background: rgba(20,28,40,0.7);
+  border: 2px solid #2a3040;
+  color: #7a8898;
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 3px;
+  transition: filter 0.1s, transform 0.08s;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+}
+#overlay-orders .od-pill:hover { filter: brightness(1.2); }
+#overlay-orders .od-pill:active { transform: translate(1px, 1px); }
+#overlay-orders .od-pill.selected {
+  background: linear-gradient(180deg, #b4b091 0%, #7a7a65 100%);
+  border-color: #c8a85a;
+  color: #0e1520;
+  box-shadow: 0 0 10px rgba(200,168,90,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+}
+/* Saved-current marker — glowing teal bar above the committed tier. */
+#overlay-orders .od-pill.saved-current::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  width: 24px;
+  height: 4px;
+  background: #35c6bf;
+  border-radius: 3px;
+  box-shadow: 0 0 8px #35c6bf, 0 0 2px #35c6bf;
+  animation: od-sc-pulse 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes od-sc-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.4); }
+}
+#overlay-orders .od-pill.saved-current {
+  border-color: rgba(53,198,191,0.5);
+}
+
+/* Preview stats row */
+#overlay-orders .od-section-preview {
+  display: flex;
+  gap: 14px;
+  padding: 6px 10px;
+  background: rgba(10,14,20,0.5);
+  border-left: 2px solid rgba(200,168,90,0.25);
+  border-radius: 0 3px 3px 0;
+}
+#overlay-orders .od-preview-stat {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: #5a7a6a;
+  letter-spacing: 0.5px;
+  /* Locked line box — inline children can't nudge the row (demo note). */
+  line-height: 18px;
+  min-height: 18px;
+}
+#overlay-orders .od-preview-stat strong {
+  color: #d0c890;
+  font-weight: normal;
+  margin-left: 4px;
+}
+#overlay-orders .od-preview-stat .delta {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
+  font-size: 13px;
+  line-height: 14px;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+#overlay-orders .od-preview-stat .delta.good    { color: #8cc890; background: rgba(140,200,144,0.12); }
+#overlay-orders .od-preview-stat .delta.bad     { color: #cc3333; background: rgba(204,51,51,0.12); }
+#overlay-orders .od-preview-stat .delta.neutral { color: #5a7a6a; background: rgba(122,136,152,0.12); }
+
+/* Warning state on a stat — projection crossed an absolute threshold
+   ("you're picking DOOM"). */
+#overlay-orders .od-preview-stat.warn strong {
+  color: #cc3333;
+  text-shadow: 0 0 6px rgba(204,51,51,0.35);
+}
+#overlay-orders .od-warn-badge {
+  display: inline-block;
+  color: #cc3333;
+  font-size: 13px;
+  line-height: 1;
+  vertical-align: middle;
+  margin-left: 5px;
+  text-shadow: 0 0 6px rgba(204,51,51,0.55);
+  font-weight: bold;
+  letter-spacing: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+#overlay-orders .od-preview-stat.warn .od-warn-badge { opacity: 1; }
+
+/* Water allocation — custom two-way slider */
+#overlay-orders .od-water-allocation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+#overlay-orders .od-water-side {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #c8a85a;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 86px;
+}
+#overlay-orders .od-water-side.crew { justify-content: flex-end; }
+#overlay-orders .od-water-side .emoji { font-size: 16px; }
+#overlay-orders .od-water-side .pct {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: #d0c890;
+  min-width: 30px;
+  text-align: right;
+}
+#overlay-orders .od-water-track {
+  flex: 1;
+  height: 30px; /* matches the pill height — same control family */
+  background: rgba(20,28,40,0.8);
+  border: 2px solid #2a3040;
+  border-radius: 3px;
+  position: relative;
+  cursor: var(--cursor-hand, grab);
+  overflow: visible; /* thumb pokes out for grabbability */
+}
+#overlay-orders .od-water-fill-plant {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, #85d270 100%, transparent) 0%,
+    color-mix(in srgb, #85d270 70%, transparent) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: width 0.2s ease;
+}
+#overlay-orders .od-water-fill-crew {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, #7dc8e8 100%, transparent) 0%,
+    color-mix(in srgb, #7dc8e8 70%, transparent) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: width 0.2s ease;
+}
+#overlay-orders .od-water-thumb {
+  position: absolute;
+  top: -6px;
+  width: 18px;
+  height: calc(100% + 12px);
+  background: linear-gradient(180deg, #e0d5a0 0%, #c8a85a 50%, #8a7035 100%);
+  border: 2px solid #2a1f0a;
+  transform: translateX(-50%);
+  pointer-events: none;
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    inset 0 -1px 0 rgba(0,0,0,0.3),
+    0 0 10px rgba(200,168,90,0.5),
+    0 2px 4px rgba(0,0,0,0.6);
+  z-index: 2;
+}
+#overlay-orders .od-water-thumb::before {
+  content: '';
+  position: absolute;
+  inset: 25% 5px;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0.35) 0px, rgba(0,0,0,0.35) 1px,
+      rgba(255,255,255,0.25) 1px, rgba(255,255,255,0.25) 2px,
+      transparent 2px, transparent 4px);
+}
+#overlay-orders .od-water-midmark {
+  position: absolute;
+  top: 2px; bottom: 2px;
+  left: 50%;
+  width: 1px;
+  background: rgba(255,255,255,0.25);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+/* Saved-current triangle — points at the committed allocation. */
+#overlay-orders .od-water-saved-mark {
+  position: absolute;
+  top: -16px;
+  width: 0; height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid #35c6bf;
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: od-sc-pulse-triangle 1.8s ease-in-out infinite;
+  transition: left 0.2s;
+  z-index: 3;
+}
+@keyframes od-sc-pulse-triangle {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(53,198,191,0.7)); }
+  50%      { filter: drop-shadow(0 0 10px rgba(53,198,191,1)); }
+}
+
+/* AI commentary line */
+#overlay-orders .od-ai {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  background: rgba(10,14,20,0.5);
+  border-top: 1px solid rgba(200,168,90,0.15);
+  border-bottom: 1px solid rgba(200,168,90,0.15);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+#overlay-orders .od-ai-avatar {
+  font-size: 16px;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #c8a85a;
+  border-radius: 50%;
+  background-color: rgba(200,168,90,0.1);
+  flex-shrink: 0;
+  line-height: 1;
+  overflow: hidden;
+}
+#overlay-orders .od-ai-avatar.has-sprite {
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: transparent;
+  border: 0;
+  border-radius: 0;
+  color: transparent;
+  text-shadow: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+#overlay-orders .od-ai-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #c8a85a;
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+  flex-shrink: 0;
+}
+#overlay-orders .od-ai-text {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: #aab5c4;
+  line-height: 1.3;
+}
+
+/* Footer: action buttons (.panel-btn chrome from shared.css) */
+#overlay-orders .od-footer {
+  flex-shrink: 0;
+  height: 60px;
+  padding: 0 20px;
+  background: linear-gradient(180deg, rgba(14,20,32,0.7) 0%, rgba(10,14,20,0.7) 100%);
+  border-top: 2px solid rgba(200,168,90,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}

@@ -1,0 +1,732 @@
+[
+  {
+    "id": "event_encounter_pirate_001",
+    "active": true,
+    "title": "Uninvited Company",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "pirate",
+      "species": null
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "UNINVITED COMPANY",
+        "body": "A rust-pocked ship closes on your port side. Weapons powered. {npc.quirk}",
+        "line": "Hail, little ship. Cut your engines. We'll make this quick.",
+        "ai": {
+          "aria": "The weapons are charged in a very spirited way!",
+          "marv": "Their fuel reserves suggest they cannot chase us far. But far enough.",
+          "rex": "Threat assessment: moderate. Recommending weapons free.",
+          "chip": "Protection insurance add-on is available. Ask me how.",
+          "ajoy": "You could fight. You could flee. You could talk. One works better than you think."
+        },
+        "choices": [
+          {
+            "text": "Open Fire",
+            "effort_required": 30,
+            "triggerCombat": true
+          },
+          {
+            "text": "Ram — engineer braces the hull",
+            "gate": {
+              "crew": "engineer"
+            },
+            "hull": 18,
+            "effort_required": 25,
+            "triggerRamResolve": true,
+            "outcome": "pirate_ram"
+          },
+          {
+            "text": "Negotiate",
+            "gate": {
+              "crew": "diplomat"
+            },
+            "effort_required": 20,
+            "next": "negotiate"
+          },
+          {
+            "text": "Pay 20 gold for safe passage",
+            "gate": {
+              "gold": 20
+            },
+            "outcome": "pirate_paid"
+          },
+          {
+            "text": "Flee — burn fuel, leave them behind",
+            "triggerFleeResolve": true,
+            "outcome": "pirate_flee"
+          }
+        ]
+      },
+      "negotiate": {
+        "title": "NEGOTIATION",
+        "body": "They're listening — for now. The captain's hand hovers over the weapons panel.",
+        "ai": {
+          "aria": "I love a good conversation!",
+          "marv": "They will not accept the first offer. Or the second.",
+          "rex": "If diplomacy fails I am already aiming.",
+          "chip": "Transcripts of this negotiation are sponsored by LipsLock™.",
+          "ajoy": "There is a line here you have not tried."
+        },
+        "choices": [
+          {
+            "text": "We have injured crew aboard",
+            "gate": {
+              "crew": "medic"
+            },
+            "outcome": "pirate_sympathy"
+          },
+          {
+            "text": "Half the fuel. You let us pass",
+            "effort_required": 20,
+            "next": "haggle"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      },
+      "haggle": {
+        "title": "THE DEAL",
+        "body": "The captain considers, then counters.",
+        "line": "Thirty percent fuel. We call it even.",
+        "ai": {
+          "aria": "A wonderful deal for everyone involved!",
+          "marv": "30% fuel pushes our reserve below the next leg's need.",
+          "rex": "They are betting you will cave. Call it.",
+          "chip": "30% is actually a great rate, by current space-piracy standards.",
+          "ajoy": "You can still walk this back. Or you can try to walk out cheaper."
+        },
+        "choices": [
+          {
+            "text": "Accept",
+            "outcome": "pirate_deal_30"
+          },
+          {
+            "text": "Counter — 20% only",
+            "effort_required": 15,
+            "outcome": "pirate_deal_20"
+          },
+          {
+            "text": "Walk away",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "pirate_paid": {
+        "title": "THEY PEEL OFF",
+        "tone": "success",
+        "body": "You hand over the gold. They salute — a bit too mockingly — and burn off into the dark.",
+        "resources": {
+          "gold": -20
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "You hand over the gold. They salute — a bit too mockingly — and burn off into the dark."
+      },
+      "pirate_flee": {
+        "title": "STRAIGHT AND FAST",
+        "tone": "success",
+        "body": "You pour the reserves into the engines. They chase for three hours, lose interest, and fall away.",
+        "resources": {
+          "fuel": -8
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "You pour the reserves into the engines. They chase for three hours, lose interest, and fall away."
+      },
+      "pirate_ram": {
+        "title": "CONTACT",
+        "tone": "danger",
+        "body": "Metal meets metal. Your hull shrieks. Theirs falls off. They drift. You drift harder — but you drift away.",
+        "resources": {
+          "fuel": -3,
+          "hull": -18
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Metal meets metal. Your hull shrieks. Theirs falls off. They drift. You drift harder — but you drift away."
+      },
+      "pirate_sympathy": {
+        "title": "A DECENT GESTURE",
+        "tone": "success",
+        "body": "The captain's jaw works. They lower weapons.",
+        "line": "Go. And don't come back through this sector.",
+        "resources": {},
+        "sets_flag": "pirate_sympathy",
+        "time_cost": "low",
+        "narrative": "The captain's jaw works. They lower weapons and let you pass."
+      },
+      "pirate_deal_30": {
+        "title": "THE DEAL IS DONE",
+        "tone": null,
+        "body": "You transfer the fuel. They peel off, already haggling amongst themselves over your supplies.",
+        "resources": {
+          "fuel": -30
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "You transfer the fuel. They peel off, already haggling amongst themselves over your supplies."
+      },
+      "pirate_deal_20": {
+        "title": "A BETTER DEAL",
+        "tone": "success",
+        "body": "The captain snorts.",
+        "line": "Fine. 20.",
+        "resources": {
+          "fuel": -20
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "The captain snorts and takes the smaller cut. Fine. 20."
+      }
+    },
+    "no_leave": true
+  },
+  {
+    "id": "event_encounter_trader_001",
+    "active": true,
+    "title": "A Commercial Opportunity",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "trader",
+      "species": null
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "A COMMERCIAL OPPORTUNITY",
+        "body": "A merchant vessel matches your velocity with practiced ease — close enough to talk, far enough to be polite about it. Its hull is a patchwork of forty years of hard bargains. {npc.quirk}",
+        "line": "{npc.line.greet}",
+        "ai": {
+          "aria": "A trader! ARIA loves traders! They have THINGS! Things are her third favorite category!",
+          "marv": "MARV has assessed the vessel. Well-maintained where it counts, shabby where it doesn't. He notes this is the signature of someone good at exactly one thing.",
+          "rex": "REX confirms the trader's weapons are stowed. Genuinely stowed, not performatively stowed. He is cautiously unimpressed.",
+          "chip": "CHIP detects a fellow commercial entity! Professional courtesy protocols engaged! CHIP will be watching the margins with love!",
+          "ajoy": "AJOY has reviewed this trader's public ledger. Fair prices, honest scales, one incident in '61 she'll summarize on request. It involves a goat."
+        },
+        "choices": [
+          {
+            "text": "Hear the pitch",
+            "next": "pitch"
+          },
+          {
+            "text": "BROWSE THE WARES",
+            "sub": "Buy and sell cargo",
+            "effort": 2,
+            "open_market": true
+          },
+          {
+            "text": "Trade pleasantries and move on",
+            "outcome": "trader_polite_pass"
+          },
+          {
+            "text": "Ignore the hail",
+            "outcome": "trader_ignored"
+          }
+        ]
+      },
+      "pitch": {
+        "title": "THE PITCH",
+        "body": "The trader's cargo manifest scrolls across your screen — the honest parts of it, anyway. Fuel cells, sealed rations, a 'miscellaneous' category doing an enormous amount of unexamined work.",
+        "line": "{npc.line.pitch}",
+        "ai": {
+          "aria": "Look at all of it! ARIA recommends buying something! Or nothing! She just enjoys commerce as a spectacle!",
+          "marv": "MARV has cross-checked the prices against station rates. Fair, with a loneliness surcharge. Out here, everything has a loneliness surcharge.",
+          "rex": "REX notes the 'miscellaneous' category. He always notes the miscellaneous category. It is where the interesting mistakes live.",
+          "chip": "CHIP rates these prices 'competitive!' High praise! CHIP does not compete, CHIP wins, but still! Competitive!",
+          "ajoy": "AJOY recommends the fuel cells if anything. She has compared the unit price to your reserves. The comparison was not idle."
+        },
+        "choices": [
+          {
+            "text": "Buy a fuel cell — 12 gold",
+            "gate": {
+              "gold": 12
+            },
+            "outcome": "trader_bought_fuel"
+          },
+          {
+            "text": "Buy sealed rations — 10 gold",
+            "gate": {
+              "gold": 10
+            },
+            "outcome": "trader_bought_food"
+          },
+          {
+            "text": "Buy an emergency beacon — 60 gold",
+            "gate": {
+              "gold": 60
+            },
+            "outcome": "trader_bought_beacon"
+          },
+          {
+            "text": "Ask about the 'miscellaneous'",
+            "next": "misc"
+          },
+          {
+            "text": "Decline politely",
+            "outcome": "trader_declined"
+          }
+        ]
+      },
+      "misc": {
+        "title": "MISCELLANEOUS",
+        "body": "The trader's expression shifts into something between pride and plausible deniability. A single crate is angled toward the camera. The label has been removed. Recently.",
+        "line": "One owner. Low mileage. No questions in either direction — that's the discount.",
+        "ai": {
+          "aria": "A mystery crate! ARIA is VIBRATING! Statistically it's probably fine! Statistically!",
+          "marv": "MARV cannot scan the crate through the trader's hull. He notes that the trader knows this. He notes the crate's placement is therefore a choice.",
+          "rex": "REX advises against unscannable cargo. On the record. He would also, off the record, quite like to know what it is.",
+          "chip": "CHIP notes 'as-is' purchases carry no warranty, no returns, and no CHIP liability! CHIP has never typed a disclaimer faster!",
+          "ajoy": "AJOY gives the crate forty-to-sixty odds of being worth it. She won't say which side is forty. That's the real gamble, she notes."
+        },
+        "choices": [
+          {
+            "text": "Buy the crate — 15 gold, no questions",
+            "gate": {
+              "gold": 15
+            },
+            "outcome": "trader_mystery_crate"
+          },
+          {
+            "text": "Back to the manifest",
+            "back": true
+          },
+          {
+            "text": "That's enough commerce for one day",
+            "outcome": "trader_declined"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "trader_polite_pass": {
+        "title": "PLEASANTRIES EXCHANGED",
+        "tone": "success",
+        "body": "You swap route gossip and weather reports — there is no weather, but spacers report it anyway. The trader burns off toward softer markets.",
+        "line": "{npc.line.farewell}",
+        "resources": {
+          "morale": 2
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Route gossip exchanged. No goods changed hands, but the crew enjoyed talking to someone whose problems are different problems."
+      },
+      "trader_ignored": {
+        "title": "HAIL DECLINED",
+        "tone": null,
+        "body": "You let the hail lapse. The merchant vessel holds alongside for another minute — commercial optimism dies slowly — then peels away without ceremony.",
+        "resources": {},
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "You ignored the hail. The trader moved on. Somewhere in their ledger, you are now a demographic."
+      },
+      "trader_bought_fuel": {
+        "title": "TRANSACTION COMPLETE",
+        "tone": "success",
+        "body": "The fuel cell crosses the gap on a cargo line, arriving with a receipt taped to it. The receipt is handwritten. The handwriting is beautiful.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -12
+        },
+        "item_grant": "fuel_cell",
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "One fuel cell, purchased fair and square. The receipt goes in the log. The cell goes in cargo. Everyone leaves solvent."
+      },
+      "trader_bought_food": {
+        "title": "TRANSACTION COMPLETE",
+        "tone": "success",
+        "body": "The ration crate arrives with a bonus tucked inside: a paper bag of actual dried fruit, unlisted on any manifest. The trader's small print, it turns out, runs in both directions.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -10,
+          "food": 10,
+          "morale": 2
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Rations purchased, plus a gift of dried fruit that outperformed every listed item. The crew remembers this trader's name."
+      },
+      "trader_mystery_crate": {
+        "title": "NO QUESTIONS ASKED",
+        "tone": null,
+        "body": "The crate arrives. It is heavier than it looks, which is the first data point you were not entitled to. It goes in the hold, label-side down, which is a joke, because there is no label.",
+        "line": "Pleasure doing business. Whatever it turns out to be — I never said it was anything.",
+        "resources": {
+          "gold": -15
+        },
+        "item_grant": "mystery_provisions",
+        "sets_flag": "bought_mystery_crate",
+        "time_cost": "low",
+        "narrative": "The crate is aboard. Nobody has opened it yet. 'Yet' is the operative word, and everyone aboard can hear it."
+      },
+      "trader_declined": {
+        "title": "NO SALE",
+        "tone": null,
+        "body": "The trader takes the refusal with professional grace and one final, reflexive price adjustment, which you also decline.",
+        "line": "{npc.line.refuse}",
+        "resources": {},
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "No sale. The trader moved on to softer wallets. The manifest, and its miscellaneous category, remain a road not taken."
+      },
+      "trader_bought_beacon": {
+        "title": "INSURANCE, PORTABLE",
+        "tone": "success",
+        "body": "The beacon crosses the gap in its original case, seals unbroken. 'Previous owner never needed it,' the trader says, then, after a pause neither of you enjoys: 'Never got to it, anyway. Sixty. It's good hardware.'",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -60
+        },
+        "item_grant": "emergency_beacon",
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "One emergency beacon, discounted history included. It goes in the rack by the airlock — the shelf where things wait to be needed never."
+      }
+    }
+  },
+  {
+    "id": "event_encounter_drifter_001",
+    "active": true,
+    "title": "The Hermit of the Lane",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "absurd"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "drifter",
+      "species": null
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE HERMIT OF THE LANE",
+        "body": "The contact isn't on any chart: a habitat cobbled from three ship hulls and what appears to be a grain silo, holding a slow tumble in the middle of nowhere. Someone lives here. Someone has lived here a long time. {npc.quirk}",
+        "line": "{npc.line.greet}",
+        "ai": {
+          "aria": "A hermit! ARIA has read about hermits! They know things! Or they've forgotten things! Either way: things!",
+          "marv": "MARV estimates the habitat is thirty years old and should not have survived ten. He is recalibrating something. Possibly respect.",
+          "rex": "REX scanned the habitat for weapons. He found a harpoon. A harpoon. He has decided not to be worried about the harpoon, and is failing.",
+          "chip": "CHIP has no commercial data on this individual! No purchase history! No profile! CHIP is fascinated the way scientists are fascinated by the deep sea!",
+          "ajoy": "AJOY notes that people who live alone this far out either want company badly or want it not at all, and both kinds wave you in."
+        },
+        "choices": [
+          {
+            "text": "Dock and say hello",
+            "next": "visit"
+          },
+          {
+            "text": "Wave and keep flying",
+            "outcome": "drifter_waved"
+          }
+        ]
+      },
+      "visit": {
+        "title": "TEA, LOOSELY DEFINED",
+        "body": "Inside, the habitat is dense with salvage arranged by a private taxonomy — engine parts shelved with dried flowers, star charts annotated in three colors of ink. Your host produces cups of something hot that is legally distinct from tea.",
+        "line": "{npc.line.ramble}",
+        "ai": {
+          "aria": "ARIA is recording everything! For history! And because the shelving system might be genius! Might!",
+          "marv": "MARV has been listening to the hermit's story for eleven minutes. He has identified four impossibilities and zero lies. He is still working on how.",
+          "rex": "REX accepted the hot beverage out of politeness. He has now drunk all of it, also out of politeness. He would like the record to show it was excellent.",
+          "chip": "CHIP asked the hermit about brand preferences! The hermit laughed for a full minute! CHIP is choosing to log it as engagement!",
+          "ajoy": "AJOY notes your host has mentioned 'the old route' three times. She recommends asking about the old route. Gently. Wind them up and step back."
+        },
+        "choices": [
+          {
+            "text": "Ask about the old route",
+            "next": "route"
+          },
+          {
+            "text": "Trade news of the inner systems",
+            "outcome": "drifter_news"
+          },
+          {
+            "text": "Thank them and take your leave",
+            "outcome": "drifter_left"
+          }
+        ]
+      },
+      "route": {
+        "title": "THE OLD ROUTE",
+        "body": "The hermit unrolls a chart older than your ship — hand-corrected, coffee-ringed, annotated with the blunt honesty of someone who was there. A finger taps a stretch of your own route ahead.",
+        "line": "{npc.line.offer}",
+        "ai": {
+          "aria": "Local knowledge! The BEST knowledge! ARIA is updating the nav charts and saying thank you seventeen ways!",
+          "marv": "MARV has checked the hermit's corrections against current survey data. The corrections are right. The survey is wrong. MARV is filing a report nobody will read.",
+          "rex": "REX respects intelligence gathered on foot. Or on tumble. He is committing the chart to memory as a backup to the backup.",
+          "chip": "CHIP notes this navigational data is being provided FREE! CHIP has checked three times! There is no catch! CHIP is dizzy!",
+          "ajoy": "AJOY has integrated the route notes. She estimates they'll save fuel, time, or trouble — she won't know which until it doesn't happen."
+        },
+        "choices": [
+          {
+            "text": "Accept the route notes with thanks",
+            "outcome": "drifter_route_notes"
+          },
+          {
+            "text": "Offer payment for them",
+            "gate": {
+              "gold": 10
+            },
+            "outcome": "drifter_paid"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "drifter_waved": {
+        "title": "SHIPS THAT PASS",
+        "tone": null,
+        "body": "You flash your running lights in the old courtesy pattern. The habitat's lights flash back — a beat late, a little crooked, unmistakably glad.",
+        "resources": {
+          "morale": 1
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "You waved. They waved back. Out here, that counts as a full social season for both parties."
+      },
+      "drifter_news": {
+        "title": "NEWS FROM INSIDE",
+        "tone": "success",
+        "body": "You spend an hour retelling the inner systems' news — the politics, the prices, the scandal with the terraforming contract. The hermit listens like it's theater, which, told properly, it is.",
+        "line": "{npc.line.farewell}",
+        "resources": {
+          "morale": 4
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "An hour of news traded for an afternoon of perspective. The crew leaves lighter. The hermit's laughter follows you to the airlock."
+      },
+      "drifter_left": {
+        "title": "A DECENT VISIT",
+        "tone": "success",
+        "body": "You leave before the third cup of legally-distinct tea. The hermit sees you off from the salvage-frame porch, waving with the unhurried confidence of someone who knows you'll think about this place for weeks.",
+        "line": "{npc.line.farewell}",
+        "resources": {
+          "morale": 3
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "A visit, a warm drink, a look at another way to live. The crew talks about it for three days. Nobody says the word 'lonely.' Everybody thinks it."
+      },
+      "drifter_route_notes": {
+        "title": "LOCAL KNOWLEDGE",
+        "tone": "success",
+        "body": "The route notes are copied to your nav computer in the hermit's careful hand-drawn style, which the computer preserves out of what can only be respect.",
+        "line": "{npc.line.farewell}",
+        "resources": {
+          "fuel": 6,
+          "morale": 2
+        },
+        "sets_flag": "has_route_notes",
+        "time_cost": "low",
+        "narrative": "The old route notes shave a clean line off the leg ahead. Thirty years of tumbling in place, and the hermit still knows the road better than the road does."
+      },
+      "drifter_paid": {
+        "title": "PAYMENT REFUSED, MOSTLY",
+        "tone": "success",
+        "body": "The hermit waves off the gold twice, then accepts it on the third offer 'for the silo fund,' and immediately gives you back change in the form of a jar of preserved something.",
+        "line": "Take the jar. The jar is non-negotiable. The jar is the whole point of the transaction.",
+        "resources": {
+          "gold": -10,
+          "fuel": 6,
+          "food": 5,
+          "morale": 3
+        },
+        "sets_flag": "has_route_notes",
+        "time_cost": "low",
+        "narrative": "Route notes, a jar of preserved something, and the strong suspicion you got the better end of a deal the hermit designed to lose. The jar's contents remain excellent and unidentified."
+      }
+    }
+  },
+  {
+    "id": "event_encounter_boarding_001",
+    "active": true,
+    "title": "Squatters' Rights",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "comm_mode": "corrupted",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "pirate",
+      "species": null
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "SQUATTERS' RIGHTS",
+        "body": "The derelict's cargo bay lights are on, which derelicts don't do. Your scan answers why: a ship grafted to the far docking ring, engines warm, registry deleted. Somebody moved into this wreck. Somebody with opinions about visitors. {npc.quirk}",
+        "line": "{npc.line.hail}",
+        "ai": {
+          "aria": "ARIA notes the derelict is INHABITED! By pirates! This is technically an urban renewal story and ARIA is trying very hard to see it that way!",
+          "marv": "MARV has assessed the grafted ship: faster than yours, better armed than yours, and currently — this is the useful part — pointed the wrong way.",
+          "rex": "REX counts one hostile vessel and an unknown boarding party inside the wreck. He has a plan for both. The plan is aggressive. Both plans are aggressive. It is one plan.",
+          "chip": "CHIP notes that salvage law and squatters' rights genuinely conflict here! A fascinating legal question that CHIP recommends resolving from a great distance!",
+          "ajoy": "AJOY has read the pirates' hail twice. They expected you to run at the word 'claimed.' She notes, for whatever it's worth, that they've already repeated themselves."
+        },
+        "choices": [
+          {
+            "text": "Open fire on the grafted ship",
+            "effort_required": 30,
+            "triggerCombat": true
+          },
+          {
+            "text": "Negotiate a split of the salvage",
+            "gate": {
+              "crew": "diplomat"
+            },
+            "next": "parley"
+          },
+          {
+            "text": "Pay the 'toll' — 15 gold",
+            "gate": {
+              "gold": 15
+            },
+            "outcome": "boarding_toll"
+          },
+          {
+            "text": "Leave them to their wreck",
+            "outcome": "boarding_left"
+          }
+        ]
+      },
+      "parley": {
+        "title": "THE SPLIT",
+        "body": "The pirates' negotiator meets your diplomat channel-to-channel. The opening positions are far apart: they propose keeping everything, your diplomat proposes them keeping less than everything. Civilization proceeds from there.",
+        "line": "{npc.line.demand}",
+        "ai": {
+          "aria": "Negotiation! ARIA is rooting for everyone! Mostly you! But everyone!",
+          "marv": "MARV calculates the pirates' position is weaker than their tone. They've stripped the easy bays already; what's left needs cutting gear. Yours is better. Mention the cutting gear.",
+          "rex": "REX stands ready in case diplomacy fails. He would like the record to reflect that he thinks diplomacy is about to succeed, and that he has feelings about that.",
+          "chip": "CHIP is drafting the salvage-partition agreement in real time! It has clauses! Everyone loves clauses once they have them!",
+          "ajoy": "AJOY notes their negotiator keeps glancing off-channel — checking with someone. That means there's a decision-maker, and the decision-maker is listening. Speak to the room."
+        },
+        "choices": [
+          {
+            "text": "Offer the aft sections — take the bow",
+            "outcome": "boarding_split"
+          },
+          {
+            "text": "Walk it back — no deal",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "boarding_toll": {
+        "title": "PAID PASSAGE",
+        "tone": null,
+        "body": "The gold transfers. The pirates wave you toward the unstripped forward bays with the magnanimity of landlords, and even point out which corridor floods with coolant on a timer. Almost hospitable. Almost.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -15,
+          "fuel": 5
+        },
+        "sets_flag": null,
+        "time_cost": "medium",
+        "narrative": "You paid the toll and salvaged the forward bays under pirate supervision. Strangest afternoon of the voyage, and not unprofitable.",
+        "materials": {
+          "scrap": 2
+        }
+      },
+      "boarding_split": {
+        "title": "PARTITIONED",
+        "tone": "success",
+        "body": "The agreement lands: they keep the aft sections they've dug into, you take the bow. CHIP's contract is transmitted, mocked openly, and — notably — followed to the letter by both sides.",
+        "resources": {
+          "fuel": 8,
+          "morale": 3
+        },
+        "sets_flag": "negotiated_with_squatters",
+        "time_cost": "medium",
+        "narrative": "Salvage rights negotiated with pirates, in writing. The diplomat has asked for the contract to be framed. The request is under consideration.",
+        "materials": {
+          "metal": 2
+        }
+      },
+      "boarding_left": {
+        "title": "THEIR WRECK NOW",
+        "tone": null,
+        "body": "You disengage and burn away. Behind you, the derelict's lights stay on — someone's home now, by the only law that operates this far out, which is presence.",
+        "resources": {},
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "You left the squatters their wreck. The salvage charts get one more annotation: OCCUPIED. DISPUTED. SKIP."
+      }
+    }
+  }
+]

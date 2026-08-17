@@ -1,0 +1,1137 @@
+/* GROWBAY OVERLAY — lifted from resources/demo-growbay.html (Phase 4).
+   Dev-only chrome (controls sidebar, size-toggle, demo-wrap/scale-root
+   fixed frame, cruise-ghost decorative backdrop, duplicate crt-overlay
+   — a global one already exists in index.html) stripped. #gb-modal
+   self-centers (left/top 50% + transform), no overlay-active override
+   needed like screen-minigames.css required. */
+
+:root {
+  /* Shared theme */
+  --teal: #35c6bf;
+  --orange: #e88830;
+  --cream: #e8d8a0;
+  --body: #aab5c4;
+  --green-plant: #85d270;
+
+  /* Modal chrome */
+  --modal-backdrop: rgba(4,8,16,0.75);
+  --modal-bg-top: #141a28;
+  --modal-bg-bot: #0a0e18;
+  --modal-border: #608c64;
+  --modal-width: 760px;
+  --modal-height: 520px;
+
+  /* Header */
+  --header-title-color: #359e3f;
+  --header-title-size: 14px;
+  --header-meta-color: #aab5c4;
+
+  /* Tunable layout knobs (exposed via dev controls) */
+  --plant-col-width: 160px;
+  --crew-col-width:  180px;
+  --plant-scale: 1;
+  --bar-height: 24px;
+  --mod-size: 14px;
+  --strip-size: 15px;
+  --aria-size: 16px;
+  --body-padding: 12px 20px 6px;
+  --info-gap: 24px;
+  --scene-gap: 0px;   /* plant + crew feel adjacent — no visible gap */
+
+  /* Hero plant area — warm greenhouse glow behind the sprite.
+     HEALTHY state is composed from three tunable vars (color,
+     alpha, spread) exposed as dev controls. Stressed and critical
+     are fixed presets that override when health drops. */
+  --glow-color:  200,168,90;   /* RGB triplet consumed by rgba() — driven by plant health at runtime */
+  --glow-alpha:  0.15;
+  --glow-spread: 60;            /* % — distance where fade reaches 0 */
+  --glow-y:      40;             /* % — vertical center of the glow (50 = dead center, lower = higher) */
+
+  /* Bars — deliberately different hues from the water slider
+     (green #85d270 / blue #7dc8e8) so the eye doesn't confuse
+     growth/health with water allocation. Growth goes amber (warm
+     progress toward ripening); health stays green but a yellower,
+     more leaf-bright tone than the water's cooler green. */
+  --bar-track-bg: rgba(10,14,20,0.6);
+  --bar-track-border: rgba(200,168,90,0.18);
+  --bar-growth-fill: #587667;
+  --bar-health-fill: #a8d84f;
+  --bar-critical-fill: #cc3333;
+
+  /* Modifier list */
+  --mod-positive: #85d270;
+  --mod-negative: #e88830;
+  --mod-critical: #cc3333;
+  --mod-stub: #4a4f5a;
+
+  /* Panel button sizing (color vars live in shared.css; green accent local) */
+  --pb-border: 3px;
+  --pb-padx: 12px;
+  --pb-pady: 6px;
+  --pb-size: 15px;
+  --pb-green-hi: #7dc891;
+  --pb-green-lo: #28402d;
+}
+
+#gb-backdrop {
+  position: absolute; inset: 0;
+  z-index: 10;
+  background: var(--modal-backdrop);
+  cursor: var(--cursor-hand, pointer);
+}
+
+#gb-modal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--modal-width);
+  height: var(--modal-height);
+  z-index: 20;
+  background: linear-gradient(180deg, var(--modal-bg-top) 0%, var(--modal-bg-bot) 100%);
+  border: 3px solid var(--modal-border);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(86,207,215,0.18),
+    inset 0 0 0 2px rgba(14,20,32,0.5),
+    0 8px 40px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.25s, transform 0.25s;
+}
+body:not(.modal-open) #gb-backdrop,
+body:not(.modal-open) #gb-modal {
+  opacity: 0;
+  pointer-events: none;
+}
+body:not(.modal-open) #gb-modal {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+/* Header */
+.gb-header {
+  flex-shrink: 0;
+  height: 42px;
+  padding: 0 16px;
+  border-bottom: 2px solid rgba(86,207,215,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.gb-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--header-title-size);
+  letter-spacing: 2px;
+  color: var(--header-title-color);
+  text-shadow: 0 0 8px rgba(86,207,215,0.35);
+  flex-shrink: 0;
+}
+.gb-subtitle {
+  flex: 1;
+  font-family: 'VT323', monospace;
+  font-size: 17px;
+  letter-spacing: 1px;
+  color: var(--cream);
+  text-align: center;
+}
+.gb-subtitle .stage-name {
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.gb-close {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  width: 26px; height: 26px;
+  border: 2px solid rgba(86,207,215,0.4);
+  background: rgba(14,20,32,0.6);
+  color: var(--header-title-color);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.gb-close:hover { filter: brightness(1.25); border-color: var(--modal-border); }
+
+/* Body = top bars band + 3-col scene/info row (flex-column).
+   The bars band spans the full width; below it, plant + crew
+   share a warm "scene" container (no visible gap between them —
+   crew stands next to plant) and the right column holds the info. */
+.gb-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--body-padding);
+  gap: 14px;
+}
+
+/* Top band: bars span the full modal width, 24px tall (default).
+   Larger bars read at a distance and anchor the eye at the top. */
+.gb-bars-band {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Main row below the bars: scene on the left, info on the right. */
+.gb-main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  gap: 20px;
+}
+
+/* Sprite slot — fixed-height wrapper that bottom-aligns the sprite
+   inside. Both plant and crew columns use the same slot height so
+   the sprites visually "stand on the same floor" regardless of
+   their individual heights (plant 192, crew sheets 196–199). */
+.gb-sprite-slot {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: visible;
+}
+
+/* Scene = plant + crew side-by-side with a shared warm greenhouse
+   glow. The glow tints with plant health (JS-applied classes). */
+.gb-scene {
+  flex-shrink: 0;
+  display: flex;
+  gap: var(--scene-gap);
+  padding: 8px;
+  /* Scene is the positioning parent for .gb-glow. Overflow must
+     stay visible so the glow can bleed past the scene's own box
+     into adjacent UI space (ultimately clipped at the modal edge). */
+  position: relative;
+  overflow: visible;
+  border-radius: 6px;
+  /* No align-items — each column handles its own internal stacking
+     via the sprite-slot wrapper, which bottom-aligns its sprite so
+     plant + crew stand on the same visible floor. */
+}
+/* The greenhouse glow — absolutely positioned, sized larger than
+   the scene so the radial fade extends past the scene's edges and
+   into the surrounding modal space. Gets clipped at the outer
+   modal edge (which has overflow: hidden for the border-radius).
+   Stressed + critical states swap the background here, not on
+   the scene itself. */
+.gb-glow {
+  position: absolute;
+  inset: -50px;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse at 50% calc(var(--glow-y) * 1%),
+    rgba(var(--glow-color), var(--glow-alpha)) 0%,
+    rgba(14,20,32,0) calc(var(--glow-spread) * 1%)
+  );
+  transition: background 0.6s ease;
+}
+/* Columns render above the glow layer. */
+.gb-col-plant,
+.gb-col-crew { position: relative; z-index: 1; }
+
+/* Plant + crew columns — identical layout (sprite-slot on top,
+   labels/tender beneath, all centered). Only difference is width. */
+.gb-col-plant,
+.gb-col-crew {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.gb-col-plant { width: var(--plant-col-width); }
+.gb-col-crew  { width: var(--crew-col-width);  }
+
+/* Animated crew sprite — dimensions + position are set per-crew
+   from CREW_SHEETS. Background-image also set dynamically. Pixel-
+   art rendering; no interpolation. */
+.crew-sprite {
+  width: 76px;                   /* default; overridden per crew */
+  height: 197px;                 /* default; overridden per crew */
+  background-repeat: no-repeat;
+  background-position: 0 0;      /* set per-frame from JS */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  transform-origin: center bottom;
+  /* Subtle tilt so the crew looks attentive toward the plant.
+     Gets overridden if .crew-sprite.empty is set (no tender). */
+  transform: scaleX(1);
+}
+.crew-sprite.empty { opacity: 0; }   /* no tender assigned */
+/* Plant sprite — 109×192 native, rendered 1:1 from the Growbay
+   spritesheet. Background-position is set per-stage from JS
+   (STAGE_SPRITES lookup). The sprite's natural aspect is narrower
+   than square; the hero container centers it in its 260px column. */
+.plant-sprite {
+  width: 109px;
+  height: 192px;
+  background-image: url('sprites/growbay/spritesheet_growbay.png');
+  background-repeat: no-repeat;
+  background-position: 0 0;  /* overridden by JS per-stage */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  animation: plant-sway 4.4s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(133,210,112,0.2));
+  color: transparent;  /* any text content is just fallback / a11y */
+  /* transform drives display-size scaling via --plant-scale so the
+     source pixels stay native (109×192). 1 = native, >1 upscales. */
+  transform: scale(var(--plant-scale));
+  transform-origin: center bottom;
+}
+@keyframes plant-sway {
+  0%, 100% { transform: scale(var(--plant-scale)) translateY(0)    rotate(0deg); }
+  50%      { transform: scale(var(--plant-scale)) translateY(-4px) rotate(1deg); }
+}
+/* Stage-transition flash — amber pulse on the sprite when growth
+   crosses a stage threshold (25/50/75/100). One-shot via a class
+   that auto-removes after the keyframe ends. */
+.plant-sprite.stage-flash {
+  animation: plant-sway 4.4s ease-in-out infinite, stage-flash 1.4s ease-out;
+}
+@keyframes stage-flash {
+  0%   { filter: drop-shadow(0 0 0 rgba(255,172,0,0)) brightness(1); }
+  25%  { filter: drop-shadow(0 0 24px rgba(255,172,0,0.9)) brightness(1.4); }
+  100% { filter: drop-shadow(0 0 12px rgba(133,210,112,0.2)) brightness(1); }
+}
+.plant-stage-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-shadow: 0 0 6px rgba(200,168,90,0.35);
+  text-align: center;
+}
+.banner-day.overdue { color: var(--red); text-shadow: 0 0 4px rgba(204,51,51,0.35); }
+
+/* Info column to the right of the hero */
+.gb-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--info-gap);
+  overflow-y: auto;
+}
+
+/* Bar row — growth + health */
+.gb-bars { display: flex; flex-direction: column; gap: 8px; }
+.gb-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gb-bar-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #5a7a6a;
+  width: 54px;
+  flex-shrink: 0;
+}
+.gb-bar-track {
+  flex: 1;
+  height: var(--bar-height);
+  background: var(--bar-track-bg);
+  border: 1px solid var(--bar-track-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.gb-bar-fill {
+  height: 100%;
+  transition: width 0.4s ease, background 0.4s ease;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.gb-bar-row.growth .gb-bar-fill { background: var(--bar-growth-fill); }
+/* Health fill color is driven by JS via healthColor() —
+   interpolated across deep-green → green → yellow → orange → red
+   as the value drops. CSS var is just the page-load fallback. */
+.gb-bar-row.health .gb-bar-fill { background: var(--bar-health-fill); }
+.gb-bar-value {
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  color: var(--cream);
+  letter-spacing: 1px;
+  width: 48px;
+  text-align: right;
+}
+/* READY projection — centered under the HARVEST button inside the
+   plant-actions column. Reads as "this is when HARVEST unlocks". */
+.gb-ready-line {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--body);
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+.gb-ready-line strong { color: var(--cream); font-weight: normal; }
+.gb-ready-line.warn strong { color: var(--red); text-shadow: 0 0 4px rgba(204,51,51,0.35); }
+
+/* Modifier list — positive/negative effects on growth rate.
+   min-height holds the box at its worst-case row count so
+   promotion/demotion between ACTIVE and MONITORED never shifts
+   content below. Picked to accommodate ~9 data rows at 14px
+   font (default --mod-size). Increase if new threats are added
+   to MONITORED_THREATS. */
+.gb-modifiers {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  background: rgba(10,14,20,0.4);
+  border: 2px solid rgba(200,168,90,0.2);
+  min-height: 200px;
+}
+.gb-mod-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #5a7a6a;
+  margin-bottom: 4px;
+}
+/* Divider between ACTIVE and MONITORED sections — thin dashed
+   gold line, lets the two lists read as related but distinct. */
+.gb-mod-divider {
+  height: 0;
+  border-top: 1px dashed rgba(200,168,90,0.2);
+  margin: 6px 0 2px;
+}
+.gb-mod-subtitle {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #5a7a6a;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+/* Monitored list renders 2-up so more threats fit without scrolling.
+   Each cell is still a name/delta flex row (space-between). Active
+   list stays single-column — its rows benefit from the full width
+   for their longer delta strings ("+15% growth", "−30% growth"). */
+#mod-list-monitored {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 14px;
+  position: relative;
+}
+/* Vertical divider between the two columns — solid match to the
+   dashed ACTIVE/MONITORED separator above. */
+#mod-list-monitored::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: rgba(200,168,90,0.2);
+  pointer-events: none;
+}
+.gb-mod-row {
+  font-family: 'VT323', monospace;
+  font-size: var(--mod-size);
+  letter-spacing: 0.5px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gb-mod-row.positive { color: var(--mod-positive); }
+.gb-mod-row.negative { color: var(--mod-negative); }
+.gb-mod-row.critical { color: var(--mod-critical); animation: mod-critical-pulse 1.5s ease-in-out infinite; }
+.gb-mod-row.stub     { color: var(--mod-stub); font-style: italic; }
+.gb-mod-row .mod-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gb-mod-row .mod-delta { font-weight: normal; color: inherit; }
+.gb-mod-row.stub .mod-delta { color: var(--mod-stub); }
+@keyframes mod-critical-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.4); }
+}
+
+/* Next stage + water + tender — compact info strip */
+.gb-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: 'VT323', monospace;
+  font-size: var(--strip-size);
+  color: var(--body);
+}
+.gb-strip-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gb-strip-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #5a7a6a;
+  /* Widened + nowrap so longer labels like "NEXT STAGE" stay on
+     a single line instead of breaking. */
+  min-width: 80px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.gb-strip-value { flex: 1; color: var(--cream); line-height: 1; }
+.gb-strip-link {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: var(--teal);
+  cursor: var(--cursor-hand, pointer);
+  text-decoration: underline;
+  text-decoration-color: rgba(53,198,191,0.4);
+  text-underline-offset: 2px;
+}
+.gb-strip-link:hover { color: #7dd4ce; }
+
+/* ── Mini water slider ─────────────────────────────────────
+   Compact in-Growbay version of the Orders water slider. Shares
+   the same underlying ship state, so dragging here or in Orders
+   updates the same value. The ideal-tick marks where the current
+   crop wants the plant% to sit (wheat=50, tomato=65, etc.). Crew-
+   status badge warns when the crew side is underfed. */
+.gb-water-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 0 2px;
+}
+.gb-water-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.gb-water-track {
+  position: relative;
+  height: 14px;
+  background: rgba(10,14,20,0.6);
+  border: 1px solid #2a3040;
+  border-radius: 2px;
+  cursor: var(--cursor-hand, grab);
+  user-select: none;
+  touch-action: none;
+}
+.gb-water-track:active,
+.gb-water-track.previewing { cursor: var(--cursor-hand, pointer); }
+/* Subtle teal glow + outline while dragging — telegraphs that the
+   value is PREVIEWING and hasn't committed yet. Goes away on
+   pointerup (commit) or Escape (revert). */
+.gb-water-track.previewing {
+  box-shadow: 0 0 10px rgba(53,198,191,0.35);
+  border-color: rgba(53,198,191,0.55);
+}
+.gb-water-track.previewing::after {
+  content: 'previewing — release to commit';
+  position: absolute;
+  left: 50%;
+  top: -20px;
+  transform: translateX(-50%);
+  font-family: 'VT323', monospace;
+  font-size: 11px;
+  color: var(--teal);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 0 4px rgba(53,198,191,0.4);
+}
+.gb-water-fill-plant {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: linear-gradient(180deg, #85d270 0%, #5fa854 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
+  transition: width 0.15s ease;
+}
+.gb-water-fill-crew {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  background: linear-gradient(180deg, #7dc8e8 0%, #5fa8d0 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
+  transition: width 0.15s ease;
+}
+/* Gold downward triangle marking the crop's ideal plant% */
+.gb-water-ideal-tick {
+  position: absolute;
+  top: -8px;
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--gold);
+  transform: translateX(-50%);
+  pointer-events: none;
+  filter: drop-shadow(0 0 3px rgba(200,168,90,0.5));
+  transition: left 0.2s ease;
+}
+/* Cream/gold grab thumb */
+.gb-water-thumb {
+  position: absolute;
+  top: -3px; bottom: -3px;
+  width: 10px;
+  background: linear-gradient(180deg, #e8d8a0 0%, var(--gold) 50%, #8a7035 100%);
+  border: 1px solid #2a1f0a;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  box-shadow: 0 0 6px rgba(200,168,90,0.45);
+  transition: left 0.15s ease;
+}
+.gb-water-readout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: var(--body);
+  gap: 8px;
+}
+.gb-water-readout strong { color: var(--cream); font-weight: normal; }
+/* One side of the readout — pct + status badge grouped together. */
+.gb-water-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+/* Shared status-badge styling; per-state colors below. */
+.gb-water-plant-status,
+.gb-water-crew-status {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  padding: 3px 6px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+/* Good (green): plant MATCHED + crew NOMINAL */
+.gb-water-plant-status.matched,
+.gb-water-crew-status.nominal {
+  color: var(--mod-positive); background: rgba(133,210,112,0.12);
+}
+/* Mild warning (amber): plant DRY/SOAKED + crew THIRSTY */
+.gb-water-plant-status.dry,
+.gb-water-plant-status.soaked,
+.gb-water-crew-status.thirsty {
+  color: var(--mod-negative); background: rgba(232,136,48,0.12);
+}
+/* Severe (red, pulsing): plant PARCHED + crew CRITICAL */
+.gb-water-plant-status.parched,
+.gb-water-crew-status.critical {
+  color: var(--mod-critical); background: rgba(204,51,51,0.15);
+  animation: mod-critical-pulse 1.5s ease-in-out infinite;
+}
+
+/* Tender slot — portrait + name + bonus. Clickable to open picker. */
+.gb-tender-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid rgba(200,168,90,0.25);
+  background: rgba(10,14,20,0.5);
+  border-radius: 3px;
+  cursor: var(--cursor-hand, pointer);
+  transition: filter 0.12s, border-color 0.12s;
+  position: relative;
+}
+.gb-tender-slot:hover { filter: brightness(1.15); border-color: var(--gold); }
+.gb-tender-portrait {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(200,168,90,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  color: transparent;
+  image-rendering: pixelated;
+}
+.gb-tender-portrait.has-sprite { background-color: transparent; }
+.gb-tender-info { flex: 1; min-width: 110px; }
+/* Both lines wrap naturally when the tender slot is narrower than
+   the content — no nowrap, no ellipsis. The picker rows inherit
+   the same wrap behavior so long names break to a second line
+   instead of overflowing the popover. */
+.gb-tender-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  text-transform: uppercase;
+  line-height: 1.25;
+}
+.gb-tender-bonus {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: var(--mod-positive);
+  line-height: 1.2;
+}
+.gb-tender-bonus.no-bonus { color: #5a7a6a; font-style: italic; }
+.gb-tender-chevron {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  color: var(--gold);
+  opacity: 0.6;
+}
+
+/* Tender picker popover — opens horizontally to the right of the
+   trigger so the scene's short vertical space doesn't clip it.
+   Extends over the info column on the right (z-index lifts it
+   above). Fixed width since it's no longer tied to the trigger. */
+.gb-picker {
+  position: absolute;
+  left: calc(100% + 6px);
+  /* Center vertically against the trigger so overflow is split
+     evenly above and below instead of always growing downward. */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 240px;
+  z-index: 10;
+  background: var(--modal-bg-top);
+  border: 2px solid var(--gold);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.7);
+  display: none;
+}
+.gb-tender-slot.open .gb-picker { display: block; }
+.gb-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: var(--cursor-hand, pointer);
+  border-bottom: 1px solid rgba(200,168,90,0.08);
+}
+.gb-picker-row:last-child { border-bottom: 0; }
+.gb-picker-row:hover { background: rgba(200,168,90,0.08); }
+.gb-picker-row.current { background: rgba(200,168,90,0.1); }
+.gb-picker-row .gb-tender-portrait { width: 24px; height: 24px; font-size: 14px; }
+/* Name, role, and bonus all stack vertically in the info column
+   so each can wrap to a second line within the column width
+   without colliding with anything else in the row. */
+.gb-picker-row .gb-tender-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.gb-picker-name {
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  color: var(--cream);
+  line-height: 1.15;
+}
+.gb-picker-role {
+  font-family: 'VT323', monospace;
+  font-size: 12px;
+  color: #7a8898;
+  line-height: 1.1;
+}
+.gb-picker-bonus {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  color: var(--mod-positive);
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+.gb-picker-bonus.no-bonus { color: #5a7a6a; }
+
+/* Footer: ARIA quip + action row */
+.gb-footer {
+  flex-shrink: 0;
+  height: 55px;
+  padding: 10px 20px;
+  border-top: 2px solid rgba(86,207,215,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.gb-aria {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.gb-aria-avatar {
+  width: 26px; height: 26px;
+  background-size: cover;
+  background-position: center;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+.gb-aria-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+.gb-aria-text {
+  font-family: 'VT323', monospace;
+  font-size: var(--aria-size);
+  color: var(--body);
+  font-style: italic;
+  line-height: 1.3;
+}
+/* Left area below the header bars = scene + action row + ready
+   line, stacked. Actions sit under the plant/crew columns so they
+   read as "applied to the plant" rather than free-floating modal
+   chrome. */
+.gb-left-area {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* Actions inside each column — HARVEST (the plant's own action)
+   stacks below the day label inside the plant column; TREAT +
+   INSPECT (the tender's actions) sit inline below the tender card.
+   In-column placement means buttons hug their subject's content
+   regardless of the other column's height. Small top margin adds
+   a breathing-room gap. */
+.gb-plant-actions {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.gb-crew-actions {
+  margin-top: 6px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Panel buttons */
+.panel-btn {
+  font-family: 'VT323', monospace;
+  font-size: var(--pb-size);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: var(--pb-pady) var(--pb-padx);
+  background: linear-gradient(180deg, var(--pb-bg-top) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-bot) 100%);
+  border: var(--pb-border) outset;
+  border-color: var(--pb-hi) var(--pb-lo) var(--pb-lo) var(--pb-hi);
+  color: var(--pb-text);
+  border-radius: 0;
+  transition: filter 0.1s;
+}
+.panel-btn:hover { filter: brightness(1.15); }
+.panel-btn:active {
+  border-style: inset;
+  border-color: var(--pb-lo) var(--pb-hi) var(--pb-hi) var(--pb-lo);
+  transform: translate(1px, 1px);
+}
+.panel-btn.accent-gold {
+  border-color: var(--pb-gold-hi) var(--pb-gold-lo) var(--pb-gold-lo) var(--pb-gold-hi);
+  color: var(--pb-gold-hi);
+}
+.panel-btn.harvest {
+  border-color: var(--pb-green-hi) var(--pb-green-lo) var(--pb-green-lo) var(--pb-green-hi);
+  color: #c8f0a0;
+  background: linear-gradient(180deg, #3e5e3e 0%, #1a3520 50%, #4a6a4e 100%);
+  animation: harvest-ready 1.6s ease-in-out infinite;
+}
+.panel-btn.harvest.locked {
+  filter: grayscale(0.7) brightness(0.6);
+  cursor: var(--cursor-pointer, default);
+  pointer-events: none;
+  animation: none;
+}
+.panel-btn.locked {
+  filter: grayscale(0.7) brightness(0.6);
+  cursor: var(--cursor-pointer, default);
+  pointer-events: none;
+}
+@keyframes harvest-ready {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(133,210,112,0); }
+  50%      { box-shadow: 0 0 12px rgba(133,210,112,0.5); }
+}
+
+/* Harvest ceremony overlay — brief celebration on successful harvest. */
+.gb-harvest-burst {
+  position: absolute;
+  left: 50%; top: 40%;
+  transform: translate(-50%, -50%);
+  font-family: 'Press Start 2P', cursive;
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: #c8f0a0;
+  text-shadow: 0 0 12px rgba(133,210,112,0.7);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 25;
+}
+.gb-harvest-burst.fire {
+  animation: harvest-burst 1.4s ease-out forwards;
+}
+@keyframes harvest-burst {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  70%  { opacity: 1; transform: translate(-50%, calc(-50% - 20px)) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, calc(-50% - 40px)) scale(1); }
+}
+
+/* Dev controls sidebar */
+
+/* Scrollbars — same baseline as inventory demo. */
+::-webkit-scrollbar           { width: 6px; height: 6px; }
+::-webkit-scrollbar-track     { background: #0a0e14; border-radius: 0; }
+::-webkit-scrollbar-thumb     { background: #2a3a48; border-radius: 0; }
+::-webkit-scrollbar-corner    { background: #0a0e14; }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3a48 #0a0e14;
+}
+
+/* ═════ Inspect sub-view ═══════════════════════════════════════
+   Two presentation modes (selectable from dev panel):
+     swap  — replaces .gb-body inside the same modal frame
+     popup — smaller dialog floating over the modal
+   Both render the SAME content via renderInspectInto(). */
+.ins-swap-wrap { display: none; flex: 1; min-height: 0; padding: 10px 16px 8px; overflow-y: auto; }
+body.ins-mode-swap.ins-open #gb-modal .gb-body { display: none; }
+body.ins-mode-swap.ins-open #gb-modal .ins-swap-wrap { display: block; }
+
+.ins-popup-backdrop {
+  position: absolute; inset: 0; z-index: 30;
+  background: rgba(4,8,16,0.55);
+  display: none;
+  cursor: var(--cursor-hand, pointer);
+}
+.ins-popup {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px; max-width: calc(100% - 40px);
+  height: 440px; max-height: calc(100% - 40px);
+  z-index: 31;
+  background: linear-gradient(180deg, var(--modal-bg-top) 0%, var(--modal-bg-bot) 100%);
+  border: 3px solid var(--modal-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.85);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+body.ins-mode-popup.ins-open .ins-popup-backdrop { display: block; }
+body.ins-mode-popup.ins-open .ins-popup { display: flex; }
+.ins-popup-header {
+  flex-shrink: 0; height: 36px; padding: 0 14px;
+  border-bottom: 2px solid rgba(86,207,215,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex; align-items: center; gap: 12px;
+}
+.ins-popup-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 11px; letter-spacing: 2px;
+  color: var(--header-title-color);
+  flex: 1;
+}
+.ins-popup-close {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px; width: 22px; height: 22px;
+  border: 2px solid rgba(86,207,215,0.4);
+  background: rgba(14,20,32,0.6);
+  color: var(--header-title-color);
+  cursor: var(--cursor-hand, pointer);
+  display: flex; align-items: center; justify-content: center;
+}
+.ins-popup-close:hover { filter: brightness(1.25); border-color: var(--modal-border); }
+.ins-popup .ins-content { flex: 1; padding: 10px 12px; overflow-y: auto; }
+
+/* ‹ BACK affordance — appears in main header during swap mode. */
+.gb-back {
+  display: none;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 1px;
+  border: 2px solid rgba(86,207,215,0.4);
+  background: rgba(14,20,32,0.6);
+  color: var(--header-title-color);
+  padding: 6px 10px;
+  cursor: var(--cursor-hand, pointer);
+  flex-shrink: 0;
+}
+.gb-back:hover { filter: brightness(1.25); border-color: var(--modal-border); }
+body.ins-mode-swap.ins-open #gb-modal .gb-back { display: inline-flex; align-items: center; }
+
+/* Shared content layout — two-column grid; ARIA spans full width. */
+.ins-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+  align-content: start;
+}
+.ins-content > .ins-fullwidth { grid-column: 1 / -1; }
+/* Inspect's ARIA panel takes over the prominent ARIA role; hide the
+   growbay footer ARIA while inspect is open to avoid duplication. */
+body.ins-open #gb-modal .gb-footer { display: none; }
+.ins-section {
+  background: rgba(10,14,20,0.5);
+  border: 1px solid rgba(86,207,215,0.18);
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+.ins-section-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 2px;
+  color: #5a7a6a;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.ins-row {
+  display: flex; justify-content: space-between;
+  font-family: 'VT323', monospace;
+  font-size: 14px; color: var(--body);
+  line-height: 1.35; gap: 10px;
+}
+.ins-row .ins-key { color: #6a7a88; flex-shrink: 0; }
+.ins-row .ins-val { color: var(--cream); text-align: right; }
+.ins-blurb {
+  font-family: 'VT323', monospace;
+  font-size: 14px; color: var(--body);
+  font-style: italic;
+  margin-bottom: 4px;
+}
+.ins-stage-list { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+.ins-stage {
+  font-family: 'VT323', monospace;
+  font-size: 13px; color: #6a7a88;
+  display: flex; gap: 6px; align-items: baseline;
+}
+.ins-stage.current { color: var(--cream); }
+.ins-stage .ins-stage-marker { width: 8px; flex-shrink: 0; color: var(--gold); }
+.ins-stage .ins-stage-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; letter-spacing: 1px;
+  color: inherit; width: 70px; flex-shrink: 0;
+}
+.ins-stage .ins-stage-tip { flex: 1; line-height: 1.3; }
+
+/* Vital signs — labelled stat list, current state at a glance. */
+.ins-vitals { display: flex; flex-direction: column; gap: 3px; }
+.ins-vital {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 8px;
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  align-items: baseline;
+}
+.ins-vital .ins-v-key {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; letter-spacing: 1px;
+  color: #5a7a6a;
+}
+.ins-vital .ins-v-val { color: var(--cream); }
+.ins-vital .ins-v-val .ins-v-sub { color: #6a7a88; font-size: 12px; }
+.ins-vital .ins-v-val.overdue { color: var(--mod-critical); }
+.ins-vital .ins-v-val.stalled { color: var(--mod-negative); font-style: italic; }
+.ins-vital .ins-v-val .ins-v-marker { color: var(--gold); margin-right: 4px; }
+
+/* Species notes — lifted from bible §11 Notes column. */
+.ins-notes {
+  font-family: 'VT323', monospace;
+  font-size: 13px; color: var(--cream);
+  line-height: 1.35;
+  padding: 4px 6px;
+  margin: 4px 0 6px;
+  border-left: 2px solid rgba(86,207,215,0.35);
+  background: rgba(86,207,215,0.05);
+}
+
+/* Lifecycle ribbon — 4 stages laid out horizontally so the player
+   sees where in the species' arc the plant currently sits. */
+.ins-lifecycle {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+.ins-life-stage {
+  padding: 6px 8px;
+  border-right: 1px solid rgba(86,207,215,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ins-life-stage:last-child { border-right: none; }
+.ins-life-stage.current { background: rgba(53,158,63,0.12); }
+.ins-life-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; letter-spacing: 1px;
+  color: #5a7a6a;
+  display: flex; align-items: baseline; gap: 4px;
+}
+.ins-life-stage.current .ins-life-name { color: var(--gold); }
+.ins-life-stage.current .ins-life-name::before { content: '▸ '; color: var(--gold); }
+.ins-life-range {
+  font-family: 'VT323', monospace;
+  font-size: 12px; color: #6a7a88;
+}
+.ins-life-stage.current .ins-life-range { color: var(--cream); }
+.ins-life-tip {
+  font-family: 'VT323', monospace;
+  font-size: 12px; color: #6a7a88;
+  line-height: 1.3;
+}
+.ins-life-stage.current .ins-life-tip { color: var(--body); }
+
+/* Active threats — 2-column internal grid (mirrors the MONITORED
+   panel pattern from other surfaces). */
+.ins-threats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+}
+.ins-threat {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  border-left: 2px solid var(--mod-negative);
+  padding-left: 8px; line-height: 1.35;
+}
+.ins-threat.critical { border-left-color: var(--mod-critical); }
+.ins-threat-head {
+  display: flex; justify-content: space-between;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px; letter-spacing: 1px;
+  color: var(--mod-negative);
+  margin-bottom: 2px;
+}
+.ins-threat.critical .ins-threat-head { color: var(--mod-critical); }
+.ins-threat-cause { color: var(--body); }
+.ins-threat-cause::before { content: '→ '; color: #5a7a6a; }
+.ins-threat-fix { color: var(--cream); }
+.ins-threat-fix::before { content: '✓ '; color: var(--mod-positive); }
+.ins-threats-empty {
+  font-family: 'VT323', monospace;
+  font-size: 13px; color: #6a7a88;
+  font-style: italic;
+}
+
+/* ARIA's read */
+.ins-aria-read {
+  font-family: 'VT323', monospace;
+  font-size: 14px; color: var(--body);
+  font-style: italic;
+  line-height: 1.4;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.ins-aria-avatar {
+  width: 32px; height: 32px;
+  background-image: url('sprites/interface/AI/aria.png');
+  background-size: cover; background-position: center;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+.ins-aria-name { color: var(--teal); font-style: normal; flex-shrink: 0; }
+

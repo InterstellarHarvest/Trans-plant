@@ -1,0 +1,62 @@
+{
+  "_meta": {
+    "description": "Raw materials and currency. Gold is the unit of account. Materials have gold-denominated trade values. Mixed payment: any transaction can be paid in any combination of gold + materials totaling the price. Three paths to any craftable item: buy at a station, mine-and-fabricate, or barter.",
+    "origin": "VA economy primitives + ST credit system merged. Currency is gold — same function as prior 'Credits' system, unified naming. Display unit: 'g' (e.g. 50g). Variable name in engine: goldAmount."
+  },
+
+  "currency": {
+    "id": "gold",
+    "name": "Gold",
+    "value": 1.0,
+    "description": "Universal currency. Accepted at all stations. Cannot be fabricated. The colony authority calls it 'credits' in official documentation. Everyone else calls it gold. This has never been resolved.",
+    "display": "g"
+  },
+
+  "materials": [
+    {
+      "id": "metal",
+      "name": "Metal",
+      "value": 0.2,
+      "description": "Common structural material. Found in asteroids and derelicts.",
+      "sources": ["mining", "salvage", "trade"],
+      "cargo_slots": 0,
+      "notes": "5 metal = 1g. The bread and butter of fabrication."
+    },
+    {
+      "id": "scrap",
+      "name": "Scrap",
+      "value": 0.1,
+      "description": "Salvaged junk. Barely useful. Better than nothing.",
+      "sources": ["salvage", "derelict", "event_reward"],
+      "cargo_slots": 0,
+      "notes": "10 scrap = 1g. The ship computer does not consider scrap a resource. The fabricator disagrees."
+    },
+    {
+      "id": "minerals",
+      "name": "Minerals",
+      "value": 0.3,
+      "description": "Unprocessed mineral ore. Useful in fabrication or tradeable at stations.",
+      "sources": ["mining", "trade"],
+      "cargo_slots": 0,
+      "notes": "~3 minerals = 1g. Primary asteroid mining yield."
+    },
+    {
+      "id": "exotic",
+      "name": "Exotic Matter",
+      "value": 2.0,
+      "description": "Rare material of unclear origin. High trade value. The ship computer has opinions about touching it.",
+      "sources": ["anomaly", "derelict", "event_reward"],
+      "cargo_slots": 1,
+      "notes": "1 exotic = 2g. Rare. The fabricator can use it but won't tell you what for until you try."
+    },
+    {
+      "id": "biocomponent",
+      "name": "Biocomponent",
+      "value": 1.0,
+      "description": "Organic material with fabrication applications. Also technically food, though the chef has asked everyone not to test this.",
+      "sources": ["planet", "derelict", "event_reward"],
+      "cargo_slots": 1,
+      "notes": "1 biocomponent = 1g. Required for crop treatment recipes."
+    }
+  ]
+}

@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Forage Anchor Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<script src="sprites/minigames/forage/sprites.js"></script>
+<style>
+:root{
+  --gold:#c8a85a; --teal:#8cc890; --orange:#e88830;
+  --red:#cc3333; --cream:#e8d8a0; --slate:#2a3040;
+  --deep:#0e1520; --void:#020408; --body:#8898a8;
+  --muted:#5a7a6a; --info:#35c6bf;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;background:#0a0e14;font-family:'VT323',monospace;color:var(--body);overflow-x:hidden}
+
+#frame{margin:18px auto;width:1304px;max-width:calc(100% - 24px)}
+
+header.eh{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 16px;height:56px;
+  background:linear-gradient(180deg,#141a28,#0a0e18);
+  border:1px solid var(--gold);border-bottom:2px solid var(--gold);
+  border-radius:4px 4px 0 0;
+}
+header.eh h1{font-family:'Press Start 2P',cursive;font-size:9px;letter-spacing:3px;color:var(--gold);text-shadow:0 0 10px rgba(200,168,90,.4)}
+header.eh h1 small{font-family:'VT323',monospace;font-size:14px;color:var(--muted);letter-spacing:1px;margin-left:10px;font-weight:normal}
+
+.toolbar{
+  display:flex;gap:18px;align-items:center;flex-wrap:wrap;
+  padding:10px 16px;min-height:48px;
+  background:rgba(20,26,40,.95);border:1px solid var(--slate);border-top:none;
+}
+.tbg{display:flex;align-items:center;gap:6px}
+.tbl{font-family:'Press Start 2P',cursive;font-size:6px;letter-spacing:1px;color:var(--muted)}
+.tbs{
+  font-family:'VT323',monospace;font-size:14px;
+  background:rgba(14,21,32,.85);color:var(--cream);
+  border:1px solid var(--slate);padding:5px 8px;border-radius:2px;
+  cursor:pointer;min-width:120px;
+}
+.tbs:disabled{opacity:.5;cursor:not-allowed}
+.tbp{
+  font-family:'Press Start 2P',cursive;font-size:7px;letter-spacing:1px;
+  padding:7px 10px;background:rgba(14,21,32,.85);
+  border:1px solid var(--slate);color:var(--body);
+  cursor:pointer;border-radius:2px;transition:.15s;
+}
+.tbp:hover{border-color:var(--gold);color:var(--cream)}
+.tbp.on{background:rgba(200,168,90,.18);border-color:var(--gold);color:var(--gold)}
+.tbb{
+  font-family:'Press Start 2P',cursive;font-size:7px;letter-spacing:1px;
+  padding:8px 12px;background:rgba(140,200,144,.1);
+  border:1px solid rgba(140,200,144,.4);color:var(--teal);
+  cursor:pointer;border-radius:2px;
+}
+.tbb:hover{background:rgba(140,200,144,.25);border-color:var(--teal)}
+.tbb.danger{background:rgba(204,51,51,.1);border-color:rgba(204,51,51,.4);color:var(--red)}
+.tbb.danger:hover{background:rgba(204,51,51,.25);border-color:var(--red)}
+
+.work{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:12px;
+  background:rgba(10,14,20,.85);border:1px solid var(--slate);border-top:none;
+  border-radius:0 0 4px 4px;
+}
+.stage{position:relative;width:960px;height:640px;background:#000;flex-shrink:0;border:1px solid var(--slate)}
+.bg{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}
+.bg.missing{visibility:hidden}
+.stage.missing::before{
+  content:'BG NOT LOADED — pick from dropdown';position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;z-index:1;
+  font-family:'Press Start 2P',cursive;font-size:9px;color:var(--muted);
+  background:repeating-linear-gradient(45deg,#1a1f2a 0,#1a1f2a 16px,#22293a 16px,#22293a 32px);
+}
+.svg{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;z-index:2}
+
+/* SVG anchor styles. cursor:move so it's clear they're draggable; the SVG
+   itself stays crosshair for placement clicks. */
+.a-pt{fill:rgba(200,168,90,.55);stroke:var(--gold);stroke-width:2;cursor:move}
+.a-pt.sel{fill:rgba(232,136,48,.75);stroke:var(--orange)}
+.a-ln{stroke:var(--teal);stroke-width:3;opacity:.9;cursor:move}
+.a-ln.sel{stroke:var(--orange)}
+.a-cap{fill:var(--teal);pointer-events:none}
+.a-cap.sel{fill:var(--orange)}
+.a-rg{fill:rgba(53,198,191,.18);stroke:var(--info);stroke-width:2;cursor:move}
+.a-rg.sel{fill:rgba(232,136,48,.25);stroke:var(--orange)}
+.a-num{fill:var(--cream);font-family:'Press Start 2P',cursive;font-size:8px;pointer-events:none;text-anchor:middle;paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-width:2}
+.preview{fill:none;stroke:var(--gold);stroke-width:2;stroke-dasharray:5 3;pointer-events:none;opacity:.75}
+.preview-fill{fill:rgba(200,168,90,.08);stroke:var(--gold);stroke-width:2;stroke-dasharray:5 3;pointer-events:none;opacity:.85}
+
+/* List */
+.panel{flex:1;min-width:300px;display:flex;flex-direction:column;gap:6px}
+.ph{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:7px 10px;background:rgba(20,26,40,.92);border:1px solid var(--slate);
+}
+.ph-title{font-family:'Press Start 2P',cursive;font-size:7px;letter-spacing:1px;color:var(--gold)}
+.ph-count{font-size:14px;color:var(--cream)}
+.rows{
+  flex:1;min-height:280px;max-height:520px;overflow-y:auto;
+  background:rgba(14,21,32,.85);border:1px solid var(--slate);padding:6px;
+}
+.row{
+  display:flex;gap:6px;align-items:center;
+  padding:5px 8px;margin-bottom:3px;
+  background:rgba(20,26,40,.8);border:1px solid transparent;
+  border-radius:2px;cursor:pointer;transition:.1s;
+}
+.row:hover{border-color:var(--gold)}
+.row.sel{border-color:var(--orange);background:rgba(232,136,48,.08)}
+.rid{font-family:'Press Start 2P',cursive;font-size:6px;color:var(--muted);width:22px;text-align:right;flex-shrink:0}
+.rtype{font-family:'Press Start 2P',cursive;font-size:6px;letter-spacing:1px;width:54px;flex-shrink:0}
+.rtype.point{color:var(--gold)}
+.rtype.line{color:var(--teal)}
+.rtype.region{color:var(--info)}
+.rface, .rdepth{
+  font-size:11px;width:18px;flex-shrink:0;text-align:center;
+  cursor:pointer;border-radius:2px;padding:2px 0;
+  transition:.1s;
+}
+.rface{color:var(--gold)}
+.rdepth{color:var(--info)}
+.rface:hover, .rdepth:hover{background:rgba(200,168,90,.2);color:var(--cream)}
+.rcoords{flex:1;font-size:13px;color:var(--body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rtarget{font-family:'VT323',monospace;font-size:13px;color:var(--cream);font-style:italic;flex-shrink:0}
+.rdel{background:none;border:none;color:var(--red);font-size:14px;cursor:pointer;padding:0 4px;flex-shrink:0}
+.rdel:hover{color:var(--orange)}
+.rplay{
+  background:rgba(140,200,144,.1);border:1px solid rgba(140,200,144,.4);
+  color:var(--teal);font-size:11px;cursor:pointer;padding:1px 6px;
+  border-radius:2px;flex-shrink:0;font-family:'Press Start 2P',cursive;
+  letter-spacing:1px;line-height:1;
+}
+.rplay:hover{background:rgba(140,200,144,.25);border-color:var(--teal);color:var(--cream)}
+
+/* Preview sprite — overlaid on the stage during anchor preview */
+.preview-sprite{
+  position:absolute;z-index:10;pointer-events:none;
+  background-size:contain;background-position:center;background-repeat:no-repeat;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));
+}
+.preview-sprite.flip-x{transform:scaleX(-1)}
+.preview-sprite.flip-y{transform:scaleY(-1)}
+.preview-sprite.flip-x.flip-y{transform:scale(-1,-1)}
+/* Line-anchored preview uses a clip-box wrapper (overflow:hidden) — the
+   sprite slides into and out of the box like whack-a-mole. The box is
+   positioned with one edge AT the line; that edge is the visibility
+   boundary. Inside = visible, outside = hidden by clipping. */
+.preview-line-box{ position:absolute; overflow:hidden; pointer-events:none; z-index:10; }
+.empty{padding:18px;color:var(--muted);font-size:13px;text-align:center;font-style:italic}
+
+.status{margin-top:4px;padding:7px 10px;background:rgba(14,21,32,.6);border:1px solid var(--slate);font-size:13px;color:var(--cream);min-height:28px;font-style:italic}
+.status.err{color:var(--red);border-color:rgba(204,51,51,.4)}
+
+.hint{font-family:'Press Start 2P',cursive;font-size:6px;letter-spacing:1px;color:var(--muted);line-height:1.7;padding:6px 4px}
+.kbd{display:inline-block;padding:2px 5px;margin:0 2px;background:rgba(20,26,40,.9);border:1px solid var(--slate);border-radius:2px;color:var(--cream)}
+</style>
+</head>
+<body>
+
+<div id="frame">
+  <header class="eh">
+    <h1>FORAGE ANCHOR EDITOR <small>place anchors on bg · export to JSON</small></h1>
+    <div style="display:flex;gap:8px">
+      <button class="tbb" id="btn-import" title="Load a JSON file into the current bg (replaces existing anchors)">⬆ IMPORT</button>
+      <input type="file" id="import-file" accept=".json,application/json" style="display:none">
+      <button class="tbb" id="btn-export-all" title="Dump all bgs authored this session as anchors.js paste-ready JS">▾▾ EXPORT ALL</button>
+      <button class="tbb" id="btn-export">▾ EXPORT JSON</button>
+      <button class="tbb danger" id="btn-clear">CLEAR THIS BG</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="tbg">
+      <span class="tbl">MODE</span>
+      <select class="tbs" id="sel-mode">
+        <option value="scav">SCAVENGE</option>
+        <option value="hunt">HUNT</option>
+        <option value="gather">GATHER</option>
+      </select>
+    </div>
+    <div class="tbg">
+      <span class="tbl">BG</span>
+      <select class="tbs" id="sel-bg"></select>
+    </div>
+    <div class="tbg">
+      <span class="tbl">PLACE</span>
+      <button class="tbp on" data-pmode="P">P · POINT</button>
+      <button class="tbp" data-pmode="L">L · LINE</button>
+      <button class="tbp" data-pmode="R">R · REGION</button>
+    </div>
+    <div class="tbg">
+      <span class="tbl">FACE</span>
+      <select class="tbs" id="sel-face">
+        <option value="up">▲ UP (default)</option>
+        <option value="down">▼ DOWN (drops from above, V-flip)</option>
+        <option value="left">◀ LEFT (emerges leftward, H-flip)</option>
+        <option value="right">▶ RIGHT (emerges rightward)</option>
+      </select>
+    </div>
+    <div class="tbg">
+      <span class="tbl">DEPTH</span>
+      <select class="tbs" id="sel-depth">
+        <option value="near">● NEAR (foreground · full size)</option>
+        <option value="mid">◐ MID (mid-distance · ~85% size)</option>
+        <option value="far">○ FAR (background · ~65% size)</option>
+      </select>
+    </div>
+    <div class="tbg">
+      <span class="tbl">SPAWN</span>
+      <select class="tbs" id="sel-spawn" title="Where on a line anchor sprites spawn from. Ignored for points/regions.">
+        <option value="continuous">↔ continuous (random along line)</option>
+        <option value="endpoints">⊢⊣ endpoints (random of 2)</option>
+        <option value="start">⊢ start only</option>
+        <option value="end">⊣ end only</option>
+        <option value="midpoint">| midpoint only</option>
+      </select>
+    </div>
+    <div class="tbg">
+      <span class="tbl">TARGET</span>
+      <select class="tbs" id="sel-target">
+        <option value="fauna">fauna</option>
+        <option value="flora">flora</option>
+        <option value="fauna+flora">fauna+flora</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="work">
+    <div class="stage" id="stage">
+      <img class="bg" id="bg" alt="" />
+      <svg class="svg" id="svg" viewBox="0 0 960 640" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="panel">
+      <div class="ph">
+        <span class="ph-title">ANCHORS</span>
+        <span class="ph-count"><span id="cnt">0</span> placed</span>
+      </div>
+      <div class="rows" id="rows"></div>
+      <div class="status" id="status">Ready · click on bg to place a point anchor.</div>
+      <div class="hint">
+        <span class="kbd">P</span> point click ·
+        <span class="kbd">L</span> line (click start, click end) ·
+        <span class="kbd">R</span> region (drag) ·
+        <span class="kbd">Esc</span> cancel placement ·
+        <span class="kbd">Del</span> remove selected
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+// Bg list per mode. Each entry is {id, biome, ext?}.
+//   biome — used for optgroup labeling in the dropdown
+//   ext   — defaults to 'jpg'; only set when a bg deviates (currently ice.png)
+const BGS_BY_MODE = {
+  scav: [
+    { id:'storage', biome:'ship_interior' },
+    { id:'service', biome:'ship_interior' },
+    { id:'pantry',  biome:'ship_interior' }
+  ],
+  hunt: [
+    { id:'asteroid',  biome:'asteroid' },
+    { id:'asteroid2', biome:'asteroid' },
+    { id:'asteroid3', biome:'asteroid' },
+    { id:'desert',    biome:'desert' },
+    { id:'desert2',   biome:'desert' },
+    { id:'ice',       biome:'ice' },
+    { id:'ice2',      biome:'ice' }
+  ],
+  gather: [
+    { id:'cave',    biome:'cave' },
+    { id:'cave2',   biome:'cave' },
+    { id:'forest',  biome:'forest' },
+    { id:'forest2', biome:'forest' },
+    { id:'meadow',  biome:'meadow' },
+    { id:'meadow2', biome:'meadow' },
+    { id:'meadow3', biome:'meadow' }
+  ]
+};
+// Folder name (lowercase) → runtime mode label. The runtime expects 'SCAVENGE'
+// not 'SCAV', so we keep the path-segment short but map back on export.
+const MODE_LABEL = { scav:'SCAVENGE', hunt:'HUNT', gather:'GATHER' };
+
+// Session memory: anchors authored across all bgs this session.
+// Keyed by `${mode}/${bgId}` so switching bgs preserves work. Persisted to
+// localStorage so closing/reopening the editor (or reloading) keeps the work.
+const sessionAnchors = {};
+function _sessionKey(mode, bg){ return `${mode}/${bg}`; }
+
+const STORAGE_KEY = 'forage-editor-session-v1';
+function _saveSessionToStorage(){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionAnchors)); }
+  catch(e) { /* quota exceeded or disabled — silently skip */ }
+}
+function _loadSessionFromStorage(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return 0;
+    const parsed = JSON.parse(raw);
+    let bgCount = 0, anchorCount = 0;
+    Object.keys(parsed).forEach(k => {
+      if(parsed[k] && Array.isArray(parsed[k])){
+        sessionAnchors[k] = parsed[k];
+        bgCount++;
+        anchorCount += parsed[k].length;
+      }
+    });
+    return { bgCount, anchorCount };
+  } catch(e) { return 0; }
+}
+let currentMode = 'scav';
+let currentBg   = 'storage';
+let pmode       = 'P';
+let target      = 'fauna';
+let face        = 'up'; // toolbar default. Stored on anchor as anchor.face when not 'up'.
+                          // Values: up | down | left | right.
+                          // up = slides up from below (creature emerges upward)
+                          // down = slides down from above + V-flipped (drops from ceiling)
+                          // left = slides leftward + H-flipped (emerges from right-side cover)
+                          // right = slides rightward (emerges from left-side cover)
+let depth       = 'near'; // depth hint. Stored on anchor as anchor.depth when not 'near'.
+                          // Values: near | mid | far. Drives sprite-size pool so
+                          // background rocks/trees spawn smaller sprites.
+let spawnMode   = 'continuous'; // line spawn-mode. Stored on line anchors as
+                                // anchor.spawn when not default. Values:
+                                // continuous | endpoints | start | end | midpoint
+                                // Ignored for points/regions.
+let anchors     = [];
+let pendingLineStart = null;
+let dragRegion  = null;
+let hoverPoint  = null;
+let selectedId  = null;
+let nextNum     = 1;
+
+const $bg = document.getElementById('bg');
+const $stage = document.getElementById('stage');
+const $svg = document.getElementById('svg');
+const $rows = document.getElementById('rows');
+const $cnt = document.getElementById('cnt');
+const $status = document.getElementById('status');
+
+// ─────────────────────────────────────────────
+// BG list + load
+// ─────────────────────────────────────────────
+function refreshBgList(){
+  const sel = document.getElementById('sel-bg');
+  sel.innerHTML = '';
+  const list = BGS_BY_MODE[currentMode] || [];
+  if(list.length === 0){
+    const opt = document.createElement('option');
+    opt.value=''; opt.textContent='(none yet)';
+    sel.appendChild(opt);
+    sel.disabled = true;
+    currentBg = '';
+    loadBg();
+    return;
+  }
+  sel.disabled = false;
+  // Group by biome via <optgroup> for cleaner readability with 6-7 bgs
+  const byBiome = {};
+  list.forEach(b => { (byBiome[b.biome] = byBiome[b.biome] || []).push(b); });
+  Object.keys(byBiome).forEach(biome => {
+    const og = document.createElement('optgroup');
+    og.label = biome;
+    byBiome[biome].forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id;
+      const tag = b.ext && b.ext !== 'jpg' ? ` (.${b.ext})` : '';
+      const stored = sessionAnchors[_sessionKey(currentMode, b.id)] || [];
+      const badge = stored.length ? ` · ${stored.length}` : '';
+      opt.textContent = b.id + tag + badge;
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+  // Pick the first available bg if current isn't in this mode's list
+  const ids = list.map(b => b.id);
+  if(!ids.includes(currentBg)) currentBg = ids[0];
+  sel.value = currentBg;
+  loadBg();
+}
+
+function _refreshBgDropdownLabels(){
+  // Update the count badges next to bg names without rebuilding the dropdown
+  // (preserves user's current selection / scroll position).
+  refreshBgList();
+}
+
+// Track the bg currently displayed (separate from currentBg, which may be
+// updated to the new selection before we save the old one's anchors).
+let _loadedBgKey = null;
+
+function loadBg(){
+  // Save anchors for the previous bg before resetting state
+  if(_loadedBgKey){
+    sessionAnchors[_loadedBgKey] = anchors.map(({id, ...rest}) => rest);
+    _saveSessionToStorage();
+  }
+  pendingLineStart = null;
+  dragRegion = null;
+  selectedId = null;
+
+  if(!currentBg){
+    anchors = [];
+    nextNum = 1;
+    _loadedBgKey = null;
+    $bg.removeAttribute('src');
+    $bg.classList.add('missing');
+    $stage.classList.add('missing');
+    setStatus('No bg selected.');
+    redraw();
+    return;
+  }
+
+  // Restore session anchors for the new bg (or start fresh)
+  const key = _sessionKey(currentMode, currentBg);
+  const stored = sessionAnchors[key] || [];
+  anchors = stored.map(a => Object.assign({ id: 'a' + (++nextNum) }, a));
+  _loadedBgKey = key;
+
+  const bgEntry = (BGS_BY_MODE[currentMode] || []).find(b => b.id === currentBg);
+  const ext = (bgEntry && bgEntry.ext) || 'jpg';
+  const path = `sprites/minigames/forage/${currentMode}/${currentBg}.${ext}`;
+  $bg.classList.remove('missing');
+  $stage.classList.remove('missing');
+  $bg.src = path;
+  $bg.onerror = ()=>{
+    $bg.classList.add('missing');
+    $stage.classList.add('missing');
+    setStatus('Could not load ' + path, true);
+  };
+  $bg.onload = ()=>{
+    const restored = stored.length ? ` · restored ${stored.length} anchor${stored.length>1?'s':''}` : '';
+    setStatus(`Loaded ${path} · source ${$bg.naturalWidth}×${$bg.naturalHeight}${restored}`);
+  };
+  redraw();
+}
+
+// Persist current anchors to session memory under their key. Called on every
+// state-changing op so EXPORT ALL always sees the latest. Also writes to
+// localStorage so reload restores the work.
+function _persistCurrent(){
+  if(!_loadedBgKey) return;
+  sessionAnchors[_loadedBgKey] = anchors.map(({id, ...rest}) => rest);
+  _saveSessionToStorage();
+}
+
+// ─────────────────────────────────────────────
+// Coords
+// ─────────────────────────────────────────────
+function eventToSvgCoords(e){
+  const rect = $svg.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 960;
+  const y = ((e.clientY - rect.top)  / rect.height) * 640;
+  return {
+    x: Math.max(0, Math.min(960, Math.round(x))),
+    y: Math.max(0, Math.min(640, Math.round(y)))
+  };
+}
+
+// ─────────────────────────────────────────────
+// Anchor model
+// ─────────────────────────────────────────────
+function newId(){ return 'a' + (nextNum++); }
+// Stamp current toolbar settings onto a new anchor; face is only attached
+// when non-default ('left') so the JSON stays clean.
+function _stamp(a){
+  if(face !== 'up')    a.face  = face;  // omit when default
+  if(depth !== 'near') a.depth = depth; // omit when default
+  // spawn only meaningful on line anchors
+  if(a.type === 'line' && spawnMode !== 'continuous') a.spawn = spawnMode;
+  return a;
+}
+function addPoint(x,y){
+  anchors.push(_stamp({id:newId(),type:'point',x,y,target}));
+  setStatus(`Placed point #${anchors.length} at (${x},${y})`);
+  _persistCurrent();
+}
+function addLine(x1,y1,x2,y2){
+  // Tolerant ortho snap — within 8px of horizontal/vertical, snap clean.
+  // Beyond that, diagonals are allowed (single 2-point line; multi-point
+  // polylines are still out of scope). Runtime computes perpendicular emerge
+  // direction from line angle.
+  const dx = Math.abs(x2-x1), dy = Math.abs(y2-y1);
+  if(dx < 8 && dy >= 8) x2 = x1;
+  else if(dy < 8 && dx >= 8) y2 = y1;
+  if(Math.hypot(x2-x1, y2-y1) < 6){
+    setStatus('Line too short — try again', true);
+    return;
+  }
+  const axis = (x1 === x2) ? 'V'
+             : (y1 === y2) ? 'H'
+             : 'diag';
+  anchors.push(_stamp({id:newId(),type:'line',x1,y1,x2,y2,target}));
+  setStatus(`Placed ${axis}-line #${anchors.length} (${x1},${y1}) → (${x2},${y2})`);
+  _persistCurrent();
+}
+function addRegion(x,y,w,h){
+  anchors.push(_stamp({id:newId(),type:'region',x,y,w,h,target}));
+  setStatus(`Placed region #${anchors.length} at (${x},${y}) ${w}×${h}`);
+  _persistCurrent();
+}
+function removeAnchor(id){
+  anchors = anchors.filter(a=>a.id!==id);
+  if(selectedId === id) selectedId = null;
+  setStatus(`Removed ${id}`);
+  _persistCurrent();
+}
+
+// ─────────────────────────────────────────────
+// Render
+// ─────────────────────────────────────────────
+function redraw(){
+  let svgHtml = '';
+  anchors.forEach((a,i)=>{
+    const sel = a.id === selectedId ? ' sel' : '';
+    const idx = i+1;
+    if(a.type === 'point'){
+      svgHtml += `<circle class="a-pt${sel}" cx="${a.x}" cy="${a.y}" r="9" data-id="${a.id}"/>`;
+      svgHtml += `<text class="a-num" x="${a.x}" y="${a.y+3}">${idx}</text>`;
+    } else if(a.type === 'line'){
+      svgHtml += `<line class="a-ln${sel}" x1="${a.x1}" y1="${a.y1}" x2="${a.x2}" y2="${a.y2}" data-id="${a.id}"/>`;
+      svgHtml += `<circle class="a-cap${sel}" cx="${a.x1}" cy="${a.y1}" r="4"/>`;
+      svgHtml += `<circle class="a-cap${sel}" cx="${a.x2}" cy="${a.y2}" r="4"/>`;
+      svgHtml += `<text class="a-num" x="${(a.x1+a.x2)/2}" y="${(a.y1+a.y2)/2+3}">${idx}</text>`;
+    } else if(a.type === 'region'){
+      svgHtml += `<rect class="a-rg${sel}" x="${a.x}" y="${a.y}" width="${a.w}" height="${a.h}" data-id="${a.id}"/>`;
+      svgHtml += `<text class="a-num" x="${a.x + a.w/2}" y="${a.y + a.h/2 + 3}">${idx}</text>`;
+    }
+  });
+
+  // Pending placement preview
+  if(pendingLineStart && hoverPoint){
+    svgHtml += `<line class="preview" x1="${pendingLineStart.x}" y1="${pendingLineStart.y}" x2="${hoverPoint.x}" y2="${hoverPoint.y}"/>`;
+    svgHtml += `<circle class="a-cap" cx="${pendingLineStart.x}" cy="${pendingLineStart.y}" r="4"/>`;
+  }
+  if(dragRegion){
+    const x = Math.min(dragRegion.x0, dragRegion.x1);
+    const y = Math.min(dragRegion.y0, dragRegion.y1);
+    const w = Math.abs(dragRegion.x1 - dragRegion.x0);
+    const h = Math.abs(dragRegion.y1 - dragRegion.y0);
+    svgHtml += `<rect class="preview-fill" x="${x}" y="${y}" width="${w}" height="${h}"/>`;
+  }
+
+  $svg.innerHTML = svgHtml;
+  $cnt.textContent = anchors.length;
+
+  // List
+  let rowsHtml = '';
+  anchors.forEach((a,i)=>{
+    const sel = a.id === selectedId ? ' sel' : '';
+    let coords = '';
+    if(a.type === 'point') coords = `(${a.x}, ${a.y})`;
+    else if(a.type === 'line') coords = `(${a.x1},${a.y1}) → (${a.x2},${a.y2})`;
+    else coords = `(${a.x},${a.y}) ${a.w}×${a.h}`;
+    const FACE_ICONS  = { up:'▲', down:'▼', left:'◀', right:'▶' };
+    const DEPTH_ICONS = { near:'●', mid:'◐', far:'○' };
+    const faceVal  = a.face  || 'up';
+    const depthVal = a.depth || 'near';
+    const faceIcon  = FACE_ICONS[faceVal]   || '▲';
+    const depthIcon = DEPTH_ICONS[depthVal] || '●';
+    rowsHtml += `<div class="row${sel}" data-id="${a.id}">
+      <span class="rid">${i+1}</span>
+      <span class="rtype ${a.type}">${a.type.toUpperCase()}</span>
+      <span class="rface" data-cycle="${a.id}" title="face: ${faceVal} — click to cycle (up→right→down→left→up)">${faceIcon}</span>
+      <span class="rdepth" data-cycle-depth="${a.id}" title="depth: ${depthVal} — click to cycle (near→mid→far→near)">${depthIcon}</span>
+      <span class="rcoords">${coords}</span>
+      <span class="rtarget">${a.target}</span>
+      <button class="rplay" data-preview="${a.id}" title="preview spawn">▷</button>
+      <button class="rdel" data-del="${a.id}" title="remove">×</button>
+    </div>`;
+  });
+  $rows.innerHTML = rowsHtml || '<div class="empty">No anchors yet — click on the bg to place one.</div>';
+}
+
+// ─────────────────────────────────────────────
+// Click handlers (svg)
+// ─────────────────────────────────────────────
+// Drag-to-reposition state. When mousedown lands on an existing anchor
+// element, dragState is populated and subsequent mousemove translates the
+// anchor's coords by the cursor delta. mouseup finalizes (or no-op if
+// cursor didn't move = simple selection click).
+let dragState = null;
+
+$svg.addEventListener('mousedown', e=>{
+  if(!currentBg) return;
+  // Right-click = cancel pending; let context menu suppress separately
+  if(e.button !== 0) return;
+  const p = eventToSvgCoords(e);
+
+  // Hit test for existing anchor → select + start drag
+  const hit = e.target;
+  const id = hit && hit.getAttribute && hit.getAttribute('data-id');
+  if(id){
+    selectedId = id;
+    const a = anchors.find(x => x.id === id);
+    if(a){
+      // For LINE anchors: detect endpoint-proximity. Mousedown within ~14px
+      // of either endpoint drags THAT endpoint (reshape). Otherwise drags
+      // the whole line as a unit (existing behavior).
+      let mode = 'whole';
+      if(a.type === 'line'){
+        const d1 = Math.hypot(p.x - a.x1, p.y - a.y1);
+        const d2 = Math.hypot(p.x - a.x2, p.y - a.y2);
+        const T = 14; // grab radius for endpoints
+        if(d1 < d2 && d1 < T) mode = 'endpoint1';
+        else if(d2 < T)       mode = 'endpoint2';
+      }
+      dragState = {
+        id,
+        startX: p.x,
+        startY: p.y,
+        orig: Object.assign({}, a),
+        moved: false,
+        mode
+      };
+      syncToolbarToAnchor(a);
+      const hint = mode === 'endpoint1' ? ' · dragging start endpoint'
+                 : mode === 'endpoint2' ? ' · dragging end endpoint'
+                 :                          ' · drag to reposition';
+      setStatus(`Selected ${id}${hint}`);
+    }
+    redraw();
+    return;
+  }
+
+  if(pmode === 'P'){
+    addPoint(p.x, p.y);
+    redraw();
+  } else if(pmode === 'L'){
+    if(!pendingLineStart){
+      pendingLineStart = p;
+      hoverPoint = p;
+      setStatus(`Line start (${p.x},${p.y}) · click again for end · Esc cancel`);
+    } else {
+      addLine(pendingLineStart.x, pendingLineStart.y, p.x, p.y);
+      pendingLineStart = null;
+    }
+    redraw();
+  } else if(pmode === 'R'){
+    dragRegion = {x0:p.x, y0:p.y, x1:p.x, y1:p.y};
+    redraw();
+  }
+});
+
+$svg.addEventListener('mousemove', e=>{
+  if(!currentBg) return;
+  const p = eventToSvgCoords(e);
+  // Drag-to-reposition: translate anchor coords by cursor delta
+  if(dragState){
+    const a = anchors.find(x => x.id === dragState.id);
+    if(a){
+      const dx = p.x - dragState.startX;
+      const dy = p.y - dragState.startY;
+      if(dx !== 0 || dy !== 0) dragState.moved = true;
+      if(a.type === 'point'){
+        a.x = Math.max(0, Math.min(960, dragState.orig.x + dx));
+        a.y = Math.max(0, Math.min(640, dragState.orig.y + dy));
+      } else if(a.type === 'line'){
+        if(dragState.mode === 'endpoint1'){
+          a.x1 = Math.max(0, Math.min(960, dragState.orig.x1 + dx));
+          a.y1 = Math.max(0, Math.min(640, dragState.orig.y1 + dy));
+        } else if(dragState.mode === 'endpoint2'){
+          a.x2 = Math.max(0, Math.min(960, dragState.orig.x2 + dx));
+          a.y2 = Math.max(0, Math.min(640, dragState.orig.y2 + dy));
+        } else {
+          // Whole-line drag — both endpoints translated equally
+          a.x1 = Math.max(0, Math.min(960, dragState.orig.x1 + dx));
+          a.y1 = Math.max(0, Math.min(640, dragState.orig.y1 + dy));
+          a.x2 = Math.max(0, Math.min(960, dragState.orig.x2 + dx));
+          a.y2 = Math.max(0, Math.min(640, dragState.orig.y2 + dy));
+        }
+      } else if(a.type === 'region'){
+        a.x = Math.max(0, Math.min(960 - a.w, dragState.orig.x + dx));
+        a.y = Math.max(0, Math.min(640 - a.h, dragState.orig.y + dy));
+      }
+      redraw();
+    }
+    return;
+  }
+  let need = false;
+  if(pendingLineStart){ hoverPoint = p; need = true; }
+  if(dragRegion){ dragRegion.x1 = p.x; dragRegion.y1 = p.y; need = true; }
+  if(need) redraw();
+});
+
+window.addEventListener('mouseup', ()=>{
+  // Finalize drag-to-reposition if active
+  if(dragState){
+    if(dragState.moved){
+      const a = anchors.find(x => x.id === dragState.id);
+      // Apply tolerant ortho-snap on endpoint drag — matches addLine behavior
+      // so reshaped lines stay clean H/V when close.
+      if(a && a.type === 'line' && (dragState.mode === 'endpoint1' || dragState.mode === 'endpoint2')){
+        const dx = Math.abs(a.x2 - a.x1), dy = Math.abs(a.y2 - a.y1);
+        if(dx < 8 && dy >= 8){
+          // Snap to vertical — align dragged endpoint to the fixed one's x
+          if(dragState.mode === 'endpoint1') a.x1 = a.x2;
+          else                                a.x2 = a.x1;
+        } else if(dy < 8 && dx >= 8){
+          // Snap to horizontal — align dragged endpoint to the fixed one's y
+          if(dragState.mode === 'endpoint1') a.y1 = a.y2;
+          else                                a.y2 = a.y1;
+        }
+      }
+      _persistCurrent();
+      const coords = a ? (a.type === 'point' ? `(${a.x},${a.y})`
+                       : a.type === 'line'  ? `(${a.x1},${a.y1})→(${a.x2},${a.y2})`
+                       :                       `(${a.x},${a.y}) ${a.w}×${a.h}`) : '';
+      const what = dragState.mode === 'endpoint1' ? 'start endpoint moved'
+                 : dragState.mode === 'endpoint2' ? 'end endpoint moved'
+                 :                                   'repositioned';
+      setStatus(`Anchor ${dragState.id} ${what} to ${coords}`);
+    }
+    dragState = null;
+    redraw();
+    return;
+  }
+  if(dragRegion){
+    const x = Math.min(dragRegion.x0, dragRegion.x1);
+    const y = Math.min(dragRegion.y0, dragRegion.y1);
+    const w = Math.abs(dragRegion.x1 - dragRegion.x0);
+    const h = Math.abs(dragRegion.y1 - dragRegion.y0);
+    if(w >= 6 && h >= 6){
+      addRegion(x, y, w, h);
+    } else {
+      setStatus('Region too small — drag further next time', true);
+    }
+    dragRegion = null;
+    redraw();
+  }
+});
+
+// Suppress right-click context menu over svg so it doesn't fight Esc
+$svg.addEventListener('contextmenu', e=>e.preventDefault());
+
+// ─────────────────────────────────────────────
+// Keyboard
+// ─────────────────────────────────────────────
+window.addEventListener('keydown', e=>{
+  // Ignore if typing in form control
+  if(['INPUT','SELECT','TEXTAREA'].includes((e.target.tagName||'').toUpperCase())) return;
+  if(e.key === 'Escape'){
+    if(pendingLineStart || dragRegion){
+      pendingLineStart = null;
+      dragRegion = null;
+      setStatus('Pending placement cancelled');
+      redraw();
+    } else if(selectedId){
+      selectedId = null;
+      setStatus('Selection cleared');
+      redraw();
+    }
+  } else if(e.key === 'Delete' || e.key === 'Backspace'){
+    if(selectedId){
+      removeAnchor(selectedId);
+      redraw();
+      e.preventDefault();
+    }
+  } else {
+    const k = e.key.toLowerCase();
+    if(k === 'p') setPmode('P');
+    else if(k === 'l') setPmode('L');
+    else if(k === 'r') setPmode('R');
+  }
+});
+
+// ─────────────────────────────────────────────
+// Toolbar
+// ─────────────────────────────────────────────
+function setPmode(m){
+  pmode = m;
+  document.querySelectorAll('.tbp').forEach(b=>b.classList.toggle('on', b.dataset.pmode === m));
+  pendingLineStart = null;
+  dragRegion = null;
+  redraw();
+  const desc = m === 'P' ? 'POINT — single click drops a pin'
+             : m === 'L' ? 'LINE — click start, click end (snaps to ortho near horizontal/vertical)'
+             : 'REGION — click+drag to draw a rectangle';
+  setStatus('Mode: ' + desc);
+}
+
+document.querySelectorAll('.tbp[data-pmode]').forEach(b=>{
+  b.addEventListener('click', ()=>setPmode(b.dataset.pmode));
+});
+// Generic helper: apply a toolbar change either to the selected anchor (if
+// any) or just update the global default for future placements.
+function applyOrDefault(field, value){
+  if(selectedId){
+    const a = anchors.find(x => x.id === selectedId);
+    if(a){
+      // Only emit non-default values to keep JSON clean
+      const isDefault = (field === 'face' && value === 'up')
+                     || (field === 'depth' && value === 'near')
+                     || (field === 'target' && value === 'fauna');
+      if(isDefault) delete a[field];
+      else          a[field] = value;
+      _persistCurrent();
+      redraw();
+      return true;
+    }
+  }
+  return false;
+}
+
+document.getElementById('sel-face').addEventListener('change', e=>{
+  face = e.target.value;
+  const desc = {
+    up:    'sprites slide up from below (default — no flip)',
+    down:  'sprites drop down from above (V-flipped, head down)',
+    left:  'sprites slide leftward (H-flipped, face left)',
+    right: 'sprites slide rightward (face right)'
+  }[face];
+  if(applyOrDefault('face', face)){
+    setStatus(`Anchor ${selectedId} face → ${face.toUpperCase()} · ${desc}`);
+  } else {
+    setStatus(`Face for new anchors: ${face.toUpperCase()} · ${desc}`);
+  }
+});
+document.getElementById('sel-depth').addEventListener('change', e=>{
+  depth = e.target.value;
+  const desc = {
+    near: 'sprites pull from full size pool 48–96 (default)',
+    mid:  'sprites scaled ~85% — pool 40–80',
+    far:  'sprites scaled ~65% — pool 32–64 (background rocks/trees)'
+  }[depth];
+  if(applyOrDefault('depth', depth)){
+    setStatus(`Anchor ${selectedId} depth → ${depth.toUpperCase()} · ${desc}`);
+  } else {
+    setStatus(`Depth for new anchors: ${depth.toUpperCase()} · ${desc}`);
+  }
+});
+document.getElementById('sel-spawn').addEventListener('change', e=>{
+  spawnMode = e.target.value;
+  // Spawn mode only meaningful for lines. If a non-line is selected, just
+  // store as the default for next line placement.
+  if(selectedId){
+    const a = anchors.find(x => x.id === selectedId);
+    if(a && a.type === 'line'){
+      if(spawnMode === 'continuous') delete a.spawn;
+      else                            a.spawn = spawnMode;
+      _persistCurrent();
+      redraw();
+      setStatus(`Line ${selectedId} spawn → ${spawnMode}`);
+      return;
+    }
+    if(a && a.type !== 'line'){
+      setStatus(`Spawn mode only applies to LINE anchors (selected ${selectedId} is ${a.type})`, true);
+      return;
+    }
+  }
+  setStatus(`Spawn mode for new lines: ${spawnMode}`);
+});
+document.getElementById('sel-mode').addEventListener('change', e=>{
+  currentMode = e.target.value;
+  refreshBgList();
+});
+document.getElementById('sel-bg').addEventListener('change', e=>{
+  currentBg = e.target.value;
+  loadBg();
+});
+document.getElementById('sel-target').addEventListener('change', e=>{
+  target = e.target.value;
+  if(applyOrDefault('target', target)){
+    setStatus(`Anchor ${selectedId} target → ${target}`);
+  } else {
+    setStatus('Target type for new anchors: ' + target);
+  }
+});
+
+// ─────────────────────────────────────────────
+// Preview-sprite — replicates runtime spawn for one anchor in the editor
+// so authors can see emerge direction + depth + flip without exporting JSON.
+// ─────────────────────────────────────────────
+// Mirror of runtime SPRITE_SIZE_STEPS_BY_DEPTH — narrow buckets so the
+// preview matches what the runtime will spawn. Keep these synced.
+const PREVIEW_SIZE_BY_DEPTH = {
+  near: [80, 88, 96],
+  mid:  [56, 64, 72],
+  far:  [40, 48, 56]
+};
+function previewPickFauna(biome){
+  const SPR = (window.FORAGE_SPRITES && window.FORAGE_SPRITES.fauna) || {};
+  const candidates = Object.entries(SPR).filter(([_,s]) => s.biomes.includes(biome));
+  if(!candidates.length) return null;
+  const [species, spec] = candidates[Math.floor(Math.random()*candidates.length)];
+  const v = spec.variants[Math.floor(Math.random()*spec.variants.length)];
+  return { kind:'fauna', species, path:`sprites/minigames/forage/sprites/fauna_${species}${v}.png` };
+}
+function previewPickFlora(biome){
+  const SPR = (window.FORAGE_SPRITES && window.FORAGE_SPRITES.flora) || {};
+  const candidates = Object.entries(SPR).filter(([_,s]) => s.biomes.includes(biome));
+  if(!candidates.length) return null;
+  const [type, spec] = candidates[Math.floor(Math.random()*candidates.length)];
+  const sizeKeys = Object.keys(spec.sizes);
+  const sz = sizeKeys[Math.floor(Math.random()*sizeKeys.length)];
+  const variants = spec.sizes[sz];
+  const v = variants[Math.floor(Math.random()*variants.length)];
+  return { kind:'flora', species:type, size:sz, path:`sprites/minigames/forage/sprites/flora_${type}_${sz}${v}.png` };
+}
+// Perpendicular for line emerge — same logic as runtime initForage
+function previewLinePerp(a, faceVal){
+  const dx = a.x2-a.x1, dy = a.y2-a.y1;
+  const len = Math.hypot(dx,dy);
+  if(len === 0) return {x:0,y:-1};
+  const ux = dx/len, uy = dy/len;
+  const pA = {x:-uy, y:ux}, pB = {x:uy, y:-ux};
+  const fv = ({up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0}})[faceVal] || {x:0,y:-1};
+  return (pA.x*fv.x+pA.y*fv.y) >= (pB.x*fv.x+pB.y*fv.y) ? pA : pB;
+}
+
+let _activePreview = null;
+function clearActivePreview(){
+  if(_activePreview){
+    try { _activePreview.anim.cancel(); } catch(e){}
+    _activePreview.el.remove();
+    _activePreview = null;
+  }
+}
+
+function previewAnchor(anchorId){
+  clearActivePreview();
+  const a = anchors.find(x => x.id === anchorId);
+  if(!a) return;
+  // Resolve biome from current bg
+  const bgEntry = (BGS_BY_MODE[currentMode] || []).find(b => b.id === currentBg);
+  const biome = bgEntry?.biome;
+  if(!biome){ setStatus('No biome resolved for current bg', true); return; }
+  // Pick sprite based on target type
+  const target = a.target || 'fauna';
+  const ttype = target === 'fauna+flora' ? (Math.random() < 0.5 ? 'fauna' : 'flora') : target;
+  const spec = ttype === 'fauna' ? previewPickFauna(biome) : previewPickFlora(biome);
+  if(!spec){
+    setStatus(`No ${ttype} sprites for biome ${biome} — check sprites.js whitelist`, true);
+    return;
+  }
+  // Sample point inside anchor (mirrors runtime sampleAnchorPoint)
+  let px, py;
+  if(a.type === 'point'){ px = a.x; py = a.y; }
+  else if(a.type === 'line'){
+    let t;
+    switch(a.spawn){
+      case 'start':     t = 0; break;
+      case 'end':       t = 1; break;
+      case 'midpoint':  t = 0.5; break;
+      case 'endpoints': t = Math.random() < 0.5 ? 0 : 1; break;
+      default:          t = Math.random();
+    }
+    px = a.x1 + (a.x2-a.x1)*t;
+    py = a.y1 + (a.y2-a.y1)*t;
+  } else { // region
+    px = a.x + Math.random()*a.w;
+    py = a.y + Math.random()*a.h;
+  }
+  // Pick size by depth
+  const depthVal = a.depth || 'near';
+  const steps = PREVIEW_SIZE_BY_DEPTH[depthVal] || PREVIEW_SIZE_BY_DEPTH.near;
+  const size = steps[Math.floor(Math.random()*steps.length)];
+  // Determine flip from face
+  const faceVal = a.face || 'up';
+  // Horizontal flip:
+  //   left  → always flipped (face direction is horizontal)
+  //   right → never flipped (default sprite faces right)
+  //   up/down → random 50/50 (no implied horizontal facing on vertical motion)
+  const flipX = faceVal === 'left'
+              || ((faceVal === 'up' || faceVal === 'down') && Math.random() < 0.5);
+  const flipY = faceVal === 'down';
+  // Compute emerge offset (start position relative to centered)
+  let offX = 0, offY = 0;
+  if(a.type === 'line'){
+    const perp = previewLinePerp(a, faceVal);
+    offX = -perp.x * size * 0.8;
+    offY = -perp.y * size * 0.8;
+  } else {
+    // Cardinal direction — same offsets as runtime CSS keyframes
+    const FACE_OFFSETS = { up:{x:0,y:size*0.8}, down:{x:0,y:-size*0.8}, left:{x:size*0.8,y:0}, right:{x:-size*0.8,y:0} };
+    const o = FACE_OFFSETS[faceVal] || FACE_OFFSETS.up;
+    offX = o.x; offY = o.y;
+  }
+  // Build preview element overlaying the stage. Flip is baked into the
+  // animation transform (not via CSS class) so it composes with scale().
+  // Shrooms anchor at sprite bottom-center (grow up from ground); fruit/pods
+  // anchor at center.
+  const isShroom = spec.kind === 'flora' && spec.species === 'shroom';
+  const stage = document.querySelector('.stage');
+  const el = document.createElement('div');
+  el.className = 'preview-sprite';
+  el.style.width = size+'px';
+  el.style.height = size+'px';
+  // Shrooms with V-flip (face=down) need scale-from-top AND image flipped
+  // around its own center — two different transform-origins. Nest the bg
+  // onto an inner div so the outer (el) can scale from top while the inner
+  // handles the static flip without conflicting transform-origins.
+  if(isShroom){
+    const inner = document.createElement('div');
+    inner.style.cssText = 'position:absolute;inset:0;background-size:contain;background-position:center;background-repeat:no-repeat';
+    inner.style.backgroundImage = `url('${spec.path}')`;
+    let innerT = '';
+    if(flipX) innerT += ' scaleX(-1)';
+    if(flipY) innerT += ' scaleY(-1)';
+    if(innerT) inner.style.transform = innerT.trim();
+    el.appendChild(inner);
+  } else {
+    el.style.backgroundImage = `url('${spec.path}')`;
+  }
+
+  // For line anchors: wrap el in an overflow:hidden clip box, position the
+  // box on one side of the line, and position el inside at the line edge.
+  // The anim later translates el through the line opening (whack-a-mole).
+  // For other anchors: el sits directly on the stage, positioned by px/py.
+  let outerEl = el;
+  if(a.type === 'line' && spec.kind === 'fauna'){
+    const BOX = 100;
+    let bLeft, bTop, bWidth = BOX, bHeight = BOX;
+    let elPos = {};
+    if(faceVal === 'up'){
+      bLeft = px - BOX/2; bTop = py - BOX;
+      elPos = { left:'50%', bottom:'0' };
+    } else if(faceVal === 'down'){
+      bLeft = px - BOX/2; bTop = py;
+      elPos = { left:'50%', top:'0' };
+    } else if(faceVal === 'right'){
+      bLeft = px; bTop = py - BOX/2;
+      elPos = { top:'50%', left:'0' };
+    } else { // left
+      bLeft = px - BOX; bTop = py - BOX/2;
+      elPos = { top:'50%', right:'0' };
+    }
+    const box = document.createElement('div');
+    box.className = 'preview-line-box';
+    box.style.left = bLeft + 'px';
+    box.style.top  = bTop  + 'px';
+    box.style.width  = bWidth + 'px';
+    box.style.height = bHeight + 'px';
+    el.style.position = 'absolute';
+    Object.assign(el.style, elPos);
+    box.appendChild(el);
+    stage.appendChild(box);
+    outerEl = box;
+  } else {
+    if(isShroom){
+      // Shrooms grow direction-aware: face determines where the anchor
+      // attaches on the sprite (bottom for up, top for down, etc.) and
+      // which transform-origin to scale from. Fruit/seedpod stay center.
+      switch(faceVal){
+        case 'down':
+          el.style.left = (px - size/2)+'px';
+          el.style.top  = py+'px';                    // top of element at anchor
+          el.style.transformOrigin = 'top center';
+          break;
+        case 'left':
+          el.style.left = (px - size)+'px';           // right edge of element at anchor
+          el.style.top  = (py - size/2)+'px';
+          el.style.transformOrigin = 'center right';
+          break;
+        case 'right':
+          el.style.left = px+'px';                    // left edge of element at anchor
+          el.style.top  = (py - size/2)+'px';
+          el.style.transformOrigin = 'center left';
+          break;
+        case 'up':
+        default:
+          el.style.left = (px - size/2)+'px';
+          el.style.top  = (py - size)+'px';           // bottom of element at anchor
+          el.style.transformOrigin = 'bottom center';
+      }
+    } else {
+      el.style.left = (px - size/2)+'px';
+      el.style.top  = (py - size/2)+'px';
+    }
+    stage.appendChild(el);
+  }
+  const flipT = (flipX && flipY) ? 'scale(-1,-1)' : (flipX ? 'scaleX(-1)' : (flipY ? 'scaleY(-1)' : ''));
+  let anim;
+  if(spec.kind === 'flora'){
+    // Flora lifecycle (matches runtime fripen → fripepulse → fspoil):
+    //   0.0–2.5s ripen: scale .5→1, brightness/saturation .8→1 (or scaleY for shrooms)
+    //   2.5–3.3s hold + pulse: scale 1↔1.08 with glow
+    //   3.3–4.4s spoil: scale 1→.85, dim + desaturate, fade
+    const D = 4400;
+    if(isShroom){
+      // Uniform scale anchored at bottom — sprite grows proportionally
+      // upward from the floor as transform-origin: bottom center on element.
+      // Spoil ends at opacity 0 so the sprite fades fully out instead of
+      // cutting abruptly when the slot clears.
+      anim = el.animate([
+        { transform: 'scale(.1)',   opacity: .55, filter: 'saturate(.4) brightness(.8)',                                            offset: 0 },
+        { transform: 'scale(1)',    opacity: 1,   filter: 'saturate(1) brightness(1)',                                              offset: 2.5/4.4 },
+        { transform: 'scale(1.06)', opacity: 1,   filter: 'saturate(1) brightness(1.1) drop-shadow(0 0 8px rgba(200,168,90,.7))',   offset: 2.9/4.4 },
+        { transform: 'scale(1)',    opacity: 1,   filter: 'saturate(1) brightness(1)',                                              offset: 3.3/4.4 },
+        { transform: 'scale(.85)',  opacity: 0,   filter: 'saturate(.2) brightness(.55) hue-rotate(25deg)',                         offset: 1 }
+      ], { duration: D, easing: 'linear', fill: 'forwards' });
+    } else {
+    anim = el.animate([
+      { transform: `scale(0.5) ${flipT}`.trim(),  opacity: .55, filter: 'saturate(.4) brightness(.8)',                                          offset: 0 },
+      { transform: `scale(1) ${flipT}`.trim(),    opacity: 1,   filter: 'saturate(1) brightness(1)',                                            offset: 2.5/4.4 },
+      { transform: `scale(1.08) ${flipT}`.trim(), opacity: 1,   filter: 'saturate(1) brightness(1.1) drop-shadow(0 0 8px rgba(200,168,90,.7))', offset: 2.9/4.4 },
+      { transform: `scale(1) ${flipT}`.trim(),    opacity: 1,   filter: 'saturate(1) brightness(1)',                                            offset: 3.3/4.4 },
+      { transform: `scale(.85) ${flipT}`.trim(),  opacity: 0,   filter: 'saturate(.2) brightness(.55) hue-rotate(25deg)',                       offset: 1 }
+    ], { duration: D, easing: 'linear', fill: 'forwards' });
+    }
+  } else {
+    // Fauna animation. Branch by anchor type:
+    //  • Line: whack-a-mole — sprite slides through the clip-box opening
+    //    (rises out, holds visible, sinks back). Box mask handles clipping.
+    //  • Point/region: slide-in from offset to center, hold, fade.
+    if(a.type === 'line'){
+      // Determine hidden/visible transforms based on face direction
+      let hiddenT, visibleT;
+      if(faceVal === 'up')         { hiddenT = 'translate(-50%, 100%)';  visibleT = 'translate(-50%, 0%)'; }
+      else if(faceVal === 'down')  { hiddenT = 'translate(-50%, -100%)'; visibleT = 'translate(-50%, 0%)'; }
+      else if(faceVal === 'right') { hiddenT = 'translate(-100%, -50%)'; visibleT = 'translate(0%, -50%)'; }
+      else                         { hiddenT = 'translate(100%, -50%)';  visibleT = 'translate(0%, -50%)'; }
+      // Compose flip with visible transform (flip is element-local; doesn't
+      // change the slide direction, but flips the sprite art).
+      if(flipT){
+        hiddenT  += ' ' + flipT;
+        visibleT += ' ' + flipT;
+      }
+      const D = 2400;
+      const RISE = 220, SINK = 260;
+      const HOLD = D - RISE - SINK;
+      anim = el.animate([
+        { transform: hiddenT,  offset: 0 },
+        { transform: visibleT, offset: RISE / D,           easing: 'ease-out' },
+        { transform: visibleT, offset: (RISE + HOLD) / D,  easing: 'ease-in' },
+        { transform: hiddenT,  offset: 1 }
+      ], { duration: D, fill: 'forwards' });
+    } else {
+      const fromT = `translate(${offX}px, ${offY}px) ${flipT}`.trim();
+      const restT = `translate(0,0) ${flipT}`.trim();
+      anim = el.animate([
+        { transform: fromT, opacity: 0 },
+        { transform: restT, opacity: 1, offset: 0.12 },
+        { transform: restT, opacity: 1, offset: 0.85 },
+        { transform: restT, opacity: 0 }
+      ], { duration: 2400, easing: 'ease-out', fill: 'forwards' });
+    }
+  }
+  // Track outerEl (the clip box for line anchors, or el itself otherwise)
+  // so cleanup removes the right element from the DOM.
+  _activePreview = { el: outerEl, anim };
+  anim.addEventListener('finish', () => {
+    if(_activePreview && _activePreview.el === outerEl){
+      outerEl.remove();
+      _activePreview = null;
+    }
+  });
+  setStatus(`Preview: ${spec.kind} ${spec.species}${spec.size?'_'+spec.size:''} at (${Math.round(px)},${Math.round(py)}) · size ${size}px · face ${faceVal} · depth ${depthVal}`);
+}
+
+// Sync toolbar dropdowns + state to a selected anchor's values so changing
+// dropdowns edits THAT anchor instead of just stamping future placements.
+function syncToolbarToAnchor(a){
+  if(!a) return;
+  face      = a.face   || 'up';
+  depth     = a.depth  || 'near';
+  target    = a.target || 'fauna';
+  spawnMode = (a.type === 'line' && a.spawn) ? a.spawn : 'continuous';
+  document.getElementById('sel-face').value   = face;
+  document.getElementById('sel-depth').value  = depth;
+  document.getElementById('sel-target').value = target;
+  document.getElementById('sel-spawn').value  = spawnMode;
+}
+
+// ─────────────────────────────────────────────
+// List interactions
+// ─────────────────────────────────────────────
+const FACE_CYCLE  = ['up','right','down','left']; // visual rotation order
+const DEPTH_CYCLE = ['near','mid','far'];         // foreground → background
+$rows.addEventListener('click', e=>{
+  const del = e.target.getAttribute && e.target.getAttribute('data-del');
+  if(del){
+    e.stopPropagation();
+    removeAnchor(del);
+    redraw();
+    return;
+  }
+  // Click face icon → cycle the anchor's face value
+  const cycleId = e.target.getAttribute && e.target.getAttribute('data-cycle');
+  if(cycleId){
+    e.stopPropagation();
+    const a = anchors.find(x => x.id === cycleId);
+    if(a){
+      const cur = a.face || 'up';
+      const next = FACE_CYCLE[(FACE_CYCLE.indexOf(cur) + 1) % FACE_CYCLE.length];
+      if(next === 'up') delete a.face; else a.face = next;
+      _persistCurrent();
+      setStatus(`Anchor ${cycleId} face → ${next.toUpperCase()}`);
+      redraw();
+    }
+    return;
+  }
+  // Click ▷ play button → preview the spawn from this anchor
+  const previewId = e.target.getAttribute && e.target.getAttribute('data-preview');
+  if(previewId){
+    e.stopPropagation();
+    previewAnchor(previewId);
+    return;
+  }
+  // Click depth icon → cycle the anchor's depth value
+  const cycleDepthId = e.target.getAttribute && e.target.getAttribute('data-cycle-depth');
+  if(cycleDepthId){
+    e.stopPropagation();
+    const a = anchors.find(x => x.id === cycleDepthId);
+    if(a){
+      const cur = a.depth || 'near';
+      const next = DEPTH_CYCLE[(DEPTH_CYCLE.indexOf(cur) + 1) % DEPTH_CYCLE.length];
+      if(next === 'near') delete a.depth; else a.depth = next;
+      _persistCurrent();
+      setStatus(`Anchor ${cycleDepthId} depth → ${next.toUpperCase()}`);
+      redraw();
+    }
+    return;
+  }
+  const row = e.target.closest('.row');
+  if(row){
+    selectedId = row.getAttribute('data-id');
+    const a = anchors.find(x => x.id === selectedId);
+    if(a){
+      syncToolbarToAnchor(a);
+      setStatus(`Selected ${selectedId} · toolbar synced (face=${a.face||'up'}, depth=${a.depth||'near'}, target=${a.target||'fauna'}) — changes apply to this anchor`);
+    } else {
+      setStatus('Selected ' + selectedId);
+    }
+    redraw();
+  }
+});
+
+// Same sync when an anchor is clicked on the SVG (not just the list)
+$svg.addEventListener('click', e=>{
+  const id = e.target && e.target.getAttribute && e.target.getAttribute('data-id');
+  if(id){
+    const a = anchors.find(x => x.id === id);
+    if(a) syncToolbarToAnchor(a);
+  }
+}, true);
+
+document.getElementById('btn-clear').addEventListener('click', ()=>{
+  if(anchors.length === 0) return;
+  if(!confirm(`Clear all ${anchors.length} anchors for ${currentBg}?`)) return;
+  anchors = [];
+  selectedId = null;
+  pendingLineStart = null;
+  dragRegion = null;
+  nextNum = 1;
+  setStatus('Anchors cleared for this bg');
+  _persistCurrent();
+  redraw();
+});
+
+// IMPORT — load a JSON file into the current bg, replacing existing anchors
+document.getElementById('btn-import').addEventListener('click', ()=>{
+  if(!currentBg){
+    setStatus('Pick a bg first before importing', true);
+    return;
+  }
+  document.getElementById('import-file').click();
+});
+document.getElementById('import-file').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if(!Array.isArray(data.anchors)){
+        setStatus('Imported file has no `anchors` array', true);
+        return;
+      }
+      // Confirm if existing anchors will be overwritten
+      if(anchors.length > 0){
+        if(!confirm(`Replace ${anchors.length} existing anchor${anchors.length>1?'s':''} for ${currentBg} with ${data.anchors.length} from ${file.name}?`)) return;
+      }
+      // Mismatch warnings — non-blocking
+      const expectedMode = MODE_LABEL[currentMode];
+      const warnings = [];
+      if(data.mode && data.mode !== expectedMode) warnings.push(`mode mismatch (file=${data.mode}, current=${expectedMode})`);
+      if(data.bg_id && data.bg_id !== currentBg)  warnings.push(`bg_id mismatch (file=${data.bg_id}, current=${currentBg})`);
+      // Replace anchors with imported set, assigning fresh ids
+      anchors = data.anchors.map(a => Object.assign({ id: 'a' + (++nextNum) }, a));
+      selectedId = null;
+      pendingLineStart = null;
+      dragRegion = null;
+      _persistCurrent();
+      const warnSuffix = warnings.length ? ' · ⚠ ' + warnings.join('; ') : '';
+      setStatus(`Imported ${anchors.length} anchor${anchors.length>1?'s':''} from ${file.name}${warnSuffix}`, warnings.length > 0);
+      redraw();
+    } catch(err){
+      setStatus(`Failed to parse JSON: ${err.message}`, true);
+    }
+    // Reset input so re-importing the same file works
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('btn-export-all').addEventListener('click', ()=>{
+  // Make sure the current bg's latest is in session memory
+  _persistCurrent();
+  // Build paste-ready JS shaped for anchors.js
+  const byMode = { scav:{}, hunt:{}, gather:{} };
+  let totalBgs = 0;
+  Object.keys(sessionAnchors).forEach(key => {
+    const ans = sessionAnchors[key];
+    if(!ans || !ans.length) return;
+    const [mode, bg] = key.split('/');
+    if(!byMode[mode]) byMode[mode] = {};
+    byMode[mode][bg] = { anchors: ans };
+    totalBgs++;
+  });
+  if(totalBgs === 0){
+    setStatus('Nothing to export — author some anchors first', true);
+    return;
+  }
+  const lines = [
+    '/* Paste this into sprites/minigames/forage/anchors.js, replacing the',
+    ' * matching window.FORAGE_ANCHORS.<mode> = { ... } block, OR merge by hand. */',
+    'window.FORAGE_ANCHORS = window.FORAGE_ANCHORS || {};'
+  ];
+  ['scav','hunt','gather'].forEach(mode => {
+    const bgs = byMode[mode] || {};
+    const ids = Object.keys(bgs);
+    if(!ids.length) return;
+    lines.push('');
+    lines.push(`window.FORAGE_ANCHORS.${mode} = window.FORAGE_ANCHORS.${mode} || {};`);
+    ids.forEach(id => {
+      const json = JSON.stringify(bgs[id], null, 2)
+        .split('\n').map((line, i) => i === 0 ? line : '  ' + line).join('\n');
+      lines.push(`window.FORAGE_ANCHORS.${mode}.${id} = ${json};`);
+    });
+  });
+  const out = lines.join('\n') + '\n';
+  console.log('=== EXPORT ALL ===');
+  console.log(out);
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(out).then(
+      ()=>setStatus(`Copied ${totalBgs} bg${totalBgs>1?'s':''} to clipboard · also dumped to console · download starting`),
+      ()=>setStatus(`Clipboard blocked · check console + download`)
+    );
+  }
+  // Also offer download as a single .js file
+  const blob = new Blob([out], {type:'text/javascript'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `forage-anchors-session.js`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('btn-export').addEventListener('click', ()=>{
+  const data = {
+    bg_id: currentBg,
+    mode: MODE_LABEL[currentMode] || currentMode.toUpperCase(),
+    bg_w: 960,
+    bg_h: 640,
+    anchors: anchors.map(({id, ...rest}) => rest)
+  };
+  const json = JSON.stringify(data, null, 2);
+  // Console always
+  console.log('=== ANCHOR JSON for ' + currentBg + ' ===');
+  console.log(json);
+  // Clipboard (best UX) + download (proper filename)
+  const finish = (msg)=>{
+    setStatus(msg + ` · downloaded ${currentBg}.json · also in console`);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(json).then(
+      ()=>finish(`Copied ${anchors.length} anchors to clipboard`),
+      ()=>finish('Clipboard blocked')
+    );
+  } else {
+    finish('Clipboard unavailable');
+  }
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${currentBg}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+function setStatus(s, isErr){
+  $status.textContent = s;
+  $status.classList.toggle('err', !!isErr);
+}
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+const restored = _loadSessionFromStorage();
+refreshBgList();
+redraw();
+if(restored && restored.bgCount){
+  setStatus(`Restored ${restored.anchorCount} anchor${restored.anchorCount>1?'s':''} across ${restored.bgCount} bg${restored.bgCount>1?'s':''} from previous session`);
+}
+</script>
+</body>
+</html>

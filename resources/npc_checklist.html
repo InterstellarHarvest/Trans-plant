@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Trans-plant NPC Sprite Checklist</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; background: #1e1e1e; color: #e0e0e0; max-width: 1100px; margin: 0 auto; padding: 20px; }
+  h1 { color: #d4a24c; margin: 0 0 4px; }
+  .subtitle { color: #888; font-size: 13px; margin-bottom: 20px; }
+  .warnings { background: #3a2a1a; border-left: 3px solid #d4a24c; padding: 10px 14px; margin-bottom: 20px; font-size: 13px; }
+  .warnings b { color: #d4a24c; }
+  .warnings code { background: #000; padding: 1px 5px; border-radius: 3px; color: #f0c070; }
+  .totals { background: #2a2a2a; padding: 12px 16px; border-radius: 6px; margin-bottom: 24px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+  .totals .big { font-size: 22px; font-weight: bold; color: #7ac47a; }
+  .totals .label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .controls { margin-left: auto; }
+  button { background: #444; color: #e0e0e0; border: 1px solid #666; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  button:hover { background: #555; }
+  .group { background: #262626; border-radius: 6px; padding: 14px 18px; margin-bottom: 14px; }
+  .group h2 { margin: 0 0 8px; color: #6ea8d8; font-size: 18px; text-transform: capitalize; }
+  .group h2 .gprog { font-size: 12px; color: #888; font-weight: normal; margin-left: 10px; }
+  .position { margin-top: 8px; padding-left: 14px; border-left: 2px solid #444; }
+  .position h3 { margin: 6px 0 4px; color: #b088c8; font-size: 14px; text-transform: capitalize; }
+  .species-row { display: flex; align-items: center; padding: 3px 0; gap: 10px; font-size: 13px; }
+  .species-name { width: 90px; text-transform: capitalize; color: #bbb; }
+  .species-prog { width: 40px; color: #888; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .slots { display: flex; gap: 6px; }
+  .slot { display: inline-flex; align-items: center; gap: 4px; background: #1a1a1a; padding: 2px 8px; border-radius: 3px; cursor: pointer; user-select: none; border: 1px solid transparent; }
+  .slot:hover { border-color: #555; }
+  .slot input { cursor: pointer; margin: 0; }
+  .slot.done { background: #1e3520; color: #7ac47a; border-color: #2e5530; }
+  .slot.waiting { background: #3a2f1a; color: #f0c070; border-color: #d4a24c; }
+  .slot.waiting.done { background: #1e3520; color: #7ac47a; border-color: #d4a24c; }
+  .slot.pkg { background: #1a2e3a; color: #6ec4d8; border-color: #3a7090; box-shadow: 0 0 6px rgba(110,196,216,0.35); }
+  .slot.pkg.done { background: #1a2e3a; color: #6ec4d8; border-color: #3a7090; }
+  .col-header { display: flex; align-items: flex-end; padding: 0 0 2px; gap: 10px; font-size: 13px; min-height: 16px; }
+  .col-header .species-name, .col-header .species-prog { visibility: hidden; }
+  .col-header .slots { gap: 6px; }
+  .col-marker { display: inline-flex; align-items: center; justify-content: center; padding: 2px 8px; border: 1px solid transparent; box-sizing: border-box; font-size: 13px; line-height: 1; color: #6ea8d8; opacity: 0; transition: opacity .15s; }
+  .col-marker.full { opacity: 1; text-shadow: 0 0 6px rgba(110,168,216,0.6); }
+  .legend { font-size: 11px; color: #777; margin-left: auto; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 4px; border: 1px solid #555; }
+</style>
+</head>
+<body>
+
+<h1>Trans-plant NPC Sprite Checklist</h1>
+<div class="subtitle">Target: 5 per species per role. Disk re-scanned 2026-04-29. Checks persist in localStorage.</div>
+
+<div class="totals">
+  <div><div class="big" id="total-pkg" style="color:#6ec4d8;">0</div><div class="label">Packaged</div></div>
+  <div><div class="big" id="total-done">0</div><div class="label">Animated</div></div>
+  <div><div class="big" id="total-waiting" style="color:#f0c070;">0</div><div class="label">Awaiting anim</div></div>
+  <div><div class="big" id="total-left" style="color:#888;">0</div><div class="label">Not started</div></div>
+  <div><div class="big" id="total-pct" style="color:#7ac47a;">0%</div><div class="label">Complete</div></div>
+  <div class="legend">
+    <span><span class="sw" style="background:#1a2e3a;border-color:#3a7090;box-shadow:0 0 4px rgba(110,196,216,0.5);"></span>Packaged (spritesheet.png + .json)</span>
+    <span><span class="sw" style="background:#1e3520;border-color:#2e5530;"></span>Animated (9+ frames, not packed)</span>
+    <span><span class="sw" style="background:#3a2f1a;border-color:#d4a24c;"></span>Source ready, awaiting animation</span>
+    <span><span class="sw" style="background:#1a1a1a;"></span>Not started</span>
+  </div>
+  <div class="controls">
+    <button onclick="resetManual()">Clear manual checks</button>
+  </div>
+</div>
+
+<div id="app"></div>
+
+<script>
+const SPECIES = ['human', 'insect', 'reptile', 'robot', 'rock', 'water', 'unknown'];
+const PER_SPECIES = 5;
+
+// Disk re-scanned 2026-04-29. 94 packaged folders on disk.
+// (demo-npc.html's NPC_DATA is in sync at 94 entries as of the same scan.)
+//   pkg     = folder has BOTH spritesheet.png + spritesheet.json (demo-ready)
+//   done    = folder has 9+ source images but no spritesheet pack yet
+//   waiting = folder exists with some files but <9 (source partial)
+// Auto-checked when slot is pkg or done. PKG slots get the cyan highlight.
+const DISK = {
+  drifter: {
+    human:   { pkg: [1],    done: [], waiting: [] },
+    insect:  { pkg: [1],    done: [], waiting: [] },
+    reptile: { pkg: [1],    done: [], waiting: [] },
+    robot:   { pkg: [1],    done: [], waiting: [] },
+    rock:    { pkg: [1],    done: [], waiting: [] },
+    water:   { pkg: [1],    done: [], waiting: [] },
+    unknown: { pkg: [1, 2], done: [], waiting: [] }
+  },
+  pirate: {
+    human:   { pkg: [1, 2, 3], done: [], waiting: [] },
+    insect:  { pkg: [1, 2],    done: [], waiting: [] },
+    reptile: { pkg: [1, 2, 3], done: [], waiting: [] },
+    robot:   { pkg: [1, 2, 3], done: [], waiting: [] },
+    rock:    { pkg: [1, 2],    done: [], waiting: [] },
+    water:   { pkg: [1],       done: [], waiting: [] },
+    unknown: { pkg: [1],       done: [], waiting: [] }
+  },
+  trader: {
+    human:   { pkg: [1, 2, 3], done: [], waiting: [] },
+    insect:  { pkg: [1, 2, 3], done: [], waiting: [] },
+    reptile: { pkg: [1, 2],    done: [], waiting: [] },
+    robot:   { pkg: [1, 2, 3], done: [], waiting: [] },
+    rock:    { pkg: [1, 2],    done: [], waiting: [] },
+    water:   { pkg: [1, 2],    done: [], waiting: [] },
+    unknown: { pkg: [1, 2, 3], done: [], waiting: [4] }
+  },
+  station_crew: {
+    botanist: {
+      human:   { pkg: [1, 2],    done: [], waiting: [] },
+      insect:  { pkg: [1],       done: [], waiting: [] },
+      reptile: { pkg: [1],       done: [], waiting: [] },
+      robot:   { pkg: [1],       done: [], waiting: [] },
+      rock:    { pkg: [1],       done: [], waiting: [] },
+      water:   { pkg: [1],       done: [], waiting: [] },
+      unknown: { pkg: [1, 2, 3], done: [], waiting: [] }
+    },
+    captain: {
+      human:   { pkg: [1],       done: [], waiting: [] },
+      insect:  { pkg: [1],       done: [], waiting: [] },
+      reptile: { pkg: [1, 2],    done: [], waiting: [] },
+      robot:   { pkg: [1],       done: [], waiting: [] },
+      rock:    { pkg: [1],       done: [], waiting: [] },
+      water:   { pkg: [1],       done: [], waiting: [] },
+      unknown: { pkg: [1],       done: [], waiting: [] }
+    },
+    engineer: {
+      human:   { pkg: [1, 2],    done: [], waiting: [] },
+      insect:  { pkg: [1],       done: [], waiting: [] },
+      reptile: { pkg: [1],       done: [], waiting: [] },
+      robot:   { pkg: [1],       done: [], waiting: [] },
+      rock:    { pkg: [1],       done: [], waiting: [] },
+      water:   { pkg: [1],       done: [], waiting: [] },
+      unknown: { pkg: [1, 2],    done: [], waiting: [] }
+    },
+    janitor: {
+      human:   { pkg: [1],       done: [], waiting: [] },
+      insect:  { pkg: [1],       done: [], waiting: [] },
+      reptile: { pkg: [1, 2],    done: [], waiting: [] },
+      robot:   { pkg: [1, 2],    done: [], waiting: [3] }, // slot 3 has 1 source frame (in progress)
+      rock:    { pkg: [1],       done: [], waiting: [] },
+      water:   { pkg: [1],       done: [], waiting: [] },
+      unknown: { pkg: [],        done: [2], waiting: [1] } // slot 2 has 10 source frames, slot 1 partial
+    },
+    medic: {
+      human:   { pkg: [1, 2],    done: [], waiting: [] },
+      insect:  { pkg: [1],       done: [], waiting: [] },
+      reptile: { pkg: [1],       done: [], waiting: [] },
+      robot:   { pkg: [1],       done: [], waiting: [] },
+      rock:    { pkg: [1],       done: [], waiting: [] },
+      water:   { pkg: [1],       done: [], waiting: [] },
+      unknown: { pkg: [1, 2, 3], done: [], waiting: [] }
+    },
+    security: {
+      human:   { pkg: [1, 2],    done: [], waiting: [] },
+      insect:  { pkg: [1],       done: [], waiting: [] },
+      reptile: { pkg: [1],       done: [], waiting: [] },
+      robot:   { pkg: [1],       done: [], waiting: [] },
+      rock:    { pkg: [1],       done: [], waiting: [] },
+      water:   { pkg: [1],       done: [], waiting: [] },
+      unknown: { pkg: [1],       done: [], waiting: [] }
+    }
+  }
+};
+
+const STORAGE_KEY = 'transplant_npc_checklist_v1';
+let manual = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(manual)); updateTotals(); }
+function resetManual() {
+  if (!confirm('Clear all manual checkmarks? (Disk-folder state stays.)')) return;
+  manual = {};
+  save();
+  document.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    const onDisk = cb.dataset.disk === '1';
+    cb.checked = onDisk;
+    cb.closest('.slot').classList.toggle('done', onDisk);
+  });
+}
+
+// Auto-checked when packaged or animated (9+ frames). Manual override wins.
+function isDone(id, onDisk) {
+  if (id in manual) return manual[id];
+  return onDisk;
+}
+function diskState(slotInfo, n) {
+  if (slotInfo.pkg && slotInfo.pkg.includes(n)) return 'pkg';
+  if (slotInfo.done && slotInfo.done.includes(n)) return 'done';
+  if (slotInfo.waiting && slotInfo.waiting.includes(n)) return 'waiting';
+  return 'empty';
+}
+
+function renderColumnHeader() {
+  const row = document.createElement('div');
+  row.className = 'col-header';
+  const name = document.createElement('span');
+  name.className = 'species-name';
+  row.appendChild(name);
+  const prog = document.createElement('span');
+  prog.className = 'species-prog';
+  row.appendChild(prog);
+  const slots = document.createElement('span');
+  slots.className = 'slots';
+  for (let n = 1; n <= PER_SPECIES; n++) {
+    const m = document.createElement('span');
+    m.className = 'col-marker';
+    m.dataset.col = n;
+    m.textContent = '★';
+    m.title = `Column ${n} complete across all species`;
+    slots.appendChild(m);
+  }
+  row.appendChild(slots);
+  return row;
+}
+
+function refreshColumnMarkers() {
+  document.querySelectorAll('.col-header').forEach(header => {
+    const siblings = Array.from(header.parentElement.children).filter(c => c.classList.contains('species-row'));
+    if (siblings.length === 0) return;
+    header.querySelectorAll('.col-marker').forEach(marker => {
+      const n = parseInt(marker.dataset.col, 10);
+      const allChecked = siblings.every(row => {
+        const cb = row.querySelectorAll('input[type=checkbox]')[n - 1];
+        return cb && cb.checked;
+      });
+      marker.classList.toggle('full', allChecked);
+    });
+  });
+}
+
+function renderSpeciesRow(pathPrefix, slotInfo) {
+  // slotInfo: { done:[...], waiting:[...] }
+  const row = document.createElement('div');
+  row.className = 'species-row';
+  const species = pathPrefix.split('/').pop();
+
+  const name = document.createElement('span');
+  name.className = 'species-name';
+  name.textContent = species;
+  row.appendChild(name);
+
+  const prog = document.createElement('span');
+  prog.className = 'species-prog';
+  row.appendChild(prog);
+
+  const slots = document.createElement('span');
+  slots.className = 'slots';
+  row.appendChild(slots);
+
+  let doneCount = 0;
+  for (let n = 1; n <= PER_SPECIES; n++) {
+    const id = `${pathPrefix}/${n}`;
+    const state = diskState(slotInfo, n);
+    const onDisk = state === 'pkg' || state === 'done';
+    const checked = isDone(id, onDisk);
+    if (checked) doneCount++;
+
+    const label = document.createElement('label');
+    label.className = 'slot';
+    if (state === 'waiting') label.classList.add('waiting');
+    if (state === 'pkg')     label.classList.add('pkg');
+    if (checked) label.classList.add('done');
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = checked;
+    cb.dataset.id = id;
+    cb.dataset.disk = onDisk ? '1' : '0';
+    cb.addEventListener('change', () => {
+      manual[id] = cb.checked;
+      label.classList.toggle('done', cb.checked);
+      save();
+      const newDone = Array.from(slots.querySelectorAll('input')).filter(c => c.checked).length;
+      prog.textContent = `${newDone}/${PER_SPECIES}`;
+    });
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(n));
+    slots.appendChild(label);
+  }
+  prog.textContent = `${doneCount}/${PER_SPECIES}`;
+  return row;
+}
+
+function renderGroup(name, speciesData, pathPrefix) {
+  const group = document.createElement('div');
+  group.className = 'group';
+  const h = document.createElement('h2');
+  h.textContent = name.replace(/_/g, ' ');
+  const gprog = document.createElement('span');
+  gprog.className = 'gprog';
+  h.appendChild(gprog);
+  group.appendChild(h);
+  group.appendChild(renderColumnHeader());
+
+  let totalDone = 0, totalSlots = 0;
+  for (const species of SPECIES) {
+    const slotInfo = speciesData[species] || { pkg: [], done: [], waiting: [] };
+    const row = renderSpeciesRow(`${pathPrefix}/${species}`, slotInfo);
+    group.appendChild(row);
+    totalSlots += PER_SPECIES;
+    for (let n = 1; n <= PER_SPECIES; n++) {
+      const state = diskState(slotInfo, n);
+      const onDisk = state === 'pkg' || state === 'done';
+      if (isDone(`${pathPrefix}/${species}/${n}`, onDisk)) totalDone++;
+    }
+  }
+  gprog.textContent = `${totalDone}/${totalSlots}`;
+  return group;
+}
+
+function updateTotals() {
+  let pkg = 0, done = 0, waiting = 0, total = 0;
+  const scan = (data, prefix) => {
+    for (const species of SPECIES) {
+      const info = data[species] || { pkg: [], done: [], waiting: [] };
+      for (let n = 1; n <= PER_SPECIES; n++) {
+        total++;
+        const id = `${prefix}/${species}/${n}`;
+        const state = diskState(info, n);
+        const onDisk = state === 'pkg' || state === 'done';
+        if (state === 'pkg') pkg++;
+        if (isDone(id, onDisk)) done++;
+        else if (state === 'waiting') waiting++;
+      }
+    }
+  };
+  scan(DISK.drifter, 'drifter');
+  scan(DISK.pirate, 'pirate');
+  scan(DISK.trader, 'trader');
+  for (const pos of Object.keys(DISK.station_crew)) {
+    scan(DISK.station_crew[pos], `station_crew/${pos}`);
+  }
+  document.getElementById('total-pkg').textContent = pkg;
+  document.getElementById('total-done').textContent = done;
+  document.getElementById('total-waiting').textContent = waiting;
+  document.getElementById('total-left').textContent = total - done - waiting;
+  document.getElementById('total-pct').textContent = Math.round(done/total*100) + '%';
+
+  document.querySelectorAll('.group').forEach(g => {
+    const gprog = g.querySelector('.gprog');
+    const inputs = g.querySelectorAll('input[type=checkbox]');
+    const d = Array.from(inputs).filter(c => c.checked).length;
+    gprog.textContent = `${d}/${inputs.length}`;
+  });
+
+  refreshColumnMarkers();
+}
+
+const app = document.getElementById('app');
+app.appendChild(renderGroup('drifter', DISK.drifter, 'drifter'));
+app.appendChild(renderGroup('pirate', DISK.pirate, 'pirate'));
+app.appendChild(renderGroup('trader', DISK.trader, 'trader'));
+
+// station crew with nested positions
+const crewWrap = document.createElement('div');
+crewWrap.className = 'group';
+const crewH = document.createElement('h2');
+crewH.textContent = 'station crew';
+const crewProg = document.createElement('span');
+crewProg.className = 'gprog';
+crewH.appendChild(crewProg);
+crewWrap.appendChild(crewH);
+for (const pos of Object.keys(DISK.station_crew)) {
+  const sub = document.createElement('div');
+  sub.className = 'position';
+  const h3 = document.createElement('h3');
+  h3.textContent = pos;
+  sub.appendChild(h3);
+  sub.appendChild(renderColumnHeader());
+  for (const species of SPECIES) {
+    const slotInfo = DISK.station_crew[pos][species] || { done: [], waiting: [] };
+    sub.appendChild(renderSpeciesRow(`station_crew/${pos}/${species}`, slotInfo));
+  }
+  crewWrap.appendChild(sub);
+}
+app.appendChild(crewWrap);
+
+// Align column-header markers to actual slot width (slots are auto-sized).
+const sampleSlot = document.querySelector('.species-row .slot');
+if (sampleSlot) {
+  const w = sampleSlot.offsetWidth;
+  document.querySelectorAll('.col-marker').forEach(m => { m.style.width = w + 'px'; });
+}
+
+updateTotals();
+</script>
+</body>
+</html>

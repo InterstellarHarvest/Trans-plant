@@ -1,0 +1,881 @@
+/* ============================================================
+   Trans-plant shared CSS primitives
+   ------------------------------------------------------------
+   Truly identical visual rules pulled out of the per-demo files
+   so a single source of truth governs them across the game.
+   Per-demo styles live in each demo's own <style>; only land
+   things here that are byte-identical (or intentionally unified)
+   across every demo that uses them.
+   ============================================================ */
+
+:root {
+  /* Brand palette — only the values that are unanimous across every
+     demo go here. --teal / --cream / --body diverge intentionally
+     per-demo (each surface has its own visual register), so those
+     stay scoped to each file. */
+  --gold: #c8a85a;
+  --red:  #cc3333;
+
+  /* Panel button colors — beveled "outset" buttons used across
+     cruise, orders, inventory, growbay, setup. Color values are
+     unanimous across all 5 demos; sizing (--pb-size, --pb-padx,
+     --pb-pady, --pb-rad, --pb-border) varies per demo and stays
+     locally defined. Setup intentionally overrides --pb-gold-hi/lo
+     and --pb-teal-hi/lo to its own register; the values below are
+     the majority defaults. */
+  --pb-bg-top: #39404F;
+  --pb-bg-mid: #252A38;
+  --pb-bg-bot: #4B597A;
+  --pb-hi:     #5a6070;
+  --pb-lo:     #1a1f2a;
+  --pb-text:   #d0c890;
+  --pb-gold-hi: #b4b091;
+  --pb-gold-lo: #363733;
+  --pb-teal-hi: #35c6bf;
+  --pb-teal-lo: #393632;
+}
+
+/* ── Custom cursors ───────────────────────────────────────────
+   shared.js bakes 2 pixel-art cursors at script load and exposes
+   them as CSS vars on :root:
+     --cursor-pointer  arrow — default, non-interactive surface
+     --cursor-hand     finger — anything you CAN do (click OR drag)
+   No closed-fist "grab" variant — draggable elements (sliders,
+   scroll thumbs) keep the hand cursor straight through the drag
+   per design call 2026-05-06. Each var has a system-cursor
+   fallback so the page stays usable if cursor generation fails. */
+html, body { cursor: var(--cursor-pointer, default); }
+
+/* ── Native scrollbar (dev sidebar + any non-custom scrollable) ──
+   The 3-rule baseline used by most demos. Demos that need a denser
+   chrome (horizontal scroll + corner) — currently inventory, crew,
+   growbay, fabricator — add their own width:6px height:6px + corner
+   rule overrides. Title intentionally diverges with its own colors. */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: #0a0e14; }
+::-webkit-scrollbar-thumb { background: #2a3a48; border-radius: 3px; }
+
+/* ── Panel buttons (beveled, retro outset/inset) ──────────────
+   Used as game-UI action buttons across cruise (Stop), orders
+   (Apply/Cancel), inventory (Equip/Jettison), growbay (Harvest),
+   setup (Continue). Accent variants .accent-gold / .accent-teal
+   recolor the bevel. Sizing vars are demo-defined; defaults are
+   provided via fallbacks so a demo that forgets one still renders. */
+.panel-btn {
+  font-family: 'VT323', monospace;
+  font-size: var(--pb-size, 14px);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: var(--pb-pady, 5px) var(--pb-padx, 10px);
+  background: linear-gradient(180deg, var(--pb-bg-top) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-bot) 100%);
+  border: var(--pb-border, 3px) outset;
+  border-color: var(--pb-hi) var(--pb-lo) var(--pb-lo) var(--pb-hi);
+  color: var(--pb-text);
+  border-radius: var(--pb-rad, 0);
+  transition: background 0.1s, filter 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.panel-btn:hover { filter: brightness(1.15); }
+.panel-btn:active {
+  border-style: inset;
+  border-color: var(--pb-lo) var(--pb-hi) var(--pb-hi) var(--pb-lo);
+  background: linear-gradient(180deg, var(--pb-bg-bot) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-top) 100%);
+  transform: translate(1px, 1px);
+}
+.panel-btn.accent-gold {
+  border-color: var(--pb-gold-hi) var(--pb-gold-lo) var(--pb-gold-lo) var(--pb-gold-hi);
+  color: var(--pb-gold-hi);
+  text-shadow: 0 0 4px rgba(180,176,145,0.3);
+}
+.panel-btn.accent-gold:active { border-color: var(--pb-gold-lo) var(--pb-gold-hi) var(--pb-gold-hi) var(--pb-gold-lo); }
+.panel-btn.accent-teal {
+  border-color: var(--pb-teal-hi) var(--pb-teal-lo) var(--pb-teal-lo) var(--pb-teal-hi);
+  color: var(--pb-teal-hi);
+  text-shadow: 0 0 4px rgba(53,198,191,0.3);
+}
+.panel-btn.accent-teal:active { border-color: var(--pb-teal-lo) var(--pb-teal-hi) var(--pb-teal-hi) var(--pb-teal-lo); }
+
+/* ── Custom scrollbar ───────────────────────────────────────
+   Hides the native scrollbar on any .scroll-content element and
+   renders a sibling gold thumb on a dark slate track. Sync logic
+   lives in shared.js (wireCustomScroll). Markup:
+     .scroll-host > .scroll-content + .scroll-track > .scroll-thumb
+   Only elements with .scroll-content opt in; everything else
+   keeps its native scrollbar. Visibility: hidden by default,
+   fades in on hover / during drag / for 600ms after any scroll. */
+.scroll-host {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.scroll-content {
+  min-height: 0;
+}
+.scroll-content::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.scroll-content { scrollbar-width: none; -ms-overflow-style: none; }
+
+.scroll-track {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  bottom: 4px;
+  width: 8px;
+  background: rgba(10,14,20,0.6);
+  border: 0;
+  border-radius: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 3;
+}
+.scroll-host:hover    .scroll-track,
+.scroll-host.scrolling .scroll-track,
+.scroll-host.dragging  .scroll-track {
+  opacity: 1;
+  pointer-events: auto;
+}
+.scroll-host.no-scroll .scroll-track { display: none; }
+
+.scroll-thumb {
+  position: absolute;
+  left: 0; right: 0;
+  min-height: 22px;
+  background: linear-gradient(180deg, #c8a85a 0%, #8a7435 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(232,216,160,0.55),
+    inset 0 -1px 0 rgba(40,25,5,0.5);
+  cursor: var(--cursor-hand, grab);
+  top: 0;
+}
+.scroll-host.dragging .scroll-thumb,
+.scroll-thumb:active { cursor: var(--cursor-hand, pointer); filter: brightness(1.12); }
+
+/* ── Typewriter cursor ────────────────────────────────────────
+   Unified across every demo per the design rule "typewriter looks
+   the same everywhere." 8px-wide block that inherits the parent
+   text color via currentColor — adapts to whatever palette context
+   it lands in (gold-on-cruise-AI, body-on-setup, etc.) without a
+   per-demo override. */
+.tw-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1em;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: blink-cursor 0.7s step-end infinite;
+  margin-left: 2px;
+}
+@keyframes blink-cursor { 50% { opacity: 0; } }
+
+
+/* ── Pause / Bridge Terminal overlay ──────────────────────────
+   Auto-mounted by shared.js (PauseMenu IIFE). Visually divergent
+   from the rest of the game on purpose — amber on near-black,
+   monospace, hard edges, faint scanlines — so the player reads
+   "I've stepped outside the game" the moment it appears. Avoid
+   touching --teal/--cream vars here; pause menu owns its own
+   palette so per-demo overrides can't bleed in. */
+
+:root {
+  --pause-amber: #c8a85a;
+  --pause-amber-bright: #e8d8a0;
+  --pause-amber-dim: #6e5a30;
+  --pause-bg: #0a0a15;
+  --pause-bezel: #1a2030;
+  --pause-bezel-edge: #2a3040;
+  --pause-danger: #cc3333;
+  /* Tunable layout vars — overrideable by demo-pause for live iteration. */
+  --pause-sidebar-w: 200px;
+  --pause-content-pad: 22px 28px;
+  --pause-content-fs: 18px;
+  --pause-item-fs: 20px;
+  --pause-h-fs: 12px;
+  --pause-h-letter: 1.5px;
+  --pause-topbar-fs: 14px;
+  /* Scanlines aren't tunable — `.pause-screen::before` paints the
+     canonical Trans-plant CRT overlay directly (DESIGN_SYSTEM.md
+     "CRT Scanlines": rgba(0,0,0, 0.05) at 1px/2px, "Never turn this
+     off"). Pause menu sits above #crt-overlay's z-index in the demos,
+     so it has to repaint the same recipe inline rather than inherit. */
+  --pause-bezel-pad: 5px;
+  --pause-dim-alpha: 0.92;
+  --pause-icon-size: 38px;
+}
+
+/* Default — mounted inside a game container, fills it. shared.js
+   adds .pause-overlay-fixed when no game container exists and the
+   overlay falls back to viewport. */
+.pause-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(2,4,8,var(--pause-dim-alpha));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'VT323', monospace;
+  color: var(--pause-amber);
+}
+/* The display:flex above outranks the UA's [hidden] {display:none}.
+   Restore the hide-when-hidden contract for the JS toggle. */
+.pause-overlay[hidden] { display: none; }
+.pause-overlay-fixed { position: fixed; }
+
+.pause-shell {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: var(--pause-bezel-pad);
+  background: linear-gradient(180deg, var(--pause-bezel-edge) 0%, var(--pause-bezel) 100%);
+  border: 2px solid #0c121c;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 12px 60px rgba(0,0,0,0.8);
+}
+.pause-overlay-fixed .pause-shell {
+  width: min(960px, 100vw);
+  height: min(640px, 100vh);
+}
+
+.pause-bezel {
+  flex: 1;
+  padding: 4px;
+  background: #050709;
+  border: 1px solid #0c121c;
+  display: flex;
+}
+
+.pause-screen {
+  flex: 1;
+  position: relative;
+  background: var(--pause-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* Subtle scanlines — barely visible, evokes monitor without harming readability. */
+/* Canonical Trans-plant CRT overlay (DESIGN_SYSTEM.md "CRT Scanlines"
+   — "Never turn this off"). Black 1px/2px at 5% alpha. Invisible on
+   the dark screen bg, dims the bright amber text/icons by 5% per
+   other line — same dim banding the rest of the game uses. */
+.pause-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 1px, transparent 1px, transparent 2px);
+  pointer-events: none;
+  z-index: 1;
+}
+.pause-screen > * { position: relative; z-index: 2; }
+
+/* Top bar — diegetic prompt. */
+.pause-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(200,168,90,0.25);
+  background: linear-gradient(180deg, rgba(200,168,90,0.05), transparent);
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--pause-topbar-fs);
+  letter-spacing: 2px;
+  color: var(--pause-amber-bright);
+}
+.pause-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #45c465;
+  box-shadow: 0 0 6px #45c465, inset 0 0 2px rgba(0,0,0,0.6);
+  animation: pause-led-pulse 2.4s ease-in-out infinite;
+}
+@keyframes pause-led-pulse { 50% { opacity: 0.55; } }
+.pause-title { flex: 1; }
+.pause-close-hint {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: var(--pause-amber);
+  opacity: 0.75;
+  background: transparent;
+  border: 0;
+  padding: 4px 6px;
+  cursor: var(--cursor-hand, pointer);
+  transition: opacity 0.12s, color 0.12s;
+}
+.pause-close-hint:hover {
+  opacity: 1;
+  color: var(--pause-amber-bright);
+}
+
+/* Body — sidebar + content. */
+.pause-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+.pause-sidebar {
+  width: var(--pause-sidebar-w);
+  border-right: 1px solid rgba(200,168,90,0.25);
+  padding: 18px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: linear-gradient(180deg, rgba(200,168,90,0.03), transparent);
+}
+.pause-content {
+  flex: 1;
+  padding: var(--pause-content-pad);
+  overflow: auto;
+  font-size: var(--pause-content-fs);
+  line-height: 1.45;
+}
+
+/* Sidebar items. */
+.pause-item {
+  background: transparent;
+  border: 0;
+  padding: 7px 18px 7px 14px;
+  text-align: left;
+  font-family: 'VT323', monospace;
+  font-size: var(--pause-item-fs);
+  letter-spacing: 2px;
+  color: var(--pause-amber);
+  cursor: var(--cursor-hand, pointer);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.1s, color 0.1s;
+}
+.pause-item .pause-arrow {
+  display: inline-block;
+  width: 12px;
+  opacity: 0;
+  font-size: 14px;
+  color: var(--pause-amber-bright);
+}
+/* 32×32 single-color PNG mask. The PNG's pixels are white-on-
+   transparent; mask-image keeps only the alpha, and
+   background-color: currentColor recolors to match the sidebar
+   item's text color — so icons tint amber on idle, amber-bright
+   on selected/hover, red on QUIT, automatically. */
+.pause-item-icon {
+  display: inline-block;
+  flex: 0 0 var(--pause-icon-size, 32px);
+  width: var(--pause-icon-size, 32px);
+  height: var(--pause-icon-size, 32px);
+  background-color: currentColor;
+  mask: var(--icon) center/contain no-repeat;
+  -webkit-mask: var(--icon) center/contain no-repeat;
+  image-rendering: pixelated;
+}
+.pause-item:hover {
+  background: rgba(200,168,90,0.08);
+  color: var(--pause-amber-bright);
+}
+.pause-item.selected {
+  background: rgba(200,168,90,0.14);
+  color: var(--pause-amber-bright);
+}
+.pause-item.selected .pause-arrow {
+  opacity: 1;
+}
+
+/* Content panels. */
+.pause-panel { animation: pause-fade-in 0.18s ease-out; }
+@keyframes pause-fade-in { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+
+.pause-h {
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--pause-h-fs);
+  letter-spacing: var(--pause-h-letter);
+  color: var(--pause-amber-bright);
+  margin: 0 0 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(200,168,90,0.3);
+}
+.pause-h.danger { color: var(--pause-danger); border-bottom-color: rgba(204,51,51,0.45); }
+.pause-h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--pause-amber-bright);
+  margin: 0 0 10px;
+}
+.pause-sub {
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: var(--pause-amber-dim);
+  margin: -10px 0 16px;
+}
+.pause-pre {
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+  color: var(--pause-amber);
+}
+.pause-blurb {
+  font-size: 16px;
+  color: var(--pause-amber-dim);
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(200,168,90,0.2);
+  line-height: 1.55;
+}
+
+/* Settings form. */
+.pause-form { display: flex; flex-direction: column; gap: 14px; }
+.pause-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 2px;
+}
+.pause-row label {
+  flex: 0 0 180px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--pause-amber-bright);
+}
+.pause-row.stub label { color: var(--pause-amber-dim); }
+.pause-stub {
+  font-family: 'VT323', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  opacity: 0.6;
+}
+.pause-swatches { display: flex; gap: 8px; }
+.pause-swatch {
+  width: 26px; height: 26px;
+  background: var(--sw, #c8a85a);
+  border: 2px solid #000;
+  outline: 1px solid rgba(200,168,90,0.3);
+  cursor: var(--cursor-hand, pointer);
+  padding: 0;
+}
+.pause-swatch:hover { outline-color: var(--pause-amber-bright); }
+.pause-swatch.on    { outline: 2px solid var(--pause-amber-bright); outline-offset: 1px; }
+
+.pause-toggle {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  background: transparent;
+  border: 1px solid var(--pause-amber);
+  color: var(--pause-amber);
+  padding: 4px 14px;
+  cursor: var(--cursor-hand, pointer);
+}
+.pause-toggle[data-on="1"] { background: rgba(200,168,90,0.18); color: var(--pause-amber-bright); }
+.pause-toggle:hover { color: var(--pause-amber-bright); border-color: var(--pause-amber-bright); }
+
+.pause-row input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: rgba(200,168,90,0.25);
+  outline: none;
+}
+.pause-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  background: var(--pause-amber);
+  border: 1px solid #000;
+  cursor: var(--cursor-hand, pointer);
+}
+.pause-row input[type="range"]::-moz-range-thumb {
+  width: 14px; height: 14px;
+  background: var(--pause-amber);
+  border: 1px solid #000;
+  cursor: var(--cursor-hand, pointer);
+}
+.pause-num {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  width: 30px;
+  text-align: right;
+  color: var(--pause-amber-bright);
+}
+.pause-radios { display: flex; gap: 6px; }
+.pause-radio {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 1.5px;
+  background: transparent;
+  border: 1px solid rgba(200,168,90,0.4);
+  color: var(--pause-amber-dim);
+  padding: 3px 10px;
+  cursor: var(--cursor-hand, pointer);
+}
+.pause-radio.on { background: rgba(200,168,90,0.18); color: var(--pause-amber-bright); border-color: var(--pause-amber); }
+.pause-radio:hover { color: var(--pause-amber-bright); }
+
+/* Save/load slots. */
+.pause-slots { display: flex; flex-direction: column; gap: 8px; }
+.pause-slot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(200,168,90,0.3);
+  background: rgba(200,168,90,0.04);
+}
+.pause-slot.empty { color: var(--pause-amber-dim); }
+.pause-slot-n {
+  flex: 0 0 80px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--pause-amber-bright);
+}
+.pause-slot.empty .pause-slot-n { color: var(--pause-amber-dim); }
+.pause-slot-meta { flex: 1; font-size: 16px; }
+
+/* Buttons inside content panels. */
+.pause-btn {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  background: transparent;
+  border: 1px solid var(--pause-amber);
+  color: var(--pause-amber);
+  padding: 5px 16px;
+  cursor: var(--cursor-hand, pointer);
+  text-transform: uppercase;
+}
+.pause-btn:hover { background: rgba(200,168,90,0.12); color: var(--pause-amber-bright); }
+.pause-btn:disabled { opacity: 0.35; cursor: default; }
+.pause-btn:disabled:hover { background: transparent; color: var(--pause-amber); }
+.pause-btn-danger { border-color: var(--pause-danger); color: var(--pause-danger); }
+.pause-btn-danger:hover { background: rgba(204,51,51,0.15); color: #e88; }
+
+/* Help columns. */
+.pause-help-cols { display: flex; gap: 30px; }
+.pause-help-col { flex: 1; min-width: 0; }
+.pause-dl { margin: 0; }
+.pause-dl dt {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: var(--pause-amber-bright);
+  margin-top: 8px;
+}
+.pause-dl dd {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  color: var(--pause-amber-dim);
+}
+
+/* SHIP'S LOG sub-panel — launcher for now (demo-shipslog.html). */
+.pause-log-preview {
+  display: flex; flex-direction: column; gap: 4px;
+  margin: 10px 0 4px;
+  padding: 8px 10px;
+  background: rgba(10,14,20,0.5);
+  border-left: 3px solid rgba(200,168,90,0.35);
+  border-radius: 2px;
+}
+.pause-log-line {
+  font-family: 'VT323', monospace; font-size: 14px; line-height: 1.25;
+  color: var(--cream, #e8d8a0); opacity: 0.85;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pause-log-blurb {
+  font-size: 16px;
+  color: var(--pause-amber);
+  line-height: 1.5;
+  margin-bottom: 22px;
+}
+.pause-log-actions { display: flex; gap: 12px; }
+
+/* Quit confirm. */
+.pause-quit-prompt {
+  font-size: 18px;
+  color: var(--pause-amber-bright);
+  margin: 0 0 22px;
+}
+.pause-quit-actions { display: flex; gap: 12px; }
+
+/* Toast (in-screen confirmation). */
+.pause-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  padding: 6px 16px;
+  background: rgba(2,4,8,0.92);
+  border: 1px solid var(--pause-amber);
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: var(--pause-amber-bright);
+  z-index: 3;
+}
+
+.pause-content::-webkit-scrollbar { width: 6px; }
+.pause-content::-webkit-scrollbar-track { background: rgba(200,168,90,0.05); }
+.pause-content::-webkit-scrollbar-thumb { background: rgba(200,168,90,0.4); }
+
+/* ─────────────────────────────────────────────────────────────────
+   Market modal — generic vendor buy/sell/trade overlay
+   ─────────────────────────────────────────────────────────────────
+   Cross-demo. Demos provide their own positioning by overriding
+   `.enc-market { left/top/right/bottom: ... }` (or attaching a
+   different selector) AND a `.market-mode` reflow rule that
+   hides/repositions the demo's own choice column, narrative,
+   dialog, etc. JS lifecycle (open/close, render rows, append log
+   lines) lives in MarketModal in shared.js.
+   Cost-shape semantics on a ware:
+     { gold: N }                       → pure gold purchase, "BUY"
+     { item: 'wheat_sample' }          → barter, "TRADE"
+     { gold: N, item: 'wheat_sample' } → mixed, "TRADE"
+   ─────────────────────────────────────────────────────────────── */
+.enc-market {
+  position: absolute;
+  background: rgba(14,18,26,0.93);
+  border: 2px solid var(--gold, #c8a85a);
+  border-radius: 3px;
+  box-shadow: 0 0 24px rgba(0,0,0,0.6), inset 0 0 24px rgba(0,0,0,0.5);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr auto;
+  grid-template-areas: 'buy sell' 'foot foot';
+  gap: 0;
+  z-index: 5;
+  font-family: 'VT323', monospace;
+  color: #f4e4be;
+  pointer-events: auto;
+}
+.enc-market.hidden { display: none; }
+
+.market-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 14px 16px 12px;
+}
+.market-side-buy  { grid-area: buy;  border-right: 1px solid rgba(200,168,90,0.25); }
+.market-side-sell { grid-area: sell; }
+
+.market-side-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--gold, #c8a85a);
+  margin-bottom: 10px;
+  flex: 0 0 auto;
+}
+.market-side-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 4px;
+}
+.market-side-list:empty::after {
+  content: '— empty —';
+  color: rgba(220,210,180,0.45);
+  font-size: 16px;
+  text-align: center;
+  padding: 18px 0;
+}
+
+.market-row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  background: rgba(20,16,10,0.45);
+  border: 1px solid rgba(200,168,90,0.18);
+  border-radius: 2px;
+  font-size: 16px;
+  position: relative;
+}
+/* Item tooltip — appears below the row on hover when data-tip is set.
+   Placed below so it doesn't clip against the modal top edge. */
+.market-row[data-tip]:hover::before {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  background: rgba(8,12,18,0.96);
+  border: 1px solid rgba(200,168,90,0.45);
+  color: #d0c890;
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  line-height: 1.35;
+  padding: 7px 10px;
+  border-radius: 3px;
+  z-index: 200;
+  pointer-events: none;
+  white-space: normal;
+  word-wrap: break-word;
+  opacity: 1;
+}
+/* Dim only element children so the ::before tooltip keeps full opacity. */
+.market-row.locked   > * { opacity: 0.5; }
+.market-row.consumed > * { opacity: 0.4; filter: grayscale(0.6); }
+.market-row-icon {
+  width: 32px; height: 32px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.market-row-count {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: rgba(200,168,90,0.6);
+  margin-left: 3px;
+}
+.market-row-name {
+  font-family: 'VT323', monospace;
+  font-size: 17px;
+  color: #f4e4be;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.market-row-cost {
+  font-size: 15px;
+  color: var(--gold, #c8a85a);
+  font-style: italic;
+  white-space: nowrap;
+}
+.market-row-cost.barter { color: #9bd1d8; }
+.market-row-cost.mixed  { color: #d8c044; }
+.market-row-cost.locked { color: rgba(204,51,51,0.85); font-style: normal; }
+.market-row-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 6px 10px;
+  background: var(--gold, #c8a85a);
+  color: #1a1410;
+  border: 1px solid #1a1410;
+  border-radius: 2px;
+  cursor: pointer;
+  min-width: 46px;
+}
+.market-row-btn:hover:not(:disabled) { filter: brightness(1.12); }
+.market-row-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: rgba(200,168,90,0.3);
+  color: rgba(255,255,255,0.4);
+}
+
+.market-footer {
+  grid-area: foot;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid rgba(200,168,90,0.25);
+  background: rgba(0,0,0,0.25);
+}
+.market-gold {
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  color: var(--gold, #c8a85a);
+  letter-spacing: 1px;
+}
+.market-gold.delta-flash { animation: market-flash 0.6s ease-out 1; }
+.market-gold.delta-flash.pos { color: #9be19b; }
+.market-gold.delta-flash.neg { color: #e19b9b; }
+@keyframes market-flash {
+  0%   { transform: scale(1.18); }
+  100% { transform: scale(1.0); }
+}
+.market-close {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 8px 16px;
+  background: rgba(60,40,30,0.6);
+  color: var(--gold, #c8a85a);
+  border: 1px solid var(--gold, #c8a85a);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.market-close:hover { background: rgba(80,55,40,0.8); }
+
+/* Log line classes — used by the host element (e.g. encounter's
+   #enc-dialog repositioned via .market-mode in the host CSS).
+   Hosts decide WHERE the log lives; these styles theme its content. */
+.market-log-line {
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+}
+.market-log-line.flavor     { color: #f4e4be; font-style: italic; }
+.market-log-line.system     { color: var(--gold, #c8a85a); }
+.market-log-line.system.pos { color: #9be19b; }
+.market-log-line.system.neg { color: #e19b9b; }
+.market-log-line.deny       { color: #e19b9b; font-style: italic; }
+/* Fence-mode sell panel: amber title signals the vendor is buying, not you. */
+.market-side-sell.fence-mode .market-side-title { color: #e0a030; }
+
+/* ── Sinister / black-market theme ──────────────────────────────
+   Applied via .sinister on #enc-market when vendor.sinister = true.
+   Overrides gold palette to dark crimson — oppressive, back-room feel. */
+.enc-market.sinister {
+  background: rgba(7, 4, 9, 0.98);
+  border-color: rgba(150, 25, 25, 0.75);
+  box-shadow: 0 0 32px rgba(100,0,0,0.45), inset 0 0 32px rgba(0,0,0,0.75);
+}
+.enc-market.sinister .market-side-title {
+  color: rgba(185, 60, 60, 0.95);
+}
+.enc-market.sinister .market-row {
+  background: rgba(22, 6, 6, 0.6);
+  border-color: rgba(150, 25, 25, 0.25);
+}
+.enc-market.sinister .market-row-name { color: #e0cccc; }
+.enc-market.sinister .market-row-count { color: rgba(185,80,80,0.6); }
+.enc-market.sinister .market-row-cost { color: rgba(185, 80, 80, 0.9); }
+.enc-market.sinister .market-row-cost.locked { color: rgba(130, 50, 50, 0.7); }
+.enc-market.sinister .market-row-btn {
+  background: rgba(130, 22, 22, 0.9);
+  color: #f0dada;
+  border-color: #0a0303;
+}
+.enc-market.sinister .market-row-btn:hover:not(:disabled) { filter: brightness(1.2); }
+.enc-market.sinister .market-row-btn:disabled {
+  background: rgba(80, 15, 15, 0.4);
+  color: rgba(200, 150, 150, 0.3);
+}
+.enc-market.sinister .market-footer {
+  border-top-color: rgba(150, 25, 25, 0.35);
+}
+.enc-market.sinister .market-gold {
+  color: rgba(185, 70, 70, 0.85);
+}
+.enc-market.sinister .market-close {
+  border-color: rgba(150, 25, 25, 0.6);
+  color: rgba(185, 80, 80, 0.9);
+}
+.enc-market.sinister .market-close:hover {
+  background: rgba(150, 25, 25, 0.2);
+}
+.enc-market.sinister .market-log-line         { color: rgba(210, 170, 170, 0.85); }
+.enc-market.sinister .market-log-line.flavor  { color: rgba(180, 130, 130, 0.8); font-style: italic; }
+.enc-market.sinister .market-log-line.system.pos { color: #c47070; }
+.enc-market.sinister .market-log-line.system.neg { color: #8b4040; }
+.enc-market.sinister .market-log-line.deny    { color: rgba(140, 60, 60, 0.85); }
+.enc-market.sinister .market-side-sell.fence-mode .market-side-title { color: rgba(185, 60, 60, 0.95); }

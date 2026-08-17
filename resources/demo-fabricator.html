@@ -1,0 +1,2255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Fabricator Modal Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="shared.css" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+
+:root {
+  /* Shared theme */
+  --teal: #56cfd7;
+  --orange: #e88830;
+  --cream: #e6d4a8;
+  --body:  #c5b28a;
+
+  /* Modal chrome — industrial / utility palette. Cool steel border,
+     cyan machine-control title. Distinct from crew's slate+lavender
+     and growbay's warm-green panels. */
+  --modal-backdrop: rgba(4,8,16,0.75);
+  --modal-bg-top: #141A28;
+  --modal-bg-bot: #0e1118;
+  --modal-border: #6A5E4E;           /* warm bronze */
+  --modal-width:  880px;
+  --modal-height: 600px;
+
+  /* Header */
+  --header-title-color: #CFBB88;     /* warm cream-gold, matches border */
+  --header-title-size:  16px;
+
+  /* Fabricator-specific knobs */
+  --recipe-list-width: 400px;        /* left column width inside body */
+  --fab-slot-size:     220px;        /* sprite slot on the right (height; width = 2×) */
+  --section-gap:       10px;
+  --body-padding:      12px 16px 10px;
+
+  /* Wear colors */
+  --wear-ok:   #85d260;
+  --wear-warn: #d8c044;
+  --wear-bad:  #cc3333;
+
+  /* Typography */
+  --body-size:        16px;   /* recipe list items (left column) */
+  --title-size:       10px;   /* section labels: INPUTS, TIME, WEAR */
+  --mono-size:        18px;   /* body text under each label (inputs/output/meta) */
+  --detail-name-size: 11px;   /* recipe name in the detail-panel header */
+  --meta-row-gap:     5px;    /* vertical gap between TIME and WEAR rows */
+
+  /* Unlock-accent colors (left-edge bar) */
+  --lock-crew:     var(--teal);
+  --lock-purchase: var(--gold);
+
+  /* Panel buttons (color vars live in shared.css; cyan accent local) */
+  --pb-cyan-hi:#7fd4dc;
+  --pb-cyan-lo:#1a3a40;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'VT323', monospace;
+  background: #0e1118;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #d1d5db;
+}
+
+#demo-wrap { display: flex; gap: 20px; padding: 20px; align-items: flex-start; }
+#scale-root { width: 960px; height: 640px; transform-origin: top left; flex-shrink: 0; }
+
+#size-toggle {
+  position: fixed; top: 12px; right: 12px; z-index: 9999;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+}
+#size-toggle:hover { filter: brightness(1.2); }
+#size-toggle:active {
+  border-style: inset;
+  border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a;
+  transform: translate(1px, 1px);
+}
+body.fullsize { overflow: hidden; }
+body.fullsize #demo-wrap { padding: 0; gap: 0; width: 100vw; height: 100vh; justify-content: center; align-items: center; }
+body.fullsize #controls { display: none; }
+body.fullsize #scale-root { transform-origin: center center; }
+
+/* Game frame — NO gold border/radius/inset (per global modal rule). */
+#game {
+  width: 960px; height: 640px;
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #0c0f22 0%, #070814 100%);
+}
+#crt-overlay {
+  pointer-events: none; position: absolute; inset: 0; z-index: 100;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 1px, transparent 1px, transparent 2px);
+}
+#stars-far, #stars-near { position: absolute; inset: 0; pointer-events: none; }
+
+/* Cruise ghost backdrop — same dim cue as demo-crew so we read as a
+   modal opened OVER the cruise screen, not a standalone page. */
+#cruise-ghost {
+  position: absolute; inset: 0;
+  z-index: 5;
+  filter: brightness(0.35);
+  pointer-events: none;
+}
+.cg-header {
+  position: absolute; left: 0; right: 0; top: 0;
+  height: 40px; padding: 0 16px;
+  background: linear-gradient(180deg, #141a28 0%, #10141e 100%);
+  border-bottom: 2px solid var(--gold);
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: 'Press Start 2P', cursive;
+}
+.cg-ship { font-size: 10px; letter-spacing: 2px; color: var(--gold); }
+.cg-day  { font-size: 8px;  letter-spacing: 1px; color: #aab5c4; }
+.cg-bottom {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 120px;
+  background: linear-gradient(180deg, #10141e 0%, #0a0e14 100%);
+  border-top: 1px solid rgba(200,168,90,0.2);
+}
+
+/* Modal backdrop + panel */
+#fb-backdrop {
+  position: absolute; inset: 0;
+  z-index: 10;
+  background: var(--modal-backdrop);
+  cursor: var(--cursor-hand, pointer);
+}
+
+#fb-modal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--modal-width);
+  height: var(--modal-height);
+  z-index: 20;
+  background: linear-gradient(180deg, var(--modal-bg-top) 0%, var(--modal-bg-bot) 100%);
+  border: 3px solid var(--modal-border);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(95,168,208,0.10),
+    inset 0 0 0 2px rgba(14,20,32,0.5),
+    0 8px 40px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.25s, transform 0.25s;
+}
+body:not(.modal-open) #fb-backdrop,
+body:not(.modal-open) #fb-modal {
+  opacity: 0;
+  pointer-events: none;
+}
+body:not(.modal-open) #fb-modal {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+/* Header */
+.fb-header {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 14px;
+  border-bottom: 2px solid rgba(95,168,208,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.fb-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--header-title-size);
+  letter-spacing: 2px;
+  color: var(--header-title-color);
+  text-shadow: 0 0 8px rgba(95,168,208,0.25);
+  flex-shrink: 0;
+}
+.fb-header-spacer { flex: 1; }
+.fb-day-counter {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: var(--cream);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.fb-day-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+.fb-day { color: var(--gold); letter-spacing: 1px; font-weight: bold; }
+.fb-day.ticking { animation: day-pulse 0.6s ease-out; }
+@keyframes day-pulse {
+  0%   { color: var(--teal); text-shadow: 0 0 6px rgba(95,168,208,0.8); }
+  100% { color: var(--gold); text-shadow: none; }
+}
+.fb-day-sep { color: #5a7a8a; }
+.fb-arrival { color: #aab5c4; letter-spacing: 1px; }
+.fb-close {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  width: 26px; height: 26px;
+  border: 2px solid rgba(95,168,208,0.4);
+  background: rgba(14,20,32,0.6);
+  color: var(--header-title-color);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.fb-close:hover { filter: brightness(1.25); border-color: var(--modal-border); }
+
+/* Body */
+.fb-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--body-padding);
+  gap: var(--section-gap);
+}
+
+/* Crew fab assist strip removed from visible UI. The bonus still
+   factors into `actualDays()`; the breakdown surfaces only as a
+   hover tooltip on the TIME row in the detail panel. Keeps the
+   modal's top inches of real estate clean. */
+
+/* ── Main split: recipes (left) + fab unit + detail (right) ──── */
+.fb-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--recipe-list-width) 1fr;
+  gap: 12px;
+  min-height: 0;
+}
+
+/* ── Recipe list column ─────────────────────────────────────── */
+.fb-recipes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
+}
+/* Recipe list wrapper — single bordered box holding the banner (sort/
+   filter dropdowns) + the scrollable list. Everything about the list
+   lives inside one outlined surface. */
+.fb-list-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid rgba(95,168,208,0.2);
+  border-radius: 3px;
+  overflow: visible;               /* dropdown flyouts escape vertically */
+}
+.fb-list-banner {
+  display: flex;
+  gap: 6px;
+  padding: 4px 6px;
+  background: rgba(14,20,32,0.65);
+  border-bottom: 1px solid rgba(95,168,208,0.15);
+  flex-shrink: 0;
+}
+
+/* Custom dropdown — no native <select> per design-system rule.
+   Trigger shows `Sort: Time ▾`; click opens a flyout of options. */
+.fb-dd { position: relative; flex: 1; min-width: 0; }
+.fb-dd-trigger {
+  width: 100%;
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: 3px 8px;
+  background: linear-gradient(180deg, var(--pb-bg-top) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-bot) 100%);
+  border: 1px solid rgba(95,168,208,0.25);
+  color: var(--pb-text);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  transition: border-color 0.12s, filter 0.12s;
+}
+.fb-dd-trigger:hover { filter: brightness(1.2); border-color: rgba(200,168,90,0.4); }
+.fb-dd.open .fb-dd-trigger { border-color: var(--gold); }
+.fb-dd-trigger .caret {
+  color: var(--gold);
+  font-size: 11px;
+  transition: transform 0.15s;
+}
+.fb-dd.open .fb-dd-trigger .caret { transform: rotate(180deg); }
+.fb-dd-trigger .dd-label { color: #7a8898; margin-right: 4px; }
+.fb-dd-trigger .dd-value { color: var(--cream); flex: 1; text-align: left; }
+
+.fb-dd-menu {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  display: none;
+  flex-direction: column;
+  background: #14181f;
+  border: 1px solid var(--gold);
+  border-radius: 2px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.55);
+  z-index: 20;
+  overflow: hidden;
+}
+.fb-dd.open .fb-dd-menu { display: flex; }
+.fb-dd-menu button {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 5px 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(95,168,208,0.08);
+  color: var(--cream);
+  cursor: var(--cursor-hand, pointer);
+  transition: background 0.1s, color 0.1s;
+}
+.fb-dd-menu button:last-child { border-bottom: none; }
+.fb-dd-menu button:hover { background: rgba(200,168,90,0.18); }
+.fb-dd-menu button.active {
+  color: var(--gold);
+  background: rgba(200,168,90,0.1);
+}
+
+.fb-recipe-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: rgba(6,10,16,0.5);
+  padding: 4px;
+  min-height: 0;
+}
+
+.fb-recipe-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 10px;
+  margin-bottom: 3px;
+  background: rgba(14,20,32,0.5);
+  border: 1px solid rgba(95,168,208,0.12);
+  border-left: 3px solid transparent;
+  border-radius: 2px;
+  cursor: var(--cursor-hand, pointer);
+  transition: border-color 0.12s, background 0.12s;
+  min-height: 30px;
+  font-family: 'VT323', monospace;
+  font-size: var(--body-size);
+  letter-spacing: 0.5px;
+  color: var(--cream);
+}
+.fb-recipe-row:hover { border-color: rgba(200,168,90,0.4); background: rgba(20,28,42,0.6); }
+.fb-recipe-row.selected {
+  border-color: var(--gold);
+  background: rgba(30,40,56,0.7);
+  box-shadow: inset 0 0 0 1px rgba(200,168,90,0.25);
+}
+.fb-recipe-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fb-recipe-days {
+  flex-shrink: 0;
+  color: var(--teal);
+  font-size: 13px;
+  letter-spacing: 1px;
+  min-width: 40px;
+  text-align: right;
+}
+/* Locked rows (crew or purchase) render DIMMED so they sit visually
+   below the available recipes rather than competing with them. No
+   accent bar, no color treatment — just greyed. A muted lock icon
+   + unlock-note text in place of the days column tells the player
+   WHY it's locked. */
+.fb-recipe-row.locked-crew,
+.fb-recipe-row.locked-purchase {
+  opacity: 0.4;
+  filter: grayscale(0.7);
+  cursor: var(--cursor-pointer, default);
+  border-left-color: transparent;
+}
+.fb-recipe-row.locked-crew:hover,
+.fb-recipe-row.locked-purchase:hover {
+  border-color: rgba(95,168,208,0.12);
+  background: rgba(14,20,32,0.5);
+  opacity: 0.55;              /* slight lift on hover — still clearly subordinate */
+}
+.fb-recipe-row.locked-crew .fb-recipe-days,
+.fb-recipe-row.locked-purchase .fb-recipe-days {
+  color: #7a8898;
+  font-style: italic;
+  font-size: 12px;
+  min-width: auto;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Click a locked row → very brief brightness pulse (acknowledges the
+   click without promoting the row visually). */
+.fb-recipe-row.pulse { animation: lock-pulse 0.4s ease-out; }
+@keyframes lock-pulse {
+  0%, 100% { filter: grayscale(0.7); }
+  50%      { filter: grayscale(0.3) brightness(1.2); }
+}
+.fb-recipe-row .lock-glyph {
+  color: #7a8898;
+  font-size: 12px;
+  margin-right: -4px;
+}
+.fb-recipe-row.locked-purchase .dollar { color: #8a9ba8; }
+
+/* Missing-materials is NOT dimmed (explicit rule). Only the detail-panel
+   input list turns its counts red when stock < required. */
+
+/* ── Fab unit + detail (right column) ───────────────────────── */
+.fb-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.fb-unit {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* Fab sprite slot — backed by sprites/fabricator/spritesheet_fabricator.png.
+   Each frame is 256w × 128h, cut out of a 516×390 sheet. Slot height is
+   `--fab-slot-size`; width is 2× that (frame aspect is 2:1). Scale factor
+   from frame-pixel-space to slot-space = slot_h / 128, applied uniformly
+   to both axes of background-size so the 2:1 frame tiling stays true. */
+.fb-unit-slot {
+  width: calc(var(--fab-slot-size) * 2);
+  height: var(--fab-slot-size);
+  position: relative;
+  background-image: url('sprites/fabricator/spritesheet_fabricator.png');
+  background-repeat: no-repeat;
+  background-size: calc(var(--fab-slot-size) * 516 / 128) calc(var(--fab-slot-size) * 390 / 128);
+  background-position: 0 0;    /* set in JS via setFabFrame() */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  transition: filter 0.3s;
+}
+.fb-unit-slot.state-done {
+  animation: fab-done-flash 0.6s ease-out;
+}
+@keyframes fab-done-flash {
+  0%   { filter: brightness(1.8) drop-shadow(0 0 12px rgba(133,210,96,0.8)); }
+  100% { filter: brightness(1); }
+}
+.fb-unit-slot.state-broken {
+  filter: grayscale(0.2) brightness(0.85);
+}
+
+/* Wear-bar overlay — pinned to the painted gauge rectangle at
+   (39,110)→(89,117) on the 256×128 frame. Uses % so it scales with
+   the slot. Style mirrors the cargo/cruise segmented gauges: 10
+   segments with per-tier colors, DEPLETES L→R as wear climbs (100%
+   wear = zero segments lit = bar invisible, which is the point, since
+   the broken sprite has OUT-OF-SERVICE text painted in the same spot). */
+.fb-wear-overlay {
+  position: absolute;
+  left: 15.23%;             /* 39  / 256 */
+  top: 85.94%;              /* 110 / 128 */
+  width: 20.70%;            /* 53  / 256 */
+  height: 6.25%;            /* 8   / 128 (was 10; -2px off the bottom) */
+  display: flex;
+  gap: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.fb-wear-overlay.hidden { display: none; }
+.fb-wear-seg {
+  flex: 1;
+  background: var(--seg-color);
+  opacity: var(--wear-seg-unlit-alpha, 0.15);
+  transition: opacity 0.2s;
+}
+.fb-wear-seg.lit { opacity: 1; box-shadow: 0 0 2px var(--seg-color); }
+/* Per-segment tier colors (L→R): leftmost 2 = red (the critical last
+   segments to go), then orange, yellow, yellow-green, rightmost 2 =
+   green. Gradient of health as wear climbs. */
+.fb-wear-seg:nth-child(1), .fb-wear-seg:nth-child(2) { --seg-color: #c23030; }
+.fb-wear-seg:nth-child(3), .fb-wear-seg:nth-child(4) { --seg-color: #e0661a; }
+.fb-wear-seg:nth-child(5), .fb-wear-seg:nth-child(6) { --seg-color: #d0a020; }
+.fb-wear-seg:nth-child(7), .fb-wear-seg:nth-child(8) { --seg-color: #b4bf40; }
+.fb-wear-seg:nth-child(9), .fb-wear-seg:nth-child(10){ --seg-color: #78c560; }
+
+/* Output-item overlay — pinned to the painted output-bay rectangle at
+   (181,32)→(236,76) on the 256×128 frame. When a craft finishes, the
+   item sprite fades in here with a gentle float + pulse and waits for
+   a click. Clicking "claims" (moves to cargo in production; demo just
+   hides + logs). Auto-claims when a new craft starts. */
+.fb-output-slot {
+  position: absolute;
+  left: 70.70%;             /* 181 / 256 */
+  top: 25.00%;              /*  32 / 128 */
+  width: 21.48%;            /* 55 / 256 */
+  height: 40%;           /* 44 / 128 */
+  background-image: var(--output-sprite, none);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 80% 80%;       /* sprite sits within the bay with padding */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: var(--cursor-hand, pointer);
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px rgba(133,210,96,0.55));
+  transition: opacity 0.4s ease;
+}
+.fb-output-slot.ready {
+  opacity: 1;
+  pointer-events: auto;
+  animation: fb-output-float 2.2s ease-in-out infinite;
+}
+.fb-output-slot.ready:hover {
+  filter: drop-shadow(0 0 8px rgba(133,210,96,0.9)) brightness(1.15);
+}
+/* Click-to-claim animation: quick pop, rise, and fade — reads as
+   "grabbed and sent to cargo". Overrides the .ready float animation
+   while playing. */
+.fb-output-slot.claimed {
+  animation: fb-output-claim 360ms cubic-bezier(0.3, 0, 0.4, 1) forwards;
+  pointer-events: none;
+}
+@keyframes fb-output-claim {
+  0%   { transform: translateY(0)     scale(1);    opacity: 1;
+         filter: drop-shadow(0 0 4px rgba(133,210,96,0.55)); }
+  25%  { transform: translateY(-3px)  scale(1.22); opacity: 1;
+         filter: drop-shadow(0 0 12px rgba(133,210,96,1)) brightness(1.3); }
+  100% { transform: translateY(-26px) scale(0.8);  opacity: 0;
+         filter: drop-shadow(0 0 2px rgba(133,210,96,0.2)); }
+}
+/* Emoji fallback centered in the slot when no sprite path is set. */
+.fb-output-slot .fb-output-emoji {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: calc(var(--fab-slot-size) * 0.22);
+  color: var(--cream);
+  text-shadow: 0 0 6px rgba(133,210,96,0.6);
+  pointer-events: none;
+}
+@keyframes fb-output-float {
+  0%, 100% { transform: translateY(0)     scale(1);    }
+  50%      { transform: translateY(-3px)  scale(1.04); }
+}
+
+/* Detail panel — fills remaining height under fab-unit */
+.fb-detail {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+  background: rgba(10,14,20,0.4);
+  border: 2px solid rgba(95,168,208,0.25);
+  border-radius: 3px;
+  gap: 6px;
+  overflow: hidden;
+}
+/* Detail panel header: item sprite + recipe name on one row. */
+.fb-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+}
+.fb-detail-sprite {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  background-image: var(--detail-sprite, none);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  font-size: 26px;
+  text-align: center;
+  line-height: 40px;
+  color: var(--cream);
+}
+.fb-detail-sprite.has-sprite { color: transparent; }
+.fb-detail-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--detail-name-size);
+  letter-spacing: 2px;
+  color: var(--gold);
+  line-height: 1.3;
+  min-height: 14px;
+}
+.fb-detail-desc {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--body);
+  font-style: italic;
+  line-height: 1.25;
+  letter-spacing: 0.5px;
+  min-height: 17px;
+}
+.fb-detail-divider {
+  height: 0;
+  border-top: 1px dashed rgba(95,168,208,0.25);
+  margin: 2px 0;
+}
+.fb-detail-section {
+  display: flex;
+  flex-direction: column;
+}
+.fb-detail-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--title-size);
+  letter-spacing: 1px;
+  color: #7a8898;
+}
+.fb-inputs {
+  /* 2-column grid — row-first fill order (default for CSS grid) so 2
+     materials take one row, 3 materials take a row-and-a-half, 4 fit
+     two rows evenly. */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 14px;
+  font-family: 'VT323', monospace;
+  font-size: var(--mono-size);
+  letter-spacing: 0.5px;
+  color: var(--cream);
+  padding-bottom: 5px;
+}
+.fb-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 18px;
+}
+.fb-input-row.missing .fb-input-count { color: var(--red); font-weight: bold; }
+.fb-input-icon { width: 18px; text-align: center; color: var(--cream); }
+.fb-input-count {
+  color: var(--cream);
+  font-family: 'VT323', monospace;
+  min-width: 44px;
+}
+.fb-input-name { flex: 1; color: var(--body); }
+.fb-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--meta-row-gap, 2px);
+  font-family: 'VT323', monospace;
+  font-size: var(--mono-size);
+  color: var(--body);
+  letter-spacing: 0.5px;
+}
+.fb-meta .row { display: flex; gap: 10px; align-items: baseline; line-height: 18px; }
+.fb-meta .label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--title-size);
+  color: #7a8898;
+  letter-spacing: 1px;
+  width: 50px;
+  flex-shrink: 0;
+}
+/* Crew engineering bonus — inline on the TIME row, right of the
+   actual-days value. Teal. No underline; help cursor signals the
+   hover-tooltip (recipe-specific time savings). */
+.fb-meta .bonus {
+  color: var(--teal);
+  cursor: help;
+  margin-left: 6px;
+  transition: color 0.15s, filter 0.15s;
+}
+.fb-meta .bonus:hover {
+  color: #8fe0e6;
+  filter: brightness(1.15);
+}
+.fb-meta .base    { color: #9aa6b8; }
+.fb-meta .actual  { color: var(--cream); }
+.fb-meta .wear-add { color: var(--wear-warn); }
+
+/* Warning lines — deadline overrun + wear-threshold. Red for the
+   serious ones, amber for "service soon". Both are purely informative;
+   they don't block the CRAFT button. */
+.fb-meta .fb-warn {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  padding: 2px 0 2px 60px;       /* align with value column (past label) */
+  line-height: 1.2;
+}
+.fb-meta .fb-warn.overrun   { color: var(--red); }
+.fb-meta .fb-warn.overrun strong { color: #ff9999; }
+.fb-meta .fb-warn.wear-crit { color: var(--red); }
+.fb-meta .fb-warn.wear-warn { color: var(--wear-warn); }
+
+/* CRAFT button (big, pulsing cyan when ready) */
+.fb-craft-wrap {
+  margin-top: auto;
+  display: flex;
+  justify-content: stretch;
+}
+.fb-craft-btn {
+  width: 100%;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: 12px 10px;
+  background: linear-gradient(180deg, #2a6066 0%, #143038 50%, #2a6066 100%);
+  border: 3px outset;
+  border-color: var(--pb-cyan-hi) var(--pb-cyan-lo) var(--pb-cyan-lo) var(--pb-cyan-hi);
+  color: #e6fafe;
+  border-radius: 0;
+  transition: filter 0.12s, box-shadow 0.2s;
+  animation: craft-ready-pulse 1.8s ease-in-out infinite;
+}
+@keyframes craft-ready-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(95,168,208,0.35), inset 0 0 0 1px rgba(127,212,220,0.2); }
+  50%      { box-shadow: 0 0 18px rgba(95,168,208,0.65), inset 0 0 0 1px rgba(127,212,220,0.4); }
+}
+.fb-craft-btn:hover { filter: brightness(1.15); }
+.fb-craft-btn:active {
+  border-style: inset;
+  border-color: var(--pb-cyan-lo) var(--pb-cyan-hi) var(--pb-cyan-hi) var(--pb-cyan-lo);
+  transform: translate(1px, 1px);
+}
+.fb-craft-btn.locked {
+  filter: grayscale(0.8) brightness(0.55);
+  cursor: var(--cursor-pointer, default);
+  pointer-events: none;
+  animation: none;
+  box-shadow: none;
+}
+
+/* ── Progress strip (bottom) — always visible; dims when idle ─── */
+.fb-progress {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(14,24,34,0.5);
+  border: 1px solid rgba(95,168,208,0.15);
+  border-radius: 3px;
+  height: 40px;
+  opacity: 0.6;
+  transition: opacity 0.25s, background 0.25s, border-color 0.25s;
+}
+.fb-progress.active {
+  opacity: 1;
+  background: rgba(14,24,34,0.65);
+  border-color: rgba(95,168,208,0.3);
+}
+/* Idle state: hide the "CRAFTING " prefix and grey the item label. */
+.fb-progress:not(.active) .fb-progress-label .prefix { display: none; }
+.fb-progress:not(.active) .fb-progress-label .item { color: #7a8898; }
+.fb-progress:not(.active) .fb-progress-days { color: #7a8898; }
+.fb-progress-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--teal);
+  flex-shrink: 0;
+}
+.fb-progress-label .item {
+  color: var(--cream);
+  letter-spacing: 2px;
+}
+.fb-progress-track {
+  flex: 1;
+  height: 18px;
+  background: rgba(10,14,20,0.7);
+  border: 1px solid rgba(95,168,208,0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.fb-progress-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, var(--teal) 0%, #8fe0e6 100%);
+  /* No transition — width is updated every rAF frame for smooth fill;
+     a CSS transition would fight the per-frame writes and add lag. */
+  box-shadow: 0 0 8px rgba(95,168,208,0.5);
+}
+.fb-progress-days {
+  flex-shrink: 0;
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: var(--cream);
+  letter-spacing: 1px;
+  min-width: 52px;
+  text-align: right;
+}
+/* Cancel button — red, compact, only visible while a craft is active. */
+.fb-progress-cancel {
+  flex-shrink: 0;
+  font-family: 'VT323', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: var(--cursor-hand, pointer);
+  padding: 3px 10px;
+  background: linear-gradient(180deg, #5a2828 0%, #2a1010 50%, #5a3030 100%);
+  border: 1px solid rgba(204,51,51,0.5);
+  color: #e6a8a8;
+  border-radius: 2px;
+  transition: filter 0.12s;
+}
+.fb-progress-cancel:hover { filter: brightness(1.2); }
+.fb-progress:not(.active) .fb-progress-cancel { display: none; }
+
+/* Celebration badge — floats up when a craft completes. */
+.fb-badge {
+  position: absolute;
+  left: 50%;
+  bottom: 60px;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  background: linear-gradient(180deg, rgba(133,210,96,0.95) 0%, rgba(90,160,70,0.95) 100%);
+  border: 2px solid #c5f2a4;
+  border-radius: 3px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #0a2010;
+  text-shadow: 0 0 4px rgba(255,255,255,0.35);
+  box-shadow: 0 0 16px rgba(133,210,96,0.55);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+.fb-badge.fire { animation: badge-float 1400ms ease-out forwards; }
+@keyframes badge-float {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  15%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  85%  { opacity: 1; transform: translateX(-50%) translateY(-40px); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-60px); }
+}
+
+/* Spark field over fab unit for break-event */
+.fb-spark-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fb-spark {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 5px; height: 5px;
+  background: radial-gradient(circle, #fff6a8 0%, #e88830 50%, #cc3333 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(232,136,48,0.8);
+  opacity: 0;
+  animation: fb-spark-rise 800ms ease-out forwards;
+}
+@keyframes fb-spark-rise {
+  0%   { opacity: 1; transform: translate(0,0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--sx, 0), var(--sy, -40px)) scale(0.2); }
+}
+
+/* Sprite helper */
+.has-sprite { background-color: transparent; }
+
+/* Dev controls sidebar */
+#controls {
+  width: 380px; background: #161a22; border: 1px solid #2a3040;
+  border-radius: 6px;
+  padding: 16px; font-family: 'VT323', monospace; font-size: 16px; color: #8898a8;
+  max-height: 640px; overflow-y: auto; overflow-x: hidden; flex-shrink: 0;
+}
+#controls h2 { font-family: 'Press Start 2P', cursive; font-size: 8px; color: var(--gold); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase; }
+#controls h3 { font-family: 'Press Start 2P', cursive; font-size: 7px; color: #7a8898; letter-spacing: 1px; margin: 14px 0 8px; text-transform: uppercase; border-bottom: 1px solid #2a3040; padding-bottom: 4px; }
+.ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.ctrl-row label { font-size: 14px; color: #667; flex-shrink: 0; min-width: 110px; }
+.ctrl-row input[type="range"] { flex: 1; accent-color: var(--gold); height: 4px; }
+.ctrl-row input[type="number"] {
+  width: 56px; background: #0e1118; color: var(--cream);
+  border: 1px solid #2a3040; padding: 2px 4px;
+  font-family: 'VT323', monospace; font-size: 14px;
+}
+.ctrl-row .val { font-size: 13px; color: #7a8898; min-width: 60px; text-align: right; font-family: 'VT323', monospace; letter-spacing: 0.5px; }
+.ctrl-row .val.modified { color: var(--orange); font-weight: bold; }
+.sim-btn {
+  width: 100%; margin-top: 6px; padding: 8px;
+  font-family: 'VT323', monospace; font-size: 15px; letter-spacing: 1px; text-transform: uppercase;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset; border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold); cursor: var(--cursor-hand, pointer); border-radius: 2px;
+}
+.sim-btn:hover { filter: brightness(1.15); }
+.sim-btn:active { border-style: inset; border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a; transform: translate(1px,1px); }
+
+/* Scrollbars */
+::-webkit-scrollbar           { width: 6px; height: 6px; }
+::-webkit-scrollbar-track     { background: #0a0e14; border-radius: 0; }
+::-webkit-scrollbar-thumb     { background: #2a3a48; border-radius: 0; }
+::-webkit-scrollbar-corner    { background: #0a0e14; }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3a48 #0a0e14;
+}
+
+</style>
+</head>
+<body>
+
+<button id="size-toggle" onclick="toggleSize()">Actual Size</button>
+
+<div id="demo-wrap">
+
+<div id="scale-root">
+<div id="game">
+  <canvas id="stars-far"  width="960" height="640"></canvas>
+  <canvas id="stars-near" width="960" height="640"></canvas>
+
+  <!-- Cruise ghost backdrop -->
+  <div id="cruise-ghost">
+    <div class="cg-header">
+      <span class="cg-ship">THE VERDANT ARK</span>
+      <span class="cg-day">DAY 47 · 73 LEFT</span>
+    </div>
+    <div class="cg-bottom"></div>
+  </div>
+
+  <div id="crt-overlay"></div>
+
+  <!-- Modal backdrop -->
+  <div id="fb-backdrop" onclick="closeModal()"></div>
+
+  <!-- Fabricator modal -->
+  <div id="fb-modal">
+
+    <!-- Header — title on left, trip-day counter pinned right (mirrors
+         cruise screen's DAY · LEFT format). Day advances during any
+         craft in progress; `ticking` class pulses the number on each
+         day-boundary. -->
+    <div class="fb-header">
+      <span class="fb-title">FABRICATOR</span>
+      <div class="fb-header-spacer"></div>
+      <div class="fb-day-counter">
+        <span class="fb-day-label">DAY</span>
+        <span class="fb-day" id="fb-trip-day">47</span>
+        <span class="fb-day-sep">·</span>
+        <span class="fb-arrival" id="fb-days-left">153 LEFT</span>
+      </div>
+      <button class="fb-close" onclick="closeModal()">X</button>
+    </div>
+
+    <!-- Body -->
+    <div class="fb-body">
+
+      <!-- Crew contribution strip -->
+
+      <!-- Main split -->
+      <div class="fb-main">
+
+        <!-- Left: recipes. Sort + Filter dropdowns sit in a compact
+             banner inside the list box; scroll below. Whole thing
+             reads as one surface. -->
+        <div class="fb-recipes">
+          <div class="fb-list-box">
+            <div class="fb-list-banner">
+              <div class="fb-dd" id="fb-dd-sort">
+                <button class="fb-dd-trigger" type="button" onclick="toggleDropdown('fb-dd-sort', event)">
+                  <span class="dd-label">SORT:</span>
+                  <span class="dd-value" id="fb-dd-sort-value">Time</span>
+                  <span class="caret">▾</span>
+                </button>
+                <div class="fb-dd-menu">
+                  <button type="button" data-sort="name">Name</button>
+                  <button type="button" data-sort="time" class="active">Time</button>
+                  <button type="button" data-sort="complexity">Complexity</button>
+                </div>
+              </div>
+              <div class="fb-dd" id="fb-dd-filter">
+                <button class="fb-dd-trigger" type="button" onclick="toggleDropdown('fb-dd-filter', event)">
+                  <span class="dd-label">FILTER:</span>
+                  <span class="dd-value" id="fb-dd-filter-value">All</span>
+                  <span class="caret">▾</span>
+                </button>
+                <div class="fb-dd-menu">
+                  <button type="button" data-filter="all" class="active">All</button>
+                  <button type="button" data-filter="unlocked">Unlocked</button>
+                  <button type="button" data-filter="craftable">Craftable now</button>
+                </div>
+              </div>
+            </div>
+            <div class="fb-recipe-scroll" id="fb-recipe-scroll"></div>
+          </div>
+        </div>
+
+        <!-- Right: fab unit + detail -->
+        <div class="fb-right">
+          <div class="fb-unit">
+            <div class="fb-unit-slot state-idle" id="fb-slot">
+              <!-- Depleting wear gauge drawn over the sprite's painted
+                   gauge area (40,111 → 88,116 on the 128px frame). 10
+                   segments; seg count lit = (100-wear)/10 rounded up.
+                   Hidden entirely when broken so the OUT-OF-SERVICE
+                   sprite text underneath is readable. -->
+              <div class="fb-wear-overlay" id="fb-wear-overlay">
+                <div class="fb-wear-seg"></div><div class="fb-wear-seg"></div>
+                <div class="fb-wear-seg"></div><div class="fb-wear-seg"></div>
+                <div class="fb-wear-seg"></div><div class="fb-wear-seg"></div>
+                <div class="fb-wear-seg"></div><div class="fb-wear-seg"></div>
+                <div class="fb-wear-seg"></div><div class="fb-wear-seg"></div>
+              </div>
+              <!-- Finished item appears here after a craft completes.
+                   Click to claim → cargo. -->
+              <div class="fb-output-slot" id="fb-output-slot" onclick="claimOutput()">
+                <span class="fb-output-emoji" id="fb-output-emoji"></span>
+              </div>
+              <div class="fb-spark-field" id="fb-spark-field"></div>
+            </div>
+          </div>
+
+          <div class="fb-detail" id="fb-detail">
+            <div class="fb-detail-header">
+              <div class="fb-detail-sprite" id="fb-detail-sprite">🛠️</div>
+              <div class="fb-detail-name" id="fb-detail-name">HULL PATCH</div>
+            </div>
+            <div class="fb-detail-desc" id="fb-detail-desc">Basic hull repair material.</div>
+            <div class="fb-detail-divider"></div>
+
+            <!-- Inputs list — no label. Material rows + counts read as
+                 "required ingredients" implicitly. -->
+            <div class="fb-detail-section">
+              <div class="fb-inputs" id="fb-inputs"></div>
+            </div>
+
+            <div class="fb-meta" id="fb-meta"></div>
+
+            <div class="fb-craft-wrap">
+              <button class="fb-craft-btn" id="fb-craft-btn" onclick="craftSelected()">CRAFT</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress strip — Cancel button only shown while active. -->
+      <div class="fb-progress" id="fb-progress">
+        <span class="fb-progress-label">
+          <span class="prefix">CRAFTING </span>
+          <span class="item" id="fb-progress-item">IDLE</span>
+        </span>
+        <div class="fb-progress-track"><div class="fb-progress-fill" id="fb-progress-fill"></div></div>
+        <span class="fb-progress-days" id="fb-progress-days">—</span>
+        <button class="fb-progress-cancel" id="fb-progress-cancel" onclick="cancelCraft()" title="Cancel craft — refunds materials, keeps incurred wear">CANCEL</button>
+      </div>
+
+    </div>
+
+    <!-- Floating celebration badge -->
+    <div class="fb-badge" id="fb-badge">+1 HULL PATCH</div>
+
+  </div>
+</div>
+</div>
+
+<!-- Dev controls -->
+<div id="controls">
+  <h2>Fabricator Modal Demo Controls</h2>
+
+  <h3>Crew Aboard</h3>
+  <div class="ctrl-row"><label>Dr. Osei (Botanist)</label><input type="checkbox" id="c-osei" checked></div>
+  <div class="ctrl-row"><label>Kazuki (Engineer, +25)</label><input type="checkbox" id="c-kazuki" checked></div>
+  <div class="ctrl-row"><label>Dr. Vasquez (Medic)</label><input type="checkbox" id="c-vasquez"></div>
+  <div class="ctrl-row"><label>Reeves (Pilot)</label><input type="checkbox" id="c-reeves"></div>
+  <div class="ctrl-row"><label>Reyes (Chef)</label><input type="checkbox" id="c-reyes" checked></div>
+  <div class="ctrl-row"><label>Hargrove (Diplomat)</label><input type="checkbox" id="c-hargrove"></div>
+  <div class="ctrl-row"><label>Dr. Tanaka (Xeno, +5)</label><input type="checkbox" id="c-tanaka"></div>
+  <div class="ctrl-row"><label>Captain background</label>
+    <select id="c-captain" style="flex:1; background:#0e1118; color:var(--cream); border:1px solid #2a3040; padding:2px 4px; font-family:'VT323',monospace; font-size:14px;">
+      <option value="engineer">Engineer bg. (+15)</option>
+      <option value="academic">Academic bg. (+10)</option>
+      <option value="none">None (baseline only)</option>
+    </select>
+  </div>
+
+  <h3>Fab State</h3>
+  <div class="ctrl-row"><label>Wear %</label><input type="range" id="c-wear" min="0" max="100" value="0"><span class="val" id="v-wear">0</span></div>
+  <div class="ctrl-row"><label>Broken</label><input type="checkbox" id="c-broken"></div>
+  <button class="sim-btn" onclick="repairFab()">Repair at station (wear 0, unbroken)</button>
+
+  <h3>Material Stock</h3>
+  <div class="ctrl-row"><label>Metal 🔩</label><input type="number" id="c-mat-metal" min="0" max="999" value="10"></div>
+  <div class="ctrl-row"><label>Scrap ♻️</label><input type="number" id="c-mat-scrap" min="0" max="999" value="10"></div>
+  <div class="ctrl-row"><label>Exotic ✨</label><input type="number" id="c-mat-exotic" min="0" max="999" value="10"></div>
+  <div class="ctrl-row"><label>Biocomp 🌱</label><input type="number" id="c-mat-biocomponent" min="0" max="999" value="10"></div>
+  <div class="ctrl-row"><label>Minerals 💎</label><input type="number" id="c-mat-minerals" min="0" max="999" value="10"></div>
+
+  <h3>Purchase Unlocks</h3>
+  <div class="ctrl-row"><label>Advanced Sensor</label><input type="checkbox" id="c-buy-advanced_sensor"></div>
+  <div class="ctrl-row"><label>Xeno Sample Kit</label><input type="checkbox" id="c-buy-xeno_sample_kit"></div>
+  <div class="ctrl-row"><label>Reactor Core</label><input type="checkbox" id="c-buy-reactor_core"></div>
+
+  <h3>Craft Pacing</h3>
+  <div class="ctrl-row"><label>ms per day</label><input type="range" id="c-ms-per-day" min="400" max="3000" step="50" value="2000"><span class="val" id="v-ms-per-day">2000</span></div>
+  <button class="sim-btn" onclick="tickDay()">Tick 1 day (manual)</button>
+
+  <h3>Trip Calendar</h3>
+  <div class="ctrl-row"><label>Current day</label><input type="range" id="c-trip-day" min="1" max="500" step="1" value="47"><span class="val" id="v-trip-day">47</span></div>
+  <div class="ctrl-row"><label>Arrival day</label><input type="range" id="c-arrival-day" min="90" max="500" step="10" value="200"><span class="val" id="v-arrival-day">200</span></div>
+
+  <h3>Modal Frame</h3>
+  <div class="ctrl-row"><label>Width</label><input type="range" id="c-modal-w" min="720" max="960" step="4" value="880"><span class="val" id="v-modal-w">880</span></div>
+  <div class="ctrl-row"><label>Height</label><input type="range" id="c-modal-h" min="500" max="640" step="4" value="600"><span class="val" id="v-modal-h">600</span></div>
+  <div class="ctrl-row"><label>Title size</label><input type="range" id="c-title-size" min="10" max="20" value="16"><span class="val" id="v-title-size">16</span></div>
+  <div class="ctrl-row"><label>Border color</label><input type="color" id="c-modal-border" value="#6A5E4E"></div>
+  <div class="ctrl-row"><label>Title color</label><input type="color" id="c-title" value="#CFBB88"></div>
+
+  <h3>Layout</h3>
+  <div class="ctrl-row"><label>Recipe list w</label><input type="range" id="c-recipe-w" min="320" max="480" step="4" value="400"><span class="val" id="v-recipe-w">400</span></div>
+  <div class="ctrl-row"><label>Fab slot size</label><input type="range" id="c-slot-size" min="96" max="280" step="4" value="220"><span class="val" id="v-slot-size">220</span></div>
+  <div class="ctrl-row"><label>Section gap</label><input type="range" id="c-section-gap" min="6" max="24" step="2" value="10"><span class="val" id="v-section-gap">10</span></div>
+
+  <h3>Typography</h3>
+  <div class="ctrl-row"><label>Item name</label><input type="range" id="c-detail-name" min="8" max="18" step="1" value="11"><span class="val" id="v-detail-name">11</span></div>
+  <div class="ctrl-row"><label>List items</label><input type="range" id="c-body-size" min="11" max="18" step="1" value="16"><span class="val" id="v-body-size">16</span></div>
+  <div class="ctrl-row"><label>Labels</label><input type="range" id="c-d-title" min="7" max="14" step="1" value="10"><span class="val" id="v-d-title">10</span></div>
+  <div class="ctrl-row"><label>Label body</label><input type="range" id="c-mono-size" min="11" max="18" step="1" value="18"><span class="val" id="v-mono-size">18</span></div>
+  <div class="ctrl-row"><label>TIME↔WEAR gap</label><input type="range" id="c-meta-row-gap" min="0" max="20" step="1" value="5"><span class="val" id="v-meta-row-gap">5</span></div>
+
+  <h3>Simulate</h3>
+  <button class="sim-btn" onclick="instantCraft()">Instant craft (skip timer)</button>
+  <button class="sim-btn" onclick="resetFab()">Reset fab (wear 0, stock 10)</button>
+  <button class="sim-btn" onclick="reopenModal()">Reopen Modal</button>
+  <button class="sim-btn" onclick="resetStyleDefaults()">Reset Style Defaults</button>
+</div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const root = document.documentElement;
+
+  // ── Viewport fit ─────────────────────────────────────────
+  function fitViewport() {
+    let s;
+    if (document.body.classList.contains('fullsize')) {
+      s = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+    } else {
+      const avail = Math.min(window.innerWidth - 440, window.innerWidth * 0.65);
+      const h = window.innerHeight - 40;
+      s = Math.min(avail / 960, h / 640, 1);
+    }
+    $('scale-root').style.transform = 'scale(' + s + ')';
+  }
+  fitViewport();
+  window.addEventListener('resize', fitViewport);
+  window.toggleSize = function() {
+    document.body.classList.toggle('fullsize');
+    $('size-toggle').textContent = document.body.classList.contains('fullsize') ? 'Demo Size' : 'Actual Size';
+    fitViewport();
+  };
+
+  // ── Parallax stars (decorative backdrop) ────────────────
+  const farCvs = $('stars-far'), farCtx = farCvs.getContext('2d');
+  const nearCvs = $('stars-near'), nearCtx = nearCvs.getContext('2d');
+  const farStars = [], nearStars = [];
+  for (let i = 0; i < 90; i++) farStars.push({ x: Math.random()*960, y: Math.random()*640, r: Math.random()*1.1+0.3, phase: Math.random()*Math.PI*2 });
+  for (let i = 0; i < 14; i++) nearStars.push({ x: Math.random()*960, y: Math.random()*640, r: Math.random()*1.6+0.8, phase: Math.random()*Math.PI*2 });
+  function drawStars() {
+    if (PauseBus.paused) { requestAnimationFrame(drawStars); return; }
+    const now = performance.now()/1000;
+    farCtx.clearRect(0,0,960,640);
+    for (const s of farStars) {
+      farCtx.globalAlpha = 0.22 + Math.sin(now*1.5 + s.phase)*0.14;
+      farCtx.fillStyle = '#8899aa';
+      farCtx.beginPath(); farCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); farCtx.fill();
+    }
+    farCtx.globalAlpha = 1;
+    nearCtx.clearRect(0,0,960,640);
+    for (const s of nearStars) {
+      nearCtx.globalAlpha = 0.4 + Math.sin(now*0.8 + s.phase)*0.2;
+      nearCtx.fillStyle = '#c8d0d8';
+      nearCtx.beginPath(); nearCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); nearCtx.fill();
+    }
+    nearCtx.globalAlpha = 1;
+    requestAnimationFrame(drawStars);
+  }
+  drawStars();
+
+  // ══ Data ═══════════════════════════════════════════════════
+  // Mirrors modules/materials/materials.json — 5 raw materials keyed
+  // by id. Sprites pulled from the cargo pool (sprites/cargo/materials/)
+  // — all 5 exist. Emoji icons kept as fallback if the PNG fails.
+  const MATERIALS = {
+    metal:        { name: 'Metal',          icon: '🔩', sprite: 'sprites/cargo/materials/metal.png',
+                    source: 'Mine asteroids · scrap from derelicts · cheap at most stations.' },
+    scrap:        { name: 'Scrap',          icon: '♻️', sprite: 'sprites/cargo/materials/scrap.png',
+                    source: 'Loot from derelicts and wrecks · cheap buy.' },
+    exotic:       { name: 'Exotic Element', icon: '✨', sprite: 'sprites/cargo/materials/exotic.png',
+                    source: 'Anomaly loot · expensive at stations · rare.' },
+    biocomponent: { name: 'Biocomponent',   icon: '🌱', sprite: 'sprites/cargo/materials/biocomponent.png',
+                    source: 'Harvested from crops · some farm events.' },
+    minerals:     { name: 'Minerals',       icon: '💎', sprite: 'sprites/cargo/materials/minerals.png',
+                    source: 'Mine asteroids · trade at stations · mid-price.' }
+  };
+
+  // Mirrors modules/recipes/recipes.json (5 starter recipes) plus 4
+  // demo-only recipes appended to exercise all four list-states:
+  //   default (cream, fully available)
+  //   locked-crew (teal accent — needs role aboard)
+  //   locked-purchase (gold accent — blueprint bought at station)
+  //   missing-materials (rendered in detail pane, NOT dimmed)
+  // Outputs use single-character icons for simplicity; the real item
+  // registry has dedicated sprites per output.
+  // Output `sprite` field pulls from the cargo pool where a match exists.
+  // Two direct hits (repair_kit, fuel_cell), two repurposed approximations
+  // (spectrometer stands in for advanced_sensor, soil_sampler stands in
+  // for xeno_sample_kit), five items still need bespoke art — those fall
+  // back to the emoji icon until a PNG ships at sprites/cargo/items/<id>.png.
+  const RECIPES = [
+    { id:'hull_patch',     name:'Hull Patch',              inputs:[['metal',3],['scrap',2]],
+      output:{item:'hull_patch', name:'Hull Patch',   count:1, icon:'🛠️', sprite:null},
+      days:1, wear:1, desc:'Used in hull-breach events to seal leaks. Consumable.',
+      unlock:'default' },
+    { id:'repair_kit',     name:'Field Repair Kit',        inputs:[['metal',5],['scrap',3]],
+      output:{item:'repair_kit', name:'Repair Kit',   count:1, icon:'🧰', sprite:'sprites/cargo/items/repair_kit.png'},
+      days:3, wear:2, desc:'Used in hull and engine repair events. Consumable.',
+      unlock:'default' },
+    { id:'crop_treatment', name:'Crop Treatment Solution', inputs:[['biocomponent',2],['minerals',1]],
+      output:{item:'crop_treatment', name:'Crop Treatment', count:2, icon:'💧', sprite:null},
+      days:2, wear:1, desc:'Applied in the Growbay to restore plant health. Consumable.',
+      unlock:'default' },
+    { id:'o2_canister',    name:'O2 Canister',             inputs:[['minerals',3],['metal',2]],
+      output:{item:'o2_canister', name:'O2 Canister', count:1, icon:'🫧', sprite:null},
+      days:1, wear:2, desc:'Used in life-support failure events. Consumable.',
+      unlock:'default' },
+    { id:'fuel_cell',      name:'Emergency Fuel Cell',     inputs:[['minerals',4],['exotic',1]],
+      output:{item:'fuel_cell', name:'Fuel Cell',     count:1, icon:'🔋', sprite:'sprites/cargo/items/fuel_cell.png'},
+      days:4, wear:3, desc:'Restores +15 fuel when used. Consumable.',
+      unlock:'crew:engineer', unlock_note:'Requires Engineer aboard' },
+    { id:'radiation_shield', name:'Radiation Shielding Plate', inputs:[['metal',4],['exotic',2]],
+      output:{item:'radiation_shield', name:'Rad Shield', count:1, icon:'🛡️', sprite:null},
+      days:6, wear:7, desc:'Reduces radiation damage in nebula and solar-flare events. Consumable.',
+      unlock:'crew:engineer', unlock_note:'Requires Engineer aboard' },
+    { id:'advanced_sensor',  name:'Advanced Sensor Module',    inputs:[['exotic',2],['minerals',1],['scrap',1]],
+      output:{item:'advanced_sensor', name:'Sensor Module', count:1, icon:'📡', sprite:'sprites/cargo/items/spectrometer.png'},
+      days:5, wear:5, desc:'Reveals hidden outcomes in anomaly and derelict events. Consumable.',
+      unlock:'purchase', unlock_note:'Blueprint · buy at station' },
+    { id:'xeno_sample_kit',  name:'Xeno Sample Kit',           inputs:[['biocomponent',1],['exotic',1],['minerals',2]],
+      output:{item:'xeno_sample_kit', name:'Sample Kit', count:1, icon:'🧪', sprite:'sprites/cargo/items/soil_sampler.png'},
+      days:3, wear:3, desc:'Required for xeno-fauna research events. Consumable.',
+      unlock:'purchase', unlock_note:'Blueprint · buy at station' },
+    { id:'reactor_core',     name:'Replacement Reactor Core',  inputs:[['metal',8],['exotic',4],['minerals',3]],
+      output:{item:'reactor_core', name:'Reactor Core', count:1, icon:'☢️', sprite:null},
+      days:10, wear:10, desc:'Permanent ship upgrade — replaces the main reactor. Installed at a station.',
+      unlock:'purchase', unlock_note:'Blueprint · buy at station' }
+  ];
+
+  // Crew roster — only the essentials for the fab demo. Per-role fab
+  // contribution values. emoji is the fallback if no other display path
+  // is wired. crewId points at the canonical crew_sprites/ entry —
+  // unused by the fab demo today (no portrait/icon rendering here),
+  // but kept for when this view eventually shows worker faces.
+  const CREW = {
+    osei:        { name:'Dr. Osei',    role:'Botanist',      fab:0,  crewId:'osei',     emoji:'🌱' },
+    kazuki:      { name:'Kazuki',      role:'Engineer',      fab:25, crewId:'kazuki',   emoji:'🔧' },
+    vasquez:     { name:'Dr. Vasquez', role:'Medic',         fab:0,  crewId:'vasquez',  emoji:'🩺' },
+    reeves:      { name:'Reeves',      role:'Pilot',         fab:0,  crewId:'reeves',   emoji:'🛸' },
+    reyes:       { name:'Reyes',       role:'Chef',          fab:0,  crewId:'reyes',    emoji:'🍳' },
+    hargrove:    { name:'Hargrove',    role:'Diplomat',      fab:0,  crewId:'hargrove', emoji:'🤝' },
+    tanaka:      { name:'Dr. Tanaka',  role:'Xenobiologist', fab:5,  crewId:'tanaka',   emoji:'🔬' },
+    captain_eng: { name:'Captain',     role:'Engineer bg.',  fab:15, crewId:'captain',  emoji:'🧑‍✈️' },
+    captain_aca: { name:'Captain',     role:'Academic bg.',  fab:10, crewId:'captain',  emoji:'🧑‍🚀' }
+  };
+  // Baseline — the captain (player) always contributes this much,
+  // independent of their chosen background. Engineer / Academic bg
+  // adds its own bonus on top.
+  const BASE_EFFORT = 10;
+
+  // ═════ State ═══════════════════════════════════════════════
+  // Driven entirely by dev controls. No persistence.
+  const STATE = {
+    // Crew toggles. Captain is picked separately (engineer / academic /
+    // none).
+    aboard: { osei:true, kazuki:true, vasquez:false, reeves:false,
+              reyes:true, hargrove:false, tanaka:false },
+    captainBg: 'engineer',    // 'engineer' | 'academic' | 'none'
+    // Fab health
+    wear: 0,                  // 0–100
+    broken: false,            // hard override
+    // Material stock
+    stock: { metal:10, scrap:10, exotic:10, biocomponent:10, minerals:10 },
+    // Purchase-unlocked recipes (blueprint flags)
+    purchased: { advanced_sensor:false, xeno_sample_kit:false, reactor_core:false },
+    // Selection / craft
+    selectedId: 'hull_patch',
+    sort: 'time',             // 'name' | 'time' | 'complexity'
+    filter: 'all',            // 'all' | 'unlocked' | 'craftable'
+    // Active craft (one-at-a-time). During a craft this holds
+    // { recipeId, daysTotal, startMs, timer, rafId }. daysDone is
+    // derived from (now - startMs) / msPerDay so the progress fill
+    // can animate smoothly per-frame rather than stepping at day
+    // boundaries.
+    craft: null,
+    // Finished item sitting in the output bay waiting for the player
+    // to click-claim it. Auto-claimed on next craft start.
+    pendingOutput: null,
+    // Trip calendar — shared clock with the cruise screen. Advances
+    // one tick per in-game day of any craft.
+    tripDay:     47,
+    arrivalDay:  200,
+    // Craft pacing. 1500ms/day gives the 4-frame animation ~3 full
+    // loops per day at 140ms/frame — long enough to watch things
+    // happen, short enough that a 10-day craft (15s) is still
+    // watchable without boredom.
+    msPerDay: 2000
+  };
+
+  // ═════ Unlock evaluation ═══════════════════════════════════
+  // Returns one of:
+  //   'available'    — fully unlocked (default OR satisfied)
+  //   'locked-crew'  — needs a role aboard
+  //   'locked-purchase' — needs a bought blueprint
+  function recipeLockState(recipe) {
+    if (recipe.unlock === 'default') return 'available';
+    if (recipe.unlock === 'crew:engineer') {
+      // Kazuki (the engineer role itself) OR captain_eng (engineer
+      // background) both satisfy an Engineer requirement.
+      const kaz = STATE.aboard.kazuki;
+      const capEng = STATE.captainBg === 'engineer';
+      return (kaz || capEng) ? 'available' : 'locked-crew';
+    }
+    if (recipe.unlock === 'purchase') {
+      return STATE.purchased[recipe.id] ? 'available' : 'locked-purchase';
+    }
+    return 'available';
+  }
+
+  // Aggregate total fab contribution — sum of crew + captain bg +
+  // captain baseline. Drives the total pill and the days reduction.
+  function totalFabContribution() {
+    let total = BASE_EFFORT;    // captain always adds baseline
+    for (const [id, on] of Object.entries(STATE.aboard)) {
+      if (on) total += CREW[id].fab;
+    }
+    if (STATE.captainBg === 'engineer') total += CREW.captain_eng.fab;
+    else if (STATE.captainBg === 'academic') total += CREW.captain_aca.fab;
+    return total;
+  }
+
+  // Effective craft days — bible §8 formula:
+  //   actual = max(1, ceil(base_days * BASE_EFFORT / available))
+  function actualDays(baseDays) {
+    const avail = Math.max(1, totalFabContribution());
+    return Math.max(1, Math.ceil(baseDays * BASE_EFFORT / avail));
+  }
+
+  // Material satisfaction — is every input satisfied by current stock?
+  function hasMaterials(recipe) {
+    return recipe.inputs.every(([mat, qty]) => (STATE.stock[mat] || 0) >= qty);
+  }
+
+  // Fab-is-functional check. Broken = wear 100% OR hard toggle.
+  function fabFunctional() {
+    return !STATE.broken && STATE.wear < 100;
+  }
+
+  // Can this recipe actually be crafted right now?
+  function canCraft(recipe) {
+    if (recipeLockState(recipe) !== 'available') return false;
+    if (!hasMaterials(recipe)) return false;
+    if (!fabFunctional()) return false;
+    if (STATE.craft) return false;       // one craft at a time
+    return true;
+  }
+
+  // ═════ Crew contribution strip ═════════════════════════════
+  // Tooltip surfaced on the TIME row. Lists crew ADDING fab speed;
+  // the solo-captain ×1.0 baseline is implicit (it's the floor when
+  // nobody is helping, not a "contribution"). TOTAL reads as the
+  // overall speed multiplier.
+  function crewAssistTooltip() {
+    const pct = n => '+' + Math.round(n / BASE_EFFORT * 100) + '%';
+    const lines = ['FAB SPEED BREAKDOWN'];
+    let anyContributor = false;
+    for (const [id, on] of Object.entries(STATE.aboard)) {
+      if (!on) continue;
+      const c = CREW[id];
+      if (c.fab > 0) { lines.push('  ' + c.name + ' (' + c.role + ')  ' + pct(c.fab)); anyContributor = true; }
+    }
+    if (STATE.captainBg === 'engineer') {
+      const c = CREW.captain_eng;
+      lines.push('  ' + c.name + ' (' + c.role + ')  ' + pct(c.fab));
+      anyContributor = true;
+    } else if (STATE.captainBg === 'academic') {
+      const c = CREW.captain_aca;
+      lines.push('  ' + c.name + ' (' + c.role + ')  ' + pct(c.fab));
+      anyContributor = true;
+    }
+    if (!anyContributor) lines.push('  (no crew assisting — solo)');
+    lines.push('');
+    const total = totalFabContribution();
+    const mult  = (total / BASE_EFFORT).toFixed(1);
+    if (total > BASE_EFFORT) {
+      lines.push('TOTAL: ×' + mult + ' SPEED (craft in ' +
+                 Math.round(BASE_EFFORT / total * 100) + '% of base time)');
+    } else {
+      lines.push('TOTAL: ×1.0 SPEED (base time)');
+    }
+    return lines.join('\n');
+  }
+
+  // ═════ Recipe list ═════════════════════════════════════════
+  function sortRecipes(list) {
+    const out = list.slice();
+    if (STATE.sort === 'name') out.sort((a,b) => a.name.localeCompare(b.name));
+    else if (STATE.sort === 'time') out.sort((a,b) => a.days - b.days);
+    else if (STATE.sort === 'complexity') {
+      const comp = r => r.inputs.reduce((s, [,q]) => s + q, 0) + r.days;
+      out.sort((a,b) => comp(a) - comp(b));
+    }
+    return out;
+  }
+  function filterRecipes(list) {
+    if (STATE.filter === 'all') return list;
+    if (STATE.filter === 'unlocked') {
+      return list.filter(r => recipeLockState(r) === 'available');
+    }
+    if (STATE.filter === 'craftable') {
+      return list.filter(r => recipeLockState(r) === 'available' && hasMaterials(r) && fabFunctional());
+    }
+    return list;
+  }
+
+  function renderRecipeList() {
+    const scroll = $('fb-recipe-scroll');
+    scroll.innerHTML = '';
+    const shown = filterRecipes(sortRecipes(RECIPES));
+    if (shown.length === 0) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'padding: 16px; text-align: center; font-family: VT323, monospace; font-size: 14px; color: #7a8898; font-style: italic;';
+      empty.textContent = 'No recipes match filter.';
+      scroll.appendChild(empty);
+      return;
+    }
+    for (const r of shown) {
+      const lock = recipeLockState(r);
+      const row = document.createElement('div');
+      row.className = 'fb-recipe-row';
+      if (lock === 'locked-crew')     row.classList.add('locked-crew');
+      if (lock === 'locked-purchase') row.classList.add('locked-purchase');
+      if (r.id === STATE.selectedId && lock === 'available') row.classList.add('selected');
+
+      const name = document.createElement('span');
+      name.className = 'fb-recipe-name';
+      let nameHtml = r.name;
+      if (lock === 'locked-crew')     nameHtml = '<span class="lock-glyph">🔒</span> ' + r.name;
+      if (lock === 'locked-purchase') nameHtml = '<span class="lock-glyph">🔒</span><span class="dollar">$</span> ' + r.name;
+      name.innerHTML = nameHtml;
+
+      const days = document.createElement('span');
+      days.className = 'fb-recipe-days';
+      if (lock === 'locked-crew' || lock === 'locked-purchase') {
+        days.textContent = r.unlock_note;
+      } else {
+        days.textContent = r.days + 'd';
+      }
+
+      row.appendChild(name);
+      row.appendChild(days);
+
+      row.addEventListener('click', () => {
+        if (lock === 'locked-crew' || lock === 'locked-purchase') {
+          // Pulse the accent bar so the player understands the row is
+          // intentionally inert (vs. appearing unresponsive).
+          row.classList.remove('pulse');
+          void row.offsetWidth;
+          row.classList.add('pulse');
+          return;
+        }
+        STATE.selectedId = r.id;
+        renderRecipeList();
+        renderDetail();
+      });
+
+      scroll.appendChild(row);
+    }
+  }
+
+  // ═════ Detail panel ════════════════════════════════════════
+  function renderDetail() {
+    const r = RECIPES.find(x => x.id === STATE.selectedId) || RECIPES[0];
+
+    $('fb-detail-name').textContent = r.name.toUpperCase();
+    $('fb-detail-desc').textContent = r.desc;
+
+    // Item sprite in the detail header (emoji fallback).
+    const spriteEl = $('fb-detail-sprite');
+    spriteEl.classList.remove('has-sprite');
+    if (r.output.sprite) {
+      const img = new Image();
+      img.onload = () => {
+        spriteEl.classList.add('has-sprite');
+        spriteEl.style.setProperty('--detail-sprite', "url('" + r.output.sprite + "')");
+        spriteEl.textContent = '';
+      };
+      img.onerror = () => {
+        spriteEl.style.setProperty('--detail-sprite', 'none');
+        spriteEl.textContent = r.output.icon || '📦';
+      };
+      img.src = r.output.sprite;
+      spriteEl.textContent = r.output.icon || '📦';   // immediate fallback
+    } else {
+      spriteEl.style.setProperty('--detail-sprite', 'none');
+      spriteEl.textContent = r.output.icon || '📦';
+    }
+
+    // Inputs — missing materials render their count in red. Whole row
+    // carries .missing so the count turns red via CSS.
+    const inputsEl = $('fb-inputs');
+    inputsEl.innerHTML = '';
+    for (const [mat, qty] of r.inputs) {
+      const have = STATE.stock[mat] || 0;
+      const miss = have < qty;
+      const row = document.createElement('div');
+      row.className = 'fb-input-row' + (miss ? ' missing' : '');
+      const m = MATERIALS[mat];
+      // Hover tooltip: material name + where to get it + current stock.
+      row.title = m.name + '\n' + (m.source || '') +
+                  '\nIn cargo: ' + have;
+      row.innerHTML =
+        '<span class="fb-input-icon">' + m.icon + '</span>' +
+        '<span class="fb-input-count">' + have + '/' + qty + '</span>' +
+        '<span class="fb-input-name">' + m.name + '</span>';
+      inputsEl.appendChild(row);
+    }
+
+    // Meta — TIME (base → actual if different) + WEAR (add)
+    const meta = $('fb-meta');
+    const act = actualDays(r.days);
+    const sameDays = (act === r.days);
+    // Crew engineering bonus — percent speed boost above solo baseline
+    // (e.g. ×5.0 speed = +400% bonus). Only renders when crew actually
+    // save time on THIS recipe. Short recipes (e.g. 1d base) hit the
+    // 1-day floor, so even big speed bonuses can produce zero time
+    // saved — in that case the line hides instead of claiming a bonus
+    // the player won't actually see.
+    const total = totalFabContribution();
+    const bonusPct = Math.round((total - BASE_EFFORT) / BASE_EFFORT * 100);
+    const timeSavedPct = r.days > 0 ? Math.round((r.days - act) / r.days * 100) : 0;
+    const showBonus = bonusPct > 0 && timeSavedPct > 0;
+    const bonusSpan = showBonus
+      ? '<span class="bonus" title="Reduces fab time by ' + timeSavedPct + '% on this recipe.">' +
+          '+' + bonusPct + '% Crew Engineering Bonus' +
+        '</span>'
+      : '';
+
+    // TIME cell: if crew actually shave time off this recipe, show only
+    // the reduced time (highlighted) — the base is visible in the recipe
+    // list already, no need to repeat. Otherwise show the base as usual.
+    const timeDisplay = sameDays
+      ? '<span class="base">' + r.days + 'd base</span>'
+      : '<span class="actual">' + act + 'd</span>';
+
+    // Deadline overrun warning — craft would finish after arrival.
+    const finishDay = STATE.tripDay + act;
+    const overrunBy = finishDay - STATE.arrivalDay;
+    const overrunWarn = overrunBy > 0
+      ? '<div class="fb-warn overrun">⚠ Finishes day ' + finishDay +
+        ' · <strong>' + overrunBy + 'd past arrival</strong></div>'
+      : '';
+
+    // Wear threshold warning — will push wear past service or break.
+    const postWear = Math.min(100, STATE.wear + r.wear);
+    let wearWarn = '';
+    if (postWear >= 100) {
+      wearWarn = '<div class="fb-warn wear-crit">⚠ Will break the fab (100% wear) · repair needed at next station</div>';
+    } else if (postWear >= 80 && STATE.wear < 80) {
+      wearWarn = '<div class="fb-warn wear-warn">⚠ Will push wear to ' + postWear + '% · service soon</div>';
+    }
+
+    meta.innerHTML =
+      '<div class="row">' +
+        '<span class="label">TIME</span>' +
+        timeDisplay +
+        bonusSpan +
+      '</div>' +
+      overrunWarn +
+      '<div class="row">' +
+        '<span class="label">WEAR</span>' +
+        '<span class="wear-add">+' + r.wear + '%</span>' +
+      '</div>' +
+      wearWarn;
+
+    // CRAFT button — enabled only if canCraft() true.
+    const btn = $('fb-craft-btn');
+    const lock = recipeLockState(r);
+    if (lock === 'locked-crew') {
+      btn.classList.add('locked');
+      btn.textContent = 'LOCKED · CREW';
+    } else if (lock === 'locked-purchase') {
+      btn.classList.add('locked');
+      btn.textContent = 'LOCKED · BLUEPRINT';
+    } else if (!fabFunctional()) {
+      btn.classList.add('locked');
+      btn.textContent = 'FAB BROKEN';
+    } else if (!hasMaterials(r)) {
+      btn.classList.add('locked');
+      btn.textContent = 'MISSING MATERIALS';
+    } else if (STATE.craft) {
+      btn.classList.add('locked');
+      btn.textContent = 'IN PROGRESS…';
+    } else {
+      btn.classList.remove('locked');
+      btn.textContent = 'CRAFT';
+    }
+  }
+
+  // ═════ Fabricator spritesheet ═══════════════════════════════
+  // Frames cut out of sprites/fabricator/spritesheet_fabricator.png
+  // (516×390 sheet, each frame 256×128). idle = at-rest, broken =
+  // worn-out, running1–4 = the 4-frame activity loop (chase-pattern
+  // side lights CW + dials ticking).
+  const FAB_FRAMES = {
+    broken:    { x: 1,   y: 1   },
+    idle:      { x: 1,   y: 131 },
+    running1:  { x: 1,   y: 261 },
+    running2:  { x: 259, y: 1   },
+    running3:  { x: 259, y: 131 },
+    running4:  { x: 259, y: 261 }
+  };
+  const FAB_RUN_LOOP = ['running1','running2','running3','running4'];
+  const FAB_RUN_MS   = 140;   // per-frame interval of the running loop
+
+  // Frame is 256×128. --fab-slot-size is the slot HEIGHT; width = 2×.
+  // Scale factor = slot_height / 128.
+  function setFabFrame(name) {
+    const f = FAB_FRAMES[name]; if (!f) return;
+    const h = parseFloat(getComputedStyle(document.documentElement)
+                         .getPropertyValue('--fab-slot-size')) || 128;
+    const scale = h / 128;
+    $('fb-slot').style.backgroundPosition =
+      -(f.x * scale) + 'px ' + -(f.y * scale) + 'px';
+  }
+
+  let runAnimTimer = null;
+  let runAnimIdx = 0;
+  function startRunAnim() {
+    if (runAnimTimer) return;   // already running
+    runAnimIdx = 0;
+    setFabFrame(FAB_RUN_LOOP[0]);
+    runAnimTimer = setInterval(() => {
+      runAnimIdx = (runAnimIdx + 1) % FAB_RUN_LOOP.length;
+      setFabFrame(FAB_RUN_LOOP[runAnimIdx]);
+    }, FAB_RUN_MS);
+  }
+  function stopRunAnim() {
+    if (runAnimTimer) {
+      clearInterval(runAnimTimer);
+      runAnimTimer = null;
+    }
+  }
+
+  // ═════ Wear + status ═══════════════════════════════════════
+  // Wear overlay (segmented, depleting) + status line + frame choice.
+  function renderWear() {
+    // Depleting gauge: 0% wear → 10 segments lit; 100% wear → 0 lit.
+    // ceil(health / 10) so 1% of health still shows one segment.
+    const overlay = $('fb-wear-overlay');
+    const broken = !fabFunctional();
+    overlay.classList.toggle('hidden', broken);
+    if (!broken) {
+      const lit = Math.ceil(Math.max(0, 100 - STATE.wear) / 10);
+      const segs = overlay.querySelectorAll('.fb-wear-seg');
+      segs.forEach((seg, i) => seg.classList.toggle('lit', i < lit));
+    }
+
+    // Unit slot class + sprite frame.
+    const slotEl = $('fb-slot');
+    slotEl.classList.remove('state-idle', 'state-busy', 'state-done', 'state-broken');
+
+    if (!fabFunctional()) {
+      slotEl.classList.add('state-broken');
+      stopRunAnim();
+      setFabFrame('broken');
+    } else if (STATE.craft) {
+      slotEl.classList.add('state-busy');
+      startRunAnim();
+    } else {
+      slotEl.classList.add('state-idle');
+      stopRunAnim();
+      setFabFrame('idle');
+    }
+  }
+
+  // ═════ Header — day counter ════════════════════════════════
+  function renderHeader() {
+    // Day counter mirrors cruise: `DAY 47 · 153 LEFT`.
+    $('fb-trip-day').textContent  = STATE.tripDay;
+    const left = Math.max(0, STATE.arrivalDay - STATE.tripDay);
+    $('fb-days-left').textContent = left + ' LEFT';
+  }
+
+  // ═════ Craft flow ═══════════════════════════════════════════
+  // CRAFT button → deduct mats, tick wear, compute failure roll, either
+  // spark+broken or start the progress timer. A single craft is in
+  // flight at a time; further CRAFT clicks are locked while in progress.
+  window.craftSelected = function() {
+    const r = RECIPES.find(x => x.id === STATE.selectedId);
+    if (!r || !canCraft(r)) return;
+
+    // Auto-claim any unclaimed output from the last craft so the
+    // output bay is clear before this one finishes.
+    autoClaimIfPending();
+
+    // Deduct materials (demo: just update state).
+    for (const [mat, qty] of r.inputs) {
+      STATE.stock[mat] = Math.max(0, (STATE.stock[mat] || 0) - qty);
+      const el = $('c-mat-' + mat);
+      if (el) el.value = STATE.stock[mat];
+    }
+    // Apply wear.
+    STATE.wear = Math.min(100, STATE.wear + r.wear);
+    $('c-wear').value = Math.round(STATE.wear);
+    $('v-wear').textContent = Math.round(STATE.wear);
+
+    // Fail roll — 0.5% base + up to +5% scaling past wear=50. Over 80%
+    // wear this gets nasty.
+    const failChance = 0.005 + Math.max(0, (STATE.wear - 50) / 100) * 0.005;
+    if (Math.random() < failChance) {
+      breakFab();
+      console.log('Craft failed: fab broken mid-cycle.');
+      renderAll();
+      return;
+    }
+
+    // Success path — kick off the craft. Timestamp-driven so the
+    // progress bar can animate smoothly per-frame rather than
+    // stepping at day boundaries.
+    const totalDays = actualDays(r.days);
+    STATE.craft = {
+      recipeId:  r.id,
+      daysTotal: totalDays,
+      startMs:   performance.now(),
+      timer:     null,
+      rafId:     null
+    };
+    // Progress strip visible + labelled.
+    $('fb-progress').classList.add('active');
+    $('fb-progress-item').textContent = r.output.name.toUpperCase();
+    updateProgressUI();
+
+    // Timeout for the NEXT day boundary (advances trip calendar) +
+    // rAF loop for smooth fill animation.
+    scheduleNextTick();
+    startProgressLoop();
+    renderAll();
+  };
+
+  // Start the craft timers: a setTimeout per in-game day (fires
+  // advanceCraftDay → bumps trip calendar, maybe completes), plus a
+  // rAF loop that continuously redraws the progress fill so the bar
+  // animates smoothly rather than stepping at day boundaries.
+  function scheduleNextTick() {
+    if (!STATE.craft) return;
+    const daysDone = currentDaysDone();
+    const elapsed  = performance.now() - STATE.craft.startMs;
+    const nextDayAt = (daysDone + 1) * STATE.msPerDay;
+    const delay    = Math.max(0, nextDayAt - elapsed);
+    clearTimeout(STATE.craft.timer);
+    STATE.craft.timer = setTimeout(() => {
+      advanceCraftDay();
+      scheduleNextTick();
+    }, delay);
+  }
+
+  function startProgressLoop() {
+    if (!STATE.craft) return;
+    const tick = () => {
+      if (!STATE.craft) return;
+      if (PauseBus.paused) { STATE.craft.rafId = requestAnimationFrame(tick); return; }
+      updateProgressUI();
+      STATE.craft.rafId = requestAnimationFrame(tick);
+    };
+    STATE.craft.rafId = requestAnimationFrame(tick);
+  }
+  function stopProgressLoop() {
+    if (STATE.craft && STATE.craft.rafId) {
+      cancelAnimationFrame(STATE.craft.rafId);
+      STATE.craft.rafId = null;
+    }
+  }
+
+  function currentDaysDone() {
+    if (!STATE.craft) return 0;
+    const elapsed = performance.now() - STATE.craft.startMs;
+    return Math.min(STATE.craft.daysTotal,
+                    Math.floor(elapsed / STATE.msPerDay));
+  }
+
+  function advanceCraftDay() {
+    if (!STATE.craft) return;
+    // Bump the shared trip calendar + pulse the day number.
+    STATE.tripDay++;
+    const dEl = $('fb-trip-day');
+    dEl.textContent = STATE.tripDay;
+    dEl.classList.remove('ticking');
+    void dEl.offsetWidth;
+    dEl.classList.add('ticking');
+
+    if (currentDaysDone() >= STATE.craft.daysTotal) {
+      completeCraft();
+    }
+  }
+
+  // Manual day tick from the dev panel — advances by compressing the
+  // craft's start timestamp back by one full day's worth of ms.
+  window.tickDay = function() {
+    if (!STATE.craft) return;
+    STATE.craft.startMs -= STATE.msPerDay;
+    clearTimeout(STATE.craft.timer);
+    advanceCraftDay();
+    scheduleNextTick();
+  };
+
+  function updateProgressUI() {
+    if (!STATE.craft) return;
+    const elapsed = performance.now() - STATE.craft.startMs;
+    const totalMs = STATE.craft.daysTotal * STATE.msPerDay;
+    const pct = Math.min(100, (elapsed / totalMs) * 100);
+    $('fb-progress-fill').style.width = pct + '%';
+    const dDone = Math.min(STATE.craft.daysTotal, Math.floor(elapsed / STATE.msPerDay));
+    $('fb-progress-days').textContent = dDone + 'd / ' + STATE.craft.daysTotal + 'd';
+  }
+
+  // Cancel an in-flight craft. Refunds materials in full; incurred
+  // wear stays (the fab already spun up); days that ticked stay spent
+  // (time is gone). No output produced.
+  window.cancelCraft = function() {
+    if (!STATE.craft) return;
+    const r = RECIPES.find(x => x.id === STATE.craft.recipeId);
+    if (r) {
+      for (const [mat, qty] of r.inputs) {
+        STATE.stock[mat] = (STATE.stock[mat] || 0) + qty;
+        const el = $('c-mat-' + mat);
+        if (el) el.value = STATE.stock[mat];
+      }
+      console.log('Craft cancelled. Materials refunded for ' + r.name + '; wear held.');
+    }
+    clearTimeout(STATE.craft.timer);
+    stopProgressLoop();
+    STATE.craft = null;
+    // Portrait back to idle; kill anim.
+    const slot = $('fb-slot');
+    slot.classList.remove('state-busy', 'state-done');
+    slot.classList.add('state-idle');
+    stopRunAnim();
+    setFabFrame('idle');
+    setProgressIdle();
+    renderAll();
+  };
+
+  // Drop the progress strip back to its muted idle look.
+  function setProgressIdle() {
+    $('fb-progress').classList.remove('active');
+    $('fb-progress-item').textContent = 'IDLE';
+    $('fb-progress-days').textContent = '—';
+    $('fb-progress-fill').style.width = '0%';
+  }
+
+  function completeCraft() {
+    const r = RECIPES.find(x => x.id === STATE.craft.recipeId);
+    const out = r.output;
+    // Brief done-flash on the fab slot — stop the run anim, hold on
+    // the idle frame under the green done-flash brightness kick.
+    const slot = $('fb-slot');
+    slot.classList.remove('state-busy', 'state-idle');
+    slot.classList.add('state-done');
+    stopRunAnim();
+    setFabFrame('idle');
+    // Floating badge — still fires briefly as a celebration flourish.
+    const badge = $('fb-badge');
+    badge.textContent = '+' + out.count + ' ' + out.name.toUpperCase();
+    badge.classList.remove('fire');
+    void badge.offsetWidth;
+    badge.classList.add('fire');
+
+    clearTimeout(STATE.craft.timer);
+    stopProgressLoop();
+    // Snap the counter + bar to the final completed state. The rAF
+    // loop's last tick can land one frame short of a boundary (e.g.
+    // `1d / 2d` at 100% fill) because floor() rounds elapsed-ms down.
+    // Force the full read before tearing the strip down.
+    $('fb-progress-days').textContent = STATE.craft.daysTotal + 'd / ' + STATE.craft.daysTotal + 'd';
+    $('fb-progress-fill').style.width = '100%';
+    STATE.craft = null;
+    setProgressIdle();
+
+    // Park the finished item in the output slot — sits there pulsing +
+    // floating until the player clicks to claim (moves to cargo).
+    showOutputItem(r);
+
+    // Return to idle after the done-flash window.
+    setTimeout(() => {
+      slot.classList.remove('state-done');
+      renderAll();
+    }, 650);
+  }
+
+  // ═════ Output-item slot ═════════════════════════════════════
+  // Called on craft complete. Renders either the sprite or emoji
+  // fallback inside the pulsing output slot. Player clicks to claim.
+  function showOutputItem(recipe) {
+    STATE.pendingOutput = recipe;
+    const slot = $('fb-output-slot');
+    const emo  = $('fb-output-emoji');
+    if (recipe.output.sprite) {
+      slot.style.setProperty('--output-sprite', "url('" + recipe.output.sprite + "')");
+      emo.textContent = '';
+    } else {
+      slot.style.setProperty('--output-sprite', 'none');
+      emo.textContent = recipe.output.icon || '📦';
+    }
+    slot.title = 'Claim ' + recipe.output.count + '× ' +
+                 recipe.output.name + ' → cargo';
+    slot.classList.add('ready');
+  }
+  window.claimOutput = function(animated = true) {
+    if (!STATE.pendingOutput) return;
+    const r = STATE.pendingOutput;
+    console.log('+' + r.output.count + ' ' + r.output.name + ' → cargo');
+    STATE.pendingOutput = null;
+    const slot = $('fb-output-slot');
+
+    const finish = () => {
+      slot.classList.remove('claimed');
+      // If a new craft completed mid-animation, showOutputItem has already
+      // taken over the slot — leave its .ready + sprite alone.
+      if (!STATE.pendingOutput) {
+        slot.classList.remove('ready');
+        $('fb-output-emoji').textContent = '';
+        slot.style.removeProperty('--output-sprite');
+      }
+    };
+
+    if (animated && slot.classList.contains('ready')) {
+      slot.classList.add('claimed');
+      slot.addEventListener('animationend', finish, { once: true });
+    } else {
+      finish();
+    }
+  };
+  // Any new craft auto-claims a pending output so the bay is clear.
+  // Skip the pickup animation here — the new item is about to appear.
+  function autoClaimIfPending() {
+    if (STATE.pendingOutput) claimOutput(false);
+  }
+
+  function breakFab() {
+    STATE.broken = true;
+    $('c-broken').checked = true;
+    // Spark burst.
+    const field = $('fb-spark-field');
+    for (let i = 0; i < 14; i++) {
+      const s = document.createElement('span');
+      s.className = 'fb-spark';
+      s.style.setProperty('--sx', ((Math.random() - 0.5) * 120) + 'px');
+      s.style.setProperty('--sy', (-20 - Math.random() * 80) + 'px');
+      s.style.animationDelay = (Math.random() * 120) + 'ms';
+      field.appendChild(s);
+      setTimeout(() => s.remove(), 900);
+    }
+    if (STATE.craft) {
+      clearTimeout(STATE.craft.timer);
+      stopProgressLoop();
+      STATE.craft = null;
+      setProgressIdle();
+    }
+  }
+
+  // ═════ Simulate buttons ═══════════════════════════════════
+  window.instantCraft = function() {
+    if (!STATE.craft) {
+      // Start then immediately finish.
+      craftSelected();
+      if (!STATE.craft) return;    // craftSelected rejected (locked etc.)
+    }
+    clearTimeout(STATE.craft.timer);
+    STATE.craft.daysDone = STATE.craft.daysTotal - 1;
+    advanceCraftDay();
+  };
+  window.resetFab = function() {
+    if (STATE.craft) {
+      clearTimeout(STATE.craft.timer);
+      STATE.craft = null;
+      setProgressIdle();
+    }
+    STATE.wear = 0;
+    STATE.broken = false;
+    $('c-wear').value = 0;
+    $('v-wear').textContent = 0;
+    $('c-broken').checked = false;
+    for (const mat of Object.keys(STATE.stock)) {
+      STATE.stock[mat] = 10;
+      const el = $('c-mat-' + mat);
+      if (el) el.value = 10;
+    }
+    renderAll();
+  };
+  window.repairFab = function() {
+    STATE.wear = 0;
+    STATE.broken = false;
+    $('c-wear').value = 0;
+    $('v-wear').textContent = 0;
+    $('c-broken').checked = false;
+    renderAll();
+  };
+
+  // ═════ Render pipeline ═══════════════════════════════════
+  function renderAll() {
+    renderRecipeList();
+    renderDetail();
+    renderWear();
+    renderHeader();
+  }
+
+  // ═════ Sort / filter dropdown wiring ══════════════════════
+  // Custom dropdown (no native <select> per design-system rule).
+  // Click the trigger → opens a flyout. Click an option → sets the
+  // value + closes. Outside-click closes. Only one dropdown open
+  // at a time.
+  window.toggleDropdown = function(id, e) {
+    if (e) e.stopPropagation();
+    const dd = $(id);
+    const wasOpen = dd.classList.contains('open');
+    // Close all first (single-open invariant).
+    document.querySelectorAll('.fb-dd').forEach(d => d.classList.remove('open'));
+    if (!wasOpen) dd.classList.add('open');
+  };
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.fb-dd').forEach(d => d.classList.remove('open'));
+  });
+
+  // Label text shown in the trigger for each value.
+  const SORT_LABEL   = { name:'Name', time:'Time', complexity:'Complexity' };
+  const FILTER_LABEL = { all:'All',   unlocked:'Unlocked', craftable:'Craftable now' };
+
+  document.querySelectorAll('#fb-dd-sort .fb-dd-menu button').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      STATE.sort = btn.dataset.sort;
+      document.querySelectorAll('#fb-dd-sort .fb-dd-menu button')
+        .forEach(b => b.classList.toggle('active', b === btn));
+      $('fb-dd-sort-value').textContent = SORT_LABEL[STATE.sort] || STATE.sort;
+      $('fb-dd-sort').classList.remove('open');
+      renderRecipeList();
+    });
+  });
+  document.querySelectorAll('#fb-dd-filter .fb-dd-menu button').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      STATE.filter = btn.dataset.filter;
+      document.querySelectorAll('#fb-dd-filter .fb-dd-menu button')
+        .forEach(b => b.classList.toggle('active', b === btn));
+      $('fb-dd-filter-value').textContent = FILTER_LABEL[STATE.filter] || STATE.filter;
+      $('fb-dd-filter').classList.remove('open');
+      renderRecipeList();
+    });
+  });
+
+  // ═════ Controls wiring ═══════════════════════════════════
+  const STYLE_DEFAULTS = {
+    'c-modal-w': '880', 'c-modal-h': '600',
+    'c-title-size': '16',
+    'c-modal-border': '#6A5E4E', 'c-title': '#CFBB88',
+    'c-recipe-w': '400', 'c-slot-size': '220', 'c-section-gap': '10',
+    'c-body-size': '16', 'c-d-title': '10', 'c-mono-size': '18',
+    'c-detail-name': '11', 'c-meta-row-gap': '5',
+    'c-wear': '0', 'c-ms-per-day': '2000',
+    'c-trip-day': '47', 'c-arrival-day': '200'
+  };
+
+  function applyStyles() {
+    const setPx = (name, id) => {
+      const v = $(id).value;
+      root.style.setProperty(name, v + 'px');
+      const s = $('v-' + id.slice(2));
+      if (s) s.textContent = v;
+    };
+    setPx('--modal-width',       'c-modal-w');
+    setPx('--modal-height',      'c-modal-h');
+    setPx('--header-title-size', 'c-title-size');
+    root.style.setProperty('--modal-border',       $('c-modal-border').value);
+    root.style.setProperty('--header-title-color', $('c-title').value);
+
+    setPx('--recipe-list-width', 'c-recipe-w');
+    setPx('--fab-slot-size',     'c-slot-size');
+    setPx('--section-gap',       'c-section-gap');
+    setPx('--body-size',         'c-body-size');
+    setPx('--title-size',        'c-d-title');
+    setPx('--mono-size',         'c-mono-size');
+    setPx('--detail-name-size',  'c-detail-name');
+    setPx('--meta-row-gap',      'c-meta-row-gap');
+
+    $('v-ms-per-day').textContent = $('c-ms-per-day').value;
+    $('v-wear').textContent = $('c-wear').value;
+
+    for (const [id, def] of Object.entries(STYLE_DEFAULTS)) {
+      const el = $(id); if (!el) continue;
+      const v = $('v-' + id.slice(2));
+      if (!v) continue;
+      v.classList.toggle('modified', String(el.value).toLowerCase() !== String(def).toLowerCase());
+    }
+  }
+
+  function apply() {
+    // Crew aboard
+    STATE.aboard.osei      = $('c-osei').checked;
+    STATE.aboard.kazuki    = $('c-kazuki').checked;
+    STATE.aboard.vasquez   = $('c-vasquez').checked;
+    STATE.aboard.reeves    = $('c-reeves').checked;
+    STATE.aboard.reyes     = $('c-reyes').checked;
+    STATE.aboard.hargrove  = $('c-hargrove').checked;
+    STATE.aboard.tanaka    = $('c-tanaka').checked;
+    STATE.captainBg        = $('c-captain').value;
+
+    // Fab state
+    STATE.wear   = parseInt($('c-wear').value) || 0;
+    STATE.broken = $('c-broken').checked;
+
+    // Material stock (numbers)
+    for (const mat of Object.keys(STATE.stock)) {
+      const el = $('c-mat-' + mat);
+      if (el) STATE.stock[mat] = Math.max(0, parseInt(el.value) || 0);
+    }
+
+    // Purchases
+    STATE.purchased.advanced_sensor  = $('c-buy-advanced_sensor').checked;
+    STATE.purchased.xeno_sample_kit  = $('c-buy-xeno_sample_kit').checked;
+    STATE.purchased.reactor_core     = $('c-buy-reactor_core').checked;
+
+    // Craft pacing
+    STATE.msPerDay = parseInt($('c-ms-per-day').value) || 2000;
+
+    // Trip calendar — dev sliders set baseline; a running craft
+    // advances tripDay on its own so manual edits during a craft
+    // are fine but get overwritten on the next day tick.
+    STATE.tripDay    = parseInt($('c-trip-day').value)    || 47;
+    STATE.arrivalDay = parseInt($('c-arrival-day').value) || 200;
+    $('v-trip-day').textContent    = STATE.tripDay;
+    $('v-arrival-day').textContent = STATE.arrivalDay;
+
+    applyStyles();
+    renderAll();
+  }
+
+  // Auto-add hex readouts to color inputs (matches other demos)
+  document.querySelectorAll('#controls input[type="color"]').forEach(input => {
+    if (input.parentElement.querySelector('.val')) return;
+    const span = document.createElement('span');
+    span.className = 'val';
+    span.textContent = input.value.toUpperCase();
+    input.parentElement.appendChild(span);
+    input.addEventListener('input', () => { span.textContent = input.value.toUpperCase(); });
+  });
+
+  // Auto-wire: inputs + selects rerun apply()
+  document.querySelectorAll('#controls input, #controls select').forEach(el =>
+    el.addEventListener('input', apply)
+  );
+  document.querySelectorAll('#controls input[type="checkbox"]').forEach(el =>
+    el.addEventListener('change', apply)
+  );
+
+  window.resetStyleDefaults = function() {
+    for (const [id, val] of Object.entries(STYLE_DEFAULTS)) {
+      const el = $(id); if (!el) continue;
+      el.value = val;
+    }
+    applyStyles();
+  };
+
+  // ═════ Modal open/close ═════════════════════════════════
+  window.closeModal = function() { document.body.classList.remove('modal-open'); };
+  window.reopenModal = function() {
+    document.body.classList.add('modal-open');
+    renderAll();
+  };
+  // Arrow keys cycle through selectable recipes (skipping locked rows);
+  // Enter crafts the current selection if craftable; Escape closes the
+  // modal. Only active while the modal is open AND no dropdown is.
+  window.addEventListener('keydown', (e) => {
+    if (!document.body.classList.contains('modal-open')) return;
+    if (document.querySelector('.fb-dd.open')) return;  // let dropdowns own keys
+    if (e.key === 'Escape') { closeModal(); return; }
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const selectable = filterRecipes(sortRecipes(RECIPES))
+        .filter(r => recipeLockState(r) === 'available');
+      if (selectable.length === 0) return;
+      const curIdx = selectable.findIndex(r => r.id === STATE.selectedId);
+      const dir    = e.key === 'ArrowDown' ? 1 : -1;
+      const next   = (curIdx + dir + selectable.length) % selectable.length;
+      STATE.selectedId = selectable[next].id;
+      renderRecipeList();
+      renderDetail();
+      e.preventDefault();
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      const r = RECIPES.find(x => x.id === STATE.selectedId);
+      if (r && canCraft(r)) { craftSelected(); e.preventDefault(); }
+      return;
+    }
+  });
+
+  // ═════ Boot ═════════════════════════════════════════════
+  applyStyles();
+  renderAll();
+  document.body.classList.add('modal-open');
+})();
+</script>
+</body>
+</html>

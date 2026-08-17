@@ -1,0 +1,244 @@
+/* ============================================================
+   screen-setup — migrated from demo-setup.html (dev-controls
+   panel and scale-root harness stripped; everything scoped under
+   #screen-setup so it can't leak into other screens). Tunable
+   CSS vars keep the demo's default values baked in as literals
+   since there's no dev panel driving them anymore.
+   ============================================================ */
+
+#screen-setup {
+  --flavor-color: #8cc890;
+  --flavor-size: 18px;
+  --flavor-border: rgba(140,200,144,0.15);
+
+  --pip-active: #8cc890;
+  --pip-inactive-bg: #0a0e14;
+  --pip-inactive-border: #2a3040;
+  --pip-size: 12px;
+
+  --card-led-active: #8cc890;
+  --card-led-inactive: #2a3040;
+  --card-led-size: 6px;
+
+  --card-padx: 14px;
+  --card-pady: 10px;
+  --card-gap: 12px;
+  --card-rad: 6px;
+  --card-border: #2a3040;
+  --card-bg: rgba(20,28,40,0.6);
+  --card-icon-size: 48px;
+  --card-name-size: 8px;
+  --card-name-color: #8898a8;
+  --card-desc-size: 17px;
+  --card-desc-color: #7a8898;
+  --card-stat-size: 15px;
+  --card-stat-color: #5a7a6a;
+
+  background: linear-gradient(180deg, #0e1520 0%, #080c14 100%);
+}
+
+#screen-setup .halftone {
+  position: absolute; pointer-events: none; z-index: 2;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(140,200,144,0.06) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+#screen-setup .halftone.bl { bottom: 0; left: 0; mask-image: radial-gradient(ellipse at 0% 100%, black 0%, transparent 70%); -webkit-mask-image: radial-gradient(ellipse at 0% 100%, black 0%, transparent 70%); }
+#screen-setup .halftone.tr { top: 0; right: 0; mask-image: radial-gradient(ellipse at 100% 0%, black 0%, transparent 70%); -webkit-mask-image: radial-gradient(ellipse at 100% 0%, black 0%, transparent 70%); }
+
+#setup-stars { position: absolute; inset: 0; pointer-events: none; }
+
+#setup-screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+}
+
+#setup-header {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  border-bottom: 2px solid var(--gold);
+  background: linear-gradient(180deg, #141a28 0%, #10141e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#setup-step-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(200,168,90,0.3);
+}
+
+#setup-progress { display: flex; gap: 8px; align-items: center; }
+
+#screen-setup .progress-pip {
+  width: var(--pip-size); height: var(--pip-size);
+  border: 2px solid var(--pip-inactive-border);
+  border-radius: 50%;
+  background: var(--pip-inactive-bg);
+  transition: all 0.3s;
+}
+#screen-setup .progress-pip.done {
+  background: var(--pip-active);
+  border-color: var(--pip-active);
+  box-shadow: 0 0 6px rgba(140,200,144,0.4);
+}
+#screen-setup .progress-pip.active {
+  border-color: var(--gold);
+  background: var(--gold);
+  animation: setup-pip-pulse 1.8s ease-in-out infinite;
+}
+@keyframes setup-pip-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(200,168,90,0.3); filter: brightness(1); }
+  50%      { box-shadow: 0 0 10px rgba(200,168,90,0.7); filter: brightness(1.15); }
+}
+
+#screen-setup .pip-line { width: 16px; height: 2px; background: var(--pip-inactive-border); transition: background 0.3s; }
+#screen-setup .pip-line.done { background: var(--pip-active); }
+
+#setup-content { flex: 1; display: flex; overflow: hidden; }
+
+#setup-left {
+  width: 340px;
+  padding: 18px 20px;
+  border-right: 2px solid rgba(200,168,90,0.25);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: rgba(10,14,20,0.5);
+}
+
+#setup-category-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 13px;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(200,168,90,0.3);
+  letter-spacing: 3px;
+  margin-bottom: 16px;
+}
+
+#setup-description { font-size: 20px; line-height: 1.5; color: var(--body); flex: 1; min-height: 4.5em; }
+
+#setup-flavor {
+  font-size: var(--flavor-size);
+  color: var(--flavor-color);
+  font-style: italic;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--flavor-border);
+  line-height: 1.4;
+  min-height: 2.8em;
+}
+
+#setup-right {
+  flex: 1;
+  padding: 14px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
+}
+
+#screen-setup .sel-card {
+  padding: var(--card-pady) var(--card-padx);
+  border: 2px solid var(--card-border);
+  border-radius: var(--card-rad);
+  background: var(--card-bg);
+  cursor: var(--cursor-hand, pointer);
+  transition: all 0.15s;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+#screen-setup .sel-card:hover { background: rgba(140,200,144,0.04); border-color: rgba(140,200,144,0.3); }
+#screen-setup .sel-card.selected {
+  background: linear-gradient(135deg, rgba(232,216,160,0.08) 0%, rgba(140,200,144,0.06) 100%);
+  border-color: var(--gold);
+  box-shadow: 0 0 10px rgba(200,168,90,0.1), inset 0 0 0 1px rgba(200,168,90,0.1);
+}
+#screen-setup .sel-card .card-led {
+  width: var(--card-led-size); height: var(--card-led-size);
+  border-radius: 50%;
+  background: var(--card-led-inactive);
+  flex-shrink: 0;
+  margin-top: 6px;
+  transition: all 0.2s;
+}
+#screen-setup .sel-card.selected .card-led { background: var(--card-led-active); box-shadow: 0 0 6px rgba(140,200,144,0.5); }
+
+#screen-setup .sel-card .card-icon {
+  flex-shrink: 0;
+  width: var(--card-icon-size);
+  height: var(--card-icon-size);
+  font-size: calc(var(--card-icon-size) * 0.72);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+#screen-setup .sel-card .card-icon.has-sprite {
+  width: var(--card-icon-size);
+  height: var(--card-icon-size);
+  padding: 0;
+  line-height: 0;
+  font-size: 0;
+  color: transparent;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+#screen-setup .sel-card .card-info { flex: 1; }
+#screen-setup .sel-card .card-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--card-name-size);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--card-name-color);
+  margin-bottom: 4px;
+  transition: color 0.15s;
+}
+#screen-setup .sel-card.selected .card-name { color: var(--gold); text-shadow: 0 0 6px rgba(200,168,90,0.3); }
+#screen-setup .sel-card .card-desc { font-size: var(--card-desc-size); color: var(--card-desc-color); line-height: 1.3; }
+#screen-setup .sel-card .card-stat { font-size: var(--card-stat-size); color: var(--card-stat-color); margin-top: 3px; }
+#screen-setup .sel-card.crew-card { padding-top: calc(var(--card-pady) - 2px); padding-bottom: calc(var(--card-pady) - 2px); }
+
+#ship-name-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 50px 20px; }
+#ship-name-input {
+  background: rgba(20,28,40,0.8);
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  color: var(--cream);
+  font-family: 'VT323', monospace;
+  font-size: 26px;
+  letter-spacing: 2px;
+  text-align: center;
+  padding: 10px 20px;
+  width: 400px;
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(200,168,90,0.1);
+}
+#ship-name-input:focus { border-color: var(--teal); box-shadow: 0 0 12px rgba(140,200,144,0.15), inset 0 0 0 1px rgba(140,200,144,0.1); }
+#ship-name-input::placeholder { color: #3a4a50; }
+
+.ship-bob { animation: ship-bob 3.6s ease-in-out infinite; }
+@keyframes ship-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+#setup-footer {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  border-top: 2px solid var(--gold);
+  background: linear-gradient(180deg, #141a28 0%, #10141e 100%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#crew-count-badge { font-family: 'Press Start 2P', cursive; font-size: 8px; color: #5a7a6a; letter-spacing: 1px; }

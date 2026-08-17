@@ -1,0 +1,1141 @@
+{
+  "_meta": {
+    "game": "Trans-plant",
+    "version": "0.7",
+    "description": "Machine-readable source of truth for all tags. Every module validates against this file. Update status fields as modules are written.",
+    "status_values": {
+      "empty": "Defined, zero modules written yet",
+      "populated": "At least one module uses this tag value",
+      "deprecated": "Removed from active use, kept for history",
+      "engine_required": "Engine needs at least one module with this tag or it breaks"
+    }
+  },
+  "difficulty": {
+    "description": "Controls event pool weighting per map difficulty and per module",
+    "multiple_allowed": false,
+    "values": {
+      "easy": {
+        "status": "populated",
+        "notes": "Majority weighting on Lunar maps"
+      },
+      "medium": {
+        "status": "populated",
+        "notes": "Balanced, appears on Mars+ maps"
+      },
+      "hard": {
+        "status": "populated",
+        "notes": "Majority on Interstellar maps, sparse on Mars"
+      },
+      "ultra": {
+        "status": "empty",
+        "notes": "Interstellar only, late-journey, genuinely unfair"
+      }
+    }
+  },
+  "tone": {
+    "description": "Emotional/comedic register of the module",
+    "multiple_allowed": true,
+    "values": {
+      "absurd": {
+        "status": "populated",
+        "notes": "Douglas Adams, Far Side register"
+      },
+      "grim": {
+        "status": "populated",
+        "notes": "Real consequences, played straight"
+      },
+      "corporate": {
+        "status": "populated",
+        "notes": "Bureaucratic, sponsored, HR-flavored"
+      },
+      "horror": {
+        "status": "populated",
+        "notes": "Derelicts and void — earned, not cheap"
+      },
+      "heartwarming": {
+        "status": "populated",
+        "notes": "Rare — hits harder for being rare"
+      },
+      "cosmic": {
+        "status": "populated",
+        "notes": "Incomprehensible scale, Lovecraft for laughs"
+      },
+      "mundane": {
+        "status": "populated",
+        "notes": "The joke is that it's boring"
+      },
+      "corrupted": {
+        "status": "populated",
+        "notes": "Deep void exclusive — AI dialogue distorts"
+      }
+    }
+  },
+  "node_type": {
+    "description": "What kind of location this node represents on the map",
+    "multiple_allowed": true,
+    "values": {
+      "station": {
+        "status": "populated",
+        "notes": "Trade, repair, recruit, resupply"
+      },
+      "planet": {
+        "status": "populated",
+        "notes": "Resupply or disaster, usually both"
+      },
+      "derelict": {
+        "status": "populated",
+        "notes": "Abandoned ship — loot or horror"
+      },
+      "asteroid_field": {
+        "status": "populated",
+        "notes": "Mining node"
+      },
+      "anomaly": {
+        "status": "populated",
+        "notes": "Pure chaos event"
+      },
+      "nebula": {
+        "status": "populated",
+        "notes": "Navigation challenge"
+      },
+      "void": {
+        "status": "populated",
+        "engine_required": true,
+        "notes": "Interstellar only, deep-space"
+      },
+      "fork": {
+        "status": "populated",
+        "notes": "Branch decision point, not a destination"
+      },
+      "any": {
+        "status": "populated",
+        "notes": "Event can fire at any node type"
+      }
+    }
+  },
+  "trigger": {
+    "description": "Game state condition that enables or prioritizes an event",
+    "multiple_allowed": true,
+    "values": {
+      "any": {
+        "status": "populated"
+      },
+      "low_fuel": {
+        "status": "populated",
+        "threshold": "below 25%"
+      },
+      "low_food": {
+        "status": "populated",
+        "threshold": "below 25%"
+      },
+      "low_water": {
+        "status": "populated",
+        "threshold": "below 25%",
+        "notes": "Crop and crew hydration"
+      },
+      "low_o2": {
+        "status": "populated",
+        "threshold": "below 25%"
+      },
+      "low_hull": {
+        "status": "populated",
+        "threshold": "below 30%"
+      },
+      "low_morale": {
+        "status": "populated",
+        "threshold": "below 30%"
+      },
+      "crop_sick": {
+        "status": "populated",
+        "threshold": "crop health below sick_threshold",
+        "notes": "VA-origin: crop in danger"
+      },
+      "crop_dead": {
+        "status": "populated",
+        "notes": "Mission failure state — crop lost"
+      },
+      "fab_broken": {
+        "status": "populated",
+        "notes": "VA-origin: fabricator non-functional"
+      },
+      "fab_low": {
+        "status": "populated",
+        "threshold": "fab health below 30%",
+        "notes": "Fabricator in danger zone"
+      },
+      "crew_injured": {
+        "status": "populated"
+      },
+      "crew_dead": {
+        "status": "populated"
+      },
+      "solo_run": {
+        "status": "populated",
+        "notes": "Captain has 0 crew — madman mode"
+      },
+      "stowaway_aboard": {
+        "status": "populated",
+        "notes": "Stowaway event resolved, extra crew taken"
+      },
+      "post_combat": {
+        "status": "populated"
+      },
+      "at_station": {
+        "status": "deprecated"
+      },
+      "full_cargo": {
+        "status": "populated"
+      },
+      "empty_cargo": {
+        "status": "populated"
+      },
+      "journey_start": {
+        "status": "populated",
+        "notes": "First two legs only"
+      },
+      "journey_mid": {
+        "status": "populated",
+        "notes": "Middle third of the map"
+      },
+      "journey_end": {
+        "status": "populated",
+        "notes": "Final two legs only"
+      }
+    }
+  },
+  "branch_flavor": {
+    "description": "Character of a fork branch — weights node and event pools within that branch",
+    "multiple_allowed": false,
+    "values": {
+      "hostile": {
+        "status": "empty",
+        "notes": "Combat-heavy"
+      },
+      "lucrative": {
+        "status": "empty",
+        "notes": "Resource-rich, riskier"
+      },
+      "safe": {
+        "status": "empty",
+        "notes": "Slower, less eventful"
+      },
+      "unknown": {
+        "status": "empty",
+        "notes": "Player sees ??? — mystery branch"
+      },
+      "corporate": {
+        "status": "empty",
+        "notes": "Station-heavy, expensive"
+      },
+      "derelict_heavy": {
+        "status": "empty",
+        "notes": "Multiple derelict nodes"
+      },
+      "scientific": {
+        "status": "empty",
+        "notes": "Planet/anomaly heavy, instrument rewards"
+      },
+      "agricultural": {
+        "status": "empty",
+        "notes": "Planet stops with crop-relevant events"
+      }
+    }
+  },
+  "trail": {
+    "description": "Which difficulty/map tier this content is available on",
+    "multiple_allowed": true,
+    "values": {
+      "lunar": {
+        "status": "populated",
+        "notes": "Short map, 10 nodes, 1 fork, easy-weighted"
+      },
+      "mars": {
+        "status": "populated",
+        "notes": "Medium map, 13 nodes, 2 forks, balanced"
+      },
+      "interstellar": {
+        "status": "populated",
+        "notes": "Long map, 15 nodes, 3 forks, hard-weighted"
+      },
+      "any": {
+        "status": "empty",
+        "notes": "Available on all trails"
+      }
+    }
+  },
+  "requires_crew": {
+    "description": "Event option only appears if this crew role is aboard (captain background counts at reduced effectiveness)",
+    "multiple_allowed": true,
+    "values": {
+      "botanist": {
+        "status": "empty",
+        "notes": "Plant-whispering, crop care, species ID"
+      },
+      "engineer": {
+        "status": "empty",
+        "notes": "Hull/power repair, fabricator improvised repair"
+      },
+      "medic": {
+        "status": "empty",
+        "notes": "Crew health, injury recovery, treatment"
+      },
+      "pilot": {
+        "status": "empty",
+        "notes": "Navigation, fuel efficiency, evasion"
+      },
+      "chef": {
+        "status": "empty",
+        "notes": "Food efficiency, morale cooking, edibility judgment"
+      },
+      "xenobiologist": {
+        "status": "empty",
+        "notes": "Alien encounters, diplomatic options, biological samples"
+      },
+      "diplomat": {
+        "status": "empty",
+        "notes": "Negotiation, peaceful resolutions, station relations"
+      },
+      "any": {
+        "status": "empty",
+        "notes": "Any crew member satisfies this"
+      }
+    }
+  },
+  "captain_background": {
+    "description": "Captain's area of study — provides discounted skill checks vs. full crew specialist",
+    "multiple_allowed": false,
+    "values": {
+      "botanist": {
+        "status": "empty",
+        "skill_modifier": 0.5,
+        "notes": "Half the bonus of a crew botanist"
+      },
+      "engineer": {
+        "status": "empty",
+        "skill_modifier": 0.5
+      },
+      "medic": {
+        "status": "empty",
+        "skill_modifier": 0.5
+      },
+      "pilot": {
+        "status": "empty",
+        "skill_modifier": 0.5
+      },
+      "chef": {
+        "status": "empty",
+        "skill_modifier": 0.5
+      },
+      "xenobiologist": {
+        "status": "empty",
+        "skill_modifier": 0.5
+      },
+      "diplomat": {
+        "status": "empty",
+        "skill_modifier": 0.5
+      },
+      "merchant": {
+        "status": "empty",
+        "skill_modifier": 0.5,
+        "notes": "Station prices reduced, barter options"
+      },
+      "academic": {
+        "status": "empty",
+        "skill_modifier": 0.5,
+        "notes": "Research options, reveals hidden outcomes"
+      },
+      "veteran": {
+        "status": "empty",
+        "skill_modifier": 0.5,
+        "notes": "Combat bonuses, tactical assessment"
+      }
+    }
+  },
+  "requires_ai": {
+    "description": "Option or flavor text variant tied to specific ship AI",
+    "multiple_allowed": false,
+    "values": {
+      "aria": {
+        "status": "empty"
+      },
+      "marv": {
+        "status": "empty"
+      },
+      "rex": {
+        "status": "empty"
+      },
+      "chip": {
+        "status": "empty"
+      },
+      "ajoy": {
+        "status": "empty"
+      },
+      "any": {
+        "status": "empty"
+      }
+    }
+  },
+  "requires_item": {
+    "description": "Event option only appears if player has this item in cargo",
+    "multiple_allowed": true,
+    "values": {
+      "repair_kit": {
+        "status": "empty",
+        "source": "purchasable"
+      },
+      "gas_analyzer": {
+        "status": "empty",
+        "source": "purchasable"
+      },
+      "water_purifier": {
+        "status": "empty",
+        "source": "purchasable"
+      },
+      "geiger_counter": {
+        "status": "empty",
+        "source": "purchasable"
+      },
+      "soil_sampler": {
+        "status": "empty",
+        "source": "purchasable"
+      },
+      "portable_drill": {
+        "status": "empty",
+        "source": "purchasable"
+      },
+      "spectrometer": {
+        "status": "empty",
+        "source": "purchasable"
+      },
+      "medical_scanner": {
+        "status": "empty",
+        "source": "purchasable"
+      },
+      "pressure_suit": {
+        "status": "empty",
+        "source": "purchasable"
+      },
+      "solar_array": {
+        "status": "empty",
+        "source": "purchasable"
+      },
+      "emergency_beacon": {
+        "status": "empty",
+        "source": "purchasable"
+      },
+      "hull_patch": {
+        "status": "empty",
+        "source": "craftable",
+        "notes": "VA-origin: fabricator output"
+      },
+      "drive_coil": {
+        "status": "empty",
+        "source": "loot_only"
+      },
+      "o2_recycler": {
+        "status": "empty",
+        "source": "loot_only"
+      },
+      "repair_fabricator": {
+        "status": "empty",
+        "source": "loot_only",
+        "notes": "Upgrades the onboard fabricator"
+      },
+      "classified_cargo": {
+        "status": "empty",
+        "source": "loot_only"
+      },
+      "alien_seed_pod": {
+        "status": "empty",
+        "source": "event_reward",
+        "notes": "VA-origin: key for anomaly diplomatic gate"
+      },
+      "suspicious_fungus": {
+        "status": "empty",
+        "source": "event_reward",
+        "notes": "VA-origin: chef joke payoff chain"
+      },
+      "expanded_fuel_tank": {
+        "status": "empty",
+        "source": "purchasable",
+        "notes": "Ship upgrade"
+      },
+      "hull_plating": {
+        "status": "empty",
+        "source": "purchasable",
+        "notes": "Ship upgrade"
+      },
+      "insulated_cargo_bay": {
+        "status": "empty",
+        "source": "purchasable",
+        "notes": "Ship upgrade — food depletes slower"
+      },
+      "weapon_hardpoint": {
+        "status": "empty",
+        "source": "purchasable",
+        "notes": "Ship upgrade — minigame fire rate"
+      }
+    }
+  },
+  "minigame_type": {
+    "description": "Which arcade variant fires if event triggers a full minigame",
+    "multiple_allowed": false,
+    "values": {
+      "shooter_fixed": {
+        "status": "empty",
+        "notes": "Galaga — enemies come to you"
+      },
+      "shooter_360": {
+        "status": "empty",
+        "notes": "Asteroids — free rotation, mining"
+      },
+      "sidescroller": {
+        "status": "empty",
+        "notes": "Moon Patrol — chase"
+      },
+      "defense": {
+        "status": "empty",
+        "notes": "Space Invaders — hold the line"
+      },
+      "navigation": {
+        "status": "populated",
+        "notes": "Frogger — thread through hazards"
+      }
+    }
+  },
+  "microgame_type": {
+    "description": "Which repair/interaction micro-minigame fires inside an event (2-15 seconds)",
+    "multiple_allowed": false,
+    "values": {
+      "wrench": {
+        "status": "populated",
+        "notes": "Circular drag to tighten bolt — mechanical repair"
+      },
+      "bypass": {
+        "status": "empty",
+        "notes": "Connect colored wires — electrical failure"
+      },
+      "pressure_gauge": {
+        "status": "populated",
+        "notes": "Hold needle in green zone — O2/fuel lines"
+      },
+      "defibrillator": {
+        "status": "empty",
+        "notes": "Hit button when bars align — injured crew"
+      },
+      "airlock_seal": {
+        "status": "populated",
+        "notes": "Click center of shrinking circle — hull breach"
+      },
+      "override": {
+        "status": "populated",
+        "notes": "4-digit code puzzle — hacking/locked doors"
+      },
+      "negotiation_wobble": {
+        "status": "populated",
+        "notes": "Rhythm keys — diplomat events only"
+      },
+      "calibration": {
+        "status": "populated",
+        "notes": "Hold drifting crosshair on target — scanner/nav"
+      },
+      "drill_target": {
+        "status": "populated",
+        "notes": "VA-origin: timing minigame for mining stops"
+      },
+      "fab_align": {
+        "status": "populated",
+        "notes": "VA-origin: alignment game for fabrication attempts"
+      }
+    }
+  },
+  "event_presentation": {
+    "description": "How an event is displayed to the player",
+    "multiple_allowed": false,
+    "values": {
+      "modal": {
+        "status": "populated",
+        "notes": "Quick overlay on cruise screen, 2-4 choices"
+      },
+      "fullscreen": {
+        "status": "populated",
+        "notes": "Scene takeover with pixel art, narration, choices"
+      },
+      "minigame": {
+        "status": "empty",
+        "notes": "Hands control to arcade variant"
+      },
+      "microgame": {
+        "status": "empty",
+        "notes": "Hands control to repair/interaction variant"
+      }
+    }
+  },
+  "comm_mode": {
+    "description": "Visual treatment for a layer's subject/dialog presentation. Added during engine integration (Phase 3) to support demo-encounter.html's layered scenario schema — see resources/POOL_READINESS_AUDIT_HANDOFF.md item A4.",
+    "multiple_allowed": false,
+    "values": {
+      "in_person": {
+        "status": "empty",
+        "notes": "Default — clean portrait, no overlay"
+      },
+      "screen": {
+        "status": "populated",
+        "notes": "Scanline overlay + green-phosphor tint, for hails/viewscreen comms"
+      },
+      "corrupted": {
+        "status": "populated",
+        "notes": "Purple-shifted scanlines + head-glitch jitter, for void/cosmic-horror scenes"
+      }
+    }
+  },
+  "scene_type": {
+    "description": "Which pixel art image pool an event draws from",
+    "multiple_allowed": false,
+    "values": {
+      "station_interior": {
+        "status": "populated",
+        "min_variants_before_launch": 2
+      },
+      "planet_surface": {
+        "status": "populated",
+        "min_variants_before_launch": 3
+      },
+      "derelict_interior": {
+        "status": "populated",
+        "min_variants_before_launch": 2
+      },
+      "anomaly": {
+        "status": "populated",
+        "min_variants_before_launch": 2
+      },
+      "asteroid_field": {
+        "status": "populated",
+        "min_variants_before_launch": 2
+      },
+      "deep_void": {
+        "status": "populated",
+        "min_variants_before_launch": 2
+      },
+      "ship_interior": {
+        "status": "populated",
+        "min_variants_before_launch": 2
+      },
+      "growbay": {
+        "status": "populated",
+        "min_variants_before_launch": 2,
+        "notes": "VA-origin: where the crop lives"
+      },
+      "cruise": {
+        "status": "empty",
+        "min_variants_before_launch": 1,
+        "notes": "VA-origin: parallax travel screen"
+      }
+    }
+  },
+  "crop_type": {
+    "description": "Which crop the player selected at setup — affects resource drain, events, and endings",
+    "multiple_allowed": false,
+    "values": {
+      "wheat": {
+        "status": "empty",
+        "notes": "Reliable but monoculture-vulnerable"
+      },
+      "tomato": {
+        "status": "empty",
+        "notes": "Drama magnet, high food value, triggers tomato-specific events"
+      },
+      "sweet_potato": {
+        "status": "empty",
+        "notes": "NASA's pick — balanced, ship computer approves"
+      },
+      "soybean": {
+        "status": "empty",
+        "notes": "Nitrogen fixing — resists soil contamination events"
+      },
+      "zinnia": {
+        "status": "empty",
+        "notes": "No food value, high morale — hard mode on food, morale payoff"
+      }
+    }
+  },
+  "severity": {
+    "description": "Consequence tier of a dangerous event outcome — controls crew damage",
+    "multiple_allowed": false,
+    "values": {
+      "lethal": {
+        "status": "empty",
+        "notes": "Immediate crew death, triggers epitaph screen"
+      },
+      "injury": {
+        "status": "empty",
+        "notes": "Active skill disabled, passive halved"
+      },
+      "delayed": {
+        "status": "empty",
+        "notes": "Injured with ticking clock — crisis if untreated by next station"
+      }
+    }
+  },
+  "crew_display_state": {
+    "description": "Visual state of a crew slot icon in the UI",
+    "multiple_allowed": false,
+    "values": {
+      "healthy": {
+        "status": "empty"
+      },
+      "injured": {
+        "status": "empty"
+      },
+      "dead": {
+        "status": "empty"
+      }
+    }
+  },
+  "failure_type": {
+    "description": "How the run ends badly — each has its own ending screen",
+    "multiple_allowed": false,
+    "values": {
+      "no_fuel": {
+        "status": "populated",
+        "notes": "Stranded in space"
+      },
+      "crew_gone": {
+        "status": "populated",
+        "notes": "Nobody left to fly the ship"
+      },
+      "hull_zero": {
+        "status": "populated",
+        "notes": "Ship destroyed"
+      },
+      "mutiny": {
+        "status": "populated",
+        "notes": "Morale collapse, crew takes over"
+      },
+      "time_expired": {
+        "status": "populated",
+        "notes": "Colony slot lost — form letter received"
+      },
+      "crop_dead": {
+        "status": "populated",
+        "notes": "VA-origin: mission failure — nothing to plant"
+      }
+    }
+  },
+  "ending_score": {
+    "description": "Victory condition bracket — determines which ending fires on arrival",
+    "multiple_allowed": false,
+    "values": {
+      "legendary": {
+        "status": "populated",
+        "notes": "Full crew, surplus resources, crop thriving, ahead of schedule"
+      },
+      "good": {
+        "status": "populated",
+        "notes": "Made it, mostly intact, crop alive"
+      },
+      "rough": {
+        "status": "populated",
+        "notes": "Arrived. Colony report is euphemisms. Crop barely survived."
+      },
+      "pyrrhic": {
+        "status": "populated",
+        "notes": "One survivor. Crop alive. Named a mountain after Jenkins."
+      },
+      "hollow": {
+        "status": "empty",
+        "notes": "You arrived. The crop did not. Unique failure-arrival hybrid."
+      }
+    }
+  },
+  "effort_cost": {
+    "description": "Human-readable label for repair demand — maps to numeric effort_required in event module",
+    "multiple_allowed": false,
+    "values": {
+      "trivial": {
+        "status": "empty",
+        "effort_benchmark": 10
+      },
+      "low": {
+        "status": "empty",
+        "effort_benchmark": 20
+      },
+      "medium": {
+        "status": "populated",
+        "effort_benchmark": 40
+      },
+      "high": {
+        "status": "empty",
+        "effort_benchmark": 70
+      },
+      "extreme": {
+        "status": "empty",
+        "notes": "Gated — choice hidden unless minimum effort threshold met"
+      }
+    }
+  },
+  "requires_effort_from": {
+    "description": "Which crew or item reduces effort cost",
+    "multiple_allowed": true,
+    "values": {
+      "any_crew": {
+        "status": "empty"
+      },
+      "engineer": {
+        "status": "empty"
+      },
+      "medic": {
+        "status": "empty"
+      },
+      "pilot": {
+        "status": "empty"
+      },
+      "botanist": {
+        "status": "empty"
+      },
+      "academic": {
+        "status": "empty"
+      },
+      "item:repair_kit": {
+        "status": "empty"
+      },
+      "item:repair_fabricator": {
+        "status": "empty"
+      }
+    }
+  },
+  "item_behavior": {
+    "description": "What an item does passively while carried",
+    "multiple_allowed": true,
+    "values": {
+      "passive_effect": {
+        "status": "empty",
+        "notes": "Always-on stat modifier"
+      },
+      "reveals_item_tags": {
+        "status": "empty",
+        "notes": "Spectrometer identifying unknowns"
+      },
+      "one_use": {
+        "status": "empty",
+        "notes": "Consumed on use"
+      },
+      "location_dependent": {
+        "status": "empty",
+        "notes": "Only active in specific contexts"
+      },
+      "upgrade": {
+        "status": "empty",
+        "notes": "Ship stat modifier — active while in cargo"
+      },
+      "craftable": {
+        "status": "empty",
+        "notes": "VA-origin: produced by fabricator"
+      }
+    }
+  },
+  "item_source": {
+    "description": "How an item enters the game",
+    "multiple_allowed": false,
+    "values": {
+      "purchasable": {
+        "status": "empty"
+      },
+      "loot_only": {
+        "status": "empty"
+      },
+      "event_reward": {
+        "status": "empty"
+      },
+      "starting_gear": {
+        "status": "empty"
+      },
+      "craftable": {
+        "status": "empty",
+        "notes": "VA-origin: fabricator output"
+      }
+    }
+  },
+  "fabricator_state": {
+    "description": "VA-origin: current state of the onboard fabricator",
+    "multiple_allowed": false,
+    "engine_required": true,
+    "values": {
+      "functional": {
+        "status": "empty",
+        "notes": "Working, health 1-100"
+      },
+      "broken": {
+        "status": "empty",
+        "notes": "Non-functional until repaired"
+      }
+    }
+  },
+  "minigame_end_condition": {
+    "description": "How an arcade minigame concludes",
+    "multiple_allowed": false,
+    "values": {
+      "timed": {
+        "status": "empty"
+      },
+      "survival": {
+        "status": "empty"
+      },
+      "clear_waves": {
+        "status": "empty"
+      },
+      "objective": {
+        "status": "empty"
+      }
+    }
+  },
+  "minigame_trigger": {
+    "description": "What scenario triggers the arcade minigame",
+    "multiple_allowed": false,
+    "values": {
+      "combat": {
+        "status": "empty"
+      },
+      "mining": {
+        "status": "empty"
+      },
+      "chase": {
+        "status": "empty"
+      },
+      "defense": {
+        "status": "empty"
+      },
+      "navigation": {
+        "status": "empty"
+      }
+    }
+  },
+  "item_location_condition": {
+    "description": "Where a passive item effect is active",
+    "multiple_allowed": false,
+    "values": {
+      "near_star": {
+        "status": "empty"
+      },
+      "on_planet": {
+        "status": "empty"
+      },
+      "in_void": {
+        "status": "empty"
+      },
+      "at_station": {
+        "status": "empty"
+      },
+      "any": {
+        "status": "empty"
+      }
+    }
+  },
+  "npc_disposition": {
+    "description": "Which NPC pool an event pulls from",
+    "multiple_allowed": false,
+    "values": {
+      "trader": {
+        "status": "populated"
+      },
+      "drifter": {
+        "status": "populated"
+      },
+      "pirate": {
+        "status": "populated"
+      },
+      "station_crew": {
+        "status": "populated",
+        "notes": "Requires npc_station_job to narrow"
+      }
+    }
+  },
+  "npc_species": {
+    "description": "Species of the resolved NPC. Wildcards any_alien, any_human, any are resolver tokens and not registered values",
+    "multiple_allowed": false,
+    "values": {
+      "human": {
+        "status": "populated"
+      },
+      "insect": {
+        "status": "populated",
+        "notes": "Tic *bzzt*, clipped grammar"
+      },
+      "rock": {
+        "status": "populated",
+        "notes": "Tic *crack*, dropped-articles grammar"
+      },
+      "water": {
+        "status": "populated",
+        "notes": "Tic *bubble*, flowing grammar"
+      },
+      "reptile": {
+        "status": "populated",
+        "notes": "Sibilant tic and grammar"
+      },
+      "robot": {
+        "status": "populated",
+        "notes": "Tic [processing], formal-expanded grammar"
+      },
+      "unknown": {
+        "status": "populated",
+        "notes": "Inconsistent grammar per line — the character is unparseable"
+      }
+    }
+  },
+  "npc_station_job": {
+    "description": "Job role for NPCs with npc_disposition: station_crew. Ignored for other dispositions",
+    "multiple_allowed": false,
+    "values": {
+      "captain": {
+        "status": "empty"
+      },
+      "medic": {
+        "status": "empty"
+      },
+      "engineer": {
+        "status": "empty"
+      },
+      "botanist": {
+        "status": "empty",
+        "notes": "Expected most-used station role"
+      },
+      "janitor": {
+        "status": "empty",
+        "notes": "Soft intel source"
+      },
+      "security": {
+        "status": "empty"
+      }
+    }
+  },
+  "requires_ship": {
+    "description": "Option or modifier tied to specific ship type",
+    "multiple_allowed": false,
+    "values": {
+      "perseverance": {
+        "status": "empty"
+      },
+      "entrepreneurial_spirit": {
+        "status": "empty"
+      },
+      "regrettable_decision": {
+        "status": "empty"
+      },
+      "any": {
+        "status": "empty",
+        "notes": "No ship requirement"
+      }
+    }
+  },
+  "microgame_difficulty_modifier": {
+    "description": "How crew and items affect a micro-minigame",
+    "multiple_allowed": true,
+    "values": {
+      "easier_with": {
+        "status": "empty"
+      },
+      "harder_without": {
+        "status": "empty"
+      },
+      "impossible_without": {
+        "status": "empty"
+      }
+    }
+  },
+  "faction_reputation_effect": {
+    "description": "Hidden reputation modifier applied by events — REMOVED from design v0.4",
+    "multiple_allowed": true,
+    "values": {
+      "corporate:+1": {
+        "status": "deprecated",
+        "notes": "Removed from design v0.4"
+      },
+      "corporate:-1": {
+        "status": "deprecated",
+        "notes": "Removed from design v0.4"
+      },
+      "pirate:+1": {
+        "status": "deprecated",
+        "notes": "Removed from design v0.4"
+      },
+      "pirate:-1": {
+        "status": "deprecated",
+        "notes": "Removed from design v0.4"
+      }
+    }
+  },
+  "combat_outcome": {
+    "description": "How a ship-to-ship combat encounter resolved",
+    "engine_required": true,
+    "multiple_allowed": false,
+    "values": {
+      "victory_destroyed": {
+        "status": "empty"
+      },
+      "victory_surrendered": {
+        "status": "empty"
+      },
+      "victory_executed": {
+        "status": "empty"
+      },
+      "tribute_resolved": {
+        "status": "empty"
+      },
+      "escaped": {
+        "status": "empty"
+      },
+      "enemy_retreated": {
+        "status": "empty",
+        "notes": "Pirate FTL'd out instead of surrendering — no loot, no morale change"
+      },
+      "defeated": {
+        "status": "empty"
+      }
+    }
+  },
+  "pirate_disposition_subtype": {
+    "description": "Sub-classification of pirate behavior, drives stat blocks and dialogue (v2 expansion)",
+    "engine_required": false,
+    "multiple_allowed": false,
+    "values": {
+      "raider": {
+        "status": "empty"
+      },
+      "marauder": {
+        "status": "empty"
+      },
+      "stalker": {
+        "status": "empty"
+      },
+      "warlord": {
+        "status": "empty"
+      }
+    }
+  },
+  "combat_action_type": {
+    "description": "Player action selected during a combat round",
+    "engine_required": true,
+    "multiple_allowed": false,
+    "values": {
+      "fire": {
+        "status": "empty"
+      },
+      "evade": {
+        "status": "empty"
+      },
+      "escape": {
+        "status": "empty"
+      },
+      "hull_patch": {
+        "status": "empty"
+      },
+      "tribute": {
+        "status": "empty"
+      },
+      "surrender_decision": {
+        "status": "empty"
+      }
+    }
+  }
+}

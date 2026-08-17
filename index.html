@@ -1,0 +1,3825 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TRANS-PLANT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link href="resources/shared.css" rel="stylesheet">
+<link href="resources/screen-title.css" rel="stylesheet">
+<link href="resources/screen-setup.css" rel="stylesheet">
+<link href="resources/screen-cruise.css" rel="stylesheet">
+<link href="resources/screen-minigames.css" rel="stylesheet">
+<link href="resources/screen-mining.css" rel="stylesheet">
+<link href="resources/screen-engine-repair.css" rel="stylesheet">
+<link href="resources/screen-growbay.css" rel="stylesheet">
+<link href="resources/screen-fabricator.css" rel="stylesheet">
+<link href="resources/screen-combat.css" rel="stylesheet">
+<link href="resources/screen-encounter-art.css" rel="stylesheet">
+<link href="resources/screen-market.css" rel="stylesheet">
+<link href="resources/screen-crew.css" rel="stylesheet">
+<link href="resources/screen-orders.css" rel="stylesheet">
+<link href="resources/screen-end.css" rel="stylesheet">
+<script src="resources/shared.js"></script>
+<script src="sprites/minigames/forage/sprites.js"></script>
+<script src="sprites/minigames/forage/anchors.js"></script>
+<style>
+:root {
+  /* --gold and --red live in shared.css. Remaining vars stay
+     local because they diverge across demos. */
+  --gold-bright: #e8d8a0;
+  --teal: #8cc890;
+  --orange: #e88830;
+  --cream: #e8d8a0;
+  --slate: #2a3040;
+  --deep:  #0e1520;
+  --void:  #020408;
+  --body:  #8898a8;
+  --bg-empty: #020408;
+
+  --res-fuel:  #e88830;
+  --res-food:  #8cc890;
+  --res-water: #5fa8d0;
+  --res-o2:    #5fa8d0;
+  --res-hull:  #b4b091;
+  --res-mor:   #5e9ec7;
+  --res-gold:  #c8a85a;
+
+  --node-station:  #d5d69f;
+  --node-planet:   #e5811f;
+  --node-asteroid: #cb2f34;
+  --node-derelict: #5d5a61;
+  --node-nebula:   #8c7fc8;
+  --node-anomaly:  #ffac00;
+  --node-fork:     #b4b091;
+  --node-void:     #5a6070;
+  --node-size: 26px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  font-family: 'VT323', monospace;
+  background: #0e1118;
+  color: #d1d5db;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+#game {
+  width: 960px; height: 640px;
+  position: relative; overflow: hidden;
+  background: #000;
+  border: 1px solid #2a3040;
+}
+#crt-overlay {
+  pointer-events: none; position: absolute; inset: 0; z-index: 200;
+  background: repeating-linear-gradient(0deg,
+    rgba(0,0,0,0.06), rgba(0,0,0,0.06) 1px, transparent 1px, transparent 2px);
+}
+
+.screen { position: absolute; inset: 0; display: none; z-index: 10; }
+.screen.active { display: block; }
+
+/* Overlays sit on top of screen-cruise without hiding it underneath
+   (Stop Menu, Map, Market, minigames) — a separate stacking layer
+   from the screen-swap system above. */
+.overlay { position: absolute; inset: 0; display: none; z-index: 60; }
+.overlay.active { display: block; }
+
+/* ── HUD (resource bar, top of map+encounter screens) ───────────── */
+.hud {
+  position: absolute;
+  top: 14px; right: 14px;
+  display: flex; gap: 6px;
+  padding: 6px 10px;
+  background: rgba(8,12,18,0.78);
+  border: 1px solid rgba(95,168,208,0.25);
+  border-radius: 3px;
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  z-index: 50;
+}
+.hud-r { display: flex; align-items: center; gap: 4px; color: var(--cream); }
+.hud-r .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--c); box-shadow: 0 0 4px var(--c);
+}
+.hud-r.fuel  { --c: var(--res-fuel); }
+.hud-r.food  { --c: var(--res-food); }
+.hud-r.water { --c: var(--res-water); }
+.hud-r.o2    { --c: var(--res-o2); }
+.hud-r.hull  { --c: var(--res-hull); }
+.hud-r.mor   { --c: var(--res-mor); }
+.hud-r.gold  { --c: var(--res-gold); }
+.hud-r.crit { color: #ff8878; }
+.hud-r.crit .dot { box-shadow: 0 0 8px var(--res-fuel), 0 0 14px #ff5050; animation: hud-warn 0.9s ease-in-out infinite; }
+@keyframes hud-warn { 50% { filter: brightness(1.6); } }
+
+/* ── Loading + error screen ─────────────────────────────────────── */
+#screen-loading {
+  flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  font-family: 'VT323', monospace;
+  color: var(--cream);
+  padding: 30px;
+}
+#screen-loading.active { display: flex; }
+#screen-loading h1 {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 22px;
+  letter-spacing: 4px;
+  color: var(--gold);
+  margin-bottom: 24px;
+  text-shadow: 0 0 12px rgba(200,168,90,0.45);
+}
+#screen-loading .sub { font-size: 18px; color: var(--body); margin-bottom: 14px; letter-spacing: 1px; }
+#screen-loading .blink { animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+#load-status { font-size: 16px; color: var(--gold); margin-top: 14px; min-height: 24px; }
+#load-error {
+  margin-top: 20px;
+  padding: 14px 18px;
+  border: 1px solid var(--red);
+  background: rgba(60,10,10,0.5);
+  color: #ffb0b0;
+  font-size: 15px;
+  max-width: 720px;
+  text-align: left;
+  display: none;
+  white-space: pre-wrap;
+}
+
+/* ── Map screen ─────────────────────────────────────────────────── */
+#screen-map { background: radial-gradient(ellipse at center, #1a2240 0%, #050810 70%, #020408 100%); }
+#map-header {
+  position: absolute; left: 14px; top: 14px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px; letter-spacing: 2px; color: var(--gold);
+}
+#map-header .sub {
+  font-family: 'VT323', monospace;
+  font-size: 14px; letter-spacing: 1px; color: var(--body);
+  text-transform: none;
+  margin-top: 6px;
+}
+#map-viewport {
+  position: absolute;
+  left: 40px; right: 40px;
+  top: 100px; bottom: 110px;
+}
+#map-connections { position: absolute; inset: 0; pointer-events: none; }
+#map-nodes { position: absolute; inset: 0; }
+
+.map-node {
+  position: absolute;
+  width: var(--node-size); height: var(--node-size);
+  transform: translate(-50%, -50%);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 5;
+}
+.map-node .shape {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: var(--nc, var(--node-station));
+  border: 2px solid rgba(255,255,255,0.4);
+  box-shadow: 0 0 8px var(--nc, var(--node-station));
+  transition: transform 0.15s;
+}
+.map-node.t-station       { --nc: var(--node-station); }
+.map-node.t-planet        { --nc: var(--node-planet); }
+.map-node.t-asteroid_field{ --nc: var(--node-asteroid); }
+.map-node.t-derelict      { --nc: var(--node-derelict); }
+.map-node.t-nebula        { --nc: var(--node-nebula); }
+.map-node.t-anomaly       { --nc: var(--node-anomaly); }
+.map-node.t-fork          { --nc: var(--node-fork); }
+.map-node.t-void          { --nc: var(--node-void); }
+
+.map-node.locked .shape { filter: brightness(0.45); box-shadow: 0 0 4px rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.15); }
+.map-node.visited .shape { box-shadow: 0 0 10px var(--nc); }
+.map-node.current .shape { animation: node-pulse 1.6s ease-in-out infinite; }
+.map-node.available { cursor: var(--cursor-hand, pointer); }
+.map-node.available .shape { box-shadow: 0 0 14px var(--nc), 0 0 0 4px color-mix(in srgb, var(--nc) 30%, transparent); }
+.map-node.available:hover .shape { transform: scale(1.35); }
+
+@keyframes node-pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--nc), 0 0 0 0 color-mix(in srgb, var(--nc) 30%, transparent); }
+  50%      { box-shadow: 0 0 18px var(--nc), 0 0 0 8px color-mix(in srgb, var(--nc) 22%, transparent); }
+}
+
+.map-node-label {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'VT323', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--cream);
+  white-space: nowrap;
+  text-shadow: 0 0 4px #000;
+  opacity: 0.85;
+}
+.map-node.locked .map-node-label { color: var(--body); opacity: 0.5; }
+/* Alternate branch-node labels above the shape so 2-node branches
+   never overlap each other's text (see renderMap's branch handling). */
+.map-node.label-above .map-node-label { top: auto; bottom: calc(100% + 6px); }
+
+#map-footer {
+  position: absolute; left: 14px; right: 14px; bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: var(--cream);
+  letter-spacing: 1px;
+  background: rgba(8,12,18,0.78);
+  border: 1px solid rgba(95,168,208,0.25);
+  padding: 10px 14px;
+  border-radius: 3px;
+}
+#map-footer .info { color: var(--body); font-size: 14px; }
+#map-footer .info b { color: var(--gold); font-weight: normal; }
+
+/* ── MAP overlay (read-only route view over screen-cruise) ──────── */
+#overlay-map {
+  background: radial-gradient(ellipse at center, #1a2240 0%, #050810 70%, #020408 100%);
+  z-index: 70;
+}
+#ovmap-header {
+  position: absolute; left: 14px; top: 14px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px; letter-spacing: 2px; color: var(--gold);
+}
+#ovmap-header .sub {
+  font-family: 'VT323', monospace;
+  font-size: 14px; letter-spacing: 1px; color: var(--body);
+  text-transform: none;
+  margin-top: 6px;
+}
+#ovmap-viewport { position: absolute; left: 40px; right: 40px; top: 100px; bottom: 70px; }
+#ovmap-connections { position: absolute; inset: 0; pointer-events: none; }
+#ovmap-nodes { position: absolute; inset: 0; }
+#ovmap-footer {
+  position: absolute; left: 14px; right: 14px; bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: 'VT323', monospace; font-size: 16px; color: var(--cream); letter-spacing: 1px;
+  background: rgba(8,12,18,0.78); border: 1px solid rgba(95,168,208,0.25);
+  padding: 10px 14px; border-radius: 3px;
+}
+#ovmap-info { color: var(--body); font-size: 14px; }
+#ovmap-info b { color: var(--gold); font-weight: normal; }
+
+.btn {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #39404F 0%, #252A38 50%, #4B597A 100%);
+  border: 3px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: #d0c890;
+  padding: 6px 16px;
+  cursor: var(--cursor-hand, pointer);
+}
+.btn.accent-gold { border-color: #b4b091 #363733 #363733 #b4b091; color: var(--gold-bright); text-shadow: 0 0 4px rgba(180,176,145,0.3); }
+.btn:hover { filter: brightness(1.15); }
+.btn:active { border-style: inset; transform: translate(1px,1px); }
+.btn:disabled { filter: brightness(0.5); cursor: default; }
+
+/* Map touches (Restoration item 9) — ship marker + branch flavor */
+.map-here {
+  position: absolute; top: calc(100% + 14px); left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Press Start 2P', cursive; font-size: 6px;
+  letter-spacing: 1px; color: var(--teal, #5fa8d0);
+  text-shadow: 0 0 6px rgba(95,168,208,0.6);
+  white-space: nowrap; pointer-events: none;
+  animation: map-here-bob 2s ease-in-out infinite;
+}
+@keyframes map-here-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-3px); }
+}
+.map-node.label-above .map-here { top: auto; bottom: calc(100% + 14px); }
+.map-branch-flavor {
+  position: absolute; top: calc(100% + 26px); left: 50%;
+  transform: translateX(-50%);
+  font-family: 'VT323', monospace; font-size: 12px;
+  letter-spacing: 1px; color: rgba(200,168,90,0.75);
+  white-space: nowrap; pointer-events: none;
+}
+.map-node.label-above .map-branch-flavor { top: auto; bottom: calc(100% + 26px); }
+
+/* ── Encounter screen ───────────────────────────────────────────── */
+#screen-encounter { background: var(--bg-empty); }
+.enc-vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.55) 100%);
+}
+.enc-backdrop {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, #0e1820 0%, #050810 100%);
+}
+.enc-backdrop::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 3px);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.enc-ai-bar {
+  position: absolute;
+  top: 14px; left: 14px;
+  right: 320px;
+  padding: 6px 12px;
+  background: rgba(10,14,20,0.72);
+  border: 1px solid rgba(200,168,90,0.25);
+  border-radius: 3px;
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  display: flex; gap: 8px; align-items: baseline;
+  z-index: 40;
+}
+.enc-ai-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 2px; color: var(--gold);
+  flex-shrink: 0;
+}
+.enc-ai-text {
+  color: #aab5c4;
+  font-style: italic;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#enc-ai-bar.hidden { display: none; }
+
+/* Speaker's actual spoken words (layer.line) — distinct from the
+   narrator prose in .enc-narrative (layer.body). Sits just above the
+   narrative panel. No portrait art exists yet, so this is text-only —
+   name + line — degrading gracefully once sprites land later. */
+.enc-dialog {
+  position: absolute;
+  right: 14px; bottom: 160px;
+  width: 320px;
+  background: rgba(8,12,18,0.82);
+  border: 1px solid rgba(200,168,90,0.3);
+  border-radius: 3px;
+  padding: 8px 12px;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  font-style: italic;
+  color: var(--cream);
+  z-index: 25;
+}
+.enc-dialog.hidden { display: none; }
+.enc-dialog-name {
+  display: block;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: 1px;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+/* comm_mode visual treatment — 'screen' (hail/viewscreen) and
+   'corrupted' (void/cosmic-horror) tint the backdrop; 'in_person'
+   (default) applies neither. */
+#screen-encounter.comm-screen .enc-backdrop {
+  filter: hue-rotate(70deg) saturate(0.6) brightness(0.9);
+}
+#screen-encounter.comm-screen .enc-backdrop::after {
+  background: repeating-linear-gradient(0deg, rgba(0,255,180,0.04) 0 1px, transparent 1px 3px);
+}
+#screen-encounter.comm-corrupted .enc-backdrop {
+  filter: hue-rotate(260deg) saturate(1.3) brightness(0.85);
+}
+
+.enc-narrative {
+  position: absolute;
+  left: 14px; right: 14px; bottom: 14px;
+  min-height: 130px;
+  /* Long bodies (stowaway reveals, layered scenarios) grow the panel
+     upward to a cap, then scroll inside — see .enc-narr-body. The old
+     behavior silently clipped anything past ~3 lines (a leaked fixed
+     height from screen-mining.css, now scoped under #mining-root). */
+  max-height: 340px;
+  background: rgba(8,12,18,0.82);
+  border: 2px solid rgba(95,168,208,0.35);
+  border-radius: 3px;
+  padding: 14px 18px;
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 20;
+}
+.enc-narr-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 14px; letter-spacing: 2px; color: var(--gold);
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+}
+.enc-narr-body {
+  font-family: 'VT323', monospace;
+  font-size: 18px; line-height: 1.3; letter-spacing: 0.5px;
+  color: var(--cream);
+  white-space: pre-wrap;
+  overflow-y: auto;
+  min-height: 0; /* lets the flex item actually shrink so overflow-y engages at the panel cap */
+}
+.enc-narrative.tone-success { border-color: #7fb8a8; box-shadow: 0 0 14px rgba(127,184,168,0.18); }
+.enc-narrative.tone-success .enc-narr-title { color: #a8d8c8; }
+.enc-narrative.tone-danger  { border-color: #c25555; box-shadow: 0 0 14px rgba(194,85,85,0.18); }
+.enc-narrative.tone-danger  .enc-narr-title { color: #ff8878; }
+
+.enc-choices {
+  position: absolute;
+  right: 14px; top: 60px;
+  bottom: 170px;
+  width: 320px;
+  display: flex; flex-direction: column; gap: 8px;
+  overflow-y: auto;
+  z-index: 30;
+}
+.enc-choice {
+  display: block;
+  text-align: left;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, #2a3040 0%, #141820 100%);
+  border: 2px solid rgba(95,168,208,0.3);
+  border-left: 3px solid var(--gold);
+  border-radius: 2px;
+  color: #d0c890;
+  font-family: 'VT323', monospace;
+  cursor: var(--cursor-hand, pointer);
+  transition: border-color 0.12s, filter 0.12s, transform 0.08s;
+}
+.enc-choice:hover { border-color: var(--gold); filter: brightness(1.15); }
+.enc-choice:active { transform: translateY(1px); }
+.enc-choice .ch-text {
+  font-size: 15px; letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+.enc-choice .ch-sub {
+  font-size: 12px;
+  color: var(--body);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+.enc-choice .ch-sub .lock { color: #cc5555; }
+.enc-choice.locked {
+  cursor: default;
+  filter: grayscale(0.6) brightness(0.55);
+  border-left-color: rgba(95,100,115,0.4);
+  border-color: rgba(95,100,115,0.3);
+}
+.enc-choice.locked:hover { filter: grayscale(0.6) brightness(0.6); border-color: rgba(95,100,115,0.3); }
+.enc-choice.advance {
+  border-left-color: var(--teal);
+  color: var(--teal);
+}
+.enc-choice.advance:hover { border-color: var(--teal); }
+
+.enc-meta {
+  position: absolute;
+  left: 14px; top: 60px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--gold-bright);
+  text-shadow: 0 0 8px rgba(200,168,90,0.4);
+  z-index: 25;
+}
+.enc-meta .where {
+  display: block;
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--body);
+  letter-spacing: 1px;
+  margin-top: 4px;
+  text-transform: none;
+}
+
+/* End screen (Phase 6 two-screen cinematic+report flow) now lives in
+   resources/screen-end.css, matching every other migrated screen. */
+
+/* ── Ship's Log overlay (engine-backed journal) ─────────────────── */
+#overlay-shipslog { display: none; align-items: center; justify-content: center; background: rgba(2,4,8,0.72); }
+#overlay-shipslog.active { display: flex; }
+/* Parchment journal chrome (demo-shipslog.html canon): the Ship's
+   Log is a JOURNAL, so it reads like paper — deliberately divergent
+   from the dark modal palette. Death entries + memorial expand swap
+   to dark slate + ember (a memorial, not a journal page). */
+#overlay-shipslog {
+  --log-paper: #e8d8a0; --log-paper-dark: #d8c888;
+  --log-ink: #2a1f10; --log-ink-dim: #6a5430;
+  --log-edge: #5a4226; --log-payload: #b85a18;
+  --death-bg-top: #1a1620; --death-bg-bot: #0a0810;
+  --death-edge: #4a3030; --death-ember: #c89050; --death-ash: #c0b8a8;
+}
+#slog-card {
+  width: 560px; max-height: 540px;
+  background:
+    radial-gradient(ellipse at 25% 20%, rgba(90,66,38,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse at 75% 80%, rgba(90,66,38,0.04) 0%, transparent 55%),
+    linear-gradient(180deg, var(--log-paper) 0%, var(--log-paper-dark) 100%);
+  border: 3px solid var(--log-edge);
+  border-radius: 6px;
+  display: flex; flex-direction: column;
+  padding: 18px 20px 14px; gap: 12px;
+  box-shadow: inset 0 0 0 1px rgba(232,216,160,0.4), inset 0 0 0 2px rgba(90,66,38,0.4), 0 8px 40px rgba(0,0,0,0.8);
+}
+#slog-header {
+  font-family: 'Press Start 2P', cursive; font-size: 12px;
+  letter-spacing: 2px; color: var(--log-ink);
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+#slog-count { font-size: 8px; color: var(--log-ink-dim); }
+#slog-rows { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; min-height: 80px; }
+.slog-row {
+  font-family: 'VT323', monospace; font-size: 17px; line-height: 1.3;
+  color: var(--log-ink);
+  background: rgba(90,66,38,0.06); border-left: 3px solid var(--log-edge);
+  border-radius: 2px; padding: 7px 10px 7px 22px;
+  position: relative;
+}
+.slog-led {
+  position: absolute; left: 8px; top: 12px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--log-edge);
+}
+.slog-row.death { border-left-color: #a02828; }
+.slog-row.death .slog-led { background: #a02828; box-shadow: 0 0 4px rgba(160,40,40,0.5); }
+.slog-row.sci .slog-led { background: var(--log-payload); box-shadow: 0 0 4px rgba(184,90,24,0.4); }
+.slog-day {
+  font-family: 'Press Start 2P', cursive; font-size: 7px; letter-spacing: 1px;
+  color: var(--log-ink-dim); display: block; margin-bottom: 3px;
+}
+.slog-row .ai-entry-link { font-size: 15px; color: var(--log-payload); }
+.slog-expand-btn {
+  font-family: 'VT323', monospace; font-size: 15px;
+  color: var(--log-payload); background: none; border: none;
+  border-bottom: 1px dotted var(--log-payload);
+  cursor: var(--cursor-hand, pointer); padding: 0; margin-left: 6px;
+}
+.slog-empty { font-family: 'VT323', monospace; font-size: 17px; color: var(--log-ink-dim); text-align: center; padding: 18px 0; }
+#slog-footer { display: flex; justify-content: space-between; align-items: center; }
+#slog-note { font-family: 'VT323', monospace; font-size: 14px; color: var(--log-ink-dim); }
+#slog-expand-modal {
+  position: absolute; inset: 0; z-index: 5;
+  background: rgba(2,4,8,0.85);
+  align-items: center; justify-content: center;
+}
+#slog-expand-card {
+  width: 480px; max-height: 440px; overflow-y: auto;
+  background: linear-gradient(180deg, var(--log-paper) 0%, var(--log-paper-dark) 100%);
+  border: 3px solid var(--log-edge); border-radius: 6px;
+  padding: 20px; display: flex; flex-direction: column; gap: 14px;
+  box-shadow: inset 0 0 0 1px rgba(232,216,160,0.4), 0 8px 40px rgba(0,0,0,0.9);
+}
+#slog-expand-body { font-family: 'VT323', monospace; font-size: 18px; line-height: 1.4; color: var(--log-ink); white-space: pre-wrap; }
+/* Memorial variant */
+#slog-expand-card.death-mode {
+  background:
+    radial-gradient(ellipse at 30% 0%, rgba(140,80,60,0.10) 0%, transparent 65%),
+    linear-gradient(180deg, var(--death-bg-top) 0%, var(--death-bg-bot) 100%);
+  border-color: var(--death-edge);
+  box-shadow: inset 0 0 0 1px rgba(180,110,80,0.35), inset 0 0 0 2px rgba(0,0,0,0.4), 0 8px 40px rgba(0,0,0,0.9);
+}
+#slog-expand-card.death-mode #slog-expand-body { color: var(--death-ash); }
+.slog-death-header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 4px 2px 14px;
+  border-bottom: 1px dashed rgba(180,110,80,0.25);
+}
+.slog-portrait {
+  width: 50px; height: 120px; flex-shrink: 0; overflow: hidden;
+  border: 2px solid var(--death-edge);
+  background: rgba(10,8,12,0.85);
+  filter: grayscale(0.85) brightness(0.7) contrast(1.1) sepia(0.15);
+}
+.slog-candle {
+  font-size: 56px; color: var(--death-ember); line-height: 1;
+  width: 50px; text-align: center; flex-shrink: 0;
+  font-family: 'Times New Roman', Georgia, serif;
+  text-shadow: 0 0 14px rgba(200,144,80,0.55), 0 1px 2px rgba(0,0,0,0.8);
+}
+.slog-death-name {
+  font-family: 'Press Start 2P', cursive; font-size: 11px;
+  letter-spacing: 2px; color: var(--death-ember);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+}
+
+/* ── Cargo hold overlay (minimal readout for full enforcement) ──── */
+#overlay-inventory { display: none; align-items: center; justify-content: center; background: rgba(2,4,8,0.7); }
+#overlay-inventory.active { display: flex; }
+#inv-card {
+  width: 480px; max-height: 480px;
+  background: linear-gradient(180deg, #1a2030, #0e1320);
+  border: 2px solid rgba(200,168,90,0.55);
+  border-radius: 4px;
+  display: flex; flex-direction: column;
+  padding: 18px 20px 14px;
+  gap: 12px;
+}
+#inv-header {
+  font-family: 'Press Start 2P', cursive; font-size: 12px;
+  letter-spacing: 2px; color: var(--gold);
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+#inv-slots { font-size: 9px; color: var(--cream); }
+#inv-slots.full { color: #ff8878; }
+/* Tabs + sprite grid + detail panel (demo-inventory.html canon —
+   tiles with cargo icons, click for detail, jettison behind confirm). */
+#inv-tabs { display: flex; gap: 8px; }
+.inv-tab {
+  font-family: 'Press Start 2P', cursive; font-size: 8px; letter-spacing: 1px;
+  color: var(--body); background: rgba(10,14,20,0.6);
+  border: 1px solid rgba(95,168,208,0.25); border-radius: 3px;
+  padding: 7px 14px; cursor: var(--cursor-hand, pointer);
+}
+.inv-tab.active { color: var(--gold); border-color: rgba(200,168,90,0.6); }
+#inv-grid {
+  overflow-y: auto; min-height: 60px; max-height: 240px;
+  display: grid; grid-template-columns: repeat(auto-fill, 72px); gap: 8px;
+  align-content: start;
+}
+.inv-tile {
+  width: 72px; height: 72px; position: relative;
+  background: rgba(10,14,20,0.6);
+  border: 1px solid rgba(95,168,208,0.25); border-radius: 3px;
+  cursor: var(--cursor-hand, pointer);
+  display: flex; align-items: center; justify-content: center;
+}
+.inv-tile:hover, .inv-tile.selected { border-color: rgba(200,168,90,0.7); }
+.inv-tile img { width: 56px; height: 56px; image-rendering: pixelated; }
+.inv-tile .inv-tile-emoji { font-size: 34px; }
+.inv-tile .inv-tile-count {
+  position: absolute; right: 3px; bottom: 2px;
+  font-family: 'VT323', monospace; font-size: 14px; color: var(--gold);
+  background: rgba(8,12,18,0.85); border-radius: 2px; padding: 0 4px;
+}
+#inv-detail, #inv-confirm {
+  background: rgba(10,14,20,0.6); border: 1px solid rgba(200,168,90,0.35);
+  border-radius: 3px; padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+#inv-detail.hidden, #inv-confirm.hidden { display: none; }
+.inv-detail-top { display: flex; gap: 12px; align-items: center; }
+#inv-detail-icon img { width: 44px; height: 44px; image-rendering: pixelated; }
+#inv-detail-icon { font-size: 30px; }
+#inv-detail-name { font-family: 'Press Start 2P', cursive; font-size: 10px; letter-spacing: 1px; color: var(--gold); }
+#inv-detail-meta { font-family: 'VT323', monospace; font-size: 14px; color: var(--body); margin-top: 4px; }
+#inv-detail-desc { font-family: 'VT323', monospace; font-size: 16px; line-height: 1.3; color: var(--cream); }
+.inv-detail-actions { display: flex; gap: 10px; justify-content: flex-end; }
+#inv-confirm-text { font-family: 'VT323', monospace; font-size: 17px; color: var(--cream); }
+#inv-rows { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
+.inv-row {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'VT323', monospace; font-size: 17px; color: var(--cream);
+  background: rgba(10,14,20,0.6); border: 1px solid rgba(95,168,208,0.2);
+  border-radius: 3px; padding: 6px 10px;
+}
+.inv-row .inv-name { flex: 1; }
+.inv-row .inv-count { color: var(--body); min-width: 40px; }
+.inv-row .inv-cost { color: var(--body); min-width: 70px; font-size: 14px; }
+.inv-row .inv-jett {
+  font-family: 'Press Start 2P', cursive; font-size: 7px;
+  padding: 5px 8px; background: #2a1a1a; color: #cc7766;
+  border: 1px solid rgba(204,85,85,0.4); border-radius: 2px;
+  cursor: var(--cursor-hand, pointer);
+}
+.inv-row .inv-jett:hover { filter: brightness(1.3); }
+.inv-empty { font-family: 'VT323', monospace; font-size: 17px; color: var(--body); text-align: center; padding: 16px 0; }
+#inv-footer { display: flex; justify-content: space-between; align-items: center; }
+#inv-note { font-family: 'VT323', monospace; font-size: 14px; color: var(--body); }
+</style>
+</head>
+<body>
+
+<div id="game">
+  <div id="crt-overlay"></div>
+
+  <!-- LOADING -->
+  <div id="screen-loading" class="screen active">
+    <h1>TRANS-PLANT</h1>
+    <div class="sub">A roguelike, in space, with paperwork.</div>
+    <div class="blink sub">LOADING MODULES</div>
+    <div id="load-status"></div>
+    <pre id="load-error"></pre>
+  </div>
+
+  <!-- TITLE -->
+  <div id="screen-title" class="screen" tabindex="0">
+    <div id="bg-void"></div>
+    <canvas id="title-stars-far" width="960" height="640"></canvas>
+    <canvas id="title-stars-near" width="960" height="640"></canvas>
+
+    <div id="title-content">
+      <div id="title-tagline"></div>
+      <div id="title-tagline-2"></div>
+      <div id="title-tagline-3"></div>
+      <div class="title-buttons" id="title-buttons">
+        <button class="retro-btn accent" id="btn-new"><span class="btn-led" style="background:#2a3040"></span>New Game</button>
+        <button class="retro-btn disabled" id="btn-continue"><span class="btn-led" style="background:#333"></span>Continue</button>
+      </div>
+    </div>
+
+    <div id="poster"></div>
+    <div id="poster-vignette"></div>
+    <div id="prompt-wrap"><span id="prompt">&gt; PRESS ANY KEY TO BEGIN &lt;</span></div>
+  </div>
+
+  <!-- SETUP -->
+  <div id="screen-setup" class="screen">
+    <canvas id="setup-stars" width="960" height="640"></canvas>
+    <div class="halftone bl"></div>
+    <div class="halftone tr"></div>
+
+    <div id="setup-screen">
+      <div id="setup-header">
+        <div id="setup-step-label">Choose Your Trail</div>
+        <div id="setup-progress"></div>
+      </div>
+
+      <div id="setup-content">
+        <div id="setup-left">
+          <div id="setup-category-title"></div>
+          <div id="setup-description"></div>
+          <div id="setup-flavor"></div>
+        </div>
+        <div id="setup-right"></div>
+      </div>
+
+      <div id="setup-footer">
+        <button class="panel-btn" id="btn-back"><span class="chevron">◀</span> Back</button>
+        <span id="crew-count-badge"></span>
+        <button class="panel-btn accent-gold" id="btn-next">Next <span class="chevron">▶</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRUISE — the default hub post-setup -->
+  <div id="screen-cruise" class="screen">
+    <canvas id="starfield" width="960" height="640"></canvas>
+    <div class="hud" id="hud-cruise"></div>
+
+    <div id="cruise-screen">
+      <div id="cruise-header">
+        <div class="ship-name" id="cruise-ship-name"></div>
+        <div class="header-ticker" id="header-ticker"></div>
+        <div class="header-actions">
+          <button class="header-icon-btn" style="background-image:url('sprites/interface/inv.png')" id="btn-inv" title="Inventory"></button>
+          <button class="header-icon-btn" style="background-image:url('sprites/interface/map.png')" id="btn-map" title="Map"></button>
+        </div>
+        <div class="header-right">
+          <div class="day-counter" id="day-counter"></div>
+        </div>
+      </div>
+
+      <div id="cruise-main">
+        <div id="cruise-leftcol">
+          <div id="cruise-scene">
+            <div id="ship-silhouette"></div>
+          </div>
+          <div id="cruise-resrow">
+            <!-- Standing-orders readout (Restoration item 5). Live —
+                 renderCruise() paints the cells from STATE.orders and
+                 clicking any cell opens the Orders modal (orders.js). -->
+            <div id="cruise-readout" title="Standing orders — click to change">
+              <div class="readout-cell"><span class="readout-label">ENGINES</span><span class="readout-value" id="readout-engines">RIDICULOUS SPEED</span></div>
+              <div class="readout-cell"><span class="readout-label">RATIONS</span><span class="readout-value" id="readout-rations">STANDARD</span></div>
+              <div class="readout-cell"><span class="readout-label">WATER</span><span class="readout-value"><span id="readout-water-plant">50%</span><span class="water-sep">/</span><span id="readout-water-crew">50%</span></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="cruise-aidialog">
+          <div class="ai-header">
+            <div class="ai-avatar has-sprite" id="ai-avatar"></div>
+            <div class="ai-name" id="ai-name"></div>
+          </div>
+          <div class="scroll-host" id="ai-log-host">
+            <div class="ai-log scroll-content" id="ai-log"></div>
+            <div class="scroll-track"><div class="scroll-thumb"></div></div>
+          </div>
+
+          <div id="stop-menu">
+            <div class="stop-menu-header">
+              <div>
+                <div class="stop-menu-region-label" id="stop-region-label"></div>
+                <div class="stop-menu-mood" id="stop-region-mood"></div>
+              </div>
+            </div>
+            <div class="scroll-host" id="stop-choices-host">
+              <div class="stop-choices scroll-content" id="stop-choices"></div>
+              <div class="scroll-track"><div class="scroll-thumb"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="cruise-bottom">
+        <div id="crew-strip"></div>
+
+        <div id="crop-card-mini">
+          <div class="crop-icon" id="crop-icon">🌾</div>
+          <div class="crop-info">
+            <div class="crop-name-row"><span class="crop-name" id="crop-name"></span><span class="crop-alert-led" id="crop-alert-led"></span></div>
+            <div class="crop-growing" id="crop-growing">
+              <div class="crop-stage" id="crop-stage"></div>
+              <div class="crop-day" id="crop-day"></div>
+              <div class="crop-bar-row"><span class="crop-bar-label">GROWTH</span><div class="crop-growth-bar"><div class="crop-growth-fill" id="crop-growth-fill"></div></div></div>
+            </div>
+            <button class="crop-harvest-btn" id="crop-harvest-btn">HARVEST</button>
+            <div class="crop-bar-row"><span class="crop-bar-label">HEALTH</span><div class="crop-health-bar"><div class="crop-health-fill" id="crop-health-fill"></div></div></div>
+          </div>
+        </div>
+
+        <div id="bottom-resources">
+          <div class="res fuel"  title="Fuel"><span class="res-label">FUEL</span><div class="res-bar"><div class="res-fill" id="res-fill-fuel"></div></div></div>
+          <div class="res food"  title="Food"><span class="res-label">FOOD</span><div class="res-bar"><div class="res-fill" id="res-fill-food"></div></div></div>
+          <div class="res water" title="Water"><span class="res-label">H2O</span><div class="res-bar"><div class="res-fill" id="res-fill-water"></div></div></div>
+        </div>
+
+        <div id="action-rail">
+          <button class="panel-btn accent-gold stop-btn" id="stop-btn">Stop</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div id="screen-map" class="screen">
+    <div id="map-header"></div>
+    <div class="hud" id="hud-map"></div>
+    <div id="map-viewport">
+      <svg id="map-connections"></svg>
+      <div id="map-nodes"></div>
+    </div>
+    <div id="map-footer">
+      <div class="info" id="map-info"></div>
+      <button class="btn accent-gold" id="btn-advance">Advance →</button>
+    </div>
+  </div>
+
+  <!-- ENCOUNTER -->
+  <div id="screen-encounter" class="screen no-subject">
+    <!-- Backdrop layer stack (scene_art.js) — z-order via DOM order:
+         base (starfield behind viewport cutouts) → viewport sprite
+         (their ship / full-bleed scene) → main backdrop (opaque room
+         art, or our_ship/bridge.png with its transparent viewport
+         revealing the two layers beneath). -->
+    <div class="enc-backdrop-base hidden" id="enc-backdrop-base"></div>
+    <div class="enc-backdrop-sprite hidden" id="enc-backdrop-sprite"></div>
+    <div class="enc-backdrop" id="enc-backdrop"></div>
+    <div class="enc-vignette"></div>
+    <!-- Subject frame (talking head) + name plate — plate is a sibling
+         because the frame's overflow:hidden would clip it. -->
+    <div class="enc-subject" id="enc-subject">
+      <div class="enc-subject-head" id="enc-subject-head"></div>
+      <div class="enc-subject-comm" id="enc-subject-comm"></div>
+    </div>
+    <div class="enc-subject-name" id="enc-subject-name"></div>
+    <!-- Combat FX canvases (demo-combat.html port) — painted only in
+         combat-mode. fx canvas is clipped to the bridge viewport cutout
+         so beams/particles stay behind the glass; the cursor canvas is
+         unclipped so the crosshair tracks everywhere. -->
+    <canvas id="combat-fx-canvas" width="960" height="640"></canvas>
+    <canvas id="combat-cursor-canvas" width="960" height="640"></canvas>
+    <div class="hud" id="hud-enc"></div>
+    <div class="enc-ai-bar" id="enc-ai-bar">
+      <span class="enc-ai-name" id="enc-ai-name">MARV</span>
+      <span class="enc-ai-text" id="enc-ai-text"></span>
+    </div>
+    <div class="enc-meta" id="enc-meta"></div>
+    <div class="enc-choices" id="enc-choices"></div>
+    <div class="enc-dialog hidden" id="enc-dialog">
+      <span class="enc-dialog-name" id="enc-dialog-name"></span>
+      <span class="enc-dialog-line" id="enc-dialog-line"></span>
+    </div>
+    <div class="enc-narrative" id="enc-narrative">
+      <div class="enc-narr-title" id="enc-narr-title"></div>
+      <div class="enc-narr-body" id="enc-narr-body"></div>
+    </div>
+
+    <!-- Combat-mode-only chrome (Phase 5) — hidden unless #screen-encounter
+         has .combat-mode, set/cleared by engine/js/combat.js. -->
+    <div class="combat-turn-indicator your-turn" id="combat-turn-indicator" style="display:none;">YOUR TURN</div>
+    <div class="combat-hpbars" id="combat-hpbars">
+      <div class="row">
+        <span class="lbl">HULL</span>
+        <div class="bar"><div class="fill player" id="combat-fill-hull" style="width:100%"></div></div>
+        <span class="num" id="combat-num-hull">100%</span>
+      </div>
+      <div class="row">
+        <span class="lbl">ENEMY</span>
+        <div class="bar"><div class="fill foe" id="combat-fill-foe" style="width:100%"></div></div>
+        <span class="num" id="combat-num-foe">100%</span>
+      </div>
+      <div class="row">
+        <span class="lbl">MOR</span>
+        <div class="bar"><div class="fill player warn" id="combat-fill-mor" style="width:50%"></div></div>
+        <span class="num" id="combat-num-mor">50</span>
+      </div>
+    </div>
+    <!-- Red-alert strips framing the bridge viewport cutout (demo-combat
+         D:1545-1548) — shown only in .combat-mode, killed by .combat-ended. -->
+    <div class="combat-alert-strip top"></div>
+    <div class="combat-alert-strip bottom"></div>
+    <div class="combat-alert-strip left"></div>
+    <div class="combat-alert-strip right"></div>
+  </div>
+
+  <!-- END — two-screen cinematic + report flow (Phase 6), painted by
+       engine/js/screens/endings.js. Both sub-views live inside this one
+       .screen (like the encounter screen's layer/outcome toggle) rather
+       than the global overlay system, which is Cruise-specific. -->
+  <div id="screen-end" class="screen">
+    <div id="end-scene"></div>
+    <div id="end-vignette"></div>
+
+    <div id="end-cinematic">
+      <div id="end-cine-group">
+        <div id="end-cine-title"></div>
+        <div id="end-cine-body"></div>
+        <div id="end-cine-quote"></div>
+        <button class="btn accent-gold" id="end-cine-btn"></button>
+        <button class="btn" id="end-cine-btn2" style="display:none;"></button>
+      </div>
+    </div>
+
+    <div id="end-report">
+      <div id="end-report-card">
+        <div id="end-report-title"></div>
+        <div id="end-report-body"></div>
+        <div id="end-report-quote"></div>
+        <div id="end-report-score">
+          <div class="end-score-label">Run Report</div>
+          <div class="score-row">
+            <span class="label">Crew</span>
+            <div class="crew-pips" id="end-crew-pips"></div>
+            <span class="val" id="end-crew-val"></span>
+          </div>
+          <div class="score-row">
+            <span class="label">Resources</span>
+            <div class="res-bars" id="end-res-bars"></div>
+          </div>
+          <div class="day-line" id="end-day-line"></div>
+        </div>
+        <div id="end-report-actions">
+          <button class="btn" onclick="endBackToCinematic()">Back</button>
+          <button class="btn accent-gold" onclick="location.reload()">New Run</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAYS — mounted on top of screen-cruise; Phase 4 fills the rest in -->
+  <div id="overlay-map" class="overlay">
+    <div id="ovmap-header"></div>
+    <div id="ovmap-viewport">
+      <svg id="ovmap-connections"></svg>
+      <div id="ovmap-nodes"></div>
+    </div>
+    <div id="ovmap-footer">
+      <div id="ovmap-info"></div>
+      <button class="btn accent-gold" id="ovmap-close">Close</button>
+    </div>
+  </div>
+  <div id="overlay-stopmenu" class="overlay"></div>
+
+  <!-- Ship's Log — the run's browsable journal (every AI-log entry,
+       day-stamped, with 🔗 link / 📖 expand payloads). Opened from the
+       pause menu's SHIP'S LOG panel. The demo's full parchment chrome
+       (demo-shipslog.html) remains future polish; this is the live,
+       engine-backed surface. -->
+  <div id="overlay-shipslog" class="overlay">
+    <div id="slog-card">
+      <div id="slog-header">SHIP'S LOG <span id="slog-count"></span></div>
+      <div id="slog-rows"></div>
+      <div id="slog-footer">
+        <span id="slog-note">Recorded in your AI's voice, since launch.</span>
+        <button class="btn accent-gold" id="slog-close">Close</button>
+      </div>
+    </div>
+    <div id="slog-expand-modal" style="display:none;">
+      <div id="slog-expand-card">
+        <div id="slog-expand-body"></div>
+        <button class="btn" id="slog-expand-close">Back to Log</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Minimal cargo readout — enough UI to live with full cargo
+       enforcement (2026-08-03 decision) until the full inventory demo
+       migrates. List, slot meter, per-row jettison. -->
+  <div id="overlay-inventory" class="overlay">
+    <div id="inv-card">
+      <div id="inv-header">CARGO HOLD <span id="inv-slots"></span></div>
+      <div id="inv-tabs">
+        <button class="inv-tab active" data-tab="gear">GEAR</button>
+        <button class="inv-tab" data-tab="resources">RESOURCES</button>
+      </div>
+      <div id="inv-grid"></div>
+      <div id="inv-detail" class="hidden">
+        <div class="inv-detail-top">
+          <div id="inv-detail-icon"></div>
+          <div>
+            <div id="inv-detail-name"></div>
+            <div id="inv-detail-meta"></div>
+          </div>
+        </div>
+        <div id="inv-detail-desc"></div>
+        <div class="inv-detail-actions">
+          <button class="btn" id="inv-jett-btn">JETTISON</button>
+        </div>
+      </div>
+      <div id="inv-confirm" class="hidden">
+        <div id="inv-confirm-text"></div>
+        <div class="inv-detail-actions">
+          <button class="btn" id="inv-confirm-yes">OPEN THE AIRLOCK</button>
+          <button class="btn accent-gold" id="inv-confirm-no">KEEP IT</button>
+        </div>
+      </div>
+      <div id="inv-footer">
+        <span id="inv-note">Materials and the crop don't use cargo slots.</span>
+        <button class="btn accent-gold" id="inv-close">Close</button>
+      </div>
+    </div>
+  </div>
+  <!-- Market modal (Restoration item 2) — chrome markup ported from
+       demo-encounter.html's #enc-market block; MarketModal (shared.js)
+       renders the rows/footer state, engine/js/screens/market.js is the
+       host wiring. #market-log stands in for the demo's repositioned
+       #enc-dialog running log (the engine's #enc-dialog carries live
+       name/line spans that renderEncounterState re-queries — wiping it
+       the way the demo does would null those lookups). Positioning CSS
+       lives in resources/screen-market.css, scoped under this overlay. -->
+  <div id="overlay-market" class="overlay">
+    <div id="market-log" class="hidden"></div>
+    <div class="enc-market hidden" id="enc-market">
+      <div class="market-side market-side-buy">
+        <div class="market-side-title">VENDOR WARES</div>
+        <div class="market-side-list" id="market-buy-list"></div>
+      </div>
+      <div class="market-side market-side-sell">
+        <div class="market-side-title">YOUR CARGO</div>
+        <div class="market-side-list" id="market-sell-list"></div>
+      </div>
+      <div class="market-footer">
+        <div class="market-gold" id="market-gold-readout">— gold</div>
+        <button class="market-close" id="market-close-btn">STEP BACK</button>
+      </div>
+    </div>
+  </div>
+  <div id="overlay-mining" class="overlay">
+    <div id="mining-root">
+      <div class="enc-backdrop-base" id="mining-backdrop-base"></div>
+      <div class="enc-backdrop" id="mining-backdrop"></div>
+      <div class="enc-vignette"></div>
+
+      <div class="enc-ai-bar">
+        <span class="enc-ai-name" id="mining-ai-name">MARV</span>
+        <span class="enc-ai-text" id="mining-ai-text"></span>
+        <span class="mining-mode-tag">MINING MODE</span>
+        <span class="sector-tag" id="sector-tag" hidden></span>
+      </div>
+
+      <div class="mining-hud" id="mining-hud">
+        <div class="row">
+          <span class="lbl">ENERGY</span>
+          <div class="bar"><div class="fill" id="mining-energy-fill" style="width:100%"></div></div>
+          <span class="num" id="mining-energy-num">100%</span>
+        </div>
+      </div>
+
+      <div class="hud" id="hud-mining"></div>
+
+      <div class="enc-choices" id="mining-choices"></div>
+
+      <div class="enc-narrative" id="mining-narrative">
+        <div class="enc-narr-title" id="mining-narr-title">THE BELT</div>
+        <div class="enc-narr-body" id="mining-narr-body"></div>
+      </div>
+
+      <div class="mining-stage" id="mining-stage"></div>
+
+      <div class="haul-overlay" id="haul-overlay"></div>
+    </div>
+  </div>
+  <!-- Engine-repair scene (Restoration item 1). Shell only — engine/js/
+       minigames/engine_repair.js injects the full scene markup on first
+       openEngineRepair() (same empty-shell pattern as #overlay-market). -->
+  <div id="overlay-engrepair" class="overlay">
+    <div id="engrepair-root"></div>
+  </div>
+  <!-- Crew detail dossier (Restoration item 4). Shell only — engine/js/
+       screens/crew.js injects the .cd-* modal on first openCrewDetail()
+       (same empty-shell pattern as #overlay-engrepair). -->
+  <div id="overlay-crew" class="overlay">
+    <div id="crewdetail-root"></div>
+  </div>
+  <!-- Standing Orders modal (Restoration item 5) — chrome ported from
+       resources/demo-orders.html (ENGINES pace pills, RATIONS pills,
+       WATER allocation slider, live projections, AI quip line). All
+       ids od-prefixed to keep clear of cruise/growbay lookups; CSS in
+       resources/screen-orders.css scoped under this overlay; behavior
+       in engine/js/screens/orders.js (window.openOrders()). -->
+  <div id="overlay-orders" class="overlay">
+    <div id="od-backdrop"></div>
+    <div id="od-modal" role="dialog" aria-labelledby="od-title">
+      <div class="od-header">
+        <span class="od-title" id="od-title">ORDERS</span>
+      </div>
+      <div class="od-body">
+
+        <section class="od-section" id="od-section-engines">
+          <div class="od-section-header">
+            <span class="od-section-icon icon icon-engines">&#9889;</span>
+            <span class="od-section-label">ENGINES</span>
+            <span class="od-tier-desc" id="od-engines-desc"></span>
+            <span class="od-section-warn" id="od-engines-warn">&#9888;</span>
+          </div>
+          <div class="od-pill-row" id="od-engines-pills">
+            <button class="od-pill" data-idx="0">LIGHT SPEED</button>
+            <button class="od-pill selected" data-idx="1">RIDICULOUS</button>
+            <button class="od-pill" data-idx="2">LUDICROUS</button>
+            <button class="od-pill" data-idx="3">PLAID</button>
+          </div>
+          <div class="od-section-preview" id="od-engines-preview"></div>
+        </section>
+
+        <section class="od-section" id="od-section-rations">
+          <div class="od-section-header">
+            <span class="od-section-icon icon icon-rations">&#127869;</span>
+            <span class="od-section-label">RATIONS</span>
+            <span class="od-tier-desc" id="od-rations-desc"></span>
+            <span class="od-section-warn" id="od-rations-warn">&#9888;</span>
+          </div>
+          <div class="od-pill-row" id="od-rations-pills">
+            <button class="od-pill" data-idx="0">VENDING MACHINE</button>
+            <button class="od-pill selected" data-idx="1">STANDARD</button>
+            <button class="od-pill" data-idx="2">PIG OUT</button>
+          </div>
+          <div class="od-section-preview" id="od-rations-preview"></div>
+        </section>
+
+        <section class="od-section" id="od-section-water">
+          <div class="od-section-header">
+            <span class="od-section-icon icon icon-water">&#128167;</span>
+            <span class="od-section-label">WATER ALLOCATION</span>
+            <span class="od-tier-desc" id="od-water-desc"></span>
+            <span class="od-section-warn" id="od-water-warn">&#9888;</span>
+          </div>
+          <div class="od-water-allocation">
+            <div class="od-water-side">
+              <span class="emoji icon icon-inline icon-plant">&#127793;</span><span>PLANT</span><span class="pct" id="od-water-plant-pct">50%</span>
+            </div>
+            <div class="od-water-track" id="od-water-track" title="Drag to allocate">
+              <div class="od-water-fill-plant" id="od-water-fill-plant" style="width:50%"></div>
+              <div class="od-water-fill-crew"  id="od-water-fill-crew"  style="width:50%"></div>
+              <div class="od-water-midmark"></div>
+              <div class="od-water-saved-mark" id="od-water-saved-mark" style="left:50%"></div>
+              <div class="od-water-thumb" id="od-water-thumb" style="left:50%"></div>
+            </div>
+            <div class="od-water-side crew">
+              <span class="pct" id="od-water-crew-pct">50%</span><span>CREW</span><span class="emoji icon icon-inline icon-crew">&#128101;</span>
+            </div>
+          </div>
+          <div class="od-section-preview" id="od-water-preview"></div>
+        </section>
+
+      </div>
+
+      <div class="od-ai">
+        <span class="od-ai-avatar has-sprite" id="od-ai-avatar">&#9728;</span>
+        <span class="od-ai-name" id="od-ai-name">ARIA:</span>
+        <span class="od-ai-text" id="od-ai-text"></span>
+      </div>
+
+      <div class="od-footer">
+        <button class="panel-btn" id="od-cancel">&#10005; CANCEL</button>
+        <button class="panel-btn accent-gold" id="od-apply">&#10003; APPLY</button>
+      </div>
+    </div>
+  </div>
+  <div id="overlay-growbay" class="overlay">
+  <div id="gb-backdrop" onclick="onBackdropClick()"></div>
+
+  <!-- Growbay modal -->
+  <div id="gb-modal">
+
+    <!-- Header -->
+    <div class="gb-header">
+      <span class="gb-title">GROWBAY</span>
+      <div class="gb-subtitle">
+        <span id="crop-display-name">WHEAT</span>
+        <span class="dot"> · </span>
+        <span class="stage-name" id="stage-label-box"><span id="stage-display">FLOWERING</span> STAGE</span>
+        <span class="dot"> · </span>
+        <span class="banner-day" id="banner-day" title="Days since planting. Base maturity is 90 days, but growth rate shifts with plant health and tending.">GROWTH DAY <span id="day-display">47</span> / <span id="maturity-display">90</span></span>
+      </div>
+      <button class="gb-back" onclick="closeInspect()">‹ BACK</button>
+      <button class="gb-close" onclick="closeModal()">X</button>
+    </div>
+
+    <!-- Body: bars band on top, scene+info row below -->
+    <div class="gb-body">
+
+      <!-- Top band: full-width bars. READY line moved to below the
+           HARVEST button — reads as "when this action becomes
+           available" instead of free-floating data. -->
+      <div class="gb-bars-band">
+        <div class="gb-bar-row growth">
+          <span class="gb-bar-label">GROWTH</span>
+          <div class="gb-bar-track"><div class="gb-bar-fill" id="growth-fill" style="width:62%"></div></div>
+          <span class="gb-bar-value" id="growth-val">62%</span>
+        </div>
+        <div class="gb-bar-row health" id="health-row">
+          <span class="gb-bar-label">HEALTH</span>
+          <div class="gb-bar-track"><div class="gb-bar-fill" id="health-fill" style="width:68%"></div></div>
+          <span class="gb-bar-value" id="health-val">68%</span>
+        </div>
+      </div>
+
+      <!-- Main row: left area (scene + actions under it) | info col -->
+      <div class="gb-main">
+
+        <!-- Left area — scene on top, plant actions + READY line
+             below. Actions sit directly under the plant/crew
+             columns so the buttons read as "applied to the plant." -->
+        <div class="gb-left-area">
+
+        <!-- Scene — shared warm backdrop. plant and crew each live
+             in their own column; labels + tender sit inside their
+             respective column directly under each sprite. Sprite-
+             slot wrappers bottom-align both sprites so they stand
+             on the same invisible floor regardless of their sizes. -->
+        <!-- Actions live INSIDE each column — HARVEST + READY under
+             the plant, TREAT + INSPECT under the crew. This couples
+             each button group to its actual subject's content height,
+             so buttons sit tightly below their content regardless of
+             the other column's height. -->
+        <div class="gb-scene" id="gb-scene">
+          <!-- Glow layer — bleeds 50px beyond the scene on every
+               side into the surrounding modal space. -->
+          <div class="gb-glow"></div>
+          <div class="gb-col-plant">
+            <div class="gb-sprite-slot">
+              <div class="plant-sprite" id="plant-sprite"></div>
+            </div>
+            <div class="plant-stage-label" id="plant-stage-label">FLOWERING</div>
+            <div class="gb-plant-actions">
+              <button class="panel-btn harvest locked" id="harvest-btn" onclick="doHarvest()">Harvest</button>
+              <div class="gb-ready-line" id="ready-line">
+                READY ON <strong id="ready-day">DAY 125</strong>
+              </div>
+            </div>
+          </div>
+          <div class="gb-col-crew">
+            <div class="gb-sprite-slot">
+              <div class="crew-sprite" id="crew-sprite"></div>
+            </div>
+            <div class="gb-tender-slot" id="tender-slot" onclick="toggleTenderPicker(event)">
+              <div class="gb-tender-info">
+                <div class="gb-tender-name" id="tender-name">DR. OSEI</div>
+                <div class="gb-tender-bonus" id="tender-bonus">+15% growth · +15% yield</div>
+              </div>
+              <span class="gb-tender-chevron">▸</span>
+              <div class="gb-picker" id="tender-picker"></div>
+            </div>
+            <div class="gb-crew-actions">
+              <button class="panel-btn locked" id="treat-btn" onclick="openTreat()">Treat</button>
+              <button class="panel-btn" onclick="openInspect()">Inspect</button>
+            </div>
+          </div>
+        </div>
+
+        </div><!-- /.gb-left-area -->
+
+        <!-- Info column: modifiers + next/water strip -->
+        <div class="gb-info">
+          <div class="gb-modifiers">
+            <div class="gb-mod-title">GROWTH MODIFIERS</div>
+            <div id="mod-list-active"></div>
+            <div class="gb-mod-divider"></div>
+            <div class="gb-mod-subtitle">MONITORED</div>
+            <div id="mod-list-monitored"></div>
+          </div>
+          <div class="gb-strip">
+            <div class="gb-strip-row">
+              <span class="gb-strip-label">NEXT STAGE</span>
+              <span class="gb-strip-value" id="next-stage-line">Flowering → Maturing in ~14 days</span>
+            </div>
+          </div>
+
+          <!-- Mini water slider — same underlying state as the Orders
+               modal. Crop-ideal tick marks the plant's preferred
+               allocation; crew status badge flags NOMINAL / THIRSTY /
+               CRITICAL so the player sees both sides of the tradeoff
+               before sliding. Commit-on-release: drag to preview,
+               release to apply. -->
+          <div class="gb-water-block">
+            <div class="gb-water-top">
+              <span class="gb-strip-label">WATER</span>
+            </div>
+            <div class="gb-water-track" id="gb-water-track" title="Drag to adjust">
+              <div class="gb-water-fill-plant" id="gb-water-fill-plant"></div>
+              <div class="gb-water-fill-crew"  id="gb-water-fill-crew"></div>
+              <div class="gb-water-ideal-tick" id="gb-water-ideal-tick" title="Crop's ideal"></div>
+              <div class="gb-water-thumb" id="gb-water-thumb"></div>
+            </div>
+            <div class="gb-water-readout">
+              <span class="gb-water-side">
+                <strong id="gb-water-plant-pct">50%</strong> plant
+                <span class="gb-water-plant-status matched" id="gb-water-plant-status">MATCHED</span>
+              </span>
+              <span class="gb-water-side">
+                <span class="gb-water-crew-status nominal" id="gb-water-crew-status">NOMINAL</span>
+                crew <strong id="gb-water-crew-pct">50%</strong>
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer: ARIA only. Action buttons moved up under the scene. -->
+    <div class="gb-footer">
+      <div class="gb-aria">
+        <span class="gb-aria-avatar has-sprite" style="background-image: url('sprites/interface/AI/aria.png')"></span>
+        <span class="gb-aria-name">ARIA:</span>
+        <span class="gb-aria-text" id="aria-text">The wheat looks introspective today. I do not read into it.</span>
+      </div>
+    </div>
+
+    <!-- Inspect — swap-in body. Replaces .gb-body when
+         body.ins-mode-swap.ins-open is set. -->
+    <div class="ins-swap-wrap">
+      <div class="ins-content" id="ins-content-swap"></div>
+    </div>
+
+    <!-- Inspect — popup over the modal. Visible when
+         body.ins-mode-popup.ins-open is set. -->
+    <div class="ins-popup-backdrop" onclick="closeInspect()"></div>
+    <div class="ins-popup">
+      <div class="ins-popup-header">
+        <span class="ins-popup-title">INSPECT</span>
+        <button class="ins-popup-close" onclick="closeInspect()">X</button>
+      </div>
+      <div class="ins-content" id="ins-content-popup"></div>
+    </div>
+
+    <!-- Harvest celebration burst -->
+    <div class="gb-harvest-burst" id="harvest-burst">+40 FOOD</div>
+
+  </div>
+  </div>
+  <div id="overlay-fabricator" class="overlay">
+  <div id="fb-backdrop" onclick="closeModal()"></div>
+
+  <!-- Fabricator modal -->
+  <div id="fb-modal">
+
+    <!-- Header — title on left, trip-day counter pinned right (mirrors
+         cruise screen's DAY · LEFT format). Day advances during any
+         craft in progress; `ticking` class pulses the number on each
+         day-boundary. -->
+    <div class="fb-header">
+      <span class="fb-title">FABRICATOR</span>
+      <div class="fb-header-spacer"></div>
+      <div class="fb-day-counter">
+        <span class="fb-day-label">DAY</span>
+        <span class="fb-day" id="fb-trip-day">47</span>
+        <span class="fb-day-sep">·</span>
+        <span class="fb-arrival" id="fb-days-left">153 LEFT</span>
+      </div>
+      <button class="fb-close" onclick="closeModal()">X</button>
+    </div>
+
+    <!-- Body -->
+    <div class="fb-body">
+
+      <!-- Crew contribution strip -->
+
+      <!-- Main split -->
+      <div class="fb-main">
+
+        <!-- Left: recipes. Sort + Filter dropdowns sit in a compact
+             banner inside the list box; scroll below. Whole thing
+             reads as one surface. -->
+        <div class="fb-recipes">
+          <div class="fb-list-box">
+            <div class="fb-list-banner">
+              <div class="fb-dd" id="fb-dd-sort">
+                <button class="fb-dd-trigger" type="button" onclick="toggleDropdown('fb-dd-sort', event)">
+                  <span class="dd-label">SORT:</span>
+                  <span class="dd-value" id="fb-dd-sort-value">Time</span>
+                  <span class="caret">▾</span>
+                </button>
+                <div class="fb-dd-menu">
+                  <button type="button" data-sort="name">Name</button>
+                  <button type="button" data-sort="time" class="active">Time</button>
+                  <button type="button" data-sort="complexity">Complexity</button>
+                </div>
+              </div>
+              <div class="fb-dd" id="fb-dd-filter">
+                <button class="fb-dd-trigger" type="button" onclick="toggleDropdown('fb-dd-filter', event)">
+                  <span class="dd-label">FILTER:</span>
+                  <span class="dd-value" id="fb-dd-filter-value">All</span>
+                  <span class="caret">▾</span>
+                </button>
+                <div class="fb-dd-menu">
+                  <button type="button" data-filter="all" class="active">All</button>
+                  <button type="button" data-filter="unlocked">Unlocked</button>
+                  <button type="button" data-filter="craftable">Craftable now</button>
+                </div>
+              </div>
+            </div>
+            <div class="fb-recipe-scroll" id="fb-recipe-scroll"></div>
+          </div>
+        </div>
+
+        <!-- Right: fab unit + detail -->
+        <div class="fb-right">
+          <div class="fb-unit">
+            <div class="fb-unit-slot state-idle" id="fb-slot">
+              <!-- Depleting wear gauge drawn over the sprite's painted
+                   gauge area (40,111 → 88,116 on the 128px frame). 10
+                   segments; seg count lit = (100-wear)/10 rounded up.
+                   Hidden entirely when broken so the OUT-OF-SERVICE
+                   sprite text underneath is readable. -->
+              <div class="fb-wear-overlay" id="fb-wear-overlay">
+                <div class="fb-wear-seg"></div><div class="fb-wear-seg"></div>
+                <div class="fb-wear-seg"></div><div class="fb-wear-seg"></div>
+                <div class="fb-wear-seg"></div><div class="fb-wear-seg"></div>
+                <div class="fb-wear-seg"></div><div class="fb-wear-seg"></div>
+                <div class="fb-wear-seg"></div><div class="fb-wear-seg"></div>
+              </div>
+              <!-- Finished item appears here after a craft completes.
+                   Click to claim → cargo. -->
+              <div class="fb-output-slot" id="fb-output-slot" onclick="claimOutput()">
+                <span class="fb-output-emoji" id="fb-output-emoji"></span>
+              </div>
+              <div class="fb-spark-field" id="fb-spark-field"></div>
+            </div>
+          </div>
+
+          <div class="fb-detail" id="fb-detail">
+            <div class="fb-detail-header">
+              <div class="fb-detail-sprite" id="fb-detail-sprite">🛠️</div>
+              <div class="fb-detail-name" id="fb-detail-name">HULL PATCH</div>
+            </div>
+            <div class="fb-detail-desc" id="fb-detail-desc">Basic hull repair material.</div>
+            <div class="fb-detail-divider"></div>
+
+            <!-- Inputs list — no label. Material rows + counts read as
+                 "required ingredients" implicitly. -->
+            <div class="fb-detail-section">
+              <div class="fb-inputs" id="fb-inputs"></div>
+            </div>
+
+            <div class="fb-meta" id="fb-meta"></div>
+
+            <div class="fb-craft-wrap">
+              <button class="fb-craft-btn" id="fb-craft-btn" onclick="craftSelected()">CRAFT</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress strip — Cancel button only shown while active. -->
+      <div class="fb-progress" id="fb-progress">
+        <span class="fb-progress-label">
+          <span class="prefix">CRAFTING </span>
+          <span class="item" id="fb-progress-item">IDLE</span>
+        </span>
+        <div class="fb-progress-track"><div class="fb-progress-fill" id="fb-progress-fill"></div></div>
+        <span class="fb-progress-days" id="fb-progress-days">—</span>
+        <button class="fb-progress-cancel" id="fb-progress-cancel" onclick="cancelCraft()" title="Cancel craft — refunds materials, keeps incurred wear">CANCEL</button>
+      </div>
+
+    </div>
+
+    <!-- Floating celebration badge -->
+    <div class="fb-badge" id="fb-badge">+1 HULL PATCH</div>
+
+  </div>
+  <div id="overlay-minigames" class="overlay">
+    <div id="ov">
+      <div id="modal">
+        <div id="mhdr">
+          <div id="mtitle">GAME</div>
+          <button id="mclose">✕ CLOSE</button>
+        </div>
+        <div id="mbody">
+          <div id="ga"></div>
+          <div id="result">
+            <div id="rtier">EXCELLENT</div>
+            <div id="rquip"><span class="rname">MARV</span><span class="rtext"></span></div>
+            <div class="rbtns">
+              <button class="rbtn quit" id="rbquit">CLOSE</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="engine/js/map.js"></script>
+<script src="engine/js/screens/title.js"></script>
+<script src="engine/js/screens/setup.js"></script>
+<script src="engine/js/screens/cruise.js"></script>
+<script src="engine/js/minigames.js"></script>
+<script src="engine/js/minigames/mining.js"></script>
+<script src="engine/js/minigames/engine_repair.js"></script>
+<script src="engine/js/screens/growbay.js"></script>
+<script src="engine/js/screens/orders.js"></script>
+<script src="engine/js/screens/fabricator.js"></script>
+<script src="engine/js/combat.js"></script>
+<script src="engine/js/scene_art.js"></script>
+<script src="engine/js/screens/market.js"></script>
+<script src="engine/js/screens/crew.js"></script>
+<script src="engine/js/screens/endings.js"></script>
+
+<script>
+'use strict';
+
+/* ────────────────────────────────────────────────────────────────
+   MODULE LOADER
+   Loads every JSON file the engine needs, in parallel.
+   Fails loudly: any 404 or parse error aborts startup and shows
+   the path that broke.
+   ──────────────────────────────────────────────────────────────── */
+const MODULE_PATHS = {
+  map_rules:     'modules/maps/map_rules.json',
+  test_path:     'modules/locations/lunar_test_path.json',
+  ai_companions: 'modules/ai/ai_companions.json',
+  ships:         'modules/ships/ships.json',
+  crew_roster:   'modules/crew/crew_roster.json',
+  items:         'modules/items/items.json',
+  endings:       'modules/endings/endings.json',
+  failures:      'modules/failures/failures.json',
+  flavor:        'modules/flavor/flavor_pools.json',
+  ev_launch:     'modules/events/events_launch.json',
+  ev_station:    'modules/events/events_station.json',
+  ev_planet:     'modules/events/events_planet.json',
+  ev_general:    'modules/events/events_general.json',
+  ev_asteroid:   'modules/events/events_asteroid.json',
+  ev_derelict:   'modules/events/events_derelict.json',
+  ev_shipboard:  'modules/events/events_shipboard.json',
+  ev_anomaly:    'modules/events/events_anomaly.json',
+  ev_nebula:     'modules/events/events_nebula.json',
+  ev_void:       'modules/events/events_void.json',
+  ev_crisis:     'modules/events/events_crisis.json',
+  ev_encounter:  'modules/events/events_encounter.json',
+  crops:         'modules/crops/crops.json',
+  materials:     'modules/materials/materials.json',
+  recipes:       'modules/recipes/recipes.json',
+};
+
+const MOD = {};       // raw loaded modules
+const EVENTS = {};    // flat event-id → event lookup
+
+async function loadJSON(path) {
+  let res;
+  try { res = await fetch(path); }
+  catch (e) { throw new Error(`network error fetching ${path}: ${e.message}`); }
+  if (!res.ok) throw new Error(`HTTP ${res.status} on ${path}`);
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch (e) { throw new Error(`JSON parse error in ${path}: ${e.message}`); }
+}
+
+async function loadAllModules() {
+  const status = document.getElementById('load-status');
+  const errBox = document.getElementById('load-error');
+  const keys = Object.keys(MODULE_PATHS);
+  status.textContent = `Fetching ${keys.length} modules...`;
+  try {
+    const results = await Promise.all(keys.map(k => loadJSON(MODULE_PATHS[k])));
+    keys.forEach((k, i) => { MOD[k] = results[i]; });
+
+    // items.json contains { _section: ... } annotation objects with no id.
+    // Filter them out per items.json loading spec.
+    const rawItems = MOD.items;
+    MOD.items = rawItems.filter(e => !e._section);
+
+    // Build flat event lookup across every events_*.json file.
+    for (const k of keys) {
+      if (!k.startsWith('ev_')) continue;
+      for (const ev of MOD[k]) {
+        if (!ev || !ev.id) continue;
+        if (EVENTS[ev.id]) console.warn(`Duplicate event id "${ev.id}" in ${k} — overwriting the earlier definition.`);
+        EVENTS[ev.id] = ev;
+      }
+    }
+
+    status.textContent = 'Modules loaded. Starting run...';
+  } catch (e) {
+    status.textContent = 'FAILED.';
+    errBox.style.display = 'block';
+    errBox.textContent = e.message + '\n\nNote: this engine reads JSON via fetch().\nFor local testing, serve the project root with a static server:\n  python3 -m http.server 8000\nThen open http://localhost:8000/';
+    throw e;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   GAME STATE
+   Initialised from map_rules.lunar starting_resources + the fixed
+   lunar_test_path. Single mutable STATE object — every screen
+   reads from it; every choice resolution writes to it.
+   ──────────────────────────────────────────────────────────────── */
+const STATE = {
+  trail:        null,
+  mapName:      null,
+  destination:  null,
+  nodes:        [],
+  byId:         {},
+  currentId:    null,
+  visited:      new Set(),
+  flags:        new Set(),
+  crew:         [],   // role names; gates check against these
+  captain:      null, // captain background (also a role name — grants a discounted crew skill)
+  crop:         null, // crop id selected at setup, for growbay
+  shipName:     null,
+  items:        [],   // item ids in cargo
+  materials:    {},   // material id -> quantity (mining/salvage yields, fabricator inputs)
+  goldAmount:   50,
+  resources: {
+    fuel: 100, food: 100, water: 100, o2: 100,
+    hull: 100, morale: 75,
+  },
+  daysElapsed: 0,
+  baseDays:    120,
+  // Standing orders (Restoration item 5, demo-orders.html) — pace id,
+  // rations id, and the plant share of the water split (0-100).
+  // ensureOrders() lazily seeds this for pre-orders saves.
+  orders:      { pace: 'ridiculous', rations: 'standard', waterSplit: 50 },
+  activeAI:    'marv',
+  currentEvent: null,
+  currentNode:  null,
+  layerStack:   null,    // layered-schema events only: stack of layer ids, top = current
+  currentOutcomeId: null,
+  npcCtx:       null,    // resolved {species, disposition, displayName, quirk} for the current event's npc field
+  npcCache:     {},      // per-event-id NPC roll cache, so revisits show the same NPC
+  outcomeMode:  false,   // narrative is showing outcome text (not event body)
+  pendingNext:  null,    // next node id queued by current outcome
+  ended:        false,
+  seenEventIds: new Set(),  // once:true events already fired this run
+  hardStreak:   0,          // consecutive hard/ultra events selected (pity counter)
+  pityRelief:   0,          // legs remaining where difficulty weights favor easy/medium
+  hubScreen:    'screen-cruise', // which screen travelTo()/advanceAfterEvent() return to between nodes — 'screen-map' under ?debug=fixed_path
+};
+
+/* ────────────────────────────────────────────────────────────────
+   RUN PERSISTENCE — localStorage autosave.
+   Saved every time the cruise hub repaints (i.e., at every safe
+   between-actions point); never mid-encounter. The title screen's
+   Continue button (designed into the title demo, dormant until now)
+   resumes it. Debug/test boots (?debug=...) never write the slot so
+   fuzz and Playwright runs can't clobber a real voyage.
+   ──────────────────────────────────────────────────────────────── */
+const SAVE_KEY = 'transplant_save_v1';
+const SAVED_FIELDS = [
+  'trail', 'mapName', 'destination', 'nodes', 'currentId',
+  'crew', 'captain', 'crop', 'shipName', 'items', 'materials', 'goldAmount',
+  'resources', 'daysElapsed', 'baseDays', 'activeAI',
+  'hardStreak', 'pityRelief', 'npcCache', 'crewHP', 'shipLog',
+  'stowaway', 'cropGrowth', 'postCombatLegs', 'aiWarnLevels', 'fabricator',
+  'consumedActions', 'crewSkillCharges', 'orders',
+];
+function saveRun() {
+  if (STATE.ended || !STATE.trail || !STATE.nodes.length) return;
+  if (new URLSearchParams(location.search).has('debug')) return;
+  try {
+    const snap = { v: 1 };
+    for (const k of SAVED_FIELDS) snap[k] = STATE[k];
+    snap.visited = [...STATE.visited];
+    snap.flags = [...STATE.flags];
+    snap.seenEventIds = [...STATE.seenEventIds];
+    localStorage.setItem(SAVE_KEY, JSON.stringify(snap));
+  } catch (_) { /* quota/privacy modes — the run just isn't saved */ }
+}
+function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (_) {} }
+function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (_) { return false; } }
+function loadRun() {
+  let snap;
+  try { snap = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (_) { return false; }
+  if (!snap || snap.v !== 1) return false;
+  for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
+  STATE.visited = new Set(snap.visited || []);
+  STATE.flags = new Set(snap.flags || []);
+  STATE.seenEventIds = new Set(snap.seenEventIds || []);
+  STATE.byId = {};
+  for (const n of STATE.nodes) STATE.byId[n.id] = n;
+  // Transients — a resumed run always lands at the cruise hub.
+  STATE.currentEvent = null; STATE.currentNode = null;
+  STATE.layerStack = null; STATE.currentOutcomeId = null;
+  STATE.npcCtx = null; STATE.outcomeMode = false;
+  STATE.pendingNext = null; STATE.ended = false;
+  STATE._itemDefs = null;
+  ensureOrders(); // pre-orders saves get the defaults (seeded from cropGrowth.waterPlant)
+  STATE.hubScreen = 'screen-cruise';
+  if (window.SceneArt) SceneArt.clearRunCaches();
+  renderHUD();
+  renderCruise();
+  showScreen('screen-cruise');
+  return true;
+}
+
+function initState() {
+  const rules = MOD.map_rules.trails[MOD.test_path.trail];
+  STATE.trail       = MOD.test_path.trail;
+  STATE.mapName     = MOD.test_path.map_name;
+  STATE.destination = MOD.test_path.destination;
+  STATE.baseDays    = MOD.test_path.base_days || rules.base_days;
+  STATE.resources = {
+    fuel:   rules.starting_resources.fuel,
+    food:   rules.starting_resources.food,
+    water:  rules.starting_resources.water,
+    o2:     rules.starting_resources.o2,
+    hull:   rules.starting_resources.hull,
+    morale: rules.starting_resources.morale,
+  };
+  // Captain-dependent credits: ship-only build, default 50 gold.
+  STATE.goldAmount = 50;
+
+  // Default crew loadout: engineer + medic + botanist. Captain + 2 crew
+  // selection screens come in a later pass — for this first build the
+  // gated choices need *some* roles aboard so the loop isn't sterile.
+  STATE.crew = ['engineer', 'medic', 'botanist'];
+
+  // Starting items — same reasoning as crew. A couple so item-gated
+  // choices unlock and the player sees that gating works.
+  STATE.items = ['soil_sampler', 'gas_analyzer', 'repair_kit'];
+  STATE.materials = {};
+
+  // Active AI — pick MARV by default. Real ship/AI select screen is
+  // a later pass.
+  STATE.activeAI = 'marv';
+
+  STATE.nodes = MOD.test_path.nodes;
+  STATE.byId  = {};
+  for (const n of STATE.nodes) STATE.byId[n.id] = n;
+  STATE.currentId = STATE.nodes[0].id;
+  STATE.visited = new Set();
+  STATE.flags   = new Set();
+  initCrewHP();
+  initCrewSkillCharges();
+  STATE.orders = { pace: 'ridiculous', rations: 'standard', waterSplit: 50 };
+  STATE.stowaway = null; // debug loop skips the stowaway roll — deterministic testing
+  STATE.hubScreen = 'screen-map'; // legacy debug loop hub — screen-cruise is the real game's hub
+}
+
+/* ────────────────────────────────────────────────────────────────
+   TITLE → SETUP → CRUISE handoff
+   ──────────────────────────────────────────────────────────────── */
+function startNewGame() {
+  showScreen('screen-setup');
+}
+
+/* Called by the setup wizard's Launch button with its accumulated
+   `sel = {trail, ai, captain, crew:[], crop, ship}` object. Populates
+   real STATE from it. Map/node generation is Phase 2's job — nodes
+   stay empty here, screen-cruise is a stub until Phase 2 lands. */
+function applySetupToState(sel) {
+  const rules = MOD.map_rules.trails[sel.trail];
+  // trail/mapName/destination/nodes/byId/currentId are set by generateMap() below
+  STATE.baseDays    = rules.base_days;
+  STATE.resources = {
+    fuel:   rules.starting_resources.fuel,
+    food:   rules.starting_resources.food,
+    water:  rules.starting_resources.water,
+    o2:     rules.starting_resources.o2,
+    hull:   rules.starting_resources.hull,
+    morale: rules.starting_resources.morale,
+  };
+  STATE.goldAmount = 50; // no ship-class credit modifier in the setup wizard yet
+
+  STATE.activeAI  = sel.ai;
+  STATE.captain   = sel.captain;
+  STATE.crew      = sel.crew.slice();
+  initCrewHP();
+  initCrewSkillCharges();
+  // Stowaway roll (full-arc decision 2026-08-03): ~35% of runs carry a
+  // hidden extra passenger, identity drawn from the flavor pool. They
+  // stay hidden until the reveal window opens past 20% of the journey.
+  const stowPool = MOD.flavor && MOD.flavor.stowaway_identities;
+  STATE.stowaway = (stowPool && stowPool.length && Math.random() < 0.35)
+    ? { identity: stowPool[Math.floor(Math.random() * stowPool.length)], revealed: false }
+    : null;
+  STATE.crop      = sel.crop;
+  // Standing orders — demo-orders.html defaults (RIDICULOUS / STANDARD /
+  // 50-50 water). cropGrowth.waterPlant is kept as a synced alias of
+  // orders.waterSplit (see setWaterSplit()).
+  STATE.orders    = { pace: 'ridiculous', rations: 'standard', waterSplit: 50 };
+  {
+    const cropDef = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + sel.crop);
+    STATE.cropGrowth = { growth: 0, health: (cropDef && cropDef.starting_health) || 80, pest: false, waterPlant: 50, tenderId: 'none', day: 0, lastTickDay: 0 };
+  }
+  STATE.shipName  = sel.ship || 'The Verdant Ark';
+
+  // Starting items — no items step in the setup wizard yet; keep the
+  // same placeholder loadout initState() used, so item-gated choices
+  // still unlock somewhere in the loop.
+  STATE.items = ['soil_sampler', 'gas_analyzer', 'repair_kit'];
+  STATE.materials = {};
+
+  STATE.daysElapsed  = 0;
+  STATE.visited      = new Set();
+  STATE.flags        = new Set();
+  STATE.currentEvent = null;
+  STATE.outcomeMode  = false;
+  STATE.pendingNext  = null;
+  STATE.ended        = false;
+  STATE.seenEventIds = new Set();
+  STATE.hardStreak   = 0;
+  STATE.pityRelief   = 0;
+  STATE.npcCache     = {};
+  STATE.consumedActions = {};
+  if (window.SceneArt) SceneArt.clearRunCaches(); // re-roll scenes + NPC variants per run
+
+  STATE.hubScreen = 'screen-cruise';
+  generateMap(sel.trail); // sets STATE.nodes/byId/currentId/mapName/destination
+
+  renderHUD();
+  renderCruise();
+  showScreen('screen-cruise');
+}
+
+/* ────────────────────────────────────────────────────────────────
+   CARGO CAPACITY (user decision 2026-08-03: full enforcement).
+   Slot data comes entirely from authored content: items.json's
+   cargo_slots / cargo_slots_per_10 per item, ships.json's
+   cargo_capacity_base (8) on the one ship, +5 from the insulated
+   cargo bay upgrade while held. Materials (fabricator stock) and the
+   crop are NOT cargo — they live in their own systems.
+   ──────────────────────────────────────────────────────────────── */
+function itemDef(shortId) {
+  if (!STATE._itemDefs) {
+    STATE._itemDefs = {};
+    for (const it of (MOD.items || [])) {
+      const sid = it.id.replace(/^item_/, '').replace(/_\d+$/, '');
+      STATE._itemDefs[sid] = it;
+    }
+  }
+  return STATE._itemDefs[shortId] || null;
+}
+
+function cargoCapacity() {
+  const base = (MOD.ships && MOD.ships.ships && MOD.ships.ships[0] && MOD.ships.ships[0].base_stats
+    && MOD.ships.ships[0].base_stats.cargo_capacity_base) || 8;
+  const upgrade = STATE.items.includes('insulated_cargo_bay') ? 5 : 0;
+  return base + upgrade;
+}
+
+/* Sum of slots used by everything in STATE.items. Stackables author
+   cargo_slots_per_10 (N slots per 10 units, rounded up per stack);
+   everything else authors a flat cargo_slots. Unknown ids cost 1. */
+function cargoSlotsUsed() {
+  const counts = {};
+  for (const id of STATE.items) counts[id] = (counts[id] || 0) + 1;
+  let used = 0;
+  for (const [id, n] of Object.entries(counts)) {
+    const def = itemDef(id);
+    if (!def) { used += n; continue; }
+    if (def.cargo_slots_per_10) used += Math.ceil(n / 10) * def.cargo_slots_per_10;
+    else used += (def.cargo_slots || 0) * n;
+  }
+  return used;
+}
+
+/* Grants an item respecting capacity. Returns true if it fit; false
+   (plus an honest log line) if the hold is full and it was left behind.
+   The insulated cargo bay itself always fits — refusing the capacity
+   upgrade for capacity reasons would be a paradox nobody enjoys. */
+function grantItem(shortId) {
+  STATE.items.push(shortId);
+  if (shortId !== 'insulated_cargo_bay' && cargoSlotsUsed() > cargoCapacity()) {
+    STATE.items.pop();
+    const def = itemDef(shortId);
+    if (typeof window.pushCruiseLog === 'function') {
+      window.pushCruiseLog('◆ CARGO FULL — ' + ((def && def.name) || shortId) + ' left behind. Jettison something (INV) to make room.');
+    }
+    return false;
+  }
+  return true;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   CREW HP (user decision 2026-08-03: per-crew HP over binary injury).
+   Every crew role carries 0–100 HP in STATE.crewHP. Events/combat
+   deal damage via crew_effect (injure = damage, kill = lethal with a
+   medkit downgrade chance per the medkit's own authored 15%), gates
+   refuse crew below 25 HP ("hurt too badly to help"), regen ticks
+   per travel leg (+1, +2 with a medic aboard), and death at 0 pulls
+   a crew epitaph from the flavor pool into the log.
+   ──────────────────────────────────────────────────────────────── */
+function initCrewHP() {
+  STATE.crewHP = {};
+  for (const role of STATE.crew) STATE.crewHP[role] = 100;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   CREW ACTIVE-SKILL CHARGES (Restoration item 4). Driven entirely
+   by crew_roster.json's active_skill {uses_per_leg, recharges_at}.
+   STATE.crewSkillCharges = { role: usesRemaining }. Seeded at run
+   start, lazily backfilled for legacy saves, decremented by the
+   dossier's USE (engine/js/screens/crew.js), restored by travelTo()
+   on station arrival for skills authored recharges_at: 'station'.
+   ──────────────────────────────────────────────────────────────── */
+function crewSkillDefOf(role) {
+  const entry = (MOD.crew_roster || []).find(c => c.role === role);
+  return (entry && entry.active_skill) || null;
+}
+function initCrewSkillCharges() {
+  STATE.crewSkillCharges = {};
+  for (const role of STATE.crew) {
+    const sk = crewSkillDefOf(role);
+    if (sk) STATE.crewSkillCharges[role] = sk.uses_per_leg || 1;
+  }
+}
+function ensureCrewSkillCharges() {
+  if (!STATE.crewSkillCharges) STATE.crewSkillCharges = {};
+  for (const role of STATE.crew) {
+    if (!(role in STATE.crewSkillCharges)) {
+      const sk = crewSkillDefOf(role);
+      if (sk) STATE.crewSkillCharges[role] = sk.uses_per_leg || 1;
+    }
+  }
+}
+window.ensureCrewSkillCharges = ensureCrewSkillCharges;
+
+function crewHPOf(role) {
+  if (!STATE.crewHP) initCrewHP();
+  if (!(role in STATE.crewHP)) STATE.crewHP[role] = 100;
+  return STATE.crewHP[role];
+}
+
+function killCrew(role) {
+  const idx = STATE.crew.indexOf(role);
+  if (idx < 0) return;
+  STATE.crew.splice(idx, 1);
+  delete STATE.crewHP[role];
+  if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
+  STATE.flags.add('crew_lost');
+  const pool = MOD.flavor && MOD.flavor.crew_epitaphs;
+  if (pool && pool.length && typeof window.pushCruiseLog === 'function') {
+    const name = (MOD.crew_roster.find(c => c.role === role) || {}).name || role;
+    const epitaph = pool[Math.floor(Math.random() * pool.length)].replaceAll('[Name]', name);
+    // Death entries carry crew identity so the journal can render the
+    // memorial page (portrait if we have one, candle if not).
+    const ROLE_TO_CREWID = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
+    window.pushCruiseLog({
+      text: '◆ ' + epitaph,
+      type: 'death',
+      crewId: ROLE_TO_CREWID[role] || null,
+      crewName: name,
+      expand: epitaph,
+    });
+  }
+}
+
+/* Deals HP damage to a crew member (role, or null for random). A
+   medic aboard softens every hit by 40%. Death at 0 HP. Exposed on
+   window for combat.js. Returns the role actually hit (or null). */
+function damageCrew(role, amount) {
+  if (!STATE.crew.length) return null;
+  if (!role || !STATE.crew.includes(role)) role = STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
+  const softened = (STATE.crew.includes('medic') || STATE.captain === 'medic') ? Math.round(amount * 0.6) : amount;
+  const hp = crewHPOf(role) - softened;
+  if (hp <= 0) killCrew(role);
+  else STATE.crewHP[role] = hp;
+  return role;
+}
+window.damageCrew = damageCrew;
+
+/* ────────────────────────────────────────────────────────────────
+   CRISIS TRIGGERS + EVENT POOL-DRAW (closes audit A1's engine half
+   and A9). Thresholds match tag_registry.json's trigger notes.
+   ──────────────────────────────────────────────────────────────── */
+function activeTriggers() {
+  const r = STATE.resources;
+  const active = new Set(['any']);
+  if (r.fuel   < 25) active.add('low_fuel');
+  if (r.food   < 25) active.add('low_food');
+  if (r.water  < 25) active.add('low_water');
+  if (r.o2     < 25) active.add('low_o2');
+  if (r.hull   < 30) active.add('low_hull');
+  if (r.morale < 30) active.add('low_morale');
+  // Position-based (not threshold-based): first/last ~15% of the
+  // journey by days elapsed; journey_mid covers the long middle third.
+  const frac = STATE.baseDays > 0 ? STATE.daysElapsed / STATE.baseDays : 0;
+  if (frac <= 0.15) active.add('journey_start');
+  if (frac >= 0.85) active.add('journey_end');
+  if (frac >= 0.35 && frac <= 0.65) active.add('journey_mid');
+  // Crop state — thresholds from the selected crop's own crops.json
+  // entry. crop_dead only activates AFTER the player accepts the loss
+  // via the failure screen's "Keep flying" (before that, checkFailure()
+  // owns the moment); it feeds aftermath events on the hollow run.
+  if (STATE.crop && STATE.cropGrowth) {
+    const cropDef = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
+    const sickAt = (cropDef && cropDef.sick_threshold) || 30;
+    const h = STATE.cropGrowth.health;
+    if (h > 0 && h < sickAt) active.add('crop_sick');
+    if (h <= 0 && STATE.flags.has('crop_death_accepted')) active.add('crop_dead');
+  }
+  // Crew state — solo_run is a standing condition; crew_dead activates
+  // permanently once anyone has been lost this run (flag set by
+  // applyOutcomeEffects' kill branch, incl. combat defeats).
+  if (STATE.crew.length === 0) active.add('solo_run');
+  if (STATE.flags.has('crew_lost')) active.add('crew_dead');
+  // Aftermath window — combat.js sets postCombatLegs = 2 on combat end;
+  // selectEvent() decrements it once per event-bearing node.
+  if ((STATE.postCombatLegs || 0) > 0) active.add('post_combat');
+  // Ship systems.
+  if (STATE.fabricator && STATE.fabricator.broken) active.add('fab_broken');
+  else if (STATE.fabricator && (STATE.fabricator.wear || 0) >= 70) active.add('fab_low');
+  // Crew HP — anyone below 60 counts as injured.
+  if (STATE.crewHP && STATE.crew.some(r => crewHPOf(r) < 60)) active.add('crew_injured');
+  // Cargo (full enforcement per 2026-08-03 decision).
+  if (cargoSlotsUsed() >= cargoCapacity()) active.add('full_cargo');
+  if (STATE.items.length === 0) active.add('empty_cargo');
+  // Stowaway reveal window: a hidden stowaway is aboard and the run is
+  // past its first ~20% — the reveal event (or shipboard_001's authored
+  // stowaway_variant) fires from here. Deactivates once revealed.
+  if (STATE.stowaway && !STATE.stowaway.revealed && frac >= 0.2) active.add('stowaway_aboard');
+  return active;
+}
+
+/* Filters `pool` by `predicate`, then picks uniformly at random among
+   the matches (not first-match) — closes audit A6, reused for both
+   event selection and ending/failure selection. */
+function filterThenRandomDraw(pool, predicate) {
+  const matches = pool.filter(predicate);
+  if (!matches.length) return null;
+  return matches[Math.floor(Math.random() * matches.length)];
+}
+
+/* Weighted random draw among candidates. `weightFn` maps a candidate
+   to a numeric weight; candidates with weight <= 0 never win. */
+function weightedDraw(candidates, weightFn) {
+  const weights = candidates.map(weightFn);
+  const total = weights.reduce((s, w) => s + w, 0);
+  if (total <= 0) return candidates[Math.floor(Math.random() * candidates.length)];
+  let r = Math.random() * total;
+  for (let i = 0; i < candidates.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return candidates[i];
+  }
+  return candidates[candidates.length - 1];
+}
+
+/* Replaces the flat node.event_id lookup. Filters EVENTS by node_type
+   + active trigger match + once/seen + active:true, weights by
+   difficulty (map_rules.json's event_difficulty_weights, reweighted
+   by the pity counter), and gives currently-active crisis triggers a
+   large-but-not-guaranteed weight bump so normal content isn't fully
+   locked out during a crisis. Returns null if nothing matches. */
+function selectEvent(node) {
+  const triggers = activeTriggers();
+  const rules = MOD.map_rules.trails[STATE.trail];
+  const baseWeights = STATE.pityRelief > 0
+    ? { easy: (rules.event_difficulty_weights.easy || 0) * 3 + 10, medium: (rules.event_difficulty_weights.medium || 0) * 2 + 5, hard: (rules.event_difficulty_weights.hard || 0) * 0.3, ultra: (rules.event_difficulty_weights.ultra || 0) * 0.1 }
+    : rules.event_difficulty_weights;
+
+  const candidates = Object.values(EVENTS).filter(ev => {
+    if (ev.active === false) return false;
+    if (ev.once && STATE.seenEventIds.has(ev.id)) return false;
+    // Event-level flag gate — consequence events (choices made earlier
+    // affecting what appears later, per CLAUDE.md's Flags section)
+    // only enter the pool once their flag is set. (Audit fix: this
+    // field existed on the schema from day one but the pool-draw never
+    // read it.)
+    if (ev.requires_flag && !STATE.flags.has(ev.requires_flag)) return false;
+    // Event-level item gate — delivery/payoff events (Next of Kin, The
+    // Handoff) only fire while the story object is actually in cargo
+    // (jettisoning it un-schedules the payoff, as it should).
+    if (ev.requires_item && !STATE.items.includes(ev.requires_item)) return false;
+    // Trail targeting (registry dim 4.29 `trail`, previously unused by
+    // any content or engine path): an event listing trails only enters
+    // the pool on those trails. Gives each difficulty its own exclusive
+    // texture — lunar's busy corridor vs interstellar's deep quiet.
+    if (ev.trail && !ev.trail.includes(STATE.trail)) return false;
+    const nodeTypes = ev.node_type || ['any'];
+    // Fork nodes are the one node_type that MUST resolve chose_alpha/
+    // chose_beta to keep the run moving forward — a generic node_type:
+    // "any" event (e.g. event_shipboard_001) matching here instead of a
+    // fork-dedicated one (only event_general_001 today) leaves the fork
+    // permanently stuck with zero next nodes (found live during Phase 7's
+    // playthrough test). So forks exclude the blanket "any" match every
+    // other node_type gets, and only draw from events explicitly tagged
+    // node_type: ["fork"].
+    if (node.node_type === 'fork') {
+      if (!nodeTypes.includes('fork')) return false;
+    } else if (!nodeTypes.includes('any') && !nodeTypes.includes(node.node_type)) return false;
+    const evTriggers = ev.trigger || ['any'];
+    return evTriggers.some(t => triggers.has(t));
+  });
+  if (!candidates.length) return null;
+
+  const chosen = weightedDraw(candidates, ev => {
+    const tier = Array.isArray(ev.difficulty) ? ev.difficulty[0] : (ev.difficulty || 'medium');
+    let w = baseWeights[tier] ?? 1;
+    const evTriggers = ev.trigger || ['any'];
+    // Positional triggers (journey_start/journey_end) exist for
+    // reachability, not urgency — they get a mild bump so they surface
+    // during their window, NOT the crisis multiplier. With ×15 they
+    // crowded out all node-specific content for the first ~15% of every
+    // run (found during the pool-content verification pass).
+    const isCrisis = evTriggers.some(t => t !== 'any' && t !== 'journey_start' && t !== 'journey_end' && triggers.has(t));
+    const isPositional = !isCrisis && evTriggers.some(t => (t === 'journey_start' || t === 'journey_end') && triggers.has(t));
+    if (isCrisis) w *= 15;      // likely, not guaranteed — normal content can still surface
+    else if (isPositional) w *= 3;
+    return w;
+  });
+
+  const tier = Array.isArray(chosen.difficulty) ? chosen.difficulty[0] : chosen.difficulty;
+  if (tier === 'hard' || tier === 'ultra') {
+    STATE.hardStreak++;
+    if (STATE.hardStreak >= (MOD.map_rules.pity_counter.consecutive_threshold || 4)) {
+      STATE.pityRelief = MOD.map_rules.pity_counter.relief_duration || 2;
+      STATE.hardStreak = 0;
+    }
+  } else {
+    STATE.hardStreak = 0;
+    if (STATE.pityRelief > 0) STATE.pityRelief--;
+  }
+  return chosen;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   HUD — resource bar shared by map + encounter screens
+   ──────────────────────────────────────────────────────────────── */
+function renderHUD() {
+  const r = STATE.resources;
+  const crit = {
+    fuel:  r.fuel  < 25,
+    food:  r.food  < 25,
+    water: r.water < 25,
+    o2:    r.o2    < 25,
+    hull:  r.hull  < 30,
+    mor:   r.morale < 30,
+  };
+  const html = `
+    <div class="hud-r fuel${crit.fuel?' crit':''}"  title="FUEL">  <span class="dot"></span>FU ${r.fuel|0}</div>
+    <div class="hud-r food${crit.food?' crit':''}"  title="FOOD">  <span class="dot"></span>FD ${r.food|0}</div>
+    <div class="hud-r water${crit.water?' crit':''}" title="WATER"> <span class="dot"></span>H2 ${r.water|0}</div>
+    <div class="hud-r o2${crit.o2?' crit':''}"      title="OXYGEN"><span class="dot"></span>O2 ${r.o2|0}</div>
+    <div class="hud-r hull${crit.hull?' crit':''}"  title="HULL">  <span class="dot"></span>HL ${r.hull|0}</div>
+    <div class="hud-r mor${crit.mor?' crit':''}"    title="MORALE"><span class="dot"></span>MO ${r.morale|0}</div>
+    <div class="hud-r gold" title="GOLD"><span class="dot"></span>${STATE.goldAmount}g</div>
+  `;
+  for (const id of ['hud-map', 'hud-enc', 'hud-cruise', 'hud-mining']) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   SCREEN ROUTING
+   ──────────────────────────────────────────────────────────────── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* Overlays (Stop Menu, Map, Market, minigames) mount on top of
+   screen-cruise without hiding it — independent of showScreen(). */
+function showOverlay(id) {
+  document.getElementById(id).classList.add('active');
+}
+function hideOverlay(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+/* ── Cargo hold overlay ──────────────────────────────────────────
+   Minimal management UI for full cargo enforcement: grouped item
+   list with per-row jettison. Wired to Cruise's INV button. */
+/* Inventory — demo-inventory.html canon: tabbed sprite grid (GEAR =
+   cargo items, RESOURCES = material stocks), tile → detail panel,
+   jettison behind a confirm dialog. Capacity math unchanged. */
+let _invTab = 'gear';
+let _invSelected = null;
+function invIconHtml(id, isMaterial, px) {
+  const path = isMaterial ? 'sprites/cargo/materials/' + id + '.png' : 'sprites/cargo/items/' + id + '.png';
+  return '<img src="' + path + '" alt="" onerror="this.outerHTML=\'<span class=&quot;inv-tile-emoji&quot;>📦</span>\'" style="width:inherit;height:inherit;max-width:56px;max-height:56px;">';
+}
+function renderInventory() {
+  const used = cargoSlotsUsed(), cap = cargoCapacity();
+  const slotsEl = document.getElementById('inv-slots');
+  slotsEl.textContent = `SLOTS ${used} / ${cap}`;
+  slotsEl.classList.toggle('full', used >= cap);
+  document.querySelectorAll('.inv-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === _invTab));
+  const grid = document.getElementById('inv-grid');
+  grid.innerHTML = '';
+  document.getElementById('inv-confirm').classList.add('hidden');
+
+  let entries;
+  if (_invTab === 'gear') {
+    const counts = {};
+    for (const id of STATE.items) counts[id] = (counts[id] || 0) + 1;
+    entries = Object.keys(counts).sort().map(id => ({ id, n: counts[id], material: false }));
+  } else {
+    entries = Object.keys(STATE.materials || {}).filter(m => STATE.materials[m] > 0)
+      .sort().map(id => ({ id, n: STATE.materials[id], material: true }));
+  }
+  if (!entries.length) {
+    grid.innerHTML = '<div class="inv-empty" style="grid-column:1/-1">' +
+      (_invTab === 'gear' ? 'The hold is empty. It echoes, professionally.'
+                          : 'No raw materials aboard. The fabricator sulks.') + '</div>';
+    document.getElementById('inv-detail').classList.add('hidden');
+    _invSelected = null;
+    return;
+  }
+  for (const en of entries) {
+    const tile = document.createElement('div');
+    tile.className = 'inv-tile' + (_invSelected === en.id ? ' selected' : '');
+    tile.innerHTML = invIconHtml(en.id, en.material) +
+      (en.n > 1 ? '<span class="inv-tile-count">×' + en.n + '</span>' : '');
+    tile.title = (itemDef(en.id) || {}).name || prettyItem(en.id);
+    tile.addEventListener('click', () => { _invSelected = en.id; renderInvDetail(en); renderInventory(); });
+    grid.appendChild(tile);
+  }
+  const sel = entries.find(e => e.id === _invSelected);
+  if (sel) renderInvDetail(sel);
+  else document.getElementById('inv-detail').classList.add('hidden');
+}
+function renderInvDetail(en) {
+  const box = document.getElementById('inv-detail');
+  box.classList.remove('hidden');
+  const def = en.material ? null : itemDef(en.id);
+  document.getElementById('inv-detail-icon').innerHTML = invIconHtml(en.id, en.material);
+  document.getElementById('inv-detail-name').textContent =
+    ((def && def.name) || prettyItem(en.id)) + (en.n > 1 ? '  ×' + en.n : '');
+  const bits = [];
+  if (en.material) bits.push('Raw material · no cargo slot');
+  else if (def) {
+    bits.push(def.cargo_slots_per_10 ? Math.ceil(en.n / 10) * def.cargo_slots_per_10 + ' slot(s)' : ((def.cargo_slots || 0) * en.n) + ' slot(s)');
+    if (def.base_price) bits.push('fence value ~' + Math.round(def.base_price * 2 / 3) + 'g');
+  }
+  document.getElementById('inv-detail-meta').textContent = bits.join(' · ');
+  document.getElementById('inv-detail-desc').textContent =
+    en.material ? 'Feedstock for the fabricator. Sharp edges included at no extra charge.'
+                : ((def && def.description) || 'Unlabeled. Confident.');
+  const jett = document.getElementById('inv-jett-btn');
+  jett.style.display = en.material ? 'none' : '';
+}
+(function wireInventoryChrome() {
+  document.querySelectorAll('.inv-tab').forEach(t =>
+    t.addEventListener('click', () => { _invTab = t.dataset.tab; _invSelected = null; renderInventory(); }));
+  document.getElementById('inv-jett-btn').addEventListener('click', () => {
+    if (!_invSelected) return;
+    const def = itemDef(_invSelected);
+    document.getElementById('inv-confirm-text').textContent =
+      'Jettison ' + ((def && def.name) || prettyItem(_invSelected)) + '? The airlock does not do refunds.';
+    document.getElementById('inv-confirm').classList.remove('hidden');
+  });
+  document.getElementById('inv-confirm-no').addEventListener('click', () =>
+    document.getElementById('inv-confirm').classList.add('hidden'));
+  document.getElementById('inv-confirm-yes').addEventListener('click', () => {
+    if (!_invSelected) return;
+    const id = _invSelected;
+    const def = itemDef(id);
+    STATE.items.splice(STATE.items.indexOf(id), 1);
+    if (typeof window.pushCruiseLog === 'function') {
+      window.pushCruiseLog('◆ Jettisoned: ' + ((def && def.name) || id) + '. It tumbles off into the dark, unemployed.');
+    }
+    if (!STATE.items.includes(id)) _invSelected = null;
+    renderInventory();
+  });
+})();
+function openInventory() {
+  showOverlay('overlay-inventory');
+  renderInventory();
+}
+
+/* ── Ship's Log overlay ──────────────────────────────────────────
+   Browsable journal of every log entry this run (day-stamped, newest
+   first), with the Bible's 🔗 link and 📖 expand payloads live.
+   Opened from the pause menu's SHIP'S LOG panel via window.openShipsLog. */
+function renderShipsLog() {
+  const rows = document.getElementById('slog-rows');
+  const entries = STATE.shipLog || [];
+  document.getElementById('slog-count').textContent = entries.length + ' ENTRIES · DAY ' + STATE.daysElapsed;
+  rows.innerHTML = '';
+  if (!entries.length) {
+    rows.innerHTML = '<div class="slog-empty">Nothing logged yet. The voyage is young and the AI is saving its material.</div>';
+    return;
+  }
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const e = entries[i];
+    const row = document.createElement('div');
+    row.className = 'slog-row' + (e.type ? ' ' + e.type : '');
+    const led = document.createElement('span');
+    led.className = 'slog-led';
+    row.appendChild(led);
+    const day = document.createElement('span');
+    day.className = 'slog-day';
+    day.textContent = 'DAY ' + e.day;
+    row.appendChild(day);
+    row.appendChild(document.createTextNode(e.text));
+    if (e.link && e.link.url) {
+      const a = document.createElement('a');
+      a.className = 'ai-entry-link';
+      a.href = e.link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.textContent = ' 🔗 ' + (e.link.label || 'Learn more');
+      row.appendChild(a);
+    }
+    if (e.expand) {
+      const b = document.createElement('button');
+      b.className = 'slog-expand-btn';
+      b.textContent = '📖 read more';
+      b.addEventListener('click', () => {
+        const card = document.getElementById('slog-expand-card');
+        const body = document.getElementById('slog-expand-body');
+        // Wipe any previous memorial header.
+        card.querySelectorAll('.slog-death-header').forEach(h => h.remove());
+        card.classList.toggle('death-mode', e.type === 'death');
+        if (e.type === 'death') {
+          // Memorial page: desaturated portrait when the crew id has
+          // one, candle otherwise (demo-shipslog canon).
+          const hdr = document.createElement('div');
+          hdr.className = 'slog-death-header';
+          if (e.crewId && typeof crewIconCss === 'function') {
+            const p = document.createElement('div');
+            p.className = 'slog-portrait';
+            p.innerHTML = '<div class="has-sprite" style="width:100%;height:100%;' + crewIconCss(e.crewId, '50px') + '"></div>';
+            hdr.appendChild(p);
+          } else {
+            const c = document.createElement('div');
+            c.className = 'slog-candle';
+            c.textContent = '†';
+            hdr.appendChild(c);
+          }
+          const nm = document.createElement('div');
+          nm.className = 'slog-death-name';
+          nm.textContent = 'IN MEMORIAM' + (e.crewName ? ' · ' + e.crewName.toUpperCase() : '');
+          hdr.appendChild(nm);
+          card.insertBefore(hdr, body);
+        }
+        body.textContent = e.expand;
+        document.getElementById('slog-expand-modal').style.display = 'flex';
+      });
+      row.appendChild(b);
+    }
+    rows.appendChild(row);
+  }
+}
+window.openShipsLog = function () {
+  showOverlay('overlay-shipslog');
+  renderShipsLog();
+};
+
+/* ────────────────────────────────────────────────────────────────
+   MAP RENDERER
+   Lays out the lunar_test_path on a left-to-right axis. Fork
+   branches stack vertically so alpha sits above beta. Lines
+   connect each node to everything in its connects_to list.
+   ──────────────────────────────────────────────────────────────── */
+/* Default ids target the legacy full-screen map (screen-map, still
+   reachable via ?debug=fixed_path). renderMapOverlay() below reuses
+   this same layout/render logic targeting the overlay-map ids instead
+   — one node-graph renderer, two mount points. */
+const MAP_IDS_DEFAULT = {
+  header: 'map-header', viewport: 'map-viewport', connections: 'map-connections',
+  nodes: 'map-nodes', footer: 'map-footer', info: 'map-info', advanceBtn: 'btn-advance',
+};
+
+function nodePositions(viewportId) {
+  // Group nodes by position. Forked branches share the fork's
+  // outgoing position+1, so we split them vertically when there
+  // are two nodes at the same position.
+  const byPos = {};
+  for (const n of STATE.nodes) {
+    (byPos[n.position] = byPos[n.position] || []).push(n);
+  }
+  const positions = Object.keys(byPos).map(Number).sort((a,b)=>a-b);
+  const maxPos = positions[positions.length - 1];
+  const pos = {};
+  const vp = document.getElementById(viewportId || MAP_IDS_DEFAULT.viewport);
+  const W = vp.clientWidth, H = vp.clientHeight;
+  for (const p of positions) {
+    const nodes = byPos[p];
+    const x = (p / maxPos) * (W - 60) + 30;
+    if (nodes.length === 1) {
+      pos[nodes[0].id] = { x, y: H / 2 };
+    } else {
+      // Stack vertically: alpha (top) / beta (bottom).
+      const slots = nodes.length;
+      nodes.forEach((n, i) => {
+        const yOff = ((i - (slots - 1) / 2) * 110);
+        pos[n.id] = { x, y: H / 2 + yOff };
+      });
+    }
+  }
+  // Multi-node branches arc outward: each subsequent branch node steps
+  // further off-spine vertically. On dense trails (interstellar, 15
+  // spine nodes) the horizontal room inside a fork gap shrinks to a few
+  // pixels — vertical separation keeps 2-node branches readable as a
+  // detour loop instead of an overlapping smear.
+  for (const n of STATE.nodes) {
+    const m = n.id.match(/^node_branch_\d+_(alpha|beta)_(\d+)$/);
+    if (!m || !pos[n.id]) continue;
+    const sign = m[1] === 'alpha' ? -1 : 1;
+    pos[n.id].y += sign * parseInt(m[2], 10) * 44;
+  }
+  return pos;
+}
+
+function renderMap(ids) {
+  ids = ids || MAP_IDS_DEFAULT;
+  const readOnly = !ids.advanceBtn; // overlay-map is look-only — no click-to-travel
+
+  const header = document.getElementById(ids.header);
+  header.innerHTML = `${STATE.mapName}<div class="sub">${STATE.trail.toUpperCase()} TRAIL — Destination: ${STATE.destination}</div>`;
+
+  const pos = nodePositions(ids.viewport);
+  const nodesEl = document.getElementById(ids.nodes);
+  const svg = document.getElementById(ids.connections);
+  nodesEl.innerHTML = '';
+  svg.innerHTML = '';
+  const vp = document.getElementById(ids.viewport);
+  svg.setAttribute('viewBox', `0 0 ${vp.clientWidth} ${vp.clientHeight}`);
+  svg.setAttribute('width', vp.clientWidth);
+  svg.setAttribute('height', vp.clientHeight);
+
+  // Draw connection lines first (under nodes).
+  for (const n of STATE.nodes) {
+    const to = connectionsOf(n);
+    const a = pos[n.id];
+    for (const tid of to) {
+      const b = pos[tid];
+      if (!a || !b) continue;
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+      line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+      const visited = STATE.visited.has(n.id) && (STATE.visited.has(tid) || tid === STATE.currentId);
+      line.setAttribute('stroke', visited ? '#c8a85a' : 'rgba(140,160,180,0.35)');
+      line.setAttribute('stroke-width', visited ? '2' : '1.5');
+      line.setAttribute('stroke-dasharray', visited ? '0' : '4 4');
+      svg.appendChild(line);
+    }
+  }
+
+  const available = nextAvailableNodes();
+
+  // Rank spine/fork nodes by position for label-side alternation below.
+  const spineRank = {};
+  STATE.nodes
+    .filter(n => !/^node_branch_/.test(n.id))
+    .sort((a, b) => a.position - b.position)
+    .forEach((n, i) => { spineRank[n.id] = i; });
+
+  for (const n of STATE.nodes) {
+    const p = pos[n.id];
+    if (!p) continue;
+    const el = document.createElement('div');
+    el.className = `map-node t-${n.node_type}`;
+    if (STATE.visited.has(n.id))      el.classList.add('visited');
+    if (n.id === STATE.currentId)     el.classList.add('current');
+    if (available.has(n.id))          el.classList.add('available');
+    if (!STATE.visited.has(n.id) && !available.has(n.id) && n.id !== STATE.currentId) el.classList.add('locked');
+    el.style.left = p.x + 'px';
+    el.style.top  = p.y + 'px';
+    // Branch nodes: show the bare type name on the map (the (alpha)/
+    // (beta) suffix is visually redundant — top row IS alpha, bottom
+    // beta — and made adjacent labels collide). Full name stays in the
+    // footer info panel and the hover title. Adjacent branch labels
+    // also alternate above/below the node so 2-node branches never
+    // overlap each other's text.
+    const branchMatch = n.id.match(/^node_branch_\d+_(alpha|beta)_(\d+)$/);
+    let labelText = n.name;
+    if (branchMatch) {
+      labelText = n.name.replace(/\s*\((alpha|beta)\)\s*$/, '');
+      // Labels face outward from the spine: alpha (top arc) above,
+      // beta (bottom arc) below — keeps text clear of the arc's own nodes.
+      if (branchMatch[1] === 'alpha') el.classList.add('label-above');
+    } else {
+      // Spine/fork labels alternate below/above by rank so dense trails
+      // (interstellar: 15 spine nodes) don't overlap adjacent labels.
+      if (spineRank[n.id] % 2 === 1) el.classList.add('label-above');
+    }
+    el.title = n.name;
+    el.innerHTML = `<div class="shape"></div><div class="map-node-label">${labelText}</div>`;
+    // YOU ARE HERE — the demo-map ship marker, kept dead simple per
+    // the user's super-simple-map ruling: a pointer on the current node.
+    if (n.id === STATE.currentId) {
+      const here = document.createElement('div');
+      here.className = 'map-here';
+      here.textContent = '▲ YOU ARE HERE';
+      el.appendChild(here);
+    }
+    // Branch-flavor label (generated by map.js since Phase 2, rendered
+    // by nothing until now — nothing-orphaned rule): tag the first
+    // node of each branch arc with its flavor.
+    if (n.branch_flavor) {
+      const bf = document.createElement('div');
+      bf.className = 'map-branch-flavor';
+      bf.textContent = String(n.branch_flavor).replace(/_/g, ' ').toUpperCase();
+      el.appendChild(bf);
+    }
+    if (!readOnly && available.has(n.id)) {
+      el.addEventListener('click', () => travelTo(n.id));
+    }
+    nodesEl.appendChild(el);
+  }
+
+  // Footer: current node info + (legacy screen-map only) Advance button.
+  const cur = STATE.byId[STATE.currentId];
+  const nextIds = [...available];
+  const info = document.getElementById(ids.info);
+  info.innerHTML = `<b>${cur.name}</b> — ${cur.description}`;
+  if (readOnly) return;
+  const btn = document.getElementById(ids.advanceBtn);
+  if (nextIds.length === 1) {
+    btn.disabled = false;
+    btn.textContent = `Advance to ${STATE.byId[nextIds[0]].name} →`;
+    btn.onclick = () => travelTo(nextIds[0]);
+  } else if (nextIds.length > 1) {
+    btn.disabled = true;
+    btn.textContent = 'Pick a route from the map';
+    btn.onclick = null;
+  } else {
+    btn.disabled = true;
+    btn.textContent = 'End of line';
+    btn.onclick = null;
+  }
+}
+
+const OVMAP_IDS = {
+  header: 'ovmap-header', viewport: 'ovmap-viewport', connections: 'ovmap-connections',
+  nodes: 'ovmap-nodes', footer: 'ovmap-footer', info: 'ovmap-info', advanceBtn: null,
+};
+function renderMapOverlay() { renderMap(OVMAP_IDS); }
+
+/* connections_to may be an array (normal node) or an object keyed by
+   branch name (fork node). Flatten to an array of node ids. */
+function connectionsOf(node) {
+  const c = node.connects_to;
+  if (!c) return [];
+  if (Array.isArray(c)) return c;
+  // Fork: { alpha: [...], beta: [...] }. Engine doesn't know yet which
+  // branch the player picked, so it returns BOTH for layout/lock logic
+  // and `branchPick` resolves the choice at travel time.
+  return Object.values(c).flat();
+}
+
+/* Which branch did the fork player pick? Reads from flags set by
+   the fork event's choices (chose_alpha / chose_beta). */
+function branchPick() {
+  if (STATE.flags.has('chose_alpha')) return 'alpha';
+  if (STATE.flags.has('chose_beta'))  return 'beta';
+  return null;
+}
+
+/* Set of node ids the player can travel to right now. */
+function nextAvailableNodes() {
+  const cur = STATE.byId[STATE.currentId];
+  const c = cur.connects_to;
+  if (!c) return new Set();
+  if (Array.isArray(c)) return new Set(c);
+  // Fork node: until the fork event resolves and a branch is picked,
+  // map UI advances by going through the fork's event instead — so
+  // expose no map-clickable targets from a fork.
+  const pick = branchPick();
+  if (pick && c[pick]) return new Set(c[pick]);
+  return new Set();
+}
+
+/* ────────────────────────────────────────────────────────────────
+   TRAVEL & EVENT ENTRY
+   ──────────────────────────────────────────────────────────────── */
+
+/* Shows whichever screen is the current run's hub (screen-cruise for
+   a real game, screen-map for ?debug=fixed_path) and re-renders it.
+   Called whenever travel/event-resolution has nothing further to do
+   and control returns to the player outside an encounter. */
+function returnToHub() {
+  renderHUD();
+  showScreen(STATE.hubScreen);
+  if (STATE.hubScreen === 'screen-map') renderMap();
+  else renderCruise();
+}
+
+/* ────────────────────────────────────────────────────────────────
+   STANDING ORDERS (Restoration item 5 — demo-orders.html).
+   Pace / rations / water-split are REAL mechanics from here on:
+   - PACE scales days-per-leg (etaMult) and the per-leg fuel cost
+     (fuelMult); hard burns also tire the crew (drainMult).
+   - RATIONS scales the daily food burn (foodMult) and drifts morale.
+   - WATER SPLIT is one shared value (orders.waterSplit ⇄ growbay's
+     cropGrowth.waterPlant): the plant side feeds the growbay's own
+     growth/health tick; the crew side applies daily morale (and, at
+     the driest extreme, crew HP) pressure — the demo's dual-drain.
+   Multipliers are the demo's exact numbers; the per-day base rates
+   are engine-scale (resources live in 0-100 here, not demo stock
+   units) — sized so the DEFAULTS roughly preserve pre-orders
+   balance (see ENGINE_INTEGRATION_HANDOFF.md).
+   ──────────────────────────────────────────────────────────────── */
+const ORDERS_PACE = [
+  { id: 'light',      name: 'LIGHT SPEED',      etaMult: 1.35, fuelMult: 0.6, drainMult: 0.6 },
+  { id: 'ridiculous', name: 'RIDICULOUS SPEED', etaMult: 1.0,  fuelMult: 1.0, drainMult: 1.0 },
+  { id: 'ludicrous',  name: 'LUDICROUS SPEED',  etaMult: 0.78, fuelMult: 1.6, drainMult: 1.4 },
+  { id: 'plaid',      name: 'PLAID',            etaMult: 0.55, fuelMult: 2.4, drainMult: 2.0 },
+];
+const ORDERS_RATIONS = [
+  { id: 'vending',  name: 'VENDING MACHINE', foodMult: 0.5, moralePerDay: -0.3, morale: 'FALLING' },
+  { id: 'standard', name: 'STANDARD',        foodMult: 1.0, moralePerDay: 0,    morale: 'STEADY'  },
+  { id: 'pigout',   name: 'PIG OUT',         foodMult: 1.5, moralePerDay: 0.15, morale: 'RISING'  },
+];
+const ORDERS_BASE = {
+  legDaysFrac:      0.55, // travel-day budget ≈ 55% of baseDays at RIDICULOUS across the whole map
+  fuelPerLeg:       3,    // fuel per leg at RIDICULOUS (× pace fuelMult)
+  foodPerDay:       0.2,  // food per day at STANDARD (× rations foodMult)
+  waterPerDay:      0.15, // ship water stock draw per day (both sides drink from it)
+  paceMoraleFactor: 0.25, // morale/day per point of drainMult above 1.0, travel days only
+  // Crew-side water pressure — demo crewDrainRate() tiers (0/1/3/6
+  // hydration pts/day) mapped to engine morale pressure per day.
+  crewWaterMorale:  { 0: 0, 1: 0.1, 3: 0.5, 6: 1.2 },
+  crewWaterHPTier:  6,    // at the driest tier, crew also take 1 HP/day
+};
+
+function ensureOrders() {
+  if (!STATE.orders || !STATE.orders.pace) {
+    STATE.orders = {
+      pace: 'ridiculous', rations: 'standard',
+      waterSplit: (STATE.cropGrowth && Number.isFinite(STATE.cropGrowth.waterPlant))
+        ? STATE.cropGrowth.waterPlant : 50,
+    };
+  }
+  return STATE.orders;
+}
+function ordersPace()    { const o = ensureOrders(); return ORDERS_PACE.find(p => p.id === o.pace) || ORDERS_PACE[1]; }
+function ordersRations() { const o = ensureOrders(); return ORDERS_RATIONS.find(r => r.id === o.rations) || ORDERS_RATIONS[1]; }
+
+/* One write point for the water split — keeps orders.waterSplit and
+   the growbay's cropGrowth.waterPlant (its pre-orders home, still what
+   the growth/health tick reads) in lockstep. Both sliders call this. */
+function setWaterSplit(pct) {
+  pct = clamp(Math.round(pct), 15, 85); // demo floor/ceiling — can't starve either side to zero
+  ensureOrders().waterSplit = pct;
+  if (STATE.cropGrowth) STATE.cropGrowth.waterPlant = pct;
+  return pct;
+}
+
+/* Crop water need — growbay's CROP_META is the authority (window.cropMetaOf
+   export); 50 when no crop/meta (demo's CROP_WATER_NEED). */
+function cropWaterNeed() {
+  const m = (typeof window.cropMetaOf === 'function' && STATE.crop) ? cropMetaOf(STATE.crop) : null;
+  return (m && m.water_need) || 50;
+}
+
+/* Demo crewDrainRate(): how hard the crew's water share is biting.
+   ratio = crew share vs what the crop's need leaves them. */
+function crewWaterDrainRate() {
+  const crewPct = 100 - ensureOrders().waterSplit;
+  const ratio = Math.min(1, crewPct / (100 - cropWaterNeed()));
+  if (ratio >= 1)   return 0;
+  if (ratio >= 0.7) return 1;
+  if (ratio >= 0.4) return 3;
+  return 6;
+}
+
+/* What one travel leg costs at the current pace. Days scale off the
+   trail's day budget spread across the generated map; fuel is a flat
+   per-leg burn × pace. Also the pilot skill's "double fuel" basis. */
+function legTravelCost() {
+  const pace = ordersPace();
+  const nodeCount = Math.max(1, (STATE.nodes && STATE.nodes.length) || 10);
+  const baseLegDays = Math.max(1, (STATE.baseDays * ORDERS_BASE.legDaysFrac) / nodeCount);
+  return {
+    days: Math.max(1, Math.round(baseLegDays * pace.etaMult)),
+    fuel: Math.round(ORDERS_BASE.fuelPerLeg * pace.fuelMult * 10) / 10,
+  };
+}
+
+/* THE one day-advancement helper — every site that passes days routes
+   through here (event time_cost, travel legs, minigame/verb/growbay/
+   fabricator day costs) so rations + water pressure apply uniformly.
+   opts.travel adds the pace's crew-drain (hard burns tire people).
+   Callers keep their own renderHUD()/checkFailure() sequencing. */
+function passDays(days, opts) {
+  days = Math.max(0, Math.round(days));
+  if (!days) return;
+  opts = opts || {};
+  STATE.daysElapsed += days;
+  const r = STATE.resources;
+  const pace = ordersPace(), ra = ordersRations();
+
+  // RATIONS — food burn + morale drift, every day.
+  r.food = clamp(r.food - ORDERS_BASE.foodPerDay * ra.foodMult * days, 0, 100);
+  let morale = ra.moralePerDay * days;
+
+  // PACE — crew drain while actually flying (drainMult < 1 rests them).
+  if (opts.travel) morale -= (pace.drainMult - 1) * ORDERS_BASE.paceMoraleFactor * days;
+
+  // WATER — stock draw + crew-side pressure (the plant side of the
+  // dual-drain lives in growbay's own per-day tick off waterPlant).
+  r.water = clamp(r.water - ORDERS_BASE.waterPerDay * days, 0, 100);
+  const rate = crewWaterDrainRate();
+  morale -= (ORDERS_BASE.crewWaterMorale[rate] || 0) * days;
+  if (rate >= ORDERS_BASE.crewWaterHPTier && STATE.crew.length) {
+    for (const role of STATE.crew.slice()) damageCrew(role, days);
+  }
+
+  r.morale = clamp(r.morale + morale, 0, 100);
+}
+window.ensureOrders = ensureOrders;
+window.ordersPace = ordersPace;
+window.ordersRations = ordersRations;
+window.setWaterSplit = setWaterSplit;
+window.cropWaterNeed = cropWaterNeed;
+window.crewWaterDrainRate = crewWaterDrainRate;
+window.legTravelCost = legTravelCost;
+window.passDays = passDays;
+window.ORDERS_PACE = ORDERS_PACE;
+window.ORDERS_RATIONS = ORDERS_RATIONS;
+window.ORDERS_BASE = ORDERS_BASE;
+
+function travelTo(nodeId, opts) {
+  opts = opts || {};
+  // Mark current node visited, move pointer, fire the new node's event.
+  STATE.visited.add(STATE.currentId);
+  STATE.currentId = nodeId;
+  const node = STATE.byId[nodeId];
+
+  // Crew HP regen — one tick per travel leg: +1, +2 with a medic aboard.
+  if (STATE.crewHP) {
+    const regen = (STATE.crew.includes('medic') || STATE.captain === 'medic') ? 2 : 1;
+    for (const r of STATE.crew) STATE.crewHP[r] = clamp(crewHPOf(r) + regen, 0, 100);
+  }
+
+  // The leg itself costs real days + fuel, scaled by the ENGINES pace
+  // (Restoration item 5). Paid on every leg — including the final hop
+  // to the arrival node, and Push Engines' skipEvent legs. Running the
+  // tank (or the clock) dry mid-leg ends the run right here.
+  {
+    const leg = legTravelCost();
+    STATE.resources.fuel = clamp(STATE.resources.fuel - leg.fuel, 0, 100);
+    passDays(leg.days, { travel: true });
+    renderHUD();
+    if (checkFailure()) return;
+  }
+
+  // Station arrival recharges crew active skills — per each skill's own
+  // authored recharges_at in crew_roster.json (all current skills author
+  // 'station'; a future 'leg' value would recharge in the leg tick above).
+  if (node.node_type === 'station') {
+    ensureCrewSkillCharges();
+    let restored = false;
+    for (const role of STATE.crew) {
+      const sk = crewSkillDefOf(role);
+      if (!sk || sk.recharges_at !== 'station') continue;
+      const max = sk.uses_per_leg || 1;
+      if ((STATE.crewSkillCharges[role] || 0) < max) { STATE.crewSkillCharges[role] = max; restored = true; }
+    }
+    if (restored && typeof window.pushCruiseLog === 'function') {
+      window.pushCruiseLog('◆ Station services — crew skills recharged.');
+    }
+  }
+
+  // Arrival node (no outgoing connections) ends the run with the
+  // configured ending module id.
+  if (node.connects_to && (Array.isArray(node.connects_to) ? node.connects_to.length === 0 : Object.keys(node.connects_to).length === 0)) {
+    STATE.visited.add(nodeId);
+    triggerArrival(node);
+    return;
+  }
+
+  // Push Engines (pilot active skill) — the leg is flown, the node's
+  // event is skipped entirely. Straight back to the hub.
+  if (opts.skipEvent) {
+    STATE.visited.add(nodeId);
+    if ((STATE.postCombatLegs || 0) > 0) STATE.postCombatLegs--;
+    returnToHub();
+    return;
+  }
+
+  // Fixed test-path nodes may still hardcode event_id (?debug=fixed_path);
+  // procedurally generated nodes have none, so this always falls through
+  // to the real pool-draw.
+  const ev = (node.event_id && EVENTS[node.event_id]) || selectEvent(node);
+  if (ev) {
+    enterEvent(node, ev);
+  } else {
+    // No event matched this node/trigger combination. Just register the
+    // visit and return to the hub so the player can advance again.
+    STATE.visited.add(nodeId);
+    returnToHub();
+  }
+  // Post-combat aftermath window shrinks one leg per node traveled —
+  // decremented AFTER the draw and the event entry, so the trigger
+  // state the draw saw is the same state the fired event observes
+  // (the fuzz harness's draw audit caught the mid-draw decrement
+  // producing a decision/state mismatch on the window's last leg).
+  if ((STATE.postCombatLegs || 0) > 0) STATE.postCombatLegs--;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   EVENT RENDERER
+   Two event shapes share this renderer:
+   - Flat (19/20 existing events): top-level body/choices, choice.outcome
+     is an inline object applied immediately on click.
+   - Layered (modules/events/events_encounter.json): entryLayer +
+     layers{id:{title,body,line,ai,choices}} + outcomes{id:{...}}.
+     choice.outcome is a STRING id into ev.outcomes here, not an inline
+     object — the two schemas are disambiguated by ev.layers presence.
+   ──────────────────────────────────────────────────────────────── */
+function enterEvent(node, ev) {
+  STATE.currentEvent     = ev;
+  STATE.currentNode      = node;
+  STATE.outcomeMode      = false;
+  STATE.pendingNext      = null;
+  STATE.currentOutcomeId = null;
+  STATE.layerStack       = ev.layers ? [ev.entryLayer || Object.keys(ev.layers)[0]] : null;
+  STATE.seenEventIds.add(ev.id);
+  STATE.npcCtx = ev.npc ? resolveNpc(ev) : null;
+
+  // Educational tie-in (Bible §18's reserved link schema): events can
+  // author science_link {url, label, text} — pushed into the cruise AI
+  // log once per run when the event fires, waiting there when the
+  // player returns from the encounter. 🔗 convention, new tab.
+  if (ev.science_link && ev.science_link.url && !STATE.flags.has('sci_' + ev.id)) {
+    STATE.flags.add('sci_' + ev.id);
+    if (typeof window.pushCruiseLog === 'function') {
+      window.pushCruiseLog({
+        text: '◆ ' + (ev.science_link.text || 'The ship computer files a reference for later reading.'),
+        link: { url: ev.science_link.url, label: ev.science_link.label || 'Learn more' },
+      });
+    }
+  }
+
+  // Stowaway reveal moment — firing either the dedicated reveal event
+  // (trigger: stowaway_aboard) or an event carrying an authored
+  // stowaway_variant (event_shipboard_001) while a stowaway is hidden
+  // IS the reveal. renderEncounterState() branches on revealed state,
+  // so flip it here (enterEvent owns state changes; render stays pure).
+  if (STATE.stowaway && !STATE.stowaway.revealed &&
+      (ev.stowaway_variant || (ev.trigger || []).includes('stowaway_aboard'))) {
+    STATE.stowaway.revealed = true;
+    STATE.stowaway.revealedByEvent = ev.id;
+  }
+
+  STATE._layerVisits = {}; // per-entry revisit tracking (demo machinery)
+  renderEncounterState();
+  renderHUD();
+  showScreen('screen-encounter');
+}
+
+/* One-shot action key — demo's `consume` machinery, scoped per event
+   AND node so a repeatable scenario (the cantina) re-arms at the next
+   station but stays spent for this one. Persisted with the run. */
+function consumeKey(choice) {
+  const ev = STATE.currentEvent, node = STATE.currentNode;
+  return (ev ? ev.id : '?') + '@' + (node ? node.id : '?') + ':' + choice.consume;
+}
+
+/* Layer-level speaker override (demo's presentNpc): a layer may carry
+   its own `npc` {disposition, job?, species?, displayName?} — that
+   character takes the subject frame + dialog name while the event's
+   default npc (and its {npc.*} tokens) stay intact. Rolled species
+   cache per event+layer so revisits show the same face. */
+function resolveLayerNpc(spec, evId, layerId) {
+  if (!spec) return null;
+  STATE.npcCache = STATE.npcCache || {};
+  const key = evId + '#' + layerId;
+  if (STATE.npcCache[key]) return STATE.npcCache[key];
+  const species = spec.species || NPC_SPECIES_POOL[Math.floor(Math.random() * NPC_SPECIES_POOL.length)];
+  const jobNames = { captain: 'STATION CAPTAIN', medic: 'STATION MEDIC', engineer: 'STATION ENGINEER', botanist: 'STATION BOTANIST', janitor: 'JANITOR', security: 'STATION SECURITY', bartender: 'BARTENDER' };
+  const ctx = {
+    species, disposition: spec.disposition, job: spec.job || null,
+    displayName: spec.displayName
+      || (spec.disposition === 'station_crew' && spec.job === 'bartender' && bartenderName())
+      || (spec.disposition === 'station_crew' && spec.job && jobNames[spec.job])
+      || NPC_DISPOSITION_NAME[spec.disposition] || spec.disposition.toUpperCase(),
+    quirk: '',
+  };
+  STATE.npcCache[key] = ctx;
+  return ctx;
+}
+
+/* Replaces {stowaway.name}/{stowaway.story}/{stowaway.line} tokens
+   from the run's rolled identity (flavor_pools.stowaway_identities).
+   No stowaway rolled → tokens drop cleanly (events using them are
+   gated behind the stowaway_aboard trigger anyway). */
+function interpolateStowawayTokens(text) {
+  if (!text || text.indexOf('{stowaway.') === -1) return text;
+  const id = STATE.stowaway && STATE.stowaway.identity;
+  return text
+    .replace(/\{stowaway\.name\}/g,  id ? id.name  : 'the stowaway')
+    .replace(/\{stowaway\.story\}/g, id ? id.story : '')
+    .replace(/\{stowaway\.line\}/g,  id ? id.line  : '');
+}
+
+function currentLayer() {
+  const ev = STATE.currentEvent;
+  if (!ev.layers || !STATE.layerStack) return null;
+  return ev.layers[STATE.layerStack[STATE.layerStack.length - 1]];
+}
+
+/* ── Typewriter (demo-canon text delivery) ──────────────────────────
+   The demos typed every narrator body and dialog line; the engine
+   port initially painted instantly — restored per the demos-are-
+   templates rule. Independent instances per element; re-rendering
+   cancels in-flight typing; clicking the target completes it.
+   Honors PauseBus. */
+const _typeActive = new Map(); // el → cancel fn
+function typeInto(el, text, ms, onDone) {
+  const prev = _typeActive.get(el);
+  if (prev) prev(true); // silent cancel — no onDone
+  text = String(text || '');
+  let i = 0, timer = null, finished = false;
+  const finish = (silent, keepForeignText) => {
+    if (finished) return;
+    finished = true;
+    if (timer) clearInterval(timer);
+    if (!keepForeignText) el.textContent = text;
+    el.removeEventListener('click', clickSkip);
+    _typeActive.delete(el);
+    if (!silent && onDone) onDone();
+  };
+  const clickSkip = () => finish(false);
+  el.addEventListener('click', clickSkip);
+  _typeActive.set(el, finish);
+  el.textContent = '';
+  // Long bodies speed up so a wall of text never gates the player.
+  const perTick = text.length > 320 ? 3 : (text.length > 160 ? 2 : 1);
+  let lastWritten = '';
+  timer = setInterval(() => {
+    if (window.PauseBus && PauseBus.paused) return;
+    // Someone else wrote this element directly (combat's setNarrCombat,
+    // etc.) — stand down and leave their text alone.
+    if (el.textContent !== lastWritten) { finish(true, true); return; }
+    i += perTick;
+    lastWritten = text.slice(0, i);
+    el.textContent = lastWritten;
+    if (i >= text.length) finish(false);
+  }, ms);
+}
+function finishAllTyping() {
+  for (const cancel of [..._typeActive.values()]) cancel(true);
+}
+
+/* Paints the encounter screen for whatever STATE currently holds:
+   an outcome view, a layer of a layered event, or a flat event's
+   body/choices. Pure — never mutates game state (side effects happen
+   in handleChoiceClick/resolveChoice before this is called). */
+function renderEncounterState() {
+  const ev = STATE.currentEvent;
+  const node = STATE.currentNode;
+
+  if (STATE.currentOutcomeId) {
+    renderOutcomeView(ev.outcomes[STATE.currentOutcomeId]);
+    return;
+  }
+
+  let layer = currentLayer();
+  // Revisit variants (demo machinery): returning to a layer already
+  // seen this entry swaps in its `revisit` overrides (body/line/ai).
+  const layerId = ev.layers && STATE.layerStack ? STATE.layerStack[STATE.layerStack.length - 1] : null;
+  if (layer && layer.revisit && STATE._layerVisits && STATE._layerVisits[layerId]) {
+    layer = Object.assign({}, layer, layer.revisit);
+  }
+  if (layerId && STATE._layerVisits) STATE._layerVisits[layerId] = true;
+  // Layer-level speaker override (demo's presentNpc machinery).
+  // crew_id (layer or event) puts one of our OWN crew in the frame
+  // (demo's growbay_visit archetype — CREW_SHEETS talking head).
+  let layerNpcCtx = (layer && layer.npc) ? resolveLayerNpc(layer.npc, ev.id, layerId) : null;
+  const crewId = (layer && layer.crew_id) || ev.crew_id || null;
+  if (crewId && !layerNpcCtx) {
+    const rosterEntry = (MOD.crew_roster || []).find(c =>
+      ({ osei:'botanist', kazuki:'engineer', vasquez:'medic', reeves:'pilot', reyes:'chef', tanaka:'xenobiologist', hargrove:'diplomat' })[crewId] === c.role);
+    layerNpcCtx = { crewId, displayName: (rosterEntry && rosterEntry.name || crewId).toUpperCase(), species: null, disposition: 'crew', quirk: '' };
+  }
+
+  let body    = layer ? layer.body : ev.body;
+  let line    = layer ? layer.line : null;
+  let choices = layer ? layer.choices : ev.choices;
+
+  // Variant events (event_shipboard_001): when this run's hidden
+  // stowaway was revealed BY this event (enterEvent sets
+  // revealedByEvent), render the authored stowaway_variant — body,
+  // plus its choices filtered by their authored crew-count conditions
+  // (crew max is 2 chosen crew + captain, per setup/Bible). Otherwise
+  // fall through to the first standard variant as before.
+  if (!choices && ev.stowaway_variant && STATE.stowaway &&
+      STATE.stowaway.revealedByEvent === ev.id) {
+    const sv = ev.stowaway_variant;
+    body = sv.stowaway_body || body;
+    choices = (sv.stowaway_choices || []).filter(c => {
+      if (c.condition === 'crew_count < max') return STATE.crew.length < 2;
+      if (c.condition === 'crew_count = max') return STATE.crew.length >= 2;
+      return true; // 'always'
+    });
+  }
+  if (!choices && ev.standard_variants && ev.standard_variants[0]) {
+    body = ev.standard_variants[0].body || body;
+    choices = ev.standard_variants[0].choices || [];
+  }
+  choices = choices || [];
+
+  document.getElementById('enc-narr-title').textContent = (layer && layer.title) || ev.title || node.name;
+  finishAllTyping();
+  typeInto(document.getElementById('enc-narr-body'),
+           interpolateStowawayTokens(interpolateNpcTokens(body || '', STATE.npcCtx)), 12);
+  document.getElementById('enc-narrative').classList.remove('tone-success', 'tone-danger');
+
+  const dialogEl = document.getElementById('enc-dialog');
+  const speaker = layerNpcCtx || STATE.npcCtx;
+  if (line) {
+    document.getElementById('enc-dialog-name').textContent = speaker ? speaker.displayName : '';
+    // Dialog types slower than narration (spoken cadence); the talk
+    // animation stops the moment the line finishes typing.
+    typeInto(document.getElementById('enc-dialog-line'),
+             interpolateStowawayTokens(interpolateNpcTokens(line, STATE.npcCtx)), 26,
+             () => { if (window.SceneArt) SceneArt.stopTalking(); });
+    dialogEl.classList.remove('hidden');
+  } else {
+    dialogEl.classList.add('hidden');
+  }
+
+  const commMode = (layer && layer.comm_mode) || ev.comm_mode || 'in_person';
+  const screenEl = document.getElementById('screen-encounter');
+  screenEl.classList.remove('comm-screen', 'comm-corrupted');
+  if (commMode === 'screen') screenEl.classList.add('comm-screen');
+  if (commMode === 'corrupted') screenEl.classList.add('comm-corrupted');
+
+  // Scene art: backdrop layers + NPC subject frame + talk animation
+  // (engine/js/scene_art.js). Interpolated line drives talk duration.
+  if (window.SceneArt) {
+    const spokenLine = line ? interpolateStowawayTokens(interpolateNpcTokens(line, STATE.npcCtx)) : null;
+    SceneArt.render(ev, node, layer, STATE.npcCtx, spokenLine,
+                    { subjectCtx: layerNpcCtx, pose: layer && layer.pose });
+  }
+
+  const meta = document.getElementById('enc-meta');
+  meta.innerHTML = `${(node.node_type || '').toUpperCase()}<span class="where">${node.name}</span>`;
+
+  const aiBar = document.getElementById('enc-ai-bar');
+  const aiFlavor = (layer && layer.ai) || ev.ai_flavor;
+  if (aiFlavor && aiFlavor[STATE.activeAI]) {
+    document.getElementById('enc-ai-name').textContent = STATE.activeAI.toUpperCase();
+    document.getElementById('enc-ai-text').textContent = aiFlavor[STATE.activeAI];
+    aiBar.classList.remove('hidden');
+  } else {
+    aiBar.classList.add('hidden');
+  }
+
+  renderChoices(choices);
+}
+
+/* Terminal outcome view (both schemas land here — flat via
+   resolveChoice(), layered via handleChoiceClick()'s outcome branch).
+   Side effects (resources/flags/etc) are already applied by the
+   caller before this runs; this only paints. */
+function renderOutcomeView(outcome) {
+  document.getElementById('enc-narr-title').textContent = outcome.title || 'OUTCOME';
+  finishAllTyping();
+  typeInto(document.getElementById('enc-narr-body'),
+           interpolateStowawayTokens(interpolateNpcTokens(outcome.body || outcome.narrative || '...', STATE.npcCtx)), 12);
+  const narr = document.getElementById('enc-narrative');
+  narr.classList.remove('tone-success', 'tone-danger');
+  if (outcome.tone === 'success' || deltaIsGood(outcome)) narr.classList.add('tone-success');
+  else if (outcome.tone === 'danger' || deltaIsBad(outcome)) narr.classList.add('tone-danger');
+
+  const dialogEl = document.getElementById('enc-dialog');
+  if (outcome.line) {
+    document.getElementById('enc-dialog-name').textContent = STATE.npcCtx ? STATE.npcCtx.displayName : '';
+    typeInto(document.getElementById('enc-dialog-line'),
+             interpolateStowawayTokens(interpolateNpcTokens(outcome.line, STATE.npcCtx)), 26,
+             () => { if (window.SceneArt) SceneArt.stopTalking(); });
+    dialogEl.classList.remove('hidden');
+  } else {
+    dialogEl.classList.add('hidden');
+  }
+
+  if (window.SceneArt) SceneArt.renderOutcome(outcome, STATE.npcCtx);
+
+  const col = document.getElementById('enc-choices');
+  col.innerHTML = '';
+  col.appendChild(makeAdvanceButton('Continue'));
+}
+
+/* Render the choice column. Each choice is either:
+   - available (active gate, will resolve when clicked)
+   - locked   (missing requires_crew/item/flag/gate — visible but disabled)
+   A8 softlock guard: if every visible choice is locked (not just
+   zero-length), fall back to a Continue button so a run can never
+   dead-end on an unwinnable gate set. */
+/* Gate badge icon per demo convention — crew gates use the career
+   portraits, item gates the cargo icons, gold the coin. Locked
+   choices show the padlock instead. */
+function gateIconPath(g) {
+  if (!g) return null;
+  if (g.crew) return 'sprites/interface/careers/' + g.crew + '.png';
+  if (g.item) return 'sprites/cargo/items/' + g.item + '.png';
+  if (g.gold) return 'sprites/interface/gold.png';
+  return null;
+}
+
+function renderChoices(choices) {
+  const col = document.getElementById('enc-choices');
+  col.innerHTML = '';
+  // Flag-based visibility (demo machinery): showFlag hides until the
+  // flag is set; hideFlag hides once it is (collapse-after-unlock).
+  // The A8 softlock guard MUST judge the visible list, not the raw one.
+  const visible = choices.filter(ch =>
+    !(ch.showFlag && !STATE.flags.has(ch.showFlag)) &&
+    !(ch.hideFlag && STATE.flags.has(ch.hideFlag)));
+  const anyUnlocked = visible.some(ch => !lockReason(ch));
+  if (!visible.length || !anyUnlocked) {
+    col.appendChild(makeAdvanceButton('Continue'));
+    return;
+  }
+  for (const ch of visible) {
+    const locked = lockReason(ch);
+    const btn = document.createElement('button');
+    btn.className = 'enc-choice'
+      + (locked ? ' locked' : '')
+      + (ch.risky ? ' risky' : '')
+      + (ch.hint ? ' hint' : '');
+
+    // Gate badge (demo-canon 32×32): requirement icon when met,
+    // padlock when locked. Flat-schema requires_* synthesize a spec.
+    const gateSpec = ch.gate
+      || (ch.requires_crew ? { crew: ch.requires_crew }
+        : ch.requires_item ? { item: ch.requires_item } : null);
+    if (gateSpec) {
+      const gate = document.createElement('div');
+      gate.className = 'enc-choice-gate' + (locked ? ' locked' : '');
+      const icon = locked ? 'sprites/interface/lock.png' : gateIconPath(gateSpec);
+      if (icon) gate.style.backgroundImage = "url('" + icon + "')";
+      btn.appendChild(gate);
+      btn.classList.add('has-gate');
+    }
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'ch-text' + (ch.dialog ? ' dialog' : '');
+    bodyEl.textContent = ch.text || ch.label;
+    btn.appendChild(bodyEl);
+
+    // Sub row: effort pips + one-line sub text (lock reason wins).
+    const subText = locked || ch.sub || '';
+    if (ch.effort || subText) {
+      const sub = document.createElement('div');
+      sub.className = 'ch-sub';
+      if (ch.effort) {
+        const eff = document.createElement('span');
+        eff.className = 'effort';
+        const filled = Math.min(ch.effort, 5);
+        eff.textContent = '●'.repeat(filled) + '○'.repeat(5 - filled);
+        sub.appendChild(eff);
+      }
+      if (subText) {
+        const txt = document.createElement('span');
+        if (locked) txt.className = 'lock';
+        else if (ch.risky) txt.className = 'risky';
+        txt.textContent = locked ? '🔒 ' + subText : subText;
+        sub.appendChild(txt);
+      }
+      btn.appendChild(sub);
+    }
+
+    // Cost tooltip (demo's composeTooltip, via title= — the demo's own
+    // stopgap convention; .ui-tip primitive stays parked by design rule).
+    if (!locked) {
+      const tip = [];
+      if (ch.effort) tip.push('Effort ' + ch.effort + '/5');
+      if (ch.gold_cost) tip.push('-' + ch.gold_cost + ' gold');
+      if (ch.gate && ch.gate.gold && !ch.gold_cost) tip.push('costs ' + ch.gate.gold + ' gold');
+      if (ch.risky) tip.push('Risky — outcomes can go badly');
+      if (tip.length) btn.title = tip.join('\n');
+    }
+    // Entrance cascade + click pulse (demo canon).
+    btn.classList.add('entering');
+    btn.style.animationDelay = (col.children.length * 55) + 'ms';
+    if (!locked) btn.addEventListener('click', () => {
+      btn.classList.add('pulse');
+      handleChoiceClick(ch);
+    });
+    col.appendChild(btn);
+  }
+  // Always-present walk-away row (demo's leaveLabel convention) —
+  // layered events only, entry layer only, suppressed by authored
+  // layer.leaveHidden / ev.no_leave. Flat events keep authored exits.
+  const ev2 = STATE.currentEvent;
+  const layer2 = currentLayer();
+  const depth = STATE.layerStack ? STATE.layerStack.length : 0;
+  if (ev2 && ev2.layers && depth === 1 && !ev2.no_leave && !(layer2 && layer2.leaveHidden)) {
+    const leave = document.createElement('button');
+    leave.className = 'enc-choice advance entering';
+    leave.style.animationDelay = (col.children.length * 55) + 'ms';
+    leave.innerHTML = '<div class="ch-text">' + escapeHTML(ev2.leave_label || 'WALK AWAY') + '</div><div class="ch-sub">Leave it be</div>';
+    leave.addEventListener('click', advanceAfterEvent);
+    col.appendChild(leave);
+  }
+}
+
+function makeAdvanceButton(label) {
+  const btn = document.createElement('button');
+  btn.className = 'enc-choice advance';
+  btn.innerHTML = `<div class="ch-text">${label} →</div>`;
+  btn.addEventListener('click', advanceAfterEvent);
+  return btn;
+}
+
+/* Returns null if choice is available; otherwise a short string
+   explaining why it's locked. Checks both the flat schema's gate
+   trio (requires_crew/requires_item/requires_flag) and the layered
+   schema's `gate` object — additive, not mutually exclusive. */
+function lockReason(choice) {
+  // One-shot consumed lock wins over gate copy — the player needs to
+  // know the action is finished, not re-doable under other conditions.
+  if (choice.consume && STATE.consumedActions && STATE.consumedActions[consumeKey(choice)]) {
+    return choice.consumedLabel || 'Already done';
+  }
+  if (choice.requires_crew) {
+    if (!STATE.crew.includes(choice.requires_crew)) return `Needs ${choice.requires_crew}`;
+    if (crewHPOf(choice.requires_crew) <= 25) return `${choice.requires_crew} is hurt too badly to help`;
+  }
+  if (choice.requires_item && !STATE.items.includes(choice.requires_item)) return `Needs ${prettyItem(choice.requires_item)}`;
+  if (choice.requires_flag && !STATE.flags.has(choice.requires_flag)) return `Story-gated`;
+  if (choice.gate) {
+    if (choice.gate.crew) {
+      if (!STATE.crew.includes(choice.gate.crew)) return `Needs ${choice.gate.crew}`;
+      if (crewHPOf(choice.gate.crew) <= 25) return `${choice.gate.crew} is hurt too badly to help`;
+    }
+    if (choice.gate.item && !STATE.items.includes(choice.gate.item)) return `Needs ${prettyItem(choice.gate.item)}`;
+    if (choice.gate.gold && STATE.goldAmount < choice.gate.gold) return `Needs ${choice.gate.gold}g`;
+  }
+  // Capacity-aware lock (audit fix): a choice whose outcome grants
+  // items that can't fit locks up-front — otherwise the player pays
+  // the outcome's costs and grantItem() refuses the goods afterward
+  // (gold spent, fuel cell left on the trader's shelf).
+  const out = choice.outcome && typeof choice.outcome === 'object'
+    ? choice.outcome
+    : (typeof choice.outcome === 'string' && STATE.currentEvent && STATE.currentEvent.outcomes
+        ? STATE.currentEvent.outcomes[choice.outcome] : null);
+  if (out && out.item_grant) {
+    const grants = Array.isArray(out.item_grant) ? out.item_grant : [out.item_grant];
+    if (!grants.includes('insulated_cargo_bay')) {
+      // Simulate the grant for an exact answer (stackables may cost 0
+      // extra slots when joining a partial stack).
+      STATE.items.push(...grants);
+      const over = cargoSlotsUsed() > cargoCapacity();
+      STATE.items.length -= grants.length;
+      if (over) return 'No cargo space';
+    }
+  }
+  return null;
+}
+
+function prettyItem(id) {
+  return id.replace(/_/g, ' ');
+}
+
+function escapeHTML(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ────────────────────────────────────────────────────────────────
+   NPC TEXT RESOLVER (text/dialogue half — portraits/talking heads
+   exists yet; per plan, degrades gracefully until sprites land).
+   ──────────────────────────────────────────────────────────────── */
+const NPC_SPECIES_POOL = ['human', 'insect', 'rock', 'water', 'reptile', 'robot', 'unknown'];
+const NPC_QUIRKS = {
+  human: 'They check a wrist device that means nothing to you.',
+  insect: 'Their mandibles click in a rhythm that might be speech, or might be digestion.',
+  rock: 'Something shifts inside their suit that sounds geological.',
+  water: 'Their transport tank sloshes with each gesture.',
+  reptile: 'They blink with the wrong eyelid first.',
+  robot: 'A small fan somewhere spins up, then stops.',
+  unknown: 'You elect not to think about it too hard.',
+};
+const NPC_DISPOSITION_NAME = { pirate: 'PIRATE CAPTAIN', trader: 'TRADER', drifter: 'DRIFTER', station_crew: 'STATION CREW' };
+
+/* Rolls (or reuses, cached per event id for the run) an NPC for events
+   that declare an `npc` field. Quirks draw from the populated
+   npc_species_coloring pools in flavor_pools.json (random per roll,
+   then cached with the NPC for the run); the local NPC_QUIRKS table
+   remains as a fallback if a species' pool is ever emptied. `job` is
+   carried through for station_crew NPCs so {npc.line.<slot>} can
+   resolve the right job's line pool. */
+/* Robot bartender model-name pool (demo-encounter canon) — stable per
+   station so the same cantina keeps the same barkeep this visit. */
+const BARTENDER_NAMES = ['SHOTMASTER 6000', 'TENDR-9', 'MIXBOT MK.III', 'BARKEEP-7', 'DRIPDROID', 'POURBOT 12', 'GLASSWARE-44', 'LIQUIDLINE'];
+function bartenderName() {
+  let h = 0;
+  const key = String(STATE.currentId || 'bar');
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return BARTENDER_NAMES[h % BARTENDER_NAMES.length];
+}
+function resolveNpc(ev) {
+  STATE.npcCache = STATE.npcCache || {};
+  if (STATE.npcCache[ev.id]) return STATE.npcCache[ev.id];
+  const species = ev.npc.species || NPC_SPECIES_POOL[Math.floor(Math.random() * NPC_SPECIES_POOL.length)];
+  const disposition = ev.npc.disposition;
+  const coloring = MOD.flavor && MOD.flavor.npc_species_coloring && MOD.flavor.npc_species_coloring[species];
+  const quirkPool = coloring && Array.isArray(coloring.quirks) && coloring.quirks.length ? coloring.quirks : null;
+  const jobNames = { captain: 'STATION CAPTAIN', medic: 'STATION MEDIC', engineer: 'STATION ENGINEER', botanist: 'STATION BOTANIST', janitor: 'JANITOR', security: 'STATION SECURITY', bartender: 'BARTENDER' };
+  const ctx = {
+    species, disposition,
+    job: ev.npc.job || null,
+    displayName: (disposition === 'station_crew' && ev.npc.job === 'bartender' && bartenderName())
+      || (disposition === 'station_crew' && ev.npc.job && jobNames[ev.npc.job])
+      || NPC_DISPOSITION_NAME[disposition] || disposition.toUpperCase(),
+    quirk: quirkPool ? quirkPool[Math.floor(Math.random() * quirkPool.length)] : (NPC_QUIRKS[species] || ''),
+  };
+  STATE.npcCache[ev.id] = ctx;
+  return ctx;
+}
+
+/* Species coloring — Bible §11's renderer contract, steps 3–4.
+   Applies ONLY to dialogue drawn from the disposition-line pools
+   ({npc.line.<slot>}), never to authored `line:` fields or scene prose
+   — per the Bible, quirks color prose, grammar+tics color dialogue,
+   and the two registers never mix. Grammar transforms are code, not
+   data (also per the Bible); each is a small pure string function. */
+const NPC_CONTRACTIONS = [
+  [/\bdon't\b/gi, 'do not'], [/\bwon't\b/gi, 'will not'], [/\bcan't\b/gi, 'cannot'],
+  [/\bit's\b/gi, 'it is'], [/\bthat's\b/gi, 'that is'], [/\bthere's\b/gi, 'there is'],
+  [/\byou're\b/gi, 'you are'], [/\bwe're\b/gi, 'we are'], [/\bthey're\b/gi, 'they are'],
+  [/\bI'm\b/g, 'I am'], [/\blet's\b/gi, 'let us'], [/\bI've\b/g, 'I have'],
+  [/\byou've\b/gi, 'you have'], [/\bwouldn't\b/gi, 'would not'], [/\bisn't\b/gi, 'is not'],
+  [/\bdidn't\b/gi, 'did not'], [/\bdoesn't\b/gi, 'does not'], [/\bI'd\b/g, 'I would'],
+  [/\byou'll\b/gi, 'you will'], [/\bwe'll\b/gi, 'we will'], [/\bI'll\b/g, 'I will'],
+];
+const NPC_GRAMMAR = {
+  standard: s => s,
+  // Shortens sentences: keeps each sentence's main clause, drops what
+  // follows the first comma (when there's enough before it to stand).
+  clipped: s => s.split(/(?<=[.!?])\s+/).map(sent => {
+    const i = sent.indexOf(',');
+    if (i > 7) return sent.slice(0, i) + (/[.!?]$/.test(sent) ? sent.slice(-1) : '.');
+    return sent;
+  }).join(' '),
+  dropped_articles: s => s.replace(/(^|\s)(a|an|the|A|An|The)\s+/g, '$1'),
+  // Longer breaths: sentence breaks become semicolons, few hard stops.
+  flowing: s => s.replace(/([.!?])\s+([A-Z])/g, (m, p, ch) => '; ' + ch.toLowerCase()),
+  // Emphasized s-sounds in existing words ("yesss", "ssstation").
+  sibilant: s => s.replace(/\b[Ss](?=[a-z])/g, m => m + 'ss').replace(/([a-z])s\b/g, '$1sss'),
+  formal_expanded: s => NPC_CONTRACTIONS.reduce((acc, [re, rep]) => acc.replace(re, rep), s),
+  // Picks a different mode per line — the inconsistency IS the voice.
+  inconsistent: s => NPC_GRAMMAR[['clipped', 'formal_expanded', 'dropped_articles', 'standard'][Math.floor(Math.random() * 4)]](s),
+};
+// Tic injection position per species (Bible §11): reptile's tic is
+// already integrated by the sibilant transform, so it never injects.
+const NPC_TIC_POSITION = { insect: 'mid', rock: 'pre', water: 'post', robot: 'pre', unknown: 'random' };
+
+function colorNpcLine(line, species) {
+  const c = MOD.flavor && MOD.flavor.npc_species_coloring && MOD.flavor.npc_species_coloring[species];
+  if (!c || !line) return line;
+  let out = (NPC_GRAMMAR[c.grammar] || NPC_GRAMMAR.standard)(line);
+  // Capitalization repair — transforms like formal_expanded ("It's" →
+  // "it is") and dropped_articles ("The box" → "box") can decapitalize
+  // sentence starts. Doesn't touch flowing's deliberate '; lowercase'.
+  out = out.charAt(0).toUpperCase() + out.slice(1);
+  out = out.replace(/([.!?]\s+)([a-z])/g, (m, p, ch) => p + ch.toUpperCase());
+  const posKind = NPC_TIC_POSITION[species];
+  if (c.tic && posKind && Math.random() < (c.tic_rate || 0)) {
+    const tic = Array.isArray(c.tic) ? c.tic[Math.floor(Math.random() * c.tic.length)] : c.tic;
+    const pos = posKind === 'random' ? ['pre', 'mid', 'post'][Math.floor(Math.random() * 3)] : posKind;
+    if (pos === 'pre') out = tic + ' ' + out;
+    else if (pos === 'post') out = out + ' ' + tic;
+    else {
+      // mid: between clauses — after the first comma, else after the
+      // first sentence, else append.
+      const ci = out.indexOf(',');
+      const si = out.search(/[.!?]\s/);
+      if (ci > 0) out = out.slice(0, ci + 1) + ' ' + tic + out.slice(ci + 1);
+      else if (si > 0) out = out.slice(0, si + 1) + ' ' + tic + out.slice(si + 1);
+      else out = out + ' ' + tic;
+    }
+  }
+  return out;
+}
+
+/* Replaces {npc.species}/{npc.disposition}/{npc.quirk}/{npc.line.<slot>}
+   tokens in authored text. {npc.line.<slot>} pulls from the
+   npc_disposition_lines flavor pool per the Bible's slot schema
+   (npc_disposition_lines[disposition][slot] = array of neutral-voice
+   lines; station_crew nests one level deeper by job, resolved via the
+   npc ctx's job field when present), then runs the species coloring
+   pass above. Falls back to dropping the token cleanly if the pool has
+   nothing for that slot. */
+function interpolateNpcTokens(text, npc) {
+  if (!text || !npc) return text;
+  return text
+    .replace(/\{npc\.species\}/g, npc.species)
+    .replace(/\{npc\.disposition\}/g, npc.disposition)
+    .replace(/\{npc\.quirk\}/g, npc.quirk)
+    .replace(/\{npc\.line\.([\w]+)\}/g, (m, slot) => {
+      let pool = MOD.flavor && MOD.flavor.npc_disposition_lines && MOD.flavor.npc_disposition_lines[npc.disposition];
+      if (pool && npc.disposition === 'station_crew') pool = pool[npc.job || 'janitor'];
+      const lines = pool && pool[slot];
+      if (!Array.isArray(lines) || !lines.length) return '';
+      return colorNpcLine(lines[Math.floor(Math.random() * lines.length)], npc.species);
+    });
+}
+
+/* ────────────────────────────────────────────────────────────────
+   CHOICE RESOLUTION
+   ──────────────────────────────────────────────────────────────── */
+
+/* Layered-schema navigation: next/back/outcome/scenario are mutually
+   exclusive per the schema (see CLAUDE.md's layered Event Module
+   section). Flat-schema choices (no ev.layers) fall through to the
+   original resolveChoice() path. */
+function handleChoiceClick(choice) {
+  const ev = STATE.currentEvent;
+
+  // One-shot actions (demo's consume machinery) — mark spent the
+  // moment the choice resolves, whatever it goes on to do.
+  if (choice.consume) {
+    STATE.consumedActions = STATE.consumedActions || {};
+    STATE.consumedActions[consumeKey(choice)] = true;
+  }
+
+  // Up-front gold cost on navigation choices (buying the engineer a
+  // drink walks you INTO a layer, not an outcome — the charge can't
+  // ride on outcome.resources). gate.gold affords it; this spends it.
+  if (Number.isFinite(choice.gold_cost) && choice.gold_cost > 0) {
+    STATE.goldAmount = Math.max(0, STATE.goldAmount - choice.gold_cost);
+    renderHUD();
+  }
+
+  // Combat hijack fields — checked BEFORE the flat-schema early-return
+  // so BOTH schemas can enter combat (audit fix: these originally sat
+  // after the flat return, silently disabling flat-event combat —
+  // which orphaned event_general_003's authored combat_trigger field,
+  // honored here as an alias).
+  if ((choice.triggerCombat || choice.combat_trigger) && typeof window.triggerCombat === 'function') {
+    if (choice.setFlag) STATE.flags.add(choice.setFlag);
+    window.triggerCombat(choice);
+    return;
+  }
+  if (choice.triggerRamResolve && typeof window.triggerRamResolve === 'function') {
+    window.triggerRamResolve(choice);
+    return;
+  }
+  if (choice.triggerFleeResolve && typeof window.triggerFleeResolve === 'function') {
+    window.triggerFleeResolve(choice);
+    return;
+  }
+
+  // Market modal (Restoration item 2) — mirrors launch_minigame's
+  // hijack shape: the choice opens the vendor overlay instead of
+  // navigating (any nav fields on it are ignored — the modal is the
+  // action, demo convention). Checked BEFORE the flat-schema early
+  // return so both schemas can host a market choice. On close, the
+  // current layer re-renders; a sinister close has already reset the
+  // layer stack + npc slot inside openMarket by then.
+  if (choice.open_market && typeof window.openMarket === 'function') {
+    if (choice.setFlag) STATE.flags.add(choice.setFlag);
+    window.openMarket({ sinister: !!choice.market_sinister }, () => renderEncounterState());
+    return;
+  }
+
+  if (!ev.layers) { resolveChoice(choice); return; }
+
+  if (choice.setFlag) STATE.flags.add(choice.setFlag);
+
+  if (choice.scenario) {
+    const targetEv = EVENTS[choice.scenario];
+    if (targetEv) enterEvent(STATE.currentNode, targetEv);
+    return;
+  }
+  if (choice.back) {
+    if (STATE.layerStack.length > 1) STATE.layerStack.pop();
+    renderEncounterState();
+    return;
+  }
+  if (choice.next) {
+    STATE.layerStack.push(choice.next);
+    renderEncounterState();
+    return;
+  }
+  if (choice.outcome) {
+    const outcome = ev.outcomes[choice.outcome];
+    applyOutcomeEffects(outcome);
+    renderHUD();
+    if (checkFailure()) return;
+    STATE.currentOutcomeId = choice.outcome;
+    renderEncounterState();
+    return;
+  }
+  // No navigation field — nothing to do but re-render (shouldn't
+  // normally happen with well-formed content; the A8 lint script
+  // catches fork layers missing chose_alpha/chose_beta coverage).
+  renderEncounterState();
+}
+
+/* Applies an outcome object's effects to STATE — shared by the flat
+   schema's inline choice.outcome and the layered schema's
+   ev.outcomes[id]. Both shapes carry the same effect fields. */
+function applyOutcomeEffects(o) {
+  o = o || {};
+  if (o.resources) {
+    for (const [k, v] of Object.entries(o.resources)) {
+      if (!Number.isFinite(v)) continue; // authored typo can't NaN-poison STATE
+      if (k === 'gold') {
+        STATE.goldAmount = Math.max(0, STATE.goldAmount + v);
+      } else if (k === 'hull' && v < 0 && STATE.flags.has('emergency_patch_armed')) {
+        // Emergency Patch (engineer active skill) — absorbs one hull
+        // damage event, then it's spent. crew_roster.json's authored
+        // effect: { hull_damage_prevented: 1 }.
+        STATE.flags.delete('emergency_patch_armed');
+        if (typeof window.pushCruiseLog === 'function') {
+          window.pushCruiseLog('◆ The emergency patch holds — ' + (-v) + ' hull damage never lands. The patch does not survive the experience.');
+        }
+      } else if (k in STATE.resources) {
+        STATE.resources[k] = clamp(STATE.resources[k] + v, 0, 100);
+      }
+    }
+  }
+
+  if (o.item_grant) {
+    const grants = Array.isArray(o.item_grant) ? o.item_grant : [o.item_grant];
+    for (const g of grants) grantItem(g); // capacity-enforced; logs refusals
+  }
+  // Materials grant (additive schema field, mirrors combat loot's
+  // direct STATE.materials routing) — map of material id -> quantity.
+  if (o.materials) {
+    for (const [mat, qty] of Object.entries(o.materials)) {
+      STATE.materials[mat] = (STATE.materials[mat] || 0) + qty;
+    }
+  }
+
+  // Stowaway resolution (outcome field on reveal-event choices):
+  //   welcome         — they join. If their identity carries a crew
+  //                     role and a slot is open, they're real crew
+  //                     (with HP); otherwise a passenger (flag only).
+  //   welcome_replace — they join AND a random existing crew member
+  //                     is put off at the next stop (the authored
+  //                     "someone has to go" choice).
+  //   refuse          — flagged for drop-off; no mechanical join.
+  if (o.stowaway_resolve && STATE.stowaway) {
+    const idn = STATE.stowaway.identity || {};
+    const resolve = o.stowaway_resolve;
+    if (resolve === 'welcome_replace' && STATE.crew.length) {
+      const gone = STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
+      STATE.crew.splice(STATE.crew.indexOf(gone), 1);
+      delete STATE.crewHP[gone];
+      if (typeof window.pushCruiseLog === 'function') {
+        window.pushCruiseLog('◆ ' + gone + ' will disembark at the next stop. Nobody discusses it at dinner.');
+      }
+    }
+    if (resolve === 'welcome' || resolve === 'welcome_replace') {
+      if (idn.join_role && STATE.crew.length < 2 && !STATE.crew.includes(idn.join_role)) {
+        STATE.crew.push(idn.join_role);
+        STATE.crewHP[idn.join_role] = 100;
+      } else {
+        STATE.flags.add('stowaway_passenger');
+      }
+      STATE.flags.add('stowaway_welcomed');
+    }
+    if (resolve === 'refuse') STATE.flags.add('stowaway_refused');
+  }
+
+  // Crop/system effect fields (additive): clears_pest ends an active
+  // pest outbreak; fabricator_repair un-breaks the fabricator and
+  // relieves wear (the flip side of fabricator.js's breakFab()).
+  if (o.clears_pest && STATE.cropGrowth) {
+    STATE.cropGrowth.pest = false;
+    STATE.flags.delete('ai_noted_pest');
+  }
+  if (o.fabricator_repair && STATE.fabricator) {
+    STATE.fabricator.broken = false;
+    STATE.fabricator.wear = Math.min(STATE.fabricator.wear || 0, 50);
+  }
+  if (o.item_consume) {
+    const idx = STATE.items.indexOf(o.item_consume);
+    if (idx >= 0) STATE.items.splice(idx, 1);
+  }
+
+  if (o.sets_flag) STATE.flags.add(o.sets_flag);
+
+  // Crew effect — routed through the per-crew HP system.
+  //   injure: -35 HP to the target (medic aboard softens all crew damage)
+  //   kill:   lethal, EXCEPT a carried medkit gives its authored 15%
+  //           chance to downgrade death to a 20-HP injury (consuming
+  //           the medkit) — items.json's own gameplay_effect text.
+  //   heal:   +40 HP to all injured, or full heal for a specific role.
+  if (o.crew_effect && STATE.crew.length) {
+    const ce = o.crew_effect;
+    const targetRole = (ce.target === 'specific_role' && ce.role && STATE.crew.includes(ce.role))
+      ? ce.role
+      : STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
+    if (ce.type === 'injure') {
+      damageCrew(targetRole, 35);
+    } else if (ce.type === 'kill') {
+      const mkIdx = STATE.items.indexOf('medkit');
+      if (mkIdx >= 0 && Math.random() < 0.15) {
+        STATE.items.splice(mkIdx, 1);
+        STATE.crewHP[targetRole] = 20;
+        if (typeof window.pushCruiseLog === 'function') {
+          window.pushCruiseLog('◆ The medkit made the difference. ' + targetRole + ' is badly hurt, but alive. The medkit is spent.');
+        }
+      } else {
+        killCrew(targetRole);
+      }
+    } else if (ce.type === 'heal') {
+      if (ce.target === 'all_injured') {
+        for (const r of STATE.crew) STATE.crewHP[r] = clamp(crewHPOf(r) + 40, 0, 100);
+      } else if (ce.role && STATE.crew.includes(ce.role)) {
+        STATE.crewHP[ce.role] = 100;
+      }
+    }
+  }
+
+  // Time cost — bump days by a small constant per tier, routed through
+  // passDays() so standing orders' daily drains (rations/water) apply.
+  const tier = o.time_cost || 'trivial';
+  passDays(({trivial:1, low:2, medium:4, high:8, extreme:14})[tier] || 1);
+}
+
+/* Flat-schema resolution: choice.outcome is an inline object. Apply →
+   render outcome narrative → wait for Continue → advance.
+
+   launch_minigame (additive choice field): the choice plays a real
+   minigame (engine/js/minigames.js — medical/brace/breach/scan/engine/
+   salvage/forage ids) BEFORE its outcome applies. The optional
+   tier_outcomes map ({perfect/good/poor: {resources?, narrative?}})
+   overlays the base outcome per result tier — resources merge key-wise
+   over base, narrative replaces. This is how crisis events wire the
+   minigames that have no Stop Menu verb (MEDICAL/BRACE/BREACH). */
+function resolveChoice(choice) {
+  if (choice.launch_minigame && typeof window.openMinigame === 'function') {
+    openMinigame(choice.launch_minigame, choice.minigame_opts || {}, (tier) => {
+      const base = choice.outcome || {};
+      const t = (choice.tier_outcomes || {})[tier] || {};
+      const merged = Object.assign({}, base, t, {
+        resources: Object.assign({}, base.resources || {}, t.resources || {}),
+        narrative: t.narrative || base.narrative,
+      });
+      applyOutcomeEffects(merged);
+      renderHUD();
+      if (checkFailure()) return;
+      STATE.outcomeMode = true;
+      renderOutcomeView({ title: 'OUTCOME', body: merged.narrative || '...', tone: deltaIsBad(merged) ? 'danger' : (deltaIsGood(merged) ? 'success' : null) });
+    });
+    return;
+  }
+  const o = choice.outcome || {};
+  applyOutcomeEffects(o);
+  renderHUD();
+  if (checkFailure()) return;
+
+  STATE.outcomeMode = true;
+  renderOutcomeView({ title: 'OUTCOME', body: o.narrative || '...', tone: deltaIsBad(o) ? 'danger' : (deltaIsGood(o) ? 'success' : null) });
+}
+
+function deltaIsBad(o)  {
+  if (o.crew_effect && (o.crew_effect.type === 'kill' || o.crew_effect.type === 'injure')) return true;
+  if (o.severity === 'lethal' || o.severity === 'injury') return true;
+  if (!o.resources) return false;
+  return Object.entries(o.resources).some(([k,v]) => v < 0 && (k !== 'gold' || v <= -10));
+}
+function deltaIsGood(o) {
+  if (!o.resources) return false;
+  const sum = Object.entries(o.resources).reduce((s,[k,v]) => s + (k==='gold' ? v/5 : v), 0);
+  return sum > 0;
+}
+
+/* After Continue: figure out the next node and either fire its
+   event or, if the next node has no event, just bring up the map. */
+function advanceAfterEvent() {
+  const cur = STATE.byId[STATE.currentId];
+  const next = nextAvailableNodes();
+  const ids = [...next];
+
+  // Fork node: the choice the player just resolved set chose_alpha or
+  // chose_beta. nextAvailableNodes() now reflects that. Single target.
+  if (ids.length === 1) {
+    travelTo(ids[0]);
+    return;
+  }
+  // Multiple targets (shouldn't happen with the lunar test path after
+  // a fork is resolved) → back to the hub so the player can pick.
+  STATE.visited.add(STATE.currentId);
+  returnToHub();
+}
+
+function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+/* ────────────────────────────────────────────────────────────────
+   FAILURE CHECK
+   Fires immediately after every resource update. Returns true if
+   a failure triggered (caller should stop further processing).
+   ──────────────────────────────────────────────────────────────── */
+function checkFailure() {
+  if (STATE.ended) return true;
+  const r = STATE.resources;
+  let type = null;
+  if (r.fuel   <= 0) type = 'no_fuel';
+  else if (r.hull   <= 0) type = 'hull_zero';
+  else if (r.morale <= 0) type = 'mutiny';
+  else if (STATE.crew.length === 0) type = 'crew_gone';
+  else if (STATE.daysElapsed > STATE.baseDays) type = 'time_expired';
+  // Phase 4's Growbay now tracks real STATE.cropGrowth.health, so this
+  // branch is genuinely reachable — but nothing currently decrements
+  // health automatically (only the one-time seed at crop selection),
+  // so in practice this stays dead until a pest/threat mechanic lands.
+  // Wired now rather than left as a TODO so that future mechanic needs
+  // zero checkFailure() changes. The crop_death_accepted flag is set by
+  // the failure screen's "Keep flying" continue_option (failures.json
+  // authors it on crop_dead; endings.js implements it) — after accepting,
+  // the run continues toward the 'hollow' arrival bracket instead of
+  // re-firing this failure on every subsequent resource mutation.
+  else if (STATE.crop && STATE.cropGrowth && STATE.cropGrowth.health <= 0 && !STATE.flags.has('crop_death_accepted')) type = 'crop_dead';
+  if (!type) return false;
+
+  const failure = filterThenRandomDraw(MOD.failures, f => f.failure_type === type) || MOD.failures[0];
+  endRun({ kind: 'failure', module: failure });
+  return true;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ENDING / ARRIVAL
+   ──────────────────────────────────────────────────────────────── */
+function triggerArrival(node) {
+  // Fixed test-path arrival node hardcodes event_id for reproducible
+  // debugging (?debug=fixed_path) — honor it deterministically.
+  // Procedurally generated maps never set event_id on any node
+  // (engine/js/map.js), so every real playthrough falls through to a
+  // genuine bracket+tone random draw among matching endings (closes
+  // the "always lands on the test_path-flagged ending" gap Phase 3
+  // flagged — endings.json had nothing real to test bracket-filtering
+  // against until now; still only 2 entries, both ending_score:"any",
+  // so today this is a coin flip between them, ready for more content).
+  const id = node.event_id;
+  let ending = id && MOD.endings.find(e => e.id === id);
+  if (!ending) {
+    const bracket = scoreBracket();
+    ending = filterThenRandomDraw(MOD.endings, e => e.ending_score === 'any' || e.ending_score === bracket) || MOD.endings[0];
+  }
+  endRun({ kind: 'ending', module: ending });
+}
+
+function scoreBracket() {
+  // Demo formula per Bible §17: score = crew*33.3 + resAvg*0.6 + dayDelta*0.5
+  // Thresholds: 130 legendary / 85 good / 40 rough / else pyrrhic.
+  // 'hollow' overrides the numeric brackets entirely: the crew arrived but
+  // the crop — the mission — did not. Both original endings authored
+  // score_paragraphs.hollow for exactly this case; it was unreachable
+  // until the crop-status wiring landed in Phase 6.
+  if (STATE.crop && STATE.cropGrowth && STATE.cropGrowth.health <= 0) return 'hollow';
+  const r = STATE.resources;
+  const resAvg = (r.fuel + r.food + r.water + r.o2 + r.hull + r.morale) / 6;
+  const dayDelta = (STATE.baseDays - STATE.daysElapsed);
+  const score = (STATE.crew.length * 33.3) + (resAvg * 0.6) + (dayDelta * 0.5);
+  if (score >= 130) return 'legendary';
+  if (score >=  85) return 'good';
+  if (score >=  40) return 'rough';
+  return 'pyrrhic';
+}
+
+/* Rendering (two-screen cinematic+report painting, bg matrix, tier
+   titles, score panel) lives in engine/js/screens/endings.js — this
+   just marks the run over and hands off. */
+function endRun(end) {
+  STATE.ended = true;
+  clearSave(); // the voyage is over, however it went — no resurrecting it
+  // A failure can fire while an overlay is open (growbay TREAT and
+  // fabricator crafts both advance days → time_expired; audit fix) —
+  // overlays are independent of showScreen(), so without this the end
+  // screen renders BURIED under the open overlay.
+  for (const ov of document.querySelectorAll('.overlay.active')) ov.classList.remove('active');
+  document.body.classList.remove('modal-open', 'stop-active');
+  renderEndScreen(end);
+}
+
+/* ────────────────────────────────────────────────────────────────
+   BOOT
+   ──────────────────────────────────────────────────────────────── */
+(async function boot() {
+  try { await loadAllModules(); }
+  catch (e) { console.error(e); return; }
+
+  document.getElementById('inv-close').addEventListener('click', () => hideOverlay('overlay-inventory'));
+  document.getElementById('slog-close').addEventListener('click', () => hideOverlay('overlay-shipslog'));
+  document.getElementById('slog-expand-close').addEventListener('click', () => { document.getElementById('slog-expand-modal').style.display = 'none'; });
+
+  // ?debug=fixed_path skips title/setup and boots straight into the
+  // old hardcoded lunar_test_path loop — kept for regression-testing
+  // the map/encounter/end screens while Phase 2+ replace initState().
+  if (new URLSearchParams(location.search).get('debug') === 'fixed_path') {
+    initState();
+    renderHUD();
+    showScreen('screen-map');
+    renderMap();
+    return;
+  }
+
+  showScreen('screen-title');
+})();
+</script>
+</body>
+</html>

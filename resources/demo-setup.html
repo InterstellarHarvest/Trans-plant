@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Setup Screen Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="shared.css" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+
+:root {
+  --teal: #8cc890;
+  --orange: #e88830;
+  --cream: #e8d8a0;
+  --slate: #2a3040;
+  --deep: #0e1520;
+  --void: #020408;
+  --body: #8898a8;
+
+  /* Flavor text (bottom-left quote) — independent so its
+     color/divider can be tuned without affecting cards or pips. */
+  --flavor-color: #8cc890;
+  --flavor-size: 18px;
+  --flavor-border: rgba(140,200,144,0.15);
+
+  /* Progress pips along the top bar — independent of card LED and
+     flavor so they can be tuned separately. */
+  --pip-active: #8cc890;
+  --pip-inactive-bg: #0a0e14;
+  --pip-inactive-border: #2a3040;
+  --pip-size: 12px;
+
+  /* Card LED dot (the small status circle on each selection card). */
+  --card-led-active: #8cc890;
+  --card-led-inactive: #2a3040;
+  --card-led-size: 6px;
+
+  /* Card layout / text — driven by variables so controls can reshape
+     the card densely or airly without touching the markup. */
+  --card-padx: 14px;
+  --card-pady: 10px;
+  --card-gap: 12px;
+  --card-rad: 6px;
+  --card-border: #2a3040;
+  --card-bg: rgba(20,28,40,0.6);
+  --card-icon-size: 48px;
+  --card-name-size: 8px;
+  --card-name-color: #8898a8;
+  --card-desc-size: 17px;
+  --card-desc-color: #7a8898;
+  --card-stat-size: 15px;
+  --card-stat-color: #5a7a6a;
+
+  /* Panel button sizing + gold/teal accent overrides
+     (other color vars live in shared.css) */
+  --pb-border: 3px;
+  --pb-padx: 8px;
+  --pb-pady: 4px;
+  --pb-rad: 0px;
+  --pb-size: 18px;
+  --pb-gold-hi: #c8a85a;
+  --pb-gold-lo: #3a2a10;
+  --pb-teal-hi: #8cc890;
+  --pb-teal-lo: #2a3a30;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'VT323', monospace;
+  background: #0e1118;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #d1d5db;
+}
+
+#demo-wrap { display: flex; gap: 20px; padding: 20px; align-items: flex-start; }
+#scale-root { width: 960px; height: 640px; transform-origin: top left; flex-shrink: 0; }
+
+/* ── Actual-size toggle button ──────────────────────────────────── */
+#size-toggle {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 9999;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: #c8a85a;
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+}
+#size-toggle:hover { filter: brightness(1.2); }
+#size-toggle:active {
+  border-style: inset;
+  border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a;
+  transform: translate(1px, 1px);
+}
+
+/* When full size is active */
+body.fullsize { overflow: hidden; }
+body.fullsize #demo-wrap { padding: 0; gap: 0; width: 100vw; height: 100vh; justify-content: center; align-items: center; }
+body.fullsize #controls { display: none; }
+body.fullsize #scale-root { transform-origin: center center; }
+
+#game {
+  width: 960px; height: 640px;
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #0e1520 0%, #080c14 100%);
+  border: 3px solid var(--gold);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 2px #1a2030, inset 0 0 0 4px rgba(140,200,144,0.15);
+}
+
+#crt-overlay {
+  pointer-events: none; position: absolute; inset: 0; z-index: 100; border-radius: 4px;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 1px, transparent 1px, transparent 2px);
+}
+
+.halftone {
+  position: absolute; pointer-events: none; z-index: 2;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(140,200,144,0.06) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+.halftone.bl { bottom: 0; left: 0; mask-image: radial-gradient(ellipse at 0% 100%, black 0%, transparent 70%); -webkit-mask-image: radial-gradient(ellipse at 0% 100%, black 0%, transparent 70%); }
+.halftone.tr { top: 0; right: 0; mask-image: radial-gradient(ellipse at 100% 0%, black 0%, transparent 70%); -webkit-mask-image: radial-gradient(ellipse at 100% 0%, black 0%, transparent 70%); }
+
+#setup-stars { position: absolute; inset: 0; pointer-events: none; }
+
+#setup-screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  z-index: 10;
+}
+
+#setup-header {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  border-bottom: 2px solid var(--gold);
+  background: linear-gradient(180deg, #141a28 0%, #10141e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#setup-step-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(200,168,90,0.3);
+}
+
+#setup-progress { display: flex; gap: 8px; align-items: center; }
+
+.progress-pip {
+  width: var(--pip-size); height: var(--pip-size);
+  border: 2px solid var(--pip-inactive-border);
+  border-radius: 50%;
+  background: var(--pip-inactive-bg);
+  transition: all 0.3s;
+}
+.progress-pip.done {
+  background: var(--pip-active);
+  border-color: var(--pip-active);
+  box-shadow: 0 0 6px rgba(140,200,144,0.4);
+}
+.progress-pip.active {
+  border-color: var(--gold);
+  background: var(--gold);
+  animation: pip-pulse 1.8s ease-in-out infinite;
+}
+@keyframes pip-pulse {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(200,168,90,0.3);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(200,168,90,0.7);
+    filter: brightness(1.15);
+  }
+}
+
+.pip-line {
+  width: 16px; height: 2px;
+  background: var(--pip-inactive-border);
+  transition: background 0.3s;
+}
+.pip-line.done { background: var(--pip-active); }
+
+#setup-content { flex: 1; display: flex; overflow: hidden; }
+
+#setup-left {
+  width: 340px;
+  padding: 18px 20px;
+  border-right: 2px solid rgba(200,168,90,0.25);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: rgba(10,14,20,0.5);
+}
+
+#setup-category-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 13px;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(200,168,90,0.3);
+  letter-spacing: 3px;
+  margin-bottom: 16px;
+}
+
+#setup-description {
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--body);
+  flex: 1;
+  min-height: 4.5em;
+}
+
+/* tw-cursor + blink-cursor live in shared.css */
+
+#setup-flavor {
+  font-size: var(--flavor-size);
+  color: var(--flavor-color);
+  font-style: italic;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--flavor-border);
+  line-height: 1.4;
+  min-height: 2.8em;
+}
+
+#setup-right {
+  flex: 1;
+  padding: 14px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
+}
+
+.sel-card {
+  padding: var(--card-pady) var(--card-padx);
+  border: 2px solid var(--card-border);
+  border-radius: var(--card-rad);
+  background: var(--card-bg);
+  cursor: var(--cursor-hand, pointer);
+  transition: all 0.15s;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+
+.sel-card:hover {
+  background: rgba(140,200,144,0.04);
+  border-color: rgba(140,200,144,0.3);
+}
+
+.sel-card.selected {
+  background: linear-gradient(135deg, rgba(232,216,160,0.08) 0%, rgba(140,200,144,0.06) 100%);
+  border-color: var(--gold);
+  box-shadow: 0 0 10px rgba(200,168,90,0.1), inset 0 0 0 1px rgba(200,168,90,0.1);
+}
+
+
+.sel-card .card-led {
+  width: var(--card-led-size); height: var(--card-led-size);
+  border-radius: 50%;
+  background: var(--card-led-inactive);
+  flex-shrink: 0;
+  margin-top: 6px;
+  transition: all 0.2s;
+}
+.sel-card.selected .card-led {
+  background: var(--card-led-active);
+  box-shadow: 0 0 6px rgba(140,200,144,0.5);
+}
+
+.sel-card .card-icon {
+  /* Icon sits in a fixed square so emoji and sprite variants occupy
+     the same space — emojis used to spill sideways and collide with
+     the card text, so we now clamp width + height to the container
+     and scale the emoji font down to fit inside it. */
+  flex-shrink: 0;
+  width: var(--card-icon-size);
+  height: var(--card-icon-size);
+  font-size: calc(var(--card-icon-size) * 0.72);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+/* Sprite variant of the card icon — used for career PNGs in the
+   captain-selection step (and wired identically for any future step
+   that wants pixel-art icons). Emoji stays as fallback content but
+   is hidden via color:transparent so the sprite is the only visual. */
+.sel-card .card-icon.has-sprite {
+  width: var(--card-icon-size);
+  height: var(--card-icon-size);
+  padding: 0;
+  line-height: 0;
+  font-size: 0;
+  color: transparent;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.sel-card .card-info { flex: 1; }
+
+.sel-card .card-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--card-name-size);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--card-name-color);
+  margin-bottom: 4px;
+  transition: color 0.15s;
+}
+
+.sel-card.selected .card-name {
+  color: var(--gold);
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+}
+
+.sel-card .card-desc {
+  font-size: var(--card-desc-size);
+  color: var(--card-desc-color);
+  line-height: 1.3;
+}
+
+.sel-card .card-stat {
+  font-size: var(--card-stat-size);
+  color: var(--card-stat-color);
+  margin-top: 3px;
+}
+
+/* Crew-card variant (step 4) inherits all card sizes/colors but
+   scales the left padding down so more cards fit vertically. */
+.sel-card.crew-card {
+  padding-top: calc(var(--card-pady) - 2px);
+  padding-bottom: calc(var(--card-pady) - 2px);
+}
+
+#ship-name-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 50px 20px;
+}
+
+#ship-name-input {
+  background: rgba(20,28,40,0.8);
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  color: var(--cream);
+  font-family: 'VT323', monospace;
+  font-size: 26px;
+  letter-spacing: 2px;
+  text-align: center;
+  padding: 10px 20px;
+  width: 400px;
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(200,168,90,0.1);
+}
+#ship-name-input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 12px rgba(140,200,144,0.15), inset 0 0 0 1px rgba(140,200,144,0.1);
+}
+#ship-name-input::placeholder { color: #3a4a50; }
+
+/* Idle hover — the ship drifts up and down a few pixels, slowly,
+   so the ship-name step feels alive without demanding attention. */
+.ship-bob { animation: ship-bob 3.6s ease-in-out infinite; }
+@keyframes ship-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+#setup-footer {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  border-top: 2px solid var(--gold);
+  background: linear-gradient(180deg, #141a28 0%, #10141e 100%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#crew-count-badge {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  color: #5a7a6a;
+  letter-spacing: 1px;
+}
+
+
+/* ── Floating retro buttons (rounded, cream/teal) ───────────────── */
+.retro-btn {
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: 8px 22px;
+  transition: all 0.12s;
+  position: relative;
+  background: linear-gradient(180deg, var(--cream) 0%, #d8c888 100%);
+  color: #2a3040;
+  border: 3px solid var(--gold);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(200,168,90,0.2), 0 2px 4px rgba(0,0,0,0.3);
+  text-shadow: none;
+}
+.retro-btn:hover {
+  background: linear-gradient(180deg, #f0e0a8 0%, #e0d090 100%);
+  box-shadow: inset 0 0 0 1px rgba(200,168,90,0.3), 0 2px 8px rgba(200,168,90,0.15);
+}
+.retro-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+.retro-btn.accent {
+  background: linear-gradient(180deg, var(--teal) 0%, #70b898 100%);
+  color: #1a2030;
+}
+.retro-btn.accent::before {
+  content: '';
+  position: absolute;
+  left: 8px; right: 8px; top: 4px; bottom: 4px;
+  background: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.06) 3px, rgba(255,255,255,0.06) 4px);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.retro-btn.disabled { opacity: 0.3; cursor: var(--cursor-pointer, default); pointer-events: none; }
+
+/* ── Panel buttons (analog, beveled) — styled via CSS variables ──── */
+.panel-btn {
+  font-family: 'VT323', monospace;
+  font-size: var(--pb-size);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: var(--pb-pady) var(--pb-padx);
+  background: linear-gradient(180deg, var(--pb-bg-top) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-bot) 100%);
+  border: var(--pb-border) outset;
+  border-color: var(--pb-hi) var(--pb-lo) var(--pb-lo) var(--pb-hi);
+  color: var(--pb-text);
+  border-radius: var(--pb-rad);
+  transition: background 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-btn:hover {
+  filter: brightness(1.15);
+}
+.panel-btn:active {
+  border-style: inset;
+  border-color: var(--pb-lo) var(--pb-hi) var(--pb-hi) var(--pb-lo);
+  background: linear-gradient(180deg, var(--pb-bg-bot) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-top) 100%);
+  transform: translate(1px, 1px);
+}
+.panel-btn.accent-gold {
+  border-color: var(--pb-gold-hi) var(--pb-gold-lo) var(--pb-gold-lo) var(--pb-gold-hi);
+  color: var(--pb-gold-hi);
+  text-shadow: 0 0 4px rgba(200,168,90,0.35);
+}
+.panel-btn.accent-gold:active {
+  border-color: var(--pb-gold-lo) var(--pb-gold-hi) var(--pb-gold-hi) var(--pb-gold-lo);
+}
+.panel-btn.accent-teal {
+  border-color: var(--pb-teal-hi) var(--pb-teal-lo) var(--pb-teal-lo) var(--pb-teal-hi);
+  color: var(--pb-teal-hi);
+  text-shadow: 0 0 4px rgba(140,200,144,0.35);
+}
+.panel-btn.accent-teal:active {
+  border-color: var(--pb-teal-lo) var(--pb-teal-hi) var(--pb-teal-hi) var(--pb-teal-lo);
+}
+.panel-btn.disabled {
+  opacity: 0.4; cursor: var(--cursor-pointer, default); pointer-events: none;
+  border-color: #3a3a3a #1a1a1a #1a1a1a #3a3a3a;
+  color: #5a5a5a; text-shadow: none;
+}
+.panel-btn .chevron { font-size: 14px; line-height: 1; }
+
+/* ── Controls panel ─────────────────────────────────────────────── */
+#controls {
+  width: 380px; background: #161a22; border: 1px solid #2a3040;
+  border-radius: 6px;
+  padding: 16px; font-family: 'VT323', monospace; font-size: 16px; color: #8898a8;
+  max-height: 640px; overflow-y: auto; overflow-x: hidden; flex-shrink: 0;
+}
+#controls h2 { font-family: 'Press Start 2P', cursive; font-size: 8px; color: var(--gold); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase; }
+#controls h3 { font-family: 'Press Start 2P', cursive; font-size: 7px; color: #5a7a6a; letter-spacing: 1px; margin: 14px 0 8px; text-transform: uppercase; border-bottom: 1px solid #2a3040; padding-bottom: 4px; }
+.ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.ctrl-row label { font-size: 14px; color: #667; flex-shrink: 0; min-width: 90px; }
+.ctrl-row input[type="range"] { flex: 1; accent-color: var(--gold); height: 4px; }
+.ctrl-row input[type="color"] { width: 32px; height: 24px; border: 1px solid #2a3040; border-radius: 3px; background: #0e1118; cursor: var(--cursor-hand, pointer); padding: 0; }
+.ctrl-row .val { font-size: 13px; color: #5a7a6a; min-width: 60px; text-align: right; font-family: 'VT323', monospace; letter-spacing: 0.5px; }
+.ctrl-row .val.modified { color: #e88830; font-weight: bold; }
+
+/* ::-webkit-scrollbar baseline lives in shared.css */
+
+</style>
+</head>
+<body>
+
+<button id="size-toggle" onclick="toggleSize()">Actual Size</button>
+
+<div id="demo-wrap">
+
+<div id="scale-root">
+<div id="game">
+  <canvas id="setup-stars" width="960" height="640"></canvas>
+  <div class="halftone bl"></div>
+  <div class="halftone tr"></div>
+  <div id="crt-overlay"></div>
+
+  <div id="setup-screen">
+
+    <div id="setup-header">
+      <div id="setup-step-label">Choose Your Trail</div>
+      <div id="setup-progress"></div>
+    </div>
+
+    <div id="setup-content">
+      <div id="setup-left">
+        <div id="setup-category-title"></div>
+        <div id="setup-description"></div>
+        <div id="setup-flavor"></div>
+      </div>
+      <div id="setup-right"></div>
+    </div>
+
+    <div id="setup-footer">
+      <button class="panel-btn" id="btn-back" onclick="prevStep()"><span class="chevron">&#9664;</span> Back</button>
+      <span id="crew-count-badge"></span>
+      <button class="panel-btn accent-gold" id="btn-next" onclick="nextStep()">Next <span class="chevron">&#9654;</span></button>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ═══ CONTROLS ═══ -->
+<div id="controls">
+  <h2>Setup Controls</h2>
+
+  <h3>Theme</h3>
+  <div class="ctrl-row"><label>Gold</label><input type="color" id="c-gold" value="#c8a85a"></div>
+  <div class="ctrl-row"><label>Teal</label><input type="color" id="c-teal" value="#8cc890"></div>
+  <div class="ctrl-row"><label>Orange</label><input type="color" id="c-orange" value="#e88830"></div>
+
+  <h3>Cards</h3>
+  <div class="ctrl-row"><label>Card radius</label><input type="range" id="c-card-rad" min="0" max="20" value="6"><span class="val" id="v-card-rad">6</span></div>
+  <div class="ctrl-row"><label>Card gap</label><input type="range" id="c-card-gap" min="2" max="20" value="12"><span class="val" id="v-card-gap">12</span></div>
+  <div class="ctrl-row"><label>Pad X</label><input type="range" id="c-card-padx" min="4" max="30" value="14"><span class="val" id="v-card-padx">14</span></div>
+  <div class="ctrl-row"><label>Pad Y</label><input type="range" id="c-card-pady" min="4" max="26" value="10"><span class="val" id="v-card-pady">10</span></div>
+  <div class="ctrl-row"><label>BG</label><input type="color" id="c-card-bg" value="#141c28"></div>
+  <div class="ctrl-row"><label>Border</label><input type="color" id="c-card-border" value="#2a3040"></div>
+
+  <h3>Card Text</h3>
+  <div class="ctrl-row"><label>Name size</label><input type="range" id="c-card-name-size" min="6" max="14" value="12"><span class="val" id="v-card-name-size">12</span></div>
+  <div class="ctrl-row"><label>Name color</label><input type="color" id="c-card-name-color" value="#00a6bb"></div>
+  <div class="ctrl-row"><label>Desc size</label><input type="range" id="c-card-desc-size" min="12" max="24" value="18"><span class="val" id="v-card-desc-size">18</span></div>
+  <div class="ctrl-row"><label>Desc color</label><input type="color" id="c-card-desc-color" value="#7a8898"></div>
+  <div class="ctrl-row"><label>Stat size</label><input type="range" id="c-card-stat-size" min="10" max="22" value="15"><span class="val" id="v-card-stat-size">15</span></div>
+  <div class="ctrl-row"><label>Stat color</label><input type="color" id="c-card-stat-color" value="#5a7a6a"></div>
+
+  <h3>Card LED</h3>
+  <div class="ctrl-row"><label>Size</label><input type="range" id="c-card-led-size" min="4" max="14" value="8"><span class="val" id="v-card-led-size">8</span></div>
+  <div class="ctrl-row"><label>Active</label><input type="color" id="c-card-led-active" value="#0bc613"></div>
+  <div class="ctrl-row"><label>Inactive</label><input type="color" id="c-card-led-inactive" value="#2a3040"></div>
+
+  <h3>Flavor Text (Bottom-left)</h3>
+  <div class="ctrl-row"><label>Color</label><input type="color" id="c-flavor-color" value="#39c6aa"></div>
+  <div class="ctrl-row"><label>Size</label><input type="range" id="c-flavor-size" min="12" max="26" value="18"><span class="val" id="v-flavor-size">18</span></div>
+  <div class="ctrl-row"><label>Divider</label><input type="color" id="c-flavor-border" value="#2a3a30"></div>
+
+  <h3>Progress Pips (Top bar)</h3>
+  <div class="ctrl-row"><label>Size</label><input type="range" id="c-pip-size" min="6" max="20" value="12"><span class="val" id="v-pip-size">12</span></div>
+  <div class="ctrl-row"><label>Active</label><input type="color" id="c-pip-active" value="#ffac00"></div>
+  <div class="ctrl-row"><label>Inactive bg</label><input type="color" id="c-pip-inactive-bg" value="#0a0e14"></div>
+  <div class="ctrl-row"><label>Inactive line</label><input type="color" id="c-pip-inactive-border" value="#2a3040"></div>
+
+  <h3>Panel Buttons (Beveled)</h3>
+  <div class="ctrl-row"><label>BG top</label><input type="color" id="c-pb-bg-top" value="#39404f"></div>
+  <div class="ctrl-row"><label>BG mid</label><input type="color" id="c-pb-bg-mid" value="#252a38"></div>
+  <div class="ctrl-row"><label>BG bottom</label><input type="color" id="c-pb-bg-bot" value="#4b597a"></div>
+  <div class="ctrl-row"><label>Highlight</label><input type="color" id="c-pb-hi" value="#5a6070"></div>
+  <div class="ctrl-row"><label>Shadow</label><input type="color" id="c-pb-lo" value="#1a1f2a"></div>
+  <div class="ctrl-row"><label>Text</label><input type="color" id="c-pb-text" value="#d0c890"></div>
+  <div class="ctrl-row"><label>Border</label><input type="range" id="c-pb-border" min="1" max="6" value="3"><span class="val" id="v-pb-border">3</span></div>
+  <div class="ctrl-row"><label>Pad X</label><input type="range" id="c-pb-padx" min="8" max="32" value="8"><span class="val" id="v-pb-padx">8</span></div>
+  <div class="ctrl-row"><label>Pad Y</label><input type="range" id="c-pb-pady" min="4" max="16" value="4"><span class="val" id="v-pb-pady">4</span></div>
+  <div class="ctrl-row"><label>Radius</label><input type="range" id="c-pb-rad" min="0" max="8" value="0"><span class="val" id="v-pb-rad">0</span></div>
+  <div class="ctrl-row"><label>Size</label><input type="range" id="c-pb-size" min="14" max="24" value="18"><span class="val" id="v-pb-size">18</span></div>
+  <div class="ctrl-row"><label>Gold hi</label><input type="color" id="c-pb-gold-hi" value="#b4b091"></div>
+  <div class="ctrl-row"><label>Gold lo</label><input type="color" id="c-pb-gold-lo" value="#363733"></div>
+  <div class="ctrl-row"><label>Teal hi</label><input type="color" id="c-pb-teal-hi" value="#35c6bf"></div>
+  <div class="ctrl-row"><label>Teal lo</label><input type="color" id="c-pb-teal-lo" value="#393632"></div>
+
+  <button class="retro-btn" id="btn-reset" style="margin-top:14px; width:100%; font-size:14px; padding:6px" onclick="resetDefaults()">Reset Defaults</button>
+</div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const root = document.documentElement;
+
+  // ── Crew sprite atlas (shared icon/portrait helper) ─────────────
+  // Crew icons + portraits live PACKED inside spritesheet_<id>.png at
+  // fixed coords from the .json. Captain is the exception: separate
+  // captain.png + captain_icon.png files (no spritesheet — captain
+  // doesn't talk to themselves yet). Sheet uniform 376×294. Icon is
+  // 48×48 at (295,195) for everyone except reyes (icon at (295,146);
+  // portrait shorter at 80×143 instead of 80×192).
+  // CREW_ATLAS + helpers live in shared.js
+
+  function fitViewport() {
+    let s;
+    if (document.body.classList.contains('fullsize')) {
+      // Actual size mode — fill window, like SSL
+      s = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+    } else {
+      // Demo mode — leave room for controls panel
+      const avail = Math.min(window.innerWidth - 440, window.innerWidth * 0.65);
+      const h = window.innerHeight - 40;
+      s = Math.min(avail / 960, h / 640, 1);
+    }
+    $('scale-root').style.transform = 'scale(' + s + ')';
+  }
+  fitViewport();
+  window.addEventListener('resize', fitViewport);
+
+  window.toggleSize = function() {
+    document.body.classList.toggle('fullsize');
+    const active = document.body.classList.contains('fullsize');
+    $('size-toggle').textContent = active ? 'Demo Size' : 'Actual Size';
+    fitViewport();
+  };
+
+  // Stars
+  const starCtx = $('setup-stars').getContext('2d');
+  const stars = [];
+  for (let i = 0; i < 70; i++) {
+    stars.push({ x: Math.random() * 960, y: Math.random() * 640, r: Math.random() * 1 + 0.2, phase: Math.random() * Math.PI * 2, drift: Math.random() * 0.03 + 0.01 });
+  }
+  function drawStars() {
+    if (PauseBus.paused) { requestAnimationFrame(drawStars); return; }
+    starCtx.clearRect(0, 0, 960, 640);
+    const now = performance.now() / 1000;
+    for (const s of stars) {
+      s.x += s.drift;
+      if (s.x > 960) { s.x = 0; s.y = Math.random() * 640; }
+      starCtx.globalAlpha = 0.25 + Math.sin(now * 1.2 + s.phase) * 0.2;
+      starCtx.fillStyle = '#8899aa';
+      starCtx.beginPath();
+      starCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      starCtx.fill();
+    }
+    starCtx.globalAlpha = 1;
+    requestAnimationFrame(drawStars);
+  }
+  drawStars();
+
+  // Setup data
+  const STEPS = [
+    {
+      key: 'trail', label: 'Choose Your Trail', cat: 'Destination',
+      desc: 'How far are you willing to go? Shorter trails are safer. Longer trails have more opportunities \u2014 and more things that can go wrong.',
+      options: [
+        { id: 'lunar',        icon: '\u{1F319}', sprite: 'sprites/interface/trails/moon.png',         name: 'Lunar Trail',        desc: 'Three months. Established corridors. You\'ll be fine. Probably.',        stat: '10 nodes \u00b7 1 fork \u00b7 Easy',   flavor: 'The sensible choice. You will not tell stories about this trip.' },
+        { id: 'mars',         icon: '\u{1F534}', sprite: 'sprites/interface/trails/mars.png',         name: 'Mars Trail',         desc: 'Eight months. Some charted territory. Some not.',                        stat: '13 nodes \u00b7 2 forks \u00b7 Medium', flavor: 'The map has helpful annotations like \u201chere be problems.\u201d' },
+        { id: 'interstellar', icon: '\u2726',    sprite: 'sprites/interface/trails/interstellar.png', name: 'Interstellar Trail', desc: 'Fourteen months. Charts stop being useful around month six.',            stat: '15 nodes \u00b7 3 forks \u00b7 Hard',   flavor: 'The destination is called Far Garden. It was named by an optimist.' }
+      ]
+    },
+    {
+      key: 'ai', label: 'Choose Your AI', cat: 'Ship Computer',
+      desc: 'Your AI companion narrates the journey, comments on every decision, and has a passive effect on gameplay. You will hear from them a lot.',
+      options: [
+        { id: 'aria', icon: '\u2600',    sprite: 'sprites/interface/AI/aria.png', name: 'ARIA', desc: 'Relentlessly positive. Factually questionable.', stat: 'Passive: Morale +1', flavor: 'ARIA believes in you. ARIA believes in everything.' },
+        { id: 'marv', icon: '\u{1F311}', sprite: 'sprites/interface/AI/marv.png', name: 'MARV', desc: 'Clinically depressed. 400% smarter than everyone.', stat: 'Passive: Reveals hidden details', flavor: 'MARV has already calculated your odds.' },
+        { id: 'rex',  icon: '\u2694',    sprite: 'sprites/interface/AI/rex.png',  name: 'REX', desc: 'Retired military. Everything is a threat.', stat: 'Passive: Combat bonus', flavor: 'REX was decommissioned for "excessive initiative."' },
+        { id: 'chip', icon: '\u{1F4B0}', sprite: 'sprites/interface/AI/chip.png', name: 'CHIP', desc: 'Corporate-issued. Full of Terms of Service.', stat: 'Passive: Station prices -15%', flavor: 'CHIP was free with purchase of the ship.' },
+        { id: 'ajoy', icon: '\u{1F60F}', sprite: 'sprites/interface/AI/ajoy.png', name: 'AJOY', desc: 'Passive-aggressive. Backseat driver. A joy.', stat: 'Passive: Shows what you missed', flavor: 'AJOY will help you make better decisions. AJOY will make sure you know about it.' }
+      ]
+    },
+    {
+      key: 'captain', label: 'Choose Your Background', cat: 'Captain',
+      desc: 'What did you study? Your background gives you a discounted version of a crew specialist\'s skills.',
+      options: [
+        { id: 'botanist',      icon: '\u{1F33F}', sprite: 'sprites/interface/careers/botanist.png',      name: 'Botanist',      desc: 'You know plants. Not as well as Dr. Osei, but enough.',                   stat: 'Crop care +7%',       flavor: 'Your parents asked what you\'d do with that degree. This.' },
+        { id: 'engineer',      icon: '\u{1F527}', sprite: 'sprites/interface/careers/engineer.png',      name: 'Engineer',      desc: 'You can fix things. Not as fast as Kazuki.',                              stat: 'Fab wear -10%',       flavor: 'The ship makes sounds it shouldn\'t. You recognize most of them.' },
+        { id: 'medic',         icon: '\u{1F48A}', sprite: 'sprites/interface/careers/medic.png',         name: 'Medic',         desc: 'You passed the exam. You are not a doctor.',                              stat: '15% lethal\u2192injury', flavor: 'The residency was... there were circumstances.' },
+        { id: 'pilot',         icon: '\u{1F680}', sprite: 'sprites/interface/careers/pilot.png',         name: 'Pilot',         desc: 'You can fly. Slightly better than expected.',                             stat: 'Fuel -5%',            flavor: 'You are statistically correct 68% of the time.' },
+        { id: 'chef',          icon: '\u{1F373}', sprite: 'sprites/interface/careers/chef.png',          name: 'Chef',          desc: 'You can make algae taste like something other than regret.',              stat: 'Food -7%',            flavor: 'You know 47 ways to prepare algae. Forty-six are bad.' },
+        { id: 'xenobiologist', icon: '\u{1F9EC}', sprite: 'sprites/interface/careers/xenobiologist.png', name: 'Xenobiologist', desc: 'You studied aliens. You have never met one.',                             stat: 'Anomaly safer',       flavor: 'Your thesis was theoretical. Everything is about to become very applied.' },
+        { id: 'diplomat',      icon: '\u{1F91D}', sprite: 'sprites/interface/careers/diplomat.png',      name: 'Diplomat',      desc: 'Very good at making people feel heard while doing nothing.',              stat: 'Credits +15',         flavor: 'Your crew does not find this reassuring.' },
+        { id: 'merchant',      icon: '\u{1F4CA}', sprite: 'sprites/interface/careers/merchant.png',      name: 'Merchant',      desc: 'You ran a business.',                                                     stat: 'Prices -10%',         flavor: 'You are going to run this mission like a business.' },
+        { id: 'academic',      icon: '\u{1F4DA}', sprite: 'sprites/interface/careers/academic.png',      name: 'Academic',      desc: 'You have a PhD. In what is not immediately relevant.',                    stat: 'Research options',    flavor: 'Your grant funding was cut. You are in space. These events are related.' },
+        { id: 'veteran',       icon: '\u{1F396}', sprite: 'sprites/interface/careers/veteran.png',       name: 'Veteran',       desc: 'You served. Where is classified.',                                        stat: 'Combat screen-clear', flavor: 'You don\'t talk about it.' }
+      ]
+    },
+    {
+      key: 'crew', label: 'Choose Your Crew', cat: 'Crew (0\u20132)',
+      desc: 'Pick up to two crew members. Each has passive skills, active skills, and narrative unlocks. Or take none and fly solo.',
+      multi: true, max: 2,
+      options: [
+        { id: 'botanist',      icon: '\u{1F33F}', crewId: 'osei',     name: 'Dr. Osei \u2014 Botanist', desc: 'Knows every plant. Has opinions about all of them.', stat: 'Crop care \u00b7 Greenhouse Protocol' },
+        { id: 'engineer',      icon: '\u{1F527}', crewId: 'kazuki',   name: 'Kazuki \u2014 Engineer', desc: 'Fixes things. Eats twice as much.', stat: 'Hull repair \u00b7 Emergency Patch' },
+        { id: 'medic',         icon: '\u{1F48A}', crewId: 'vasquez',  name: 'Dr. Vasquez \u2014 Medic', desc: 'Chronically anxious. Excellent at their job.', stat: 'Crew health \u00b7 Treatment' },
+        { id: 'pilot',         icon: '\u{1F680}', crewId: 'reeves',   name: 'Reeves \u2014 Pilot', desc: 'Overconfident. Correct 78% of the time.', stat: 'Fuel \u00b7 Push Engines' },
+        { id: 'chef',          icon: '\u{1F373}', crewId: 'reyes',    name: 'Reyes \u2014 Chef', desc: 'The most important person on the ship.', stat: 'Food \u00b7 Special Meal' },
+        { id: 'xenobiologist', icon: '\u{1F9EC}', crewId: 'tanaka',   name: 'Dr. Tanaka \u2014 Xenobiologist', desc: 'Deeply excited about everything that could kill them.', stat: 'Alien analysis' },
+        { id: 'diplomat',      icon: '\u{1F91D}', crewId: 'hargrove', name: 'Hargrove \u2014 Diplomat', desc: 'Useless except in the one specific situation.', stat: 'Negotiation' }
+      ]
+    },
+    {
+      key: 'crop', label: 'Choose Your Crop', cat: 'The Mission',
+      desc: 'This is what you\'re keeping alive. Different crops need different resources, resist different threats.',
+      options: [
+        { id: 'wheat',        icon: '\u{1F33E}', sprite: 'sprites/interface/crops/wheat.png',    name: 'Wheat', desc: 'Reliable. Predictable. Monoculture-vulnerable.', stat: 'Food: high', flavor: 'You will never feel clever for picking wheat, but you probably won\'t regret it.' },
+        { id: 'tomato',       icon: '\u{1F345}', sprite: 'sprites/interface/crops/tomato.png',   name: 'Tomatoes', desc: 'High maintenance. High reward. High drama.', stat: 'Food: highest \u00b7 Morale +2', flavor: 'They will demand your attention and you will give it to them.' },
+        { id: 'sweet_potato', icon: '\u{1F360}', sprite: 'sprites/interface/crops/potato.png',   name: 'Sweet Potatoes', desc: 'NASA\'s top pick.', stat: 'Hardiest', flavor: 'The ship computer approves of this choice. It will mention this.' },
+        { id: 'soybean',      icon: '\u{1FAD8}', sprite: 'sprites/interface/crops/soybeans.png', name: 'Soybeans', desc: 'Fixes nitrogen. Resists contamination.', stat: 'Self-sustaining', flavor: 'The engineer of crops.' },
+        { id: 'zinnia',       icon: '\u{1F338}', sprite: 'sprites/interface/crops/zinnia.png',   name: 'Zinnias', desc: 'No food value. High morale. Hard mode.', stat: 'Morale +8', flavor: 'The bravest or stupidest choice you can make.' }
+      ]
+    },
+    {
+      key: 'ship', label: 'Name Your Ship', cat: 'The Ship',
+      desc: 'Every ship needs a name. This one is yours. Name it well. Or don\'t. It doesn\'t know.',
+      nameInput: true
+    }
+  ];
+
+  let step = 0;
+  const sel = { trail: null, ai: null, captain: null, crew: [], crop: null, ship: '' };
+
+  // ── Typewriter for the step description (left column) ────────
+  // Per-call timers are tracked so a re-render (clicking Next or
+  // reselecting a card) cleanly cancels the prior animation.
+  const TYPE_SPEED_MS = 25;
+  let twTimers = [];
+  function typewriteDescription(text) {
+    twTimers.forEach(clearTimeout);
+    twTimers = [];
+    const el = $('setup-description');
+    el.innerHTML = '';
+    const span = document.createElement('span');
+    const cursor = document.createElement('span');
+    cursor.className = 'tw-cursor';
+    el.appendChild(span);
+    el.appendChild(cursor);
+    let i = 0;
+    function tick() {
+      if (i < text.length) {
+        span.textContent += text[i++];
+        twTimers.push(setTimeout(tick, TYPE_SPEED_MS));
+      } else {
+        cursor.remove();
+      }
+    }
+    tick();
+  }
+
+  function buildPips() {
+    const wrap = $('setup-progress');
+    wrap.innerHTML = '';
+    for (let i = 0; i < STEPS.length; i++) {
+      if (i > 0) {
+        const line = document.createElement('div');
+        line.className = 'pip-line' + (i <= step ? ' done' : '');
+        wrap.appendChild(line);
+      }
+      const pip = document.createElement('div');
+      pip.className = 'progress-pip' + (i < step ? ' done' : '') + (i === step ? ' active' : '');
+      wrap.appendChild(pip);
+    }
+  }
+
+  // Track which step's description is currently typed/typing, so that
+  // re-renders triggered by card selection don't retype the description
+  // mid-interaction.
+  let typedStep = -1;
+
+  // Per-step scroll memory for #setup-left and #setup-right. Scroll
+  // position is captured on the way out of a step (in next/prev) and
+  // restored after the next render lays out its new DOM.
+  const scrollMemory = {};
+  function saveScroll() {
+    scrollMemory[step] = {
+      left:  $('setup-left').scrollTop,
+      right: $('setup-right').scrollTop
+    };
+  }
+  function restoreScroll() {
+    const mem = scrollMemory[step] || { left: 0, right: 0 };
+    requestAnimationFrame(() => {
+      $('setup-left').scrollTop  = mem.left;
+      $('setup-right').scrollTop = mem.right;
+    });
+  }
+
+  function render() {
+    const s = STEPS[step];
+    // Decide scroll restore target BEFORE we blow away #setup-right.
+    // Fresh step → jump to the memoized position (0 on first visit).
+    // Same step (card click re-render) → preserve current scroll.
+    const freshStep = typedStep !== step;
+    const mem = scrollMemory[step];
+    const restoreLeft  = freshStep ? (mem ? mem.left  : 0) : $('setup-left').scrollTop;
+    const restoreRight = freshStep ? (mem ? mem.right : 0) : $('setup-right').scrollTop;
+
+    $('setup-step-label').textContent = s.label;
+    $('setup-category-title').textContent = s.cat;
+    if (typedStep !== step) {
+      typedStep = step;
+      typewriteDescription(s.desc);
+    }
+    $('setup-flavor').textContent = '';
+    $('btn-back').classList.toggle('disabled', step === 0);
+
+    const nextBtn = $('btn-next');
+    const needsChoice = !s.multi && !s.nameInput;
+    const blocked = needsChoice && !sel[s.key];
+    if (step === STEPS.length - 1) {
+      nextBtn.className = 'panel-btn accent-teal';
+      nextBtn.innerHTML = 'Launch <span class="chevron">\u25B6</span>';
+    } else {
+      nextBtn.className = 'panel-btn accent-gold';
+      nextBtn.innerHTML = 'Next <span class="chevron">\u25B6</span>';
+    }
+    if (blocked) nextBtn.className += ' disabled';
+    $('crew-count-badge').textContent = s.key === 'crew' ? (sel.crew.length + '/2 selected') : '';
+    // Only rebuild pips when the step actually changed — otherwise
+    // re-creating the active pip restarts its CSS pulse animation.
+    if (freshStep) buildPips();
+
+    const right = $('setup-right');
+    right.innerHTML = '';
+
+    if (s.nameInput) {
+      right.innerHTML =
+        '<div id="ship-name-wrap">' +
+        '<img src="sprites/ships/default.png" alt="" class="ship-bob" style="display:block; margin-bottom:8px; image-rendering:pixelated; image-rendering:crisp-edges;">' +
+        '<div style="font-family:\'Press Start 2P\'; font-size:8px; color:#5a7a6a; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px">Ship Name</div>' +
+        '<input type="text" id="ship-name-input" value="' + sel.ship + '" placeholder="The Verdant Ark" maxlength="30">' +
+        '</div>';
+      $('ship-name-input').addEventListener('input', e => { sel.ship = e.target.value; });
+      $('setup-flavor').textContent = 'It doesn\'t know its name. It doesn\'t need to. You do.';
+      return;
+    }
+
+    for (const opt of s.options) {
+      const isMulti = s.multi;
+      const isSel = isMulti ? sel[s.key].includes(opt.id) : sel[s.key] === opt.id;
+
+      const card = document.createElement('div');
+      card.className = 'sel-card' + (isSel ? ' selected' : '') + (isMulti ? ' crew-card' : '');
+      // Icon priority: crewId (crops from spritesheet, scales with the
+      // --card-icon-size CSS var) > opt.sprite (loose PNG URL, used by
+      // trail icons) > emoji-only fallback. The emoji char is always in
+      // the inner text as a safety net if image load fails.
+      const iconHtml = opt.crewId
+        ? '<div class="card-icon has-sprite" style="' + crewIconCss(opt.crewId, 'var(--card-icon-size)') + '">' + opt.icon + '</div>'
+        : opt.sprite
+          ? '<div class="card-icon has-sprite" style="background-image: url(\'' + opt.sprite + '\')">' + opt.icon + '</div>'
+          : '<div class="card-icon">' + opt.icon + '</div>';
+      card.innerHTML =
+        '<div class="card-led"></div>' +
+        iconHtml +
+        '<div class="card-info">' +
+          '<div class="card-name">' + opt.name + '</div>' +
+          '<div class="card-desc">' + opt.desc + '</div>' +
+          (opt.stat ? '<div class="card-stat">' + opt.stat + '</div>' : '') +
+        '</div>';
+      card.addEventListener('click', () => {
+        if (isMulti) {
+          const idx = sel[s.key].indexOf(opt.id);
+          if (idx >= 0) sel[s.key].splice(idx, 1);
+          else if (sel[s.key].length < s.max) sel[s.key].push(opt.id);
+        } else {
+          sel[s.key] = opt.id;
+        }
+        $('setup-flavor').textContent = opt.flavor || '';
+        render();
+      });
+      right.appendChild(card);
+    }
+
+    if (!s.multi && sel[s.key]) {
+      const found = s.options.find(o => o.id === sel[s.key]);
+      if (found) $('setup-flavor').textContent = found.flavor || '';
+    }
+
+    requestAnimationFrame(() => {
+      $('setup-left').scrollTop  = restoreLeft;
+      $('setup-right').scrollTop = restoreRight;
+    });
+  }
+
+  window.nextStep = function() {
+    const cur = STEPS[step];
+    if (cur.key === 'crew' && sel.crew.length < 2) {
+      const msg = sel.crew.length === 0
+        ? '\u26A0 No crew selected.\n\nYou will be flying solo. Are you sure?'
+        : '\u26A0 Only ' + sel.crew.length + ' of 2 crew selected.\n\nProceed with an incomplete crew?';
+      if (!confirm(msg)) return;
+    }
+    if (step < STEPS.length - 1) { saveScroll(); step++; render(); }
+    else {
+      alert('LAUNCH!\n\nTrail: ' + sel.trail + '\nAI: ' + sel.ai +
+        '\nCaptain: ' + sel.captain + '\nCrew: ' + (sel.crew.join(', ') || 'solo') +
+        '\nCrop: ' + sel.crop + '\nShip: ' + (sel.ship || 'The Verdant Ark'));
+    }
+  };
+  window.prevStep = function() { if (step > 0) { saveScroll(); step--; render(); } };
+
+  // ── Style controls via CSS variables ─────────────────────────
+  function applyStyles() {
+    // Theme
+    root.style.setProperty('--gold', $('c-gold').value);
+    root.style.setProperty('--teal', $('c-teal').value);
+    root.style.setProperty('--orange', $('c-orange').value);
+
+    // Cards (drive all of it via CSS variables; CSS handles the rest)
+    const setVar = (name, val) => root.style.setProperty(name, val);
+    const setPx  = (name, id)  => { const v = $(id).value; setVar(name, v + 'px'); const r = $('v-' + id.slice(2)); if (r) r.textContent = v; };
+
+    setPx('--card-rad',        'c-card-rad');
+    setPx('--card-gap',        'c-card-gap');
+    setPx('--card-padx',       'c-card-padx');
+    setPx('--card-pady',       'c-card-pady');
+    setVar('--card-bg',        $('c-card-bg').value);
+    setVar('--card-border',    $('c-card-border').value);
+
+    setPx('--card-name-size',  'c-card-name-size');
+    setVar('--card-name-color',$('c-card-name-color').value);
+    setPx('--card-desc-size',  'c-card-desc-size');
+    setVar('--card-desc-color',$('c-card-desc-color').value);
+    setPx('--card-stat-size',  'c-card-stat-size');
+    setVar('--card-stat-color',$('c-card-stat-color').value);
+
+    // Card LED dot
+    setPx('--card-led-size',     'c-card-led-size');
+    setVar('--card-led-active',  $('c-card-led-active').value);
+    setVar('--card-led-inactive',$('c-card-led-inactive').value);
+
+    // Flavor text (bottom-left quote)
+    setVar('--flavor-color',  $('c-flavor-color').value);
+    setPx('--flavor-size',    'c-flavor-size');
+    setVar('--flavor-border', $('c-flavor-border').value);
+
+    // Progress pips (top bar)
+    setPx('--pip-size',              'c-pip-size');
+    setVar('--pip-active',           $('c-pip-active').value);
+    setVar('--pip-inactive-bg',      $('c-pip-inactive-bg').value);
+    setVar('--pip-inactive-border',  $('c-pip-inactive-border').value);
+
+    // Panel buttons — set CSS variables (the CSS does the rest)
+    root.style.setProperty('--pb-bg-top', $('c-pb-bg-top').value);
+    root.style.setProperty('--pb-bg-mid', $('c-pb-bg-mid').value);
+    root.style.setProperty('--pb-bg-bot', $('c-pb-bg-bot').value);
+    root.style.setProperty('--pb-hi', $('c-pb-hi').value);
+    root.style.setProperty('--pb-lo', $('c-pb-lo').value);
+    root.style.setProperty('--pb-text', $('c-pb-text').value);
+    root.style.setProperty('--pb-border', $('c-pb-border').value + 'px');
+    root.style.setProperty('--pb-padx', $('c-pb-padx').value + 'px');
+    root.style.setProperty('--pb-pady', $('c-pb-pady').value + 'px');
+    root.style.setProperty('--pb-rad', $('c-pb-rad').value + 'px');
+    root.style.setProperty('--pb-size', $('c-pb-size').value + 'px');
+    root.style.setProperty('--pb-gold-hi', $('c-pb-gold-hi').value);
+    root.style.setProperty('--pb-gold-lo', $('c-pb-gold-lo').value);
+    root.style.setProperty('--pb-teal-hi', $('c-pb-teal-hi').value);
+    root.style.setProperty('--pb-teal-lo', $('c-pb-teal-lo').value);
+
+    $('v-pb-border').textContent = $('c-pb-border').value;
+    $('v-pb-padx').textContent = $('c-pb-padx').value;
+    $('v-pb-pady').textContent = $('c-pb-pady').value;
+    $('v-pb-rad').textContent = $('c-pb-rad').value;
+    $('v-pb-size').textContent = $('c-pb-size').value;
+  }
+
+  // Auto-add hex readouts to color inputs
+  document.querySelectorAll('#controls input[type="color"]').forEach(input => {
+    if (input.parentElement.querySelector('.val')) return;
+    const span = document.createElement('span');
+    span.className = 'val';
+    span.textContent = input.value.toUpperCase();
+    input.parentElement.appendChild(span);
+    input.addEventListener('input', () => {
+      span.textContent = input.value.toUpperCase();
+    });
+  });
+
+  document.querySelectorAll('#controls input').forEach(el => el.addEventListener('input', () => {
+    applyStyles();
+    markModified();
+  }));
+
+  // Defaults for reset
+  const DEFAULTS = {
+    'c-gold': '#c8a85a', 'c-teal': '#8cc890', 'c-orange': '#e88830',
+    'c-card-rad': '6', 'c-card-gap': '12', 'c-card-padx': '14', 'c-card-pady': '10',
+    'c-card-bg': '#141c28', 'c-card-border': '#2a3040',
+    'c-card-name-size': '12', 'c-card-name-color': '#00a6bb',
+    'c-card-desc-size': '18', 'c-card-desc-color': '#7a8898',
+    'c-card-stat-size': '15', 'c-card-stat-color': '#5a7a6a',
+    'c-card-led-size': '8', 'c-card-led-active': '#0bc613', 'c-card-led-inactive': '#2a3040',
+    'c-flavor-color': '#39c6aa', 'c-flavor-size': '18', 'c-flavor-border': '#2a3a30',
+    'c-pip-size': '12', 'c-pip-active': '#ffac00',
+    'c-pip-inactive-bg': '#0a0e14', 'c-pip-inactive-border': '#2a3040',
+    'c-pb-bg-top': '#39404f', 'c-pb-bg-mid': '#252a38', 'c-pb-bg-bot': '#4b597a',
+    'c-pb-hi': '#5a6070', 'c-pb-lo': '#1a1f2a', 'c-pb-text': '#d0c890',
+    'c-pb-border': '3', 'c-pb-padx': '8', 'c-pb-pady': '4',
+    'c-pb-rad': '0', 'c-pb-size': '18',
+    'c-pb-gold-hi': '#b4b091', 'c-pb-gold-lo': '#363733',
+    'c-pb-teal-hi': '#35c6bf', 'c-pb-teal-lo': '#393632'
+  };
+
+  window.resetDefaults = function() {
+    for (const [id, val] of Object.entries(DEFAULTS)) {
+      const el = $(id);
+      if (el) {
+        el.value = val;
+        // Update the hex readout for color inputs
+        if (el.type === 'color') {
+          const span = el.parentElement.querySelector('.val');
+          if (span) span.textContent = val.toUpperCase();
+        }
+      }
+    }
+    applyStyles();
+    markModified();
+  };
+
+  // Highlight values that differ from default
+  function markModified() {
+    for (const [id, defVal] of Object.entries(DEFAULTS)) {
+      const el = $(id);
+      if (!el) continue;
+      const span = el.parentElement.querySelector('.val');
+      if (!span) continue;
+      const isModified = el.value.toLowerCase() !== defVal.toLowerCase();
+      span.classList.toggle('modified', isModified);
+    }
+  }
+
+  render();
+  applyStyles();
+  markModified();
+
+})();
+</script>
+</body>
+</html>

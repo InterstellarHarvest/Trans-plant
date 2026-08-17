@@ -1,0 +1,2379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Inventory Modal Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="shared.css" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+
+:root {
+  /* Shared theme */
+  --teal: #35c6bf;
+  --orange: #e88830;
+  --cream: #e8d8a0;
+  --body: #aab5c4;
+
+  /* Modal chrome */
+  --modal-backdrop: rgba(4,8,16,0.75);
+  --modal-bg-top: #141a28;
+  --modal-bg-bot: #0a0e18;
+  --modal-border: #435384;
+  --modal-width: 816px;
+  --modal-height: 600px;
+
+  /* Header */
+  --header-title-color: #56cfd7;
+  --header-title-size: 14px;
+  --header-meta-color: #aab5c4;
+
+  /* Resource tiles */
+  --tile-size: 72px;
+  --tile-gap: 16px;
+  --tile-frame-bg: rgba(10,14,20,0.6);
+  --tile-frame-border: #2a3040;
+  --tile-label-color: #8a98a8;
+
+  /* Segmented gauge overlay */
+  --gauge-seg-low:    #c23030;
+  --gauge-seg-lowmid: #e0661a;
+  --gauge-seg-mid:    #d0a020;
+  --gauge-seg-highmid:#b4bf40;
+  --gauge-seg-high:   #78c560;
+  --gauge-seg-full:   #35c56a;
+  --gauge-unlit-alpha: 0.15;
+
+  /* Tabs */
+  --tab-bg-top: #39404F;
+  --tab-bg-mid: #252A38;
+  --tab-bg-bot: #4B597A;
+  --tab-hi: #5a6070;
+  --tab-lo: #1a1f2a;
+  --tab-text: #8a98a8;
+  --tab-active-text: #d0c890;
+  --tab-active-accent: #e88830;
+
+  /* Item grid tiles */
+  --grid-tile-size: 88px;
+  --grid-sprite-size: 64px;
+  --grid-gap: 8px;
+  --scrollbar-w: 6px;
+  --grid-bg: rgba(20,28,40,0.55);
+  --grid-border: #2a3040;
+  --grid-border-selected: #c8a85a;
+  --grid-name-color: #d0c890;
+  --grid-badge-bg: rgba(14,20,32,0.95);
+  --grid-badge-color: #ffac00;
+  --grid-price-color: #8a98a8;
+  --grid-price-hidden: #7a6a5a;
+
+  /* Detail panel */
+  --detail-bg: rgba(10,14,20,0.65);
+  --detail-border: rgba(200,168,90,0.25);
+  --detail-name-color: #c8a85a;
+  --detail-label-color: #5a7a6a;
+  --detail-body-color: #aab5c4;
+
+  /* Jettison confirm */
+  --confirm-bg: rgba(4,8,16,0.92);
+  --confirm-panel-bg: #141a28;
+  --confirm-panel-border: #cc3333;
+
+  /* Panel button sizing (color vars live in shared.css; red accent local) */
+  --pb-border: 3px;
+  --pb-padx: 10px;
+  --pb-pady: 5px;
+  --pb-size: 14px;
+  --pb-red-hi: #cc6666;
+  --pb-red-lo: #4a1a1a;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'VT323', monospace;
+  background: #0e1118;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #d1d5db;
+}
+
+#demo-wrap { display: flex; gap: 20px; padding: 20px; align-items: flex-start; }
+#scale-root { width: 960px; height: 640px; transform-origin: top left; flex-shrink: 0; }
+
+/* Actual-size toggle — same pattern as other demos */
+#size-toggle {
+  position: fixed; top: 12px; right: 12px; z-index: 9999;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: #c8a85a;
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+}
+#size-toggle:hover { filter: brightness(1.2); }
+#size-toggle:active {
+  border-style: inset;
+  border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a;
+  transform: translate(1px, 1px);
+}
+body.fullsize { overflow: hidden; }
+body.fullsize #demo-wrap { padding: 0; gap: 0; width: 100vw; height: 100vh; justify-content: center; align-items: center; }
+body.fullsize #controls { display: none; }
+body.fullsize #scale-root { transform-origin: center center; }
+
+/* Game frame */
+#game {
+  width: 960px; height: 640px;
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #0c0f22 0%, #070814 100%);
+}
+
+#crt-overlay {
+  pointer-events: none; position: absolute; inset: 0; z-index: 100; border-radius: 4px;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 1px, transparent 1px, transparent 2px);
+}
+
+#stars-far, #stars-near { position: absolute; inset: 0; pointer-events: none; }
+
+/* ── Cruise ghost backdrop (what the player was on before opening cargo) */
+#cruise-ghost {
+  position: absolute; inset: 0;
+  z-index: 5;
+  filter: brightness(0.35);
+  pointer-events: none;
+}
+.cg-header {
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 40px;
+  padding: 0 16px;
+  background: linear-gradient(180deg, #141a28 0%, #10141e 100%);
+  border-bottom: 2px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Press Start 2P', cursive;
+}
+.cg-ship { font-size: 10px; letter-spacing: 2px; color: var(--gold); }
+.cg-day  { font-size: 8px; letter-spacing: 1px; color: #aab5c4; }
+.cg-bottom {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 120px;
+  background: linear-gradient(180deg, #10141e 0%, #0a0e14 100%);
+  border-top: 1px solid rgba(200,168,90,0.2);
+}
+
+/* ── Modal backdrop + panel ────────────────────────────────── */
+#inv-backdrop {
+  position: absolute; inset: 0;
+  z-index: 10;
+  background: var(--modal-backdrop);
+  cursor: var(--cursor-hand, pointer);
+}
+
+#inv-modal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--modal-width);
+  height: var(--modal-height);
+  z-index: 20;
+  background: linear-gradient(180deg, var(--modal-bg-top) 0%, var(--modal-bg-bot) 100%);
+  border: 3px solid var(--modal-border);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(86,207,215,0.18),
+    inset 0 0 0 2px rgba(14,20,32,0.5),
+    0 8px 40px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.25s, transform 0.25s;
+}
+body:not(.modal-open) #inv-backdrop,
+body:not(.modal-open) #inv-modal {
+  opacity: 0;
+  pointer-events: none;
+}
+body:not(.modal-open) #inv-modal {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+/* ── Header row ─────────────────────────────────────────────── */
+.inv-header {
+  flex-shrink: 0;
+  height: 42px;
+  padding: 0 16px;
+  border-bottom: 2px solid rgba(86,207,215,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.inv-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--header-title-size);
+  letter-spacing: 2px;
+  color: var(--header-title-color);
+  text-shadow: 0 0 8px rgba(86,207,215,0.35);
+  flex-shrink: 0;
+}
+.inv-header-meta {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+}
+.slots-readout,
+.gold-readout {
+  font-family: 'VT323', monospace;
+  font-size: 17px;
+  letter-spacing: 1px;
+  color: var(--header-meta-color);
+}
+.slots-readout strong,
+.gold-readout strong {
+  color: #d0c890;
+  font-weight: normal;
+}
+.slots-readout.near-cap strong { color: #d8a840; }  /* amber pre-warn at ≥90% */
+.slots-readout.at-cap strong   { color: var(--red); }
+.slots-readout.at-cap { animation: slot-pulse 1.2s ease-in-out infinite; }
+@keyframes slot-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.4); }
+}
+
+/* Brief flash-pulse on the number whenever slots_used changes.
+   Applied as a one-shot class; auto-removed on animation-end. */
+.readout-flash { animation: readout-flash 0.45s ease-out; }
+@keyframes readout-flash {
+  0%   { text-shadow: 0 0 10px currentColor; transform: scale(1.15); }
+  60%  { text-shadow: 0 0 4px currentColor;  transform: scale(1.0); }
+  100% { text-shadow: none; transform: scale(1.0); }
+}
+.slots-readout strong,
+.gold-readout strong { display: inline-block; transition: color 0.15s; }
+.inv-close {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  width: 26px; height: 26px;
+  border: 2px solid rgba(86,207,215,0.4);
+  background: rgba(14,20,32,0.6);
+  color: var(--header-title-color);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.inv-close:hover { filter: brightness(1.25); border-color: var(--modal-border); }
+
+/* ── Resource tiles row ─────────────────────────────────────── */
+.resource-row {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  background: rgba(10,14,20,0.4);
+  border-bottom: 1px solid rgba(200,168,90,0.12);
+  position: relative;  /* anchor for the absolute "SHIP RESOURCE" title */
+}
+.resource-tiles {
+  display: flex;
+  gap: var(--tile-gap);
+  justify-content: center;
+}
+/* Floating row-title — pinned to the left edge, vertically
+   centered, stacked on two lines. Absolutely positioned so it
+   doesn't consume layout. Matches .detail-category styling. */
+.resource-row-title {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'VT323', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--detail-label-color);
+  text-transform: uppercase;
+  line-height: 1.15;
+  pointer-events: none;
+}
+/* Resource tile = sprite on the left + stacked info on the right.
+   The tile is the permanent "at-a-glance" surface for the three
+   ship resources; clicking it populates the detail panel with the
+   non-scalar info (flavor, desc, related cargo). */
+.res-tile {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  cursor: var(--cursor-hand, pointer);
+  padding: 4px 10px 4px 4px;
+  border-radius: 4px;
+  transition: background 0.12s;
+}
+/* No tile-background tint on hover/select — the sprite ring and
+   label color shift carry the selection feedback on their own. */
+.res-tile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 96px;
+}
+.res-tile-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--tile-label-color);
+}
+.res-tile.selected .res-tile-label { color: var(--gold); }
+/* Matches .detail-stat — same font, size, and label/value colors
+   the gear details use for COUNT / SLOT COST / SELL PRICE. */
+.res-tile-stat {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  color: var(--detail-label-color);
+  line-height: 1.2;
+  white-space: nowrap;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.res-tile-stat strong {
+  color: var(--cream);
+  font-weight: normal;
+}
+/* Resource sprite — 64×64 native, transparent bg so no box sits
+   behind the pixel-art. Selection & hover effects live on the
+   tile wrapper (see .res-tile:hover / .selected), so they apply
+   to sprite AND text together. */
+.res-tile-frame {
+  width: 64px;
+  height: 64px;
+  background-size: 64px 64px;
+  background-repeat: no-repeat;
+  background-position: center;
+  position: relative;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  color: transparent; /* hides emoji fallback when bg image loaded */
+}
+.res-tile-frame.no-sprite { color: #d0c890; display: flex; align-items: center; justify-content: center; font-size: 36px; }
+/* Hover + select effects sit on the whole tile so the text info
+   brightens and glows with the sprite. No transform — clicking
+   re-renders the tiles from scratch, and a translateY from hover
+   would reset mid-click and visibly bounce. Pure filter feedback
+   avoids the bounce. */
+.res-tile { transition: filter 0.15s; }
+.res-tile:hover    { filter: brightness(1.2); }
+.res-tile.selected { filter: brightness(1.25) drop-shadow(0 0 6px rgba(200,168,90,0.55)); }
+
+/* Segmented gauge — 10 stacked segments overlaid on the sprite at
+   per-resource pixel coordinates (authored in JS RESOURCES array).
+   Frame is native 64px so coords map 1:1. */
+.res-gauge {
+  position: absolute;
+  display: flex;
+  flex-direction: column-reverse;  /* bottom-up fill */
+  gap: 1px;
+  pointer-events: none;
+}
+.gauge-seg {
+  flex: 1;
+  background: var(--seg-color);
+  box-shadow: 0 0 3px var(--seg-color);
+  opacity: var(--gauge-unlit-alpha);
+  transition: opacity 0.25s;
+}
+.gauge-seg.lit { opacity: 1; }
+
+/* ── Tab strip + sort dropdown row ─────────────────────────── */
+.tab-row {
+  flex-shrink: 0;
+  padding: 10px 16px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(200,168,90,0.12);
+}
+.tab-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 2px;
+  padding: 8px 16px;
+  background: linear-gradient(180deg, var(--tab-bg-top) 0%, var(--tab-bg-mid) 50%, var(--tab-bg-bot) 100%);
+  border: 3px outset;
+  border-color: var(--tab-hi) var(--tab-lo) var(--tab-lo) var(--tab-hi);
+  color: var(--tab-text);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 0;
+  transition: filter 0.1s;
+  position: relative;
+}
+.tab-btn:hover { filter: brightness(1.15); }
+.tab-btn:active {
+  border-style: inset;
+  border-color: var(--tab-lo) var(--tab-hi) var(--tab-hi) var(--tab-lo);
+  transform: translate(1px, 1px);
+}
+.tab-btn.active {
+  color: var(--tab-active-text);
+  text-shadow: 0 0 4px rgba(208,200,144,0.4);
+  border-color: var(--pb-gold-hi) var(--pb-gold-lo) var(--pb-gold-lo) var(--pb-gold-hi);
+}
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -6px;
+  height: 3px;
+  background: var(--tab-active-accent);
+  box-shadow: 0 0 6px rgba(232,136,48,0.5);
+}
+.tab-count {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  letter-spacing: 0;
+  color: #5a7a6a;
+  margin-left: 4px;
+}
+.tab-btn.active .tab-count { color: #a89869; }
+
+/* Spacer between tabs and sort dropdown */
+.tab-row-spacer { flex: 1; }
+
+/* ── Custom sort dropdown ─────────────────────────────────── */
+.sort-dropdown {
+  position: relative;
+  flex-shrink: 0;
+}
+.sort-trigger {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  padding: 6px 10px;
+  padding-right: 24px;
+  background: linear-gradient(180deg, var(--pb-bg-top) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-bot) 100%);
+  border: 2px outset;
+  border-color: var(--pb-hi) var(--pb-lo) var(--pb-lo) var(--pb-hi);
+  color: var(--cream);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+  min-width: 130px;
+  text-align: left;
+  position: relative;
+}
+.sort-trigger::after {
+  content: '▾';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: var(--gold);
+  transition: transform 0.15s;
+}
+.sort-dropdown.open .sort-trigger::after {
+  transform: translateY(-50%) rotate(180deg);
+}
+.sort-trigger:hover { filter: brightness(1.15); }
+.sort-trigger-label {
+  color: var(--tile-label-color);
+  font-size: 11px;
+  margin-right: 4px;
+}
+.sort-flyout {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 25;
+  min-width: 150px;
+  background: var(--modal-bg-top);
+  border: 2px solid var(--gold);
+  border-radius: 3px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+  display: none;
+  overflow: hidden;
+}
+.sort-dropdown.open .sort-flyout { display: block; }
+.sort-option {
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  color: var(--cream);
+  cursor: var(--cursor-hand, pointer);
+  transition: background 0.1s, color 0.1s;
+}
+.sort-option:hover {
+  background: rgba(200,168,90,0.15);
+  color: var(--gold);
+}
+.sort-option.selected {
+  color: var(--gold);
+  background: rgba(200,168,90,0.08);
+  box-shadow: inset 0 0 0 1px rgba(200,168,90,0.2);
+}
+
+/* ── Main body: grid + detail panel ──────────────────────── */
+.inv-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+/* .inv-grid-wrap is now the scroll-content; the scroll-host parent
+   takes the flex sizing and positioning role. */
+.scroll-host-grid {
+  flex: 1;
+  min-height: 0;
+}
+.inv-grid-wrap {
+  padding: 12px 14px;
+  overflow-y: auto;
+  height: 100%;
+}
+.inv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-tile-size), var(--grid-tile-size)));
+  gap: var(--grid-gap);
+  justify-content: start;
+}
+
+/* Grid tile */
+.grid-tile {
+  width: var(--grid-tile-size);
+  height: var(--grid-tile-size);
+  background: var(--grid-bg);
+  border: 2px solid var(--grid-border);
+  border-radius: 4px;
+  position: relative;
+  cursor: var(--cursor-hand, pointer);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px 4px;
+  transition: border-color 0.12s, background 0.12s, transform 0.08s;
+  overflow: hidden;
+}
+.grid-tile:hover {
+  border-color: rgba(200,168,90,0.45);
+  background: rgba(200,168,90,0.05);
+}
+.grid-tile.selected {
+  border-color: var(--grid-border-selected);
+  background: rgba(200,168,90,0.08);
+}
+.tile-icon {
+  font-size: var(--grid-sprite-size);
+  line-height: 1;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tile-icon.has-sprite {
+  width: var(--grid-sprite-size);
+  height: var(--grid-sprite-size);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  color: transparent;
+}
+/* Stack count badge — top-right, Minecraft-style */
+.tile-count {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background: var(--grid-badge-bg);
+  color: var(--grid-badge-color);
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  border: 1px solid rgba(255,172,0,0.3);
+  text-shadow: 0 0 3px rgba(255,172,0,0.5);
+}
+/* Sell price — bottom-right, small */
+.tile-price {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  font-family: 'VT323', monospace;
+  font-size: 10px;
+  color: var(--grid-price-color);
+  letter-spacing: 0;
+}
+.tile-price.hidden {
+  color: var(--grid-price-hidden);
+  font-style: italic;
+}
+/* Trade-only marker — corner */
+.tile-trade-marker {
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  color: var(--grid-price-hidden);
+  font-size: 10px;
+  font-family: 'VT323', monospace;
+}
+/* NEW badge — shown on freshly-acquired tiles. Clears on first
+   click (JS sets item.seen = true). Pulsing amber dot in the top-
+   left corner, positioned far enough from the classified ⚠ that
+   both can coexist on a classified new pickup. */
+.tile-new-badge {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  background: #ffac00;
+  color: #1a1408;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  padding: 2px 3px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 6px rgba(255,172,0,0.6);
+  animation: new-badge-pulse 1.4s ease-in-out infinite;
+  z-index: 2;
+}
+@keyframes new-badge-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.3); }
+}
+/* If an item is both NEW and CLASSIFIED, the classified ⚠ shifts
+   down so it doesn't overlap the NEW pill. */
+.grid-tile.is-new .tile-classified-marker { top: 20px; }
+
+/* Classified-warning — red ⚠ at stations */
+.tile-classified-marker {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  color: var(--red);
+  font-size: 10px;
+  text-shadow: 0 0 4px rgba(204,51,51,0.5);
+  display: none;
+}
+body.at-station .tile-classified-marker { display: block; }
+
+/* Jettison poof — the vacating tile fades + lifts, and a handful
+   of small particles rise and fade around it. Purely visual; once
+   the animation ends the grid re-renders with the stack reduced. */
+.grid-tile.jettisoning {
+  animation: tile-jettison 0.5s ease-out forwards;
+  pointer-events: none;
+}
+/* Tile shrinks in place and fades — reads as the item receding
+   into the distance (zoom-out) rather than drifting upward. */
+@keyframes tile-jettison {
+  0%   { opacity: 1;    transform: scale(1);    filter: brightness(1); }
+  40%  { opacity: 0.7;  transform: scale(0.78); filter: brightness(1.2); }
+  100% { opacity: 0;    transform: scale(0.2);  filter: brightness(1.35); }
+}
+.poof-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 5;
+}
+.poof-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(200,180,140,0.85);
+  box-shadow: 0 0 6px rgba(200,180,140,0.55);
+  animation: poof-rise var(--poof-dur, 0.7s) ease-out forwards;
+  animation-delay: var(--poof-delay, 0s);
+  --dx: 0px;
+  --dy: -28px;
+}
+@keyframes poof-rise {
+  0%   { opacity: 0; transform: translate(0,0) scale(0.4); }
+  20%  { opacity: 0.9; transform: translate(calc(var(--dx) * 0.3), calc(var(--dy) * 0.3)) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.5); }
+}
+
+/* GEAR sub-section divider — labels a group of tiles (instruments,
+   consumables, curiosities, story) within the GEAR tab so the grid
+   reads as sorted categories instead of a flat dump. Spans all
+   columns of the grid. */
+.grid-section-header {
+  grid-column: 1 / -1;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: var(--detail-label-color);
+  text-transform: uppercase;
+  padding: 6px 2px 2px;
+  border-bottom: 1px dashed rgba(200,168,90,0.18);
+  margin-bottom: 2px;
+}
+
+/* Empty state (per tab) */
+.empty-state {
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  color: var(--body);
+  font-style: italic;
+  opacity: 0.55;
+  text-align: center;
+  padding: 60px 20px;
+  grid-column: 1 / -1;
+}
+
+/* ── Detail panel ─────────────────────────────────────────── */
+/* Similar split: scroll-host takes width + flex-shrink, .inv-detail
+   (now scroll-content) keeps padding / flex / overflow. */
+.scroll-host-detail {
+  flex-shrink: 0;
+  width: 295px;
+  border-left: 1px solid rgba(200,168,90,0.2);
+  background: var(--detail-bg);
+}
+.inv-detail {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  height: 100%;
+}
+.detail-empty {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--detail-label-color);
+  font-style: italic;
+  text-align: center;
+  padding: 30px 0;
+  opacity: 0.7;
+}
+.detail-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--detail-name-color);
+  text-shadow: 0 0 6px rgba(200,168,90,0.25);
+  line-height: 1.35;
+}
+.detail-category {
+  font-family: 'VT323', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--detail-label-color);
+  text-transform: uppercase;
+  margin-top: -6px;
+}
+.detail-desc {
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  color: var(--detail-body-color);
+  line-height: 1.35;
+}
+.detail-flavor {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--teal);
+  font-style: italic;
+  line-height: 1.3;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(53,198,191,0.2);
+}
+.detail-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(200,168,90,0.15);
+}
+.detail-stat {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--detail-label-color);
+  display: flex;
+  justify-content: space-between;
+}
+.detail-stat strong {
+  color: var(--cream);
+  font-weight: normal;
+}
+/* Station-price bonus hint inline with the SELL PRICE value.
+   Dim teal, small, in parentheses-ish position. */
+.detail-station-bonus {
+  font-family: 'VT323', monospace;
+  font-size: 12px;
+  color: var(--teal);
+  margin-left: 4px;
+  text-transform: lowercase;
+  letter-spacing: 0;
+}
+
+/* Provenance row — inline label + wrapping value. Pulled out of
+   the flex .detail-stats block because location names can be long
+   and don't play well with right-justified single-line rows. */
+.detail-acquired {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--cream);
+  line-height: 1.3;
+  padding-top: 2px;
+}
+.detail-acquired-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--detail-label-color);
+  margin-right: 6px;
+  text-transform: uppercase;
+}
+
+/* "USED FOR: X · Y · Z" list — events this item helps resolve. */
+.detail-used-by {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--detail-body-color);
+  padding-top: 6px;
+  border-top: 1px solid rgba(200,168,90,0.15);
+}
+.detail-used-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--detail-label-color);
+  margin-right: 4px;
+}
+
+/* Tile-marker explanations — shown only when the item has a
+   non-obvious corner marker on its grid tile (trade-only ⇄,
+   classified ⚠). Dim palette so the notes read as metadata. */
+.detail-marker-notes {
+  padding-top: 6px;
+  border-top: 1px solid rgba(200,168,90,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.detail-marker-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--detail-label-color);
+  margin-bottom: 2px;
+}
+.detail-marker-row {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: var(--detail-body-color);
+  line-height: 1.3;
+}
+.detail-marker-icon {
+  display: inline-block;
+  width: 16px;
+  color: var(--orange);
+  text-align: center;
+  margin-right: 4px;
+  font-size: 14px;
+}
+
+/* Rotating ARIA quip — sparse and seasoned with the AI voice.
+   Dim teal italic, short label prefix. */
+.detail-aria {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--teal);
+  font-style: italic;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(53,198,191,0.2);
+}
+.detail-aria-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  font-style: normal;
+  margin-right: 4px;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(200,168,90,0.15);
+  margin-top: auto;
+}
+
+/* Shared panel-button */
+.panel-btn {
+  font-family: 'VT323', monospace;
+  font-size: var(--pb-size);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: var(--cursor-hand, pointer);
+  padding: var(--pb-pady) var(--pb-padx);
+  background: linear-gradient(180deg, var(--pb-bg-top) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-bot) 100%);
+  border: var(--pb-border) outset;
+  border-color: var(--pb-hi) var(--pb-lo) var(--pb-lo) var(--pb-hi);
+  color: var(--pb-text);
+  border-radius: 0;
+  transition: filter 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.panel-btn:hover { filter: brightness(1.15); }
+.panel-btn:active {
+  border-style: inset;
+  border-color: var(--pb-lo) var(--pb-hi) var(--pb-hi) var(--pb-lo);
+  transform: translate(1px, 1px);
+}
+.panel-btn.accent-gold {
+  border-color: var(--pb-gold-hi) var(--pb-gold-lo) var(--pb-gold-lo) var(--pb-gold-hi);
+  color: var(--pb-gold-hi);
+}
+.panel-btn.accent-red {
+  border-color: var(--pb-red-hi) var(--pb-red-lo) var(--pb-red-lo) var(--pb-red-hi);
+  color: #e0a0a0;
+}
+.panel-btn.disabled {
+  opacity: 0.4; pointer-events: none;
+  filter: grayscale(0.6);
+}
+
+/* ── Jettison confirm overlay ────────────────────────────── */
+.jettison-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: var(--confirm-bg);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.jettison-overlay.open { display: flex; }
+.jettison-panel {
+  width: 380px;
+  background: var(--confirm-panel-bg);
+  border: 3px solid var(--confirm-panel-border);
+  border-radius: 4px;
+  padding: 20px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.7), 0 0 16px rgba(204,51,51,0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+/* Route-required item → the confirm panel pulses a brighter red
+   ring and shows a warning line. Doesn't block jettison; just
+   calls out that the player is about to discard something the
+   current trail expects them to keep. */
+.jettison-panel.route-warn {
+  animation: jettison-warn-pulse 1.2s ease-in-out infinite;
+}
+@keyframes jettison-warn-pulse {
+  0%, 100% { box-shadow: 0 6px 24px rgba(0,0,0,0.7), 0 0 18px rgba(204,51,51,0.35); }
+  50%      { box-shadow: 0 6px 24px rgba(0,0,0,0.7), 0 0 28px rgba(204,51,51,0.75); }
+}
+.jettison-route-warn {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: #e08080;
+  text-align: center;
+  line-height: 1.3;
+  padding: 6px 10px;
+  background: rgba(204,51,51,0.12);
+  border: 1px solid rgba(204,51,51,0.4);
+  border-radius: 3px;
+  display: none;
+}
+.jettison-panel.route-warn .jettison-route-warn { display: block; }
+.jettison-route-warn strong { color: #ffac00; font-weight: normal; }
+.jettison-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--red);
+  text-align: center;
+  text-shadow: 0 0 6px rgba(204,51,51,0.4);
+}
+.jettison-msg {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: var(--body);
+  text-align: center;
+  line-height: 1.3;
+}
+.jettison-count-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.jettison-count-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 14px;
+  width: 32px; height: 32px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+}
+.jettison-count-btn:active {
+  border-style: inset;
+  border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a;
+  transform: translate(1px,1px);
+}
+.jettison-count-value {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 14px;
+  color: var(--cream);
+  min-width: 60px;
+  text-align: center;
+}
+.jettison-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.jettison-buttons .panel-btn { font-size: 13px; padding: 6px 10px; }
+
+/* ── Controls sidebar (dev-only; uses plain selects) ────── */
+#controls {
+  width: 380px; background: #161a22; border: 1px solid #2a3040;
+  border-radius: 6px;
+  padding: 16px; font-family: 'VT323', monospace; font-size: 16px; color: #8898a8;
+  max-height: 640px; overflow-y: auto; overflow-x: hidden; flex-shrink: 0;
+}
+#controls h2 { font-family: 'Press Start 2P', cursive; font-size: 8px; color: var(--gold); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase; }
+#controls h3 { font-family: 'Press Start 2P', cursive; font-size: 7px; color: #5a7a6a; letter-spacing: 1px; margin: 14px 0 8px; text-transform: uppercase; border-bottom: 1px solid #2a3040; padding-bottom: 4px; }
+.ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.ctrl-row label { font-size: 14px; color: #667; flex-shrink: 0; min-width: 100px; }
+.ctrl-row input[type="range"] { flex: 1; accent-color: var(--gold); height: 4px; }
+.ctrl-row input[type="color"] { width: 32px; height: 24px; border: 1px solid #2a3040; border-radius: 3px; background: #0e1118; cursor: var(--cursor-hand, pointer); padding: 0; }
+.ctrl-row .val { font-size: 13px; color: #5a7a6a; min-width: 60px; text-align: right; font-family: 'VT323', monospace; letter-spacing: 0.5px; }
+.ctrl-row .val.modified { color: #e88830; font-weight: bold; }
+.sim-btn {
+  width: 100%; margin-top: 6px; padding: 8px;
+  font-family: 'VT323', monospace; font-size: 15px; letter-spacing: 1px; text-transform: uppercase;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset; border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold); cursor: var(--cursor-hand, pointer); border-radius: 2px;
+}
+.sim-btn:hover { filter: brightness(1.15); }
+.sim-btn:active { border-style: inset; border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a; transform: translate(1px,1px); }
+
+/* Webkit scrollbar baseline — still applies to #controls (the dev
+   sidebar), which intentionally keeps native scrolling. */
+::-webkit-scrollbar           { width: 6px; height: 6px; }
+::-webkit-scrollbar-track     { background: #0a0e14; border-radius: 0; }
+::-webkit-scrollbar-thumb     { background: #2a3a48; border-radius: 0; }
+::-webkit-scrollbar-corner    { background: #0a0e14; }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3a48 #0a0e14;
+}
+
+/* scrollbar lives in shared.css */
+
+</style>
+</head>
+<body>
+
+<button id="size-toggle" onclick="toggleSize()">Actual Size</button>
+
+<div id="demo-wrap">
+
+<div id="scale-root">
+<div id="game">
+  <canvas id="stars-far" width="960" height="640"></canvas>
+  <canvas id="stars-near" width="960" height="640"></canvas>
+
+  <!-- Cruise ghost (dimmed) -->
+  <div id="cruise-ghost">
+    <div class="cg-header">
+      <span class="cg-ship">THE VERDANT ARK</span>
+      <span class="cg-day">DAY 47 · 73 LEFT</span>
+    </div>
+    <div class="cg-bottom"></div>
+  </div>
+
+  <div id="crt-overlay"></div>
+
+  <!-- Modal backdrop -->
+  <div id="inv-backdrop" onclick="closeModal()"></div>
+
+  <!-- Inventory modal -->
+  <div id="inv-modal">
+
+    <!-- Header -->
+    <div class="inv-header">
+      <span class="inv-title">CARGO HOLD</span>
+      <div class="inv-header-meta">
+        <span class="slots-readout" id="slots-readout">
+          <strong id="slots-used">0</strong> / <strong id="slots-total">0</strong> SLOTS
+        </span>
+        <span class="gold-readout">
+          <strong id="gold-amount">0</strong> cr
+        </span>
+        <button class="inv-close" onclick="closeModal()">X</button>
+      </div>
+    </div>
+
+    <!-- Resource tiles row -->
+    <div class="resource-row">
+      <div class="resource-row-title">Ship<br>Resources</div>
+      <!-- Tiles injected into #resource-row; title sits outside so it
+           survives innerHTML wipes on re-render. -->
+      <div class="resource-tiles" id="resource-row"></div>
+    </div>
+
+    <!-- Tab strip + sort dropdown -->
+    <div class="tab-row">
+      <button class="tab-btn active" data-tab="gear"      onclick="setTab('gear')">GEAR <span class="tab-count" id="count-gear"></span></button>
+      <button class="tab-btn"        data-tab="materials" onclick="setTab('materials')">MATERIALS <span class="tab-count" id="count-materials"></span></button>
+      <button class="tab-btn"        data-tab="upgrades"  onclick="setTab('upgrades')">UPGRADES <span class="tab-count" id="count-upgrades"></span></button>
+      <span class="tab-row-spacer"></span>
+      <div class="sort-dropdown" id="sort-dropdown">
+        <button class="sort-trigger" onclick="toggleSort()">
+          <span class="sort-trigger-label">SORT:</span><span id="sort-current">Recent</span>
+        </button>
+        <div class="sort-flyout" id="sort-flyout">
+          <div class="sort-option selected" data-sort="recent" onclick="chooseSort('recent')">Recent</div>
+          <div class="sort-option" data-sort="alpha"  onclick="chooseSort('alpha')">A–Z</div>
+          <div class="sort-option" data-sort="slots"  onclick="chooseSort('slots')">Slot cost</div>
+          <div class="sort-option" data-sort="price"  onclick="chooseSort('price')">Sell price</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body: grid + detail. Each scrollable area is wrapped in a
+         .scroll-host (positioning parent) + .scroll-track sibling.
+         The .scroll-content is the actual scrollable box; its native
+         scrollbar is hidden via CSS and replaced with the gold thumb
+         the JS syncs to its scroll position. -->
+    <div class="inv-body">
+      <div class="scroll-host scroll-host-grid">
+        <div class="inv-grid-wrap scroll-content">
+          <div class="inv-grid" id="inv-grid"></div>
+        </div>
+        <div class="scroll-track"><div class="scroll-thumb"></div></div>
+      </div>
+      <div class="scroll-host scroll-host-detail">
+        <div class="inv-detail scroll-content" id="inv-detail">
+          <div class="detail-empty">Click an item or resource tile for details.</div>
+        </div>
+        <div class="scroll-track"><div class="scroll-thumb"></div></div>
+      </div>
+    </div>
+
+    <!-- Jettison confirm overlay (renders above modal, under backdrop for demo) -->
+    <div class="jettison-overlay" id="jettison-overlay">
+      <div class="jettison-panel" id="jettison-panel">
+        <div class="jettison-title">⚠ JETTISON?</div>
+        <div class="jettison-msg" id="jettison-msg">Drop 1 × Item into space?</div>
+        <div class="jettison-route-warn" id="jettison-route-warn"></div>
+        <div class="jettison-count-row" id="jettison-count-row">
+          <button class="jettison-count-btn" onclick="jettisonAdjust(-1)">−</button>
+          <div class="jettison-count-value" id="jettison-count-value">1</div>
+          <button class="jettison-count-btn" onclick="jettisonAdjust(1)">+</button>
+        </div>
+        <div class="jettison-buttons">
+          <button class="panel-btn" onclick="closeJettison()">CANCEL</button>
+          <button class="panel-btn accent-red" id="jettison-all-btn" onclick="jettisonAll()">JETTISON ALL</button>
+          <button class="panel-btn accent-red" id="jettison-confirm-btn" onclick="jettisonConfirm()">JETTISON 1</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- Dev controls (plain <select> allowed here; not game UI) -->
+<div id="controls">
+  <h2>Inventory Demo Controls</h2>
+
+  <h3>Modal Frame</h3>
+  <div class="ctrl-row"><label>Backdrop α</label><input type="range" id="c-backdrop" min="0" max="100" value="75"><span class="val" id="v-backdrop">75</span></div>
+  <div class="ctrl-row"><label>Border</label><input type="color" id="c-modal-border" value="#435384"></div>
+  <div class="ctrl-row"><label>Title color</label><input type="color" id="c-title" value="#56cfd7"></div>
+  <div class="ctrl-row"><label>Width</label><input type="range" id="c-modal-w" min="700" max="940" value="816"><span class="val" id="v-modal-w">816</span></div>
+  <div class="ctrl-row"><label>Height</label><input type="range" id="c-modal-h" min="480" max="620" value="600"><span class="val" id="v-modal-h">600</span></div>
+
+  <h3>Resource Tiles</h3>
+  <div class="ctrl-row"><label>Unlit α</label><input type="range" id="c-unlit" min="0" max="50" value="15"><span class="val" id="v-unlit">15</span></div>
+
+  <h3>Grid Tiles</h3>
+  <div class="ctrl-row"><label>Tile size</label><input type="range" id="c-grid-tile" min="48" max="112" step="4" value="88"><span class="val" id="v-grid-tile">88</span></div>
+  <div class="ctrl-row"><label>Sprite size</label><input type="range" id="c-grid-sprite" min="24" max="96" step="4" value="64"><span class="val" id="v-grid-sprite">64</span></div>
+
+  <h3>Scrollbar</h3>
+  <div class="ctrl-row"><label>Width</label><input type="range" id="c-scrollbar-w" min="2" max="16" step="1" value="6"><span class="val" id="v-scrollbar-w">6</span></div>
+
+  <h3>Gauge Segment Colors</h3>
+  <div class="ctrl-row"><label>Low (1)</label><input type="color" id="c-seg-low" value="#c23030"></div>
+  <div class="ctrl-row"><label>Low-mid (2-3)</label><input type="color" id="c-seg-lowmid" value="#e0661a"></div>
+  <div class="ctrl-row"><label>Mid (4-5)</label><input type="color" id="c-seg-mid" value="#d0a020"></div>
+  <div class="ctrl-row"><label>High-mid (6-7)</label><input type="color" id="c-seg-highmid" value="#b4bf40"></div>
+  <div class="ctrl-row"><label>High (8-9)</label><input type="color" id="c-seg-high" value="#78c560"></div>
+  <div class="ctrl-row"><label>Full (10)</label><input type="color" id="c-seg-full" value="#35c56a"></div>
+
+  <h3>Resource Levels</h3>
+  <div class="ctrl-row"><label>Fuel %</label><input type="range" id="c-fuel" min="0" max="100" value="75"><span class="val" id="v-fuel">75</span></div>
+  <div class="ctrl-row"><label>Food %</label><input type="range" id="c-food" min="0" max="100" value="90"><span class="val" id="v-food">90</span></div>
+  <div class="ctrl-row"><label>H2O %</label><input type="range" id="c-water" min="0" max="100" value="60"><span class="val" id="v-water">60</span></div>
+
+  <h3>Ship State</h3>
+  <div class="ctrl-row"><label>Gold (cr)</label><input type="range" id="c-gold" min="0" max="500" value="120"><span class="val" id="v-gold">120</span></div>
+  <div class="ctrl-row"><label>Base capacity</label><input type="range" id="c-capacity" min="40" max="120" value="80"><span class="val" id="v-capacity">80</span></div>
+
+  <h3>Simulate</h3>
+  <button class="sim-btn" onclick="toggleStation()">Toggle AT_STATION (for [SELL] + classified marker)</button>
+  <button class="sim-btn" onclick="stuffCargo()">Stuff cargo to cap (test red pulse)</button>
+  <button class="sim-btn" onclick="resetInventory()">Reset Mock Inventory</button>
+  <button class="sim-btn" onclick="reopenModal()">Reopen Modal</button>
+  <button class="sim-btn" onclick="resetDefaults()">Reset Defaults</button>
+</div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const root = document.documentElement;
+
+  // ── Viewport fit ───────────────────────────────────────────
+  function fitViewport() {
+    let s;
+    if (document.body.classList.contains('fullsize')) {
+      s = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+    } else {
+      const avail = Math.min(window.innerWidth - 440, window.innerWidth * 0.65);
+      const h = window.innerHeight - 40;
+      s = Math.min(avail / 960, h / 640, 1);
+    }
+    $('scale-root').style.transform = 'scale(' + s + ')';
+  }
+  fitViewport();
+  window.addEventListener('resize', fitViewport);
+
+  window.toggleSize = function() {
+    document.body.classList.toggle('fullsize');
+    $('size-toggle').textContent = document.body.classList.contains('fullsize') ? 'Demo Size' : 'Actual Size';
+    fitViewport();
+  };
+
+  // ── Stars (decorative only) ───────────────────────────────
+  const farCvs = $('stars-far'), farCtx = farCvs.getContext('2d');
+  const nearCvs = $('stars-near'), nearCtx = nearCvs.getContext('2d');
+  let farStars = [], nearStars = [];
+  function makeStars(arr, count) {
+    arr.length = 0;
+    for (let i = 0; i < count; i++) arr.push({
+      x: Math.random()*960, y: Math.random()*640,
+      r: Math.random()*1.3+0.3,
+      phase: Math.random()*Math.PI*2
+    });
+  }
+  makeStars(farStars, 90);
+  makeStars(nearStars, 14);
+  function drawStars() {
+    if (PauseBus.paused) { requestAnimationFrame(drawStars); return; }
+    const now = performance.now()/1000;
+    farCtx.clearRect(0,0,960,640);
+    for (const s of farStars) {
+      farCtx.globalAlpha = 0.20 + Math.sin(now*1.5 + s.phase)*0.12;
+      farCtx.fillStyle = '#8899aa';
+      farCtx.beginPath(); farCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); farCtx.fill();
+    }
+    farCtx.globalAlpha = 1;
+    nearCtx.clearRect(0,0,960,640);
+    for (const s of nearStars) {
+      nearCtx.globalAlpha = 0.35 + Math.sin(now*0.8 + s.phase)*0.18;
+      nearCtx.fillStyle = '#c8d0d8';
+      nearCtx.beginPath(); nearCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); nearCtx.fill();
+    }
+    nearCtx.globalAlpha = 1;
+    requestAnimationFrame(drawStars);
+  }
+  drawStars();
+
+  // ══ Data: mock ship state ═════════════════════════════════
+  // In the real game these are populated from the engine. The demo
+  // hand-rolls enough shape to exercise every UI path.
+
+  let SHIP = {
+    goldAmount: 120,
+    baseCapacity: 80,
+    atStation: false,
+    // Resources (percents for the demo; engine would provide exact
+    // stock + max).
+    fuel_pct: 75,
+    food_pct: 90,
+    water_pct: 60
+  };
+
+  // Mock inventory — keys match items.json IDs (short form) and
+  // materials.json IDs. `count` is the stack size.
+  // `acquired` is the in-game day the item was picked up. `where`
+  // is the node it came from (for the provenance line in detail).
+  // `isNew` marks items picked up in the last day or two — shown
+  // with a pulsing NEW badge in the grid; cleared on first click.
+  let MOCK = {
+    gear: [
+      { id: 'gas_analyzer',          count: 1, acquired: 12, where: 'Waypoint Zeta-4' },
+      { id: 'repair_kit',            count: 2, acquired: 18, where: 'The Rocks' },
+      { id: 'medkit',                count: 1, acquired: 22, where: 'Waypoint Zeta-4' },
+      { id: 'fuel_cell',             count: 4, acquired: 28, where: 'Derelict scavenge' },
+      { id: 'ration_brick',          count: 6, acquired: 30, where: 'Rockwell Station' },
+      { id: 'water_canister',        count: 3, acquired: 31, where: 'Rockwell Station' },
+      { id: 'pre_collapse_artifact', count: 1, rolled: 87, acquired: 37, where: 'Derelict: OPTIMISTIC PROJECTION' },
+      { id: 'corporate_memorabilia', count: 1, rolled: 22, acquired: 40, where: 'Asteroid mining' },
+      { id: 'logbook_fragment',      count: 1, acquired: 42, where: 'Derelict: OPTIMISTIC PROJECTION' },
+      { id: 'classified_cargo',      count: 1, acquired: 45, where: 'Encounter event', isNew: true }
+    ],
+    materials: [
+      { id: 'metal',        count: 35, acquired: 10, where: 'Asteroid mining' },
+      { id: 'scrap',        count: 46, acquired: 24, where: 'Derelict scavenge' },
+      { id: 'exotic',       count: 2,  acquired: 38, where: 'Deep-space anomaly', isNew: true },
+      { id: 'biocomponent', count: 4,  acquired: 35, where: 'Soil Sample Paradise' },
+      { id: 'minerals',     count: 18, acquired: 27, where: 'Asteroid mining' }
+    ],
+    upgrades: [
+      { id: 'expanded_fuel_tank',  count: 1, acquired: 1,  where: 'Starting kit' },
+      { id: 'hull_plating',        count: 1, acquired: 5,  where: 'Kepler-9 purchase' },
+      { id: 'insulated_cargo_bay', count: 1, acquired: 8,  where: 'Kepler-9 purchase' },
+      { id: 'drive_coil',          count: 1, acquired: 33, where: 'Derelict scavenge' },
+      { id: 'repair_fabricator',   count: 1, acquired: 41, where: 'Event reward' }
+    ]
+  };
+
+  // Item metadata — normally loaded from items.json + materials.json.
+  // Inlining a subset here so the demo is self-contained. Keys match
+  // the id prefixes used above (items.json: item_<id>_001 → <id>).
+  // Sprite path helper — keeps the per-tab base dirs in one place.
+  const SP = {
+    item:     (name) => 'sprites/cargo/items/'     + name + '.png',
+    material: (name) => 'sprites/cargo/materials/' + name + '.png',
+    upgrade:  (name) => 'sprites/cargo/upgrades/'  + name + '.png'
+  };
+
+  const ITEM_META = {
+    // --- GEAR: instruments
+    gas_analyzer:          { tab: 'gear', name: 'Gas Analyzer',   icon: '🔬', sprite: SP.item('gas_analyzer'),   slots: 1, price: 80,  one_use: false, flavor: 'The gas analyzer hums quietly near the viewport. It knows things you don\'t.', effect: 'Reveals atmospheric composition before planet events.', used_by: ['Planet Landing', 'Anomaly Scan'], route_required: 'Planet nodes on current trail' },
+    // --- GEAR: consumables (stackable)
+    repair_kit:            { tab: 'gear', name: 'Repair Kit',     icon: '🔧', sprite: SP.item('repair_kit'),     slots: 0, slots_per_10: 2, price: 10,  one_use: true,  flavor: null, effect: '+20 effort to mechanical repairs. Consumed on use.', used_by: ['Hull Breach', 'Engine Fault', 'Airlock Seal'] },
+    medkit:                { tab: 'gear', name: 'Medkit',         icon: '💊', sprite: SP.item('medkit'),         slots: 0, slots_per_10: 1, price: 12,  one_use: true,  flavor: null, effect: 'Heals one injured crew. 15% chance to convert would-be-lethal outcomes.', used_by: ['Crew Injury', 'Outbreak'] },
+    fuel_cell:             { tab: 'gear', name: 'Fuel Cell',      icon: '🔋', sprite: SP.item('fuel_cell'),      slots: 0, slots_per_10: 3, price: 8,   one_use: true,  flavor: null, effect: '+15 FUEL on use.' },
+    ration_brick:          { tab: 'gear', name: 'Ration Brick',   icon: '🥫', sprite: SP.item('ration_brick'),   slots: 0, slots_per_10: 2, price: 4,   one_use: true,  flavor: null, effect: '+10 FOOD on use.' },
+    water_canister:        { tab: 'gear', name: 'Water Canister', icon: '💧', sprite: SP.item('water_canister'), slots: 0, slots_per_10: 3, price: 5,   one_use: true,  flavor: null, effect: '+10 H2O on use.' },
+    // --- GEAR: curiosities
+    pre_collapse_artifact: { tab: 'gear', name: 'Pre-Collapse Artifact', icon: '🏺', sprite: SP.item('pre_collapse_artifact'), slots: 1, price_range: [40, 120], one_use: false, flavor: null, effect: 'Pure trade good. Each pickup is a unique instance.', station_bonus: { corp: 0.2, research: 0.5 } },
+    corporate_memorabilia: { tab: 'gear', name: 'Corp. Memorabilia',     icon: '🎖️', sprite: SP.item('corporate_memorabilia'), slots: 1, price_range: [10, 30],  one_use: false, flavor: null, effect: 'Pure trade good. Each pickup is a unique instance.', station_bonus: { corp: 0.5 } },
+    // --- GEAR: story
+    logbook_fragment:      { tab: 'gear', name: 'Logbook Fragment',  icon: '📜', sprite: SP.item('logbook_fragment'), slots: 0, price: 0, one_use: false, trade_only: true, flavor: null, effect: 'Unlocks additional options in narrative events tied to the previous crew.', used_by: ['Derelict Scavenge', 'Ghost Ship Encounter'] },
+    classified_cargo:      { tab: 'gear', name: 'Classified Cargo',  icon: '📦', sprite: SP.item('classified_cargo'), slots: 1, price: null, one_use: false, trade_only: true, classified: true, flavor: 'The classified cargo sits in the hold. It hasn\'t done anything. You check on it anyway.', effect: 'Unknown effects until spectrometer used. May trigger station inspection events.' },
+
+    // --- MATERIALS (all stackable at 1 slot per 10) — matches materials.json
+    metal:        { tab: 'materials', name: 'Metal',          icon: '⛰️', sprite: SP.material('metal'),        slots: 0, slots_per_10: 1, price: 0.2, one_use: false, flavor: '5 metal = 1 credit. The bread and butter of fabrication.', effect: 'Structural material. Fabricator input, station-sellable.' },
+    scrap:        { tab: 'materials', name: 'Scrap',          icon: '🧱', sprite: SP.material('scrap'),        slots: 0, slots_per_10: 1, price: 0.1, one_use: false, flavor: '10 scrap = 1 credit. Vendors sigh when you pay in scrap.', effect: 'Salvaged junk. Accumulates.' },
+    exotic:       { tab: 'materials', name: 'Exotic Element', icon: '✨', sprite: SP.material('exotic'),       slots: 0, slots_per_10: 1, price: 3.0, one_use: false, flavor: null, effect: 'Rare material from anomalies and deep-space mining. Required for advanced fabrication.', station_bonus: { research: 0.4 } },
+    biocomponent: { tab: 'materials', name: 'Biocomponent',   icon: '🌿', sprite: SP.material('biocomponent'), slots: 0, slots_per_10: 1, price: 1.5, one_use: false, flavor: null, effect: 'Organic material. Used in crop treatment recipes.' },
+    minerals:     { tab: 'materials', name: 'Minerals',       icon: '🪨', sprite: SP.material('minerals'),     slots: 0, slots_per_10: 1, price: 0.5, one_use: false, flavor: null, effect: 'Mixed mineral yield from asteroid mining. Refinable or tradable.' },
+
+    // --- UPGRADES (cargo_slots: 0, possibly with slot_bonus)
+    expanded_fuel_tank:  { tab: 'upgrades', name: 'Expanded Fuel Tank', icon: '⛽', sprite: SP.upgrade('expanded_fuel_tank'), slots: 0, price: 120, one_use: false, flavor: null, effect: 'Fuel max +20. Active while in cargo.' },
+    drive_coil:          { tab: 'upgrades', name: 'Drive Coil',         icon: '🌀', sprite: SP.upgrade('drive_coil'),         slots: 0, price: null, one_use: false, flavor: 'The drive coil hums. Sometimes it hums differently. You try not to think about it.', effect: 'Fuel burn reduced 20%. 5% chance per leg of a misfire event.' },
+    // id kept stable (insulated_cargo_bay) for event-schema compatibility; display name + sprite updated
+    insulated_cargo_bay: { tab: 'upgrades', name: 'Extra Cargo Bay',    icon: '🧳', sprite: SP.upgrade('extra_cargo'), slots: 0, slot_bonus: 5, price: 80, one_use: false, flavor: null, effect: 'Food consumption -15%. Crop temperature damage -20%. CARGO max +5.' },
+    hull_plating:        { tab: 'upgrades', name: 'Hull Plating',       icon: '🛡️', sprite: SP.upgrade('hull_plating'), slots: 0, price: 100, one_use: false, flavor: null, effect: 'Hull max +15. Fewer minor-damage events land.' },
+    o2_recycler:         { tab: 'upgrades', name: 'Prototype O2 Recycler', icon: '🫁', sprite: SP.upgrade('o2_recycler'), slots: 0, price: null, one_use: false, flavor: null, effect: 'O2 consumption reduced 25%. Occasionally makes concerning sounds.' },
+    repair_fabricator:   { tab: 'upgrades', name: 'Field Repair Fabricator', icon: '⚙️', sprite: SP.upgrade('repair_fabricator'), slots: 0, price: null, one_use: false, flavor: null, effect: 'Unlocks additional fabricator recipes. Fabricator wear -10%.' }
+  };
+
+  // ARIA quip pools — per-item arrays beat category-generic arrays
+  // when present. The quip picks one line on each open of the detail
+  // panel, so re-clicking an item gives a different read. Empty/
+  // missing → no quip line rendered (keeps the panel sparse).
+  const ARIA_QUIPS = {
+    gas_analyzer: [
+      'The atmosphere at our next stop is 73% mildly poisonous. I feel we should note that.',
+      'The gas analyzer is, technically, always analyzing gas. It is on its job.'
+    ],
+    medkit: [
+      'The medkit is sealed. That is its happiest state.',
+      'Every medkit is a small hope in a tidy box.'
+    ],
+    fuel_cell: [
+      'Cells rated for field use. Ratings are aspirational.',
+      'The fuel cells hum faintly. I find it soothing.'
+    ],
+    pre_collapse_artifact: [
+      'It is beautiful in a way I cannot explain and a collector will pay for.',
+      'Older than you. Older than your ship. It has been quiet for a long time.'
+    ],
+    corporate_memorabilia: [
+      'Someone believed in this company. A long time ago.',
+      'The logo is instantly recognizable to exactly no one currently alive.'
+    ],
+    metal: [
+      'Iron. Very reliable. Never asks for anything. A small hero.',
+      'The cornerstone of every decent fabrication. Very humble.'
+    ],
+    exotic: [
+      'I cannot tell you what it is. I can tell you it weighs concerning amounts.',
+      'Exotic element detected. Vendors will be suspiciously eager.'
+    ],
+    drive_coil: [
+      'It hums. Sometimes it hums with enthusiasm.',
+      'The warranty card is blank. This is, I believe, a bad sign.'
+    ],
+    classified_cargo: [
+      'I am not to know what is in it. I respect the not-knowing.',
+      'Station scanners may take an interest. You should prepare a story.'
+    ],
+    expanded_fuel_tank: [
+      'More fuel, more range, more opinions. I am pleased.',
+      'The tank is, in a real sense, bigger. I cannot overstate this.'
+    ],
+    logbook_fragment: [
+      'Someone else\'s handwriting. Someone else\'s worries. Instructive.',
+      'The last entries are smudged. I choose not to speculate.'
+    ]
+  };
+  // Category fallbacks — when no per-item quip pool exists, pick by
+  // what the item IS.
+  const ARIA_QUIPS_BY_CAT = {
+    'INSTRUMENT':      ['A real instrument with a real purpose. I approve.',
+                        'It is calibrated. It is ready. It is waiting.'],
+    'CONSUMABLE':      ['Packaged thoughtfully by someone who does not know us.'],
+    'STACKABLE GEAR':  ['One of several. A small community.'],
+    'CURIOSITY':       ['Its value is whatever someone will pay. This is how most things work.',
+                        'Beautiful. Probably. Depending on taste.'],
+    'STORY':           ['Read it once. Then read it again. Then keep it.',
+                        'Information is its own kind of cargo.'],
+    'MATERIAL':        ['Raw stock. Waiting to become something else.'],
+    'UPGRADE':         ['Bolted in. Active. Reassuring.',
+                        'The upgrade hums slightly when no one is watching.']
+  };
+  function pickAriaQuip(id, meta) {
+    const pool = ARIA_QUIPS[id] || ARIA_QUIPS_BY_CAT[itemCategory(id)] || [];
+    if (!pool.length) return null;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  // Friendly category label for the detail panel
+  function itemCategory(id) {
+    const m = ITEM_META[id]; if (!m) return '';
+    if (m.tab === 'materials') return 'MATERIAL';
+    if (m.tab === 'upgrades')  return 'UPGRADE';
+    if (m.slots_per_10 && m.one_use) return 'CONSUMABLE';
+    if (m.slots_per_10) return 'STACKABLE GEAR';
+    if (m.price_range) return 'CURIOSITY';
+    if (m.trade_only) return 'STORY';
+    return 'INSTRUMENT';
+  }
+
+  // ══ Slot math ═════════════════════════════════════════════
+  function itemSlots(id, count) {
+    const m = ITEM_META[id]; if (!m) return 0;
+    if (m.slots_per_10) return Math.ceil(count * m.slots_per_10 / 10);
+    return (m.slots || 0) * count;
+  }
+  function slotsUsed() {
+    let s = 0;
+    for (const it of MOCK.gear)      s += itemSlots(it.id, it.count);
+    for (const it of MOCK.materials) s += itemSlots(it.id, it.count);
+    // Upgrades always cost 0
+    return s;
+  }
+  function slotsTotal() {
+    let t = SHIP.baseCapacity;
+    for (const up of MOCK.upgrades) {
+      const m = ITEM_META[up.id];
+      if (m && m.slot_bonus) t += m.slot_bonus;
+    }
+    return t;
+  }
+
+  // ══ Resource tiles ═════════════════════════════════════════
+  // Each tile is a 72px sprite with a segmented gauge overlaid at an
+  // author-declared rectangle. In production, the 64px sprite + gauge
+  // coordinates come from a config; demo uses emoji + controls-panel
+  // sliders for the overlay rectangle.
+  const SEGMENTS = 10;
+
+  // Per-resource sprite + gauge rectangle (pixel coords inside the
+  // native 64×64 sprite). Authored by art lead; engine reads these
+  // same coords, demo reads them verbatim.
+  const RESOURCES = [
+    { key: 'fuel',  label: 'FUEL', icon: '🛢️',
+      sprite: 'sprites/cargo/cargo_fuel.png',
+      gauge: { x: 27, y: 18, w: 10, h: 35 },
+      pctVar: 'fuel_pct' },
+    { key: 'food',  label: 'FOOD', icon: '🥫',
+      sprite: 'sprites/cargo/cargo_food.png',
+      gauge: { x: 27, y: 14, w: 10, h: 35 },
+      pctVar: 'food_pct' },
+    { key: 'water', label: 'H2O',  icon: '💧',
+      sprite: 'sprites/cargo/cargo_water.png',
+      gauge: { x: 27, y: 22, w: 10, h: 33 },
+      pctVar: 'water_pct' }
+  ];
+  let selectedResource = null;
+
+  function segmentColorForPosition(pos /* 1..10 */) {
+    // Ramp matches fuel-gauge convention: reds at the bottom, greens
+    // at the top. Colors come from CSS vars so the controls can
+    // re-tune the ramp live.
+    if (pos === 1)        return 'var(--gauge-seg-low)';
+    if (pos <= 3)         return 'var(--gauge-seg-lowmid)';
+    if (pos <= 5)         return 'var(--gauge-seg-mid)';
+    if (pos <= 7)         return 'var(--gauge-seg-highmid)';
+    if (pos <= 9)         return 'var(--gauge-seg-high)';
+    return 'var(--gauge-seg-full)';
+  }
+
+  function renderResourceTiles() {
+    const row = $('resource-row');
+    row.innerHTML = '';
+    for (const r of RESOURCES) {
+      const tile = document.createElement('div');
+      tile.className = 'res-tile';
+      if (selectedResource === r.key) tile.classList.add('selected');
+      tile.onclick = () => {
+        selectedResource = r.key;
+        selectedItem = null;
+        renderResourceTiles();
+        renderGrid();  // deselect item in grid
+        renderResourceDetail(r);
+      };
+
+      // Sprite frame (64×64 native with segmented gauge overlay)
+      const frame = document.createElement('div');
+      frame.className = 'res-tile-frame';
+      if (r.sprite) {
+        frame.style.backgroundImage = "url('" + r.sprite + "')";
+      } else {
+        frame.classList.add('no-sprite');
+        frame.textContent = r.icon;
+      }
+
+      const gauge = document.createElement('div');
+      gauge.className = 'res-gauge';
+      gauge.style.left   = r.gauge.x + 'px';
+      gauge.style.top    = r.gauge.y + 'px';
+      gauge.style.width  = r.gauge.w + 'px';
+      gauge.style.height = r.gauge.h + 'px';
+
+      const pct = SHIP[r.pctVar];
+      const lit = Math.round(pct / 100 * SEGMENTS);
+      for (let i = 1; i <= SEGMENTS; i++) {
+        const seg = document.createElement('div');
+        seg.className = 'gauge-seg' + (i <= lit ? ' lit' : '');
+        seg.style.setProperty('--seg-color', segmentColorForPosition(i));
+        gauge.appendChild(seg);
+      }
+      frame.appendChild(gauge);
+      tile.appendChild(frame);
+
+      // Info column to the right of the sprite — the three scalar
+      // stats (level, consumption, projected empty) that used to live
+      // in the detail panel. Now always visible alongside the tile.
+      const info = document.createElement('div');
+      info.className = 'res-tile-info';
+      const projEmpty = 47 + Math.floor(pct);  // demo math; engine will supply real projection
+      info.innerHTML =
+        '<div class="res-tile-label">' + r.label + '</div>' +
+        '<div class="res-tile-stat"><span>LEVEL</span><strong>' + pct + ' / 100</strong></div>' +
+        '<div class="res-tile-stat"><span>USE</span><strong>~1.0 / DAY</strong></div>' +
+        '<div class="res-tile-stat"><span>EMPTY</span><strong>DAY ' + projEmpty + '</strong></div>';
+      tile.appendChild(info);
+
+      row.appendChild(tile);
+    }
+  }
+
+  function renderResourceDetail(r) {
+    const box = $('inv-detail');
+    box.innerHTML = '';
+
+    // No hero sprite, no stats block — those all live in the resource
+    // tile row at the top of the modal. The detail panel carries only
+    // the non-scalar info: name, category, desc, related cargo, flavor.
+
+    const name = document.createElement('div');
+    name.className = 'detail-name';
+    name.textContent = r.label;
+    box.appendChild(name);
+
+    const cat = document.createElement('div');
+    cat.className = 'detail-category';
+    cat.textContent = 'SHIP RESOURCE';
+    box.appendChild(cat);
+
+    const desc = document.createElement('div');
+    desc.className = 'detail-desc';
+    desc.textContent = ({
+      fuel:  'Burns with every leg. Consumption scales with engine tier.',
+      food:  'Crew eats daily. Rations tier sets per-day intake.',
+      water: 'Split between plant and crew via the Orders water slider.'
+    })[r.key];
+    box.appendChild(desc);
+
+    // Cargo items that restore this resource.
+    const related = findRelatedItems(r.key);
+    if (related.length) {
+      const sep = document.createElement('div');
+      sep.className = 'detail-stats';
+      sep.innerHTML = '<div class="detail-stat"><span>IN CARGO</span><strong>' + related.join(', ') + '</strong></div>';
+      box.appendChild(sep);
+    }
+
+    const flavor = document.createElement('div');
+    flavor.className = 'detail-flavor';
+    flavor.textContent = ({
+      fuel:  'ARIA: The fuel gauge is steady. I have nothing further to say.',
+      food:  'ARIA: The crew is fed. Morale is a funny thing. It requires food.',
+      water: 'ARIA: Both plant and crew are hydrated to specification.'
+    })[r.key];
+    box.appendChild(flavor);
+  }
+
+  function findRelatedItems(resourceKey) {
+    const map = { fuel: 'fuel_cell', food: 'ration_brick', water: 'water_canister' };
+    const needleId = map[resourceKey];
+    const rel = MOCK.gear.find(g => g.id === needleId);
+    if (rel) return ['×' + rel.count + ' ' + ITEM_META[rel.id].name];
+    return [];
+  }
+
+  // ══ Tabs ════════════════════════════════════════════════════
+  let currentTab = 'gear';
+  let selectedItem = null;
+
+  window.setTab = function(tab) {
+    currentTab = tab;
+    selectedItem = null;
+    selectedResource = null;
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+    });
+    renderGrid();
+    renderEmptyDetail();
+    renderResourceTiles();
+  };
+
+  function currentList() {
+    if (currentTab === 'gear')      return MOCK.gear;
+    if (currentTab === 'materials') return MOCK.materials;
+    return MOCK.upgrades;
+  }
+
+  // ══ Sort ════════════════════════════════════════════════════
+  let currentSort = 'recent';
+
+  window.toggleSort = function() {
+    $('sort-dropdown').classList.toggle('open');
+  };
+  window.chooseSort = function(sortKey) {
+    currentSort = sortKey;
+    const label = { recent: 'Recent', alpha: 'A–Z', slots: 'Slot cost', price: 'Sell price' }[sortKey];
+    $('sort-current').textContent = label;
+    document.querySelectorAll('.sort-option').forEach(o => {
+      o.classList.toggle('selected', o.getAttribute('data-sort') === sortKey);
+    });
+    $('sort-dropdown').classList.remove('open');
+    renderGrid();
+  };
+  // Outside-click closes sort flyout
+  document.addEventListener('click', (e) => {
+    const dd = $('sort-dropdown');
+    if (dd && dd.classList.contains('open') && !dd.contains(e.target)) {
+      dd.classList.remove('open');
+    }
+  });
+
+  function sortedItems() {
+    const list = currentList().slice();
+    switch (currentSort) {
+      case 'alpha':
+        list.sort((a, b) => (ITEM_META[a.id]?.name || '').localeCompare(ITEM_META[b.id]?.name || ''));
+        break;
+      case 'slots':
+        list.sort((a, b) => itemSlots(b.id, b.count) - itemSlots(a.id, a.count));
+        break;
+      case 'price':
+        list.sort((a, b) => displayPriceNum(b) - displayPriceNum(a));
+        break;
+      case 'recent':
+      default:
+        list.sort((a, b) => (b.acquired || 0) - (a.acquired || 0));
+    }
+    return list;
+  }
+
+  function displayPrice(item) {
+    const m = ITEM_META[item.id];
+    if (!m) return '—';
+    if (m.trade_only || m.price === null) return '??';
+    if (item.rolled) return item.rolled + 'cr';
+    if (m.price_range) return '?cr';
+    if (m.price === 0) return '—';
+    if (m.price < 1)   return Math.round(m.price * 100) / 100 + 'cr';
+    return Math.round(m.price) + 'cr';
+  }
+  function displayPriceNum(item) {
+    const m = ITEM_META[item.id];
+    if (!m) return 0;
+    if (item.rolled) return item.rolled;
+    if (m.price == null) return 0;
+    return m.price;
+  }
+
+  // ══ Grid render ══════════════════════════════════════════════
+  // GEAR sub-category grouping. Other tabs don't benefit from
+  // sub-grouping (materials feel homogeneous, upgrades list is short).
+  // The bucket key is whatever itemCategory() returns for the item.
+  const GEAR_GROUPS = [
+    { label: 'Instruments',  cats: ['INSTRUMENT'] },
+    { label: 'Consumables',  cats: ['CONSUMABLE', 'STACKABLE GEAR'] },
+    { label: 'Curiosities',  cats: ['CURIOSITY'] },
+    { label: 'Story',        cats: ['STORY'] }
+  ];
+  function bucketGear(list) {
+    return GEAR_GROUPS.map(g => ({
+      label: g.label,
+      items: list.filter(it => g.cats.includes(itemCategory(it.id)))
+    }));
+  }
+  function updateTabCounters() {
+    $('count-gear').textContent      = MOCK.gear.length      ? '(' + MOCK.gear.length      + ')' : '';
+    $('count-materials').textContent = MOCK.materials.length ? '(' + MOCK.materials.length + ')' : '';
+    $('count-upgrades').textContent  = MOCK.upgrades.length  ? '(' + MOCK.upgrades.length  + ' INSTALLED)' : '';
+  }
+
+  function renderGrid() {
+    const grid = $('inv-grid');
+    grid.innerHTML = '';
+    const list = sortedItems();
+
+    if (list.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = {
+        gear:      '"Bare."',
+        materials: '"Nothing mined yet."',
+        upgrades:  '"Stock configuration."'
+      }[currentTab];
+      grid.appendChild(empty);
+      updateTabCounters();
+      return;
+    }
+
+    // GEAR tab: bucket items by sub-category, emit a divider row
+    // before each non-empty bucket. Other tabs render flat.
+    const groups = (currentTab === 'gear') ? bucketGear(list) : [{ label: null, items: list }];
+    for (const group of groups) {
+      if (group.items.length === 0) continue;
+      if (group.label) {
+        const hdr = document.createElement('div');
+        hdr.className = 'grid-section-header';
+        hdr.textContent = '— ' + group.label + ' —';
+        grid.appendChild(hdr);
+      }
+      for (const it of group.items) {
+        const m = ITEM_META[it.id]; if (!m) continue;
+        const tile = document.createElement('div');
+        tile.className = 'grid-tile';
+        if (selectedItem && selectedItem.id === it.id) tile.classList.add('selected');
+        if (it.isNew) tile.classList.add('is-new');
+        tile.onclick = () => {
+          it.isNew = false;  // first click clears NEW badge
+          selectedItem = it;
+          selectedResource = null;
+          renderGrid();
+          renderResourceTiles();
+          renderItemDetail(it);
+        };
+
+        const icon = document.createElement('div');
+        icon.className = 'tile-icon' + (m.sprite ? ' has-sprite' : '');
+        if (m.sprite) icon.style.backgroundImage = "url('" + m.sprite + "')";
+        icon.textContent = m.icon || '·';  // fallback emoji; hidden by color:transparent on .has-sprite
+        icon.title = m.name;  // native tooltip on hover
+        tile.appendChild(icon);
+
+        // Stack count — stackable items only, count > 1
+        if ((m.slots_per_10 || currentTab === 'materials') && it.count > 1) {
+          const badge = document.createElement('div');
+          badge.className = 'tile-count';
+          badge.textContent = '×' + it.count;
+          tile.appendChild(badge);
+        }
+
+        // Sell value
+        const price = document.createElement('div');
+        price.className = 'tile-price';
+        const priceText = displayPrice(it);
+        price.textContent = priceText;
+        if (priceText === '??' || priceText === '—') price.classList.add('hidden');
+        tile.appendChild(price);
+
+        // NEW badge — persists until first click, then cleared
+        if (it.isNew) {
+          const badge = document.createElement('div');
+          badge.className = 'tile-new-badge';
+          badge.textContent = 'NEW';
+          tile.appendChild(badge);
+        }
+
+        // Trade-only marker (⇄) bottom-left
+        if (m.trade_only) {
+          const mk = document.createElement('div');
+          mk.className = 'tile-trade-marker';
+          mk.textContent = '⇄';
+          tile.appendChild(mk);
+        }
+        // Classified at-station warning
+        if (m.classified) {
+          const mk = document.createElement('div');
+          mk.className = 'tile-classified-marker';
+          mk.textContent = '⚠';
+          tile.appendChild(mk);
+        }
+        grid.appendChild(tile);
+      }
+    }
+
+    updateTabCounters();
+  }
+
+  function renderItemDetail(item) {
+    const m = ITEM_META[item.id]; if (!m) return;
+    const box = $('inv-detail');
+    box.innerHTML = '';
+
+    const name = document.createElement('div');
+    name.className = 'detail-name';
+    name.textContent = m.name;
+    box.appendChild(name);
+
+    const cat = document.createElement('div');
+    cat.className = 'detail-category';
+    cat.textContent = itemCategory(item.id);
+    box.appendChild(cat);
+
+    const desc = document.createElement('div');
+    desc.className = 'detail-desc';
+    desc.textContent = m.effect;
+    box.appendChild(desc);
+
+    if (m.flavor) {
+      const flavor = document.createElement('div');
+      flavor.className = 'detail-flavor';
+      flavor.textContent = m.flavor;
+      box.appendChild(flavor);
+    }
+
+    const stats = document.createElement('div');
+    stats.className = 'detail-stats';
+    // Slot cost — per-unit decimal for stackables (0.1 per unit of
+    // metal, 0.3 per fuel_cell, etc.); flat integer for single-tile
+    // items. Upgrades with slot_bonus append "+N cap" to advertise
+    // that they expand the hold rather than consuming space.
+    let slotText;
+    if (m.slots_per_10) {
+      const perUnit = (m.slots_per_10 / 10).toFixed(1).replace(/\.0$/, '.0');
+      slotText = perUnit + ' per unit';
+    } else {
+      slotText = (m.slots || 0) + (m.slot_bonus ? ' (+' + m.slot_bonus + ' cap)' : '');
+    }
+    let priceDisplay = displayPrice(item);
+    if (m.price_range) priceDisplay = (item.rolled ? item.rolled + 'cr' : m.price_range[0] + '–' + m.price_range[1] + 'cr');
+
+    // Station price delta hint — "25cr (+20% at corp)" when the
+    // item has station-type bonuses. Helps the player hold rare
+    // items for the right buyer instead of dumping at first shop.
+    if (m.station_bonus) {
+      const best = Object.entries(m.station_bonus).reduce((acc, [k,v]) => v > acc[1] ? [k,v] : acc, ['', 0]);
+      if (best[1] > 0) {
+        priceDisplay += ' <span class="detail-station-bonus">+' + Math.round(best[1]*100) + '% at ' + best[0] + '</span>';
+      }
+    }
+
+    stats.innerHTML =
+      '<div class="detail-stat"><span>COUNT</span><strong>×' + item.count + '</strong></div>' +
+      '<div class="detail-stat"><span>SLOT COST</span><strong>' + slotText + '</strong></div>' +
+      '<div class="detail-stat"><span>SELL PRICE</span><strong>' + priceDisplay + '</strong></div>';
+    box.appendChild(stats);
+
+    // Provenance — where + when this was acquired. Pulled out of the
+    // stats flex block because location names can be long and wrap;
+    // an inline label + wrapping value reads cleanly regardless of
+    // length (vs. the rigid flex rows above).
+    if (item.acquired !== undefined || item.where) {
+      let prov = '';
+      if (item.acquired !== undefined) prov += 'DAY ' + item.acquired;
+      if (item.where) prov += (prov ? ' · ' : '') + item.where;
+      const acq = document.createElement('div');
+      acq.className = 'detail-acquired';
+      acq.innerHTML = '<span class="detail-acquired-label">ACQUIRED</span> ' + prov;
+      box.appendChild(acq);
+    }
+
+    // Used-for — events where this item adds options to the player's
+    // choice list. Reframed as purpose-oriented ("what is it used
+    // for") rather than the more abstract "unlocks".
+    if (m.used_by && m.used_by.length) {
+      const used = document.createElement('div');
+      used.className = 'detail-used-by';
+      used.innerHTML = '<span class="detail-used-label">USED FOR:</span> ' + m.used_by.join(' · ');
+      box.appendChild(used);
+    }
+
+    // Tile-marker notes — explains the corner markers a player may
+    // see on the grid tile. Only rendered when a relevant marker is
+    // active on this item, so the panel stays sparse for plain items.
+    const notes = [];
+    if (m.trade_only) notes.push({ icon: '⇄', text: 'Trade-only: swap for goods, not credits.' });
+    if (m.classified) notes.push({ icon: '⚠', text: 'Classified: may trigger station inspections.' });
+    if (notes.length) {
+      const notesEl = document.createElement('div');
+      notesEl.className = 'detail-marker-notes';
+      notesEl.innerHTML =
+        '<div class="detail-marker-label">NOTES</div>' +
+        notes.map(n =>
+          '<div class="detail-marker-row"><span class="detail-marker-icon">' + n.icon + '</span>' + n.text + '</div>'
+        ).join('');
+      box.appendChild(notesEl);
+    }
+
+    // Rotating ARIA quip — picked at open from a per-item pool.
+    // Falls back to a category-generic pool when the item doesn't
+    // have its own lines yet. Additive to the static flavor above.
+    const quip = pickAriaQuip(item.id, m);
+    if (quip) {
+      const aria = document.createElement('div');
+      aria.className = 'detail-aria';
+      aria.innerHTML = '<span class="detail-aria-name">ARIA:</span> ' + quip;
+      box.appendChild(aria);
+    }
+
+    // Actions
+    const actions = document.createElement('div');
+    actions.className = 'detail-actions';
+    if (SHIP.atStation && !m.trade_only && m.price !== null) {
+      const sell = document.createElement('button');
+      sell.className = 'panel-btn accent-gold';
+      sell.textContent = 'SELL';
+      sell.onclick = () => { alert('Would sell 1× ' + m.name + ' for ' + displayPrice(item)); };
+      actions.appendChild(sell);
+    }
+    if (m.one_use) {
+      const use = document.createElement('button');
+      use.className = 'panel-btn';
+      use.textContent = 'USE';
+      use.onclick = () => { alert('Would use 1× ' + m.name + ' (' + m.effect + ')'); };
+      actions.appendChild(use);
+    }
+    const jett = document.createElement('button');
+    jett.className = 'panel-btn accent-red';
+    jett.textContent = 'JETTISON';
+    jett.onclick = () => openJettison(item);
+    actions.appendChild(jett);
+    box.appendChild(actions);
+  }
+
+  function renderEmptyDetail() {
+    $('inv-detail').innerHTML = '<div class="detail-empty">Click an item or resource tile for details.</div>';
+  }
+
+  // ══ Jettison confirm ═══════════════════════════════════════
+  let pendingJettison = null;
+  let pendingJettisonCount = 1;
+
+  function openJettison(item) {
+    pendingJettison = item;
+    pendingJettisonCount = 1;
+    const m = ITEM_META[item.id];
+    $('jettison-msg').textContent = 'Drop '
+      + (item.count > 1 ? 'some of your' : 'your')
+      + ' ' + m.name + ' into space?';
+    // Hide count picker if there's only 1 to jettison
+    $('jettison-count-row').style.display = item.count > 1 ? 'flex' : 'none';
+    $('jettison-all-btn').style.display   = item.count > 1 ? 'inline-flex' : 'none';
+
+    // Route-required warning — pulse the panel and show a red hint.
+    // Doesn't block; just calls out that the current trail expects
+    // this item. Same mechanic will hook to real route metadata
+    // when the engine provides it.
+    const panel = $('jettison-panel');
+    const warn  = $('jettison-route-warn');
+    if (m.route_required) {
+      panel.classList.add('route-warn');
+      warn.innerHTML = 'Required for: <strong>' + m.route_required + '</strong>';
+    } else {
+      panel.classList.remove('route-warn');
+      warn.textContent = '';
+    }
+
+    updateJettisonCount();
+    $('jettison-overlay').classList.add('open');
+  }
+  window.closeJettison = function() {
+    pendingJettison = null;
+    $('jettison-overlay').classList.remove('open');
+    $('jettison-panel').classList.remove('route-warn');
+  };
+  window.jettisonAdjust = function(delta) {
+    if (!pendingJettison) return;
+    pendingJettisonCount = Math.max(1, Math.min(pendingJettison.count, pendingJettisonCount + delta));
+    updateJettisonCount();
+  };
+  function updateJettisonCount() {
+    if (!pendingJettison) return;
+    $('jettison-count-value').textContent = pendingJettisonCount;
+    $('jettison-confirm-btn').textContent = 'JETTISON ' + pendingJettisonCount;
+  }
+  window.jettisonAll = function() {
+    if (!pendingJettison) return;
+    pendingJettisonCount = pendingJettison.count;
+    doJettison();
+  };
+  window.jettisonConfirm = function() {
+    if (!pendingJettison) return;
+    doJettison();
+  };
+  // Spawn a poof cloud at a grid tile. Small number of rising
+  // particles with randomized angle + duration so each jettison
+  // feels organic rather than a canned animation. Particles live
+  // inside the tile (absolute-positioned), so they automatically
+  // clean up when the tile is re-rendered.
+  function spawnPoofInTile(tileEl) {
+    const count = 7 + Math.floor(Math.random() * 3);  // 7–9 particles
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'poof-particle';
+      // Start near the middle-bottom of the tile
+      const startX = 20 + Math.random() * 50;   // % across
+      const startY = 40 + Math.random() * 30;   // % down
+      p.style.left = startX + '%';
+      p.style.top  = startY + '%';
+      // Randomize drift + rise
+      const dx = (Math.random() - 0.5) * 40;
+      const dy = -30 - Math.random() * 25;
+      p.style.setProperty('--dx', dx + 'px');
+      p.style.setProperty('--dy', dy + 'px');
+      p.style.setProperty('--poof-delay', (Math.random() * 0.08) + 's');
+      p.style.setProperty('--poof-dur', (0.55 + Math.random() * 0.25) + 's');
+      tileEl.appendChild(p);
+    }
+  }
+
+  function doJettison() {
+    const list = currentList();
+    const idx = list.indexOf(pendingJettison);
+    if (idx === -1) { closeJettison(); return; }
+
+    const jettisoningItem = pendingJettison;  // capture for closure
+    const jettisoningCount = pendingJettisonCount;
+
+    // Find the tile in the DOM matching this item (for animation)
+    const tiles = document.querySelectorAll('#inv-grid .grid-tile');
+    let tileEl = null;
+    const list2 = sortedItems();
+    const tileIdx = list2.indexOf(jettisoningItem);
+    if (tileIdx >= 0 && tiles[tileIdx]) tileEl = tiles[tileIdx];
+
+    // When the whole stack is leaving → animate the tile out entirely.
+    // When just some units are leaving → only a poof (tile stays put
+    // in the grid since the stack still has members).
+    const fullStackLeaving = (jettisoningItem.count - jettisoningCount) <= 0;
+    if (tileEl) {
+      spawnPoofInTile(tileEl);
+      if (fullStackLeaving) tileEl.classList.add('jettisoning');
+    }
+
+    closeJettison();
+
+    // Defer the actual state mutation until the animation has had
+    // time to land. 500ms is the jettisoning keyframe duration.
+    setTimeout(() => {
+      jettisoningItem.count -= jettisoningCount;
+      if (jettisoningItem.count <= 0) {
+        list.splice(idx, 1);
+        selectedItem = null;
+        renderEmptyDetail();
+      } else if (selectedItem === jettisoningItem) {
+        renderItemDetail(jettisoningItem);
+      }
+      renderGrid();
+      updateSlotReadout();
+    }, fullStackLeaving ? 500 : 350);
+  }
+
+  // ══ Header readouts ════════════════════════════════════════
+  // Flash a readout number briefly (scale pop + glow). Used for
+  // slot count ticks AND gold counter ticks during a roll-up.
+  function flashReadout(el) {
+    if (!el) return;
+    el.classList.remove('readout-flash');
+    void el.offsetWidth;         // force reflow so re-adding the class restarts the animation
+    el.classList.add('readout-flash');
+  }
+
+  // Earthbound-style rolling counter for gold. Interpolates from
+  // current-displayed value to the target over ~600ms, flashing
+  // on every tick so the digits feel mechanical.
+  let goldRollTimer = null;
+  let goldDisplayed = 0;
+  function animateGoldTo(target) {
+    const el = $('gold-amount');
+    if (goldRollTimer) { clearInterval(goldRollTimer); goldRollTimer = null; }
+    const start = goldDisplayed;
+    const delta = target - start;
+    if (delta === 0) { el.textContent = target; return; }
+    const duration = Math.min(900, 200 + Math.abs(delta) * 18); // scale with magnitude
+    const steps = Math.min(Math.abs(delta), Math.floor(duration / 40));
+    const stepMs = duration / steps;
+    let i = 0;
+    goldRollTimer = setInterval(() => {
+      i++;
+      const t = i / steps;
+      const eased = 1 - Math.pow(1 - t, 2); // ease-out
+      goldDisplayed = Math.round(start + delta * eased);
+      el.textContent = goldDisplayed;
+      flashReadout(el);
+      if (i >= steps) {
+        clearInterval(goldRollTimer);
+        goldRollTimer = null;
+        goldDisplayed = target;
+        el.textContent = target;
+      }
+    }, stepMs);
+  }
+
+  let lastSlotsUsed = 0;
+  let lastSlotsTotal = 0;
+  function updateSlotReadout() {
+    const used = slotsUsed();
+    const total = slotsTotal();
+    const usedEl = $('slots-used');
+    const totalEl = $('slots-total');
+
+    // Tick the slot numbers — flash pulse on any change.
+    if (used !== lastSlotsUsed)   { usedEl.textContent = used;   flashReadout(usedEl); }
+    if (total !== lastSlotsTotal) { totalEl.textContent = total; flashReadout(totalEl); }
+    lastSlotsUsed = used;
+    lastSlotsTotal = total;
+
+    // Gold uses the roll-up animation instead of a direct set.
+    animateGoldTo(SHIP.goldAmount);
+
+    const ratio = total > 0 ? used / total : 0;
+    const readout = $('slots-readout');
+    readout.classList.toggle('at-cap', used >= total);
+    readout.classList.toggle('near-cap', ratio >= 0.9 && used < total);
+
+    // Breakdown tooltip — "22.0 gear · 18.4 materials · 2 story"
+    // Hovering the slot readout answers "what's eating my cargo?"
+    // without cluttering the always-visible header.
+    readout.title = slotBreakdown().join('  ·  ');
+  }
+
+  // Sum tab totals for the breakdown tooltip. Materials are
+  // reported separately from gear since they're the most commonly
+  // bulky; story items with 0 cost show as "0 story".
+  function slotBreakdown() {
+    const parts = [];
+    const gear  = MOCK.gear.reduce((a, it) => a + itemSlots(it.id, it.count), 0);
+    const mat   = MOCK.materials.reduce((a, it) => a + itemSlots(it.id, it.count), 0);
+    const fmt   = (n) => Math.round(n * 10) / 10;
+    parts.push(fmt(gear) + ' gear');
+    parts.push(fmt(mat) + ' materials');
+    return parts;
+  }
+
+  // ══ Modal open/close ═══════════════════════════════════════
+  window.closeModal = function() { document.body.classList.remove('modal-open'); };
+  window.reopenModal = function() {
+    document.body.classList.add('modal-open');
+    renderAll();
+  };
+  // Esc closes modal (and jettison sub-overlay takes precedence)
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if ($('jettison-overlay').classList.contains('open')) closeJettison();
+      else if (document.body.classList.contains('modal-open')) closeModal();
+    }
+    // Tab number shortcuts
+    if (document.body.classList.contains('modal-open') && !document.activeElement.matches('input')) {
+      if (e.key === '1') setTab('gear');
+      if (e.key === '2') setTab('materials');
+      if (e.key === '3') setTab('upgrades');
+    }
+  });
+
+  // ══ Sim buttons ════════════════════════════════════════════
+  window.toggleStation = function() {
+    SHIP.atStation = !SHIP.atStation;
+    document.body.classList.toggle('at-station', SHIP.atStation);
+    if (selectedItem) renderItemDetail(selectedItem);
+    alert('AT_STATION = ' + SHIP.atStation + '\n\n• [SELL] button now ' + (SHIP.atStation ? 'visible' : 'hidden') + '\n• Classified ⚠ marker now ' + (SHIP.atStation ? 'visible' : 'hidden') + ' on classified tiles');
+  };
+  window.stuffCargo = function() {
+    // Add a pile of iron until we hit cap
+    let mat = MOCK.materials.find(m => m.id === 'iron');
+    if (!mat) { mat = { id: 'iron', count: 0, acquired: 999 }; MOCK.materials.push(mat); }
+    const total = slotsTotal();
+    while (slotsUsed() < total) { mat.count += 10; }
+    renderGrid();
+    updateSlotReadout();
+  };
+  window.resetInventory = function() {
+    MOCK = JSON.parse(JSON.stringify(MOCK_BACKUP));
+    selectedItem = null;
+    selectedResource = null;
+    renderAll();
+  };
+  const MOCK_BACKUP = JSON.parse(JSON.stringify(MOCK));
+
+  // ══ Controls apply ═════════════════════════════════════════
+  function apply() {
+    const setVar = (n, v) => root.style.setProperty(n, v);
+    const setPx = (n, id) => {
+      const v = $(id).value;
+      setVar(n, v + 'px');
+      const s = $('v-' + id.slice(2));
+      if (s) s.textContent = v;
+    };
+
+    setVar('--modal-backdrop', 'rgba(4,8,16,' + ($('c-backdrop').value / 100) + ')');
+    $('v-backdrop').textContent = $('c-backdrop').value;
+    setVar('--modal-border', $('c-modal-border').value);
+    setVar('--header-title-color', $('c-title').value);
+    setPx('--modal-width',  'c-modal-w');
+    setPx('--modal-height', 'c-modal-h');
+
+    setVar('--gauge-unlit-alpha', ($('c-unlit').value / 100));
+    $('v-unlit').textContent = $('c-unlit').value;
+
+    setPx('--grid-tile-size',   'c-grid-tile');
+    setPx('--grid-sprite-size', 'c-grid-sprite');
+
+    // Scrollbar width — webkit picks up the px directly; Firefox
+    // only accepts thin|auto|none, so we map the slider coarsely.
+    setPx('--scrollbar-w', 'c-scrollbar-w');
+    const sbw = parseInt($('c-scrollbar-w').value);
+    const ffWidth = sbw <= 4 ? 'none' : sbw <= 9 ? 'thin' : 'auto';
+    root.style.setProperty('scrollbar-width', ffWidth);
+
+    setVar('--gauge-seg-low',    $('c-seg-low').value);
+    setVar('--gauge-seg-lowmid', $('c-seg-lowmid').value);
+    setVar('--gauge-seg-mid',    $('c-seg-mid').value);
+    setVar('--gauge-seg-highmid',$('c-seg-highmid').value);
+    setVar('--gauge-seg-high',   $('c-seg-high').value);
+    setVar('--gauge-seg-full',   $('c-seg-full').value);
+
+    SHIP.fuel_pct  = parseInt($('c-fuel').value);
+    SHIP.food_pct  = parseInt($('c-food').value);
+    SHIP.water_pct = parseInt($('c-water').value);
+    $('v-fuel').textContent  = SHIP.fuel_pct;
+    $('v-food').textContent  = SHIP.food_pct;
+    $('v-water').textContent = SHIP.water_pct;
+
+    SHIP.goldAmount   = parseInt($('c-gold').value);
+    SHIP.baseCapacity = parseInt($('c-capacity').value);
+    $('v-gold').textContent     = SHIP.goldAmount;
+    $('v-capacity').textContent = SHIP.baseCapacity;
+
+    renderResourceTiles();
+    updateSlotReadout();
+  }
+
+  const DEFAULTS = {
+    'c-backdrop': '75', 'c-modal-border': '#435384', 'c-title': '#56cfd7',
+    'c-modal-w': '816', 'c-modal-h': '600',
+    'c-unlit': '15',
+    'c-grid-tile': '88', 'c-grid-sprite': '64',
+    'c-scrollbar-w': '6',
+    'c-seg-low': '#c23030', 'c-seg-lowmid': '#e0661a', 'c-seg-mid': '#d0a020',
+    'c-seg-highmid': '#b4bf40', 'c-seg-high': '#78c560', 'c-seg-full': '#35c56a',
+    'c-fuel': '75', 'c-food': '90', 'c-water': '60',
+    'c-gold': '120', 'c-capacity': '80'
+  };
+
+  document.querySelectorAll('#controls input[type="color"]').forEach(input => {
+    if (input.parentElement.querySelector('.val')) return;
+    const span = document.createElement('span');
+    span.className = 'val';
+    span.textContent = input.value.toUpperCase();
+    input.parentElement.appendChild(span);
+    input.addEventListener('input', () => { span.textContent = input.value.toUpperCase(); });
+  });
+
+  function markModified() {
+    for (const [id, def] of Object.entries(DEFAULTS)) {
+      const el = $(id); if (!el) continue;
+      const span = el.parentElement.querySelector('.val'); if (!span) continue;
+      span.classList.toggle('modified', String(el.value).toLowerCase() !== String(def).toLowerCase());
+    }
+  }
+
+  document.querySelectorAll('#controls input').forEach(el =>
+    el.addEventListener('input', () => { apply(); markModified(); })
+  );
+
+  window.resetDefaults = function() {
+    for (const [id, val] of Object.entries(DEFAULTS)) {
+      const el = $(id); if (!el) continue;
+      el.value = val;
+      if (el.type === 'color') {
+        const span = el.parentElement.querySelector('.val');
+        if (span) span.textContent = val.toUpperCase();
+      }
+    }
+    apply();
+    markModified();
+  };
+
+  function renderAll() {
+    apply();
+    renderResourceTiles();
+    renderGrid();
+    updateSlotReadout();
+    renderEmptyDetail();
+  }
+
+  // wireCustomScroll lives in shared.js
+  document.querySelectorAll('.scroll-host').forEach(wireCustomScroll);
+
+  // Boot
+  renderAll();
+  markModified();
+  document.body.classList.add('modal-open');
+
+})();
+</script>
+</body>
+</html>

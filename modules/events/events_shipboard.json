@@ -1,0 +1,572 @@
+[
+  {
+    "id": "event_shipboard_001",
+    "active": true,
+    "title": "Something in Cargo Bay 3",
+    "difficulty": "easy",
+    "tone": [
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has detected an anomaly in Cargo Bay 3! She describes it as 'an exciting surprise!'",
+      "marv": "MARV has detected a life sign in Cargo Bay 3. He waited 3 days to mention it. He was hoping it would resolve itself.",
+      "rex": "REX has detected an intruder in Cargo Bay 3. He has been tracking it for 72 hours. He is disappointed nobody noticed sooner.",
+      "chip": "CHIP has detected unauthorized cargo in Bay 3! This may void your shipping insurance! Please check the Terms of Service!",
+      "ajoy": "AJOY noticed something in Cargo Bay 3 three days ago. She assumed someone else would mention it. Nobody did. She's mentioning it now."
+    },
+    "body": "A noise from Cargo Bay 3. It has been happening for three days. Someone finally investigated.",
+    "stowaway_variant": {
+      "description": "If stowaway event hasn't fired yet and RNG triggers it, this event becomes the stowaway reveal. Otherwise it's one of the standard variants below.",
+      "stowaway_chance": 0.3,
+      "stowaway_body": "There is a person in Cargo Bay 3. They look cold. They look hungry. They do not look like they have a boarding pass.\n\nThey give their name as {stowaway.name}.\n\n{stowaway.story}\n\n“{stowaway.line}”\n\nYour ship can support three humans. The math depends on how many you already have.",
+      "stowaway_choices": [
+        {
+          "text": "Welcome aboard (if crew < 2)",
+          "condition": "crew_count < max",
+          "outcome": {
+            "resources": {
+              "food": -5
+            },
+            "sets_flag": "stowaway_aboard",
+            "narrative": "You have a new crew member. They are grateful. They are also hungry. The food reserves notice.",
+            "stowaway_resolve": "welcome"
+          }
+        },
+        {
+          "text": "Welcome aboard — but someone has to go (if crew = 2)",
+          "condition": "crew_count = max",
+          "outcome": {
+            "resources": {
+              "food": -5,
+              "morale": -5
+            },
+            "sets_flag": "stowaway_replaced_crew",
+            "narrative": "You have a new crew member. You have one fewer old crew member. The crew has opinions about this decision. The ship computer logs it as 'personnel restructuring.'",
+            "stowaway_resolve": "welcome_replace"
+          }
+        },
+        {
+          "text": "Leave them at the next station",
+          "condition": "always",
+          "outcome": {
+            "resources": {
+              "food": -3,
+              "morale": -3
+            },
+            "sets_flag": "stowaway_refused",
+            "narrative": "You'll drop them at the next station. They'll survive. Probably. The crew is quiet about it. The ship computer logs it without comment, which is worse than commentary.",
+            "stowaway_resolve": "refuse"
+          }
+        }
+      ]
+    },
+    "standard_variants": [
+      {
+        "variant_id": "loose_crate",
+        "body": "A loose crate has been bumping against the wall for three days and nobody mentioned it. Inside: your own supplies, rearranged by inertia into a configuration that suggests modern art.",
+        "choices": [
+          {
+            "text": "Secure the crate",
+            "outcome": {
+              "resources": {},
+              "time_cost": "trivial",
+              "narrative": "The crate is secured. The noise stops. Three days of sleep deprivation end. Morale improves by the absence of annoyance, which is the most common form of morale improvement on this ship."
+            }
+          }
+        ]
+      },
+      {
+        "variant_id": "creature",
+        "body": "A small creature boarded at the last station. It has been eating food reserves and leaving small, apologetic-looking droppings near the airlock. It is approximately the size of a cat and approximately the temperament of a cat. It is not a cat.",
+        "choices": [
+          {
+            "text": "Keep it",
+            "outcome": {
+              "resources": {
+                "food": -3,
+                "morale": 5
+              },
+              "sets_flag": "has_creature",
+              "narrative": "The crew has adopted it. It eats food reserves. It boosts morale. The math may or may not work out. The creature does not care about the math."
+            }
+          },
+          {
+            "text": "Release it at the next planet stop",
+            "outcome": {
+              "resources": {
+                "food": -1
+              },
+              "narrative": "You'll release it at the next planet. Until then, it continues to eat your food and be small. The crew names it anyway. They know this makes it harder."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_002",
+    "active": true,
+    "title": "The Growbay Report",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "growbay",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA reports the crop is doing GREAT! She checks the numbers. The crop is doing 'okay.' She reports it as 'great with potential!'",
+      "marv": "MARV delivers the growbay report. He does not editorialize. The numbers speak for themselves. The numbers are not optimistic.",
+      "rex": "REX has completed a threat assessment of the growbay. The crop is not a threat. He finds this unremarkable. He moves on.",
+      "chip": "CHIP reminds you that crop insurance is available at participating stations! Your current crop is rated 'uninsured' which means 'all outcomes are your responsibility!'",
+      "ajoy": "AJOY has reviewed the growbay data. She has suggestions. She always has suggestions. The crop did not ask for suggestions."
+    },
+    "body": "The ship computer issues a routine growbay status update.\n\nCrop health, water levels, nutrient reserves, and light cycle data are displayed. The computer delivers this with the exact level of concern appropriate to a machine that definitely does not care about plants.\n\nIf the crop is healthy, the report is brief. If the crop is sick, the tone shifts almost imperceptibly. The crew notices. The computer denies any tonal shift.",
+    "choices": [
+      {
+        "text": "Check the crop personally",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You visited the growbay. The crop looks like a crop. You are not sure what you expected. The visit made you feel better. The ship computer logs this as 'routine botanical inspection' which is generous."
+        }
+      },
+      {
+        "text": "Acknowledge the report and continue",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Report acknowledged. The crop continues to grow. The ship continues to fly. The computer continues to not care about plants."
+        }
+      }
+    ],
+    "crew_id": "osei"
+  },
+  {
+    "id": "event_shipboard_003",
+    "active": true,
+    "title": "Table for One",
+    "difficulty": "easy",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "solo_run"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has calculated that you plus her plus the crop equals three! Three is a crew! She will not be taking questions on the math!",
+      "marv": "MARV notes that solo operation is within vessel parameters. He notes separately that parameters were written by committees, and committees have never eaten dinner alone at a fold-down table in deep space.",
+      "rex": "REX has doubled his patrol frequency. With one human aboard, he considers himself the entire department of everything else.",
+      "chip": "CHIP would like to point out that single-occupancy voyages qualify for the Solo Pioneer™ discount tier! It is not a good tier! But it is YOURS!",
+      "ajoy": "AJOY has taken the liberty of scheduling her system reports for mealtimes. She is aware you know why. Neither of you needs to say it."
+    },
+    "body": "Dinner, day whatever-it-is.\n\nThe mess hall seats eight. You are one. The fold-down table nearest the galley has become yours the way things become someone's when there's no one to negotiate with — utterly, and by default.\n\nThe ship hums. The AIs talk when talked to, and sometimes before that. The crop grows in its bay, one deck down, alive because you keep it alive. It occurs to you tonight, chewing, that the reverse is also functionally true.",
+    "choices": [
+      {
+        "text": "Eat with the growbay",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You carry the tray down a deck and eat beside the glass, narrating your day to a plant with the shameless fluency of someone who stopped feeling silly about it weeks ago. The crop says nothing, magnificently. Best conversation you've had all month."
+        }
+      },
+      {
+        "text": "Ask the AI to run dinner conversation",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You ask for conversation and receive it: your AI's best attempt at small talk, which arrives with the cadence of a weather report and the sincerity of a handwritten letter. It is strange. It is also, unmistakably, company. You both improve with practice."
+        }
+      },
+      {
+        "text": "Work through the meal — the ship needs you",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You eat over a maintenance readout, because the ship needs you, which is true, and because busy is easier than quiet, which is also true. The tray goes back barely touched. The readout gets memorized. The quiet waits. It's patient, the quiet. It has you outnumbered."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_004",
+    "active": true,
+    "title": "The Empty Bunk",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crew_dead"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has left their duty roster slot exactly as it was! She checked with everyone first! Everyone agreed without saying anything! That is a kind of agreeing!",
+      "marv": "MARV has completed the personnel file. Cause, time, coordinates. The file also has a field labeled 'remarks.' MARV has been staring at the remarks field for some time.",
+      "rex": "REX folded the blanket. Corners squared, regulation fold, the way it's done. Nobody asked him to. Some things are just done, and this is how you do them.",
+      "chip": "CHIP has suspended their subscription services without cancellation fees! It is the only thing CHIP knows how to give! He gave it immediately!",
+      "ajoy": "AJOY still routes the morning report to their console, then to yours. She could fix it in a keystroke. She has decided it is not broken."
+    },
+    "body": "Someone's bunk is empty, and the ship has not adjusted.\n\nTheir mug is in the galley rack. Their handwriting is on the maintenance whiteboard, mid-list. The duty roster still rotates their name into slots that the rest of you cover without comment, trading the shifts silently, like passing something fragile hand to hand.\n\nGrief on a small ship has nowhere to go. It just changes seats.",
+    "choices": [
+      {
+        "text": "Hold a service in the mess hall",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "held_memorial",
+          "time_cost": "low",
+          "narrative": "Everyone gathers. Stories get told — the good ones, the unflattering ones, the one nobody was supposed to know. Laughter happens, then the other thing, then laughter again. The mug stays in the rack afterward, by unanimous silence. It's not a shrine. It's just theirs."
+        }
+      },
+      {
+        "text": "Finish their whiteboard list",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "held_memorial",
+          "time_cost": "medium",
+          "narrative": "Their maintenance list, completed item by item in their memory: the sticky vent, the dim panel, the thing in the galley nobody else understood. The last item gets checked off and the board wiped clean — except the name. The name stays. The ship runs a little better now. They'd have liked that answer."
+        }
+      },
+      {
+        "text": "Keep moving — they'd understand",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The voyage continues, because it has to, because deadlines don't grieve. Everyone works. The bunk stays empty and the mug stays racked and nothing is said, day after day, with increasing effort. They would have understood, it's true. That was never the question."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_005",
+    "active": true,
+    "title": "Passenger Manifest: One (1) Discrepancy",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "stowaway_aboard"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has been keeping a secret! She is TERRIBLE at it! She has been humming near Cargo Bay 3 for two weeks!",
+      "marv": "MARV has known since day four. Heat signature, ration drift, a life sign politely holding still during scans. He said nothing. He was curious how long it would take everyone else. His notes on that are sealed.",
+      "rex": "REX conducted a covert assessment eleven days ago. Threat level: none. Blanket usage: unauthorized. He left a second blanket within reach and logged it as 'tactical.'",
+      "chip": "CHIP has detected an unregistered consumer aboard! An entire untapped demographic of one! CHIP has SO many introductory offers prepared!",
+      "ajoy": "AJOY re-ran the food consumption numbers three times before accepting them. She would like the record to show the discrepancy was 4.1%, and that 4.1% has been very polite about rationing itself."
+    },
+    "body": "The numbers have been wrong for weeks — food drifting faster than the roster explains, a warm spot on the thermal map that moves between scans, one blanket fewer in stores than the manifest claims.\n\nToday the numbers stood up, stepped out from behind the aft water tanks, and introduced themselves.\n\nTheir name is {stowaway.name}.\n\n{stowaway.story}\n\n“{stowaway.line}”",
+    "choices": [
+      {
+        "text": "Welcome them aboard",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -5,
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "stowaway_aboard",
+          "time_cost": "trivial",
+          "narrative": "They're aboard. Officially, now. The ration math adjusts, the bunk situation adjusts, and the ship — which has known for weeks — adjusts least of all. The crew shakes hands like this is a formality. It was.",
+          "stowaway_resolve": "welcome"
+        }
+      },
+      {
+        "text": "They can stay — working passage",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -4,
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "stowaway_working",
+          "time_cost": "trivial",
+          "narrative": "Passage for work: galley shifts, filter scrubbing, whatever needs hands. They accept before the sentence finishes. By the end of the first week the arrangement is indistinguishable from belonging, which was quietly the point.",
+          "stowaway_resolve": "welcome"
+        }
+      },
+      {
+        "text": "Confine them until the next stop",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "stowaway_refused",
+          "time_cost": "trivial",
+          "narrative": "You assign them quarters and a schedule that keeps them out of the way. It is correct, defensible, and joyless — three words the crew does not say at dinner, loudly. The next station will take them. The corridors feel narrower until then.",
+          "stowaway_resolve": "refuse"
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_006",
+    "active": true,
+    "title": "Light Duty",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crew_injured"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has redesigned the duty roster with a new category called 'supervising from a chair!' It has one member! They hate it!",
+      "marv": "MARV notes the injured crew member has attempted their normal duties three times today. He has locked three doors. He can do this all week.",
+      "rex": "REX respects powering through an injury. As a doctrine. As a practice, he has confiscated the injured party's toolkit and left a puzzle book. The puzzle book is non-negotiable.",
+      "chip": "CHIP notes that workplace injuries aboard uninsured vessels are handled under the 'good luck' provision! It is not a generous provision! Rest is free, though! CHIP checked!",
+      "ajoy": "AJOY has quietly rerouted the injured crew member's alerts to other consoles. They haven't noticed yet. When they do, she will describe it as a glitch. It is not a glitch."
+    },
+    "body": "Someone aboard is hurt and refusing to act like it.\n\nThey move through the ship one-armed and stubborn, doing three-quarters of their job at twice the cost, guarding the injury the way people guard things they're embarrassed by. The crew has begun orbiting them with casual, transparent helpfulness.\n\nHealing needs rest. Rest needs enforcing. Enforcing needs a captain.",
+    "choices": [
+      {
+        "text": "Order full rest — no arguments",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You make it an order, which lets them surrender to the bunk without surrendering any pride. They sleep eleven hours, complain magnificently, and heal at double speed. The crew covers the gap without being asked. That part gets logged."
+        }
+      },
+      {
+        "text": "Medic supervised recovery program",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The medic builds a proper recovery program: rest intervals, mobility work, and a chart with stickers on it that everyone pretends is beneath them and nobody misses a sticker of. Recovery runs ahead of schedule. The chart is later framed."
+        }
+      },
+      {
+        "text": "Spend a medkit — patch them up properly",
+        "requires_crew": null,
+        "requires_item": "medkit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "medkit",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The medkit's contents do in an afternoon what rest would do in a week: sealed, splinted, dosed, done. The empty kit goes into recycling with the quiet dignity of used emergency equipment. Its patient goes back on shift, whole."
+        }
+      },
+      {
+        "text": "They say they're fine. Believe them",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You take 'fine' at face value, and 'fine' does what it always does: works the injury deeper while everyone watches and says nothing. Healing will happen eventually, the long way. The crew's helpfulness orbit tightens by one meter."
+        }
+      }
+    ]
+  }
+]

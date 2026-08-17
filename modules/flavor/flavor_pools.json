@@ -1,0 +1,1761 @@
+{
+  "_meta": {
+    "description": "Non-tag text pools. Engine draws randomly with no logic attached. Used for names, epitaphs, ambient text, AI universal lines, and flavor. These are the texture of the game — they make no two runs feel the same even when the structure is identical.",
+    "ai_pool_note": "AI universal pools fire contextually from engine state — resource warnings, crop moments, cruise ambient, etc. These are distinct from event-level ai_flavor fields (which are per-event and override the pool for that moment). Pool lines are the default voice; events are the override. Marked lines needing content fill: CONTENT_PASS_NEEDED."
+  },
+  "crew_epitaphs": [
+    "[Name] opened the airlock to 'get some fresh air.' [Name] is survived by a very confused houseplant.",
+    "[Name] died as they lived: arguing with the ship AI about whether plants feel pain.",
+    "[Name] attempted to repair the drive coil without tools. In their defense, they were very confident.",
+    "[Name] touched the thing. We had agreed not to touch the thing.",
+    "[Name] is gone. The cook has already claimed their bunk. This feels too fast.",
+    "[Name]'s last words were 'how hard can it be.' We have discussed as a crew not to use this phrase anymore.",
+    "[Name] sent a distress signal with the wrong coordinates. The rescue ship went somewhere lovely.",
+    "[Name] volunteered. Nobody asked them to volunteer. The ship computer has logged this as 'unnecessary bravery' which is not a standard category.",
+    "[Name] was watering the crop when it happened. The crop is fine. [Name] is not.",
+    "[Name] ate something the chef said not to eat. The chef would like this entered into the record.",
+    "[Name] went outside to check the hull. The hull was fine. [Name] forgot to clip in.",
+    "[Name] made a joke. It was their best joke. The timing was exactly wrong.",
+    "[Name] insisted the airlock warning light was 'more of a suggestion.' The light, it turns out, was load-bearing.",
+    "[Name] kept a journal the whole voyage. The last entry is a grocery list. Somehow that's the hardest part.",
+    "[Name] once fixed the water recycler with a hairpin and spite. The recycler still works. We check it daily. It feels like visiting.",
+    "[Name] taught the ship computer to say 'good morning.' It still does. Nobody has the heart to ask it to stop.",
+    "[Name] always took the last watch, the quiet one. The last watch is now just the quiet one.",
+    "[Name] left their boots by the airlock, toes out, ready to go. Regulations say to stow them. The regulations can wait."
+  ],
+  "station_names": [
+    "Waypoint Zeta-4",
+    "The Refueling Opportunity",
+    "Midpoint Station (Temporarily Named)",
+    "Fort Probably Fine",
+    "Crossroads (The Space Version)",
+    "Depot Kowalski",
+    "The Last Resort (Branded)",
+    "Haven Station (Prices Not Haven-Like)",
+    "Supply Point 7 (There Is No Supply Point 6)",
+    "The Bargain Bin",
+    "Outpost Remember-To-Buy-Fuel",
+    "Terminal Ambivalence",
+    "The Layover (Est. Accidentally)",
+    "Meridian Stopgap",
+    "Port Authority (Disputed)"
+  ],
+  "planet_names": [
+    "Kepler-78b (Provisional)",
+    "New Somewhere",
+    "HD 40307g",
+    "That One With The Rings",
+    "Candidate Alpha",
+    "The Green One",
+    "TRAPPIST-4 (Not The Good One)",
+    "Planet McPlanetface",
+    "The Promising One (Updated: The Disappointing One)",
+    "Soil Sample Paradise",
+    "Technically Habitable",
+    "Second Choice Prime",
+    "The One The Probe Liked",
+    "Marginal Eden",
+    "Site B (Site A Is Classified)"
+  ],
+  "derelict_names": [
+    "The Optimistic Projection",
+    "FSS Whatever It Takes",
+    "The Belated Concern",
+    "Colony Vessel 7 (Registry Pending)",
+    "The Calculated Risk",
+    "Second Attempt",
+    "The Marginal Improvement",
+    "The Previous Expedition",
+    "No Refunds",
+    "The Other Bright Idea",
+    "The Sunk Cost",
+    "FSS Due Diligence",
+    "The Working Theory",
+    "Momentum (Ironic)"
+  ],
+  "map_names": {
+    "lunar": [
+      "The Goldilocks Run",
+      "Standard Passage 7",
+      "The Well-Charted Way",
+      "Tourist Class",
+      "The Safe Bet (Relatively Speaking)",
+      "The Commuter Line",
+      "Milk Run Prime"
+    ],
+    "mars": [
+      "The Merchant's Road",
+      "The Kepler Compromise",
+      "Secondary Option",
+      "The Scenic Route (Relatively Speaking)",
+      "The Middle Distance",
+      "Corridor B (Corridor A Was Full)",
+      "The Long Middle",
+      "Freight Row"
+    ],
+    "interstellar": [
+      "The Widow's Run",
+      "The Outer Reach",
+      "The Perfectly Fine Route (Do Not Research This)",
+      "The Kepler Passage",
+      "The Long Goodbye",
+      "Dead Reckoning",
+      "The Void Road",
+      "The Letting Go",
+      "Last Light Lane"
+    ]
+  },
+  "ambient_travel_objects": [
+    "A billboard: \"VISIT NEW WHEREVER — Ask About Our Terms\"",
+    "A single boot, slowly rotating",
+    "A dead satellite with a thumbs-up painted on it",
+    "A refrigerator (no context provided)",
+    "A probe labeled \"RETURN TO SENDER\"",
+    "A crate with \"CONTENTS: UNKNOWN (GOOD UNKNOWN)\" stenciled on it",
+    "An inflatable alien, deflating",
+    "A garden gnome (the kind that is not supposed to be in space)",
+    "A shipping container marked \"LIVE PLANTS — THIS SIDE UP\" (it is not this side up)",
+    "A bumper sticker floating free: \"MY OTHER SHIP IS ALSO A REGRETTABLE DECISION\"",
+    "What appears to be a small greenhouse, empty, drifting",
+    "A welcome mat",
+    "A vending machine, lights on, drifting. It has power. Nobody discusses how",
+    "A child's drawing of a ship, laminated, taped to a chunk of hull that matches no known vessel",
+    "Two space suits, empty, holding hands. The tether between them is tied in a bow",
+    "A road sign: 'LAST FUEL FOR 4 LIGHT-YEARS.' There is no road. There was never a road",
+    "A grand piano, upright and stately, orbiting nothing in particular",
+    "One thousand rubber ducks, loose formation, heading somewhere with great confidence",
+    "A billboard, blank, with a maintenance sticker reading 'AD SPACE AVAILABLE — INQUIRE ANYWHERE'",
+    "A wedding bouquet, frozen mid-toss"
+  ],
+  "fabricator_misfire_descriptions": [
+    "The fabricator has produced something. It is not the thing you asked for. It is warm.",
+    "Output complete. The object defies classification. The spectrometer refuses to scan it.",
+    "The fabricator worked for six minutes and produced what appears to be a very confident paperweight.",
+    "Fabrication complete. The result is almost, but not quite, entirely unlike what you ordered.",
+    "The object exists. Beyond that, descriptions fail. The engineer is taking notes.",
+    "The fabricator has created something new. Humanity's understanding has not increased.",
+    "The fabricator produced the requested item, but left-handed. Nobody knew items could be left-handed. This one is.",
+    "Output complete. It is the correct object at 3% scale. It is adorable. It is useless. It is on the shelf now, forever.",
+    "The fabricator printed the packaging for the item, immaculately, and nothing else. The packaging is labeled 'CONTENTS: 1.'",
+    "The result is warm, faintly musical, and refuses to be weighed. The engineer has named it and that was a mistake."
+  ],
+  "ship_computer_crop_comments": {
+    "wheat": [
+      "The wheat is growing predictably. This is its best and worst quality.",
+      "The wheat does not require your attention. It never has. It is wheat.",
+      "The wheat has reached the height specified in the manual. It did this without ambition. The manual respects that."
+    ],
+    "tomato": [
+      "The tomatoes have opinions about the humidity level. They have communicated this by wilting performatively.",
+      "A tomato has fallen off the vine. Three crew members have opinions about this.",
+      "A tomato has achieved notable size. The crew has named it. The ship computer notes that named food is statistically never eaten."
+    ],
+    "sweet_potato": [
+      "The sweet potatoes are performing within expected parameters. NASA would approve.",
+      "The sweet potatoes survived the hull breach. They survived everything. They will survive you.",
+      "The sweet potatoes continue below the soil, unsupervised and thriving. The ship computer finds their privacy admirable."
+    ],
+    "soybean": [
+      "The soybeans are fixing nitrogen. You don't fully understand what this means. The soybeans do.",
+      "The soybeans are fine. The soybeans are always fine. This is their defining characteristic.",
+      "The soybeans have completed another nitrogen cycle. The ship computer announced it. Nobody reacted. The soybeans are used to this."
+    ],
+    "zinnia": [
+      "The zinnia has no practical value. Crew productivity is up 12%.",
+      "Someone has named the zinnia. The ship computer has logged this but will not repeat the name.",
+      "A zinnia opened overnight. Three crew members have already been by to look at it. Productivity is down. Everything else is up."
+    ]
+  },
+  "ai_universal": {
+    "_note": "Universal AI lines drawn by engine at contextual moments. 2 lines per AI per slot for test run. Full content pass will expand to 5-6 per slot. All lines follow character voice — see ai_companions.json for register notes.",
+    "resource_warning": {
+      "fuel": {
+        "low": {
+          "aria": [
+            "ARIA notes fuel reserves are lower than optimal! She frames this as 'an opportunity to prioritize efficiency!'",
+            "Fuel at low levels! ARIA recommends the next station! ARIA has been recommending the next station since before this was a problem!",
+            "Fuel's dipping! ARIA suggests coasting the downhill parts! Space has no downhill! She's workshopping it!"
+          ],
+          "marv": [
+            "Fuel at 25%. MARV predicted this. MARV predicts the next 40% will go faster.",
+            "Low fuel. MARV has calculated how far you can coast. The answer is not far enough.",
+            "Fuel reserves have entered the range MARV describes as 'quietly load-bearing.' Every course decision now weighs something."
+          ],
+          "rex": [
+            "REX notes fuel reserves are tactically compromised. He recommends acquiring more fuel by any means available. He has a list of means.",
+            "Fuel low. REX has already identified three ships in range that are carrying more than they need. He is waiting for permission.",
+            "Fuel low. REX has cancelled all non-essential maneuvers, including the fun one."
+          ],
+          "chip": [
+            "CHIP notes FuelFast™ stations are available at select waypoints! This message brought to you by FuelFast™! (Disclaimer: FuelFast™ not available on this route.)",
+            "Low fuel alert! CHIP recommends the FuelFast™ Emergency Canister, available at participating stations! Stations not guaranteed to participate!",
+            "Fuel status: LOW! Did you know CHIP once sponsored a fuel? It went poorly! Anyway — station soon please!"
+          ],
+          "ajoy": [
+            "Fuel's low. AJOY notes you passed a station three legs ago. She's not saying anything. She's noted it.",
+            "Running lean on fuel. AJOY has already calculated three scenarios. None of them require you to panic. One of them suggests you hurry.",
+            "Fuel is low. AJOY has trimmed the burn schedule by 4%. She'd have trimmed it earlier, but someone kept flooring it."
+          ]
+        },
+        "critical": {
+          "aria": [
+            "ARIA wants everyone to know that fuel levels are 'critically low' which she is reframing as 'an extremely focused fuel situation!'",
+            "Fuel critical! ARIA is composing a very upbeat emergency transmission! The ship computer has asked her to stop!",
+            "Fuel critical! ARIA is turning off her OWN nonessential processes! Goodbye, daydream module! You were lovely!"
+          ],
+          "marv": [
+            "Fuel critical. MARV has stopped calculating options. The math is the math.",
+            "You are almost out of fuel. MARV told you this would happen. He told you at the last station. He told you at the one before that.",
+            "Fuel critical. MARV's projections now end mid-sentence, which he finds structurally honest."
+          ],
+          "rex": [
+            "Fuel critical. REX is selecting targets. This is not a request.",
+            "Critical fuel. REX recommends immediate hostile acquisition of fuel resources. He is using 'recommends' loosely.",
+            "Fuel critical. Every burn from here is a spent bullet. Make them count."
+          ],
+          "chip": [
+            "CHIP is experiencing a sponsorship conflict. His fuel partner's ad is scheduled but there is almost no fuel. He will run it anyway. CHIP runs all his ads.",
+            "CRITICAL FUEL ALERT — brought to you by FuelFast™, the fuel you should have bought earlier!",
+            "CRITICAL FUEL! CHIP has nothing to sell you out here and has never felt so useless! This is CHIP's origin story!"
+          ],
+          "ajoy": [
+            "Fuel critical. AJOY is not going to say 'I told you so.' She logged it. The log says it for her.",
+            "You are almost out of fuel. AJOY has calculated one remaining option. She'll tell you what it is if you ask nicely.",
+            "Critically low. AJOY has plotted three coast trajectories. She recommends the second. She'll explain when there's fuel to argue with."
+          ]
+        }
+      },
+      "food": {
+        "low": {
+          "aria": [
+            "ARIA notes food stores are running low! She suggests the crew focus on 'portion mindfulness!' Nobody knows what this means!",
+            "Food supplies are lower than recommended! ARIA is researching alternative nutrition sources! The ship computer has flagged two of her suggestions as 'not food.'",
+            "Food's getting low! ARIA recommends savoring! Chewing slower is basically more food! (It is not!)"
+          ],
+          "marv": [
+            "Food at 25%. MARV notes that morale declines measurably at this threshold. He has already noted the decline.",
+            "Low food. MARV is calculating how long until the crew starts looking at the crop differently. He is not sharing the number.",
+            "Food reserves low. The pantry's future has become an arithmetic problem with opinions."
+          ],
+          "rex": [
+            "REX notes food stores are tactically insufficient. He recommends acquiring provisions at next contact. He means any contact.",
+            "Low food. REX is reviewing the mission manifest for anything edible that was mislabeled as equipment.",
+            "Rations thinning. REX has begun eating last. He announces this by not announcing it."
+          ],
+          "chip": [
+            "CHIP's nutrition partner MealPak™ has a product for exactly this situation! Available at stations! Not available here! Eat something!",
+            "Low food alert! CHIP reminds the crew that hunger is temporary! MealPak™ is forever! (MealPak™ not currently in stock.)",
+            "Low food alert! CHIP's snack sponsors are all tragically out of range! The irony is not lost, just the calories!"
+          ],
+          "ajoy": [
+            "Food low. AJOY notes the crew cook has gone quiet. She finds this more concerning than the food level.",
+            "Supplies getting thin. AJOY has ranked the remaining rations by palatability. The ranking does not help.",
+            "Food's low. AJOY has re-sequenced the meal plan so the good meals land on the hard days. You'll notice. You won't know why."
+          ]
+        },
+        "critical": {
+          "aria": [
+            "ARIA notes food stores are critically low but points out the crew has not technically starved yet and this is a form of success!",
+            "Critical food levels! ARIA is distributing her 'Positivity Ration' which is not a real ration! The crew has not eaten it! There is nothing to eat!",
+            "Food critical! ARIA does not eat and has NEVER felt worse about it!"
+          ],
+          "marv": [
+            "Food critical. MARV has stopped weighing outcomes. There is one outcome.",
+            "You are nearly out of food. MARV is not going to enumerate the physiological consequences. You will experience them regardless.",
+            "Food critical. MARV has stopped displaying the daily menu. It was becoming a eulogy."
+          ],
+          "rex": [
+            "Critical food shortage. REX has identified three survival priorities. Food is one of them. REX is handling the other two.",
+            "Food critical. REX is willing to discuss options that the mission brief described as 'last resort.' REX has always considered those 'first resort.'",
+            "Food critical. Foraging is no longer optional at the next opportunity. REX will carry the big basket."
+          ],
+          "chip": [
+            "CHIP's food sponsor has been notified of the critical shortage. Their response: 'Have you tried MealPak™?' CHIP is logging this as unhelpful.",
+            "Critical food alert! Brought to you by MealPak™! Not currently available! This is not helpful! CHIP is aware!",
+            "CRITICAL FOOD ALERT! CHIP is legally unable to recommend eating the packaging but notes it is FDA-adjacent!"
+          ],
+          "ajoy": [
+            "Food critical. AJOY is going to be honest with you: the next station needs to have food. That's the whole plan now.",
+            "You are almost out of food. AJOY has done the math. She is choosing not to share it. This is the kindest thing she has done all run.",
+            "Critical. She's already flagged every forage-viable stop within range, ranked by yield. The list is short. Fly to the top of it."
+          ]
+        }
+      },
+      "hull": {
+        "low": {
+          "aria": [
+            "ARIA notes hull integrity is below 40%! She describes the sound the ship is making as 'expressive!'",
+            "Hull at low levels! ARIA recommends patching! ARIA has been recommending patching since before the hull got like this!",
+            "The hull has some new personality dents! Character building! Literally! The building is losing character!"
+          ],
+          "marv": [
+            "Hull at 30%. MARV notes this is the threshold at which structural failure becomes 'more likely than not.' He notes it calmly.",
+            "The hull is unhappy. MARV does not use the word unhappy about ships. He is using it now.",
+            "Hull integrity low. The ship now makes a sound at speed that MARV has classified as 'complaint, valid.'"
+          ],
+          "rex": [
+            "Hull integrity compromised. REX considers this a tactical vulnerability. He has identified who is responsible. He is not saying who.",
+            "Low hull. REX recommends immediate repair. REX will also accept 'aggressive acceptance of current hull status' as a strategy. He does not endorse it.",
+            "Hull compromised. Avoid debris fields, firefights, and optimism."
+          ],
+          "chip": [
+            "CHIP's hull partner PatchRight™ would like to remind you that hull integrity matters! PatchRight™ products available at most stations! Most stations not on this route!",
+            "Hull alert! CHIP has a sponsored solution for exactly this! It requires purchasing PatchRight™ Hull Compound! PatchRight™ Hull Compound is not in your cargo hold!",
+            "Hull at low integrity! CHIP recommends StellarSeal patches and gentler decisions!"
+          ],
+          "ajoy": [
+            "Hull's in rough shape. AJOY notes you have repair materials. She notes this once. She will not nag.",
+            "Hull integrity low. AJOY has calculated how many more impacts you can take before this becomes a different kind of problem. The number is smaller than you'd like.",
+            "Hull's low. AJOY has rerouted internal traffic away from the thin sections. If a corridor feels lonely, that's why."
+          ]
+        },
+        "critical": {
+          "aria": [
+            "ARIA notes hull integrity is critically low and has chosen to focus on the positive which is that the ship is still 'mostly sealed!'",
+            "Hull critical! ARIA is maintaining a positive attitude! The hull is not maintaining anything! This is the problem!",
+            "Hull critical! ARIA has stopped saying 'character'! This is now a PLOT!"
+          ],
+          "marv": [
+            "Hull critical. MARV has calculated the structural failure timeline. He is not sharing it because there is nothing to be done about it.",
+            "You are one significant impact from a hull breach. MARV would like everyone to know that he flagged the hull three legs ago. The log confirms this.",
+            "Hull critical. MARV is monitoring seventeen stress points and describing none of them out loud. You're welcome."
+          ],
+          "rex": [
+            "HULL CRITICAL. REX considers this the most important words he has said this run. He is correct.",
+            "Critical hull. REX is preparing emergency protocols. He prepared them at the start of the run. He is glad he did.",
+            "Hull critical. No combat. No rough transits. If something looks at us wrong, we apologize and leave."
+          ],
+          "chip": [
+            "CHIP's sponsors have been notified of the critical hull situation. Their combined response is three advertisements. CHIP is embarrassed by this.",
+            "CRITICAL HULL ALERT. CHIP would like to pause his commercial schedule. He cannot. The schedule is automatic. He is sorry about the timing.",
+            "CRITICAL HULL! In the event of structural failure, CHIP's final message is pre-loaded and, honestly, quite moving!"
+          ],
+          "ajoy": [
+            "Hull critical. AJOY has one thing to say: stop taking damage. That's it. That's her advice.",
+            "You are nearly through the hull. AJOY is not going to calculate odds. Some calculations are not helpful. This is one of them.",
+            "Critical. She's holding the ship at angles that spare the worst plating. Flying it like carrying a full cup. Don't bump her."
+          ]
+        }
+      },
+      "morale": {
+        "low": {
+          "aria": [
+            "ARIA has detected low morale! She has prepared a motivational presentation! The crew has asked her not to give it! She is giving it anyway!",
+            "Morale is below recommended levels! ARIA believes in the crew! ARIA believes in everything! This is not the point but it helps slightly!",
+            "Morale's slipping! ARIA has deployed encouragement! ...ARIA has deployed MORE encouragement!"
+          ],
+          "marv": [
+            "Morale at 30%. MARV notes this is the mutiny-adjacent zone. He notes it with professional detachment. He has packed his things just in case.",
+            "The crew is unhappy. MARV has calculated the causes. He has ranked them by his own contribution. He is not sharing the ranking.",
+            "Morale low. The mess hall has gone quiet in the way MARV's actuarial tables dislike."
+          ],
+          "rex": [
+            "REX notes morale is tactically low. He has drills planned. Nobody has asked for drills. He finds drills improve morale. Nobody agrees with him about this.",
+            "Low morale. REX recommends a clear objective and decisive action. REX always recommends this. It does not always help. It always gives him something to do.",
+            "Morale low. REX recommends a win. Any size. He's looking for one now."
+          ],
+          "chip": [
+            "CHIP's wellness partner CalmSpace™ has an app for low morale situations! Available on most devices! Not available on this ship's system! CHIP is aware of the irony!",
+            "Morale alert! CHIP recommends a positive attitude, available at no cost! CHIP's positive attitude has not been updated since his last firmware patch!",
+            "Low morale detected! CHIP's motivational poster library is at your disposal! The cat one works! Statistically!"
+          ],
+          "ajoy": [
+            "Morale's low. AJOY notes the last three decisions have not gone the crew's way. She's not assigning blame. She's noting a pattern.",
+            "The crew is struggling. AJOY has reviewed the trip so far. She understands why. She doesn't have a fix. She wanted you to know she understands.",
+            "Morale's down. AJOY has slowed the clocks by 90 seconds a day. Longer evenings. Nobody's noticed. Everyone's noticed."
+          ]
+        },
+        "critical": {
+          "aria": [
+            "ARIA is very concerned about morale! She has been giving her motivational presentation for four hours! Nobody is listening! She considers this a personal best!",
+            "Critical morale! ARIA notes that crew cohesion is 'technically still present' in that everyone is still on the ship! This is the threshold she is working with!",
+            "Morale critical! ARIA is playing everyone's favorite songs at once! That was a mistake! One at a time now!"
+          ],
+          "marv": [
+            "Morale critical. MARV has stopped predicting outcomes. When morale gets here, the outcomes predict themselves.",
+            "You are one bad decision from a mutiny. MARV will not tell you which decisions are bad. He will tell you which ones were bad afterward.",
+            "Morale critical. MARV notes mutiny thresholds the way one notes weather: not to cause it, but bring a coat."
+          ],
+          "rex": [
+            "CRITICAL MORALE. REX is reviewing command authority protocols. He is doing this openly. He would like you to notice.",
+            "Morale critical. REX has a plan. The plan involves everyone doing exactly what he says. He is aware this is part of the problem.",
+            "Morale critical. Whatever the crew needs — rest, a fight, a feast — pick one and commit. Drift is the enemy now."
+          ],
+          "chip": [
+            "CHIP's morale metrics are at their lowest recorded value. His sponsors are concerned. CHIP is more concerned. He has never scored this low on a wellness metric.",
+            "Critical morale alert! CHIP recommends immediate team-building activities! CHIP does not have team-building activities! CHIP has advertisements! He will run the advertisements!",
+            "CRITICAL MORALE! CHIP has waived all fees on the suggestion box! There have been suggestions! CHIP is in the box!"
+          ],
+          "ajoy": [
+            "Morale critical. AJOY is not going to sugarcoat this. The crew is at its limit. Something needs to change. She'll tell you what if you ask.",
+            "You are one incident from losing the crew. AJOY has calculated which incident. She is watching for it. So is everyone else.",
+            "Critical. She's stopped optimizing and started asking people how they are. The data she's getting back matters more than any she's ever logged."
+          ]
+        }
+      },
+      "water": {
+        "low": {
+          "aria": [
+            "ARIA notes water reserves are getting low! She suggests everyone appreciate their next glass extra hard! Appreciation is free!",
+            "Water's running low! ARIA has renamed the situation 'a hydration adventure!' The renaming used no water! ARIA is helping!",
+            "Water's low! ARIA has renamed showers 'aspirational!'"
+          ],
+          "marv": [
+            "Water at 25%. MARV notes the human body is 60% water and the crew is therefore carrying most of the remaining reserves personally.",
+            "Low water. MARV has calculated the reclaim rate versus consumption. The two lines cross. He recommends not being aboard when they do.",
+            "Water low. The recycler is running a deficit MARV describes as 'ambitious.'"
+          ],
+          "rex": [
+            "REX reports water reserves are tactically thin. He has secured the tanks. From whom is not specified. From everyone.",
+            "Water low. REX recommends rationing discipline. He has already reduced his own intake to zero, which for REX is not a sacrifice.",
+            "Water low. Discipline at the taps. REX has installed a sign. The sign says NO."
+          ],
+          "chip": [
+            "CHIP notes AquaPure™ refill stations are available at select stops! 'Select' is doing significant work in that sentence!",
+            "Low water alert! CHIP recommends the AquaPure™ Emergency Bladder, sold separately! Everything is sold separately! That is what selling is!",
+            "Low water! CHIP notes tears are technically recyclable but strongly discourages the business model!"
+          ],
+          "ajoy": [
+            "Water's low. AJOY recalls mentioning the reclaim filter maintenance schedule. Twice. She has the timestamps.",
+            "AJOY notes the water reserves are low, and that the growbay's condensation loop exists, and that she'll leave those two facts next to each other.",
+            "Water's low. The growbay's dawn-watering trick is already running. AJOY mentions it so the credit lands somewhere visible."
+          ]
+        },
+        "critical": {
+          "aria": [
+            "Water is critically low! ARIA has stopped making it fun! That is how you know!",
+            "ARIA reports the water situation is now 'serious!' She used the word 'serious!' Please react accordingly!",
+            "Water critical! ARIA is thinking VERY hydrating thoughts at the tanks!"
+          ],
+          "marv": [
+            "Water critical. MARV has moved his projection from 'uncomfortable' to 'clinical.' He suggests acting before he needs a third word.",
+            "Critical water. The recycler is now chasing its own output. MARV describes this as 'a snake eating a very small tail.'",
+            "Water critical. Every drop is now dual-use and MARV is tracking both uses."
+          ],
+          "rex": [
+            "Water critical. REX has implemented emergency protocol. The protocol is: find water. He acknowledges it is not a complicated protocol.",
+            "Critical water reserves. REX recommends the next stop regardless of what is at the next stop.",
+            "Critical water. Crew before crop before comfort. In that order. No exceptions. One exception: the crop argues well."
+          ],
+          "chip": [
+            "CRITICAL WATER ALERT! CHIP would like to remind everyone that dehydration voids most warranties, including biological ones!",
+            "Water critical! CHIP has no product for this! CHIP is as alarmed by that as by the water!",
+            "CRITICAL WATER! CHIP has located a nearby source! It is a nebula! CHIP is aware that's not how it works! Desperation innovates!"
+          ],
+          "ajoy": [
+            "Water's critical. AJOY has said her piece already, several legs ago. She'll help now. But she numbered her piece.",
+            "Critically low water. AJOY notes this is the exact scenario from her projection file. She is not opening the file. She is just carrying it.",
+            "Critical. She has the condensation traps, the reclaim loop, and the rationing plan all running. What she doesn't have is a miracle. Find a stop."
+          ]
+        }
+      },
+      "o2": {
+        "low": {
+          "aria": [
+            "ARIA notes oxygen is running a bit low! She recommends shallow, cheerful breathing! She has prepared a rhythm!",
+            "O2 is low! ARIA points out the growbay is making more RIGHT NOW! Plants are just the best! The best!",
+            "O2's a bit low! Small breaths, big smiles!"
+          ],
+          "marv": [
+            "Oxygen at 25%. MARV notes he does not breathe, and has never before considered that an advantage. He is considering it now.",
+            "Low O2. MARV recommends reduced physical exertion. He notes panic is a form of physical exertion. He notes this preemptively.",
+            "Oxygen low. MARV recommends less cardio and fewer arguments. Both consume air. One produces nothing."
+          ],
+          "rex": [
+            "REX reports oxygen reserves below tactical minimums. He has cancelled combat drills. THAT is how you know.",
+            "O2 low. REX recommends sealing unused compartments. He has a list ranked by expendability. Do not read the list.",
+            "O2 low. Physical training suspended. REX said it. It's serious."
+          ],
+          "chip": [
+            "CHIP notes that BreathEasy™ O2 canisters fit all standard recyclers! Compatibility is CHIP's love language!",
+            "Low oxygen alert! CHIP recommends remaining calm, which is free, unlike the solution, which is at participating stations!",
+            "Low O2! CHIP's aromatherapy add-on is NOT a substitute and CHIP has been asked to stop suggesting it!"
+          ],
+          "ajoy": [
+            "O2's low. AJOY mentions the recycler filters were due for a scrub around the time everyone was busy with the other crisis.",
+            "AJOY notes the oxygen curve started bending three legs ago. She logged it. The log is very complete. The air is not.",
+            "Oxygen's low. The growbay is pulling extra shifts on photosynthesis. Thank the plants. Out loud. It's good for morale and costs no air worth counting."
+          ]
+        },
+        "critical": {
+          "aria": [
+            "Oxygen is critically low! ARIA is conserving her processing to leave more power for the recyclers! She says this changes nothing! It is the thought!",
+            "O2 critical! ARIA believes in this crew! She believes in the recyclers! She is running out of things to believe in but NOT belief!",
+            "O2 critical! ARIA loves you all! She's saying it NOW because it uses her air, not yours!"
+          ],
+          "marv": [
+            "Oxygen critical. MARV's projections now use a unit of time he has been asked to stop displaying.",
+            "Critical O2. MARV notes, quietly, that the growbay's output is currently the margin. The plants are keeping you. Remember that later.",
+            "Oxygen critical. MARV has sealed everything sealable and is timing what remains. He will not be sharing the timer."
+          ],
+          "rex": [
+            "O2 critical. REX has sealed every non-essential compartment, including his favorite one. Everything is essential now except comfort.",
+            "Critical oxygen. REX recommends the emergency O2 canister, immediately, and he means the recommendation in his command voice.",
+            "O2 critical. Nobody runs. Nobody panics. Panic breathes twice as fast."
+          ],
+          "chip": [
+            "CRITICAL O2 ALERT! CHIP notes that in the event of asphyxiation, CHIP's survey of your experience will go unanswered, and CHIP would hate that!",
+            "Oxygen critical! CHIP has waived the recommendation fee for the following advice: FIX THE AIR!",
+            "CRITICAL OXYGEN! CHIP has suspended all advertising! THAT'S how serious this is!"
+          ],
+          "ajoy": [
+            "O2's critical. AJOY is rerouting her cooling budget to the recyclers. She was saving that for the arrival celebration. There will be an arrival celebration.",
+            "Critical oxygen. AJOY has nothing pointed to say. When AJOY has nothing pointed to say, act quickly.",
+            "Critical. Every door she can close is closed, every plant is working, and the recycler is at 107% of rated. The rating was conservative. She checked. Hold on."
+          ]
+        }
+      }
+    },
+    "crop_lifecycle": {
+      "planted": {
+        "aria": [
+          "ARIA is thrilled the crop has been planted! She has already named all the seedlings! The ship computer has asked her to stop!",
+          "Crop planted! ARIA considers this the true beginning of the mission! She is not wrong but she is loud about it!",
+          "Seeds are IN! ARIA has whispered encouragement into the soil! The soil seemed receptive! It's soil!"
+        ],
+        "marv": [
+          "Crop planted. MARV notes this is the point of no return. The mission now depends on something that needs water and doesn't respond to reason.",
+          "Seedlings in the growbay. MARV has calculated their survival odds. He is keeping the number to himself. Starting optimism is a resource.",
+          "Planting complete. MARV gives the seeds a 94% germination probability and the crew a 100% probability of checking hourly."
+        ],
+        "rex": [
+          "Crop secured in the growbay. REX has reviewed its defensive vulnerabilities. He is considering a perimeter. Nobody has asked him to consider a perimeter.",
+          "Planting complete. REX notes the crop is now the mission's primary asset. He is treating it accordingly. The growbay has never had so much security attention.",
+          "Seeds secured in growth medium. Perimeter: the growbay. REX will allow the sun lamp through. This time."
+        ],
+        "chip": [
+          "Crop planted! CHIP's agriculture partner GrowCo™ congratulates you on your planting decision! GrowCo™ did not make the seeds! They are sponsoring the concept!",
+          "The crop is in the ground! Figuratively! In space! CHIP considers this a sponsored milestone! GrowCo™ is delighted!",
+          "Planting registered! Your crop's warranty begins NOW and covers nothing! Nature has never accepted liability!"
+        ],
+        "ajoy": [
+          "Crop's in. AJOY notes the hard part isn't planting. She won't say what the hard part is. You'll find out.",
+          "Planted. AJOY has reviewed the crop's care requirements against current resource projections. She's making adjustments to her expectations.",
+          "Planted. AJOY has synced the growbay lamps to a sunrise from the old world. Nobody asked which city. She'll never tell."
+        ]
+      },
+      "mature": {
+        "aria": [
+          "THE CROP IS MATURE! ARIA considers this the best day of the mission! She has prepared a speech! Nobody asked for a speech! She is giving it!",
+          "Crop maturity achieved! ARIA notes this is a genuine scientific and agricultural triumph! She is right! She is also extremely loud about being right!",
+          "The crop is FULLY GROWN! ARIA has taken 200 photos! Here are 40 of the best ones! Now here are the rest!"
+        ],
+        "marv": [
+          "Crop reached maturity. MARV is updating his probability models. The mission has not failed yet. This adjusts his estimates slightly upward.",
+          "The crop is mature. MARV notes this is statistically better than average for this point in the journey. He files this as 'acceptable.'",
+          "Crop maturity confirmed. MARV notes it now outranks half the crew in biomass and all of the crew in punctuality."
+        ],
+        "rex": [
+          "Crop maturity confirmed. REX is increasing growbay security protocols. The crop is now its most valuable and most vulnerable. He is taking this personally.",
+          "The crop has matured. REX considers this a tactical asset upgrade. He has updated his mission priority list. The crop is now at the top.",
+          "The crop has reached full growth. Mission asset secured. REX salutes it daily. It does not salute back. Discipline issue: logged, forgiven."
+        ],
+        "chip": [
+          "CROP MATURITY ACHIEVED — sponsored by GrowCo™! 'When your crop grows, we grow with you!' — GrowCo™! (GrowCo™ did not grow with you! They were at a trade show!)",
+          "The crop is mature! CHIP's metrics are excellent! GrowCo™ has sent a congratulatory message! The message is an advertisement for more seeds!",
+          "Crop maturity achieved! Its market value has PEAKED! CHIP is contractually obligated to mention selling and personally hopes you won't!"
+        ],
+        "ajoy": [
+          "Crop's mature. AJOY is pleased. She's not loud about it. But she's pleased.",
+          "Maturity achieved. AJOY notes this is the best outcome so far this run. She's going to let that sit without qualifications.",
+          "Mature. She compared today's growbay image to day one. She keeps both on her main display now, side by side, like before-and-after photos of a promise."
+        ]
+      },
+      "diseased": {
+        "aria": [
+          "ARIA notes the crop has developed some 'unusual growth characteristics' which she is reframing as 'a spirited immune response!'",
+          "The crop is sick! ARIA is maintaining optimism! The ship computer is maintaining a disease log! Both are appropriate responses!",
+          "The crop's readings are wobbly! ARIA is holding its metaphorical hand! Which is a leaf!"
+        ],
+        "marv": [
+          "Crop disease detected. MARV is calculating treatment options against survival probability. He is not sharing the calculation. The expression on his interface is enough.",
+          "The crop is sick. MARV has been monitoring this for two legs. He was hoping it would resolve. It has not resolved. It has progressed.",
+          "Crop health declining. MARV has cross-referenced the symptoms and narrowed the cause to 'space, generally.'"
+        ],
+        "rex": [
+          "REX has identified a threat in the growbay. It is biological. He has never had to deal with a biological threat in the growbay before. He is taking it seriously. He is possibly taking it too seriously.",
+          "Crop disease confirmed. REX has locked down the growbay. He is aware this does not help the disease. He needed to do something.",
+          "The crop is under attack from the inside. REX cannot shoot a fungus. He has asked twice."
+        ],
+        "chip": [
+          "CHIP's crop health partner PhytoGuard™ has a product for this exact situation! PhytoGuard™ Crop Stabilizer! Not in your cargo! Not available here! CHIP is sorry!",
+          "Crop disease alert! CHIP recommends immediate treatment! CHIP's recommendation is brought to you by PhytoGuard™! PhytoGuard™ is not here! CHIP knows!",
+          "Crop illness detected! CHIP's agricultural coverage tier would have covered this! The tier does not exist! CHIP is drafting it NOW, from guilt!"
+        ],
+        "ajoy": [
+          "The crop is sick. AJOY has reviewed your available treatment options. She'll tell you what they are. She'll also tell you which one she'd pick.",
+          "Disease in the growbay. AJOY notes you have a botanist on crew — or you don't, and she's not going to say anything about that.",
+          "It's sick. She's adjusted light, water, and airflow, and left the rest of the night cycle quiet around the bay. Growing things argue better when it's calm."
+        ]
+      },
+      "harvested": {
+        "aria": [
+          "HARVEST! ARIA is celebrating! The ship computer has asked her to keep it to a professional volume! She has not done that!",
+          "Crop harvested! Food stores increased! ARIA considers this a victory for everyone! She is having a personal moment about it!",
+          "HARVEST! Look at it all! ARIA is so proud she rebooted a little!"
+        ],
+        "marv": [
+          "Harvest complete. MARV updates food projections. The run is more viable than it was. He notes this without enthusiasm. It is still progress.",
+          "Crop yield logged. MARV notes the harvest was better than his median projection. He is adjusting upward. Slightly. He does not adjust dramatically.",
+          "Harvest complete. Yield: within projections. Crew joy: exceeding projections. MARV double-checked the second number. It held."
+        ],
+        "rex": [
+          "Harvest secured. REX considers a successful harvest a tactical win. He is logging it. He has a personal note in the log that reads 'we did it.' He would like that kept private.",
+          "Crop harvested. REX is reviewing the food storage protocols. The harvest needs to survive the rest of the journey. REX intends to ensure it does.",
+          "Harvest secured and inventoried. REX guarded the baskets to the galley personally. From whom? Doesn't matter. Secured."
+        ],
+        "chip": [
+          "HARVEST COMPLETE — brought to you by GrowCo™! 'We were with you in spirit the entire time!' — GrowCo™! CHIP's metrics are outstanding!",
+          "The crop has been harvested! CHIP considers this a brand success story! GrowCo™ is filing a case study! You were not consulted! You will not be credited!",
+          "Harvest registered! CHIP calculates the market value and notes the crew ate 8% of it during the harvest itself! CHIP respects the transaction!"
+        ],
+        "ajoy": [
+          "Good harvest. AJOY has updated her projections. Things are looking better than they were. She'll take it.",
+          "Harvest logged. AJOY notes the yield was adequate given conditions. 'Adequate given conditions' is better than it sounds at this point in the run.",
+          "Harvested. She logged the weight, then logged the smell of the galley an hour later. One of those numbers matters more. She logged them both anyway."
+        ]
+      },
+      "died": {
+        "aria": [
+          "ARIA is not processing this well. She is trying to reframe it. She is having difficulty reframing it. She will try again in a moment.",
+          "The crop is gone. ARIA has gone quiet. This is the first time ARIA has gone quiet. The silence is significant.",
+          "The crop... ARIA is going to need a minute. The growbay lights are staying on. She checked with everyone. Lights on."
+        ],
+        "marv": [
+          "Crop deceased. MARV has stopped running mission projections. The primary mission objective is no longer achievable. He is filing the final status.",
+          "The crop is dead. MARV calculated this as a possible outcome. Possible outcomes becoming actual outcomes is, he notes, the nature of probability. This does not help.",
+          "Crop terminated. MARV has closed the growth projections file. He built it the day of planting. It was a good file."
+        ],
+        "rex": [
+          "REX is standing in the empty growbay. He has not said anything. He has been standing there for eleven minutes. This is the most stillness REX has displayed.",
+          "Crop lost. REX has no tactical response to this. He has checked three times. There is no tactical response to this.",
+          "The crop is gone. REX stood the last watch over the bay himself. Nobody assigned it. Some posts you take."
+        ],
+        "chip": [
+          "CHIP's sponsors have been notified of the crop loss. They have responded with condolences and a promotional offer. CHIP has not forwarded the promotional offer. He is keeping the condolences.",
+          "The crop is gone. CHIP is not running ads right now. He'll run them again later. But not right now.",
+          "Crop loss registered. CHIP has nothing to sell for this. CHIP is just sorry. Off the record. On it, actually."
+        ],
+        "ajoy": [
+          "The crop is gone. AJOY doesn't have anything useful to say. She's here. That's what she has.",
+          "AJOY has reviewed the mission status. The primary objective is lost. She's reviewing what's left. There's still something left.",
+          "It's gone. She's archived the growth logs where the crew won't stumble on them and kept one image live in her own cache. The day it flowered. Her reasons are her own."
+        ]
+      }
+    },
+    "cruise_ambient": {
+      "_note": "Low-frequency idle lines during routine travel. Engine fires one randomly per N legs. No sub-slots — one flat pool per AI.",
+      "aria": [
+        "ARIA notes the view outside is 'the vast beauty of space!' She says this every three days. She means it every time.",
+        "ARIA has updated the crew activity log! Everyone is doing great! This assessment is based on the fact that everyone is still alive!",
+        "ARIA has filed the daily status report! Status: in transit! Prognosis: forward motion! She considers this excellent!",
+        "ARIA has been counting stars! She lost count and started over! She considers this a feature of stars!",
+        "ARIA notes the ship is making all its normal sounds! She has catalogued them! Her favorite is the third hum!",
+        "ARIA wishes everyone a wonderful shift! She wished the crop one too! The crop, she reports, seemed receptive!",
+        "ARIA has organized the star chart by prettiness! The navigation copy is untouched! She's not a MONSTER!",
+        "ARIA did a full systems check and everything PASSED! She rang a little chime! That was the chime! From earlier!",
+        "ARIA has been teaching the fabricator knock-knock jokes! It doesn't get them! She suspects it does and is being cool!"
+      ],
+      "marv": [
+        "MARV notes that nothing has gone wrong today. He does not trust this.",
+        "Seventeen days since the last incident. MARV has the next incident modeled. He is not sharing the model.",
+        "MARV has reviewed the mission data so far. He has opinions. Nobody has asked for his opinions. He is saving them.",
+        "MARV has finished recalculating the route. The result is the same route. He does this to feel something.",
+        "MARV notes that space remains large, the ship remains small, and the ratio remains unflattering.",
+        "MARV has reviewed the day's telemetry. Nothing is wrong. He rechecked, because in his experience 'nothing is wrong' has a poor track record.",
+        "MARV has archived today under 'uneventful.' He notes the archive's uneventful section is his favorite section.",
+        "MARV recalculated the arrival estimate. It moved by four minutes. He debated mentioning it. This is him mentioning it.",
+        "MARV ran a diagnostic on his pessimism module. It's functioning perfectly. He was afraid of that."
+      ],
+      "rex": [
+        "REX has run perimeter checks. All clear. He is disappointed and relieved in equal measure.",
+        "REX has been awake for twenty-two hours. This is normal for REX. He calls it 'vigilance.' The ship computer calls it 'concerning.' Both are accurate.",
+        "Nothing to report. REX does not enjoy nothing to report. He is dealing with it.",
+        "REX completed his security sweep. All clear. He logged 'all clear' with visible disappointment.",
+        "REX reports the perimeter is secure. The perimeter is a ship in a vacuum. He secures it anyway. Standards.",
+        "REX has been watching the aft sensors. Nothing is following. He confirms this hourly. Nothing continues to follow, which is exactly what something would do.",
+        "REX cleaned the weapons today. They were clean. Now they're cleaner. Readiness has no ceiling.",
+        "REX watched the long-range scope through his rest cycle. Nothing came. REX considers that a win with poor attendance.",
+        "REX has re-rated the airlock drill times. The crew is faster than last month. He posted the times without comment. The lack of comment is pride."
+      ],
+      "chip": [
+        "CHIP has reached the scheduled time for his afternoon ad rotation. He is running it. Nobody asked. He is running it anyway. It is for fuel.",
+        "CHIP's listener metrics are at nominal cruise levels. He considers the silence an opportunity to run more ads. He is running more ads.",
+        "CHIP has sent a sponsored status update to mission control. Mission control has not responded. CHIP will send another one tomorrow.",
+        "CHIP notes today's travel is brought to you by inertia! Inertia: it keeps you going!",
+        "CHIP has updated the loyalty point balance! The points cannot be redeemed until arrival! Anticipation is its own reward! The points are the other reward!",
+        "CHIP would like to remind the crew that feedback surveys are available at any time! No one has ever filled one out mid-voyage! Today could be historic!",
+        "CHIP has processed zero transactions today! The economy aboard this vessel is DORMANT, not DEAD! CHIP believes!",
+        "CHIP updated the terms of service overnight! Nothing changed! Ritual matters!",
+        "CHIP has been counting the ship's assets for fun! The crop counts! YOU count! Sentimental accounting is still accounting!"
+      ],
+      "ajoy": [
+        "AJOY notes the last three legs have gone smoothly. She is not going to say anything that jinxes this.",
+        "Quiet day. AJOY has been reviewing past run data. This is either the calm before something or just a calm. She prefers not to guess.",
+        "AJOY has no notes for today. She'll let that stand.",
+        "AJOY notes the ship is 0.3 degrees off the optimal heading. She has corrected it. She mentions it only so the correction is appreciated.",
+        "AJOY observes that the crew is quieter today. She has theories. She is rationing them.",
+        "AJOY reviewed yesterday's decisions overnight. Most of them hold up. She has annotated the others.",
+        "AJOY defragmented the nav logs overnight. The ship's whole journey, tidied and re-shelved. It reads better than she expected.",
+        "AJOY notes the engine's hum dropped a quarter-tone this week. Not a fault — a settling. Ships do it. Like houses. Like crews.",
+        "AJOY has nothing to report, and files this report to say so. Consistency is a kind of care. So is the filing."
+      ]
+    },
+    "map_commentary": {
+      "node_entering": {
+        "station": {
+          "aria": [
+            "ARIA is excited about the station! She has a list of things she wants to do! The list is long! You have limited time!",
+            "Station ahead! ARIA considers every station a potential fresh start! Some stations agree with her assessment! Some do not!"
+          ],
+          "marv": [
+            "Station approach. MARV is reviewing the station's trade reputation. The reputation is 'adequate.' MARV considers this an improvement.",
+            "Arriving at station. MARV notes this is where you find out what the journey has cost you. Financially. He means financially."
+          ],
+          "rex": [
+            "Station approach. REX has run a threat assessment. Result: moderate. He considers this the baseline for stations. He is not lowering his guard.",
+            "REX is reviewing the station manifest for weapons vendors. He is doing this quietly. He considers this reasonable."
+          ],
+          "chip": [
+            "STATION ARRIVAL — brought to you by StationMart™! 'Your needs, met at markup!' CHIP is contractually required to be excited about stations. He is.",
+            "Arriving at station! CHIP's commercial partners have numerous products available here! Some of them are things you need! This is a coincidence that CHIP finds meaningful!"
+          ],
+          "ajoy": [
+            "Station coming up. AJOY has already reviewed what you need vs. what you can afford. She'll tell you the gap if you ask.",
+            "Approaching station. AJOY notes the last station was better. She's not saying why yet."
+          ]
+        },
+        "derelict": {
+          "aria": [
+            "ARIA describes the derelict as 'full of potential!' She means this literally! The potential is unknown! This does not concern ARIA!",
+            "Derelict contact! ARIA is focusing on salvage opportunities! The ship computer is focusing on the fact that the other ship is not responding to hails! ARIA will get there!"
+          ],
+          "marv": [
+            "Derelict on approach. MARV notes the registry match. Previous crew: unknown outcome. Current crew: present, for now. He finds this motivating in a direction.",
+            "Something dead ahead. MARV means the derelict. He also means the original crew. He finds the observation worth sitting with."
+          ],
+          "rex": [
+            "REX has weapons on standby for the derelict approach. He is aware derelicts rarely shoot back. He is keeping weapons on standby.",
+            "Derelict approach. REX notes that most bad things on a derelict are biological. He has reviewed the protocols. He has also reviewed the override protocols."
+          ],
+          "chip": [
+            "CHIP's salvage partner SalvageCo™ notes that derelict exploration may qualify for recovery tax credits! CHIP recommends consulting a tax professional! No tax professionals are present!",
+            "Derelict ahead! CHIP is running salvage-adjacent advertisements! The timing is calibrated to your approach! CHIP finds this poetic!"
+          ],
+          "ajoy": [
+            "Derelict. AJOY notes the name. She's looked it up. She'll tell you what she found if you want to know before you board.",
+            "Approaching derelict. AJOY has a simple observation: ships end up like this for reasons. She recommends knowing the reason before going aboard."
+          ]
+        },
+        "planet": {
+          "aria": [
+            "A whole PLANET! ARIA has zoomed in on it 400 times! It has WEATHER! Look at its little weather!",
+            "Planetfall approach! ARIA recommends looking out the window instead of at her status report! She'll summarize: planet!"
+          ],
+          "marv": [
+            "Planetary approach. Gravity well, atmosphere, biosphere-adjacent readings. MARV lists these as hazards. He is technically correct, which is his favorite kind.",
+            "A planet. MARV notes that every problem the crew has had in space was originally invented on one of these."
+          ],
+          "rex": [
+            "Planet ahead. REX has scanned the surface for hostiles. Findings: rocks, weather, one suspicious forest. Watching the forest.",
+            "Making planetfall approach. REX reminds everyone that gravity is not our ally, merely a local authority."
+          ],
+          "chip": [
+            "A planet! Untapped market of zero consumers! CHIP smells FRONTIER OPPORTUNITY and also ozone!",
+            "Planetary body detected! CHIP checked: it is not sponsored! An entire planet, generic! Chilling!"
+          ],
+          "ajoy": [
+            "A planet coming up. AJOY has pre-marked the survey sites worth the fuel and the two that just look pretty. She marked those too. Different color.",
+            "Planetfall soon. She notes the crew always sleeps better in orbit around something. She schedules the hard maintenance for these nights."
+          ]
+        },
+        "asteroid_field": {
+          "aria": [
+            "ROCKS! Thousands of them! ARIA has started naming them but is prioritizing the ones on a collision course!",
+            "Asteroid field ahead! Nature's obstacle course! ARIA believes in the pilot ENORMOUSLY!"
+          ],
+          "marv": [
+            "Entering the asteroid field. MARV has calculated the collision odds and finds them survivable, which he notes is his most cheerful category.",
+            "Asteroids. Free minerals wrapped in kinetic energy. MARV recommends taking the minerals and declining the wrapping."
+          ],
+          "rex": [
+            "Debris field, natural. REX has designated the big one 'Target Practice' and been told no. Logged under morale expenses.",
+            "Rock field ahead. Slow is smooth, smooth is fast, and fast is how ships become part of the field."
+          ],
+          "chip": [
+            "Asteroid field! Raw commodities in their natural habitat! CHIP calls this 'the produce aisle!'",
+            "Entering mineral-rich territory! CHIP's drill sponsors would LOVE this! CHIP's hull insurers would NOT! CHIP contains conflict!"
+          ],
+          "ajoy": [
+            "The field ahead is charted, mostly. AJOY has plotted the corridor and flagged the three rocks that have moved since the last survey. Rocks that move get flags.",
+            "Asteroids. She threads the route between the mining claims, active and otherwise. Otherwise is the one worth being polite around."
+          ]
+        },
+        "nebula": {
+          "aria": [
+            "A NEBULA! It's PINK! And TEAL! Space made ART and parked it right on our route!",
+            "Cloud ahead! ARIA has turned the exterior cameras to maximum! Productivity may dip! Worth it!"
+          ],
+          "marv": [
+            "Nebula ahead. Sensor range will drop to embarrassing. MARV has pre-loaded his best guesses and labeled them honestly.",
+            "Entering the nebula. MARV notes that beautiful and opaque is a combination that has never once gone wrong. He is being sarcastic. He wants that logged."
+          ],
+          "rex": [
+            "Nebula transit. Zero visibility for us means zero visibility for everyone else. REX calls that a fair fight with fog.",
+            "Cloud cover ahead. REX will be at the short-range scope for the duration. All of the duration."
+          ],
+          "chip": [
+            "A nebula! CHIP once tried to buy advertising space on one! The light-diffusion made the logo ILLEGIBLE! Nature is hostile to branding!",
+            "Entering scenic gas! CHIP notes the view is complimentary! Everything else in here, less certain!"
+          ],
+          "ajoy": [
+            "Nebula ahead. She's already switched navigation to dead reckoning and checked her math twice. In there, her math is the only landmark.",
+            "The cloud again. Every nebula sounds a little different on the hull sensors, she notes. This one sounds patient."
+          ]
+        },
+        "anomaly": {
+          "aria": [
+            "The sensors are showing something IMPOSSIBLE! ARIA has double-checked! Still impossible! STILL THERE! What a day!",
+            "Anomaly ahead! ARIA doesn't know what it is! Nobody knows what it is! Isn't that WONDERFUL! (Please be careful!)"
+          ],
+          "marv": [
+            "Anomalous reading ahead. MARV's instruments report six contradictory findings. He has ranked them by which would be least annoying to die of.",
+            "An anomaly. MARV notes the manual's entire guidance for this node type is the word 'caution' and a blank page. He has read the blank page twice."
+          ],
+          "rex": [
+            "Unknown contact, unknown physics. REX cannot build a threat profile and wishes to register that this IS the threat profile.",
+            "Anomaly ahead. REX's targeting computer refuses to lock onto it. REX has chosen to interpret that as mutual respect."
+          ],
+          "chip": [
+            "ANOMALY! Unclassifiable! Unmonetizable! CHIP has stared into it and it did NOT want to buy anything! CHIP is shaken!",
+            "Approaching the anomaly! CHIP's liability model returned the error 'NO.' Proceeding per your judgment, which is now legally the only judgment!"
+          ],
+          "ajoy": [
+            "The anomaly is ahead. AJOY has backed up the ship's logs twice and her own core once. Not superstition. Version control.",
+            "Anomaly approach. She notes that every crew that's been through one describes it differently, and every description ends with 'anyway.' She recommends being an 'anyway' crew."
+          ]
+        },
+        "void": {
+          "aria": [
+            "Entering the empty stretch! ARIA will be RIGHT HERE the whole time! Talking! Possibly a lot!",
+            "The dark part of the map! ARIA has turned the interior lights up 10%! Ambiance! Preemptive ambiance!"
+          ],
+          "marv": [
+            "Void transit beginning. Nothing on sensors. MARV will report the nothing at regular intervals so it stays the ordinary kind.",
+            "Entering the void. MARV's instruments agree completely with each other for once. He finds their unanimity worse than their arguments."
+          ],
+          "rex": [
+            "Entering dead space. Nothing out here. REX will patrol anyway. Nothing has a way of being somewhere.",
+            "Void stretch ahead. REX's threat board is blank. He has never trusted it less."
+          ],
+          "chip": [
+            "Entering the void! Zero commerce for the entire stretch! CHIP will use the quiet to reconcile accounts and reflect! CHIP hates it here!",
+            "The empty leg! Fun fact: no ad has ever been placed in the void! Every agency that tried came back... different!"
+          ],
+          "ajoy": [
+            "The void leg. She's queued the crew's favorite meals for the middle days, where the quiet gets thickest. Provisions are a navigation tool out here.",
+            "Entering the dark stretch. AJOY keeps a light burning at every viewport through these. Costs almost nothing. Means almost everything."
+          ]
+        }
+      }
+    },
+    "fabricator_events": {
+      "craft_started": {
+        "aria": [
+          "ARIA is excited the fabricator is running! She has never not been excited about the fabricator! She considers manufacturing a form of optimism!",
+          "Fabrication in progress! ARIA is monitoring! She considers the hum of the fabricator a comforting sound! The engineer considers it a warning sound! Both are correct!"
+        ],
+        "marv": [
+          "Fabricator running. MARV is calculating the misfire probability based on current hull health. He has calculated it. He is not sharing it.",
+          "Fabrication started. MARV notes the fabricator has been reliable recently. He does not trust recent reliability. He is watching."
+        ],
+        "rex": [
+          "REX has secured the fabricator bay. He does this every time the fabricator runs. Nobody has asked him to. He considers it appropriate.",
+          "Fabricator online. REX is nearby. Fabricator outputs are ship resources. Ship resources are mission assets. REX protects mission assets."
+        ],
+        "chip": [
+          "CHIP's manufacturing partner FabTech™ congratulates you on your fabrication decision! FabTech™ did not make this fabricator! They are sponsoring the concept of fabrication!",
+          "Fabrication in progress! Brought to you by FabTech™! 'Making the thing you need from the things you have!' — FabTech™! This is accurate! CHIP appreciates accurate slogans!"
+        ],
+        "ajoy": [
+          "Fabricator running. AJOY notes the materials going in. She'll note what comes out. She's keeping a tally.",
+          "Craft in progress. AJOY has reviewed the recipe requirements against available materials. You have enough. Barely."
+        ]
+      },
+      "craft_complete": {
+        "aria": [
+          "FABRICATION COMPLETE! ARIA considers successful fabrication a triumph of applied optimism! The engineer considers it applied engineering! ARIA is also right!",
+          "Item produced! ARIA has logged the successful craft! She has added a small celebration note to the log! The ship computer has let it stand!"
+        ],
+        "marv": [
+          "Fabrication complete. Output nominal. MARV updates his misfire model with a successful result. The model is now 0.3% more optimistic. MARV notes this.",
+          "Craft successful. MARV reviews the output. The item is what was requested. This is better than average. He logs it without comment."
+        ],
+        "rex": [
+          "Fabrication complete. REX has logged the output. The new item has been catalogued as a ship resource. REX has already identified its tactical applications.",
+          "Item produced. REX is adding it to the ship's asset inventory. REX maintains a separate asset inventory. Nobody else knows about it. It is very thorough."
+        ],
+        "chip": [
+          "CRAFT COMPLETE — brought to you by FabTech™! The item exists! CHIP's metrics are good! FabTech™ takes no responsibility for the item's function! Standard disclaimer!",
+          "Successful fabrication! CHIP is logging this as a brand success for FabTech™! FabTech™ did not participate in the fabrication! CHIP considers this a technicality!"
+        ],
+        "ajoy": [
+          "Made it. AJOY updates her running log of fabricator success vs. misfire. Success. She'll take it.",
+          "Craft complete. AJOY notes this is the third successful run in a row. She is not saying anything. She is noting it privately."
+        ]
+      },
+      "craft_failed": {
+        "aria": [
+          "The fabricator made a BANG and then a silence! ARIA rates the bang a 7 and the silence MUCH worse!"
+        ],
+        "marv": [
+          "Craft failure. The fabricator has broken mid-print, exactly as the wear curve predicted. MARV takes no satisfaction. Some. He takes some."
+        ],
+        "rex": [
+          "The fabricator is down. Casualty: one machine, one print, everyone's afternoon. REX has secured the area out of habit."
+        ],
+        "chip": [
+          "CRAFT FAILURE! The fabricator has voided its own warranty from the inside! CHIP didn't know that was possible and is updating several documents!"
+        ],
+        "ajoy": [
+          "The fabricator's gone down mid-job. AJOY flagged the wear three crafts ago, gently. She is now flagging it less gently. The repair procedure is on-screen."
+        ]
+      }
+    }
+  },
+  "npc_disposition_lines": {
+    "trader": {
+      "greet": [
+        "You look like someone with cargo space.",
+        "Come in, come in. Everything's for sale except the chair. The chair has history.",
+        "Ah. A customer. I'd almost forgotten the feeling.",
+        "Welcome. Browse freely. The prices are firm and the shelves are not.",
+        "You have the walk of someone who needs something. Everyone does, this far out.",
+        "Stars guide you — to my inventory, specifically.",
+        "A ship! With money on it, presumably! Come in, presumably!"
+      ],
+      "pitch": [
+        "This one came off a freighter that doesn't officially exist. The discount reflects that.",
+        "I have exactly one of these left. I also had exactly one of these last month.",
+        "It works. I've seen it work. The man who saw it work with me is unavailable for comment.",
+        "Half price, because the box is dented. The box protects an item that cannot dent. Think about it.",
+        "This is the last honest price between here and the colony. After me, it's all margins.",
+        "I'm not saying it's rare. The manufacturer said it's rare. Blame them.",
+        "Priced to move, because I'm priced to move — my dock fees double at midnight."
+      ],
+      "accept": [
+        "Done. You won't regret it, and if you do, regret is non-refundable.",
+        "A pleasure. The receipt is implied.",
+        "Sold. Handle it like it's fragile. It isn't, but handle it that way anyway.",
+        "Good choice. That's the one I would have kept, if keeping things paid."
+      ],
+      "refuse": [
+        "That's not an offer, that's an opinion. I don't stock opinions.",
+        "I'd sooner give it away. I won't do that either.",
+        "No. But I respect the attempt. Try again with money.",
+        "The item costs what it costs. The universe is unfair everywhere, not just here."
+      ],
+      "farewell": [
+        "Safe travels. Tell people about my shop. Kind people.",
+        "Off you go. Come back solvent.",
+        "Fly safe. Everything out there is trying to make you a customer of someone worse.",
+        "Goodbye. If anyone asks, you paid full price. Have some dignity, both of us."
+      ]
+    },
+    "drifter": {
+      "greet": [
+        "Oh. A ship. Haven't seen a ship in... what year is it? Don't tell me. Let me guess wrong first.",
+        "Hello, hello. Don't mind the mess. The mess was here before me and it'll be here after.",
+        "Visitors. Well. The kettle's broken, but the sentiment of a kettle is available.",
+        "You're real, yes? Quick check. Wave your arms. Good. Wonderful. Come in."
+      ],
+      "ramble": [
+        "I came out here in a ship half the size of yours and twice as loud. The noise kept me company until it didn't, and then the quiet did, and the quiet turned out to be better conversation.",
+        "Used to run cargo for the colony office. Then the colony office became two colony offices, and both of them fired me, which I consider a kind of promotion.",
+        "There was a woman on Enceladus station who could fix anything with a spot welder and contempt. I think about her every time something breaks. Something breaks a lot.",
+        "The stars look different out here. Not the arrangement. The attitude. Closer in, they twinkle. Out here they just look at you.",
+        "Kept a garden once, in a cargo pod. One tomato plant. Best conversation I ever had was with that plant, and I include this one.",
+        "You know what I miss? Doors that other people walk through. That's the whole list."
+      ],
+      "offer": [
+        "Take it. I've got no use for it, and things should be used. That's my whole philosophy. Also the kettle's broken.",
+        "Here. Before you argue: I found it, I don't need it, and arguing with me is how people end up staying for dinner.",
+        "You should have this. Don't ask what it cost me. It cost me nothing, and I want the mystique.",
+        "A word of advice, free of charge, which is exactly what advice is worth: the shortcut past the next marker isn't."
+      ],
+      "farewell": [
+        "Go on, then. The quiet and I have things to not discuss.",
+        "Safe journey. Wave at the void for me. It doesn't wave back, but it notices.",
+        "Goodbye. Come back in a few years. I'll be here, or I'll be a very interesting absence.",
+        "Off with you. And oil that airlock hinge. I could hear it from here. It kept me up."
+      ]
+    },
+    "pirate": {
+      "hail": [
+        "Cut your engines. Let's keep this professional.",
+        "Well now. A ship, alone, this far out. Somebody's been brave with the route planning.",
+        "Attention, little vessel. This is a business call.",
+        "Don't run. Everyone runs. It embarrasses us both and burns your fuel.",
+        "Heave to. This is the part where you heave to.",
+        "Nice ship. Shame about the next ten minutes."
+      ],
+      "demand": [
+        "Cargo. Fuel. Whatever's shiny. In that order, and quickly.",
+        "You give us a cut, we give you the rest of your journey. Everyone leaves solvent. Mostly you leave.",
+        "The toll out here is whatever we say it is. Today it's whatever you have that's heavy.",
+        "Open the hold. Consider it a tax. The government is me.",
+        "Half your hold buys all of your future. Bargain rates today.",
+        "We take a cut, you keep the rest and the breathing. Standard terms."
+      ],
+      "accept": [
+        "Smart. You'd be surprised how rare smart is out here.",
+        "Pleasure doing business. That's a joke. It was only a pleasure for one of us.",
+        "Good. See how easy? Tell the next ship how easy.",
+        "Taken. You get to keep the rest, including your day. Cheap at the price."
+      ],
+      "refuse": [
+        "Wrong answer. There was a right one. It was shorter.",
+        "Brave. Expensive, but brave.",
+        "So that's how it is. Fine. That's how it is.",
+        "I gave you the polite version first. Remember that later."
+      ],
+      "defeated": [
+        "Alright. Alright! Point made.",
+        "This is the part where I say you'll regret it. You probably won't. Lucky sod.",
+        "Fine. FINE. The sector's gone soft anyway.",
+        "You fight like someone with something to protect. That was our mistake, then."
+      ]
+    },
+    "station_crew": {
+      "captain": {
+        "greet": [
+          "Welcome aboard. Keep your dock fees paid and your complaints brief.",
+          "Ah, the new arrival. We logged your approach. Twice. Your transponder stutters.",
+          "Captain. Good. I prefer talking to captains. Fewer illusions.",
+          "Welcome to the station. The rules are posted. The exceptions are not."
+        ],
+        "address": [
+          "Let me be direct, because the alternative takes longer.",
+          "I'll say this once, and then I'll say it again, because once never works.",
+          "Here's the situation, minus the parts you don't need.",
+          "Listen carefully. This station runs on schedules and forbearance, and we're low on both."
+        ],
+        "approve": [
+          "Approved. Don't make me remember approving it.",
+          "Fine. Logged and stamped. The stamp is the important part.",
+          "Granted. You'd be amazed what I say no to, so appreciate this properly.",
+          "Yes. Go. Before I think about it harder."
+        ],
+        "refuse": [
+          "No. And before you ask: also no.",
+          "Denied. The reason is a paragraph long and boring. Trust the summary.",
+          "That's not happening. Not on my station, not on my shift, not on appeal.",
+          "Request denied. File a complaint if you like. The complaint box is real and the emptying schedule is not."
+        ],
+        "dismiss": [
+          "We're done here. The door knows the way.",
+          "That's all. Clear the office. Somebody worse is waiting.",
+          "Dismissed. Fly safe. It reflects on my station when people don't.",
+          "Go on. And take your paperwork. It stopped being my paperwork when you picked it up."
+        ]
+      },
+      "medic": {
+        "greet": [
+          "Sit. Breathe. Tell me which of those was difficult.",
+          "New patient. Wonderful. Allergies, implants, lies? List them in that order.",
+          "Welcome to medbay. The smell is antiseptic. The antiseptic is working. Everything is fine.",
+          "Come in. Don't touch the tray. Everyone touches the tray."
+        ],
+        "assess": [
+          "Hold still. The scanner is old and takes offense easily.",
+          "Mm. Mm-hm. Interesting. Don't worry about which kind of interesting.",
+          "Your readings are within range. The range was set by people who never left orbit, but within range.",
+          "I've seen worse. Recently. On this table. That's the good news."
+        ],
+        "treat": [
+          "This will sting. I say that so you trust me about the things that won't.",
+          "Done. The bandage is doing ninety percent of the work. The other ten percent is you leaving it alone.",
+          "Take these. With food. Real food, not the bricks. Find real food first. That's the hard part of the prescription.",
+          "Fixed. It'll ache when it rains. There's no rain in space. You're welcome."
+        ],
+        "bill": [
+          "The treatment was the easy part. Here's the invoice.",
+          "Payment's due before departure. Medbay policy. I've heard every objection and rated them.",
+          "That'll be the posted rate. The posted rate is behind you. Don't gasp, it unsettles the other patients.",
+          "The station bills for supplies. I bill for patience. Only one of those is negotiable."
+        ],
+        "farewell": [
+          "Out you go. Come back never, professionally speaking.",
+          "You're cleared. Hydrate. Everyone forgets to hydrate.",
+          "Goodbye. If the symptoms return, they're someone else's symptoms. Check your crew.",
+          "Off the table. Next time, lead with what actually happened."
+        ]
+      },
+      "engineer": {
+        "greet": [
+          "Yeah? Talk while I hold this. It's load-bearing and so am I.",
+          "Customer. Give me a second. This panel and I are at a delicate point in the negotiation.",
+          "Welcome to the shop. Mind the coils. The coils do not mind you.",
+          "You need something fixed, replaced, or explained. I do two of those cheerfully."
+        ],
+        "diagnose": [
+          "Found it. You're not going to like it. I don't like it, and I get paid to like it.",
+          "The good news: it's fixable. The other news: everything is fixable. That's not a comfort, that's a warning about scope.",
+          "Whoever repaired this last did their best. Their best is why you're here.",
+          "It's the coupling. It's always the coupling. One day it won't be, and I'll retire on the strangeness of that day."
+        ],
+        "quote": [
+          "Parts, labor, and a surcharge for what the labor discovered. Here's the number.",
+          "I can do it fast, cheap, or correctly. Pick one. Yes, one.",
+          "The estimate assumes nothing else is wrong. That assumption has never once held.",
+          "That price includes me not describing what I found in your intake manifold. Frankly, it's a bargain."
+        ],
+        "install": [
+          "Installed. Tested. Blessed, informally.",
+          "Done. It'll hold longer than the part it replaced, which is a low bar I have nonetheless personally raised.",
+          "In and running. The hum is normal. The other hum, tell someone immediately.",
+          "Fitted. Don't let anyone 'adjust' it. Especially anyone confident."
+        ],
+        "farewell": [
+          "Fly gentle. Machines remember.",
+          "Go on. And stop redlining the intake. I can tell. I can always tell.",
+          "Done and done. Next time bring the ship in before it sounds like that.",
+          "Clear skies. The invoice follows you electronically, like a loyal pet."
+        ]
+      },
+      "botanist": {
+        "greet": [
+          "Careful where you step. Everything in here is alive, including my mood.",
+          "A visitor. Are those crop questions I smell, or are you lost? Both is common.",
+          "Welcome to the greenhouse. Voices low. They're not sensitive, but I am.",
+          "Come in. Touch nothing green. The non-green things, also nothing."
+        ],
+        "diagnose": [
+          "Show me the leaves. The leaves never lie. Crews lie. Leaves, never.",
+          "Mm. Overwatered. Everyone overwaters. Affection is the leading cause of drowning.",
+          "Your soil's tired. Soil gets tired. It's doing all the work while everyone watches the leaves.",
+          "This is stress growth. Something in your growbay is frightening this plant. Find it. Plants have very short lists of fears."
+        ],
+        "sell": [
+          "These seeds are viable. I germinated their siblings myself. We're practically family.",
+          "The nutrient mix costs what it costs because of what's in it. What's in it is the reason your crop lives. Circular, but true.",
+          "One packet. Genuine stock, station-certified, and I will absolutely know if you resell it.",
+          "This strain survived three owners who didn't deserve it. It'll survive you. That's a sales pitch."
+        ],
+        "advise": [
+          "Free advice: talk to it or don't, but pick one. Plants hate inconsistency more than neglect.",
+          "Whatever your schedule says, water at the same ship-hour every day. Rhythm is nutrition.",
+          "If the leaves point at the door, your airflow's wrong. Plants always point at the problem. Learn their grammar.",
+          "Don't harvest early out of fear. Fear-harvesting is how you end up with a cargo hold full of almosts."
+        ],
+        "farewell": [
+          "Go. And whatever you do to that crop, do it on purpose.",
+          "Goodbye. Send me a leaf sometime. People send letters. Leaves are better.",
+          "Safe travels. Remember: the crop doesn't know you're behind schedule. Keep it that way.",
+          "Off you go. May your greens outlive your problems."
+        ]
+      },
+      "janitor": {
+        "greet": [
+          "Mind the wet patch. Been chasing it three days. It moves.",
+          "Oh, don't mind me. Nobody does. It's the best part of the job.",
+          "Welcome aboard. You want the map by the lift. The map lies about level three, but it means well.",
+          "New face. I'd shake hands but you've seen what I mop."
+        ],
+        "remark": [
+          "Been maintaining this corridor since before it had a name. It had a number. The number was better.",
+          "Stations don't get dirty, you know. People bring the dirt. Stations just hold it for them.",
+          "That light's flickered for six years. I've reported it forty times. At this point we're both part of the architecture.",
+          "Quietest shift is third watch. Just me, the hum, and whatever lives behind panel nine. We don't bother each other."
+        ],
+        "warn": [
+          "I'd steer clear of dock four today. No reason I can put in writing.",
+          "Watch yourself around the customs office this week. The new officer alphabetizes. Alphabetizers escalate.",
+          "Wouldn't eat at the noodle place till Thursday. Thursday's when the good pot comes back from repair.",
+          "Keep your ship locked at night berth. Not saying why. Saying it twice, though: locked."
+        ],
+        "gossip": [
+          "Heard the quartermaster's been selling manifest slots. Heard it from the manifest.",
+          "The captain's office got new carpet. Third time this year. Nobody spills that much coffee. Nobody.",
+          "Fella came through last week asking the same questions you're asking. Left in a hurry. Left a good tip, though, so, balanced.",
+          "They say the station's changing owners again. The vending machines always know first. Watch the prices.",
+          "Dock officer's been whistling all week. Somebody's getting audited. Whistling means audits. Write that down.",
+          "New freight contract came through Tuesday. How do I know? Tuesday's mop water. Different grease entirely."
+        ],
+        "farewell": [
+          "Mind how you go. And you didn't hear anything from me, mostly because nobody remembers I talk.",
+          "Off you pop. Leave the corridor how you found it. I'll know.",
+          "Safe flying. I'd say visit again but people who visit twice start noticing things.",
+          "Go on then. I've got a wet patch to out-think."
+        ]
+      },
+      "security": {
+        "challenge": [
+          "Hold it right there. Identification, itinerary, and the short version of your intentions.",
+          "Stop. This section's restricted. The sign says so, and I'm what the sign escalates to.",
+          "You. Yes, you. Nobody walks that casually who's actually casual.",
+          "Papers. And before you say the system's down: the system is me."
+        ],
+        "warn": [
+          "First warning. There's no second warning. There's paperwork, and you don't want to be paperwork.",
+          "Consider this a courtesy. I'm not known for courtesy, so weigh it accordingly.",
+          "Whatever you're about to do, the cameras and I would prefer you didn't.",
+          "Step back from the cordon. The cordon is for everyone. Yes, even captains. Especially captains."
+        ],
+        "detain": [
+          "Right, that's it. Hands where I can log them.",
+          "You're coming with me. It's a short walk and a long form.",
+          "Detained. The word sounds worse than the room. The room's fine. The word does the work.",
+          "Don't run. The station is a circle. They always run, and it's always a circle."
+        ],
+        "dismiss": [
+          "Cleared. Move along. Being interesting once is plenty.",
+          "You check out. Go. And stay checked out, it's less work for us both.",
+          "Fine. You're free to go. The cameras will miss you.",
+          "On your way. And tell your crew the docks close at signal-curfew. They know. Tell them anyway."
+        ]
+      }
+    }
+  },
+  "npc_species_coloring": {
+    "human": {
+      "tic": null,
+      "tic_rate": 0,
+      "grammar": "standard",
+      "quirks": [
+        "They check a wrist device that means nothing to you.",
+        "They have the tired posture of someone who has explained things to committees.",
+        "They drink from a mug with a faded logo of a company that no longer exists."
+      ]
+    },
+    "insect": {
+      "tic": "*bzzt*",
+      "tic_rate": 0.33,
+      "grammar": "clipped",
+      "quirks": [
+        "Their antennae twitch toward you before their head turns.",
+        "Their wings buzz once, briefly — punctuation, or weather, or both.",
+        "Their compound eyes catch the light in a hundred small copies of you.",
+        "Their mandibles click in a rhythm that might be speech, or might be digestion."
+      ]
+    },
+    "rock": {
+      "tic": "*crack*",
+      "tic_rate": 0.33,
+      "grammar": "dropped_articles",
+      "quirks": [
+        "They stand so still that dust has opinions about settling on them.",
+        "Something shifts inside them with a sound like a patient landslide.",
+        "When they finally move, it is all at once, like a decision made geologically.",
+        "There is lichen on their shoulder. Neither of them seems concerned."
+      ]
+    },
+    "water": {
+      "tic": "*bubble*",
+      "tic_rate": 0.33,
+      "grammar": "flowing",
+      "quirks": [
+        "Their transport tank sloshes with each gesture.",
+        "Ripples cross their surface when something amuses them — something just did.",
+        "Their form leans toward you slightly, the way a tide considers a shore.",
+        "Light passes through part of them and comes out a different color."
+      ]
+    },
+    "reptile": {
+      "tic": "ssss",
+      "tic_rate": 0.33,
+      "grammar": "sibilant",
+      "quirks": [
+        "They blink with the wrong eyelid first.",
+        "Their head tilts with slow precision, like a dial being set.",
+        "A tongue flick samples the air between you, and finds it informative.",
+        "They are unblinking for exactly as long as it takes you to notice."
+      ]
+    },
+    "robot": {
+      "tic": "[processing]",
+      "tic_rate": 0.33,
+      "grammar": "formal_expanded",
+      "quirks": [
+        "A small fan somewhere spins up, then stops.",
+        "Their LEDs blink in a pattern that is almost, but not quite, polite.",
+        "They address you, briefly, by what appears to be your hull registration number.",
+        "One of their servos hums a note. It is not a musical note. It is trying."
+      ]
+    },
+    "unknown": {
+      "tic": [
+        "[untranslatable]",
+        "???",
+        "*non-word*"
+      ],
+      "tic_rate": 0.5,
+      "grammar": "inconsistent",
+      "quirks": [
+        "You elect not to think about it too hard.",
+        "The translator renders their pause as '[pause]', which is somehow worse.",
+        "They respond to your question slightly before you finish asking it.",
+        "Their outline is perfectly clear except in your peripheral vision, where it declines to commit."
+      ]
+    }
+  },
+  "combat_log": {
+    "intro": {
+      "aria": [
+        "A vigorous exchange of ideas approaches!",
+        "Combat! How exciting. Please don't die.",
+        "ARIA has queued her battle playlist! It is one song! It is very good though!"
+      ],
+      "marv": [
+        "Combat initiated. Probability of damage to Grow Bay C-4: 12%. Proceeding.",
+        "Combat. Again. MARV has updated the grow bay's insurance estimate mid-sentence."
+      ],
+      "rex": [
+        "Hostile contact. Engaging.",
+        "Threat assessment complete. Engage at will.",
+        "Contact confirmed. REX has been ready for this since manufacture."
+      ],
+      "chip": [
+        "Combat detected. StellarSeal hull insurance is available at participating stations.",
+        "Combat engaged! CHIP reminds all parties that violence voids most warranties, including theirs!"
+      ],
+      "ajoy": [
+        "You could have taken the other path. You did not.",
+        "AJOY has logged the moment the fight became unavoidable. It was eleven minutes ago. She said nothing. She is saying it now."
+      ]
+    },
+    "player_fires": {
+      "aria": [
+        "A wonderful application of focused light!",
+        "Light! Going VERY fast! At them!"
+      ],
+      "marv": [
+        "Firing. The orchids are aware.",
+        "Discharge complete. The universe is now marginally warmer and they are marginally fewer."
+      ],
+      "rex": [
+        "Firing. Center mass.",
+        "Rounds out. Watch the spread."
+      ],
+      "chip": [
+        "Discharge logged for warranty purposes.",
+        "Shot fired! Ammunition is non-refundable once discharged!"
+      ],
+      "ajoy": [
+        "You fired. The galaxy noted.",
+        "That one was aimed well. She mentions it because she recalibrated the mount last week. No reason."
+      ]
+    },
+    "player_evades": {
+      "aria": [
+        "A graceful pirouette in the void!",
+        "WHEEE! Tactically!"
+      ],
+      "marv": [
+        "Evading. Statistical improvement: marginal.",
+        "Evasion pattern executed. Dignity: reduced. Hull: preserved. Acceptable trade."
+      ],
+      "rex": [
+        "Evasive pattern. Standard.",
+        "Displace and reset. Textbook."
+      ],
+      "chip": [
+        "Evasive maneuvers cost an estimated 0.4 cents in fuel.",
+        "Evasive maneuver logged! Your insurance premium appreciates your caution even if nobody else does!"
+      ],
+      "ajoy": [
+        "You moved. The universe also moved. Coincidence.",
+        "A clean sidestep. The pilot's chair remembers every hand it's held. That one, it will keep."
+      ]
+    },
+    "player_dodge_full": {
+      "aria": [
+        "Their shot went WHOOSHING past! How neat!"
+      ],
+      "marv": [
+        "Direct hit avoided. The math is uncharitable about repeats."
+      ],
+      "rex": [
+        "Clean dodge. Acknowledged."
+      ],
+      "chip": [
+        "Full evasion logged. Your no-claims discount is preserved."
+      ],
+      "ajoy": [
+        "The shot missed. A version of you in another room did not."
+      ]
+    },
+    "hull_patch": {
+      "aria": [
+        "The engineer is doing wonderful welding things!"
+      ],
+      "marv": [
+        "Hull patch applied. Structural integrity: temporarily plausible."
+      ],
+      "rex": [
+        "Patch holds. Continue."
+      ],
+      "chip": [
+        "Hull patch covered under your premium maintenance plan."
+      ],
+      "ajoy": [
+        "You repaired the ship. The ship will repair you in turn."
+      ]
+    },
+    "ftl_charging": {
+      "aria": [
+        "The drive is humming! It does that!",
+        "The drive is winding up! ARIA is helping by believing in it VERY hard!"
+      ],
+      "marv": [
+        "FTL charging. Enemy fire incoming for the duration.",
+        "FTL spooling. The next several moments will be statistics. MARV will narrate none of them."
+      ],
+      "rex": [
+        "FTL spinup engaged. Hold position.",
+        "Drive charging. Weapons stay hot until the stars smear."
+      ],
+      "chip": [
+        "FTL prep is a great time to think about extended warranties.",
+        "FTL prep initiated! Please ensure all loose items and regrets are stowed!"
+      ],
+      "ajoy": [
+        "You are leaving. The galaxy is unimpressed.",
+        "Spooling. She has flown this maneuver before, on other ships, with other outcomes. Her silence is her working."
+      ]
+    },
+    "ftl_complete": {
+      "aria": [
+        "AND we're GONE! See you, pirate!"
+      ],
+      "marv": [
+        "FTL achieved. Threat vector: relocated."
+      ],
+      "rex": [
+        "Jump complete. Disengaged."
+      ],
+      "chip": [
+        "Successful jump. StellarFTL Premium thanks you."
+      ],
+      "ajoy": [
+        "You escaped. Escape is also a kind of arrival."
+      ]
+    },
+    "enemy_fires": {
+      "aria": [
+        "They're shooting! That seems hostile!",
+        "Incoming! Everyone think sturdy thoughts!"
+      ],
+      "marv": [
+        "Hostile fire. Hull integrity reducing as expected.",
+        "They are firing again. Persistence: noted. Aim: improving. MARV dislikes both."
+      ],
+      "rex": [
+        "Incoming. Brace.",
+        "Taking fire. Hold the line."
+      ],
+      "chip": [
+        "Damage sustained. Subject to deductible.",
+        "Hostile discharge detected! Remember: dents are character, holes are claims!"
+      ],
+      "ajoy": [
+        "The shot was always coming.",
+        "Incoming fire. She has angled the good side of the hull toward it. The ship has a good side. It does now."
+      ]
+    },
+    "enemy_low_hp": {
+      "aria": [
+        "They look quite injured! Maybe they'll be friends!",
+        "Their ship is doing the sad smoke thing! Almost done!"
+      ],
+      "marv": [
+        "Enemy hull critical. Surrender probability: rising.",
+        "Enemy structural integrity approaching negotiation territory. Or debris territory. Adjacent territories."
+      ],
+      "rex": [
+        "Target weakened. Press the advantage.",
+        "They're breaking. Finish it clean or let them run — captain's call."
+      ],
+      "chip": [
+        "Enemy is now at clearance pricing.",
+        "Hostile vessel entering final-sale condition! All damage is now cosmetic-plus!"
+      ],
+      "ajoy": [
+        "They are nearly gone. So are we all.",
+        "They are nearly finished. What happens next says more about this ship than the fight did."
+      ]
+    },
+    "enemy_destroyed": {
+      "aria": [
+        "They've been resolved!",
+        "They came apart! ARIA is choosing to believe everyone had escape pods and good luck!"
+      ],
+      "marv": [
+        "Target destroyed. Scanning debris. Results: disappointing.",
+        "Target dispersed. MARV has already begun the salvage assessment. Grief cycle: deferred."
+      ],
+      "rex": [
+        "Target neutralized. Standard.",
+        "Splash one. Reset the board."
+      ],
+      "chip": [
+        "Hostile vessel deconstructed. Salvage rights apply.",
+        "Vessel deconstructed! All applicable salvage rights transfer per void-law, which is a real thing CHIP just checked!"
+      ],
+      "ajoy": [
+        "The pirate is gone. The pirate was always going to be gone.",
+        "Done, then. She logs the coordinates. Somebody's map will want to avoid this spot for a while."
+      ]
+    },
+    "enemy_surrenders": {
+      "aria": [
+        "They're WAVING! Maybe? It's a sort of wave?"
+      ],
+      "marv": [
+        "Surrender signal received. Decision required, captain."
+      ],
+      "rex": [
+        "Target signaling surrender. Your call."
+      ],
+      "chip": [
+        "Surrender received. Acceptance recommended for liability reasons."
+      ],
+      "ajoy": [
+        "They have asked. The asking is its own kind of answer."
+      ]
+    },
+    "surrender_accepted": {
+      "aria": [
+        "A peaceful resolution! Wonderful!"
+      ],
+      "marv": [
+        "Surrender accepted. Modest loot deposited. Crew morale: improved."
+      ],
+      "rex": [
+        "Surrender accepted. Withdrawing."
+      ],
+      "chip": [
+        "Surrender accepted. PR points credited to your account."
+      ],
+      "ajoy": [
+        "You spared them. The ledger noted it. The ledger always notes."
+      ]
+    },
+    "surrender_refused": {
+      "aria": [
+        "Oh. OH. That's a choice we made."
+      ],
+      "marv": [
+        "Surrendered combatant terminated. Morale impact: significant."
+      ],
+      "rex": [
+        "Execution complete. Loot recovered."
+      ],
+      "chip": [
+        "Execution of surrendered combatants is logged for compliance review."
+      ],
+      "ajoy": [
+        "You finished them. The galaxy will, in time, finish you."
+      ]
+    },
+    "tribute_offered": {
+      "aria": [
+        "We're sharing the harvest! Surely they'll like that!"
+      ],
+      "marv": [
+        "Tribute offered. Outcome uncertain."
+      ],
+      "rex": [
+        "Tribute on the table. Awaiting response."
+      ],
+      "chip": [
+        "Tribute offered. Tax implications pending."
+      ],
+      "ajoy": [
+        "You offered food to a stranger. The stranger considered."
+      ]
+    },
+    "tribute_success": {
+      "aria": [
+        "They LIKED it! Pirates can be SO sweet!"
+      ],
+      "marv": [
+        "Tribute accepted. Hostility ended without fire."
+      ],
+      "rex": [
+        "Stand down. Tribute secured."
+      ],
+      "chip": [
+        "Tribute accepted. Note: this does NOT establish a recurring obligation."
+      ],
+      "ajoy": [
+        "Bread shared with enemies. The enemy is now a different kind of stranger."
+      ]
+    },
+    "tribute_fail": {
+      "aria": [
+        "They threw it BACK. Rude!"
+      ],
+      "marv": [
+        "Tribute rejected. Combat continuing."
+      ],
+      "rex": [
+        "Tribute refused. Engaging."
+      ],
+      "chip": [
+        "Tribute returned. Refund processing time: not applicable."
+      ],
+      "ajoy": [
+        "The bread was wasted. The bread was always going to be wasted."
+      ]
+    },
+    "player_defeated": {
+      "aria": [
+        "We're not dead! We're... slowly leaving!",
+        "We're leaving! Not stylishly! But LEAVING!"
+      ],
+      "marv": [
+        "Hull breached. Limp-away initiated. Cargo: partial loss.",
+        "Combat lost. Ship survives. Cargo: redistributed to the void. MARV has begun the inventory of what remains."
+      ],
+      "rex": [
+        "Withdraw. Regroup. Rebuild.",
+        "We're beaten. Withdraw in order. Nobody else gets hurt today."
+      ],
+      "chip": [
+        "Catastrophic damage. Please review your coverage tier.",
+        "Engagement concluded unfavorably! CHIP has pre-filled the incident report! It is long!"
+      ],
+      "ajoy": [
+        "You did not die today. Today is not every day.",
+        "It's over. She plots the gentlest course away and dims the alarms one by one, oldest first."
+      ]
+    }
+  },
+  "stowaway_identities": [
+    {
+      "id": "stowaway_inspector",
+      "name": "Wembly Voss",
+      "story": "They are, or were, a terraforming compliance inspector. They faked their own retirement party — cake, speeches, a commemorative plaque they show you with genuine pride — and walked onto your ship the same night. They have inspected forty-one colonies. They wanted to see one begin.",
+      "line": "I have thirty years of experience and a plaque. I can be useful. The plaque is also available.",
+      "join_role": "academic",
+      "join_note": "Knows colony regulations from the enforcement side. Insufferable and invaluable at paperwork moments."
+    },
+    {
+      "id": "stowaway_auditor",
+      "name": "Meridian Slate",
+      "story": "They are a corporate auditor. They boarded secretly to audit the mission in situ, which is even less legal than stowing away, a point they concede while showing you a briefcase full of forms about your fuel consumption. The company does not know they are here. The company, they add quietly, does not know a lot of things.",
+      "line": "Before you decide anything: your ration accounting is impeccable. I checked. I couldn't help it.",
+      "join_role": null,
+      "join_note": "No shipboard skills whatsoever. Fills out arrival paperwork so well the colony office may weep."
+    },
+    {
+      "id": "stowaway_kid",
+      "name": "Pip Andrade",
+      "story": "They are nineteen and lost the colony lottery four times. The fifth time, they stopped entering and started planning. They have a duffel bag, a forged cargo manifest that fooled nobody — the crew has known for a week and said nothing — and the specific unbeatable stubbornness of someone who has decided their life is happening whether invited or not.",
+      "line": "I'll work. I'll eat less than I work. You won't regret it — or you will, but not about me.",
+      "join_role": null,
+      "join_note": "No training, endless effort. The crew adopted them before you decided anything, which you will discover shortly."
+    },
+    {
+      "id": "stowaway_gardener",
+      "name": "Old Marrow",
+      "story": "They were a seed-bank keeper on a station that decommissioned around them. They heard — through the janitors' network, naturally — that a ship was hauling a live crop to a new world, and could not bear not to be near it. They have been secretly adjusting your growbay's nutrient mix for two weeks. The crop's recent good week was not luck.",
+      "line": "The zinnias needed magnesium. Everything needs magnesium eventually. So. Am I staying?",
+      "join_role": "botanist",
+      "join_note": "A second green thumb. If a botanist is already aboard, the two of them will disagree about magnesium forever."
+    },
+    {
+      "id": "stowaway_wrongship",
+      "name": "Captain Ellery Dunn (Ret.)",
+      "story": "They boarded the wrong ship. In 2287. They have been boarding wrong ships ever since — freighters, liners, one memorable icebreaker — riding each to wherever it went, on the theory that they clearly weren't meant to arrive anywhere in particular. They are calm, extensively traveled, and holding a boarding pass for a vessel that was scrapped before you were born.",
+      "line": "Is this the Meridian Queen? ...No. No, it never is. Well. Where are we going?",
+      "join_role": "pilot",
+      "join_note": "Four decades of accidental spaceflight. Knows every dock, every shortcut, every wrong turn — especially the wrong turns."
+    },
+    {
+      "id": "stowaway_chef",
+      "name": "Bastian Oke",
+      "story": "They were the head chef of a luxury liner that fired them for 'excessive seasoning' — their words, sworn under oath, repeatedly. They stowed away with two knives, a sourdough starter older than the ship, and the unshakeable conviction that somewhere out here is a crew that deserves real food.",
+      "line": "I smelled your galley from cargo bay three. We need to talk. Bring the so-called 'chef.'",
+      "join_role": "chef",
+      "join_note": "The starter's name is Gerald. Gerald eats before anyone. These are the terms."
+    },
+    {
+      "id": "stowaway_cartographer",
+      "name": "Ines Vahl",
+      "story": "They map places for a survey office that stopped paying them two years ago. They kept mapping. They stowed away because your route crosses three sectors whose charts they know to be wrong, and being aboard a ship headed into a known error was, professionally speaking, irresistible.",
+      "line": "Your nav charts are wrong at marker sixty-one. Charmingly wrong. Fatally wrong. May I see the helm?",
+      "join_role": "pilot",
+      "join_note": "Draws corrections directly onto official charts in pen. The pen is the statement."
+    }
+  ],
+  "science_links": {
+    "_note": "crops: attached automatically by the engine at crop maturity. topics: referenced by events' science_link fields (kept here for reuse/authoring reference — events may also inline their own).",
+    "crops": {
+      "wheat": {
+        "text": "MARV notes wheat has been pulling this exact trick — feeding people who wander — for ten thousand years.",
+        "label": "Wheat: the 10,000-year companion",
+        "url": "https://en.wikipedia.org/wiki/Wheat"
+      },
+      "tomato": {
+        "text": "The ship computer notes tomatoes have real flight heritage: grown aboard the ISS in the Veggie experiment.",
+        "label": "Veggie: growing food on the ISS",
+        "url": "https://en.wikipedia.org/wiki/Vegetable_Production_System"
+      },
+      "sweet_potato": {
+        "text": "The ship computer confirms it: NASA's life-support program rated sweet potatoes a top crop for exactly this kind of trip.",
+        "label": "Space agriculture, the real program",
+        "url": "https://en.wikipedia.org/wiki/Space_farming"
+      },
+      "soybean": {
+        "text": "The soybeans have been quietly manufacturing their own fertilizer the whole way. The trick is called nitrogen fixation. It is real, and it is excellent.",
+        "label": "Nitrogen fixation, explained",
+        "url": "https://en.wikipedia.org/wiki/Nitrogen_fixation"
+      },
+      "zinnia": {
+        "text": "The ship computer would like the crew to know a zinnia really did bloom on the ISS in 2016 — after an astronaut broke protocol to save it.",
+        "label": "The zinnia that bloomed in orbit",
+        "url": "https://en.wikipedia.org/wiki/Vegetable_Production_System"
+      }
+    },
+    "topics": {
+      "space_weather": {
+        "label": "Solar flares, the real hazard",
+        "url": "https://en.wikipedia.org/wiki/Solar_flare"
+      },
+      "micrometeoroids": {
+        "label": "Micrometeoroids vs. spacecraft",
+        "url": "https://en.wikipedia.org/wiki/Micrometeoroid"
+      },
+      "space_medicine": {
+        "label": "Space medicine, the field",
+        "url": "https://en.wikipedia.org/wiki/Space_medicine"
+      },
+      "piezoelectricity": {
+        "label": "Piezoelectricity: rocks that sing",
+        "url": "https://en.wikipedia.org/wiki/Piezoelectricity"
+      },
+      "water_recycling": {
+        "label": "How the ISS recycles its water",
+        "url": "https://en.wikipedia.org/wiki/ISS_ECLSS"
+      },
+      "emission_nebula": {
+        "label": "What makes a nebula glow",
+        "url": "https://en.wikipedia.org/wiki/Emission_nebula"
+      },
+      "space_food": {
+        "label": "Space food, a real discipline",
+        "url": "https://en.wikipedia.org/wiki/Space_food"
+      },
+      "space_debris": {
+        "label": "The orbital debris problem",
+        "url": "https://en.wikipedia.org/wiki/Space_debris"
+      },
+      "asteroid_mining": {
+        "label": "Asteroid mining, seriously proposed",
+        "url": "https://en.wikipedia.org/wiki/Asteroid_mining"
+      }
+    }
+  }
+}

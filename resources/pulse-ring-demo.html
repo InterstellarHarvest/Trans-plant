@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pulsing Ring Techniques :: Chunky Pixel Demo</title>
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg2: #11161e;
+  --bg3: #161c26;
+  --border: #1f2937;
+  --accent: #00ffaa;
+  --text: #e6e6e6;
+  --text-dim: #6b7280;
+  --good: #00ff88;
+  --bad: #ff3366;
+  --warn: #ffaa00;
+  --mono: 'Courier New', 'Monaco', 'Consolas', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(0,255,170,0.04), transparent 50%),
+    radial-gradient(circle at 80% 100%, rgba(255,0,170,0.04), transparent 50%);
+  color: var(--text);
+  font-family: var(--mono);
+  padding: 20px;
+  min-height: 100vh;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+}
+header h1 {
+  font-size: 18px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+header .sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+header .global-stats {
+  display: flex;
+  gap: 8px;
+}
+header .global-stats .stat {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: 3px;
+  min-width: 110px;
+}
+header .global-stats label {
+  display: block;
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+header .global-stats b {
+  color: var(--accent);
+  font-weight: normal;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+main {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+.card .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.card h2 {
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+.card .verdict {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+.verdict.good { background: rgba(0,255,136,0.12); color: var(--good); border: 1px solid var(--good); }
+.verdict.okay { background: rgba(255,170,0,0.12); color: var(--warn); border: 1px solid var(--warn); }
+.verdict.bad  { background: rgba(255,51,102,0.12); color: var(--bad);  border: 1px solid var(--bad); }
+.card .desc {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  line-height: 1.45;
+  min-height: 46px;
+}
+.card .stage {
+  background: #000;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 12px 12px;
+  border: 1px solid var(--border);
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.card .stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  font-size: 10px;
+}
+.card .stats .stat {
+  background: var(--bg3);
+  padding: 5px 7px;
+  border-radius: 2px;
+}
+.card .stats .stat label {
+  color: var(--text-dim);
+  display: block;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+.card .stats .stat b {
+  color: var(--accent);
+  font-weight: normal;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+button {
+  background: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+button.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+canvas, svg {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+footer {
+  margin-top: 24px;
+  font-size: 10px;
+  color: var(--text-dim);
+  text-align: center;
+  letter-spacing: 1px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>::: pulsing ring techniques :::</h1>
+    <div class="sub">5 ways to put a ring around a pixel sprite — running side by side</div>
+  </div>
+  <div class="global-stats">
+    <div class="stat"><label>fps</label><b id="fps">--</b></div>
+    <div class="stat"><label>frame ms</label><b id="frametime">--</b></div>
+    <div class="stat"><label>js heap</label><b id="heap">--</b></div>
+  </div>
+</header>
+
+<main id="cards"></main>
+
+<div class="controls">
+  <button id="pauseBtn">Pause</button>
+  <button id="speedBtn">Slower</button>
+  <button id="thickBtn">Ring: 1px</button>
+</div>
+
+<footer>
+  drag the window narrow to reflow • integer-stepped pulse at ~9Hz • ring color cycles slowly
+</footer>
+
+<script>
+// ========== SPRITE (16x16 alien) ==========
+const SPRITE_STR = `
+................
+................
+.......##.......
+......####......
+.....######.....
+....########....
+...##########...
+..############..
+.##.########.##.
+.##.########.##.
+.##############.
+....##....##....
+...##......##...
+..##........##..
+.##..........##.
+................
+`.trim().split('\n');
+
+const SW = 16, SH = 16;
+const sprite = new Uint8Array(SW * SH);
+for (let y = 0; y < SH; y++) {
+  for (let x = 0; x < SW; x++) {
+    sprite[y * SW + x] = SPRITE_STR[y][x] === '#' ? 1 : 0;
+  }
+}
+
+// ========== CONFIG ==========
+const MAX_R = 7;
+const PAD = MAX_R + 2;
+const PW = SW + PAD * 2; // padded width
+const PH = SH + PAD * 2;
+const PIX = 6; // display scale per sprite pixel
+let RING_THICK = 1;
+
+// padded sprite mask
+const paddedSprite = new Uint8Array(PW * PH);
+for (let y = 0; y < SH; y++) {
+  for (let x = 0; x < SW; x++) {
+    if (sprite[y * SW + x]) paddedSprite[(y + PAD) * PW + (x + PAD)] = 1;
+  }
+}
+
+// ========== EUCLIDEAN DILATION ==========
+function dilateEuclid(mask, w, h, r) {
+  const out = new Uint8Array(w * h);
+  if (r <= 0) { out.set(mask); return out; }
+  const r2 = r * r;
+  for (let sy = 0; sy < h; sy++) {
+    for (let sx = 0; sx < w; sx++) {
+      if (!mask[sy * w + sx]) continue;
+      const x0 = Math.max(0, sx - r), x1 = Math.min(w - 1, sx + r);
+      const y0 = Math.max(0, sy - r), y1 = Math.min(h - 1, sy + r);
+      for (let y = y0; y <= y1; y++) {
+        for (let x = x0; x <= x1; x++) {
+          const dx = x - sx, dy = y - sy;
+          if (dx*dx + dy*dy <= r2) out[y * w + x] = 1;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+// ========== PRECOMPUTE RING MASKS (per radius, per thickness) ==========
+function buildRings(thickness) {
+  const masks = [];
+  const lists = [];
+  for (let r = 0; r <= MAX_R; r++) {
+    const outer = dilateEuclid(paddedSprite, PW, PH, r);
+    const innerR = Math.max(0, r - thickness);
+    const inner = innerR === 0 && r > 0 ? paddedSprite : (innerR === 0 ? new Uint8Array(PW * PH) : dilateEuclid(paddedSprite, PW, PH, innerR));
+    // Actually we want ring = outer - inner. Inner should be dilation by (r - thickness), or sprite if r-thickness <= 0
+    let innerMask;
+    if (r === 0) {
+      innerMask = new Uint8Array(PW * PH); // empty -> ring is empty
+    } else if (r - thickness <= 0) {
+      innerMask = paddedSprite; // ring fills outside sprite up to r
+    } else {
+      innerMask = dilateEuclid(paddedSprite, PW, PH, r - thickness);
+    }
+    const ring = new Uint8Array(PW * PH);
+    const list = [];
+    for (let i = 0; i < ring.length; i++) {
+      if (outer[i] && !innerMask[i]) {
+        ring[i] = 1;
+        list.push([i % PW, (i / PW) | 0]);
+      }
+    }
+    masks.push(ring);
+    lists.push(list);
+  }
+  return { masks, lists };
+}
+
+let { masks: ringMasks, lists: ringPixelLists } = buildRings(RING_THICK);
+
+// sprite pixel list for box-shadow technique
+const spritePixelList = [];
+for (let y = 0; y < PH; y++) {
+  for (let x = 0; x < PW; x++) {
+    if (paddedSprite[y * PW + x]) spritePixelList.push([x, y]);
+  }
+}
+
+// ========== COLOR ==========
+const SPRITE_R = 0, SPRITE_G = 255, SPRITE_B = 170;
+function hslPulse(t, pulseR) {
+  const h = (t * 0.04 + pulseR * 12) % 360;
+  return `hsl(${h.toFixed(1)}, 100%, ${50 + pulseR * 3}%)`;
+}
+function hslPulseRgb(t, pulseR) {
+  const h = (t * 0.04 + pulseR * 12) % 360;
+  const l = (50 + pulseR * 3) / 100;
+  const s = 1;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
+}
+
+// ========== CARD HELPER ==========
+function makeCard({ title, verdict, verdictText, desc }) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="head">
+      <h2>${title}</h2>
+      <span class="verdict ${verdict}">${verdictText}</span>
+    </div>
+    <div class="desc">${desc}</div>
+    <div class="stage"></div>
+    <div class="stats">
+      <div class="stat"><label>render</label><b class="ms">--</b><span style="color:var(--text-dim);font-size:9px"> ms</span></div>
+      <div class="stat"><label>radius</label><b class="r">--</b></div>
+      <div class="stat"><label>peak ms</label><b class="peak">--</b></div>
+    </div>
+  `;
+  document.getElementById('cards').appendChild(card);
+  return {
+    el: card,
+    stage: card.querySelector('.stage'),
+    msEl: card.querySelector('.ms'),
+    rEl: card.querySelector('.r'),
+    peakEl: card.querySelector('.peak'),
+    peak: 0,
+  };
+}
+
+// ========== TECHNIQUE 1: CANVAS DILATION ==========
+function makeCanvasDilation() {
+  const card = makeCard({
+    title: '1. Canvas dilation',
+    verdict: 'good',
+    verdictText: 'CHUNKY',
+    desc: 'Per-pixel mask dilation in JS, drawn to a small canvas, scaled with image-rendering: pixelated. Ring is literally pixel-aligned.',
+  });
+  const canvas = document.createElement('canvas');
+  canvas.width = PW; canvas.height = PH;
+  canvas.style.width = (PW * PIX) + 'px';
+  canvas.style.height = (PH * PIX) + 'px';
+  card.stage.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(PW, PH);
+
+  function update(t, pulseR) {
+    const start = performance.now();
+    const data = img.data;
+    data.fill(0);
+    const ring = ringMasks[pulseR];
+    const [rR, rG, rB] = hslPulseRgb(t, pulseR);
+    for (let i = 0, p = 0; i < ring.length; i++, p += 4) {
+      if (ring[i]) {
+        data[p]   = rR;
+        data[p+1] = rG;
+        data[p+2] = rB;
+        data[p+3] = 255;
+      }
+      if (paddedSprite[i]) {
+        data[p]   = SPRITE_R;
+        data[p+1] = SPRITE_G;
+        data[p+2] = SPRITE_B;
+        data[p+3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    return performance.now() - start;
+  }
+  return { update, card };
+}
+
+// ========== TECHNIQUE 2: BOX-SHADOW PIXEL STACK ==========
+function makeBoxShadow() {
+  const card = makeCard({
+    title: '2. Box-shadow stack',
+    verdict: 'good',
+    verdictText: 'CHUNKY',
+    desc: 'Sprite + ring rendered as box-shadow offsets on one PIX×PIX dot. Each "pixel" is a hard-edged shadow. ~150-300 shadows per frame.',
+  });
+  const wrap = document.createElement('div');
+  wrap.style.position = 'relative';
+  wrap.style.width = (PW * PIX) + 'px';
+  wrap.style.height = (PH * PIX) + 'px';
+
+  const dot = document.createElement('div');
+  dot.style.width = PIX + 'px';
+  dot.style.height = PIX + 'px';
+  dot.style.position = 'absolute';
+  dot.style.left = '0';
+  dot.style.top = '0';
+  dot.style.background = 'transparent';
+  wrap.appendChild(dot);
+  card.stage.appendChild(wrap);
+
+  const spriteShadowParts = spritePixelList.map(([x, y]) => `${x*PIX}px ${y*PIX}px 0 #00ffaa`);
+
+  function update(t, pulseR) {
+    const start = performance.now();
+    const ring = ringPixelLists[pulseR];
+    const c = hslPulse(t, pulseR);
+    const parts = new Array(ring.length + spriteShadowParts.length);
+    let i = 0;
+    for (const [x, y] of ring) parts[i++] = `${x*PIX}px ${y*PIX}px 0 ${c}`;
+    for (const s of spriteShadowParts) parts[i++] = s;
+    dot.style.boxShadow = parts.join(',');
+    return performance.now() - start;
+  }
+  return { update, card };
+}
+
+// ========== TECHNIQUE 3: SVG feMorphology ==========
+function makeSvgMorphology() {
+  const card = makeCard({
+    title: '3. SVG feMorphology',
+    verdict: 'okay',
+    verdictText: 'KINDA CHUNKY',
+    desc: 'SVG dilate filter on the sprite. Operates in user space, so chunky-ish at integer radii — but the filter raster pass can soften corners.',
+  });
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width', PW * PIX);
+  svg.setAttribute('height', PH * PIX);
+  svg.setAttribute('viewBox', `0 0 ${PW} ${PH}`);
+  svg.setAttribute('shape-rendering', 'crispEdges');
+  svg.style.imageRendering = 'pixelated';
+
+  const defs = document.createElementNS(NS, 'defs');
+  const filter = document.createElementNS(NS, 'filter');
+  filter.setAttribute('id', 'dilateFilter');
+  filter.setAttribute('x', '-50%'); filter.setAttribute('y', '-50%');
+  filter.setAttribute('width', '200%'); filter.setAttribute('height', '200%');
+  filter.setAttribute('filterUnits', 'userSpaceOnUse');
+
+  const morph = document.createElementNS(NS, 'feMorphology');
+  morph.setAttribute('operator', 'dilate');
+  morph.setAttribute('radius', '1');
+  morph.setAttribute('in', 'SourceAlpha');
+  morph.setAttribute('result', 'dilated');
+  filter.appendChild(morph);
+
+  const flood = document.createElementNS(NS, 'feFlood');
+  flood.setAttribute('flood-color', '#ff00aa');
+  flood.setAttribute('result', 'colored');
+  filter.appendChild(flood);
+
+  const composite = document.createElementNS(NS, 'feComposite');
+  composite.setAttribute('in', 'colored');
+  composite.setAttribute('in2', 'dilated');
+  composite.setAttribute('operator', 'in');
+  composite.setAttribute('result', 'ring');
+  filter.appendChild(composite);
+
+  const merge = document.createElementNS(NS, 'feMerge');
+  const m1 = document.createElementNS(NS, 'feMergeNode');
+  m1.setAttribute('in', 'ring');
+  const m2 = document.createElementNS(NS, 'feMergeNode');
+  m2.setAttribute('in', 'SourceGraphic');
+  merge.appendChild(m1); merge.appendChild(m2);
+  filter.appendChild(merge);
+
+  defs.appendChild(filter);
+  svg.appendChild(defs);
+
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('filter', 'url(#dilateFilter)');
+  for (let y = 0; y < SH; y++) {
+    for (let x = 0; x < SW; x++) {
+      if (sprite[y * SW + x]) {
+        const rect = document.createElementNS(NS, 'rect');
+        rect.setAttribute('x', x + PAD);
+        rect.setAttribute('y', y + PAD);
+        rect.setAttribute('width', 1);
+        rect.setAttribute('height', 1);
+        rect.setAttribute('fill', '#00ffaa');
+        g.appendChild(rect);
+      }
+    }
+  }
+  svg.appendChild(g);
+  card.stage.appendChild(svg);
+
+  function update(t, pulseR) {
+    const start = performance.now();
+    morph.setAttribute('radius', Math.max(0.001, pulseR));
+    flood.setAttribute('flood-color', hslPulse(t, pulseR));
+    return performance.now() - start;
+  }
+  return { update, card };
+}
+
+// ========== TECHNIQUE 4: CSS drop-shadow (smooth glow) ==========
+function makeDropShadow() {
+  const card = makeCard({
+    title: '4. CSS drop-shadow',
+    verdict: 'bad',
+    verdictText: 'SMOOTH GLOW',
+    desc: 'filter: drop-shadow(...) with growing blur. Applied AFTER pixel scaling, so the halo is smooth and ignores the pixel grid.',
+  });
+  const canvas = document.createElement('canvas');
+  canvas.width = PW; canvas.height = PH;
+  canvas.style.width = (PW * PIX) + 'px';
+  canvas.style.height = (PH * PIX) + 'px';
+  card.stage.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(PW, PH);
+  for (let i = 0, p = 0; i < paddedSprite.length; i++, p += 4) {
+    if (paddedSprite[i]) {
+      img.data[p] = SPRITE_R; img.data[p+1] = SPRITE_G; img.data[p+2] = SPRITE_B; img.data[p+3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+
+  function update(t, pulseR) {
+    const start = performance.now();
+    const c = hslPulse(t, pulseR);
+    const blur = pulseR * PIX * 0.8;
+    canvas.style.filter = `drop-shadow(0 0 ${blur.toFixed(2)}px ${c}) drop-shadow(0 0 ${(blur*0.4).toFixed(2)}px ${c})`;
+    return performance.now() - start;
+  }
+  return { update, card };
+}
+
+// ========== TECHNIQUE 5: box-shadow blur (rect glow, smooth) ==========
+function makeBoxShadowBlur() {
+  const card = makeCard({
+    title: '5. Box-shadow blur',
+    verdict: 'bad',
+    verdictText: 'RECT GLOW',
+    desc: 'CSS box-shadow with blur on a tight bounding box. Smooth AND rectangular — the glow ignores the sprite silhouette entirely.',
+  });
+  const wrap = document.createElement('div');
+  wrap.style.width = (PW * PIX) + 'px';
+  wrap.style.height = (PH * PIX) + 'px';
+  wrap.style.position = 'relative';
+  const canvas = document.createElement('canvas');
+  canvas.width = PW; canvas.height = PH;
+  canvas.style.width = (PW * PIX) + 'px';
+  canvas.style.height = (PH * PIX) + 'px';
+  canvas.style.position = 'absolute';
+  canvas.style.left = '0';
+  canvas.style.top = '0';
+  canvas.style.zIndex = '2';
+
+  const tight = document.createElement('div');
+  tight.style.position = 'absolute';
+  tight.style.left = (PAD * PIX) + 'px';
+  tight.style.top = (PAD * PIX) + 'px';
+  tight.style.width = (SW * PIX) + 'px';
+  tight.style.height = (SH * PIX) + 'px';
+  tight.style.zIndex = '1';
+
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(PW, PH);
+  for (let i = 0, p = 0; i < paddedSprite.length; i++, p += 4) {
+    if (paddedSprite[i]) {
+      img.data[p] = SPRITE_R; img.data[p+1] = SPRITE_G; img.data[p+2] = SPRITE_B; img.data[p+3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+
+  wrap.appendChild(tight);
+  wrap.appendChild(canvas);
+  card.stage.appendChild(wrap);
+
+  function update(t, pulseR) {
+    const start = performance.now();
+    const c = hslPulse(t, pulseR);
+    const blur = pulseR * PIX * 0.7;
+    const spread = pulseR * 1.5;
+    tight.style.boxShadow = `0 0 ${blur.toFixed(2)}px ${spread.toFixed(2)}px ${c}`;
+    return performance.now() - start;
+  }
+  return { update, card };
+}
+
+// ========== INIT ==========
+const techniques = [
+  makeCanvasDilation(),
+  makeBoxShadow(),
+  makeSvgMorphology(),
+  makeDropShadow(),
+  makeBoxShadowBlur(),
+];
+
+// ========== CONTROLS ==========
+let paused = false;
+let speedMul = 1;
+const pauseBtn = document.getElementById('pauseBtn');
+const speedBtn = document.getElementById('speedBtn');
+const thickBtn = document.getElementById('thickBtn');
+
+pauseBtn.onclick = () => {
+  paused = !paused;
+  pauseBtn.textContent = paused ? 'Play' : 'Pause';
+  pauseBtn.classList.toggle('active', paused);
+  if (!paused) { lastT = performance.now(); requestAnimationFrame(tick); }
+};
+const speeds = [1, 0.5, 0.25, 2];
+let speedIdx = 0;
+const speedLabels = ['Slower', 'Slowest', 'Faster', 'Normal'];
+speedBtn.onclick = () => {
+  speedIdx = (speedIdx + 1) % speeds.length;
+  speedMul = speeds[speedIdx];
+  speedBtn.textContent = speedLabels[speedIdx];
+};
+const thicknesses = [1, 2, 3];
+let thickIdx = 0;
+thickBtn.onclick = () => {
+  thickIdx = (thickIdx + 1) % thicknesses.length;
+  RING_THICK = thicknesses[thickIdx];
+  thickBtn.textContent = `Ring: ${RING_THICK}px`;
+  const rebuilt = buildRings(RING_THICK);
+  ringMasks = rebuilt.masks;
+  ringPixelLists = rebuilt.lists;
+};
+
+// ========== ANIMATION LOOP ==========
+const fpsEl = document.getElementById('fps');
+const frametimeEl = document.getElementById('frametime');
+const heapEl = document.getElementById('heap');
+
+let lastT = performance.now();
+let virtualT = 0; // affected by speed
+let frames = 0;
+let fpsAcc = 0;
+let lastFpsUpdate = lastT;
+
+function tick(now) {
+  if (paused) return;
+  const dt = now - lastT;
+  lastT = now;
+  virtualT += dt * speedMul;
+  frames++;
+  fpsAcc += dt;
+
+  // Pulse: integer steps 0..MAX_R..0, ~1.6s full cycle
+  const period = 1800;
+  const phase = (virtualT % period) / period;
+  let pulseR;
+  if (phase < 0.5) {
+    pulseR = Math.floor(phase * 2 * (MAX_R + 1));
+  } else {
+    pulseR = Math.floor((1 - phase) * 2 * (MAX_R + 1));
+  }
+  pulseR = Math.min(MAX_R, Math.max(0, pulseR));
+
+  for (const t of techniques) {
+    const ms = t.update(virtualT, pulseR);
+    t.card.msEl.textContent = ms.toFixed(2);
+    t.card.rEl.textContent = pulseR;
+    if (ms > t.card.peak) {
+      t.card.peak = ms;
+      t.card.peakEl.textContent = ms.toFixed(2);
+    }
+  }
+
+  if (now - lastFpsUpdate > 400) {
+    const fps = (frames * 1000 / fpsAcc);
+    fpsEl.textContent = fps.toFixed(1);
+    frametimeEl.textContent = (fpsAcc / frames).toFixed(2);
+    if (performance.memory) {
+      const mb = performance.memory.usedJSHeapSize / 1024 / 1024;
+      heapEl.textContent = mb.toFixed(1) + ' MB';
+    } else {
+      heapEl.textContent = 'n/a';
+    }
+    frames = 0;
+    fpsAcc = 0;
+    lastFpsUpdate = now;
+  }
+
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+// reset peaks every 5s so they reflect recent state
+setInterval(() => {
+  for (const t of techniques) {
+    t.card.peak = 0;
+  }
+}, 5000);
+</script>
+</body>
+</html>

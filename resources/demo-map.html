@@ -1,0 +1,2232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Map Screen Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="shared.css" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+
+:root {
+  /* Shared theme */
+  --teal: #8cc890;
+  --orange: #e88830;
+  --cream: #e8d8a0;
+  --deep: #0e1520;
+  --void: #020408;
+  --body: #8898a8;
+
+  /* Modal chrome — same shape as inventory/growbay/crew popups.
+     Map's accent is gold (matches its existing trail palette) so
+     it reads as the chart-room popup over the dimmed cruise UI. */
+  --modal-backdrop: rgba(4,8,16,0.75);
+  --modal-bg-top: #141a28;
+  --modal-bg-bot: #0a0e18;
+  --modal-border: #c8a85a;
+  --modal-width:  920px;
+  --modal-height: 580px;
+
+  /* Map header */
+  --hdr-bg-top: #141a28;
+  --hdr-bg-bot: #10141e;
+  --hdr-border: #c8a85a;
+  --hdr-title-color: #c8a85a;
+  --hdr-subtitle-color: #7a8898;
+
+  /* Node type palette */
+  --node-station:       #d5d69f; /* pale warm */
+  --node-planet:        #e5811f; /* orange */
+  --node-asteroid:      #cb2f34; /* crimson */
+  --node-derelict:      #5d5a61; /* muted slate */
+  --node-nebula:        #8c7fc8; /* purple */
+  --node-anomaly:       #ffac00; /* amber */
+  --node-void:          #5a6070; /* slate */
+
+  /* Node sizing */
+  --node-size: 25px;
+  --node-rad: 50%;
+  --dash-gap: 16px;
+
+  /* Font sizes (exposed via controls panel) */
+  --fs-trail-name: 12px;
+  --fs-trail-stats: 15px;
+  --fs-tooltip: 10px;
+  --fs-branch: 6px;
+  --fs-legend: 10px;
+  --fs-info-name: 10px;
+  --fs-info-desc: 18px;
+  --fs-footer: 25px;
+  --fs-scanner: 4px;
+
+  /* Node states */
+  --node-visited-fill: rgba(20,28,40,0.6);
+  --node-unvisited-fill: rgba(10,14,20,0.8);
+  --node-unvisited-dim: 0.45;
+  --current-pulse: #ffac00;
+
+  /* Connection lines */
+  --line-visited: rgba(200,168,90,0.7);
+  --line-next:    rgba(200,168,90,0.4);
+  --line-future:  rgba(120,136,152,0.25);
+  --line-width: 3px;
+
+  /* Branch flavor labels */
+  --flavor-color: #35c6bf;
+  --flavor-hidden-color: #cc3333;
+
+  /* Panel button sizing (color vars live in shared.css) */
+  --pb-border: 3px;
+  --pb-padx: 10px;
+  --pb-pady: 5px;
+  --pb-rad: 0px;
+  --pb-size: 14px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'VT323', monospace;
+  background: #0e1118;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #d1d5db;
+}
+
+#demo-wrap { display: flex; gap: 20px; padding: 20px; align-items: flex-start; }
+#scale-root { width: 960px; height: 640px; transform-origin: top left; flex-shrink: 0; }
+
+/* Actual-size toggle */
+#size-toggle {
+  position: fixed; top: 12px; right: 12px; z-index: 9999;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: #c8a85a;
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+}
+#size-toggle:hover { filter: brightness(1.2); }
+#size-toggle:active {
+  border-style: inset;
+  border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a;
+  transform: translate(1px, 1px);
+}
+
+body.fullsize { overflow: hidden; }
+body.fullsize #demo-wrap { padding: 0; gap: 0; width: 100vw; height: 100vh; justify-content: center; align-items: center; }
+body.fullsize #controls { display: none; }
+body.fullsize #scale-root { transform-origin: center center; }
+
+/* Game frame — single backdrop palette, sitting between the
+   blue-gray of near-space and the indigo of deep space. */
+#game {
+  width: 960px; height: 640px;
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #0c0f22 0%, #070814 100%);
+}
+
+#crt-overlay {
+  pointer-events: none; position: absolute; inset: 0; z-index: 100; border-radius: 4px;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 1px, transparent 1px, transparent 2px);
+}
+
+#stars-far, #stars-near { position: absolute; inset: 0; pointer-events: none; }
+
+/* ── Cruise ghost backdrop — what the player was on before
+   opening the chart-room. Same pattern as inventory/growbay/crew
+   demos: dim header strip + dim HUD strip implying the cruise UI
+   is sitting underneath. */
+#cruise-ghost {
+  position: absolute; inset: 0;
+  z-index: 5;
+  filter: brightness(0.35);
+  pointer-events: none;
+}
+.cg-header {
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 40px;
+  padding: 0 16px;
+  background: linear-gradient(180deg, #141a28 0%, #10141e 100%);
+  border-bottom: 2px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Press Start 2P', cursive;
+}
+.cg-ship { font-size: 10px; letter-spacing: 2px; color: var(--gold); }
+.cg-day  { font-size: 8px; letter-spacing: 1px; color: #aab5c4; }
+.cg-bottom {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 120px;
+  background: linear-gradient(180deg, #10141e 0%, #0a0e14 100%);
+  border-top: 1px solid rgba(200,168,90,0.2);
+}
+
+/* ── Modal backdrop + panel ─────────────────────────────────────── */
+#map-backdrop {
+  position: absolute; inset: 0;
+  z-index: 10;
+  background: var(--modal-backdrop);
+  cursor: var(--cursor-hand, pointer);
+}
+
+/* Map screen is now a centered modal panel (chart-room popup),
+   not a fullscreen view. Width/height come from --modal-* so dev
+   controls can resize it. Border + box-shadow match the inventory
+   /growbay/crew popup chrome. */
+#map-screen {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--modal-width);
+  height: var(--modal-height);
+  z-index: 20;
+  background: linear-gradient(180deg, var(--modal-bg-top) 0%, var(--modal-bg-bot) 100%);
+  border: 3px solid var(--modal-border);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(200,168,90,0.18),
+    inset 0 0 0 2px rgba(14,20,32,0.5),
+    0 8px 40px rgba(0,0,0,0.8);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.25s, transform 0.25s;
+}
+body:not(.modal-open) #map-backdrop,
+body:not(.modal-open) #map-screen {
+  opacity: 0;
+  pointer-events: none;
+}
+body:not(.modal-open) #map-screen {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+#map-header {
+  flex-shrink: 0;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 2px solid var(--hdr-border);
+  background: linear-gradient(180deg, var(--hdr-bg-top) 0%, var(--hdr-bg-bot) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.hdr-left { display: flex; flex-direction: column; gap: 2px; }
+.hdr-right { display: flex; align-items: center; gap: 10px; }
+/* Modal-style X close button — matches inventory/growbay/crew popups
+   so the chart-room reads as the same family of overlay UI. */
+.map-close {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  width: 26px; height: 26px;
+  border: 2px solid rgba(200,168,90,0.5);
+  background: rgba(14,20,32,0.6);
+  color: var(--gold);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.map-close:hover { filter: brightness(1.25); border-color: var(--modal-border); }
+.trail-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--fs-trail-name);
+  letter-spacing: 2px;
+  color: var(--hdr-title-color);
+  text-shadow: 0 0 8px rgba(200,168,90,0.3);
+}
+.trail-stats {
+  font-family: 'VT323', monospace;
+  font-size: var(--fs-trail-stats);
+  letter-spacing: 1px;
+  color: var(--hdr-subtitle-color);
+}
+
+/* Map viewport — where the nodes + connections live */
+#map-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* SVG connections layer — behind the nodes */
+#map-connections {
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+.conn {
+  fill: none;
+  stroke: var(--line-future);
+  stroke-width: var(--line-width);
+  stroke-linecap: round;
+}
+.conn.visited { stroke: var(--line-visited); }
+.conn.next    { stroke: var(--line-next); }
+.conn.future  { stroke-dasharray: 4 var(--dash-gap); }
+
+/* Future-segment threat tints — color-coded by destination node's
+   threat so the player gets an at-a-glance danger map without having
+   to click through every node. Unscanned destinations stay neutral
+   gray so we don't leak threat info before the node is readable. */
+.conn.future.threat-none { stroke: rgba(140, 180, 156, 0.45); }
+.conn.future.threat-low  { stroke: rgba(255, 172,   0, 0.55); }
+.conn.future.threat-high { stroke: rgba(203,  47,  52, 0.62); }
+.conn.future.unscanned   { stroke: var(--line-future); }
+
+/* Highlighted route — the path from current node to the player's
+   focused target (clicked node, or temporarily the hovered one).
+   Brighter gold + slightly thicker + soft glow so the planned path
+   reads above the other future lines. Stays dashed — only actually
+   traveled segments are solid. */
+.conn.route {
+  stroke: var(--gold);
+  stroke-width: calc(var(--line-width) + 1px);
+  filter: drop-shadow(0 0 5px rgba(200,168,90,0.55));
+  stroke-dasharray: 4 var(--dash-gap);
+}
+
+/* Days-per-leg label sitting at the midpoint of each connection.
+   Subtle by default so the lines stay visually dominant; brightens
+   on .route segments so the planned path's days stand out. The
+   stroke + paint-order trick draws a dark text outline so labels
+   stay readable when crossing other lines or node glow halos. */
+.conn-label {
+  font-family: 'VT323', monospace;
+  font-size: 11px;
+  fill: rgba(170, 181, 196, 0.65);
+  paint-order: stroke;
+  stroke: rgba(8, 12, 20, 0.9);
+  stroke-width: 3px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+  user-select: none;
+  letter-spacing: 0.5px;
+}
+.conn-label.traveled { fill: rgba(200, 168, 90, 0.55); }
+.conn-label.route    { fill: var(--gold); font-weight: bold; }
+
+/* Outcome badge — tiny corner glyph on visited nodes recording
+   what happened there (trader, combat, loot, etc). Turns the map
+   into a journey diary. Minimal size + dark backing so it doesn't
+   crowd the dot; pointer-events:none so it doesn't intercept hover. */
+.node-outcome {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 13px;
+  height: 13px;
+  font-size: 9px;
+  line-height: 13px;
+  text-align: center;
+  background: rgba(14, 21, 32, 0.95);
+  border: 1.5px solid rgba(200, 168, 90, 0.7);
+  border-radius: 50%;
+  color: var(--gold);
+  pointer-events: none;
+  font-family: 'VT323', monospace;
+  z-index: 6;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
+}
+.node-outcome.outcome-disaster { color: var(--red); border-color: rgba(204, 51, 51, 0.7); }
+.node-outcome.outcome-combat   { color: var(--orange); border-color: rgba(232, 136, 48, 0.7); }
+.node-outcome.outcome-trader   { color: #35c6bf; border-color: rgba(53, 198, 191, 0.7); }
+.node-outcome.outcome-loot     { color: var(--gold); }
+.node-outcome.outcome-empty    { color: rgba(170, 181, 196, 0.5); border-color: rgba(170, 181, 196, 0.4); }
+
+/* Route summary block in the info panel — appended below the
+   threat readout when the clicked node is a reachable future
+   target. Days + hops + per-threat counts so the player can
+   compare paths at a fork. */
+.info-route {
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: rgba(200, 168, 90, 0.06);
+  border: 1px solid rgba(200, 168, 90, 0.25);
+  border-radius: 3px;
+  font-family: 'VT323', monospace;
+}
+.info-route-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--body);
+  padding: 1px 0;
+}
+.info-route-line strong {
+  color: var(--gold);
+  font-weight: normal;
+}
+.info-route-line.high strong { color: var(--red); }
+.info-route-line.low  strong { color: var(--orange); }
+
+/* Node wrappers */
+.map-node {
+  position: absolute;
+  width: var(--node-size);
+  height: var(--node-size);
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  cursor: var(--cursor-hand, pointer);
+}
+/* Nodes are simple solid-filled circles (like FTL's dots). The fill
+   color comes from --node-color, set per type class. Lines connect
+   to the center of each dot. */
+.node-shape {
+  width: 100%; height: 100%;
+  border-radius: var(--node-rad);
+  background: var(--node-color, var(--node-station));
+  border: 2px solid rgba(255,255,255,0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 0 8px var(--node-color, var(--node-station));
+}
+.map-node:hover .node-shape { transform: scale(1.35); }
+/* Unvisited: same type color, dimmed but kept readable so dark-hued
+   types (void, derelict) don't disappear into the bg. The bright
+   white border ensures every node is silhouetted regardless of fill,
+   so each bend in the path always has a visible node at it. */
+.map-node.unvisited .node-shape {
+  filter: brightness(0.6);
+  box-shadow: 0 0 4px rgba(255,255,255,0.15);
+}
+.map-node.unvisited:hover .node-shape {
+  filter: brightness(0.85);
+}
+/* Visited: full brightness + type-color glow. */
+.map-node.visited .node-shape {
+  box-shadow: 0 0 10px var(--node-color, var(--node-station));
+}
+.map-node.current .node-shape {
+  animation: node-pulse 1.6s ease-in-out infinite;
+}
+/* Pulse color = the current node's own type color so a station pulses
+   pale-gold, a planet pulses orange, etc. Outer ring uses color-mix
+   to fade the same hue to transparent. */
+@keyframes node-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 8px var(--node-color),
+      0 0 0 0 color-mix(in srgb, var(--node-color) 30%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 18px var(--node-color),
+      0 0 0 6px color-mix(in srgb, var(--node-color) 22%, transparent);
+  }
+}
+
+/* Type-specific node colors (used via --node-color on .map-node) */
+.map-node.type-station       { --node-color: var(--node-station); }
+.map-node.type-planet        { --node-color: var(--node-planet); }
+.map-node.type-asteroid_field{ --node-color: var(--node-asteroid); }
+.map-node.type-derelict      { --node-color: var(--node-derelict); }
+.map-node.type-nebula        { --node-color: var(--node-nebula); }
+.map-node.type-anomaly       { --node-color: var(--node-anomaly); }
+.map-node.type-void          { --node-color: var(--node-void); }
+
+/* Uncharted: no type color revealed. Neutral gray fill until the
+   player actually arrives. Wrapper-level override so it wins
+   against type-specific --node-color. */
+.map-node.uncharted { --node-color: #4a4f5a !important; }
+.map-node.uncharted .node-shape {
+  filter: brightness(0.55);
+  background: repeating-linear-gradient(
+    45deg,
+    #4a4f5a 0px, #4a4f5a 3px,
+    #3a3f4a 3px, #3a3f4a 6px
+  );
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: none;
+}
+.map-node.uncharted:hover .node-shape { filter: brightness(0.8); }
+
+/* Unscanned: scanner not equipped OR node too far away to read.
+   Neutral gray fill (no type color leak), no glow. Distinct from
+   uncharted's stripe — unscanned = "can't see yet," uncharted =
+   "flavor unknown by design." */
+.map-node.unscanned { --node-color: #4a4f5a !important; }
+.map-node.unscanned .node-shape {
+  filter: brightness(0.6);
+  background: #4a4f5a;
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: none;
+}
+.map-node.unscanned:hover .node-shape { filter: brightness(0.85); }
+
+
+/* Fast tooltip on node hover — replaces always-on labels so the
+   map stays readable at larger scales. Click for the info panel. */
+.map-node::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--fs-tooltip);
+  letter-spacing: 1px;
+  color: var(--gold);
+  background: rgba(14,21,32,0.95);
+  border: 1px solid rgba(200,168,90,0.5);
+  padding: 4px 7px;
+  white-space: nowrap;
+  border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.08s;
+  z-index: 20;
+  text-shadow: 0 0 4px rgba(200,168,90,0.4);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+.map-node:hover::after { opacity: 1; }
+.map-node.uncharted::after { color: #888; border-color: #555; text-shadow: none; }
+
+/* Branch flavor label (floats near fork branches).
+   Three states:
+   - .hidden     — too far from fork to read: dim gray "???"
+   - .uncharted  — flavor is `unknown`, stays "???" even when close: red
+   - .revealed   — flavor is known and player is close enough: neutral label
+   (We deliberately DON'T color-code revealed flavors yet — doing so
+   through the ??? would leak which flavor was hidden underneath.) */
+.branch-flavor {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--fs-branch);
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px currentColor, 0 1px 2px #000;
+  pointer-events: none;
+  z-index: 3;
+  padding: 3px 6px;
+  background: rgba(14,21,32,0.7);
+  border-radius: 3px;
+  white-space: nowrap;
+  border: 1px solid;
+}
+.branch-flavor.hidden {
+  color: #7a8898;
+  border-color: rgba(122,136,152,0.3);
+  text-shadow: 0 1px 2px #000;
+}
+.branch-flavor.uncharted {
+  color: var(--flavor-hidden-color);
+  border-color: rgba(204,51,51,0.4);
+}
+/* Revealed branches get a per-flavor color. Each canonical flavor
+   tag from the registry (lucrative, derelict_heavy, hostile, safe,
+   corporate, scientific, agricultural) has its own hue. `unknown`
+   stays on the uncharted style above and never reaches .revealed. */
+.branch-flavor.revealed {
+  color: var(--flavor-color);
+  border-color: color-mix(in srgb, var(--flavor-color) 40%, transparent);
+}
+.branch-flavor.flavor-lucrative     { --flavor-color: #ffac00; }  /* amber */
+.branch-flavor.flavor-derelict_heavy{ --flavor-color: #5d5a61; }  /* slate (matches derelict nodes) */
+.branch-flavor.flavor-hostile       { --flavor-color: #cb2f34; }  /* crimson */
+.branch-flavor.flavor-safe          { --flavor-color: #8cc890; }  /* soft green */
+.branch-flavor.flavor-corporate     { --flavor-color: #35c6bf; }  /* teal */
+.branch-flavor.flavor-scientific    { --flavor-color: #8c7fc8; }  /* purple (matches nebula) */
+.branch-flavor.flavor-agricultural  { --flavor-color: #cb9c5d; }  /* earthy amber */
+
+/* Ship marker — shows current position while in transit between
+   nodes. Small triangle oriented along the travel direction.
+   Visibility toggled from JS based on transitProgress. */
+.ship-marker {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  z-index: 6;
+  transition: left 0.2s linear, top 0.2s linear;
+  animation: ship-pulse 1.2s ease-in-out infinite;
+}
+.ship-marker::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--current-pulse);
+  clip-path: polygon(100% 50%, 0% 0%, 30% 50%, 0% 100%);
+  filter: drop-shadow(0 0 6px var(--current-pulse));
+}
+@keyframes ship-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.35); }
+}
+
+/* YOU ARE HERE indicator — stacked across 4 lines, with the
+   arrow on the bottom line pointing down at the current node. */
+.here-pointer {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 2px;
+  line-height: 1.35;
+  color: var(--current-pulse);
+  text-shadow: 0 0 8px currentColor, 0 1px 2px #000;
+  pointer-events: none;
+  z-index: 4;
+  animation: here-bounce 1.2s ease-in-out infinite;
+  text-align: center;
+}
+@keyframes here-bounce {
+  0%, 100% { transform: translate(-50%, -100%); }
+  50%      { transform: translate(-50%, calc(-100% - 4px)); }
+}
+
+/* Node info panel — fixed top-right of the map viewport. Click a
+   node to populate; default shows a "click a node" prompt. */
+#map-info {
+  position: absolute;
+  right: 12px; top: 12px;
+  width: 260px;
+  z-index: 18;
+  background: rgba(14,21,32,0.92);
+  border: 1px solid rgba(200,168,90,0.4);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-family: 'VT323', monospace;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  transition: border-color 0.2s;
+}
+#map-info.empty { border-color: rgba(200,168,90,0.15); opacity: 0.7; }
+.info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #5a7a6a;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(200,168,90,0.15);
+  margin-bottom: 6px;
+}
+.info-status {
+  padding: 2px 5px;
+  border-radius: 2px;
+  background: rgba(200,168,90,0.12);
+  color: var(--gold);
+}
+.info-status.visited  { background: rgba(200,168,90,0.15); color: var(--gold); }
+.info-status.current  { background: rgba(255,172,0,0.2); color: var(--current-pulse); text-shadow: 0 0 6px currentColor; }
+.info-status.unvisited{ background: rgba(96,112,128,0.15); color: #7a8898; }
+.info-status.uncharted{ background: rgba(68,68,85,0.2); color: #888; }
+.info-status.unscanned{ background: rgba(68,68,85,0.15); color: #7a8898; }
+.info-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--fs-info-name);
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+.info-name.uncharted {
+  color: #888;
+  text-shadow: none;
+}
+.info-desc {
+  font-size: var(--fs-info-desc);
+  line-height: 1.35;
+  color: var(--body);
+  min-height: 2.6em;
+}
+.info-empty {
+  font-size: 13px;
+  color: #5a7a6a;
+  font-style: italic;
+  text-align: center;
+  padding: 8px 0;
+}
+/* Threat readout for unvisited scanned nodes — color-coded pill.
+   Pulled from the node's event difficulty in the real engine (see
+   the reply in chat); stored per-node for the demo. */
+.info-threat {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  margin-top: 8px;
+  padding: 4px 7px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.info-threat.threat-low    { color: #ffac00; background: rgba(255,172,0,0.12);  border: 1px solid rgba(255,172,0,0.4); }
+.info-threat.threat-high   { color: #cb2f34; background: rgba(203,47,52,0.15);  border: 1px solid rgba(203,47,52,0.5); }
+
+/* Scanner indicator — sits just above the legend, left-aligned with
+   it. Shown only when the ship has a scanner installed; completely
+   removed from layout otherwise (body.no-scanner in JS). */
+#scanner-indicator {
+  position: absolute;
+  left: 16px;
+  bottom: calc(16px + 132px); /* legend box ~132px tall; sits right above it */
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(14,21,32,0.85);
+  border: 1px solid rgba(11,198,19,0.45);
+  border-radius: 3px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--fs-scanner);
+  letter-spacing: 1px;
+  color: #0bc613;
+  text-shadow: 0 0 4px rgba(11,198,19,0.35);
+}
+body.no-scanner #scanner-indicator { display: none; }
+.si-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #0bc613;
+  box-shadow: 0 0 5px #0bc613;
+  animation: si-pulse 1.6s ease-in-out infinite;
+}
+@keyframes si-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.5); }
+}
+
+/* Legend at the bottom */
+#map-legend {
+  position: absolute;
+  left: 16px; bottom: 16px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(14,21,32,0.85);
+  border: 1px solid rgba(200,168,90,0.25);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: 'VT323', monospace;
+  font-size: var(--fs-legend);
+}
+.legend-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--hdr-subtitle-color);
+  margin-bottom: 2px;
+}
+.legend-row { display: flex; align-items: center; gap: 6px; color: var(--body); }
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 4px currentColor;
+}
+
+/* Footer: destination + back button */
+#map-footer {
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 16px;
+  border-top: 2px solid var(--hdr-border);
+  background: linear-gradient(180deg, #141a28 0%, #10141e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+/* Pace status pill — 2-line text description of whether the
+   player is on track to hit the arrival deadline. No numbers or
+   dates; text-only to keep the concept glanceable. */
+.pace-status {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  line-height: 1.35;
+  letter-spacing: 1px;
+  padding: 6px 9px;
+  border-radius: 3px;
+  text-align: center;
+  white-space: pre-line;
+  border: 1px solid;
+  text-transform: uppercase;
+}
+.pace-status.on-pace     { color: #8cc890; border-color: rgba(140,200,144,0.45); background: rgba(140,200,144,0.08); }
+.pace-status.ahead       { color: #35c6bf; border-color: rgba(53,198,191,0.45); background: rgba(53,198,191,0.08); }
+.pace-status.behind      { color: #ffac00; border-color: rgba(255,172,0,0.45); background: rgba(255,172,0,0.08); }
+.pace-status.at-risk     { color: #cb2f34; border-color: rgba(203,47,52,0.5); background: rgba(203,47,52,0.1); }
+.destination-label {
+  font-family: 'VT323', monospace;
+  font-size: var(--fs-footer);
+  color: var(--body);
+  letter-spacing: 1px;
+}
+.destination-label strong {
+  color: var(--gold);
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+  font-weight: normal;
+}
+
+/* .panel-btn lives in shared.css */
+
+/* Controls panel */
+#controls {
+  width: 380px; background: #161a22; border: 1px solid #2a3040;
+  border-radius: 6px;
+  padding: 16px; font-family: 'VT323', monospace; font-size: 16px; color: #8898a8;
+  max-height: 640px; overflow-y: auto; overflow-x: hidden; flex-shrink: 0;
+}
+#controls h2 { font-family: 'Press Start 2P', cursive; font-size: 8px; color: var(--gold); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase; }
+#controls h3 { font-family: 'Press Start 2P', cursive; font-size: 7px; color: #5a7a6a; letter-spacing: 1px; margin: 14px 0 8px; text-transform: uppercase; border-bottom: 1px solid #2a3040; padding-bottom: 4px; }
+.ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.ctrl-row label { font-size: 14px; color: #667; flex-shrink: 0; min-width: 110px; }
+.ctrl-row input[type="range"] { flex: 1; accent-color: var(--gold); height: 4px; }
+.ctrl-row input[type="color"] { width: 32px; height: 24px; border: 1px solid #2a3040; border-radius: 3px; background: #0e1118; cursor: var(--cursor-hand, pointer); padding: 0; }
+.ctrl-row .val { font-size: 13px; color: #5a7a6a; min-width: 60px; text-align: right; font-family: 'VT323', monospace; letter-spacing: 0.5px; }
+.ctrl-row .val.modified { color: #e88830; font-weight: bold; }
+.sim-btn {
+  width: 100%; margin-top: 6px; padding: 8px;
+  font-family: 'VT323', monospace; font-size: 15px; letter-spacing: 1px; text-transform: uppercase;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset; border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold); cursor: var(--cursor-hand, pointer); border-radius: 2px;
+}
+.sim-btn:hover { filter: brightness(1.15); }
+.sim-btn:active { border-style: inset; border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a; transform: translate(1px,1px); }
+
+/* ::-webkit-scrollbar baseline lives in shared.css */
+
+</style>
+</head>
+<body>
+
+<button id="size-toggle" onclick="toggleSize()">Actual Size</button>
+
+<div id="demo-wrap">
+
+<div id="scale-root">
+<div id="game">
+  <canvas id="stars-far" width="960" height="640"></canvas>
+  <canvas id="stars-near" width="960" height="640"></canvas>
+
+  <!-- Cruise ghost (dimmed, sits behind the modal) -->
+  <div id="cruise-ghost">
+    <div class="cg-header">
+      <span class="cg-ship">THE VERDANT ARK</span>
+      <span class="cg-day">DAY 47 &middot; 73 LEFT</span>
+    </div>
+    <div class="cg-bottom"></div>
+  </div>
+
+  <div id="crt-overlay"></div>
+
+  <!-- Modal backdrop -->
+  <div id="map-backdrop" onclick="closeModal()"></div>
+
+  <div id="map-screen">
+
+    <div id="map-header">
+      <div class="hdr-left">
+        <div class="trail-name" id="trail-title">THE GOLDILOCKS RUN</div>
+        <div class="trail-stats" id="trail-stats">LUNAR TRAIL &middot; 8 NODES &middot; 1 FORK</div>
+      </div>
+      <div class="hdr-right">
+        <button class="panel-btn" onclick="closeModal()">&#9664; BACK TO CRUISE</button>
+        <button class="map-close" onclick="closeModal()" title="Close">X</button>
+      </div>
+    </div>
+
+    <div id="map-viewport">
+      <svg id="map-connections"></svg>
+      <div id="map-nodes"></div>
+      <div id="map-decor"></div>
+
+      <div id="map-info" class="empty">
+        <div class="info-empty">Click a node for details.</div>
+      </div>
+
+      <!-- Scanner indicator — only visible when a scanner is
+           installed on the ship. Renders nothing when absent. -->
+      <div id="scanner-indicator" title="Scanner Active — future nodes revealed within range">
+        <span class="si-dot"></span>
+        <span class="si-label">SCANNER ACTIVE</span>
+      </div>
+
+      <div id="map-legend">
+        <div class="legend-title">NODE TYPES</div>
+        <div class="legend-row"><span class="legend-dot" style="background: var(--node-station); color: var(--node-station)"></span>Station</div>
+        <div class="legend-row"><span class="legend-dot" style="background: var(--node-planet); color: var(--node-planet)"></span>Planet</div>
+        <div class="legend-row"><span class="legend-dot" style="background: var(--node-asteroid); color: var(--node-asteroid)"></span>Asteroid Field</div>
+        <div class="legend-row"><span class="legend-dot" style="background: var(--node-derelict); color: var(--node-derelict)"></span>Derelict</div>
+        <div class="legend-row"><span class="legend-dot" style="background: var(--node-nebula); color: var(--node-nebula)"></span>Nebula</div>
+        <div class="legend-row"><span class="legend-dot" style="background: var(--node-void); color: var(--node-void)"></span>Void / Waypoint</div>
+      </div>
+    </div>
+
+    <div id="map-footer">
+      <div class="destination-label">DESTINATION &raquo; <strong id="dest-name">PROXIMA COLONY</strong></div>
+      <div class="footer-right">
+        <div class="pace-status" id="pace-status" title="Projected schedule status">ON PACE</div>
+        <div class="destination-label">DAY <strong id="day-now">47</strong> &middot; ETA <strong id="eta">~73 DAYS</strong></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ═══ CONTROLS ═══ -->
+<div id="controls">
+  <h2>Map Controls</h2>
+
+  <h3>Modal Frame</h3>
+  <div class="ctrl-row"><label>Backdrop α</label><input type="range" id="c-backdrop" min="0" max="100" value="75"><span class="val" id="v-backdrop">75</span></div>
+  <div class="ctrl-row"><label>Border</label><input type="color" id="c-modal-border" value="#c8a85a"></div>
+  <div class="ctrl-row"><label>Width</label><input type="range" id="c-modal-w" min="700" max="940" value="920"><span class="val" id="v-modal-w">920</span></div>
+  <div class="ctrl-row"><label>Height</label><input type="range" id="c-modal-h" min="460" max="620" value="580"><span class="val" id="v-modal-h">580</span></div>
+
+  <h3>Current Position</h3>
+  <div class="ctrl-row"><label>Node index</label><input type="range" id="c-current" min="0" max="8" value="2"><span class="val" id="v-current">2</span></div>
+  <div class="ctrl-row"><label>Transit %</label><input type="range" id="c-transit" min="0" max="100" value="0"><span class="val" id="v-transit">0</span></div>
+
+  <h3>Node Sizing</h3>
+  <div class="ctrl-row"><label>Size</label><input type="range" id="c-node-size" min="10" max="60" value="25"><span class="val" id="v-node-size">25</span></div>
+
+  <h3>Node Type Colors</h3>
+  <div class="ctrl-row"><label>Station</label><input type="color" id="c-n-station" value="#d5d69f"></div>
+  <div class="ctrl-row"><label>Planet</label><input type="color" id="c-n-planet" value="#e5811f"></div>
+  <div class="ctrl-row"><label>Asteroid</label><input type="color" id="c-n-asteroid" value="#cb2f34"></div>
+  <div class="ctrl-row"><label>Derelict</label><input type="color" id="c-n-derelict" value="#5d5a61"></div>
+  <div class="ctrl-row"><label>Nebula</label><input type="color" id="c-n-nebula" value="#8c7fc8"></div>
+  <div class="ctrl-row"><label>Anomaly</label><input type="color" id="c-n-anomaly" value="#ffac00"></div>
+
+  <h3>Connection Lines</h3>
+  <div class="ctrl-row"><label>Visited</label><input type="color" id="c-line-visited" value="#c8a85a"></div>
+  <div class="ctrl-row"><label>Next edge</label><input type="color" id="c-line-next" value="#a0906a"></div>
+  <div class="ctrl-row"><label>Future</label><input type="color" id="c-line-future" value="#607080"></div>
+  <div class="ctrl-row"><label>Width</label><input type="range" id="c-line-width" min="1" max="5" step="0.5" value="3"><span class="val" id="v-line-width">3</span></div>
+  <div class="ctrl-row"><label>Dash gap</label><input type="range" id="c-dash-gap" min="2" max="24" value="16"><span class="val" id="v-dash-gap">16</span></div>
+
+  <h3>Current Position Pulse</h3>
+  <div class="ctrl-row"><label>Pulse color</label><input type="color" id="c-pulse" value="#ffac00"></div>
+
+  <h3>Branch Flavor Labels</h3>
+  <div class="ctrl-row"><label>Revealed</label><input type="color" id="c-flavor" value="#35c6bf"></div>
+  <div class="ctrl-row"><label>Hidden (???)</label><input type="color" id="c-flavor-hidden" value="#d3c48c"></div>
+
+  <h3>Font Sizes</h3>
+  <div class="ctrl-row"><label>Trail name</label><input type="range" id="c-fs-trail-name" min="8" max="20" value="12"><span class="val" id="v-fs-trail-name">12</span></div>
+  <div class="ctrl-row"><label>Trail stats</label><input type="range" id="c-fs-trail-stats" min="10" max="24" value="15"><span class="val" id="v-fs-trail-stats">15</span></div>
+  <div class="ctrl-row"><label>Tooltip</label><input type="range" id="c-fs-tooltip" min="5" max="14" value="10"><span class="val" id="v-fs-tooltip">10</span></div>
+  <div class="ctrl-row"><label>Branch label</label><input type="range" id="c-fs-branch" min="5" max="14" value="6"><span class="val" id="v-fs-branch">6</span></div>
+  <div class="ctrl-row"><label>Legend</label><input type="range" id="c-fs-legend" min="6" max="20" value="10"><span class="val" id="v-fs-legend">10</span></div>
+  <div class="ctrl-row"><label>Info name</label><input type="range" id="c-fs-info-name" min="7" max="16" value="10"><span class="val" id="v-fs-info-name">10</span></div>
+  <div class="ctrl-row"><label>Info desc</label><input type="range" id="c-fs-info-desc" min="10" max="24" value="18"><span class="val" id="v-fs-info-desc">18</span></div>
+  <div class="ctrl-row"><label>Footer</label><input type="range" id="c-fs-footer" min="10" max="28" value="25"><span class="val" id="v-fs-footer">25</span></div>
+  <div class="ctrl-row"><label>Scanner</label><input type="range" id="c-fs-scanner" min="3" max="14" value="4"><span class="val" id="v-fs-scanner">4</span></div>
+
+  <h3>Trail Generators</h3>
+  <button class="sim-btn" onclick="generateLunar()">Generate Lunar Trail (10 / 1)</button>
+  <button class="sim-btn" onclick="generateMars()">Generate Mars Trail (13 / 2)</button>
+  <button class="sim-btn" onclick="generateInterstellar()">Generate Interstellar Trail (15 / 3)</button>
+  <button class="sim-btn" onclick="resetToGoldilocks()">Restore Goldilocks (canonical)</button>
+  <button class="sim-btn" onclick="randomizeTrail()">Randomize Topology (layout stress)</button>
+
+  <h3>Simulate</h3>
+  <button class="sim-btn" onclick="advanceTransit()">Advance 10% Transit (auto-snaps)</button>
+  <button class="sim-btn" onclick="advancePosition()">Advance to Next Node</button>
+  <button class="sim-btn" onclick="resetPosition()">Reset to Start</button>
+  <button class="sim-btn" onclick="toggleHiddenBranch()">Toggle Uncharted Branch (??? ↔ revealed)</button>
+  <button class="sim-btn" onclick="cyclePaceStatus()">Cycle Pace Status</button>
+  <button class="sim-btn" onclick="toggleScanner()">Toggle Scanner (equipped ↔ not)</button>
+  <button class="sim-btn" onclick="reopenModal()">Reopen Modal</button>
+  <button class="sim-btn" onclick="resetDefaults()">Reset Defaults</button>
+</div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const root = document.documentElement;
+
+  // ── Viewport fit ─────────────────────────────────────────────
+  function fitViewport() {
+    let s;
+    if (document.body.classList.contains('fullsize')) {
+      s = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+    } else {
+      const avail = Math.min(window.innerWidth - 440, window.innerWidth * 0.65);
+      const h = window.innerHeight - 40;
+      s = Math.min(avail / 960, h / 640, 1);
+    }
+    $('scale-root').style.transform = 'scale(' + s + ')';
+  }
+  fitViewport();
+  window.addEventListener('resize', fitViewport);
+
+  window.toggleSize = function() {
+    document.body.classList.toggle('fullsize');
+    $('size-toggle').textContent = document.body.classList.contains('fullsize') ? 'Demo Size' : 'Actual Size';
+    fitViewport();
+  };
+
+  // ── Modal open/close ─────────────────────────────────────────
+  // The map demo is a popup over the (ghost) cruise screen, same
+  // pattern as inventory/growbay/crew. Open by default; X button,
+  // BACK button, backdrop click, AND ESC key all close. ESC is the
+  // canonical close convention for every popup modal across the
+  // game — see DESIGN_SYSTEM.md "Modal popup conventions".
+  document.body.classList.add('modal-open');
+  window.closeModal = function() {
+    document.body.classList.remove('modal-open');
+  };
+  window.reopenModal = function() {
+    document.body.classList.add('modal-open');
+  };
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.body.classList.contains('modal-open')) {
+      closeModal();
+    }
+  });
+
+  // ── Parallax stars ───────────────────────────────────────────
+  const farCvs = $('stars-far'), farCtx = farCvs.getContext('2d');
+  const nearCvs = $('stars-near'), nearCtx = nearCvs.getContext('2d');
+  let farStars = [], nearStars = [];
+  function makeStars(arr, count, type) {
+    arr.length = 0;
+    for (let i = 0; i < count; i++) arr.push({
+      x: Math.random()*960, y: Math.random()*640,
+      r: type==='far' ? Math.random()*1.1+0.3 : Math.random()*1.6+0.8,
+      phase: Math.random()*Math.PI*2,
+      drift: Math.random()*0.6+0.4
+    });
+  }
+  makeStars(farStars, 100, 'far');
+  makeStars(nearStars, 16, 'near');
+  function drawStars() {
+    if (PauseBus.paused) { requestAnimationFrame(drawStars); return; }
+    const now = performance.now()/1000;
+    farCtx.clearRect(0,0,960,640);
+    for (const s of farStars) {
+      farCtx.globalAlpha = 0.3 + Math.sin(now*1.5 + s.phase)*0.2;
+      farCtx.fillStyle = '#8899aa';
+      farCtx.beginPath(); farCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); farCtx.fill();
+    }
+    farCtx.globalAlpha = 1;
+    nearCtx.clearRect(0,0,960,640);
+    for (const s of nearStars) {
+      nearCtx.globalAlpha = 0.5 + Math.sin(now*0.8 + s.phase)*0.2;
+      nearCtx.fillStyle = '#c8d0d8';
+      nearCtx.beginPath(); nearCtx.arc(s.x, s.y, s.r, 0, Math.PI*2); nearCtx.fill();
+    }
+    nearCtx.globalAlpha = 1;
+    requestAnimationFrame(drawStars);
+  }
+  drawStars();
+
+  // ── Lunar trail data (embedded here for the demo; in the engine
+  //    this comes from modules/locations/lunar_test_path.json) ─
+  const TRAIL = {
+    name: 'THE GOLDILOCKS RUN',
+    subtitle: 'LUNAR TRAIL \u00b7 8 NODES \u00b7 1 FORK',
+    destination: 'PROXIMA COLONY',
+    currentDay: 47,
+    totalDays: 120,
+    nodes: [
+      // Logical coords only: `depth` is column-along-the-spine,
+      // `lane` is signed offset from spine (0 = on-spine, -1 = branch
+      // up, +1 = branch down). Pixel x/y are computed by layoutNodes()
+      // at render time so any procedurally-generated topology fits
+      // and centers in the viewport regardless of its size.
+      { id: 'node_launch',        name: 'KEPLER-9',              type: 'station',        depth: 0, lane: 0, desc: 'Earth orbital station. Departure point. The paperwork has been filed.', charted: true, threat: 'none', outcome: 'empty' },
+      { id: 'node_station_1',     name: 'WAYPOINT ZETA-4',       type: 'station',        depth: 1, lane: 0, desc: 'The last honest station. Fair prices. Genuine concern.', charted: true, threat: 'none', outcome: 'trader' },
+      { id: 'node_planet_1',      name: 'SOIL SAMPLE PARADISE',  type: 'planet',         depth: 2, lane: 0, desc: 'Rocky, mineral-rich, profoundly boring. The ship computer approves.', charted: true, threat: 'none' },
+      { id: 'node_fork_1',        name: 'CROSSROADS STATION',    type: 'station',        depth: 3, lane: 0, desc: 'A small commerce station at a split point. The dispatcher will tell you what\'s on either branch — if you ask nicely, or pay for the briefing.', charted: true, threat: 'none' },
+      { id: 'node_asteroid_1',    name: 'THE ROCKS',             type: 'asteroid_field', depth: 4, lane: -1, branch: 'alpha', branchFlavor: 'lucrative', desc: 'Mineral-bearing asteroids. Tedious, lucrative.', charted: true, threat: 'low' },
+      { id: 'node_derelict_1',    name: '???',                   realName: 'OPTIMISTIC PROJECTION', type: 'derelict', depth: 4, lane: 1, branch: 'beta', branchFlavor: 'unknown', realFlavor: 'derelict_heavy', desc: '', realDesc: 'Intact derelict. Powered down. Growing something.', charted: false, threat: 'high' },
+      { id: 'node_reconnect',     name: 'DUSTFIELD CROSSING',    type: 'nebula',         depth: 5, lane: 0, desc: 'Paths converge through a thin nebula. Shipboard events may fire here.', charted: true, threat: 'low' },
+      { id: 'node_station_final', name: 'THE LAST RESORT',       type: 'station',        depth: 6, lane: 0, desc: 'Final station. Premium prices. Mysterious trader in the corner.', charted: true, threat: 'none' },
+      { id: 'node_arrival',       name: 'PROXIMA COLONY',        type: 'station',        depth: 7, lane: 0, desc: 'Destination. The form is ready.', charted: true, threat: 'none' }
+    ],
+    // [from, to, days] — per-leg travel time. Sum of the linear
+    // spine should be close to base_days for the trail; branch
+    // alternatives typically have similar cost to each other.
+    connections: [
+      ['node_launch',        'node_station_1',     10],
+      ['node_station_1',     'node_planet_1',      14],
+      ['node_planet_1',      'node_fork_1',        12],
+      ['node_fork_1',        'node_asteroid_1',    16],
+      ['node_fork_1',        'node_derelict_1',    16],
+      ['node_asteroid_1',    'node_reconnect',     14],
+      ['node_derelict_1',    'node_reconnect',     14],
+      ['node_reconnect',     'node_station_final', 18],
+      ['node_station_final', 'node_arrival',       10]
+    ]
+  };
+
+  // Linear player position — index into the primary spine order.
+  // The fork at index 3 branches: positions 4a (asteroid) and 4b
+  // (derelict) are alternatives. For demo we assume the alpha branch
+  // was chosen once past the fork.
+  const LINEAR_ORDER = [
+    'node_launch', 'node_station_1', 'node_planet_1', 'node_fork_1',
+    'node_asteroid_1', 'node_reconnect', 'node_station_final', 'node_arrival'
+  ];
+  // No emoji icons — nodes are solid colored dots, FTL-style.
+
+  // Snapshot of the canonical authored Goldilocks Run, taken before
+  // any procgen overrides TRAIL. Used by the "Reset to Goldilocks"
+  // dev button to restore the demo's authored test case.
+  const ORIGINAL_TRAIL  = JSON.parse(JSON.stringify(TRAIL));
+  const ORIGINAL_LINEAR = LINEAR_ORDER.slice();
+
+  // Trail composition rules — drawn from GAME_BIBLE.md §4.29 (sizing)
+  // and the "Region weirdness curve (per trail)" subsection (type
+  // weights, charted ratio, threat density). Two weight tables per
+  // trail interpolated linearly across the spine, so early nodes
+  // skew civilized and late nodes skew toward the trail's flavor.
+  const TRAIL_RULES = {
+    lunar: {
+      name: 'THE GOLDILOCKS RUN', subtitle: 'LUNAR TRAIL',
+      destination: 'LUNAR COLONY', spineLen: 10, forkCount: 1,
+      daysPerLeg: 9,                                 // ~90-day total
+      // Lunar = mostly civilized throughout. No voids, no anomalies.
+      weightsStart: { station: 6, planet: 4, asteroid_field: 1, derelict: 0, nebula: 1, void: 0, anomaly: 0 },
+      weightsEnd:   { station: 4, planet: 3, asteroid_field: 2, derelict: 1, nebula: 2, void: 0, anomaly: 0 },
+      // Charted + threat are start/end pairs interpolated across the
+      // spine. Lunar is well-mapped end-to-end with very low threat.
+      chartedStart: 1.00, chartedEnd: 0.90,
+      threatLowStart: 0.10, threatLowEnd:  0.25,
+      threatHighStart:0.00, threatHighEnd: 0.05,
+      flavors: ['safe', 'lucrative', 'corporate'],
+      branchLenMin: 1, branchLenMax: 2
+    },
+    mars: {
+      name: 'THE RED CROSSING', subtitle: 'MARS TRAIL',
+      destination: 'MARS COLONY', spineLen: 13, forkCount: 2,
+      daysPerLeg: 14,                                // ~180-day total
+      // Mars = civilized → fringe ramp. Asteroid + derelict heavy mid,
+      // occasional anomaly. Still no voids (engine_required).
+      weightsStart: { station: 5, planet: 3, asteroid_field: 2, derelict: 1, nebula: 1, void: 0, anomaly: 0 },
+      weightsEnd:   { station: 2, planet: 2, asteroid_field: 4, derelict: 3, nebula: 2, void: 0, anomaly: 1 },
+      chartedStart: 0.95, chartedEnd: 0.55,
+      threatLowStart: 0.20, threatLowEnd:  0.40,
+      threatHighStart:0.05, threatHighEnd: 0.25,
+      flavors: ['lucrative', 'hostile', 'safe', 'scientific', 'derelict_heavy'],
+      branchLenMin: 2, branchLenMax: 3
+    },
+    interstellar: {
+      name: 'THE OUTBOUND', subtitle: 'INTERSTELLAR TRAIL',
+      destination: 'PROXIMA COLONY', spineLen: 15, forkCount: 3,
+      daysPerLeg: 28,                                // ~420-day total
+      // Interstellar = civilized start, much weirder middle, ends in
+      // void / anomaly territory. Voids are ONLY on this trail per §10.
+      weightsStart: { station: 4, planet: 3, asteroid_field: 2, derelict: 1, nebula: 2, void: 0, anomaly: 0 },
+      weightsEnd:   { station: 1, planet: 1, asteroid_field: 2, derelict: 3, nebula: 2, void: 5, anomaly: 4 },
+      // Civilized start = mostly charted; rules-don't-apply end =
+      // heavily uncharted. Threat ramps the same way.
+      chartedStart: 0.90, chartedEnd: 0.15,
+      threatLowStart: 0.20, threatLowEnd:  0.30,
+      threatHighStart:0.05, threatHighEnd: 0.55,
+      flavors: ['lucrative', 'hostile', 'derelict_heavy', 'scientific', 'unknown', 'unknown', 'unknown'],
+      branchLenMin: 2, branchLenMax: 3
+    }
+  };
+
+  // Type-flavored description templates for procgen nodes. Real game
+  // would pull from a content pool tagged by node_type + tone; for
+  // the demo a single line per type is enough to make the info panel
+  // not look stub-y when clicking through generated trails.
+  const TYPE_DESCS = {
+    station:        'A trading post along the route. Refuel, repair, recruit.',
+    planet:         'Unsurveyed surface. Probe drops or skip — your call.',
+    asteroid_field: 'Mineral-bearing asteroids. Slow travel, possible salvage.',
+    derelict:       'Abandoned vessel drifting silent. Loot is plausible. So is something worse.',
+    nebula:         'Dense gas cloud. Sensors gummed up; pilot earns their pay.',
+    void:           'Empty space. No services. No witnesses.',
+    anomaly:        'Sensor readings disagree. Reality is debatable here.'
+  };
+
+  function pickWeighted(weights) {
+    let total = 0;
+    for (const k in weights) total += weights[k];
+    if (total <= 0) return Object.keys(weights)[0];
+    let r = Math.random() * total;
+    for (const k in weights) {
+      r -= weights[k];
+      if (r <= 0) return k;
+    }
+    return Object.keys(weights)[0];
+  }
+  function interpWeights(a, b, t) {
+    const out = {};
+    for (const k in a) out[k] = a[k] * (1 - t) + (b[k] || 0) * t;
+    return out;
+  }
+
+  // Build a TRAIL conforming to the rules for one of the canonical
+  // trail ids. Always produces: first/last nodes are stations, mid
+  // nodes weighted by interpolated trail weights, charted/threat
+  // rolls per trail, fork count + multi-node detours respecting the
+  // anti-stack rules.
+  function generateTrail(rules) {
+    const newNodes = [];
+    const newConn  = [];
+    const spineIds = [];
+
+    for (let d = 0; d < rules.spineLen; d++) {
+      const id = 'n_spine_' + d;
+      spineIds.push(id);
+      const isEdge = (d === 0 || d === rules.spineLen - 1);
+      const t = rules.spineLen <= 1 ? 0 : d / (rules.spineLen - 1);
+      const weights = interpWeights(rules.weightsStart, rules.weightsEnd, t);
+      const type = isEdge ? 'station' : pickWeighted(weights);
+      // Charted + threat ramp linearly across the spine: civilized
+      // start → trail-flavor end. Edges always charted, never threat.
+      const chartedRate = rules.chartedStart * (1 - t) + rules.chartedEnd * t;
+      const threatLow   = rules.threatLowStart  * (1 - t) + rules.threatLowEnd  * t;
+      const threatHigh  = rules.threatHighStart * (1 - t) + rules.threatHighEnd * t;
+      const charted = isEdge ? true : Math.random() < chartedRate;
+      const threatRoll = Math.random();
+      const threat = isEdge ? 'none'
+                   : threatRoll < threatHigh ? 'high'
+                   : threatRoll < (threatHigh + threatLow) ? 'low'
+                   : 'none';
+      newNodes.push({
+        id,
+        name: charted ? rules.subtitle.split(' ')[0].slice(0,4) + '-' + d.toString().padStart(2,'0') : '???',
+        realName: charted ? null : 'WAYPOINT-' + d,
+        type, depth: d, lane: 0, charted, threat,
+        desc: charted ? TYPE_DESCS[type] : '',
+        realDesc: TYPE_DESCS[type]
+      });
+      if (d > 0) newConn.push([spineIds[d-1], id, rules.daysPerLeg + Math.floor(Math.random()*4 - 2)]);
+    }
+
+    const taken = new Set();
+    let placed = 0;
+    let branchNum = 0;
+    for (let attempt = 0; attempt < rules.forkCount * 8 && placed < rules.forkCount; attempt++) {
+      const branchLen = rules.branchLenMin + Math.floor(Math.random() * (rules.branchLenMax - rules.branchLenMin + 1));
+      if (rules.spineLen <= branchLen + 2) continue;
+      const forkAt = 1 + Math.floor(Math.random() * (rules.spineLen - branchLen - 2));
+      const rejoinAt = forkAt + branchLen + 1;
+      const lane = Math.random() < 0.5 ? -1 : 1;
+
+      let collision = false;
+      for (let d = forkAt + 1; d < rejoinAt; d++) {
+        if (taken.has(d + ',' + lane)) { collision = true; break; }
+      }
+      if (collision) continue;
+      for (let d = forkAt + 1; d < rejoinAt; d++) taken.add(d + ',' + lane);
+
+      const flavor = rules.flavors[Math.floor(Math.random() * rules.flavors.length)];
+      const branchIds = [];
+      for (let i = 0; i < branchLen; i++) {
+        const id = 'n_branch_' + branchNum + '_' + i;
+        branchIds.push(id);
+        const t = (forkAt + i + 1) / (rules.spineLen - 1);
+        const weights = interpWeights(rules.weightsStart, rules.weightsEnd, t);
+        const type = pickWeighted(weights);
+        // Branches use the same start→end ramps as the spine, just
+        // a touch less charted (detours are inherently sketchier) and
+        // a touch more threat. Unknown-flavor branches are uncharted
+        // by design.
+        const baseCharted = rules.chartedStart * (1 - t) + rules.chartedEnd * t;
+        const baseThreatLow  = rules.threatLowStart  * (1 - t) + rules.threatLowEnd  * t;
+        const baseThreatHigh = rules.threatHighStart * (1 - t) + rules.threatHighEnd * t;
+        const branchCharted = flavor === 'unknown' ? false
+                            : Math.random() < baseCharted * 0.85;
+        const branchRoll = Math.random();
+        const branchThreat = branchRoll < baseThreatHigh * 1.3 ? 'high'
+                           : branchRoll < (baseThreatHigh * 1.3 + baseThreatLow) ? 'low'
+                           : 'none';
+        newNodes.push({
+          id,
+          name: branchCharted ? 'ALT-' + (forkAt + i + 1) : '???',
+          realName: branchCharted ? null : 'OFF-PATH ' + (forkAt + i + 1),
+          type, depth: forkAt + i + 1, lane,
+          branch: 'r' + branchNum,
+          branchFlavor: i === 0 ? flavor : undefined,
+          realFlavor: flavor === 'unknown' ? rules.flavors.find(f => f !== 'unknown') || 'lucrative' : null,
+          desc: branchCharted ? TYPE_DESCS[type] : '',
+          realDesc: TYPE_DESCS[type],
+          charted: branchCharted,
+          threat: branchThreat
+        });
+      }
+      newConn.push([spineIds[forkAt], branchIds[0], Math.max(2, rules.daysPerLeg - 2)]);
+      for (let i = 0; i < branchIds.length - 1; i++) {
+        newConn.push([branchIds[i], branchIds[i+1], Math.max(2, rules.daysPerLeg - 2)]);
+      }
+      newConn.push([branchIds[branchIds.length-1], spineIds[rejoinAt], Math.max(2, rules.daysPerLeg - 2)]);
+      branchNum++;
+      placed++;
+    }
+
+    TRAIL.nodes = newNodes;
+    TRAIL.connections = newConn;
+    TRAIL.name = rules.name;
+    TRAIL.destination = rules.destination;
+    TRAIL.subtitle = rules.subtitle + ' · ' + rules.spineLen + ' NODES · ' + placed + ' FORK' + (placed === 1 ? '' : 'S');
+    TRAIL.currentDay = 0;
+    LINEAR_ORDER.length = 0;
+    spineIds.forEach(id => LINEAR_ORDER.push(id));
+
+    currentIdx = 0;
+    transitProgress = 0;
+    $('c-current').max = LINEAR_ORDER.length - 1;
+    $('c-current').value = 0;
+    $('v-current').textContent = 0;
+    $('c-transit').value = 0;
+    $('v-transit').textContent = 0;
+    clearInfoPanel();
+    render();
+  }
+
+  window.generateLunar        = function() { generateTrail(TRAIL_RULES.lunar); };
+  window.generateMars         = function() { generateTrail(TRAIL_RULES.mars); };
+  window.generateInterstellar = function() { generateTrail(TRAIL_RULES.interstellar); };
+
+  // Restore the canonical authored Goldilocks Run from the snapshot.
+  window.resetToGoldilocks = function() {
+    TRAIL.nodes        = JSON.parse(JSON.stringify(ORIGINAL_TRAIL.nodes));
+    TRAIL.connections  = ORIGINAL_TRAIL.connections.map(c => c.slice());
+    TRAIL.name         = ORIGINAL_TRAIL.name;
+    TRAIL.subtitle     = ORIGINAL_TRAIL.subtitle;
+    TRAIL.destination  = ORIGINAL_TRAIL.destination;
+    TRAIL.currentDay   = ORIGINAL_TRAIL.currentDay;
+    LINEAR_ORDER.length = 0;
+    ORIGINAL_LINEAR.forEach(id => LINEAR_ORDER.push(id));
+    currentIdx = 2;
+    transitProgress = 0;
+    $('c-current').max = LINEAR_ORDER.length - 1;
+    $('c-current').value = 2;
+    $('v-current').textContent = 2;
+    $('c-transit').value = 0;
+    $('v-transit').textContent = 0;
+    $('trail-title').textContent = 'THE GOLDILOCKS RUN';
+    clearInfoPanel();
+    render();
+  };
+
+  let currentIdx = 2; // starts at planet_1, demonstrates both past + future
+  let transitProgress = 0; // 0 = at currentIdx; 1 = arrived at currentIdx+1
+  let scannerEquipped = true; // demo default ON; gameplay default OFF
+
+  // Route planning state. `targetNodeId` is the player's chosen
+  // destination (set by clicking a future node). `hoverNodeId` is a
+  // transient preview while hovering — overrides target for display
+  // so a player at a fork can hover each branch and see both routes
+  // before committing.
+  let targetNodeId = null;
+  let hoverNodeId  = null;
+
+  // Outcome glyphs for visited nodes. Mocked content for the demo;
+  // real game pulls from event log. Kept ASCII-friendly so the
+  // pixel font renders consistently across OSes (no emoji drift).
+  const OUTCOME_GLYPHS = {
+    combat:   '⚔',   // ⚔
+    loot:     '★',   // ★
+    trader:   '⇄',   // ⇄
+    disaster: '⚠',   // ⚠
+    event:    '·',   // ·
+    empty:    '·'    // ·
+  };
+
+  // With no scanner, only the next reachable node(s) show real type/
+  // color. Everything further forward blurs to a neutral gray ? until
+  // either visited or within one step of the player.
+  function isScannable(node) {
+    if (scannerEquipped) return true;
+    if (!node) return false;
+    const nodeIdx = LINEAR_ORDER.indexOf(node.id);
+    if (nodeIdx !== -1 && nodeIdx <= currentIdx + 1) return true;
+    // A fork's branch alternatives are scannable only when the
+    // player is AT the fork (i.e., the branches are literally the
+    // immediate next step). Being one step away from the fork is
+    // NOT enough — branches stay hidden behind the fork node.
+    if (node.branch) {
+      const parent = TRAIL.connections.find(c => c[1] === node.id);
+      if (parent && LINEAR_ORDER.indexOf(parent[0]) === currentIdx) return true;
+    }
+    return false;
+  }
+
+  // ── Render the map ───────────────────────────────────────────
+  function nodeById(id) { return TRAIL.nodes.find(n => n.id === id); }
+
+  // Find the spine "fork point" for a given branch node — the
+  // predecessor that lies on the linear spine. Walks back through
+  // the connection graph until it hits a node that's in
+  // LINEAR_ORDER. Works for both authored single-node forks and
+  // procgen multi-node detours.
+  function findForkSpine(branchNode) {
+    let cur = branchNode;
+    const seen = new Set();
+    while (cur && !seen.has(cur.id)) {
+      seen.add(cur.id);
+      if (LINEAR_ORDER.indexOf(cur.id) !== -1) return cur;
+      const inEdge = TRAIL.connections.find(c => c[1] === cur.id);
+      if (!inEdge) return null;
+      cur = nodeById(inEdge[0]);
+    }
+    return null;
+  }
+
+  // How a branch label should render right now:
+  //   hidden    — fork not yet reached → dim gray "???"
+  //   uncharted — fork reached but flavor is `unknown` → red "???"
+  //   revealed  — fork reached and flavor is known → show the name
+  function branchFlavorDisplay(branchNode, flavorTag) {
+    if (!flavorTag) return null;
+    const fork = findForkSpine(branchNode);
+    const forkIdx = fork ? LINEAR_ORDER.indexOf(fork.id) : -1;
+    const reached = forkIdx >= 0 && currentIdx >= forkIdx;
+    if (!reached)                return { text: '???',                                         state: 'hidden' };
+    if (flavorTag === 'unknown') return { text: '???',                                         state: 'uncharted' };
+    return { text: flavorTag.toUpperCase().replace(/_/g, ' '),                                 state: 'revealed' };
+  }
+
+  function renderNodes() {
+    const wrap = $('map-nodes');
+    const decor = $('map-decor');
+    wrap.innerHTML = '';
+    decor.innerHTML = '';
+
+    const currentId = LINEAR_ORDER[currentIdx];
+    const visitedIds = new Set(LINEAR_ORDER.slice(0, currentIdx + 1));
+    // Opposite fork branch that wasn't taken is treated as unvisited
+    // even if later in the spine; mark the other branch here.
+    const otherBranchId = currentIdx > 3 ? 'node_derelict_1' : null;
+
+    // When in transit, the node we departed is styled as "visited"
+    // (no pulse); the pulse moves to the ship marker instead.
+    const inTransit = transitProgress > 0 && transitProgress < 1 && currentIdx < LINEAR_ORDER.length - 1;
+
+    for (const n of TRAIL.nodes) {
+      const el = document.createElement('div');
+      el.className = 'map-node type-' + n.type;
+      if (n.id === currentId && !inTransit) el.classList.add('current');
+      else if (visitedIds.has(n.id)) el.classList.add('visited');
+      else el.classList.add('unvisited');
+      if (n.id === otherBranchId) el.classList.add('unvisited');
+      if (!n.charted) el.classList.add('uncharted');
+      // Without a scanner, unvisited nodes beyond the next-reachable
+      // set go gray until you get close enough. Visited nodes stay
+      // fully revealed because you've been there.
+      const scanned = isScannable(n) || visitedIds.has(n.id);
+      if (!scanned) el.classList.add('unscanned');
+
+      el.style.left = n.x + 'px';
+      el.style.top  = n.y + 'px';
+
+      // Tooltip text shown on hover. Uncharted/unscanned nodes
+      // reveal only "???".
+      const tooltipText = (n.charted && scanned) ? n.name : '???';
+      el.setAttribute('data-tooltip', tooltipText);
+
+      const shape = document.createElement('div');
+      shape.className = 'node-shape';
+      el.appendChild(shape);
+
+      // Outcome badge — small corner glyph on visited nodes that
+      // logged an event. Mocked content for the demo; real game
+      // pulls from the event log entry written when the player
+      // resolved that node.
+      if (visitedIds.has(n.id) && n.outcome && OUTCOME_GLYPHS[n.outcome]) {
+        const badge = document.createElement('div');
+        badge.className = 'node-outcome outcome-' + n.outcome;
+        badge.textContent = OUTCOME_GLYPHS[n.outcome];
+        el.appendChild(badge);
+      }
+
+      // Click toggles target. Visited / current → clears target
+      // (no route to plot to past or self). Future-reachable →
+      // sets that node as target, or unsets if it was already.
+      el.addEventListener('click', () => {
+        if (visitedIds.has(n.id) || n.id === currentId) {
+          targetNodeId = null;
+        } else {
+          targetNodeId = (n.id === targetNodeId) ? null : n.id;
+        }
+        selectNode(n);
+        renderConnections();
+      });
+
+      // Hover preview — temporarily route to the hovered node so a
+      // player at a fork can compare branches without committing.
+      // Only the SVG layer re-renders; HTML node state (selected,
+      // current pulse, etc.) is left untouched so hover doesn't
+      // glitch the dot itself.
+      el.addEventListener('mouseenter', () => {
+        if (!visitedIds.has(n.id) && n.id !== currentId) {
+          hoverNodeId = n.id;
+          renderConnections();
+        }
+      });
+      el.addEventListener('mouseleave', () => {
+        if (hoverNodeId === n.id) {
+          hoverNodeId = null;
+          renderConnections();
+        }
+      });
+
+      wrap.appendChild(el);
+
+      // Branch flavor label — sits at the midpoint of the line from
+      // this branch node's predecessor to itself. Predecessor lookup
+      // goes through the connection graph, NOT a hardcoded id, so
+      // procedurally-generated trails work correctly. (The previous
+      // version hardcoded 'node_fork_1' which crashed renderNodes
+      // mid-loop on procgen trails, leaving connection lines drawn
+      // to nodes that never got created in the DOM.)
+      if (n.branchFlavor) {
+        const inEdge = TRAIL.connections.find(c => c[1] === n.id);
+        const parent = inEdge ? nodeById(inEdge[0]) : null;
+        if (parent) {
+          const disp = branchFlavorDisplay(n, n.branchFlavor);
+          const label = document.createElement('div');
+          let cls = 'branch-flavor ' + disp.state;
+          if (disp.state === 'revealed') cls += ' flavor-' + n.branchFlavor;
+          label.className = cls;
+          label.style.left = ((parent.x + n.x) / 2) + 'px';
+          label.style.top  = ((parent.y + n.y) / 2) + 'px';
+          label.textContent = disp.text;
+          decor.appendChild(label);
+        }
+      }
+    }
+
+    // Position + anchor point for the YOU-ARE-HERE pointer. When at
+    // a node, that's the current node's center. When in transit,
+    // that's the interpolated ship position along the connection
+    // line from currentNode → nextNode.
+    const cur = nodeById(currentId);
+    const nodeSize = parseFloat(getComputedStyle(root).getPropertyValue('--node-size'));
+    let anchorX = cur.x, anchorY = cur.y;
+
+    if (inTransit) {
+      const next = nodeById(LINEAR_ORDER[currentIdx + 1]);
+      anchorX = cur.x + (next.x - cur.x) * transitProgress;
+      anchorY = cur.y + (next.y - cur.y) * transitProgress;
+
+      // Ship marker — a triangle oriented along travel direction.
+      const angle = Math.atan2(next.y - cur.y, next.x - cur.x) * 180 / Math.PI;
+      const ship = document.createElement('div');
+      ship.className = 'ship-marker';
+      ship.style.left = anchorX + 'px';
+      ship.style.top  = anchorY + 'px';
+      ship.style.transform = 'translate(-50%, -50%) rotate(' + angle + 'deg)';
+      decor.appendChild(ship);
+    }
+
+    // "YOU ARE HERE" pointer — anchors to node (at rest) or ship
+    // (in transit). Four stacked lines with the down-arrow on the
+    // last line targeting the anchor.
+    const here = document.createElement('div');
+    here.className = 'here-pointer';
+    here.style.left = anchorX + 'px';
+    here.style.top  = (anchorY - nodeSize / 2 - 4) + 'px';
+    here.innerHTML = 'YOU<br>ARE<br>HERE<br>\u25BC';
+    decor.appendChild(here);
+  }
+
+  // BFS shortest-path from current node to target along the
+  // connection graph. Returns an ordered array of node ids, or
+  // null if no path exists. Used both for route highlighting and
+  // for route stats (days/hops/threats) in the info panel.
+  function computeRoute(targetId) {
+    const startId = LINEAR_ORDER[currentIdx];
+    if (!targetId || targetId === startId) return null;
+    const queue = [[startId, [startId]]];
+    const seen = new Set([startId]);
+    while (queue.length) {
+      const [cur, path] = queue.shift();
+      if (cur === targetId) return path;
+      for (const c of TRAIL.connections) {
+        if (c[0] === cur && !seen.has(c[1])) {
+          seen.add(c[1]);
+          queue.push([c[1], path.concat(c[1])]);
+        }
+      }
+    }
+    return null;
+  }
+
+  function renderConnections() {
+    const svg = $('map-connections');
+    svg.innerHTML = '';
+
+    const visitedIds = new Set(LINEAR_ORDER.slice(0, currentIdx + 1));
+
+    // Hover preview overrides committed target so a player at a
+    // fork can "feel out" each branch before clicking.
+    const routeTarget = hoverNodeId || targetNodeId;
+    const routePath = computeRoute(routeTarget);
+    const routeEdgeKey = (a, b) => a + '>' + b;
+    const routeEdges = new Set();
+    if (routePath) {
+      for (let i = 0; i < routePath.length - 1; i++) {
+        routeEdges.add(routeEdgeKey(routePath[i], routePath[i+1]));
+      }
+    }
+
+    for (const [a, b, days] of TRAIL.connections) {
+      const na = nodeById(a), nb = nodeById(b);
+      if (!na || !nb) continue;
+      const traveled = visitedIds.has(a) && visitedIds.has(b);
+      const onRoute  = routeEdges.has(routeEdgeKey(a, b));
+
+      // Class composition: visited > route > future-(threat|unscanned)
+      let cls = 'conn';
+      if (traveled) {
+        cls += ' visited';
+      } else if (onRoute) {
+        cls += ' route';
+      } else {
+        cls += ' future';
+        const dstScanned = isScannable(nb) || visitedIds.has(nb.id);
+        if (!dstScanned) cls += ' unscanned';
+        else cls += ' threat-' + (nb.threat || 'none');
+      }
+
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', na.x);
+      line.setAttribute('y1', na.y);
+      line.setAttribute('x2', nb.x);
+      line.setAttribute('y2', nb.y);
+      line.setAttribute('class', cls);
+      svg.appendChild(line);
+
+      // Days label at midpoint, offset slightly perpendicular to
+      // the line so it doesn't sit dead-center on the dashes. The
+      // perpendicular sign is chosen so the label always sits ABOVE
+      // a near-horizontal segment (negative y) and to the right of
+      // a near-vertical one — keeps labels from stacking on each
+      // other for parallel detour lines.
+      const dx = nb.x - na.x, dy = nb.y - na.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const offset = 9; // px perpendicular off the line
+      const px = -dy / len * offset;
+      const py =  dx / len * offset;
+      const mx = (na.x + nb.x) / 2 + (py < 0 ? px : -px);
+      const my = (na.y + nb.y) / 2 + (py < 0 ? py : -py);
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', mx);
+      text.setAttribute('y', my);
+      let labelCls = 'conn-label';
+      if (traveled) labelCls += ' traveled';
+      else if (onRoute) labelCls += ' route';
+      text.setAttribute('class', labelCls);
+      text.textContent = days + 'd';
+      svg.appendChild(text);
+    }
+  }
+
+  // Leg-days lookup — days between two connected nodes.
+  function legDays(fromId, toId) {
+    for (const c of TRAIL.connections) {
+      if ((c[0] === fromId && c[1] === toId) || (c[0] === toId && c[1] === fromId)) {
+        return c[2] || 0;
+      }
+    }
+    return 0;
+  }
+
+  // How many days from the player's current position to a given
+  // target node? null for current/visited nodes; computed along the
+  // linear spine (or via the fork for branch alternatives).
+  function etaTo(targetId) {
+    const targetIdx = LINEAR_ORDER.indexOf(targetId);
+    if (targetIdx !== -1 && targetIdx <= currentIdx) return null;
+
+    if (targetIdx !== -1) {
+      let sum = 0;
+      for (let i = currentIdx; i < targetIdx; i++) {
+        sum += legDays(LINEAR_ORDER[i], LINEAR_ORDER[i + 1]);
+      }
+      return sum;
+    }
+    // Branch alternative (not on the linear spine). Path is:
+    // current → fork → target. Find the fork that feeds this node.
+    const parent = TRAIL.connections.find(c => c[1] === targetId);
+    if (!parent) return null;
+    const forkIdx = LINEAR_ORDER.indexOf(parent[0]);
+    if (forkIdx === -1 || forkIdx < currentIdx) return null;
+    let sum = 0;
+    for (let i = currentIdx; i < forkIdx; i++) {
+      sum += legDays(LINEAR_ORDER[i], LINEAR_ORDER[i + 1]);
+    }
+    sum += legDays(parent[0], targetId);
+    return sum;
+  }
+
+  // Update the footer ETA to reflect the most recently clicked node.
+  // null = "-nul-" (current node, visited, or unreachable).
+  function setEtaDisplay(targetId) {
+    const eta = $('eta');
+    if (!targetId) {
+      eta.textContent = '~' + (LINEAR_ORDER.length - 1 - currentIdx) * 10 + ' DAYS';
+      return;
+    }
+    const days = etaTo(targetId);
+    if (days === null) {
+      eta.textContent = '-NUL-';
+    } else {
+      eta.textContent = days + ' DAYS';
+    }
+  }
+
+  // Compute summary stats over a route node-id list: total days,
+  // hops, plus a count of high/low-threat scanned nodes along the
+  // way. Used for the route summary block in the info panel.
+  function routeStats(nodeIds) {
+    const visitedIds = new Set(LINEAR_ORDER.slice(0, currentIdx + 1));
+    let days = 0, high = 0, low = 0;
+    for (let i = 0; i < nodeIds.length - 1; i++) {
+      const from = nodeIds[i], to = nodeIds[i + 1];
+      days += legDays(from, to);
+      const dst = nodeById(to);
+      if (dst) {
+        const scanned = isScannable(dst) || visitedIds.has(to);
+        if (scanned && dst.threat === 'high') high++;
+        if (scanned && dst.threat === 'low')  low++;
+      }
+    }
+    return { days, hops: nodeIds.length - 1, high, low };
+  }
+
+  // Populate the info panel when a node is clicked. Uncharted nodes
+  // reveal only ??? + a "travel to reveal" stub. Reachable future
+  // nodes also append a ROUTE summary block (days / hops / threat
+  // counts) so the player can compare paths at a fork.
+  function selectNode(n) {
+    setEtaDisplay(n.id);
+    const box = $('map-info');
+    const currentId = LINEAR_ORDER[currentIdx];
+    const visitedIds = new Set(LINEAR_ORDER.slice(0, currentIdx + 1));
+    const scanned = isScannable(n) || visitedIds.has(n.id);
+
+    let status = 'unvisited';
+    if (n.id === currentId) status = 'current';
+    else if (visitedIds.has(n.id)) status = 'visited';
+    if (!n.charted) status = 'uncharted';
+    else if (!scanned) status = 'unscanned';
+
+    const revealed  = n.charted && scanned;
+    const typeLabel = revealed ? n.type.toUpperCase().replace('_', ' ')
+                       : (!n.charted ? 'UNCHARTED' : 'OUT OF SCANNER RANGE');
+    const nameClass = revealed ? '' : ' uncharted';
+    const displayName = revealed ? n.name : '???';
+    const displayDesc = revealed ? (n.desc || '')
+                       : (!n.charted ? 'Uncharted. Travel here to reveal.'
+                                     : 'Too far to scan. Approach or equip a scanner.');
+
+    let threatHtml = '';
+    if (revealed && n.threat && n.threat !== 'none') {
+      threatHtml =
+        '<div class="info-threat threat-' + n.threat + '">' +
+          'Threat &middot; <strong>' + n.threat.toUpperCase() + '</strong>' +
+        '</div>';
+    }
+
+    // Route summary — only for reachable future nodes (not current,
+    // not visited). At a fork, players can click each branch and
+    // compare days + risk side-by-side.
+    let routeHtml = '';
+    if (n.id !== currentId && !visitedIds.has(n.id)) {
+      const path = computeRoute(n.id);
+      if (path && path.length > 1) {
+        const stats = routeStats(path);
+        routeHtml =
+          '<div class="info-route">' +
+            '<div class="info-route-line"><span>ROUTE</span>' +
+              '<strong>' + stats.days + ' DAYS &middot; ' + stats.hops + ' HOP' + (stats.hops === 1 ? '' : 'S') + '</strong></div>';
+        if (stats.high > 0) routeHtml += '<div class="info-route-line high"><span>HIGH THREAT</span><strong>' + stats.high + '</strong></div>';
+        if (stats.low  > 0) routeHtml += '<div class="info-route-line low"><span>LOW THREAT</span><strong>' + stats.low + '</strong></div>';
+        routeHtml += '</div>';
+      }
+    }
+
+    box.classList.remove('empty');
+    box.innerHTML =
+      '<div class="info-header">' +
+        '<span class="info-type">' + (n.charted ? typeLabel : 'UNCHARTED') + '</span>' +
+        '<span class="info-status ' + status + '">' + status.toUpperCase() + '</span>' +
+      '</div>' +
+      '<div class="info-name' + nameClass + '">' + displayName + '</div>' +
+      '<div class="info-desc">' + displayDesc + '</div>' +
+      threatHtml +
+      routeHtml;
+  }
+  function clearInfoPanel() {
+    const box = $('map-info');
+    box.classList.add('empty');
+    box.innerHTML = '<div class="info-empty">Click a node for details.</div>';
+    setEtaDisplay(null); // reset to default (days to arrival)
+    targetNodeId = null;
+    hoverNodeId  = null;
+  }
+
+  // Stable per-node hash → ~[-1, 1]. Same node id always produces
+  // the same offset, so the wobble is deterministic for a given
+  // trail (procedurally generated trails will get a different but
+  // consistent shape from their unique node ids). The salt argument
+  // produces independent values for x vs y axes.
+  function nodeJitter(id, salt) {
+    let h = 2166136261 ^ salt;
+    for (let i = 0; i < id.length; i++) {
+      h ^= id.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return (((h >>> 0) % 10000) / 4999.5) - 1;
+  }
+
+  // Compute pixel x/y for each node from its logical (depth, lane).
+  //
+  // Two passes wrapped together:
+  //   1. Bounding-box fit — projects (depth, lane) into pixel space
+  //      so any topology (5 nodes or 25, one fork or four, lopsided
+  //      branches) fits and centers in the current viewport.
+  //   2. Per-node jitter — adds a small id-hashed offset in both
+  //      axes scaled to the column/lane spacing, so the spine
+  //      wobbles organically and forks aren't perfect mirrors.
+  //      This is what keeps the chart feeling like a star map
+  //      instead of a HUD bar.
+  //
+  // Padding reserves room for the YOU ARE HERE pointer (top) and
+  // lets nodes near edges still pass cleanly behind the legend and
+  // info-panel overlays.
+  function layoutNodes() {
+    const vp = $('map-viewport');
+    const W = vp.clientWidth;
+    const H = vp.clientHeight;
+    if (!W || !H) return;
+
+    const PAD_X = 70;
+    // Lanes are sized in FIXED pixels around the viewport centerline,
+    // NOT bounding-box-fit. Important: an asymmetric trail (e.g. all
+    // branches on one side) would otherwise stretch one lane to fill
+    // the entire vertical space, shooting branches off-screen and
+    // clipping nodes — which is what produced the "triangle with no
+    // apex" + "forks too far away" bugs. Fixed lane spacing keeps
+    // the spine centered and branches at predictable distance
+    // regardless of topology.
+    const LANE_PX  = 95;
+    const JITTER_X = 0.22;
+    const JITTER_Y = 0.45;  // fraction of LANE_PX
+
+    const NODE_MARGIN = 22;
+    const noGo = [
+      // Top banner — keeps YOU ARE HERE pointer clear of header.
+      { x1: 0, y1: 0,        x2: W,   y2: 55 },
+      // Legend + scanner indicator (bottom-left).
+      { x1: 0, y1: H - 195,  x2: 175, y2: H }
+    ];
+
+    // X axis: bounding-box fit. Depth always uses the full width so
+    // a 5-node and a 25-node trail both span left-to-right cleanly.
+    let minD = Infinity, maxD = -Infinity;
+    for (const n of TRAIL.nodes) {
+      if (n.depth < minD) minD = n.depth;
+      if (n.depth > maxD) maxD = n.depth;
+    }
+    const depthRange = maxD - minD;
+    const innerW = W - 2 * PAD_X;
+    const dStep = (depthRange === 0) ? innerW / 4 : innerW / depthRange;
+    const cy = H / 2;
+
+    for (const n of TRAIL.nodes) {
+      const xJit = nodeJitter(n.id, 1) * JITTER_X * dStep;
+      const yJit = nodeJitter(n.id, 2) * JITTER_Y * LANE_PX;
+      n.x = ((depthRange === 0) ? W / 2 : PAD_X + (n.depth - minD) * dStep) + xJit;
+      n.y = cy + n.lane * LANE_PX + yJit;
+    }
+
+    // Clamp into viewport bounds first. Without this, a deep-lane
+    // node plus negative jitter could land at y < 0 and get clipped
+    // by overflow:hidden, leaving connection lines pointing at empty
+    // space.
+    for (const n of TRAIL.nodes) {
+      n.x = Math.max(NODE_MARGIN, Math.min(W - NODE_MARGIN, n.x));
+      n.y = Math.max(NODE_MARGIN, Math.min(H - NODE_MARGIN, n.y));
+    }
+
+    // Repel out of no-go zones. Only consider exits that stay
+    // in-viewport — for an edge-anchored zone (e.g. the legend
+    // touching x=0 and y=H), off-screen exits are dropped so the
+    // only options are right or up. Shortest valid push wins.
+    for (const n of TRAIL.nodes) {
+      for (const z of noGo) {
+        if (n.x < z.x1 || n.x > z.x2 || n.y < z.y1 || n.y > z.y2) continue;
+        const exits = [];
+        if (z.x1 > 0)  exits.push({ d: n.x - z.x1, set: () => n.x = z.x1 - NODE_MARGIN });
+        if (z.x2 < W)  exits.push({ d: z.x2 - n.x, set: () => n.x = z.x2 + NODE_MARGIN });
+        if (z.y1 > 0)  exits.push({ d: n.y - z.y1, set: () => n.y = z.y1 - NODE_MARGIN });
+        if (z.y2 < H)  exits.push({ d: z.y2 - n.y, set: () => n.y = z.y2 + NODE_MARGIN });
+        if (exits.length === 0) continue;
+        exits.sort((a, b) => a.d - b.d);
+        exits[0].set();
+      }
+    }
+  }
+
+  function render() {
+    if (TRAIL.name) $('trail-title').textContent = TRAIL.name;
+    $('trail-stats').textContent = TRAIL.subtitle;
+    $('dest-name').textContent = TRAIL.destination;
+    $('day-now').textContent = TRAIL.currentDay;
+    // Default ETA = days to the final arrival node. Use the dynamic
+    // last-spine id rather than the hardcoded 'node_arrival' so
+    // procedurally-generated trails display ETA correctly too.
+    const arrivalId = LINEAR_ORDER[LINEAR_ORDER.length - 1];
+    const arrivalDays = etaTo(arrivalId);
+    $('eta').textContent = (arrivalDays === null ? '0 DAYS' : arrivalDays + ' DAYS');
+    layoutNodes();
+    renderConnections();
+    renderNodes();
+  }
+
+  // Mock outcome roll, weighted by node type. Real game writes this
+  // when the player resolves the node's encounter; here we roll on
+  // advance so the visited badges populate as the sim walks the trail.
+  function rollOutcome(node) {
+    if (!node) return 'empty';
+    const t = node.type;
+    const r = Math.random();
+    if (t === 'station')        return r < 0.55 ? 'trader' : (r < 0.7 ? 'loot' : 'empty');
+    if (t === 'planet')         return r < 0.40 ? 'loot'   : (r < 0.7 ? 'event' : 'empty');
+    if (t === 'asteroid_field') return r < 0.45 ? 'loot'   : (r < 0.7 ? 'combat' : 'empty');
+    if (t === 'derelict')       return r < 0.35 ? 'loot'   : (r < 0.7 ? 'disaster' : 'event');
+    if (t === 'nebula')         return r < 0.30 ? 'event'  : 'empty';
+    if (t === 'void')           return r < 0.40 ? 'disaster' : 'empty';
+    if (t === 'anomaly')        return r < 0.55 ? 'event'  : (r < 0.85 ? 'disaster' : 'loot');
+    return 'empty';
+  }
+
+  // ── Sim actions ──────────────────────────────────────────────
+  window.advancePosition = function() {
+    if (currentIdx < LINEAR_ORDER.length - 1) {
+      // Stamp an outcome on the node we're departing if it didn't
+      // already have one — turns the spine into a journey diary as
+      // the sim walks it.
+      const departing = nodeById(LINEAR_ORDER[currentIdx]);
+      if (departing && !departing.outcome) departing.outcome = rollOutcome(departing);
+      currentIdx++;
+      transitProgress = 0;
+      $('c-current').value = currentIdx;
+      $('v-current').textContent = currentIdx;
+      $('c-transit').value = 0;
+      $('v-transit').textContent = 0;
+      // Clear target if we've now reached or passed it.
+      if (targetNodeId && LINEAR_ORDER.indexOf(targetNodeId) <= currentIdx) targetNodeId = null;
+      render();
+    }
+  };
+
+  // Advance transit by 10% per click. Crossing 100% snaps to the
+  // next node and resets progress to 0 — the engine behavior when
+  // a leg's travel days complete.
+  window.advanceTransit = function() {
+    if (currentIdx >= LINEAR_ORDER.length - 1) return;
+    transitProgress = Math.min(1, transitProgress + 0.1);
+    if (transitProgress >= 1) {
+      advancePosition();
+    } else {
+      $('c-transit').value = Math.round(transitProgress * 100);
+      $('v-transit').textContent = Math.round(transitProgress * 100);
+      render();
+    }
+  };
+  window.resetPosition = function() {
+    currentIdx = 0;
+    transitProgress = 0;
+    targetNodeId = null;
+    hoverNodeId  = null;
+    $('c-current').value = 0;
+    $('v-current').textContent = 0;
+    $('c-transit').value = 0;
+    $('v-transit').textContent = 0;
+    render();
+  };
+  // Pace status — "will you make the deadline?" Derived from current
+  // day + projected travel time + target date. Text only; no numbers.
+  // In the real engine this would be computed; for the demo, sim button
+  // cycles between states.
+  const PACE_STATES = [
+    { key: 'on-pace', text: 'ON\nPACE' },
+    { key: 'ahead',   text: 'AHEAD OF\nSCHEDULE' },
+    { key: 'behind',  text: 'BEHIND\nSCHEDULE' },
+    { key: 'at-risk', text: 'DEADLINE\nAT RISK' }
+  ];
+  let paceIdx = 0;
+  function renderPaceStatus() {
+    const el = $('pace-status');
+    const p = PACE_STATES[paceIdx];
+    el.className = 'pace-status ' + p.key;
+    el.textContent = p.text;
+  }
+  window.toggleScanner = function() {
+    scannerEquipped = !scannerEquipped;
+    document.body.classList.toggle('no-scanner', !scannerEquipped);
+    clearInfoPanel();
+    render();
+  };
+
+  window.cyclePaceStatus = function() {
+    paceIdx = (paceIdx + 1) % PACE_STATES.length;
+    renderPaceStatus();
+  };
+
+  // Stress-test: rebuild TRAIL with a procedurally-shaped graph so
+  // the auto-layout can be eyeballed against different topologies.
+  //
+  // Branches are MULTI-NODE detours (2-3 nodes), not single-node
+  // shortcuts. They share depths with the spine nodes between fork
+  // and rejoin points, just on a different lane — so each detour
+  // reads as a parallel path the player traverses, like a Slay the
+  // Spire branch, instead of a single point off the spine.
+  window.randomizeTrail = function() {
+    const len = 9 + Math.floor(Math.random() * 5); // 9..13 spine nodes
+    const types = ['station','planet','asteroid_field','derelict','nebula','void'];
+    const flavors = ['lucrative','hostile','safe','scientific'];
+    const newNodes = [];
+    const newConn  = [];
+    const spineIds = [];
+
+    for (let d = 0; d < len; d++) {
+      const id = 'n_spine_' + d;
+      spineIds.push(id);
+      newNodes.push({
+        id, name: 'NODE-' + d.toString().padStart(2,'0'),
+        type: d === 0 ? 'station' : (d === len-1 ? 'station' : types[Math.floor(Math.random()*types.length)]),
+        depth: d, lane: 0,
+        desc: 'Procedurally placed waypoint at depth ' + d + '.',
+        charted: true, threat: Math.random() < 0.3 ? (Math.random() < 0.5 ? 'low' : 'high') : 'none'
+      });
+      if (d > 0) newConn.push([spineIds[d-1], id, 8 + Math.floor(Math.random()*12)]);
+    }
+
+    // Multi-node detours. Each spans (fork, rejoin) with branchLen
+    // nodes filling the depths in between at lane ±1. We track
+    // taken (depth, lane) slots so two detours never stack on top
+    // of each other.
+    const detourCount = 2 + Math.floor(Math.random() * 3); // 2..4 detours
+    const taken = new Set(); // 'depth,lane' keys
+    let branchNum = 0;
+    let placed = 0;
+
+    for (let attempt = 0; attempt < detourCount * 4 && placed < detourCount; attempt++) {
+      const branchLen = 2 + Math.floor(Math.random() * 2); // 2 or 3 nodes
+      const forkAt   = 1 + Math.floor(Math.random() * (len - branchLen - 2));
+      const rejoinAt = forkAt + branchLen + 1;
+      const lane     = Math.random() < 0.5 ? -1 : 1;
+
+      // Skip if this depth+lane band is already taken by another detour.
+      let collision = false;
+      for (let d = forkAt + 1; d < rejoinAt; d++) {
+        if (taken.has(d + ',' + lane)) { collision = true; break; }
+      }
+      if (collision) continue;
+      for (let d = forkAt + 1; d < rejoinAt; d++) taken.add(d + ',' + lane);
+
+      const flavor = flavors[Math.floor(Math.random() * flavors.length)];
+      const branchIds = [];
+      for (let i = 0; i < branchLen; i++) {
+        const id = 'n_branch_' + branchNum + '_' + i;
+        branchIds.push(id);
+        newNodes.push({
+          id, name: 'ALT-' + (forkAt + i + 1),
+          type: types[Math.floor(Math.random() * types.length)],
+          depth: forkAt + i + 1, lane,
+          branch: 'r' + branchNum,
+          // Only the first branch node carries the flavor label so
+          // each detour shows ONE flavor tag (between fork and the
+          // entry of the branch), not three stacked on the same arc.
+          branchFlavor: i === 0 ? flavor : undefined,
+          desc: 'Alternate route — node ' + (i+1) + ' of ' + branchLen + '.',
+          charted: true, threat: Math.random() < 0.4 ? (Math.random() < 0.5 ? 'low' : 'high') : 'none'
+        });
+      }
+      // Wire the detour: spine[fork] → branch[0] → ... → branch[N-1] → spine[rejoin]
+      newConn.push([spineIds[forkAt], branchIds[0], 6 + Math.floor(Math.random()*4)]);
+      for (let i = 0; i < branchIds.length - 1; i++) {
+        newConn.push([branchIds[i], branchIds[i+1], 6 + Math.floor(Math.random()*4)]);
+      }
+      newConn.push([branchIds[branchIds.length-1], spineIds[rejoinAt], 6 + Math.floor(Math.random()*4)]);
+      branchNum++;
+      placed++;
+    }
+
+    TRAIL.nodes = newNodes;
+    TRAIL.connections = newConn;
+    LINEAR_ORDER.length = 0;
+    spineIds.forEach(id => LINEAR_ORDER.push(id));
+    TRAIL.subtitle = 'PROC TRAIL · ' + len + ' SPINE · ' + placed + ' DETOUR' + (placed===1?'':'S');
+
+    currentIdx = 0;
+    transitProgress = 0;
+    $('c-current').max = LINEAR_ORDER.length - 1;
+    $('c-current').value = 0;
+    $('v-current').textContent = 0;
+    $('c-transit').value = 0;
+    $('v-transit').textContent = 0;
+    clearInfoPanel();
+    render();
+  };
+
+  window.toggleHiddenBranch = function() {
+    const derelict = nodeById('node_derelict_1');
+    if (derelict.branchFlavor === 'unknown') {
+      derelict.branchFlavor = derelict.realFlavor || 'derelict_heavy';
+      derelict.charted = true;
+      derelict.name = derelict.realName || derelict.name;
+      derelict.desc = derelict.realDesc || derelict.desc;
+    } else {
+      derelict.branchFlavor = 'unknown';
+      derelict.charted = false;
+      derelict.name = '???';
+      derelict.desc = '';
+    }
+    clearInfoPanel();
+    render();
+  };
+
+  // ── Apply styles ─────────────────────────────────────────────
+  function apply() {
+    const setVar = (name, val) => root.style.setProperty(name, val);
+
+    // Modal frame — backdrop alpha + border + size.
+    setVar('--modal-backdrop', 'rgba(4,8,16,' + ($('c-backdrop').value / 100) + ')');
+    $('v-backdrop').textContent = $('c-backdrop').value;
+    setVar('--modal-border', $('c-modal-border').value);
+    setVar('--modal-width',  $('c-modal-w').value + 'px');
+    $('v-modal-w').textContent = $('c-modal-w').value;
+    setVar('--modal-height', $('c-modal-h').value + 'px');
+    $('v-modal-h').textContent = $('c-modal-h').value;
+
+    currentIdx = parseInt($('c-current').value);
+    $('v-current').textContent = currentIdx;
+    transitProgress = parseInt($('c-transit').value) / 100;
+    $('v-transit').textContent = $('c-transit').value;
+
+    setVar('--node-size', $('c-node-size').value + 'px');
+    $('v-node-size').textContent = $('c-node-size').value;
+
+    setVar('--node-station',  $('c-n-station').value);
+    setVar('--node-planet',   $('c-n-planet').value);
+    setVar('--node-asteroid', $('c-n-asteroid').value);
+    setVar('--node-derelict', $('c-n-derelict').value);
+    setVar('--node-nebula',   $('c-n-nebula').value);
+    setVar('--node-anomaly',  $('c-n-anomaly').value);
+
+    setVar('--line-visited', $('c-line-visited').value);
+    setVar('--line-next',    $('c-line-next').value);
+    setVar('--line-future',  $('c-line-future').value);
+    setVar('--line-width',   $('c-line-width').value + 'px');
+    $('v-line-width').textContent = $('c-line-width').value;
+    setVar('--dash-gap', $('c-dash-gap').value + 'px');
+    $('v-dash-gap').textContent = $('c-dash-gap').value;
+
+    setVar('--current-pulse', $('c-pulse').value);
+    setVar('--flavor-color',  $('c-flavor').value);
+    setVar('--flavor-hidden-color', $('c-flavor-hidden').value);
+
+    // Font sizes — all stored in px via CSS vars.
+    const fsIds = ['fs-trail-name','fs-trail-stats','fs-tooltip','fs-branch',
+                   'fs-legend','fs-info-name','fs-info-desc','fs-footer','fs-scanner'];
+    for (const key of fsIds) {
+      const v = $('c-' + key).value;
+      setVar('--' + key, v + 'px');
+      $('v-' + key).textContent = v;
+    }
+
+    render();
+  }
+
+  const DEFAULTS = {
+    'c-backdrop': '75', 'c-modal-border': '#c8a85a',
+    'c-modal-w': '920', 'c-modal-h': '580',
+    'c-current': '2', 'c-transit': '0',
+    'c-node-size': '25',
+    'c-n-station': '#d5d69f', 'c-n-planet': '#e5811f',
+    'c-n-asteroid': '#cb2f34', 'c-n-derelict': '#5d5a61', 'c-n-nebula': '#8c7fc8',
+    'c-n-anomaly': '#ffac00',
+    'c-line-visited': '#c8a85a', 'c-line-next': '#a0906a', 'c-line-future': '#607080',
+    'c-line-width': '3', 'c-dash-gap': '16',
+    'c-pulse': '#ffac00',
+    'c-flavor': '#35c6bf', 'c-flavor-hidden': '#d3c48c',
+    'c-fs-trail-name': '12', 'c-fs-trail-stats': '15',
+    'c-fs-tooltip': '10', 'c-fs-branch': '6',
+    'c-fs-legend': '10',
+    'c-fs-info-name': '10', 'c-fs-info-desc': '18',
+    'c-fs-footer': '25', 'c-fs-scanner': '4'
+  };
+
+  document.querySelectorAll('#controls input[type="color"]').forEach(input => {
+    if (input.parentElement.querySelector('.val')) return;
+    const span = document.createElement('span');
+    span.className = 'val';
+    span.textContent = input.value.toUpperCase();
+    input.parentElement.appendChild(span);
+    input.addEventListener('input', () => { span.textContent = input.value.toUpperCase(); });
+  });
+
+  function markModified() {
+    for (const [id, defVal] of Object.entries(DEFAULTS)) {
+      const el = $(id);
+      if (!el) continue;
+      const span = el.parentElement.querySelector('.val');
+      if (!span) continue;
+      span.classList.toggle('modified', String(el.value).toLowerCase() !== String(defVal).toLowerCase());
+    }
+  }
+
+  document.querySelectorAll('#controls input').forEach(el => el.addEventListener('input', () => {
+    apply();
+    markModified();
+  }));
+
+  window.resetDefaults = function() {
+    for (const [id, val] of Object.entries(DEFAULTS)) {
+      const el = $(id);
+      if (!el) continue;
+      el.value = val;
+      if (el.type === 'color') {
+        const span = el.parentElement.querySelector('.val');
+        if (span) span.textContent = val.toUpperCase();
+      }
+    }
+    apply();
+    markModified();
+  };
+
+  apply();
+  markModified();
+  renderPaceStatus();
+
+})();
+</script>
+</body>
+</html>

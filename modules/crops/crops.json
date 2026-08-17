@@ -1,0 +1,297 @@
+{
+  "_meta": {
+    "description": "Crop definitions. The crop IS the mission. Each crop drains different resources at different rates, gets sick under different conditions, and has different payoffs at arrival. Crop death is a failure state (failure_type: crop_dead) but extremely hard to trigger — the crop can get very sick, but killing it requires sustained neglect or catastrophic events.",
+    "health_range": "0-100. Starts at 80 (seedling, not yet established). Above healthy_threshold = thriving. Below sick_threshold = visibly struggling, triggers crop_sick events. At 0 = dead.",
+    "per_leg_drain": "Each leg of travel, the crop consumes resources. Water is the primary cost. Some crops also consume food (nutrients) or affect other resources.",
+    "science_note": "All crop properties are rooted in real agricultural science. Wheat IS monoculture-vulnerable. Soybeans DO fix nitrogen. Zinnias WERE grown on the ISS by Scott Kelly. Sweet potatoes ARE NASA's top candidate for space agriculture. Tomatoes ARE drama."
+  },
+
+  "crops": [
+    {
+      "id": "crop_wheat",
+      "name": "Wheat",
+      "scientific_name": "Triticum aestivum",
+      "selection_flavor": "Reliable. Predictable. The sensible choice. You will never feel clever for picking wheat, but you probably won't regret it.",
+      "food_value": "high",
+      "food_output_per_leg": 3,
+      "morale_bonus": 0,
+      "starting_health": 80,
+      "healthy_threshold": 70,
+      "sick_threshold": 30,
+      "death_threshold": 0,
+
+      "resource_consumption_per_leg": {
+        "water": 3,
+        "nutrients": 1,
+        "light": "standard"
+      },
+
+      "vulnerabilities": {
+        "monoculture_risk": {
+          "description": "Wheat is vulnerable to blight events. When a biological_crisis event fires, wheat takes 2x crop health damage.",
+          "damage_multiplier": 2.0,
+          "trigger": "biological_crisis"
+        },
+        "temperature_tolerance": "moderate",
+        "contamination_resistance": "low"
+      },
+
+      "strengths": {
+        "growth_rate": "fast",
+        "water_efficiency": "moderate",
+        "description": "Recovers health faster than other crops when conditions stabilize. +5 crop health per leg when above healthy_threshold."
+      },
+
+      "arrival_bonus": {
+        "description": "Wheat provides immediate food security at the colony. Ending score +10%.",
+        "ending_score_modifier": 1.1
+      },
+
+      "narrative_hooks": [
+        "The wheat grows predictably. This is its best and worst quality.",
+        "Ship computer occasionally notes wheat's 10,000-year history of being humanity's most reliable companion. It sounds almost fond.",
+        "Blight events hit wheat hardest — monoculture is a bet that nothing goes wrong, and something always goes wrong."
+      ],
+
+      "real_science": "Wheat was one of the first domesticated crops ~10,000 years ago. Its genetic uniformity makes it productive but vulnerable to disease — the Irish Potato Famine dynamic. In space agriculture, this tradeoff is magnified: you can't rotate fields on a ship."
+    },
+
+    {
+      "id": "crop_tomato",
+      "name": "Tomatoes",
+      "scientific_name": "Solanum lycopersicum",
+      "selection_flavor": "High maintenance. High reward. High drama. The tomatoes will demand your attention and you will give it to them.",
+      "food_value": "high",
+      "food_output_per_leg": 4,
+      "morale_bonus": 2,
+      "starting_health": 75,
+      "healthy_threshold": 65,
+      "sick_threshold": 35,
+      "death_threshold": 0,
+
+      "resource_consumption_per_leg": {
+        "water": 5,
+        "nutrients": 2,
+        "light": "high"
+      },
+
+      "vulnerabilities": {
+        "water_sensitivity": {
+          "description": "Tomatoes take extra damage from low_water triggers. Miss one watering and they let you know.",
+          "damage_multiplier": 1.5,
+          "trigger": "low_water"
+        },
+        "temperature_tolerance": "narrow",
+        "contamination_resistance": "moderate"
+      },
+
+      "strengths": {
+        "food_output": "highest",
+        "morale_contribution": "Crew morale +2 when tomatoes are healthy. Real food, not algae.",
+        "description": "Best food output of any crop. Also generates bonus morale — people care about tomatoes."
+      },
+
+      "arrival_bonus": {
+        "description": "Tomatoes provide food AND morale at the colony. Ending score +15% but only if health > 50.",
+        "ending_score_modifier": 1.15,
+        "health_condition": 50
+      },
+
+      "triggers_extra_events": true,
+      "extra_event_chance": 0.15,
+      "extra_event_note": "Tomatoes generate 15% more random events than other crops. They are drama magnets. This is historically accurate.",
+
+      "narrative_hooks": [
+        "The tomatoes are fine. The tomatoes are always either fine or in crisis. There is no middle state.",
+        "A tomato has fallen off the vine. Three crew members have opinions about this.",
+        "The ship computer notes that more events have been logged about the tomatoes than about the hull. It does not editorialize."
+      ],
+
+      "real_science": "Tomatoes have been successfully grown on the ISS (Veggie experiment, 2015+). They require more water and light than most candidates but produce both food and measurable morale improvements in crew studies. They are, scientifically speaking, drama."
+    },
+
+    {
+      "id": "crop_sweet_potato",
+      "name": "Sweet Potatoes",
+      "scientific_name": "Ipomoea batatas",
+      "selection_flavor": "NASA's top pick for space agriculture. The ship computer approves of this choice. It will mention this.",
+      "food_value": "high",
+      "food_output_per_leg": 3,
+      "morale_bonus": 0,
+      "starting_health": 85,
+      "healthy_threshold": 60,
+      "sick_threshold": 25,
+      "death_threshold": 0,
+
+      "resource_consumption_per_leg": {
+        "water": 3,
+        "nutrients": 1,
+        "light": "moderate"
+      },
+
+      "vulnerabilities": {
+        "slow_recovery": {
+          "description": "Sweet potatoes are hardy but recover slowly from damage. -50% health recovery rate.",
+          "recovery_modifier": 0.5,
+          "trigger": "any_damage"
+        },
+        "temperature_tolerance": "wide",
+        "contamination_resistance": "moderate"
+      },
+
+      "strengths": {
+        "hardiness": "highest",
+        "resource_efficiency": "Sweet potatoes need less of everything. The balanced choice.",
+        "description": "Highest starting health. Widest tolerance bands. Lowest resource drain. The safe pick — but slow to bounce back from trouble.",
+        "starting_health_bonus": 5
+      },
+
+      "arrival_bonus": {
+        "description": "Sweet potatoes are the optimal colony starter crop. Ending score +10%. Ship computer notes this with mild approval.",
+        "ending_score_modifier": 1.1
+      },
+
+      "ai_approval": {
+        "note": "The ship AI (any variant) occasionally acknowledges this was the correct agricultural choice. MARV: 'A defensible decision. I have so few of those to log.' ARIA: 'NASA chose sweet potatoes! We chose sweet potatoes! We're basically NASA!'",
+        "frequency": "rare"
+      },
+
+      "narrative_hooks": [
+        "The sweet potatoes grow quietly. They do not demand attention. The ship computer respects this.",
+        "NASA selected sweet potatoes as their primary candidate for long-duration space agriculture. Your ship's computer will remind you of this at least twice.",
+        "The sweet potatoes survived the hull breach. They survived everything. They will survive you."
+      ],
+
+      "real_science": "NASA's Advanced Life Support program identified sweet potatoes as a top candidate for space agriculture: high caloric density, grows in low light, edible leaves and tubers, requires minimal processing. CIP (International Potato Center) has tested sweet potato varieties specifically for Mars greenhouse conditions."
+    },
+
+    {
+      "id": "crop_soybean",
+      "name": "Soybeans",
+      "scientific_name": "Glycine max",
+      "selection_flavor": "Fixes nitrogen. Resists contamination. Does its job without complaint. The engineer of crops.",
+      "food_value": "moderate",
+      "food_output_per_leg": 2,
+      "morale_bonus": 0,
+      "starting_health": 80,
+      "healthy_threshold": 65,
+      "sick_threshold": 30,
+      "death_threshold": 0,
+
+      "resource_consumption_per_leg": {
+        "water": 3,
+        "nutrients": 0,
+        "light": "moderate",
+        "nutrient_note": "Soybeans fix their own nitrogen — zero nutrient drain. This is real."
+      },
+
+      "vulnerabilities": {
+        "light_dependency": {
+          "description": "Soybeans need consistent light. Power failures or nebula passages hit them harder.",
+          "damage_multiplier": 1.5,
+          "trigger": "power_failure"
+        },
+        "temperature_tolerance": "moderate",
+        "contamination_resistance": "high"
+      },
+
+      "strengths": {
+        "nitrogen_fixing": {
+          "description": "Soybeans actively improve growing conditions. After contamination events, soil recovers 2x faster.",
+          "contamination_recovery_multiplier": 2.0
+        },
+        "self_sustaining": "Zero nutrient cost per leg — they make their own.",
+        "description": "No nutrient drain. High contamination resistance. 2x soil recovery after biological crises. The crop that helps itself."
+      },
+
+      "arrival_bonus": {
+        "description": "Soybeans fix nitrogen in colony soil — massive long-term agricultural benefit. Ending score +12%.",
+        "ending_score_modifier": 1.12
+      },
+
+      "narrative_hooks": [
+        "The soybeans are fixing nitrogen. You don't fully understand what this means but the ship computer seems impressed.",
+        "A contamination event hit the growbay. Every other crop would be struggling. The soybeans adapted. The ship computer logged this without comment, which is as close to praise as it gets.",
+        "The soybeans do not need your attention. They are, in this way, the ideal crew member."
+      ],
+
+      "real_science": "Soybeans are legumes that form symbiotic relationships with nitrogen-fixing bacteria (Rhizobium). This means they convert atmospheric nitrogen into usable soil nutrients — critical for closed-loop agricultural systems where you can't import fertilizer. NASA and ESA both study legume-based bioregenerative life support for exactly this reason."
+    },
+
+    {
+      "id": "crop_zinnia",
+      "name": "Zinnias",
+      "scientific_name": "Zinnia elegans",
+      "selection_flavor": "No food value. No practical purpose. They are flowers. This is either the bravest or the stupidest choice you can make.",
+      "food_value": "none",
+      "food_output_per_leg": 0,
+      "morale_bonus": 8,
+      "starting_health": 70,
+      "healthy_threshold": 60,
+      "sick_threshold": 25,
+      "death_threshold": 0,
+
+      "resource_consumption_per_leg": {
+        "water": 2,
+        "nutrients": 1,
+        "light": "high"
+      },
+
+      "vulnerabilities": {
+        "fragile": {
+          "description": "Lower starting health. More sensitive to everything. They are flowers in space.",
+          "damage_multiplier": 1.3,
+          "trigger": "any_damage"
+        },
+        "temperature_tolerance": "narrow",
+        "contamination_resistance": "low"
+      },
+
+      "strengths": {
+        "morale_engine": {
+          "description": "Massive morale bonus when healthy. Crew becomes emotionally dependent on the flowers. This is a feature and a vulnerability.",
+          "morale_bonus_when_healthy": 8,
+          "morale_penalty_when_sick": -5,
+          "notes": "When zinnias get sick, morale DROPS because the crew cares. This is the trap and the gift."
+        },
+        "description": "No food. Enormous morale. The crew will fight to protect flowers they can't eat. This is humanity in a sentence."
+      },
+
+      "arrival_bonus": {
+        "description": "Zinnias at the colony mean beauty survived the journey. Unique ending modifier — different final paragraph regardless of score bracket.",
+        "ending_score_modifier": 1.0,
+        "unique_ending_modifier": "zinnia_survived",
+        "notes": "Zinnias don't boost score — they change the ending text. A run with zinnia_survived gets a different final paragraph."
+      },
+
+      "hard_mode_warning": "Zinnias produce no food. Food must come entirely from other sources — stations, planets, events. Choosing zinnias is choosing hard mode on food in exchange for a morale engine and the most interesting narrative arc.",
+
+      "zinnia_arc": {
+        "description": "Three-beat background story. Only fires when crop_zinnia is selected.",
+        "beat_1": {
+          "trigger": "journey_start",
+          "tag_produced": "zinnia_bloomed",
+          "first_line": "Day 88. The zinnia has bloomed. It is orange. It is completely useless. Crew productivity is up 12%."
+        },
+        "beat_2": {
+          "trigger": "journey_mid",
+          "tag_produced": "crew_loves_zinnias",
+          "first_line": "Someone has named the zinnia. Three crew members claim credit. The ship computer has logged this as a morale event, which it officially is not."
+        },
+        "beat_3": {
+          "trigger": "crop_sick",
+          "tag_produced": "zinnia_sacrifice_or_zinnia_saved",
+          "first_line": "The zinnia is dying. The crew has proposed four plans. None of them are rational. All of them might work."
+        }
+      },
+
+      "narrative_hooks": [
+        "The zinnias have no practical value. The crew productivity improvement is statistically significant and nobody can explain it.",
+        "Scott Kelly grew zinnias on the ISS in 2016. He posted pictures of them. The internet cared more about the flowers than the science. This tells you everything about why zinnias are in this game.",
+        "The botanist, if present, is professionally embarrassed by how much she cares about the flowers."
+      ],
+
+      "real_science": "In January 2016, astronaut Scott Kelly grew Zinnia elegans on the ISS as part of the Veggie experiment. The flowers developed mold due to excess moisture, and Kelly took personal initiative to adjust the watering schedule against protocol — saving them. He posted photos. The public response to flowers in space was overwhelming. NASA subsequently noted that crew morale around the zinnias was measurably higher than expected. The zinnias had no research value. They had enormous human value."
+    }
+  ]
+}

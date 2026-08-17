@@ -1,0 +1,225 @@
+[
+  {
+    "id": "crew_botanist_001",
+    "active": true,
+    "role": "botanist",
+    "name": "Dr. Osei",
+    "bio": "Knows every plant on Earth by sight. Has opinions about all of them. Does not like what is growing on the derelict.",
+    "personality": "professional",
+    "eats_double": false,
+    "passive_skill": {
+      "description": "Crop health events resolve more favorably. Crop water consumption reduced 15%.",
+      "effect": "crop_care",
+      "effort_contribution": {
+        "repair_types": ["biological_events", "crop_events", "contamination_events"],
+        "value": 25
+      }
+    },
+    "active_skill": {
+      "name": "Greenhouse Protocol",
+      "description": "Stabilize a sick crop — restore 15 crop health. One use per leg.",
+      "uses_per_leg": 1,
+      "recharges_at": "station",
+      "effect": { "crop_health": 15 }
+    },
+    "narrative_unlocks": [
+      "Plant identification choices in derelict and planet events",
+      "Modified descriptions when examining alien biology — she knows what she's looking at and doesn't like it",
+      "Zinnia Arc beat variations — professionally embarrassed by how much she cares"
+    ],
+    "crew_display_state": "healthy"
+  },
+
+  {
+    "id": "crew_engineer_001",
+    "active": true,
+    "role": "engineer",
+    "name": "Kazuki",
+    "bio": "Fixes things. Eats twice as much. Nobody has asked why.",
+    "personality": "stoic",
+    "eats_double": true,
+    "passive_skill": {
+      "description": "Hull repair events cost less time and resources. Fabricator wear reduced by 20%.",
+      "effect": "hull_repair",
+      "effort_contribution": {
+        "repair_types": ["hull_events", "mechanical_events", "fabricator_events"],
+        "value": 25
+      }
+    },
+    "active_skill": {
+      "name": "Emergency Patch",
+      "description": "Prevent 1 hull damage event per leg. Also enables improvised fabricator repair.",
+      "uses_per_leg": 1,
+      "recharges_at": "station",
+      "effect": { "hull_damage_prevented": 1 }
+    },
+    "narrative_unlocks": [
+      "Improvised fabricator repair path — no parts cost, partial restoration, can fail",
+      "Mechanical event options with better outcomes",
+      "Derelict salvage events — knows what's worth taking"
+    ],
+    "crew_display_state": "healthy"
+  },
+
+  {
+    "id": "crew_medic_001",
+    "active": true,
+    "role": "medic",
+    "name": "Dr. Vasquez",
+    "bio": "Chronically anxious. Excellent at their job. Do not ask about their residency.",
+    "personality": "stressed",
+    "eats_double": false,
+    "passive_skill": {
+      "description": "Severity rolls improved — injury instead of lethal more often. Injured crew recover faster.",
+      "effect": "crew_health",
+      "effort_contribution": {
+        "repair_types": ["medical_events", "biological_events"],
+        "value": 25
+      },
+      "severity_modifier": {
+        "lethal_to_injury_chance": 0.3,
+        "notes": "30% chance a lethal outcome downgrades to injury when medic is aboard"
+      }
+    },
+    "active_skill": {
+      "name": "Treatment",
+      "description": "Heal one injured crew member — restore to healthy. One use per leg.",
+      "uses_per_leg": 1,
+      "recharges_at": "station",
+      "effect": { "heal_crew": 1 }
+    },
+    "narrative_unlocks": [
+      "Medical treatment choices that aren't available without a medic",
+      "Defibrillator microgame target zones doubled",
+      "Zinnia Arc — documents the measurable morale improvement in her logs"
+    ],
+    "crew_display_state": "healthy"
+  },
+
+  {
+    "id": "crew_pilot_001",
+    "active": true,
+    "role": "pilot",
+    "name": "Reeves",
+    "bio": "Overconfident. Statistically correct 78% of the time. Keeps a tally.",
+    "personality": "prickly",
+    "eats_double": false,
+    "passive_skill": {
+      "description": "Fuel efficiency improved — engine burn reduced 10%. Calibration microgame drift reduced.",
+      "effect": "fuel_efficiency",
+      "effort_contribution": {
+        "repair_types": ["navigation_events"],
+        "value": 25
+      },
+      "fuel_burn_modifier": 0.9
+    },
+    "active_skill": {
+      "name": "Push Engines",
+      "description": "Skip a node at double fuel cost. Sometimes you need to be somewhere else.",
+      "uses_per_leg": 1,
+      "recharges_at": "station",
+      "effect": { "skip_node": true, "fuel_cost_multiplier": 2 }
+    },
+    "narrative_unlocks": [
+      "Evasive maneuver choices with reduced fuel cost",
+      "Nebula navigation minigame bonus — tighter controls",
+      "Can identify ship signatures on long-range scans"
+    ],
+    "crew_display_state": "healthy"
+  },
+
+  {
+    "id": "crew_chef_001",
+    "active": true,
+    "role": "chef",
+    "name": "Reyes",
+    "bio": "The most important person on the ship. They know it.",
+    "personality": "patient",
+    "eats_double": false,
+    "passive_skill": {
+      "description": "Food lasts longer — consumption reduced 15%. Passive morale +1 from actual meals.",
+      "effect": "food_efficiency",
+      "effort_contribution": {
+        "repair_types": ["food_events", "morale_events"],
+        "value": 25
+      },
+      "food_consumption_modifier": 0.85,
+      "morale_passive": 1
+    },
+    "active_skill": {
+      "name": "Special Meal",
+      "description": "Restore 10 morale using food reserves. Worth it.",
+      "uses_per_leg": 1,
+      "recharges_at": "station",
+      "effect": { "morale": 10, "food_cost": 5 }
+    },
+    "narrative_unlocks": [
+      "Food-based morale recovery events",
+      "Chef's Secret Project — suspicious fungus + chef = artisanal space cheese",
+      "Edibility judgment on unknown planet specimens — 'this is food' vs 'this is not food'"
+    ],
+    "crew_display_state": "healthy"
+  },
+
+  {
+    "id": "crew_xenobiologist_001",
+    "active": true,
+    "role": "xenobiologist",
+    "name": "Dr. Tanaka",
+    "bio": "Deeply excited about everything that could kill them. This is either bravery or a problem.",
+    "personality": "patient",
+    "eats_double": false,
+    "passive_skill": {
+      "description": "Anomaly and alien events have additional safe options. Biological sample analysis available.",
+      "effect": "alien_analysis",
+      "effort_contribution": {
+        "repair_types": ["biological_events", "alien_events", "anomaly_events"],
+        "value": 25
+      }
+    },
+    "active_skill": {
+      "name": "Field Analysis",
+      "description": "Analyze one unknown biological item or specimen — reveals properties before committing. One use per leg.",
+      "uses_per_leg": 1,
+      "recharges_at": "station",
+      "effect": { "reveal_biological_properties": true }
+    },
+    "narrative_unlocks": [
+      "Diplomatic option at the deep space anomaly (requires alien_seed_pod + xenobiologist)",
+      "Hidden choice to take biological samples at derelict stations",
+      "Alien encounter options that don't end in shooting"
+    ],
+    "crew_display_state": "healthy"
+  },
+
+  {
+    "id": "crew_diplomat_001",
+    "active": true,
+    "role": "diplomat",
+    "name": "Hargrove",
+    "bio": "Absolutely useless in every situation except the one specific situation. That situation comes up more than you'd think.",
+    "personality": "professional",
+    "eats_double": false,
+    "passive_skill": {
+      "description": "No passive stat bonus. They'd call it 'strategic patience.'",
+      "effect": "none",
+      "effort_contribution": {
+        "repair_types": ["negotiation_events", "station_events"],
+        "value": 25
+      }
+    },
+    "active_skill": {
+      "name": "Negotiation",
+      "description": "Unlock peaceful resolution in hostile/pirate events. Also occasionally talk stations into better deals.",
+      "uses_per_leg": 1,
+      "recharges_at": "station",
+      "effect": { "unlock_peaceful_resolution": true }
+    },
+    "narrative_unlocks": [
+      "Negotiation_wobble microgame only appears with diplomat aboard",
+      "Peaceful resolution options in pirate/hostile encounters",
+      "Station reputation improves — better recruitment pool"
+    ],
+    "crew_display_state": "healthy"
+  }
+]

@@ -1,0 +1,3460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trans-plant — Cruise Screen Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="shared.css" rel="stylesheet">
+<script src="shared.js"></script>
+<style>
+
+:root {
+  /* --gold and --red live in shared.css. Remaining vars stay
+     local because they diverge across demos. */
+  --teal: #8cc890;
+  --orange: #e88830;
+  --cream: #e8d8a0;
+  --slate: #2a3040;
+  --deep: #0e1520;
+  --void: #020408;
+  --body: #8898a8;
+
+  /* Header */
+  --hdr-bg-top: #141a28;
+  --hdr-bg-bot: #10141e;
+  --hdr-border: #c8a85a;
+  --hdr-title-color: #c8a85a;
+  --hdr-ticker-color: #35c6bf;
+  --hdr-ticker-event: #cc3333;
+  --hdr-meta-color: #aab5c4;
+  --hdr-paused-color: #ffac00;
+
+  /* AI dialog panel */
+  --ai-bg: rgba(8,12,18,0.88);
+  --ai-border: rgba(200,168,90,0.25);
+  --ai-name-color: #c8a85a;
+  --ai-text-color: #aab5c4;
+
+  /* Scene alert */
+  --alert-color: #ffac00;
+  --alert-size: 11px;
+
+  /* Resource bar */
+  --res-label-color: #5a7a6a;
+  --res-val-color: #aab5c4;
+  --res-bar-bg: rgba(20,28,40,0.8);
+  --res-bar-border: #2a3040;
+  --res-fuel:  #e88830;
+  --res-food:  #8cc890;
+  --res-water: #5fa8d0;
+
+  /* Crew bar colors — HEALTH inherits --res-food (green),
+     MORALE gets its own blue, STRENGTH future. Kept separate from
+     --ai-name-color so the AI name stays gold. */
+  --crew-mo:   #5e9ec7;
+
+  /* Readout strip (pace/rations/water glance) */
+  --readout-bg: rgba(14,20,32,0.85);
+  --readout-border: rgba(200,168,90,0.2);
+  --readout-label-color: #5a7a6a;
+  --readout-value-color: #d0c890;
+  --readout-divider: rgba(200,168,90,0.15);
+
+  /* Stop button pulse */
+  --stop-pulse-color: #5AA354;
+
+  /* Crew slot cards (reuse card vars) */
+  --card-padx: 14px;
+  --card-pady: 10px;
+  --card-gap: 8px;
+  --card-rad: 6px;
+  --card-border: #2a3040;
+  --card-bg: rgba(20,28,40,0.6);
+  --card-icon-size: 48px;
+  --card-name-color: #00a6bb;
+  --card-desc-color: #7a8898;
+  --card-led-size: 6px;
+  --card-led-active: #0bc613;
+  --card-led-inactive: #2a3040;
+
+  /* Crop card */
+  --crop-border-color: #c8a85a;
+  --crop-health-bg: rgba(20,28,40,0.8);
+  --crop-health-fill: #8cc890;
+  --crop-growth-fill: #35c6bf;
+  --crop-alert-color: #ffac00;
+  --crop-alert-inactive: #2a3040;
+
+  /* Panel button sizing (color vars live in shared.css) */
+  --pb-border: 3px;
+  --pb-padx: 10px;
+  --pb-pady: 5px;
+  --pb-rad: 0px;
+  --pb-size: 14px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'VT323', monospace;
+  background: #0e1118;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #d1d5db;
+}
+
+#demo-wrap { display: flex; gap: 20px; padding: 20px; align-items: flex-start; }
+#scale-root { width: 960px; height: 640px; transform-origin: top left; flex-shrink: 0; }
+
+/* ── Actual-size toggle ─────────────────────────────────────────── */
+#size-toggle {
+  position: fixed; top: 12px; right: 12px; z-index: 9999;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset;
+  border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: #c8a85a;
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+}
+#size-toggle:hover { filter: brightness(1.2); }
+#size-toggle:active {
+  border-style: inset;
+  border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a;
+  transform: translate(1px, 1px);
+}
+
+body.fullsize { overflow: hidden; }
+body.fullsize #demo-wrap { padding: 0; gap: 0; width: 100vw; height: 100vh; justify-content: center; align-items: center; }
+body.fullsize #controls { display: none; }
+body.fullsize #scale-root { transform-origin: center center; }
+
+/* ── Game frame ─────────────────────────────────────────────────── */
+#game {
+  width: 960px; height: 640px;
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #080c12 0%, #02050a 100%);
+}
+
+/* Screen shake — fired when the player tries to Resume during a
+   forced event. Class is toggled off then on to restart the anim. */
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10%, 30%, 50%, 70%, 90% { transform: translate(-5px, 2px); }
+  20%, 40%, 60%, 80%      { transform: translate(5px, -2px); }
+}
+#game.shaking { animation: screen-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+
+#crt-overlay {
+  pointer-events: none; position: absolute; inset: 0; z-index: 100; border-radius: 4px;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 1px, transparent 1px, transparent 2px);
+}
+
+/* Starfield — single canvas, 3 parallax layers (far/mid/near), driven
+   by engine setting. Fills the full game area; AI dialog column has
+   its own opaque bg so it covers the right edge. Dimmed during stop
+   per the spec ("stars stop drifting"). */
+#starfield { position: absolute; inset: 0; pointer-events: none; }
+
+/* ── Cruise layout ──────────────────────────────────────────────── */
+#cruise-screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  z-index: 10;
+}
+
+/* Header */
+#cruise-header {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 16px;
+  border-bottom: 2px solid var(--hdr-border);
+  background: linear-gradient(180deg, var(--hdr-bg-top) 0%, var(--hdr-bg-bot) 100%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.ship-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--hdr-title-color);
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+  flex-shrink: 0;
+}
+/* Ticker: a single stationary line of text. On replace, the current
+   line slides left off-screen while the new line slides in from
+   the right (0.55s each, running simultaneously). Event mode pulses
+   in a different color (default red) to flag ship-stopping events;
+   the pre-event text is restored when the event clears. */
+.header-ticker {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  height: 24px;
+}
+.ticker-text {
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  transform: translate(0, -50%);
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: var(--hdr-ticker-color);
+  text-shadow: 0 0 8px currentColor;
+  text-align: center;
+  white-space: nowrap;
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ticker-text.enter { transform: translate(100%, -50%); }
+.ticker-text.exit  { transform: translate(-100%, -50%); }
+
+.ticker-text.event {
+  color: var(--hdr-ticker-event);
+  animation: ticker-event-pulse 1.6s ease-in-out infinite;
+}
+.ticker-text.event-info {
+  color: var(--hdr-paused-color);
+  animation: ticker-event-pulse 1.6s ease-in-out infinite;
+}
+@keyframes ticker-event-pulse {
+  0%, 100% { filter: brightness(0.9); text-shadow: 0 0 8px currentColor; }
+  50%      { filter: brightness(1.4); text-shadow: 0 0 16px currentColor; }
+}
+/* Header action icons — INV + MAP, 32px PNGs from sprites/interface/.
+   Sized to fit the 40px header height with 4px vertical breathing room.
+   Will shrink via max-height if header ever resizes — never pushes the
+   header taller. */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.header-icon-btn {
+  width: 32px;
+  height: 32px;
+  max-height: calc(100% - 8px);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  border: 0;
+  cursor: var(--cursor-hand, pointer);
+  padding: 0;
+  image-rendering: pixelated;
+  transition: filter 0.12s;
+}
+.header-icon-btn:hover {
+  filter: brightness(1.3) drop-shadow(0 0 5px rgba(200,168,90,0.5));
+}
+.header-icon-btn:active { transform: translateY(1px); }
+
+.header-right { flex-shrink: 0; position: relative; min-width: 150px; text-align: right; }
+.day-counter, .paused-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  transition: opacity 0.3s;
+}
+.day-counter  { color: var(--hdr-meta-color); }
+.paused-label {
+  color: var(--hdr-paused-color);
+  text-shadow: 0 0 8px currentColor;
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  opacity: 0;
+  animation: paused-pulse 1.4s ease-in-out infinite;
+}
+@keyframes paused-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.4); }
+}
+body.paused .day-counter   { opacity: 0; }
+body.paused .paused-label  { opacity: 1; }
+
+/* Main split: [scene + readout] left column + AI right column.
+   #cruise-leftcol stacks the scene above the readout strip so the
+   AI dialog (right column) can take the full main-band height. */
+#cruise-main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+#cruise-leftcol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid rgba(200,168,90,0.2);
+}
+
+#cruise-scene {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+#scene-alert {
+  position: absolute;
+  left: 50%; top: 24px;
+  transform: translateX(-50%);
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--alert-size);
+  letter-spacing: 2px;
+  color: var(--alert-color);
+  text-shadow: 0 0 10px currentColor, 0 1px 2px #000, 0 0 2px #000;
+  text-align: center;
+  max-width: 520px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  z-index: 12;
+}
+#scene-alert.show { opacity: 1; }
+
+#ship-silhouette {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  /* Native sprite is 380×135. --ship-w sets display width; height
+     auto-scales by the same ratio so aspect is preserved. */
+  width: var(--ship-w, 380px);
+  height: calc(var(--ship-w, 380px) * 135 / 380);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-image: url('sprites/ships/default.png');
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  font-size: 0;          /* hide the legacy emoji fallback content */
+  color: transparent;
+  filter: drop-shadow(0 0 var(--ship-glow-blur, 12px) var(--ship-glow-color, rgba(127,127,92,0.43)));
+  animation: ship-drift 6s ease-in-out infinite;
+  transition: animation-play-state 0.4s;
+  pointer-events: none;
+}
+@keyframes ship-drift {
+  0%, 100% { transform: translate(-50%, -50%); }
+  50%      { transform: translate(-50%, calc(-50% - 6px)); }
+}
+/* Ship-bob halts when stopped — the ship is parked in space. The
+   starfield deceleration handles the "movement stops" illusion;
+   freezing the bob completes it. */
+body.stop-active #ship-silhouette { animation-play-state: paused; }
+
+#cruise-aidialog {
+  width: 320px;
+  flex-shrink: 0;
+  /* Right padding is 0 so the scroll-host (and its track) can reach
+     the actual right edge of the column. Children that need right
+     breathing room — the AI header + the ai-log text + the stop-menu
+     header — apply their own right inset instead. */
+  padding: 14px 0 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--ai-bg);
+  border-left: 2px solid var(--ai-border);
+  overflow: hidden;
+  position: relative;     /* anchor for absolute-positioned #stop-menu cross-fade */
+}
+.ai-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ai-border);
+}
+/* Companion voice portrait. Emoji stays as fallback text content;
+   .has-sprite swaps in a PNG via inline background-image so each
+   AI can wire its own sprite. Identical pattern in orders demo. */
+.ai-avatar {
+  font-size: 22px;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--ai-name-color);
+  border-radius: 50%;
+  background-color: rgba(200,168,90,0.1);
+  overflow: hidden;
+}
+.ai-avatar.has-sprite {
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: transparent;
+  border: 0;
+  border-radius: 0;
+  color: transparent;
+  text-shadow: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.ai-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--ai-name-color);
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+}
+/* AI log — accumulating chat-style history. Newest entry is
+   typewritten at full opacity; older entries dim to read as context. */
+.ai-log {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  font-family: 'VT323', monospace;
+  font-size: 17px;
+  line-height: 1.35;
+  color: var(--ai-text-color);
+  /* Right inset keeps text clear of the gold scrollbar thumb that
+     now sits flush against the column's right edge (8px track + 4px
+     breathing room). */
+  padding-right: 14px;
+}
+.ai-entry {
+  opacity: 0.55;
+  transition: opacity 0.3s;
+}
+.ai-entry.latest { opacity: 1; }
+/* Entries carrying an expand/link payload become clickable. */
+.ai-entry.has-payload { cursor: var(--cursor-hand, pointer); }
+.ai-entry.has-payload:hover {
+  opacity: 1;
+  text-decoration: underline;
+  text-decoration-color: rgba(200,168,90,0.5);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.ai-day-marker {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: var(--ai-name-color);
+  text-align: center;
+  margin: 6px 0 2px;
+  opacity: 0.75;
+}
+/* .tw-cursor + @keyframes blink-cursor live in shared.css */
+
+/* Orders readout strip — simplified after resources moved to the
+   bottom band. Now this row only carries engines/rations/water
+   settings. Cargo + Gold dropped from cruise (both surfaced in
+   the inventory modal — no need to repeat at-a-glance). */
+#cruise-resrow {
+  flex-shrink: 0;
+  padding: 0;
+  background: linear-gradient(180deg, rgba(20,28,40,0.9) 0%, rgba(14,20,32,0.9) 100%);
+  border-top: 1px solid rgba(200,168,90,0.2);
+  border-bottom: 1px solid rgba(200,168,90,0.2);
+  display: flex;
+  align-items: stretch;
+  position: relative;
+}
+
+/* Vertical resource stack — lives in the bottom band between the
+   crop card and the Stop button. Three bars (FUEL/FOOD/H2O) stacked
+   for at-a-glance survival readouts. Cargo state lives in inventory;
+   gold lives in inventory. */
+#bottom-resources {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--res-row-gap, 8px);
+  padding: 0 4px;
+}
+.res {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.res-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: var(--res-label-size, 7px);
+  letter-spacing: 1px;
+  color: var(--res-label-color);
+  width: 36px;
+  flex-shrink: 0;
+}
+.res-bar {
+  flex: 1;
+  height: var(--res-bar-h, 10px);
+  background: var(--res-bar-bg);
+  border: 1px solid var(--res-bar-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.res-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.res.fuel  .res-fill { background: var(--res-fuel);  box-shadow: 0 0 4px var(--res-fuel);  }
+.res.food  .res-fill { background: var(--res-food);  box-shadow: 0 0 4px var(--res-food);  }
+.res.water .res-fill { background: var(--res-water); box-shadow: 0 0 4px var(--res-water); }
+
+/* Readout strip — glanceable current Orders settings. Now sits
+   inside the combined resrow wrapper, so background/borders
+   come from the wrapper; only the subtle divider between bars
+   and readout is applied here. */
+#cruise-readout {
+  flex: 1;
+  height: 28px;
+  background: var(--readout-bg);
+  display: flex;
+  align-items: center;
+}
+.readout-cell {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: var(--cursor-hand, pointer);
+  border-right: 1px solid var(--readout-divider);
+  transition: background 0.15s;
+  padding: 0 10px;
+}
+.readout-cell:last-child { border-right: 0; }
+.readout-cell:hover { background: rgba(200,168,90,0.05); }
+/* Stop multi-word values like "LIGHT SPEED" from wrapping in the cell. */
+.readout-value { white-space: nowrap; }
+.readout-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--readout-label-color);
+}
+
+/* Sprite icon slots — shared pattern with the orders modal. Emoji
+   stays as text content for fallback / readability in raw HTML;
+   sprite CSS hides it via color:transparent. Later moves to a
+   single spritesheet with background-position offsets. */
+.icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  vertical-align: middle;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.icon.icon-engines { background-image: url('sprites/interface/engines.png'); color: transparent; text-shadow: none; }
+.icon.icon-rations { background-image: url('sprites/interface/rations.png'); color: transparent; text-shadow: none; }
+.icon.icon-water   { background-image: url('sprites/interface/water.png');   color: transparent; text-shadow: none; }
+.icon.icon-plant   { background-image: url('sprites/interface/plant.png');   color: transparent; text-shadow: none; }
+.icon.icon-crew    { background-image: url('sprites/interface/crew.png');    color: transparent; text-shadow: none; }
+.readout-value {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: var(--readout-value-color);
+  letter-spacing: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.water-sep {
+  color: var(--readout-meta-color, #8898a8);
+  margin: 0 2px;
+  opacity: 0.7;
+}
+
+/* Bottom bar */
+#cruise-bottom {
+  flex-shrink: 0;
+  height: 100px;
+  padding: 8px 16px;
+  background: linear-gradient(180deg, #10141e 0%, #0a0e14 100%);
+  border-top: 1px solid rgba(200,168,90,0.2);
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+#crew-strip {
+  display: flex;
+  gap: var(--card-gap);
+  flex-shrink: 0;
+}
+.crew-slot {
+  width: 130px;
+  padding: 6px 8px;
+  border: 2px solid var(--card-border);
+  border-radius: var(--card-rad);
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: space-between;
+  position: relative;
+  cursor: var(--cursor-hand, pointer);
+  transition: all 0.15s;
+}
+.crew-slot:hover {
+  border-color: rgba(140,200,144,0.3);
+  background: rgba(140,200,144,0.04);
+}
+.crew-slot-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.crew-icon { font-size: var(--card-icon-size); line-height: 1; flex-shrink: 0; }
+.crew-icon.has-sprite {
+  width: var(--card-icon-size);
+  height: var(--card-icon-size);
+  color: transparent;
+  text-shadow: none;
+}
+.crew-info { flex: 1; min-width: 0; }
+.crew-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  color: var(--card-name-color);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.crew-role {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  color: var(--card-desc-color);
+}
+.crew-bars { display: flex; flex-direction: column; gap: 3px; }
+.crew-bar { display: flex; align-items: center; gap: 4px; }
+.crew-bar-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  color: var(--card-desc-color);
+  width: 16px;
+}
+.crew-bar-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(20,28,40,0.9);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.crew-bar-fill { height: 100%; }
+.crew-bar.hp .crew-bar-fill { background: var(--res-food); }
+.crew-bar.mo .crew-bar-fill { background: var(--crew-mo); }
+
+/* Crop card (shrunken) */
+#crop-card-mini {
+  width: 250px;
+  padding: 8px 12px;
+  border: 2px solid var(--crop-border-color);
+  border-radius: var(--card-rad);
+  background: linear-gradient(135deg, rgba(200,168,90,0.08) 0%, rgba(140,200,144,0.05) 100%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  cursor: var(--cursor-hand, pointer);
+  flex-shrink: 0;
+}
+.crop-icon {
+  font-size: 38px;
+  filter: drop-shadow(0 0 6px rgba(140,200,144,0.3));
+  flex-shrink: 0;
+}
+/* Plant sprite mode — when wired with the growbay spritesheet, the
+   crop-icon swaps from emoji to a cropped frame of the 666×776 sheet.
+   Frame is 109×192 native; we display at a fixed height that fits the
+   100px-tall bottom band with breathing room. */
+.crop-icon.has-plant-sprite {
+  width: 44px;
+  height: 76px;
+  margin-bottom: 4px;     /* lift the sprite a tick off the card's bottom edge */
+  font-size: 0;
+  color: transparent;
+  background-image: url('sprites/growbay/spritesheet_growbay.png');
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 0 8px rgba(140,200,144,0.25));
+}
+.crop-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.crop-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.crop-name {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--crop-border-color);
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+}
+/* Alert LED — dim by default, lights up when crop needs attention
+   (thirsty, infected, ready to harvest, etc.). */
+.crop-alert-led {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--crop-alert-inactive);
+  flex-shrink: 0;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.crop-alert-led.on {
+  background: var(--crop-alert-color);
+  box-shadow: 0 0 6px var(--crop-alert-color);
+  animation: crop-alert-pulse 1.4s ease-in-out infinite;
+}
+@keyframes crop-alert-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.4); }
+}
+.crop-growing {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.crop-stage {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: var(--crop-border-color);
+  text-shadow: 0 0 4px rgba(200,168,90,0.25);
+}
+.crop-day {
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--card-desc-color);
+  transition: color 0.3s, text-shadow 0.3s;
+}
+/* Day counter goes red when we're past the expected maturity but
+   the plant hasn't actually reached 100% growth (poor health). */
+.crop-day.overdue {
+  color: var(--red);
+  text-shadow: 0 0 4px rgba(204,51,51,0.4);
+}
+/* Labeled bar row: label on the left (fixed width so GROWTH and
+   HEALTH align), bar fills the rest of the card. */
+.crop-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.crop-bar-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--card-desc-color);
+  flex-shrink: 0;
+  width: 42px;
+}
+.crop-growth-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--crop-health-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.crop-growth-fill {
+  height: 100%;
+  background: var(--crop-growth-fill);
+  box-shadow: 0 0 4px var(--crop-growth-fill);
+  transition: width 0.4s ease;
+}
+.crop-health-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--crop-health-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.crop-health-fill {
+  height: 100%;
+  background: var(--crop-health-fill);
+  box-shadow: 0 0 4px var(--crop-health-fill);
+  transition: width 0.3s;
+}
+
+/* Harvest button — replaces the growing-state block when mature.
+   Distinct style (green fill, pulsing border) so it reads as an
+   actionable CTA, not passive info. */
+.crop-harvest-btn {
+  display: none;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 8px 10px;
+  margin: 2px 0;
+  border: 2px solid var(--crop-border-color);
+  border-radius: 4px;
+  color: #0e1520;
+  background: linear-gradient(180deg, var(--crop-health-fill) 0%, #6ab074 100%);
+  cursor: var(--cursor-hand, pointer);
+  transition: filter 0.12s, transform 0.08s;
+  animation: harvest-pulse 1.4s ease-in-out infinite;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+}
+.crop-harvest-btn:hover { filter: brightness(1.12); }
+.crop-harvest-btn:active { transform: translate(1px, 1px); }
+@keyframes harvest-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(140,200,144,0.4), inset 0 1px 0 rgba(255,255,255,0.2); }
+  50%      { box-shadow: 0 0 12px rgba(140,200,144,0.8), inset 0 1px 0 rgba(255,255,255,0.3); }
+}
+
+#crop-card-mini.mature .crop-growing { display: none; }
+#crop-card-mini.mature .crop-harvest-btn { display: block; }
+
+/* Action rail — 2×2 grid with 4 equal buttons */
+/* Action rail — only houses the Stop/Resume button now. INV/MAP
+   moved to the top header; GROW redundant with the clickable crop card;
+   FAB now lives in the Stop Menu. Stop spans full width + height of
+   the action rail to read as the most loaded action on cruise. */
+#action-rail {
+  flex: 0 0 140px;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+#action-rail .panel-btn {
+  width: 100%;
+  flex: 1;
+  justify-content: center;
+  font-size: var(--stop-btn-size, 16px);
+  letter-spacing: 2px;
+  padding: 0 12px;
+}
+
+/* Stop button pulse (when something noteworthy is near) */
+.stop-btn {
+  position: relative;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+.stop-btn.alert {
+  animation: stop-pulse 1.5s ease-in-out infinite;
+}
+@keyframes stop-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--stop-pulse-color); filter: brightness(1); }
+  50%      { box-shadow: 0 0 7px 1px var(--stop-pulse-color); filter: brightness(1.08); }
+}
+/* Stopped/event state — button reads as inset/depressed with a
+   pulse that matches the ticker's color cue. Player-stop pulses
+   the configurable --stop-pulse-color (default green); a forced
+   event scope-overrides that var to red so the same animation
+   reads as "this is bad, resolve it." */
+body.stop-active .stop-btn,
+body.event-active .stop-btn {
+  background: linear-gradient(180deg, #1a1f2a 0%, #0e1420 100%);
+  border-color: var(--stop-pulse-color);
+  color: var(--stop-pulse-color);
+  text-shadow: 0 0 6px currentColor;
+  animation: stop-pulse 1.6s ease-in-out infinite;
+}
+body.event-active { --stop-pulse-color: var(--red); }
+
+/* Engine HUD dim during stop — orders readout cells dim to ~55%
+   brightness so the active row is the Stop Menu, not the engine
+   settings (which are inert until Resume). */
+body.stop-active #cruise-resrow { filter: brightness(0.55) saturate(0.7); }
+body.stop-active #cruise-resrow,
+body.stop-active #bottom-resources { transition: filter 0.25s ease; }
+#cruise-resrow, #bottom-resources { transition: filter 0.25s ease; }
+
+/* .panel-btn lives in shared.css */
+
+/* ── Controls panel ─────────────────────────────────────────────── */
+#controls {
+  width: 380px; background: #161a22; border: 1px solid #2a3040;
+  border-radius: 6px;
+  padding: 16px; font-family: 'VT323', monospace; font-size: 16px; color: #8898a8;
+  max-height: 640px; overflow-y: auto; overflow-x: hidden; flex-shrink: 0;
+}
+#controls h2 { font-family: 'Press Start 2P', cursive; font-size: 8px; color: var(--gold); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase; }
+#controls h3 { font-family: 'Press Start 2P', cursive; font-size: 7px; color: #5a7a6a; letter-spacing: 1px; margin: 14px 0 8px; text-transform: uppercase; border-bottom: 1px solid #2a3040; padding-bottom: 4px; }
+.ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.ctrl-row label { font-size: 14px; color: #667; flex-shrink: 0; min-width: 90px; }
+.ctrl-row input[type="range"] { flex: 1; accent-color: var(--gold); height: 4px; }
+.ctrl-row input[type="color"] { width: 32px; height: 24px; border: 1px solid #2a3040; border-radius: 3px; background: #0e1118; cursor: var(--cursor-hand, pointer); padding: 0; }
+.ctrl-row select { background: #0e1118; color: var(--cream); border: 1px solid #2a3040; border-radius: 3px; padding: 2px 6px; font-family: 'VT323', monospace; font-size: 14px; }
+.ctrl-row .val { font-size: 13px; color: #5a7a6a; min-width: 60px; text-align: right; font-family: 'VT323', monospace; letter-spacing: 0.5px; }
+.ctrl-row .val.modified { color: #e88830; font-weight: bold; }
+.sim-btn {
+  width: 100%; margin-top: 6px; padding: 8px;
+  font-family: 'VT323', monospace; font-size: 15px; letter-spacing: 1px; text-transform: uppercase;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset; border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold); cursor: var(--cursor-hand, pointer); border-radius: 2px;
+}
+.sim-btn:hover { filter: brightness(1.15); }
+.sim-btn:active { border-style: inset; border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a; transform: translate(1px,1px); }
+
+/* ::-webkit-scrollbar baseline lives in shared.css */
+
+/* Custom scrollbar block lives in shared.css. Cruise needs its
+   scroll-hosts to flex-fill their parent column, which the shared
+   base intentionally doesn't impose (other demos use scroll-host
+   with width-constrained variants). Override by id locally. */
+#ai-log-host, #stop-choices-host { flex: 1; min-height: 0; }
+
+/* ── Stop Menu (replaces AI log when ship is stopped) ───────── */
+/* Lives as a sibling of .ai-log inside #cruise-aidialog. Body
+   class .stop-active toggles which one is visible. Phase 1 = hard
+   swap; 200ms cross-fade polish deferred to a later pass. */
+/* Cross-fade between log/header and stop-menu via opacity. The stop
+   menu is absolutely-positioned over the cruise-aidialog column and
+   fades in/out over the .ai-header + .ai-log flow. Padding mirrors
+   the cruise-aidialog padding so the stop menu lines up. */
+.ai-log, .ai-header, #stop-menu { transition: opacity 0.2s ease; }
+#stop-menu {
+  position: absolute;
+  inset: 0;
+  /* Same asymmetric padding as #cruise-aidialog so the choice column's
+     scroll-host reaches the right edge. Children handle their own
+     right inset. */
+  padding: 14px 0 14px 16px;
+  display: flex;
+  flex-direction: column;
+}
+body.stop-active .ai-log,
+body.stop-active .ai-header { opacity: 0; pointer-events: none; }
+body:not(.stop-active) #stop-menu { opacity: 0; pointer-events: none; }
+body.stop-active #stop-menu { opacity: 1; }
+
+#stop-menu {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;     /* required for inner overflow-y in a flex column */
+}
+.stop-menu-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding-right: 16px;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--ai-border);
+}
+.stop-menu-region-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--ai-name-color);
+  text-shadow: 0 0 6px rgba(200,168,90,0.3);
+  line-height: 1.4;
+}
+.stop-menu-mood {
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--ai-text-color);
+  line-height: 1.25;
+  margin-top: 4px;
+  opacity: 0.85;
+}
+.stop-menu-log-btn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: var(--cursor-hand, pointer);
+  flex-shrink: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 1.5px;
+  color: var(--ai-name-color);
+  text-shadow: 0 0 4px rgba(200,168,90,0.3);
+  transition: filter 0.12s;
+}
+.stop-menu-log-btn::before {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 32px;
+  background-image: url('sprites/interface/log.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  image-rendering: pixelated;
+}
+.stop-menu-log-btn:hover {
+  filter: brightness(1.3) drop-shadow(0 0 5px rgba(200,168,90,0.5));
+}
+
+/* Choice column — encounter pattern, scoped for cruise's 320px column. */
+.stop-choices {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow-y: auto;
+  /* Right inset keeps the choice buttons clear of the gold scrollbar
+     thumb that sits flush against the column's right edge. */
+  padding-right: 14px;
+}
+.stop-choice {
+  --strip-c: var(--gold);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 9px;
+  align-items: center;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, rgba(40,46,58,0.85) 0%, rgba(20,24,32,0.85) 100%);
+  border: 2px solid #2a3040;
+  border-left: 3px solid var(--strip-c);
+  border-radius: 2px;
+  color: var(--cream);
+  font-family: 'VT323', monospace;
+  cursor: var(--cursor-hand, pointer);
+  text-align: left;
+  transition: border-color 0.12s, filter 0.12s, transform 0.08s;
+}
+.stop-choice:hover { border-color: var(--strip-c); filter: brightness(1.15); }
+.stop-choice:active { transform: translateY(1px); }
+.stop-choice.locked {
+  --strip-c: rgba(95,100,115,0.4);
+  cursor: var(--cursor-pointer, default);
+  border-color: rgba(95,100,115,0.4);
+  border-left-color: var(--strip-c);
+  filter: grayscale(0.6) brightness(0.65);
+}
+.stop-choice.locked:hover {
+  border-color: rgba(95,100,115,0.4);
+  filter: grayscale(0.6) brightness(0.7);
+}
+.stop-choice.risky { --strip-c: var(--red); }
+.stop-choice.hint  { --strip-c: var(--teal); }
+.stop-choice.no-gate { grid-template-columns: 1fr; }
+.stop-choice.no-gate .stop-choice-body { grid-column: 1; }
+.stop-choice.no-gate .stop-choice-sub  { grid-column: 1; }
+
+.stop-choice-gate {
+  grid-row: 1 / 3;
+  /* Bare icon — no bounding box. Variant intent (risky/hint/locked)
+     is carried by the choice button's left strip color and (for
+     locked) by the lock.png icon itself. */
+  width: 32px; height: 32px;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 32px 32px;
+  image-rendering: pixelated;
+  border: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;       /* glyph fallback if any verb still ships emoji */
+  color: var(--gold);
+}
+.stop-choice-gate.locked { color: rgba(200,168,90,0.5); }
+
+.stop-choice-body {
+  grid-column: 2;
+  /* Match encounter --choice-size (15px) and --sub-size (12px). */
+  font-size: 15px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 1.15;
+  color: var(--gold);
+}
+.stop-choice-sub {
+  grid-column: 2;
+  font-size: 12px;
+  color: var(--ai-text-color);
+  letter-spacing: 0.5px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  line-height: 1.1;
+  flex-wrap: wrap;
+}
+.stop-choice-sub .effort {
+  color: var(--gold);
+  font-family: 'VT323', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+.stop-choice-sub .lock-need {
+  color: rgba(200,168,90,0.7);
+  font-style: italic;
+}
+
+/* Day stepper — when wait_for_trader is clicked, the button swaps
+   its body+sub rows for a 1..7 picker. Click any day to commit and
+   start the wait. Click anywhere else (or any other choice) collapses
+   back to the normal verb row. */
+.stop-choice.day-picker {
+  cursor: var(--cursor-pointer, default);
+  background: linear-gradient(180deg, rgba(60,66,80,0.92) 0%, rgba(28,34,46,0.92) 100%);
+}
+.stop-choice.day-picker .stop-choice-body { color: var(--cream); }
+.day-stepper {
+  grid-column: 2;
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+.day-step {
+  flex: 1;
+  min-width: 22px;
+  padding: 5px 0;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  letter-spacing: 1px;
+  background: rgba(20,24,32,0.85);
+  border: 1px solid rgba(200,168,90,0.4);
+  color: var(--gold);
+  cursor: var(--cursor-hand, pointer);
+  border-radius: 2px;
+  transition: filter 0.12s, background 0.12s, border-color 0.12s;
+}
+.day-step:hover {
+  filter: brightness(1.4);
+  background: rgba(200,168,90,0.2);
+  border-color: var(--gold);
+}
+.day-step:active { transform: translateY(1px); }
+.day-stepper-prompt {
+  grid-column: 2;
+  font-size: 12px;
+  color: var(--ai-text-color);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* Action banner — top of scene viewport. Multi-day action progress
+   indicator: verb + day counter + thin progress bar. Used by
+   wait_for_trader and (later) any multi-day verb. */
+#action-banner {
+  position: absolute;
+  left: 50%; top: 24px;
+  transform: translateX(-50%);
+  z-index: 11;
+  pointer-events: none;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+#action-banner.show { opacity: 1; }
+.action-banner-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-shadow: 0 0 10px currentColor, 0 1px 2px #000;
+  margin-bottom: 4px;
+}
+.action-banner-counter {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: var(--cream);
+  text-shadow: 0 0 6px rgba(232,216,160,0.4), 0 1px 2px #000;
+  margin-bottom: 6px;
+}
+.action-banner-bar {
+  width: 220px;
+  height: 4px;
+  background: rgba(20,28,40,0.9);
+  border: 1px solid rgba(200,168,90,0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+.action-banner-fill {
+  height: 100%;
+  background: var(--gold);
+  box-shadow: 0 0 6px var(--gold);
+  width: 0%;
+  transition: width 0.5s ease;
+}
+/* Cancelled-state styling — banner stays visible briefly after the
+   player hits STOP WAITING, retinted amber to signal "you halted
+   this." Whole banner fades out via the parent .show-toggle. */
+#action-banner.cancelled .action-banner-label { color: #d6a060; }
+#action-banner.cancelled .action-banner-fill {
+  background: #d6a060;
+  box-shadow: 0 0 6px #d6a060;
+}
+
+/* Wait-result flash — big centered headline that fires when a wait
+   resolves. Two variants: .success (trader appeared, gold + pulse)
+   and .timeout (no one came, calmer cream + no pulse). Fades in,
+   holds, then either cuts to a downstream scene (Phase 2) or fades
+   out and returns the player to the Stop Menu. */
+#wait-flash {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 14;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+#wait-flash.show { opacity: 1; }
+.wait-flash-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 22px;
+  letter-spacing: 4px;
+  background: rgba(8,12,18,0.82);
+  padding: 18px 28px;
+  border: 2px solid;
+  border-radius: 4px;
+}
+/* Success — trader appeared. Gold, pulsing. */
+#wait-flash.success .wait-flash-label {
+  color: var(--gold);
+  border-color: var(--gold);
+  text-shadow: 0 0 16px var(--gold), 0 0 4px #fff, 0 2px 4px #000;
+  animation: wait-flash-pulse 1.4s ease-in-out infinite;
+}
+@keyframes wait-flash-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.3); }
+}
+/* Timeout — no one came. Calmer, cream-on-slate, no pulse. */
+#wait-flash.timeout .wait-flash-label {
+  color: #c0b48a;
+  border-color: #6a604a;
+  text-shadow: 0 0 8px rgba(192,180,138,0.5), 0 1px 3px #000;
+  font-size: 20px;
+  letter-spacing: 3px;
+}
+/* Event variants — wait got interrupted by something else. Each event
+   type picks a color that signals its register at a glance:
+   - .event         (amber)  — generic / default, used for non-threat events
+   - .event-danger  (red)    — pirate / hostile / "weapons" register
+   Distinct from success (gold) and timeout (cream) so the player reads
+   any event variant as "something happened" rather than "trader" or
+   "no one came". Per-event variant comes from WAIT_EVENT_TABLE. */
+#wait-flash.event .wait-flash-label {
+  color: #d6a060;
+  border-color: #d6a060;
+  text-shadow: 0 0 14px rgba(214,160,96,0.7), 0 0 4px #fff, 0 2px 4px #000;
+  animation: wait-flash-pulse 1.4s ease-in-out infinite;
+}
+#wait-flash.event-danger .wait-flash-label {
+  color: #ff6b5a;
+  border-color: #cc3333;
+  text-shadow: 0 0 14px rgba(204,51,51,0.85), 0 0 4px #fff, 0 2px 4px #000;
+  animation: wait-flash-pulse 1.0s ease-in-out infinite;
+}
+
+</style>
+</head>
+<body>
+
+<button id="size-toggle" onclick="toggleSize()">Actual Size</button>
+
+<div id="demo-wrap">
+
+<div id="scale-root">
+<div id="game">
+  <canvas id="starfield" width="960" height="640"></canvas>
+  <div id="crt-overlay"></div>
+
+  <div id="cruise-screen">
+
+    <!-- Header -->
+    <div id="cruise-header">
+      <div class="ship-name">THE VERDANT ARK</div>
+      <div class="header-ticker" id="header-ticker"></div>
+      <div class="header-actions">
+        <button class="header-icon-btn" style="background-image: url('sprites/interface/inv.png')" onclick="openModal('Inventory')" title="Inventory"></button>
+        <button class="header-icon-btn" style="background-image: url('sprites/interface/map.png')" onclick="openModal('Map')" title="Map"></button>
+      </div>
+      <div class="header-right">
+        <div class="day-counter" id="day-counter">DAY 47 &middot; 133 LEFT</div>
+        <div class="paused-label">TIME PAUSED</div>
+      </div>
+    </div>
+
+    <!-- Main: [scene + readout-row] left column + AI right column.
+         The AI dialog now spans the full height of cruise-main, which
+         includes the readout-row's space — so the log extends down to
+         just above #cruise-bottom. -->
+    <div id="cruise-main">
+      <div id="cruise-leftcol">
+        <div id="cruise-scene">
+          <div id="scene-alert"></div>
+          <div id="action-banner">
+            <div class="action-banner-label" id="action-banner-label"></div>
+            <div class="action-banner-counter" id="action-banner-counter"></div>
+            <div class="action-banner-bar"><div class="action-banner-fill" id="action-banner-fill"></div></div>
+          </div>
+          <div id="wait-flash"><div class="wait-flash-label">TRADER APPROACHING</div></div>
+          <div id="ship-silhouette">&#128640;</div>
+        </div>
+        <div id="cruise-resrow">
+          <div id="cruise-readout">
+            <div class="readout-cell" onclick="openOrders('engines')">
+              <span class="icon icon-engines">&#9889;</span>
+              <span class="readout-label">ENGINES</span>
+              <span class="readout-value"><span id="pace-name">RIDICULOUS SPEED</span></span>
+            </div>
+            <div class="readout-cell" onclick="openOrders('rations')">
+              <span class="icon icon-rations">&#127869;</span>
+              <span class="readout-label">RATIONS</span>
+              <span class="readout-value"><span id="rations-name">STANDARD</span></span>
+            </div>
+            <div class="readout-cell" onclick="openOrders('water')">
+              <span class="icon icon-water">&#128167;</span>
+              <span class="readout-label">WATER</span>
+              <span class="readout-value">
+                <span class="icon icon-plant">&#127793;</span>
+                <span id="water-plant">50%</span><span class="water-sep">/</span><span id="water-crew">50%</span>
+                <span class="icon icon-crew">&#128101;</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="cruise-aidialog">
+        <div class="ai-header">
+          <div class="ai-avatar has-sprite" style="background-image: url('sprites/interface/AI/aria.png')">&#9728;</div>
+          <div class="ai-name">ARIA</div>
+        </div>
+        <div class="scroll-host" id="ai-log-host">
+          <div class="ai-log scroll-content" id="ai-log"></div>
+          <div class="scroll-track"><div class="scroll-thumb"></div></div>
+        </div>
+        <!-- Stop Menu — replaces ai-log while body.stop-active. -->
+        <div id="stop-menu">
+          <div class="stop-menu-header">
+            <div>
+              <div class="stop-menu-region-label" id="stop-region-label">DEEP SPACE</div>
+              <div class="stop-menu-mood" id="stop-region-mood">Stars and silence. Nothing here but thinking.</div>
+            </div>
+            <button class="stop-menu-log-btn" onclick="openShipsLog()" title="Open Ship's Log">LOG</button>
+          </div>
+          <div class="scroll-host" id="stop-choices-host">
+            <div class="stop-choices scroll-content" id="stop-choices"></div>
+            <div class="scroll-track"><div class="scroll-thumb"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom: crew + crop + actions -->
+    <div id="cruise-bottom">
+      <div id="crew-strip">
+        <div class="crew-slot" onclick="openModal('Crew: Captain')">
+          <div class="crew-slot-top">
+            <div class="crew-icon" data-crew-id="captain">&#128104;&zwj;&#128640;</div>
+            <div class="crew-info">
+              <div class="crew-name">CAPTAIN</div>
+              <div class="crew-role">Botanist</div>
+            </div>
+          </div>
+          <div class="crew-bars">
+            <div class="crew-bar hp" title="Health"><span class="crew-bar-label">HP</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:85%"></div></div></div>
+            <div class="crew-bar mo" title="Morale"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:70%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="crew-slot" onclick="openModal('Crew: Dr. Osei')">
+          <div class="crew-slot-top">
+            <div class="crew-icon" data-crew-id="osei">&#129561;</div>
+            <div class="crew-info">
+              <div class="crew-name">DR. OSEI</div>
+              <div class="crew-role">Botanist</div>
+            </div>
+          </div>
+          <div class="crew-bars">
+            <div class="crew-bar hp" title="Health"><span class="crew-bar-label">HP</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:100%"></div></div></div>
+            <div class="crew-bar mo" title="Morale"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:55%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="crew-slot" onclick="openModal('Crew: Kazuki')">
+          <div class="crew-slot-top">
+            <div class="crew-icon" data-crew-id="kazuki">&#128295;</div>
+            <div class="crew-info">
+              <div class="crew-name">KAZUKI</div>
+              <div class="crew-role">Engineer</div>
+            </div>
+          </div>
+          <div class="crew-bars">
+            <div class="crew-bar hp" title="Health"><span class="crew-bar-label">HP</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:60%"></div></div></div>
+            <div class="crew-bar mo" title="Morale"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:80%"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="crop-card-mini" onclick="openModal('Growbay')">
+        <div class="crop-icon">&#127806;</div>
+        <div class="crop-info">
+          <div class="crop-name-row">
+            <span class="crop-name">WHEAT</span>
+            <span class="crop-alert-led" id="crop-alert-led" title="Needs attention"></span>
+          </div>
+          <!-- Growing state: stage name, day counter, growth-progress
+               bar. Hidden when the crop is mature (swapped out for
+               the Harvest button). -->
+          <div class="crop-growing" id="crop-growing">
+            <div class="crop-stage" id="crop-stage">SPROUTING</div>
+            <div class="crop-day"   id="crop-day">DAY 12 / 90</div>
+            <div class="crop-bar-row" title="Growth cycle">
+              <span class="crop-bar-label">GROWTH</span>
+              <div class="crop-growth-bar"><div class="crop-growth-fill" id="crop-growth-fill" style="width:13%"></div></div>
+            </div>
+          </div>
+          <!-- Mature state: Harvest button replaces stage/day/growth.
+               Click is isolated so the underlying card (Growbay
+               shortcut) doesn't also fire. -->
+          <button class="crop-harvest-btn" id="crop-harvest-btn" onclick="event.stopPropagation(); handleHarvest()">
+            HARVEST
+          </button>
+          <!-- Health bar always visible in both states. -->
+          <div class="crop-bar-row" title="Plant health">
+            <span class="crop-bar-label">HEALTH</span>
+            <div class="crop-health-bar"><div class="crop-health-fill" style="width:78%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="bottom-resources">
+        <div class="res fuel"  title="Fuel: 75 / 100"><span class="res-label">FUEL</span><div class="res-bar"><div class="res-fill" style="width:75%"></div></div></div>
+        <div class="res food"  title="Food: 90 / 100"><span class="res-label">FOOD</span><div class="res-bar"><div class="res-fill" style="width:90%"></div></div></div>
+        <div class="res water" title="Water: 60 / 100"><span class="res-label">H2O</span><div class="res-bar"><div class="res-fill" style="width:60%"></div></div></div>
+      </div>
+
+      <div id="action-rail">
+        <button class="panel-btn accent-gold stop-btn" id="stop-btn" onclick="handleStop()">Stop</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ═══ CONTROLS ═══ -->
+<div id="controls">
+  <h2>Cruise Controls</h2>
+
+  <h3>Header</h3>
+  <div class="ctrl-row"><label>BG top</label><input type="color" id="c-hdr-bg-top" value="#141a28"></div>
+  <div class="ctrl-row"><label>BG bot</label><input type="color" id="c-hdr-bg-bot" value="#10141e"></div>
+  <div class="ctrl-row"><label>Border</label><input type="color" id="c-hdr-border" value="#c8a85a"></div>
+  <div class="ctrl-row"><label>Title color</label><input type="color" id="c-hdr-title" value="#c8a85a"></div>
+  <div class="ctrl-row"><label>Ticker color</label><input type="color" id="c-hdr-ticker" value="#35c6bf"></div>
+  <div class="ctrl-row"><label>Event color</label><input type="color" id="c-hdr-ticker-ev" value="#cc3333"></div>
+  <div class="ctrl-row"><label>Meta color</label><input type="color" id="c-hdr-meta" value="#aab5c4"></div>
+  <div class="ctrl-row"><label>Paused color</label><input type="color" id="c-hdr-paused" value="#ffac00"></div>
+
+  <h3>AI Dialog Panel</h3>
+  <div class="ctrl-row"><label>Name color</label><input type="color" id="c-ai-name" value="#c8a85a"></div>
+  <div class="ctrl-row"><label>Text color</label><input type="color" id="c-ai-text" value="#aab5c4"></div>
+  <div class="ctrl-row"><label>Type speed</label><input type="range" id="c-ai-speed" min="15" max="80" value="35"><span class="val" id="v-ai-speed">35ms</span></div>
+
+  <h3>Scene Alert</h3>
+  <div class="ctrl-row"><label>Color</label><input type="color" id="c-alert-color" value="#ffac00"></div>
+  <div class="ctrl-row"><label>Size</label><input type="range" id="c-alert-size" min="8" max="18" value="11"><span class="val" id="v-alert-size">11</span></div>
+
+  <h3>Resource Bars</h3>
+  <div class="ctrl-row"><label>Fuel</label><input type="color" id="c-res-fuel" value="#e88830"></div>
+  <div class="ctrl-row"><label>Food</label><input type="color" id="c-res-food" value="#8cc890"></div>
+  <div class="ctrl-row"><label>Water</label><input type="color" id="c-res-water" value="#5fa8d0"></div>
+  <div class="ctrl-row"><label>Label color</label><input type="color" id="c-res-label" value="#5a7a6a"></div>
+
+  <h3>Readout Strip</h3>
+  <div class="ctrl-row"><label>Label</label><input type="color" id="c-ro-label" value="#5a7a6a"></div>
+  <div class="ctrl-row"><label>Value</label><input type="color" id="c-ro-value" value="#d0c890"></div>
+  <div class="ctrl-row"><label>BG</label><input type="color" id="c-ro-bg" value="#0e1420"></div>
+
+  <h3>Settings Defaults</h3>
+  <div class="ctrl-row"><label>Pace</label>
+    <select id="c-pace">
+      <option value="0">Light Speed</option>
+      <option value="1" selected>Ridiculous Speed</option>
+      <option value="2">Ludicrous Speed</option>
+      <option value="3">Plaid</option>
+    </select>
+  </div>
+  <div class="ctrl-row"><label>Rations</label>
+    <select id="c-rations">
+      <option value="0">Pig Out</option>
+      <option value="1" selected>Standard</option>
+      <option value="2">Vending Machine</option>
+    </select>
+  </div>
+  <div class="ctrl-row"><label>Water (plant %)</label><input type="range" id="c-water" min="0" max="100" value="50"><span class="val" id="v-water">50</span></div>
+
+  <h3>Crew Slots</h3>
+  <div class="ctrl-row"><label>Icon size</label><input type="range" id="c-card-icon-size" min="24" max="80" value="48"><span class="val" id="v-card-icon-size">48</span></div>
+  <div class="ctrl-row"><label>Name color</label><input type="color" id="c-card-name-color" value="#00a6bb"></div>
+  <div class="ctrl-row"><label>Desc color</label><input type="color" id="c-card-desc-color" value="#7a8898"></div>
+  <div class="ctrl-row"><label>Border</label><input type="color" id="c-card-border" value="#2a3040"></div>
+  <div class="ctrl-row"><label>BG</label><input type="color" id="c-card-bg" value="#141c28"></div>
+  <div class="ctrl-row"><label>Radius</label><input type="range" id="c-card-rad" min="0" max="20" value="6"><span class="val" id="v-card-rad">6</span></div>
+
+  <h3>Crop Card</h3>
+  <div class="ctrl-row"><label>Border</label><input type="color" id="c-crop-border" value="#c8a85a"></div>
+  <div class="ctrl-row"><label>Health fill</label><input type="color" id="c-crop-health" value="#8cc890"></div>
+  <div class="ctrl-row"><label>Growth fill</label><input type="color" id="c-crop-growth" value="#35c6bf"></div>
+  <div class="ctrl-row"><label>Alert LED</label><input type="color" id="c-crop-alert" value="#ffac00"></div>
+
+  <h3>Stop Button</h3>
+  <div class="ctrl-row"><label>Font size</label><input type="range" id="c-stop-btn-size" min="10" max="32" value="16"><span class="val" id="v-stop-btn-size">16px</span></div>
+  <div class="ctrl-row"><label>Pulse color</label><input type="color" id="c-stop-pulse" value="#44AE3E"></div>
+
+  <h3>Stop Menu</h3>
+  <div class="ctrl-row">
+    <label>Region</label>
+    <select id="c-region">
+      <option value="deep_space">Deep Space</option>
+      <option value="asteroid_field" selected>Asteroid Field</option>
+      <option value="ice_field">Ice Field</option>
+      <option value="debris_field">Debris Field</option>
+      <option value="nebula">Nebula</option>
+      <option value="anomaly">Anomaly</option>
+      <option value="planet_orbit_habitable">Planet Orbit (Habitable)</option>
+      <option value="planet_orbit_alien">Planet Orbit (Alien)</option>
+      <option value="station_approach">Station Approach</option>
+    </select>
+  </div>
+  <div class="ctrl-row"><label>Trader present</label><input type="checkbox" id="c-trader-present"></div>
+  <div class="ctrl-row"><label>Hull damaged</label><input type="checkbox" id="c-hull-damaged"></div>
+  <div class="ctrl-row"><label>Has Atm. Condenser</label><input type="checkbox" id="c-has-condenser"></div>
+
+  <h3>Ship Silhouette</h3>
+  <div class="ctrl-row"><label>Width</label><input type="range" id="c-ship-size" min="200" max="520" value="380"><span class="val" id="v-ship-size">380</span></div>
+  <div class="ctrl-row"><label>Glow color</label><input type="color" id="c-ship-glow-color" value="#7F7F5C"></div>
+  <div class="ctrl-row"><label>Glow blur</label><input type="range" id="c-ship-glow-blur" min="0" max="40" value="12"><span class="val" id="v-ship-glow-blur">12px</span></div>
+  <div class="ctrl-row"><label>Glow amount</label><input type="range" id="c-ship-glow-alpha" min="0" max="1" step="0.01" value="0.25"><span class="val" id="v-ship-glow-alpha">0.25</span></div>
+
+  <h3>Starfield (driven by Engines)</h3>
+  <div class="ctrl-row"><label>Far · count</label><input type="range" id="c-star-count-0" min="0"  max="200" value="80"><span class="val" id="v-star-count-0">80</span></div>
+  <div class="ctrl-row"><label>Far · speed</label><input type="range" id="c-star-speed-0" min="0.05" max="2" step="0.05" value="0.35"><span class="val" id="v-star-speed-0">0.35</span></div>
+  <div class="ctrl-row"><label>Far · size</label> <input type="range" id="c-star-size-0"  min="0.5" max="3" step="0.1" value="1"><span class="val" id="v-star-size-0">1.0</span></div>
+  <div class="ctrl-row"><label>Mid · count</label><input type="range" id="c-star-count-1" min="0"  max="120" value="42"><span class="val" id="v-star-count-1">42</span></div>
+  <div class="ctrl-row"><label>Mid · speed</label><input type="range" id="c-star-speed-1" min="0.05" max="3" step="0.05" value="0.95"><span class="val" id="v-star-speed-1">0.95</span></div>
+  <div class="ctrl-row"><label>Mid · size</label> <input type="range" id="c-star-size-1"  min="0.5" max="4" step="0.1" value="1.6"><span class="val" id="v-star-size-1">1.6</span></div>
+  <div class="ctrl-row"><label>Near · count</label><input type="range" id="c-star-count-2" min="0"  max="80" value="18"><span class="val" id="v-star-count-2">18</span></div>
+  <div class="ctrl-row"><label>Near · speed</label><input type="range" id="c-star-speed-2" min="0.05" max="4" step="0.05" value="1.85"><span class="val" id="v-star-speed-2">1.85</span></div>
+  <div class="ctrl-row"><label>Near · size</label> <input type="range" id="c-star-size-2"  min="0.5" max="6" step="0.1" value="2.4"><span class="val" id="v-star-size-2">2.4</span></div>
+
+  <h3>Resource Text</h3>
+  <div class="ctrl-row"><label>Label size</label><input type="range" id="c-res-label-size" min="5" max="14" value="8"><span class="val" id="v-res-label-size">8px</span></div>
+  <div class="ctrl-row"><label>Bar height</label><input type="range" id="c-res-bar-h"     min="6" max="20" value="16"><span class="val" id="v-res-bar-h">16px</span></div>
+  <div class="ctrl-row"><label>Row gap</label>   <input type="range" id="c-res-row-gap"   min="2" max="20" value="12"><span class="val" id="v-res-row-gap">12px</span></div>
+
+  <h3>CRT</h3>
+  <div class="ctrl-row"><label>Scanlines</label><input type="range" id="c-crt" min="0" max="25" value="5"><span class="val" id="v-crt">5%</span></div>
+
+  <h3>Simulate</h3>
+  <button class="sim-btn" onclick="pushSimAlert()">Push Scene Alert (+ Stop pulse)</button>
+  <button class="sim-btn" onclick="togglePause()">Toggle Time Paused</button>
+  <button class="sim-btn" onclick="pushTickerNews()">Push News to Ticker</button>
+  <button class="sim-btn" onclick="pushTickerEvent()">Trigger Ship-Stopping Event (red)</button>
+  <button class="sim-btn" onclick="clearTickerEventBtn()">Resume from Event</button>
+  <button class="sim-btn" onclick="simulateStationArrival()">Simulate Station Arrival (GOTO BRIDGE)</button>
+  <button class="sim-btn" onclick="simulateStationDepart()">Reset to Cruise (depart station)</button>
+  <button class="sim-btn" onclick="simulateTraderHail()">Simulate Trader Hail (HAIL BACK)</button>
+  <button class="sim-btn" onclick="simulateTraderStop()">Simulate Trader Stop (TRADE in menu)</button>
+  <button class="sim-btn" onclick="toggleCropAlert()">Toggle Crop Alert LED</button>
+  <button class="sim-btn" onclick="advanceCropDaysHealthy()">Advance Crop +10 Days (healthy)</button>
+  <button class="sim-btn" onclick="advanceCropDaysSick()">Advance Crop +10 Days (sick)</button>
+  <button class="sim-btn" onclick="completeCropGrowth()">Complete Crop Growth (100%)</button>
+  <button class="sim-btn" onclick="advanceDay()">Advance Day (+ AI quip)</button>
+  <button class="sim-btn" onclick="replayDialog()">Push AI Quip</button>
+  <button class="sim-btn" onclick="resetDefaults()">Reset Defaults</button>
+</div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const root = document.documentElement;
+
+  // ── Viewport fit ─────────────────────────────────────────────
+  function fitViewport() {
+    let s;
+    if (document.body.classList.contains('fullsize')) {
+      s = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+    } else {
+      const avail = Math.min(window.innerWidth - 440, window.innerWidth * 0.65);
+      const h = window.innerHeight - 40;
+      s = Math.min(avail / 960, h / 640, 1);
+    }
+    $('scale-root').style.transform = 'scale(' + s + ')';
+  }
+  fitViewport();
+  window.addEventListener('resize', fitViewport);
+
+  window.toggleSize = function() {
+    document.body.classList.toggle('fullsize');
+    $('size-toggle').textContent = document.body.classList.contains('fullsize') ? 'Demo Size' : 'Actual Size';
+    fitViewport();
+  };
+
+  // ── Starfield — 3-layer parallax, speed-driven ───────────────
+  // Adapted from the canvas starfield demo. 3 layers: far (slow,
+  // small), mid (medium), near (fast, large + streaks at warp).
+  // Speed multiplier mirrors the engine setting (PACE_NAMES index
+  // 0..3 → DRIFT/CRUISE/BOOST/WARP). Stars travel LEFT-TO-RIGHT
+  // by convention (cruise direction). On Stop, decel ramp to 0;
+  // on Resume, ease back up.
+  const STAR_W = 960, STAR_H = 640;
+  const starCvs = $('starfield');
+  const starCtx = starCvs.getContext('2d', { alpha: true });
+  const STAR_LAYERS_DEFAULT = [
+    { count: 80, speed: 0.35, size: 1,   alpha: 0.55 },  // far
+    { count: 42, speed: 0.95, size: 1.6, alpha: 0.85 },  // mid
+    { count: 18, speed: 1.85, size: 2.4, alpha: 1.00 }   // near
+  ];
+  const STAR_SPEEDS = [
+    { name: 'LIGHT SPEED',      mul:  1, streakAt: Infinity },
+    { name: 'RIDICULOUS SPEED', mul:  4, streakAt: Infinity },
+    { name: 'LUDICROUS SPEED',  mul: 14, streakAt: 5 },
+    { name: 'PLAID',            mul: 42, streakAt: 2 }
+  ];
+  // Linear deceleration in mul-units per second when stopping.
+  // 28/s → from PLAID (42) to 0 in ~1.5s; from RIDICULOUS (4) to 0 in ~0.14s.
+  const STAR_STOP_DECEL = 28;
+  const STAR_ACCEL_EASE = 0.08;
+
+  let starLayers = [];
+  function rebuildStarLayers(layerCfgs) {
+    starLayers = layerCfgs.map(L => {
+      const xs = new Float32Array(L.count);
+      const ys = new Float32Array(L.count);
+      for (let i = 0; i < L.count; i++) {
+        xs[i] = Math.random() * STAR_W;
+        ys[i] = Math.random() * STAR_H;
+      }
+      return { xs, ys, cfg: L };
+    });
+  }
+  rebuildStarLayers(STAR_LAYERS_DEFAULT);
+
+  // Engine setting drives the target speed mul. Stop state (ticker
+  // 'stopped' or 'event') triggers the decel ramp.
+  let starCurrentMul = STAR_SPEEDS[1].mul;
+  let starLastT = performance.now();
+
+  function isShipStopped() {
+    return tickerState === 'stopped' || tickerState === 'event';
+  }
+  function targetSpeedMul() {
+    const i = parseInt($('c-pace').value);
+    return STAR_SPEEDS[Math.max(0, Math.min(3, i))].mul;
+  }
+  function currentStreakAt() {
+    const i = parseInt($('c-pace').value);
+    return STAR_SPEEDS[Math.max(0, Math.min(3, i))].streakAt;
+  }
+
+  function drawStars(now) {
+    if (PauseBus.paused) { starLastT = now; requestAnimationFrame(drawStars); return; }
+    let dtFrame = (now - starLastT) / 16.6667;  // 1.0 = one 60fps frame
+    if (dtFrame > 3) dtFrame = 3;                // tab-switch clamp
+    const dtSec = (now - starLastT) / 1000;
+    starLastT = now;
+
+    if (isShipStopped()) {
+      const step = STAR_STOP_DECEL * dtSec;
+      if (Math.abs(starCurrentMul) <= step) starCurrentMul = 0;
+      else starCurrentMul -= Math.sign(starCurrentMul) * step;
+    } else {
+      const target = targetSpeedMul();
+      starCurrentMul += (target - starCurrentMul) * Math.min(1, STAR_ACCEL_EASE * dtFrame);
+      if (Math.abs(starCurrentMul - target) < 0.01) starCurrentMul = target;
+    }
+
+    starCtx.clearRect(0, 0, STAR_W, STAR_H);
+
+    const streakAt = currentStreakAt();
+
+    for (let l = 0; l < starLayers.length; l++) {
+      const { xs, ys, cfg } = starLayers[l];
+      // Stars move LEFT-TO-RIGHT in cruise convention. dx is the
+      // per-frame x advance; positive currentMul → positive dx → x
+      // increases → star renders rightward each frame.
+      const dx  = cfg.speed * starCurrentMul * dtFrame;
+      const adx = Math.abs(dx);
+      const drawAsStreak = adx > streakAt;
+      const n = xs.length;
+
+      if (drawAsStreak) {
+        starCtx.strokeStyle = 'rgba(255,255,255,' + cfg.alpha + ')';
+        starCtx.lineWidth = Math.max(1, cfg.size * 0.85);
+        starCtx.lineCap = 'butt';
+        starCtx.beginPath();
+        for (let i = 0; i < n; i++) {
+          let x = xs[i] + dx;
+          if (x > STAR_W + adx) {
+            x = -Math.random() * 40;
+            ys[i] = Math.random() * STAR_H;
+          }
+          xs[i] = x;
+          starCtx.moveTo(x, ys[i]);
+          starCtx.lineTo(x - dx, ys[i]);
+        }
+        starCtx.stroke();
+      } else {
+        starCtx.fillStyle = 'rgba(255,255,255,' + cfg.alpha + ')';
+        const s = cfg.size;
+        const half = s / 2;
+        for (let i = 0; i < n; i++) {
+          let x = xs[i] + dx;
+          if (x > STAR_W) {
+            x = 0;
+            ys[i] = Math.random() * STAR_H;
+          }
+          xs[i] = x;
+          starCtx.fillRect((x - half) | 0, (ys[i] - half) | 0, s, s);
+        }
+      }
+    }
+    requestAnimationFrame(drawStars);
+  }
+  requestAnimationFrame(drawStars);
+
+  // Reapply the layer config when dev controls change.
+  function applyStarfieldDevConfig() {
+    const cfgs = STAR_LAYERS_DEFAULT.map((L, i) => ({
+      count: parseInt($('c-star-count-' + i).value),
+      speed: parseFloat($('c-star-speed-' + i).value),
+      size:  parseFloat($('c-star-size-'  + i).value),
+      alpha: L.alpha
+    }));
+    rebuildStarLayers(cfgs);
+  }
+
+  // ── AI log (accumulating chat history) ───────────────────────
+  // Latest entry typewrites at full opacity; previous entries are
+  // demoted to dim. Day markers split the log into sessions. This
+  // is the in-game running record — commentary + noteworthy events
+  // that the player might want to look back on later (e.g. "why did
+  // I set pace to PLAID on DAY 32?").
+  const AI_COMMENTARY = [
+    'Everything is going great! The ship is fine. The crew is fine. The crop is fine.',
+    'I detect elevated cortisol in the engineer. Would you like me to suggest a calming playlist?',
+    'The plants are photosynthesizing at an acceptable clip. I cheer them on silently.',
+    'Morale is a funny thing! It goes up when there is pie. Mostly.',
+    'I rechecked the trajectory. Still correct. Still beautiful.'
+  ];
+  let twTimers = [];
+  function typewriteInto(el, text, speed, onDone, opts) {
+    opts = opts || {};
+    twTimers.forEach(clearTimeout);
+    twTimers = [];
+    el.innerHTML = '';
+    const span = document.createElement('span');
+    const cursor = document.createElement('span');
+    cursor.className = 'tw-cursor';
+    el.appendChild(span);
+    el.appendChild(cursor);
+    let i = 0;
+    (function tick() {
+      if (i < text.length) {
+        span.textContent += text[i++];
+        if (opts.onTick) opts.onTick();
+        twTimers.push(setTimeout(tick, speed));
+      } else {
+        cursor.remove();
+        if (onDone) onDone();
+      }
+    })();
+  }
+
+  const aiLog = () => $('ai-log');
+  function demoteLatest() {
+    const prev = aiLog().querySelector('.ai-entry.latest');
+    if (prev) prev.classList.remove('latest');
+  }
+  // "At bottom" with a few px of slack — if the user is already
+  // following the tail we keep auto-scrolling; if they've scrolled
+  // up to read history, we leave their position alone.
+  function isAtBottom(el) {
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+  }
+  function pushLogEntry(text, opts) {
+    opts = opts || {};
+    demoteLatest();
+    const log = aiLog();
+    // Capture stickiness BEFORE we append — if the user is reading
+    // older entries (scrolled up), we don't yank them back down.
+    const sticky = isAtBottom(log);
+
+    const entry = document.createElement('div');
+    entry.className = 'ai-entry latest';
+
+    // Attach payload behavior if expand/link provided. (Visual icon
+    // is expected to be baked into `text` — keeps the data model
+    // simple and lets content authors control placement.)
+    if (opts.expand || opts.link) {
+      entry.classList.add('has-payload');
+      entry.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (opts.link) {
+          alert('Would open in new tab (game auto-pauses):\n\n' + opts.link);
+        } else if (opts.expand) {
+          alert('Would open modal with full content:\n\n' + opts.expand);
+        }
+      });
+    }
+
+    log.appendChild(entry);
+    if (sticky) log.scrollTop = log.scrollHeight;
+
+    if (opts.instant) {
+      entry.textContent = text;
+      if (sticky) log.scrollTop = log.scrollHeight;
+    } else {
+      const speed = parseInt($('c-ai-speed').value);
+      typewriteInto(entry, text, speed,
+        () => { if (sticky) log.scrollTop = log.scrollHeight; },
+        { onTick: () => { if (sticky) log.scrollTop = log.scrollHeight; } }
+      );
+    }
+    return entry;
+  }
+  function pushDayMarker(day) {
+    const log = aiLog();
+    const sticky = isAtBottom(log);
+    const marker = document.createElement('div');
+    marker.className = 'ai-day-marker';
+    marker.textContent = '\u2500\u2500 DAY ' + day + ' \u2500\u2500';
+    log.appendChild(marker);
+    if (sticky) log.scrollTop = log.scrollHeight;
+  }
+
+  // AI commentary routing: while traveling, lines stream into the AI
+  // log column. While stopped, the log is hidden and the Stop Menu is
+  // shown instead — so quips reroute into the header ticker as a
+  // gold-pulse `event-info` line. The log still receives the entry
+  // (silent write) so the player sees full continuity on Resume.
+  function playDialog() {
+    const line = AI_COMMENTARY[Math.floor(Math.random()*AI_COMMENTARY.length)];
+    if (document.body.classList.contains('stop-active')) {
+      writeTicker('ARIA: ' + line, 'event-info');
+      pushLogEntry(line, { instant: true });
+    } else {
+      pushLogEntry(line);
+    }
+  }
+  window.replayDialog = playDialog;
+
+  // ── Day advancement ──────────────────────────────────────────
+  let currentDay = 47;
+  const TARGET_DAY = 180;
+  function updateDayDisplay() {
+    $('day-counter').textContent = 'DAY ' + currentDay + ' \u00b7 ' + (TARGET_DAY - currentDay) + ' LEFT';
+  }
+  window.advanceDay = function() {
+    currentDay++;
+    updateDayDisplay();
+    pushDayMarker(currentDay);
+    // Plant day advances with journey day. Assume healthy growth
+    // for this sim button — real gameplay would pass that day's
+    // actual health factor.
+    advancePlantOneDay(1.0);
+    playDialog();
+  };
+
+  // CREW_ATLAS + crewIconCss + _looseFileBg + applyCrewPortrait +
+  // probeCrewSprite all live in shared.js.
+
+  // Apply the atlas icon to every .crew-icon element with a data-crew-id.
+  // Adds .has-sprite so the existing emoji fallback hides; if the sprite
+  // 404s the element falls back to the original emoji content.
+  function applyCruiseCrewSprites() {
+    document.querySelectorAll('.crew-icon[data-crew-id]').forEach(el => {
+      const id = el.getAttribute('data-crew-id');
+      const css = crewIconCss(id, 'var(--card-icon-size)');
+      if (!css) return;
+      el.classList.add('has-sprite');
+      el.setAttribute('style', css);
+    });
+  }
+
+  // ── Settings model (engines/rations/water) ───────────────────
+  const PACE_NAMES = ['LIGHT SPEED', 'RIDICULOUS SPEED', 'LUDICROUS SPEED', 'PLAID'];
+  const RATIONS_NAMES = ['PIG OUT', 'STANDARD', 'VENDING MACHINE'];
+  let lastPace = null, lastRations = null, lastWater = null;
+  function renderReadouts() {
+    const pi = parseInt($('c-pace').value);
+    const ri = parseInt($('c-rations').value);
+    const wi = parseInt($('c-water').value);
+    $('pace-name').textContent = PACE_NAMES[pi];
+    $('rations-name').textContent = RATIONS_NAMES[ri];
+    $('water-plant').textContent = wi + '%';
+    $('water-crew').textContent = (100 - wi) + '%';
+    $('v-water').textContent = wi;
+
+    // Log setting changes — these are exactly the kind of decision
+    // the player will want to revisit later ("when did I do that?").
+    // Skip the initial render (lastX === null) so we don't spam the
+    // log on page load.
+    if (lastPace !== null && lastPace !== pi) {
+      pushLogEntry('\u25B6 ENGINES set to ' + PACE_NAMES[pi] + '.', { instant: true });
+    }
+    if (lastRations !== null && lastRations !== ri) {
+      pushLogEntry('\u25B6 RATIONS set to ' + RATIONS_NAMES[ri] + '.', { instant: true });
+    }
+    if (lastWater !== null && lastWater !== wi) {
+      pushLogEntry('\u25B6 WATER split \u2192 ' + wi + '% plant / ' + (100-wi) + '% crew.', { instant: true });
+    }
+    lastPace = pi; lastRations = ri; lastWater = wi;
+  }
+
+  // ── Time pause ───────────────────────────────────────────────
+  let paused = false;
+  window.togglePause = function() {
+    paused = !paused;
+    document.body.classList.toggle('paused', paused);
+  };
+
+  // ── Scene alert + Stop button pulse ──────────────────────────
+  let alertTimer = null;
+  function showSceneAlert(msg, pulseMs) {
+    const el = $('scene-alert');
+    el.textContent = msg;
+    el.classList.add('show');
+    $('stop-btn').classList.add('alert');
+    clearTimeout(alertTimer);
+    alertTimer = setTimeout(() => {
+      el.classList.remove('show');
+      $('stop-btn').classList.remove('alert');
+    }, pulseMs || 4200);
+  }
+  const SIM_ALERTS = [
+    'TRADER SHIP ON APPROACH',
+    'ASTEROID FIELD AHEAD — GOOD MINING',
+    'DERELICT DETECTED — PROCEED WITH CAUTION',
+    'UNIDENTIFIED SIGNAL · PORT BOW',
+    'SOLAR FLARE WARNING',
+  ];
+  window.pushSimAlert = function() {
+    const msg = SIM_ALERTS[Math.floor(Math.random()*SIM_ALERTS.length)];
+    showSceneAlert(msg);
+    // Also log it — alerts are the kind of event worth seeing later.
+    pushLogEntry('\u25B6 ' + msg, { instant: true });
+  };
+
+  // ── Header ticker ────────────────────────────────────────────
+  // One line at a time. On replace, old slides left and new slides
+  // in from right simultaneously. Event mode (e.g. ship stopped)
+  // replaces with a pulsing color and remembers the prior normal
+  // text so it can be restored when the event clears.
+  const TICKER_NEWS = [
+    'BREAKING \u2014 PRICES UP 8% AT NEXT STATION',
+    'CREW REPORT: DR. OSEI WANTS TO TALK',
+    'PLANT HEALTH STEADY \u00b7 NEXT WATER CYCLE IN 1 DAY',
+    'ENGINES TRIM NOMINAL',
+    'LONG-RANGE: ANOMALY 3 NODES AHEAD'
+  ];
+  // Forced ship-stopping events. Each has a ticker line + a list of
+  // event-specific resolve verbs that surface in the Stop Menu while
+  // the event is active. Real content (proper stat costs, branching
+  // outcomes, encounter routing) lands when verb routing is wired \u2014
+  // these are demo stubs that just clear the event when picked.
+  const FORCED_EVENTS = {
+    solar_flare: {
+      text:  'SOLAR FLARE \u2014 SHIELDS HOLDING',
+      label: 'SOLAR FLARE',
+      mood:  'Plasma front incoming. Shields are taking it.',
+      resolveVerbs: ['shield_brace', 'wait_it_out']
+    },
+    hull_breach: {
+      text:  'HULL BREACH \u2014 SEAL IN PROGRESS',
+      label: 'HULL BREACH',
+      mood:  'Atmosphere hissing out. Pick fast.',
+      resolveVerbs: ['patch_breach', 'foam_breach', 'seal_deck']
+    },
+    engine_fault: {
+      text:  'ENGINE FAULT \u2014 REPAIR UNDER WAY',
+      label: 'ENGINE FAULT',
+      mood:  'Drive coil throwing sparks. Power down or risk it.',
+      resolveVerbs: ['field_repair', 'limp_mode']
+    }
+  };
+  const FORCED_EVENT_IDS = Object.keys(FORCED_EVENTS);
+
+  // Event-resolve verbs \u2014 same shape as STOP_VERBS but specific to
+  // forced events. Reuses the existing interface/ icons until proper
+  // event-icon art lands (repair / wait / lock cover the spectrum).
+  const EVENT_VERBS = {
+    shield_brace: {
+      label: 'BRACE FOR IMPACT',
+      iconUrl: 'sprites/interface/repair.png',
+      sub: 'Hold the line. Hope the shields outlast the flare.',
+      effort: 2, time: 4
+    },
+    wait_it_out: {
+      label: 'WAIT IT OUT',
+      iconUrl: 'sprites/interface/wait.png',
+      sub: 'Let the flare pass. Time only.',
+      effort: 1, time: 8,
+      hint: true
+    },
+    patch_breach: {
+      label: 'PATCH BREACH',
+      iconUrl: 'sprites/interface/repair.png',
+      sub: 'Engineer + welding kit. Fast and clean.',
+      effort: 3, time: 3
+    },
+    foam_breach: {
+      label: 'FOAM IT',
+      iconUrl: 'sprites/interface/repair.png',
+      sub: 'Pop the canister. Hardens in eleven seconds. Manual was optimistic.',
+      effort: 2, time: 1,
+      hint: true
+    },
+    seal_deck: {
+      label: 'SEAL THE DECK',
+      iconUrl: 'sprites/interface/lock.png',
+      sub: 'Cycle the bulkheads. Lose what was stored there.',
+      effort: 1, time: 1,
+      risky: true
+    },
+    field_repair: {
+      label: 'FIELD REPAIR',
+      iconUrl: 'sprites/interface/repair.png',
+      sub: 'Engineer powers down the coil and rebuilds it.',
+      effort: 3, time: 6
+    },
+    limp_mode: {
+      label: 'LIMP MODE',
+      iconUrl: 'sprites/interface/wait.png',
+      sub: 'Drop to half power. Adds days, but the drive holds.',
+      effort: 1, time: 2,
+      hint: true
+    }
+  };
+
+  let currentEventId = null;
+
+  let currentTickerEl = null;
+  let normalTickerText = 'COMING UP ON ROCKWELL STATION';
+  let tickerState = 'normal'; // 'normal' | 'event' | 'stopped' | 'station-arrival'
+
+  function writeTicker(text, kind) {
+    const container = $('header-ticker');
+    const el = document.createElement('span');
+    el.className = 'ticker-text enter';
+    if (kind === 'event')      el.classList.add('event');
+    if (kind === 'event-info') el.classList.add('event-info');
+    el.textContent = text;
+    container.appendChild(el);
+
+    // Force layout so the enter transform sticks, then release so
+    // the transition to center runs on the next frame.
+    void el.offsetWidth;
+    el.classList.remove('enter');
+
+    // Slide the previous line out to the left.
+    if (currentTickerEl) {
+      const old = currentTickerEl;
+      old.classList.add('exit');
+      setTimeout(() => old.remove(), 700);
+    }
+    currentTickerEl = el;
+  }
+
+  // Public API
+  function setTicker(text) {
+    normalTickerText = text;
+    if (tickerState === 'normal') writeTicker(text, 'normal');
+  }
+  function setTickerEvent(text, kind) {
+    tickerState = (kind === 'event-info') ? 'stopped' : 'event';
+    writeTicker(text, kind || 'event');
+    updateStopButton();
+  }
+  function clearTickerEvent() {
+    tickerState = 'normal';
+    currentEventId = null;
+    writeTicker(normalTickerText, 'normal');
+    updateStopButton();
+  }
+
+  // Stop button morphs to "Resume" whenever we're not traveling.
+  // body.event-active toggles in lockstep with tickerState so CSS
+  // can drive the red-pulse variant of the stop button.
+  // Special state: 'station-arrival' relabels the button to GOTO BRIDGE
+  // and routes its click into the encounter demo (station_approach scenario)
+  // rather than the normal stop/resume cycle. This is the engine-side
+  // hook for "you've reached a station" — for now triggered via the dev
+  // sim button; the real engine layer will set this on node arrival.
+  function updateStopButton() {
+    const btn = $('stop-btn');
+    if (!btn) return;
+    if (tickerState === 'station-arrival') {
+      btn.textContent = 'Goto Bridge';
+    } else if (tickerState === 'trader-hail') {
+      btn.textContent = 'Hail Back';
+    } else {
+      btn.textContent = (tickerState === 'normal') ? 'Stop' : 'Resume';
+    }
+    document.body.classList.toggle('event-active', tickerState === 'event' || tickerState === 'trader-hail');
+  }
+
+  // Screen-shake + warning flash when the player tries to Resume
+  // during a forced event (can't resume while the ship is broken).
+  function shakeScreen() {
+    const g = $('game');
+    g.classList.remove('shaking');
+    void g.offsetWidth; // restart the animation
+    g.classList.add('shaking');
+    setTimeout(() => g.classList.remove('shaking'), 600);
+  }
+  let warningRestoreTimer = null;
+  function flashTickerWarning() {
+    const priorText = currentTickerEl ? currentTickerEl.textContent : '';
+    writeTicker('CANNOT RESUME \u2014 HANDLE EVENT FIRST', 'event');
+    clearTimeout(warningRestoreTimer);
+    warningRestoreTimer = setTimeout(() => {
+      if (tickerState === 'event' && priorText) {
+        writeTicker(priorText, 'event');
+      }
+    }, 2400);
+  }
+
+  window.pushTickerNews = function() {
+    const msg = TICKER_NEWS[Math.floor(Math.random()*TICKER_NEWS.length)];
+    setTicker(msg);
+  };
+  window.pushTickerEvent = function() {
+    // World-fired events interrupt any active multi-day action (per
+    // spec). Tear down the action without the cancel-feedback banner
+    // since the event is taking over the surface anyway.
+    if (activeWait) {
+      if (activeWait.intervalId) clearInterval(activeWait.intervalId);
+      clearPendingResolve();
+      hideWaitFlash();
+      hideActionBanner();
+      activeWait = null;
+    }
+    const id = FORCED_EVENT_IDS[Math.floor(Math.random()*FORCED_EVENT_IDS.length)];
+    const ev = FORCED_EVENTS[id];
+    currentEventId = id;
+    setTickerEvent(ev.text, 'event');
+    openStopMenu();   // open menu so the event-resolve verbs surface
+    pushLogEntry('\u25B6 ' + ev.text, { instant: true });
+  };
+  window.clearTickerEventBtn = function() {
+    if (tickerState === 'normal') return;
+    closeStopMenu();   // close the menu if the event opened it
+    pushLogEntry('\u25B6 Ship resumed. Back to normal ops.', { instant: true });
+    clearTickerEvent();
+  };
+
+  window.toggleCropAlert = function() {
+    const led = $('crop-alert-led');
+    led.classList.toggle('on');
+    if (led.classList.contains('on')) {
+      pushLogEntry('\u25B6 Crop needs attention.', { instant: true });
+    }
+  };
+
+  // ── Crop growth cycle ────────────────────────────────────────
+  // Two independent values:
+  //   cropDay    — days since planting. Ticks every game day.
+  //   cropGrowth — actual % grown. Advances each day at a rate
+  //                scaled by that day's health (100% health =
+  //                full rate, 0% health = no growth).
+  // Maturity = cropGrowth >= 100. If cropDay overruns MATURITY_DAYS
+  // without reaching 100% growth, the day counter goes red to flag
+  // the plant is behind schedule.
+  const CROP_MATURITY_DAYS = 90;
+  const CROP_STAGES = [
+    { max: 25,  name: 'SPROUTING',  key: 'sprouting'  },
+    { max: 50,  name: 'VEGETATIVE', key: 'vegetative' },
+    { max: 75,  name: 'FLOWERING',  key: 'flowering'  },
+    { max: 100, name: 'MATURING',   key: 'maturing'   }
+  ];
+
+  // Plant spritesheet — coords from sprites/growbay/spritesheet_growbay.json,
+  // verbatim from demo-growbay.html. Sheet 666×776, frame 109×192. Cruise
+  // only renders wheat for now (canonical demo crop), but the table carries
+  // every crop so swapping is a single-line cropId change later.
+  const PLANT_SHEET_W = 666, PLANT_SHEET_H = 776, PLANT_FRAME_W = 109, PLANT_FRAME_H = 192;
+  const PLANT_STAGE_SPRITES = {
+    wheat:    { sprouting: { x: 445, y: 389 }, vegetative: { x: 556, y: 1   }, flowering: { x: 223, y: 389 }, maturing: { x: 334, y: 389 } },
+    tomato:   { sprouting: { x: 1,   y: 389 }, vegetative: { x: 112, y: 389 }, flowering: { x: 334, y: 195 }, maturing: { x: 445, y: 195 } },
+    potato:   { sprouting: { x: 223, y: 1   }, vegetative: { x: 334, y: 1   }, flowering: { x: 1,   y: 1   }, maturing: { x: 112, y: 1   } },
+    soybeans: { sprouting: { x: 112, y: 195 }, vegetative: { x: 223, y: 195 }, flowering: { x: 445, y: 1   }, maturing: { x: 1,   y: 195 } },
+    zinnia:   { sprouting: { x: 1,   y: 583 }, vegetative: { x: 112, y: 583 }, flowering: { x: 556, y: 195 }, maturing: { x: 556, y: 389 } }
+  };
+
+  let cropId     = 'wheat';
+  let cropDay    = 12;
+  let cropGrowth = 13;    // percent, independent of day count
+
+  // ── Ship sprite (full-ship-with-plant per stage) ────────────
+  // sprites/ships/<cropId>/<stage>.png  — stage = 1..4 mapping to
+  // sprouting/vegetative/flowering/maturing. Files all 380×135.
+  // Probe is lazy + cached; falls back to default.png on 404, which
+  // also covers crops we haven't drawn yet (e.g. soybeans is empty
+  // on disk right now). Post-harvest gap: cropDay < POST_HARVEST_DAYS
+  // shows default.png instead of stage 1 — reads as "you just yanked
+  // the crops, nothing's grown back yet."
+  const POST_HARVEST_DAYS = 3;
+  const SHIP_SPRITE_CACHE = {};
+  function resolveShipSprite(crop, stage, cb) {
+    const key = crop + '-' + stage;
+    if (key in SHIP_SPRITE_CACHE) return cb(SHIP_SPRITE_CACHE[key]);
+    const candidates = [
+      'sprites/ships/' + crop + '/' + stage + '.png',
+      'sprites/ships/' + crop + '/' + stage + '.jpg'
+    ];
+    let i = 0;
+    function tryNext() {
+      if (i >= candidates.length) {
+        SHIP_SPRITE_CACHE[key] = 'sprites/ships/default.png';
+        cb(SHIP_SPRITE_CACHE[key]);
+        return;
+      }
+      const url = candidates[i++];
+      const img = new Image();
+      img.onload  = () => { SHIP_SPRITE_CACHE[key] = url; cb(url); };
+      img.onerror = tryNext;
+      img.src = url;
+    }
+    tryNext();
+  }
+  function applyShipSprite() {
+    const el = $('ship-silhouette');
+    // Post-harvest gap (or never-planted): default.png until the
+    // sprouts get visible enough to deserve their own sprite.
+    if (cropDay < POST_HARVEST_DAYS) {
+      el.style.backgroundImage = "url('sprites/ships/default.png')";
+      return;
+    }
+    const idx = CROP_STAGES.findIndex(s => cropGrowth <= s.max);
+    const stage = (idx >= 0 ? idx : CROP_STAGES.length - 1) + 1;  // 1..4
+    resolveShipSprite(cropId, stage, url => {
+      el.style.backgroundImage = "url('" + url + "')";
+    });
+  }
+
+  // Update the crop-icon element to show the right sprite frame. Display
+  // size is set by the .has-plant-sprite CSS rule (50×84); we scale the
+  // entire sheet proportionally so the cropped frame lands in the box.
+  function applyCropSprite() {
+    const el = $('crop-card-mini').querySelector('.crop-icon');
+    const stages = PLANT_STAGE_SPRITES[cropId];
+    if (!stages) return;
+    const stageIdx = Math.min(CROP_STAGES.length - 1,
+      CROP_STAGES.findIndex(s => cropGrowth <= s.max) >= 0
+        ? CROP_STAGES.findIndex(s => cropGrowth <= s.max) : CROP_STAGES.length - 1);
+    const frame = stages[CROP_STAGES[stageIdx].key];
+    if (!frame) return;
+    el.classList.add('has-plant-sprite');
+    // Display height matches the .has-plant-sprite CSS rule (76px).
+    // Sheet display = 666*scale × 776*scale; frame coords scale identically.
+    const scaleY = 76 / PLANT_FRAME_H;
+    const sheetW = (PLANT_SHEET_W * scaleY).toFixed(2);
+    const sheetH = (PLANT_SHEET_H * scaleY).toFixed(2);
+    el.style.backgroundSize = sheetW + 'px ' + sheetH + 'px';
+    el.style.backgroundPosition = (-frame.x * scaleY).toFixed(2) + 'px ' + (-frame.y * scaleY).toFixed(2) + 'px';
+  }
+
+  function renderCrop() {
+    const mature  = cropGrowth >= 100;
+    const overdue = cropDay > CROP_MATURITY_DAYS && !mature;
+    const stage   = mature
+      ? 'READY'
+      : (CROP_STAGES.find(s => cropGrowth <= s.max) || CROP_STAGES[0]).name;
+
+    $('crop-stage').textContent = stage;
+    $('crop-day').textContent = 'DAY ' + cropDay + ' / ' + CROP_MATURITY_DAYS;
+    $('crop-day').classList.toggle('overdue', overdue);
+    $('crop-growth-fill').style.width = Math.min(100, cropGrowth).toFixed(1) + '%';
+    applyCropSprite();
+    applyShipSprite();
+
+    const card = $('crop-card-mini');
+    const wasMature = card.classList.contains('mature');
+    card.classList.toggle('mature', mature);
+    if (mature && !wasMature) {
+      $('crop-alert-led').classList.add('on');
+      pushLogEntry('\u25B6 Crop MATURE \u2014 ready to harvest.', { instant: true });
+    }
+  }
+
+  // Advance one plant day. growthFactor is 0..1 (fraction of normal
+  // daily growth — driven by that day's health in the real game).
+  // Mature plants freeze until harvested.
+  function advancePlantOneDay(growthFactor) {
+    if (cropGrowth >= 100) return;
+    cropDay++;
+    const dailyRate = 100 / CROP_MATURITY_DAYS; // ~1.11% for a 90-day crop
+    cropGrowth = Math.min(100, cropGrowth + dailyRate * growthFactor);
+    renderCrop();
+  }
+
+  window.advanceCropDaysHealthy = function() {
+    for (let i = 0; i < 10; i++) advancePlantOneDay(1.0);
+  };
+  window.advanceCropDaysSick = function() {
+    for (let i = 0; i < 10; i++) advancePlantOneDay(0.2);
+  };
+  window.completeCropGrowth = function() {
+    cropGrowth = 100;
+    if (cropDay < CROP_MATURITY_DAYS) cropDay = CROP_MATURITY_DAYS;
+    renderCrop();
+  };
+  window.handleHarvest = function() {
+    cropDay = 0;
+    cropGrowth = 0;
+    $('crop-card-mini').classList.remove('mature');
+    $('crop-alert-led').classList.remove('on');
+    pushLogEntry('\u25B6 Harvested WHEAT. +40 food rations. Cycle reset.', { instant: true });
+    renderCrop();
+  };
+
+  // ── Modal routing ────────────────────────────────────────────
+  // Each modal lives as its own self-contained demo file. Until the
+  // engine layer absorbs them, cruise opens them in a new browser tab
+  // via window.open. Honest about the demo state — each prototype
+  // continues to iterate independently. Ship's Log (§19) is not yet
+  // built, so its button keeps the alert stub.
+  function openDemo(file, opts) {
+    const url = file + (opts && opts.hash ? ('#' + opts.hash) : '');
+    window.open(url, '_blank', 'noopener');
+  }
+
+  // Maps modal-name strings used by inline onclick attributes to the
+  // demo file that hosts them. Crew names route to demo-crew with a
+  // hash so the demo can pre-select that crew when it loads (the demo
+  // doesn't read the hash today, but the data is there for free).
+  window.openModal = function(name) {
+    if (name === 'Inventory')        return openDemo('demo-inventory.html');
+    if (name === 'Map')              return openDemo('demo-map.html');
+    if (name === 'Growbay')          return openDemo('demo-growbay.html');
+    if (name && name.indexOf('Crew') === 0) {
+      // Strip 'Crew:' prefix and any honorific (Dr./Mr./Mrs./Ms./
+      // Captain when followed by another name) so "Crew: Dr. Osei"
+      // routes to the bare crewId 'osei' that demo-crew expects.
+      // Plain "Crew: Captain" (no following name) maps to 'captain'.
+      const id = name.replace(/^Crew:\s*/, '')
+                      .replace(/^(Dr|Mr|Mrs|Ms|Capt)\.?\s+/i, '')
+                      .toLowerCase()
+                      .replace(/[^a-z]+/g, '-');
+      return openDemo('demo-crew.html', { hash: id });
+    }
+    if (name === 'Fabricator')       return openDemo('demo-fabricator.html');
+    alert('Open ' + name + ' modal (TODO — demo not yet built).');
+  };
+  window.openOrders = function(focus) {
+    openDemo('demo-orders.html', focus ? { hash: focus } : null);
+  };
+
+  // ── Stop Menu — region-driven world actions ─────────────────
+  // Spec: GAME_BIBLE.md §18 "Stop Menu & World Actions".
+  // Pressing Stop in normal state opens this menu in place of the
+  // AI log column. Verbs are filtered by the current region; gates
+  // (item, gold, etc.) follow the encounter pattern.
+  const REGIONS = {
+    deep_space: {
+      label: 'DEEP SPACE',
+      mood: 'Stars and silence. Nothing here but thinking.',
+      verbs: ['scan', 'repair', 'rest', 'wait_for_trader', 'fab']
+    },
+    asteroid_field: {
+      label: 'ASTEROID FIELD',
+      mood: 'Cold rocks. The kind of place that pays in chips, not stories.',
+      verbs: ['mine', 'forage_food', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab']
+    },
+    ice_field: {
+      label: 'ICE FIELD',
+      mood: 'Frozen drifters tumbling slow. Water in every direction, all of it solid.',
+      verbs: ['mine', 'forage_food', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab']
+    },
+    debris_field: {
+      label: 'DEBRIS FIELD',
+      mood: "Someone else's bad day, scattered for kilometers.",
+      verbs: ['salvage', 'mine', 'forage_food', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab']
+    },
+    nebula: {
+      label: 'NEBULA',
+      mood: 'Glowing gas in colors that probably mean something.',
+      verbs: ['mine', 'scan', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab']
+    },
+    anomaly: {
+      label: 'ANOMALY',
+      mood: 'The instruments disagree with each other. None of them with reality.',
+      verbs: ['scan', 'forage_food', 'repair', 'rest', 'fab']
+    },
+    planet_orbit_habitable: {
+      label: 'PLANET ORBIT · HABITABLE',
+      mood: 'Green and blue and trying. A world that knows how to grow things.',
+      verbs: ['forage_food', 'trade', 'wait_for_trader', 'scan', 'repair', 'rest', 'fab']
+    },
+    planet_orbit_alien: {
+      label: 'PLANET ORBIT · ALIEN',
+      mood: 'Whatever evolved here did so without consulting Earth precedent.',
+      verbs: ['forage_food', 'trade', 'wait_for_trader', 'scan', 'repair', 'rest', 'fab']
+    },
+    station_approach: {
+      label: 'STATION APPROACH',
+      mood: 'Lights and traffic. Civilization, give or take.',
+      verbs: ['trade', 'wait_for_trader', 'repair', 'rest', 'fab']
+    }
+  };
+
+  const FORAGE_LABEL_BY_REGION = {
+    planet_orbit_habitable: 'GATHER',
+    planet_orbit_alien:     'FORAGE',
+    asteroid_field:         'HUNT',
+    ice_field:              'HUNT',
+    debris_field:           'SCAVENGE',
+    anomaly:                'FORAGE'
+  };
+
+  // Verb registry — Phase 1 stubs. Phase 2 wires routing into the
+  // encounter screen (per spec, Stop Menu is just a trigger surface).
+  const STOP_VERBS = {
+    mine: {
+      label: 'MINE',
+      iconUrl: 'sprites/interface/mining.png',
+      sub: 'Pull raw materials from the rocks.',
+      effort: 3, time: 8
+    },
+    salvage: {
+      label: 'SALVAGE',
+      iconUrl: 'sprites/interface/salvage.png',
+      sub: 'Pick through the wreckage. Mind the sharp bits.',
+      effort: 3, time: 6
+    },
+    forage_food: {
+      label: function(region) { return FORAGE_LABEL_BY_REGION[region] || 'FORAGE'; },
+      iconUrl: 'sprites/interface/forage.png',
+      sub: 'Find something edible. Or interesting. Sometimes both.',
+      effort: 2, time: 5,
+      variantBy: function(region) { return region === 'planet_orbit_alien' ? 'risky' : null; }
+    },
+    trade: {
+      label: 'TRADE',
+      iconUrl: 'sprites/interface/trade.png',
+      sub: 'Haggle. Or pretend to.',
+      effort: 1, time: 2,
+      requires: function(ctx) { return ctx.traderPresent; }
+    },
+    wait_for_trader: {
+      label: 'WAIT FOR TRADER',
+      iconUrl: 'sprites/interface/wait.png',
+      sub: 'Park. Roll the dice. Days will pass. Things will hear you.',
+      effort: 1, time: 24, timeLabel: '1-7d',
+      hint: true,
+      hideWhen: function(ctx) { return ctx.traderPresent; }
+    },
+    scan: {
+      label: 'SCAN',
+      iconUrl: 'sprites/interface/scan.png',
+      sub: 'Read the signals. Find what is coming.',
+      effort: 2, time: 3,
+      hint: true
+    },
+    repair: {
+      label: 'REPAIR',
+      iconUrl: 'sprites/interface/repair.png',
+      sub: 'Patch what is broken. Cost in materials and hours.',
+      effort: 3, time: 6,
+      hideWhen: function(ctx) { return !ctx.hullDamaged; }
+    },
+    rest: {
+      label: 'REST',
+      iconUrl: 'sprites/interface/rest.png',
+      sub: 'Crew morale up. Days down.',
+      effort: 1, time: 24,
+      hint: true
+    },
+    fab: {
+      label: 'FABRICATOR',
+      iconUrl: 'sprites/interface/fab.png',
+      sub: 'Open the print queue. Long jobs need a still ship.',
+      effort: 1, time: 0,
+      hint: true,
+      routesTo: 'fabricator'
+    }
+  };
+
+  // Resolve gates against current ctx. Phase 1 has no item-gates wired
+  // because no Phase-1 verb requires one. Pattern is here so Phase 2
+  // can extend trivially (e.g. water_condense gated on ctx.hasCondenser).
+  function resolveGateFor(verbId, verb, ctx) {
+    return { locked: false, need: null };
+  }
+
+  function gatherStopCtx() {
+    const regionEl = $('c-region');
+    return {
+      region:        regionEl ? regionEl.value : 'deep_space',
+      traderPresent: $('c-trader-present') ? $('c-trader-present').checked : false,
+      hullDamaged:   $('c-hull-damaged')   ? $('c-hull-damaged').checked   : false,
+      hasCondenser:  $('c-has-condenser')  ? $('c-has-condenser').checked  : false
+    };
+  }
+
+  function effortPips(n) {
+    n = Math.max(0, Math.min(5, n|0));
+    return '●'.repeat(n) + '○'.repeat(5 - n);
+  }
+  function stopTimeLabel(hours) {
+    if (!hours) return '';
+    if (hours < 1)  return '<1h';
+    if (hours < 24) return Math.round(hours) + 'h';
+    return Math.round(hours / 24) + 'd';
+  }
+
+  function renderStopMenu() {
+    const ctx = gatherStopCtx();
+    const region = REGIONS[ctx.region] || REGIONS.deep_space;
+    $('stop-region-label').textContent = region.label;
+    $('stop-region-mood').textContent  = region.mood;
+
+    const list = $('stop-choices');
+    list.innerHTML = '';
+
+    // Forced event in progress — replace the region copy with the
+    // event's label/mood and surface only its resolve verbs. Player
+    // must pick one to clear the event; Resume is blocked.
+    if (tickerState === 'event' && currentEventId) {
+      const ev = FORCED_EVENTS[currentEventId];
+      $('stop-region-label').textContent = ev.label;
+      $('stop-region-mood').textContent  = ev.mood;
+      ev.resolveVerbs.forEach(function(verbId) {
+        const verb = EVENT_VERBS[verbId];
+        if (!verb) return;
+        const variant = verb.risky ? 'risky' : (verb.hint ? 'hint' : null);
+        const btn = document.createElement('button');
+        btn.className = 'stop-choice' + (variant ? ' ' + variant : '');
+        const gate = document.createElement('div');
+        gate.className = 'stop-choice-gate' + (variant ? ' ' + variant : '');
+        if (verb.iconUrl) gate.style.backgroundImage = "url('" + verb.iconUrl + "')";
+        btn.appendChild(gate);
+        const body = document.createElement('div');
+        body.className = 'stop-choice-body';
+        body.textContent = verb.label;
+        btn.appendChild(body);
+        const sub = document.createElement('div');
+        sub.className = 'stop-choice-sub';
+        if (verb.effort) {
+          const eff = document.createElement('span');
+          eff.className = 'effort';
+          eff.textContent = effortPips(verb.effort);
+          sub.appendChild(eff);
+        }
+        if (verb.time) {
+          const t = document.createElement('span');
+          t.textContent = verb.timeLabel || stopTimeLabel(verb.time);
+          sub.appendChild(t);
+        }
+        if (verb.sub) {
+          const s = document.createElement('span');
+          s.textContent = '· ' + verb.sub;
+          s.style.flexBasis = '100%';
+          s.style.opacity = '0.8';
+          sub.appendChild(s);
+        }
+        btn.appendChild(sub);
+        btn.addEventListener('click', function() { handleEventResolve(verbId, verb); });
+        list.appendChild(btn);
+      });
+      return;
+    }
+
+    // While a multi-day action is in progress, hide every other verb
+    // and surface a single "STOP" button that cancels the action and
+    // brings back the full choice column. Prevents the player from
+    // queueing/clicking through other verbs mid-wait.
+    if (activeWait) {
+      const a = activeWait;
+      const cfg = IN_PLACE_WAIT_CFG[a.verbId];
+      const stopLabel = cfg ? cfg.cancelStopLabel : 'CANCEL ACTION';
+      const stopSub   = cfg ? cfg.cancelStopSub   : 'Abort the current action and return to the menu.';
+
+      const btn = document.createElement('button');
+      btn.className = 'stop-choice risky';
+      const gate = document.createElement('div');
+      gate.className = 'stop-choice-gate risky';
+      gate.textContent = '✕';     // ✕
+      btn.appendChild(gate);
+      const body = document.createElement('div');
+      body.className = 'stop-choice-body';
+      body.textContent = stopLabel;
+      btn.appendChild(body);
+      const sub = document.createElement('div');
+      sub.className = 'stop-choice-sub';
+      const s = document.createElement('span');
+      s.textContent = '· ' + stopSub;
+      s.style.flexBasis = '100%';
+      s.style.opacity = '0.8';
+      sub.appendChild(s);
+      btn.appendChild(sub);
+      btn.addEventListener('click', cancelMultiDayAction);
+      list.appendChild(btn);
+      return;
+    }
+
+    region.verbs.forEach(function(verbId) {
+      const verb = STOP_VERBS[verbId];
+      if (!verb) return;
+      if (verb.hideWhen && verb.hideWhen(ctx)) return;
+      if (verb.requires && !verb.requires(ctx)) return;
+
+      const gateInfo = resolveGateFor(verbId, verb, ctx);
+      const labelStr = (typeof verb.label === 'function') ? verb.label(ctx.region) : verb.label;
+
+      let variant = null;
+      if (verb.risky) variant = 'risky';
+      if (verb.hint)  variant = 'hint';
+      if (verb.variantBy) {
+        const v = verb.variantBy(ctx.region);
+        if (v) variant = v;
+      }
+
+      const btn = document.createElement('button');
+      btn.className = 'stop-choice';
+      if (gateInfo.locked) btn.classList.add('locked');
+      else if (variant)    btn.classList.add(variant);
+
+      const gate = document.createElement('div');
+      gate.className = 'stop-choice-gate';
+      if (gateInfo.locked) gate.classList.add('locked');
+      else if (variant)    gate.classList.add(variant);
+      // Prefer the PNG icon. Locked verbs always show lock.png. If a
+      // verb has no iconUrl yet, fall back to its emoji glyph.
+      const iconUrl = gateInfo.locked ? 'sprites/interface/lock.png' : verb.iconUrl;
+      if (iconUrl) {
+        gate.style.backgroundImage = "url('" + iconUrl + "')";
+      } else if (verb.icon) {
+        gate.textContent = verb.icon;
+      }
+      btn.appendChild(gate);
+
+      const body = document.createElement('div');
+      body.className = 'stop-choice-body';
+      body.textContent = labelStr;
+      btn.appendChild(body);
+
+      const sub = document.createElement('div');
+      sub.className = 'stop-choice-sub';
+      if (gateInfo.locked && gateInfo.need) {
+        const need = document.createElement('span');
+        need.className = 'lock-need';
+        need.textContent = '\u{1F512} Need: ' + gateInfo.need;
+        sub.appendChild(need);
+      } else {
+        if (verb.effort) {
+          const eff = document.createElement('span');
+          eff.className = 'effort';
+          eff.textContent = effortPips(verb.effort);
+          sub.appendChild(eff);
+        }
+        if (verb.time) {
+          const t = document.createElement('span');
+          t.textContent = verb.timeLabel || stopTimeLabel(verb.time);
+          sub.appendChild(t);
+        }
+        if (verb.sub) {
+          const s = document.createElement('span');
+          s.textContent = '· ' + verb.sub;
+          s.style.flexBasis = '100%';
+          s.style.opacity = '0.8';
+          sub.appendChild(s);
+        }
+      }
+      btn.appendChild(sub);
+
+      btn.setAttribute('data-verb-id', verbId);
+      btn.addEventListener('click', function() {
+        if (gateInfo.locked) return;
+        // Don't refire while picking days on this same button.
+        if (btn.classList.contains('day-picker')) return;
+        handleVerbClick(verbId, verb, labelStr, ctx, btn);
+      });
+
+      list.appendChild(btn);
+    });
+
+    if (!list.children.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'padding:18px 6px; color:var(--ai-text-color); font-family:VT323,monospace; font-size:14px; font-style:italic; opacity:0.7; text-align:center;';
+      empty.textContent = 'Nothing to do here.';
+      list.appendChild(empty);
+    }
+  }
+
+  function handleEventResolve(verbId, verb) {
+    // Open the encounter demo with the verb id as a hash hint. Same
+    // hand-off pattern as the modal buttons (window.open in a new
+    // tab). The encounter demo doesn't currently read the hash but
+    // the data is in the URL for when it does. Cruise clears the
+    // event locally — when the engine layer lands, encounter will
+    // own the resolution and report back.
+    pushLogEntry('▶ ' + verb.label + ' — opening encounter scene.', { instant: true });
+    openDemo('demo-encounter.html', { hash: verbId });
+    clearTickerEvent();
+    closeStopMenu();
+  }
+
+  function handleVerbClick(verbId, verb, labelStr, ctx, btn) {
+    if (verb.routesTo === 'fabricator') {
+      openDemo('demo-fabricator.html');
+      return;
+    }
+    // In-place verbs (stay on cruise, banner + tick) get the day picker.
+    if (verbId === 'wait_for_trader' || verbId === 'rest') {
+      enterDayPickerMode(btn, ctx, verbId);
+      return;
+    }
+    // TRADE routes to the standalone trader scenario in the encounter demo,
+    // not to a #trade hash (which has no matching scenario key).
+    if (verbId === 'trade') {
+      pushLogEntry('▶ TRADE — opening trader scenario.', { instant: true });
+      openDemo('demo-encounter.html', { hash: 'trader' });
+      return;
+    }
+    // Routed verbs (mine/salvage/forage/scan/repair) hand off
+    // to the encounter demo in a new tab. Hash carries the verb id
+    // so encounter can preselect when it reads the hash.
+    pushLogEntry('▶ ' + labelStr + ' — opening encounter scene.', { instant: true });
+    openDemo('demo-encounter.html', { hash: verbId });
+  }
+
+  // ── Multi-day action infrastructure ──────────────────────────
+  // Currently only used by wait_for_trader. The action banner +
+  // tick loop are general-purpose so any future verb that needs
+  // multi-day duration can plug in. Real-time ~1.5s per game-day.
+
+  // Region-modulated daily roll for a trader showing up. Higher
+  // near civilized regions, near-zero in deep space. Real tables
+  // need to land before publishing — these are placeholders.
+  const TRADER_CHANCE_BY_REGION = {
+    station_approach:        0.30,
+    planet_orbit_habitable:  0.18,
+    planet_orbit_alien:      0.08,
+    debris_field:            0.10,
+    asteroid_field:          0.08,
+    ice_field:               0.08,
+    nebula:                  0.06,
+    anomaly:                 0.02,
+    deep_space:              0.01
+  };
+
+  // Placeholder during-wait event table — what *else* might happen
+  // each day a stationary ship sits in space. `targetScenario` is the
+  // encounter-screen scenario id this event will route to once the
+  // cruise→encounter wire is run. Until then, handleWaitEvent shows
+  // the flash + logs the routing intent so the player sees that the
+  // wait was interrupted (and by what).
+  const WAIT_EVENT_TABLE = [
+    { id: 'pirate_jump',   weight: 8, log: 'Pirate signature on long-range scan. They saw you sitting still.',
+      flashText: 'PIRATE INBOUND', flashVariant: 'event-danger', targetScenario: 'pirate' },
+    { id: 'anomaly_drift', weight: 3, log: 'Anomalous drift current bumps the ship. Instruments disagree about which way is up.',
+      flashText: 'ANOMALY',        flashVariant: 'event',        targetScenario: 'anomaly' },
+    { id: 'distress_call', weight: 5, log: 'Distress call on an open channel. Someone, somewhere, needs help.',
+      flashText: 'DISTRESS CALL',  flashVariant: 'event',        targetScenario: 'drifter_encounter' }
+    // remaining ~84% weight → "nothing happens this day"
+  ];
+  const WAIT_TICK_MS = 1500;     // real-time ms per game-day during a wait
+  const WAIT_DAY_MAX = 7;        // hard cap on wait length per the spec
+
+  let activeWait = null;  // { verbId, label, day, days, intervalId }
+
+  function pickWaitEvent() {
+    const totalWeight = 100;  // weights are out of 100; remainder = nothing
+    let r = Math.random() * totalWeight;
+    for (const ev of WAIT_EVENT_TABLE) {
+      r -= ev.weight;
+      if (r < 0) return ev;
+    }
+    return null;  // nothing happened
+  }
+
+  function showActionBanner(label, day, days) {
+    const banner = $('action-banner');
+    $('action-banner-label').textContent   = label;
+    $('action-banner-counter').textContent = 'DAY ' + day + ' / ' + days;
+    $('action-banner-fill').style.width = (Math.min(100, (day / days) * 100)).toFixed(1) + '%';
+    banner.classList.add('show');
+  }
+  function hideActionBanner() {
+    $('action-banner').classList.remove('show');
+  }
+  // Two variants: 'success' (trader appeared, gold pulse) and
+  // 'timeout' (no one came, calm cream). Caller controls hide timing.
+  // All known flash variants — kept in one list so add/remove stays in
+  // sync between show and hide. Add a new variant here when adding a
+  // new entry in WAIT_EVENT_TABLE or a new flash type.
+  const FLASH_VARIANTS = ['success', 'timeout', 'event', 'event-danger'];
+  function showWaitFlash(text, variant) {
+    const el = $('wait-flash');
+    el.querySelector('.wait-flash-label').textContent = text;
+    el.classList.remove(...FLASH_VARIANTS);
+    el.classList.add(variant);
+    el.classList.add('show');
+  }
+  function hideWaitFlash() {
+    const el = $('wait-flash');
+    el.classList.remove('show');
+    setTimeout(() => el.classList.remove(...FLASH_VARIANTS), 600);
+  }
+
+  // Day picker — swap the in-place verb's button body for a 1..7 day
+  // stepper. Clicking any number commits + starts the wait. Clicking
+  // any other choice button collapses the picker. Used by both
+  // wait_for_trader and rest (any verb that stays on cruise and ticks
+  // days). The verbId is captured so the eventual startInPlaceWait
+  // call knows which behavior set to run.
+  function enterDayPickerMode(btn, ctx, verbId) {
+    document.querySelectorAll('.stop-choice.day-picker').forEach(b => collapseDayPicker(b));
+
+    btn.classList.add('day-picker');
+    btn._origHTML = btn.innerHTML;
+    const gate = btn.querySelector('.stop-choice-gate');
+    btn.innerHTML = '';
+    if (gate) btn.appendChild(gate);
+
+    const body = document.createElement('div');
+    body.className = 'stop-choice-body';
+    body.textContent = verbId === 'rest' ? 'REST HOW MANY DAYS?' : 'WAIT HOW MANY DAYS?';
+    btn.appendChild(body);
+
+    const stepper = document.createElement('div');
+    stepper.className = 'day-stepper';
+    for (let d = 1; d <= WAIT_DAY_MAX; d++) {
+      const step = document.createElement('button');
+      step.type = 'button';
+      step.className = 'day-step';
+      step.textContent = String(d);
+      step.addEventListener('click', function(e) {
+        e.stopPropagation();
+        startInPlaceWait(verbId, d, ctx);
+      });
+      stepper.appendChild(step);
+    }
+    btn.appendChild(stepper);
+
+    // Click outside the picker → collapse. Use capture-phase listener
+    // installed once and torn down in collapseDayPicker.
+    btn._outsideHandler = function(e) {
+      if (btn.contains(e.target)) return;
+      collapseDayPicker(btn);
+    };
+    setTimeout(() => document.addEventListener('click', btn._outsideHandler, true), 0);
+  }
+  function collapseDayPicker(btn) {
+    if (!btn.classList.contains('day-picker')) return;
+    btn.classList.remove('day-picker');
+    if (btn._origHTML != null) {
+      btn.innerHTML = btn._origHTML;
+      btn._origHTML = null;
+    }
+    if (btn._outsideHandler) {
+      document.removeEventListener('click', btn._outsideHandler, true);
+      btn._outsideHandler = null;
+    }
+  }
+
+  // Verb-specific wait config — banner label, log copy, etc.
+  // Both verbs share the tick + flash + cancel infrastructure; only
+  // the per-verb strings + roll behavior diverge.
+  const IN_PLACE_WAIT_CFG = {
+    wait_for_trader: {
+      label: 'WAITING FOR TRADER',
+      startLog: function(d) { return '▶ Captain orders the ship parked. Waiting for a trader (' + d + ' day cap).'; },
+      timeoutFlashText: 'NO ONE CAME',
+      timeoutFlashVariant: 'timeout',
+      timeoutLog:  '▶ No one came. Captain calls it off.',
+      cancelStopLabel: 'STOP WAITING',
+      cancelStopSub:   'Resume course. Trader unfound. No cost beyond days already spent.'
+    },
+    rest: {
+      label: 'RESTING',
+      startLog: function(d) { return '▶ Crew stands down for ' + d + ' day' + (d===1?'':'s') + '. Lights low. Time soft.'; },
+      // Rest's "timeout" IS the success — completion at cap = refreshed.
+      timeoutFlashText: 'REFRESHED',
+      timeoutFlashVariant: 'success',
+      timeoutLog:  '▶ Crew rested. Morale up.',
+      cancelStopLabel: 'WAKE UP',
+      cancelStopSub:   'Cut rest short. Crew is still tired but the ship can move.'
+    }
+  };
+
+  function startInPlaceWait(verbId, days, ctx) {
+    if (activeWait) return;
+    document.querySelectorAll('.stop-choice.day-picker').forEach(b => collapseDayPicker(b));
+
+    const cfg = IN_PLACE_WAIT_CFG[verbId];
+    if (!cfg) return;
+
+    activeWait = {
+      verbId: verbId,
+      label:  cfg.label,
+      day: 0,
+      days: days,
+      ctx: ctx,
+      intervalId: null
+    };
+    pushLogEntry(cfg.startLog(days), { instant: true });
+    // Snap the fill to 0 with no transition before showing the new
+    // banner. Without this, the previous wait's fill % animates down
+    // to 0 over the 0.5s width-transition before the first tick
+    // starts filling it again — reads as "drain then refill".
+    const fill = $('action-banner-fill');
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+    void fill.offsetWidth;            // force reflow so the next style change re-engages the transition
+    fill.style.transition = '';
+    showActionBanner(activeWait.label, 0, days);
+
+    // Defer the choice-column rebuild by one tick. Browsers can
+    // re-target an in-flight click event to whatever sits under the
+    // cursor when handlers complete; if we rebuild the column
+    // synchronously inside the day-step's click handler, the new
+    // STOP WAITING button materializes at the same screen position
+    // the day-step button occupied, and the very same click that
+    // started the wait can also fire its cancel handler. Deferring
+    // lets the original click fully resolve before STOP WAITING
+    // exists in the DOM.
+    setTimeout(() => renderStopMenu(), 0);
+    activeWait.intervalId = setInterval(tickWaitDay, WAIT_TICK_MS);
+  }
+
+  // Pending result timer — cleared on cancel so we don't fire stale
+  // setTimeouts after the player has already resumed travel.
+  let waitResolveTimer = null;
+  function clearPendingResolve() {
+    if (waitResolveTimer) { clearTimeout(waitResolveTimer); waitResolveTimer = null; }
+  }
+
+  function tickWaitDay() {
+    if (!activeWait) return;
+    const a = activeWait;
+    a.day++;
+    showActionBanner(a.label, a.day, a.days);
+
+    // Trader appearance roll — only meaningful for wait_for_trader.
+    // Rest doesn't search for anyone; it just waits for time.
+    if (a.verbId === 'wait_for_trader') {
+      const traderChance = TRADER_CHANCE_BY_REGION[a.ctx.region] || 0.05;
+      if (Math.random() < traderChance) {
+        handleTraderArrival();
+        return;
+      }
+    }
+    // During-wait events apply to any in-place wait. Stationary ship
+    // attracts attention regardless of *why* it's stationary.
+    const ev = pickWaitEvent();
+    if (ev) {
+      handleWaitEvent(ev);
+      return;
+    }
+    // Day complete with no result. If we've hit the cap, stop the
+    // tick interval and let the bar's transition land at 100% before
+    // announcing the timeout.
+    if (a.day >= a.days) {
+      clearInterval(a.intervalId);
+      a.intervalId = null;
+      // Linger long enough for the bar fill transition (0.5s) to
+      // visibly complete before showing the result flash.
+      waitResolveTimer = setTimeout(() => {
+        waitResolveTimer = null;
+        endWait('timeout');
+      }, 800);
+    }
+  }
+
+  function handleTraderArrival() {
+    if (!activeWait) return;
+    if (activeWait.intervalId) clearInterval(activeWait.intervalId);
+    activeWait.intervalId = null;
+    pushLogEntry('▶ A trader has appeared.', { instant: true });
+    // Linger on the bar's final fill briefly, then flash the result.
+    waitResolveTimer = setTimeout(() => {
+      showWaitFlash('TRADER APPROACHING', 'success');
+      waitResolveTimer = setTimeout(() => {
+        waitResolveTimer = null;
+        hideWaitFlash();
+        activeWait = null;
+        hideActionBanner();
+        closeStopMenu();
+        pushLogEntry('▶ Trader vessel in range — opening encounter.', { instant: true });
+        openDemo('demo-encounter.html', { hash: 'trader' });
+      }, 2000);
+    }, 600);
+  }
+
+  // During-wait event interrupted the wait. Mirrors handleTraderArrival's
+  // pacing — linger on the bar's final fill, flash the event name, then
+  // hand control back. Encounter routing (the [STUB] line) is the wire
+  // to be run once cruise→encounter is connected; in production this
+  // function will route into the targetScenario instead of just logging.
+  function handleWaitEvent(ev) {
+    if (!activeWait) return;
+    if (activeWait.intervalId) clearInterval(activeWait.intervalId);
+    activeWait.intervalId = null;
+    pushLogEntry('▶ ' + ev.log, { instant: true });
+    waitResolveTimer = setTimeout(() => {
+      showWaitFlash(ev.flashText || ev.id.toUpperCase(), ev.flashVariant || 'event');
+      waitResolveTimer = setTimeout(() => {
+        waitResolveTimer = null;
+        hideWaitFlash();
+        // [STUB] cruise→encounter routing not wired yet. When connected,
+        // replace this log line with the actual route call:
+        //   routeToEncounter(ev.targetScenario);
+        // Until then the log entry tells the player which scenario would
+        // have fired, and the flash + amber pulse makes it visible.
+        pushLogEntry('▶ [STUB] would route to encounter: ' + ev.targetScenario, { instant: true });
+        activeWait = null;
+        hideActionBanner();
+        renderStopMenu();
+      }, 2000);
+    }, 600);
+  }
+
+  function endWait(reason) {
+    if (!activeWait && reason !== 'timeout') return;
+    const a = activeWait;
+    if (a && a.intervalId) clearInterval(a.intervalId);
+
+    if (reason === 'timeout') {
+      // Verb-specific completion copy. wait_for_trader timing out
+      // reads as failure ("NO ONE CAME"), rest reading the same way
+      // would be wrong — rest's timeout IS the success.
+      const cfg = a && IN_PLACE_WAIT_CFG[a.verbId];
+      const flashText    = cfg ? cfg.timeoutFlashText    : 'NO ONE CAME';
+      const flashVariant = cfg ? cfg.timeoutFlashVariant : 'timeout';
+      const logLine      = cfg ? cfg.timeoutLog          : '▶ No one came. Captain calls it off.';
+      showWaitFlash(flashText, flashVariant);
+      pushLogEntry(logLine, { instant: true });
+      waitResolveTimer = setTimeout(() => {
+        waitResolveTimer = null;
+        hideWaitFlash();
+        activeWait = null;
+        hideActionBanner();
+        renderStopMenu();
+      }, 2200);
+      return;
+    }
+    if (reason === 'cancel') {
+      const daysSpent = a ? a.day : 0;
+      const dayWord = daysSpent === 1 ? 'DAY' : 'DAYS';
+      const wastedLabel = daysSpent === 0
+        ? 'WAIT CANCELLED'
+        : 'WASTED ' + daysSpent + ' ' + dayWord + '!';
+      pushLogEntry('▶ Wait cancelled — ship resumes course.', { instant: true });
+      // Morph the action banner in place: same banner, repurposed
+      // copy + amber tint. Bar stays at its current %. Menu re-renders
+      // immediately so the player has agency back; the banner fades
+      // independently after a beat.
+      const bannerEl = $('action-banner');
+      bannerEl.classList.add('cancelled');
+      $('action-banner-label').textContent   = wastedLabel;
+      $('action-banner-counter').textContent = '';
+      clearPendingResolve();
+      hideWaitFlash();
+      activeWait = null;
+      renderStopMenu();
+      waitResolveTimer = setTimeout(() => {
+        waitResolveTimer = null;
+        hideActionBanner();
+        // Strip the cancelled class after the fade so the next wait
+        // starts with the default gold styling.
+        setTimeout(() => bannerEl.classList.remove('cancelled'), 400);
+      }, 1500);
+      return;
+    }
+    clearPendingResolve();
+    hideWaitFlash();
+    activeWait = null;
+    hideActionBanner();
+    renderStopMenu();
+  }
+
+  // Cancel any active multi-day action — called when the player hits
+  // Resume mid-wait. Per spec, Resume is reachable during the wait;
+  // canceling doesn't cost anything beyond the days already spent.
+  function cancelMultiDayAction() {
+    if (activeWait) endWait('cancel');
+  }
+
+  function openStopMenu() {
+    document.body.classList.add('stop-active');
+    renderStopMenu();
+  }
+  function closeStopMenu() {
+    document.body.classList.remove('stop-active');
+    cancelMultiDayAction();   // safety — shouldn't normally happen, but tidy
+  }
+
+  // Ship's Log — opens demo-shipslog.html in a new window, mirroring the
+  // window.open pattern cruise uses for inventory/growbay/crew/map/orders/
+  // fabricator/encounter. When the engine layer lands, this becomes
+  // `engine.mountModal('shipslog')` reading from STATE.log.
+  window.openShipsLog = function() {
+    window.open('demo-shipslog.html', '_blank', 'noopener');
+  };
+
+  // Three-state Stop/Resume:
+  //   normal  → press Stop    → state=stopped, ticker "STOPPED" (amber)
+  //   stopped → press Resume  → state=normal,  restore last normal ticker
+  //   event   → press Resume  → can't resume: shake screen + flash
+  //                              "CANNOT RESUME" warning, state stays
+  window.handleStop = function() {
+    if (tickerState === 'station-arrival') {
+      // Open the encounter demo on station_approach in a new tab. Engine
+      // layer eventually swaps this for an in-place mount.
+      window.open('demo-encounter.html#station_approach', '_blank');
+      return;
+    }
+    if (tickerState === 'trader-hail') {
+      window.open('demo-encounter.html#trader', '_blank');
+      return;
+    }
+    if (tickerState === 'normal') {
+      setTickerEvent('STOPPED', 'event-info');
+      openStopMenu();
+      pushLogEntry('\u25B6 Ship stopped by captain.', { instant: true });
+    } else if (tickerState === 'stopped') {
+      pushLogEntry('\u25B6 Ship resumed.', { instant: true });
+      clearTickerEvent();
+      closeStopMenu();
+    } else if (tickerState === 'event') {
+      shakeScreen();
+      flashTickerWarning();
+    }
+  };
+
+  // Sim-only entry point. Forces the ship into the "arrived at station"
+  // state \u2014 auto-stops travel, swaps the Stop button to GOTO BRIDGE, and
+  // pulses the ticker. Click GOTO BRIDGE to open the encounter on the
+  // station_approach scenario in a new tab.
+  window.simulateStationArrival = function() {
+    // Tear down any active multi-day wait \u2014 same pattern pushTickerEvent uses.
+    if (activeWait) {
+      if (activeWait.intervalId) clearInterval(activeWait.intervalId);
+      clearPendingResolve();
+      hideWaitFlash();
+      hideActionBanner();
+      activeWait = null;
+    }
+    tickerState = 'station-arrival';
+    writeTicker('\u25CF ARRIVED AT STATION \u2014 awaiting orders', 'event-info');
+    updateStopButton();
+    pushLogEntry('\u25B6 Station in range \u2014 auto-stop engaged.', { instant: true });
+  };
+  // Reset back to normal cruise \u2014 for re-running the sim cleanly without
+  // reloading the page. Mirrors clearTickerEvent for the new state.
+  window.simulateStationDepart = function() {
+    if (tickerState !== 'station-arrival') return;
+    tickerState = 'normal';
+    currentEventId = null;
+    writeTicker(normalTickerText || '\u2014', 'normal');
+    updateStopButton();
+    pushLogEntry('\u25B6 Departed station, resuming cruise.', { instant: true });
+  };
+
+  // Sim: a trader vessel has hailed the ship. Stops travel, swaps the
+  // Stop button to HAIL BACK. Clicking HAIL BACK opens the trader
+  // scenario in the encounter demo.
+  window.simulateTraderHail = function() {
+    if (activeWait) {
+      if (activeWait.intervalId) clearInterval(activeWait.intervalId);
+      clearPendingResolve();
+      hideWaitFlash();
+      hideActionBanner();
+      activeWait = null;
+    }
+    tickerState = 'trader-hail';
+    writeTicker('VESSEL CONTACT \u00B7 MERCHANT HAILING \u2014 respond or ignore', 'event');
+    updateStopButton();
+    pushLogEntry('\u25B6 Merchant vessel on comms \u2014 press HAIL BACK to respond.', { instant: true });
+  };
+
+  // Sim: a trader is within range in the current zone. Sets the
+  // traderPresent flag (via checkbox) and stops the ship so the player
+  // sees TRADE in the stop menu. Use the "Trader present" checkbox to
+  // toggle without auto-stopping.
+  window.simulateTraderStop = function() {
+    const cb = $('c-trader-present');
+    if (cb) cb.checked = true;
+    if (tickerState === 'normal') {
+      setTickerEvent('STOPPED \u2014 TRADER IN RANGE', 'event-info');
+      openStopMenu();
+      pushLogEntry('\u25B6 Ship stopped. Trader vessel in range \u2014 select TRADE.', { instant: true });
+    } else {
+      // Already stopped or in event \u2014 just refresh the menu so TRADE appears.
+      renderStopMenu();
+      pushLogEntry('\u25B6 Trader now in range. TRADE action available.', { instant: true });
+    }
+  };
+
+  // ── Apply styles ─────────────────────────────────────────────
+  function apply() {
+    const setVar = (name, val) => root.style.setProperty(name, val);
+    const setPx  = (name, id)  => {
+      const v = $(id).value;
+      setVar(name, v + 'px');
+      const r = $('v-' + id.slice(2));
+      if (r) r.textContent = v;
+    };
+
+    // Header
+    setVar('--hdr-bg-top',     $('c-hdr-bg-top').value);
+    setVar('--hdr-bg-bot',     $('c-hdr-bg-bot').value);
+    setVar('--hdr-border',     $('c-hdr-border').value);
+    setVar('--hdr-title-color',$('c-hdr-title').value);
+    setVar('--hdr-ticker-color',$('c-hdr-ticker').value);
+    setVar('--hdr-ticker-event',$('c-hdr-ticker-ev').value);
+    setVar('--hdr-meta-color', $('c-hdr-meta').value);
+    setVar('--hdr-paused-color',$('c-hdr-paused').value);
+
+    // AI panel
+    setVar('--ai-name-color',  $('c-ai-name').value);
+    setVar('--ai-text-color',  $('c-ai-text').value);
+    $('v-ai-speed').textContent = $('c-ai-speed').value + 'ms';
+
+    // Scene alert
+    setVar('--alert-color', $('c-alert-color').value);
+    setPx('--alert-size',  'c-alert-size');
+
+    // Resources
+    setVar('--res-fuel',        $('c-res-fuel').value);
+    setVar('--res-food',        $('c-res-food').value);
+    setVar('--res-water',       $('c-res-water').value);
+    setVar('--res-label-color', $('c-res-label').value);
+
+    // Resource text/spacing
+    setPx('--res-label-size', 'c-res-label-size');
+    setPx('--res-bar-h',      'c-res-bar-h');
+    setPx('--res-row-gap',    'c-res-row-gap');
+
+    // Starfield — counts/speeds/sizes per layer. Echo each value
+    // into its readout span and rebuild the layer arrays.
+    for (let i = 0; i < 3; i++) {
+      const c = $('c-star-count-' + i);
+      const sp = $('c-star-speed-' + i);
+      const sz = $('c-star-size-'  + i);
+      $('v-star-count-' + i).textContent = c.value;
+      $('v-star-speed-' + i).textContent = parseFloat(sp.value).toFixed(2);
+      $('v-star-size-'  + i).textContent = parseFloat(sz.value).toFixed(1);
+    }
+    if (typeof applyStarfieldDevConfig === 'function') applyStarfieldDevConfig();
+
+    // Readout strip
+    setVar('--readout-label-color', $('c-ro-label').value);
+    setVar('--readout-value-color', $('c-ro-value').value);
+    setVar('--readout-bg',          $('c-ro-bg').value);
+
+    // Settings
+    renderReadouts();
+
+    // Crew cards
+    setPx('--card-icon-size',    'c-card-icon-size');
+    setVar('--card-name-color',  $('c-card-name-color').value);
+    setVar('--card-desc-color',  $('c-card-desc-color').value);
+    setVar('--card-border',      $('c-card-border').value);
+    setVar('--card-bg',          $('c-card-bg').value);
+    setPx('--card-rad',          'c-card-rad');
+
+    // Crop
+    setVar('--crop-border-color', $('c-crop-border').value);
+    setVar('--crop-health-fill',  $('c-crop-health').value);
+    setVar('--crop-growth-fill',  $('c-crop-growth').value);
+    setVar('--crop-alert-color',  $('c-crop-alert').value);
+
+    // Stop button
+    setPx('--stop-btn-size', 'c-stop-btn-size');
+    setVar('--stop-pulse-color', $('c-stop-pulse').value);
+
+    // Ship silhouette
+    const shipSize = $('c-ship-size').value;
+    setVar('--ship-w', shipSize + 'px');
+    $('v-ship-size').textContent = shipSize;
+
+    // Ship glow — drop-shadow blur + color (color picker hex + alpha
+    // slider composed into rgba so drop-shadow takes one color arg).
+    const glowHex   = $('c-ship-glow-color').value;
+    const glowBlur  = parseInt($('c-ship-glow-blur').value);
+    const glowAlpha = parseFloat($('c-ship-glow-alpha').value);
+    const gr = parseInt(glowHex.slice(1,3), 16);
+    const gg = parseInt(glowHex.slice(3,5), 16);
+    const gb = parseInt(glowHex.slice(5,7), 16);
+    setVar('--ship-glow-blur',  glowBlur + 'px');
+    setVar('--ship-glow-color', 'rgba(' + gr + ',' + gg + ',' + gb + ',' + glowAlpha + ')');
+    $('v-ship-glow-blur').textContent  = glowBlur + 'px';
+    $('v-ship-glow-alpha').textContent = glowAlpha.toFixed(2);
+
+    // CRT
+    const crt = $('c-crt').value;
+    $('crt-overlay').style.background =
+      'repeating-linear-gradient(0deg, rgba(0,0,0,' + (crt/100) + '), rgba(0,0,0,' + (crt/100) + ') 1px, transparent 1px, transparent 2px)';
+    $('v-crt').textContent = crt + '%';
+
+    // Stop Menu — re-render when dev controls change while menu is open.
+    if (document.body.classList.contains('stop-active')) {
+      renderStopMenu();
+    }
+  }
+
+  // ── Defaults ─────────────────────────────────────────────────
+  const DEFAULTS = {
+    'c-hdr-bg-top': '#141a28', 'c-hdr-bg-bot': '#10141e', 'c-hdr-border': '#c8a85a',
+    'c-hdr-title': '#c8a85a', 'c-hdr-ticker': '#35c6bf', 'c-hdr-ticker-ev': '#cc3333',
+    'c-hdr-meta': '#aab5c4', 'c-hdr-paused': '#ffac00',
+    'c-ai-name': '#c8a85a', 'c-ai-text': '#aab5c4', 'c-ai-speed': '35',
+    'c-alert-color': '#ffac00', 'c-alert-size': '11',
+    'c-res-fuel': '#e88830', 'c-res-food': '#8cc890', 'c-res-water': '#5fa8d0',
+    'c-res-label': '#5a7a6a',
+    'c-res-label-size': '8', 'c-res-bar-h': '16', 'c-res-row-gap': '12',
+    'c-star-count-0': '80', 'c-star-speed-0': '0.35', 'c-star-size-0': '1',
+    'c-star-count-1': '42', 'c-star-speed-1': '0.95', 'c-star-size-1': '1.6',
+    'c-star-count-2': '18', 'c-star-speed-2': '1.85', 'c-star-size-2': '2.4',
+    'c-ro-label': '#5a7a6a', 'c-ro-value': '#d0c890', 'c-ro-bg': '#0e1420',
+    'c-pace': '1', 'c-rations': '1', 'c-water': '50',
+    'c-card-icon-size': '48', 'c-card-name-color': '#00a6bb',
+    'c-card-desc-color': '#7a8898', 'c-card-border': '#2a3040', 'c-card-bg': '#141c28',
+    'c-card-rad': '6',
+    'c-crop-border': '#c8a85a', 'c-crop-health': '#8cc890',
+    'c-crop-growth': '#35c6bf', 'c-crop-alert': '#ffac00',
+    'c-stop-btn-size': '16',
+    'c-stop-pulse': '#44AE3E',
+    'c-ship-size': '380',
+    'c-ship-glow-color': '#7F7F5C', 'c-ship-glow-blur': '12', 'c-ship-glow-alpha': '0.25',
+    'c-crt': '5'
+  };
+
+  // Auto-add hex readouts to color inputs
+  document.querySelectorAll('#controls input[type="color"]').forEach(input => {
+    if (input.parentElement.querySelector('.val')) return;
+    const span = document.createElement('span');
+    span.className = 'val';
+    span.textContent = input.value.toUpperCase();
+    input.parentElement.appendChild(span);
+    input.addEventListener('input', () => { span.textContent = input.value.toUpperCase(); });
+  });
+
+  function markModified() {
+    for (const [id, defVal] of Object.entries(DEFAULTS)) {
+      const el = $(id);
+      if (!el) continue;
+      const span = el.parentElement.querySelector('.val');
+      if (!span) continue;
+      span.classList.toggle('modified', String(el.value).toLowerCase() !== String(defVal).toLowerCase());
+    }
+  }
+
+  document.querySelectorAll('#controls input, #controls select').forEach(el => el.addEventListener('input', () => {
+    apply();
+    markModified();
+  }));
+  document.querySelectorAll('#controls select').forEach(el => el.addEventListener('change', () => {
+    apply();
+    markModified();
+  }));
+
+  window.resetDefaults = function() {
+    for (const [id, val] of Object.entries(DEFAULTS)) {
+      const el = $(id);
+      if (!el) continue;
+      el.value = val;
+      if (el.type === 'color') {
+        const span = el.parentElement.querySelector('.val');
+        if (span) span.textContent = val.toUpperCase();
+      }
+    }
+    apply();
+    markModified();
+  };
+
+  // ── Seed the log with a mid-game slice so the demo shows all the
+  //    log features at once: day markers, events (▶ prefix), AI
+  //    commentary in ARIA tone, and payload entries (📖 expand and
+  //    🔗 external link) clickable to fire their placeholder dialogs.
+  function seedLog() {
+    pushDayMarker(44);
+    pushLogEntry('ARIA: Good morning! The ship is still in space, which is what we want.', { instant: true });
+    pushLogEntry('\u25B6 ENGINES set to LIGHT SPEED.', { instant: true });
+    pushLogEntry('ARIA: A prudent choice. Very sustainable.', { instant: true });
+
+    pushDayMarker(45);
+    pushLogEntry('\u25B6 Asteroid field ahead \u2014 good mining.', { instant: true });
+    pushLogEntry('ARIA: Mineral density reminds me of Ceres. \u{1F4D6}', {
+      instant: true,
+      expand: 'Long-form mineral composition analysis would live here. The full ARIA scan report is sometimes too long for the log — that\'s what 📖 entries are for.'
+    });
+    pushLogEntry('\u25B6 Crew rested 1 day.', { instant: true });
+    pushLogEntry('ARIA: Everyone seems more relaxed. Except Kazuki. Kazuki is the same.', { instant: true });
+
+    pushDayMarker(46);
+    pushLogEntry('ARIA: Dr. Osei has been singing to the wheat. I do not understand, but I approve.', { instant: true });
+    pushLogEntry('\u25B6 ENGINES set to RIDICULOUS SPEED.', { instant: true });
+    pushLogEntry('ARIA: Bold. A bit scary.', { instant: true });
+    pushLogEntry('\u25B6 RATIONS set to STANDARD.', { instant: true });
+    pushLogEntry('ARIA: Everyone gets exactly enough. The galaxy\'s most tolerable compromise.', { instant: true });
+
+    pushDayMarker(47);
+    pushLogEntry('\u25B6 Coming up on Rockwell Station (ETA 4 days).', { instant: true });
+    pushLogEntry('ARIA: The route is named for a painter known for diners. \u{1F517}', {
+      instant: true,
+      link: 'https://en.wikipedia.org/wiki/Norman_Rockwell'
+    });
+    pushLogEntry('ARIA: Station water filtration is rumored to be excellent. I will believe it when I sip it.', { instant: true });
+  }
+
+  // wireCustomScroll lives in shared.js (with rAF coalescing so a
+  // fast DOM rebuild doesn't briefly flash the track visible).
+  document.querySelectorAll('.scroll-host').forEach(wireCustomScroll);
+
+  apply();
+  markModified();
+  applyCruiseCrewSprites();
+  seedLog();
+  updateDayDisplay();
+  renderCrop();
+  // Ticker needs a first line — skip the slide-in animation by
+  // writing directly into the normal state.
+  writeTicker(normalTickerText, 'normal');
+  updateStopButton();
+  // Let the last entry arrive with a typewriter so the animation is
+  // visible when the demo loads.
+  setTimeout(playDialog, 400);
+
+})();
+</script>
+</body>
+</html>

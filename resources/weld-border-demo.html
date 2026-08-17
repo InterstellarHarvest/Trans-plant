@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pixel Weld Border :: Live Demo</title>
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg2: #11161e;
+  --bg3: #161c26;
+  --border: #1f2937;
+  --accent: #ffaa44;
+  --text: #e6e6e6;
+  --text-dim: #6b7280;
+  --mono: 'Courier New', 'Monaco', 'Consolas', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  padding: 20px;
+  min-height: 100vh;
+}
+header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+}
+header h1 {
+  font-size: 18px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+header .sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+main {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+}
+@media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+
+.preview {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 20px;
+}
+.preview h2 {
+  font-size: 12px;
+  color: var(--accent);
+  margin-bottom: 14px;
+  letter-spacing: 1px;
+}
+.preview .stage {
+  background: #000;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  min-height: 360px;
+}
+canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+
+.controls {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.controls h2 { font-size: 12px; color: var(--accent); letter-spacing: 1px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  justify-content: space-between;
+}
+.field label b { color: var(--accent); font-weight: normal; }
+.field input[type=range] { width: 100%; }
+.field select, .field input[type=text] {
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  border-radius: 2px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+button {
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 2px;
+  font-family: var(--mono);
+  font-size: 10px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+button:hover { border-color: var(--accent); color: var(--accent); }
+button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+.variants {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+.variant {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 10px;
+  cursor: pointer;
+  text-align: center;
+}
+.variant:hover { border-color: var(--accent); }
+.variant.active { border-color: var(--accent); background: rgba(255,170,68,0.08); }
+.variant canvas { margin: 0 auto 8px; }
+.variant .name {
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.variant.active .name { color: var(--accent); }
+
+.code {
+  margin-top: 20px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 16px;
+}
+.code h2 { font-size: 12px; color: var(--accent); margin-bottom: 10px; letter-spacing: 1px; }
+.code pre {
+  background: #000;
+  border: 1px solid var(--border);
+  padding: 12px;
+  font-size: 10.5px;
+  overflow-x: auto;
+  color: #aab;
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>::: pixel weld border :::</h1>
+  <div class="sub">distance-field bead generator with bumpiness + lighting • drop-in function below</div>
+</header>
+
+<main>
+  <div class="preview">
+    <h2>preview</h2>
+    <div class="stage">
+      <canvas id="main"></canvas>
+    </div>
+    <div class="variants" id="variants"></div>
+  </div>
+
+  <div class="controls">
+    <h2>parameters</h2>
+
+    <div class="field">
+      <label>thickness <b id="lblThickness">3</b></label>
+      <input type="range" id="thickness" min="1" max="6" step="1" value="3">
+    </div>
+
+    <div class="field">
+      <label>bumpiness <b id="lblBumpiness">0.55</b></label>
+      <input type="range" id="bumpiness" min="0" max="1" step="0.05" value="0.55">
+    </div>
+
+    <div class="field">
+      <label>noise scale <b id="lblNoiseScale">2</b></label>
+      <input type="range" id="noiseScale" min="1" max="5" step="1" value="2">
+    </div>
+
+    <div class="field">
+      <label>hot spots <b id="lblHotChance">0.00</b></label>
+      <input type="range" id="hotChance" min="0" max="0.15" step="0.01" value="0">
+    </div>
+
+    <div class="field">
+      <label>seed <b id="lblSeed">12345</b></label>
+      <input type="number" id="seed" value="12345">
+    </div>
+
+    <div class="field">
+      <label>light angle</label>
+      <select id="lightAngle">
+        <option value="-1,-1">upper-left</option>
+        <option value="0,-1">top</option>
+        <option value="1,-1">upper-right</option>
+        <option value="-1,0">left</option>
+        <option value="1,0">right</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <button id="reseedBtn">Reseed</button>
+      <button id="downloadBtn" class="primary">Download PNG</button>
+    </div>
+  </div>
+</main>
+
+<div class="code">
+  <h2>core function (paste this)</h2>
+  <pre id="codeBlock"></pre>
+</div>
+
+<script>
+// =============================================================
+// CORE FUNCTION — drop into your project, no deps required.
+// =============================================================
+/**
+ * Add a chunky-pixel weld bead around the opaque region of an image.
+ * @param {ImageData} src  - source pixels; alpha > 127 = "panel"
+ * @param {Object} opts
+ * @param {number} opts.thickness   max bead thickness in pixels (1-6 typical)
+ * @param {number} opts.bumpiness   0=smooth bead, 1=very lumpy (reduces effective thickness in noisy spots)
+ * @param {number} opts.noiseScale  noise grid size in pixels (2-3 = chunky, 1 = noisy)
+ * @param {number} opts.seed        hash seed
+ * @param {Object} opts.palette     {shadow, mid, highlight, hot} as [r,g,b,a]
+ * @param {number} opts.hotChance   0..1 chance per pixel of a "hot spot" override (e.g. fresh weld spark)
+ * @param {Array}  opts.lightDir    [dx, dy] light source vector (e.g. [-1,-1] = upper-left)
+ * @returns {ImageData} new ImageData with weld bead written into transparent pixels
+ */
+function applyWeldBorder(src, opts = {}) {
+  const {
+    thickness = 3, bumpiness = 0.55, noiseScale = 2, seed = 12345,
+    palette = {
+      shadow:    [20, 25, 35, 255],
+      mid:       [70, 85, 105, 255],
+      highlight: [150, 165, 185, 255],
+      hot:       [240, 150, 60, 255],
+    },
+    hotChance = 0,
+    lightDir = [-1, -1],
+  } = opts;
+
+  const w = src.width, h = src.height, sd = src.data;
+  const out = new ImageData(new Uint8ClampedArray(sd), w, h);
+  const od = out.data;
+
+  // 1. mask
+  const mask = new Uint8Array(w * h);
+  for (let i = 0, p = 0; i < mask.length; i++, p += 4) mask[i] = sd[p + 3] > 127 ? 1 : 0;
+
+  // 2. distance transform (8-conn chamfer) + nearest-source tracking
+  const INF = 9999;
+  const dist = new Int16Array(w * h);
+  const nx = new Int16Array(w * h), ny = new Int16Array(w * h);
+  for (let i = 0; i < dist.length; i++) {
+    if (mask[i]) { dist[i] = 0; nx[i] = i % w; ny[i] = (i / w) | 0; }
+    else         { dist[i] = INF; nx[i] = -1; ny[i] = -1; }
+  }
+  const relax = (i, j) => {
+    if (j < 0 || j >= dist.length) return;
+    const c = dist[j] + 1;
+    if (c < dist[i]) { dist[i] = c; nx[i] = nx[j]; ny[i] = ny[j]; }
+  };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (x > 0)             relax(i, i - 1);
+    if (y > 0)             relax(i, i - w);
+    if (x > 0 && y > 0)     relax(i, i - w - 1);
+    if (x < w-1 && y > 0)   relax(i, i - w + 1);
+  }
+  for (let y = h-1; y >= 0; y--) for (let x = w-1; x >= 0; x--) {
+    const i = y * w + x;
+    if (x < w-1)            relax(i, i + 1);
+    if (y < h-1)            relax(i, i + w);
+    if (x < w-1 && y < h-1) relax(i, i + w + 1);
+    if (x > 0 && y < h-1)   relax(i, i + w - 1);
+  }
+
+  // 3. hash → value noise [0,1)
+  const hash = (a, b, c) => {
+    let v = (a * 374761393) ^ (b * 668265263) ^ (c * 2147483647);
+    v = (v ^ (v >>> 13)) * 1274126177;
+    return ((v ^ (v >>> 16)) >>> 0) / 4294967295;
+  };
+
+  // 4. light vec
+  const ll = Math.hypot(lightDir[0], lightDir[1]) || 1;
+  const lx = lightDir[0] / ll, ly = lightDir[1] / ll;
+
+  // 5. paint weld pixels
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (mask[i]) continue;
+    const d = dist[i];
+    if (d <= 0 || d > thickness) continue;
+
+    // bumpiness: low-freq noise eats into thickness
+    const gx = (x / noiseScale) | 0, gy = (y / noiseScale) | 0;
+    const n = hash(gx, gy, seed);
+    const eff = thickness - bumpiness * (1 - n) * thickness * 0.7;
+    if (d > eff) continue;
+
+    // outward normal → lambert
+    const ox = x - nx[i], oy = y - ny[i];
+    const ol = Math.hypot(ox, oy) || 1;
+    const lam = (ox / ol) * lx + (oy / ol) * ly;
+
+    let c;
+    if (d >= thickness)              c = palette.shadow;
+    else if (lam > 0.3 && d <= 2)    c = palette.highlight;
+    else if (lam < -0.2)             c = palette.shadow;
+    else                             c = palette.mid;
+
+    if (hotChance > 0 && hash(x, y, seed + 999) < hotChance) c = palette.hot;
+
+    const p = i * 4;
+    od[p] = c[0]; od[p+1] = c[1]; od[p+2] = c[2]; od[p+3] = c[3];
+  }
+  return out;
+}
+// =============================================================
+// END CORE FUNCTION
+// =============================================================
+
+
+// ---- DEMO PALETTES ----
+const PALETTES = {
+  gunmetal: {
+    name: 'gunmetal',
+    palette: { shadow: [18,22,30,255], mid: [70,80,95,255], highlight: [155,165,180,255], hot: [240,150,60,255] },
+    hotChance: 0,
+  },
+  matched: {
+    name: 'panel-matched',
+    palette: { shadow: [15,25,40,255], mid: [50,65,90,255], highlight: [115,140,175,255], hot: [240,150,60,255] },
+    hotChance: 0,
+  },
+  freshHot: {
+    name: 'fresh weld',
+    palette: { shadow: [40,15,5,255], mid: [110,55,20,255], highlight: [240,180,80,255], hot: [255,240,120,255] },
+    hotChance: 0.06,
+  },
+  oxidized: {
+    name: 'oxidized',
+    palette: { shadow: [25,15,15,255], mid: [85,55,45,255], highlight: [165,120,80,255], hot: [110,140,170,255] },
+    hotChance: 0.04,
+  },
+  slag: {
+    name: 'dark slag',
+    palette: { shadow: [8,8,10,255], mid: [30,30,35,255], highlight: [70,70,80,255], hot: [200,80,40,255] },
+    hotChance: 0,
+  },
+};
+
+// ---- LOAD IMAGE & RUN ----
+const SRC_B64 = 'iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA+tpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDcuMC1jMDAwIDc5LmRhYmFjYmIsIDIwMjEvMDQvMTQtMDA6Mzk6NDQgICAgICAgICI+IDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+IDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDIyLjQgKE1hY2ludG9zaCkiIHhtcDpDcmVhdGVEYXRlPSIyMDI2LTA0LTI4VDIwOjM1OjExLTA0OjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyNi0wNC0yOVQwMDo0NToxNy0yMDowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNi0wNC0yOVQwMDo0NToxNy0yMDowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6RDAzODBERkIzQjg4MTFGMUFERjU4NTY3RkI2NjA1MTkiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6RDAzODBERkMzQjg4MTFGMUFERjU4NTY3RkI2NjA1MTkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RS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'; // replaced at build time
+const PIX = 8;
+let baseImage = null;
+
+const mainCanvas = document.getElementById('main');
+const mainCtx = mainCanvas.getContext('2d');
+
+const ui = {
+  thickness: document.getElementById('thickness'),
+  bumpiness: document.getElementById('bumpiness'),
+  noiseScale: document.getElementById('noiseScale'),
+  hotChance: document.getElementById('hotChance'),
+  seed: document.getElementById('seed'),
+  lightAngle: document.getElementById('lightAngle'),
+};
+const lbl = {
+  thickness: document.getElementById('lblThickness'),
+  bumpiness: document.getElementById('lblBumpiness'),
+  noiseScale: document.getElementById('lblNoiseScale'),
+  hotChance: document.getElementById('lblHotChance'),
+  seed: document.getElementById('lblSeed'),
+};
+
+let activePalette = 'matched';
+
+function getOpts() {
+  const ld = ui.lightAngle.value.split(',').map(Number);
+  return {
+    thickness: +ui.thickness.value,
+    bumpiness: +ui.bumpiness.value,
+    noiseScale: +ui.noiseScale.value,
+    hotChance: +ui.hotChance.value,
+    seed: +ui.seed.value,
+    lightDir: ld,
+    palette: PALETTES[activePalette].palette,
+  };
+}
+
+function render() {
+  if (!baseImage) return;
+  // sync labels
+  lbl.thickness.textContent = ui.thickness.value;
+  lbl.bumpiness.textContent = (+ui.bumpiness.value).toFixed(2);
+  lbl.noiseScale.textContent = ui.noiseScale.value;
+  lbl.hotChance.textContent = (+ui.hotChance.value).toFixed(2);
+  lbl.seed.textContent = ui.seed.value;
+
+  // we need padding around the image for the bead
+  const pad = 8;
+  const w = baseImage.width + pad * 2;
+  const h = baseImage.height + pad * 2;
+
+  // build padded source ImageData
+  const tmp = document.createElement('canvas');
+  tmp.width = w; tmp.height = h;
+  const tctx = tmp.getContext('2d');
+  tctx.drawImage(baseImage, pad, pad);
+  const src = tctx.getImageData(0, 0, w, h);
+
+  const out = applyWeldBorder(src, getOpts());
+
+  mainCanvas.width = w;
+  mainCanvas.height = h;
+  mainCanvas.style.width = (w * PIX) + 'px';
+  mainCanvas.style.height = (h * PIX) + 'px';
+  mainCtx.putImageData(out, 0, 0);
+}
+
+function renderVariants() {
+  if (!baseImage) return;
+  const container = document.getElementById('variants');
+  container.innerHTML = '';
+  const pad = 8;
+  const w = baseImage.width + pad * 2;
+  const h = baseImage.height + pad * 2;
+  const tmp = document.createElement('canvas');
+  tmp.width = w; tmp.height = h;
+  const tctx = tmp.getContext('2d');
+  tctx.drawImage(baseImage, pad, pad);
+  const src = tctx.getImageData(0, 0, w, h);
+
+  for (const [key, p] of Object.entries(PALETTES)) {
+    const div = document.createElement('div');
+    div.className = 'variant' + (key === activePalette ? ' active' : '');
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.style.width = (w * 3) + 'px';
+    c.style.height = (h * 3) + 'px';
+    const cctx = c.getContext('2d');
+    const out = applyWeldBorder(src, {
+      ...getOpts(),
+      palette: p.palette,
+      hotChance: p.hotChance,
+    });
+    cctx.putImageData(out, 0, 0);
+    div.appendChild(c);
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = p.name;
+    div.appendChild(name);
+    div.onclick = () => { activePalette = key; render(); renderVariants(); };
+    container.appendChild(div);
+  }
+}
+
+// wire controls
+for (const id of ['thickness','bumpiness','noiseScale','hotChance','seed','lightAngle']) {
+  ui[id].addEventListener('input', () => { render(); renderVariants(); });
+}
+document.getElementById('reseedBtn').onclick = () => {
+  ui.seed.value = (Math.random() * 1e9) | 0;
+  render(); renderVariants();
+};
+document.getElementById('downloadBtn').onclick = () => {
+  const url = mainCanvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `welded_${activePalette}_t${ui.thickness.value}_s${ui.seed.value}.png`;
+  a.click();
+};
+
+// load image
+const img = new Image();
+img.onload = () => { baseImage = img; render(); renderVariants(); };
+img.src = 'data:image/png;base64,' + SRC_B64;
+
+// dump function source into the code block
+document.getElementById('codeBlock').textContent =
+  applyWeldBorder.toString();
+</script>
+</body>
+</html>

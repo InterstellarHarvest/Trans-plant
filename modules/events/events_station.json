@@ -1,0 +1,1325 @@
+[
+  {
+    "id": "event_station_001",
+    "active": true,
+    "title": "The Last Honest Station",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "journey_start"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": true,
+    "test_path_position": 1,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA loves this station! The prices are fair! The people are kind! She has already left a five-star review!",
+      "marv": "MARV notes that fair prices this early in the journey are statistically anomalous. He recommends enjoying it while it lasts. Which won't be long.",
+      "rex": "REX has scanned the station. No threats detected. He seems almost bored. He scans it again.",
+      "chip": "CHIP notes this station is NOT a brand partner. Prices may be fair but they are not OPTIMIZED. Consider waiting for a participating location.",
+      "ajoy": "AJOY observes that the prices here are actually reasonable. She recommends stocking up. She also notes that you probably won't, and will regret it later. Just putting that out there."
+    },
+    "body": "Waypoint Zeta-4. The shelves are stocked. The prices are fair. This will not happen again.\n\nThe station attendant seems genuinely concerned about your journey and offers unsolicited advice about fuel management. The advice is correct. You will ignore it.\n\nThe repair bay is functional. The food is real food, not algae. A small recruitment board shows available crew for hire.",
+    "choices": [
+      {
+        "text": "Resupply — buy fuel and food at fair prices",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 15,
+            "food": 15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You resupplied at fair prices. The attendant wished you well. You will think about this station later, when prices are not fair."
+        }
+      },
+      {
+        "text": "BROWSE THE WARES",
+        "sub": "Buy and sell cargo",
+        "open_market": true,
+        "setFlag": "browsed_zeta4_shop"
+      },
+      {
+        "text": "Check the recruitment board",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "One crew member available. Their qualifications look genuine. They make eye contact when you approach. You are not used to this from station recruitment boards."
+        }
+      },
+      {
+        "text": "Take the attendant's fuel advice",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "took_fuel_advice",
+          "time_cost": "trivial",
+          "narrative": "The attendant explains optimal burn rates for your engine class. You adjust. Fuel efficiency improves slightly for the next leg. The attendant nods. 'Most people don't listen,' they say."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_station_002",
+    "active": true,
+    "title": "Supply Point 7",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA is excited to visit a new station! She has already forgotten that Supply Point 6 doesn't exist! This is fine!",
+      "marv": "MARV notes the absence of Supply Point 6. He has investigated. The results are 'not encouraging.' He will not elaborate.",
+      "rex": "REX has noted the missing Supply Point 6. He has classified this as a 'security concern' and increased alert status. The station attendant looks tired.",
+      "chip": "CHIP notes that Supply Point 7 is a participating RetailReach™ location! Rewards points are available! The conversion rate is unfavorable!",
+      "ajoy": "AJOY notices Supply Point 7 doesn't mention Supply Point 6. She asked the attendant. The attendant changed the subject. AJOY is sure this is fine."
+    },
+    "body": "Supply Point 7. There Is No Supply Point 6.\n\nThe station is crowded, understaffed, and the food menu has been 'temporarily simplified' to two items, one of which is algae. The other is also algae, described differently.\n\nFuel is available. A recruitment board shows one available crew member. Their qualifications are listed as 'present.'",
+    "choices": [
+      {
+        "text": "Buy algae (the first kind)",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 10,
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "It's algae. Green. Tastes like what you'd expect. The crew eats it. Nobody comments. This is worse than complaining."
+        }
+      },
+      {
+        "text": "Buy algae (the second kind, described as 'artisanal')",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 10,
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "It's algae. Also green. The word 'artisanal' appears to mean 'slightly warmer.' Morale loss is slightly less. This counts as a win now."
+        }
+      },
+      {
+        "text": "Refuel and leave",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Fuel acquired. You do not investigate Supply Point 6. Some questions are better unanswered."
+        }
+      },
+      {
+        "text": "Ask about Supply Point 6",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "asked_about_sp6",
+          "time_cost": "trivial",
+          "narrative": "The attendant's face does something complicated. 'We don't talk about Supply Point 6,' they say. They do not say anything else. The silence is informative."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_station_003",
+    "active": true,
+    "title": "The Last Resort (Branded)",
+    "difficulty": "medium",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "journey_end"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": true,
+    "test_path_position": 7,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA is thrilled! The last station! Almost there! The prices are... she's choosing not to focus on the prices right now!",
+      "marv": "MARV has calculated the markup. It is 340%. He is not surprised. He is never surprised. This does not make it better.",
+      "rex": "REX has assessed the station's defenses. Minimal. He recommends not getting into trouble here. For once, this is good advice.",
+      "chip": "CHIP is DELIGHTED to announce that The Last Resort is a PREMIUM RetailReach™ partner! All purchases earn DOUBLE points! Points expire upon arrival at your destination!",
+      "ajoy": "AJOY notes the prices are astronomical. She also notes you should have stocked up at that first station. The one with the fair prices. Remember? She remembers."
+    },
+    "body": "The Last Resort (Branded). The final station before your destination. It knows it's the last station. The prices reflect this.\n\nEverything costs more. The repair bay works but charges premium rates. The food is real but expensive. Fuel is available at what the attendant calls 'market rate' with a straight face.\n\nA trader in the corner is buying something unusual. Fabricator Surplus items. Above-market prices. They do not explain why. They get twitchy when asked.",
+    "choices": [
+      {
+        "text": "Resupply at premium prices — fuel and food",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 15,
+            "food": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You paid premium. The attendant thanked you with the enthusiasm of someone who knows you had no choice. Your credit balance hurts to look at."
+        }
+      },
+      {
+        "text": "Repair hull at the premium bay",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 20
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Hull repaired. The mechanic did good work. The invoice did bad things to your budget. Both are true."
+        }
+      },
+      {
+        "text": "Sell Fabricator Surplus to the mysterious trader",
+        "requires_crew": null,
+        "requires_item": "fab_surplus",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "fab_surplus",
+          "sets_flag": "sold_to_collector",
+          "time_cost": "trivial",
+          "narrative": "The trader's eyes tracked the Surplus crate before they tracked any of the crew. Payment was immediate. Above market value. They did not ask what it was. They already knew. You did not ask what they wanted it for. Some economies run on mystery."
+        }
+      },
+      {
+        "text": "Check crop supplies — buy water and biocomponents",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Water acquired. A small supply of biocomponents available at extortionate rates. The crop doesn't know what you paid. The crop doesn't care. The crop just needs water."
+        }
+      },
+      {
+        "text": "Skip the station — you have enough",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "skipped_last_station",
+          "time_cost": "trivial",
+          "narrative": "You have enough. Probably. The ship computer notes that the word 'enough' is 'doing significant work in this context.' You leave."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_station_004",
+    "active": true,
+    "title": "The Docking Queue",
+    "difficulty": "easy",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA loves a queue! Everyone gets a turn! It's fairness, expressed as waiting!",
+      "marv": "MARV has calculated the queue's advance rate. He recommends recalibrating your relationship with the concept of 'soon.'",
+      "rex": "REX notes ship #4 in the queue has been idling aggressively. There is no such thing, he has been told. He disagrees.",
+      "chip": "CHIP notes Priority Docking™ is available for a fee! The fee is displayed on a second screen! The second screen requires a fee!",
+      "ajoy": "AJOY has slotted you into the queue at the mathematically optimal position, which is the back, because that is how queues work. She wanted the word 'optimal' in there anyway."
+    },
+    "body": "The station's docking queue is eleven ships long, and the traffic controller's voice has the texture of someone four hours past the end of their shift.\n\nA freighter ahead of you has been arguing about berth allocation for twenty minutes. The controller has begun responding exclusively in form-sentence. The queue does not move.\n\nThe queue is a place where time goes to practice standing still.",
+    "choices": [
+      {
+        "text": "Wait your turn like a civilized vessel",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You wait. The queue advances at the speed of bureaucracy. Two hours later you dock, in the correct berth, with the quiet pride of the rule-abiding and nothing else to show for it."
+        }
+      },
+      {
+        "text": "Have the diplomat sweet-talk traffic control",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The diplomat gets on the horn and — through some alchemy of sympathy, flattery, and precisely-deployed patience — the controller finds you an earlier berth 'that just opened up.' It had not just opened up. The diplomat does not explain their methods."
+        }
+      },
+      {
+        "text": "Slip the queue fee — 8 gold",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The Priority Docking™ fee moves you to the front with corporate efficiency and eleven silent judgments burning against your hull. The berth is excellent. The guilt fades by dinner."
+        }
+      },
+      {
+        "text": "Skip the station entirely",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You pull out of the queue and burn for the next marker. The controller logs your departure with palpable relief: one less ship. The crew watches the station lights recede with the specific melancholy of a port not visited."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_station_005",
+    "active": true,
+    "title": "Health and Safety",
+    "difficulty": "medium",
+    "tone": [
+      "corporate",
+      "grim"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "An inspection! ARIA has nothing to hide! ARIA has double-checked that she has nothing to hide! Triple!",
+      "marv": "MARV has reviewed the inspection checklist. Forty items. The ship complies with thirty-one. He is deciding which nine to have feelings about.",
+      "rex": "REX has met this kind of inspector before. He recommends total cooperation and the removal of anything interesting from sight lines.",
+      "chip": "CHIP is THRILLED! An audit! CHIP has been ready for an audit since manufacture! This is CHIP's moment!",
+      "ajoy": "AJOY notes the inspector's boarding request cites regulation 44-C. She has read 44-C. It doesn't say what they think it says. Hold that in reserve."
+    },
+    "body": "A station inspector requests permission to board, citing spot-check authority under a regulation whose number they recite from memory.\n\nThey carry a clipboard. An actual, physical clipboard, in this century. The clipboard is a statement. The statement is: I have done this ten thousand times, and I have never once been in a hurry.\n\nYour growbay, your fabricator, and your cargo manifest are all about to become topics.",
+    "choices": [
+      {
+        "text": "Full cooperation — open everything",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The inspection takes three hours and finds four minor violations, all real, all fixable, all cited with the weariness of someone who has written 'unsecured cargo netting' nine thousand times. You fix them. The stamp of approval, when it comes, is oddly satisfying."
+        }
+      },
+      {
+        "text": "Let the engineer walk them through",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The engineer conducts the tour in fluent Regulation, preempting every checklist item one line before the inspector reaches it. The inspection concludes in forty minutes with zero citations and what can only be described as professional courtship. They exchange clipboard recommendations."
+        }
+      },
+      {
+        "text": "Cite regulation 44-C back at them",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You quote 44-C, subsection two — spot-checks require documented cause at civilian berths. The inspector pauses. Rereads their own clipboard. Closes it with the tiny nod of a professional acknowledging a clean hit. 'Carry on,' they say, and do not come back."
+        }
+      },
+      {
+        "text": "Slip them 10 gold to expedite",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": -10,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "bribed_inspector",
+          "time_cost": "trivial",
+          "narrative": "The inspection concludes in nine minutes with zero findings. The stamp is real; the process was not. The crew noticed. The clipboard, somehow, also noticed."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_station_006",
+    "active": true,
+    "title": "The Janitor Knows",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "station_crew",
+      "job": "janitor",
+      "species": null
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE JANITOR KNOWS",
+        "body": "Down a service corridor, past the vending machines, someone is mopping a floor that looks like it was already clean. They have the settled air of a person who has outlasted four station administrations without once attending a meeting. {npc.quirk}",
+        "line": "{npc.line.greet}",
+        "ai": {
+          "aria": "ARIA loves janitors! They know EVERYTHING! It's the mops! People talk in front of mops!",
+          "marv": "MARV notes that in his experience, station janitors possess more accurate operational intelligence than station command. He recommends courtesy and attention, in that order.",
+          "rex": "REX assesses the janitor as unarmed, unhurried, and unimpressed by your arrival. Threat level: none. Information level: he suspects considerable.",
+          "chip": "CHIP has no data on this individual! No purchases, no subscriptions, no profile! In CHIP's world that makes them either nobody or SOMEBODY!",
+          "ajoy": "AJOY suggests listening more than talking here. Custodians trade in observation. Bring some of your own if you want the good stock."
+        },
+        "choices": [
+          {
+            "text": "Stop and chat a while",
+            "next": "chat"
+          },
+          {
+            "text": "Nod and move along",
+            "outcome": "janitor_nod"
+          }
+        ]
+      },
+      "chat": {
+        "title": "CORRIDOR TALK",
+        "body": "The mop keeps moving in slow, practiced arcs while you talk — the conversation happens around it, the way conversations happen around lighthouses. Station life drifts past in both directions and nods at the janitor. All of it. Everyone nods at the janitor.",
+        "line": "{npc.line.remark}",
+        "ai": {
+          "aria": "ARIA is taking notes! The janitor has opinions about the dock schedule that CONTRADICT the posted dock schedule! ARIA believes the janitor!",
+          "marv": "MARV is cross-referencing the janitor's remarks against station records. The records are losing.",
+          "rex": "REX has relaxed his posture by a measurable amount. He reports this corridor is the most secure location on the station. He declines to explain his reasoning. His reasoning is the janitor.",
+          "chip": "CHIP is attempting to compute the janitor's net worth and getting ERROR: PRICELESS! That is not a real error code! CHIP invented it just now!",
+          "ajoy": "AJOY notes you've been here twenty minutes and learned more than the station directory offers. She recommends one more question and then a graceful exit. Overstaying is how you end up holding the other mop."
+        },
+        "choices": [
+          {
+            "text": "Ask what's worth knowing this week",
+            "outcome": "janitor_gossip"
+          },
+          {
+            "text": "Ask if there's anything to steer clear of",
+            "outcome": "janitor_warning"
+          },
+          {
+            "text": "Thank them and go",
+            "outcome": "janitor_farewell"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "janitor_nod": {
+        "title": "MUTUAL RESPECT",
+        "tone": null,
+        "body": "You nod. They nod. The mop continues its patient orbit. Some exchanges are complete at one nod each, and both parties leave them richer.",
+        "resources": {},
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "A nod exchanged with the station janitor. Diplomatically, this may be the cleanest interaction of the entire voyage."
+      },
+      "janitor_gossip": {
+        "title": "THE GOOD STOCK",
+        "tone": "success",
+        "body": "They lean on the mop, glance both ways down the corridor out of habit rather than caution, and deliver.",
+        "line": "{npc.line.gossip}",
+        "resources": {
+          "morale": 3
+        },
+        "sets_flag": "janitor_intel",
+        "time_cost": "trivial",
+        "narrative": "The janitor's intelligence briefing: informal, unverifiable, and more useful than the station directory. Filed under 'sources, protected.'"
+      },
+      "janitor_warning": {
+        "title": "FAIR WARNING",
+        "tone": "success",
+        "body": "The mop stops. That's how you know this one matters — the mop stops.",
+        "line": "{npc.line.warn}",
+        "resources": {},
+        "sets_flag": "janitor_warning",
+        "time_cost": "trivial",
+        "narrative": "A warning from the person who sees everything and reports nothing. You adjust your plans accordingly, and do not ask follow-up questions."
+      },
+      "janitor_farewell": {
+        "title": "BACK TO IT",
+        "tone": "success",
+        "body": "The conversation ends the way it began: unhurried, on the janitor's schedule, sealed with a nod worth more than most contracts.",
+        "line": "{npc.line.farewell}",
+        "resources": {
+          "morale": 2
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Time spent with the best-informed person on the station. The floor, for the record, was spotless the whole time."
+      }
+    }
+  },
+  {
+    "id": "event_station_007",
+    "active": true,
+    "title": "Walk-In Clinic",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "station_crew",
+      "job": "medic",
+      "species": null
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "WALK-IN CLINIC",
+        "body": "The station medbay smells of antiseptic and long shifts. Behind the intake desk, the duty medic looks up from a chart with the professional warmth of someone who has seen every possible thing a spacer can do to themselves, twice. {npc.quirk}",
+        "line": "{npc.line.greet}",
+        "ai": {
+          "aria": "A real medbay! With real supplies! ARIA recommends everyone get checked! Especially the ones who said 'it's fine!' You know who you are! ARIA also knows!",
+          "marv": "MARV has transmitted the crew's medical logs ahead. The station medic read them and made a sound. MARV could not classify the sound. He recommends cooperation.",
+          "rex": "REX respects station medics. Anyone who chooses to practice medicine at a fuel stop has seen combat of a kind. He straightens his posture entering the room.",
+          "chip": "A licensed medical facility! CHIP notes their rates are posted, itemized, and fair! CHIP has checked for hidden fees THREE TIMES! There are NONE! CHIP is unsettled!",
+          "ajoy": "AJOY booked the appointment window two stations back, on suspicion. She notes that the crew members most overdue for a checkup are, per tradition, the ones who argued hardest against docking."
+        },
+        "choices": [
+          {
+            "text": "Full crew checkup",
+            "next": "checkup"
+          },
+          {
+            "text": "Just buy supplies and go",
+            "next": "supplies"
+          },
+          {
+            "text": "Everyone's fine, actually",
+            "outcome": "clinic_declined"
+          }
+        ]
+      },
+      "checkup": {
+        "title": "INTAKE",
+        "body": "The medic works down the crew line with scanner and flashlight, narrating findings in the flat cadence of someone billing by the observation. Nothing escapes: old sprains, skipped meals, the thing someone's been calling 'just a noise my shoulder makes now.'",
+        "line": "{npc.line.assess}",
+        "ai": {
+          "aria": "The medic found the shoulder noise! ARIA has been logging the shoulder noise for WEEKS! Vindication! Medical vindication!",
+          "marv": "MARV is comparing the medic's findings to his own passive diagnostics. Agreement: 94%. The remaining 6% is the shoulder. Everyone missed something about the shoulder.",
+          "rex": "REX passed his physical. He would like this noted. He has already noted it himself, in the log, under 'readiness.'",
+          "chip": "Itemized diagnosis in progress! CHIP is watching a professional generate billable line items with SURGICAL precision! It's beautiful! It's literally surgical!",
+          "ajoy": "AJOY notes the crew is healthier than the trail average and worse than they think. The medic said the same thing in fewer words. She has adopted the fewer words."
+        },
+        "choices": [
+          {
+            "text": "Pay for full treatment — 12 gold",
+            "gate": {
+              "gold": 12
+            },
+            "outcome": "clinic_treated"
+          },
+          {
+            "text": "Take the diagnosis, skip the treatment",
+            "outcome": "clinic_diagnosed"
+          }
+        ]
+      },
+      "supplies": {
+        "title": "THE SUPPLY COUNTER",
+        "body": "The medbay's supply counter is small, well-stocked, and priced with the particular honesty of someone who knows you can't get this anywhere else for four legs and charges fairly anyway.",
+        "line": "{npc.line.bill}",
+        "ai": {
+          "aria": "Medical supplies! The good kind! With SEALS on them! ARIA recommends the medkit! And the other medkit!",
+          "marv": "MARV inventories the counter: genuine, in-date, correctly stored. He notes this is rarer on the trail than the prices suggest. Buy the medkit.",
+          "rex": "REX recommends the medkit. A ship can never have too many. A ship, in his experience, always has exactly too few.",
+          "chip": "Posted prices, no bundles, no upsell! CHIP asked the medic their retention strategy and they said 'people keep getting hurt!' HONEST DEMAND! CHIP took notes!",
+          "ajoy": "AJOY has checked cargo space and gold reserves against the counter's stock. The medkit fits both. She mentions it with the studied neutrality of someone who has already decided."
+        },
+        "choices": [
+          {
+            "text": "Buy a medkit — 12 gold",
+            "gate": {
+              "gold": 12
+            },
+            "outcome": "clinic_bought_medkit"
+          },
+          {
+            "text": "Back to the desk",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "clinic_declined": {
+        "title": "AGAINST MEDICAL ADVICE",
+        "tone": null,
+        "body": "The medic watches you go with the expression of someone adding a line to a private ledger of people who said they were fine.",
+        "line": "{npc.line.farewell}",
+        "resources": {},
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "No checkup. The crew is fine, probably, mostly, in the way spacers are always fine right up until the interesting part."
+      },
+      "clinic_treated": {
+        "title": "CLEAN BILL",
+        "tone": "success",
+        "body": "Treatment, adjustments, one minor procedure conducted to the soundtrack of vigorous complaining. The crew leaves the medbay recalibrated.",
+        "line": "{npc.line.treat}",
+        "resources": {
+          "gold": -12,
+          "morale": 5
+        },
+        "crew_effect": {
+          "type": "heal",
+          "target": "all_injured"
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Twelve gold for a crew running at factory spec. The shoulder noise is gone. Its owner misses it, a little, and is told firmly that this is normal."
+      },
+      "clinic_diagnosed": {
+        "title": "KNOWLEDGE, UNTREATED",
+        "tone": null,
+        "body": "You leave with a neat list of everything wrong and treatment for none of it — medicine's free tier.",
+        "line": "{npc.line.farewell}",
+        "resources": {},
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "The diagnosis list is posted in the galley, where it functions as both medical record and conversation starter. The shoulder noise has a NAME now."
+      },
+      "clinic_bought_medkit": {
+        "title": "SUPPLIED",
+        "tone": "success",
+        "body": "The medkit crosses the counter with a receipt and an unprompted thirty-second lecture on not letting anyone aboard 'save it for emergencies' past its expiry date.",
+        "line": "{npc.line.farewell}",
+        "resources": {
+          "gold": -12
+        },
+        "item_grant": "medkit",
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "One genuine, sealed, in-date medkit, purchased from someone who stakes their name on the seal. It rides in the rack by the galley, visible, the way good insurance should."
+      }
+    }
+  },
+  {
+    "id": "event_station_008",
+    "active": true,
+    "title": "Next of Kin",
+    "difficulty": "easy",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": "recovered_beacon_tag",
+    "requires_item": "distress_beacon_tag",
+    "npc": {
+      "disposition": "station_crew",
+      "job": "captain",
+      "species": null
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "NEXT OF KIN",
+        "body": "The dockmaster's office smells of cold coffee and colder paperwork. You put the beacon tag on the desk. {npc.quirk}\n\nThe dockmaster reads the registry code twice. The second read is slower.",
+        "line": "The Petrel. We logged her mayday relay weeks back — signal came through boosted, good and loud. Somebody out there did that for her. Didn't know who till now.",
+        "ai": {
+          "aria": "ARIA thinks the family will be so glad to know! ARIA is, for once, not wrong!",
+          "marv": "MARV notes that closure has no resource value. MARV keeps looking at it anyway.",
+          "rex": "REX stands at parade rest. It is the only thing REX knows how to do with grief.",
+          "chip": "CHIP will waive the filing fee. CHIP does not have the authority to do that. CHIP is doing it anyway.",
+          "ajoy": "AJOY has nothing to add. She wants you to know that's a first."
+        },
+        "choices": [
+          {
+            "text": "Hand over the tag",
+            "outcome": "tag_delivered"
+          },
+          {
+            "text": "\"What happens to it now?\"",
+            "dialog": true,
+            "next": "what_happens"
+          }
+        ]
+      },
+      "what_happens": {
+        "title": "PROCEDURE",
+        "body": "The dockmaster turns the tag over in their hands, careful with it, the way you'd hold something that used to belong to someone.",
+        "line": "Registry finds the family. Tag goes to them with the flight log and whatever's owed from the claim office. Then they get to stop wondering. Wondering's the worst part. The rest is just sad.",
+        "choices": [
+          {
+            "text": "Hand over the tag",
+            "outcome": "tag_delivered"
+          },
+          {
+            "text": "Not yet. Not today",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "tag_delivered": {
+        "title": "DELIVERED",
+        "tone": "success",
+        "body": "The dockmaster logs the tag with both hands, which is not how anyone logs anything. There's no reward. That was never what this was.\n\nOn the way back to the ship, the crew walks a little closer together than usual.",
+        "line": "I'll see it home. You flew a long way to hand somebody the truth. That's the job, even when nobody posted it.",
+        "resources": {
+          "morale": 8
+        },
+        "item_consume": "distress_beacon_tag",
+        "sets_flag": "delivered_beacon_tag",
+        "time_cost": "low"
+      }
+    }
+  },
+  {
+    "id": "event_station_009",
+    "active": true,
+    "title": "The Long Dark Bar",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "station_crew",
+      "job": "bartender",
+      "species": "robot"
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE LONG DARK BAR",
+        "body": "Four crews drinking. The far corner is loud. One booth is too quiet. The robot bartender slides a coaster across without asking.",
+        "line": "Captain. What's the call?",
+        "pose": "pleased",
+        "ai": {
+          "aria": "Such ambience! ARIA loves everyone here already!",
+          "marv": "Patron threat assessment: low. Beverage variance: high.",
+          "rex": "Watch the table by the door.",
+          "chip": "Cantina loyalty cards expire after 90 days!",
+          "ajoy": "The crew watching you. They have a job for you."
+        },
+        "revisit": {
+          "body": "Same crews, same drinks. The bartender slides another coaster.",
+          "line": "Back for more, captain?"
+        },
+        "choices": [
+          {
+            "text": "ORDER A DRINK",
+            "gate": {
+              "gold": 5
+            },
+            "effort": 2,
+            "sub": "5 gold · listen for rumors",
+            "consume": "cantina_drink",
+            "consumedLabel": "You've had enough. The bartender agrees",
+            "outcome": "cantina_drink"
+          },
+          {
+            "text": "APPROACH THE WATCHERS",
+            "hint": true,
+            "risky": true,
+            "effort": 4,
+            "sub": "They have work",
+            "hideFlag": "courier_job_taken",
+            "next": "watchers"
+          },
+          {
+            "text": "APPROACH THE ENGINEER",
+            "effort": 2,
+            "sub": "Quiet booth, third beer",
+            "next": "engineer"
+          }
+        ]
+      },
+      "watchers": {
+        "title": "THE WATCHERS",
+        "npc": {
+          "disposition": "pirate",
+          "displayName": "A WATCHER"
+        },
+        "pose": "listening",
+        "body": "They make room without asking. Two of them. One stands. The other sits across from you with the patience of someone who's done this in three timezones.",
+        "line": "We've got a courier run. Sealed package. Double the standard rate. The date is tight, the route isn't.",
+        "ai": {
+          "aria": "A real opportunity!",
+          "marv": "Risk-reward asymmetry favors the buyer.",
+          "rex": "They're armed under the table. Both of them.",
+          "chip": "Sealed packages ship at premium rates!",
+          "ajoy": "Take it. Don't ask what's inside."
+        },
+        "revisit": {
+          "body": "They look up. Same booth, same patience.",
+          "line": "Made up your mind?"
+        },
+        "choices": [
+          {
+            "text": "\"What's in the package?\"",
+            "dialog": true,
+            "sub": "They will not say",
+            "next": "watchers_pry"
+          },
+          {
+            "text": "TAKE THE JOB",
+            "dialog": true,
+            "risky": true,
+            "sub": "Sealed cargo, 1 slot, paid on handoff",
+            "outcome": "cantina_job"
+          },
+          {
+            "text": "SEE THE GOODS",
+            "risky": true,
+            "effort": 2,
+            "sub": "Back inventory",
+            "open_market": true,
+            "market_sinister": true
+          },
+          {
+            "text": "BACK TO THE BAR",
+            "sub": "Pass on the offer",
+            "back": true
+          }
+        ]
+      },
+      "watchers_pry": {
+        "title": "THE WATCHERS",
+        "npc": {
+          "disposition": "pirate",
+          "displayName": "A WATCHER"
+        },
+        "pose": "listening",
+        "body": "The seated one shrugs. The standing one lights something that isn't quite a cigarette.",
+        "line": "If we knew, we wouldn't be paying double.",
+        "ai": {
+          "aria": "Honest of them!",
+          "marv": "Plausible deniability is a feature.",
+          "rex": "The standing one's tracking your exits.",
+          "chip": "Mystery cargo voids most insurance riders!",
+          "ajoy": "That's the answer. Decide."
+        },
+        "choices": [
+          {
+            "text": "TAKE THE JOB",
+            "dialog": true,
+            "sub": "OK, fair enough",
+            "outcome": "cantina_job"
+          },
+          {
+            "text": "BACK",
+            "back": true
+          }
+        ]
+      },
+      "engineer": {
+        "title": "OFF-DUTY ENGINEER",
+        "npc": {
+          "disposition": "station_crew",
+          "job": "engineer",
+          "displayName": "OFF-DUTY ENGINEER"
+        },
+        "pose": "listening",
+        "body": "Their shift ended six hours ago. They're still on the same beer. The booth seat opposite is open. They glance at you once, then back at the beer.",
+        "line": "If you came to ask about the dock pumps, they're fine. The cargo cranes are not.",
+        "ai": {
+          "aria": "Helpful!",
+          "marv": "Engineer fatigue index: high. Conversational disclosure index: also high.",
+          "rex": "They're armed only with opinions.",
+          "chip": "Off-duty staff opinions are not endorsed by Station Authority!",
+          "ajoy": "Buy them a drink. They'll tell you everything."
+        },
+        "revisit": {
+          "body": "They're still in the booth. They tip the glass at you in greeting.",
+          "line": "Back already? What do you want to know now?"
+        },
+        "choices": [
+          {
+            "text": "BUY THEM A DRINK",
+            "gate": {
+              "gold": 5
+            },
+            "dialog": true,
+            "sub": "5 gold · loosen the tongue",
+            "consume": "engineer_drink",
+            "consumedLabel": "Glass already in their hand",
+            "next": "engineer_drink",
+            "gold_cost": 5
+          },
+          {
+            "text": "\"What's wrong with the cranes?\"",
+            "dialog": true,
+            "sub": "Press the gripe",
+            "next": "engineer_cranes"
+          },
+          {
+            "text": "BACK TO THE BAR",
+            "sub": "Leave them to it",
+            "back": true
+          }
+        ]
+      },
+      "engineer_drink": {
+        "title": "OFF-DUTY ENGINEER",
+        "npc": {
+          "disposition": "station_crew",
+          "job": "engineer",
+          "displayName": "OFF-DUTY ENGINEER"
+        },
+        "pose": "pleased",
+        "body": "The engineer raises the new glass an inch in salute. The salute is sincere; the engineering is grateful. Five gold well spent — dock crews fix what they like you for.",
+        "line": "Three things about this station. One: the cranes drift left. Two: the medbay lights are wired backwards. Three: don't dock at berth seven, ever.",
+        "ai": {
+          "aria": "Three free tips!",
+          "marv": "Tip-per-credit ratio: excellent.",
+          "rex": "Berth seven noted.",
+          "chip": "Disclosed berth defects qualify for a rebate at participating stations!",
+          "ajoy": "You'll forget two of these by tomorrow. Pick the right one to remember."
+        },
+        "choices": [
+          {
+            "text": "\"Why berth seven?\"",
+            "dialog": true,
+            "sub": "Press",
+            "next": "engineer_berth"
+          },
+          {
+            "text": "BACK TO THE BAR",
+            "sub": "Wave thanks",
+            "outcome": "engineer_goodwill"
+          }
+        ]
+      },
+      "engineer_berth": {
+        "title": "OFF-DUTY ENGINEER",
+        "npc": {
+          "disposition": "station_crew",
+          "job": "engineer",
+          "displayName": "OFF-DUTY ENGINEER"
+        },
+        "pose": "listening",
+        "body": "They look at you for the first time, square on.",
+        "line": "The clamp on berth seven is slow. Last month it nearly took a freighter's nose off. Don't be the next freighter.",
+        "ai": {
+          "aria": "Saved a freighter! Possibly yours!",
+          "marv": "Mechanical failure mode: clamp delay.",
+          "rex": "Logged.",
+          "chip": "Berth seven advisory: unofficial!",
+          "ajoy": "Useful. Move on."
+        },
+        "choices": [
+          {
+            "text": "BACK TO THE BAR",
+            "outcome": "engineer_goodwill"
+          }
+        ]
+      },
+      "engineer_cranes": {
+        "title": "OFF-DUTY ENGINEER",
+        "npc": {
+          "disposition": "station_crew",
+          "job": "engineer",
+          "displayName": "OFF-DUTY ENGINEER"
+        },
+        "pose": "listening",
+        "body": "They snort once, set down the beer, and gesture vaguely at the ceiling.",
+        "line": "Two-thousand-tonne cranes. Calibrated by a guy who retired in 2089. Nobody's recalibrated since. They drift. We compensate. It's fine.",
+        "ai": {
+          "aria": "Compensated! Mostly!",
+          "marv": "Drift compensation: ad hoc.",
+          "rex": "Documented complacency.",
+          "chip": "Crane drift is covered by Tier-3 dock insurance!",
+          "ajoy": "It is not, in fact, fine."
+        },
+        "choices": [
+          {
+            "text": "BACK",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "cantina_drink": {
+        "title": "A RUMOR",
+        "tone": "success",
+        "body": "The drink is bad and the rumor is good. A nebula route is paying triple this week — some survey outfit stranded the pretty way, desperate for a data courier. Worth the detour? Up to you.",
+        "line": "Don't say I didn't tell you.",
+        "resources": {
+          "gold": -5,
+          "morale": 2
+        },
+        "sets_flag": "heard_nebula_rumor",
+        "time_cost": "low"
+      },
+      "cantina_job": {
+        "title": "A JOB",
+        "tone": "success",
+        "body": "Half up front, half on handoff at the next station authority desk that doesn't ask questions. The package goes into your hold. It is exactly as heavy as something you shouldn't shake.",
+        "line": "Don't open it. Don't scan it. Don't be late.",
+        "resources": {
+          "gold": 20
+        },
+        "item_grant": "classified_cargo",
+        "sets_flag": "courier_job_taken",
+        "time_cost": "low"
+      },
+      "engineer_goodwill": {
+        "title": "LOCAL KNOWLEDGE",
+        "tone": "success",
+        "body": "You leave the engineer to the rest of their beer. On the walk back to the ship, a dock crew waves you away from berth seven without being asked. Word travels at exactly the speed of gratitude.",
+        "resources": {
+          "morale": 3
+        },
+        "time_cost": "low"
+      }
+    }
+  },
+  {
+    "id": "event_station_010",
+    "active": true,
+    "title": "The Handoff",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "grim"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": "courier_job_taken",
+    "requires_item": "classified_cargo",
+    "npc": {
+      "disposition": "station_crew",
+      "job": "security",
+      "species": null
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE HANDOFF",
+        "body": "The security officer at the freight desk doesn't look up until you say the phrase from the contract. Then they look up very fast. {npc.quirk}",
+        "line": "That package. Desk three. No signature, no manifest, no you, starting about a minute ago.",
+        "ai": {
+          "aria": "Delivery complete! ARIA will not think about the contents!",
+          "marv": "MARV scanned it. MARV wishes he hadn't. MARV won't say.",
+          "rex": "Handoff clean. Exits clear.",
+          "chip": "Off-manifest deliveries accrue no loyalty points. CHIP checked twice.",
+          "ajoy": "Don't ask. You're so close to not knowing."
+        },
+        "choices": [
+          {
+            "text": "Hand it over, take the pay",
+            "outcome": "handoff_done"
+          },
+          {
+            "text": "\"One question first—\"",
+            "dialog": true,
+            "risky": true,
+            "sub": "You were told: no questions",
+            "next": "pry"
+          }
+        ]
+      },
+      "pry": {
+        "title": "THE HANDOFF",
+        "body": "The officer's hand stops over the credit chit. The freight hall gets quieter without anyone in it moving.",
+        "line": "The question costs you the tip. The second question costs more. Is there a second question?",
+        "ai": {
+          "aria": "ARIA suggests there is no second question!",
+          "marv": "Probability the tip was ever coming: 40%. Probability now: see previous, minus 40.",
+          "rex": "Two more just came off shift by the door. Coincidences don't wear boots.",
+          "chip": "Curiosity is not a covered expense!",
+          "ajoy": "There is no second question. Say it."
+        },
+        "choices": [
+          {
+            "text": "\"...No.\"",
+            "dialog": true,
+            "outcome": "handoff_cowed"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "handoff_done": {
+        "title": "PAID",
+        "tone": "success",
+        "body": "The package leaves your life the way it entered it: sealed, silent, and slightly too heavy. The balance lands in your account with a small tip for punctuality. You will wonder about it at odd hours for years.",
+        "line": "Pleasure doing business. There was no business. You were never here.",
+        "resources": {
+          "gold": 30
+        },
+        "item_consume": "classified_cargo",
+        "sets_flag": "courier_job_done",
+        "time_cost": "low"
+      },
+      "handoff_cowed": {
+        "title": "PAID. MOSTLY",
+        "tone": "success",
+        "body": "The chit lands in your palm light by exactly one tip. The package leaves. The officer watches you all the way to the dock doors, professionally, the way lighthouses watch ships.",
+        "resources": {
+          "gold": 25
+        },
+        "item_consume": "classified_cargo",
+        "sets_flag": "courier_job_done",
+        "time_cost": "low"
+      }
+    }
+  }
+]
