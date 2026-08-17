@@ -242,3 +242,17 @@
 }
 
 #crew-count-badge { font-family: 'Press Start 2P', cursive; font-size: 8px; color: #5a7a6a; letter-spacing: 1px; }
+
+/* Disabled nav buttons (bug fix 2026-08-04): the class was being set
+   by render() with no rule backing it — buttons looked live while a
+   required choice was missing. */
+#screen-setup .panel-btn.disabled {
+  filter: grayscale(0.7) brightness(0.55);
+  cursor: var(--cursor-pointer, default);
+}
+@keyframes setup-btn-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+#screen-setup .panel-btn.shake { animation: setup-btn-shake 0.25s ease-in-out 2; }
