@@ -161,7 +161,8 @@
       typewriteDescription(s.desc);
     }
     $('setup-flavor').textContent = '';
-    $('btn-back').classList.toggle('disabled', step === 0);
+    $('btn-back').classList.remove('disabled'); // step 0 exits to the title menu
+    $('btn-back').innerHTML = step === 0 ? '<span class="chevron">◀</span> Menu' : '<span class="chevron">◀</span> Back';
 
     const nextBtn = $('btn-next');
     const needsChoice = !s.multi && !s.nameInput;
@@ -238,6 +239,15 @@
 
   function nextStep() {
     const cur = STEPS[step];
+    // Hard gate (bug fix): the render pass dims the button, but the
+    // gate must live HERE — a click with nothing selected would send
+    // undefined into applySetupToState/generateMap and wreck the run.
+    if (!cur.multi && !cur.nameInput && !sel[cur.key]) {
+      const btn = $('btn-next');
+      btn.classList.remove('shake'); void btn.offsetWidth; btn.classList.add('shake');
+      $('setup-flavor').textContent = 'Pick one. The void will wait.';
+      return;
+    }
     if (cur.key === 'crew' && sel.crew.length < 2) {
       const msg = sel.crew.length === 0
         ? '⚠ No crew selected.\n\nYou will be flying solo. Are you sure?'
@@ -247,7 +257,12 @@
     if (step < STEPS.length - 1) { saveScroll(); step++; render(); }
     else { applySetupToState(sel); }
   }
-  function prevStep() { if (step > 0) { saveScroll(); step--; render(); } }
+  function prevStep() {
+    if (step > 0) { saveScroll(); step--; render(); }
+    // Step 0: BACK returns to the main menu (title). Selections keep —
+    // coming back resumes the wizard where it was.
+    else if (typeof showScreen === 'function') showScreen('screen-title');
+  }
 
   $('btn-back').addEventListener('click', prevStep);
   $('btn-next').addEventListener('click', nextStep);
