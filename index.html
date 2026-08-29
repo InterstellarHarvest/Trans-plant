@@ -1222,7 +1222,7 @@ body {
         <span class="banner-day" id="banner-day" title="Days since planting. Base maturity is 90 days, but growth rate shifts with plant health and tending.">GROWTH DAY <span id="day-display">47</span> / <span id="maturity-display">90</span></span>
       </div>
       <button class="gb-back" onclick="closeInspect()">‹ BACK</button>
-      <button class="gb-close" onclick="closeModal()">X</button>
+      <button class="gb-close" onclick="closeGrowbay()">X</button>
     </div>
 
     <!-- Body: bars band on top, scene+info row below -->
@@ -1379,7 +1379,7 @@ body {
   </div>
   </div>
   <div id="overlay-fabricator" class="overlay">
-  <div id="fb-backdrop" onclick="closeModal()"></div>
+  <div id="fb-backdrop" onclick="closeFabricator()"></div>
 
   <!-- Fabricator modal -->
   <div id="fb-modal">
@@ -1397,7 +1397,7 @@ body {
         <span class="fb-day-sep">·</span>
         <span class="fb-arrival" id="fb-days-left">153 LEFT</span>
       </div>
-      <button class="fb-close" onclick="closeModal()">X</button>
+      <button class="fb-close" onclick="closeFabricator()">X</button>
     </div>
 
     <!-- Body -->
@@ -1968,6 +1968,10 @@ function killCrew(role) {
   delete STATE.crewHP[role];
   if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
   STATE.flags.add('crew_lost');
+  // The 'Autopilot' failure (crew_gone) means your crew all DIED — not
+  // that you have none. Solo launches (wizard-permitted, with authored
+  // solo_run content) and deliberate dismissals never trip it.
+  if (STATE.crew.length === 0) STATE.flags.add('all_crew_dead');
   const pool = MOD.flavor && MOD.flavor.crew_epitaphs;
   if (pool && pool.length && typeof window.pushCruiseLog === 'function') {
     const name = (MOD.crew_roster.find(c => c.role === role) || {}).name || role;
@@ -2273,7 +2277,10 @@ function renderInvDetail(en) {
 }
 (function wireInventoryChrome() {
   document.querySelectorAll('.inv-tab').forEach(t =>
-    t.addEventListener('click', () => { _invTab = t.dataset.tab; _invSelected = null; renderInventory(); }));
+    t.addEventListener('click', () => {
+      if (t.dataset.tab === _invTab) return; // re-clicking the active tab must not wipe the selection (ui_sweep catch)
+      _invTab = t.dataset.tab; _invSelected = null; renderInventory();
+    }));
   document.getElementById('inv-jett-btn').addEventListener('click', () => {
     if (!_invSelected) return;
     const def = itemDef(_invSelected);
@@ -3691,6 +3698,15 @@ function deltaIsGood(o) {
 /* After Continue: figure out the next node and either fire its
    event or, if the next node has no event, just bring up the map. */
 function advanceAfterEvent() {
+  // Summoned events (TRADE / WAIT FOR TRADER stop-verbs) happen AT the
+  // parked node — resolving them returns to this node's hub, exactly
+  // like every other stop verb. Found by ui_sweep 2026-08-04: walking
+  // away from a summoned trader used to fling the ship down the trail.
+  if (STATE.summonedEvent) {
+    STATE.summonedEvent = false;
+    returnToHub();
+    return;
+  }
   const cur = STATE.byId[STATE.currentId];
   const next = nextAvailableNodes();
   const ids = [...next];
@@ -3721,7 +3737,7 @@ function checkFailure() {
   if (r.fuel   <= 0) type = 'no_fuel';
   else if (r.hull   <= 0) type = 'hull_zero';
   else if (r.morale <= 0) type = 'mutiny';
-  else if (STATE.crew.length === 0) type = 'crew_gone';
+  else if (STATE.crew.length === 0 && STATE.flags.has('all_crew_dead')) type = 'crew_gone'; // death only — solo-by-choice is a valid run (ui_sweep catch 2026-08-04)
   else if (STATE.daysElapsed > STATE.baseDays) type = 'time_expired';
   // Phase 4's Growbay now tracks real STATE.cropGrowth.health, so this
   // branch is genuinely reachable — but nothing currently decrements

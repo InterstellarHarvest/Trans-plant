@@ -257,6 +257,25 @@ function trailCoverage() {
   return lines.join('  |  ');
 }
 
+
+// ── Global-name collision scan (added 2026-08-04) ──────────────────
+// All engine files share ONE global scope (no modules). Two files
+// assigning the same window.X silently let the later-loaded one win —
+// the growbay's X button called the FABRICATOR's closeModal for weeks.
+{
+  const fs2 = require('fs'), path2 = require('path');
+  const files = [];
+  const walk = d => { for (const e of fs2.readdirSync(d)) { const f = path2.join(d, e); if (fs2.statSync(f).isDirectory()) walk(f); else if (f.endsWith('.js')) files.push(f); } };
+  walk('engine/js'); files.push('resources/shared.js');
+  const owners = {};
+  for (const f of files) {
+    const src = fs2.readFileSync(f, 'utf8');
+    for (const m of src.matchAll(/window\.([A-Za-z_$][\w$]*)\s*=(?!=)/g)) (owners[m[1]] = owners[m[1]] || new Set()).add(f);
+  }
+  const dupes = Object.entries(owners).filter(([, fs]) => fs.size > 1);
+  for (const [name, fs] of dupes) errors.push(`global collision: window.${name} assigned in ${[...fs].join(' AND ')} — later-loaded file silently wins`);
+}
+
 if (errors.length) {
   console.error(`lint_modules: ${errors.length} issue(s) found:\n`);
   errors.forEach(e => console.error('  - ' + e));
