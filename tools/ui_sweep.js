@@ -111,16 +111,28 @@ const INERT_OK = new Set([]);
       const open = await page.evaluate(() => [...document.querySelectorAll('.overlay.active')].map(o => o.id));
       if (!open.length) return true;
       const top = open[open.length - 1];
-      const clicked = await page.evaluate(id => {
+      // Try EVERY close-looking control in turn until the overlay closes —
+      // a sub-panel's ✕ can match first while the real exit sits further down.
+      const tried = [];
+      const closed = await page.evaluate(async id => {
         const ov = document.getElementById(id);
-        const btn = [...ov.querySelectorAll('button')].find(b => b.offsetParent !== null && (/close|back to|leave|done|return|✕|×|^x$|resume/i.test(b.textContent.trim()) || /close|-x$/.test(b.id)));
-        if (btn) { btn.click(); return btn.textContent.trim() || btn.id; }
-        return null;
+        const cands = [...ov.querySelectorAll('button, [role=button], .enc-choice, [onclick], .er-choice, .panel-btn')]
+          .filter(b => b.offsetParent !== null && (/close|back to|leave|done|return|abandon|✕|×|^x$|resume/i.test(b.textContent.trim()) || /close|-x$|leave|exit/.test(b.id)));
+        const names = [];
+        for (const b of cands) {
+          names.push(b.textContent.trim().slice(0, 20) || b.id);
+          b.click();
+          await new Promise(r => setTimeout(r, 300));
+          if (!ov.classList.contains('active')) return { ok: true, names };
+        }
+        return { ok: false, names };
       }, top);
-      await page.waitForTimeout(300);
-      if (await page.evaluate(id => !document.getElementById(id).classList.contains('active'), top)) continue;
+      tried.push(...closed.names);
+      const clicked = tried.join(' → ') || null;
+      await page.waitForTimeout(100);
+      if (closed.ok) continue;
       // Its own close control failed (or none exists) — that IS a finding.
-      flag('overlay has no working close control', top + (clicked ? ' (clicked "' + clicked + '", still open)' : ' (no close-like button found)'));
+      flag('overlay has no working close control', top + (clicked ? ' (tried: ' + clicked + ' — still open)' : ' (no close-like control found)'));
       await page.evaluate(id => { document.getElementById(id).classList.remove('active'); document.body.classList.remove('modal-open'); }, top);
     }
     return true;
