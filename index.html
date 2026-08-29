@@ -70,9 +70,11 @@ body {
 
 #game {
   width: 960px; height: 640px;
+  flex: 0 0 auto;
   position: relative; overflow: hidden;
   background: #000;
   border: 1px solid #2a3040;
+  transform-origin: center center;
 }
 #crt-overlay {
   pointer-events: none; position: absolute; inset: 0; z-index: 200;
@@ -1693,23 +1695,24 @@ const SAVED_FIELDS = [
   'stowaway', 'cropGrowth', 'postCombatLegs', 'aiWarnLevels', 'fabricator',
   'consumedActions', 'crewSkillCharges', 'orders',
 ];
-function saveRun() {
-  if (STATE.ended || !STATE.trail || !STATE.nodes.length) return;
-  if (new URLSearchParams(location.search).has('debug')) return;
+function saveRun(key) {
+  if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
+  if (new URLSearchParams(location.search).has('debug')) return false;
   try {
-    const snap = { v: 1 };
+    const snap = { v: 1, ts: Date.now() };
     for (const k of SAVED_FIELDS) snap[k] = STATE[k];
     snap.visited = [...STATE.visited];
     snap.flags = [...STATE.flags];
     snap.seenEventIds = [...STATE.seenEventIds];
-    localStorage.setItem(SAVE_KEY, JSON.stringify(snap));
-  } catch (_) { /* quota/privacy modes — the run just isn't saved */ }
+    localStorage.setItem(key || SAVE_KEY, JSON.stringify(snap));
+    return true;
+  } catch (_) { return false; /* quota/privacy modes — the run just isn't saved */ }
 }
 function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (_) {} }
 function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (_) { return false; } }
-function loadRun() {
+function loadRun(key) {
   let snap;
-  try { snap = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (_) { return false; }
+  try { snap = JSON.parse(localStorage.getItem(key || SAVE_KEY)); } catch (_) { return false; }
   if (!snap || snap.v !== 1) return false;
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   STATE.visited = new Set(snap.visited || []);
@@ -2202,6 +2205,16 @@ function hideOverlay(id) {
   document.getElementById(id).classList.remove('active');
 }
 
+/* Keep the canonical 960×640 coordinate system used by every demo and
+   canvas, but scale the finished cabinet down as one unit when the viewport
+   is smaller. Pointer coordinates continue to map through the CSS transform. */
+function fitGameToViewport() {
+  const scale = Math.min(1, window.innerWidth / 960, window.innerHeight / 640);
+  document.getElementById('game').style.transform = `scale(${scale})`;
+}
+fitGameToViewport();
+window.addEventListener('resize', fitGameToViewport);
+
 /* ── Cargo hold overlay ──────────────────────────────────────────
    Minimal management UI for full cargo enforcement: grouped item
    list with per-row jettison. Wired to Cruise's INV button. */
@@ -2210,11 +2223,13 @@ function hideOverlay(id) {
    jettison behind a confirm dialog. Capacity math unchanged. */
 let _invTab = 'gear';
 let _invSelected = null;
+let _invJettisonPending = null;
 function invIconHtml(id, isMaterial, px) {
   const path = isMaterial ? 'sprites/cargo/materials/' + id + '.png' : 'sprites/cargo/items/' + id + '.png';
   return '<img src="' + path + '" alt="" onerror="this.outerHTML=\'<span class=&quot;inv-tile-emoji&quot;>📦</span>\'" style="width:inherit;height:inherit;max-width:56px;max-height:56px;">';
 }
 function renderInventory() {
+  _invJettisonPending = null;
   const used = cargoSlotsUsed(), cap = cargoCapacity();
   const slotsEl = document.getElementById('inv-slots');
   slotsEl.textContent = `SLOTS ${used} / ${cap}`;
@@ -2284,17 +2299,25 @@ function renderInvDetail(en) {
   document.getElementById('inv-jett-btn').addEventListener('click', () => {
     if (!_invSelected) return;
     const def = itemDef(_invSelected);
+    _invJettisonPending = _invSelected;
     document.getElementById('inv-confirm-text').textContent =
       'Jettison ' + ((def && def.name) || prettyItem(_invSelected)) + '? The airlock does not do refunds.';
     document.getElementById('inv-confirm').classList.remove('hidden');
   });
-  document.getElementById('inv-confirm-no').addEventListener('click', () =>
-    document.getElementById('inv-confirm').classList.add('hidden'));
+  document.getElementById('inv-confirm-no').addEventListener('click', () => {
+    _invJettisonPending = null;
+    document.getElementById('inv-confirm').classList.add('hidden');
+  });
   document.getElementById('inv-confirm-yes').addEventListener('click', () => {
-    if (!_invSelected) return;
-    const id = _invSelected;
+    // Consume the confirmation before mutating or repainting. A physical
+    // double-click must still authorize exactly one unit through the airlock.
+    const id = _invJettisonPending;
+    _invJettisonPending = null;
+    if (!id) return;
     const def = itemDef(id);
-    STATE.items.splice(STATE.items.indexOf(id), 1);
+    const idx = STATE.items.indexOf(id);
+    if (idx < 0) return;
+    STATE.items.splice(idx, 1);
     if (typeof window.pushCruiseLog === 'function') {
       window.pushCruiseLog('◆ Jettisoned: ' + ((def && def.name) || id) + '. It tumbles off into the dark, unemployed.');
     }
@@ -2840,6 +2863,7 @@ function travelTo(nodeId, opts) {
      object — the two schemas are disambiguated by ev.layers presence.
    ──────────────────────────────────────────────────────────────── */
 function enterEvent(node, ev) {
+  if (window.SceneArt && SceneArt.beginEvent) SceneArt.beginEvent();
   STATE.currentEvent     = ev;
   STATE.currentNode      = node;
   STATE.outcomeMode      = false;
@@ -3207,10 +3231,10 @@ function renderChoices(choices) {
     // Entrance cascade + click pulse (demo canon).
     btn.classList.add('entering');
     btn.style.animationDelay = (col.children.length * 55) + 'ms';
-    if (!locked) btn.addEventListener('click', () => {
+    if (!locked) btn.addEventListener('click', () => runChoiceAction(() => {
       btn.classList.add('pulse');
       handleChoiceClick(ch);
-    });
+    }));
     col.appendChild(btn);
   }
   // Always-present walk-away row (demo's leaveLabel convention) —
@@ -3224,7 +3248,7 @@ function renderChoices(choices) {
     leave.className = 'enc-choice advance entering';
     leave.style.animationDelay = (col.children.length * 55) + 'ms';
     leave.innerHTML = '<div class="ch-text">' + escapeHTML(ev2.leave_label || 'WALK AWAY') + '</div><div class="ch-sub">Leave it be</div>';
-    leave.addEventListener('click', advanceAfterEvent);
+    leave.addEventListener('click', () => runChoiceAction(advanceAfterEvent));
     col.appendChild(leave);
   }
 }
@@ -3233,8 +3257,21 @@ function makeAdvanceButton(label) {
   const btn = document.createElement('button');
   btn.className = 'enc-choice advance';
   btn.innerHTML = `<div class="ch-text">${label} →</div>`;
-  btn.addEventListener('click', advanceAfterEvent);
+  btn.addEventListener('click', () => runChoiceAction(advanceAfterEvent));
   return btn;
+}
+
+// A physical double-click can land once on a choice and again on the
+// freshly-rendered Continue button at the same coordinates, skipping the
+// outcome (or even selecting a choice in the following event). Keep one
+// short interaction lock across choice-column re-renders.
+let _choiceActionLockedUntil = 0;
+function runChoiceAction(action) {
+  const now = performance.now();
+  if (now < _choiceActionLockedUntil) return false;
+  _choiceActionLockedUntil = now + 300;
+  action();
+  return true;
 }
 
 /* Returns null if choice is available; otherwise a short string

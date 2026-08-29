@@ -599,6 +599,37 @@
   })();
 
   /* ── Player actions ─────────────────────────────────────────── */
+  function armAutoFireFallback(delay) {
+    if (FX.autoFireTimer) clearTimeout(FX.autoFireTimer);
+    FX.autoFireTimer = setTimeout(() => {
+      if (!COMBAT.active || COMBAT.state !== 'TARGETING') {
+        FX.autoFireTimer = null;
+        return;
+      }
+      if (window.PauseBus && PauseBus.paused) {
+        // Pause is thinking time, not permission for a fallback timer to
+        // choose and fire a shot. Poll cheaply, then grant a fresh aim
+        // window from the moment play resumes.
+        const waitForResume = () => {
+          if (!COMBAT.active || COMBAT.state !== 'TARGETING') {
+            FX.autoFireTimer = null;
+            return;
+          }
+          if (window.PauseBus && PauseBus.paused) {
+            FX.autoFireTimer = setTimeout(waitForResume, 100);
+            return;
+          }
+          armAutoFireFallback(1600);
+        };
+        FX.autoFireTimer = setTimeout(waitForResume, 100);
+        return;
+      }
+      FX.autoFireTimer = null;
+      const ec = enemyShipCenter();
+      resolveFire(ec.x + rand(-20, 20), ec.y + rand(-14, 14));
+    }, delay);
+  }
+
   function enterTargeting() {
     if (!COMBAT.active || COMBAT.state !== 'PLAYER_TURN') return;
     COMBAT.state = 'TARGETING';
@@ -609,13 +640,7 @@
     // Auto-fire fallback (engine addition): aim at the ship center if
     // no aim click lands — keyboard players and the fuzz harness must
     // never wedge in TARGETING.
-    if (FX.autoFireTimer) clearTimeout(FX.autoFireTimer);
-    FX.autoFireTimer = setTimeout(() => {
-      if (COMBAT.active && COMBAT.state === 'TARGETING') {
-        const ec = enemyShipCenter();
-        resolveFire(ec.x + rand(-20, 20), ec.y + rand(-14, 14));
-      }
-    }, 1600);
+    armAutoFireFallback(1600);
   }
 
   function cancelTargeting() {
