@@ -915,7 +915,7 @@
   });
 
   // ═════ Modal open/close ═════════════════════════════════
-  window.closeModal = function() {
+  window.closeFabricator = function() {
     document.body.classList.remove('modal-open');
     hideOverlay('overlay-fabricator');
   };
@@ -925,7 +925,7 @@
   window.addEventListener('keydown', (e) => {
     if (!document.body.classList.contains('modal-open')) return;
     if (document.querySelector('.fb-dd.open')) return;  // let dropdowns own keys
-    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === 'Escape') { closeFabricator(); return; }
 
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       const selectable = filterRecipes(sortRecipes(RECIPES))

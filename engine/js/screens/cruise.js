@@ -367,6 +367,7 @@
     const ev = EVENTS['event_encounter_trader_001'];
     if (!ev) { pushLogEntry('◆ No traders registered on this route.'); return; }
     closeStopMenu();
+    STATE.summonedEvent = true; // resolves back to THIS node's hub, not onward
     enterEvent(STATE.byId[STATE.currentId], ev);
   }
   function handleWaitTraderVerb() {
@@ -377,7 +378,7 @@
     if (Math.random() < 0.55) {
       pushLogEntry('◆ WAIT — after ' + days + ' day(s), a merchant sail lights up the scope.');
       const ev = EVENTS['event_encounter_trader_001'];
-      if (ev) { closeStopMenu(); enterEvent(STATE.byId[STATE.currentId], ev); return; }
+      if (ev) { closeStopMenu(); STATE.summonedEvent = true; enterEvent(STATE.byId[STATE.currentId], ev); return; }
     }
     pushLogEntry('◆ WAIT — ' + days + ' day(s) parked. Nobody came. The dice do not apologize.');
     renderCruise();

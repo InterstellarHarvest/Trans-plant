@@ -1201,7 +1201,7 @@
   };
 
   // ═════ Modal open/close ═════════════════════════════════════
-  window.closeModal = function() {
+  window.closeGrowbay = function() {
     document.body.classList.remove('modal-open');
     document.body.classList.remove('ins-open');
     hideOverlay('overlay-growbay');
@@ -1211,14 +1211,14 @@
   // it off first instead of closing both at once.
   window.onBackdropClick = function() {
     if (document.body.classList.contains('ins-open')) { closeInspect(); return; }
-    closeModal();
+    closeGrowbay();
   };
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     // Inspect catches Escape first if open — close inspect, leave
     // the underlying growbay modal up.
     if (document.body.classList.contains('ins-open')) { closeInspect(); return; }
-    if (document.body.classList.contains('modal-open')) closeModal();
+    if (document.body.classList.contains('modal-open')) closeGrowbay();
   });
 
   // ═════ Entry point ══════════════════════════════════════════
