@@ -399,6 +399,10 @@
   function stopTalking() {
     if (_talkRAF) cancelAnimationFrame(_talkRAF);
     _talkRAF = null;
+    // A line can finish while its spritesheet is still being probed.
+    // Clear the deferred start as well as the live loop, otherwise the
+    // eventual image load starts talking after the text is complete.
+    _pendingLine = null;
     if (_activeSheet) setNpcFrame(_activeSheet, _activeSheet.idleIdx);
   }
 
@@ -498,6 +502,17 @@
   let _currentEvKey = null;
   let _currentSubjKey = null;
   let _pendingLine = null;
+
+  /* An event id can be drawn more than once in one run. Sticky art may
+     remain keyed by id, but presentation state belongs to one entry:
+     prior combat opacity and CRT classes must not survive a later draw
+     of the same authored event. */
+  function beginEvent() {
+    _currentEvKey = null;
+    _currentSubjKey = null;
+    stopTalking();
+    _activeSheet = null;
+  }
 
   function subjKeyFor(evKey, ctx) {
     return evKey + '|' + (ctx
@@ -604,5 +619,5 @@
     _activeSheet = null;
   }
 
-  window.SceneArt = { render, renderOutcome, subjectFX, clearRunCaches, stopTalking, sceneSpecFor };
+  window.SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, sceneSpecFor };
 })();

@@ -607,6 +607,10 @@
     let line;
     if (jettisoned) {
       STATE.flags.add('crew_lost');
+      // An unsafe "dismissal" is explicitly an airlock death. Preserve
+      // solo-by-choice at stations/planets, but route a last-person
+      // jettison through the same crew_gone failure as killCrew().
+      if (STATE.crew.length === 0) STATE.flags.add('all_crew_dead');
       const pool = (typeof MOD !== 'undefined' && MOD.flavor && MOD.flavor.crew_epitaphs) || [];
       line = pool.length ? pool[Math.floor(Math.random() * pool.length)].replaceAll('[Name]', name)
                          : name + ' has joined the long line of things that used to be indoors.';

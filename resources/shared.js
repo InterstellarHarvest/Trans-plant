@@ -865,8 +865,8 @@ function scatterLayout(n, opts) {
        // …real frame…
      }
 
-   onChange(fn) lets a demo do per-game pause work (mute audio,
-   dim active visuals, etc) without polling. setTimeout-based
+   onChange(fn) lets a demo do per-game pause work (for example,
+   dim active visuals) without polling. setTimeout-based
    timers keep ticking — that's intentional MVP scope; the real
    STATE-pass refactor will pause those too.
 
@@ -876,10 +876,10 @@ function scatterLayout(n, opts) {
    pause icon at bottom-right is the second open trigger. DOM is
    built lazily on first open.
 
-   All save/load slots are intentionally cosmetic until a central
-   STATE object exists — slots write a stub {ts,label} blob to
-   localStorage today. The cursor controls in SETTINGS are real
-   (wired through refreshCursorVars + persisted in localStorage).
+   Save/load slots use the host engine's saveRun/loadRun hooks when
+   present; standalone demos retain a cosmetic localStorage preview.
+   The cursor controls in SETTINGS are real (wired through
+   refreshCursorVars + persisted in localStorage).
    ============================================================ */
 
 const PauseBus = {
@@ -897,6 +897,10 @@ const PauseBus = {
   },
   onChange(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); },
 };
+// Classic-script top-level `const` bindings are not properties of window.
+// Engine files intentionally probe `window.PauseBus` before consulting it,
+// so publish this single shared owner rather than leaving those guards inert.
+window.PauseBus = PauseBus;
 
 const TP_SETTINGS_KEY = 'transplant:settings';
 const TP_SAVE_PREFIX  = 'transplant:save:';
@@ -913,7 +917,7 @@ function tpSaveSettings(patch) {
 
 // Re-apply persisted cursor settings on boot, after the always-on
 // cursors have been baked once with defaults. Only cursorColor +
-// cursorOutline have any real effect today; the rest are stubs.
+// cursorOutline have any real effect today; text speed remains a stub.
 function tpApplyCursorSettings() {
   const s = tpLoadSettings();
   const ps = {};
@@ -1113,16 +1117,6 @@ const PauseMenu = (() => {
           '</button>' +
         '</div>' +
         '<div class="pause-row stub">' +
-          '<label>SFX VOLUME <span class="pause-stub">·STUB</span></label>' +
-          '<input type="range" min="0" max="100" value="' + (s.sfxVolume != null ? s.sfxVolume : 70) + '" data-field="sfxVolume">' +
-          '<span class="pause-num">' + (s.sfxVolume != null ? s.sfxVolume : 70) + '</span>' +
-        '</div>' +
-        '<div class="pause-row stub">' +
-          '<label>MUSIC VOLUME <span class="pause-stub">·STUB</span></label>' +
-          '<input type="range" min="0" max="100" value="' + (s.musicVolume != null ? s.musicVolume : 50) + '" data-field="musicVolume">' +
-          '<span class="pause-num">' + (s.musicVolume != null ? s.musicVolume : 50) + '</span>' +
-        '</div>' +
-        '<div class="pause-row stub">' +
           '<label>TEXT SPEED <span class="pause-stub">·STUB</span></label>' +
           '<div class="pause-radios" data-field="textSpeed">' +
             ['slow','normal','fast'].map(v =>
@@ -1159,14 +1153,7 @@ const PauseMenu = (() => {
       });
     });
 
-    // Stubs — persist for future audio/text-speed wiring
-    w.querySelectorAll('input[type="range"]').forEach(r => {
-      r.addEventListener('input', () => {
-        const v = parseInt(r.value, 10);
-        r.parentElement.querySelector('.pause-num').textContent = v;
-        tpSaveSettings({ [r.dataset.field]: v });
-      });
-    });
+    // Stub — persist for future text-speed wiring.
     w.querySelectorAll('.pause-radios').forEach(group => {
       group.addEventListener('click', e => {
         const b = e.target.closest('.pause-radio'); if (!b) return;
@@ -1181,6 +1168,7 @@ const PauseMenu = (() => {
   function panelSaveLoad(mode) {
     const w = document.createElement('div');
     w.className = 'pause-panel';
+    const inEngine = typeof window.saveRun === 'function' && typeof window.loadRun === 'function';
     const slots = [1,2,3].map(n => {
       let blob = null;
       try { blob = JSON.parse(localStorage.getItem(TP_SAVE_PREFIX + n)); } catch (e) {}
@@ -1188,12 +1176,16 @@ const PauseMenu = (() => {
     });
     w.innerHTML =
       '<h2 class="pause-h">' + (mode === 'save' ? 'SAVE GAME' : 'LOAD GAME') + '</h2>' +
-      '<p class="pause-sub">SLOTS WRITE TO LOCAL STORAGE · CONTENTS COSMETIC PENDING STATE SUBSYSTEM</p>' +
+      '<p class="pause-sub">' + (inEngine
+        ? 'LOCAL SLOTS · SAVES BETWEEN ENCOUNTERS · LOADS RETURN TO CRUISE'
+        : 'SLOTS WRITE TO LOCAL STORAGE · CONTENTS COSMETIC IN THIS DEMO') + '</p>' +
       '<div class="pause-slots">' +
         slots.map(s => {
           const empty = !s.blob;
           const ts = empty ? '' : new Date(s.blob.ts || 0).toISOString().replace('T',' ').slice(0,16);
-          const label = empty ? 'EMPTY' : (s.blob.label || 'SAVE');
+          const label = empty ? 'EMPTY' : (inEngine && s.blob.v === 1
+            ? String(s.blob.trail || 'RUN').toUpperCase() + ' · DAY ' + Math.floor(s.blob.daysElapsed || 0)
+            : (s.blob.label || 'SAVE'));
           return (
             '<div class="pause-slot' + (empty ? ' empty' : '') + '" data-slot="' + s.n + '">' +
               '<span class="pause-slot-n">SLOT ' + s.n + '</span>' +
@@ -1211,13 +1203,25 @@ const PauseMenu = (() => {
       const btn = row.querySelector('.pause-btn');
       btn.addEventListener('click', () => {
         if (btn.dataset.act === 'save') {
-          const blob = { ts: Date.now(), label: 'TEST · DAY 0' };
-          try { localStorage.setItem(TP_SAVE_PREFIX + n, JSON.stringify(blob)); } catch (e) {}
+          if (inEngine) {
+            if (!window.saveRun(TP_SAVE_PREFIX + n)) {
+              toast('SAVE UNAVAILABLE — RETURN TO CRUISE');
+              return;
+            }
+          } else {
+            const blob = { ts: Date.now(), label: 'TEST · DAY 0' };
+            try { localStorage.setItem(TP_SAVE_PREFIX + n, JSON.stringify(blob)); } catch (e) {}
+          }
           toast('SAVED TO SLOT ' + n);
           renderSection('save');
         } else {
           if (btn.disabled) return;
-          toast('LOADED SLOT ' + n + ' (cosmetic — no state restored)');
+          if (inEngine) {
+            if (window.loadRun(TP_SAVE_PREFIX + n)) close();
+            else toast('LOAD FAILED — SLOT IS NOT A RUN SAVE');
+          } else {
+            toast('LOADED SLOT ' + n + ' (cosmetic — no state restored)');
+          }
         }
       });
     });

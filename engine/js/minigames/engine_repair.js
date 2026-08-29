@@ -313,6 +313,17 @@
   }
   function closeComp() { stopGauge(); $('er-comp-panel').classList.remove('open'); activeComp = null; }
 
+  // A success beat resolves after a short visual hold. If the player
+  // opens another component during that hold, do not close the newer
+  // panel when the older component's callback arrives.
+  function completeComp(comp, delay) {
+    setTimeout(() => {
+      if (!running || fixed[comp]) return;
+      if (activeComp === comp) closeComp();
+      markFixed(comp);
+    }, delay);
+  }
+
   // ── microgame 1: breaker bank ────────────────────────────────
   function buildBreaker() {
     $('er-comp-hint').textContent = 'Four circuit breakers tripped. Click each to reset. The manual calls this "Step 1 of 47."';
@@ -320,7 +331,7 @@
     $('er-comp-controls').innerHTML = `<div class="breaker-bank">${['B1', 'B2', 'B3', 'B4'].map(id => `<div class="breaker" id="er-br-${id}" data-br="${id}"><img class="br-sprite" id="er-br-img-${id}" src="${SPR}breaker_faulted.png" alt=""><div class="br-label">${id}</div></div>`).join('')}</div>`;
     ['B1', 'B2', 'B3', 'B4'].forEach(id => $('er-br-' + id).addEventListener('click', () => resetBreaker(id)));
   }
-  function resetBreaker(id) { if (brState[id]) return; brState[id] = true; const el = $('er-br-' + id); el.classList.add('br-fixed'); $('er-br-img-' + id).src = SPR + 'breaker_fixed.png'; if (Object.values(brState).every(v => v)) setTimeout(() => { closeComp(); markFixed('breaker'); }, 350); }
+  function resetBreaker(id) { if (brState[id]) return; brState[id] = true; const el = $('er-br-' + id); el.classList.add('br-fixed'); $('er-br-img-' + id).src = SPR + 'breaker_fixed.png'; if (Object.values(brState).every(v => v)) completeComp('breaker', 350); }
 
   // ── microgame 2: ignition switches ───────────────────────────
   function buildSwitches() {
@@ -330,7 +341,7 @@
     $('er-comp-controls').innerHTML = `<div style="width:100%"><div class="sw-ref-box"><div class="sw-ref-label">▸ REFERENCE — CORRECT POSITIONS (Appendix D-7, Laminated)</div><div class="sw-row">${SW_IDS.map(id => `<div class="sw-toggle ref-item"><img class="sw-sprite" src="${SPR}switch_ref_${SW_CORRECT[id] ? '2' : '1'}.png" alt=""><div class="sw-lbl">${id.toUpperCase()}</div></div>`).join('')}</div></div><div style="font-size:14px;color:#5a7a6a;margin-bottom:7px;font-style:italic">Current — click wrong switches to correct:</div><div class="sw-row">${SW_IDS.map(id => `<div class="sw-toggle" id="er-sw-${id}" data-sw="${id}"><img class="sw-sprite" id="er-sw-img-${id}" src="${SPR}switch_${swState[id] ? '2' : '1'}.png" alt=""><div class="sw-lbl">${id.toUpperCase()}</div></div>`).join('')}</div></div>`;
     SW_IDS.forEach(id => $('er-sw-' + id).addEventListener('click', () => toggleSw(id)));
   }
-  function toggleSw(id) { swState[id] = !swState[id]; $('er-sw-img-' + id).src = SPR + 'switch_' + (swState[id] ? '2' : '1') + '.png'; if (SW_IDS.every(k => swState[k] === SW_CORRECT[k])) setTimeout(() => { closeComp(); markFixed('switches'); }, 350); }
+  function toggleSw(id) { swState[id] = !swState[id]; $('er-sw-img-' + id).src = SPR + 'switch_' + (swState[id] ? '2' : '1') + '.png'; if (SW_IDS.every(k => swState[k] === SW_CORRECT[k])) completeComp('switches', 350); }
 
   // ── microgame 3: coolant valve gauge + steam ─────────────────
   function buildValve() {
@@ -352,7 +363,7 @@
     if (!$('er-gauge-canvas')) { gaugeRAF = null; return; }
     if (gaugeHeld && !gaugeWon) {
       gaugeAngle = Math.min(1, gaugeAngle + 0.007);
-      if (gaugeAngle >= 0.44 && gaugeAngle <= 0.66) { gaugeGreenFrames++; if (gaugeGreenFrames > 18) { gaugeWon = true; gaugeHeld = false; const n = $('er-gauge-nom'); if (n) n.classList.add('show'); drawGauge(); setTimeout(() => { closeComp(); markFixed('valve'); }, 600); return; } } else { gaugeGreenFrames = 0; }
+      if (gaugeAngle >= 0.44 && gaugeAngle <= 0.66) { gaugeGreenFrames++; if (gaugeGreenFrames > 18) { gaugeWon = true; gaugeHeld = false; const n = $('er-gauge-nom'); if (n) n.classList.add('show'); drawGauge(); completeComp('valve', 600); return; } } else { gaugeGreenFrames = 0; }
       if (gaugeAngle > 0.72) { const m = $('er-gauge-nom'); if (m) m.textContent = '● OVER-BLED — RELEASE AND RETRY'; }
     } else if (!gaugeHeld && gaugeAngle > 0.72) { gaugeAngle = Math.max(0.04, gaugeAngle - 0.003); gaugeGreenFrames = 0; }
     drawGauge();
@@ -381,7 +392,7 @@
     $('er-comp-controls').innerHTML = `<div class="junction-section"><div class="junction-row">${['LINE A', 'LINE B', 'LINE C'].map((l, i) => `<div class="jnode" id="er-jn-${i}" data-jn="${i}"><img class="jn-sprite" id="er-jn-img-${i}" src="${SPR}junction_a_faulted.png" alt=""><div class="jn-lbl">${l}</div></div>`).join('')}</div></div>`;
     [0, 1, 2].forEach(i => $('er-jn-' + i).addEventListener('click', () => reconnect(i)));
   }
-  function reconnect(i) { if (jState[i]) return; jState[i] = true; const el = $('er-jn-' + i); el.classList.add('jn-fixed'); $('er-jn-img-' + i).src = SPR + 'junction_a_fixed.png'; if (Object.values(jState).every(v => v)) setTimeout(() => { closeComp(); markFixed('junction'); }, 350); }
+  function reconnect(i) { if (jState[i]) return; jState[i] = true; const el = $('er-jn-' + i); el.classList.add('jn-fixed'); $('er-jn-img-' + i).src = SPR + 'junction_a_fixed.png'; if (Object.values(jState).every(v => v)) completeComp('junction', 350); }
 
   // ── valve steam particles (modal-local canvas above the button) ──
   // Idle: slow gentle puffs. Held: pressurized side jets. Auto-stops
