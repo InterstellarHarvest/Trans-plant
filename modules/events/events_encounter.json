@@ -67,6 +67,15 @@
             "next": "negotiate"
           },
           {
+            "text": "Invoke the prepared terms",
+            "sub": "Hargrove did the groundwork · no cost",
+            "gate": {
+              "crew": "diplomat"
+            },
+            "requires_flag": "negotiation_prepared",
+            "outcome": "pirate_prepared"
+          },
+          {
             "text": "Pay 20 gold for safe passage",
             "gate": {
               "gold": 20
@@ -138,6 +147,18 @@
       }
     },
     "outcomes": {
+      "pirate_prepared": {
+        "title": "ALREADY SETTLED",
+        "tone": "success",
+        "body": "Hargrove reads them a registry number, a name, and a date. The channel goes quiet long enough to hear someone on the other end swallow. The weapons power down. Nobody says the word 'passage'. It happens anyway.",
+        "resources": {
+          "morale": 3
+        },
+        "sets_flag": "negotiated_pirate",
+        "clears_flag": "negotiation_prepared",
+        "time_cost": "low",
+        "narrative": "The pirates had already been talked to. They just hadn't known it yet. Hargrove's groundwork bought clean passage at no cost, and the crew stood a little straighter for having watched it."
+      },
       "pirate_paid": {
         "title": "THEY PEEL OFF",
         "tone": "success",
@@ -651,6 +672,15 @@
             "next": "parley"
           },
           {
+            "text": "Invoke the prepared terms",
+            "sub": "Hargrove did the groundwork · no toll",
+            "gate": {
+              "crew": "diplomat"
+            },
+            "requires_flag": "negotiation_prepared",
+            "outcome": "boarding_prepared"
+          },
+          {
             "text": "Pay the 'toll' — 15 gold",
             "gate": {
               "gold": 15
@@ -687,6 +717,19 @@
       }
     },
     "outcomes": {
+      "boarding_prepared": {
+        "title": "PRIOR ARRANGEMENT",
+        "tone": "success",
+        "body": "Hargrove mentions a name. The squatters mention a different name. Hargrove mentions the first name again, more slowly. The forward bays are yours, no toll, and someone even points out the coolant corridor unprompted.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "fuel": 5
+        },
+        "sets_flag": null,
+        "clears_flag": "negotiation_prepared",
+        "time_cost": "medium",
+        "narrative": "Salvaged the forward bays under a prior arrangement nobody remembers making. Hargrove's groundwork paid the toll in advance."
+      },
       "boarding_toll": {
         "title": "PAID PASSAGE",
         "tone": null,

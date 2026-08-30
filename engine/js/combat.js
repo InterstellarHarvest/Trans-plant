@@ -285,7 +285,7 @@
       return;
     }
     if (COMBAT.state === 'TARGETING') {
-      wrap.appendChild(makeActionBtn({ verb: 'TARGETING', sub: 'Click the enemy ship to fire', locked: true }));
+      wrap.appendChild(makeActionBtn({ verb: 'FIRE AT CENTER', sub: 'Or click the ship to aim · Enter', cls: 'combat-fire', onClick: fireAtCenter }));
       wrap.appendChild(makeActionBtn({ verb: 'CANCEL', sub: 'Hold fire', cls: 'combat-danger', onClick: cancelTargeting }));
       return;
     }
@@ -340,13 +340,14 @@
      damage floaters, miss popups, CRT-off on the captain's feed.
      Real targeting: FIRE LASER enters TARGETING; the player clicks
      the enemy ship to aim. Engine-side addition over the demo: an
-     auto-fire fallback aims at the ship center after 1.6s so keyboard
-     players and the fuzz harness can never wedge in TARGETING. */
-  const FX = { beams: [], particles: [], sparks: [], mouseX: 480, mouseY: 320, mouseInside: false, running: false, autoFireTimer: null };
+     explicit FIRE AT CENTER action (+ Enter key) so keyboard players
+     and the fuzz harness can never wedge in TARGETING — no timers,
+     combat stays strictly turn-based per the Bible. */
   const WIN = { left: 160, top: 93, right: 800, bottom: 498 };
   const rand = (lo, hi) => lo + Math.random() * (hi - lo);
   const pickOne = arr => arr[Math.floor(Math.random() * arr.length)];
 
+  const FX = { beams: [], particles: [], sparks: [], mouseX: 480, mouseY: 320, mouseInside: false, running: false };
   function fxScreen() { return document.getElementById('screen-encounter'); }
   // #game is CSS-scaled to fit small viewports (fitGameToViewport); every
   // rect-derived coordinate must be divided back into the 960×640 space
@@ -587,6 +588,11 @@
       const s = screenScale(r);
       return { x: clamp((evt.clientX - r.left) / s, 0, 960), y: clamp((evt.clientY - r.top) / s, 0, 640) };
     };
+    document.addEventListener('keydown', evt => {
+      if (evt.key !== 'Enter' || !COMBAT.active || COMBAT.state !== 'TARGETING') return;
+      evt.preventDefault();
+      fireAtCenter();
+    });
     screen.addEventListener('mousemove', evt => {
       if (!COMBAT.active) return;
       const c = coords(evt);
@@ -605,35 +611,14 @@
   })();
 
   /* ── Player actions ─────────────────────────────────────────── */
-  function armAutoFireFallback(delay) {
-    if (FX.autoFireTimer) clearTimeout(FX.autoFireTimer);
-    FX.autoFireTimer = setTimeout(() => {
-      if (!COMBAT.active || COMBAT.state !== 'TARGETING') {
-        FX.autoFireTimer = null;
-        return;
-      }
-      if (window.PauseBus && PauseBus.paused) {
-        // Pause is thinking time, not permission for a fallback timer to
-        // choose and fire a shot. Poll cheaply, then grant a fresh aim
-        // window from the moment play resumes.
-        const waitForResume = () => {
-          if (!COMBAT.active || COMBAT.state !== 'TARGETING') {
-            FX.autoFireTimer = null;
-            return;
-          }
-          if (window.PauseBus && PauseBus.paused) {
-            FX.autoFireTimer = setTimeout(waitForResume, 100);
-            return;
-          }
-          armAutoFireFallback(1600);
-        };
-        FX.autoFireTimer = setTimeout(waitForResume, 100);
-        return;
-      }
-      FX.autoFireTimer = null;
-      const ec = enemyShipCenter();
-      resolveFire(ec.x + rand(-20, 20), ec.y + rand(-14, 14));
-    }, delay);
+  // FIRE AT CENTER — the explicit aim-less shot (Bible: combat is strictly
+  // turn-based, no timers). Replaces the engine's old 1.6s auto-fire
+  // fallback; keyboard players press Enter, the fuzz harness clicks it.
+  function fireAtCenter() {
+    if (!COMBAT.active || COMBAT.state !== 'TARGETING') return;
+    if (window.PauseBus && PauseBus.paused) return;
+    const ec = enemyShipCenter();
+    resolveFire(ec.x + rand(-20, 20), ec.y + rand(-14, 14));
   }
 
   function enterTargeting() {
@@ -643,15 +628,10 @@
     document.getElementById('enc-subject').classList.add('combat-locking');
     setAiCombat('Weapons hot. Pick your shot.');
     renderCombatActions();
-    // Auto-fire fallback (engine addition): aim at the ship center if
-    // no aim click lands — keyboard players and the fuzz harness must
-    // never wedge in TARGETING.
-    armAutoFireFallback(1600);
   }
 
   function cancelTargeting() {
     if (!COMBAT.active || COMBAT.state !== 'TARGETING') return;
-    if (FX.autoFireTimer) { clearTimeout(FX.autoFireTimer); FX.autoFireTimer = null; }
     COMBAT.state = 'PLAYER_TURN';
     fxScreen().classList.remove('combat-targeting');
     document.getElementById('enc-subject').classList.remove('combat-locking');
@@ -663,7 +643,6 @@
     if (!COMBAT.active || COMBAT.state !== 'TARGETING' || COMBAT._firing) return;
     COMBAT._firing = true;
     COMBAT.openingTurn = false;
-    if (FX.autoFireTimer) { clearTimeout(FX.autoFireTimer); FX.autoFireTimer = null; }
     fxScreen().classList.remove('combat-targeting');
     document.getElementById('enc-subject').classList.remove('combat-locking');
     showEnemyTurn();
@@ -1120,7 +1099,6 @@
     document.getElementById('screen-encounter').classList.remove('combat-mode', 'combat-targeting', 'combat-vignette', 'combat-ftl-charging');
     document.getElementById('enc-choices').classList.remove('combat-actions', 'combat-locked');
     document.getElementById('enc-subject').classList.remove('combat-locking');
-    if (FX.autoFireTimer) { clearTimeout(FX.autoFireTimer); FX.autoFireTimer = null; }
     // Defensive sweep of transient FTL/retreat FX: the flash overlay
     // self-removes at 900ms and the charge class at 1000ms, but any
     // path that ends combat mid-effect must not leave them orphaned.
