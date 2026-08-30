@@ -301,28 +301,35 @@
       STATE.resources.morale = Math.min(100, STATE.resources.morale + 10);
       return { ok: true, log: 'SPECIAL MEAL — Reyes cooks the good stuff (−5 food, +10 morale). The crew is civil again.' };
     },
-    // Field Analysis — effect {reveal_biological_properties: true} →
-    // reveals the authored gameplay_effect of one biological unknown
-    // in cargo (the engine's item-knowledge surface is the log).
+    // Field Analysis — effect {reveal_biological_properties: true}.
+    // Examines one un-analysed biological/unknown item in cargo and
+    // flags it analyzed_<id>: the item's authored `analysis` line then
+    // shows in the cargo detail AND replaces the sub-label of any
+    // encounter choice that needs/spends that item — the consequence is
+    // revealed before the player commits.
     xenobiologist() {
       const defs = (typeof MOD !== 'undefined' && MOD.items) || [];
-      let hit = null;
-      for (const sid of STATE.items) {
-        const d = defs.find(x => { const s = x.id && x.id.replace(/^item_/, '').replace(/_\d+$/, ''); return s === sid; });
-        if (d && (d.tags || []).some(t => ['biological', 'alien', 'unknown'].includes(t))) { hit = d; break; }
+      let hit = null, sid = null;
+      for (const id of STATE.items) {
+        const d = defs.find(x => { const s = x.id && x.id.replace(/^item_/, '').replace(/_\d+$/, ''); return s === id; });
+        if (!d || !d.analysis) continue;
+        if (!(d.tags || []).some(t => ['biological', 'alien', 'unknown', 'questionable', 'curiosity'].includes(t))) continue;
+        if (STATE.flags.has('analyzed_' + id)) continue;
+        hit = d; sid = id; break;
       }
-      if (!hit) return { ok: false, refusal: 'Nothing biological or unknown in the hold. Dr. Tanaka is visibly disappointed.' };
-      return { ok: true, log: 'FIELD ANALYSIS — Dr. Tanaka examines the ' + hit.name + ': ' + (hit.gameplay_effect || hit.description || 'inconclusive, which she finds thrilling.') };
+      if (!hit) return { ok: false, refusal: 'Nothing unanalysed and biological in the hold. Dr. Tanaka is visibly disappointed.' };
+      STATE.flags.add('analyzed_' + sid);
+      return { ok: true, log: 'FIELD ANALYSIS — Dr. Tanaka examines the ' + hit.name + ': ' + hit.analysis + ' (Finding filed in cargo; relevant choices now show it.)' };
     },
-    // Negotiation — effect {unlock_peaceful_resolution: true}. Peaceful
-    // encounter options are already presence-gated on the diplomat, so
-    // the one-shot maps to the skill's OTHER authored line: "talk
-    // stations into better deals" — arms a flag market.js consumes for
-    // 15% off the next station market.
+    // Negotiation — effect {unlock_peaceful_resolution: true}. Arms
+    // negotiation_prepared, spent by whichever comes first: an "Invoke
+    // the prepared terms" choice in a hostile hail (pirate_001,
+    // boarding_001, general pirate tribute — free, clean passage) or
+    // the next station market (−15%, the skill's other authored line).
     diplomat() {
       if (STATE.flags.has('negotiation_prepared')) return { ok: false, refusal: 'Hargrove has already prepared the ground. Patience.' };
       STATE.flags.add('negotiation_prepared');
-      return { ok: true, log: 'NEGOTIATION — Hargrove works the channels ahead. The next station market will see reason (−15% prices).' };
+      return { ok: true, log: 'NEGOTIATION — Hargrove works the channels ahead. The next hostile hail can be settled on prepared terms, or the next station market sees reason (−15%). Whichever comes first.' };
     },
   };
 

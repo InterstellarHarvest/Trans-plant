@@ -200,7 +200,7 @@
     return STATE.daysElapsed + Math.max(1, Math.round(remainingLegs() * perLegDays(paceIdx)));
   }
   function fuelEmptyDay(paceIdx) {
-    const perLegFuel = ORDERS_BASE.fuelPerLeg * ORDERS_PACE[paceIdx].fuelMult;
+    const perLegFuel = (typeof window.fuelPerLegBase === 'function' ? fuelPerLegBase() : 3) * ORDERS_PACE[paceIdx].fuelMult;
     const legsOfFuel = STATE.resources.fuel / perLegFuel;
     return STATE.daysElapsed + Math.floor(legsOfFuel * perLegDays(paceIdx));
   }

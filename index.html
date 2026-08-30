@@ -2284,9 +2284,11 @@ function renderInvDetail(en) {
     if (def.base_price) bits.push('fence value ~' + Math.round(def.base_price * 2 / 3) + 'g');
   }
   document.getElementById('inv-detail-meta').textContent = bits.join(' · ');
-  document.getElementById('inv-detail-desc').textContent =
-    en.material ? 'Feedstock for the fabricator. Sharp edges included at no extra charge.'
-                : ((def && def.description) || 'Unlabeled. Confident.');
+  let desc = en.material ? 'Feedstock for the fabricator. Sharp edges included at no extra charge.'
+                         : ((def && def.description) || 'Unlabeled. Confident.');
+  // Xenobiologist Field Analysis payoff — the finding travels with the item.
+  if (def && def.analysis && STATE.flags.has('analyzed_' + en.id)) desc += '  ◆ FIELD ANALYSIS: ' + def.analysis;
+  document.getElementById('inv-detail-desc').textContent = desc;
   const jett = document.getElementById('inv-jett-btn');
   jett.style.display = en.material ? 'none' : '';
 }
@@ -2666,7 +2668,8 @@ const ORDERS_RATIONS = [
 ];
 const ORDERS_BASE = {
   legDaysFrac:      0.55, // travel-day budget ≈ 55% of baseDays at RIDICULOUS across the whole map
-  fuelPerLeg:       3,    // fuel per leg at RIDICULOUS (× pace fuelMult)
+  travelFuelBudget: 30,   // RIDICULOUS fuel across a trail's total_nodes: Lunar 3/leg, Mars ~2.3, Interstellar 2
+                          // (a flat 3/leg starved the 15-node trail — two independent Interstellar runs ended fuel-dry)
   foodPerDay:       0.2,  // food per day at STANDARD (× rations foodMult)
   waterPerDay:      0.15, // ship water stock draw per day (both sides drink from it)
   paceMoraleFactor: 0.25, // morale/day per point of drainMult above 1.0, travel days only
@@ -2720,13 +2723,20 @@ function crewWaterDrainRate() {
 /* What one travel leg costs at the current pace. Days scale off the
    trail's day budget spread across the generated map; fuel is a flat
    per-leg burn × pace. Also the pilot skill's "double fuel" basis. */
+/* Per-leg fuel at RIDICULOUS, normalised by the trail's authored node
+   count so every trail spends the same travel budget on a clean run. */
+function fuelPerLegBase() {
+  const rules = (typeof MOD !== 'undefined' && MOD.map_rules && MOD.map_rules.trails && MOD.map_rules.trails[STATE.trail]) || null;
+  return ORDERS_BASE.travelFuelBudget / Math.max(1, (rules && rules.total_nodes) || 10);
+}
+window.fuelPerLegBase = fuelPerLegBase;
 function legTravelCost() {
   const pace = ordersPace();
   const nodeCount = Math.max(1, (STATE.nodes && STATE.nodes.length) || 10);
   const baseLegDays = Math.max(1, (STATE.baseDays * ORDERS_BASE.legDaysFrac) / nodeCount);
   return {
     days: Math.max(1, Math.round(baseLegDays * pace.etaMult)),
-    fuel: Math.round(ORDERS_BASE.fuelPerLeg * pace.fuelMult * 10) / 10,
+    fuel: Math.round(fuelPerLegBase() * pace.fuelMult * 10) / 10,
   };
 }
 
@@ -3197,7 +3207,14 @@ function renderChoices(choices) {
     btn.appendChild(bodyEl);
 
     // Sub row: effort pips + one-line sub text (lock reason wins).
-    const subText = locked || ch.sub || '';
+    let subText = locked || ch.sub || '';
+    // Field Analysis payoff: a choice that spends/needs an analysed item
+    // shows the finding before the player commits (one line; CSS ellipsis).
+    const gateItem = ch.requires_item || (ch.gate && ch.gate.item) || ch.item_consume || (ch.outcome && ch.outcome.item_consume) || null;
+    if (!locked && gateItem && STATE.flags.has('analyzed_' + gateItem)) {
+      const gd = itemDef(gateItem);
+      if (gd && gd.analysis) subText = 'ANALYZED · ' + gd.analysis;
+    }
     if (ch.effort || subText) {
       const sub = document.createElement('div');
       sub.className = 'ch-sub';
@@ -3644,6 +3661,7 @@ function applyOutcomeEffects(o) {
   }
 
   if (o.sets_flag) STATE.flags.add(o.sets_flag);
+  if (o.clears_flag) STATE.flags.delete(o.clears_flag); // one-shot armed flags (e.g. negotiation_prepared) spend here
 
   // Crew effect — routed through the per-crew HP system.
   //   injure: -35 HP to the target (medic aboard softens all crew damage)

@@ -426,7 +426,7 @@ Every line of text written in modules must match the game's voice. Before writin
 **Avoid:**
 - Winking at the player ("get it?")
 - Explaining the joke
-- Exclamation points (CHIP is the only character who uses them, intentionally)
+- Exclamation points (CHIP and ARIA are the only characters who use them, intentionally — ARIA's relentless positivity IS exclamation points; everyone else stays dry)
 - Purple prose — one good dry sentence beats three flowery ones
 
 **Crew epitaphs** are drawn from `modules/flavor/flavor_pools.json`. They are one sentence. They are not sad. They are the saddest thing in the game.
