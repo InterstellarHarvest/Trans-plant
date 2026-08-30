@@ -348,12 +348,17 @@
   const pickOne = arr => arr[Math.floor(Math.random() * arr.length)];
 
   function fxScreen() { return document.getElementById('screen-encounter'); }
+  // #game is CSS-scaled to fit small viewports (fitGameToViewport); every
+  // rect-derived coordinate must be divided back into the 960×640 space
+  // the fx canvas and aim logic live in.
+  function screenScale(rect) { return (rect && rect.width) ? rect.width / 960 : 1; }
   function enemyShipCenter() {
     const sp = document.getElementById('enc-backdrop-sprite');
     const sr = fxScreen().getBoundingClientRect();
     const r = sp.getBoundingClientRect();
     if (!r.width) return { x: 480, y: 295 }; // sprite hidden/unresolved — window center
-    return { x: r.left + r.width / 2 - sr.left, y: r.top + r.height / 2 - sr.top };
+    const s = screenScale(sr);
+    return { x: (r.left + r.width / 2 - sr.left) / s, y: (r.top + r.height / 2 - sr.top) / s };
   }
   function spawnBeam(opts) { FX.beams.push({ side: opts.side, sx: opts.sx, sy: opts.sy, ex: opts.ex, ey: opts.ey, life: 0, ttl: 280 }); }
   function spawnMissPopup(text) {
@@ -579,7 +584,8 @@
     if (!screen) return;
     const coords = evt => {
       const r = screen.getBoundingClientRect();
-      return { x: clamp(evt.clientX - r.left, 0, 960), y: clamp(evt.clientY - r.top, 0, 640) };
+      const s = screenScale(r);
+      return { x: clamp((evt.clientX - r.left) / s, 0, 960), y: clamp((evt.clientY - r.top) / s, 0, 640) };
     };
     screen.addEventListener('mousemove', evt => {
       if (!COMBAT.active) return;
@@ -974,7 +980,8 @@
     if (hullRow) {
       const sr = screen.getBoundingClientRect();
       const hr = hullRow.getBoundingClientRect();
-      spawnDamageFloater(amount, (hr.left - sr.left) + hr.width / 2, (hr.top - sr.top) - 12, 'player-hit');
+      const s = screenScale(sr);
+      spawnDamageFloater(amount, ((hr.left - sr.left) + hr.width / 2) / s, ((hr.top - sr.top) - 12) / s, 'player-hit');
     }
     renderCombatHud();
   }
