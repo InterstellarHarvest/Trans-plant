@@ -38,7 +38,7 @@
             "resources": {
               "food": -5
             },
-            "sets_flag": "stowaway_aboard",
+            "sets_flag": null,
             "narrative": "You have a new crew member. They are grateful. They are also hungry. The food reserves notice.",
             "stowaway_resolve": "welcome"
           }
@@ -404,7 +404,7 @@
           "severity": null,
           "item_grant": null,
           "item_consume": null,
-          "sets_flag": "stowaway_aboard",
+          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "They're aboard. Officially, now. The ration math adjusts, the bunk situation adjusts, and the ship — which has known for weeks — adjusts least of all. The crew shakes hands like this is a formality. It was.",
           "stowaway_resolve": "welcome"
@@ -1304,7 +1304,7 @@
           "severity": null,
           "item_grant": null,
           "item_consume": null,
-          "sets_flag": "stowaway_aboard",
+          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "They are aboard, officially. They finish drying the pan first. The crew decides, unanimously, that a stowaway who washes up is not, strictly speaking, a stowaway. It is a colleague with an unusual hiring process.",
           "stowaway_resolve": "welcome"
@@ -1349,6 +1349,97 @@
           "time_cost": "trivial",
           "narrative": "You assign them a cabin and a door that locks from outside. They go quietly, after asking whether they may finish the pan. The galley dishes pile up within the week, and everyone knows exactly why.",
           "stowaway_resolve": "refuse"
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_016",
+    "active": true,
+    "title": "The Chef's Secret Project",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_item": "suspicious_fungus",
+    "ai_flavor": {
+      "aria": "ARIA has detected a NEW SMELL! It is either a culinary breakthrough or a containment breach! ARIA is rooting for breakthrough!",
+      "marv": "MARV has identified the fungus to genus level and stopped there. The species name is not something he wants to have known.",
+      "rex": "REX has classified the galley as a contested zone. The chef has classified REX as 'not hungry yet.' Both are correct.",
+      "chip": "CHIP notes that artisanal cheese retails at a 400% markup! CHIP would like a cut! CHIP does not have a mouth, which CHIP considers a loophole!",
+      "ajoy": "AJOY has been told the galley is off-limits 'for science.' She has seen the chef's science before. She is keeping the medkit nearby."
+    },
+    "body": "The fungus from the cargo hold has gone missing. It has been found. It is in the galley, in a covered dish, under a handwritten sign that reads DO NOT. The chef has been seen talking to it.\n\nThe medic has asked, twice, for a full list of what is in that dish. The chef has replied, twice, 'time.'\n\nWhatever is under the cover has started to smell like something you would pay for.",
+    "choices": [
+      {
+        "text": "Let the chef finish what they started",
+        "requires_crew": "chef",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 10,
+            "food": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "suspicious_fungus",
+          "sets_flag": "ate_space_cheese",
+          "time_cost": "low",
+          "narrative": "The cover comes off. It is cheese. It is undeniably, impossibly cheese, grown on a fungus nobody can name, aged in a galley that is technically a hazard zone.\n\nIt is the best thing anyone aboard has eaten since launch. The medic has a second helping, then a third, then asks for the recipe 'for the records.' The chef declines."
+        }
+      },
+      {
+        "text": "Have the medic confiscate it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "suspicious_fungus",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The medic removes the dish with tongs, at arm's length, and seals it in a sample bag that goes out the airlock. The chef watches the whole procedure without blinking.\n\nDinner is algae. Nobody says anything about it, which says enough."
+        }
+      },
+      {
+        "text": "Leave it. It's not hurting anyone. Yet",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You decide the dish is the chef's business. The chef nods once, gravely, the way people nod at a general who has made the right call.\n\nThe smell from the galley improves daily. So does the chef's mood. The medic has started sleeping with the door shut."
         }
       }
     ]

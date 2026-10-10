@@ -290,11 +290,13 @@
       return;
     }
 
+    // Odds shown are the real ones (a wounded crew member halves them).
+    const tribPct = k => Math.round(COMBAT_CONFIG.crew_bonuses[k].tribute_success * (COMBAT.crew[k] || 1) * 100);
     if (COMBAT.openingTurn && COMBAT.crew.botanist) {
-      wrap.appendChild(makeActionBtn({ verb: 'OFFER HARVEST', sub: 'Botanist · 40% · -5 food · opening only', cls: 'combat-tribute', onClick: () => offerTribute('botanist') }));
+      wrap.appendChild(makeActionBtn({ verb: 'OFFER HARVEST', sub: 'Botanist · ' + tribPct('botanist') + '% · -' + COMBAT_CONFIG.crew_bonuses.botanist.tribute_food_cost + ' food · opening only', cls: 'combat-tribute', onClick: () => offerTribute('botanist') }));
     }
     if (COMBAT.openingTurn && COMBAT.crew.chef) {
-      wrap.appendChild(makeActionBtn({ verb: 'OFFER COOKIES', sub: 'Chef · 25% · -3 food · friendly tag', cls: 'combat-tribute', onClick: () => offerTribute('chef') }));
+      wrap.appendChild(makeActionBtn({ verb: 'OFFER COOKIES', sub: 'Chef · ' + tribPct('chef') + '% · -' + COMBAT_CONFIG.crew_bonuses.chef.tribute_food_cost + ' food · they remember you', cls: 'combat-tribute', onClick: () => offerTribute('chef') }));
     }
 
     const fireBonusTags = [];
@@ -307,7 +309,7 @@
     }));
     wrap.appendChild(makeActionBtn({
       verb: 'EVASIVE MANEUVERS',
-      sub: 'Halve next hit' + ((COMBAT.crew.pilot || COMBAT.captainBg === 'pilot') ? ' · pilot full-dodge chance' : ''),
+      sub: (COMBAT.player.morale < 30 ? 'Soften next hit (shaky crew)' : 'Halve next hit') + (bonus('evade_full_dodge') > 0 ? ' · ' + Math.round(bonus('evade_full_dodge') * 100) + '% full dodge' : ''),
       cls: 'combat-evade', onClick: doEvade
     }));
 
@@ -1019,7 +1021,7 @@
       onClick: () => resolveVictoryChoice({ outcome: 'victory_destroyed', salvaged: true })
     }));
     wrap.appendChild(makeActionBtn({
-      verb: 'LEAVE IT', sub: '60% loot · skip minigame',
+      verb: 'LEAVE IT', sub: 'Partial loot · back on course sooner',
       onClick: () => resolveVictoryChoice({ outcome: 'victory_destroyed', salvaged: false })
     }));
   }
@@ -1145,7 +1147,7 @@
         lootItems = rollCombatLoot(result.salvaged ? 'destroyed_salvage' : 'destroyed_leave',
           result.salvaged ? { bonusChance: 0.45 + bonus('salvage_bonus_rolls') * 0.10 } : {});
         body = (result.salvaged ? 'Wreckage cracked open. Drives still warm. ' : 'You leave the wreck behind. The galaxy is full of wrecks. ') + describeLoot(lootItems);
-        outcome.time_cost = 'high';
+        outcome.time_cost = result.salvaged ? 'high' : 'low'; // leaving the wreck is the quick way out
         break;
       case 'victory_surrendered':
         title = 'SURRENDER ACCEPTED'; tone = 'success';
@@ -1162,7 +1164,7 @@
         break;
       case 'tribute':
         title = 'TRIBUTE RESOLVED'; tone = 'success';
-        body = `They took the ${result.friendly ? 'cookies' : 'harvest'} and went somewhere else.${result.friendly ? ' Friendly tag set for one journey leg.' : ''}`;
+        body = `They took the ${result.friendly ? 'cookies' : 'harvest'} and went somewhere else.${result.friendly ? ' Meet that crew again before the next station and they will remember the cookies.' : ''}`;
         outcome.resources.food = -(result.foodCost || 0); // morale is in the net reconciliation below
         if (result.friendly) outcome.sets_flag = `friendly_with_pirate_${COMBAT.species}`;
         outcome.time_cost = 'low';
@@ -1254,7 +1256,6 @@
     // (decremented in selectEvent()).
     STATE.postCombatLegs = 2;
 
-    STATE.outcomeMode = true;
     renderOutcomeView({ title, body, tone, narrative: body });
   }
 
@@ -1303,6 +1304,18 @@
   window.triggerCombat = function (choice, opts) {
     if (COMBAT.active) return;
     opts = opts || {};
+    // The chef's cookies (OFFER COOKIES success sets a friendly tag for
+    // one journey leg — COMBAT_SYSTEM_HANDOFF §5): the same crew, met
+    // again before the next station, wave you through instead.
+    const sp = (STATE.npcCtx && STATE.npcCtx.species) || 'human';
+    if (!opts.ramFailed && STATE.flags.has('friendly_with_pirate_' + sp)) {
+      const o = { time_cost: 'trivial', resources: { morale: 2 },
+        narrative: 'Their weapons stay cold. Comms crackle: someone is still talking about the cookies. They wave you through and ask, quietly, whether there are more.' };
+      applyOutcomeEffects(o);
+      renderHUD();
+      renderOutcomeView({ title: 'OLD FRIENDS', body: o.narrative, tone: 'success' });
+      return;
+    }
     const ramFailed = !!opts.ramFailed;
     const ramHull = opts.ramHull || 0;
 

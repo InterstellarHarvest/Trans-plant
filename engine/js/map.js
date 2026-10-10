@@ -18,7 +18,7 @@ const TYPE_LABELS = {
   derelict: 'Derelict', nebula: 'Nebula', void: 'Void', anomaly: 'Anomaly',
 };
 const TYPE_DESCS = {
-  station:        'A trading post along the route. Refuel, repair, recruit.',
+  station:        'A trading post along the route. Trade, patch up the crew, service the fabricator.',
   planet:         'Unsurveyed surface. Probe drops or skip — your call.',
   asteroid_field: 'Mineral-bearing asteroids. Slow travel, possible salvage.',
   derelict:       'Abandoned vessel drifting silent. Loot is plausible. So is something worse.',
@@ -78,7 +78,19 @@ function pickSpineType(weights, prevType, index, nextForced) {
 function nodeName(type, index, rules) {
   if (index === 0) return 'Earth Orbital Station';
   if (index === rules.total_nodes - 1) return rules.destination;
-  return TYPE_LABELS[type] + ' ' + index;
+  return flavorName(type) || (TYPE_LABELS[type] + ' ' + index);
+}
+// Real place names from flavor_pools (station_names / planet_names /
+// derelict_names), each used once per map; other types keep the type
+// label. The map draws the short type label (node.short) — these names
+// are for the encounter header, the log and the map footer.
+const NAME_POOL_BY_TYPE = { station: 'station_names', planet: 'planet_names', derelict: 'derelict_names' };
+let _namesLeft = {};
+function flavorName(type) {
+  const key = NAME_POOL_BY_TYPE[type];
+  if (!key) return null;
+  if (!_namesLeft[key]) _namesLeft[key] = shuffle((((typeof MOD !== 'undefined' && MOD.flavor) || {})[key] || []).slice());
+  return _namesLeft[key].pop() || null;
 }
 
 /* Generates STATE.nodes/byId/currentId for `trailKey` from
@@ -89,6 +101,7 @@ function nodeName(type, index, rules) {
    already expect. */
 function generateMap(trailKey) {
   const rules = MOD.map_rules.trails[trailKey];
+  _namesLeft = {};
   const spineLen = rules.total_nodes;
   const nodes = [];
   const byId = {};
@@ -106,6 +119,7 @@ function generateMap(trailKey) {
     spine.push(add({
       id: 'node_spine_' + i,
       name: nodeName(type, i, rules),
+      short: (i === 0 || i === spineLen - 1) ? null : TYPE_LABELS[type] + ' ' + i,
       description: TYPE_DESCS[type] || '',
       node_type: type, position: i, connects_to: [], event_id: null,
     }));
@@ -147,7 +161,7 @@ function generateMap(trailKey) {
         const id = 'node_branch_' + branchNum + '_' + key + '_' + j;
         branchIds.push(id);
         add({
-          id, name: TYPE_LABELS[type] + ' (' + key + ')',
+          id, name: flavorName(type) || (TYPE_LABELS[type] + ' (' + key + ')'), short: TYPE_LABELS[type],
           description: TYPE_DESCS[type] || '',
           // Distribute branch nodes evenly across the fork→rejoin gap
           // (0.5 position units). The old fixed 0.1 step packed a
@@ -171,7 +185,8 @@ function generateMap(trailKey) {
   spine[spineLen - 1].connects_to = []; // arrival node — triggerArrival() fires on empty connects_to
 
   STATE.trail       = trailKey;
-  STATE.mapName      = rules.name;
+  const mapNames = ((MOD.flavor && MOD.flavor.map_names) || {})[trailKey];
+  STATE.mapName      = (Array.isArray(mapNames) && mapNames.length) ? mapNames[Math.floor(Math.random() * mapNames.length)] : rules.name;
   STATE.destination  = rules.destination;
   STATE.nodes        = nodes;
   STATE.byId         = byId;

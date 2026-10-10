@@ -343,7 +343,7 @@
       return {
         key, isCaptain: true, crewId: 'captain', emoji: CD_ROLE_EMOJI.captain,
         name: 'Captain', role: 'Captain', bgTag: bg.name,
-        bio: bg.flavor || bg.desc, hint: 'If the captain background matches a crew role, specialist bonuses are halved.',
+        bio: bg.flavor || bg.desc, hint: 'With no specialist of your background aboard, you cover half their passive yourself.',
         passiveName: bg.name + ' Background', passiveDesc: (bg.stat ? bg.stat + ' — ' : '') + bg.desc,
         active: null,
       };
@@ -464,7 +464,7 @@
       $('cd-active-desc').textContent = m.active.description || '';
       $('cd-active-cost').textContent = SKILL_COST_TAG[m.key] || 'NO COST';
       $('cd-active-card').title = (m.active.name || '') + '\n\n' + (m.active.description || '') +
-        '\nUses: ' + max + ' per leg · recharges at ' + (m.active.recharges_at || 'station') + '.' +
+        '\nUses: ' + max + ' between stations · recharges at the next ' + (m.active.recharges_at || 'station') + '.' +
         (isWounded ? '\n\nDisabled while wounded.' : '');
       const btn = $('cd-active-btn');
       const usesEl = $('cd-active-uses');

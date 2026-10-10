@@ -242,6 +242,7 @@
   // the solo-captain ×1.0 baseline is implicit (it's the floor when
   // nobody is helping, not a "contribution"). TOTAL reads as the
   // overall speed multiplier.
+  const escAttr = t => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   function crewAssistTooltip() {
     const pct = n => '+' + Math.round(n / BASE_EFFORT * 100) + '%';
     const lines = ['FAB SPEED BREAKDOWN'];
@@ -437,13 +438,13 @@
     const postWear = Math.min(100, FSTATE.wear + recipeWear(r));
     let wearWarn = '';
     if (postWear >= 100) {
-      wearWarn = '<div class="fb-warn wear-crit">⚠ Will break the fab (100% wear) · repair needed at next station</div>';
+      wearWarn = '<div class="fb-warn wear-crit">⚠ Will break the fab (100% wear) · FAB SERVICE at a station fixes it</div>';
     } else if (postWear >= 80 && FSTATE.wear < 80) {
       wearWarn = '<div class="fb-warn wear-warn">⚠ Will push wear to ' + postWear + '% · service soon</div>';
     }
 
     meta.innerHTML =
-      '<div class="row">' +
+      '<div class="row" title="' + escAttr(crewAssistTooltip()) + '">' +
         '<span class="label">TIME</span>' +
         timeDisplay +
         bonusSpan +

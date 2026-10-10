@@ -65,7 +65,7 @@
       maturity_days: 75,
       water_need: 60,
       ideal_temp: [20, 28],
-      yield_amount: 35,
+      yield_amount: 50,         // highest food per day (crops.json food_output_per_leg 4 — setup "Food: highest")
       yield_label: 'Food',
       sprite: 'sprites/interface/crops/tomato.png',
       fallback_icon: '🍅',
@@ -99,7 +99,7 @@
       maturity_days: 100,
       water_need: 45,
       ideal_temp: [20, 30],
-      yield_amount: 45,
+      yield_amount: 35,         // moderate food (crops.json food_output_per_leg 2)
       yield_label: 'Food',
       sprite: 'sprites/interface/crops/soybeans.png',
       fallback_icon: '🌱',
@@ -269,7 +269,7 @@
     GSTATE.cropId    = currentCropId();
     GSTATE.shipDay   = STATE.daysElapsed;
     GSTATE.arrivalDay = STATE.baseDays;
-    GSTATE.temp      = 22; // no ship-environment thermal system yet — constant, matches demo default
+    GSTATE.temp      = NODE_TEMP[shipNodeType()] || 22; // the region sets the ship's ambient (see NODE_TEMP)
 
     const crop = CROP_META[GSTATE.cropId];
     // Health decay/recovery per day — grounded in crops.json's own
@@ -319,15 +319,26 @@
   // above and removed from MONITORED. Expanded as new threats
   // get implemented; always comprehensive so players learn the
   // full threat landscape before being bitten by it.
+  // Only threats the model can actually raise (owner ruling: nothing
+  // shown is decorative) — disease/radiation/nutrients had no source.
   const MONITORED_THREATS = [
-    { id: 'disease',             name: 'Disease' },
-    { id: 'radiation',           name: 'Radiation' },
-    { id: 'cold_snap',           name: 'Cold snap' },
-    { id: 'heat_wave',           name: 'Heat wave' },
-    { id: 'root_rot',            name: 'Root rot' },
-    { id: 'pests',               name: 'Pests' },
-    { id: 'nutrient_starvation', name: 'Nutrient starvation' }
+    { id: 'cold_snap',  name: 'Cold snap' },
+    { id: 'heat_wave',  name: 'Heat wave' },
+    { id: 'low_light',  name: 'Low light' },
+    { id: 'root_rot',   name: 'Root rot' },
+    { id: 'dry_ship',   name: 'Ship water dry' },
+    { id: 'pests',      name: 'Pests' }
   ];
+
+  // Ship environment by where the ship is (no thermal sim — the region
+  // sets it): deep void runs cold, anomalies run hot, nebulae and the
+  // void are dim. Light need from crops.json resource_consumption_per_leg.
+  const NODE_TEMP  = { void: 13, anomaly: 31, nebula: 19 };
+  const DIM_NODES  = { nebula: true, void: true };
+  // The crop's water need as the ship sees it (index.html cropWaterNeed:
+  // botanist −15%, water purifier −10%), rounded for display.
+  function waterNeed() { return typeof cropWaterNeed === 'function' ? Math.round(cropWaterNeed()) : CROP_META[GSTATE.cropId].water_need; }
+  function shipNodeType() { const n = STATE.byId && STATE.byId[STATE.currentId]; return n ? n.node_type : null; }
 
   // ═════ Modifier math ═════════════════════════════════════
   // Returns { active: [...], monitored: [...] }.
@@ -338,10 +349,18 @@
   function cropVuln() {
     const realCrop = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + GSTATE.cropId) || {};
     const vuln = realCrop.vulnerabilities || {};
+    const strong = realCrop.strengths || {};
     return {
       dmg:   (vuln.fragile && vuln.fragile.damage_multiplier) || 1.0,                // zinnia: everything hurts more
       water: (vuln.water_sensitivity && vuln.water_sensitivity.damage_multiplier) || 1.0, // tomato
       recov: (vuln.slow_recovery && vuln.slow_recovery.recovery_modifier) || 1.0,    // sweet potato
+      blight: (vuln.monoculture_risk && vuln.monoculture_risk.damage_multiplier) || 1.0, // wheat: pests (the biological crisis) hit 2x
+      lightDep: (vuln.light_dependency && vuln.light_dependency.damage_multiplier) || 1.0, // soybean
+      light: ((realCrop.resource_consumption_per_leg || {}).light) || 'standard',
+      tol: vuln.temperature_tolerance || 'moderate',
+      // wheat: "recovers health faster once conditions stabilize"
+      fastRecovery: /recovers health faster/i.test(strong.description || '') ? 2 : 1,
+      healthy: realCrop.healthy_threshold || 65,
     };
   }
   const fmtNum = n => String(Math.round(Math.abs(n) * 10) / 10);
@@ -369,12 +388,13 @@
 
     // WATER — the ship's tanks first, then the Orders split vs the
     // crop's need.
-    const waterDelta = GSTATE.waterPlant - crop.water_need;
+    const waterDelta = GSTATE.waterPlant - waterNeed();
     const waterAbs = Math.abs(waterDelta);
     if (STATE.resources.water <= 0) {
       add('critical', 'Ship water dry', -50, -3 * v.dmg * v.water);
+      promoted.add('dry_ship');
     } else if (waterAbs <= 5) {
-      add('positive', 'Water matched', 0, 0.5 * v.recov);
+      add('positive', 'Water matched', 0, 0.5 * v.recov * (GSTATE.health >= v.healthy ? v.fastRecovery : 1));
     } else if (waterDelta < -5) {
       // Underwatered stalls growth; badly underwatered also harms.
       const penalty = Math.min(40, Math.round(waterAbs * 0.8));
@@ -383,29 +403,41 @@
       add('negative', 'Root rot risk', 0, -0.5 * v.dmg);
       promoted.add('root_rot');
     } else {
-      add('positive', 'Plant well-watered', 0, 0.5 * v.recov);
+      add('positive', 'Plant well-watered', 0, 0.5 * v.recov * (GSTATE.health >= v.healthy ? v.fastRecovery : 1));
     }
 
     // TEMPERATURE — promotes cold_snap or heat_wave depending on
     // which side of the ideal range we're on.
-    const [tMin, tMax] = crop.ideal_temp;
+    // crops.json temperature_tolerance widens/narrows the ideal band;
+    // the insulated cargo bay takes 20% off temperature damage.
+    const tolPad = { narrow: -2, moderate: 0, wide: 3 }[v.tol] || 0;
+    const tMin = crop.ideal_temp[0] - tolPad, tMax = crop.ideal_temp[1] + tolPad;
+    const insul = STATE.items.includes('insulated_cargo_bay') ? 0.8 : 1;
     if (GSTATE.temp < tMin - 4) {
-      add('critical', 'Cold snap CRITICAL', -30, 0);
+      add('critical', 'Cold snap CRITICAL', -30 * insul, -1 * v.dmg * insul);
       promoted.add('cold_snap');
     } else if (GSTATE.temp < tMin) {
-      add('negative', 'Cold stress', -(tMin - GSTATE.temp) * 4, 0);
+      add('negative', 'Cold stress', -(tMin - GSTATE.temp) * 4 * insul, 0);
       promoted.add('cold_snap');
     } else if (GSTATE.temp > tMax + 4) {
-      add('critical', 'Heat wave CRITICAL', -30, 0);
+      add('critical', 'Heat wave CRITICAL', -30 * insul, -1 * v.dmg * insul);
       promoted.add('heat_wave');
     } else if (GSTATE.temp > tMax) {
-      add('negative', 'Heat stress', -(GSTATE.temp - tMax) * 4, 0);
+      add('negative', 'Heat stress', -(GSTATE.temp - tMax) * 4 * insul, 0);
       promoted.add('heat_wave');
+    }
+
+    // LIGHT — nebulae and the void are dim; high-light crops slow most,
+    // soybeans' light_dependency multiplies it.
+    if (DIM_NODES[shipNodeType()] && v.light !== 'low') {
+      const base = v.light === 'high' ? 20 : 10;
+      add('negative', 'Low light', -Math.round(base * v.lightDep), 0);
+      promoted.add('low_light');
     }
 
     // PESTS — untreated, they slow growth and compound damage.
     if (GSTATE.pest) {
-      add('critical', 'Pest outbreak', -15, -1.5 * v.dmg);
+      add('critical', 'Pest outbreak', -15, -1.5 * v.dmg * v.blight);
       promoted.add('pests');
     }
 
@@ -421,6 +453,17 @@
     const g = active.reduce((s, m) => s + (m.growth || 0), 0);
     return (GSTATE.health / 100) * Math.max(0, 1 + g / 100);
   }
+  // Growth factor at a hypothetical water split — the Orders modal's
+  // "PLANT MATURES" projection uses the real crop model.
+  window.cropGrowthFactorAt = function (pct) {
+    if (!STATE.cropGrowth || !STATE.crop) return 0;
+    bindGrowbayState();
+    const keep = GSTATE.waterPlant;
+    GSTATE.waterPlant = pct;
+    const f = growthFactor();
+    GSTATE.waterPlant = keep;
+    return f;
+  };
   function dailyHealthDelta(mods) {
     const { active } = mods || computeModifiers();
     return active.reduce((s, m) => s + (m.health || 0), 0);
@@ -470,7 +513,7 @@
       crop.name.toUpperCase(),
       crop.blurb,
       '',
-      'Maturity: ' + crop.maturity_days + ' days  ·  Water: ' + crop.water_need + '%  ·  Temp: ' + tMin + '–' + tMax + '°C',
+      'Maturity: ' + crop.maturity_days + ' days  ·  Water: ' + waterNeed() + '%  ·  Temp: ' + tMin + '–' + tMax + '°C',
       'Yield: +' + crop.yield_amount + ' ' + crop.yield_label,
       '',
       'STAGES'
@@ -752,7 +795,7 @@
     if (GSTATE.temp > tMax) return randPick(ARIA_QUIPS.hot);
     if (GSTATE.temp < tMin) return randPick(ARIA_QUIPS.cold);
     const crop = CROP_META[GSTATE.cropId];
-    if (GSTATE.waterPlant < crop.water_need - 10) return randPick(ARIA_QUIPS.thirsty);
+    if (GSTATE.waterPlant < waterNeed() - 10) return randPick(ARIA_QUIPS.thirsty);
     return randPick(ARIA_QUIPS.healthy);
   }
   function randPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -857,25 +900,25 @@
     $('gb-water-fill-plant').style.width = plant + '%';
     $('gb-water-fill-crew').style.width  = crew  + '%';
     $('gb-water-thumb').style.left       = plant + '%';
-    $('gb-water-ideal-tick').style.left  = crop.water_need + '%';
+    $('gb-water-ideal-tick').style.left  = waterNeed() + '%';
     $('gb-water-plant-pct').textContent  = plant + '%';
     $('gb-water-crew-pct').textContent   = crew  + '%';
 
     // Plant status — distance from the crop's ideal water allocation.
     // Bands match the growth-modifier logic (matched within ±5,
     // DRY below, SOAKED far above). PARCHED is the red-zone case.
-    const plantDelta = plant - crop.water_need;
+    const plantDelta = plant - waterNeed();
     let pLabel, pCls;
     if      (plantDelta < -15) { pLabel = 'PARCHED'; pCls = 'parched'; }
     else if (plantDelta <  -5) { pLabel = 'DRY';     pCls = 'dry';     }
-    else if (plantDelta >  25) { pLabel = 'SOAKED';  pCls = 'soaked';  }
+    else if (plantDelta >  20) { pLabel = 'SOAKED';  pCls = 'soaked';  } // root rot starts above +20 (computeModifiers)
     else                       { pLabel = 'MATCHED'; pCls = 'matched'; }
     const pEl = $('gb-water-plant-status');
     pEl.textContent = pLabel;
     pEl.className   = 'gb-water-plant-status ' + pCls;
 
     // Crew status — same band thresholds as Orders modal.
-    const crewRatio = crew / (100 - crop.water_need);
+    const crewRatio = crew / (100 - waterNeed());
     let cLabel, cCls;
     if (crewRatio < 0.4)      { cLabel = 'CRITICAL'; cCls = 'critical'; }
     else if (crewRatio < 0.7) { cLabel = 'THIRSTY';  cCls = 'thirsty';  }
@@ -1217,12 +1260,14 @@
   // computeModifiers().active for negative/critical entries.
   const THREAT_INFO = {
     'Underwatered':       { cause: 'Plant water below crop need.',         fix: 'Raise plant water in the WATER track.' },
-    'Cold stress':        { cause: 'Bay temperature below crop ideal.',    fix: 'TREAT with a heater or move to a warmer region.' },
-    'Cold snap CRITICAL': { cause: 'Temperature far below crop ideal.',    fix: 'Heater immediately. Plant near death.' },
-    'Heat stress':        { cause: 'Bay temperature above crop ideal.',    fix: 'TREAT with coolant or vent the bay.' },
-    'Heat wave CRITICAL': { cause: 'Temperature far above crop ideal.',    fix: 'Coolant immediately. Plant near death.' },
-    'Pest outbreak':      { cause: 'Pest event firing on the bay.',        fix: 'TREAT with pesticide.' },
-    'Root rot risk':      { cause: 'Plant overwatered (>25% above need).', fix: 'Drop plant water back toward the ideal tick.' }
+    'Cold stress':        { cause: 'Deep void runs cold.',                 fix: 'It passes with the region. An insulated cargo bay softens it.' },
+    'Cold snap CRITICAL': { cause: 'Far below the crop\'s ideal — deep void.', fix: 'Move on to a warmer region; an insulated cargo bay softens it.' },
+    'Heat stress':        { cause: 'Anomalies run hot.',                   fix: 'It passes with the region. An insulated cargo bay softens it.' },
+    'Heat wave CRITICAL': { cause: 'Far above the crop\'s ideal — anomaly heat.', fix: 'Move on to a cooler region; an insulated cargo bay softens it.' },
+    'Low light':          { cause: 'Nebulae and the void are dim.',        fix: 'Growth recovers in brighter regions. High-light crops feel it most.' },
+    'Ship water dry':     { cause: 'The ship\'s water tanks are empty.',   fix: 'Resupply water — a station, an event, a purifier at a planet.' },
+    'Pest outbreak':      { cause: 'Pests in the bay. Slows growth, eats health.', fix: 'TREAT clears them (a day of work; a botanist does it free).' },
+    'Root rot risk':      { cause: 'Plant overwatered (>20% above need).', fix: 'Drop plant water back toward the ideal tick.' }
   };
 
   // ARIA's longer-form Inspect read. Keyed by dominant threat class.
@@ -1437,7 +1482,7 @@
         '<div class="ins-blurb">' + ihEsc(crop.blurb) + '</div>' +
         (CROP_NOTES[GSTATE.cropId] ? '<div class="ins-notes">' + ihEsc(CROP_NOTES[GSTATE.cropId]) + '</div>' : '') +
         '<div class="ins-row"><span class="ins-key">Maturity</span><span class="ins-val">' + crop.maturity_days + ' days</span></div>' +
-        '<div class="ins-row"><span class="ins-key">Water need</span><span class="ins-val">' + crop.water_need + '%</span></div>' +
+        '<div class="ins-row"><span class="ins-key">Water need</span><span class="ins-val">' + waterNeed() + '%</span></div>' +
         '<div class="ins-row"><span class="ins-key">Ideal temp</span><span class="ins-val">' + tMin + '–' + tMax + '°C</span></div>' +
         '<div class="ins-row"><span class="ins-key">Yield</span><span class="ins-val">+' + crop.yield_amount + ' ' + ihEsc(crop.yield_label) + '</span></div>' +
       '</div>';

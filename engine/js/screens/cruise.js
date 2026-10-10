@@ -276,7 +276,7 @@
     nebula:                 { label: 'NEBULA',                 mood: 'Glowing gas in colors that probably mean something.',                 verbs: ['mine', 'scan', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
     anomaly:                { label: 'ANOMALY',                mood: 'The instruments disagree with each other. None of them with reality.', verbs: ['scan', 'forage_food', 'repair', 'rest', 'fab'] },
     planet_orbit_habitable: { label: 'PLANET ORBIT · HABITABLE', mood: 'Green and blue and trying. A world that knows how to grow things.', verbs: ['forage_food', 'trade', 'wait_for_trader', 'scan', 'repair', 'rest', 'fab'] },
-    station_approach:       { label: 'STATION APPROACH',       mood: 'Lights and traffic. Civilization, give or take.',                     verbs: ['trade', 'wait_for_trader', 'medbay', 'repair', 'rest', 'fab'] },
+    station_approach:       { label: 'STATION APPROACH',       mood: 'Lights and traffic. Civilization, give or take.',                     verbs: ['trade', 'wait_for_trader', 'medbay', 'fab_service', 'repair', 'rest', 'fab'] },
   };
   const FORAGE_LABEL_BY_REGION = { planet_orbit_habitable: 'GATHER', asteroid_field: 'HUNT', debris_field: 'SCAVENGE', anomaly: 'FORAGE' };
   const STOP_VERBS = {
@@ -286,10 +286,11 @@
     trade:        { label: 'TRADE',     sub: 'Haggle. Or pretend to.',                           effort: 1 },
     wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park. Roll the dice. Days will pass.',    effort: 1, hint: true },
     scan:         { label: 'SCAN',      sub: 'Read the signals. Find what is coming.',           effort: 2, hint: true },
-    repair:       { label: 'REPAIR',    sub: 'Patch what is broken. Cost in materials and hours.', effort: 3 },
+    repair:       { label: 'REPAIR',    sub: 'Patch the hull. Costs a day; an engineer patches further.', effort: 3 },
     rest:         { label: 'REST',      sub: 'Crew morale up. Days down.',                       effort: 1, hint: true },
     fab:          { label: 'FABRICATOR', sub: 'Open the print queue. Long jobs need a still ship.', effort: 1, hint: true },
     medbay:       { label: 'MEDBAY',    sub: 'Station rates. Cash up front. Mostly sterile.',   effort: 1, hint: true, locked: medbayLockReason },
+    fab_service:  { label: 'FAB SERVICE', sub: 'Station techs overhaul the fabricator. Wear to zero.', effort: 1, hint: true, locked: fabServiceLockReason },
   };
   function effortPips(n) { n = Math.max(0, Math.min(5, n | 0)); return '●'.repeat(n) + '○'.repeat(5 - n); }
 
@@ -349,8 +350,10 @@
       const n = result.fixedCount | 0;
       if (n === 0) { renderCruise(); return; }
       if (!result.allFixed) return settleAbandoned('REPAIR');
-      const gain = 20;
-      STATE.resources.hull = clamp(STATE.resources.hull + gain, 0, resMax('hull'));
+      // Engineer aboard: the patch goes further (+10, captain half).
+      const before = STATE.resources.hull;
+      STATE.resources.hull = clamp(STATE.resources.hull + 20 + Math.round(10 * specialistMult('engineer')), 0, resMax('hull'));
+      const gain = Math.round(STATE.resources.hull - before); // the log reports what actually landed
       settleMinigame('◆ REPAIR — ' + (result.allFixed ? 'all four systems nominal' : n + '/4 faults cleared') + ', hull patched (+' + gain + ').');
     });
   }
@@ -382,7 +385,13 @@
         if (s.type === 'poisoning') { if (STATE.crew.length) damageCrew(null, sev); else STATE.resources.food = clamp(STATE.resources.food - sev, 0, 100); }
         else STATE.resources.morale = clamp(STATE.resources.morale - sev, 0, 100);
       });
-      const gained = payload.food ? ('+' + payload.food + ' food.') : 'came back empty-handed.';
+      let gained = payload.food ? ('+' + payload.food + ' food.') : 'came back empty-handed.';
+      // A good forage on alien ground can turn up the suspicious fungus
+      // (the chef's Secret Project — event_shipboard_016).
+      if (tier !== 'poor' && (regionKey === 'anomaly' || regionKey === 'planet_orbit_habitable') &&
+          !STATE.items.includes('suspicious_fungus') && Math.random() < 0.15 && grantItem('suspicious_fungus')) {
+        gained += ' Also: a fungus nobody can name. The chef has asked to keep it.';
+      }
       settleMinigame('◆ ' + mode + ' — ' + gained);
     });
   }
@@ -403,6 +412,12 @@
         else if (key in TANK_O2) { STATE.resources.o2 = clamp(STATE.resources.o2 + TANK_O2[key] * qty, 0, 100); got.push('+' + TANK_O2[key] * qty + ' O₂'); }
         else if (key === 'gold') { STATE.goldAmount += 5 * qty; got.push(5 * qty + 'g'); }
         else if (key !== 'useless_scrap') { for (let i = 0; i < qty; i++) grantItem(key); got.push(key.replace(/_/g, ' ')); }
+      }
+      // Wrecks hold curiosities the fence pays for (items.json "pure trade
+      // good" — they had no source).
+      if (tier !== 'poor' && Math.random() < 0.2) {
+        const cur = ['pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_bone'][Math.floor(Math.random() * 3)];
+        if (grantItem(cur)) got.push(cur.replace(/_/g, ' '));
       }
       renderHUD();
       settleMinigame('◆ SALVAGE — recovered ' + (got.join(', ') || 'nothing usable') + '.');
@@ -439,7 +454,6 @@
     const ev = EVENTS['event_encounter_trader_001'];
     if (!ev) { pushLogEntry('◆ No traders registered on this route.'); return; }
     closeStopMenu();
-    STATE.summonedEvent = true; // resolves back to THIS node's hub, not onward
     enterEvent(STATE.byId[STATE.currentId], ev);
   }
   function handleWaitTraderVerb() {
@@ -450,7 +464,7 @@
     if (Math.random() < 0.55) {
       pushLogEntry('◆ WAIT — after ' + days + ' day(s), a merchant sail lights up the scope.');
       const ev = EVENTS['event_encounter_trader_001'];
-      if (ev) { closeStopMenu(); STATE.summonedEvent = true; enterEvent(STATE.byId[STATE.currentId], ev); return; }
+      if (ev) { closeStopMenu(); enterEvent(STATE.byId[STATE.currentId], ev); return; }
     }
     pushLogEntry('◆ WAIT — ' + days + ' day(s) parked. Nobody came. The dice do not apologize.');
     renderCruise();
@@ -469,7 +483,8 @@
   // medic's skill: for a flat fee, the worst-hurt crew member is
   // treated to full HP, which also closes a delayed-severity wound
   // before it comes due. No time cost — the Bible prices it in credits.
-  const MEDBAY_FEE = 30;
+  const MEDBAY_BASE = 30;
+  const medbayFee = () => stationPrice(MEDBAY_BASE); // CHIP / merchant discounts
   function medbayPatient() {
     let worst = null;
     for (const r of STATE.crew) if (crewHPOf(r) < 100 && (!worst || crewHPOf(r) < crewHPOf(worst))) worst = r;
@@ -477,23 +492,45 @@
   }
   function medbayLockReason() {
     if (!medbayPatient()) return 'HEALTHY';
-    if (STATE.goldAmount < MEDBAY_FEE) return MEDBAY_FEE + 'g';
+    if (STATE.goldAmount < medbayFee()) return medbayFee() + 'g';
     return null;
   }
   function handleMedbayVerb() {
     const r = medbayPatient();
     if (!r) { pushLogEntry('◆ MEDBAY — the duty nurse looks your crew over and finds nothing to bill. They seem disappointed.'); return; }
-    if (STATE.goldAmount < MEDBAY_FEE) { pushLogEntry('◆ MEDBAY — treatment is ' + MEDBAY_FEE + 'g, payable in advance. You have ' + STATE.goldAmount + 'g. The nurse has heard every story.'); return; }
-    STATE.goldAmount -= MEDBAY_FEE;
+    if (STATE.goldAmount < medbayFee()) { pushLogEntry('◆ MEDBAY — treatment is ' + medbayFee() + 'g, payable in advance. You have ' + STATE.goldAmount + 'g. The nurse has heard every story.'); return; }
+    STATE.goldAmount -= medbayFee();
     STATE.crewHP[r] = 100;
     if (STATE.crewPending) delete STATE.crewPending[r];
-    pushLogEntry('◆ MEDBAY — ' + crewNameOf(r) + ' is treated, stitched and discharged with a lollipop. −' + MEDBAY_FEE + 'g.');
+    pushLogEntry('◆ MEDBAY — ' + crewNameOf(r) + ' is treated, stitched and discharged with a lollipop. −' + medbayFee() + 'g.');
     renderHUD();
     renderCruise();
     renderStopMenu(); // the verb re-gates (nobody hurt / can't afford)
   }
 
-  const VERB_HANDLERS = { medbay: handleMedbayVerb, mine: handleMineVerb, scan: handleScanVerb, repair: handleRepairVerb, forage_food: handleForageVerb, salvage: handleSalvageVerb, fab: handleFabricatorVerb, rest: handleRestVerb, trade: handleTradeVerb, wait_for_trader: handleWaitTraderVerb };
+  // FAB SERVICE (stations only) — the station overhaul the fabricator's
+  // own wear warning promises ("repair needed at next station"): wear
+  // back to 0, a broken fab working again. Flat fee, no time cost.
+  const FAB_SERVICE_BASE = 40;
+  const fabServiceFee = () => stationPrice(FAB_SERVICE_BASE);
+  function fabServiceLockReason() {
+    const f = STATE.fabricator || {};
+    if (!f.broken && (f.wear || 0) < 10) return 'GOOD AS NEW';
+    if (STATE.goldAmount < fabServiceFee()) return fabServiceFee() + 'g';
+    return null;
+  }
+  function handleFabServiceVerb() {
+    if (fabServiceLockReason()) return;
+    STATE.goldAmount -= fabServiceFee();
+    STATE.fabricator.wear = 0;
+    STATE.fabricator.broken = false;
+    pushLogEntry('◆ FAB SERVICE — station techs strip the fabricator, swear at it professionally, and hand it back at zero wear. −' + fabServiceFee() + 'g.');
+    renderHUD();
+    renderCruise();
+    renderStopMenu();
+  }
+
+  const VERB_HANDLERS = { fab_service: handleFabServiceVerb, medbay: handleMedbayVerb, mine: handleMineVerb, scan: handleScanVerb, repair: handleRepairVerb, forage_food: handleForageVerb, salvage: handleSalvageVerb, fab: handleFabricatorVerb, rest: handleRestVerb, trade: handleTradeVerb, wait_for_trader: handleWaitTraderVerb };
 
   function currentRegionKey() {
     const node = STATE.byId && STATE.byId[STATE.currentId];
@@ -607,9 +644,15 @@
       // living crop (flavor_pools.ship_computer_crop_comments, per crop).
       const cropPool = MOD.flavor && MOD.flavor.ship_computer_crop_comments && STATE.crop
         && STATE.cropGrowth && STATE.cropGrowth.health > 0 && MOD.flavor.ship_computer_crop_comments[STATE.crop];
-      const line = (Array.isArray(cropPool) && cropPool.length && Math.random() < 0.25)
+      // …and one in five is something drifting past the window
+      // (flavor_pools.ambient_travel_objects).
+      const drift = MOD.flavor && MOD.flavor.ambient_travel_objects;
+      const roll = Math.random();
+      const line = (Array.isArray(cropPool) && cropPool.length && roll < 0.25)
         ? cropPool[Math.floor(Math.random() * cropPool.length)]
-        : aiPool(['cruise_ambient']);
+        : (Array.isArray(drift) && drift.length && roll < 0.45)
+          ? 'Passing the window: ' + drift[Math.floor(Math.random() * drift.length)].replace(/^./, c => c.toLowerCase()).replace(/\.$/, '') + '.'
+          : aiPool(['cruise_ambient']);
       if (line) pushLogEntry('◆ ' + line);
     }
   }

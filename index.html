@@ -1692,8 +1692,7 @@ const STATE = {
   currentOutcomeId: null,
   npcCtx:       null,    // resolved {species, disposition, displayName, quirk} for the current event's npc field
   npcCache:     {},      // per-event-id NPC roll cache, so revisits show the same NPC
-  outcomeMode:  false,   // narrative is showing outcome text (not event body)
-  pendingNext:  null,    // next node id queued by current outcome
+  outcomeMode:  false,   // an outcome is showing (set by renderOutcomeView; read by tools/tests)
   ended:        false,
   seenEventIds: new Set(),  // once:true events already fired this run
   hardStreak:   0,          // consecutive hard/ultra events selected (pity counter)
@@ -1720,8 +1719,10 @@ const SAVED_FIELDS = [
   'miningSectors', 'lastAmbientNode', // sector re-roll on reload defeated mining's anti-reroll; ambient repeated
   'deprived', // consecutive days at 0 food/water/O2
   'crewIdentity', // joined stowaways keep their own name in a crew role
-  'researchReady', 'researchKey', // Academic captain: one Research preview per station leg
+  'researchReady', // Academic captain: one Research preview per station leg
   'scouted', // SCAN: events locked in at the stops ahead
+  'soilSurveys', // soil sampler planet surveys (ending score)
+  'startCrew',   // crew size at launch (ending crew paragraph / score)
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1780,7 +1781,6 @@ function teardownLiveUI() {
   document.body.classList.remove('stop-active', 'modal-open', 'ins-open');
   const sb = document.getElementById('stop-btn');
   if (sb) sb.textContent = 'Stop';
-  STATE.summonedEvent = false;
 }
 
 function loadRun(key) {
@@ -1797,14 +1797,14 @@ function loadRun(key) {
   // Transients — a resumed run always lands at the cruise hub.
   STATE.currentEvent = null; STATE.currentNode = null;
   STATE.layerStack = null; STATE.currentOutcomeId = null;
-  STATE.npcCtx = null; STATE.outcomeMode = false;
-  STATE.pendingNext = null; STATE.ended = false;
+  STATE.npcCtx = null; STATE.outcomeMode = false; STATE.ended = false;
   STATE._itemDefs = null;
   ensureOrders(); // pre-orders saves get the defaults (seeded from cropGrowth.waterPlant)
   if (!('crewPending' in snap)) STATE.crewPending = {}; // pre-severity saves
   if (!('deprived' in snap)) STATE.deprived = {};
   if (!('crewIdentity' in snap)) STATE.crewIdentity = {};
   if (!('scouted' in snap)) STATE.scouted = {};
+  if (!('startCrew' in snap)) STATE.startCrew = Math.max(STATE.crew.length, STATE.flags.has('crew_lost') ? STATE.crew.length + 1 : 0);
   STATE.scanIntelEvent = null;
   // Saves from before the "planted" announcement existed: the crop was
   // planted long ago — don't announce it on resume.
@@ -1905,6 +1905,7 @@ function applySetupToState(sel) {
   STATE.activeAI  = sel.ai;
   STATE.captain   = sel.captain;
   STATE.crew      = sel.crew.slice();
+  STATE.startCrew = sel.crew.length; // the ending measures losses against this
   initCrewHP();
   initCrewSkillCharges();
   // Stowaway roll (full-arc decision 2026-08-03): ~35% of runs carry a
@@ -1936,7 +1937,6 @@ function applySetupToState(sel) {
   STATE.flags        = new Set();
   STATE.currentEvent = null;
   STATE.outcomeMode  = false;
-  STATE.pendingNext  = null;
   STATE.ended        = false;
   STATE.seenEventIds = new Set();
   STATE.hardStreak   = 0;
@@ -1947,9 +1947,9 @@ function applySetupToState(sel) {
   // after another used to inherit its log, fabricator, sectors…).
   STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
   STATE.postCombatLegs = 0; STATE.miningSectors = {}; STATE.aiWarnLevels = {};
-  STATE.crisisPatient = null; STATE.summonedEvent = false; STATE.lastAmbientNode = null;
+  STATE.crisisPatient = null; STATE.lastAmbientNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
-  STATE.scouted = {}; STATE.scanIntelEvent = null;
+  STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0;
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
   if (typeof window.abortFabricator === 'function') window.abortFabricator();
@@ -1983,7 +1983,10 @@ function itemDef(shortId) {
 }
 
 function cargoCapacity() {
-  const base = (MOD.ships && MOD.ships.ships && MOD.ships.ships[0] && MOD.ships.ships[0].base_stats
+  // map_rules per-trail cargo_capacity (8 / 10 / 12 — longer voyages
+  // pack bigger holds), falling back to the ship's base.
+  const rules = MOD.map_rules && MOD.map_rules.trails && MOD.map_rules.trails[STATE.trail];
+  const base = (rules && rules.cargo_capacity) || (MOD.ships && MOD.ships.ships && MOD.ships.ships[0] && MOD.ships.ships[0].base_stats
     && MOD.ships.ships[0].base_stats.cargo_capacity_base) || 8;
   const upgrade = STATE.items.includes('insulated_cargo_bay') ? 5 : 0;
   return base + upgrade;
@@ -2286,7 +2289,7 @@ function activeTriggers() {
   // selectEvent() decrements it once per event-bearing node.
   if ((STATE.postCombatLegs || 0) > 0) active.add('post_combat');
   // Ship systems.
-  if (STATE.fabricator && STATE.fabricator.broken) active.add('fab_broken');
+  if (STATE.fabricator && (STATE.fabricator.broken || (STATE.fabricator.wear || 0) >= 100)) active.add('fab_broken'); // worn out = broken
   else if (STATE.fabricator && (STATE.fabricator.wear || 0) >= 70) active.add('fab_low');
   // Crew HP — anyone under the wound line counts as injured.
   if (STATE.crewHP && STATE.crew.some(r => crewHPOf(r) < CREW_WOUNDED_HP)) active.add('crew_injured');
@@ -2576,6 +2579,7 @@ const ITEM_USE = {
   ration_brick:   { label: '+10 FOOD',  can: () => STATE.resources.food  >= 100 ? 'Food stores are full' : null,  use: () => { invAddRes('food', 10);  return 'Ration brick unwrapped. +10 food. Nobody describes the flavour.'; } },
   water_canister: { label: '+10 H2O',   can: () => STATE.resources.water >= 100 ? 'Water tanks are full' : null,  use: () => { invAddRes('water', 10); return 'Water canister emptied into the tanks. +10 water.'; } },
   fuel_cell:      { label: '+15 FUEL',  can: () => STATE.resources.fuel  >= resMax('fuel') ? 'Fuel tank is full' : null, use: () => { invAddRes('fuel', 15); return 'Fuel cell slotted in. +15 fuel.'; } },
+  repair_kit:     { label: '+10 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { invAddRes('hull', 10); return 'Repair kit spent on the worst seams. +10 hull.'; } },
   hull_patch:     { label: '+15 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { invAddRes('hull', 15); return 'Hull patch applied. +15 hull. It holds. Probably.'; } },
   o2_canister:    { label: '+14 O2',    can: () => STATE.resources.o2    >= 100 ? 'O2 is full' : null,               use: () => { invAddRes('o2', 14);   return 'O2 canister vented into the air supply. +14 O2.'; } },
   medkit:         { label: 'HEAL',      can: () => worstHurtCrew() ? null : 'Nobody is hurt',
@@ -2847,9 +2851,11 @@ function renderMap(ids) {
     // also alternate above/below the node so 2-node branches never
     // overlap each other's text.
     const branchMatch = n.id.match(/^node_branch_\d+_(alpha|beta)_(\d+)$/);
-    let labelText = n.name;
+    // The map draws the short type label; the place name is in the
+    // hover title and the footer (map.js node.short).
+    let labelText = n.short || n.name;
     if (branchMatch) {
-      labelText = n.name.replace(/\s*\((alpha|beta)\)\s*$/, '');
+      labelText = labelText.replace(/\s*\((alpha|beta)\)\s*$/, '');
       el.classList.add('br-' + branchMatch[1]);
     }
     // Labels alternate below/above by column so neighbours (one column
@@ -2884,7 +2890,7 @@ function renderMap(ids) {
   const cur = STATE.byId[STATE.currentId];
   const nextIds = [...available];
   const info = document.getElementById(ids.info);
-  info.innerHTML = `<b>${cur.name}</b> — ${cur.description}`;
+  info.innerHTML = `<b>${escapeHTML(cur.name)}</b>${cur.short ? ' <span class="sub">(' + escapeHTML(cur.short) + ')</span>' : ''} — ${cur.description}`;
   if (readOnly) return;
   const btn = document.getElementById(ids.advanceBtn);
   if (nextIds.length === 1) {
@@ -2955,8 +2961,8 @@ function returnToHub() {
   // so saveRun() (which refuses mid-event) silently stopped autosaving
   // after the first encounter of every run (bug hunt 2026-10-09).
   STATE.currentEvent = null; STATE.currentNode = null;
-  STATE.layerStack = null; STATE.currentOutcomeId = null;
-  STATE.outcomeMode = false; STATE.npcCtx = null; STATE.pendingNext = null;
+  STATE.layerStack = null; STATE.currentOutcomeId = null; STATE.outcomeMode = false;
+  STATE.npcCtx = null;
   STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
   STATE.researchKey = null; // a Research preview lasts for its encounter only
   STATE.scanIntelEvent = null;
@@ -3032,7 +3038,11 @@ function setWaterSplit(pct) {
    export); 50 when no crop/meta (demo's CROP_WATER_NEED). */
 function cropWaterNeed() {
   const m = (typeof window.cropMetaOf === 'function' && STATE.crop) ? cropMetaOf(STATE.crop) : null;
-  return (m && m.water_need) || 50;
+  // Botanist passive "crop water consumption reduced 15%" (captain half);
+  // the water purifier's passive −10% (items.json).
+  return ((m && m.water_need) || 50)
+    * (1 - 0.15 * specialistMult('botanist'))
+    * (STATE.items.includes('water_purifier') ? 0.9 : 1);
 }
 
 /* Demo crewDrainRate(): how hard the crew's water share is biting.
@@ -3064,6 +3074,40 @@ function resMax(k) {
   return 100;
 }
 window.resMax = resMax;
+/* Per-leg passives that depend on where the ship arrives or what it
+   carries — each is an authored promise (items.json / crops.json). */
+function arrivalPassives(node) {
+  const log = m => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + m); };
+  const t = node.node_type;
+  // Solar array: "+2 fuel per leg when near a star. Zero in void or deep space."
+  if (STATE.items.includes('solar_array') && !{ void: 1, nebula: 1, anomaly: 1 }[t]) {
+    STATE.resources.fuel = clamp(STATE.resources.fuel + 2, 0, resMax('fuel'));
+  }
+  // Water purifier: "On planet nodes: converts local water to ship water supply."
+  if (t === 'planet' && STATE.items.includes('water_purifier') && STATE.resources.water < 100) {
+    STATE.resources.water = clamp(STATE.resources.water + 8, 0, 100);
+    log('The water purifier draws from the planet below. +8 water.');
+  }
+  // Soil sampler: "Using on planet nodes reveals soil quality data — affects ending score."
+  if (t === 'planet' && STATE.items.includes('soil_sampler') && (STATE.soilSurveys || 0) < 3) {
+    STATE.soilSurveys = (STATE.soilSurveys || 0) + 1;
+    log('Soil sampler survey logged (' + STATE.soilSurveys + '/3). The colony office will want this.');
+  }
+  // Crop morale (crops.json morale_bonus / zinnia morale_engine): a
+  // healthy tomato or zinnia crop lifts the crew each leg; sick zinnias
+  // drag them down — "the crew becomes emotionally dependent".
+  const meta = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
+  const cg = STATE.cropGrowth;
+  if (meta && cg && cg.health > 0) {
+    const eng = (meta.strengths || {}).morale_engine;
+    if (meta.morale_bonus && cg.health >= (meta.healthy_threshold || 65)) {
+      STATE.resources.morale = clamp(STATE.resources.morale + meta.morale_bonus, 0, 100);
+    } else if (eng && eng.morale_penalty_when_sick && cg.health <= (meta.sick_threshold || 30)) {
+      STATE.resources.morale = clamp(STATE.resources.morale + eng.morale_penalty_when_sick, 0, 100);
+    }
+  }
+}
+
 /* Strength of a role's economy passive: a crew specialist in full
    (halved while wounded), a captain of that background at half
    (Bible §4.30 skill_modifier 0.5 — setup's "Fuel -5%" / "Food -7%"). */
@@ -3071,6 +3115,12 @@ function specialistMult(role) {
   const crew = STATE.crew.includes(role) ? (crewHPOf(role) < CREW_WOUNDED_HP ? 0.5 : 1) : 0;
   return Math.max(crew, STATE.captain === role ? 0.5 : 0);
 }
+// Station price discount (setup: CHIP "Station prices -15%", Merchant
+// captain "Prices -10%") — the market, MEDBAY and FAB SERVICE all use it.
+function stationPriceMult() {
+  return (STATE.activeAI === 'chip' ? 0.85 : 1) * (STATE.captain === 'merchant' ? 0.9 : 1);
+}
+function stationPrice(g) { return Math.max(1, Math.round(g * stationPriceMult())); }
 function rosterPassive(role, key, dflt) {
   const c = (MOD.crew_roster || []).find(x => x.role === role);
   const v = c && c.passive_skill && c.passive_skill[key];
@@ -3186,7 +3236,10 @@ function travelTo(nodeId, opts) {
   // leg on average (HP stays whole numbers).
   if (STATE.crewHP) {
     const regen = 1 + (Math.random() < passiveMult('medic') ? 1 : 0);
-    for (const r of STATE.crew) STATE.crewHP[r] = clamp(crewHPOf(r) + regen, 0, 100);
+    // Medical scanner (items.json "treatment options that resolve
+    // faster"): wounded crew heal +2 more per leg.
+    const scan = STATE.items.includes('medical_scanner') ? 2 : 0;
+    for (const r of STATE.crew) STATE.crewHP[r] = clamp(crewHPOf(r) + regen + (crewHPOf(r) < CREW_WOUNDED_HP ? scan : 0), 0, 100);
   }
 
   // The leg itself costs real days + fuel, scaled by the ENGINES pace
@@ -3204,6 +3257,7 @@ function travelTo(nodeId, opts) {
     passDays(leg.days, { travel: true });
     // ARIA's passive (ai_companions morale_bonus 1): +1 morale per leg.
     if (STATE.activeAI === 'aria') STATE.resources.morale = clamp(STATE.resources.morale + 1, 0, 100);
+    arrivalPassives(node);
     renderHUD();
     if (checkFailure({ arriving: connectionsOf(node).length === 0 })) return;
   }
@@ -3213,6 +3267,8 @@ function travelTo(nodeId, opts) {
   // 'station'; a future 'leg' value would recharge in the leg tick above).
   if (node.node_type === 'station') {
     STATE.researchReady = true; // Academic captain: a fresh Research preview each station leg
+    // The chef's cookie tag lasts "one journey leg" — to the next station.
+    for (const f of [...STATE.flags]) if (f.startsWith('friendly_with_pirate_')) STATE.flags.delete(f);
     ensureCrewSkillCharges();
     let restored = false;
     for (const role of STATE.crew) {
@@ -3287,10 +3343,10 @@ function enterEvent(node, ev) {
   STATE.currentEvent     = ev;
   STATE.currentNode      = node;
   STATE.outcomeMode      = false;
-  STATE.pendingNext      = null;
   STATE.currentOutcomeId = null;
   STATE.layerStack       = ev.layers ? [ev.entryLayer || Object.keys(ev.layers)[0]] : null;
   STATE.seenEventIds.add(ev.id);
+  if (ev.sets_flag) STATE.flags.add(ev.sets_flag); // event-level flag: meeting the event is the fact
   STATE.npcCtx = ev.npc ? resolveNpc(ev) : null;
 
   // Educational tie-in (Bible §18's reserved link schema): events can
@@ -3560,6 +3616,7 @@ function renderEncounterState() {
    Side effects (resources/flags/etc) are already applied by the
    caller before this runs; this only paints. */
 function renderOutcomeView(outcome) {
+  STATE.outcomeMode = true;
   document.getElementById('enc-narr-title').textContent = outcome.title || 'OUTCOME';
   finishAllTyping();
   let bodyText = interpolateStowawayTokens(interpolateNpcTokens(outcome.body || outcome.narrative || '...', STATE.npcCtx));
@@ -3710,6 +3767,17 @@ function renderChoicesInner(choices) {
       if (gd && gd.analysis) subText = 'ANALYZED · ' + gd.analysis;
     }
     if (!locked && choiceStandIn(ch)) subText = 'Captain stands in · half the gains';
+    // Welcoming a stowaway: say what it means (flavor_pools join_role /
+    // join_note — the note goes in the tooltip, the sub stays one line).
+    const stowOut = choiceOutcome(ch);
+    const idn = STATE.stowaway && STATE.stowaway.identity;
+    const welcomes = stowOut && /^welcome/.test(stowOut.stowaway_resolve || '') && idn;
+    if (!locked && welcomes && !subText) {
+      subText = !idn.join_role ? 'Rides along as a passenger'
+        : stowOut.stowaway_resolve === 'welcome_replace' ? 'Joins as ' + idn.join_role + ' · one crew disembarks'
+        : (STATE.crew.length < 2 && !STATE.crew.includes(idn.join_role)) ? 'Joins the crew as ' + idn.join_role
+        : 'Rides along as a passenger';
+    }
     const preview = !locked && previews.get(ch);
     if (preview) { subText = preview; btn.classList.add('previewed'); }
     if (ch.effort || subText) {
@@ -3741,6 +3809,7 @@ function renderChoicesInner(choices) {
       if (ch.gate && ch.gate.gold && !ch.gold_cost) tip.push('costs ' + ch.gate.gold + ' gold');
       if (ch.risky) tip.push('Risky — outcomes can go badly');
       if (preview) tip.push(preview);
+      if (welcomes && idn.join_note) tip.push(idn.join_note);
       if (tip.length) btn.title = tip.join('\n');
     }
     // Entrance cascade + click pulse (demo canon).
@@ -3844,6 +3913,26 @@ function choicePreviews(choices) {
       out.set(ch, 'SCAN · ' + (facts.length ? facts.join(' · ') : 'NO EFFECT'));
     }
   }
+  // Medical scanner (items.json "reveals injury cause; unlocks treatment
+  // options"): in a wound crisis every choice shows what it does.
+  if (STATE.items.includes('medical_scanner') && STATE.currentEvent && (STATE.currentEvent.trigger || []).includes('delayed_crisis')) {
+    for (const ch of cands) {
+      if (out.has(ch)) continue;
+      const facts = outcomeFacts(choiceOutcome(ch)).slice(0, 2).map(f => f.text);
+      if (facts.length) out.set(ch, 'SCANNER · ' + facts.join(' · '));
+    }
+  }
+  // Geiger counter (items.json "warns before hazard events — without it
+  // the crew takes damage before you know why"): flags every choice
+  // that can hurt the crew.
+  if (STATE.items.includes('geiger_counter')) {
+    for (const ch of cands) {
+      if (out.has(ch)) continue;
+      const o = choiceOutcome(ch);
+      const harm = o.severity || (o.crew_effect && /kill|injure/.test(o.crew_effect.type || ''));
+      if (harm) out.set(ch, 'GEIGER · CREW HAZARD');
+    }
+  }
   if (STATE.captain === 'academic' && STATE.currentEvent) {
     const key = STATE.currentEvent.id + '|' + (STATE.layerStack || []).join('>');
     if (STATE.researchReady || STATE.researchKey === key) {
@@ -3916,7 +4005,11 @@ function lockReason(choice) {
 }
 
 function prettyItem(id) {
-  return id.replace(/_/g, ' ');
+  // item_grant may be a list (event_derelict_004 grants two) — a bare
+  // .replace on an array threw inside the choice previews and silently
+  // skipped the whole encounter.
+  if (Array.isArray(id)) return id.map(prettyItem).join(' + ');
+  return String(id == null ? '' : id).replace(/_/g, ' ');
 }
 
 function escapeHTML(s) {
@@ -4163,6 +4256,15 @@ function handleChoiceClick(choice) {
    ev.outcomes[id]. Both shapes carry the same effect fields. */
 function applyOutcomeEffects(o) {
   o = o || {};
+  // set_orders: an outcome that changes standing orders ("cut to half
+  // rations, effective immediately") — {pace, rations, waterSplit}.
+  if (o.set_orders && typeof o.set_orders === 'object') {
+    const ord = ensureOrders();
+    if (o.set_orders.pace) ord.pace = o.set_orders.pace;
+    if (o.set_orders.rations) ord.rations = o.set_orders.rations;
+    if (Number.isFinite(o.set_orders.waterSplit)) setWaterSplit(o.set_orders.waterSplit);
+    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ Standing orders changed — check ORDERS.');
+  }
   if (o.resources) {
     for (const [k, v] of Object.entries(o.resources)) {
       if (!Number.isFinite(v)) continue; // authored typo can't NaN-poison STATE
@@ -4179,6 +4281,9 @@ function applyOutcomeEffects(o) {
       } else if (k in STATE.resources) {
         // O2 recycler (items.json): O2 losses reduced 25%.
         let dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.round(v * 0.75) : v;
+        // Engineer passive "hull repair events cost less time and
+        // resources": hull repairs land 25% further (captain half).
+        if (k === 'hull' && dv > 0) dv = Math.round(dv * (1 + 0.25 * specialistMult('engineer')));
         if (STATE.halfEffect && dv > 0) dv = Math.round(dv / 2); // captain standing in: half the gains
         STATE.resources[k] = clamp(STATE.resources[k] + dv, 0, resMax(k));
       }
@@ -4247,7 +4352,10 @@ function applyOutcomeEffects(o) {
   // health — crisis care choices said the crop recovered but changed
   // nothing. A dead crop stays dead.
   if (Number.isFinite(o.crop_health) && STATE.cropGrowth && STATE.cropGrowth.health > 0) {
-    STATE.cropGrowth.health = clamp(STATE.cropGrowth.health + o.crop_health, 1, 100);
+    // Botanist passive "crop health events resolve more favorably": +25%
+    // on crop recovery (captain botanist half).
+    const ch = o.crop_health > 0 ? Math.round(o.crop_health * (1 + 0.25 * specialistMult('botanist'))) : o.crop_health;
+    STATE.cropGrowth.health = clamp(STATE.cropGrowth.health + ch, 1, 100);
   }
   if (o.clears_pest && STATE.cropGrowth) {
     STATE.cropGrowth.pest = false;
@@ -4324,7 +4432,6 @@ function resolveChoice(choice) {
         applyOutcomeEffects(quit);
         renderHUD();
         if (checkFailure()) return;
-        STATE.outcomeMode = true;
         renderOutcomeView({ title: 'ABANDONED', body: quit.narrative, tone: 'danger' });
         return;
       }
@@ -4340,7 +4447,6 @@ function resolveChoice(choice) {
       applyOutcomeEffects(merged);
       renderHUD();
       if (checkFailure()) return;
-      STATE.outcomeMode = true;
       renderOutcomeView({ title: 'OUTCOME', body: merged.narrative || '...', tone: deltaIsBad(merged) ? 'danger' : (deltaIsGood(merged) ? 'success' : null) });
     });
     return;
@@ -4350,7 +4456,6 @@ function resolveChoice(choice) {
   renderHUD();
   if (checkFailure()) return;
 
-  STATE.outcomeMode = true;
   renderOutcomeView({ title: 'OUTCOME', body: o.narrative || '...', tone: deltaIsBad(o) ? 'danger' : (deltaIsGood(o) ? 'success' : null) });
 }
 
@@ -4391,7 +4496,6 @@ function advanceAfterEvent() {
   // crew, orders, MEDBAY…) for the whole run after the first leg.
   // Forks are unchanged in effect: the branch flag the fork event set
   // makes Resume's single next node the chosen branch.
-  STATE.summonedEvent = false;
   STATE.visited.add(STATE.currentId);
   returnToHub();
 }
@@ -4473,7 +4577,18 @@ function scoreBracket() {
   const r = STATE.resources;
   const resAvg = (r.fuel + r.food + r.water + r.o2 + r.hull + r.morale) / 6;
   const dayDelta = (STATE.baseDays - STATE.daysElapsed);
-  const score = (STATE.crew.length * 33.3) + (resAvg * 0.6) + (dayDelta * 0.5);
+  // Crew term: the share of the launch crew who made it, worth 100 (it
+  // assumed a 3-person crew the setup can't pick — legendary was out of
+  // reach). A solo-by-choice launch counts half.
+  const start = STATE.startCrew != null ? STATE.startCrew : STATE.crew.length;
+  const crewTerm = start > 0 ? 100 * Math.min(1, STATE.crew.length / start) : 50;
+  let score = crewTerm + (resAvg * 0.6) + (dayDelta * 0.5);
+  score += (STATE.soilSurveys || 0) * 5; // soil sampler surveys (items.json "affects ending score")
+  // crops.json arrival_bonus: the crop's colony value (wheat +10%, tomato
+  // +15% if health > 50, soybean +12%…).
+  const meta = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
+  const ab = meta && meta.arrival_bonus;
+  if (ab && ab.ending_score_modifier && STATE.cropGrowth && STATE.cropGrowth.health > (ab.health_condition || 0)) score *= ab.ending_score_modifier;
   if (score >= 130) return 'legendary';
   if (score >=  85) return 'good';
   if (score >=  40) return 'rough';

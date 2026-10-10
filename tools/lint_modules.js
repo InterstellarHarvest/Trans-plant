@@ -309,6 +309,8 @@ for (const file of eventFiles) {
     'classified_cargo',                               // sinister market back inventory (market.js)
     'logbook_fragment', 'medkit',                     // forage rare finds (cruise.js RARE_TO_REAL)
     'fab_surplus',                                    // fabricator misfires (fabricator.js)
+    'suspicious_fungus',                              // good forage on alien ground (cruise.js)
+    'pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_bone', // salvage curiosities (cruise.js)
   ]);
   const items = readJSON('modules/items/items.json').filter(i => !i._section);
   const sourced = new Set(ENGINE_GRANTED_ITEMS);

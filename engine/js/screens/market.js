@@ -50,6 +50,10 @@
   // Demo sell-price convention: vendors pay ~2/3 of asking price.
   const sellPrice = bp => Math.max(1, Math.round(bp * 2 / 3));
 
+  function allMaterialDefs() {
+    return (typeof MOD !== 'undefined' && MOD.materials && MOD.materials.materials) || [];
+  }
+  const materialPrice = m => Math.max(1, Math.round((m.value || 0.2) * 5));
   function allItemDefs() {
     return (typeof MOD !== 'undefined' && MOD.items) ? MOD.items : [];
   }
@@ -82,12 +86,15 @@
         buyPrices[shortIdOf(d.id)] = sellPrice(d.base_price);
       }
     }
+    // Raw materials are "tradeable at stations" (materials.json) — the
+    // trader buys them by the unit at their authored value.
+    for (const m of allMaterialDefs()) buyPrices[m.id] = materialPrice(m);
     // Negotiation (diplomat active skill, crew.js): the armed flag buys
     // 15% off this station market's wares, then it's spent — the skill's
     // authored "talk stations into better deals" line, made mechanical.
     // Standing discounts (setup screen): CHIP "Station prices -15%"
     // (ai_companions price_reduction), Merchant captain "Prices -10%".
-    const standing = (STATE.activeAI === 'chip' ? 0.85 : 1) * (STATE.captain === 'merchant' ? 0.9 : 1);
+    const standing = stationPriceMult();
     if (standing < 1) {
       for (const w of wares) {
         if (w.cost && w.cost.gold) w.cost.gold = Math.max(1, Math.round(w.cost.gold * standing));
@@ -205,16 +212,25 @@
       subjectNameEl: $('enc-subject-name'),
       getGold: () => STATE.goldAmount,
       setGold: v => { STATE.goldAmount = Math.max(0, v); renderHUD(); },
-      getCargo: () => STATE.items.map(cargoEntry),
+      // Items, then one entry per unit of each raw material (the list
+      // stacks them) — materials sell at stations, never take hold space.
+      getCargo: () => STATE.items.map(cargoEntry).concat(
+        vendor.sinister ? [] : allMaterialDefs().flatMap(m => Array.from({ length: STATE.materials[m.id] || 0 }, () => ({
+          id: m.id, name: (m.name || m.id).toUpperCase(), icon: 'sprites/cargo/materials/' + m.id + '.png', desc: m.description || '', tags: [], material: true,
+        })))),
       // Capacity gate BEFORE any cost applies — a refused buy must
       // leave gold untouched (shared.js MarketModal optional hook).
       canAddCargo: ware => cargoFits(ware.id),
       cargoFullMsg: 'No room in the hold. Jettison something (INV) first.',
       addCargo: entry => { grantItem(entry.id); renderHUD(); },
       // The cargo bay can't leave while the hold needs its extra slots.
-      canRemoveCargo: sid => typeof canRemoveItem !== 'function' || canRemoveItem(sid),
+      canRemoveCargo: sid => allMaterialDefs().some(m => m.id === sid) || typeof canRemoveItem !== 'function' || canRemoveItem(sid),
       cargoLockedMsg: 'The cargo bay is holding things. Clear some space first.',
       removeCargo: sid => {
+        if (allMaterialDefs().some(m => m.id === sid)) {
+          STATE.materials[sid] = Math.max(0, (STATE.materials[sid] || 0) - 1);
+          renderHUD(); return;
+        }
         const i = STATE.items.indexOf(sid);
         if (i >= 0) STATE.items.splice(i, 1);
         renderHUD();

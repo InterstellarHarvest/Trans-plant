@@ -117,8 +117,13 @@
     return `${SCENE_BASE}/${p.folder}/${p.prefix}_${cropBgId}.jpg`;
   }
 
+  // full = nobody lost; partial = some lost, someone left; solo = alone
+  // (it used to need 3 crew for 'full' — the setup allows 2, so every
+  // intact crew read "empty spaces where people used to stand").
   function crewKeyFor(count) {
-    return count >= 3 ? 'full' : (count >= 2 ? 'partial' : 'solo');
+    if (count <= 0) return 'solo';
+    const start = STATE.startCrew != null ? STATE.startCrew : count;
+    return (STATE.flags.has('crew_lost') || count < start) ? 'partial' : 'full';
   }
 
   /* Builds the {category, toneId, title, body, quote, showReport,
@@ -171,6 +176,13 @@
       .replaceAll('{crew_paragraph}', crewPara)
       .replaceAll('{crew_reaction}', crewPara)
       .replaceAll('{report_number}', reportNum);
+    // crops.json zinnia unique_ending_modifier "zinnia_survived": living
+    // zinnias change the final paragraph whatever the bracket (authored
+    // once, on ending_colonyfiled_001's zinnia_modifier).
+    if (STATE.crop === 'zinnia' && STATE.cropGrowth && STATE.cropGrowth.health > 0) {
+      const zm = m.zinnia_modifier || ((MOD.endings || []).find(e => e.zinnia_modifier) || {}).zinnia_modifier;
+      if (zm && zm.additional_paragraph) body += '\n\n' + zm.additional_paragraph;
+    }
 
     return {
       category: 'arrival',
@@ -203,12 +215,13 @@
 
     const pips = $('end-crew-pips');
     pips.innerHTML = '';
-    for (let i = 0; i < 3; i++) {
+    const launched = Math.max(STATE.startCrew != null ? STATE.startCrew : stats.crew, stats.crew);
+    for (let i = 0; i < launched; i++) {
       const p = document.createElement('div');
       p.className = 'crew-pip ' + (i < stats.crew ? 'filled' : 'empty');
       pips.appendChild(p);
     }
-    $('end-crew-val').textContent = stats.crew + ' / 3';
+    $('end-crew-val').textContent = stats.crew + ' / ' + launched;
 
     const bars = $('end-res-bars');
     bars.innerHTML = '';

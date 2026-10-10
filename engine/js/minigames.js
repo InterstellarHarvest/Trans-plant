@@ -1557,10 +1557,11 @@ function initForage(container, onResult, ctx){
   const FOOD_SPOILED  = 1;
 
   const RARE_DROPS = [
-    {id:'cred_chip',     name:'Credit Chip'},
-    {id:'data_fragment', name:'Data Fragment'},
-    {id:'salt_crystal',  name:'Salt Crystal'},
-    {id:'med_herb',      name:'Medicinal Herb'}
+    // Names say what the ship actually gets (cruise.js RARE_TO_REAL).
+    {id:'cred_chip',     name:'Credit Chip (+10g)'},
+    {id:'data_fragment', name:'Logbook Fragment'},
+    {id:'salt_crystal',  name:'Salt Crystal (+2 minerals)'},
+    {id:'med_herb',      name:'Medicinal Herb (medkit)'}
   ];
 
   // Build base DOM up-front so DEPART can fire even before bg/anchors load.
@@ -3752,7 +3753,7 @@ function initSalvage(container, onResult){
       addToInv(key, item.sprite, sizes[item.sz] + ' O₂ Tank', 1);
       showFlash(`
         <img src="${item.sprite}" class="sal-flash-sprite">
-        <div class="sal-flash-arrow">→ inventory</div>
+        <div class="sal-flash-arrow">→ air supply</div>
         <div class="sal-flash-label">${sizes[item.sz]} O₂ Tank</div>
       `, finish);
     }
@@ -3766,7 +3767,7 @@ function initSalvage(container, onResult){
         <img src="${item.sprite}" class="sal-flash-sprite">
         <div class="sal-flash-arrow">→</div>
         <div class="sal-flash-result"><img src="${MD}metal.png" class="sal-flash-resource"><span class="sal-flash-label">×${N} metal</span></div>
-        ${gold ? `<div class="sal-flash-bonus"><img src="${MD}gold.png" class="sal-flash-resource" style="vertical-align:middle"> +1 GOLD!</div>` : ''}
+        ${gold ? `<div class="sal-flash-bonus"><img src="${MD}gold.png" class="sal-flash-resource" style="vertical-align:middle"> +5 GOLD!</div>` : ''}
       `, finish);
     }
 

@@ -43,7 +43,7 @@
   const RATIONS_DESCS = [
     'Half rations. Morale sinks. Food lasts.',
     'Full rations. Morale holds steady.',
-    'Double rations. Morale lifts. Food empties fast.'
+    'Extra rations. Morale lifts. Food empties fast.'
   ];
 
   // ── AI quips — demo's ARIA table verbatim; the other four written
@@ -76,7 +76,7 @@
       rations: [
         'Half rations. Morale will decline. I have charted it. The chart is very straight.',
         'Standard rations. Everyone is fed. Nobody is happy. Working as designed.',
-        'Double rations. The food runs out sooner. The math does not care how good dinner was.'
+        'Extra rations. The food runs out sooner. The math does not care how good dinner was.'
       ],
       water_matched: 'Water allocation is currently optimal. Optimality never lasts.',
       water_plant_starving: 'The crop is under-watered. It will die slowly, then all at once.',
@@ -92,7 +92,7 @@
       rations: [
         'Half rations. Hungry troops fight worse. Logged for the after-action report.',
         'Standard rations. Supply lines holding. Do not test them.',
-        'Double rations. Morale up, reserves down. A salient invites encirclement.'
+        'Extra rations. Morale up, reserves down. A salient invites encirclement.'
       ],
       water_matched: 'Water discipline holding on both fronts. Maintain.',
       water_plant_starving: 'The crop is losing its supply line. Plants do not surrender. They just die.',
@@ -124,7 +124,7 @@
       rations: [
         'Half rations. The crew will love that. I am sure they will say so. Repeatedly.',
         'Standard rations. Fine. It is what I would have suggested, not that anyone asked.',
-        'Double rations. Very generous. Someone should watch the pantry math. I guess that is me.'
+        'Extra rations. Very generous. Someone should watch the pantry math. I guess that is me.'
       ],
       water_matched: 'The water split is actually correct. I am as surprised as you are.',
       water_plant_starving: 'The plant is parched. I mentioned the watering schedule earlier. You seemed busy.',
@@ -154,6 +154,7 @@
     return (typeof window.cropMetaOf === 'function' && STATE.crop) ? cropMetaOf(STATE.crop) : null;
   }
   function waterNeed() {
+    if (typeof window.cropWaterNeed === 'function' && STATE.crop) return cropWaterNeed(); // botanist / purifier aware
     const m = cropMeta();
     return (m && m.water_need) || 50;
   }
@@ -200,24 +201,23 @@
     return STATE.daysElapsed + Math.max(1, Math.round(remainingLegs() * perLegDays(paceIdx)));
   }
   function fuelEmptyDay(paceIdx) {
-    const perLegFuel = (typeof window.fuelPerLegBase === 'function' ? fuelPerLegBase() : 3) * ORDERS_PACE[paceIdx].fuelMult;
+    const perLegFuel = (typeof window.fuelPerLegBase === 'function' ? fuelPerLegBase() : 3) * ORDERS_PACE[paceIdx].fuelMult
+      * (typeof window.fuelBurnMult === 'function' ? fuelBurnMult() : 1); // pilot / drive coil
     const legsOfFuel = STATE.resources.fuel / perLegFuel;
     return STATE.daysElapsed + Math.floor(legsOfFuel * perLegDays(paceIdx));
   }
   function foodEmptyDay(rationsIdx) {
-    const perDay = ORDERS_BASE.foodPerDay * ORDERS_RATIONS[rationsIdx].foodMult;
+    const perDay = ORDERS_BASE.foodPerDay * ORDERS_RATIONS[rationsIdx].foodMult
+      * (typeof window.foodBurnMult === 'function' ? foodBurnMult() : 1); // chef / cargo bay
     return STATE.daysElapsed + Math.floor(STATE.resources.food / perDay);
   }
   function cropMatureDay(plantPct) {
     const m = cropMeta();
     const cg = STATE.cropGrowth;
     if (!m || !cg || cg.health <= 0) return Infinity;
-    const ratio = Math.min(1, plantPct / waterNeed());
-    if (ratio === 0) return Infinity;
-    // Growbay's real rate is (100/maturity) × health-factor; the water
-    // ratio rides on top the way the demo projected it — under-watering
-    // erodes health, so the slider must move this number.
-    const dailyRate = (100 / m.maturity_days) * Math.max(0.05, cg.health / 100) * ratio;
+    // The growbay's own model (every modifier, at this water split).
+    const factor = typeof window.cropGrowthFactorAt === 'function' ? cropGrowthFactorAt(plantPct) : Math.min(1, plantPct / waterNeed()) * cg.health / 100;
+    const dailyRate = (100 / m.maturity_days) * factor;
     if (dailyRate <= 0.01) return Infinity;
     return STATE.daysElapsed + Math.ceil(Math.max(0, 100 - cg.growth) / dailyRate);
   }
@@ -310,7 +310,7 @@
 
     const foodDelta = dayDelta(foodEmpty, savedEmpty, true);
 
-    const fpd = ORDERS_BASE.foodPerDay * r.foodMult;
+    const fpd = ORDERS_BASE.foodPerDay * r.foodMult * (typeof window.foodBurnMult === 'function' ? foodBurnMult() : 1);
     let fpdText = null;
     if (r.foodMult !== s.foodMult) {
       const d = fpd - ORDERS_BASE.foodPerDay * s.foodMult;
@@ -369,7 +369,10 @@
 
     const drain      = crewDrainRate(plant);
     const savedDrain = crewDrainRate(sv.water);
-    const crewLabel  = drain === 0 ? 'NOMINAL' : ('CRITICAL DAY ' + crewDay);
+    // What the dry tiers actually do (index.html ORDERS_BASE): morale
+    // per day, and at the driest tier 1 HP per crew member per day.
+    const crewLabel  = drain === 0 ? 'NOMINAL'
+      : 'MORALE −' + ((ORDERS_BASE.crewWaterMorale || {})[drain] || 0) + '/DAY' + (drain >= (ORDERS_BASE.crewWaterHPTier || 6) ? ' · HP −1/DAY' : '');
 
     let crewDeltaText = null, crewDeltaCls = null;
     if (drain !== savedDrain) {
@@ -380,7 +383,7 @@
       crewDeltaText = d.text; crewDeltaCls = d.cls;
     }
 
-    const crewWarn = crewDay < arrival;
+    const crewWarn = drain >= (ORDERS_BASE.crewWaterHPTier || 6);
 
     $('od-water-preview').innerHTML =
       statLine('PLANT MATURES', matureStr, matureDelta.text, matureDelta.cls, plantWarn) +

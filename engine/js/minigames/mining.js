@@ -186,8 +186,8 @@
   const CREW_ASSIST = {
     kazuki:   { name: 'KAZUKI',   role: 'Engineer',      bias: '+YIELD',   yieldBonus: 1 },
     osei:     { name: 'DR. OSEI', role: 'Botanist',      bias: '+BIOCOMP', poolFactors: { biocomponent: 3 } },
-    tanaka:   { name: 'TANAKA',   role: 'Scientist',     bias: '+EXOTIC',  poolFactors: { exotic: 2 } },
-    hargrove: { name: 'HARGROVE', role: 'Quartermaster', bias: '+SCRAP',   poolFactors: { scrap: 2 } },
+    tanaka:   { name: 'TANAKA',   role: 'Xenobiologist',     bias: '+EXOTIC',  poolFactors: { exotic: 2 } },
+    hargrove: { name: 'HARGROVE', role: 'Diplomat', bias: '+SCRAP',   poolFactors: { scrap: 2 } },
   };
   // CREW_ORDER used to be hardcoded to the 4 demo crew. Recomputed fresh
   // each time renderArmed() runs from the real engine's live STATE.crew
@@ -595,20 +595,18 @@
     hollow:   { weight:  5, sizeRange: [90, 110],  speedMul: 1.05, briRange: [1.0, 1.1],  pool: null,          units: 0, layerZ: 3, hollow: true },
   };
   const TIER_KEYS = Object.keys(TIERS);
-  const TIER_TOTAL_W = TIER_KEYS.reduce((s,k) => s + TIERS[k].weight, 0);
 
   function rollTier() {
     // Sector modifier (if present) overrides the per-tier spawn weights.
-    const override = MSTATE.sector && MSTATE.sector.tierWeights;
-    if (override) {
-      let total = 0;
-      for (const k of TIER_KEYS) total += override[k] || 0;
-      let r = Math.random() * total;
-      for (const k of TIER_KEYS) { if ((r -= (override[k] || 0)) <= 0) return k; }
-      return 'standard';
-    }
-    let r = Math.random() * TIER_TOTAL_W;
-    for (const k of TIER_KEYS) { if ((r -= TIERS[k].weight) <= 0) return k; }
+    // A portable drill aboard (items.json "unlocks higher asteroid loot
+    // tier") doubles the rich-tier weight.
+    const w = Object.assign({}, MSTATE.sector && MSTATE.sector.tierWeights
+      || Object.fromEntries(TIER_KEYS.map(k => [k, TIERS[k].weight])));
+    if (STATE.items.includes('portable_drill')) w.rich = (w.rich || 0) * 2;
+    let total = 0;
+    for (const k of TIER_KEYS) total += w[k] || 0;
+    let r = Math.random() * total;
+    for (const k of TIER_KEYS) { if ((r -= (w[k] || 0)) <= 0) return k; }
     return 'standard';
   }
 
