@@ -3860,6 +3860,21 @@ function resolveChoice(choice) {
   if (choice.launch_minigame && typeof window.openMinigame === 'function') {
     openMinigame(choice.launch_minigame, choice.minigame_opts || {}, (tier) => {
       const base = choice.outcome || {};
+      if (tier === 'abandoned') {
+        // Quit mid-game (owner ruling 2026-10-09): nothing gained, time
+        // still spent. Losses are the poor tier's (base merged), so a
+        // quit is never better than playing badly.
+        const worst = Object.assign({}, base.resources || {}, ((choice.tier_outcomes || {}).poor || {}).resources || {});
+        const losses = Object.fromEntries(Object.entries(worst).filter(([, v]) => Number.isFinite(v) && v < 0));
+        const quit = { resources: losses, time_cost: base.time_cost,
+          narrative: 'You abandon it partway. Whatever was in hand stays behind, and the time is spent all the same.' };
+        applyOutcomeEffects(quit);
+        renderHUD();
+        if (checkFailure()) return;
+        STATE.outcomeMode = true;
+        renderOutcomeView({ title: 'ABANDONED', body: quit.narrative, tone: 'danger' });
+        return;
+      }
       const t = (choice.tier_outcomes || {})[tier] || {};
       const merged = Object.assign({}, base, t, {
         resources: Object.assign({}, base.resources || {}, t.resources || {}),

@@ -54,7 +54,8 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
   // mining returns a small haul. The CONTRACTS stay fully exercised.
   const installHarness = () => page.evaluate(() => {
     window.openMinigame = (id, opts, onDone) => {
-      const tier = ['perfect', 'good', 'poor'][Math.floor(Math.random() * 3)];
+      // 'abandoned' = the player quit mid-game (✕ QUIT after BEGIN).
+      const tier = ['perfect', 'good', 'poor', 'abandoned'][Math.floor(Math.random() * 4)];
       setTimeout(() => onDone(tier, {}), 25);
     };
     window.openMining = (onDone) => setTimeout(() => onDone({ inventory: { minerals: 1 } }), 25);

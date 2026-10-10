@@ -276,12 +276,20 @@
     renderCruise();
   }
 
+  // Quitting a minigame mid-game (tier 'abandoned', owner ruling
+  // 2026-10-09): nothing gained, even what was already in hand — the
+  // day is still spent.
+  function settleAbandoned(verb) {
+    settleMinigame('◆ ' + verb + ' — abandoned partway. Nothing kept; the day is gone anyway.');
+  }
+
   const TRAIL_TO_SCAN_DIFFICULTY = { lunar: 'easy', mars: 'medium', interstellar: 'hard' };
   const REGION_TO_FORAGE_MODE = { asteroid_field: 'HUNT', debris_field: 'SCAVENGE', planet_orbit_habitable: 'GATHER', anomaly: 'GATHER' };
 
   function handleScanVerb() {
     const difficulty = TRAIL_TO_SCAN_DIFFICULTY[STATE.trail] || 'medium';
     openMinigame('scan', { difficulty }, (tier) => {
+      if (tier === 'abandoned') return settleAbandoned('SCAN');
       const lines = { perfect: 'Clean lock. Scan logged, nothing hiding in the noise.', good: 'Partial read — noisy, but usable.', poor: 'Signal lost in the static. Nothing useful recovered.' };
       settleMinigame('◆ SCAN — ' + (lines[tier] || 'Scan complete.'));
     });
@@ -293,15 +301,16 @@
   // Simon-says here — that game stays in minigames.js for
   // launch_minigame events. Outcome contract preserved from the old
   // tier handler: allFixed (4/4 faults) → the 'perfect' effect (+20
-  // hull), a partial repair → the 'poor' effect (+3 hull), and walking
-  // out having fixed nothing → no effect and no day spent (mirrors
-  // MINE's empty-handed LEAVE).
+  // hull). Abandoning partway (1–3 faults fixed) is a QUIT — nothing
+  // kept, the day spent (owner ruling 2026-10-09); walking out before
+  // touching anything is a free cancel (mirrors MINE's pre-run LEAVE).
   function handleRepairVerb() {
     openEngineRepair((result) => {
       result = result || {};
       const n = result.fixedCount | 0;
       if (n === 0) { renderCruise(); return; }
-      const gain = result.allFixed ? 20 : 3;
+      if (!result.allFixed) return settleAbandoned('REPAIR');
+      const gain = 20;
       STATE.resources.hull = clamp(STATE.resources.hull + gain, 0, 100);
       settleMinigame('◆ REPAIR — ' + (result.allFixed ? 'all four systems nominal' : n + '/4 faults cleared') + ', hull patched (+' + gain + ').');
     });
@@ -311,6 +320,7 @@
     const regionKey = currentRegionKey();
     const mode = REGION_TO_FORAGE_MODE[regionKey] || 'GATHER';
     openMinigame('forage', { mode, return_to: 'cruise', origin_node: STATE.currentId }, (tier, payload) => {
+      if (tier === 'abandoned') return settleAbandoned(mode);
       payload = payload || {};
       if (typeof payload.food === 'number' && payload.food > 0) {
         STATE.resources.food = clamp(STATE.resources.food + payload.food, 0, 100);
@@ -331,6 +341,7 @@
 
   function handleSalvageVerb() {
     openMinigame('salvage', {}, (tier) => {
+      if (tier === 'abandoned') return settleAbandoned('SALVAGE');
       const grant = { perfect: { metal: 3, scrap: 2 }, good: { metal: 2 }, poor: { scrap: 1 } }[tier] || {};
       for (const [mat, qty] of Object.entries(grant)) STATE.materials[mat] = (STATE.materials[mat] || 0) + qty;
       const summary = Object.entries(grant).map(([m, q]) => q + ' ' + m).join(', ') || 'nothing usable';

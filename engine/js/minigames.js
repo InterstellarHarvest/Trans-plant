@@ -276,6 +276,7 @@ let engineerMult = 0; // engineer passive in effect: 1, 0.5 wounded, 0 absent
 let currentGame = null;
 let cleanupFn = null;
 let onMinigameDone = null; // (tier, payload) => void — supplied by openMinigame()'s caller
+let minigameStarted = false; // BEGIN pressed this visit — closing after this is a QUIT
 let lastTier = null, lastPayload = null;
 
 const NAMES = {scan:'SCAN',engine:'ENGINE REPAIR',medical:'MEDICAL TRIAGE',forage:'FORAGE',brace:'SOLAR BRACE',breach:'HULL BREACH',salvage:'SALVAGE'};
@@ -319,6 +320,9 @@ function openMinigame(id, opts, onDone){
   engineerMult = STATE.crew.includes('engineer') ? passiveMult('engineer') : 0;
   engineerAboard = engineerMult > 0;
   onMinigameDone = onDone;
+  minigameStarted = false;
+  const mclose = document.getElementById('mclose');
+  mclose.textContent = '✕ CLOSE'; mclose.title = 'Back out — nothing has started yet.';
   currentGame = id;
   if(cleanupFn){ cleanupFn(); cleanupFn=null; }
   document.getElementById('mtitle').textContent = NAMES[id]||id.toUpperCase();
@@ -329,6 +333,9 @@ function openMinigame(id, opts, onDone){
   showOverlay('overlay-minigames');
   const inits = {scan:initScan,engine:initEngine,medical:initMedical,forage:initForage,brace:initBrace,breach:initBreach,salvage:initSalvage};
   showReady(id, ()=>{
+    minigameStarted = true;
+    const mclose = document.getElementById('mclose');
+    mclose.textContent = '✕ QUIT'; mclose.title = 'Quit now: nothing is kept, and the time is still spent.';
     cleanupFn = inits[id](document.getElementById('ga'), showResult, opts || {});
   });
 }
@@ -403,8 +410,23 @@ function showResult(tier, payload){
 
   resultEl.classList.add('show');
 }
-document.getElementById('mclose').addEventListener('click', closeMinigameOverlay);
-document.getElementById('ov').addEventListener('click', e=>{ if(e.target===document.getElementById('ov')) closeMinigameOverlay(); });
+/* ✕ CLOSE / backdrop click (owner ruling 2026-10-09: quitting gains
+   nothing and costs time):
+   - result screen up → the game is over; same as the result's CLOSE.
+   - game in progress → QUIT: the caller gets tier 'abandoned' and no
+     payload, so nothing salvaged/foraged/earned so far is kept; callers
+     charge the time.
+   - still on the briefing (BEGIN not pressed) → a free cancel; the
+     caller is not called back (the verb/choice simply didn't happen). */
+function requestCloseMinigame(){
+  if(document.getElementById('result').classList.contains('show')){ document.getElementById('rbquit').click(); return; }
+  const cb = onMinigameDone, started = minigameStarted;
+  onMinigameDone = null;
+  closeMinigameOverlay();
+  if(started && cb) cb('abandoned', null);
+}
+document.getElementById('mclose').addEventListener('click', requestCloseMinigame);
+document.getElementById('ov').addEventListener('click', e=>{ if(e.target===document.getElementById('ov')) requestCloseMinigame(); });
 // No "Play Again" — replaying a Stop Menu verb minigame for free without
 // re-opening the Stop Menu would let SALVAGE/FORAGE farm resources in a
 // tight loop (same exploit-avoidance concern the plan flagged for Mining's
@@ -412,6 +434,7 @@ document.getElementById('ov').addEventListener('click', e=>{ if(e.target===docum
 // to whoever called openMinigame() so STATE gets the real result applied.
 document.getElementById('rbquit').addEventListener('click', ()=>{
   const cb = onMinigameDone;
+  onMinigameDone = null;
   const tier = lastTier, payload = lastPayload;
   closeMinigameOverlay();
   if (cb) cb(tier, payload);

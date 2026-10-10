@@ -119,7 +119,7 @@
         </div>
         <div class="enc-choice leave" id="er-ec-abandon">
           <div class="enc-choice-body">RETURN TO BRIDGE</div>
-          <div class="enc-choice-sub">Abandon repairs</div>
+          <div class="enc-choice-sub">Abandon repairs · nothing kept</div>
         </div>
       </div>
       <div class="enc-narrative">
