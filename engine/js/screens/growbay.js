@@ -1144,10 +1144,19 @@
 
     // Grant the real resource — Food for every crop except Zinnia
     // (Morale), per crop.yield_label.
+    let banked = 0;
     if (crop.yield_label === 'Morale') {
       STATE.resources.morale = clamp(STATE.resources.morale + total, 0, 100);
     } else {
+      // Food past a full store is packed as ration bricks (10 food each)
+      // instead of vanishing at the 100 cap — capacity permitting.
+      const room = Math.max(0, 100 - STATE.resources.food);
       STATE.resources.food = clamp(STATE.resources.food + total, 0, 100);
+      let spare = Math.max(0, total - room);
+      while (spare >= 10 && typeof grantItem === 'function' && grantItem('ration_brick')) { spare -= 10; banked++; }
+    }
+    if (banked && typeof window.pushCruiseLog === 'function') {
+      window.pushCruiseLog('◆ HARVEST — the stores are full; the surplus is pressed into ' + banked + ' ration brick' + (banked > 1 ? 's' : '') + '.');
     }
     renderHUD();
 

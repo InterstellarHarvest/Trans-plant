@@ -208,7 +208,8 @@
   }
   function foodEmptyDay(rationsIdx) {
     const perDay = ORDERS_BASE.foodPerDay * ORDERS_RATIONS[rationsIdx].foodMult
-      * (typeof window.foodBurnMult === 'function' ? foodBurnMult() : 1); // chef / cargo bay
+      * (typeof window.foodBurnMult === 'function' ? foodBurnMult() : 1)  // chef / cargo bay
+      * (typeof window.mouthsMult === 'function' ? mouthsMult() : 1);   // crew size
     return STATE.daysElapsed + Math.floor(STATE.resources.food / perDay);
   }
   function cropMatureDay(plantPct) {
@@ -310,7 +311,7 @@
 
     const foodDelta = dayDelta(foodEmpty, savedEmpty, true);
 
-    const fpd = ORDERS_BASE.foodPerDay * r.foodMult * (typeof window.foodBurnMult === 'function' ? foodBurnMult() : 1);
+    const fpd = ORDERS_BASE.foodPerDay * r.foodMult * (typeof window.foodBurnMult === 'function' ? foodBurnMult() : 1) * (typeof window.mouthsMult === 'function' ? mouthsMult() : 1);
     let fpdText = null;
     if (r.foodMult !== s.foodMult) {
       const d = fpd - ORDERS_BASE.foodPerDay * s.foodMult;

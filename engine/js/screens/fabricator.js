@@ -65,6 +65,7 @@
     recipe_hull_patch:     { icon: '🛠️', sprite: null },
     recipe_repair_kit:     { icon: '🧰', sprite: 'sprites/cargo/items/repair_kit.png' },
     recipe_crop_treatment: { icon: '💧', sprite: null },
+    recipe_ration_brick:   { icon: '🧱', sprite: 'sprites/cargo/items/ration_brick.png' },
     recipe_o2_canister:    { icon: '🫧', sprite: null },
     recipe_fuel_cell:      { icon: '🔋', sprite: 'sprites/cargo/items/fuel_cell.png' },
   };

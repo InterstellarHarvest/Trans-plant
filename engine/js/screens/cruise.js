@@ -271,12 +271,12 @@
   // ── Stop Menu shell ──────────────────────────────────────────
   const REGIONS = {
     deep_space:             { label: 'DEEP SPACE',             mood: 'Stars and silence. Nothing here but thinking.',                       verbs: ['scan', 'repair', 'rest', 'wait_for_trader', 'fab'] },
-    asteroid_field:         { label: 'ASTEROID FIELD',         mood: 'Cold rocks. The kind of place that pays in chips, not stories.',      verbs: ['mine', 'forage_food', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
-    debris_field:           { label: 'DEBRIS FIELD',           mood: 'Someone else’s bad day, scattered for kilometers.',              verbs: ['salvage', 'mine', 'forage_food', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
-    nebula:                 { label: 'NEBULA',                 mood: 'Glowing gas in colors that probably mean something.',                 verbs: ['mine', 'scan', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
+    asteroid_field:         { label: 'ASTEROID FIELD',         mood: 'Cold rocks. The kind of place that pays in chips, not stories.',      verbs: ['mine', 'forage_food', 'trade', 'repair', 'rest', 'fab'] },
+    debris_field:           { label: 'DEBRIS FIELD',           mood: 'Someone else’s bad day, scattered for kilometers.',              verbs: ['salvage', 'mine', 'forage_food', 'trade', 'repair', 'rest', 'fab'] },
+    nebula:                 { label: 'NEBULA',                 mood: 'Glowing gas in colors that probably mean something.',                 verbs: ['mine', 'condense', 'scan', 'trade', 'repair', 'rest', 'fab'] },
     anomaly:                { label: 'ANOMALY',                mood: 'The instruments disagree with each other. None of them with reality.', verbs: ['scan', 'forage_food', 'repair', 'rest', 'fab'] },
-    planet_orbit_habitable: { label: 'PLANET ORBIT · HABITABLE', mood: 'Green and blue and trying. A world that knows how to grow things.', verbs: ['forage_food', 'trade', 'wait_for_trader', 'scan', 'repair', 'rest', 'fab'] },
-    station_approach:       { label: 'STATION APPROACH',       mood: 'Lights and traffic. Civilization, give or take.',                     verbs: ['trade', 'wait_for_trader', 'medbay', 'fab_service', 'repair', 'rest', 'fab'] },
+    planet_orbit_habitable: { label: 'PLANET ORBIT · HABITABLE', mood: 'Green and blue and trying. A world that knows how to grow things.', verbs: ['forage_food', 'trade', 'scan', 'repair', 'rest', 'fab'] },
+    station_approach:       { label: 'STATION APPROACH',       mood: 'Lights and traffic. Civilization, give or take.',                     verbs: ['trade', 'medbay', 'drydock', 'fab_service', 'repair', 'rest', 'fab'] },
   };
   const FORAGE_LABEL_BY_REGION = { planet_orbit_habitable: 'GATHER', asteroid_field: 'HUNT', debris_field: 'SCAVENGE', anomaly: 'FORAGE' };
   const STOP_VERBS = {
@@ -286,10 +286,12 @@
     trade:        { label: 'TRADE',     sub: 'Haggle. Or pretend to.',                           effort: 1 },
     wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park. Roll the dice. Days will pass.',    effort: 1, hint: true },
     scan:         { label: 'SCAN',      sub: 'Read the signals. Find what is coming.',           effort: 2, hint: true },
-    repair:       { label: 'REPAIR',    sub: 'Patch the hull. Costs a day; an engineer patches further.', effort: 3 },
+    repair:       { label: 'REPAIR',    sub: 'Patch the hull: 2 metal + 1 scrap and a day.', effort: 3, locked: repairLockReason },
     rest:         { label: 'REST',      sub: 'Crew morale up. Days down.',                       effort: 1, hint: true },
     fab:          { label: 'FABRICATOR', sub: 'Open the print queue. Long jobs need a still ship.', effort: 1, hint: true },
     medbay:       { label: 'MEDBAY',    sub: 'Station rates. Cash up front. Mostly sterile.',   effort: 1, hint: true, locked: medbayLockReason },
+    condense:     { label: 'CONDENSE',  sub: 'Wring water out of the nebula. A day for +12 water.', effort: 2, locked: condenseLockReason },
+    drydock:      { label: 'DRYDOCK',   sub: 'Station crews patch the hull. +30 hull, paid in gold.', effort: 1, hint: true, locked: drydockLockReason },
     fab_service:  { label: 'FAB SERVICE', sub: 'Station techs overhaul the fabricator. Wear to zero.', effort: 1, hint: true, locked: fabServiceLockReason },
   };
   function effortPips(n) { n = Math.max(0, Math.min(5, n | 0)); return '●'.repeat(n) + '○'.repeat(5 - n); }
@@ -307,6 +309,9 @@
     if (checkFailure()) return;
     pushLogEntry(logLine);
     renderCruise();
+    // The Stop menu stays open across verbs — re-gate it (a REPAIR that
+    // spent the last metal must lock, MEDBAY with no one hurt…).
+    if (document.body.classList.contains('stop-active') && typeof renderStopMenu === 'function') renderStopMenu();
   }
 
   // Quitting a minigame mid-game (tier 'abandoned', owner ruling
@@ -344,12 +349,22 @@
   // hull). Abandoning partway (1–3 faults fixed) is a QUIT — nothing
   // kept, the day spent (owner ruling 2026-10-09); walking out before
   // touching anything is a free cancel (mirrors MINE's pre-run LEAVE).
+  // REPAIR costs materials (owner ruling 2026-10-10): 2 metal + 1 scrap,
+  // spent only when the patch is done (a quit keeps them, costs the day).
+  const REPAIR_COST = { metal: 2, scrap: 1 };
+  function repairLockReason() {
+    const m = STATE.materials || {};
+    if ((m.metal || 0) < REPAIR_COST.metal || (m.scrap || 0) < REPAIR_COST.scrap) return '2 METAL + 1 SCRAP';
+    return null;
+  }
   function handleRepairVerb() {
+    if (repairLockReason()) return;
     openEngineRepair((result) => {
       result = result || {};
       const n = result.fixedCount | 0;
       if (n === 0) { renderCruise(); return; }
       if (!result.allFixed) return settleAbandoned('REPAIR');
+      for (const [mat, q] of Object.entries(REPAIR_COST)) STATE.materials[mat] = Math.max(0, (STATE.materials[mat] || 0) - q);
       // Engineer aboard: the patch goes further (+10, captain half).
       const before = STATE.resources.hull;
       STATE.resources.hull = clamp(STATE.resources.hull + 20 + Math.round(10 * specialistMult('engineer')), 0, resMax('hull'));
@@ -435,6 +450,18 @@
         granted.push(qty + ' ' + mat);
       }
       if (!granted.length) { renderCruise(); return; } // LEAVE with no run made — no time cost either
+      // Bible multi-path rule: asteroid ice melts into water, a nebula
+      // run scoops fuel — scaled by how much was mined (cap 15).
+      const mined = Object.values(inv).reduce((a, b) => a + (b || 0), 0);
+      const side = Math.min(15, Math.round(mined / 2));
+      const region = currentRegionKey();
+      if (side > 0 && region === 'asteroid_field') {
+        STATE.resources.water = clamp(STATE.resources.water + side, 0, 100);
+        granted.push('ice melted for +' + side + ' water');
+      } else if (side > 0 && region === 'nebula') {
+        STATE.resources.fuel = clamp(STATE.resources.fuel + side, 0, resMax('fuel'));
+        granted.push('+' + side + ' fuel scooped from the gas');
+      }
       settleMinigame('◆ MINE — recovered ' + granted.join(', ') + '.');
     });
   }
@@ -530,7 +557,38 @@
     renderStopMenu();
   }
 
-  const VERB_HANDLERS = { fab_service: handleFabServiceVerb, medbay: handleMedbayVerb, mine: handleMineVerb, scan: handleScanVerb, repair: handleRepairVerb, forage_food: handleForageVerb, salvage: handleSalvageVerb, fab: handleFabricatorVerb, rest: handleRestVerb, trade: handleTradeVerb, wait_for_trader: handleWaitTraderVerb };
+  // CONDENSE (nebulae, Atmospheric Condenser upgrade — Bible multi-path
+  // rule's canonical upgrade-gated verb): a day of work, +12 water.
+  function condenseLockReason() {
+    if (!STATE.items.includes('atmospheric_condenser')) return 'Need: Atmospheric Condenser';
+    if (STATE.resources.water >= 100) return 'TANKS FULL';
+    return null;
+  }
+  function handleCondenseVerb() {
+    if (condenseLockReason()) return;
+    STATE.resources.water = clamp(STATE.resources.water + 12, 0, 100);
+    settleMinigame('◆ CONDENSE — a day of the condenser hissing at the nebula. +12 water, faintly violet.');
+  }
+  // DRYDOCK (stations — Bible multi-path rule "station drydock (gold)").
+  const DRYDOCK_BASE = 30;
+  const drydockFee = () => stationPrice(DRYDOCK_BASE);
+  function drydockLockReason() {
+    if (STATE.resources.hull >= resMax('hull')) return 'HULL INTACT';
+    if (STATE.goldAmount < drydockFee()) return drydockFee() + 'g';
+    return null;
+  }
+  function handleDrydockVerb() {
+    if (drydockLockReason()) return;
+    STATE.goldAmount -= drydockFee();
+    const before = STATE.resources.hull;
+    STATE.resources.hull = clamp(STATE.resources.hull + 30, 0, resMax('hull'));
+    pushLogEntry('◆ DRYDOCK — station crews weld, rivet and invoice. +' + Math.round(STATE.resources.hull - before) + ' hull, −' + drydockFee() + 'g.');
+    renderHUD();
+    renderCruise();
+    renderStopMenu();
+  }
+
+  const VERB_HANDLERS = { condense: handleCondenseVerb, drydock: handleDrydockVerb, fab_service: handleFabServiceVerb, medbay: handleMedbayVerb, mine: handleMineVerb, scan: handleScanVerb, repair: handleRepairVerb, forage_food: handleForageVerb, salvage: handleSalvageVerb, fab: handleFabricatorVerb, rest: handleRestVerb, trade: handleTradeVerb, wait_for_trader: handleWaitTraderVerb };
 
   function currentRegionKey() {
     const node = STATE.byId && STATE.byId[STATE.currentId];

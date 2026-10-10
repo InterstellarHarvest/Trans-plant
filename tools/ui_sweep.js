@@ -42,8 +42,13 @@ const INERT_OK = new Set([]);
     const overlays = [...document.querySelectorAll('.overlay.active')].map(o => o.id).join(',');
     const modal = document.body.className;
     const st = typeof STATE !== 'undefined' ? [STATE.daysElapsed, STATE.goldAmount, STATE.currentId, (STATE.currentEvent||{}).id, STATE.items.length].join('|') : '';
-    const logLen = (document.getElementById('ai-log') || { innerText: '' }).innerText.length;
-    return (active ? active.id : '') + '#' + overlays + '#' + modal + '#' + st + '#' + (document.body.innerText.length - logLen);
+    // Hash the visible text (minus the typewriting AI log) — comparing
+    // only its LENGTH called a button inert when its effect happened to
+    // swap in a same-length line (Orders' LUDICROUS preview).
+    const logText = (document.getElementById('ai-log') || { innerText: '' }).innerText;
+    const text = document.body.innerText.replace(logText, '');
+    let h = 0; for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) | 0;
+    return (active ? active.id : '') + '#' + overlays + '#' + modal + '#' + st + '#' + h;
   });
   const looksDisabled = el => page.evaluate(el => {
     const cs = getComputedStyle(el);

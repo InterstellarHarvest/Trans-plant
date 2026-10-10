@@ -43,9 +43,14 @@
     insulated_cargo_bay: '📦',
     drive_coil:          '🌀',
     o2_recycler:         '♻️',
-    repair_fabricator:   '🛠️'
+    repair_fabricator:   '🛠️',
+    atmospheric_condenser: '💧',
+    o2_canister:         '🫧',
+    crop_treatment:      '🧪'
   };
-  const iconOf = sid => ICON_FALLBACK[sid] || ('sprites/cargo/items/' + sid + '.png');
+  // Upgrades have their own art in sprites/cargo/upgrades (it existed
+  // all along — the market showed emoji); emoji only where no art exists.
+  const iconOf = sid => (typeof itemSpritePath === 'function' && itemSpritePath(sid)) || ICON_FALLBACK[sid] || ('sprites/cargo/items/' + sid + '.png');
 
   // Demo sell-price convention: vendors pay ~2/3 of asking price.
   const sellPrice = bp => Math.max(1, Math.round(bp * 2 / 3));
@@ -100,10 +105,10 @@
         if (w.cost && w.cost.gold) w.cost.gold = Math.max(1, Math.round(w.cost.gold * standing));
       }
     }
-    // Only one cargo bay does anything — don't sell a second.
-    if (STATE.items.includes('insulated_cargo_bay')) {
-      const bi = wares.findIndex(w => w.id === 'insulated_cargo_bay');
-      if (bi >= 0) wares.splice(bi, 1);
+    // An upgrade you already carry does nothing twice — don't offer it.
+    for (let i = wares.length - 1; i >= 0; i--) {
+      const d = defBy(wares[i].id);
+      if (d && (d.item_behavior || []).includes('upgrade') && STATE.items.includes(wares[i].id)) wares.splice(i, 1);
     }
     let negotiated = false;
     if (typeof STATE !== 'undefined' && STATE.flags && STATE.flags.has('negotiation_prepared')) {

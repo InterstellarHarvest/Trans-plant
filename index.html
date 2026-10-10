@@ -1723,6 +1723,7 @@ const SAVED_FIELDS = [
   'scouted', // SCAN: events locked in at the stops ahead
   'soilSurveys', // soil sampler planet surveys (ending score)
   'startCrew',   // crew size at launch (ending crew paragraph / score)
+  'dayCarry',    // fractional travel day carried between legs
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1930,7 +1931,7 @@ function applySetupToState(sel) {
   // same placeholder loadout initState() used, so item-gated choices
   // still unlock somewhere in the loop.
   STATE.items = ['soil_sampler', 'gas_analyzer', 'repair_kit'];
-  STATE.materials = {};
+  STATE.materials = { metal: 4, scrap: 2 }; // ship stores: two hull patches' worth (REPAIR costs 2 metal + 1 scrap)
 
   STATE.daysElapsed  = 0;
   STATE.visited      = new Set();
@@ -1949,7 +1950,7 @@ function applySetupToState(sel) {
   STATE.postCombatLegs = 0; STATE.miningSectors = {}; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.lastAmbientNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
-  STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0;
+  STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0;
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
   if (typeof window.abortFabricator === 'function') window.abortFabricator();
@@ -2467,13 +2468,16 @@ function renderHUD() {
     hull:  r.hull  < 30,
     mor:   r.morale < 30,
   };
+  // Shown values: rounded, but anything above zero reads at least 1 — a
+  // tank at 0.4 used to read 0 while it still had something in it.
+  const sh = v => v > 0 ? Math.max(1, Math.round(v)) : 0;
   const html = `
-    <div class="hud-r fuel${crit.fuel?' crit':''}"  title="FUEL">  <span class="dot"></span>FU ${r.fuel|0}</div>
-    <div class="hud-r food${crit.food?' crit':''}"  title="FOOD">  <span class="dot"></span>FD ${r.food|0}</div>
-    <div class="hud-r water${crit.water?' crit':''}" title="WATER"> <span class="dot"></span>H2 ${r.water|0}</div>
-    <div class="hud-r o2${crit.o2?' crit':''}"      title="OXYGEN"><span class="dot"></span>O2 ${r.o2|0}</div>
-    <div class="hud-r hull${crit.hull?' crit':''}"  title="HULL">  <span class="dot"></span>HL ${r.hull|0}</div>
-    <div class="hud-r mor${crit.mor?' crit':''}"    title="MORALE"><span class="dot"></span>MO ${r.morale|0}</div>
+    <div class="hud-r fuel${crit.fuel?' crit':''}"  title="FUEL">  <span class="dot"></span>FU ${sh(r.fuel)}</div>
+    <div class="hud-r food${crit.food?' crit':''}"  title="FOOD">  <span class="dot"></span>FD ${sh(r.food)}</div>
+    <div class="hud-r water${crit.water?' crit':''}" title="WATER"> <span class="dot"></span>H2 ${sh(r.water)}</div>
+    <div class="hud-r o2${crit.o2?' crit':''}"      title="OXYGEN"><span class="dot"></span>O2 ${sh(r.o2)}</div>
+    <div class="hud-r hull${crit.hull?' crit':''}"  title="HULL">  <span class="dot"></span>HL ${sh(r.hull)}</div>
+    <div class="hud-r mor${crit.mor?' crit':''}"    title="MORALE"><span class="dot"></span>MO ${sh(r.morale)}</div>
     <div class="hud-r gold" title="GOLD"><span class="dot"></span>${STATE.goldAmount}g</div>
   `;
   for (const id of ['hud-map', 'hud-enc', 'hud-cruise', 'hud-mining']) {
@@ -2521,8 +2525,19 @@ window.addEventListener('resize', fitGameToViewport);
 let _invTab = 'gear';
 let _invSelected = null;
 let _invJettisonPending = null;
+// Item art lives in two folders: upgrades in sprites/cargo/upgrades
+// (insulated_cargo_bay's file is extra_cargo.png), everything else in
+// sprites/cargo/items. null when no art exists yet (emoji fallback).
+const UPGRADE_SPRITES = { expanded_fuel_tank: 'expanded_fuel_tank', hull_plating: 'hull_plating', insulated_cargo_bay: 'extra_cargo', drive_coil: 'drive_coil', o2_recycler: 'o2_recycler', repair_fabricator: 'repair_fabricator' };
+const NO_ITEM_ART = { atmospheric_condenser: 1, o2_canister: 1, crop_treatment: 1 }; // on the PMO art list
+function itemSpritePath(id) {
+  if (UPGRADE_SPRITES[id]) return 'sprites/cargo/upgrades/' + UPGRADE_SPRITES[id] + '.png';
+  if (NO_ITEM_ART[id]) return null;
+  return 'sprites/cargo/items/' + id + '.png';
+}
 function invIconHtml(id, isMaterial, px) {
-  const path = isMaterial ? 'sprites/cargo/materials/' + id + '.png' : 'sprites/cargo/items/' + id + '.png';
+  const path = isMaterial ? 'sprites/cargo/materials/' + id + '.png' : itemSpritePath(id);
+  if (!path) return '<span class="inv-tile-emoji">' + ({ atmospheric_condenser: '💧', o2_canister: '🫧', crop_treatment: '🧪' }[id] || '📦') + '</span>';
   return '<img src="' + path + '" alt="" onerror="this.outerHTML=\'<span class=&quot;inv-tile-emoji&quot;>📦</span>\'" style="width:inherit;height:inherit;max-width:56px;max-height:56px;">';
 }
 function renderInventory() {
@@ -2963,7 +2978,7 @@ function returnToHub() {
   STATE.currentEvent = null; STATE.currentNode = null;
   STATE.layerStack = null; STATE.currentOutcomeId = null; STATE.outcomeMode = false;
   STATE.npcCtx = null;
-  STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
+  STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.effortScale = 1;
   STATE.researchKey = null; // a Research preview lasts for its encounter only
   STATE.scanIntelEvent = null;
   renderHUD();
@@ -2999,11 +3014,15 @@ const ORDERS_RATIONS = [
   { id: 'pigout',   name: 'PIG OUT',         foodMult: 1.5, moralePerDay: 0.15, morale: 'RISING'  },
 ];
 const ORDERS_BASE = {
-  legDaysFrac:      0.55, // travel-day budget ≈ 55% of baseDays at RIDICULOUS across the whole map
-  travelFuelBudget: 30,   // RIDICULOUS fuel across a trail's total_nodes: Lunar 3/leg, Mars ~2.3, Interstellar 2
+  // Balance pass 2026-10-10 (audit sim: every resource sat near full,
+  // ~95% of arrivals were legendary): travel is spread over the legs
+  // actually flown (pathLegs), and consumption bites.
+  legDaysFrac:      0.60, // travel-day budget ≈ 60% of baseDays at RIDICULOUS along the path
+  travelFuelBudget: 45,   // RIDICULOUS fuel along the whole path (PLAID needs fuel cells)
                           // (a flat 3/leg starved the 15-node trail — two independent Interstellar runs ended fuel-dry)
-  foodPerDay:       0.2,  // food per day at STANDARD (× rations foodMult)
-  waterPerDay:      0.15, // ship water stock draw per day (both sides drink from it)
+  foodPerDay:       0.5,  // food per day at STANDARD (× rations foodMult) — harvests/forage matter
+  waterPerDay:      0.35, // ship water stock draw per day (both sides drink from it)
+  o2PerDay:         0.2,  // the crew breathe (owner ruling 2026-10-10); O2 recycler halves it
   paceMoraleFactor: 0.25, // morale/day per point of drainMult above 1.0, travel days only
   // Crew-side water pressure — demo crewDrainRate() tiers (0/1/3/6
   // hydration pts/day) mapped to engine morale pressure per day.
@@ -3061,9 +3080,26 @@ function crewWaterDrainRate() {
    per-leg burn × pace. Also the pilot skill's "double fuel" basis. */
 /* Per-leg fuel at RIDICULOUS, normalised by the trail's authored node
    count so every trail spends the same travel budget on a clean run. */
+/* Legs actually flown start → destination (spine gaps, plus each fork's
+   detour: fork + branch nodes + rejoin). The travel and fuel budgets are
+   spread over THIS — dividing by all map nodes (both branches counted)
+   or by the spine alone mis-sized every leg (audit 2026-10-10). */
+function pathLegs() {
+  if (!STATE.nodes || !STATE.nodes.length) return 10;
+  if (STATE._pathLegs && STATE._pathLegsFor === STATE.nodes) return STATE._pathLegs;
+  let id = STATE.nodes[0].id, legs = 0, guard = 0;
+  while (guard++ < 200) {
+    const n = STATE.byId[id];
+    const next = n && connectionsOf(n);
+    if (!next || !next.length) break;
+    id = next[0]; legs++;
+  }
+  STATE._pathLegs = Math.max(1, legs); STATE._pathLegsFor = STATE.nodes;
+  return STATE._pathLegs;
+}
+window.pathLegs = pathLegs;
 function fuelPerLegBase() {
-  const rules = (typeof MOD !== 'undefined' && MOD.map_rules && MOD.map_rules.trails && MOD.map_rules.trails[STATE.trail]) || null;
-  return ORDERS_BASE.travelFuelBudget / Math.max(1, (rules && rules.total_nodes) || 10);
+  return ORDERS_BASE.travelFuelBudget / pathLegs();
 }
 window.fuelPerLegBase = fuelPerLegBase;
 /* Resource ceilings: 100, raised while the upgrade is in cargo
@@ -3129,6 +3165,18 @@ function rosterPassive(role, key, dflt) {
 // Food burn: chef (crew_roster food_consumption_modifier 0.85) and the
 // insulated cargo bay (−15%). Fuel burn: pilot (fuel_burn_modifier 0.9)
 // and the drive coil (−20%).
+/* Mouths to feed (owner ruling 2026-10-10): the captain plus each crew
+   member, the engineer counting double ("eats twice as much" —
+   crew_roster eats_double), against the reference ship of three. */
+function mouthsMult() {
+  let mouths = 1;
+  for (const r of STATE.crew) {
+    const c = (MOD.crew_roster || []).find(x => x.role === r);
+    mouths += (c && c.eats_double && !crewIdentityOf(r)) ? 2 : 1; // a stowaway in the role eats normally
+  }
+  return mouths / 3;
+}
+window.mouthsMult = mouthsMult;
 function foodBurnMult() {
   return (1 - (1 - rosterPassive('chef', 'food_consumption_modifier', 0.85)) * specialistMult('chef'))
     * (STATE.items.includes('insulated_cargo_bay') ? 0.85 : 1);
@@ -3139,10 +3187,11 @@ function fuelBurnMult() {
 }
 function legTravelCost() {
   const pace = ordersPace();
-  const nodeCount = Math.max(1, (STATE.nodes && STATE.nodes.length) || 10);
-  const baseLegDays = Math.max(1, (STATE.baseDays * ORDERS_BASE.legDaysFrac) / nodeCount);
+  const baseLegDays = (STATE.baseDays * ORDERS_BASE.legDaysFrac) / pathLegs();
+  const exact = baseLegDays * pace.etaMult;
   return {
-    days: Math.max(1, Math.round(baseLegDays * pace.etaMult)),
+    days: Math.max(1, Math.round(exact)), // projection; travelTo carries the fraction
+    exactDays: exact,
     fuel: Math.round(fuelPerLegBase() * pace.fuelMult * fuelBurnMult() * 10) / 10,
   };
 }
@@ -3177,7 +3226,14 @@ function passDays(days, opts) {
   const pace = ordersPace(), ra = ordersRations();
 
   // RATIONS — food burn + morale drift, every day.
-  r.food = clamp(r.food - ORDERS_BASE.foodPerDay * ra.foodMult * foodBurnMult() * days, 0, 100);
+  r.food = clamp(r.food - ORDERS_BASE.foodPerDay * ra.foodMult * foodBurnMult() * mouthsMult() * days, 0, 100);
+  // O2 (owner ruling 2026-10-10): the crew breathe — a slow daily draw,
+  // halved by the O2 recycler. Events, tanks and canisters refill it.
+  // A healthy crop makes air (the growbay is the ship's lung — the AI's
+  // own warning lines say so): it halves the draw too.
+  const cropMeta = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
+  const cropBreathes = STATE.cropGrowth && cropMeta && STATE.cropGrowth.health >= (cropMeta.healthy_threshold || 65);
+  r.o2 = clamp(r.o2 - ORDERS_BASE.o2PerDay * (STATE.items.includes('o2_recycler') ? 0.5 : 1) * (cropBreathes ? 0.5 : 1) * days, 0, 100);
   let morale = ra.moralePerDay * days;
 
   // PACE — crew drain while actually flying (drainMult < 1 rests them).
@@ -3208,6 +3264,8 @@ function passDays(days, opts) {
   }
 
   r.morale = clamp(r.morale + morale, 0, 100);
+  // No float drift (83.79999999999997): resources are kept to 0.01.
+  for (const k of ['fuel', 'food', 'water', 'o2', 'hull', 'morale']) r[k] = Math.round(r[k] * 100) / 100;
 }
 window.ensureOrders = ensureOrders;
 window.ordersPace = ordersPace;
@@ -3248,6 +3306,12 @@ function travelTo(nodeId, opts) {
   // tank (or the clock) dry mid-leg ends the run right here.
   {
     const leg = legTravelCost();
+    // Fractional days carry leg to leg (rounding each leg distorted the
+    // trip by up to ±20% depending on map size).
+    STATE.dayCarry = (STATE.dayCarry || 0) + leg.exactDays;
+    const legDays = Math.max(1, Math.floor(STATE.dayCarry));
+    STATE.dayCarry -= legDays;
+    leg.days = legDays;
     STATE.resources.fuel = clamp(STATE.resources.fuel - leg.fuel, 0, resMax('fuel'));
     // Drive coil (items.json): 5% per leg it misfires — minor hull damage.
     if (STATE.items.includes('drive_coil') && Math.random() < 0.05) {
@@ -3778,6 +3842,12 @@ function renderChoicesInner(choices) {
         : (STATE.crew.length < 2 && !STATE.crew.includes(idn.join_role)) ? 'Joins the crew as ' + idn.join_role
         : 'Rides along as a passenger';
     }
+    const effort = !locked && choiceEffort(ch);
+    if (effort && !subText) {
+      const o = choiceOutcome(ch);
+      const days = Math.max(1, Math.round((({trivial:1, low:2, medium:4, high:8, extreme:14})[(o && o.time_cost) || 'trivial'] || 1) * effort.ratio));
+      subText = 'Effort ' + effort.available + ' / ' + effort.required + ' · ' + days + (days === 1 ? ' day' : ' days');
+    }
     const preview = !locked && previews.get(ch);
     if (preview) { subText = preview; btn.classList.add('previewed'); }
     if (ch.effort || subText) {
@@ -4168,6 +4238,12 @@ function handleChoiceClick(choice) {
   const ev = STATE.currentEvent;
   STATE.lethalSaved = null;
   STATE.halfEffect = choiceStandIn(choice);
+  const eff = choiceEffort(choice);
+  STATE.effortScale = eff ? eff.ratio : 1;
+  if (eff && eff.kit) {
+    const i = STATE.items.indexOf(eff.kit);
+    if (i >= 0) { STATE.items.splice(i, 1); if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ A ' + prettyItem(eff.kit) + ' went into the job.'); }
+  }
   STATE.lastPick = { picked: choice, shown: STATE._shownChoices || [] };
 
   // One-shot actions (demo's consume machinery) — mark spent the
@@ -4280,11 +4356,11 @@ function applyOutcomeEffects(o) {
         }
       } else if (k in STATE.resources) {
         // O2 recycler (items.json): O2 losses reduced 25%.
-        let dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.round(v * 0.75) : v;
+        let dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.trunc(v * 0.75) : v; // toward zero: a −1 loss becomes 0
         // Engineer passive "hull repair events cost less time and
         // resources": hull repairs land 25% further (captain half).
         if (k === 'hull' && dv > 0) dv = Math.round(dv * (1 + 0.25 * specialistMult('engineer')));
-        if (STATE.halfEffect && dv > 0) dv = Math.round(dv / 2); // captain standing in: half the gains
+        if (STATE.halfEffect && dv > 0) dv = Math.floor(dv / 2); // captain standing in: half the gains (rounded down)
         STATE.resources[k] = clamp(STATE.resources[k] + dv, 0, resMax(k));
       }
     }
@@ -4404,7 +4480,40 @@ function applyOutcomeEffects(o) {
   // Time cost — bump days by a small constant per tier, routed through
   // passDays() so standing orders' daily drains (rations/water) apply.
   const tier = o.time_cost || 'trivial';
-  passDays(({trivial:1, low:2, medium:4, high:8, extreme:14})[tier] || 1);
+  const base = ({trivial:1, low:2, medium:4, high:8, extreme:14})[tier] || 1;
+  // Effort system (Bible §Effort, owner ruling 2026-10-10 "effort only"):
+  // a repair choice's days scale by effort_required / effort available.
+  const scale = STATE.effortScale || 1;
+  passDays(Math.max(1, Math.round(base * scale)));
+}
+
+/* Effort a repair choice can draw on (GAME_BIBLE §The Effort System):
+   the captain's own hands (+10), each listed specialist aboard at their
+   crew_roster effort_contribution (wounded: half; a captain of that
+   background: half), each other crew member as general help (+10), and
+   each listed item in cargo at its items.json contribution (a repair kit
+   is consumed when it's used). Returns {available, required, ratio,
+   kit}. ratio = required / available, capped to ×0.5…×2 ("a crew that
+   can't contribute much watches it take twice as long"). */
+function choiceEffort(choice) {
+  if (!choice || !Number.isFinite(choice.effort_required) || !Array.isArray(choice.requires_effort_from)) return null;
+  let available = 10, kit = null;
+  const listed = new Set();
+  for (const src of choice.requires_effort_from) {
+    if (src.startsWith('item:')) {
+      const id = src.slice(5);
+      const d = itemDef(id);
+      if (STATE.items.includes(id) && d && d.effort_contribution) { available += d.effort_contribution.value || 0; if ((d.item_behavior || []).includes('one_use')) kit = id; }
+    } else {
+      listed.add(src);
+      const c = (MOD.crew_roster || []).find(x => x.role === src);
+      const v = (c && c.passive_skill && c.passive_skill.effort_contribution && c.passive_skill.effort_contribution.value) || 25;
+      available += v * specialistMult(src);
+    }
+  }
+  for (const r of STATE.crew) if (!listed.has(r)) available += 10;
+  const ratio = Math.min(2, Math.max(0.5, choice.effort_required / Math.max(1, available)));
+  return { available: Math.round(available), required: choice.effort_required, ratio, kit };
 }
 
 /* Flat-schema resolution: choice.outcome is an inline object. Apply →
@@ -4566,32 +4675,42 @@ function triggerArrival(node) {
   endRun({ kind: 'ending', module: ending });
 }
 
-function scoreBracket() {
-  // Demo formula per Bible §17: score = crew*33.3 + resAvg*0.6 + dayDelta*0.5
-  // Thresholds: 130 legendary / 85 good / 40 rough / else pyrrhic.
+function scoreValue() {
+  // Score (balance pass 2026-10-10; was the demo's crew*33.3 + resAvg*0.6
+  // + dayDelta*0.5): 0.6·crew% + 0.4·resources(no O2) + 50·time-share.
+  // Thresholds: 125 legendary / 85 good / 45 rough / else pyrrhic (calibrated on a 120-run sim).
   // 'hollow' overrides the numeric brackets entirely: the crew arrived but
   // the crop — the mission — did not. Both original endings authored
   // score_paragraphs.hollow for exactly this case; it was unreachable
   // until the crop-status wiring landed in Phase 6.
-  if (STATE.crop && STATE.cropGrowth && STATE.cropGrowth.health <= 0) return 'hollow';
   const r = STATE.resources;
-  const resAvg = (r.fuel + r.food + r.water + r.o2 + r.hull + r.morale) / 6;
-  const dayDelta = (STATE.baseDays - STATE.daysElapsed);
   // Crew term: the share of the launch crew who made it, worth 100 (it
   // assumed a 3-person crew the setup can't pick — legendary was out of
   // reach). A solo-by-choice launch counts half.
   const start = STATE.startCrew != null ? STATE.startCrew : STATE.crew.length;
   const crewTerm = start > 0 ? 100 * Math.min(1, STATE.crew.length / start) : 50;
-  let score = crewTerm + (resAvg * 0.6) + (dayDelta * 0.5);
-  score += (STATE.soilSurveys || 0) * 5; // soil sampler surveys (items.json "affects ending score")
+  // Balance pass 2026-10-10: the raw day term scaled with trail length
+  // (interstellar arrivals scored "good" with no crew at all) and O2 was
+  // always full — weights rebalanced, time as a share of the deadline,
+  // O2 out of the average. Thresholds below recalibrated to match.
+  const resNoO2 = (r.fuel + r.food + r.water + r.hull + r.morale) / 5;
+  let score = 0.6 * crewTerm + 0.4 * resNoO2 + 50 * (STATE.baseDays - STATE.daysElapsed) / Math.max(1, STATE.baseDays);
+  score += (STATE.soilSurveys || 0) * 2; // soil sampler surveys (items.json "affects ending score")
   // crops.json arrival_bonus: the crop's colony value (wheat +10%, tomato
   // +15% if health > 50, soybean +12%…).
   const meta = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
   const ab = meta && meta.arrival_bonus;
   if (ab && ab.ending_score_modifier && STATE.cropGrowth && STATE.cropGrowth.health > (ab.health_condition || 0)) score *= ab.ending_score_modifier;
-  if (score >= 130) return 'legendary';
+  return score;
+}
+function scoreBracket() {
+  // 'hollow' overrides the numeric brackets: the crew arrived, the crop
+  // (the mission) did not.
+  if (STATE.crop && STATE.cropGrowth && STATE.cropGrowth.health <= 0) return 'hollow';
+  const score = scoreValue();
+  if (score >= 125) return 'legendary'; // sim-calibrated: competent runs ~115-122 (good), excellent 125+
   if (score >=  85) return 'good';
-  if (score >=  40) return 'rough';
+  if (score >=  45) return 'rough';
   return 'pyrrhic';
 }
 
