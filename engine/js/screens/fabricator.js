@@ -582,7 +582,15 @@
     const failChance = 0.005 + Math.max(0, (FSTATE.wear - 50) / 100) * 0.005;
     if (Math.random() < failChance) {
       breakFab();
-      console.log('Craft failed: fab broken mid-cycle.');
+      // A misfire sometimes leaves something behind: items.json's
+      // fab_surplus ("produced by fabricator misfires (15% of misfires)"),
+      // logged with a line from flavor_pools.fabricator_misfire_descriptions.
+      if (Math.random() < 0.15 && typeof grantItem === 'function' && grantItem('fab_surplus')) {
+        const lines = MOD.flavor && MOD.flavor.fabricator_misfire_descriptions;
+        if (Array.isArray(lines) && lines.length && typeof window.pushCruiseLog === 'function') {
+          window.pushCruiseLog('◆ ' + lines[Math.floor(Math.random() * lines.length)] + ' (Fabricator Surplus added to cargo.)');
+        }
+      }
       renderAll();
       return;
     }
@@ -599,6 +607,9 @@
     // Success path — kick off the craft. Timestamp-driven so the
     // progress bar can animate smoothly per-frame rather than
     // stepping at day boundaries.
+    // The craft is paid for (days + materials) — record the output as owed
+    // in saved STATE so a reload can't lose it (FSTATE is memory-only).
+    STATE.fabricator.owedOutput = r.id;
     FSTATE.craft = {
       recipeId:  r.id,
       daysTotal: totalDays,
@@ -706,7 +717,7 @@
     }
     clearTimeout(FSTATE.craft.timer);
     stopProgressLoop();
-    FSTATE.craft = null;
+    FSTATE.craft = null; STATE.fabricator.owedOutput = null; // cancelled/broken — nothing owed
     // Portrait back to idle; kill anim.
     const slot = $('fb-slot');
     slot.classList.remove('state-busy', 'state-done');
@@ -801,6 +812,7 @@
       for (let i = 0; i < r.output.count; i++) STATE.items.push(r.output.item);
     }
     FSTATE.pendingOutput = null;
+    STATE.fabricator.owedOutput = null;
     // AI commentary on completed craft (fabricator_events pool).
     if (typeof window.pushCruiseLog === 'function') {
       const pool = MOD.flavor && MOD.flavor.ai_universal && MOD.flavor.ai_universal.fabricator_events
@@ -857,7 +869,7 @@
     if (FSTATE.craft) {
       clearTimeout(FSTATE.craft.timer);
       stopProgressLoop();
-      FSTATE.craft = null;
+      FSTATE.craft = null; STATE.fabricator.owedOutput = null; // cancelled/broken — nothing owed
       setProgressIdle();
     }
   }
@@ -957,9 +969,25 @@
   // callback: crafting applies its time cost immediately in
   // craftSelected() and claimOutput() grants STATE.items directly, so
   // there's nothing to hand back on close.
+  // Load-time teardown (index.html teardownLiveUI): forget the replaced
+  // run's in-memory craft; the loaded run's owedOutput restores on open.
+  window.abortFabricator = function () {
+    if (FSTATE.craft) { clearTimeout(FSTATE.craft.timer); stopProgressLoop(); FSTATE.craft = null; }
+    FSTATE.pendingOutput = null;
+    const prog = document.getElementById('fb-progress'); if (prog) prog.classList.remove('active');
+    const slot = document.getElementById('fb-output-slot'); if (slot) slot.classList.remove('ready');
+  };
+
   window.openFabricator = function() {
     loadFabricatorData();
     bindFabricatorState();
+    // A paid-for craft from before a reload/load: its time is already
+    // spent, so it waits finished in the output bay.
+    const owed = STATE.fabricator.owedOutput;
+    if (owed && !FSTATE.craft && !FSTATE.pendingOutput) {
+      const r = RECIPES.find(x => x.id === owed);
+      if (r) showOutputItem(r); else STATE.fabricator.owedOutput = null;
+    }
     if (!RECIPES.find(r => r.id === FSTATE.selectedId)) FSTATE.selectedId = RECIPES[0] && RECIPES[0].id;
     renderAll();
     showOverlay('overlay-fabricator');

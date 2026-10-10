@@ -405,15 +405,22 @@
   }
   function gaugeDown(e) { if (e) e.preventDefault(); if (gaugeWon) return; gaugeHeld = true; const img = $('er-valve-btn-img'); if (img) img.src = SPR + 'valve_btn_held.png'; if (!gaugeRAF) gaugeLoop(); }
   function gaugeUp() { gaugeHeld = false; const img = $('er-valve-btn-img'); if (img) img.src = SPR + 'valve_btn.png'; }
-  function stopGauge() { gaugeHeld = false; if (gaugeRAF) { cancelAnimationFrame(gaugeRAF); gaugeRAF = null; } document.removeEventListener('mouseup', gaugeUp); document.removeEventListener('touchend', gaugeUp); }
-  function gaugeLoop() {
+  function stopGauge() { gaugeHeld = false; gaugeLast = 0; if (gaugeRAF) { cancelAnimationFrame(gaugeRAF); gaugeRAF = null; } document.removeEventListener('mouseup', gaugeUp); document.removeEventListener('touchend', gaugeUp); }
+  // Rates were tuned per frame at 60fps; scale by elapsed time so the
+  // hold feels the same at 30Hz or 144Hz (it used to take ~4s at 12fps
+  // and ~0.5s at 144Hz).
+  let gaugeLast = 0;
+  function gaugeLoop(now) {
+    now = now || performance.now();
+    const f = gaugeLast ? Math.min(4, Math.max(0, (now - gaugeLast) / (1000 / 60))) : 1;
+    gaugeLast = now;
     if (paused()) { gaugeRAF = requestAnimationFrame(gaugeLoop); return; }
-    if (!$('er-gauge-canvas')) { gaugeRAF = null; return; }
+    if (!$('er-gauge-canvas')) { gaugeRAF = null; gaugeLast = 0; return; }
     if (gaugeHeld && !gaugeWon) {
-      gaugeAngle = Math.min(1, gaugeAngle + 0.007);
-      if (gaugeAngle >= 0.44 && gaugeAngle <= 0.66) { gaugeGreenFrames++; if (gaugeGreenFrames > 18) { gaugeWon = true; gaugeHeld = false; const n = $('er-gauge-nom'); if (n) n.classList.add('show'); drawGauge(); completeComp('valve', 600); return; } } else { gaugeGreenFrames = 0; }
+      gaugeAngle = Math.min(1, gaugeAngle + 0.007 * f);
+      if (gaugeAngle >= 0.44 && gaugeAngle <= 0.66) { gaugeGreenFrames += f; if (gaugeGreenFrames > 18) { gaugeWon = true; gaugeHeld = false; const n = $('er-gauge-nom'); if (n) n.classList.add('show'); drawGauge(); completeComp('valve', 600); return; } } else { gaugeGreenFrames = 0; }
       if (gaugeAngle > 0.72) { const m = $('er-gauge-nom'); if (m) m.textContent = '● OVER-BLED — RELEASE AND RETRY'; }
-    } else if (!gaugeHeld && gaugeAngle > 0.72) { gaugeAngle = Math.max(0.04, gaugeAngle - 0.003); gaugeGreenFrames = 0; }
+    } else if (!gaugeHeld && gaugeAngle > 0.72) { gaugeAngle = Math.max(0.04, gaugeAngle - 0.003 * f); gaugeGreenFrames = 0; }
     drawGauge();
     gaugeRAF = requestAnimationFrame(gaugeLoop);
   }

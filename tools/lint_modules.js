@@ -213,6 +213,16 @@ for (const file of eventFiles) {
             if (!TIER_KEYS.has(k)) err(`${file} ${ev.id}${layer ? '/' + layer : ''}: tier_outcomes key "${k}" is not perfect/good/poor`);
           }
         }
+        // A choice that spends gold must be gated on having it (gold floors
+        // at 0, so an ungated cost was free to a broke player). Layered
+        // outcome ids resolve through ev.outcomes.
+        {
+          const oc = typeof ch.outcome === 'object' ? ch.outcome : (ev.outcomes || {})[ch.outcome];
+          const cost = oc && oc.resources && oc.resources.gold < 0 ? -oc.resources.gold : 0;
+          if (cost && !((ch.gate && ch.gate.gold) >= cost) && !ch.gold_cost) {
+            err(`${file} ${ev.id}${layer ? '/' + layer : ''}: choice "${ch.text || ch.label}" costs ${cost} gold but has no gate.gold ≥ ${cost} — a player with no gold could take it free`);
+          }
+        }
         const o = ch.outcome;
         if (o && typeof o === 'object' && o.stowaway_resolve && !STOWAWAY_RESOLVES.has(o.stowaway_resolve)) {
           err(`${file} ${ev.id}${layer ? '/' + layer : ''}: stowaway_resolve "${o.stowaway_resolve}" is not welcome/welcome_replace/refuse`);
@@ -247,6 +257,15 @@ for (const file of eventFiles) {
       err(`${file} ${ev.id}: science_link.url missing or not http(s)`);
     }
 
+    // requires_item values (choice, gate.item, event-level) must be
+    // registered like any other tag (nine had drifted unregistered).
+    {
+      const reg = (registry.requires_item || {}).values || {};
+      const ids = [ev.requires_item];
+      for (const { choices } of choiceSets) for (const ch of choices) ids.push(ch.requires_item, ch.gate && ch.gate.item);
+      for (const id of ids) if (id && !(id in reg)) err(`${file} ${ev.id}: requires_item "${id}" is not registered in tag_registry.json`);
+    }
+
     // Tag registry membership (only for dimensions the flat schema uses).
     for (const [field, dim] of [['difficulty', 'difficulty'], ['tone', 'tone'], ['node_type', 'node_type'], ['trigger', 'trigger']]) {
       if (!ev[field] || !registry[dim]) continue;
@@ -276,6 +295,48 @@ for (const file of eventFiles) {
   for (const { event: ev } of eventsById.values()) {
     walk(ev.ai_flavor || {}, [ev.id, 'ai_flavor']);
     for (const [lk, l] of Object.entries(ev.layers || {})) walk(l.ai || {}, [ev.id, lk, 'ai']);
+  }
+}
+
+// Item sources (nothing orphaned): every item a choice, event or recipe
+// REQUIRES must be obtainable somewhere — an event grant, the station
+// market (purchasable), a recipe, or one of the engine's own grant paths
+// below. Five items were required but unobtainable until 2026-10-09.
+{
+  const ENGINE_GRANTED_ITEMS = new Set([
+    'drive_coil', 'o2_recycler', 'repair_fabricator', // salvage minigame upgrades (minigames.js UPGRADES)
+    'fuel_cell', 'repair_kit',                        // combat loot (combat.js)
+    'classified_cargo',                               // sinister market back inventory (market.js)
+    'logbook_fragment', 'medkit',                     // forage rare finds (cruise.js RARE_TO_REAL)
+    'fab_surplus',                                    // fabricator misfires (fabricator.js)
+  ]);
+  const items = readJSON('modules/items/items.json').filter(i => !i._section);
+  const sourced = new Set(ENGINE_GRANTED_ITEMS);
+  for (const i of items) if (i.item_source === 'purchasable') sourced.add(i.id.replace(/^item_/, '').replace(/_\d+$/, ''));
+  const recipesRaw = readJSON('modules/recipes/recipes.json');
+  const recipes = Array.isArray(recipesRaw) ? recipesRaw : (recipesRaw.recipes || []);
+  for (const r of recipes) { const out = r.output && (r.output.item_id || r.output.item || r.output); if (typeof out === 'string') sourced.add(out); }
+  // Every recipe must craft a real items.json item (two crafted phantom ids
+  // nobody could use until 2026-10-09).
+  const itemIdSet = new Set(items.map(i => i.id.replace(/^item_/, '').replace(/_\d+$/, '')));
+  for (const r of recipes) { const out = r.output && r.output.item_id; if (out && !itemIdSet.has(out)) err(`recipes.json ${r.id}: output "${out}" is not an item in items.json`); }
+  const required = new Map(); // item -> where
+  const need = (id, where) => { if (id && !required.has(id)) required.set(id, where); };
+  for (const { file, event: ev } of eventsById.values()) {
+    need(ev.requires_item, `${file} ${ev.id}`);
+    const grantsOf = o => o ? (Array.isArray(o.item_grant) ? o.item_grant : (o.item_grant ? [o.item_grant] : [])) : [];
+    const all = [...(ev.choices || [])];
+    for (const l of Object.values(ev.layers || {})) all.push(...(l.choices || []));
+    for (const v of (ev.standard_variants || [])) all.push(...(v.choices || []));
+    for (const ch of all) {
+      need(ch.requires_item, `${file} ${ev.id}`); need(ch.gate && ch.gate.item, `${file} ${ev.id}`);
+      if (ch.outcome && typeof ch.outcome === 'object') { grantsOf(ch.outcome).forEach(g => sourced.add(g)); need(ch.outcome.item_consume, `${file} ${ev.id}`); }
+    }
+    for (const o of Object.values(ev.outcomes || {})) { grantsOf(o).forEach(g => sourced.add(g)); if (o) need(o.item_consume, `${file} ${ev.id}`); }
+  }
+  for (const r of recipes) need(r.requires_item, `recipes.json ${r.id}`);
+  for (const [id, where] of required) {
+    if (!sourced.has(id)) err(`item "${id}" is required (${where}) but nothing grants it — no event item_grant, not purchasable, no recipe, not an engine grant`);
   }
 }
 

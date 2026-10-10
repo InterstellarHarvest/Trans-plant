@@ -173,6 +173,15 @@
   transition: opacity 0.25s;
 }
 #mining-root .enc-ai-text.fading { opacity: 0; }
+/* The resource HUD (#hud-mining) overlays the right ~190px of the AI
+   bar — reserve that strip so the chips below sit beside it, not under
+   it (the SECTOR chip was completely hidden). */
+#mining-root .enc-ai-bar { padding-right: 200px; }
+#mining-root .enc-ai-bar .enc-ai-text { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mining-root .enc-ai-bar .sector-tag { flex: none; }
+/* Room is tight beside the HUD: the MINING MODE chip only repeats the
+   bar's own MINING label, so it yields to the AI line + SECTOR chip. */
+#mining-root .enc-ai-bar .mining-mode-tag { display: none; }
 /* MINING MODE + SECTOR chips — right-aligned on the AI bar. */
 #mining-root .enc-ai-bar .mining-mode-tag,
 #mining-root .enc-ai-bar .sector-tag {

@@ -344,14 +344,14 @@ body {
 .enc-ai-bar {
   position: absolute;
   top: 14px; left: 14px;
-  right: 320px;
+  right: 395px; /* stop short of the resource HUD (it starts at x≈571); the bar used to run under it */
   padding: 6px 12px;
   background: rgba(10,14,20,0.72);
   border: 1px solid rgba(200,168,90,0.25);
   border-radius: 3px;
   font-family: 'VT323', monospace;
   font-size: 14px;
-  display: flex; gap: 8px; align-items: baseline;
+  display: flex; gap: 8px; align-items: flex-start;
   z-index: 40;
 }
 .enc-ai-name {
@@ -362,7 +362,11 @@ body {
 .enc-ai-text {
   color: #aab5c4;
   font-style: italic;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  /* Wraps (up to 4 lines covers every authored line, max 257 chars).
+     It was one ellipsized line — the median AI line (137 chars) was cut
+     off mid-sentence in every event. */
+  overflow: hidden; white-space: normal;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4;
 }
 #enc-ai-bar.hidden { display: none; }
 
@@ -782,6 +786,7 @@ body {
         <div class="header-actions">
           <button class="header-icon-btn" style="background-image:url('sprites/interface/inv.png')" id="btn-inv" title="Inventory"></button>
           <button class="header-icon-btn" style="background-image:url('sprites/interface/map.png')" id="btn-map" title="Map"></button>
+          <button class="header-icon-btn header-pause-btn" id="btn-pause" title="Pause menu — save, load, settings, quit (Esc)" aria-label="Pause menu">❚❚</button>
         </div>
         <div class="header-right">
           <div class="day-counter" id="day-counter"></div>
@@ -1709,6 +1714,7 @@ const SAVED_FIELDS = [
   'hardStreak', 'pityRelief', 'npcCache', 'crewHP', 'shipLog',
   'stowaway', 'cropGrowth', 'postCombatLegs', 'aiWarnLevels', 'fabricator',
   'consumedActions', 'crewSkillCharges', 'orders', 'crewPending',
+  'miningSectors', 'lastAmbientNode', // sector re-roll on reload defeated mining's anti-reroll; ambient repeated
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1729,7 +1735,7 @@ function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (_) 
    LOAD can fire mid-combat, mid-minigame, with the Stop menu open…):
    none of it may resolve into, or linger over, the loaded run. */
 function teardownLiveUI() {
-  for (const fn of ['abortCombat', 'abortMinigame', 'abortMining', 'abortEngineRepair']) {
+  for (const fn of ['abortCombat', 'abortMinigame', 'abortMining', 'abortEngineRepair', 'abortFabricator']) {
     if (typeof window[fn] === 'function') { try { window[fn](); } catch (_) {} }
   }
   document.querySelectorAll('#game .overlay.active').forEach(o => o.classList.remove('active'));
@@ -1879,6 +1885,14 @@ function applySetupToState(sel) {
   STATE.pityRelief   = 0;
   STATE.npcCache     = {};
   STATE.consumedActions = {};
+  // Every other per-run field starts clean too (a run started in-page
+  // after another used to inherit its log, fabricator, sectors…).
+  STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
+  STATE.postCombatLegs = 0; STATE.miningSectors = {}; STATE.aiWarnLevels = {};
+  STATE.crisisPatient = null; STATE.summonedEvent = false; STATE.lastAmbientNode = null;
+  STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null;
+  STATE.currentOutcomeId = null; STATE.npcCtx = null;
+  if (typeof window.abortFabricator === 'function') window.abortFabricator();
   if (window.SceneArt) SceneArt.clearRunCaches(); // re-roll scenes + NPC variants per run
 
   STATE.hubScreen = 'screen-cruise';
@@ -3159,7 +3173,8 @@ function typeInto(el, text, ms, onDone) {
     _typeActive.delete(el);
     if (!silent && onDone) onDone();
   };
-  const clickSkip = () => finish(false);
+  // Skipping drops the whole text in at once — start the reader at the top.
+  const clickSkip = () => { finish(false); el.scrollTop = 0; };
   el.addEventListener('click', clickSkip);
   _typeActive.set(el, finish);
   el.textContent = '';
@@ -3173,7 +3188,11 @@ function typeInto(el, text, ms, onDone) {
     if (el.textContent !== lastWritten) { finish(true, true); return; }
     i += perTick;
     lastWritten = text.slice(0, i);
+    // Follow the typing in a scrolling panel (it used to type out of view)
+    // unless the reader has scrolled up to re-read.
+    const pinned = el.scrollTop + el.clientHeight >= el.scrollHeight - 24;
     el.textContent = lastWritten;
+    if (pinned) el.scrollTop = el.scrollHeight;
     if (i >= text.length) finish(false);
   }, ms);
 }
@@ -3286,6 +3305,12 @@ function renderEncounterState() {
   } else {
     aiBar.classList.add('hidden');
   }
+  // A wrapped (taller) AI bar pushes the location label down to clear it.
+  {
+    const meta = document.getElementById('enc-meta');
+    const below = aiBar.classList.contains('hidden') ? 0 : aiBar.offsetTop + aiBar.offsetHeight + 8;
+    meta.style.top = Math.max(60, below) + 'px';
+  }
 
   renderChoices(choices);
 }
@@ -3320,6 +3345,7 @@ function renderOutcomeView(outcome) {
   const col = document.getElementById('enc-choices');
   col.innerHTML = '';
   col.appendChild(makeAdvanceButton('Continue'));
+  fitEncounterColumns();
 }
 
 /* Render the choice column. Each choice is either:
@@ -3339,7 +3365,29 @@ function gateIconPath(g) {
   return null;
 }
 
+/* Keeps the choice column and the narrative panel from overlapping: a
+   long choice list scrolls rather than burying the story's first lines
+   (event_derelict_001 hid 87px of its body), and the narrative takes the
+   room that's left (it scrolls past that). */
+function fitEncounterColumns() {
+  const narr = document.getElementById('enc-narrative'), ch = document.getElementById('enc-choices');
+  if (!narr || !ch) return;
+  // Rendered before showScreen(): while hidden everything measures 0 —
+  // retry on the next frame, once the screen is laid out.
+  if (!narr.offsetParent) { requestAnimationFrame(() => { if (narr.offsetParent) fitEncounterColumns(); }); return; }
+  narr.style.maxHeight = ''; ch.style.maxHeight = '';
+  const narrBottom = narr.offsetTop + narr.offsetHeight;
+  const MIN_NARR = 200, GAP = 8;
+  ch.style.maxHeight = Math.max(80, narrBottom - MIN_NARR - GAP - ch.offsetTop) + 'px';
+  const chBottom = ch.offsetTop + ch.offsetHeight;
+  narr.style.maxHeight = Math.min(340, Math.max(MIN_NARR, narrBottom - chBottom - GAP)) + 'px';
+}
+
 function renderChoices(choices) {
+  renderChoicesInner(choices);
+  fitEncounterColumns();
+}
+function renderChoicesInner(choices) {
   const col = document.getElementById('enc-choices');
   col.innerHTML = '';
   // Flag-based visibility (demo machinery): showFlag hides until the
@@ -3799,7 +3847,12 @@ function applyOutcomeEffects(o) {
     const idn = STATE.stowaway.identity || {};
     const resolve = o.stowaway_resolve;
     if (resolve === 'welcome_replace' && STATE.crew.length) {
-      const gone = STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
+      // If the stowaway's own role is already aboard, that's who they
+      // replace — a random pick could drop someone else and leave the
+      // stowaway a mere passenger (the duplicate role still aboard).
+      const gone = (idn.join_role && STATE.crew.includes(idn.join_role))
+        ? idn.join_role
+        : STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
       STATE.crew.splice(STATE.crew.indexOf(gone), 1);
       delete STATE.crewHP[gone];
       if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[gone];
@@ -3824,6 +3877,12 @@ function applyOutcomeEffects(o) {
   // Crop/system effect fields (additive): clears_pest ends an active
   // pest outbreak; fabricator_repair un-breaks the fabricator and
   // relieves wear (the flip side of fabricator.js's breakFab()).
+  // crop_health (additive outcome field): nudges the living crop's
+  // health — crisis care choices said the crop recovered but changed
+  // nothing. A dead crop stays dead.
+  if (Number.isFinite(o.crop_health) && STATE.cropGrowth && STATE.cropGrowth.health > 0) {
+    STATE.cropGrowth.health = clamp(STATE.cropGrowth.health + o.crop_health, 1, 100);
+  }
   if (o.clears_pest && STATE.cropGrowth) {
     STATE.cropGrowth.pest = false;
     STATE.flags.delete('ai_noted_pest');
@@ -3903,7 +3962,11 @@ function resolveChoice(choice) {
         renderOutcomeView({ title: 'ABANDONED', body: quit.narrative, tone: 'danger' });
         return;
       }
-      const t = (choice.tier_outcomes || {})[tier] || {};
+      // medical's 'fedup' (patient walked out) is a failure: it scores as
+      // poor unless authored — it used to fall back to the base outcome,
+      // which beat poor.
+      const tiers = choice.tier_outcomes || {};
+      const t = tiers[tier] || (tier === 'fedup' ? tiers.poor : null) || {};
       const merged = Object.assign({}, base, t, {
         resources: Object.assign({}, base.resources || {}, t.resources || {}),
         narrative: t.narrative || base.narrative,
@@ -4064,6 +4127,9 @@ function endRun(end) {
   catch (e) { console.error(e); return; }
 
   document.getElementById('inv-close').addEventListener('click', () => hideOverlay('overlay-inventory'));
+  document.getElementById('btn-pause').addEventListener('click', () => {
+    if (typeof PauseMenu !== 'undefined' && !PauseMenu.isOpen()) PauseMenu.open();
+  });
   document.getElementById('slog-close').addEventListener('click', () => hideOverlay('overlay-shipslog'));
   document.getElementById('slog-expand-close').addEventListener('click', () => { document.getElementById('slog-expand-modal').style.display = 'none'; });
 

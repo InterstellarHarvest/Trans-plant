@@ -111,8 +111,10 @@ const INERT_OK = new Set([]);
   const closeAnyOverlay = async () => {
     for (let k = 0; k < 5; k++) {
       // Pause menu (opened by ESC or a stray click) blocks everything — close it first.
-      const pauseOpen = await page.evaluate(() => { const po = document.getElementById('pause-overlay'); return !!po && getComputedStyle(po).display !== 'none' && po.classList.contains('open') !== false; });
-      if (pauseOpen) { await page.evaluate(() => { if (window.PauseMenu && PauseMenu.close) PauseMenu.close(); }); await page.waitForTimeout(150); }
+      // (PauseMenu is a top-level const — not on window — so the old
+      // window.PauseMenu check never closed it; the cruise ❚❚ button opens it.)
+      const pauseOpen = await page.evaluate(() => document.body.classList.contains('pause-open'));
+      if (pauseOpen) { await page.evaluate(() => { if (typeof PauseMenu !== 'undefined' && PauseMenu.close) PauseMenu.close(); }); await page.waitForTimeout(150); }
       // Nested modals inside overlays (expand/confirm dialogs) — dismiss by their own buttons.
       await page.evaluate(() => {
         const m = document.getElementById('slog-expand-modal'); if (m && m.style.display === 'flex') m.style.display = 'none';

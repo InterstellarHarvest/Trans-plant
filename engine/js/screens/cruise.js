@@ -352,13 +352,22 @@
       if (typeof payload.food === 'number' && payload.food > 0) {
         STATE.resources.food = clamp(STATE.resources.food + payload.food, 0, 100);
       }
+      // Forage's rare finds are demo ids with no items.json entry — granting
+      // them raw put phantom, unsellable cargo in the hold. Map each to a
+      // real reward (demo ware ids never enter STATE).
+      const RARE_TO_REAL = { cred_chip: { gold: 10 }, data_fragment: { item: 'logbook_fragment' }, salt_crystal: { material: 'minerals', qty: 2 }, med_herb: { item: 'medkit' } };
       if (payload.rare_drops) payload.rare_drops.forEach(d => {
-        if (typeof window.grantItem === 'function') window.grantItem(d.id); // capacity-enforced
-        else STATE.items.push(d.id);
+        const r = RARE_TO_REAL[d.id] || {};
+        if (r.gold) STATE.goldAmount += r.gold;
+        if (r.material) STATE.materials[r.material] = (STATE.materials[r.material] || 0) + (r.qty || 1);
+        if (r.item) grantItem(r.item); // capacity-enforced
       });
       if (payload.sickness) payload.sickness.forEach(s => {
         const sev = { light: 3, medium: 7, heavy: 15 }[s.severity] || 3;
-        if (s.type === 'poisoning') STATE.resources.food = clamp(STATE.resources.food - sev, 0, 100);
+        // Poisoning hurts one crew member (the demo's "SICKNESS · -HP one
+        // crew" and the briefing's "poisons a crew member"); solo, the
+        // spoiled haul costs food instead.
+        if (s.type === 'poisoning') { if (STATE.crew.length) damageCrew(null, sev); else STATE.resources.food = clamp(STATE.resources.food - sev, 0, 100); }
         else STATE.resources.morale = clamp(STATE.resources.morale - sev, 0, 100);
       });
       const gained = payload.food ? ('+' + payload.food + ' food.') : 'came back empty-handed.';
@@ -455,7 +464,7 @@
     return worst;
   }
   function medbayLockReason() {
-    if (!medbayPatient()) return 'NOBODY HURT';
+    if (!medbayPatient()) return 'HEALTHY';
     if (STATE.goldAmount < MEDBAY_FEE) return MEDBAY_FEE + 'g';
     return null;
   }

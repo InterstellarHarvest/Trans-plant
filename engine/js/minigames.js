@@ -356,7 +356,7 @@ function showResult(tier, payload){
   lastTier = tier; lastPayload = payload || null;
   const rt = document.getElementById('rtier');
   rt.className = tier;
-  const labels = {perfect:'EXCELLENT',good:'ADEQUATE',poor:'INSUFFICIENT',fedup:'ABANDONED'};
+  const labels = {perfect:'EXCELLENT',good:'ADEQUATE',poor:'INSUFFICIENT',fedup:'WALKED OUT'}; // 'ABANDONED' now means a player QUIT
   rt.textContent = labels[tier];
   const ai = activeAi;
   const names = {aria:'ARIA',marv:'MARV',rex:'REX',chip:'CHIP',ajoy:'AJOY'};
@@ -423,6 +423,10 @@ function showResult(tier, payload){
      caller is not called back (the verb/choice simply didn't happen). */
 function requestCloseMinigame(){
   if(document.getElementById('result').classList.contains('show')){ document.getElementById('rbquit').click(); return; }
+  // Salvage's own end-of-run haul card is up: the run is over, so X
+  // means "done", not QUIT (it used to discard the haul as abandoned).
+  const salClose = document.getElementById('sal-close');
+  if(salClose && salClose.offsetParent){ salClose.click(); return; }
   const cb = onMinigameDone, started = minigameStarted;
   onMinigameDone = null;
   closeMinigameOverlay();
@@ -694,7 +698,10 @@ function initEngine(container, onResult){
     {id:'relay', lbl:'RELAY',   sub:'Switch'},
     {id:'cond',  lbl:'CONDUIT', sub:'Power'}
   ];
-  const SEQ=[0,3,2,1]; // 4-step sequence
+  // 4-step sequence over the 4 nodes, shuffled per play (a fixed
+  // [0,3,2,1] could simply be memorised).
+  const SEQ=[0,1,2,3];
+  for(let i=SEQ.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [SEQ[i],SEQ[j]]=[SEQ[j],SEQ[i]]; }
 
   container.innerHTML=`
     <div class="tbar-wrap"><div class="tbar" id="eng-tb" style="width:100%"></div></div>
@@ -742,22 +749,33 @@ function initEngine(container, onResult){
   });
 
   // Show sequence
+  // Pausing during the watch phase (ESC) used to let the plain
+  // setTimeouts play the sequence behind the pause menu. Now a pause
+  // mid-sequence cancels it and the whole sequence replays on resume.
+  const isPaused = () => typeof PauseBus !== 'undefined' && PauseBus.paused;
+  function replayAfterPause(){
+    timers.forEach(clearTimeout); timers=[];
+    NODES.forEach((_,i)=>setState(i,''));
+    const wait=()=>{ if(done) return; if(isPaused()) timers.push(setTimeout(wait,150)); else showSeq(); };
+    timers.push(setTimeout(wait,150));
+  }
   function showSeq(){
     document.getElementById('estatus').textContent='WATCH THE SEQUENCE';
     let delay=600;
+    const step=fn=>()=>{ if(done) return; if(isPaused()){ replayAfterPause(); return; } fn(); };
     SEQ.forEach(ni=>{
-      timers.push(setTimeout(()=>{if(!done)setState(ni,'show');},delay));
-      timers.push(setTimeout(()=>{if(!done)setState(ni,'');},delay+550));
+      timers.push(setTimeout(step(()=>setState(ni,'show')),delay));
+      timers.push(setTimeout(step(()=>setState(ni,'')),delay+550));
       delay+=700;
     });
-    timers.push(setTimeout(()=>{
-      if(!done){playerTurn=true;document.getElementById('estatus').textContent='YOUR TURN';}
-    },delay+200));
+    timers.push(setTimeout(step(()=>{
+      playerTurn=true;document.getElementById('estatus').textContent='YOUR TURN';
+    }),delay+200));
   }
   timers.push(setTimeout(showSeq,400));
 
   const stopTimer=makeTimer('eng-tb',24000,null,()=>{
-    if(!done){done=true;onResult(hadError?'good':'poor');}
+    if(!done){done=true;onResult('poor');} // out of time = poor (an earlier wrong click used to upgrade a failed run to 'good')
   });
   return()=>{done=true;timers.forEach(clearTimeout);stopTimer();};
 }
@@ -1993,12 +2011,17 @@ function initForage(container, onResult, ctx){
     const TICK_MS    = 150;
     const STOP_BY    = TIMER_MS - 1500;
 
-    const gameStart = performance.now();
+    // Play-time clock (advances only on unpaused ticks). Wall-clock time
+    // from gameStart kept running behind the pause menu, so a long pause
+    // pushed past STOP_BY and no target ever spawned again.
+    let playElapsed = 0;
     let lastSpawnAt = -SPAWN_GAP;
 
     schedTimer = setInterval(()=>{
       if(done) return;
-      const elapsed = performance.now() - gameStart;
+      if(typeof PauseBus !== 'undefined' && PauseBus.paused) return;
+      playElapsed += TICK_MS;
+      const elapsed = playElapsed;
       if(elapsed > STOP_BY) return;
 
       // Active count = slots not idle (a fauna in retreat or a flora ripening
@@ -2369,7 +2392,8 @@ function initBrace(container, onResult){
   // dodges, so this just shifts perception — they see it sooner.
   const RELEASE_LEAD = 220;
 
-  function onDown(e){ if(done) return; if(e.button===0||e.type==='touchstart'){holding=true;btn.classList.add('held');} }
+  let everBraced = false; // never holding the brace at all used to finish ~60% → 'good'
+  function onDown(e){ if(done) return; if(e.button===0||e.type==='touchstart'){holding=true;everBraced=true;btn.classList.add('held');} }
   function onUp(){ holding=false; btn.classList.remove('held'); }
   btn.addEventListener('mousedown',onDown);
   document.addEventListener('mouseup',onUp);
@@ -2382,11 +2406,13 @@ function initBrace(container, onResult){
     cancelAnimationFrame(rafId);
     btn.removeEventListener('mousedown',onDown);
     document.removeEventListener('mouseup',onUp);
+    document.removeEventListener('touchend',onUp); // leaked one listener per play
     scene.classList.remove('shake');
     shex.classList.remove('show', 'struck');
     btn.classList.remove('warning','strike','heat-warm','heat-hot');
     let tier, endClass;
     if(fried)              { tier='poor';    endClass='end-fried';   stat.textContent='BRACE FRIED'; }
+    else if(!everBraced)   { tier='poor';    endClass='end-poor';    stat.textContent='NEVER BRACED'; }
     else if(shield >= 80)  { tier='perfect'; endClass='end-perfect'; stat.textContent='FLARE PASSED'; }
     else if(shield >= 40)  { tier='good';    endClass='end-good';    stat.textContent='FLARE PASSED'; }
     else                   { tier='poor';    endClass='end-poor';    stat.textContent='SHIELD DOWN'; }
@@ -3442,7 +3468,10 @@ function initSalvage(container, onResult){
       energy -= ENERGY_DRAIN_PER_SEC * dt;
       if (held) {
         const dx = mouse.x - lastMouseX, dy = mouse.y - lastMouseY;
-        energy -= Math.hypot(dx, dy) * ENERGY_DRAIN_PER_PX;
+        // mouse is in screen px; drain per GAME px so a bigger (scaled-up)
+        // window doesn't burn energy faster for the same drag.
+        const toGame = stage.offsetWidth / (stage.getBoundingClientRect().width || stage.offsetWidth);
+        energy -= Math.hypot(dx, dy) * toGame * ENERGY_DRAIN_PER_PX;
       }
       if (energy <= 0) {
         energy = 0;

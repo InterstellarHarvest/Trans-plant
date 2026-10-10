@@ -658,9 +658,10 @@
 
     // Time cap — sector modifier can override (e.g., STILL FIELD = 22s).
     const cap = (MSTATE.sector && MSTATE.sector.timeCapSec) || MSTATE.timeCapSec;
-    MSTATE.timeIv = setTimeout(() => {
-      if (MSTATE.mining) endRun('time');
-    }, cap * 1000);
+    // Counted down in tick() on unpaused frames only — a plain setTimeout
+    // kept running behind the pause menu and ended the run there.
+    MSTATE.timeLeftMs = cap * 1000;
+    MSTATE.timerLast = performance.now();
 
     // Tick loop.
     MSTATE.lastTick = performance.now();
@@ -1062,6 +1063,7 @@
     if (!MSTATE.mining) return;
     if (PauseBus.paused) {
       MSTATE.lastTick = now;
+      MSTATE.timerLast = now; // paused time doesn't count against the cap
       MSTATE.rafId = requestAnimationFrame(tick);
       return;
     }
@@ -1074,6 +1076,11 @@
     }
     const dt = Math.min(0.05, (now - MSTATE.lastTick) / 1000);
     MSTATE.lastTick = now;
+    if (MSTATE.mining && MSTATE.timeLeftMs != null) {
+      MSTATE.timeLeftMs -= Math.max(0, now - (MSTATE.timerLast || now));
+      MSTATE.timerLast = now;
+      if (MSTATE.timeLeftMs <= 0) { MSTATE.timeLeftMs = null; endRun('time'); return; }
+    }
 
     // Asteroids: drift, tumble, decay-fade, off-stage cull, decay-out.
     for (let i = MSTATE.asteroids.length - 1; i >= 0; i--) {

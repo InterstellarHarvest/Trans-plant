@@ -123,6 +123,7 @@
   color:var(--gold);width:54px;flex-shrink:0;
 }
 .med-timer-bg{
+  position:relative; /* anchors .med-timer-num's countdown, which rendered hidden */
   flex:1;height:14px;background:rgba(14,21,32,.85);
   border:1px solid var(--slate);border-radius:2px;overflow:hidden;
 }
@@ -409,10 +410,17 @@
 .for-stage[data-art="1"]::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.35) 100%)}
 
 .for-anchor{
-  /* No cursor here — inherits hand cursor from .for-scene parent. */
+  /* No cursor here — inherits hand cursor from .for-scene parent.
+     pointer-events:none: the fixed 56px box used to swallow clicks meant
+     for a neighbour's (larger) sprite even while empty. Live targets take
+     the pointer; their clicks bubble to the anchor's handler. */
   position:absolute;width:56px;height:56px;
   display:flex;align-items:center;justify-content:center;z-index:5;
+  pointer-events:none;
 }
+/* A box holding a live target rises above the HUD strips, so a target
+   spawning under DEPART is clickable instead of ending the run. */
+.for-anchor:has(.for-target.fauna:not(.retreating)), .for-anchor:has(.for-target.flora){z-index:11}
 .for-cover{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font-size:34px;z-index:2;pointer-events:none;
@@ -438,7 +446,7 @@
      fixed-size for-anchor box) — hitbox auto-grows with the sprite.
      Cursor inherits from .for-scene (hand cursor across whole playspace). */
   position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);
-  z-index:3;pointer-events:auto;
+  z-index:3;pointer-events:none; /* invisible idle targets (opacity 0) used to take clicks */
   opacity:0;line-height:1;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));
   /* decoy-burst falls back to text for the ☠ overlay */
@@ -517,6 +525,7 @@
 .for-anchor.line-box.face-down  .for-target{ top:0; bottom:auto; left:50%; right:auto; }
 .for-anchor.line-box.face-right .for-target{ top:50%; bottom:auto; left:0; right:auto; }
 .for-anchor.line-box.face-left  .for-target{ top:50%; bottom:auto; left:auto; right:0; }
+.for-target.fauna, .for-target.flora{pointer-events:auto}
 .for-target.fauna{
   animation:foremerge .25s ease-out forwards, fbob 1s ease-in-out .25s infinite alternate;
 }
