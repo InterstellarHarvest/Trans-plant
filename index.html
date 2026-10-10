@@ -1730,6 +1730,14 @@ function saveRun(key) {
   if (document.querySelector('#overlay-minigames.active, #overlay-mining.active')) return false;
   return writeSnapshot(key);
 }
+// Why a pause-menu SAVE was refused, in the player's terms.
+window.saveBlockedReason = function () {
+  if (!STATE.trail || !STATE.nodes.length) return 'NO VOYAGE TO SAVE YET';
+  if (STATE.ended) return 'THE VOYAGE IS OVER';
+  if (STATE.currentEvent) return 'FINISH THIS ENCOUNTER FIRST';
+  if (document.querySelector('#overlay-minigames.active, #overlay-mining.active')) return 'FINISH THE JOB FIRST';
+  return null;
+};
 function writeSnapshot(key, extra) {
   if (new URLSearchParams(location.search).has('debug')) return false;
   try {

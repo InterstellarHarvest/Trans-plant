@@ -1208,7 +1208,7 @@ const PauseMenu = (() => {
         if (btn.dataset.act === 'save') {
           if (inEngine) {
             if (!window.saveRun(TP_SAVE_PREFIX + n)) {
-              toast('SAVE UNAVAILABLE — RETURN TO CRUISE');
+              toast((typeof window.saveBlockedReason === 'function' && window.saveBlockedReason()) || 'SAVE UNAVAILABLE — RETURN TO CRUISE');
               return;
             }
           } else {

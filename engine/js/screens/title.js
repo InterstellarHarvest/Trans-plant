@@ -138,10 +138,14 @@
   // Only listen for the "any key" dismiss while the title screen is
   // actually the active screen, so keystrokes on later screens (e.g.
   // typing a ship name) don't get intercepted by this handler.
+  // Capture phase: ESC that dismisses the poster must not ALSO open the
+  // pause menu (shared.js's document-level ESC handler runs first in
+  // the bubble phase).
   window.addEventListener('keydown', e => {
     if (!$('screen-title').classList.contains('active')) return;
+    if (!posterDismissed && e.key === 'Escape') e.stopPropagation();
     onSceneInput(e);
-  });
+  }, true);
 
   $('btn-new').addEventListener('click', () => startNewGame());
   // Continue — designed into the title demo, live now that run
