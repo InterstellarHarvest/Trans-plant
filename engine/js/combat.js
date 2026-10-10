@@ -864,6 +864,14 @@
       } else if (dmg <= 0) {
         setNarrCombat('COMBAT LOG', pfx + combatLine('enemy_fires'), 'No effective damage.');
         COMBAT._narrPrefix = null;
+      } else if (COMBAT.rexShield) {
+        // REX's passive (ai_companions combat_bonus — "an extra life"):
+        // the first hit of every fight lands on point-defense instead.
+        COMBAT.rexShield = false;
+        spawnMissPopup('BLOCKED');
+        setNarrCombat('COMBAT LOG', pfx + combatLine('enemy_fires'), 'REX’s point-defense eats the shot. Hull untouched. Once.');
+        setAiCombat('Point-defense engaged. That was the free one. Do not get comfortable.');
+        COMBAT._narrPrefix = null;
       } else {
         const dealt = Math.max(1, Math.round(dmg));
         applyPlayerDamage(dealt);
@@ -1202,6 +1210,7 @@
     const crewBefore = STATE.crew.slice();
     const namesBefore = Object.fromEntries(crewBefore.map(r => [r, crewNameOf(r)]));
     applyOutcomeEffects(outcome);
+    STATE.lethalSaved = null; // combat writes its own crew line below
     if (result.outcome === 'defeated') {
       const lost = crewBefore.filter(r => !STATE.crew.includes(r));
       if (result._injured && !lost.includes(result._injured) && !STATE.crew.includes(result._injured)) lost.push(result._injured);
@@ -1334,6 +1343,7 @@
     COMBAT._lastOutcome = null;
     COMBAT._narrPrefix = null;
     COMBAT._resolved = false;
+    COMBAT.rexShield = COMBAT.ai === 'rex' || STATE.activeAI === 'rex'; // REX passive: one free hit per fight
     COMBAT.active = true;
     COMBAT.state = 'PLAYER_TURN';
 

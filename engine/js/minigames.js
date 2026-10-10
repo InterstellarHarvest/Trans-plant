@@ -466,6 +466,13 @@ document.getElementById('rbquit').addEventListener('click', ()=>{
 // ─────────────────────────────────────────────
 // Shared timer helper
 // ─────────────────────────────────────────────
+// REX's passive (ai_companions combat_bonus: "starts arcade minigames
+// with an extra shot/life"): engine sequence forgives a 4th mistake,
+// brace's first surge strike is absorbed, salvage's tractor drains 20%
+// slower, hull breach gets 15% more time.
+const rexAboard = () => activeAi === 'rex';
+const ENGINE_MAX_ERRS = () => rexAboard() ? 4 : 3;
+
 function makeTimer(barId, totalMs, onTick, onDone, colors){
   // colors (optional): {high, mid, low} CSS values for the >35/35-15/<15 zones.
   const C = colors || {high:'var(--info)', mid:'var(--orange)', low:'var(--red)'};
@@ -729,7 +736,7 @@ function initEngine(container, onResult){
       <div class="eng-nodes">
         ${NODES.map((n,i)=>`<div class="enode" id="en${i}" data-i="${i}"><div class="enode-lbl">${n.lbl}</div><div class="enode-sub">${n.sub}</div></div>`).join('')}
       </div>
-      <div class="eng-errs">ERRORS: <span id="eecount">0</span> / 3</div>
+      <div class="eng-errs">ERRORS: <span id="eecount">0</span> / ${ENGINE_MAX_ERRS()}</div>
     </div>
     <div class="ghint">Watch · then repeat the sequence</div>`;
 
@@ -755,7 +762,7 @@ function initEngine(container, onResult){
       document.getElementById('eecount').textContent=errs;
       setState(i,'err'); timers.push(setTimeout(()=>setState(i,''),400));
       cIdx=0; // reset position
-      if(errs>=3){
+      if(errs>=ENGINE_MAX_ERRS()){
         done=true;
         document.getElementById('estatus').textContent='SEQUENCE FAILED';
         endBeat(()=>onResult('poor'), 500);
@@ -2414,6 +2421,7 @@ function initBrace(container, onResult){
 
   let everBraced = false; // never holding the brace at all used to finish ~60% → 'good'
   let bracedMs = 0;       // total time held — a single tap used to score 'good' too
+  let rexSpare = rexAboard();
   const MIN_BRACE_MS = 1500;
   function onDown(e){ if(done) return; if(e.button===0||e.type==='touchstart'){holding=true;everBraced=true;btn.classList.add('held');} }
   function onUp(){ holding=false; btn.classList.remove('held'); }
@@ -2507,6 +2515,10 @@ function initBrace(container, onResult){
       s.waveEl.style.opacity = String(Math.min(1, travelProg * 2.2));
 
       // Strike contact.
+      if(activeStrike && holding && !s.struck && rexSpare){
+        rexSpare = false; s.struck = true; // REX: the first strike lands on his spare shield
+        spawnDodgeRing();
+      }
       if(activeStrike && holding && !s.struck){
         shield = Math.max(0, shield - SURGE_DAMAGE);
         s.struck = true;
@@ -2753,7 +2765,7 @@ function initBreach(container, onResult){
   // elapsed during the action (the action button shows allotted time before
   // committing). For the demo we use real seconds via makeTimer().
   const perHole = 3000 + 1000 * engineerMult; // wounded engineer: +0.5s
-  const totalTime = N * perHole;
+  const totalTime = Math.round(N * perHole * (rexAboard() ? 1.15 : 1)); // REX: 15% more time
 
   // ── Spawn hole sprites ────────────────────────
   holes.forEach(h=>{
@@ -3496,13 +3508,14 @@ function initSalvage(container, onResult){
 
     // Energy
     if (firing) {
-      energy -= ENERGY_DRAIN_PER_SEC * dt;
+      const rexMul = rexAboard() ? 0.8 : 1; // REX: tractor drains 20% slower
+      energy -= ENERGY_DRAIN_PER_SEC * dt * rexMul;
       if (held) {
         const dx = mouse.x - lastMouseX, dy = mouse.y - lastMouseY;
         // mouse is in screen px; drain per GAME px so a bigger (scaled-up)
         // window doesn't burn energy faster for the same drag.
         const toGame = stage.offsetWidth / (stage.getBoundingClientRect().width || stage.offsetWidth);
-        energy -= Math.hypot(dx, dy) * toGame * ENERGY_DRAIN_PER_PX;
+        energy -= Math.hypot(dx, dy) * toGame * ENERGY_DRAIN_PER_PX * rexMul;
       }
       if (energy <= 0) {
         energy = 0;

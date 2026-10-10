@@ -1048,6 +1048,7 @@ body {
         </div>
         <div id="inv-detail-desc"></div>
         <div class="inv-detail-actions">
+          <button class="btn accent-gold" id="inv-use-btn">USE</button>
           <button class="btn" id="inv-jett-btn">JETTISON</button>
         </div>
       </div>
@@ -1717,6 +1718,7 @@ const SAVED_FIELDS = [
   'miningSectors', 'lastAmbientNode', // sector re-roll on reload defeated mining's anti-reroll; ambient repeated
   'deprived', // consecutive days at 0 food/water/O2
   'crewIdentity', // joined stowaways keep their own name in a crew role
+  'researchReady', 'researchKey', // Academic captain: one Research preview per station leg
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1927,6 +1929,7 @@ function applySetupToState(sel) {
   STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
   STATE.postCombatLegs = 0; STATE.miningSectors = {}; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.summonedEvent = false; STATE.lastAmbientNode = null;
+  STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
   if (typeof window.abortFabricator === 'function') window.abortFabricator();
@@ -2168,9 +2171,12 @@ function applySeverity(role, severity) {
   const log = msg => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + msg); };
   if (severity === 'lethal') {
     const crewMedic = STATE.crew.includes('medic') ? 0.5 * (crewHPOf('medic') < CREW_WOUNDED_HP ? 0.5 : 1) : 0;
-    if (Math.random() < crewMedic || (STATE.captain === 'medic' && Math.random() < 0.15)) {
+    const medicSave = Math.random() < crewMedic;
+    if (medicSave || (STATE.captain === 'medic' && Math.random() < 0.15)) {
       woundCrew(role);
       log('It should have been fatal. The medic disagreed. ' + name + ' is badly hurt, but alive.');
+      STATE.lethalSaved = (medicSave ? crewNameOf('medic') + ' refused to let it end there' : 'You refused to let it end there')
+        + ' — ' + name + ' is badly hurt, but alive.';
       return;
     }
     const mkIdx = STATE.items.indexOf('medkit');
@@ -2178,6 +2184,7 @@ function applySeverity(role, severity) {
       STATE.items.splice(mkIdx, 1);
       STATE.crewHP[role] = 20;
       log('The medkit made the difference. ' + name + ' is badly hurt, but alive. The medkit is spent.');
+      STATE.lethalSaved = 'The medkit made the difference — ' + name + ' is badly hurt, but alive.';
       return;
     }
     killCrew(role);
@@ -2489,6 +2496,25 @@ function renderInventory() {
   if (sel) renderInvDetail(sel);
   else document.getElementById('inv-detail').classList.add('hidden');
 }
+/* Consumables the player can use from the hold (items.json "on use"
+   effects). can() → null when usable, else the reason it isn't. */
+function invAddRes(k, n) { STATE.resources[k] = clamp(STATE.resources[k] + n, 0, resMax(k)); }
+function worstHurtCrew() {
+  let worst = null;
+  for (const r of STATE.crew) if (crewHPOf(r) < 100 && (!worst || crewHPOf(r) < crewHPOf(worst))) worst = r;
+  return worst;
+}
+const ITEM_USE = {
+  ration_brick:   { label: '+10 FOOD',  can: () => STATE.resources.food  >= 100 ? 'Food stores are full' : null,  use: () => { invAddRes('food', 10);  return 'Ration brick unwrapped. +10 food. Nobody describes the flavour.'; } },
+  water_canister: { label: '+10 H2O',   can: () => STATE.resources.water >= 100 ? 'Water tanks are full' : null,  use: () => { invAddRes('water', 10); return 'Water canister emptied into the tanks. +10 water.'; } },
+  fuel_cell:      { label: '+15 FUEL',  can: () => STATE.resources.fuel  >= resMax('fuel') ? 'Fuel tank is full' : null, use: () => { invAddRes('fuel', 15); return 'Fuel cell slotted in. +15 fuel.'; } },
+  hull_patch:     { label: '+15 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { invAddRes('hull', 15); return 'Hull patch applied. +15 hull. It holds. Probably.'; } },
+  o2_canister:    { label: '+14 O2',    can: () => STATE.resources.o2    >= 100 ? 'O2 is full' : null,               use: () => { invAddRes('o2', 14);   return 'O2 canister vented into the air supply. +14 O2.'; } },
+  medkit:         { label: 'HEAL',      can: () => worstHurtCrew() ? null : 'Nobody is hurt',
+                    use: () => { const r = worstHurtCrew(); STATE.crewHP[r] = 100; delete crewPendingOf()[r]; return 'Medkit opened. ' + crewNameOf(r) + ' is patched up and back on their feet.'; } },
+  crop_treatment: { label: '+30 CROP',  can: () => !STATE.cropGrowth || STATE.cropGrowth.health <= 0 ? 'Nothing left to treat' : (STATE.cropGrowth.health >= 100 && !STATE.cropGrowth.pest ? 'The crop is healthy' : null),
+                    use: () => { const cg = STATE.cropGrowth; cg.health = Math.min(100, cg.health + 30); cg.pest = false; STATE.flags.delete('ai_noted_pest'); return 'Crop treatment applied. +30 crop health; pests cleared.'; } },
+};
 function renderInvDetail(en) {
   const box = document.getElementById('inv-detail');
   box.classList.remove('hidden');
@@ -2510,6 +2536,15 @@ function renderInvDetail(en) {
   document.getElementById('inv-detail-desc').textContent = desc;
   const jett = document.getElementById('inv-jett-btn');
   jett.style.display = en.material ? 'none' : '';
+  const useBtn = document.getElementById('inv-use-btn');
+  const iu = !en.material && ITEM_USE[en.id];
+  useBtn.style.display = iu ? '' : 'none';
+  if (iu) {
+    const why = iu.can();
+    useBtn.textContent = 'USE · ' + iu.label;
+    useBtn.disabled = !!why;
+    useBtn.title = why || '';
+  }
 }
 (function wireInventoryChrome() {
   document.querySelectorAll('.inv-tab').forEach(t =>
@@ -2527,6 +2562,17 @@ function renderInvDetail(en) {
       : 'Jettison ' + ((def && def.name) || prettyItem(_invSelected)) + '? The airlock does not do refunds.';
     document.getElementById('inv-confirm-yes').classList.toggle('hidden', blocked);
     document.getElementById('inv-confirm').classList.remove('hidden');
+  });
+  document.getElementById('inv-use-btn').addEventListener('click', () => {
+    const id = _invSelected, iu = id && ITEM_USE[id];
+    if (!iu || iu.can() || !STATE.items.includes(id)) return;
+    STATE.items.splice(STATE.items.indexOf(id), 1);
+    const msg = iu.use();
+    renderHUD();
+    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + msg);
+    if (!STATE.items.includes(id)) _invSelected = null;
+    renderInventory();
+    if (typeof window.renderCruise === 'function' && document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();
   });
   document.getElementById('inv-confirm-no').addEventListener('click', () => {
     _invJettisonPending = null;
@@ -2863,6 +2909,8 @@ function returnToHub() {
   STATE.currentEvent = null; STATE.currentNode = null;
   STATE.layerStack = null; STATE.currentOutcomeId = null;
   STATE.outcomeMode = false; STATE.npcCtx = null; STATE.pendingNext = null;
+  STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
+  STATE.researchKey = null; // a Research preview lasts for its encounter only
   renderHUD();
   showScreen(STATE.hubScreen);
   if (STATE.hubScreen === 'screen-map') renderMap();
@@ -3105,6 +3153,8 @@ function travelTo(nodeId, opts) {
       if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ The drive coil misfires mid-burn. A bang, a smell, three points of hull. It keeps working, unrepentant.');
     }
     passDays(leg.days, { travel: true });
+    // ARIA's passive (ai_companions morale_bonus 1): +1 morale per leg.
+    if (STATE.activeAI === 'aria') STATE.resources.morale = clamp(STATE.resources.morale + 1, 0, 100);
     renderHUD();
     if (checkFailure()) return;
   }
@@ -3113,6 +3163,7 @@ function travelTo(nodeId, opts) {
   // authored recharges_at in crew_roster.json (all current skills author
   // 'station'; a future 'leg' value would recharge in the leg tick above).
   if (node.node_type === 'station') {
+    STATE.researchReady = true; // Academic captain: a fresh Research preview each station leg
     ensureCrewSkillCharges();
     let restored = false;
     for (const role of STATE.crew) {
@@ -3457,8 +3508,12 @@ function renderEncounterState() {
 function renderOutcomeView(outcome) {
   document.getElementById('enc-narr-title').textContent = outcome.title || 'OUTCOME';
   finishAllTyping();
-  typeInto(document.getElementById('enc-narr-body'),
-           interpolateStowawayTokens(interpolateNpcTokens(outcome.body || outcome.narrative || '...', STATE.npcCtx)), 12);
+  let bodyText = interpolateStowawayTokens(interpolateNpcTokens(outcome.body || outcome.narrative || '...', STATE.npcCtx));
+  // A lethal outcome the medic/medkit turned into an injury still reads
+  // as a death in authored text — say what actually happened.
+  if (STATE.lethalSaved) bodyText += '\n\n' + STATE.lethalSaved;
+  typeInto(document.getElementById('enc-narr-body'), bodyText, 12);
+  showHindsight();
   const narr = document.getElementById('enc-narrative');
   narr.classList.remove('tone-success', 'tone-danger');
   if (outcome.tone === 'success' || deltaIsGood(outcome)) narr.classList.add('tone-success');
@@ -3481,6 +3536,32 @@ function renderOutcomeView(outcome) {
   col.innerHTML = '';
   col.appendChild(makeAdvanceButton('Continue'));
   fitEncounterColumns();
+}
+
+/* AJOY's passive (ai_companions hindsight_reveal): after an outcome,
+   name one choice the player didn't pick and what it would have done. */
+function showHindsight() {
+  if (STATE.activeAI !== 'ajoy' || !STATE.lastPick) return;
+  const { picked, shown } = STATE.lastPick;
+  const alt = shown.filter(ch => ch !== picked && choiceOutcome(ch));
+  if (!alt.length) return;
+  const ch = alt[Math.floor(Math.random() * alt.length)];
+  const facts = outcomeFacts(choiceOutcome(ch));
+  const top = facts[0];
+  const result = !top ? 'changed nothing you could measure'
+    : top.good ? 'got you ' + top.text.replace(/^\+/, '').toLowerCase()
+    : /^−/.test(top.text) ? 'cost you ' + top.text.slice(1).toLowerCase()
+    : 'meant ' + top.text.toLowerCase();
+  const pool = (MOD.flavor && MOD.flavor.ajoy_hindsight) || ['For the record, “{choice}” would have {result}.'];
+  const label = String(ch.text || ch.label || '').replace(/\s+/g, ' ').trim();
+  const line = pool[Math.floor(Math.random() * pool.length)]
+    .replaceAll('{choice}', label.length > 48 ? label.slice(0, 46) + '…' : label)
+    .replaceAll('{result}', result);
+  const bar = document.getElementById('enc-ai-bar');
+  if (bar) bar.classList.remove('hidden');
+  document.getElementById('enc-ai-name').textContent = 'AJOY';
+  document.getElementById('enc-ai-text').textContent = line;
+  STATE.lastPick = null; // once per outcome
 }
 
 /* Render the choice column. Each choice is either:
@@ -3536,6 +3617,8 @@ function renderChoicesInner(choices) {
     col.appendChild(makeAdvanceButton('Continue'));
     return;
   }
+  STATE._shownChoices = visible.filter(ch => !lockReason(ch)); // AJOY's hindsight pool
+  const previews = choicePreviews(visible);
   for (const ch of visible) {
     const locked = lockReason(ch);
     const btn = document.createElement('button');
@@ -3572,6 +3655,9 @@ function renderChoicesInner(choices) {
       const gd = itemDef(gateItem);
       if (gd && gd.analysis) subText = 'ANALYZED · ' + gd.analysis;
     }
+    if (!locked && choiceStandIn(ch)) subText = 'Captain stands in · half the gains';
+    const preview = !locked && previews.get(ch);
+    if (preview) { subText = preview; btn.classList.add('previewed'); }
     if (ch.effort || subText) {
       const sub = document.createElement('div');
       sub.className = 'ch-sub';
@@ -3600,6 +3686,7 @@ function renderChoicesInner(choices) {
       if (ch.gold_cost) tip.push('-' + ch.gold_cost + ' gold');
       if (ch.gate && ch.gate.gold && !ch.gold_cost) tip.push('costs ' + ch.gate.gold + ' gold');
       if (ch.risky) tip.push('Risky — outcomes can go badly');
+      if (preview) tip.push(preview);
       if (tip.length) btn.title = tip.join('\n');
     }
     // Entrance cascade + click pulse (demo canon).
@@ -3648,6 +3735,76 @@ function runChoiceAction(action) {
   return true;
 }
 
+/* ── Choice foresight (MARV's passive, the Academic captain's Research,
+   AJOY's hindsight) ─────────────────────────────────────────────── */
+// The fixed outcome a choice leads to — flat inline object or layered
+// outcome id — or null when it launches something (minigame, combat,
+// market, another layer) whose result isn't known in advance.
+function choiceOutcome(choice) {
+  if (!choice || choice.launch_minigame || choice.triggerCombat || choice.combat_trigger ||
+      choice.triggerRamResolve || choice.triggerFleeResolve || choice.open_market || choice.next) return null;
+  const o = choice.outcome;
+  if (o && typeof o === 'object') return o;
+  const ev = STATE.currentEvent;
+  if (typeof o === 'string' && ev && ev.outcomes) return ev.outcomes[o] || null;
+  return null;
+}
+const RES_LABEL = { fuel: 'FUEL', food: 'FOOD', water: 'H2O', o2: 'O2', hull: 'HULL', morale: 'MORALE', gold: 'GOLD' };
+const SEVERITY_LABEL = { injury: 'AN INJURY', delayed: 'A BAD WOUND', lethal: 'A DEATH RISK' };
+// [{text, weight, good}] — every effect of an outcome a player would care about.
+function outcomeFacts(o) {
+  const facts = [];
+  for (const [k, v] of Object.entries(o.resources || {})) {
+    if (!Number.isFinite(v) || !v || !RES_LABEL[k]) continue;
+    facts.push({ text: (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + RES_LABEL[k], weight: Math.abs(v) / (k === 'gold' ? 5 : 1), good: v > 0 });
+  }
+  if (o.severity && SEVERITY_LABEL[o.severity]) facts.push({ text: SEVERITY_LABEL[o.severity], weight: o.severity === 'lethal' ? 40 : 15, good: false });
+  const ce = o.crew_effect;
+  if (ce && ce.type === 'kill') facts.push({ text: 'A DEATH', weight: 50, good: false });
+  else if (ce && ce.type === 'injure') facts.push({ text: 'AN INJURY', weight: 15, good: false });
+  else if (ce && ce.type === 'heal') facts.push({ text: 'HEALING', weight: 10, good: true });
+  if (o.item_grant) facts.push({ text: '+' + prettyItem(o.item_grant).toUpperCase(), weight: 8, good: true });
+  if (o.item_consume) facts.push({ text: 'USES ' + prettyItem(o.item_consume).toUpperCase(), weight: 6, good: false });
+  if (Number.isFinite(o.crop_health) && o.crop_health) facts.push({ text: (o.crop_health > 0 ? '+' : '−') + Math.abs(o.crop_health) + ' CROP', weight: Math.abs(o.crop_health) / 2, good: o.crop_health > 0 });
+  return facts.sort((a, b) => b.weight - a.weight);
+}
+function costWeight(o) { return outcomeFacts(o).filter(f => !f.good).reduce((s, f) => s + f.weight, 0); }
+// Map choice → preview line for this render. MARV: the costliest
+// choice's costs ("the cost of accuracy is knowing how bad it is").
+// Academic captain: one full outcome per station leg (kept for re-renders
+// of the same layer).
+function choicePreviews(choices) {
+  const out = new Map();
+  const cands = choices.filter(ch => !lockReason(ch) && choiceOutcome(ch));
+  if (!cands.length) return out;
+  if (STATE.activeAI === 'marv') {
+    const worst = cands.slice().sort((a, b) => costWeight(choiceOutcome(b)) - costWeight(choiceOutcome(a)))[0];
+    const costs = outcomeFacts(choiceOutcome(worst)).filter(f => !f.good).slice(0, 2).map(f => f.text);
+    if (costs.length) out.set(worst, 'MARV · ' + costs.join(' · '));
+  }
+  if (STATE.captain === 'academic' && STATE.currentEvent) {
+    const key = STATE.currentEvent.id + '|' + (STATE.layerStack || []).join('>');
+    if (STATE.researchReady || STATE.researchKey === key) {
+      const pick = cands.find(ch => !out.has(ch) && outcomeFacts(choiceOutcome(ch)).length);
+      if (pick) {
+        STATE.researchReady = false; STATE.researchKey = key;
+        out.set(pick, 'RESEARCH · ' + outcomeFacts(choiceOutcome(pick)).slice(0, 3).map(f => f.text).join(' · '));
+      }
+    }
+  }
+  return out;
+}
+// A crew-gated choice the captain covers alone (Xenobiologist captain
+// standing in for a missing xenobiologist — Bible §4.30, half strength).
+function captainStandsIn(role) {
+  return role === 'xenobiologist' && STATE.captain === role && !STATE.crew.includes(role);
+}
+function hasRoleFor(role) { return STATE.crew.includes(role) || captainStandsIn(role); }
+function choiceStandIn(choice) {
+  const role = choice && (choice.requires_crew || (choice.gate && choice.gate.crew));
+  return !!role && captainStandsIn(role);
+}
+
 /* Returns null if choice is available; otherwise a short string
    explaining why it's locked. Checks both the flat schema's gate
    trio (requires_crew/requires_item/requires_flag) and the layered
@@ -3659,7 +3816,7 @@ function lockReason(choice) {
     return choice.consumedLabel || 'Already done';
   }
   if (choice.requires_crew) {
-    if (!STATE.crew.includes(choice.requires_crew)) return `Needs ${choice.requires_crew}`;
+    if (!hasRoleFor(choice.requires_crew)) return `Needs ${choice.requires_crew}`;
     if (crewHPOf(choice.requires_crew) <= CREW_CRITICAL_HP) return `${choice.requires_crew} is hurt too badly to help`;
     if (STATE.crisisPatient === choice.requires_crew) return `${choice.requires_crew} is the patient`;
   }
@@ -3667,7 +3824,7 @@ function lockReason(choice) {
   if (choice.requires_flag && !STATE.flags.has(choice.requires_flag)) return `Story-gated`;
   if (choice.gate) {
     if (choice.gate.crew) {
-      if (!STATE.crew.includes(choice.gate.crew)) return `Needs ${choice.gate.crew}`;
+      if (!hasRoleFor(choice.gate.crew)) return `Needs ${choice.gate.crew}`;
       if (crewHPOf(choice.gate.crew) <= CREW_CRITICAL_HP) return `${choice.gate.crew} is hurt too badly to help`;
       if (STATE.crisisPatient === choice.gate.crew) return `${choice.gate.crew} is the patient`;
     }
@@ -3854,6 +4011,9 @@ function interpolateNpcTokens(text, npc) {
    original resolveChoice() path. */
 function handleChoiceClick(choice) {
   const ev = STATE.currentEvent;
+  STATE.lethalSaved = null;
+  STATE.halfEffect = choiceStandIn(choice);
+  STATE.lastPick = { picked: choice, shown: STATE._shownChoices || [] };
 
   // One-shot actions (demo's consume machinery) — mark spent the
   // moment the choice resolves, whatever it goes on to do.
@@ -3956,7 +4116,8 @@ function applyOutcomeEffects(o) {
         }
       } else if (k in STATE.resources) {
         // O2 recycler (items.json): O2 losses reduced 25%.
-        const dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.round(v * 0.75) : v;
+        let dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.round(v * 0.75) : v;
+        if (STATE.halfEffect && dv > 0) dv = Math.round(dv / 2); // captain standing in: half the gains
         STATE.resources[k] = clamp(STATE.resources[k] + dv, 0, resMax(k));
       }
     }
