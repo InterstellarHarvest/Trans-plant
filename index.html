@@ -3022,6 +3022,12 @@ function enterEvent(node, ev) {
     }
   }
 
+  // Standard variants (event_shipboard_001's "noise in Cargo Bay 3"):
+  // one is drawn uniformly per firing (owner ruling 2026-10-09) and
+  // held here so every re-render of this firing shows the same one.
+  STATE.variantIndex = (ev.standard_variants && ev.standard_variants.length)
+    ? Math.floor(Math.random() * ev.standard_variants.length) : 0;
+
   // The delayed-crisis patient belongs to the crisis event alone.
   if (!(ev.trigger || []).includes('delayed_crisis')) STATE.crisisPatient = null;
 
@@ -3185,7 +3191,7 @@ function renderEncounterState() {
   // revealedByEvent), render the authored stowaway_variant — body,
   // plus its choices filtered by their authored crew-count conditions
   // (crew max is 2 chosen crew + captain, per setup/Bible). Otherwise
-  // fall through to the first standard variant as before.
+  // render the standard variant enterEvent drew for this firing.
   if (!choices && ev.stowaway_variant && STATE.stowaway &&
       STATE.stowaway.revealedByEvent === ev.id) {
     const sv = ev.stowaway_variant;
@@ -3196,9 +3202,10 @@ function renderEncounterState() {
       return true; // 'always'
     });
   }
-  if (!choices && ev.standard_variants && ev.standard_variants[0]) {
-    body = ev.standard_variants[0].body || body;
-    choices = ev.standard_variants[0].choices || [];
+  const variant = ev.standard_variants && (ev.standard_variants[STATE.variantIndex || 0] || ev.standard_variants[0]);
+  if (!choices && variant) {
+    body = variant.body || body;
+    choices = variant.choices || [];
   }
   choices = choices || [];
 

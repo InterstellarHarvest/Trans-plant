@@ -28,8 +28,7 @@
     },
     "body": "A noise from Cargo Bay 3. It has been happening for three days. Someone finally investigated.",
     "stowaway_variant": {
-      "description": "If stowaway event hasn't fired yet and RNG triggers it, this event becomes the stowaway reveal. Otherwise it's one of the standard variants below.",
-      "stowaway_chance": 0.3,
+      "description": "When this run carries a hidden stowaway (rolled at launch, ~35% of runs) and the reveal window is open, this event becomes the reveal. Otherwise one of the standard variants below is drawn at random.",
       "stowaway_body": "There is a person in Cargo Bay 3. They look cold. They look hungry. They do not look like they have a boarding pass.\n\nThey give their name as {stowaway.name}.\n\n{stowaway.story}\n\n“{stowaway.line}”\n\nYour ship can support three humans. The math depends on how many you already have.",
       "stowaway_choices": [
         {
@@ -754,6 +753,170 @@
           "sets_flag": null,
           "time_cost": "low",
           "narrative": "The ship computer performs Chapter Eleven in full, with voices. The patient falls asleep during the section on splints. It is not treatment. It is, the patient admits on waking, a very good performance."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_009",
+    "active": true,
+    "title": "It Has a Name Now",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "has_creature",
+    "ai_flavor": {
+      "aria": "ARIA has added the creature to the crew manifest! Its role is \"Morale Officer!\" Its salary is crumbs! It has never once been late!",
+      "marv": "MARV has weighed the creature's food intake against its contribution to morale. The numbers work out. He finds this suspicious.",
+      "rex": "REX has reassessed the creature from \"hostile\" to \"irregular auxiliary.\" It still sleeps on his console. He allows it.",
+      "chip": "CHIP notes that pets are not covered by the ship's lease! The creature is therefore a \"decorative accessory!\" CHIP loves it anyway! Off the record!",
+      "ajoy": "AJOY said to release it at the next planet. She would like the record to show that. She would also like the record to show it sleeps on her speaker grille and she has not moved it."
+    },
+    "body": "The creature from Cargo Bay 3 has settled in.\n\nIt has a name, agreed after a vote, a recount, and a second name nobody uses. It has a favorite bunk, which is whichever one belongs to the person having the worst day. It has opinions about the growbay, which it visits every night and leaves looking slightly tidier.\n\nIt has not been officially entered into anything. The crew would like that fixed.",
+    "choices": [
+      {
+        "text": "Make it the ship's mascot",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "It gets a crew patch, sewn by three people who will not admit to sewing it, and a line in the ship's log. It celebrates by sleeping through the ceremony. The crew counts this as in character."
+        }
+      },
+      {
+        "text": "Let it patrol the growbay",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "It takes the night shift in the growbay. Anything small and many-legged among the planters stops being a problem, and then stops being anything at all. The botanist pretends not to approve.",
+          "clears_pest": true
+        }
+      },
+      {
+        "text": "Put it on rations like everyone else",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 3,
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "It accepts its ration with great dignity, then steals a second one with greater dignity. The food math improves slightly. The mood in the galley does not."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_010",
+    "active": true,
+    "title": "The Creature Found It",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_o2",
+      "low_hull"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "has_creature",
+    "ai_flavor": {
+      "aria": "ARIA thinks the creature is trying to tell you something! ARIA thinks it is saying \"I love you!\" It may also be saying \"leak!\"",
+      "marv": "MARV noticed the pressure drop eleven hours ago. The creature noticed it ten hours ago. MARV is not taking questions about this.",
+      "rex": "REX respects the creature's discipline. It has held that position for six hours without relief. He would have it on his team.",
+      "chip": "CHIP's leak sensors are a premium subscription tier you did not purchase! The creature's sensors appear to be free! CHIP is reviewing the competition!",
+      "ajoy": "AJOY would have found the leak too. Eventually. She would like it noted that the creature had a head start and no other responsibilities."
+    },
+    "body": "The creature has been sitting in front of the same wall panel in the aft corridor for six hours. It does not eat. It does not sleep. It stares at the panel the way it stares at the food locker, which is to say with total conviction.\n\nThe panel looks fine. The pressure readings in the aft corridor are, on closer inspection, very slightly not fine.",
+    "choices": [
+      {
+        "text": "Open the panel",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 10,
+            "hull": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Behind the panel, a seal has been letting air out a thimble at a time, for weeks. The creature watches you fix it, then walks off to the food locker like an inspector who has seen enough. Nobody argues about its rations again."
+        }
+      },
+      {
+        "text": "It's a creature. Shoo it along",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -3,
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You move the creature. It comes back. You move it again. Four days later the instruments find the leak behind that exact panel, and the creature is sitting in front of it, making no comment whatsoever."
         }
       }
     ]

@@ -260,6 +260,22 @@ for (const file of eventFiles) {
   }
 }
 
+// Stowaway identities: a welcomed stowaway with a join_role is pushed
+// straight into STATE.crew, so it must be a real crew role (or null =
+// passenger). Wembly Voss shipped as "academic" (a captain background).
+for (const idn of (readJSON('modules/flavor/flavor_pools.json').stowaway_identities || [])) {
+  if (idn.join_role != null && !crewRoles.has(idn.join_role)) {
+    err(`flavor_pools.json stowaway_identities ${idn.id}: join_role "${idn.join_role}" is not a role in crew_roster.json (use a crew role or null)`);
+  }
+}
+// The stowaway roll is the engine's (35% of runs, owner ruling
+// 2026-10-09); a per-event chance field would be dead data.
+for (const { file, event: ev } of eventsById.values()) {
+  if (ev.stowaway_variant && 'stowaway_chance' in ev.stowaway_variant) {
+    err(`${file} ${ev.id}: stowaway_variant.stowaway_chance is not read by the engine (the roll is a fixed 35% per run) — remove it`);
+  }
+}
+
 for (const flag of requiresFlags) {
   if (!setsFlags.has(flag) && !ENGINE_SET_FLAGS.has(flag)) {
     err(`Dangling requires_flag "${flag}" — no event's sets_flag (and no engine path) ever sets it`);
@@ -318,6 +334,18 @@ function trailCoverage() {
   const outPath = path.join(ROOT, OUT);
   if (!fs.existsSync(outPath) || fs.readFileSync(outPath, 'utf8') !== build()) {
     err(`${OUT} is stale vs modules/ (file:// launches would run old content) — run: node tools/build_portable.js`);
+  }
+}
+
+// ── flags.md freshness (added 2026-10-09) ─────────────────────────
+// The content-set table is generated from the event files; a stale one
+// hides who checks a flag (the orphan question every new flag asks).
+{
+  // flags.md is a local authoring doc (Markdown stays out of the public
+  // repo), so a fresh clone without it skips this check.
+  const gen = require('./gen_flags.js');
+  if (fs.existsSync(path.join(ROOT, gen.OUT)) && fs.readFileSync(path.join(ROOT, gen.OUT), 'utf8') !== gen.render()) {
+    err(`${gen.OUT} content-set table is stale vs modules/events — run: node tools/gen_flags.js`);
   }
 }
 
