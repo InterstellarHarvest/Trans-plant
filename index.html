@@ -228,7 +228,7 @@ body {
   transform: translateX(-50%);
   font-family: 'VT323', monospace;
   font-size: 12px;
-  letter-spacing: 1px;
+  letter-spacing: 0;
   color: var(--cream);
   white-space: nowrap;
   text-shadow: 0 0 4px #000;
@@ -302,7 +302,8 @@ body {
 
 /* Map touches (Restoration item 9) — ship marker + branch flavor */
 .map-here {
-  position: absolute; top: calc(100% + 14px); left: 50%;
+  /* opposite side from the node's label, so they never collide */
+  position: absolute; bottom: calc(100% + 24px); left: 50%;
   transform: translateX(-50%);
   font-family: 'Press Start 2P', cursive; font-size: 6px;
   letter-spacing: 1px; color: var(--teal, #5fa8d0);
@@ -314,7 +315,7 @@ body {
   0%, 100% { transform: translateX(-50%) translateY(0); }
   50%      { transform: translateX(-50%) translateY(-3px); }
 }
-.map-node.label-above .map-here { top: auto; bottom: calc(100% + 14px); }
+.map-node.label-above .map-here { bottom: auto; top: calc(100% + 24px); }
 .map-branch-flavor {
   position: absolute; top: calc(100% + 26px); left: 50%;
   transform: translateX(-50%);
@@ -322,7 +323,8 @@ body {
   letter-spacing: 1px; color: rgba(200,168,90,0.75);
   white-space: nowrap; pointer-events: none;
 }
-.map-node.label-above .map-branch-flavor { top: auto; bottom: calc(100% + 26px); }
+.map-node.br-alpha .map-branch-flavor { top: auto; bottom: calc(100% + 26px); } /* outer side of the row */
+.map-node.br-beta  .map-branch-flavor { bottom: auto; top: calc(100% + 26px); }
 
 /* ── Encounter screen ───────────────────────────────────────────── */
 #screen-encounter { background: var(--bg-empty); }
@@ -2752,43 +2754,33 @@ const MAP_IDS_DEFAULT = {
 };
 
 function nodePositions(viewportId) {
-  // Group nodes by position. Forked branches share the fork's
-  // outgoing position+1, so we split them vertically when there
-  // are two nodes at the same position.
+  // One column per distinct route position (map.js gives a fork's branch
+  // nodes fractional positions between the fork and the merge). Using
+  // column RANK, not the raw position, gives every branch node a full
+  // column — they used to be squeezed into half a spine gap, stacking
+  // into unreadable towers on interstellar. Branch rows sit at a fixed
+  // offset above (alpha) / below (beta) the spine.
   const byPos = {};
-  for (const n of STATE.nodes) {
-    (byPos[n.position] = byPos[n.position] || []).push(n);
-  }
-  const positions = Object.keys(byPos).map(Number).sort((a,b)=>a-b);
-  const maxPos = positions[positions.length - 1];
+  for (const n of STATE.nodes) (byPos[n.position] = byPos[n.position] || []).push(n);
+  const positions = Object.keys(byPos).map(Number).sort((a, b) => a - b);
   const pos = {};
   const vp = document.getElementById(viewportId || MAP_IDS_DEFAULT.viewport);
   const W = vp.clientWidth, H = vp.clientHeight;
-  for (const p of positions) {
-    const nodes = byPos[p];
-    const x = (p / maxPos) * (W - 60) + 30;
-    if (nodes.length === 1) {
-      pos[nodes[0].id] = { x, y: H / 2 };
-    } else {
-      // Stack vertically: alpha (top) / beta (bottom).
-      const slots = nodes.length;
-      nodes.forEach((n, i) => {
-        const yOff = ((i - (slots - 1) / 2) * 110);
-        pos[n.id] = { x, y: H / 2 + yOff };
-      });
+  const ROW = Math.min(110, H * 0.28);
+  // Spine/fork columns carry the long labels ("Asteroid Field 7") —
+  // give them more width than branch-only columns (short type names).
+  const isBranchCol = p => byPos[p].every(n => /^node_branch_/.test(n.id));
+  const widths = positions.map(p => isBranchCol(p) ? 1 : 1.2);
+  let acc = 0;
+  const colX = positions.map((p, ci) => { if (ci) acc += (widths[ci - 1] + widths[ci]) / 2; return acc; });
+  const span = colX[colX.length - 1] || 1;
+  positions.forEach((p, ci) => {
+    const x = (colX[ci] / span) * (W - 60) + 30;
+    for (const n of byPos[p]) {
+      const m = n.id.match(/^node_branch_\d+_(alpha|beta)_\d+$/);
+      pos[n.id] = { x, y: H / 2 + (m ? (m[1] === 'alpha' ? -ROW : ROW) : 0), col: ci };
     }
-  }
-  // Multi-node branches arc outward: each subsequent branch node steps
-  // further off-spine vertically. On dense trails (interstellar, 15
-  // spine nodes) the horizontal room inside a fork gap shrinks to a few
-  // pixels — vertical separation keeps 2-node branches readable as a
-  // detour loop instead of an overlapping smear.
-  for (const n of STATE.nodes) {
-    const m = n.id.match(/^node_branch_\d+_(alpha|beta)_(\d+)$/);
-    if (!m || !pos[n.id]) continue;
-    const sign = m[1] === 'alpha' ? -1 : 1;
-    pos[n.id].y += sign * parseInt(m[2], 10) * 44;
-  }
+  });
   return pos;
 }
 
@@ -2829,13 +2821,6 @@ function renderMap(ids) {
 
   const available = nextAvailableNodes();
 
-  // Rank spine/fork nodes by position for label-side alternation below.
-  const spineRank = {};
-  STATE.nodes
-    .filter(n => !/^node_branch_/.test(n.id))
-    .sort((a, b) => a.position - b.position)
-    .forEach((n, i) => { spineRank[n.id] = i; });
-
   for (const n of STATE.nodes) {
     const p = pos[n.id];
     if (!p) continue;
@@ -2857,14 +2842,11 @@ function renderMap(ids) {
     let labelText = n.name;
     if (branchMatch) {
       labelText = n.name.replace(/\s*\((alpha|beta)\)\s*$/, '');
-      // Labels face outward from the spine: alpha (top arc) above,
-      // beta (bottom arc) below — keeps text clear of the arc's own nodes.
-      if (branchMatch[1] === 'alpha') el.classList.add('label-above');
-    } else {
-      // Spine/fork labels alternate below/above by rank so dense trails
-      // (interstellar: 15 spine nodes) don't overlap adjacent labels.
-      if (spineRank[n.id] % 2 === 1) el.classList.add('label-above');
+      el.classList.add('br-' + branchMatch[1]);
     }
+    // Labels alternate below/above by column so neighbours (one column
+    // apart, on the spine or a branch row) never share a side.
+    if (p.col % 2 === 1) el.classList.add('label-above');
     el.title = n.name;
     el.innerHTML = `<div class="shape"></div><div class="map-node-label">${labelText}</div>`;
     // YOU ARE HERE — the demo-map ship marker, kept dead simple per
