@@ -1150,8 +1150,8 @@
     } else {
       // Food past a full store is packed as ration bricks (10 food each)
       // instead of vanishing at the 100 cap — capacity permitting.
-      const room = Math.max(0, 100 - STATE.resources.food);
-      STATE.resources.food = clamp(STATE.resources.food + total, 0, 100);
+      const room = Math.max(0, resMax('food') - STATE.resources.food);
+      STATE.resources.food = clamp(STATE.resources.food + total, 0, resMax('food'));
       let spare = Math.max(0, total - room);
       while (spare >= 10 && typeof grantItem === 'function' && grantItem('ration_brick')) { spare -= 10; banked++; }
     }

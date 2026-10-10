@@ -119,7 +119,8 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
   const invariants = () => page.evaluate(() => {
     const bad = [];
     for (const [k, v] of Object.entries(STATE.resources)) {
-      if (!Number.isFinite(v) || v < 0 || v > 100) bad.push(`resources.${k}=${v}`);
+      const cap = typeof resMax === "function" ? resMax(k) : 100; // upgrades / captain bonuses raise ceilings
+      if (!Number.isFinite(v) || v < 0 || v > cap) bad.push(`resources.${k}=${v}`);
     }
     if (!Number.isFinite(STATE.goldAmount) || STATE.goldAmount < 0) bad.push(`gold=${STATE.goldAmount}`);
     if (!Number.isFinite(STATE.daysElapsed) || STATE.daysElapsed < 0) bad.push(`days=${STATE.daysElapsed}`);

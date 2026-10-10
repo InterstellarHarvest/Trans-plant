@@ -122,7 +122,7 @@
     // HUD lives in the reused .hud component top-right).
     const r = STATE.resources;
     $('res-fill-fuel').style.width  = clampPct(r.fuel * 100 / resMax('fuel'))  + '%';
-    $('res-fill-food').style.width  = clampPct(r.food)  + '%';
+    $('res-fill-food').style.width  = clampPct(r.food * 100 / resMax('food'))  + '%';
     $('res-fill-water').style.width = clampPct(r.water) + '%';
 
     // Standing-orders readout — live from STATE.orders (Restoration
@@ -380,7 +380,7 @@
       if (tier === 'abandoned') return settleAbandoned(mode);
       payload = payload || {};
       if (typeof payload.food === 'number' && payload.food > 0) {
-        STATE.resources.food = clamp(STATE.resources.food + payload.food, 0, 100);
+        STATE.resources.food = clamp(STATE.resources.food + payload.food, 0, resMax('food'));
       }
       // Forage's rare finds are demo ids with no items.json entry — granting
       // them raw put phantom, unsellable cargo in the hold. Map each to a
@@ -397,7 +397,7 @@
         // Poisoning hurts one crew member (the demo's "SICKNESS · -HP one
         // crew" and the briefing's "poisons a crew member"); solo, the
         // spoiled haul costs food instead.
-        if (s.type === 'poisoning') { if (STATE.crew.length) damageCrew(null, sev); else STATE.resources.food = clamp(STATE.resources.food - sev, 0, 100); }
+        if (s.type === 'poisoning') { if (STATE.crew.length) damageCrew(null, sev); else STATE.resources.food = clamp(STATE.resources.food - sev, 0, resMax('food')); }
         else STATE.resources.morale = clamp(STATE.resources.morale - sev, 0, 100);
       });
       let gained = payload.food ? ('+' + payload.food + ' food.') : 'came back empty-handed.';

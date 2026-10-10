@@ -770,7 +770,7 @@
         // (COMBAT_SYSTEM_HANDOFF.md §5) — combat continues on failure,
         // so this deducts immediately rather than through the deferred
         // end-of-combat outcome reconciliation.
-        STATE.resources.food = clamp(STATE.resources.food - cfg.tribute_food_cost, 0, 100);
+        STATE.resources.food = clamp(STATE.resources.food - cfg.tribute_food_cost, 0, resMax('food'));
         renderHUD();
         setTimeout(enemyTurn, 600);
       }

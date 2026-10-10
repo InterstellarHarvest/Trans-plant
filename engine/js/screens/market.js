@@ -43,10 +43,7 @@
     insulated_cargo_bay: '📦',
     drive_coil:          '🌀',
     o2_recycler:         '♻️',
-    repair_fabricator:   '🛠️',
-    atmospheric_condenser: '💧',
-    o2_canister:         '🫧',
-    crop_treatment:      '🧪'
+    repair_fabricator:   '🛠️'
   };
   // Upgrades have their own art in sprites/cargo/upgrades (it existed
   // all along — the market showed emoji); emoji only where no art exists.

@@ -1582,6 +1582,7 @@ const MODULE_PATHS = {
   ai_companions: 'modules/ai/ai_companions.json',
   ships:         'modules/ships/ships.json',
   crew_roster:   'modules/crew/crew_roster.json',
+  captains:      'modules/captains/captains.json',
   items:         'modules/items/items.json',
   endings:       'modules/endings/endings.json',
   failures:      'modules/failures/failures.json',
@@ -1901,7 +1902,7 @@ function applySetupToState(sel) {
     hull:   rules.starting_resources.hull,
     morale: rules.starting_resources.morale,
   };
-  STATE.goldAmount = 50 + (sel.captain === 'diplomat' ? 15 : 0); // setup: Diplomat "Credits +15"
+  STATE.goldAmount = 50;
 
   STATE.activeAI  = sel.ai;
   STATE.captain   = sel.captain;
@@ -1930,8 +1931,18 @@ function applySetupToState(sel) {
   // Starting items — no items step in the setup wizard yet; keep the
   // same placeholder loadout initState() used, so item-gated choices
   // still unlock somewhere in the loop.
-  STATE.items = ['soil_sampler', 'gas_analyzer', 'repair_kit'];
+  STATE.items = ['soil_sampler', 'repair_kit']; // the gas analyzer is the Academic captain's starting bonus
   STATE.materials = { metal: 4, scrap: 2 }; // ship stores: two hull patches' worth (REPAIR costs 2 metal + 1 scrap)
+  // captains.json starting_bonus — each captain's setup promise ("Hull
+  // starts at 105", "Start with a spectrometer", "extra credits"…).
+  const sb = captainBonus();
+  if (sb) {
+    for (const k of ['fuel', 'hull', 'food']) if (Number.isFinite(sb[k])) STATE.resources[k] += sb[k];
+    if (Number.isFinite(sb.crop_health) && STATE.cropGrowth) STATE.cropGrowth.health = Math.min(100, STATE.cropGrowth.health + sb.crop_health);
+    if (Number.isFinite(sb.credits)) STATE.goldAmount += sb.credits;
+    for (let i = 0; i < (sb.medical_supplies || 0); i++) STATE.items.push('medkit');
+    if (sb.item && !STATE.items.includes(sb.item)) STATE.items.push(sb.item);
+  }
 
   STATE.daysElapsed  = 0;
   STATE.visited      = new Set();
@@ -2459,7 +2470,7 @@ function scoutedEventFor(node) {
 function renderHUD() {
   const r = STATE.resources;
   // An upgrade sold/jettisoned/lost takes its headroom with it.
-  for (const k of ['fuel', 'hull']) if (r[k] > resMax(k)) r[k] = resMax(k);
+  for (const k of ['fuel', 'hull', 'food']) if (r[k] > resMax(k)) r[k] = resMax(k);
   const crit = {
     fuel:  r.fuel  < 25,
     food:  r.food  < 25,
@@ -2528,8 +2539,8 @@ let _invJettisonPending = null;
 // Item art lives in two folders: upgrades in sprites/cargo/upgrades
 // (insulated_cargo_bay's file is extra_cargo.png), everything else in
 // sprites/cargo/items. null when no art exists yet (emoji fallback).
-const UPGRADE_SPRITES = { expanded_fuel_tank: 'expanded_fuel_tank', hull_plating: 'hull_plating', insulated_cargo_bay: 'extra_cargo', drive_coil: 'drive_coil', o2_recycler: 'o2_recycler', repair_fabricator: 'repair_fabricator' };
-const NO_ITEM_ART = { atmospheric_condenser: 1, o2_canister: 1, crop_treatment: 1 }; // on the PMO art list
+const UPGRADE_SPRITES = { expanded_fuel_tank: 'expanded_fuel_tank', hull_plating: 'hull_plating', insulated_cargo_bay: 'extra_cargo', drive_coil: 'drive_coil', o2_recycler: 'o2_recycler', repair_fabricator: 'repair_fabricator', atmospheric_condenser: 'atmospheric_condenser' };
+const NO_ITEM_ART = {}; // ids awaiting art (resources/ART_REQUESTS.md) — emoji until it lands
 function itemSpritePath(id) {
   if (UPGRADE_SPRITES[id]) return 'sprites/cargo/upgrades/' + UPGRADE_SPRITES[id] + '.png';
   if (NO_ITEM_ART[id]) return null;
@@ -2537,7 +2548,7 @@ function itemSpritePath(id) {
 }
 function invIconHtml(id, isMaterial, px) {
   const path = isMaterial ? 'sprites/cargo/materials/' + id + '.png' : itemSpritePath(id);
-  if (!path) return '<span class="inv-tile-emoji">' + ({ atmospheric_condenser: '💧', o2_canister: '🫧', crop_treatment: '🧪' }[id] || '📦') + '</span>';
+  if (!path) return '<span class="inv-tile-emoji">📦</span>';
   return '<img src="' + path + '" alt="" onerror="this.outerHTML=\'<span class=&quot;inv-tile-emoji&quot;>📦</span>\'" style="width:inherit;height:inherit;max-width:56px;max-height:56px;">';
 }
 function renderInventory() {
@@ -2591,7 +2602,7 @@ function worstHurtCrew() {
   return worst;
 }
 const ITEM_USE = {
-  ration_brick:   { label: '+10 FOOD',  can: () => STATE.resources.food  >= 100 ? 'Food stores are full' : null,  use: () => { invAddRes('food', 10);  return 'Ration brick unwrapped. +10 food. Nobody describes the flavour.'; } },
+  ration_brick:   { label: '+10 FOOD',  can: () => STATE.resources.food  >= resMax('food') ? 'Food stores are full' : null,  use: () => { invAddRes('food', 10);  return 'Ration brick unwrapped. +10 food. Nobody describes the flavour.'; } },
   water_canister: { label: '+10 H2O',   can: () => STATE.resources.water >= 100 ? 'Water tanks are full' : null,  use: () => { invAddRes('water', 10); return 'Water canister emptied into the tanks. +10 water.'; } },
   fuel_cell:      { label: '+15 FUEL',  can: () => STATE.resources.fuel  >= resMax('fuel') ? 'Fuel tank is full' : null, use: () => { invAddRes('fuel', 15); return 'Fuel cell slotted in. +15 fuel.'; } },
   repair_kit:     { label: '+10 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { invAddRes('hull', 10); return 'Repair kit spent on the worst seams. +10 hull.'; } },
@@ -3105,10 +3116,21 @@ window.fuelPerLegBase = fuelPerLegBase;
 /* Resource ceilings: 100, raised while the upgrade is in cargo
    (items.json gameplay_effect) — fuel tank 120, hull plating 115. */
 function resMax(k) {
-  if (k === 'fuel' && STATE.items.includes('expanded_fuel_tank')) return 120;
-  if (k === 'hull' && STATE.items.includes('hull_plating')) return 115;
-  return 100;
+  let max = 100;
+  if (k === 'fuel' && STATE.items.includes('expanded_fuel_tank')) max = 120;
+  if (k === 'hull' && STATE.items.includes('hull_plating')) max = 115;
+  // A captain's starting bonus that starts a resource above 100 ("Hull
+  // starts at 105 — you reinforced the weak points") raises its ceiling
+  // by the same amount for the run, or the first change would erase it.
+  const b = captainBonus();
+  if (b && Number.isFinite(b[k]) && (k === 'fuel' || k === 'hull' || k === 'food')) max += b[k];
+  return max;
 }
+function captainDef(bg) {
+  const list = (MOD.captains && MOD.captains.captains) || [];
+  return list.find(c => c.background === (bg || STATE.captain)) || null;
+}
+function captainBonus() { const c = captainDef(); return c && c.starting_bonus; }
 window.resMax = resMax;
 /* Per-leg passives that depend on where the ship arrives or what it
    carries — each is an authored promise (items.json / crops.json). */
@@ -3226,7 +3248,7 @@ function passDays(days, opts) {
   const pace = ordersPace(), ra = ordersRations();
 
   // RATIONS — food burn + morale drift, every day.
-  r.food = clamp(r.food - ORDERS_BASE.foodPerDay * ra.foodMult * foodBurnMult() * mouthsMult() * days, 0, 100);
+  r.food = clamp(r.food - ORDERS_BASE.foodPerDay * ra.foodMult * foodBurnMult() * mouthsMult() * days, 0, resMax('food'));
   // O2 (owner ruling 2026-10-10): the crew breathe — a slow daily draw,
   // halved by the O2 recycler. Events, tanks and canisters refill it.
   // A healthy crop makes air (the growbay is the ship's lung — the AI's
