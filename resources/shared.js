@@ -1331,6 +1331,8 @@ const PauseMenu = (() => {
       // stacks on top of another overlay.
       const ov = document.querySelector('.overlay.active');
       if (ov) {
+        // Timed games (minigames, mining) are pause-aware: ESC pauses.
+        if (ov.hasAttribute('data-esc-pause')) { e.preventDefault(); open(); return; }
         const c = ov.querySelector('[data-esc-close]');
         if (c) { e.preventDefault(); c.click(); }
         return;

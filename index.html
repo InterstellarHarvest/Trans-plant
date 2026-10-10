@@ -1089,7 +1089,7 @@ body {
       </div>
     </div>
   </div>
-  <div id="overlay-mining" class="overlay">
+  <div id="overlay-mining" class="overlay" data-esc-pause>
     <div id="mining-root">
       <div class="enc-backdrop-base" id="mining-backdrop-base"></div>
       <div class="enc-backdrop" id="mining-backdrop"></div>
@@ -1526,7 +1526,7 @@ body {
   </div><!-- /#overlay-fabricator — this close was missing, which nested
              #overlay-minigames inside it: every minigame rendered at 0×0
              unless the fabricator happened to be open. -->
-  <div id="overlay-minigames" class="overlay">
+  <div id="overlay-minigames" class="overlay" data-esc-pause>
     <div id="ov">
       <div id="modal">
         <div id="mhdr">
@@ -1720,6 +1720,9 @@ const SAVED_FIELDS = [
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
+  // Mid-minigame the verb hasn't resolved (its time not yet charged) —
+  // a save here would let a load dodge the cost.
+  if (document.querySelector('#overlay-minigames.active, #overlay-mining.active')) return false;
   if (new URLSearchParams(location.search).has('debug')) return false;
   try {
     const snap = { v: 1, ts: Date.now() };

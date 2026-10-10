@@ -554,8 +554,12 @@
     // Bail out before committing to a run — no haul, nothing to bank.
     const leaveBtn = document.createElement('button');
     leaveBtn.className = 'enc-choice leave';
-    leaveBtn.innerHTML = `<div class="enc-choice-body">◀ LEAVE</div><div class="enc-choice-sub">Back to the ship</div>`;
+    leaveBtn.innerHTML = `<div class="enc-choice-body">◀ LEAVE</div><div class="enc-choice-sub">${SESSION.runs > 0 ? 'Back to the ship · haul kept' : 'Back to the ship'}</div>`;
     leaveBtn.addEventListener('click', () => {
+      // After MINE AGAIN, earlier finished runs are already this visit's
+      // haul — LEAVE banks them like RETURN TO SHIP (only the run not
+      // started is skipped).
+      if (SESSION.runs > 0) { finishMining(); return; }
       hideOverlay('overlay-mining');
       const cb = onMiningDone;
       onMiningDone = null;
@@ -1077,7 +1081,7 @@
     const dt = Math.min(0.05, (now - MSTATE.lastTick) / 1000);
     MSTATE.lastTick = now;
     if (MSTATE.mining && MSTATE.timeLeftMs != null) {
-      MSTATE.timeLeftMs -= Math.max(0, now - (MSTATE.timerLast || now));
+      MSTATE.timeLeftMs -= Math.min(250, Math.max(0, now - (MSTATE.timerLast || now))); // a hidden-tab gap doesn't count
       MSTATE.timerLast = now;
       if (MSTATE.timeLeftMs <= 0) { MSTATE.timeLeftMs = null; endRun('time'); return; }
     }

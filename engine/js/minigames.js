@@ -277,6 +277,12 @@ let currentGame = null;
 let cleanupFn = null;
 let onMinigameDone = null; // (tier, payload) => void — supplied by openMinigame()'s caller
 let minigameStarted = false; // BEGIN pressed this visit — closing after this is a QUIT
+// The run's result is decided and its end beat (TIME'S UP flash, a
+// pause for the moment to land) is playing — ✕ now means "done", so
+// it waits for the result and closes through it instead of QUITting.
+let minigameEnding = false, closeAfterResult = false;
+function markMinigameEnding(){ minigameEnding = true; }
+function endBeat(fn, ms){ markMinigameEnding(); return setTimeout(fn, ms); }
 let minigameToken = 0;       // bumps per open/close: a quit game's delayed result can't land in the next one
 let lastTier = null, lastPayload = null;
 
@@ -321,7 +327,7 @@ function openMinigame(id, opts, onDone){
   engineerMult = STATE.crew.includes('engineer') ? passiveMult('engineer') : 0;
   engineerAboard = engineerMult > 0;
   onMinigameDone = onDone;
-  minigameStarted = false;
+  minigameStarted = false; minigameEnding = false; closeAfterResult = false;
   const mclose = document.getElementById('mclose');
   mclose.textContent = '✕ CLOSE'; mclose.title = 'Back out — nothing has started yet.';
   currentGame = id;
@@ -412,6 +418,8 @@ function showResult(tier, payload){
   }
 
   resultEl.classList.add('show');
+  // ✕ pressed during the end beat — deliver this result and close.
+  if(closeAfterResult){ closeAfterResult = false; setTimeout(()=>document.getElementById('rbquit').click(), 0); }
 }
 /* ✕ CLOSE / backdrop click (owner ruling 2026-10-09: quitting gains
    nothing and costs time):
@@ -426,7 +434,8 @@ function requestCloseMinigame(){
   // Salvage's own end-of-run haul card is up: the run is over, so X
   // means "done", not QUIT (it used to discard the haul as abandoned).
   const salClose = document.getElementById('sal-close');
-  if(salClose && salClose.offsetParent){ salClose.click(); return; }
+  if(salClose && salClose.offsetParent){ closeAfterResult = true; salClose.click(); return; }
+  if(minigameEnding){ closeAfterResult = true; return; }
   const cb = onMinigameDone, started = minigameStarted;
   onMinigameDone = null;
   closeMinigameOverlay();
@@ -460,10 +469,11 @@ document.getElementById('rbquit').addEventListener('click', ()=>{
 function makeTimer(barId, totalMs, onTick, onDone, colors){
   // colors (optional): {high, mid, low} CSS values for the >35/35-15/<15 zones.
   const C = colors || {high:'var(--info)', mid:'var(--orange)', low:'var(--red)'};
-  let start = performance.now(), rafId, done=false;
+  let start = performance.now(), rafId, done=false, prev = start;
   let pauseStartedAt = null;
   function frame(now){
     if(done) return;
+    const gap = now - prev; prev = now;
     if(PauseBus.paused){
       if(pauseStartedAt===null) pauseStartedAt = now;
       rafId = requestAnimationFrame(frame); return;
@@ -471,6 +481,10 @@ function makeTimer(barId, totalMs, onTick, onDone, colors){
     if(pauseStartedAt!==null){
       start += (now - pauseStartedAt);
       pauseStartedAt = null;
+    } else if(gap > 250){
+      // rAF slept (hidden tab, stall) and so did the game — don't let
+      // the clock end the run on the first frame back.
+      start += gap - 16.667;
     }
     const e = now - start;
     const r = Math.max(0, 1 - e/totalMs);
@@ -549,7 +563,7 @@ function initScan(container, onResult, opts){
   ctx.imageSmoothingEnabled = false;
   const CX=130,CY=130,R=112;
   let bx=CX+50,by=CY-30,bwa=Math.random()*Math.PI*2,sweep=0,lock=0,mx=CX,my=CY;
-  let jumped=false,done=false,rafId,startTime=performance.now(),pauseStartedAt=null;
+  let jumped=false,done=false,rafId,startTime=performance.now(),pauseStartedAt=null,lastFrame=null;
   const blipImg = new Image(); blipImg.src = 'sprites/minigames/scan/scan_blip.png';
 
   function onMove(e){
@@ -568,7 +582,12 @@ function initScan(container, onResult, opts){
       if(pauseStartedAt===null) pauseStartedAt=now;
       rafId=requestAnimationFrame(frame); return;
     }
+    const gap = lastFrame===null ? 16.667 : now - lastFrame; lastFrame = now;
     if(pauseStartedAt!==null){ startTime += (now - pauseStartedAt); pauseStartedAt=null; }
+    else if(gap > 250) startTime += gap - 16.667; // hidden tab / stall: the game slept too
+    // Motion + lock were tuned per 60Hz frame — scale by real frame time
+    // so a 120/144Hz display doesn't play twice as fast.
+    const f = Math.min(3, gap / 16.667);
     const e=now-startTime;
     // Single mid-game teleport — locking before this gets 'perfect'.
     if(!jumped&&e>tier.jumpAt){
@@ -580,16 +599,16 @@ function initScan(container, onResult, opts){
     // jitter, lurch, speed all come from the difficulty tier.
     bwa+=(Math.random()-.5)*tier.jitter;
     if(Math.random()<tier.lurch) bwa+=(Math.random()-.5)*1.1; // random lurch
-    const nx=bx+Math.cos(bwa)*tier.speed, ny=by+Math.sin(bwa)*tier.speed;
+    const nx=bx+Math.cos(bwa)*tier.speed*f, ny=by+Math.sin(bwa)*tier.speed*f;
     const bd=Math.sqrt((nx-CX)**2+(ny-CY)**2);
     if(bd<R-10){bx=nx;by=ny;}else{bwa+=Math.PI+(Math.random()-.5)*0.8;}
     // Sweep
-    sweep+=0.028;
+    sweep+=0.028*f;
     // Lock — fills while cursor is within tier.lockWindow of blip,
     // decays at a fixed rate when not. Decay stays constant across
     // tiers so easy isn't punishingly forgiving on misses.
     const ld=Math.sqrt((mx-bx)**2+(my-by)**2);
-    lock = ld<tier.lockWindow ? Math.min(1,lock+tier.lockFill) : Math.max(0,lock-0.03);
+    lock = ld<tier.lockWindow ? Math.min(1,lock+tier.lockFill*f) : Math.max(0,lock-0.03*f);
     const lf=document.getElementById('lock-fill');
     if(lf){lf.style.height=(lock*100)+'%';}
     // Win check
@@ -598,7 +617,7 @@ function initScan(container, onResult, opts){
       // Tier name reuses the local variable — shadow it to avoid
       // confusion with the difficulty `tier` const above.
       const resultTier = (e<tier.jumpAt) ? 'perfect' : 'good';
-      setTimeout(()=>onResult(resultTier),250); return;
+      endBeat(()=>onResult(resultTier), 250); return;
     }
     draw(e); rafId=requestAnimationFrame(frame);
   }
@@ -729,7 +748,7 @@ function initEngine(container, onResult){
       if(cIdx>=SEQ.length){
         done=true;
         document.getElementById('estatus').textContent='SEQUENCE COMPLETE';
-        setTimeout(()=>onResult(errs===0?'perfect':'good'),500);
+        endBeat(()=>onResult(errs===0?'perfect':'good'), 500);
       }
     } else {
       errs++; hadError=true;
@@ -739,7 +758,7 @@ function initEngine(container, onResult){
       if(errs>=3){
         done=true;
         document.getElementById('estatus').textContent='SEQUENCE FAILED';
-        setTimeout(()=>onResult('poor'),500);
+        endBeat(()=>onResult('poor'), 500);
       }
     }
   }
@@ -1336,9 +1355,9 @@ function initMedical(container, onResult, medConfig){
     // get a brief end-state pause for the moment to land before the result.
     if(tier === 'fedup'){
       bodySprite.classList.add('fedup-slide');
-      setTimeout(()=>onResult(tier), 900);
+      endBeat(()=>onResult(tier), 900);
     } else {
-      setTimeout(()=>onResult(tier), 750);
+      endBeat(()=>onResult(tier), 750);
     }
   }
 
@@ -2238,6 +2257,7 @@ function initForage(container, onResult, ctx){
   // finish() directly — no flash, no delay.
   function finishTimeUp(){
     if(done) return;
+    markMinigameEnding();
     const stage = document.getElementById('for-stage');
     if(stage){
       const alert = document.createElement('div');
@@ -2393,6 +2413,8 @@ function initBrace(container, onResult){
   const RELEASE_LEAD = 220;
 
   let everBraced = false; // never holding the brace at all used to finish ~60% → 'good'
+  let bracedMs = 0;       // total time held — a single tap used to score 'good' too
+  const MIN_BRACE_MS = 1500;
   function onDown(e){ if(done) return; if(e.button===0||e.type==='touchstart'){holding=true;everBraced=true;btn.classList.add('held');} }
   function onUp(){ holding=false; btn.classList.remove('held'); }
   btn.addEventListener('mousedown',onDown);
@@ -2412,13 +2434,13 @@ function initBrace(container, onResult){
     btn.classList.remove('warning','strike','heat-warm','heat-hot');
     let tier, endClass;
     if(fried)              { tier='poor';    endClass='end-fried';   stat.textContent='BRACE FRIED'; }
-    else if(!everBraced)   { tier='poor';    endClass='end-poor';    stat.textContent='NEVER BRACED'; }
+    else if(!everBraced || bracedMs < MIN_BRACE_MS) { tier='poor'; endClass='end-poor'; stat.textContent=everBraced?'BARELY BRACED':'NEVER BRACED'; }
     else if(shield >= 80)  { tier='perfect'; endClass='end-perfect'; stat.textContent='FLARE PASSED'; }
     else if(shield >= 40)  { tier='good';    endClass='end-good';    stat.textContent='FLARE PASSED'; }
     else                   { tier='poor';    endClass='end-poor';    stat.textContent='SHIELD DOWN'; }
     btn.classList.add(endClass);
     // Brief end-state pause so the moment lands before the result modal hits.
-    setTimeout(()=>onResult(tier), 750);
+    endBeat(()=>onResult(tier), 750);
   }
 
   let prev=null, elapsed=0;
@@ -2426,10 +2448,11 @@ function initBrace(container, onResult){
     if(done) return;
     if(PauseBus.paused){ prev=now; rafId=requestAnimationFrame(frame); return; }
     if(prev===null) prev=now;
-    const dt=(now-prev)/1000; prev=now;
+    const dt=Math.min(0.05,(now-prev)/1000); prev=now; // capped: a hidden tab mustn't drain the shield in one frame
     elapsed += dt*1000;
 
     // Heat
+    if(holding) bracedMs += dt*1000;
     heat = holding
       ? Math.min(100, heat + HEAT_FILL*dt)
       : Math.max(0,   heat - HEAT_VENT*dt);
@@ -2470,6 +2493,9 @@ function initBrace(container, onResult){
       if(elapsed < s.strikeAt) activeWarn = true; else activeStrike = true;
       // Pre-strike heads-up.
       if(elapsed >= s.strikeAt - RELEASE_LEAD) releasePhase = true;
+      // A dodge means braced through the warning, then let go — a surge
+      // that never saw the brace up isn't a dodge (idle play farmed it).
+      if(holding && elapsed >= s.warnAt && elapsed < s.strikeAt) s.braced = true;
 
       // Wave element + position.
       if(!s.waveEl) s.waveEl = spawnWaveEl(s);
@@ -2493,9 +2519,12 @@ function initBrace(container, onResult){
       }
       // Strike window ended without a hit → clean dodge.
       if(elapsed >= s.strikeAt + SURGE_STRIKE*1000 && !s.struck){
-        s.struck = true; s.dodged = true;
-        shield = Math.min(100, shield + SURGE_BONUS);
-        spawnDodgeRing();
+        s.struck = true;
+        if(s.braced){
+          s.dodged = true;
+          shield = Math.min(100, shield + SURGE_BONUS);
+          spawnDodgeRing();
+        }
       }
       // Cleanup wave a beat after struck.
       if(s.struck && s.waveEl){
@@ -2548,7 +2577,9 @@ function initBrace(container, onResult){
   return ()=>{
     done = true; cancelAnimationFrame(rafId); stopTimer();
     btn.removeEventListener('mousedown',onDown);
+    btn.removeEventListener('touchstart',onDown);
     document.removeEventListener('mouseup',onUp);
+    document.removeEventListener('touchend',onUp); // quitting leaked one per play
   };
 }
 
@@ -2922,7 +2953,7 @@ function initBreach(container, onResult){
     if(w>=N){
       done=true;
       // [STUB] hull breach result → engine: O2/morale unaffected (perfect)
-      setTimeout(()=>onResult('perfect'), 700);
+      endBeat(()=>onResult('perfect'), 700);
       return;
     }
     renderTray();
@@ -2951,7 +2982,7 @@ function initBreach(container, onResult){
     function step(now){
       if(done||patch.state!=='dropped') return;
       if(PauseBus.paused){ prev=now; requestAnimationFrame(step); return; }
-      const dt=(now-prev)/1000; prev=now;
+      const dt=Math.min(0.05,(now-prev)/1000); prev=now;
       patch.vy=(patch.vy||0)+1400*dt;
       patch.y += patch.vy*dt;
       if(patch.y>=floorY){
@@ -3573,6 +3604,7 @@ function initSalvage(container, onResult){
   function endRun() {
     if (done) return;
     done = true;
+    markMinigameEnding();
     cancelAnimationFrame(rafId);
     clearInterval(spawnIv);
     clearInterval(hazardSpawnIv);
@@ -3588,6 +3620,7 @@ function initSalvage(container, onResult){
   function endRunDepleted() {
     if (done) return;
     done = true;
+    markMinigameEnding();
     cancelAnimationFrame(rafId);
     clearInterval(spawnIv);
     clearInterval(hazardSpawnIv);
@@ -3608,6 +3641,7 @@ function initSalvage(container, onResult){
   function endRunTimeUp() {
     if (done) return;
     done = true;
+    markMinigameEnding();
     cancelAnimationFrame(rafId);
     clearInterval(spawnIv);
     clearInterval(hazardSpawnIv);
@@ -3752,41 +3786,44 @@ function initSalvage(container, onResult){
     }
 
     function processCrate(item, tile, finish) {
+      // Roll and bank the contents NOW — the shake/pop/flash sequence is
+      // only a reveal, so closing mid-reveal keeps exactly these drops.
+      const range = {s:[1,2], m:[3,4], l:[4,6]}[item.sz];
+      const n = range[0] + Math.floor(Math.random() * (range[1]-range[0]+1));
+      const pool = CRATE_POOLS[sceneType];
+      const totalW = pool.reduce((s,p)=>s+p.w, 0);
+      const drops = [];
+      let upgradeRolled = false;
+      for (let i = 0; i < n; i++) {
+        if (!upgradeRolled && Math.random() < 0.10) {
+          const id = UPGRADES[Math.floor(Math.random()*UPGRADES.length)];
+          drops.push({kind:'upgrade', id});
+          upgradeRolled = true;
+        } else {
+          let r = Math.random() * totalW;
+          for (const p of pool) { if ((r -= p.w) <= 0) { drops.push({kind:'resource', id:p.r}); break; } }
+        }
+      }
+      for (const d of drops) {
+        if (d.kind === 'upgrade') addToInv(d.id, UD+d.id+'.png', d.id.replace(/_/g,' '), 1);
+        else addToInv(d.id, MD+d.id+'.png', d.id, 1);
+      }
       tile.classList.add('shaking');
       setTimeout(() => {
         tile.classList.add('popped');
         setTimeout(() => {
-          // Roll contents.
-          const range = {s:[1,2], m:[3,4], l:[4,6]}[item.sz];
-          const n = range[0] + Math.floor(Math.random() * (range[1]-range[0]+1));
-          const pool = CRATE_POOLS[sceneType];
-          const totalW = pool.reduce((s,p)=>s+p.w, 0);
-          const drops = [];
-          let upgradeRolled = false;
-          for (let i = 0; i < n; i++) {
-            if (!upgradeRolled && Math.random() < 0.10) {
-              const id = UPGRADES[Math.floor(Math.random()*UPGRADES.length)];
-              drops.push({kind:'upgrade', id});
-              upgradeRolled = true;
-            } else {
-              let r = Math.random() * totalW;
-              for (const p of pool) { if ((r -= p.w) <= 0) { drops.push({kind:'resource', id:p.r}); break; } }
-            }
-          }
           // Show drops sequentially.
           let i = 0;
           (function next(){
             if (i >= drops.length) { finish(); return; }
             const d = drops[i++];
             if (d.kind === 'upgrade') {
-              addToInv(d.id, UD+d.id+'.png', d.id.replace(/_/g,' '), 1);
               showFlash(`
                 <div class="sal-flash-rare">★ SHIP UPGRADE ★</div>
                 <img src="${UD}${d.id}.png" class="sal-flash-sprite">
                 <div class="sal-flash-label">${d.id.replace(/_/g,' ')}</div>
               `, next);
             } else {
-              addToInv(d.id, MD+d.id+'.png', d.id, 1);
               showFlash(`
                 <img src="${MD}${d.id}.png" class="sal-flash-resource sal-flash-resource-big">
                 <div class="sal-flash-label">×1 ${d.id}</div>
@@ -3799,7 +3836,10 @@ function initSalvage(container, onResult){
 
     haulGrid.querySelectorAll('.sal-haul-tile').forEach(tile => {
       tile.addEventListener('click', () => {
-        if (tile.classList.contains('processed')) return;
+        // 'claimed' at click: the loot is banked immediately, so the
+        // silent CLOSE/PROCESS ALL pass must never pay this tile again.
+        if (tile.classList.contains('processed') || tile.classList.contains('claimed')) return;
+        tile.classList.add('claimed');
         const idx = +tile.dataset.idx;
         const item = cargo[idx];
         const finish = () => {
@@ -3825,7 +3865,7 @@ function initSalvage(container, onResult){
     // resolve each item's loot and dump straight into inventory. Crates use
     // the same roll logic as the click-through path.
     function processAllSilent() {
-      const tiles = haulGrid.querySelectorAll('.sal-haul-tile:not(.processed)');
+      const tiles = haulGrid.querySelectorAll('.sal-haul-tile:not(.processed):not(.claimed)');
       tiles.forEach(tile => {
         const idx = +tile.dataset.idx;
         const item = cargo[idx];
@@ -3874,6 +3914,8 @@ function initSalvage(container, onResult){
     });
 
     closeBtn.addEventListener('click', () => {
+      if (closeBtn._closed) return; // one hand-off, however many clicks
+      closeBtn._closed = true;
       // Per-tile click-through is purely a reveal flourish; CLOSE silently
       // processes whatever the player left untouched so nothing is ever
       // lost just because they didn't click each tile.
@@ -3885,6 +3927,9 @@ function initSalvage(container, onResult){
       // engine never granted (it paid a fixed amount per tier instead).
       onResult(tier, { salvage: Object.fromEntries(Object.entries(inv).map(([k, v]) => [k, v.count])) });
     });
+    // ✕ pressed during the TIME'S UP / ENERGY DEPLETED beat: close
+    // through the haul card (everything banked) now that it's here.
+    if (closeAfterResult) setTimeout(() => closeBtn.click(), 0); // showResult then closes through rbquit
     viewBtn.addEventListener('click', () => {
       if (viewBtn.classList.contains('disabled')) return;
       // [STUB] In the real engine this routes to the cargo/inventory modal

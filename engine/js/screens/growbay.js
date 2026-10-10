@@ -1060,12 +1060,11 @@
 
     // Harvest button lock state
     const hbtn = $('harvest-btn');
-    hbtn.classList.toggle('locked', GSTATE.growth < 100);
+    hbtn.classList.toggle('locked', GSTATE.growth < 100 || GSTATE.health <= 0); // a dead crop yields nothing
 
-    // Treat button — actionable only when an active threat exists
-    // (negative or critical modifier). Positives don't need treating.
-    const hasTreatable = active.some(m => m.kind === 'negative' || m.kind === 'critical');
-    $('treat-btn').classList.toggle('locked', !hasTreatable);
+    // Treat button — TREAT clears pests (doTreat); other threats
+    // (underwatered, root rot risk) are fixed by water, not treatment.
+    $('treat-btn').classList.toggle('locked', !GSTATE.pest || GSTATE.health <= 0);
   }
 
   // ═════ Animations ═══════════════════════════════════════════
@@ -1079,7 +1078,7 @@
 
   // ═════ Harvest ceremony ═════════════════════════════════════
   window.doHarvest = function() {
-    if (GSTATE.growth < 100) return;
+    if (GSTATE.growth < 100 || GSTATE.health <= 0) return;
     const crop = CROP_META[GSTATE.cropId];
     const tender = CREW[GSTATE.tenderId] || CREW.none;
     const baseYield = crop.yield_amount;
