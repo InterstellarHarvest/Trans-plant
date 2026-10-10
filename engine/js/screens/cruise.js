@@ -74,6 +74,32 @@
     sil.style.backgroundImage = "url('sprites/ships/" + folder + "/" + stage + ".png'), " + base;
   }
 
+  // Crop card plant sprite (demo-cruise.html canon, dropped in the
+  // port — the card showed a wheat emoji for every crop). Frame coords
+  // are the demo's verbatim table from sprites/growbay/spritesheet_growbay
+  // .json: sheet 666×776, frames 109×192, displayed 76px tall.
+  const PLANT_SHEET_W = 666, PLANT_SHEET_H = 776, PLANT_FRAME_H = 192;
+  const PLANT_STAGE_SPRITES = {
+    wheat:    [{ x: 445, y: 389 }, { x: 556, y: 1   }, { x: 223, y: 389 }, { x: 334, y: 389 }],
+    tomato:   [{ x: 1,   y: 389 }, { x: 112, y: 389 }, { x: 334, y: 195 }, { x: 445, y: 195 }],
+    potato:   [{ x: 223, y: 1   }, { x: 334, y: 1   }, { x: 1,   y: 1   }, { x: 112, y: 1   }],
+    soybeans: [{ x: 112, y: 195 }, { x: 223, y: 195 }, { x: 445, y: 1   }, { x: 1,   y: 195 }],
+    zinnia:   [{ x: 1,   y: 583 }, { x: 112, y: 583 }, { x: 556, y: 195 }, { x: 556, y: 389 }],
+  };
+  const CROP_TO_SHEET_KEY = { sweet_potato: 'potato', soybean: 'soybeans' };
+  function paintCropIcon(crop, stageIdx) {
+    const el = $('crop-icon');
+    const frames = PLANT_STAGE_SPRITES[CROP_TO_SHEET_KEY[crop] || crop];
+    if (!el || !frames) return;
+    const f = frames[Math.max(0, Math.min(3, stageIdx))];
+    const k = 76 / PLANT_FRAME_H;
+    el.classList.add('has-plant-sprite');
+    el.textContent = '';
+    el.style.backgroundImage = "url('sprites/growbay/spritesheet_growbay.png')";
+    el.style.backgroundSize = (PLANT_SHEET_W * k).toFixed(2) + 'px ' + (PLANT_SHEET_H * k).toFixed(2) + 'px';
+    el.style.backgroundPosition = (-f.x * k).toFixed(2) + 'px ' + (-f.y * k).toFixed(2) + 'px';
+  }
+
   function renderCruise() {
     // Catch crop growth/health up to today before painting the card —
     // decay must tick even if the player never opens the growbay.
@@ -154,6 +180,7 @@
       const STAGE_NAMES = ['SPROUTING', 'VEGETATIVE', 'FLOWERING', 'MATURING'];
       const stageIdx = growth <= 25 ? 0 : growth <= 50 ? 1 : growth <= 75 ? 2 : 3;
       $('crop-name').textContent = STATE.crop.replace(/_/g, ' ').toUpperCase();
+      paintCropIcon(STATE.crop, stageIdx);
       $('crop-stage').textContent = STAGE_NAMES[stageIdx];
       $('crop-day').textContent = 'DAY ' + (cg ? cg.day : 0);
       $('crop-growth-fill').style.width = clampPct(growth) + '%';

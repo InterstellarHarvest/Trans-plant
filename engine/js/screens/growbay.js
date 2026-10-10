@@ -84,7 +84,7 @@
       ideal_temp: [21, 30],
       yield_amount: 50,
       yield_label: 'Food',
-      sprite: 'sprites/interface/crops/sweet_potato.png',
+      sprite: 'sprites/interface/crops/potato.png',
       fallback_icon: '🍠',
       stages: [
         { max: 25,  name: 'SPROUTING',  tip: 'Slips root. Needs warmth — a cold snap here is fatal.' },
@@ -101,7 +101,7 @@
       ideal_temp: [20, 30],
       yield_amount: 45,
       yield_label: 'Food',
-      sprite: 'sprites/interface/crops/soybean.png',
+      sprite: 'sprites/interface/crops/soybeans.png',
       fallback_icon: '🌱',
       stages: [
         { max: 25,  name: 'SPROUTING',  tip: 'Cotyledons break soil. Protect from cold and slugs.' },
