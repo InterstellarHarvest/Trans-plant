@@ -2989,7 +2989,7 @@ function returnToHub() {
   STATE.currentEvent = null; STATE.currentNode = null;
   STATE.layerStack = null; STATE.currentOutcomeId = null; STATE.outcomeMode = false;
   STATE.npcCtx = null;
-  STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.effortScale = 1;
+  STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.effortScale = 1; STATE.effortCon = null;
   STATE.researchKey = null; // a Research preview lasts for its encounter only
   STATE.scanIntelEvent = null;
   renderHUD();
@@ -3709,6 +3709,7 @@ function renderOutcomeView(outcome) {
   // A lethal outcome the medic/medkit turned into an injury still reads
   // as a death in authored text — say what actually happened.
   if (STATE.lethalSaved) bodyText += '\n\n' + STATE.lethalSaved;
+  if (STATE.effortCon) bodyText += '\n\n' + STATE.effortCon.line;
   typeInto(document.getElementById('enc-narr-body'), bodyText, 12);
   showHindsight();
   const narr = document.getElementById('enc-narrative');
@@ -3868,7 +3869,10 @@ function renderChoicesInner(choices) {
     if (effort && !subText) {
       const o = choiceOutcome(ch);
       const days = Math.max(1, Math.round((({trivial:1, low:2, medium:4, high:8, extreme:14})[(o && o.time_cost) || 'trivial'] || 1) * effort.ratio));
-      subText = 'Effort ' + effort.available + ' / ' + effort.required + ' · ' + days + (days === 1 ? ' day' : ' days');
+      const authoredTime = Number.isFinite(ch.effort_required);
+      subText = 'Effort ' + effort.available + ' / ' + effort.required
+        + (authoredTime || !effort.check ? ' · ' + days + (days === 1 ? ' day' : ' days') : '')
+        + (effort.check ? ' · ' + Math.round(effort.chance * 100) + '% clean' : '');
     }
     const preview = !locked && previews.get(ch);
     if (preview) { subText = preview; btn.classList.add('previewed'); }
@@ -3902,6 +3906,7 @@ function renderChoicesInner(choices) {
       if (ch.risky) tip.push('Risky — outcomes can go badly');
       if (preview) tip.push(preview);
       if (welcomes && idn.join_note) tip.push(idn.join_note);
+      if (effort && effort.check) tip.push('Short of effort: half the gains, two more days, ' + Object.entries(effort.check.con).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).join(', ') + '. Crew and tools raise the odds.');
       if (tip.length) btn.title = tip.join('\n');
     }
     // Entrance cascade + click pulse (demo canon).
@@ -4262,6 +4267,7 @@ function handleChoiceClick(choice) {
   STATE.halfEffect = choiceStandIn(choice);
   const eff = choiceEffort(choice);
   STATE.effortScale = eff ? eff.ratio : 1;
+  STATE.effortCon = (eff && eff.check && Math.random() >= eff.chance) ? eff.check : null;
   if (eff && eff.kit) {
     const i = STATE.items.indexOf(eff.kit);
     if (i >= 0) { STATE.items.splice(i, 1); if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ A ' + prettyItem(eff.kit) + ' went into the job.'); }
@@ -4363,6 +4369,12 @@ function applyOutcomeEffects(o) {
     if (Number.isFinite(o.set_orders.waterSplit)) setWaterSplit(o.set_orders.waterSplit);
     if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ Standing orders changed — check ORDERS.');
   }
+  // Short of effort on a hands-on job: the job's own setback on top.
+  if (STATE.effortCon && !o._conApplied) {
+    o = Object.assign({}, o, { _conApplied: true, resources: Object.assign({}, o.resources || {}) });
+    for (const [k, v] of Object.entries(STATE.effortCon.con)) o.resources[k] = (o.resources[k] || 0) + v;
+    if (o.materials) o.materials = Object.fromEntries(Object.entries(o.materials).map(([m, q]) => [m, Math.floor(q / 2)]));
+  }
   if (o.resources) {
     for (const [k, v] of Object.entries(o.resources)) {
       if (!Number.isFinite(v)) continue; // authored typo can't NaN-poison STATE
@@ -4383,6 +4395,7 @@ function applyOutcomeEffects(o) {
         // resources": hull repairs land 25% further (captain half).
         if (k === 'hull' && dv > 0) dv = Math.round(dv * (1 + 0.25 * specialistMult('engineer')));
         if (STATE.halfEffect && dv > 0) dv = Math.floor(dv / 2); // captain standing in: half the gains (rounded down)
+        if (STATE.effortCon && dv > 0) dv = Math.floor(dv / 2);  // short of effort: thinner gains
         STATE.resources[k] = clamp(STATE.resources[k] + dv, 0, resMax(k));
       }
     }
@@ -4506,7 +4519,7 @@ function applyOutcomeEffects(o) {
   // Effort system (Bible §Effort, owner ruling 2026-10-10 "effort only"):
   // a repair choice's days scale by effort_required / effort available.
   const scale = STATE.effortScale || 1;
-  passDays(Math.max(1, Math.round(base * scale)));
+  passDays(Math.max(1, Math.round(base * scale)) + (STATE.effortCon ? 2 : 0));
 }
 
 /* Effort a repair choice can draw on (GAME_BIBLE §The Effort System):
@@ -4517,15 +4530,43 @@ function applyOutcomeEffects(o) {
    is consumed when it's used). Returns {available, required, ratio,
    kit}. ratio = required / available, capped to ×0.5…×2 ("a crew that
    can't contribute much watches it take twice as long"). */
+/* Hands-on jobs (owner ruling 2026-10-10): choices whose content names a
+   "microgame" are plain choices whose result rides on the effort the
+   crew brings — enough effort, the authored outcome (pro); short of it,
+   a costlier version (con: gains halved, two more days, the job's own
+   setback). The button shows the odds before you commit. */
+const EFFORT_CHECKS = {
+  wrench:             { required: 35, from: ['engineer', 'item:repair_kit'], con: { hull: -3 },   line: 'Short of skilled hands, the work goes in wrong twice before it goes in right. It holds — mostly — and it took longer than anyone wanted.' },
+  fab_align:          { required: 30, from: ['engineer', 'item:repair_kit'], con: { hull: -3 },   line: 'The first print comes out misaligned and the second is only passable. It will do. It took a while.' },
+  drill_target:       { required: 30, from: ['item:portable_drill'],         con: { morale: -2 }, line: 'The bit binds halfway in and shears. You pull out less than you hoped, and later than you hoped.' },
+  pressure_gauge:     { required: 30, from: ['engineer'],                    con: { o2: -3 },     line: 'The gauge needle never settles. You win some of it back, and lose a little more doing it.' },
+  airlock_seal:       { required: 30, from: ['engineer'],                    con: { o2: -3 },     line: 'The seal takes on the third try. The first two cost air.' },
+  bypass:             { required: 30, from: ['engineer'],                    con: { morale: -3 }, line: 'The bypass trips an alarm nobody knew existed. The job gets done, loudly and badly.' },
+  override:           { required: 30, from: ['engineer'],                    con: { morale: -3 }, line: 'The override fights back. You win, eventually, and nobody enjoys how.' },
+  negotiation_wobble: { required: 30, from: ['diplomat'],                    con: { gold: -10, morale: -2 }, line: 'The pitch wobbles at the worst moment. They hear weakness, and they charge you for it.' },
+  calibration:        { required: 30, from: ['pilot'],                       con: { fuel: -3 },   line: 'The calibration drifts. You correct it, then correct the correction. It costs fuel.' },
+  navigation:         { required: 30, from: ['pilot'],                       con: { fuel: -3 },   line: 'The line through drifts wide twice before it holds. It costs fuel and a day.' },
+};
+function effortCheckOf(choice) {
+  const t = choice && (choice.microgame_type || choice.minigame_type);
+  return (t && EFFORT_CHECKS[t]) ? Object.assign({ type: t }, EFFORT_CHECKS[t]) : null;
+}
 function choiceEffort(choice) {
-  if (!choice || !Number.isFinite(choice.effort_required) || !Array.isArray(choice.requires_effort_from)) return null;
+  if (!choice) return null;
+  const check = effortCheckOf(choice);
+  const authored = Number.isFinite(choice.effort_required) && Array.isArray(choice.requires_effort_from);
+  if (!authored && !check) return null;
+  const required = authored ? choice.effort_required : check.required;
+  const from = authored ? choice.requires_effort_from : check.from;
   let available = 10, kit = null;
   const listed = new Set();
-  for (const src of choice.requires_effort_from) {
+  for (const src of from) {
     if (src.startsWith('item:')) {
       const id = src.slice(5);
       const d = itemDef(id);
-      if (STATE.items.includes(id) && d && d.effort_contribution) { available += d.effort_contribution.value || 0; if ((d.item_behavior || []).includes('one_use')) kit = id; }
+      // The right tool for the job (Bible benchmark +20 when the item
+      // authors no contribution of its own — e.g. the portable drill).
+      if (STATE.items.includes(id) && d) { available += (d.effort_contribution && d.effort_contribution.value) || 20; if ((d.item_behavior || []).includes('one_use')) kit = id; }
     } else {
       listed.add(src);
       const c = (MOD.crew_roster || []).find(x => x.role === src);
@@ -4534,8 +4575,11 @@ function choiceEffort(choice) {
     }
   }
   for (const r of STATE.crew) if (!listed.has(r)) available += 10;
-  const ratio = Math.min(2, Math.max(0.5, choice.effort_required / Math.max(1, available)));
-  return { available: Math.round(available), required: choice.effort_required, ratio, kit };
+  // Time scaling (Bible §Effort) applies to the authored repair choices;
+  // the clean-result odds to every hands-on job.
+  const ratio = authored ? Math.min(2, Math.max(0.5, required / Math.max(1, available))) : 1;
+  const chance = check ? Math.max(0.15, Math.min(0.95, available / (required * 1.3))) : null;
+  return { available: Math.round(available), required, ratio, kit, chance, check };
 }
 
 /* Flat-schema resolution: choice.outcome is an inline object. Apply →
