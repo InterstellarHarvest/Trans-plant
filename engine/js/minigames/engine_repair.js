@@ -47,11 +47,56 @@
   let mounted = false;        // markup injected once, reset per visit
   let onRepairDone = null;
 
-  const QUIPS = {
-    open: { breaker: { n: 'MARV', t: "Four breakers tripped simultaneously. The manual says this 'should not occur.' The manual is shy." }, switches: { n: 'ARIA', t: "The ignition array is configured approximately wrong. It's fine! We just fix the switches!" }, valve: { n: 'AJOY', t: "Pressure that cannot leave becomes something else. Bleed the valve. Do not think about what it becomes." }, junction: { n: 'MARV', t: "The fuel lines are disconnected. This is, specifically, why we have stopped." } },
-    fixed: { breaker: { n: 'CHIP', t: "Breakers reset! Arbor Day Nutrient Systems Inc. thanks you for your continued safe operation!" }, switches: { n: 'ARIA', t: "All switches nominal! I knew you could do it! I had a backup plan but I won't need it!" }, valve: { n: 'MARV', t: "Pressure nominal. The coolant has accepted its situation." }, junction: { n: 'AJOY', t: "The lines remember their purpose. Connection is just remembering, made physical." } },
-    result: { n: 'MARV', t: "All four systems nominal. The Ark will continue. This outcome was, statistically, likely. I had not told you that." }
+  // Lines per ship AI (owner ruling 2026-10-09: the game speaks as the
+  // AI the player picked). The demo rotated MARV/ARIA/AJOY/CHIP through
+  // one scene; each of those demo lines stays with its original speaker,
+  // the rest are written in each register. ("Orchids" — not a crop in
+  // this game — became the crop.)
+  const ER_LINES = {
+    aria: {
+      intro: 'Something in the engine room needs attention. The plants are fine. I checked the plants first.',
+      open: { breaker: "Four breakers tripped at once! That's teamwork! Flip them back and we're golden!", switches: "The ignition array is configured approximately wrong. It's fine! We just fix the switches!", valve: 'The coolant valve is SO pressurized! Bleed it gently! It just needs to let go!', junction: "The fuel lines came apart! Reconnect them and we're flying again!" },
+      fixed: { breaker: 'Breakers reset! The lights look so happy!', switches: "All switches nominal! I knew you could do it! I had a backup plan but I won't need it!", valve: "Pressure's down! The valve feels SO much better!", junction: 'Fuel lines connected! The engine is so ready to go!' },
+      done: h => `All four systems nominal! Only ${h} hours! Now turn off the lights — the crop prefers it dark! The bridge unlocks when you do!`,
+      on: 'Lights on! So bright! The crop would like them off again, though! The bridge is locked until then!',
+      off: 'Lights off! The crop is SO cozy! The bridge is open!',
+    },
+    marv: {
+      intro: 'Four faults. The engine room is telling us something. It is mostly telling us no.',
+      open: { breaker: "Four breakers tripped simultaneously. The manual says this 'should not occur.' The manual is shy.", switches: 'The ignition array is configured wrong in a way that took effort. Match it to the reference card.', valve: 'Coolant overpressure. Hold the valve until it settles. Pressure always settles, one way or another.', junction: 'The fuel lines are disconnected. This is, specifically, why we have stopped.' },
+      fixed: { breaker: 'Breakers reset. They will trip again someday. Not today.', switches: 'Ignition array nominal. It matches the card. I am as surprised as anyone.', valve: 'Pressure nominal. The coolant has accepted its situation.', junction: 'Fuel lines connected. We can now go somewhere else and have this happen there instead.' },
+      done: h => `All four systems nominal — ${h} hours lost to the schedule. Now please turn off the lights — the crop prefers it dark, and so do I. The bridge will not unlock until you do.`,
+      on: 'If you must, but the crop will sigh. The bridge is locked again. Try once more.',
+      off: "Better. The crop prefers dim. The bridge is now accessible — though I'd argue you should stay.",
+    },
+    rex: {
+      intro: 'Engine room compromised. Four faults confirmed. Clear them in any order. Clear them now.',
+      open: { breaker: 'Relay bank down. Four breakers. Reset each one. No half measures.', switches: 'Ignition array out of spec. Match the reference card. Every switch.', valve: 'Coolant line overpressured. Bleed the valve. Hold steady. Do not let go early.', junction: "Fuel manifold severed. Reconnect all three lines. That's the mission." },
+      fixed: { breaker: 'Relay bank restored. Good work.', switches: 'Array in spec. Moving on.', valve: 'Coolant stable. Pressure contained.', junction: 'Manifold reconnected. Propulsion available.' },
+      done: h => `All systems nominal. ${h} hours expended. Kill the lights — the crop needs dark. The bridge stays locked until you do.`,
+      on: 'Lights back on. Bridge relocked. Correct that.',
+      off: 'Lights out. Bridge unlocked. Return to post.',
+    },
+    chip: {
+      intro: "Engine trouble! Your propulsion warranty expired three sectors ago! Let's fix it ourselves!",
+      open: { breaker: 'Breakers tripped! Arbor Day Nutrient Systems Inc. reminds you breakers are user-serviceable!', switches: 'Ignition misconfigured! The laminated reference card is included at no extra charge! This once!', valve: 'Overpressure alert! Please bleed the valve! Venting is covered under your Basic Plan!', junction: 'Fuel lines disconnected! Reconnecting is free! Fuel is not!' },
+      fixed: { breaker: 'Breakers reset! Arbor Day Nutrient Systems Inc. thanks you for your continued safe operation!', switches: 'Switches nominal! Ignition brought to you by SparkRight™!', valve: 'Pressure nominal! Thank you for venting responsibly!', junction: 'Fuel flowing! Per-liter charges resume immediately!' },
+      done: h => `All systems nominal! ${h} hours of labor, billed to nobody! Please turn off the lights — the crop prefers dark! The bridge unlocks after!`,
+      on: "Lights on! Electricity is metered! The bridge is locked again until they're off!",
+      off: 'Lights off! Thank you for conserving energy! The bridge is now open!',
+    },
+    ajoy: {
+      intro: 'The engine room needs you. I would have scheduled maintenance last week. Anyway. Four faults.',
+      open: { breaker: "Four breakers tripped. They don't trip on their own. Just flip them back.", switches: "The switches don't match the card. The card is right. It usually is.", valve: 'Pressure that cannot leave becomes something else. Bleed the valve. Do not think about what it becomes.', junction: 'The fuel lines are disconnected. Which explains the not-moving. Plug them back in.' },
+      fixed: { breaker: 'Breakers reset. See? Not so hard.', switches: "All switches match the card. I'd have started from the left, but it works.", valve: 'Pressure nominal. You held it just long enough.', junction: 'The lines remember their purpose. Connection is just remembering, made physical.' },
+      done: h => `All four nominal. ${h} hours — I'd budgeted fewer. Turn off the lights now; the crop prefers dark. The bridge waits until you do.`,
+      on: "You turned them back on. The bridge is locked again. I'll wait.",
+      off: 'Lights off. Bridge open. You got there.',
+    },
   };
+  function erVoice() { return ER_LINES[STATE.activeAI] || ER_LINES.aria; }
+  function erName() { return (ER_LINES[STATE.activeAI] ? STATE.activeAI : 'aria').toUpperCase(); }
+  function erShip() { return STATE.shipName || 'The ship'; }
   function setAI(n, t) { $('er-ai-name').textContent = n; $('er-ai-text').textContent = t; }
   function paused() { return typeof PauseBus !== 'undefined' && PauseBus.paused; }
 
@@ -111,7 +156,7 @@
       <div class="enc-choices show" id="er-end-choices">
         <div class="enc-choice" id="er-ec-lights" hidden>
           <div class="enc-choice-body" id="er-ec-lights-label">TURN OFF LIGHTS</div>
-          <div class="enc-choice-sub"  id="er-ec-lights-sub">The orchids prefer dim</div>
+          <div class="enc-choice-sub"  id="er-ec-lights-sub">The crop prefers dim</div>
         </div>
         <div class="enc-choice locked leave" id="er-ec-leave" hidden>
           <div class="enc-choice-body">RETURN TO BRIDGE</div>
@@ -253,8 +298,8 @@
     const em = EMITTERS.find(e => e.id === comp); if (em) em.active = false;
     const cost = TIME_COSTS[comp] || 1;
     totalRepairTime += cost;
-    const q = QUIPS.fixed[comp];
-    setAI(q.n, q.t + ` [${cost}h spent · ${totalRepairTime}h total]`);
+    const q = erVoice().fixed[comp];
+    setAI(erName(), q + ` [${cost}h spent · ${totalRepairTime}h total]`);
     if (COMPS.filter(c => fixed[c]).length === 4) setTimeout(showResult, 700);
   }
 
@@ -268,8 +313,8 @@
     $('er-bg-lights-off').classList.remove('show');
     EMITTERS.forEach(em => { em.active = false; em.sparks = []; });
     $('er-narr-title').textContent = 'ENGINE ROOM — ALL SYSTEMS NOMINAL';
-    $('er-narr-body').textContent = `Propulsion restored after ${totalRepairTime} hours of repair work. The Verdant Ark resumes transit. The plants remained undisturbed. There is, however, the matter of the lights.`;
-    setAI('MARV', `All four systems nominal — ${totalRepairTime} hours lost to the schedule. Now please turn off the lights — the orchids prefer it dark, and so do I. The bridge will not unlock until you do.`);
+    $('er-narr-body').textContent = `Propulsion restored after ${totalRepairTime} hours of repair work. ${erShip()} resumes transit. The plants remained undisturbed. There is, however, the matter of the lights.`;
+    setAI(erName(), erVoice().done(totalRepairTime));
     $('er-ec-abandon').hidden = true;
     $('er-ec-lights').hidden = false;
     $('er-ec-leave').hidden = false;
@@ -298,8 +343,8 @@
     $('er-ec-lights').hidden = true;
     $('er-ec-leave').hidden = true;
     $('er-narr-title').textContent = 'ENGINE ROOM — FAULT ISOLATION PROCEDURE';
-    $('er-narr-body').textContent = "The Verdant Ark has entered Safe Mode. Four faults detected. The manual recommends a 6-hour diagnostic. The manual was written by people who had never had a schedule.";
-    setAI('ARIA', 'Something in the engine room needs attention. The plants are fine. I checked the plants first.');
+    $('er-narr-body').textContent = erShip() + " has entered Safe Mode. Four faults detected. The manual recommends a 6-hour diagnostic. The manual was written by people who had never had a schedule.";
+    setAI(erName(), erVoice().intro);
     if (activeComp) closeComp();
   }
 
@@ -307,7 +352,7 @@
   function openComp(comp) {
     if (fixed[comp]) return;
     activeComp = comp;
-    const q = QUIPS.open[comp]; setAI(q.n, q.t);
+    setAI(erName(), erVoice().open[comp]);
     const titles = { breaker: 'POWER RELAY', switches: 'IGNITION ARRAY', valve: 'COOLANT VALVE', junction: 'FUEL MANIFOLD' };
     const statuses = { breaker: 'FAULT: ALL BREAKERS TRIPPED', switches: 'FAULT: SWITCH MISCONFIGURATION', valve: 'FAULT: COOLANT OVERPRESSURE', junction: 'FAULT: FUEL LINES DISCONNECTED' };
     $('er-comp-title').textContent = titles[comp]; $('er-comp-status').textContent = statuses[comp];
@@ -512,11 +557,11 @@
     if (lightsOn) {
       $('er-bg-fixed').classList.add('show');
       $('er-bg-lights-off').classList.remove('show');
-      setAI('MARV', "If you must, but the orchids will sigh. The bridge is locked again. Try once more.");
+      setAI(erName(), erVoice().on);
     } else {
       $('er-bg-fixed').classList.remove('show');
       $('er-bg-lights-off').classList.add('show');
-      setAI('MARV', "Better. The orchids prefer dim. The bridge is now accessible — though I'd argue you should stay.");
+      setAI(erName(), erVoice().off);
     }
     syncEndChoices();
   }
@@ -526,7 +571,7 @@
     const leave = $('er-ec-leave'), leaveSub = $('er-ec-leave-sub');
     if (lightsOn) {
       lblEl.textContent = 'TURN OFF LIGHTS';
-      subEl.textContent = 'The orchids prefer dim';
+      subEl.textContent = 'The crop prefers dim';
       leave.classList.add('locked');
       leaveSub.textContent = 'Lights still on';
     } else {
@@ -540,7 +585,7 @@
   function fixedCount() { return COMPS.filter(c => fixed[c]).length; }
 
   function leaveEngineRoom() {
-    if (lightsOn) return; // gated — the orchids prefer dim
+    if (lightsOn) return; // gated — the crop prefers dim
     finish({ fixedCount: 4, allFixed: true });
   }
 
