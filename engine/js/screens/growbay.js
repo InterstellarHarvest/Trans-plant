@@ -167,6 +167,14 @@
     'tanaka':            { name: 'Dr. Tanaka',  role: 'Xenobiologist',  crewId: 'tanaka',   growth: 3,  yield: 0 },
     'none':              { name: 'Nobody',      role: 'Untended',       crewId: null,       growth: 0,  yield: 0, emoji: '—' }
   };
+  // A tender entry as shown: a joined stowaway holding the role keeps
+  // their own name and has no sprite (index.html crewIdentityOf).
+  const TENDER_ROLE = { osei: 'botanist', reyes: 'chef', kazuki: 'engineer', hargrove: 'diplomat', reeves: 'pilot', vasquez: 'medic', tanaka: 'xenobiologist' };
+  function tenderOf(id) {
+    const c = CREW[id] || CREW.none;
+    const idn = TENDER_ROLE[id] && typeof crewIdentityOf === 'function' ? crewIdentityOf(TENDER_ROLE[id]) : null;
+    return idn ? Object.assign({}, c, { name: idn.name, crewId: null, emoji: '🧑' }) : c;
+  }
 
   // Animated crew spritesheets — 9 animation frames + 1 idle frame
   // per crew member, each sheet slightly different dimensions. Data
@@ -339,7 +347,7 @@
   // A threat fires → promoted to active, dropped from monitored.
   function computeModifiers() {
     const crop = CROP_META[GSTATE.cropId];
-    const tender = CREW[GSTATE.tenderId];
+    const tender = tenderOf(GSTATE.tenderId);
     const active = [];
     const promoted = new Set();
 
@@ -755,7 +763,7 @@
     const picker = $('tender-picker');
     picker.innerHTML = '';
     for (const id of aboardIds) {
-      const c = CREW[id];
+      const c = tenderOf(id);
       const row = document.createElement('div');
       row.className = 'gb-picker-row' + (GSTATE.tenderId === id ? ' current' : '');
       row.onclick = (ev) => {
@@ -936,7 +944,7 @@
   // ═════ Render ═══════════════════════════════════════════════
   function renderAll() {
     const crop = CROP_META[GSTATE.cropId];
-    const tender = CREW[GSTATE.tenderId];
+    const tender = tenderOf(GSTATE.tenderId);
 
     // Subtitle / day line
     $('crop-display-name').textContent = crop.name.toUpperCase();

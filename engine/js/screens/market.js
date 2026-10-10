@@ -85,6 +85,19 @@
     // Negotiation (diplomat active skill, crew.js): the armed flag buys
     // 15% off this station market's wares, then it's spent — the skill's
     // authored "talk stations into better deals" line, made mechanical.
+    // Standing discounts (setup screen): CHIP "Station prices -15%"
+    // (ai_companions price_reduction), Merchant captain "Prices -10%".
+    const standing = (STATE.activeAI === 'chip' ? 0.85 : 1) * (STATE.captain === 'merchant' ? 0.9 : 1);
+    if (standing < 1) {
+      for (const w of wares) {
+        if (w.cost && w.cost.gold) w.cost.gold = Math.max(1, Math.round(w.cost.gold * standing));
+      }
+    }
+    // Only one cargo bay does anything — don't sell a second.
+    if (STATE.items.includes('insulated_cargo_bay')) {
+      const bi = wares.findIndex(w => w.id === 'insulated_cargo_bay');
+      if (bi >= 0) wares.splice(bi, 1);
+    }
     let negotiated = false;
     if (typeof STATE !== 'undefined' && STATE.flags && STATE.flags.has('negotiation_prepared')) {
       STATE.flags.delete('negotiation_prepared');
@@ -162,7 +175,7 @@
   // Trial-fit: would one more of `sid` fit the hold? Mirrors
   // grantItem's own check without committing (push → measure → pop).
   function cargoFits(sid) {
-    if (sid === 'insulated_cargo_bay') return true; // grantItem's own paradox guard
+    if (sid === 'insulated_cargo_bay') return !STATE.items.includes(sid); // grantItem's own paradox guard
     STATE.items.push(sid);
     const fits = cargoSlotsUsed() <= cargoCapacity();
     STATE.items.pop();
@@ -198,6 +211,9 @@
       canAddCargo: ware => cargoFits(ware.id),
       cargoFullMsg: 'No room in the hold. Jettison something (INV) first.',
       addCargo: entry => { grantItem(entry.id); renderHUD(); },
+      // The cargo bay can't leave while the hold needs its extra slots.
+      canRemoveCargo: sid => typeof canRemoveItem !== 'function' || canRemoveItem(sid),
+      cargoLockedMsg: 'The cargo bay is holding things. Clear some space first.',
       removeCargo: sid => {
         const i = STATE.items.indexOf(sid);
         if (i >= 0) STATE.items.splice(i, 1);

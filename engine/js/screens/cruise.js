@@ -47,8 +47,7 @@
   const NODE_TYPE_TO_REGION = { station: 'station_approach', planet: 'planet_orbit_habitable', asteroid_field: 'asteroid_field', derelict: 'debris_field', nebula: 'nebula', void: 'deep_space', anomaly: 'anomaly', fork: 'deep_space' };
 
   function crewDisplayName(role) {
-    const entry = (MOD.crew_roster || []).find(c => c.role === role);
-    return entry ? entry.name : role;
+    return crewNameOf(role); // index.html — a joined stowaway keeps their own name
   }
 
   /* Binds the real STATE object to every part of the cruise screen.
@@ -120,7 +119,7 @@
     // Resource bars (fuel/food/water at-a-glance; the full 6-resource
     // HUD lives in the reused .hud component top-right).
     const r = STATE.resources;
-    $('res-fill-fuel').style.width  = clampPct(r.fuel)  + '%';
+    $('res-fill-fuel').style.width  = clampPct(r.fuel * 100 / resMax('fuel'))  + '%';
     $('res-fill-food').style.width  = clampPct(r.food)  + '%';
     $('res-fill-water').style.width = clampPct(r.water) + '%';
 
@@ -140,10 +139,10 @@
     const strip = $('crew-strip');
     strip.innerHTML = '';
     const members = [];
-    if (STATE.captain) members.push({ role: STATE.captain, label: 'CAPTAIN' });
-    for (const role of STATE.crew) members.push({ role, label: crewDisplayName(role).toUpperCase() });
+    if (STATE.captain) members.push({ role: STATE.captain, label: 'CAPTAIN', crewId: ROLE_TO_CREWID[STATE.captain] });
+    for (const role of STATE.crew) members.push({ role, label: crewDisplayName(role).toUpperCase(), crewId: crewSpriteIdOf(role) });
     for (const m of members) {
-      const crewId = ROLE_TO_CREWID[m.role];
+      const crewId = m.crewId;
       const slot = document.createElement('div');
       slot.className = 'crew-slot';
       const iconHtml = crewId
@@ -338,7 +337,7 @@
       if (n === 0) { renderCruise(); return; }
       if (!result.allFixed) return settleAbandoned('REPAIR');
       const gain = 20;
-      STATE.resources.hull = clamp(STATE.resources.hull + gain, 0, 100);
+      STATE.resources.hull = clamp(STATE.resources.hull + gain, 0, resMax('hull'));
       settleMinigame('◆ REPAIR — ' + (result.allFixed ? 'all four systems nominal' : n + '/4 faults cleared') + ', hull patched (+' + gain + ').');
     });
   }

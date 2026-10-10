@@ -274,7 +274,7 @@
       }
       if (!worst || worstHp >= 100) return { ok: false, refusal: 'Nobody is injured. Dr. Vasquez remains anxious anyway.' };
       STATE.crewHP[worst] = 100;
-      const name = (rosterOf(worst) || {}).name || worst;
+      const name = crewNameOf(worst);
       return { ok: true, log: 'TREATMENT — Dr. Vasquez patches up ' + name + ' (restored to full health). Do not ask about the residency.' };
     },
     // Push Engines — effect {skip_node: true, fuel_cost_multiplier: 2}.
@@ -349,10 +349,13 @@
       };
     }
     const r = rosterOf(key) || {};
+    // A joined stowaway holds the role (skills, passive) but not the
+    // roster member's identity — their own name/story, emoji portrait.
+    const idn = crewIdentityOf(key);
     return {
-      key, isCaptain: false, crewId: CD_ROLE_TO_CREWID[key], emoji: CD_ROLE_EMOJI[key] || '👤',
-      name: r.name || key, role: key.charAt(0).toUpperCase() + key.slice(1), bgTag: 'Crew',
-      bio: r.bio || '', hint: (r.narrative_unlocks && r.narrative_unlocks[0]) || '',
+      key, isCaptain: false, crewId: idn ? null : CD_ROLE_TO_CREWID[key], emoji: CD_ROLE_EMOJI[key] || '👤',
+      name: idn ? idn.name : (r.name || key), role: key.charAt(0).toUpperCase() + key.slice(1), bgTag: idn ? 'Stowaway' : 'Crew',
+      bio: idn ? idn.story : (r.bio || ''), hint: idn ? '' : ((r.narrative_unlocks && r.narrative_unlocks[0]) || ''),
       passiveName: PASSIVE_NAME[key] || 'Passive',
       passiveDesc: (r.passive_skill && r.passive_skill.description) || '',
       active: r.active_skill || null,
@@ -390,7 +393,7 @@
   function render() {
     const m = memberData(cur);
     const hp = m.isCaptain ? 100 : ((typeof crewHPOf === 'function') ? crewHPOf(m.key) : 100);
-    const mo = STATE.resources.morale;
+    const mo = Math.round(STATE.resources.morale);
 
     $('cd-name-banner').textContent = m.name.toUpperCase();
     $('cd-role-banner').textContent = m.role.toUpperCase();
@@ -611,11 +614,13 @@
      count failure) all key off STATE.crew, so the splice is the whole
      story; charges + HP entries go with them. */
   function removeCrew(role, jettisoned) {
+    const name = crewNameOf(role);
     const idx = STATE.crew.indexOf(role);
     if (idx >= 0) STATE.crew.splice(idx, 1);
     if (STATE.crewHP) delete STATE.crewHP[role];
     if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
-    const name = (rosterOf(role) || {}).name || role;
+    if (STATE.crewPending) delete STATE.crewPending[role];
+    if (STATE.crewIdentity) delete STATE.crewIdentity[role];
     let line;
     if (jettisoned) {
       STATE.flags.add('crew_lost');
@@ -647,11 +652,12 @@
       portraitEl.classList.add('anim-jettison');
       setTimeout(() => spawnSparks(18, { center: true }), 1500);
       setTimeout(() => {
+        const departedName = crewNameOf(role);
         const line = removeCrew(role, true);
         // crew_gone failure can fire from an empty roster — endRun()
         // strips overlays itself, so just stop here if the run ended.
         if (typeof checkFailure === 'function' && checkFailure()) { departing = false; return; }
-        pendingEpitaph = { role, name: ((rosterOf(role) || {}).name || role) };
+        pendingEpitaph = { role, name: departedName };
         const sentences = line.match(/[^.!?]+[.!?]+/g) || [line];
         $('cd-epitaph-name').textContent = pendingEpitaph.name.toUpperCase();
         $('cd-epitaph-line').innerHTML = sentences.map(s => s.trim()).filter(Boolean).join('<br>');

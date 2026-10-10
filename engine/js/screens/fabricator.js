@@ -69,7 +69,7 @@
     recipe_fuel_cell:      { icon: '🔋', sprite: 'sprites/cargo/items/fuel_cell.png' },
   };
   function prettyItemName(itemId) {
-    const real = (MOD.items || []).find(it => it.id === itemId || it.id === 'item_' + itemId);
+    const real = (typeof itemDef === 'function' && itemDef(itemId)) || (MOD.items || []).find(it => it.id === itemId || it.id === 'item_' + itemId);
     if (real) return real.name;
     return itemId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
@@ -207,6 +207,15 @@
   function actualDays(baseDays) {
     const avail = Math.max(1, totalFabContribution());
     return Math.max(1, Math.ceil(baseDays * BASE_EFFORT / avail));
+  }
+
+  // Wear a craft adds: engineer passive −20% (crew_roster; a captain
+  // engineer half that — setup "Fab wear -10%"), the field repair
+  // fabricator −10% (items.json). Never below 1.
+  function recipeWear(r) {
+    const eng = typeof specialistMult === 'function' ? specialistMult('engineer') : 0;
+    const kit = STATE.items.includes('repair_fabricator') ? 0.9 : 1;
+    return Math.max(1, Math.round(r.wear * (1 - 0.2 * eng) * kit));
   }
 
   // Material satisfaction — is every input satisfied by current stock?
@@ -425,7 +434,7 @@
       : '';
 
     // Wear threshold warning — will push wear past service or break.
-    const postWear = Math.min(100, FSTATE.wear + r.wear);
+    const postWear = Math.min(100, FSTATE.wear + recipeWear(r));
     let wearWarn = '';
     if (postWear >= 100) {
       wearWarn = '<div class="fb-warn wear-crit">⚠ Will break the fab (100% wear) · repair needed at next station</div>';
@@ -442,7 +451,7 @@
       overrunWarn +
       '<div class="row">' +
         '<span class="label">WEAR</span>' +
-        '<span class="wear-add">+' + r.wear + '%</span>' +
+        '<span class="wear-add">+' + recipeWear(r) + '%</span>' +
       '</div>' +
       wearWarn;
 
@@ -575,7 +584,7 @@
       FSTATE.stock[mat] = Math.max(0, (FSTATE.stock[mat] || 0) - qty);
     }
     // Apply wear.
-    FSTATE.wear = Math.min(100, FSTATE.wear + r.wear);
+    FSTATE.wear = Math.min(100, FSTATE.wear + recipeWear(r));
 
     // Fail roll — 0.5% base + up to +5% scaling past wear=50. Over 80%
     // wear this gets nasty.

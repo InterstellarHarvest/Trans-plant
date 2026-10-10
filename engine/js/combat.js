@@ -642,6 +642,9 @@
   function resolveFire(tx, ty) {
     if (!COMBAT.active || COMBAT.state !== 'TARGETING' || COMBAT._firing) return;
     COMBAT._firing = true;
+    // The shot commits the turn — no second Enter/click can fire again
+    // while it resolves (enemyTurn hands the turn back).
+    COMBAT.state = 'ENEMY_TURN';
     COMBAT.openingTurn = false;
     fxScreen().classList.remove('combat-targeting');
     document.getElementById('enc-subject').classList.remove('combat-locking');
@@ -693,6 +696,7 @@
 
   function doEvade() {
     if (!COMBAT.active || COMBAT.state !== 'PLAYER_TURN') return;
+    COMBAT.state = 'ENEMY_TURN'; // committed — a second activation is a no-op
     COMBAT.openingTurn = false;
     COMBAT.evadingNextHit = true;
     setNarrCombat('COMBAT LOG', combatLine('player_evades'), 'Evasive pattern engaged. Incoming damage halved (or fully dodged with Pilot).');
@@ -739,8 +743,9 @@
   }
 
   function offerTribute(kind) {
-    if (!COMBAT.active || COMBAT.tributeUsed || !COMBAT.openingTurn) return;
+    if (!COMBAT.active || COMBAT.state !== 'PLAYER_TURN' || COMBAT.tributeUsed || !COMBAT.openingTurn) return;
     COMBAT.tributeUsed = true; COMBAT.openingTurn = false;
+    COMBAT.state = 'ENEMY_TURN'; // no firing while they consider the offer
     setAiCombat(combatLine('tribute_offered'));
     setNarrCombat('COMBAT LOG', combatLine('tribute_offered'), 'Awaiting response.');
     showEnemyTurn();
@@ -771,7 +776,7 @@
   }
 
   function resolveMutinyStandDown() {
-    if (!COMBAT.active) return;
+    if (!COMBAT.active || COMBAT.state !== 'MUTINY') return;
     if (COMBAT_CONFIG.surrenders[COMBAT.species]) {
       COMBAT.enemy.surrenderOffered = true;
       acceptSurrender();
@@ -783,7 +788,7 @@
 
   /* ── Enemy turn ─────────────────────────────────────────────── */
   function enemyTurn() {
-    if (!COMBAT.active) return;
+    if (!COMBAT.active || COMBAT.state === 'END') return;
 
     if (!COMBAT.enemy.surrenderOffered && COMBAT.enemy.alive &&
         (COMBAT.enemy.hull / COMBAT.enemy.hullMax) <= COMBAT_CONFIG.surrender_threshold &&
@@ -841,6 +846,9 @@
     });
 
     setTimeout(() => {
+      // The fight may have resolved while the beam was in flight (stand
+      // down, surrender, a kill) — a stale shot must not land.
+      if (!COMBAT.active || COMBAT.state === 'END') return;
       const pfx = COMBAT._narrPrefix ? COMBAT._narrPrefix + ' ' : '';
       if (dodgedFull) {
         spawnMissPopup('MISS!');
@@ -1015,12 +1023,15 @@
     setTimeout(() => endCombatToOutcome(result), 700);
   }
   function acceptSurrender() {
+    if (!COMBAT.active) return;
+    COMBAT.state = 'END';
     COMBAT.player.morale = clamp(COMBAT.player.morale + 5, 0, 100);
     setAiCombat(combatLine('surrender_accepted'));
     setNarrCombat('SURRENDER ACCEPTED', combatLine('surrender_accepted'), '+40% loot · morale +5');
     endCombatToOutcome({ outcome: 'victory_surrendered' });
   }
   function finishSurrendered() {
+    if (!COMBAT.active || COMBAT.state !== 'SURRENDER_DECISION') return;
     COMBAT.state = 'END';
     COMBAT.player.morale = clamp(COMBAT.player.morale - 10, 0, 100);
     COMBAT.enemy.hull = 0; COMBAT.enemy.alive = false;
@@ -1040,10 +1051,10 @@
     if (COMBAT.player.morale >= 70) deathChance -= 0.04;
     if (COMBAT.player.morale >= 90) deathChance -= 0.02;
     deathChance = Math.max(0.03, deathChance);
-    const died = Math.random() < deathChance;
+    const died = STATE.crew.length > 0 && Math.random() < deathChance;
     setAiCombat(combatLine('player_defeated'));
     setNarrCombat('LIMP-AWAY STATE', combatLine('player_defeated'),
-      `Hull set to 1. Cargo loss: ${cargoLoss}%.${died ? ' One crew lost — pulling epitaph.' : ' All crew accounted for.'}`);
+      `Hull set to 1. Cargo loss: ${cargoLoss}%.${died ? ' Casualty reports coming in.' : ''}`);
     renderCombatHud();
     setTimeout(() => endCombatToOutcome({ outcome: 'defeated', cargoLoss, crewDied: died }), 700);
   }
@@ -1091,6 +1102,10 @@
      uses (renderOutcomeView) so combat's resolution matches the rest
      of the game's UX instead of a bespoke modal. ──────────────── */
   function endCombatToOutcome(result) {
+    // One resolution per fight — late timers (an in-flight enemy shot,
+    // a double-clicked choice) must not apply a second outcome.
+    if (COMBAT._resolved) return;
+    COMBAT._resolved = true;
     if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
     COMBAT.state = 'END';
     COMBAT.active = false;
@@ -1128,21 +1143,19 @@
         title = 'SURRENDER ACCEPTED'; tone = 'success';
         lootItems = rollCombatLoot('surrender');
         body = 'Pirates stripped, ship intact. They live to disappoint someone else. ' + describeLoot(lootItems);
-        outcome.resources.morale = 5;
         outcome.time_cost = 'medium';
         break;
       case 'victory_executed':
         title = 'SURRENDER REFUSED'; tone = 'danger';
         lootItems = rollCombatLoot('executed', { bonusChance: 0.45 });
         body = 'You finished a surrendered combatant. The crew noticed. The galaxy noticed. ' + describeLoot(lootItems);
-        outcome.resources.morale = -10;
         outcome.sets_flag = 'executed_surrendered_pirate';
         outcome.time_cost = 'high';
         break;
       case 'tribute':
         title = 'TRIBUTE RESOLVED'; tone = 'success';
         body = `They took the ${result.friendly ? 'cookies' : 'harvest'} and went somewhere else.${result.friendly ? ' Friendly tag set for one journey leg.' : ''}`;
-        outcome.resources.morale = result.moraleDelta || 0;
+        outcome.resources.food = -(result.foodCost || 0); // morale is in the net reconciliation below
         if (result.friendly) outcome.sets_flag = `friendly_with_pirate_${COMBAT.species}`;
         outcome.time_cost = 'low';
         break;
@@ -1166,8 +1179,10 @@
           injuredRole = window.damageCrew(null, 30);
         }
         title = 'LIMP AWAY'; tone = 'danger';
-        body = `Hull at 1. Cargo loss ${result.cargoLoss}%.` +
-          (result.crewDied ? ' One crew lost.' : (injuredRole ? ` ${injuredRole} is hurt.` : ' All crew accounted for.'));
+        // Crew line is written after applyOutcomeEffects (below): the
+        // kill can be saved by a medic, and the injury can be fatal.
+        body = `Hull at 1. Cargo loss ${result.cargoLoss}%.`;
+        result._injured = injuredRole;
         if (result.crewDied) outcome.crew_effect = { type: 'kill', target: 'random' };
         outcome.time_cost = 'high';
         break;
@@ -1184,7 +1199,17 @@
       if (goldItem) outcome.resources.gold = (outcome.resources.gold || 0) + goldItem.count;
     }
 
+    const crewBefore = STATE.crew.slice();
+    const namesBefore = Object.fromEntries(crewBefore.map(r => [r, crewNameOf(r)]));
     applyOutcomeEffects(outcome);
+    if (result.outcome === 'defeated') {
+      const lost = crewBefore.filter(r => !STATE.crew.includes(r));
+      if (result._injured && !lost.includes(result._injured) && !STATE.crew.includes(result._injured)) lost.push(result._injured);
+      if (lost.length) body += ' ' + lost.map(r => namesBefore[r] || crewNameOf(r)).join(' and ') + (lost.length > 1 ? " didn't make it." : " didn't make it.");
+      else if (result.crewDied) body += ' It should have cost a life. The medic disagreed.';
+      else if (result._injured) body += ` ${namesBefore[result._injured] || crewNameOf(result._injured)} is hurt.`;
+      else body += ' All crew accounted for.';
+    }
 
     // Materials/items loot isn't part of the standard outcome schema
     // (applyOutcomeEffects only knows resources/item_grant/crew_effect/
@@ -1283,7 +1308,7 @@
     roles.forEach(r => { COMBAT.crew[r] = STATE.crew.includes(r) ? (crewHPOf(r) < CREW_WOUNDED_HP ? 0.5 : 1) : 0; });
     COMBAT.captainBg = STATE.captain || '';
 
-    COMBAT.player.hullMax = COMBAT_CONFIG.player_hp_max;
+    COMBAT.player.hullMax = Math.round(COMBAT_CONFIG.player_hp_max * resMax('hull') / 100); // hull plating
     COMBAT.player.hull = clamp(STATE.resources.hull, 1, COMBAT.player.hullMax);
     if (ramFailed) COMBAT.player.hull = clamp(COMBAT.player.hull - ramHull, 1, COMBAT.player.hullMax);
     COMBAT.player.morale = clamp(STATE.resources.morale, 0, 100);
@@ -1308,6 +1333,7 @@
     COMBAT._firing = false;
     COMBAT._lastOutcome = null;
     COMBAT._narrPrefix = null;
+    COMBAT._resolved = false;
     COMBAT.active = true;
     COMBAT.state = 'PLAYER_TURN';
 

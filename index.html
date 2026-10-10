@@ -679,7 +679,7 @@ body {
   border-radius: 3px; padding: 10px 12px;
   display: flex; flex-direction: column; gap: 8px;
 }
-#inv-detail.hidden, #inv-confirm.hidden { display: none; }
+#inv-detail.hidden, #inv-confirm.hidden, #inv-confirm-yes.hidden { display: none; }
 .inv-detail-top { display: flex; gap: 12px; align-items: center; }
 #inv-detail-icon img { width: 44px; height: 44px; image-rendering: pixelated; }
 #inv-detail-icon { font-size: 30px; }
@@ -1716,6 +1716,7 @@ const SAVED_FIELDS = [
   'consumedActions', 'crewSkillCharges', 'orders', 'crewPending',
   'miningSectors', 'lastAmbientNode', // sector re-roll on reload defeated mining's anti-reroll; ambient repeated
   'deprived', // consecutive days at 0 food/water/O2
+  'crewIdentity', // joined stowaways keep their own name in a crew role
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1766,6 +1767,7 @@ function loadRun(key) {
   ensureOrders(); // pre-orders saves get the defaults (seeded from cropGrowth.waterPlant)
   if (!('crewPending' in snap)) STATE.crewPending = {}; // pre-severity saves
   if (!('deprived' in snap)) STATE.deprived = {};
+  if (!('crewIdentity' in snap)) STATE.crewIdentity = {};
   // Saves from before the "planted" announcement existed: the crop was
   // planted long ago — don't announce it on resume.
   if (STATE.cropGrowth) STATE.flags.add('ai_noted_crop_planted');
@@ -1844,7 +1846,7 @@ function applySetupToState(sel) {
     hull:   rules.starting_resources.hull,
     morale: rules.starting_resources.morale,
   };
-  STATE.goldAmount = 50; // no ship-class credit modifier in the setup wizard yet
+  STATE.goldAmount = 50 + (sel.captain === 'diplomat' ? 15 : 0); // setup: Diplomat "Credits +15"
 
   STATE.activeAI  = sel.ai;
   STATE.captain   = sel.captain;
@@ -1892,7 +1894,7 @@ function applySetupToState(sel) {
   STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
   STATE.postCombatLegs = 0; STATE.miningSectors = {}; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.summonedEvent = false; STATE.lastAmbientNode = null;
-  STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {};
+  STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
   if (typeof window.abortFabricator === 'function') window.abortFabricator();
   if (window.SceneArt) SceneArt.clearRunCaches(); // re-roll scenes + NPC variants per run
@@ -1929,6 +1931,17 @@ function cargoCapacity() {
     && MOD.ships.ships[0].base_stats.cargo_capacity_base) || 8;
   const upgrade = STATE.items.includes('insulated_cargo_bay') ? 5 : 0;
   return base + upgrade;
+}
+
+/* Would the hold still fit without one `id`? Only the cargo bay can
+   make this false (removing it takes 5 slots with it). */
+function canRemoveItem(id) {
+  const i = STATE.items.indexOf(id);
+  if (i < 0) return false;
+  STATE.items.splice(i, 1);
+  const fits = cargoSlotsUsed() <= cargoCapacity();
+  STATE.items.splice(i, 0, id);
+  return fits;
 }
 
 /* Sum of slots used by everything in STATE.items. Stackables author
@@ -2033,7 +2046,9 @@ function crewHPOf(role) {
 function killCrew(role) {
   const idx = STATE.crew.indexOf(role);
   if (idx < 0) return;
+  const name = crewNameOf(role), crewId = crewSpriteIdOf(role);
   STATE.crew.splice(idx, 1);
+  if (STATE.crewIdentity) delete STATE.crewIdentity[role];
   delete STATE.crewHP[role];
   if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
   delete crewPendingOf()[role];
@@ -2044,23 +2059,35 @@ function killCrew(role) {
   if (STATE.crew.length === 0) STATE.flags.add('all_crew_dead');
   const pool = MOD.flavor && MOD.flavor.crew_epitaphs;
   if (pool && pool.length && typeof window.pushCruiseLog === 'function') {
-    const name = (MOD.crew_roster.find(c => c.role === role) || {}).name || role;
     const epitaph = pool[Math.floor(Math.random() * pool.length)].replaceAll('[Name]', name);
     // Death entries carry crew identity so the journal can render the
     // memorial page (portrait if we have one, candle if not).
-    const ROLE_TO_CREWID = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
     window.pushCruiseLog({
       text: '◆ ' + epitaph,
       type: 'death',
-      crewId: ROLE_TO_CREWID[role] || null,
+      crewId,
       crewName: name,
       expand: epitaph,
     });
   }
 }
 
+/* A stowaway who joins as crew fills a role but keeps their own
+   identity — the roster member for that role (name, bio, portrait)
+   never boarded. STATE.crewIdentity[role] = {id, name, story}. */
+const CREWID_OF_ROLE = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
+function crewIdentityOf(role) {
+  return (STATE.crewIdentity && STATE.crewIdentity[role]) || null;
+}
 function crewNameOf(role) {
+  const idn = crewIdentityOf(role);
+  if (idn) return idn.name;
   return ((MOD.crew_roster || []).find(c => c.role === role) || {}).name || role;
+}
+/* Sprite id for a crew role, or null when the holder has no sprite
+   (a joined stowaway) — callers fall back to the emoji portrait. */
+function crewSpriteIdOf(role) {
+  return crewIdentityOf(role) ? null : (CREWID_OF_ROLE[role] || null);
 }
 
 /* How much of a role's passive skill is in effect: 1 healthy, 0.5
@@ -2319,6 +2346,8 @@ function selectEvent(node) {
    ──────────────────────────────────────────────────────────────── */
 function renderHUD() {
   const r = STATE.resources;
+  // An upgrade sold/jettisoned/lost takes its headroom with it.
+  for (const k of ['fuel', 'hull']) if (r[k] > resMax(k)) r[k] = resMax(k);
   const crit = {
     fuel:  r.fuel  < 25,
     food:  r.food  < 25,
@@ -2458,9 +2487,12 @@ function renderInvDetail(en) {
   document.getElementById('inv-jett-btn').addEventListener('click', () => {
     if (!_invSelected) return;
     const def = itemDef(_invSelected);
-    _invJettisonPending = _invSelected;
-    document.getElementById('inv-confirm-text').textContent =
-      'Jettison ' + ((def && def.name) || prettyItem(_invSelected)) + '? The airlock does not do refunds.';
+    const blocked = STATE.items.includes(_invSelected) && !canRemoveItem(_invSelected);
+    _invJettisonPending = blocked ? null : _invSelected;
+    document.getElementById('inv-confirm-text').textContent = blocked
+      ? 'The ' + ((def && def.name) || prettyItem(_invSelected)) + ' is holding cargo. Clear some space first.'
+      : 'Jettison ' + ((def && def.name) || prettyItem(_invSelected)) + '? The airlock does not do refunds.';
+    document.getElementById('inv-confirm-yes').classList.toggle('hidden', blocked);
     document.getElementById('inv-confirm').classList.remove('hidden');
   });
   document.getElementById('inv-confirm-no').addEventListener('click', () => {
@@ -2475,8 +2507,9 @@ function renderInvDetail(en) {
     if (!id) return;
     const def = itemDef(id);
     const idx = STATE.items.indexOf(id);
-    if (idx < 0) return;
+    if (idx < 0 || !canRemoveItem(id)) return;
     STATE.items.splice(idx, 1);
+    renderHUD();
     if (typeof window.pushCruiseLog === 'function') {
       window.pushCruiseLog('◆ Jettisoned: ' + ((def && def.name) || id) + '. It tumbles off into the dark, unemployed.');
     }
@@ -2893,13 +2926,44 @@ function fuelPerLegBase() {
   return ORDERS_BASE.travelFuelBudget / Math.max(1, (rules && rules.total_nodes) || 10);
 }
 window.fuelPerLegBase = fuelPerLegBase;
+/* Resource ceilings: 100, raised while the upgrade is in cargo
+   (items.json gameplay_effect) — fuel tank 120, hull plating 115. */
+function resMax(k) {
+  if (k === 'fuel' && STATE.items.includes('expanded_fuel_tank')) return 120;
+  if (k === 'hull' && STATE.items.includes('hull_plating')) return 115;
+  return 100;
+}
+window.resMax = resMax;
+/* Strength of a role's economy passive: a crew specialist in full
+   (halved while wounded), a captain of that background at half
+   (Bible §4.30 skill_modifier 0.5 — setup's "Fuel -5%" / "Food -7%"). */
+function specialistMult(role) {
+  const crew = STATE.crew.includes(role) ? (crewHPOf(role) < CREW_WOUNDED_HP ? 0.5 : 1) : 0;
+  return Math.max(crew, STATE.captain === role ? 0.5 : 0);
+}
+function rosterPassive(role, key, dflt) {
+  const c = (MOD.crew_roster || []).find(x => x.role === role);
+  const v = c && c.passive_skill && c.passive_skill[key];
+  return Number.isFinite(v) ? v : dflt;
+}
+// Food burn: chef (crew_roster food_consumption_modifier 0.85) and the
+// insulated cargo bay (−15%). Fuel burn: pilot (fuel_burn_modifier 0.9)
+// and the drive coil (−20%).
+function foodBurnMult() {
+  return (1 - (1 - rosterPassive('chef', 'food_consumption_modifier', 0.85)) * specialistMult('chef'))
+    * (STATE.items.includes('insulated_cargo_bay') ? 0.85 : 1);
+}
+function fuelBurnMult() {
+  return (1 - (1 - rosterPassive('pilot', 'fuel_burn_modifier', 0.9)) * specialistMult('pilot'))
+    * (STATE.items.includes('drive_coil') ? 0.8 : 1);
+}
 function legTravelCost() {
   const pace = ordersPace();
   const nodeCount = Math.max(1, (STATE.nodes && STATE.nodes.length) || 10);
   const baseLegDays = Math.max(1, (STATE.baseDays * ORDERS_BASE.legDaysFrac) / nodeCount);
   return {
     days: Math.max(1, Math.round(baseLegDays * pace.etaMult)),
-    fuel: Math.round(fuelPerLegBase() * pace.fuelMult * 10) / 10,
+    fuel: Math.round(fuelPerLegBase() * pace.fuelMult * fuelBurnMult() * 10) / 10,
   };
 }
 
@@ -2933,7 +2997,7 @@ function passDays(days, opts) {
   const pace = ordersPace(), ra = ordersRations();
 
   // RATIONS — food burn + morale drift, every day.
-  r.food = clamp(r.food - ORDERS_BASE.foodPerDay * ra.foodMult * days, 0, 100);
+  r.food = clamp(r.food - ORDERS_BASE.foodPerDay * ra.foodMult * foodBurnMult() * days, 0, 100);
   let morale = ra.moralePerDay * days;
 
   // PACE — crew drain while actually flying (drainMult < 1 rests them).
@@ -3001,7 +3065,12 @@ function travelTo(nodeId, opts) {
   // tank (or the clock) dry mid-leg ends the run right here.
   {
     const leg = legTravelCost();
-    STATE.resources.fuel = clamp(STATE.resources.fuel - leg.fuel, 0, 100);
+    STATE.resources.fuel = clamp(STATE.resources.fuel - leg.fuel, 0, resMax('fuel'));
+    // Drive coil (items.json): 5% per leg it misfires — minor hull damage.
+    if (STATE.items.includes('drive_coil') && Math.random() < 0.05) {
+      STATE.resources.hull = clamp(STATE.resources.hull - 3, 0, resMax('hull'));
+      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ The drive coil misfires mid-burn. A bang, a smell, three points of hull. It keeps working, unrepentant.');
+    }
     passDays(leg.days, { travel: true });
     renderHUD();
     if (checkFailure()) return;
@@ -3559,6 +3628,7 @@ function lockReason(choice) {
   if (choice.requires_crew) {
     if (!STATE.crew.includes(choice.requires_crew)) return `Needs ${choice.requires_crew}`;
     if (crewHPOf(choice.requires_crew) <= CREW_CRITICAL_HP) return `${choice.requires_crew} is hurt too badly to help`;
+    if (STATE.crisisPatient === choice.requires_crew) return `${choice.requires_crew} is the patient`;
   }
   if (choice.requires_item && !STATE.items.includes(choice.requires_item)) return `Needs ${prettyItem(choice.requires_item)}`;
   if (choice.requires_flag && !STATE.flags.has(choice.requires_flag)) return `Story-gated`;
@@ -3566,6 +3636,7 @@ function lockReason(choice) {
     if (choice.gate.crew) {
       if (!STATE.crew.includes(choice.gate.crew)) return `Needs ${choice.gate.crew}`;
       if (crewHPOf(choice.gate.crew) <= CREW_CRITICAL_HP) return `${choice.gate.crew} is hurt too badly to help`;
+      if (STATE.crisisPatient === choice.gate.crew) return `${choice.gate.crew} is the patient`;
     }
     if (choice.gate.item && !STATE.items.includes(choice.gate.item)) return `Needs ${prettyItem(choice.gate.item)}`;
     if (choice.gate.gold && STATE.goldAmount < choice.gate.gold) return `Needs ${choice.gate.gold}g`;
@@ -3851,7 +3922,9 @@ function applyOutcomeEffects(o) {
           window.pushCruiseLog('◆ The emergency patch holds — ' + (-v) + ' hull damage never lands. The patch does not survive the experience.');
         }
       } else if (k in STATE.resources) {
-        STATE.resources[k] = clamp(STATE.resources[k] + v, 0, 100);
+        // O2 recycler (items.json): O2 losses reduced 25%.
+        const dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.round(v * 0.75) : v;
+        STATE.resources[k] = clamp(STATE.resources[k] + dv, 0, resMax(k));
       }
     }
   }
@@ -3886,18 +3959,22 @@ function applyOutcomeEffects(o) {
       const gone = (idn.join_role && STATE.crew.includes(idn.join_role))
         ? idn.join_role
         : STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
+      const goneName = crewNameOf(gone);
       STATE.crew.splice(STATE.crew.indexOf(gone), 1);
       delete STATE.crewHP[gone];
       if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[gone];
+      if (STATE.crewIdentity) delete STATE.crewIdentity[gone];
       delete crewPendingOf()[gone];
       if (typeof window.pushCruiseLog === 'function') {
-        window.pushCruiseLog('◆ ' + gone + ' will disembark at the next stop. Nobody discusses it at dinner.');
+        window.pushCruiseLog('◆ ' + goneName + ' will disembark at the next stop. Nobody discusses it at dinner.');
       }
     }
     if (resolve === 'welcome' || resolve === 'welcome_replace') {
       if (idn.join_role && STATE.crew.length < 2 && !STATE.crew.includes(idn.join_role)) {
         STATE.crew.push(idn.join_role);
         STATE.crewHP[idn.join_role] = 100;
+        if (!STATE.crewIdentity) STATE.crewIdentity = {};
+        STATE.crewIdentity[idn.join_role] = { id: idn.id, name: idn.name, story: idn.story };
         ensureCrewSkillCharges(); // a full crew member gets their skill charges too
       } else {
         STATE.flags.add('stowaway_passenger');

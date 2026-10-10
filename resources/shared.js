@@ -1733,8 +1733,10 @@ const MarketModal = (function() {
     const cargo = _state.opts.getCargo();
     const entry = cargo && cargo[idx];
     if (!entry || _state.soldCargoIdxs.has(idx)) return;
+    if (refuseRemoval(entry.id) || sellGuarded()) return;
     _state.opts.setGold(_state.opts.getGold() + offer);
-    _state.soldCargoIdxs.add(idx);
+    if (_state.opts.removeCargo) _state.opts.removeCargo(entry.id);
+    else _state.soldCargoIdxs.add(idx);
     appendLog('Fenced ' + entry.name + ' · +' + offer + 'g', 'system pos');
     const flavor = pickFlavor('fence');
     if (flavor) appendLog(flavor, 'flavor');
@@ -1781,8 +1783,10 @@ const MarketModal = (function() {
       if (deny) appendLog(deny, 'deny');
       return;
     }
+    if (refuseRemoval(entry.id) || sellGuarded()) return;
     _state.opts.setGold(_state.opts.getGold() + price);
-    _state.soldCargoIdxs.add(idx);
+    if (_state.opts.removeCargo) _state.opts.removeCargo(entry.id);
+    else _state.soldCargoIdxs.add(idx);
     appendLog('Sold ' + entry.name + ' · +' + price + 'g', 'system pos');
     const flavor = pickFlavor('sell');
     if (flavor) appendLog(flavor, 'flavor');
@@ -1790,13 +1794,30 @@ const MarketModal = (function() {
     renderLists();
   }
 
+  // A sale re-renders the list and a ×1 row vanishes — the next row
+  // slides under the cursor. Swallow the second click of a double-click.
+  function sellGuarded() {
+    const now = performance.now();
+    if (_state.sellLockUntil && now < _state.sellLockUntil) return true;
+    _state.sellLockUntil = now + 350;
+    return false;
+  }
+  // Hosts with removeCargo drop a sold unit at once (the hold frees up
+  // for the next buy); without it, removal is deferred to close().
+  function refuseRemoval(id) {
+    if (!_state.opts.canRemoveCargo || _state.opts.canRemoveCargo(id)) return false;
+    appendLog(_state.opts.cargoLockedMsg || "Can't part with that right now.", 'deny');
+    return true;
+  }
   function sellCargoStacked(id, offer, name) {
     if (!_state || !offer) return;
     const cargo  = _state.opts.getCargo();
     const sold   = _state.soldCargoById.get(id) || 0;
     const available = cargo.filter(e => e.id === id).length - sold;
     if (available <= 0) return;
-    _state.soldCargoById.set(id, sold + 1);
+    if (refuseRemoval(id) || sellGuarded()) return;
+    if (_state.opts.removeCargo) _state.opts.removeCargo(id);
+    else _state.soldCargoById.set(id, sold + 1);
     _state.opts.setGold(_state.opts.getGold() + offer);
     // Buyback: item was purchased from this vendor, vendor has no standing
     // buy-price for it. Restore the ware slot so it re-appears as available.
