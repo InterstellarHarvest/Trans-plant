@@ -272,6 +272,7 @@ const AI_NAMES = {aria:'ARIA',marv:'MARV',rex:'REX',chip:'CHIP',ajoy:'AJOY'};
 // ─────────────────────────────────────────────
 let activeAi = 'marv';
 let engineerAboard = false;
+let engineerMult = 0; // engineer passive in effect: 1, 0.5 wounded, 0 absent
 let currentGame = null;
 let cleanupFn = null;
 let onMinigameDone = null; // (tier, payload) => void — supplied by openMinigame()'s caller
@@ -286,7 +287,7 @@ function showReady(id, onStart){
   const ga = document.getElementById('ga');
   let mechanicHtml = b.mechanic;
   if(id==='breach' && engineerAboard){
-    mechanicHtml += `<br><br><span style="color:var(--teal)"><strong>ENGINEER ABOARD:</strong> +1 second per breach.</span>`;
+    mechanicHtml += `<br><br><span style="color:var(--teal)"><strong>ENGINEER ABOARD:</strong> +${engineerMult < 1 ? 'half a second' : '1 second'} per breach${engineerMult < 1 ? ' (wounded)' : ''}.</span>`;
   }
   ga.innerHTML = `
     <div class="ready">
@@ -315,7 +316,8 @@ function showReady(id, onStart){
    doesn't need that escape hatch. */
 function openMinigame(id, opts, onDone){
   activeAi = STATE.activeAI || 'marv';
-  engineerAboard = STATE.crew.includes('engineer');
+  engineerMult = STATE.crew.includes('engineer') ? passiveMult('engineer') : 0;
+  engineerAboard = engineerMult > 0;
   onMinigameDone = onDone;
   currentGame = id;
   if(cleanupFn){ cleanupFn(); cleanupFn=null; }
@@ -2661,7 +2663,7 @@ function initBreach(container, onResult){
   // [STUB] In the real game, the countdown should be driven by game-world time
   // elapsed during the action (the action button shows allotted time before
   // committing). For the demo we use real seconds via makeTimer().
-  const perHole = engineerAboard ? 4000 : 3000;
+  const perHole = 3000 + 1000 * engineerMult; // wounded engineer: +0.5s
   const totalTime = N * perHole;
 
   // ── Spawn hole sprites ────────────────────────

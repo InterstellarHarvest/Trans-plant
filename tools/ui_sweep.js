@@ -257,6 +257,10 @@ const INERT_OK = new Set([]);
     await closeAnyOverlay();
     if ((await sig()) === before) flag('encounter choice inert', label); else clicksOk++;
     if (!(await page.evaluate(() => document.getElementById('screen-encounter').classList.contains('active')))) { say(true, 'event resolved and exited after ' + clicksOk + ' clicks'); break; }
+    // Continue can travel straight into the NEXT node's random event (a
+    // launch_minigame choice there opens a real, harness-unclosable
+    // minigame — false flags). This section tests station_009 only.
+    if (await page.evaluate(() => !STATE.currentEvent || STATE.currentEvent.id !== 'event_station_009')) { say(true, 'event resolved after ' + clicksOk + ' clicks (moved on to the next node)'); break; }
   }
   say(clicksOk > 0, 'encounter clicks all registered', clicksOk + ' clicks, 0 inert');
 

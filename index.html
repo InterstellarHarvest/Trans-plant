@@ -1704,7 +1704,7 @@ const SAVED_FIELDS = [
   'resources', 'daysElapsed', 'baseDays', 'activeAI',
   'hardStreak', 'pityRelief', 'npcCache', 'crewHP', 'shipLog',
   'stowaway', 'cropGrowth', 'postCombatLegs', 'aiWarnLevels', 'fabricator',
-  'consumedActions', 'crewSkillCharges', 'orders',
+  'consumedActions', 'crewSkillCharges', 'orders', 'crewPending',
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1738,6 +1738,7 @@ function loadRun(key) {
   STATE.pendingNext = null; STATE.ended = false;
   STATE._itemDefs = null;
   ensureOrders(); // pre-orders saves get the defaults (seeded from cropGrowth.waterPlant)
+  if (!('crewPending' in snap)) STATE.crewPending = {}; // pre-severity saves
   STATE.hubScreen = 'screen-cruise';
   if (window.SceneArt) SceneArt.clearRunCaches();
   renderHUD();
@@ -1936,7 +1937,23 @@ function grantItem(shortId) {
    ──────────────────────────────────────────────────────────────── */
 function initCrewHP() {
   STATE.crewHP = {};
+  STATE.crewPending = {};
   for (const role of STATE.crew) STATE.crewHP[role] = 100;
+}
+
+// The wound line (owner ruling 2026-10-09 — one number everywhere):
+// below CREW_WOUNDED_HP a crew member is WOUNDED — active skill
+// disabled, passive halved (Bible §4.25), crew_injured fires, the
+// cruise bar goes amber. At or below CREW_CRITICAL_HP they're too hurt
+// to answer crew-gated choices (red bar).
+const CREW_WOUNDED_HP = 40;
+const CREW_CRITICAL_HP = 25;
+
+// Delayed-severity wounds awaiting treatment: { role: true }. Lazily
+// created for saves that predate the field.
+function crewPendingOf() {
+  if (!STATE.crewPending) STATE.crewPending = {};
+  return STATE.crewPending;
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -1981,6 +1998,7 @@ function killCrew(role) {
   STATE.crew.splice(idx, 1);
   delete STATE.crewHP[role];
   if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
+  delete crewPendingOf()[role];
   STATE.flags.add('crew_lost');
   // The 'Autopilot' failure (crew_gone) means your crew all DIED — not
   // that you have none. Solo launches (wizard-permitted, with authored
@@ -2003,19 +2021,106 @@ function killCrew(role) {
   }
 }
 
+function crewNameOf(role) {
+  return ((MOD.crew_roster || []).find(c => c.role === role) || {}).name || role;
+}
+
+/* How much of a role's passive skill is in effect: 1 healthy, 0.5
+   wounded (Bible §4.25 "passive halved"), 0 when nobody holds it. A
+   captain of that background always counts in full — the captain is
+   the player and takes no HP damage. Combat's own crew_bonuses table
+   (combat.js) is a separate system and doesn't read this. */
+function passiveMult(role) {
+  if (STATE.captain === role) return 1;
+  if (!STATE.crew.includes(role)) return 0;
+  return crewHPOf(role) < CREW_WOUNDED_HP ? 0.5 : 1;
+}
+
 /* Deals HP damage to a crew member (role, or null for random). A
-   medic aboard softens every hit by 40%. Death at 0 HP. Exposed on
-   window for combat.js. Returns the role actually hit (or null). */
+   medic aboard softens every hit by 40% (20% while the medic is
+   wounded). Death at 0 HP. Exposed on window for combat.js. Returns
+   the role actually hit (or null). */
 function damageCrew(role, amount) {
   if (!STATE.crew.length) return null;
   if (!role || !STATE.crew.includes(role)) role = STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
-  const softened = (STATE.crew.includes('medic') || STATE.captain === 'medic') ? Math.round(amount * 0.6) : amount;
+  const softened = Math.round(amount * (1 - 0.4 * passiveMult('medic')));
   const hp = crewHPOf(role) - softened;
   if (hp <= 0) killCrew(role);
   else STATE.crewHP[role] = hp;
   return role;
 }
 window.damageCrew = damageCrew;
+
+/* Bible §4.25 / §7 severity tiers, applied to one crew member.
+   injury  — wounded: HP drops under the wound line, never lethal.
+   delayed — wounded, plus a pending crisis: still wounded when the ship
+             reaches the next station → the follow-up crisis fires there
+             (see dueDelayedCrisis).
+   lethal  — death, with the Bible's softer landings in turn: a medic
+             crew member's passive (50%, halved while the medic is
+             wounded), a medic captain's authored 15%, then a carried
+             medkit's authored 15% (spending the medkit). The 50% is a
+             tuning number — the roster says only "more often". */
+function woundCrew(role) {
+  STATE.crewHP[role] = Math.max(5, Math.min(crewHPOf(role) - 15, CREW_WOUNDED_HP - 5));
+}
+function applySeverity(role, severity) {
+  if (!role || !STATE.crew.includes(role)) return;
+  const name = crewNameOf(role);
+  const log = msg => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + msg); };
+  if (severity === 'lethal') {
+    const crewMedic = STATE.crew.includes('medic') ? 0.5 * (crewHPOf('medic') < CREW_WOUNDED_HP ? 0.5 : 1) : 0;
+    if (Math.random() < crewMedic || (STATE.captain === 'medic' && Math.random() < 0.15)) {
+      woundCrew(role);
+      log('It should have been fatal. The medic disagreed. ' + name + ' is badly hurt, but alive.');
+      return;
+    }
+    const mkIdx = STATE.items.indexOf('medkit');
+    if (mkIdx >= 0 && Math.random() < 0.15) {
+      STATE.items.splice(mkIdx, 1);
+      STATE.crewHP[role] = 20;
+      log('The medkit made the difference. ' + name + ' is badly hurt, but alive. The medkit is spent.');
+      return;
+    }
+    killCrew(role);
+    return;
+  }
+  if (severity !== 'injury' && severity !== 'delayed') return;
+  woundCrew(role);
+  if (severity === 'delayed') {
+    crewPendingOf()[role] = true;
+    log(name + ' is wounded, and it is not healing right. It needs treatment before the next station.');
+  } else {
+    log(name + ' is wounded. Their skill is offline until they recover.');
+  }
+}
+
+/* Station arrival: each delayed wound is either treated by now (HP back
+   over the wound line — medic skill, a heal outcome, regen, the medbay)
+   and quietly closes, or it's still open and a delayed_crisis event
+   fires here in place of the station's own draw. One crisis per
+   arrival; a second open wound waits for the next station. The patient
+   is STATE.crisisPatient — {patient.name} in text, crew_effect target
+   "patient" in outcomes. */
+function dueDelayedCrisis() {
+  const pend = crewPendingOf();
+  let patient = null;
+  for (const role of Object.keys(pend)) {
+    if (!STATE.crew.includes(role)) { delete pend[role]; continue; }
+    if (crewHPOf(role) >= CREW_WOUNDED_HP) {
+      delete pend[role];
+      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + crewNameOf(role) + '’s wound closed clean. Nobody says "lucky" out loud.');
+      continue;
+    }
+    if (!patient) patient = role;
+  }
+  if (!patient) return null;
+  const pool = Object.values(EVENTS).filter(ev => ev.active !== false && (ev.trigger || []).includes('delayed_crisis'));
+  if (!pool.length) return null;
+  delete pend[patient];
+  STATE.crisisPatient = patient;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
 /* ────────────────────────────────────────────────────────────────
    CRISIS TRIGGERS + EVENT POOL-DRAW (closes audit A1's engine half
@@ -2058,8 +2163,8 @@ function activeTriggers() {
   // Ship systems.
   if (STATE.fabricator && STATE.fabricator.broken) active.add('fab_broken');
   else if (STATE.fabricator && (STATE.fabricator.wear || 0) >= 70) active.add('fab_low');
-  // Crew HP — anyone below 60 counts as injured.
-  if (STATE.crewHP && STATE.crew.some(r => crewHPOf(r) < 60)) active.add('crew_injured');
+  // Crew HP — anyone under the wound line counts as injured.
+  if (STATE.crewHP && STATE.crew.some(r => crewHPOf(r) < CREW_WOUNDED_HP)) active.add('crew_injured');
   // Cargo (full enforcement per 2026-08-03 decision).
   if (cargoSlotsUsed() >= cargoCapacity()) active.add('full_cargo');
   if (STATE.items.length === 0) active.add('empty_cargo');
@@ -2802,8 +2907,10 @@ function travelTo(nodeId, opts) {
   const node = STATE.byId[nodeId];
 
   // Crew HP regen — one tick per travel leg: +1, +2 with a medic aboard.
+  // A wounded medic's halved passive lands the bonus point every other
+  // leg on average (HP stays whole numbers).
   if (STATE.crewHP) {
-    const regen = (STATE.crew.includes('medic') || STATE.captain === 'medic') ? 2 : 1;
+    const regen = 1 + (Math.random() < passiveMult('medic') ? 1 : 0);
     for (const r of STATE.crew) STATE.crewHP[r] = clamp(crewHPOf(r) + regen, 0, 100);
   }
 
@@ -2844,9 +2951,13 @@ function travelTo(nodeId, opts) {
     return;
   }
 
+  // An untreated delayed wound comes due on station arrival — it takes
+  // the node's event slot, and Push Engines can't outrun it.
+  const crisis = node.node_type === 'station' ? dueDelayedCrisis() : null;
+
   // Push Engines (pilot active skill) — the leg is flown, the node's
   // event is skipped entirely. Straight back to the hub.
-  if (opts.skipEvent) {
+  if (opts.skipEvent && !crisis) {
     STATE.visited.add(nodeId);
     if ((STATE.postCombatLegs || 0) > 0) STATE.postCombatLegs--;
     returnToHub();
@@ -2856,7 +2967,7 @@ function travelTo(nodeId, opts) {
   // Fixed test-path nodes may still hardcode event_id (?debug=fixed_path);
   // procedurally generated nodes have none, so this always falls through
   // to the real pool-draw.
-  const ev = (node.event_id && EVENTS[node.event_id]) || selectEvent(node);
+  const ev = crisis || (node.event_id && EVENTS[node.event_id]) || selectEvent(node);
   if (ev) {
     enterEvent(node, ev);
   } else {
@@ -2907,6 +3018,9 @@ function enterEvent(node, ev) {
       });
     }
   }
+
+  // The delayed-crisis patient belongs to the crisis event alone.
+  if (!(ev.trigger || []).includes('delayed_crisis')) STATE.crisisPatient = null;
 
   // Stowaway reveal moment — firing either the dedicated reveal event
   // (trigger: stowaway_aboard) or an event carrying an authored
@@ -2962,6 +3076,14 @@ function resolveLayerNpc(spec, evId, layerId) {
    No stowaway rolled → tokens drop cleanly (events using them are
    gated behind the stowaway_aboard trigger anyway). */
 function interpolateStowawayTokens(text) {
+  // Run-identity tokens: {stowaway.*} (the hidden passenger) and
+  // {patient.*} (a delayed_crisis event's wounded crew member).
+  if (text && text.indexOf('{patient.') !== -1) {
+    const p = STATE.crisisPatient;
+    text = text
+      .replace(/\{patient\.name\}/g, p ? crewNameOf(p) : 'the patient')
+      .replace(/\{patient\.role\}/g, p || 'crew member');
+  }
   if (!text || text.indexOf('{stowaway.') === -1) return text;
   const id = STATE.stowaway && STATE.stowaway.identity;
   return text
@@ -3314,14 +3436,14 @@ function lockReason(choice) {
   }
   if (choice.requires_crew) {
     if (!STATE.crew.includes(choice.requires_crew)) return `Needs ${choice.requires_crew}`;
-    if (crewHPOf(choice.requires_crew) <= 25) return `${choice.requires_crew} is hurt too badly to help`;
+    if (crewHPOf(choice.requires_crew) <= CREW_CRITICAL_HP) return `${choice.requires_crew} is hurt too badly to help`;
   }
   if (choice.requires_item && !STATE.items.includes(choice.requires_item)) return `Needs ${prettyItem(choice.requires_item)}`;
   if (choice.requires_flag && !STATE.flags.has(choice.requires_flag)) return `Story-gated`;
   if (choice.gate) {
     if (choice.gate.crew) {
       if (!STATE.crew.includes(choice.gate.crew)) return `Needs ${choice.gate.crew}`;
-      if (crewHPOf(choice.gate.crew) <= 25) return `${choice.gate.crew} is hurt too badly to help`;
+      if (crewHPOf(choice.gate.crew) <= CREW_CRITICAL_HP) return `${choice.gate.crew} is hurt too badly to help`;
     }
     if (choice.gate.item && !STATE.items.includes(choice.gate.item)) return `Needs ${prettyItem(choice.gate.item)}`;
     if (choice.gate.gold && STATE.goldAmount < choice.gate.gold) return `Needs ${choice.gate.gold}g`;
@@ -3639,6 +3761,8 @@ function applyOutcomeEffects(o) {
       const gone = STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
       STATE.crew.splice(STATE.crew.indexOf(gone), 1);
       delete STATE.crewHP[gone];
+      if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[gone];
+      delete crewPendingOf()[gone];
       if (typeof window.pushCruiseLog === 'function') {
         window.pushCruiseLog('◆ ' + gone + ' will disembark at the next stop. Nobody discusses it at dinner.');
       }
@@ -3647,6 +3771,7 @@ function applyOutcomeEffects(o) {
       if (idn.join_role && STATE.crew.length < 2 && !STATE.crew.includes(idn.join_role)) {
         STATE.crew.push(idn.join_role);
         STATE.crewHP[idn.join_role] = 100;
+        ensureCrewSkillCharges(); // a full crew member gets their skill charges too
       } else {
         STATE.flags.add('stowaway_passenger');
       }
@@ -3674,36 +3799,31 @@ function applyOutcomeEffects(o) {
   if (o.sets_flag) STATE.flags.add(o.sets_flag);
   if (o.clears_flag) STATE.flags.delete(o.clears_flag); // one-shot armed flags (e.g. negotiation_prepared) spend here
 
-  // Crew effect — routed through the per-crew HP system.
-  //   injure: -35 HP to the target (medic aboard softens all crew damage)
-  //   kill:   lethal, EXCEPT a carried medkit gives its authored 15%
-  //           chance to downgrade death to a 20-HP injury (consuming
-  //           the medkit) — items.json's own gameplay_effect text.
-  //   heal:   +40 HP to all injured, or full heal for a specific role.
-  if (o.crew_effect && STATE.crew.length) {
-    const ce = o.crew_effect;
-    const targetRole = (ce.target === 'specific_role' && ce.role && STATE.crew.includes(ce.role))
-      ? ce.role
-      : STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
-    if (ce.type === 'injure') {
-      damageCrew(targetRole, 35);
-    } else if (ce.type === 'kill') {
-      const mkIdx = STATE.items.indexOf('medkit');
-      if (mkIdx >= 0 && Math.random() < 0.15) {
-        STATE.items.splice(mkIdx, 1);
-        STATE.crewHP[targetRole] = 20;
-        if (typeof window.pushCruiseLog === 'function') {
-          window.pushCruiseLog('◆ The medkit made the difference. ' + targetRole + ' is badly hurt, but alive. The medkit is spent.');
-        }
-      } else {
-        killCrew(targetRole);
-      }
-    } else if (ce.type === 'heal') {
-      if (ce.target === 'all_injured') {
+  // Crew effect + severity — routed through the per-crew HP system.
+  //   severity (Bible §4.25: injury / delayed / lethal) decides what
+  //     happens; crew_effect, when also present, only picks who. A bare
+  //     severity hits a random crew member.
+  //   crew_effect without severity:
+  //     injure: -35 HP to the target (medic aboard softens crew damage)
+  //     kill:   = severity lethal (medic / medkit softer landings)
+  //     heal:   +40 HP to all injured, or full heal for a specific role
+  //             (or the delayed_crisis "patient").
+  if (STATE.crew.length && (o.crew_effect || o.severity)) {
+    const ce = o.crew_effect || {};
+    const named = (ce.target === 'specific_role' && ce.role && STATE.crew.includes(ce.role)) ? ce.role
+      : (ce.target === 'patient' && STATE.crisisPatient && STATE.crew.includes(STATE.crisisPatient)) ? STATE.crisisPatient
+      : null;
+    const targetRole = named || STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
+    const severity = o.severity || (ce.type === 'kill' ? 'lethal' : null);
+    if (ce.type === 'heal' && !o.severity) {
+      if (named) STATE.crewHP[named] = 100;
+      else if (ce.target === 'all_injured') {
         for (const r of STATE.crew) STATE.crewHP[r] = clamp(crewHPOf(r) + 40, 0, 100);
-      } else if (ce.role && STATE.crew.includes(ce.role)) {
-        STATE.crewHP[ce.role] = 100;
       }
+    } else if (severity) {
+      applySeverity(targetRole, severity);
+    } else if (ce.type === 'injure') {
+      damageCrew(targetRole, 35);
     }
   }
 
@@ -3751,7 +3871,7 @@ function resolveChoice(choice) {
 
 function deltaIsBad(o)  {
   if (o.crew_effect && (o.crew_effect.type === 'kill' || o.crew_effect.type === 'injure')) return true;
-  if (o.severity === 'lethal' || o.severity === 'injury') return true;
+  if (o.severity === 'lethal' || o.severity === 'injury' || o.severity === 'delayed') return true;
   if (!o.resources) return false;
   return Object.entries(o.resources).some(([k,v]) => v < 0 && (k !== 'gold' || v <= -10));
 }

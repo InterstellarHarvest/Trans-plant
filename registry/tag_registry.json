@@ -164,7 +164,8 @@
         "notes": "Fabricator in danger zone"
       },
       "crew_injured": {
-        "status": "populated"
+        "status": "populated",
+        "threshold": "any crew member below 40 HP (CREW_WOUNDED_HP — the wound line)"
       },
       "crew_dead": {
         "status": "populated"
@@ -175,7 +176,11 @@
       },
       "stowaway_aboard": {
         "status": "populated",
-        "notes": "Stowaway event resolved, extra crew taken"
+        "notes": "Reveal window: a hidden stowaway is aboard and the run is past ~20% of the journey. Deactivates once revealed."
+      },
+      "delayed_crisis": {
+        "status": "populated",
+        "notes": "ENGINE-FORCED, never pool-drawn: travelTo() fires one on station arrival when a severity:delayed wound is still untreated. Text token {patient.name}; outcome crew_effect target \"patient\"."
       },
       "post_combat": {
         "status": "populated"
@@ -664,15 +669,15 @@
     "multiple_allowed": false,
     "values": {
       "lethal": {
-        "status": "empty",
+        "status": "populated",
         "notes": "Immediate crew death, triggers epitaph screen"
       },
       "injury": {
-        "status": "empty",
+        "status": "populated",
         "notes": "Active skill disabled, passive halved"
       },
       "delayed": {
-        "status": "empty",
+        "status": "populated",
         "notes": "Injured with ticking clock — crisis if untreated by next station"
       }
     }

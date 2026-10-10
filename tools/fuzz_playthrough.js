@@ -84,7 +84,11 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
       }
       const trig = activeTriggers();
       const evTrig = ev.trigger || ['any'];
-      if (!evTrig.some(t => trig.has(t))) {
+      // Engine-forced exemption: delayed_crisis events are never
+      // pool-drawn — travelTo() fires one on station arrival for an
+      // untreated delayed wound (dueDelayedCrisis sets the patient).
+      const forcedCrisis = evTrig.includes('delayed_crisis') && STATE.crisisPatient;
+      if (!forcedCrisis && !evTrig.some(t => trig.has(t))) {
         v.push(`${ev.id} fired with NO active trigger (needs ${JSON.stringify(evTrig)}, active: ${JSON.stringify([...trig])})`);
       }
       if (ev.trail && !ev.trail.includes(STATE.trail)) {

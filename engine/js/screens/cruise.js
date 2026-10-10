@@ -127,7 +127,7 @@
       // the player and doesn't take HP damage — always full.
       const hp = m.label === 'CAPTAIN' ? 100
         : (typeof window.crewHPOf === 'function' ? crewHPOf(m.role) : 100);
-      const hpColor = hp <= 25 ? '#cc5555' : (hp < 60 ? '#d4a830' : '');
+      const hpColor = hp <= CREW_CRITICAL_HP ? '#cc5555' : (hp < CREW_WOUNDED_HP ? '#d4a830' : '');
       slot.innerHTML =
         '<div class="crew-slot-top">' + iconHtml +
           '<div class="crew-info"><div class="crew-name">' + m.label + '</div><div class="crew-role">' + m.role + '</div></div>' +
@@ -244,7 +244,7 @@
     nebula:                 { label: 'NEBULA',                 mood: 'Glowing gas in colors that probably mean something.',                 verbs: ['mine', 'scan', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
     anomaly:                { label: 'ANOMALY',                mood: 'The instruments disagree with each other. None of them with reality.', verbs: ['scan', 'forage_food', 'repair', 'rest', 'fab'] },
     planet_orbit_habitable: { label: 'PLANET ORBIT · HABITABLE', mood: 'Green and blue and trying. A world that knows how to grow things.', verbs: ['forage_food', 'trade', 'wait_for_trader', 'scan', 'repair', 'rest', 'fab'] },
-    station_approach:       { label: 'STATION APPROACH',       mood: 'Lights and traffic. Civilization, give or take.',                     verbs: ['trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
+    station_approach:       { label: 'STATION APPROACH',       mood: 'Lights and traffic. Civilization, give or take.',                     verbs: ['trade', 'wait_for_trader', 'medbay', 'repair', 'rest', 'fab'] },
   };
   const FORAGE_LABEL_BY_REGION = { planet_orbit_habitable: 'GATHER', asteroid_field: 'HUNT', debris_field: 'SCAVENGE', anomaly: 'FORAGE' };
   const STOP_VERBS = {
@@ -257,6 +257,7 @@
     repair:       { label: 'REPAIR',    sub: 'Patch what is broken. Cost in materials and hours.', effort: 3 },
     rest:         { label: 'REST',      sub: 'Crew morale up. Days down.',                       effort: 1, hint: true },
     fab:          { label: 'FABRICATOR', sub: 'Open the print queue. Long jobs need a still ship.', effort: 1, hint: true },
+    medbay:       { label: 'MEDBAY',    sub: 'Station rates. Cash up front. Mostly sterile.',   effort: 1, hint: true, locked: medbayLockReason },
   };
   function effortPips(n) { n = Math.max(0, Math.min(5, n | 0)); return '●'.repeat(n) + '○'.repeat(5 - n); }
 
@@ -355,7 +356,7 @@
   // REST — a day of doing deliberately nothing. Chef aboard makes it
   // land better (their whole thing is morale through care).
   function handleRestVerb() {
-    const chefBonus = (STATE.crew.includes('chef') || STATE.captain === 'chef') ? 2 : 0;
+    const chefBonus = Math.round(2 * passiveMult('chef')); // wounded chef: halved
     STATE.resources.morale = clamp(STATE.resources.morale + 6 + chefBonus, 0, 100);
     settleMinigame('◆ REST — a full day off. Morale +' + (6 + chefBonus) + (chefBonus ? ' (the chef cooked the good stuff).' : '.'));
   }
@@ -393,7 +394,35 @@
   // every region's STOP_VERBS list before Phase 4 wired it up).
   function handleFabricatorVerb() { openFabricator(); }
 
-  const VERB_HANDLERS = { mine: handleMineVerb, scan: handleScanVerb, repair: handleRepairVerb, forage_food: handleForageVerb, salvage: handleSalvageVerb, fab: handleFabricatorVerb, rest: handleRestVerb, trade: handleTradeVerb, wait_for_trader: handleWaitTraderVerb };
+  // MEDBAY (stations only) — the Bible §7 recovery path besides the
+  // medic's skill: for a flat fee, the worst-hurt crew member is
+  // treated to full HP, which also closes a delayed-severity wound
+  // before it comes due. No time cost — the Bible prices it in credits.
+  const MEDBAY_FEE = 30;
+  function medbayPatient() {
+    let worst = null;
+    for (const r of STATE.crew) if (crewHPOf(r) < 100 && (!worst || crewHPOf(r) < crewHPOf(worst))) worst = r;
+    return worst;
+  }
+  function medbayLockReason() {
+    if (!medbayPatient()) return 'NOBODY HURT';
+    if (STATE.goldAmount < MEDBAY_FEE) return MEDBAY_FEE + 'g';
+    return null;
+  }
+  function handleMedbayVerb() {
+    const r = medbayPatient();
+    if (!r) { pushLogEntry('◆ MEDBAY — the duty nurse looks your crew over and finds nothing to bill. They seem disappointed.'); return; }
+    if (STATE.goldAmount < MEDBAY_FEE) { pushLogEntry('◆ MEDBAY — treatment is ' + MEDBAY_FEE + 'g, payable in advance. You have ' + STATE.goldAmount + 'g. The nurse has heard every story.'); return; }
+    STATE.goldAmount -= MEDBAY_FEE;
+    STATE.crewHP[r] = 100;
+    if (STATE.crewPending) delete STATE.crewPending[r];
+    pushLogEntry('◆ MEDBAY — ' + crewNameOf(r) + ' is treated, stitched and discharged with a lollipop. −' + MEDBAY_FEE + 'g.');
+    renderHUD();
+    renderCruise();
+    renderStopMenu(); // the verb re-gates (nobody hurt / can't afford)
+  }
+
+  const VERB_HANDLERS = { medbay: handleMedbayVerb, mine: handleMineVerb, scan: handleScanVerb, repair: handleRepairVerb, forage_food: handleForageVerb, salvage: handleSalvageVerb, fab: handleFabricatorVerb, rest: handleRestVerb, trade: handleTradeVerb, wait_for_trader: handleWaitTraderVerb };
 
   function currentRegionKey() {
     const node = STATE.byId && STATE.byId[STATE.currentId];
@@ -413,9 +442,11 @@
       if (!verb) return;
       const labelStr = typeof verb.label === 'function' ? verb.label(regionKey) : verb.label;
       const btn = document.createElement('button');
-      btn.className = 'stop-choice' + (verb.hint ? ' hint' : '');
+      const lockReason = verb.locked ? verb.locked() : null;
+      btn.className = 'stop-choice' + (verb.hint ? ' hint' : '') + (lockReason ? ' locked' : '');
       const gate = document.createElement('div');
-      gate.className = 'stop-choice-gate';
+      gate.className = 'stop-choice-gate' + (lockReason ? ' locked' : '');
+      if (lockReason) gate.textContent = lockReason;
       btn.appendChild(gate);
       const body = document.createElement('div');
       body.className = 'stop-choice-body';

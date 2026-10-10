@@ -1188,12 +1188,12 @@
             "hull": 10
           },
           "crew_effect": null,
-          "severity": null,
+          "severity": "injury",
           "item_grant": null,
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "medium",
-          "narrative": "The fabricator's scrap stock becomes patch-plates; the patch-plates become hull. The welds are honest work — visibly hand-done, the spacefaring equivalent of darned socks. They hold. Darned socks usually do."
+          "narrative": "The fabricator's scrap stock becomes patch-plates; the patch-plates become hull. The welds are honest work — visibly hand-done, the spacefaring equivalent of darned socks. They hold. Darned socks usually do. The welder's forearm got darned too, less neatly."
         }
       },
       {
@@ -1673,12 +1673,12 @@
             "morale": -6
           },
           "crew_effect": null,
-          "severity": null,
+          "severity": "delayed",
           "item_grant": null,
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "Shifts continue. The bug, given a warm, tired, close-quartered population working at full tempo, does exactly what bugs do with a gift like that. It takes twice as long to clear and everyone remembers whose idea that was."
+          "narrative": "Shifts continue. The bug, given a warm, tired, close-quartered population working at full tempo, does exactly what bugs do with a gift like that. It takes twice as long to clear and everyone remembers whose idea that was. One case does not clear at all. It just gets quieter, which is worse."
         }
       }
     ],
@@ -1884,13 +1884,17 @@
           "resources": {
             "hull": 10
           },
-          "crew_effect": null,
+          "crew_effect": {
+            "type": "injure",
+            "target": "specific_role",
+            "role": "engineer"
+          },
           "severity": null,
           "item_grant": null,
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "The engineer works the breach line like a surgeon with a grudge, calling patch sizes before the scanner agrees and being right every time. Sealed, welded, tested, done."
+          "narrative": "The engineer works the breach line like a surgeon with a grudge, calling patch sizes before the scanner agrees and being right every time. Sealed, welded, tested, done. The engineer comes back with a burn along one wrist and declines to discuss it."
         }
       },
       {
@@ -2223,6 +2227,250 @@
           "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You log the grind as 'characteristic' and keep the queue running. The fabricator continues, wearing, complaining, remembering. Machines keep accounts. This one's ledger is getting long."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_021",
+    "active": true,
+    "title": "It Was Not Fine",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "delayed_crisis"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has diagnosed the fever as \"enthusiasm!\" ARIA is not a medical system! ARIA would still like to be listened to!",
+      "marv": "MARV flagged this wound as untreated the day it happened. He has been counting since. He has stopped counting, because the count has arrived.",
+      "rex": "REX classifies the infection as a hostile occupying force. He recommends a decisive response. He has been recommending it for days.",
+      "chip": "CHIP notes the clinic accepts all major currencies and most minor ones! CHIP cannot recommend paying! CHIP also cannot recommend not paying! CHIP's lawyers are in another time zone!",
+      "ajoy": "AJOY mentioned this wound at the last stop. And the one before. She is not saying anything now. She is making sure you notice her not saying it."
+    },
+    "body": "{patient.name} has insisted the wound is fine since it happened. The wound has a different view, and has started expressing it as a fever.\n\nThe station clinic is a counter, a nurse, and a price list taped to the glass. The nurse looks at {patient.name}, then at the price list, then slides the price list an inch closer.\n\nThis is the part of the journey where \"later\" runs out.",
+    "choices": [
+      {
+        "text": "Pay the clinic, whatever it costs",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 40
+        },
+        "outcome": {
+          "resources": {
+            "gold": -40
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "patient"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The nurse takes the money, then {patient.name}, behind a curtain that is mostly for show. Two hours later they walk out cleaned, dosed, and furious about the bill. The fever is gone. The bill is not."
+        }
+      },
+      {
+        "text": "The medic operates aboard",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "patient"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The medic clears the galley table, boils what can be boiled, and works for three hours with the door shut. {patient.name} comes out pale, stitched, and alive. The galley table is never quite the galley table again."
+        }
+      },
+      {
+        "text": "Spend a medkit on it",
+        "requires_crew": null,
+        "requires_item": "medkit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": {
+            "type": "heal",
+            "target": "patient"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "medkit",
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The medkit's strongest injector goes in, then its second strongest. By morning the fever breaks. {patient.name} eats breakfast like a person who has decided to live, and the empty kit goes into recycling."
+        }
+      },
+      {
+        "text": "Keep flying and let it run its course",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -5
+          },
+          "crew_effect": {
+            "type": "kill",
+            "target": "patient"
+          },
+          "severity": "lethal",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You decide the clinic's prices are the real emergency, and you keep flying. For two days {patient.name} keeps working, quieter every shift. Then the ship's log has an entry about it, and the entry is the whole story."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_022",
+    "active": true,
+    "title": "Quarantine Desk",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "corporate"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "delayed_crisis"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA thinks the quarantine desk is a FANTASTIC chance to meet the station's medical staff! They are wearing hazmat suits! They seem friendly! It is hard to tell!",
+      "marv": "MARV notes the station scanner is accurate to four decimal places. He respects it. It is the first thing in weeks he has respected.",
+      "rex": "REX considers the quarantine desk a hostile checkpoint. He has identified two exits and one clerk. He has been told the clerk is not a threat. He remains unconvinced.",
+      "chip": "CHIP has located the station's Premium Wellness Package! It includes treatment, a wristband, and a complimentary pen! CHIP wants the pen! Please get the pen!",
+      "ajoy": "AJOY flagged this wound for treatment two stops ago. The flag is still up. She would like it noted that the flag has been up the whole time."
+    },
+    "body": "The station health-checks every crew coming aboard. Its scanner takes one look at {patient.name} and turns red.\n\nThe wound has gone bad. The station's position is that this is your problem, but that it becomes the station's problem the moment {patient.name} steps through the airlock, and the station would prefer to solve it with paperwork.\n\nThe clerk at the quarantine desk offers three forms. One of them is laminated.",
+    "choices": [
+      {
+        "text": "Pay for the station's treatment",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 35
+        },
+        "outcome": {
+          "resources": {
+            "gold": -35
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "patient"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The laminated form is the expensive one. {patient.name} is treated in a white room by people in white suits who do not make small talk, and comes back clean, cleared, and wearing a wristband they may not remove until arrival."
+        }
+      },
+      {
+        "text": "Diplomat talks the clerk into a favor",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "patient"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The diplomat leans on the desk and talks for twenty minutes about the clerk's family, the clerk's prospects, and a regulation the clerk had never heard of. {patient.name} is treated on the station's discretionary budget. The clerk is not sure what happened, and is still smiling about it."
+        }
+      },
+      {
+        "text": "Quarantine aboard and wait it out",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "patient"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "high",
+          "narrative": "You take the free form: self-quarantine aboard, station-supervised. {patient.name} spends eight days behind a sealed cabin door, getting better by inches, while a station drone hovers at the viewport to make sure. It is the slowest week of the voyage."
+        }
+      },
+      {
+        "text": "Undock and treat it yourselves",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": {
+            "type": "kill",
+            "target": "patient"
+          },
+          "severity": "lethal",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You decline all three forms and undock. Without the station, treatment is whatever the ship has, and the ship does not have enough. {patient.name} gets worse for a while. Then the ship's log has an entry about how that ended."
         }
       }
     ]

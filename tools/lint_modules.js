@@ -60,6 +60,12 @@ const ENGINE_SET_FLAGS = new Set([
 // launch_minigame validation.
 const MINIGAME_IDS = new Set(['scan', 'engine', 'medical', 'forage', 'brace', 'breach', 'salvage']);
 const STOWAWAY_RESOLVES = new Set(['welcome', 'welcome_replace', 'refuse']);
+// crew_effect contract (applyOutcomeEffects). "patient" = the wounded
+// crew member of an engine-forced delayed_crisis event, so it (and the
+// {patient.*} text tokens) only make sense inside those events.
+const CREW_EFFECT_TYPES = new Set(['injure', 'kill', 'heal']);
+const CREW_EFFECT_TARGETS = new Set(['random', 'specific_role', 'all_injured', 'patient']);
+const severityValues = new Set(Object.keys((registry.severity || {}).values || {}));
 const TIER_KEYS = new Set(['perfect', 'good', 'poor']);
 
 // Node types that can actually appear on generated maps: weighted
@@ -98,6 +104,12 @@ for (const file of eventFiles) {
       for (const [layerId, layer] of Object.entries(ev.layers)) {
         if (layer.choices) choiceSets.push({ layer: layerId, choices: layer.choices });
       }
+    }
+    // standard_variants (event_shipboard_001) render as ordinary choices
+    // when the event isn't the stowaway reveal — their flags are real
+    // setters and their refs need the same checks.
+    for (const v of (ev.standard_variants || [])) {
+      if (v.choices) choiceSets.push({ layer: 'variant:' + v.variant_id, choices: v.choices });
     }
 
     for (const { layer, choices } of choiceSets) {
@@ -167,6 +179,28 @@ for (const file of eventFiles) {
         err(`${file} ${ev.id}: node_type ${JSON.stringify(ev.node_type)} contains no type that any trail's map generation can produce — event is unreachable`);
       }
     }
+
+    // Severity + crew_effect contract on every outcome shape.
+    const isCrisis = (ev.trigger || []).includes('delayed_crisis');
+    const outcomeList = [];
+    for (const { layer, choices } of choiceSets) {
+      for (const ch of choices) if (ch.outcome && typeof ch.outcome === 'object') outcomeList.push([layer, ch.outcome]);
+    }
+    for (const [outId, o] of Object.entries(ev.outcomes || {})) if (o && typeof o === 'object') outcomeList.push(['outcomes.' + outId, o]);
+    for (const ch of ((ev.stowaway_variant || {}).stowaway_choices || [])) if (ch.outcome) outcomeList.push(['stowaway_variant', ch.outcome]);
+    for (const [where, o] of outcomeList) {
+      const at = `${file} ${ev.id}${where ? '/' + where : ''}`;
+      if (o.severity != null && !severityValues.has(o.severity)) err(`${at}: severity "${o.severity}" is not registered (${[...severityValues].join('/')})`);
+      const ce = o.crew_effect;
+      if (ce) {
+        if (ce.type != null && !CREW_EFFECT_TYPES.has(ce.type)) err(`${at}: crew_effect.type "${ce.type}" is not injure/kill/heal`);
+        if (ce.target != null && !CREW_EFFECT_TARGETS.has(ce.target)) err(`${at}: crew_effect.target "${ce.target}" is not ${[...CREW_EFFECT_TARGETS].join('/')}`);
+        if (ce.target === 'specific_role' && !crewRoles.has(ce.role)) err(`${at}: crew_effect.role "${ce.role}" is not a role in crew_roster.json`);
+        if (ce.target === 'patient' && !isCrisis) err(`${at}: crew_effect target "patient" only exists inside delayed_crisis events`);
+      }
+    }
+    if (!isCrisis && JSON.stringify(ev).includes('{patient.')) err(`${file} ${ev.id}: {patient.*} tokens only resolve inside delayed_crisis events`);
+    if (isCrisis && JSON.stringify(ev.node_type) !== '["station"]') err(`${file} ${ev.id}: delayed_crisis events fire only on station arrival — node_type must be ["station"]`);
 
     // Engine-contract field validation on choices (both schemas).
     for (const { layer, choices } of choiceSets) {

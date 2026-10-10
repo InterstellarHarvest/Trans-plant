@@ -91,8 +91,9 @@
   ];
 
   // Monitored statuses — demo's canonical list. The engine currently
-  // promotes wounded (crew HP) and morale_crisis (ship morale); the
-  // rest render as dim monitored stubs until their systems land.
+  // promotes wounded (crew HP), pending_crisis (an untreated delayed-
+  // severity wound) and morale_crisis (ship morale); the rest render as
+  // dim monitored stubs until their systems land.
   const MONITORED_STATUSES = [
     { id: 'wounded',            name: 'Wounded',            kind: 'critical', effect: 'Active skill disabled · passive halved' },
     { id: 'sick',               name: 'Sick',               kind: 'negative', effect: '−10% strength regen · morale −1/day' },
@@ -358,10 +359,14 @@
     };
   }
 
-  function computeStatuses(hp, mo) {
+  function computeStatuses(hp, mo, role) {
     const fired = new Set();
     const active = [];
-    if (hp < 40) { fired.add('wounded'); active.push(MONITORED_STATUSES[0]); }
+    if (hp < CREW_WOUNDED_HP) { fired.add('wounded'); active.push(MONITORED_STATUSES[0]); }
+    // Delayed-severity wound awaiting treatment (index.html crewPendingOf).
+    if (role && STATE.crewPending && STATE.crewPending[role]) {
+      fired.add('pending_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'pending_crisis'));
+    }
     if (mo < 25) { fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'morale_crisis')); }
     return { active, monitored: MONITORED_STATUSES.filter(s => !fired.has(s.id)) };
   }
@@ -414,7 +419,7 @@
     $('cd-stat-hp-fill').style.background = 'rgb(' + rgb.join(',') + ')';
 
     // Status band
-    const { active, monitored } = computeStatuses(hp, mo);
+    const { active, monitored } = computeStatuses(hp, mo, cur);
     const activeEl = $('cd-status-active');
     const monEl = $('cd-status-monitored');
     activeEl.innerHTML = '';
@@ -539,7 +544,7 @@
     const m = memberData(cur);
     if (!m.active) return;
     const hp = (typeof crewHPOf === 'function') ? crewHPOf(cur) : 100;
-    if (hp < 40) return; // wounded — button is locked anyway
+    if (hp < CREW_WOUNDED_HP) return; // wounded — button is locked anyway
     if (typeof window.ensureCrewSkillCharges === 'function') ensureCrewSkillCharges();
     const uses = STATE.crewSkillCharges[cur] || 0;
     if (uses <= 0) return;

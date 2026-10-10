@@ -985,7 +985,9 @@
     }
     GSTATE.pest = false;
     STATE.flags.delete('ai_noted_pest');
-    const hasBotanist = STATE.crew.includes('botanist') || STATE.captain === 'botanist';
+    // Botanist passive saves the day; a wounded botanist's halved
+    // passive saves it half the time.
+    const hasBotanist = Math.random() < passiveMult('botanist');
     if (!hasBotanist) {
       passDays(1);
       renderHUD();

@@ -568,5 +568,194 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_shipboard_007",
+    "active": true,
+    "title": "Visiting Hours",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crew_injured"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has drafted a get-well card on behalf of the whole ship! It is forty pages long! Page nine is a word search!",
+      "marv": "MARV notes that recovery improves with rest and worsens with company. He has shared this with the company. The company stayed.",
+      "rex": "REX has posted a guard at the medical curtain. The guard is a mop in a helmet. It has turned away two visitors and one draft.",
+      "chip": "CHIP reminds everyone that Visiting Hours™ are a premium feature! The first visit is free! So is the second, because CHIP cannot actually charge anyone! Please do not tell his sponsors!",
+      "ajoy": "AJOY built a visiting schedule so nobody overlaps. The crew ignored it. She has updated it to match what they did and labeled it \"original plan.\""
+    },
+    "body": "The wounded have been moved to the medical bay, which is a cot behind a curtain behind a cargo net.\n\nThe crew visits in shifts. They bring things: a puzzle with three pieces missing, a cup of something warm, the latest gossip, which is about the patient.\n\nThe patient is either recovering faster because of the visits or slower because of them. The medical literature is divided.",
+    "choices": [
+      {
+        "text": "Set visiting hours and enforce them",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Visiting hours: two to four, ship time, one guest at a time. The patient sleeps through most of them, which is the point. Recovery picks up. The waiting list for the cot does not."
+        }
+      },
+      {
+        "text": "Chef runs room service",
+        "requires_crew": "chef",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -3,
+            "morale": 3
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The chef declares the cot a restaurant and the patient its only customer. Broth, then toast, then a dish the chef refuses to name. The patient is back on their feet in record time, mostly to ask what it was."
+        }
+      },
+      {
+        "text": "Let the crew visit whenever",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The curtain stays open. The patient heals at the speed of a person who is never once allowed to be bored, which is to say slowly, and happily. The puzzle gets finished. It was missing four pieces."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_008",
+    "active": true,
+    "title": "Chapter Eleven",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crew_injured"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has read the whole manual in four milliseconds! Chapter Eleven is her favorite! Chapter Twelve is about amputation, so she skipped it!",
+      "marv": "MARV has checked Chapter Eleven against the injury. The binder is correct. MARV finds this personally disappointing.",
+      "rex": "REX's field manual covers this injury in one line: \"Walk it off.\" He concedes the binder may be more thorough. He does not concede it is better.",
+      "chip": "CHIP notes the binder is a licensed product of a medical publisher that no longer exists! Its warranty is void! Its advice is still pretty good! CHIP is legally required to add \"probably!\"",
+      "ajoy": "AJOY bookmarked Chapter Eleven the day you launched. She had a feeling. She is not saying which feeling."
+    },
+    "body": "The ship's medical manual is a 900-page binder last updated by someone with strong feelings about fonts. Somebody aboard is hurt badly enough that the binder has come out.\n\nChapter Eleven covers the injury in question. It recommends rest, fluids, and \"a qualified physician.\" It lists the nearest qualified physician as practicing on Earth, in an office that has since become a car park.",
+    "choices": [
+      {
+        "text": "Follow Chapter Eleven to the letter",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Rest, fluids, elevation, and a compress folded exactly to the diagram. The binder is smug about it. The patient improves on schedule, which is the most a binder can promise."
+        }
+      },
+      {
+        "text": "The medic skips to the good part",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The medic closes the binder, says \"no,\" and does something faster that is not in any chapter. The patient is up by dinner. The binder goes back on its shelf, where it sulks."
+        }
+      },
+      {
+        "text": "Have the ship computer read it aloud",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The ship computer performs Chapter Eleven in full, with voices. The patient falls asleep during the section on splints. It is not treatment. It is, the patient admits on waking, a very good performance."
+        }
+      }
+    ]
   }
 ]
