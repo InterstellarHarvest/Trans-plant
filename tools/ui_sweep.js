@@ -58,6 +58,16 @@ const INERT_OK = new Set([]);
   await page.waitForFunction(() => typeof EVENTS !== 'undefined' && Object.keys(EVENTS).length > 0);
   await page.evaluate(() => localStorage.removeItem('transplant_save_v1'));
 
+  // ── 0. DOM structure (added 2026-10-09) ───────────────────────
+  // A missing </div> once nested #overlay-minigames inside the
+  // fabricator overlay, so every minigame rendered at 0×0 for two
+  // months. No .overlay/.screen may live inside another one.
+  console.log('0. DOM structure');
+  const nested = await page.evaluate(() =>
+    [...document.querySelectorAll('.overlay .overlay, .screen .screen, .overlay .screen, .screen .overlay')]
+      .map(el => el.id + ' inside ' + (el.parentElement.closest('.overlay, .screen') || {}).id));
+  if (nested.length) nested.forEach(n => flag('nested overlay/screen', n)); else say(true, 'no nested overlays or screens');
+
   // ── 1. Wizard via real clicks ─────────────────────────────────
   console.log('1. Setup wizard (real clicks)');
   await page.keyboard.press('Space');
@@ -263,6 +273,22 @@ const INERT_OK = new Set([]);
     if (await page.evaluate(() => !STATE.currentEvent || STATE.currentEvent.id !== 'event_station_009')) { say(true, 'event resolved after ' + clicksOk + ' clicks (moved on to the next node)'); break; }
   }
   say(clicksOk > 0, 'encounter clicks all registered', clicksOk + ' clicks, 0 inert');
+
+  // ── 4. Minigame overlay actually renders ─────────────────────
+  console.log('4. Minigame overlay');
+  for (const id of ['scan', 'medical']) {
+    const vis = await page.evaluate(id => {
+      openMinigame(id, {}, () => {});
+      const r = document.getElementById('overlay-minigames').getBoundingClientRect();
+      const b = [...document.querySelectorAll('#ov button')].find(x => /BEGIN/.test(x.textContent));
+      const br = b && b.getBoundingClientRect();
+      return { w: Math.round(r.width), h: Math.round(r.height), begin: !!(br && br.width && br.height) };
+    }, id);
+    if (vis.w && vis.h && vis.begin) say(true, `minigame "${id}" renders`, `${vis.w}×${vis.h}, BEGIN visible`);
+    else flag('minigame overlay invisible', `${id}: ${vis.w}×${vis.h}, BEGIN visible=${vis.begin}`);
+    await page.click('#mclose').catch(() => {});
+    await page.waitForTimeout(200);
+  }
 
   console.log('\nFLAGS:', flags.length ? flags : 'none');
   console.log('ERRORS:', errors.length ? errors.slice(0, 6) : 'none');
