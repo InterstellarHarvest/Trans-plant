@@ -1715,6 +1715,7 @@ const SAVED_FIELDS = [
   'stowaway', 'cropGrowth', 'postCombatLegs', 'aiWarnLevels', 'fabricator',
   'consumedActions', 'crewSkillCharges', 'orders', 'crewPending',
   'miningSectors', 'lastAmbientNode', // sector re-roll on reload defeated mining's anti-reroll; ambient repeated
+  'deprived', // consecutive days at 0 food/water/O2
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1764,6 +1765,7 @@ function loadRun(key) {
   STATE._itemDefs = null;
   ensureOrders(); // pre-orders saves get the defaults (seeded from cropGrowth.waterPlant)
   if (!('crewPending' in snap)) STATE.crewPending = {}; // pre-severity saves
+  if (!('deprived' in snap)) STATE.deprived = {};
   // Saves from before the "planted" announcement existed: the crop was
   // planted long ago — don't announce it on resume.
   if (STATE.cropGrowth) STATE.flags.add('ai_noted_crop_planted');
@@ -1890,7 +1892,7 @@ function applySetupToState(sel) {
   STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
   STATE.postCombatLegs = 0; STATE.miningSectors = {}; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.summonedEvent = false; STATE.lastAmbientNode = null;
-  STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null;
+  STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
   if (typeof window.abortFabricator === 'function') window.abortFabricator();
   if (window.SceneArt) SceneArt.clearRunCaches(); // re-roll scenes + NPC variants per run
@@ -2906,6 +2908,22 @@ function legTravelCost() {
    fabricator day costs) so rations + water pressure apply uniformly.
    opts.travel adds the pace's crew-drain (hard burns tire people).
    Callers keep their own renderHUD()/checkFailure() sequencing. */
+// Per day at 0: crew HP lost (each), morale lost; failAfter = consecutive
+// days at 0 before the dedicated failure. Air kills fastest, food slowest.
+const DEPRIVATION = {
+  food:  { hp: 4,  morale: 2, failAfter: 10, fail: 'starvation',  onset: 'FOOD GONE — the crew is starving. Every day without food costs health and nerve.' },
+  water: { hp: 6,  morale: 3, failAfter: 5,  fail: 'dehydration', onset: 'WATER GONE — the crew is going without. Every dry day costs health and nerve.' },
+  o2:    { hp: 12, morale: 5, failAfter: 3,  fail: 'suffocation', onset: 'O2 EXHAUSTED — the air is running out. This cannot last more than a few days.' },
+};
+
+// The deprivation failure due now (starvation / dehydration /
+// suffocation), or null.
+function deprivationFailure() {
+  const dep = STATE.deprived || {};
+  for (const [res, d] of Object.entries(DEPRIVATION)) if ((dep[res] || 0) >= d.failAfter) return d.fail;
+  return null;
+}
+
 function passDays(days, opts) {
   days = Math.max(0, Math.round(days));
   if (!days) return;
@@ -2928,6 +2946,21 @@ function passDays(days, opts) {
   morale -= (ORDERS_BASE.crewWaterMorale[rate] || 0) * days;
   if (rate >= ORDERS_BASE.crewWaterHPTier && STATE.crew.length) {
     for (const role of STATE.crew.slice()) damageCrew(role, days);
+  }
+
+  // DEPRIVATION (owner ruling 2026-10-10 — all three consequences): a
+  // day at 0 food / water / O2 hurts every crew member (medic-softened,
+  // so deaths can end the run as crew_gone first) and drains morale
+  // (mutiny), and enough consecutive days at 0 is its own failure
+  // (checkFailure: starvation / dehydration / suffocation). The counter
+  // resets the moment the resource is above 0 again.
+  if (!STATE.deprived) STATE.deprived = {};
+  for (const [res, d] of Object.entries(DEPRIVATION)) {
+    if (r[res] > 0) { STATE.deprived[res] = 0; continue; }
+    if (!STATE.deprived[res] && typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + d.onset);
+    STATE.deprived[res] = (STATE.deprived[res] || 0) + days;
+    morale -= d.morale * days;
+    for (const role of STATE.crew.slice()) damageCrew(role, d.hp * days);
   }
 
   r.morale = clamp(r.morale + morale, 0, 100);
@@ -4045,6 +4078,7 @@ function checkFailure() {
   else if (r.hull   <= 0) type = 'hull_zero';
   else if (r.morale <= 0) type = 'mutiny';
   else if (STATE.crew.length === 0 && STATE.flags.has('all_crew_dead')) type = 'crew_gone'; // death only — solo-by-choice is a valid run (ui_sweep catch 2026-08-04)
+  else if (deprivationFailure()) type = deprivationFailure();
   else if (STATE.daysElapsed > STATE.baseDays) type = 'time_expired';
   // Phase 4's Growbay now tracks real STATE.cropGrowth.health, so this
   // branch is genuinely reachable — but nothing currently decrements

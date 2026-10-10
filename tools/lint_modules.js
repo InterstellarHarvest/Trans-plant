@@ -340,6 +340,19 @@ for (const file of eventFiles) {
   }
 }
 
+// Every failure type the registry marks populated needs an active
+// failures.json module — checkFailure() falls back to failures[0]
+// (the wrong screen) when one is missing.
+{
+  const fr = readJSON('modules/failures/failures.json');
+  const fails = Array.isArray(fr) ? fr : (fr.failures || []);
+  for (const [t, v] of Object.entries((registry.failure_type || {}).values || {})) {
+    if (v.status === 'populated' && !fails.some(f => f.failure_type === t && f.active !== false)) {
+      err(`failure_type "${t}" is populated but failures.json has no active module for it`);
+    }
+  }
+}
+
 // Stowaway identities: a welcomed stowaway with a join_role is pushed
 // straight into STATE.crew, so it must be a real crew role (or null =
 // passenger). Wembly Voss shipped as "academic" (a captain background).
