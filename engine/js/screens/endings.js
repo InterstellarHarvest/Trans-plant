@@ -350,10 +350,21 @@
     }
 
     $('end-cinematic').classList.remove('show');
-    returnToHub();
     if (typeof window.pushCruiseLog === 'function') logLines.forEach(l => window.pushCruiseLog(l));
-    renderHUD();
+    resumeAfterFailure();
   };
+
+  /* Pressing on from a non-terminal failure: any OTHER failure that
+     landed at the same moment (hull 0, mutiny, deprivation…) still
+     ends the run; reaching the destination still arrives (the failure
+     fired on the final leg, before triggerArrival); else back to hub. */
+  function resumeAfterFailure() {
+    renderHUD();
+    if (checkFailure()) return;
+    const node = STATE.byId && STATE.byId[STATE.currentId];
+    if (node && connectionsOf(node).length === 0) { triggerArrival(node); return; }
+    returnToHub();
+  }
 
   /* Accept a non-terminal failure (continue_option) and press on.
      Sets crop_death_accepted so checkFailure() won't re-fire crop_dead
@@ -365,8 +376,8 @@
     STATE.flags.add('crop_death_accepted');
     const narrative = currentView.continueOption.narrative;
     $('end-cinematic').classList.remove('show');
-    returnToHub();
     if (narrative && typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + narrative);
+    resumeAfterFailure();
   };
 
 })();

@@ -104,8 +104,6 @@
     // decay must tick even if the player never opens the growbay.
     if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth();
     syncShipSprite();
-    // Every hub repaint is a safe between-actions point — autosave.
-    if (typeof saveRun === 'function') saveRun();
     $('cruise-ship-name').textContent = (STATE.shipName || 'THE SHIP').toUpperCase();
     $('header-ticker').textContent = STATE.mapName ? ('EN ROUTE TO ' + STATE.destination.toUpperCase()) : '';
     const daysLeft = Math.max(0, STATE.baseDays - STATE.daysElapsed);
@@ -193,6 +191,10 @@
     maybePushAmbient();
     checkResourceWarnings();
     checkCropMilestones();
+    // Every hub repaint is a safe between-actions point — autosave, last,
+    // so the lines/flags just pushed above are in it (they used to replay
+    // with fresh text after a reload).
+    if (typeof saveRun === 'function') saveRun();
   }
   function clampPct(v) { return Math.max(0, Math.min(100, v | 0)); }
 

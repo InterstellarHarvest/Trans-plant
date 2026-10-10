@@ -1502,6 +1502,10 @@
     document.body.classList.remove('modal-open');
     document.body.classList.remove('ins-open');
     hideOverlay('overlay-growbay');
+    // Harvest/treat changed the run — repaint the hub (crop card) and
+    // autosave through it.
+    if (typeof window.renderCruise === 'function' && !STATE.ended &&
+        document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();
   };
   // Click on the area outside the growbay box. Inspect is a child
   // surface of growbay, so when it's open, an outside-click peels

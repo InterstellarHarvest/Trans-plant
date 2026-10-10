@@ -1735,7 +1735,24 @@ function saveRun(key) {
   } catch (_) { return false; /* quota/privacy modes — the run just isn't saved */ }
 }
 function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (_) {} }
-function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (_) { return false; } }
+/* A save Continue can actually resume: parses, right version, a map,
+   and a position on it. Anything else is cleared (Continue used to
+   light up for it and then do nothing, or load a hub that threw). */
+function validSave(snap) {
+  return !!(snap && snap.v === 1 && Array.isArray(snap.nodes) && snap.nodes.length &&
+    snap.nodes.some(n => n && n.id === snap.currentId));
+}
+function hasSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    let snap = null;
+    try { snap = JSON.parse(raw); } catch (_) {}
+    if (validSave(snap)) return true;
+    localStorage.removeItem(SAVE_KEY);
+    return false;
+  } catch (_) { return false; }
+}
 /* Tears down whatever is live before a save replaces the run (pause →
    LOAD can fire mid-combat, mid-minigame, with the Stop menu open…):
    none of it may resolve into, or linger over, the loaded run. */
@@ -1753,7 +1770,7 @@ function teardownLiveUI() {
 function loadRun(key) {
   let snap;
   try { snap = JSON.parse(localStorage.getItem(key || SAVE_KEY)); } catch (_) { return false; }
-  if (!snap || snap.v !== 1) return false;
+  if (!validSave(snap)) return false;
   teardownLiveUI();
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   STATE.visited = new Set(snap.visited || []);
@@ -1776,6 +1793,19 @@ function loadRun(key) {
   if (STATE.cropGrowth) STATE.flags.add('ai_noted_crop_planted');
   STATE.hubScreen = 'screen-cruise';
   if (window.SceneArt) SceneArt.clearRunCaches();
+  // The hub log belongs to the run being replaced — show this run's
+  // recent log instead (pause → LOAD used to keep the old timeline's).
+  const aiLog = document.getElementById('ai-log');
+  if (aiLog) {
+    aiLog.innerHTML = '';
+    for (const en of (STATE.shipLog || []).slice(-8)) {
+      const d = document.createElement('div');
+      d.className = 'ai-entry';
+      d.textContent = (en && en.text) || '';
+      aiLog.appendChild(d);
+    }
+    aiLog.scrollTop = aiLog.scrollHeight;
+  }
   renderHUD();
   renderCruise();
   showScreen('screen-cruise');
@@ -4152,6 +4182,9 @@ function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
    ──────────────────────────────────────────────────────────────── */
 function checkFailure() {
   if (STATE.ended) return true;
+  // Crop health only advances when ticked — catch it up so crop_dead
+  // (and the arrival bracket) never read a leg-old value.
+  if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth();
   const r = STATE.resources;
   let type = null;
   if (r.fuel   <= 0) type = 'no_fuel';
@@ -4182,6 +4215,7 @@ function checkFailure() {
    ENDING / ARRIVAL
    ──────────────────────────────────────────────────────────────── */
 function triggerArrival(node) {
+  if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth(); // score the crop as of today
   // Fixed test-path arrival node hardcodes event_id for reproducible
   // debugging (?debug=fixed_path) — honor it deterministically.
   // Procedurally generated maps never set event_id on any node
@@ -4240,7 +4274,10 @@ function endRun(end) {
   try { await loadAllModules(); }
   catch (e) { console.error(e); return; }
 
-  document.getElementById('inv-close').addEventListener('click', () => hideOverlay('overlay-inventory'));
+  document.getElementById('inv-close').addEventListener('click', () => {
+    hideOverlay('overlay-inventory');
+    if (typeof saveRun === 'function') saveRun(); // jettisons persist
+  });
   document.getElementById('btn-pause').addEventListener('click', () => {
     if (typeof PauseMenu !== 'undefined' && !PauseMenu.isOpen()) PauseMenu.open();
   });
