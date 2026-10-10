@@ -244,7 +244,7 @@
     fillM.style.width = mPct + '%';
     fillM.classList.remove('warn', 'crit');
     if (mPct <= 25) fillM.classList.add('crit'); else if (mPct <= 50) fillM.classList.add('warn');
-    document.getElementById('combat-num-mor').textContent = mPct;
+    document.getElementById('combat-num-mor').textContent = Math.round(mPct); // morale is fractional (daily ration drift); show it whole like the main HUD
   }
 
   function makeActionBtn(opts) {
