@@ -32,6 +32,9 @@ const IMAGES = [
   'sprites/minigames/engine/bg_engine_error_ignition.png',     //   (CSS mask-image is a CORS
   'sprites/minigames/engine/bg_engine_error_coolant.png',      //   fetch, refused on file://)
   'sprites/minigames/engine/bg_engine_error_fuel.png',
+  // Pause-menu sidebar icons — also CSS masks (shared.js PauseMenu), so
+  // they rendered blank on a double-click launch.
+  ...['resume', 'settings', 'save', 'load', 'log', 'help', 'quit'].map(n => 'sprites/interface/pause/' + n + '.png'),
 ];
 
 function walk(rel, test, out = []) {

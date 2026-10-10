@@ -933,6 +933,9 @@ if (document.readyState === 'loading') {
 
 const PauseMenu = (() => {
   const PAUSE_ICON_DIR = 'sprites/interface/pause/';
+  // CSS mask-image is a CORS fetch, refused on file:// — a double-click
+  // launch reads the icons as data: URIs from the portable bundle.
+  const pauseIconUrl = f => (window.TP_PORTABLE && window.TP_PORTABLE.images && window.TP_PORTABLE.images[PAUSE_ICON_DIR + f]) || PAUSE_ICON_DIR + f;
   const SECTIONS = [
     { id: 'resume',   label: 'RESUME',     icon: 'resume.png'   },
     { id: 'settings', label: 'SETTINGS',   icon: 'settings.png' },
@@ -1008,7 +1011,7 @@ const PauseMenu = (() => {
       b.setAttribute('role', 'menuitem');
       b.innerHTML =
         '<span class="pause-arrow">▶</span>' +
-        (sec.icon ? '<span class="pause-item-icon" style="--icon:url(\'' + PAUSE_ICON_DIR + sec.icon + '\')"></span>' : '') +
+        (sec.icon ? '<span class="pause-item-icon" style="--icon:url(\'' + pauseIconUrl(sec.icon) + '\')"></span>' : '') +
         '<span class="pause-label">' + sec.label + '</span>';
       b.addEventListener('mouseenter', () => select(sec.id, false));
       b.addEventListener('click', () => activate(sec.id));
