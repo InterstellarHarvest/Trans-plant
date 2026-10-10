@@ -2322,10 +2322,13 @@ function hideOverlay(id) {
 }
 
 /* Keep the canonical 960×640 coordinate system used by every demo and
-   canvas, but scale the finished cabinet down as one unit when the viewport
-   is smaller. Pointer coordinates continue to map through the CSS transform. */
+   canvas, and scale the finished cabinet as one unit to fill the window
+   (largest fit, letterboxed) — the demos' "Actual Size" mode. Up on big
+   screens, down on small ones (Codex C9). Pointer coordinates continue to
+   map through the CSS transform (every mapping divides by the rendered
+   rect, so any scale works). */
 function fitGameToViewport() {
-  const scale = Math.min(1, window.innerWidth / 960, window.innerHeight / 640);
+  const scale = Math.min(window.innerWidth / 960, window.innerHeight / 640);
   document.getElementById('game').style.transform = `scale(${scale})`;
 }
 fitGameToViewport();
