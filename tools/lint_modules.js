@@ -50,7 +50,7 @@ function checkOutcomeRefs(file, evId, where, o) {
 // engine table when new engine-set flags land.
 const ENGINE_SET_FLAGS = new Set([
   'chose_alpha', 'chose_beta', 'crop_death_accepted', 'crew_lost',
-  'ai_noted_crop_mature', 'ai_noted_crop_sick', 'ai_noted_crop_died', 'ai_noted_pest',
+  'ai_noted_crop_mature', 'ai_noted_crop_sick', 'ai_noted_crop_died', 'ai_noted_crop_planted', 'ai_noted_pest',
   'stowaway_welcomed', 'stowaway_passenger', 'stowaway_refused',
   'executed_surrendered_pirate',
   'emergency_patch_armed', 'negotiation_prepared',
@@ -257,6 +257,25 @@ for (const file of eventFiles) {
         }
       }
     }
+  }
+}
+
+// Voice rule (pass #14 ruling): only ARIA and CHIP use exclamation
+// points. Any string under a marv/rex/ajoy key — flavor pools, event
+// ai_flavor, layered-event ai lines — must not contain one.
+{
+  const DRY = new Set(['marv', 'rex', 'ajoy']);
+  const walk = (o, where) => {
+    if (Array.isArray(o)) o.forEach((x, i) => walk(x, where.concat(i)));
+    else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) walk(v, where.concat(k));
+    else if (typeof o === 'string' && o.includes('!') && where.some(k => DRY.has(k))) {
+      err(`${where.join('.')}: "!" in a ${where.find(k => DRY.has(k)).toUpperCase()} line — only ARIA and CHIP use exclamation points`);
+    }
+  };
+  walk(readJSON('modules/flavor/flavor_pools.json'), ['flavor_pools']);
+  for (const { event: ev } of eventsById.values()) {
+    walk(ev.ai_flavor || {}, [ev.id, 'ai_flavor']);
+    for (const [lk, l] of Object.entries(ev.layers || {})) walk(l.ai || {}, [ev.id, lk, 'ai']);
   }
 }
 

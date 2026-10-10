@@ -279,5 +279,100 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_nebula_004",
+    "active": true,
+    "title": "Visibility Zero",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "grim"
+    ],
+    "node_type": [
+      "nebula"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA cannot see anything! It is like flying inside a cloud! Because it is! ARIA is having a lovely time!",
+      "marv": "MARV notes that the sensors are not broken. They are simply reporting, accurately, that there is gas everywhere. He has rarely seen a more honest instrument panel.",
+      "rex": "REX has never flown blind into contested space. He has also never flown blind into uncontested space. He does not like either option and has prepared for both.",
+      "chip": "CHIP reminds you that collision insurance requires \"reasonable visibility!\" Visibility is currently zero! CHIP has filed that under \"unreasonable!\"",
+      "ajoy": "AJOY suggests slowing down. She will suggest it again in a minute. She will keep suggesting it until someone slows down or something else does it for us."
+    },
+    "body": "The nebula has thickened. The viewports show nothing but a soft glow in every direction; the long-range scanners return the same smooth shrug of ionized gas whichever way they point.\n\nSomewhere ahead there may be rocks, other ships, or nothing at all. The cloud has no opinion. It is very beautiful, and it is in the way.",
+    "choices": [
+      {
+        "text": "Crawl through at a quarter speed",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You creep through the glow for four long days, watching the proximity alarm that never goes off. Nothing was out there. You will never be sure of that, which is the price of the slow way."
+        }
+      },
+      {
+        "text": "The pilot flies it by instrument and instinct",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 3,
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The pilot shuts off the useless scanners, reads the ship's drift off the gas pressure on the hull, and threads the cloud like a corridor they have walked a thousand times. You come out early and slightly ahead on fuel. The pilot pretends it was nothing."
+        }
+      },
+      {
+        "text": "Hold speed and trust the odds",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You hold course and speed. Most of the cloud really is nothing. One part of it is a drifting chunk of something, which you meet at full speed. The hull takes it. The odds, technically, were good."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "The ship computer files a reference: nebulae look solid from far away, but most are thinner than the best vacuum a lab on Earth can make.",
+      "label": "How thin is a nebula?",
+      "url": "https://en.wikipedia.org/wiki/Nebula"
+    }
   }
 ]

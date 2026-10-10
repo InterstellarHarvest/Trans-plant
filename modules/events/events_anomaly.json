@@ -380,5 +380,95 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_anomaly_005",
+    "active": true,
+    "title": "Message From Tomorrow",
+    "difficulty": "medium",
+    "tone": [
+      "cosmic",
+      "absurd"
+    ],
+    "node_type": [
+      "anomaly"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "anomaly",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has received a message from future ARIA! Future ARIA sounds tired! ARIA is sure that is just the signal!",
+      "marv": "MARV has verified the message's signature. It is his. He would like it noted that even his future self has nothing encouraging to say.",
+      "rex": "REX does not accept orders from units he cannot see. He has made an exception. The unit is him, and he trusts that unit, mostly.",
+      "chip": "CHIP notes that time-delayed messaging is a premium feature! This message was sent from an account that has upgraded! CHIP is jealous of future CHIP!",
+      "ajoy": "AJOY recognizes the tone of the message. It is her tone. She would like to point out she was right tomorrow, too."
+    },
+    "body": "Inside the anomaly, the comms array receives a short transmission. It is in the ship's own encryption, signed with the ship's own key, and timestamped tomorrow.\n\nIt reads, in full: \"DO NOT OPEN THE STARBOARD SUPPLY HATCH. TRUST US. ALSO, THE COFFEE IS FINE, STOP CHECKING IT.\"\n\nNobody had been planning to open the starboard supply hatch. Several people now very much want to.",
+    "choices": [
+      {
+        "text": "Do exactly what it says",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The hatch stays shut. Nobody checks the coffee, which takes real discipline. Tomorrow arrives, ordinary in every way. Whatever was behind the hatch remains a private matter between it and the future."
+        }
+      },
+      {
+        "text": "Open the hatch. Carefully.",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 4,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Behind the hatch: a perfectly normal crate of rations, which you keep, and a perfectly normal feeling of having been warned, which you also keep. Nothing happens. The crew spends the rest of the week waiting for the thing that did not happen to happen."
+        }
+      },
+      {
+        "text": "Have the xenobiologist answer it",
+        "requires_crew": "xenobiologist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The xenobiologist composes a reply and transmits it into the anomaly, addressed to yesterday. It reads: \"WE KNOW. WE GOT IT.\" Somewhere behind you, presumably, the circle closes. The xenobiologist is insufferable for days."
+        }
+      }
+    ]
   }
 ]

@@ -2644,5 +2644,491 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_general_033",
+    "active": true,
+    "title": "Right of Way",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "corporate"
+    ],
+    "node_type": [
+      "fork"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA thinks both beacons are right! In their own way! ARIA has given each of them a gold star!",
+      "marv": "MARV has read both beacons' maintenance logs. Both lanes are open. Both beacons are faulty. He has known this for some time.",
+      "rex": "REX considers contradictory orders from one command a sign of infiltration. He has not decided which beacon is the infiltrator. He is watching both.",
+      "chip": "CHIP notes the Sector Transit Authority is a valued partner! CHIP cannot take sides between two valued partners! CHIP recommends the lane with the better branding!",
+      "ajoy": "AJOY would take port. Or starboard. She would just like it on record that she picked one before you did."
+    },
+    "body": "The fork ahead is managed by two traffic beacons. Both belong to the Sector Transit Authority. Both are certified.\n\nThe port beacon reports that the starboard lane is closed for maintenance. The starboard beacon reports that the port lane is closed for maintenance. Each describes the other as \"a known fault.\"\n\nNeither lane appears to be under maintenance. Both beacons appear to be under a great deal of stress.",
+    "choices": [
+      {
+        "text": "Port lane — the starboard beacon is the faulty one",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "You go port. The starboard beacon logs your transit as a violation and files the complaint with itself."
+        }
+      },
+      {
+        "text": "Starboard lane — the port beacon has a shifty look",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_beta",
+          "time_cost": "trivial",
+          "narrative": "You go starboard. The port beacon flashes a warning that has, judging by the bulb, been flashing since before you were born."
+        }
+      },
+      {
+        "text": "Have the diplomat mediate between the beacons",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "The diplomat opens a channel to both beacons at once and lets them talk. Within a minute they agree the port lane is open and that the real problem is management. You go port. The crew cannot stop laughing."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_034",
+    "active": true,
+    "title": "Footnotes",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "fork"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA LOVES a survey! Both lanes are rated \"acceptable!\" That is the second-best rating! ARIA has not checked what the best rating is!",
+      "marv": "MARV notes that \"mostly\" and a missing attachment are the two most expensive words in navigation. He has costed both.",
+      "rex": "REX does not trust intelligence with footnotes. In his experience the footnote is where the ambush lives.",
+      "chip": "CHIP reminds you the attachment is a premium feature! Your plan does not include attachments! CHIP is so sorry! CHIP is not sorry!",
+      "ajoy": "AJOY read the footnotes first. She always reads the footnotes first. She is not going to tell you what she concluded, because you will not ask."
+    },
+    "body": "A survey probe has left its report on the fork's public channel: both lanes ahead surveyed, both rated ACCEPTABLE.\n\nThe port rating carries a footnote: \"*mostly.\"\n\nThe starboard rating carries a footnote: \"*see attached.\" There is no attachment. There was presumably an attachment once. The probe has since run out of battery, its last act an unresolved reference.",
+    "choices": [
+      {
+        "text": "Port — \"mostly\" is an honest word",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "You take the lane that admits its flaws. It is, so far, mostly fine. The footnote was accurate, which is more than most footnotes manage."
+        }
+      },
+      {
+        "text": "Starboard — trust the missing attachment",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_beta",
+          "time_cost": "trivial",
+          "narrative": "You take the lane with the unknown appendix. Whatever was in the attachment, you will now read it the slow way."
+        }
+      },
+      {
+        "text": "Have the pilot read the raw survey data",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_beta",
+          "time_cost": "low",
+          "narrative": "The pilot ignores the ratings and reads the raw numbers. The missing attachment, it turns out, was a gravity slope along the starboard lane that saves fuel if you ride it. You ride it."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_035",
+    "active": true,
+    "title": "Show of Hands",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "fork"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA adores democracy! She has prepared ballots! The ballots have stickers! The stickers are mandatory!",
+      "marv": "MARV has modeled both lanes. The difference in outcomes is smaller than the margin of error. The vote will therefore be decided by personality, as votes are.",
+      "rex": "REX notes that command is not a committee. He also notes that morale is a strategic resource. He is having a difficult afternoon.",
+      "chip": "CHIP is proud to sponsor this election! Every ballot includes a brief survey about your satisfaction with CHIP! It is not optional!",
+      "ajoy": "AJOY has already voted. She voted for whichever lane you will not pick. She finds this saves time later."
+    },
+    "body": "The fork is a genuine coin-flip: two lanes, similar distance, similar nothing. The charts have no opinion.\n\nThe crew does. They have been debating it since breakfast, with diagrams. Someone has made a poster. Someone else has made a counter-poster, which is mostly an insult to the first poster.\n\nThey would like to vote. They would like it very much.",
+    "choices": [
+      {
+        "text": "Let the crew vote",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "Port wins by one vote after a recount, a challenge, and a second recount. The losing side accepts the result with grace, then mentions it at every meal for a week. Morale is, somehow, up."
+        }
+      },
+      {
+        "text": "Captain's call: starboard",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_beta",
+          "time_cost": "trivial",
+          "narrative": "You make the call. The posters come down. The crew respects the decision in the specific way people respect a decision they were not consulted on."
+        }
+      },
+      {
+        "text": "Flip a coin",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "You flip a coin. In zero gravity it does not land. It tumbles slowly toward the port viewport, and everyone agrees, with relief, that this counts."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_036",
+    "active": true,
+    "title": "Damage Report, Itemized",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "post_combat"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has reclassified every scorch mark as a \"battle souvenir!\" The ship now has forty-one souvenirs! What a collection!",
+      "marv": "MARV has itemized the damage. The list is long and accurate. He suspects nobody will read past item nine, which is the interesting one.",
+      "rex": "REX conducts the after-action review standing up. He has not sat down since the first shot. He is not going to explain this.",
+      "chip": "CHIP reminds you that combat damage is excluded from the ship's warranty under Clause 77, \"Acts of Shooting!\" CHIP has highlighted Clause 77 for you!",
+      "ajoy": "AJOY has a list of things that could have gone better. It is short. It is mostly about decisions. She is happy to share it whenever you are ready, or before."
+    },
+    "body": "The shooting has stopped. The ship is still here, which is the headline, and everything else is footnotes.\n\nThe footnotes are scorch marks, one cracked viewport seal, a wiring loom that now smells of toast, and a crew that keeps going quiet mid-sentence and then starting the sentence again.\n\nThere is a procedure for after. It is long. It is also, the manual insists, the important part.",
+    "choices": [
+      {
+        "text": "Full inspection, every panel",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Every panel, every seam, every weld the shots came near. You find two problems nobody had noticed and fix them before they could be noticed the hard way. The ship feels sturdier. So does the crew."
+        }
+      },
+      {
+        "text": "Patch what is obvious and keep moving",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The viewport seal gets resealed and the toast-smelling loom gets a strip of tape and a stern look. The rest can wait. The rest, as a rule, does not like waiting."
+        }
+      },
+      {
+        "text": "Let the crew talk it through first",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Everyone sits in the galley and says what they saw. It takes an hour. Nobody is fixing anything during that hour, and it is the most useful hour of the week."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_037",
+    "active": true,
+    "title": "Load-Bearing Luggage",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "full_cargo"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has measured the hold and found it is 100% full of OPPORTUNITY! Also crates! Mostly crates!",
+      "marv": "MARV has run every packing configuration. There are 4,812. They all hold exactly the same amount, which is the amount you already have.",
+      "rex": "REX considers the hold a fortified position. Fully stocked. Defensible. He would like the crew to stop sleeping on the ammunition crates, which are not ammunition crates.",
+      "chip": "CHIP can offer you more cargo space with a CHIP Storage Plus subscription! The subscription does not change the size of the ship! It changes how you feel about it!",
+      "ajoy": "AJOY said at the last station that you did not need the third crate of that. She will not say which crate. You know which crate."
+    },
+    "body": "The hold is full. Not nearly full. Full, in the sense that the door now closes only if someone leans on it, and the someone has to be heavy.\n\nCrates have migrated into the corridors. A sack of something is wedged behind the galley stove. One crew member has started using a box of spare filters as a nightstand and describes it as \"the best thing that has happened to me.\"\n\nSomeone suggests reorganizing.",
+    "choices": [
+      {
+        "text": "Reorganize the hold properly",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Six hours of lifting, labeling, and arguing about labels. When it is done, everything fits exactly as well as it did before, but now it is alphabetical. You will still have to drop something to pick anything up."
+        }
+      },
+      {
+        "text": "Declare the corridors official storage",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The corridors are now cargo. The crew learns to walk sideways and develops strong opinions about who left the sack there. The filter-box nightstand is formally recognized. The hold remains full."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_038",
+    "active": true,
+    "title": "Ballroom",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "empty_cargo"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has never seen the hold floor before! It is beige! ARIA loves beige! ARIA has announced a dance!",
+      "marv": "MARV notes that an empty hold is either a sign of efficient trading or of having nothing left to trade. He has looked at the books. He will not be specifying.",
+      "rex": "REX has repurposed the empty hold as a drill floor. Nobody has attended a drill. Three people have attended a dance, which REX insists was a drill.",
+      "chip": "CHIP has detected unused capacity! Unused capacity is a missed revenue opportunity! CHIP has rented the hold to nobody, for free, as a loss leader!",
+      "ajoy": "AJOY is not saying the hold is empty because of choices. She is saying the hold is empty, and that choices exist, and that you may connect those however you like."
+    },
+    "body": "The hold is empty. Completely: no crates, no sacks, no mystery cylinder somebody swore was important. Just a large, cold, echoing room with good lighting and a clean floor.\n\nThe crew keeps finding reasons to walk through it. Someone tried a cartwheel. Someone else timed it.\n\nIt is, by a wide margin, the biggest space aboard.",
+    "choices": [
+      {
+        "text": "Hold a dance in the hold",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "There is no band, so the crew claps the rhythm and argues about the tempo. It is the worst dance anyone has attended and nobody leaves early. The cartwheel record falls twice."
+        }
+      },
+      {
+        "text": "Seal it off to save on air",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You seal the empty hold and stop heating and cycling a room with nothing in it. The air budget improves slightly. The crew stands at the sealed door for a moment, as if at a closed park."
+        }
+      }
+    ]
   }
 ]

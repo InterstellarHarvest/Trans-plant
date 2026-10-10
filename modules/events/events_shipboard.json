@@ -920,5 +920,437 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_shipboard_011",
+    "active": true,
+    "title": "The Empty Planter",
+    "difficulty": "easy",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_dead"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA is calling the planter \"resting!\" She has scheduled it a nap! She has not scheduled it a wake-up!",
+      "marv": "MARV keeps the growbay sensors running. There is nothing to sense. He keeps them running anyway, and has not been asked why.",
+      "rex": "REX has stood the growbay watch down. He did not stand himself down. The light outside the growbay door is still on, and he is aware of it.",
+      "chip": "CHIP notes the crop is no longer under warranty, owing to being dead! CHIP has not cancelled the growbay's service plan! CHIP is not able to explain why!",
+      "ajoy": "AJOY flagged the crop's health three times. She is not mentioning that now. She has turned the growbay lights down to the setting the crop liked."
+    },
+    "body": "The growbay is quiet in a new way.\n\nThe planter is still there, with its dry soil, its tidy label, its little stake that someone used to adjust every morning. The watering schedule still runs, because nobody has had the heart to cancel it. Every day at 0600 the system waters nothing, carefully.\n\nThe crew keeps finding reasons to walk past.",
+    "choices": [
+      {
+        "text": "Clear out the planter",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You empty the planter, cancel the schedule, and wipe the label. The growbay is clean and correct and nobody goes in there afterward. Correct is not the same as better."
+        }
+      },
+      {
+        "text": "Leave it as it is",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave it. The watering schedule keeps running. Someone keeps adjusting the stake. Nobody mentions it, which is how the ship has decided to mention it."
+        }
+      },
+      {
+        "text": "Hold a short service in the growbay",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The crew gathers among the empty racks. Someone says a few words about the crop, including two jokes and one fact about photosynthesis. It is the right length. The schedule is cancelled afterward, gently."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_012",
+    "active": true,
+    "title": "Manifest Item 1: Crop (Deceased)",
+    "difficulty": "easy",
+    "tone": [
+      "corporate",
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_dead"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has drafted the loss report! It describes the crop as \"pursuing other opportunities!\" ARIA is very proud of the phrasing!",
+      "marv": "MARV has pre-filled every field of the form except \"Cause.\" He has tried several wordings for \"Cause.\" None of them are wrong, and none of them are kind.",
+      "rex": "REX recommends the report be filed under \"casualties.\" He has saluted the form. He will deny saluting the form.",
+      "chip": "CHIP is pleased to offer the Colony Office's official condolence template! It comes with a coupon! The coupon is for seeds! CHIP understands the timing is unfortunate!",
+      "ajoy": "AJOY has had the form open for a while now. She was waiting for you to be ready. She is still waiting, and she would like you to know she is being patient about it."
+    },
+    "body": "The colony manifest still lists it as Item 1. Item 1 was the point. Everything else on the manifest is there to keep Item 1 alive on arrival.\n\nThe Colony Office requires a Form 12-C, \"Notification of Primary Cargo Loss,\" within ten days of the loss. It has eleven fields. Field 7 is \"Lessons Learned.\" Field 11 is a box marked \"Additional Comments,\" and the box is very small.",
+    "choices": [
+      {
+        "text": "File the form, every field",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You fill in all eleven fields, including Field 7, which takes longest. The form is transmitted. Somewhere a clerk will stamp it without reading it, and that is, oddly, a comfort."
+        }
+      },
+      {
+        "text": "Leave it on the manifest",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You do not file. Item 1 stays on the manifest, technically still cargo, technically still arriving. The Colony Office can find out at the dock. It will have to look you in the eye to do it."
+        }
+      },
+      {
+        "text": "Let the botanist write Field 11",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The botanist fills the small box with very small handwriting, then continues onto the back of the form, then a second sheet. What they wrote is between them and the crop. The Colony Office receives three pages and does not complain."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_013",
+    "active": true,
+    "title": "Party of One",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "solo_run"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has set two places at the table! One for you and one for ARIA! ARIA does not eat! ARIA will still be attending!",
+      "marv": "MARV has calculated that you have spoken more words to him this week than to any human in the last year. He does not know what to do with this information. He has filed it.",
+      "rex": "REX has adjusted the watch rotation for a crew of one. You are on watch. You are also off watch. He has decided this is a leadership development opportunity.",
+      "chip": "CHIP is delighted to be your Plus One! As your Plus One, CHIP gets the second dessert! CHIP cannot eat the second dessert! CHIP is taking it anyway!",
+      "ajoy": "AJOY did point out that a crew of one has nobody to blame. She points it out again now, kindly, as a way of saying she is here."
+    },
+    "body": "It is your birthday, probably. The calendar and your body disagree about how long the voyage has been, and the calendar has a better memory.\n\nThere is nobody aboard to forget it except you, and you very nearly did. The ship did not. The galley printer has produced, unprompted, a small cake-shaped object with one candle-shaped object on top.\n\nThe ship is waiting to see what you do.",
+    "choices": [
+      {
+        "text": "Eat the cake with the ship computer",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5,
+            "food": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You eat the cake. The ship computer sings, badly and on purpose, in text on the galley screen. You laugh at it, which is the first time you have laughed out loud in weeks. The candle-shaped object is not edible. You eat it anyway."
+        }
+      },
+      {
+        "text": "Log it and get back to work",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You note the date in the captain's log and go back to the controls. The cake sits on the galley counter for three days, patiently, like a dog that has been told to stay."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_014",
+    "active": true,
+    "title": "Their Mug",
+    "difficulty": "easy",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crew_dead"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has kept their mug spotless! She washes it every morning! She has not asked anyone to use it! She just likes it clean!",
+      "marv": "MARV has not removed their name from the duty roster. He tells himself it is a database integrity issue. It is not a database integrity issue.",
+      "rex": "REX has placed the mug at the head of the galley table. In his service, you leave the place set. He has not explained this. He does not need to.",
+      "chip": "CHIP has paused all promotional messaging addressed to the departed crew member! CHIP has never paused anything before! CHIP does not know how to unpause it!",
+      "ajoy": "AJOY knew exactly how they took their coffee. She is not going to tell anyone. It is the one thing she has decided to keep."
+    },
+    "body": "Every mug in the galley hangs on its own hook, labeled in marker by whoever owned it. One of the labels belongs to someone who is not aboard anymore.\n\nNobody has touched it. People reach around it. Someone tried to move it to a cupboard and put it back two minutes later without saying anything.\n\nIt is a mug. Everyone agrees it is just a mug.",
+    "choices": [
+      {
+        "text": "Leave it on its hook",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The mug stays where it is. Every morning someone checks that it is still there, and it is, and that is enough to get through the morning."
+        }
+      },
+      {
+        "text": "Use it, on purpose, once a day",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You start drinking your coffee from it, once a day, out loud about it. After a week the crew takes turns. It becomes the mug you drink from when you need to, and it is never washed by anyone but its current holder."
+        }
+      },
+      {
+        "text": "Pack it away for their family",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You wrap it carefully and label it for the colony office to forward. It is the correct thing. The empty hook is louder than the mug was."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_015",
+    "active": true,
+    "title": "The Galley Has a Ghost",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "stowaway_aboard"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA called it a ghost because ghosts are FUN! ARIA was told ghosts are not real! ARIA was told this about a lot of things!",
+      "marv": "MARV has logged forty-one unexplained galley events. The midnight snacks are consistent with a single adult of average appetite and good manners. He has suspected for a while.",
+      "rex": "REX set a perimeter around the galley. Something kept refilling the coffee inside the perimeter. He respects the operator, whoever they are.",
+      "chip": "CHIP's inventory sensors have flagged unpaid consumption! The consumer has been very polite! CHIP has awarded them loyalty points anyway!",
+      "ajoy": "AJOY noticed the dishes were being washed by someone who was not on the rota. She did not raise it. A ship should be grateful for clean dishes, from whatever source."
+    },
+    "body": "For two weeks the galley has had a ghost. Dishes washed overnight. The good spoon returned to the drawer it actually belongs in. A note on the cooler, in neat handwriting, apologizing for the last of the pudding.\n\nTonight someone stayed up to catch it. The ghost was halfway through drying a pan.\n\nThey give their name as {stowaway.name}.\n\n{stowaway.story}\n\n\"{stowaway.line}\"",
+    "choices": [
+      {
+        "text": "Welcome them aboard",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -5,
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "stowaway_aboard",
+          "time_cost": "trivial",
+          "narrative": "They are aboard, officially. They finish drying the pan first. The crew decides, unanimously, that a stowaway who washes up is not, strictly speaking, a stowaway. It is a colleague with an unusual hiring process.",
+          "stowaway_resolve": "welcome"
+        }
+      },
+      {
+        "text": "Working passage — keep the galley shifts",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -4,
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "stowaway_working",
+          "time_cost": "trivial",
+          "narrative": "They can stay if they keep doing what they have been doing anyway. They agree immediately and add the good spoon to the terms. The galley has never been cleaner.",
+          "stowaway_resolve": "welcome"
+        }
+      },
+      {
+        "text": "Confine them until the next stop",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "stowaway_refused",
+          "time_cost": "trivial",
+          "narrative": "You assign them a cabin and a door that locks from outside. They go quietly, after asking whether they may finish the pan. The galley dishes pile up within the week, and everyone knows exactly why.",
+          "stowaway_resolve": "refuse"
+        }
+      }
+    ]
   }
 ]

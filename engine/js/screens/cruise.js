@@ -531,7 +531,13 @@
       if (nodeLine && Math.random() < 0.6) { pushLogEntry('◆ ' + nodeLine); return; }
     }
     if (Math.random() < 0.45) {
-      const line = aiPool(['cruise_ambient']);
+      // One ambient beat in four is the ship computer's own note on the
+      // living crop (flavor_pools.ship_computer_crop_comments, per crop).
+      const cropPool = MOD.flavor && MOD.flavor.ship_computer_crop_comments && STATE.crop
+        && STATE.cropGrowth && STATE.cropGrowth.health > 0 && MOD.flavor.ship_computer_crop_comments[STATE.crop];
+      const line = (Array.isArray(cropPool) && cropPool.length && Math.random() < 0.25)
+        ? cropPool[Math.floor(Math.random() * cropPool.length)]
+        : aiPool(['cruise_ambient']);
       if (line) pushLogEntry('◆ ' + line);
     }
   }
@@ -562,6 +568,13 @@
     if (!STATE.crop || !STATE.cropGrowth) return;
     const growth = STATE.cropGrowth.growth || 0;
     const health = STATE.cropGrowth.health;
+    // A fresh growth cycle (launch, or the replant after a harvest —
+    // growbay.js re-arms the flag) gets its "planted" line once.
+    if (health > 0 && growth < 75 && !STATE.flags.has('ai_noted_crop_planted')) {
+      STATE.flags.add('ai_noted_crop_planted');
+      const line = aiPool(['crop_lifecycle', 'planted']);
+      if (line) pushLogEntry('◆ ' + line);
+    }
     if (growth > 75 && !STATE.flags.has('ai_noted_crop_mature')) {
       STATE.flags.add('ai_noted_crop_mature');
       const line = aiPool(['crop_lifecycle', 'mature']);

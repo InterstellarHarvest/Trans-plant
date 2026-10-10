@@ -2474,5 +2474,183 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_crisis_023",
+    "active": true,
+    "title": "The Fabricator Prints a Note",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "fab_broken"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA thinks the fabricator is communicating! It printed a WORD! ARIA has framed the word! The word is \"NO!\"",
+      "marv": "MARV has read the fault log. The fabricator has been failing for weeks and politely printing anyway. He sympathizes more than he would like.",
+      "rex": "REX considers a machine that refuses orders a mutiny. He has placed the fabricator under arrest. It does not appear to have noticed.",
+      "chip": "CHIP's Fabricator Care™ plan would have covered this! You did not purchase Fabricator Care™! CHIP has printed you a brochure! On the other fabricator! There is no other fabricator!",
+      "ajoy": "AJOY mentioned the grinding noise. Twice. She is not saying that to be right. She is saying it to be accurate, which is different, and better."
+    },
+    "body": "The fabricator is broken. It has not stopped working so much as stopped cooperating: every job it accepts comes out as the same small, flat rectangle, embossed with the single word NO.\n\nThere are now forty of these on the floor. They are, everyone has to admit, very well made.",
+    "choices": [
+      {
+        "text": "Engineer opens it up",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The engineer takes the fabricator apart on the galley table, finds a feed gear worn smooth, and turns a new one by hand from scrap. The next print is a test cube. It does not say anything. Everyone claps anyway.",
+          "fabricator_repair": true
+        }
+      },
+      {
+        "text": "Follow the troubleshooting flowchart",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "high",
+          "narrative": "The manual's flowchart is nineteen pages long and loops back on itself twice. On the third pass you find the fault, a clogged feed line, and clear it. The fabricator returns to service. The flowchart goes in the recycler, which feels earned.",
+          "fabricator_repair": true
+        }
+      },
+      {
+        "text": "Leave it be for now",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You switch it off. The forty rectangles are swept into a bin, except one, which someone pins to the galley wall. It reads NO. It is the most honest thing on the ship."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_024",
+    "active": true,
+    "title": "Slightly Crooked",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "fab_low"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA thinks the crooked prints have CHARACTER! Every single thing on the ship is now one degree more interesting!",
+      "marv": "MARV measured the drift at 1.2 degrees. In twelve more prints it will be two degrees. He has drawn a graph. The graph also leans.",
+      "rex": "REX does not tolerate misalignment. He has noticed the drift. He has noticed you noticing the drift. He is waiting.",
+      "chip": "CHIP is excited to announce Crooked Collection™, a limited edition range! It is the same as the normal range! But crooked! And limited!",
+      "ajoy": "AJOY has been straightening the prints by hand as they come out. She would like that work acknowledged before it is made unnecessary."
+    },
+    "body": "Everything the fabricator makes now comes out very slightly crooked. A bracket leans. A cup sits at an angle. A replacement hinge closes the door with a tilt that makes the whole corridor look drunk.\n\nThe fabricator still works. It just works with an accent.",
+    "choices": [
+      {
+        "text": "Recalibrate by the book",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "An hour of alignment checks, three shims and a firm word. The next bracket comes out straight. The corridor door sobers up.",
+          "fabricator_repair": true
+        }
+      },
+      {
+        "text": "Engineer does a proper service",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The engineer finds the drift in a worn bearing, replaces it, then quietly reprints the crooked hinge as well. The corridor is straight again. The engineer is visibly relieved; it had been bothering them more than anyone.",
+          "fabricator_repair": true
+        }
+      },
+      {
+        "text": "Embrace the crooked aesthetic",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You declare the lean a design choice. The crew starts hanging pictures at the same angle to match. The fabricator keeps wearing down, quietly, while everyone admires its style."
+        }
+      }
+    ]
   }
 ]

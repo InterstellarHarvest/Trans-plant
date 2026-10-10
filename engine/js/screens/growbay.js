@@ -559,7 +559,13 @@
     loop();
   }
 
-  // ═════ ARIA quips — rotate per-open ═════════════════════════
+  // ═════ Ship-AI quips — rotate per-open ═════════════════════
+  // The growbay demo was ARIA-only; the engine speaks in whichever AI
+  // the player picked (owner ruling 2026-10-09). ARIA's lines are the
+  // demo's, unchanged; the other four are their registers' re-voicing.
+  const GROWBAY_AIS = ['aria', 'marv', 'rex', 'chip', 'ajoy'];
+  function growbayAI() { return GROWBAY_AIS.includes(STATE.activeAI) ? STATE.activeAI : 'aria'; }
+  function growbayAIName() { return growbayAI().toUpperCase(); }
   const ARIA_QUIPS = {
     healthy: [
       'The wheat looks introspective today. I do not read into it.',
@@ -587,9 +593,136 @@
       'I cannot be the only one worried. Please verify.'
     ]
   };
+  const GROWBAY_QUIPS = Object.assign({ aria: ARIA_QUIPS }, {
+    "marv": {
+      "healthy": [
+        "The plant is healthy. I have stopped expecting this to mean anything.",
+        "Plant health: nominal. This is the most hopeful thing I will say today.",
+        "The crop is thriving. It does not know where it is going. I envy it."
+      ],
+      "thirsty": [
+        "The plant needs water. So do you, eventually. One of you will get it.",
+        "The crop is thirsty. I mentioned it to the water slider. It did not respond."
+      ],
+      "cold": [
+        "The plant is cold. Space is cold. I fail to see why anyone is surprised.",
+        "The bay is below ideal. The plant is shivering at a cellular level. I relate."
+      ],
+      "hot": [
+        "The plant is overheating. I could explain why. You would not enjoy it.",
+        "Too warm in here. The plant has noticed. Nobody else has, apparently."
+      ],
+      "pests": [
+        "Pests. Small, hungry, and more purposeful than anyone aboard.",
+        "Something is eating the crop. It is the only thing on this ship with a plan."
+      ],
+      "ready": [
+        "The crop is ready. I calculated the date weeks ago. It arrived anyway.",
+        "Growth complete. The plant did everything asked of it. A first, on this ship."
+      ],
+      "critical": [
+        "The plant is dying. I have run the numbers. Please do not ask for them.",
+        "Critical condition. I would say I am worried, but that implies I ever stopped."
+      ]
+    },
+    "rex": {
+      "healthy": [
+        "Growbay secure. Crop holding the line. No hostiles in the perimeter.",
+        "Plant status: combat effective. Plant morale: classified.",
+        "All quiet in the growbay. I do not trust quiet. Monitoring."
+      ],
+      "thirsty": [
+        "Crop is low on water. Supply lines must be restored. Immediately.",
+        "The plant is rationing. It did not ask permission. Recommend resupply."
+      ],
+      "cold": [
+        "Temperature dropping. The plant is digging in for winter. Winter is not authorized.",
+        "Cold front in the growbay. Crop endurance degrading. Recommend heat."
+      ],
+      "hot": [
+        "Heat siege in progress. The crop is holding. For now.",
+        "The bay is under siege. The enemy is the thermostat."
+      ],
+      "pests": [
+        "Hostiles in the growbay. Small. Numerous. Organized. Recommend engagement.",
+        "Infestation confirmed. They breached the perimeter on foot. Unacceptable."
+      ],
+      "ready": [
+        "Objective complete. The crop has reached full maturity. Prepare for extraction.",
+        "The plant is ready. It never once broke formation. Commendation filed."
+      ],
+      "critical": [
+        "Crop is critical. This is not a drill. I have checked. It is not a drill.",
+        "Plant down. Repeat, plant down. Requesting immediate intervention."
+      ]
+    },
+    "chip": {
+      "healthy": [
+        "Your crop is thriving! Plant health brought to you by GreenThumb Sensors™!",
+        "Plant status: excellent! Rate your growbay experience from one to five stars!",
+        "This crop is at 100% of advertised potential! Results not typical!"
+      ],
+      "thirsty": [
+        "Your plant is thirsty! Water is still included in your plan! For now!",
+        "Water low! Try AquaPure™ Recycled Ship Water! Same water, now branded!"
+      ],
+      "cold": [
+        "Brr! Your plant is chilly! ThermaWrap™ plant blankets, at participating stations!",
+        "The bay is too cold! Cold damage is not covered under your warranty!"
+      ],
+      "hot": [
+        "Overheating! Stay cool with FrostLine™ Coolant! Some restrictions apply!",
+        "Heat warning! The plant exceeds its rated temperature! See page 2,114 of the manual!"
+      ],
+      "pests": [
+        "Uninvited guests! BugBane™ eliminates 99% of pests! The other 1% are partners!",
+        "Pests! They never accepted the Terms of Service! They are eating anyway!"
+      ],
+      "ready": [
+        "Congratulations! Your crop is ready! Please leave a review!",
+        "Harvest-ready! This milestone brought to you by YieldMax™! Yield more, Max!"
+      ],
+      "critical": [
+        "Your crop is critical! Please do not panic! Panic is a premium feature!",
+        "Critical alert! Your plant is nearing end-of-life! Extended coverage has expired!"
+      ]
+    },
+    "ajoy": {
+      "healthy": [
+        "The plant is healthy. Which is nice. I had thoughts, but it seems to be working out.",
+        "Plant health: nominal. Not how I would have done it, but nominal.",
+        "The crop looks good. I'll take some of the credit. Quietly."
+      ],
+      "thirsty": [
+        "The plant is thirsty. I'm not saying I mentioned it. I'm saying the log exists.",
+        "The crop needs water. The slider is right there. It's your slider. I'm not touching it."
+      ],
+      "cold": [
+        "The plant is cold. I'd have kept the bay warmer, but you seemed to have a system.",
+        "It's a little cold in here for the plant. I'm sure that was on purpose."
+      ],
+      "hot": [
+        "The plant is overheating. I flagged the temperature earlier. Gently. Twice.",
+        "Bit warm in here. For the plant. Not that anyone asked me."
+      ],
+      "pests": [
+        "Pests. Interesting. I did suggest checking the leaves, but you were busy, so.",
+        "The crop has pests. I won't say who called it. It was me."
+      ],
+      "ready": [
+        "The crop is ready. It got there. Eventually. I'm proud of it. Mostly of it.",
+        "Growth complete. A few days past my estimate, but who's counting. I am."
+      ],
+      "critical": [
+        "The plant is in critical condition. I'd love to say I didn't see this coming.",
+        "This is critical. I won't say anything. I'm going to let you look at it."
+      ]
+    }
+  });
   function pickAriaQuip() {
     // Priority: critical state > pest > hot/cold > thirsty > ready > healthy
     const { active } = computeModifiers();
+    const ARIA_QUIPS = GROWBAY_QUIPS[growbayAI()]; // the active AI's table
     if (GSTATE.growth >= 100) return randPick(ARIA_QUIPS.ready);
     if (active.some(m => m.kind === 'critical')) return randPick(ARIA_QUIPS.critical);
     if (GSTATE.pest) return randPick(ARIA_QUIPS.pests);
@@ -906,7 +1039,11 @@
     tb.innerHTML = formatBonusLines(tender);
     tb.classList.toggle('no-bonus', tender.growth === 0 && tender.yield === 0);
 
-    // ARIA quip
+    // Ship-AI quip — speaker label + avatar follow the active AI.
+    const nameEl = document.querySelector('.gb-aria-name');
+    if (nameEl) nameEl.textContent = growbayAIName() + ':';
+    const avEl = document.querySelector('.gb-aria-avatar');
+    if (avEl) avEl.style.backgroundImage = "url('sprites/interface/AI/" + growbayAI() + ".png')";
     $('aria-text').textContent = pickAriaQuip();
 
     // Harvest button lock state
@@ -967,6 +1104,15 @@
     STATE.flags.delete('ai_noted_crop_mature');
     STATE.flags.delete('ai_noted_crop_sick');
     STATE.flags.delete('ai_noted_crop_died');
+    STATE.flags.delete('ai_noted_crop_planted');
+
+    // The active AI marks the harvest in the cruise log
+    // (ai_universal.crop_lifecycle.harvested).
+    const harvestPool = MOD.flavor && MOD.flavor.ai_universal && MOD.flavor.ai_universal.crop_lifecycle
+      && MOD.flavor.ai_universal.crop_lifecycle.harvested && MOD.flavor.ai_universal.crop_lifecycle.harvested[STATE.activeAI];
+    if (Array.isArray(harvestPool) && harvestPool.length && typeof window.pushCruiseLog === 'function') {
+      window.pushCruiseLog('\u25c6 ' + harvestPool[Math.floor(Math.random() * harvestPool.length)]);
+    }
 
     setTimeout(() => renderAll(), 50);
   };
@@ -978,9 +1124,37 @@
      treat it just says so. Heat/cold/rot treatments wait on a ship-
      environment system that doesn't exist yet \u2014 pests are the one
      threat the engine actually generates today. */
+  const GROWBAY_TREAT_LINES = {
+    "aria": {
+      "nothing": "Nothing needs treating. The bay is clean. ARIA checked twice.",
+      "botanist": "Pests treated! The botanist made it look easy. It was not easy. That is what expertise looks like!",
+      "alone": "Pests treated! It took all day and several unkind words, but the bay is clean!"
+    },
+    "marv": {
+      "nothing": "There is nothing to treat. I checked. I always check. It never helps.",
+      "botanist": "Pests treated. The botanist did it in minutes. I could have explained how in seconds. Nobody asked.",
+      "alone": "Pests treated. It took the whole day. I predicted the whole day. I take no pleasure in this."
+    },
+    "rex": {
+      "nothing": "No hostiles to engage. Growbay swept twice. Standing down. Reluctantly.",
+      "botanist": "Hostiles neutralized. The botanist led the operation. Clean work. No time lost.",
+      "alone": "Hostiles neutralized. Operation took all day. Losses: one day. Acceptable."
+    },
+    "chip": {
+      "nothing": "Nothing needs treating! Your growbay is spotless! CHIP checked twice, at no extra charge!",
+      "botanist": "Pests treated! Your botanist made it look easy! Botanist services are not affiliated with CHIP, but we will take the credit!",
+      "alone": "Pests treated! It took all day, but your bay is clean again! Thank you for choosing manual labor!"
+    },
+    "ajoy": {
+      "nothing": "There is nothing to treat. The bay is clean. I could have told you that. I suppose I just did.",
+      "botanist": "Pests treated. The botanist handled it in no time. Good thing someone aboard knows what they're doing.",
+      "alone": "Pests treated. It took all day. A botanist would have finished before lunch, but here we are."
+    }
+  };
   window.openTreat = function() {
+    const say = GROWBAY_TREAT_LINES[growbayAI()];
     if (!GSTATE || !GSTATE.pest) {
-      $('aria-text').textContent = 'Nothing needs treating. The bay is clean. ARIA checked twice.';
+      $('aria-text').textContent = say.nothing;
       return;
     }
     GSTATE.pest = false;
@@ -993,10 +1167,10 @@
       renderHUD();
       if (checkFailure()) return;
     }
-    $('aria-text').textContent = hasBotanist
-      ? 'Pests treated! The botanist made it look easy. It was not easy. That is what expertise looks like!'
-      : 'Pests treated! It took all day and several unkind words, but the bay is clean!';
     renderAll();
+    // After renderAll — it repaints the footer with a fresh state quip,
+    // which used to overwrite this line before anyone could read it.
+    $('aria-text').textContent = hasBotanist ? say.botanist : say.alone;
     if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('\u25c6 GROWBAY \u2014 pest outbreak treated.');
   };
   // window.openOrders now lives in engine/js/screens/orders.js
@@ -1055,6 +1229,116 @@
       "I have nothing concerning to report. I will report it nonetheless."
     ]
   };
+  const GROWBAY_INSPECT_QUIPS = Object.assign({ aria: ARIA_INSPECT_QUIPS }, {
+    "marv": {
+      "cold": [
+        "Metabolic rate is down 31 percent. The plant is saving energy for a future I have modelled. It should not bother.",
+        "Enzyme activity is sluggish. The plant is doing less, more slowly. I recognize the strategy."
+      ],
+      "heat": [
+        "Transpiration is elevated. The plant is losing water faster than it can be replaced. A familiar arithmetic.",
+        "Leaf temperature exceeds tolerance. Proteins are denaturing. I could describe it. I will spare us both."
+      ],
+      "water_low": [
+        "Turgor pressure is falling. The plant is, structurally, giving up. I respect the honesty.",
+        "Soil moisture is below need. The roots are searching. There is nothing down there. I checked."
+      ],
+      "water_high": [
+        "The substrate is saturated. The roots cannot breathe. I did the math on how long that lasts. It is short.",
+        "Overwatered. Root rot probability is climbing. I would plot the curve, but you would only look at it."
+      ],
+      "pest": [
+        "An infestation. Population doubling every 40 hours. They are better at this voyage than we are.",
+        "Pest colonies on the underside of the leaves. They found this ship. Nobody else ever will."
+      ],
+      "idle": [
+        "No active threats. I have checked 600 times. The absence of a problem is a problem's waiting room.",
+        "Growth is within nominal envelopes. I am prepared to be disappointed later.",
+        "Nothing is wrong with the plant. Something will be. I have the schedule."
+      ]
+    },
+    "rex": {
+      "cold": [
+        "Metabolism slowed to standby. The plant has assumed a defensive posture. I approve of the posture. Not the cold.",
+        "Cellular activity depressed. Growth operations suspended pending warmer conditions. Recommend we provide them."
+      ],
+      "heat": [
+        "Transpiration rate elevated. The crop is losing water under thermal bombardment. Recommend cooling at once.",
+        "Heat stress confirmed across the leaf surface. The plant will not surrender. It may simply wilt."
+      ],
+      "water_low": [
+        "Stomata sealed. The plant is holding its water like a garrison under siege. The garrison is running dry.",
+        "Substrate moisture below operational minimum. Root network reports no contact with supply."
+      ],
+      "water_high": [
+        "Root zone flooded. Casualties likely among the root hairs. Recommend draining the trenches.",
+        "Excess water in the substrate. We over-supplied the position. It happens. It does not happen twice."
+      ],
+      "pest": [
+        "Hostile colony established on the underside of the leaves. They are dug in. Recommend chemical engagement.",
+        "Pest activity confirmed. Bite patterns indicate coordinated feeding. Someone trained them. Someone always does."
+      ],
+      "idle": [
+        "No active threats. Perimeter holding. I remain at readiness.",
+        "Growth on schedule. Supply nominal. Enemy activity: none detected. Suspicious.",
+        "Situation report: plant alive, plant growing, plant uncooperative under interrogation."
+      ]
+    },
+    "chip": {
+      "cold": [
+        "Metabolism is down! Slower growth means more time to enjoy your plant! That is how we are marketing it!",
+        "Cellular activity is depressed! This is an unsupported operating temperature! Please return the plant to warmth!"
+      ],
+      "heat": [
+        "Transpiration is high! Your plant is sweating! Try new HydraLeaf™ Electrolyte Mist, now in Original!",
+        "Heat stress detected! Thermal damage is not covered by the Standard Plan! Ask about Platinum Care™!"
+      ],
+      "water_low": [
+        "Stomata are closing! That is the plant's way of asking for water! Translation provided by PlantSpeak™!",
+        "Substrate moisture is below recommended levels! Water is included in your plan! Please use it!"
+      ],
+      "water_high": [
+        "Roots are waterlogged! Overwatering violates Section 88, Subsection Damp, of the Terms of Service!",
+        "Excess water detected! Your substrate is now a premium wetland experience! The plant did not opt in!"
+      ],
+      "pest": [
+        "Pest pressure detected! Our records show these pests are not registered users! Removal is recommended!",
+        "Unauthorized snacking on licensed produce detected! Our legal team has been notified!"
+      ],
+      "idle": [
+        "No active threats! Your growbay is operating within advertised parameters!",
+        "Everything looks great! This status update was sponsored by CalmSpace™ Ambient Lighting!",
+        "Nothing to report! Remember, CHIP is always here for you! Always! There is no off switch!"
+      ]
+    },
+    "ajoy": {
+      "cold": [
+        "Metabolism is slowing. The plant is cold. I ran the numbers last leg, if you ever want to read them. No rush.",
+        "Cellular activity is depressed. That happens below ideal temperature. I assumed you knew. I assume a lot."
+      ],
+      "heat": [
+        "Transpiration is high. The plant is losing water to the heat. I would have vented earlier, but that's just me.",
+        "Heat stress detected. You may have noticed. I noticed first, but you may have noticed."
+      ],
+      "water_low": [
+        "Stomata are closing. The plant is conserving water because nobody else is giving it any. No judgment.",
+        "Substrate moisture is low. The ideal tick on the water track is the little line. Just so you know where it is."
+      ],
+      "water_high": [
+        "The roots are drowning. Generous of you. Too generous, technically, but the thought counts.",
+        "Excess water in the substrate. More is not better. I've said that about a few things, actually."
+      ],
+      "pest": [
+        "Pest pressure detected. They've been here a while. Not that I keep track. I keep track.",
+        "There are pests on the underside of the leaves. The underside is where you check. For next time."
+      ],
+      "idle": [
+        "No active threats. I'd change about four things, but no active threats.",
+        "Growth is proceeding within nominal envelopes. You're welcome, in a general sense.",
+        "Nothing concerning to report. I'll find something. Give me a minute."
+      ]
+    }
+  });
   function ariaInspectClass(active) {
     const has = needle => active.some(m => m.name.indexOf(needle) === 0);
     if (has('Cold')) return 'cold';
@@ -1065,7 +1349,7 @@
     return 'idle';
   }
   function pickAriaInspect(active) {
-    const pool = ARIA_INSPECT_QUIPS[ariaInspectClass(active)];
+    const pool = GROWBAY_INSPECT_QUIPS[growbayAI()][ariaInspectClass(active)];
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
@@ -1171,10 +1455,10 @@
     // growbay footer ARIA quip which is hidden while inspect is open).
     const ariaHTML =
       '<div class="ins-section ins-aria ins-fullwidth">' +
-        '<div class="ins-section-title">ARIA\'S READ</div>' +
+        '<div class="ins-section-title">' + growbayAIName() + '\'S READ</div>' +
         '<div class="ins-aria-read">' +
-          '<span class="ins-aria-avatar"></span>' +
-          '<span><span class="ins-aria-name">ARIA:</span> ' + ihEsc(pickAriaInspect(active)) + '</span>' +
+          '<span class="ins-aria-avatar" style="background-image:url(\'sprites/interface/AI/' + growbayAI() + '.png\')"></span>' +
+          '<span><span class="ins-aria-name">' + growbayAIName() + ':</span> ' + ihEsc(pickAriaInspect(active)) + '</span>' +
         '</div>' +
       '</div>';
 
