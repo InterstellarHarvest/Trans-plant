@@ -356,6 +356,14 @@ function trailCoverage() {
   }
 }
 
+// ── Registry status freshness (added 2026-10-09) ──────────────────
+// A value content uses must not be marked "empty" (the "what tags are
+// still empty?" audit depends on it). Fix: node tools/sync_registry.js
+{
+  const st = require('./sync_registry.js').stale();
+  if (st.length) err(`tag_registry.json: ${st.length} value(s) used by content but still "empty" (${st.slice(0, 5).map(([d, v]) => d + '.' + v).join(', ')}${st.length > 5 ? ', …' : ''}) — run: node tools/sync_registry.js`);
+}
+
 // ── flags.md freshness (added 2026-10-09) ─────────────────────────
 // The content-set table is generated from the event files; a stale one
 // hides who checks a flag (the orphan question every new flag asks).

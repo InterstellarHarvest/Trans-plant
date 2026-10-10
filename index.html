@@ -1742,6 +1742,9 @@ function loadRun(key) {
   STATE._itemDefs = null;
   ensureOrders(); // pre-orders saves get the defaults (seeded from cropGrowth.waterPlant)
   if (!('crewPending' in snap)) STATE.crewPending = {}; // pre-severity saves
+  // Saves from before the "planted" announcement existed: the crop was
+  // planted long ago — don't announce it on resume.
+  if (STATE.cropGrowth) STATE.flags.add('ai_noted_crop_planted');
   STATE.hubScreen = 'screen-cruise';
   if (window.SceneArt) SceneArt.clearRunCaches();
   renderHUD();

@@ -151,7 +151,7 @@
     for (const role of Object.keys(COMBAT.crew)) {
       if (!COMBAT.crew[role]) continue;
       const b = COMBAT_CONFIG.crew_bonuses[role];
-      if (b && typeof b[key] === 'number') total += b[key];
+      if (b && typeof b[key] === 'number') total += b[key] * COMBAT.crew[role];
     }
     if (COMBAT.captainBg) {
       const cb = COMBAT_CONFIG.captain_bonuses[COMBAT.captainBg];
@@ -177,7 +177,7 @@
     if (COMBAT.crew.veteran) total += COMBAT_CONFIG.crew_bonuses.veteran.crit_bonus;
     if (COMBAT.captainBg === 'veteran') total += COMBAT_CONFIG.captain_bonuses.veteran.crit_bonus;
     if (COMBAT.identifiedByXeno) {
-      if (COMBAT.crew.xenobiologist) total += COMBAT_CONFIG.crew_bonuses.xenobiologist.crit_bonus_on_identify;
+      if (COMBAT.crew.xenobiologist) total += COMBAT_CONFIG.crew_bonuses.xenobiologist.crit_bonus_on_identify * COMBAT.crew.xenobiologist;
       else if (COMBAT.captainBg === 'xenobiologist') total += COMBAT_CONFIG.captain_bonuses.xenobiologist.crit_bonus_on_identify;
     }
     if (COMBAT.player.morale >= 90) total += 0.05;
@@ -314,7 +314,7 @@
     const hasEng = COMBAT.crew.engineer || COMBAT.captainBg === 'engineer';
     if (hasEng) {
       const hpRatio = COMBAT.player.hull / COMBAT.player.hullMax;
-      const patchPct = COMBAT.crew.engineer ? 25 : 12;
+      const patchPct = COMBAT.crew.engineer ? Math.round(25 * COMBAT.crew.engineer) : 12;
       const avail = hpRatio <= 0.50 && !COMBAT.hullPatchUsed;
       wrap.appendChild(makeActionBtn({
         verb: 'HULL PATCH',
@@ -666,7 +666,7 @@
       let dmg = irand(COMBAT_CONFIG.player_damage.min, COMBAT_CONFIG.player_damage.max);
       let dmgMul = 1 + bonus('fire_dmg_bonus_flat');
       if (COMBAT.identifiedByXeno) {
-        const fb = COMBAT.crew.xenobiologist ? COMBAT_CONFIG.crew_bonuses.xenobiologist.fire_dmg_bonus
+        const fb = COMBAT.crew.xenobiologist ? COMBAT_CONFIG.crew_bonuses.xenobiologist.fire_dmg_bonus * COMBAT.crew.xenobiologist
                  : COMBAT.captainBg === 'xenobiologist' ? COMBAT_CONFIG.captain_bonuses.xenobiologist.fire_dmg_bonus : 0;
         dmgMul += fb;
       }
@@ -704,7 +704,7 @@
   function doHullPatch() {
     if (!COMBAT.active || COMBAT.state !== 'PLAYER_TURN' || COMBAT.hullPatchUsed) return;
     if ((COMBAT.player.hull / COMBAT.player.hullMax) > 0.50) return;
-    const pct = COMBAT.crew.engineer ? COMBAT_CONFIG.crew_bonuses.engineer.hull_patch_pct : COMBAT_CONFIG.captain_bonuses.engineer.hull_patch_pct;
+    const pct = COMBAT.crew.engineer ? COMBAT_CONFIG.crew_bonuses.engineer.hull_patch_pct * COMBAT.crew.engineer : COMBAT_CONFIG.captain_bonuses.engineer.hull_patch_pct;
     const heal = Math.round(COMBAT.player.hullMax * pct);
     COMBAT.player.hull = clamp(COMBAT.player.hull + heal, 0, COMBAT.player.hullMax);
     COMBAT.hullPatchUsed = true;
@@ -748,7 +748,7 @@
     const cfg = kind === 'botanist' ? COMBAT_CONFIG.crew_bonuses.botanist : COMBAT_CONFIG.crew_bonuses.chef;
     const label = kind === 'botanist' ? 'harvest' : 'cookies';
     setTimeout(() => {
-      const success = Math.random() < cfg.tribute_success;
+      const success = Math.random() < cfg.tribute_success * (COMBAT.crew[kind] || 1);
       if (success) {
         COMBAT.player.morale = clamp(COMBAT.player.morale + cfg.morale_on_success, 0, 100);
         setNarrCombat('TRIBUTE ACCEPTED', combatLine('tribute_success'), `-${cfg.tribute_food_cost} food · morale +${cfg.morale_on_success}`);
@@ -806,7 +806,7 @@
     let dmg = irand(COMBAT_CONFIG.enemy_damage.min, COMBAT_CONFIG.enemy_damage.max) * COMBAT.enemy.dmgMod;
 
     if (COMBAT.turn === 1 && (COMBAT.crew.diplomat || COMBAT.captainBg === 'diplomat')) {
-      const r = COMBAT.crew.diplomat ? COMBAT_CONFIG.crew_bonuses.diplomat.opening_dmg_reduction : COMBAT_CONFIG.captain_bonuses.diplomat.opening_dmg_reduction;
+      const r = COMBAT.crew.diplomat ? COMBAT_CONFIG.crew_bonuses.diplomat.opening_dmg_reduction * COMBAT.crew.diplomat : COMBAT_CONFIG.captain_bonuses.diplomat.opening_dmg_reduction;
       dmg *= (1 - r);
     }
 
@@ -826,7 +826,7 @@
     let ftlMiss = false;
     if (COMBAT.state === 'FTL_CHARGING') {
       let missRate = 0.35;
-      if (COMBAT.crew.pilot) missRate = 0.75;
+      if (COMBAT.crew.pilot) missRate = 0.35 + (0.75 - 0.35) * COMBAT.crew.pilot; // wounded pilot: halved edge
       else if (COMBAT.captainBg === 'pilot') missRate = 0.50;
       if (Math.random() < missRate) { dmg = 0; ftlMiss = true; }
     }
@@ -1262,7 +1262,10 @@
     COMBAT.trail = STATE.trail;
     const roles = ['pilot', 'engineer', 'medic', 'botanist', 'chef', 'diplomat', 'xenobiologist', 'veteran', 'merchant'];
     COMBAT.crew = {};
-    roles.forEach(r => { COMBAT.crew[r] = STATE.crew.includes(r); });
+    // Each crew entry carries its passive in effect: 1 healthy, 0.5
+    // wounded (Bible §4.25 "passive halved"), 0 absent — truthy checks
+    // still mean "aboard"; numeric bonuses scale by it.
+    roles.forEach(r => { COMBAT.crew[r] = STATE.crew.includes(r) ? (crewHPOf(r) < CREW_WOUNDED_HP ? 0.5 : 1) : 0; });
     COMBAT.captainBg = STATE.captain || '';
 
     COMBAT.player.hullMax = COMBAT_CONFIG.player_hp_max;

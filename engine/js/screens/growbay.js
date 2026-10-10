@@ -734,6 +734,10 @@
     return randPick(ARIA_QUIPS.healthy);
   }
   function randPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  // ARIA's demo lines were written for the demo's wheat; say whichever
+  // crop is actually planted.
+  const CROP_NOUN = { wheat: 'wheat', tomato: 'tomato plant', sweet_potato: 'sweet potato', soybean: 'soybean', zinnia: 'zinnia' };
+  function forCrop(line) { return line.replace(/\bwheat\b/g, CROP_NOUN[GSTATE && GSTATE.cropId] || 'plant'); }
 
   // ═════ Tender picker ═══════════════════════════════════════
   window.toggleTenderPicker = function(e) {
@@ -1044,7 +1048,7 @@
     if (nameEl) nameEl.textContent = growbayAIName() + ':';
     const avEl = document.querySelector('.gb-aria-avatar');
     if (avEl) avEl.style.backgroundImage = "url('sprites/interface/AI/" + growbayAI() + ".png')";
-    $('aria-text').textContent = pickAriaQuip();
+    $('aria-text').textContent = forCrop(pickAriaQuip());
 
     // Harvest button lock state
     const hbtn = $('harvest-btn');
@@ -1458,7 +1462,7 @@
         '<div class="ins-section-title">' + growbayAIName() + '\'S READ</div>' +
         '<div class="ins-aria-read">' +
           '<span class="ins-aria-avatar" style="background-image:url(\'sprites/interface/AI/' + growbayAI() + '.png\')"></span>' +
-          '<span><span class="ins-aria-name">' + growbayAIName() + ':</span> ' + ihEsc(pickAriaInspect(active)) + '</span>' +
+          '<span><span class="ins-aria-name">' + growbayAIName() + ':</span> ' + ihEsc(forCrop(pickAriaInspect(active))) + '</span>' +
         '</div>' +
       '</div>';
 
