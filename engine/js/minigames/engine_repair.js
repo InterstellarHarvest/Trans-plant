@@ -596,6 +596,14 @@
     finish({ fixedCount: n, allFixed: n === 4 });
   }
 
+  // Load-time teardown (index.html teardownLiveUI): close the scene
+  // without calling back into the run being replaced.
+  window.abortEngineRepair = function () {
+    if (!running) return;
+    onRepairDone = null;
+    finish({ fixedCount: 0, allFixed: false });
+  };
+
   function finish(result) {
     running = false;
     closeComp();

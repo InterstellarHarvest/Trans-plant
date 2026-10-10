@@ -923,7 +923,9 @@
   // Enter crafts the current selection if craftable; Escape closes the
   // modal. Only active while the modal is open AND no dropdown is.
   window.addEventListener('keydown', (e) => {
-    if (!document.body.classList.contains('modal-open')) return;
+    // Gate on the fabricator's OWN overlay — body.modal-open is shared
+    // with the growbay/orders, so Enter there used to craft here, hidden.
+    if (!document.getElementById('overlay-fabricator').classList.contains('active')) return;
     if (document.querySelector('.fb-dd.open')) return;  // let dropdowns own keys
     if (e.key === 'Escape') { closeFabricator(); return; }
 

@@ -1251,6 +1251,21 @@
     }
   };
 
+  // Load-time teardown (index.html teardownLiveUI): stop a live fight
+  // and strip its chrome without resolving an outcome into the run being
+  // replaced (it used to bleed into the next ordinary event).
+  window.abortCombat = function () {
+    if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
+    COMBAT.active = false; COMBAT.state = 'END'; COMBAT._firing = false;
+    const scr = document.getElementById('screen-encounter');
+    scr.classList.remove('combat-mode', 'combat-targeting', 'combat-vignette', 'combat-ftl-charging', 'combat-ended', 'hostile-gone');
+    document.getElementById('enc-choices').classList.remove('combat-actions', 'combat-locked');
+    document.getElementById('enc-subject').classList.remove('combat-locking');
+    scr.querySelectorAll('.combat-ftl-flash').forEach(el => el.remove());
+    const sp = document.getElementById('enc-backdrop-sprite');
+    if (sp) sp.classList.remove('combat-enemy-charge', 'combat-low-hp');
+  };
+
   window.triggerCombat = function (choice, opts) {
     if (COMBAT.active) return;
     opts = opts || {};

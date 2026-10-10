@@ -367,12 +367,24 @@
   }
 
   function handleSalvageVerb() {
-    openMinigame('salvage', {}, (tier) => {
+    openMinigame('salvage', {}, (tier, payload) => {
       if (tier === 'abandoned') return settleAbandoned('SALVAGE');
-      const grant = { perfect: { metal: 3, scrap: 2 }, good: { metal: 2 }, poor: { scrap: 1 } }[tier] || {};
-      for (const [mat, qty] of Object.entries(grant)) STATE.materials[mat] = (STATE.materials[mat] || 0) + qty;
-      const summary = Object.entries(grant).map(([m, q]) => q + ' ' + m).join(', ') || 'nothing usable';
-      settleMinigame('◆ SALVAGE — recovered ' + summary + '.');
+      // Grant exactly the haul card's contents: materials stock, upgrade
+      // items (capacity-enforced), O₂ tanks as air, gold chips as gold;
+      // 'useless_scrap' is what it says. No payload → the old tier table.
+      const haul = (payload && payload.salvage) || { perfect: { metal: 3, scrap: 2 }, good: { metal: 2 }, poor: { scrap: 1 } }[tier] || {};
+      const MATS = new Set(((MOD.materials && MOD.materials.materials) || []).map(m => m.id));
+      const TANK_O2 = { tank_s: 4, tank_m: 8, tank_l: 12 };
+      const got = [];
+      for (const [key, qty] of Object.entries(haul)) {
+        if (!qty) continue;
+        if (MATS.has(key)) { STATE.materials[key] = (STATE.materials[key] || 0) + qty; got.push(qty + ' ' + key); }
+        else if (key in TANK_O2) { STATE.resources.o2 = clamp(STATE.resources.o2 + TANK_O2[key] * qty, 0, 100); got.push('+' + TANK_O2[key] * qty + ' O₂'); }
+        else if (key === 'gold') { STATE.goldAmount += 5 * qty; got.push(5 * qty + 'g'); }
+        else if (key !== 'useless_scrap') { for (let i = 0; i < qty; i++) grantItem(key); got.push(key.replace(/_/g, ' ')); }
+      }
+      renderHUD();
+      settleMinigame('◆ SALVAGE — recovered ' + (got.join(', ') || 'nothing usable') + '.');
     });
   }
 
@@ -530,6 +542,7 @@
      here, so it just logs instead of forcing a route. */
   function attemptResume() {
     const nextIds = [...nextAvailableNodes()];
+    if (nextIds.length === 0 && typeof resolveStuckFork === 'function' && resolveStuckFork()) { closeStopMenu(); return; }
     if (nextIds.length !== 1) {
       pushLogEntry(nextIds.length === 0
         ? '◆ No route forward from here yet.'

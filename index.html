@@ -44,6 +44,7 @@ if (location.protocol === 'file:') document.write('<script src="engine/js/portab
   --void:  #020408;
   --body:  #8898a8;
   --bg-empty: #020408;
+  --info:  #35c6bf; /* minigame timer/shield/energy bars + ADEQUATE tier (demo-minigames.html) — missing here left them transparent */
 
   --res-fuel:  #e88830;
   --res-food:  #8cc890;
@@ -994,7 +995,7 @@ body {
     </div>
     <div id="ovmap-footer">
       <div id="ovmap-info"></div>
-      <button class="btn accent-gold" id="ovmap-close">Close</button>
+      <button class="btn accent-gold" id="ovmap-close" data-esc-close>Close</button>
     </div>
   </div>
   <div id="overlay-stopmenu" class="overlay"></div>
@@ -1010,7 +1011,7 @@ body {
       <div id="slog-rows"></div>
       <div id="slog-footer">
         <span id="slog-note">Recorded in your AI's voice, since launch.</span>
-        <button class="btn accent-gold" id="slog-close">Close</button>
+        <button class="btn accent-gold" id="slog-close" data-esc-close>Close</button>
       </div>
     </div>
     <div id="slog-expand-modal" style="display:none;">
@@ -1054,7 +1055,7 @@ body {
       </div>
       <div id="inv-footer">
         <span id="inv-note">Materials and the crop don't use cargo slots.</span>
-        <button class="btn accent-gold" id="inv-close">Close</button>
+        <button class="btn accent-gold" id="inv-close" data-esc-close>Close</button>
       </div>
     </div>
   </div>
@@ -1724,10 +1725,25 @@ function saveRun(key) {
 }
 function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (_) {} }
 function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (_) { return false; } }
+/* Tears down whatever is live before a save replaces the run (pause →
+   LOAD can fire mid-combat, mid-minigame, with the Stop menu open…):
+   none of it may resolve into, or linger over, the loaded run. */
+function teardownLiveUI() {
+  for (const fn of ['abortCombat', 'abortMinigame', 'abortMining', 'abortEngineRepair']) {
+    if (typeof window[fn] === 'function') { try { window[fn](); } catch (_) {} }
+  }
+  document.querySelectorAll('#game .overlay.active').forEach(o => o.classList.remove('active'));
+  document.body.classList.remove('stop-active', 'modal-open', 'ins-open');
+  const sb = document.getElementById('stop-btn');
+  if (sb) sb.textContent = 'Stop';
+  STATE.summonedEvent = false;
+}
+
 function loadRun(key) {
   let snap;
   try { snap = JSON.parse(localStorage.getItem(key || SAVE_KEY)); } catch (_) { return false; }
   if (!snap || snap.v !== 1) return false;
+  teardownLiveUI();
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2759,6 +2775,12 @@ function nextAvailableNodes() {
    Called whenever travel/event-resolution has nothing further to do
    and control returns to the player outside an encounter. */
 function returnToHub() {
+  // Back at the hub, no event is in progress. These were never cleared,
+  // so saveRun() (which refuses mid-event) silently stopped autosaving
+  // after the first encounter of every run (bug hunt 2026-10-09).
+  STATE.currentEvent = null; STATE.currentNode = null;
+  STATE.layerStack = null; STATE.currentOutcomeId = null;
+  STATE.outcomeMode = false; STATE.npcCtx = null; STATE.pendingNext = null;
   renderHUD();
   showScreen(STATE.hubScreen);
   if (STATE.hubScreen === 'screen-map') renderMap();
@@ -2914,6 +2936,9 @@ function travelTo(nodeId, opts) {
   STATE.visited.add(STATE.currentId);
   STATE.currentId = nodeId;
   const node = STATE.byId[nodeId];
+  // Each fork decides afresh: the previous fork's branch flag used to
+  // linger, so an alpha pick at fork 1 overrode every later beta pick.
+  if (node.node_type === 'fork') { STATE.flags.delete('chose_alpha'); STATE.flags.delete('chose_beta'); }
 
   // Crew HP regen — one tick per travel leg: +1, +2 with a medic aboard.
   // A wounded medic's halved passive lands the bonus point every other
@@ -3256,7 +3281,7 @@ function renderEncounterState() {
   const aiFlavor = (layer && layer.ai) || ev.ai_flavor;
   if (aiFlavor && aiFlavor[STATE.activeAI]) {
     document.getElementById('enc-ai-name').textContent = STATE.activeAI.toUpperCase();
-    document.getElementById('enc-ai-text').textContent = aiFlavor[STATE.activeAI];
+    document.getElementById('enc-ai-text').textContent = interpolateStowawayTokens(interpolateNpcTokens(aiFlavor[STATE.activeAI], STATE.npcCtx));
     aiBar.classList.remove('hidden');
   } else {
     aiBar.classList.add('hidden');
@@ -3914,28 +3939,30 @@ function deltaIsGood(o) {
 
 /* After Continue: figure out the next node and either fire its
    event or, if the next node has no event, just bring up the map. */
-function advanceAfterEvent() {
-  // Summoned events (TRADE / WAIT FOR TRADER stop-verbs) happen AT the
-  // parked node — resolving them returns to this node's hub, exactly
-  // like every other stop verb. Found by ui_sweep 2026-08-04: walking
-  // away from a summoned trader used to fling the ship down the trail.
-  if (STATE.summonedEvent) {
-    STATE.summonedEvent = false;
-    returnToHub();
-    return;
-  }
-  const cur = STATE.byId[STATE.currentId];
-  const next = nextAvailableNodes();
-  const ids = [...next];
+/* A fork whose event never resolved (e.g. a failure "continue" — beacon
+   or Keep flying — fired on the leg INTO it, skipping the node's event)
+   has no route out. Cruise's Resume calls this to fire a fork event
+   there instead of dead-ending; once:true is waived if every fork event
+   has already been seen. Returns true if an event was entered. */
+function resolveStuckFork() {
+  const node = STATE.byId[STATE.currentId];
+  if (!node || node.node_type !== 'fork' || branchPick()) return false;
+  const ev = selectEvent(node) || Object.values(EVENTS).find(e => e.active !== false && (e.node_type || []).includes('fork'));
+  if (!ev) return false;
+  enterEvent(node, ev);
+  return true;
+}
 
-  // Fork node: the choice the player just resolved set chose_alpha or
-  // chose_beta. nextAvailableNodes() now reflects that. Single target.
-  if (ids.length === 1) {
-    travelTo(ids[0]);
-    return;
-  }
-  // Multiple targets (shouldn't happen with the lunar test path after
-  // a fork is resolved) → back to the hub so the player can pick.
+function advanceAfterEvent() {
+  // Bible §Stop Menu: a world-fired event force-stops the ship ("Resume
+  // blocked until resolved") — so resolving it leaves the ship STOPPED
+  // at this node's cruise hub, and the player's Resume is what travels.
+  // This used to travelTo() the next node immediately, chaining every
+  // event into the next and skipping the hub (Stop menu, growbay,
+  // crew, orders, MEDBAY…) for the whole run after the first leg.
+  // Forks are unchanged in effect: the branch flag the fork event set
+  // makes Resume's single next node the chosen branch.
+  STATE.summonedEvent = false;
   STATE.visited.add(STATE.currentId);
   returnToHub();
 }

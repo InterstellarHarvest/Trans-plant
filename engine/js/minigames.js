@@ -277,6 +277,7 @@ let currentGame = null;
 let cleanupFn = null;
 let onMinigameDone = null; // (tier, payload) => void — supplied by openMinigame()'s caller
 let minigameStarted = false; // BEGIN pressed this visit — closing after this is a QUIT
+let minigameToken = 0;       // bumps per open/close: a quit game's delayed result can't land in the next one
 let lastTier = null, lastPayload = null;
 
 const NAMES = {scan:'SCAN',engine:'ENGINE REPAIR',medical:'MEDICAL TRIAGE',forage:'FORAGE',brace:'SOLAR BRACE',breach:'HULL BREACH',salvage:'SALVAGE'};
@@ -332,14 +333,16 @@ function openMinigame(id, opts, onDone){
   document.getElementById('ov').classList.add('open');
   showOverlay('overlay-minigames');
   const inits = {scan:initScan,engine:initEngine,medical:initMedical,forage:initForage,brace:initBrace,breach:initBreach,salvage:initSalvage};
+  const token = ++minigameToken;
   showReady(id, ()=>{
     minigameStarted = true;
     const mclose = document.getElementById('mclose');
     mclose.textContent = '✕ QUIT'; mclose.title = 'Quit now: nothing is kept, and the time is still spent.';
-    cleanupFn = inits[id](document.getElementById('ga'), showResult, opts || {});
+    cleanupFn = inits[id](document.getElementById('ga'), (tier, payload) => { if (token === minigameToken) showResult(tier, payload); }, opts || {});
   });
 }
 function closeMinigameOverlay(){
+  minigameToken++;
   if(cleanupFn){ cleanupFn(); cleanupFn=null; }
   document.getElementById('ov').classList.remove('open');
   document.getElementById('result').classList.remove('show');
@@ -426,7 +429,13 @@ function requestCloseMinigame(){
   if(started && cb) cb('abandoned', null);
 }
 document.getElementById('mclose').addEventListener('click', requestCloseMinigame);
-document.getElementById('ov').addEventListener('click', e=>{ if(e.target===document.getElementById('ov')) requestCloseMinigame(); });
+// Backdrop click = close — but only when the press STARTED on the
+// backdrop. A drag (salvage tractor, breach patch) released outside the
+// modal makes the browser send the click to #ov, which used to QUIT the
+// game mid-drag.
+let ovPressOnBackdrop = false;
+document.getElementById('ov').addEventListener('mousedown', e=>{ ovPressOnBackdrop = (e.target===document.getElementById('ov')); });
+document.getElementById('ov').addEventListener('click', e=>{ if(e.target===document.getElementById('ov') && ovPressOnBackdrop) requestCloseMinigame(); ovPressOnBackdrop = false; });
 // No "Play Again" — replaying a Stop Menu verb minigame for free without
 // re-opening the Stop Menu would let SALVAGE/FORAGE farm resources in a
 // tight loop (same exploit-avoidance concern the plan flagged for Mining's
@@ -3843,7 +3852,9 @@ function initSalvage(container, onResult){
       const tier = cargo.length >= 8 ? 'perfect'
                  : cargo.length >= 4 ? 'good'
                  : 'poor';
-      onResult(tier);
+      // Hand the real haul to the caller — the card showed loot the
+      // engine never granted (it paid a fixed amount per tier instead).
+      onResult(tier, { salvage: Object.fromEntries(Object.entries(inv).map(([k, v]) => [k, v.count])) });
     });
     viewBtn.addEventListener('click', () => {
       if (viewBtn.classList.contains('disabled')) return;
@@ -3876,4 +3887,10 @@ function initSalvage(container, onResult){
 }
 
   window.openMinigame = openMinigame;
+  // Load-time teardown (index.html teardownLiveUI): close without firing
+  // the caller's callback — the run it belonged to is being replaced.
+  window.abortMinigame = function () {
+    onMinigameDone = null;
+    if (document.getElementById('overlay-minigames').classList.contains('active')) closeMinigameOverlay();
+  };
 })();

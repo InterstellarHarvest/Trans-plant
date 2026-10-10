@@ -1417,6 +1417,15 @@
   // Called by cruise.js's MINE verb handler. onDone(haul) fires when the
   // player clicks RETURN TO SHIP — see finishMining() above.
   let onMiningDone = null;
+  // Load-time teardown (index.html teardownLiveUI): drop the visit
+  // without banking or calling back into the run being replaced.
+  window.abortMining = function () {
+    onMiningDone = null;
+    const ho = document.getElementById('haul-overlay');
+    if (ho) { ho.classList.remove('visible'); ho.innerHTML = ''; }
+    hideOverlay('overlay-mining');
+  };
+
   window.openMining = function (onDone) {
     onMiningDone = onDone;
     sessionInventory = {};

@@ -1508,7 +1508,9 @@
     // Inspect catches Escape first if open — close inspect, leave
     // the underlying growbay modal up.
     if (document.body.classList.contains('ins-open')) { closeInspect(); return; }
-    if (document.body.classList.contains('modal-open')) closeGrowbay();
+    // Own overlay only — modal-open is shared (closing the growbay here
+    // used to strip it from under an open fabricator).
+    if (document.getElementById('overlay-growbay').classList.contains('active')) closeGrowbay();
   });
 
   // ═════ Entry point ══════════════════════════════════════════

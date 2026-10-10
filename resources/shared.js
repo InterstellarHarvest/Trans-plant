@@ -1306,7 +1306,11 @@ const PauseMenu = (() => {
         '<button type="button" class="pause-btn" data-act="cancel">CANCEL</button>' +
       '</div>';
     w.querySelector('[data-act="confirm"]').addEventListener('click', () => {
-      window.location.href = 'demo-title.html';
+      // The engine (index.html) has its own title screen — a reload lands
+      // there with Continue offered from the autosave. demo-title.html only
+      // exists beside the standalone demos (the engine used to 404 here).
+      if (document.getElementById('screen-title')) window.location.reload();
+      else window.location.href = 'demo-title.html';
     });
     w.querySelector('[data-act="cancel"]').addEventListener('click', () => {
       activate('resume');
@@ -1319,6 +1323,15 @@ const PauseMenu = (() => {
     if (e.key === 'Escape') {
       if (isOpen()) { e.preventDefault(); close(); return; }
       if (document.body.classList.contains('modal-open')) return;  // demo modals own ESC
+      // Any open overlay owns ESC: one marked [data-esc-close] is closed
+      // by it; the rest handle ESC themselves (or ignore it). Pause never
+      // stacks on top of another overlay.
+      const ov = document.querySelector('.overlay.active');
+      if (ov) {
+        const c = ov.querySelector('[data-esc-close]');
+        if (c) { e.preventDefault(); c.click(); }
+        return;
+      }
       e.preventDefault(); open(); return;
     }
     if (!isOpen()) return;
