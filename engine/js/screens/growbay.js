@@ -171,6 +171,10 @@
   // their own name and has no sprite (index.html crewIdentityOf).
   const TENDER_ROLE = { osei: 'botanist', reyes: 'chef', kazuki: 'engineer', hargrove: 'diplomat', reeves: 'pilot', vasquez: 'medic', tanaka: 'xenobiologist' };
   function tenderOf(id) {
+    // A tender who died or left (or a captain-botanist slot without a
+    // botanist captain) tends nothing.
+    if (TENDER_ROLE[id] && !STATE.crew.includes(TENDER_ROLE[id])) return CREW.none;
+    if (id === 'captain-botanist' && STATE.captain !== 'botanist') return CREW.none;
     const c = CREW[id] || CREW.none;
     const idn = TENDER_ROLE[id] && typeof crewIdentityOf === 'function' ? crewIdentityOf(TENDER_ROLE[id]) : null;
     return idn ? Object.assign({}, c, { name: idn.name, crewId: null, emoji: '🧑' }) : c;
@@ -275,31 +279,16 @@
     // 80-health crop in ~20-27 days depending on crop; ordinary
     // imperfect care only stalls recovery, never kills.
     const realCrop = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + GSTATE.cropId) || {};
-    const vuln = realCrop.vulnerabilities || {};
-    const dmgMult =
-      (vuln.fragile && vuln.fragile.damage_multiplier) ||           // zinnia: everything hurts more
-      1.0;
-    const waterMult = (vuln.water_sensitivity && vuln.water_sensitivity.damage_multiplier) || 1.0; // tomato
-    const recovMult = (vuln.slow_recovery && vuln.slow_recovery.recovery_modifier) || 1.0;         // sweet potato
-
     const daysPassed = Math.max(0, STATE.daysElapsed - (GSTATE.lastTickDay || 0));
     for (let i = 0; i < daysPassed; i++) {
       GSTATE.day++;
+      const mods = computeModifiers(); // the same list the panel shows
       if (GSTATE.growth < 100 && GSTATE.health > 0) {
-        const dailyRate = (100 / crop.maturity_days) * growthFactor();
+        const dailyRate = (100 / crop.maturity_days) * growthFactor(mods);
         GSTATE.growth = Math.min(100, GSTATE.growth + dailyRate);
       }
       if (GSTATE.health > 0) {
-        let delta = 0;
-        if (STATE.resources.water <= 0) {
-          delta -= 3 * dmgMult * waterMult;           // ship dry — the crop starves
-        } else if (Math.abs((GSTATE.waterPlant || 50) - crop.water_need) > 20) {
-          delta -= 0.5 * dmgMult;                     // badly mismatched watering — slow harm
-        } else {
-          delta += 0.5 * recovMult;                   // decent care — slow recovery
-        }
-        if (GSTATE.pest) delta -= 1.5 * dmgMult;      // untreated pests compound
-        GSTATE.health = Math.max(0, Math.min(100, GSTATE.health + delta));
+        GSTATE.health = Math.max(0, Math.min(100, GSTATE.health + dailyHealthDelta(mods)));
 
         // Pest onset — daily roll scaled by the crop's authored
         // contamination_resistance (crops.json). Only once the plant
@@ -345,57 +334,78 @@
   //   active    = modifiers currently firing (positives + promoted threats)
   //   monitored = MONITORED_THREATS entries that are NOT firing
   // A threat fires → promoted to active, dropped from monitored.
+  // The crop's authored vulnerabilities (crops.json) as tick multipliers.
+  function cropVuln() {
+    const realCrop = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + GSTATE.cropId) || {};
+    const vuln = realCrop.vulnerabilities || {};
+    return {
+      dmg:   (vuln.fragile && vuln.fragile.damage_multiplier) || 1.0,                // zinnia: everything hurts more
+      water: (vuln.water_sensitivity && vuln.water_sensitivity.damage_multiplier) || 1.0, // tomato
+      recov: (vuln.slow_recovery && vuln.slow_recovery.recovery_modifier) || 1.0,    // sweet potato
+    };
+  }
+  const fmtNum = n => String(Math.round(Math.abs(n) * 10) / 10);
+  function modDelta(growth, health) {
+    const bits = [];
+    if (growth) bits.push((growth > 0 ? '+' : '−') + fmtNum(growth) + '% growth');
+    if (health) bits.push((health > 0 ? '+' : '−') + fmtNum(health) + ' health/day');
+    return bits.join(' · ');
+  }
+
+  // THE crop model: every modifier shown in the panel carries the real
+  // numbers the daily tick applies — growth (% on the daily growth rate)
+  // and health (points per day). Nothing listed is decorative (owner
+  // ruling 2026-10-10: "modifiers should never do nothing").
   function computeModifiers() {
     const crop = CROP_META[GSTATE.cropId];
     const tender = tenderOf(GSTATE.tenderId);
+    const v = cropVuln();
     const active = [];
     const promoted = new Set();
+    const add = (kind, name, growth, health) => active.push({ kind, name, growth, health, delta: modDelta(growth, health) });
 
-    // POSITIVES — not threats, no MONITORED counterpart.
-    if (tender.growth > 0) {
-      active.push({ kind: 'positive', name: tender.name + ' tending', delta: '+' + tender.growth + '% growth' });
-    }
+    // Tending crew member: their authored growth bonus.
+    if (tender.growth > 0) add('positive', tender.name + ' tending', tender.growth, 0);
 
-    // WATER — the positive-match case is a positive mod; the
-    // under/over cases are threats that promote (root_rot).
+    // WATER — the ship's tanks first, then the Orders split vs the
+    // crop's need.
     const waterDelta = GSTATE.waterPlant - crop.water_need;
     const waterAbs = Math.abs(waterDelta);
-    if (waterAbs <= 5) {
-      active.push({ kind: 'positive', name: 'Water matched', delta: '+0%' });
+    if (STATE.resources.water <= 0) {
+      add('critical', 'Ship water dry', -50, -3 * v.dmg * v.water);
+    } else if (waterAbs <= 5) {
+      add('positive', 'Water matched', 0, 0.5 * v.recov);
     } else if (waterDelta < -5) {
-      // Underwatered stalls growth. Not a "named threat" in the
-      // monitored list; it's just a water-allocation consequence.
+      // Underwatered stalls growth; badly underwatered also harms.
       const penalty = Math.min(40, Math.round(waterAbs * 0.8));
-      active.push({ kind: 'negative', name: 'Underwatered', delta: '−' + penalty + '% growth' });
-    } else if (waterAbs > 25) {
-      active.push({ kind: 'negative', name: 'Root rot risk', delta: '−5% health' });
+      add('negative', 'Underwatered', -penalty, waterAbs > 20 ? -0.5 * v.dmg * v.water : 0.5 * v.recov);
+    } else if (waterAbs > 20) {
+      add('negative', 'Root rot risk', 0, -0.5 * v.dmg);
       promoted.add('root_rot');
     } else {
-      active.push({ kind: 'positive', name: 'Plant well-watered', delta: '+0%' });
+      add('positive', 'Plant well-watered', 0, 0.5 * v.recov);
     }
 
     // TEMPERATURE — promotes cold_snap or heat_wave depending on
     // which side of the ideal range we're on.
     const [tMin, tMax] = crop.ideal_temp;
     if (GSTATE.temp < tMin - 4) {
-      active.push({ kind: 'critical', name: 'Cold snap CRITICAL', delta: '−30% growth' });
+      add('critical', 'Cold snap CRITICAL', -30, 0);
       promoted.add('cold_snap');
     } else if (GSTATE.temp < tMin) {
-      const off = tMin - GSTATE.temp;
-      active.push({ kind: 'negative', name: 'Cold stress', delta: '−' + (off * 4) + '% growth' });
+      add('negative', 'Cold stress', -(tMin - GSTATE.temp) * 4, 0);
       promoted.add('cold_snap');
     } else if (GSTATE.temp > tMax + 4) {
-      active.push({ kind: 'critical', name: 'Heat wave CRITICAL', delta: '−30% growth' });
+      add('critical', 'Heat wave CRITICAL', -30, 0);
       promoted.add('heat_wave');
     } else if (GSTATE.temp > tMax) {
-      const off = GSTATE.temp - tMax;
-      active.push({ kind: 'negative', name: 'Heat stress', delta: '−' + (off * 4) + '% growth' });
+      add('negative', 'Heat stress', -(GSTATE.temp - tMax) * 4, 0);
       promoted.add('heat_wave');
     }
 
-    // PESTS — toggle-driven in the demo.
+    // PESTS — untreated, they slow growth and compound damage.
     if (GSTATE.pest) {
-      active.push({ kind: 'critical', name: 'Pest outbreak', delta: '−15% growth · −8% health' });
+      add('critical', 'Pest outbreak', -15, -1.5 * v.dmg);
       promoted.add('pests');
     }
 
@@ -405,11 +415,15 @@
     return { active, monitored };
   }
 
-  // Health-factor for growth rate. In the real game this aggregates
-  // every modifier into a multiplier on the base daily growth rate.
-  // Demo approximates from health %.
-  function growthFactor() {
-    return GSTATE.health / 100;
+  // Daily growth multiplier: crop health × every growth modifier.
+  function growthFactor(mods) {
+    const { active } = mods || computeModifiers();
+    const g = active.reduce((s, m) => s + (m.growth || 0), 0);
+    return (GSTATE.health / 100) * Math.max(0, 1 + g / 100);
+  }
+  function dailyHealthDelta(mods) {
+    const { active } = mods || computeModifiers();
+    return active.reduce((s, m) => s + (m.health || 0), 0);
   }
 
   function projectedReadyDay() {
@@ -1080,7 +1094,7 @@
   window.doHarvest = function() {
     if (GSTATE.growth < 100 || GSTATE.health <= 0) return;
     const crop = CROP_META[GSTATE.cropId];
-    const tender = CREW[GSTATE.tenderId] || CREW.none;
+    const tender = tenderOf(GSTATE.tenderId);
     const baseYield = crop.yield_amount;
     const bonusYield = Math.round(baseYield * tender.yield / 100);
     const total = baseYield + bonusYield;

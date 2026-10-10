@@ -105,7 +105,11 @@
     if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth();
     syncShipSprite();
     $('cruise-ship-name').textContent = (STATE.shipName || 'THE SHIP').toUpperCase();
-    $('header-ticker').textContent = STATE.mapName ? ('EN ROUTE TO ' + STATE.destination.toUpperCase()) : '';
+    // Bible §ticker: long-range scan hits replace the default line.
+    const nextIds = (typeof nextAvailableNodes === 'function' && STATE.byId[STATE.currentId]) ? [...nextAvailableNodes()] : [];
+    const hit = nextIds.map(id => STATE.scouted && STATE.scouted[id]).find(sc => sc && sc.ev && EVENTS[sc.ev]);
+    $('header-ticker').textContent = hit ? ('SCAN · NEXT: ' + String(EVENTS[hit.ev].title || 'CONTACT').toUpperCase())
+      : STATE.mapName ? ('EN ROUTE TO ' + STATE.destination.toUpperCase()) : '';
     const daysLeft = Math.max(0, STATE.baseDays - STATE.daysElapsed);
     $('day-counter').textContent = 'DAY ' + STATE.daysElapsed + ' · ' + daysLeft + ' LEFT';
 
@@ -318,8 +322,15 @@
     const difficulty = TRAIL_TO_SCAN_DIFFICULTY[STATE.trail] || 'medium';
     openMinigame('scan', { difficulty }, (tier) => {
       if (tier === 'abandoned') return settleAbandoned('SCAN');
-      const lines = { perfect: 'Clean lock. Scan logged, nothing hiding in the noise.', good: 'Partial read — noisy, but usable.', poor: 'Signal lost in the static. Nothing useful recovered.' };
-      settleMinigame('◆ SCAN — ' + (lines[tier] || 'Scan complete.'));
+      // Owner ruling 2026-10-10 — SCAN does something: it locks in and
+      // reports what waits ahead (index.html scoutAhead). Perfect: two
+      // stops deep, with full outcome intel on arrival. Good: the next
+      // stop(s), every fork branch. Poor: static.
+      if (tier === 'poor') return settleMinigame('◆ SCAN — Signal lost in the static. Nothing useful recovered.');
+      const perfect = tier === 'perfect';
+      const report = scoutAhead(perfect ? 2 : 1, perfect);
+      const head = perfect ? 'Clean lock. Long-range picture, outcomes modelled.' : 'Partial read — the next stop, at least.';
+      settleMinigame('◆ SCAN — ' + head + (report.length ? ' ' + report.join(' · ') : ' Nothing ahead but the destination.'));
     });
   }
 

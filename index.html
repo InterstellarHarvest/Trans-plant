@@ -1719,15 +1719,19 @@ const SAVED_FIELDS = [
   'deprived', // consecutive days at 0 food/water/O2
   'crewIdentity', // joined stowaways keep their own name in a crew role
   'researchReady', 'researchKey', // Academic captain: one Research preview per station leg
+  'scouted', // SCAN: events locked in at the stops ahead
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
   // Mid-minigame the verb hasn't resolved (its time not yet charged) —
   // a save here would let a load dodge the cost.
   if (document.querySelector('#overlay-minigames.active, #overlay-mining.active')) return false;
+  return writeSnapshot(key);
+}
+function writeSnapshot(key, extra) {
   if (new URLSearchParams(location.search).has('debug')) return false;
   try {
-    const snap = { v: 1, ts: Date.now() };
+    const snap = Object.assign({ v: 1, ts: Date.now() }, extra || {});
     for (const k of SAVED_FIELDS) snap[k] = STATE[k];
     snap.visited = [...STATE.visited];
     snap.flags = [...STATE.flags];
@@ -1790,6 +1794,8 @@ function loadRun(key) {
   if (!('crewPending' in snap)) STATE.crewPending = {}; // pre-severity saves
   if (!('deprived' in snap)) STATE.deprived = {};
   if (!('crewIdentity' in snap)) STATE.crewIdentity = {};
+  if (!('scouted' in snap)) STATE.scouted = {};
+  STATE.scanIntelEvent = null;
   // Saves from before the "planted" announcement existed: the crop was
   // planted long ago — don't announce it on resume.
   if (STATE.cropGrowth) STATE.flags.add('ai_noted_crop_planted');
@@ -1809,6 +1815,9 @@ function loadRun(key) {
     aiLog.scrollTop = aiLog.scrollHeight;
   }
   renderHUD();
+  // Saved on a resumable failure screen: put the player back there.
+  const pf = snap.pendingFailure && (MOD.failures || []).find(x => x.id === snap.pendingFailure);
+  if (pf) { endRun({ kind: 'failure', module: pf }); return true; }
   renderCruise();
   showScreen('screen-cruise');
   return true;
@@ -1930,6 +1939,7 @@ function applySetupToState(sel) {
   STATE.postCombatLegs = 0; STATE.miningSectors = {}; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.summonedEvent = false; STATE.lastAmbientNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
+  STATE.scouted = {}; STATE.scanIntelEvent = null;
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
   if (typeof window.abortFabricator === 'function') window.abortFabricator();
@@ -2316,7 +2326,14 @@ function selectEvent(node) {
     ? { easy: (rules.event_difficulty_weights.easy || 0) * 3 + 10, medium: (rules.event_difficulty_weights.medium || 0) * 2 + 5, hard: (rules.event_difficulty_weights.hard || 0) * 0.3, ultra: (rules.event_difficulty_weights.ultra || 0) * 0.1 }
     : rules.event_difficulty_weights;
 
-  const candidates = Object.values(EVENTS).filter(ev => {
+  const candidates = Object.values(EVENTS).filter(ev => eventEligible(ev, node, triggers));
+  if (!candidates.length) return null;
+  return drawWeightedEvent(candidates, triggers, baseWeights);
+}
+
+/* Can this event fire at this node right now? (selectEvent's pool rule —
+   also used to re-validate an event SCAN locked in earlier.) */
+function eventEligible(ev, node, triggers) {
     if (ev.active === false) return false;
     if (ev.once && STATE.seenEventIds.has(ev.id)) return false;
     // Event-level flag gate — consequence events (choices made earlier
@@ -2348,9 +2365,9 @@ function selectEvent(node) {
     } else if (!nodeTypes.includes('any') && !nodeTypes.includes(node.node_type)) return false;
     const evTriggers = ev.trigger || ['any'];
     return evTriggers.some(t => triggers.has(t));
-  });
-  if (!candidates.length) return null;
+}
 
+function drawWeightedEvent(candidates, triggers, baseWeights) {
   const chosen = weightedDraw(candidates, ev => {
     const tier = Array.isArray(ev.difficulty) ? ev.difficulty[0] : (ev.difficulty || 'medium');
     let w = baseWeights[tier] ?? 1;
@@ -2379,6 +2396,47 @@ function selectEvent(node) {
     if (STATE.pityRelief > 0) STATE.pityRelief--;
   }
   return chosen;
+}
+
+/* SCAN (Bible §Stop verbs: "reveals upcoming nodes / event intel").
+   Draws the events waiting at the stops ahead NOW and locks them in, so
+   what the scan reports is what the ship meets (re-validated on arrival
+   — a scouted event that can no longer fire is redrawn). depth 1 = the
+   next stop(s), every branch of a fork; depth 2 = one stop further;
+   intel = on arrival every choice shows its outcome. Returns the report
+   lines for the cruise log. */
+function scoutAhead(depth, intel) {
+  STATE.scouted = STATE.scouted || {};
+  const pity = [STATE.hardStreak, STATE.pityRelief]; // a scan isn't a draw for pity purposes
+  const lines = [];
+  let frontier = [STATE.currentId];
+  for (let d = 0; d < depth; d++) {
+    const next = [];
+    for (const id of frontier) {
+      const from = STATE.byId[id];
+      for (const nid of (from ? connectionsOf(from) : [])) {
+        const n = STATE.byId[nid];
+        if (!n || next.includes(nid) || STATE.visited.has(nid)) continue;
+        next.push(nid);
+        if (!connectionsOf(n).length) { lines.push((n.name || 'Destination') + ': the destination.'); continue; }
+        const prev = STATE.scouted[nid];
+        const ev = prev ? (prev.ev && EVENTS[prev.ev]) : selectEvent(n);
+        STATE.scouted[nid] = { ev: ev ? ev.id : null, intel: !!(intel || (prev && prev.intel)) };
+        const diff = ev ? (Array.isArray(ev.difficulty) ? ev.difficulty[0] : ev.difficulty) : null;
+        lines.push((n.name || n.node_type) + ': ' + (ev ? (ev.title || 'contact') + (diff ? ' [' + String(diff).toUpperCase() + ']' : '') : 'quiet — nothing on the scopes'));
+      }
+    }
+    frontier = next;
+  }
+  [STATE.hardStreak, STATE.pityRelief] = pity;
+  return lines;
+}
+function scoutedEventFor(node) {
+  const sc = STATE.scouted && STATE.scouted[node.id];
+  if (!sc) return undefined;               // never scanned
+  if (!sc.ev) return null;                 // scanned quiet
+  const ev = EVENTS[sc.ev];
+  return ev && eventEligible(ev, node, activeTriggers()) ? ev : undefined; // stale → redraw
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -2911,6 +2969,7 @@ function returnToHub() {
   STATE.outcomeMode = false; STATE.npcCtx = null; STATE.pendingNext = null;
   STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
   STATE.researchKey = null; // a Research preview lasts for its encounter only
+  STATE.scanIntelEvent = null;
   renderHUD();
   showScreen(STATE.hubScreen);
   if (STATE.hubScreen === 'screen-map') renderMap();
@@ -3156,7 +3215,7 @@ function travelTo(nodeId, opts) {
     // ARIA's passive (ai_companions morale_bonus 1): +1 morale per leg.
     if (STATE.activeAI === 'aria') STATE.resources.morale = clamp(STATE.resources.morale + 1, 0, 100);
     renderHUD();
-    if (checkFailure()) return;
+    if (checkFailure({ arriving: connectionsOf(node).length === 0 })) return;
   }
 
   // Station arrival recharges crew active skills — per each skill's own
@@ -3193,6 +3252,7 @@ function travelTo(nodeId, opts) {
   // event is skipped entirely. Straight back to the hub.
   if (opts.skipEvent && !crisis) {
     STATE.visited.add(nodeId);
+    if (STATE.scouted) delete STATE.scouted[nodeId];
     if ((STATE.postCombatLegs || 0) > 0) STATE.postCombatLegs--;
     returnToHub();
     return;
@@ -3201,7 +3261,11 @@ function travelTo(nodeId, opts) {
   // Fixed test-path nodes may still hardcode event_id (?debug=fixed_path);
   // procedurally generated nodes have none, so this always falls through
   // to the real pool-draw.
-  const ev = crisis || (node.event_id && EVENTS[node.event_id]) || selectEvent(node);
+  const scoutRec = STATE.scouted && STATE.scouted[node.id];
+  const scouted = scoutedEventFor(node);
+  if (STATE.scouted) delete STATE.scouted[node.id];
+  const ev = crisis || (node.event_id && EVENTS[node.event_id]) || (scouted !== undefined ? scouted : selectEvent(node));
+  STATE.scanIntelEvent = (ev && scouted === ev && scoutRec && scoutRec.intel) ? ev.id : null;
   if (ev) {
     enterEvent(node, ev);
   } else {
@@ -3782,6 +3846,14 @@ function choicePreviews(choices) {
     const costs = outcomeFacts(choiceOutcome(worst)).filter(f => !f.good).slice(0, 2).map(f => f.text);
     if (costs.length) out.set(worst, 'MARV · ' + costs.join(' · '));
   }
+  // A perfect SCAN's intel: every choice of the scouted event shows its outcome.
+  if (STATE.scanIntelEvent && STATE.currentEvent && STATE.scanIntelEvent === STATE.currentEvent.id) {
+    for (const ch of cands) {
+      if (out.has(ch)) continue;
+      const facts = outcomeFacts(choiceOutcome(ch)).slice(0, 2).map(f => f.text);
+      out.set(ch, 'SCAN · ' + (facts.length ? facts.join(' · ') : 'NO EFFECT'));
+    }
+  }
   if (STATE.captain === 'academic' && STATE.currentEvent) {
     const key = STATE.currentEvent.id + '|' + (STATE.layerStack || []).join('>');
     if (STATE.researchReady || STATE.researchKey === key) {
@@ -4341,19 +4413,24 @@ function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
    Fires immediately after every resource update. Returns true if
    a failure triggered (caller should stop further processing).
    ──────────────────────────────────────────────────────────────── */
-function checkFailure() {
+// opts.arriving — the leg INTO the destination: the ship got there, so a
+// tank run dry on the way in or a blown deadline isn't a failure; the
+// arrival ending reports the lateness ("N DAYS LATE", owner ruling
+// 2026-10-10). Hull/mutiny/crew/deprivation/crop still end the run.
+function checkFailure(opts) {
   if (STATE.ended) return true;
+  const arriving = !!(opts && opts.arriving);
   // Crop health only advances when ticked — catch it up so crop_dead
   // (and the arrival bracket) never read a leg-old value.
   if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth();
   const r = STATE.resources;
   let type = null;
-  if (r.fuel   <= 0) type = 'no_fuel';
+  if (r.fuel   <= 0 && !arriving) type = 'no_fuel';
   else if (r.hull   <= 0) type = 'hull_zero';
   else if (r.morale <= 0) type = 'mutiny';
   else if (STATE.crew.length === 0 && STATE.flags.has('all_crew_dead')) type = 'crew_gone'; // death only — solo-by-choice is a valid run (ui_sweep catch 2026-08-04)
   else if (deprivationFailure()) type = deprivationFailure();
-  else if (STATE.daysElapsed > STATE.baseDays) type = 'time_expired';
+  else if (STATE.daysElapsed > STATE.baseDays && !arriving) type = 'time_expired';
   // Phase 4's Growbay now tracks real STATE.cropGrowth.health, so this
   // branch is genuinely reachable — but nothing currently decrements
   // health automatically (only the one-time seed at crop selection),
@@ -4418,7 +4495,15 @@ function scoreBracket() {
    just marks the run over and hands off. */
 function endRun(end) {
   STATE.ended = true;
-  clearSave(); // the voyage is over, however it went — no resurrecting it
+  // A failure that offers a way on (Keep flying, the emergency beacon)
+  // isn't the end until the player says so — save the run with that
+  // failure pending so a reload brings the same choice back (it used to
+  // delete the save, losing a run the player could have continued).
+  // Every other end clears it: no resurrecting a finished voyage.
+  const f = end.kind === 'failure' && end.module;
+  const resumable = f && (f.continue_option || (f.emergency_beacon_option && STATE.items.includes('emergency_beacon')));
+  if (resumable && STATE.trail && STATE.nodes.length) writeSnapshot(SAVE_KEY, { pendingFailure: f.id });
+  else clearSave();
   // A failure can fire while an overlay is open (growbay TREAT and
   // fabricator crafts both advance days → time_expired; audit fix) —
   // overlays are independent of showScreen(), so without this the end

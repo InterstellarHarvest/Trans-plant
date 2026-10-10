@@ -267,7 +267,7 @@
       quoteEl.style.display = 'none';
     } else {
       btn.textContent = 'New Run';
-      btn.onclick = () => location.reload();
+      btn.onclick = () => { if (typeof clearSave === 'function') clearSave(); location.reload(); };
       bodyEl.textContent = view.body || '';
       bodyEl.style.display = view.body ? 'block' : 'none';
       if (view.quote) { quoteEl.textContent = view.quote; quoteEl.style.display = 'block'; }
@@ -311,6 +311,9 @@
     showScreen('screen-end');
   };
   window.showEndReport = function () {
+    // Reading the report accepts the ending — a resumable failure's
+    // pending save goes now (index.html endRun kept it for this choice).
+    if (typeof clearSave === 'function') clearSave();
     if (currentView) renderReport(currentView);
   };
   window.endBackToCinematic = function () {
@@ -360,9 +363,10 @@
      fired on the final leg, before triggerArrival); else back to hub. */
   function resumeAfterFailure() {
     renderHUD();
-    if (checkFailure()) return;
     const node = STATE.byId && STATE.byId[STATE.currentId];
-    if (node && connectionsOf(node).length === 0) { triggerArrival(node); return; }
+    const arriving = !!node && connectionsOf(node).length === 0;
+    if (checkFailure({ arriving })) return;
+    if (arriving) { triggerArrival(node); return; }
     returnToHub();
   }
 
