@@ -317,6 +317,9 @@
   }
 
   function fetchJSON(url) {
+    // file:// launch: XHR is blocked, read the generated bundle instead.
+    const bundled = window.TP_PORTABLE && window.TP_PORTABLE.sheets[url];
+    if (bundled) return Promise.resolve(bundled);
     return new Promise(res => {
       const x = new XMLHttpRequest();
       x.onload = () => { try { res(JSON.parse(x.responseText)); } catch (_) { res(null); } };

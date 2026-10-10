@@ -29,6 +29,9 @@ const { chromium } = require('playwright');
 
 const RUNS = parseInt(process.env.FUZZ_RUNS || '6', 10);
 const LEG_BUDGET = 300;
+// Probe-by-error art loading misses on purpose: 404 over http,
+// ERR_FILE_NOT_FOUND on a file:// (double-click) launch.
+const isProbeMiss = e => e.includes('404') || e.includes('ERR_FILE_NOT_FOUND');
 const BASE_URL = process.env.FUZZ_URL || 'http://localhost:8177/index.html?debug=fixed_path';
 
 const TRAILS = ['lunar', 'mars', 'interstellar'];
@@ -191,7 +194,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 
   console.log('distinct events across fuzz:', totalEvents.size);
   console.log('VIOLATIONS:', violations.length ? violations : 'none');
-  console.log('CONSOLE/PAGE ERRORS:', errors.filter(e => !e.includes('404')).slice(0, 10));
+  console.log('CONSOLE/PAGE ERRORS:', errors.filter(e => !isProbeMiss(e)).slice(0, 10));
   await browser.close();
-  process.exit(violations.length || errors.filter(e => !e.includes('404')).length ? 1 : 0);
+  process.exit(violations.length || errors.filter(e => !isProbeMiss(e)).length ? 1 : 0);
 })();

@@ -21,6 +21,13 @@
 <link href="resources/screen-crew.css" rel="stylesheet">
 <link href="resources/screen-orders.css" rel="stylesheet">
 <link href="resources/screen-end.css" rel="stylesheet">
+<script>
+/* Double-click launch: browsers block fetch()/XHR on file:// pages, so
+   opened from disk the engine reads its JSON from a generated bundle
+   (tools/build_portable.js). Parser-inserted so window.TP_PORTABLE
+   exists before any engine script runs. Over http it is never loaded. */
+if (location.protocol === 'file:') document.write('<script src="engine/js/portable_data.js"><\/script>');
+</script>
 <script src="resources/shared.js"></script>
 <script src="sprites/minigames/forage/sprites.js"></script>
 <script src="sprites/minigames/forage/anchors.js"></script>
@@ -1588,6 +1595,8 @@ const MOD = {};       // raw loaded modules
 const EVENTS = {};    // flat event-id → event lookup
 
 async function loadJSON(path) {
+  const bundled = window.TP_PORTABLE && window.TP_PORTABLE.modules[path];
+  if (bundled) return bundled;
   let res;
   try { res = await fetch(path); }
   catch (e) { throw new Error(`network error fetching ${path}: ${e.message}`); }
@@ -1625,7 +1634,9 @@ async function loadAllModules() {
   } catch (e) {
     status.textContent = 'FAILED.';
     errBox.style.display = 'block';
-    errBox.textContent = e.message + '\n\nNote: this engine reads JSON via fetch().\nFor local testing, serve the project root with a static server:\n  python3 -m http.server 8000\nThen open http://localhost:8000/';
+    errBox.textContent = e.message + (location.protocol === 'file:'
+      ? '\n\nOpened from disk: the data bundle engine/js/portable_data.js is missing or incomplete.\nRebuild it with:  node tools/build_portable.js\nOr serve the project root:  python3 -m http.server 8000'
+      : '\n\nNote: this engine reads JSON via fetch().\nFor local testing, serve the project root with a static server:\n  python3 -m http.server 8000\nThen open http://localhost:8000/');
     throw e;
   }
 }

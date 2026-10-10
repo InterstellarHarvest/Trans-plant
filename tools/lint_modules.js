@@ -276,6 +276,17 @@ function trailCoverage() {
   for (const [name, fs] of dupes) errors.push(`global collision: window.${name} assigned in ${[...fs].join(' AND ')} — later-loaded file silently wins`);
 }
 
+// ── file:// bundle freshness (added 2026-10-09) ────────────────────
+// Double-click launches read modules from engine/js/portable_data.js,
+// not the JSON — a stale bundle would silently ship old content there.
+{
+  const { build, OUT } = require('./build_portable.js');
+  const outPath = path.join(ROOT, OUT);
+  if (!fs.existsSync(outPath) || fs.readFileSync(outPath, 'utf8') !== build()) {
+    err(`${OUT} is stale vs modules/ (file:// launches would run old content) — run: node tools/build_portable.js`);
+  }
+}
+
 if (errors.length) {
   console.error(`lint_modules: ${errors.length} issue(s) found:\n`);
   errors.forEach(e => console.error('  - ' + e));

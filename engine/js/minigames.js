@@ -2497,7 +2497,10 @@ function initBrace(container, onResult){
 // ─────────────────────────────────────────────
 // Patch sprite preloaded once (used to bake welded variants on demand).
 const BREACH_PATCH_IMG = new Image();
-BREACH_PATCH_IMG.src = 'sprites/minigames/hullbreach/breach_patch.png';
+// file:// launch: a disk image taints the weld-bake canvas, so use the
+// bundle's data: URI copy when there is one.
+BREACH_PATCH_IMG.src = (window.TP_PORTABLE && window.TP_PORTABLE.images['sprites/minigames/hullbreach/breach_patch.png'])
+  || 'sprites/minigames/hullbreach/breach_patch.png';
 const WELD_THICKNESS = 4;
 const WELD_PAD = WELD_THICKNESS + 1;  // 5 — must match CSS .bpatch.welded sizing
 

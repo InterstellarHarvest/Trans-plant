@@ -32,7 +32,7 @@ const INERT_OK = new Set([]);
   const page = await browser.newPage({ viewport: { width: 1100, height: 780 } });
   const errors = [], flags = [];
   page.on('pageerror', e => errors.push('[pageerror] ' + (e.stack || e.message)));
-  page.on('console', m => { if (m.type() === 'error' && !m.text().includes('404')) errors.push('[console] ' + m.text()); });
+  page.on('console', m => { if (m.type() === 'error' && !m.text().includes('404') && !m.text().includes('ERR_FILE_NOT_FOUND')) errors.push('[console] ' + m.text()); });
   page.on('dialog', async d => { await d.accept(); });
   const say = (ok, n, d) => console.log((ok ? '  ✓ ' : '  ✗ ') + n + (d ? ' — ' + d : ''));
   const flag = (n, d) => { flags.push(n + (d ? ' — ' + d : '')); say(false, n, d); };

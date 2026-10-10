@@ -28,6 +28,9 @@
 
   const $ = id => document.getElementById(id);
   const SPR = 'sprites/minigames/engine/';
+  // CSS mask-image is a CORS fetch, which file:// launches refuse — use
+  // the bundle's data: URI copy when there is one (tools/build_portable.js).
+  const MASK = f => (window.TP_PORTABLE && window.TP_PORTABLE.images[SPR + f]) || SPR + f;
 
   // ── scene state ──────────────────────────────────────────────
   const COMPS = ['breaker', 'switches', 'valve', 'junction'];
@@ -75,10 +78,10 @@
       <img class="fault-sprite" id="er-fs-valve"    src="${SPR}bg_engine_error_coolant.png"  alt="">
       <img class="fault-sprite" id="er-fs-junction" src="${SPR}bg_engine_error_fuel.png"     alt="">
       <div id="er-hl-tint-layer" class="hl-layer active">
-        <div class="hl-tint" data-fault="breaker"  style="-webkit-mask-image:url(${SPR}bg_engine_error_relay.png);mask-image:url(${SPR}bg_engine_error_relay.png)"></div>
-        <div class="hl-tint" data-fault="switches" style="-webkit-mask-image:url(${SPR}bg_engine_error_ignition.png);mask-image:url(${SPR}bg_engine_error_ignition.png)"></div>
-        <div class="hl-tint" data-fault="valve"    style="-webkit-mask-image:url(${SPR}bg_engine_error_coolant.png);mask-image:url(${SPR}bg_engine_error_coolant.png)"></div>
-        <div class="hl-tint" data-fault="junction" style="-webkit-mask-image:url(${SPR}bg_engine_error_fuel.png);mask-image:url(${SPR}bg_engine_error_fuel.png)"></div>
+        <div class="hl-tint" data-fault="breaker"  style="-webkit-mask-image:url(${MASK('bg_engine_error_relay.png')});mask-image:url(${MASK('bg_engine_error_relay.png')})"></div>
+        <div class="hl-tint" data-fault="switches" style="-webkit-mask-image:url(${MASK('bg_engine_error_ignition.png')});mask-image:url(${MASK('bg_engine_error_ignition.png')})"></div>
+        <div class="hl-tint" data-fault="valve"    style="-webkit-mask-image:url(${MASK('bg_engine_error_coolant.png')});mask-image:url(${MASK('bg_engine_error_coolant.png')})"></div>
+        <div class="hl-tint" data-fault="junction" style="-webkit-mask-image:url(${MASK('bg_engine_error_fuel.png')});mask-image:url(${MASK('bg_engine_error_fuel.png')})"></div>
       </div>
       <canvas id="er-spark-canvas" width="960" height="640"></canvas>
       <div class="enc-ai-bar">
