@@ -183,7 +183,21 @@
     return 'space/deep';
   }
 
+  /* An event may author its own room at the top level (same names and
+     rules as a layer's bg / bgBase / bgSprite — e.g. our_ship/cargo for
+     a cargo-bay event); its layers resolve against that. */
   function sceneSpecFor(ev, node, npcCtx) {
+    const base = sceneTypeSpecFor(ev, node, npcCtx);
+    if (!(ev.bg || ev.bgBase !== undefined || ev.bgSprite !== undefined)) return base;
+    const slot = (v, inherited) => (v === undefined || v === 'inherit') ? inherited
+      : (v ? expandPath(v, ev, node, npcCtx) : null);
+    return {
+      bg: (ev.bg && ev.bg !== 'inherit') ? (expandPath(ev.bg, ev, node, npcCtx) || base.bg) : base.bg,
+      bgBase: slot(ev.bgBase, base.bgBase || null),
+      bgSprite: slot(ev.bgSprite, base.bgSprite || null),
+    };
+  }
+  function sceneTypeSpecFor(ev, node, npcCtx) {
     const st = ev.scene_type || null;
     const pickKey = instanceKey(ev, node);
     const npc = npcCtx || null;
@@ -215,7 +229,12 @@
         if (disp === 'station_crew' && npc.job && STATION_ROOM_BY_JOB[npc.job]) {
           return { bg: STATION_ROOM_BY_JOB[npc.job] };
         }
-        if (disp === 'trader') return { bg: 'station/market/mixed' };
+        // A station stall: the vendor's own quarter of the market (human
+        // or alien) or the mixed concourse — stable per event instance.
+        if (disp === 'trader') {
+          const own = (npc.species === 'human') ? 'station/market/human' : 'station/market/alien';
+          return { bg: stablePick('market:' + pickKey, [own, 'station/market/mixed']) };
+        }
         return { bg: 'station/promenade' };
       }
       case 'planet_surface': {

@@ -945,6 +945,7 @@ const eventOnTrail = (ev, trail) => {
     for (const [t, to] of Object.entries(o.tier_outcomes || {})) outcomeScenes(at + ' tier ' + t, to, ev);
   };
   for (const { file, event: ev } of eventsById.values()) {
+    for (const [f, sp] of LAYER_FIELDS) usePath(atOf(file, ev.id, ''), f, ev[f], ev, sp); // event-level room (scene_art sceneSpecFor)
     for (const [lid, layer] of Object.entries(ev.layers || {})) {
       for (const [f, sp] of LAYER_FIELDS) usePath(atOf(file, ev.id, lid), f, layer[f], ev, sp);
     }
@@ -966,7 +967,8 @@ const eventOnTrail = (ev, trail) => {
     ['ship_interior/derelict', false, 'scene_art.js derelict_interior'], ['our_ship/corridor', false, 'scene_art.js ship_interior'],
     ['our_ship/growbay/{crop}', false, 'scene_art.js growbay'],
     ['station/medbay', false, 'scene_art.js station'], ['station/office', false, 'scene_art.js station'], ['station/dock', false, 'scene_art.js station'],
-    ['station/promenade', false, 'scene_art.js station'], ['station/market/mixed', false, 'scene_art.js station'], ['station/cantina', false, 'scene_art.js station'],
+    ['station/promenade', false, 'scene_art.js station'], ['station/market/mixed', false, 'scene_art.js station'],
+    ['station/market/human', false, 'scene_art.js station trader (human vendor)'], ['station/market/alien', false, 'scene_art.js station trader (alien vendor)'], ['station/cantina', false, 'scene_art.js station'],
     ['planet_surface/{biome}/approach', false, 'scene_art.js planet_surface'],
     ['anomaly/distortion', false, 'scene_art.js anomaly'], ['anomaly/fractal', false, 'scene_art.js anomaly'], ['anomaly/void', false, 'scene_art.js anomaly'],
   ];

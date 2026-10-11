@@ -502,7 +502,11 @@
   // layered encounter rather than a bare market screen; the trader IS
   // the market). WAIT FOR TRADER — park for days and roll the dice.
   function handleTradeVerb() {
-    const ev = EVENTS['event_encounter_trader_001'];
+    // Docked at a station, the market is the station's own Market Row
+    // (a vendor in person at a stall); anywhere else a trader ship
+    // answers the call.
+    const here = STATE.byId[STATE.currentId];
+    const ev = (here && here.node_type === 'station' && EVENTS['event_station_013']) || EVENTS['event_encounter_trader_001'];
     if (!ev) { pushLogEntry('◆ No traders registered on this route.'); return; }
     closeStopMenu();
     enterEvent(STATE.byId[STATE.currentId], ev);
