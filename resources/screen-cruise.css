@@ -141,25 +141,24 @@
 }
 
 /* Station stop: the node's station (sprites/backgrounds/station/approach,
-   painted by scene_art.js paintStationView) hangs above and behind the
-   ship, which drops into the lower half of the scene to sit under it
-   (top clears the resource HUD floating at the scene's top-left). Same render
+   painted by scene_art.js paintStationView) hangs in the distance, upper
+   right, clear of the resource HUD (top-left) and the ship (centre) —
+   the ship is on approach, not parked on top of it. Same render
    contract as the encounter's approach mode: --sprite-w/h unitless px,
    --approach-scale an integer downscale, spritesheet frames cycled via
    --frame-x/y, static pngs bob. */
 #cruise-station {
   position: absolute;
-  left: 50%; top: 46px;
+  right: 28px; top: 40px;
   width:  calc(var(--sprite-w, 0) * var(--approach-scale, 1) * 1px);
   height: calc(var(--sprite-h, 0) * var(--approach-scale, 1) * 1px);
-  margin-left: calc(var(--sprite-w, 0) * var(--approach-scale, 1) * -0.5px);
+  filter: brightness(0.9) saturate(0.9); /* a touch of distance */
   background-repeat: no-repeat;
   image-rendering: pixelated;
   pointer-events: none;
   display: none;
 }
 #cruise-station.shown { display: block; }
-#cruise-scene.at-station #ship-silhouette { top: 68%; }
 #cruise-station.static { background-size: 100% 100%; }
 #cruise-station.static.bobbing { animation: cruise-station-bob 10s ease-in-out infinite; }
 #cruise-station.animated {

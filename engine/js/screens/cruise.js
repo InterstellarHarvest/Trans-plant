@@ -108,7 +108,7 @@
     if (!window.SceneArt || !SceneArt.paintStationView) return;
     const node = STATE.byId && STATE.byId[STATE.currentId];
     $('cruise-scene').classList.toggle('at-station', !!(node && node.node_type === 'station'));
-    SceneArt.paintStationView($('cruise-station'), node, { maxW: 330, maxH: 250 });
+    SceneArt.paintStationView($('cruise-station'), node, { maxW: 170, maxH: 130 });
   }
 
   function renderCruise() {

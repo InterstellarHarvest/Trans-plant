@@ -1018,7 +1018,8 @@ const eventOnTrail = (ev, trail) => {
     }
   };
   if (fs.existsSync(BG)) walkBg(BG);
-  for (const [folder, n] of [...orphans].sort()) warn(`orphaned backdrop: sprites/backgrounds/${folder}/ — ${n} image(s) no event path or engine scene pool can show`);
+  // Owner 2026-10-11: every background must be reachable ("if they don't, we need to wire them up").
+  for (const [folder, n] of [...orphans].sort()) err(`orphaned backdrop: sprites/backgrounds/${folder}/ — ${n} image(s) no event path or engine scene pool can show`);
 }
 
 function printWarnings(out) {
