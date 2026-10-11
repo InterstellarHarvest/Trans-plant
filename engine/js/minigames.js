@@ -450,10 +450,10 @@ document.getElementById('mclose').addEventListener('click', requestCloseMinigame
 // game mid-drag.
 let ovPressOnBackdrop = false;
 document.getElementById('ov').addEventListener('mousedown', e=>{ ovPressOnBackdrop = (e.target===document.getElementById('ov')); });
-// Once a game has started, only ✕ QUIT ends it: a stray backdrop press
-// (a double-click on the pause menu's RESUME landing behind it) used to
-// abandon the job.
-document.getElementById('ov').addEventListener('click', e=>{ if(e.target===document.getElementById('ov') && ovPressOnBackdrop && !minigameStarted) requestCloseMinigame(); ovPressOnBackdrop = false; });
+// A press in the first moment after the pause menu closes is the second
+// half of a double-clicked RESUME, not a quit (hunt 6: it abandoned the job).
+const justResumed = () => window.PauseBus && PauseBus.resumedAt && performance.now() - PauseBus.resumedAt < 400;
+document.getElementById('ov').addEventListener('click', e=>{ if(e.target===document.getElementById('ov') && ovPressOnBackdrop && !justResumed()) requestCloseMinigame(); ovPressOnBackdrop = false; });
 // No "Play Again" — replaying a Stop Menu verb minigame for free without
 // re-opening the Stop Menu would let SALVAGE/FORAGE farm resources in a
 // tight loop (same exploit-avoidance concern the plan flagged for Mining's

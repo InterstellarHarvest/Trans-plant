@@ -893,6 +893,7 @@ const PauseBus = {
   resume() {
     if (!this.paused) return;
     this.paused = false;
+    this.resumedAt = performance.now(); // a double-clicked RESUME's 2nd press must not land as a click behind the menu
     this.listeners.forEach(fn => { try { fn(false); } catch (e) { console.warn(e); } });
   },
   onChange(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); },

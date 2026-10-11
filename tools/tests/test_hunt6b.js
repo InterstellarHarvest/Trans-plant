@@ -146,11 +146,12 @@ const btn = (page, re) => page.evaluate(src => { const b = [...document.querySel
       const begin = [...document.querySelectorAll('#ov button, #ov .btn')].find(x => /BEGIN/i.test(x.textContent));
       begin && begin.click(); await new Promise(r => setTimeout(r, 300));
       const ov = document.getElementById('ov');
-      ov.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); ov.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      PauseBus.pause(); PauseBus.resume();                   // RESUME's first press…
+      ov.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); ov.dispatchEvent(new MouseEvent('click', { bubbles: true })); // …and its second
       await new Promise(r => setTimeout(r, 200));
       return { stillOpen: ov.classList.contains('open'), day: STATE.daysElapsed, morale: STATE.resources.morale };
     });
-    ok(r1.stillOpen, 'a backdrop press does not quit a running job');
+    ok(r1.stillOpen, 'a double-clicked RESUME does not quit the running job behind it');
     await reloadAndContinue(page);
     const r2 = await page.evaluate(() => ({ day: STATE.daysElapsed, morale: STATE.resources.morale, log: JSON.stringify((STATE.shipLog || []).slice(-2)) }));
     ok(r2.day === r1.day + 1 && r2.morale === r1.morale && /abandoned partway/.test(r2.log), `a reload mid-job settles as a quit (day +${r2.day - r1.day}, tax kept)`);
