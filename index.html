@@ -4053,6 +4053,32 @@ function currentLayer() {
 const _typeActive = new Map(); // el → cancel fn
 // Pause menu SETTINGS → TEXT SPEED (shared.js tpLoadSettings).
 const TEXT_SPEED_MULT = { slow: 1.8, normal: 1, fast: 0.35 };
+/* The spoken line hangs under the speaker's portrait; a long one used to
+   run down under the narrative panel (event_station_008 by 37px). Both
+   type in, so measure them at their full text, then lift the line just
+   enough to clear the panel. */
+function fitEncDialog(lineText, bodyText, tries) {
+  const d = document.getElementById('enc-dialog'), n = document.getElementById('enc-narrative');
+  const dl = document.getElementById('enc-dialog-line'), nb = document.getElementById('enc-narr-body');
+  d.style.transition = 'none';
+  d.style.top = '';
+  d._fitFor = lineText;
+  if (d.classList.contains('hidden') || getComputedStyle(d).display === 'none' || !d.offsetHeight || !n.offsetHeight) {
+    d.style.transition = '';
+    // Painted before the screen is shown (first entry): fit once it lays out.
+    if ((tries || 0) < 10 && !d.classList.contains('hidden')) requestAnimationFrame(() => { if (d._fitFor === lineText) fitEncDialog(lineText, bodyText, (tries || 0) + 1); });
+    return;
+  }
+  const saved = [dl.textContent, nb.textContent];
+  dl.textContent = lineText;
+  if (bodyText != null) nb.textContent = bodyText;
+  const scale = d.getBoundingClientRect().height / d.offsetHeight || 1; // the stage may be CSS-scaled
+  const over = (d.getBoundingClientRect().bottom - n.getBoundingClientRect().top) / scale + 8;
+  dl.textContent = saved[0]; nb.textContent = saved[1];
+  if (over > 0) d.style.top = Math.round(d.offsetTop - over) + 'px';
+  void d.offsetHeight;
+  d.style.transition = '';
+}
 function typeInto(el, text, ms, onDone) {
   let speed = 'normal';
   try { speed = (typeof tpLoadSettings === 'function' && tpLoadSettings().textSpeed) || 'normal'; } catch (e) {}
@@ -4160,8 +4186,8 @@ function renderEncounterState() {
 
   document.getElementById('enc-narr-title').textContent = (layer && layer.title) || ev.title || node.name;
   finishAllTyping();
-  typeInto(document.getElementById('enc-narr-body'),
-           interpolateStowawayTokens(interpolateNpcTokens(body || '', STATE.npcCtx)), 12);
+  const layerBodyText = interpolateStowawayTokens(interpolateNpcTokens(body || '', STATE.npcCtx));
+  typeInto(document.getElementById('enc-narr-body'), layerBodyText, 12);
   document.getElementById('enc-narrative').classList.remove('tone-success', 'tone-danger');
 
   const dialogEl = document.getElementById('enc-dialog');
@@ -4171,10 +4197,11 @@ function renderEncounterState() {
     document.getElementById('enc-dialog-name').textContent = speaker ? speaker.displayName : '';
     // Dialog types slower than narration (spoken cadence); the talk
     // animation stops the moment the line finishes typing.
-    typeInto(document.getElementById('enc-dialog-line'),
-             interpolateStowawayTokens(interpolateNpcTokens(line, STATE.npcCtx)), 26,
+    const lineText = interpolateStowawayTokens(interpolateNpcTokens(line, STATE.npcCtx));
+    typeInto(document.getElementById('enc-dialog-line'), lineText, 26,
              () => { if (window.SceneArt) SceneArt.stopTalking(); });
     dialogEl.classList.remove('hidden');
+    fitEncDialog(lineText, layerBodyText);
   } else {
     dialogEl.classList.add('hidden');
   }
@@ -4242,10 +4269,11 @@ function renderOutcomeView(outcome) {
   if (outcome.line) {
     const who = STATE.lastSpeaker || STATE.npcCtx;
     document.getElementById('enc-dialog-name').textContent = who ? who.displayName : '';
-    typeInto(document.getElementById('enc-dialog-line'),
-             interpolateStowawayTokens(interpolateNpcTokens(outcome.line, who)), 26,
+    const lineText = interpolateStowawayTokens(interpolateNpcTokens(outcome.line, who));
+    typeInto(document.getElementById('enc-dialog-line'), lineText, 26,
              () => { if (window.SceneArt) SceneArt.stopTalking(); });
     dialogEl.classList.remove('hidden');
+    fitEncDialog(lineText, bodyText);
   } else {
     dialogEl.classList.add('hidden');
   }

@@ -250,6 +250,37 @@ const close = (a, b) => Math.abs(a - b) < 1e-9;
     await page.close();
   }
 
+  console.log('— a long spoken line never runs under the narrative panel');
+  {
+    const page = await boot();
+    const r = await page.evaluate(async () => {
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      const node = STATE.byId[STATE.currentId];
+      const bad = [], checked = [];
+      for (const ev of Object.values(EVENTS)) {
+        const layers = ev.layers ? Object.keys(ev.layers) : [null];
+        for (const lid of layers) {
+          const layer = lid ? ev.layers[lid] : ev;
+          if (!layer || !layer.line) continue;
+          showScreen('screen-cruise'); // enter from the hub each time: the first paint happens before the screen lays out
+          enterEvent(node, ev, lid ? { layerStack: [lid] } : undefined);
+          await wait(80);
+          if (typeof finishAllTyping === 'function') finishAllTyping();
+          await wait(20);
+          const d = document.getElementById('enc-dialog'), n = document.getElementById('enc-narrative');
+          if (d.classList.contains('hidden') || getComputedStyle(d).display === 'none') continue;
+          const gap = n.getBoundingClientRect().top - d.getBoundingClientRect().bottom;
+          checked.push(ev.id + (lid ? '/' + lid : ''));
+          if (gap < 0) bad.push(ev.id + (lid ? '/' + lid : '') + ' ' + Math.round(gap));
+        }
+      }
+      return { bad, n: checked.length, has008: checked.some(x => x.startsWith('event_station_008')) };
+    });
+    ok(r.n > 20 && r.has008, 'checked ' + r.n + ' spoken lines (incl. event_station_008)');
+    ok(r.bad.length === 0, 'no spoken line overlaps the narrative panel' + (r.bad.length ? ': ' + r.bad.slice(0, 5).join(', ') : ''));
+    await page.close();
+  }
+
   ok(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
   await browser.close();
   console.log(`\n${pass} passed, ${fail} failed`);
