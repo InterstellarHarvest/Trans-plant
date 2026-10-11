@@ -356,6 +356,14 @@ for (const file of eventFiles) {
   }
 }
 
+// Materials are cargo (owner ruling 2026-10-11, Bible §14.1): each type
+// is a stack costing ceil(count × cargo_slots_per_10 / 10) slots. The
+// field is data (default 1); when present it must be a number ≥ 0.
+for (const m of (readJSON('modules/materials/materials.json').materials || [])) {
+  if ('cargo_slots' in m) err(`materials.json ${m.id}: "cargo_slots" is the item field — materials stack: use cargo_slots_per_10`);
+  if ('cargo_slots_per_10' in m && !(Number.isFinite(m.cargo_slots_per_10) && m.cargo_slots_per_10 >= 0)) err(`materials.json ${m.id}: cargo_slots_per_10 must be a number ≥ 0`);
+}
+
 let engineGrantedItems = {}; // filled by the item-sources block; read by the item-sinks block
 // Item sources (nothing orphaned): every item a choice, event or recipe
 // REQUIRES must be obtainable somewhere — an event grant, the station

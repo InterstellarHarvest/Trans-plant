@@ -1025,7 +1025,6 @@ body {
       </div>
       <!-- DESIGN_SYSTEM close path 2 (the demo has no footer). -->
       <div id="inv-footer">
-        <span id="inv-note">Materials and the crop don't use cargo slots.</span>
         <button class="btn accent-gold" id="inv-close" data-esc-close>Close</button>
       </div>
       <div id="inv-confirm" class="hidden">
@@ -2044,8 +2043,10 @@ function applySetupToState(sel) {
    Slot data comes entirely from authored content: items.json's
    cargo_slots / cargo_slots_per_10 per item, ships.json's
    cargo_capacity_base (8) on the one ship, +5 from the insulated
-   cargo bay upgrade while held. Materials (fabricator stock) and the
-   crop are NOT cargo — they live in their own systems.
+   cargo bay upgrade while held. Materials (fabricator stock) ARE cargo
+   (owner ruling 2026-10-11, Bible §14.1): stackable at materials.json
+   cargo_slots_per_10 (default 1), granted through grantMaterials().
+   The crop is not cargo — it lives in the growbay.
    ──────────────────────────────────────────────────────────────── */
 function itemDef(shortId) {
   if (!STATE._itemDefs) {
@@ -2099,20 +2100,80 @@ function canRemoveItem(id) {
    Bible/demo per-unit rule (owner ruling 2026-10-11: one fuel cell is
    0.3 of a slot → 1, not a whole 3-slot block; was ceil(n/10) × per10).
    Everything else authors a flat cargo_slots. Unknown ids cost 1. */
+// A material's slot rate per 10 units (materials.json, default 1), or null for a non-material id.
+function materialPer10(id) {
+  const m = ((MOD.materials && MOD.materials.materials) || []).find(x => x.id === id);
+  if (!m) return null;
+  return Number.isFinite(m.cargo_slots_per_10) && m.cargo_slots_per_10 >= 0 ? m.cargo_slots_per_10 : 1;
+}
 function itemSlotsFor(id, n) {
+  if (!n) return 0;
+  const mp = materialPer10(id);
+  if (mp != null) return Math.ceil(n * mp / 10 - 1e-9);
   const def = itemDef(id);
   if (!def) return n;
   if (def.cargo_slots_per_10) return Math.ceil(n * def.cargo_slots_per_10 / 10 - 1e-9);
   return (def.cargo_slots || 0) * n;
+}
+// Slots the materials stores take (each type its own stack).
+function materialSlotsUsed() {
+  let used = 0;
+  for (const [id, n] of Object.entries(STATE.materials || {})) if (n > 0) used += itemSlotsFor(id, n);
+  return used;
 }
 function cargoSlotsUsed() {
   const counts = {};
   for (const id of STATE.items) counts[id] = (counts[id] || 0) + 1;
   let used = 0;
   for (const [id, n] of Object.entries(counts)) used += itemSlotsFor(id, n);
-  return used;
+  return used + materialSlotsUsed();
 }
-window.itemSlotsFor = itemSlotsFor; window.cargoCapacityParts = cargoCapacityParts;
+/* How much of each material in `want` ({ id: qty }) would land right now,
+   taking them in order (each stack fills to the slot it can get): the
+   honest preview and the grant use the same answer. Negative entries
+   are costs, not grants (passed through). */
+function materialLandings(want) {
+  const cap = cargoCapacity();
+  const sim = Object.assign({}, STATE.materials || {});
+  const out = {};
+  for (const [id, q0] of Object.entries(want || {})) {
+    const q = Math.round(q0 || 0);
+    if (q <= 0) { out[id] = q; continue; }
+    const per10 = materialPer10(id);
+    const have = sim[id] || 0;
+    if (!per10) { out[id] = q; sim[id] = have + q; continue; }
+    const saved = STATE.materials; STATE.materials = sim;
+    const usedOther = cargoSlotsUsed() - itemSlotsFor(id, have);
+    STATE.materials = saved;
+    const allowed = Math.floor((cap - usedOther) * 10 / per10 + 1e-9); // units of this stack the hold can carry
+    const got = Math.max(0, Math.min(q, allowed - have));
+    out[id] = got; sim[id] = have + got;
+  }
+  return out;
+}
+/* Grants materials respecting capacity (owner ruling 2026-10-11 — the
+   same rule as items): what fits comes aboard, the rest is left behind
+   with an honest log line (no silent loss). Returns { got, left }.
+   opts.quiet: the caller reports the left-behind itself (combat card). */
+function grantMaterials(want, opts) {
+  const land = materialLandings(want);
+  const got = {}, left = {};
+  if (!STATE.materials) STATE.materials = {};
+  for (const [id, q0] of Object.entries(want || {})) {
+    const q = Math.round(q0 || 0);
+    if (q < 0) { STATE.materials[id] = Math.max(0, (STATE.materials[id] || 0) + q); continue; }
+    const g = land[id] || 0;
+    if (g > 0) { STATE.materials[id] = (STATE.materials[id] || 0) + g; got[id] = g; }
+    if (q > g) left[id] = q - g;
+  }
+  const leftList = Object.entries(left).map(([id, n]) => n + ' ' + id);
+  if (leftList.length && !(opts && opts.quiet) && typeof window.pushCruiseLog === 'function') {
+    window.pushCruiseLog('◆ CARGO FULL — ' + leftList.join(', ') + ' left behind. Jettison something (INV) to make room.');
+  }
+  return { got, left };
+}
+function grantMaterial(id, qty, opts) { return grantMaterials({ [id]: qty }, opts).got[id] || 0; }
+Object.assign(window, { itemSlotsFor, cargoCapacityParts, materialPer10, materialSlotsUsed, materialLandings, grantMaterials, grantMaterial });
 
 /* Grants an item respecting capacity. Returns true if it fit; false
    (plus an honest log line) if the hold is full and it was left behind.
@@ -4743,8 +4804,15 @@ function outcomeFacts(o) {
     if (!v) continue;
     facts.push({ text: (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + RES_LABEL[k], weight: Math.abs(v) / (k === 'gold' ? 5 : 1), good: v > 0 });
   }
+  // Materials are cargo: a gain shows only what the hold can take now.
+  const matLand = materialLandings(o.materials || {});
   for (const [m, q] of Object.entries(o.materials || {})) {
-    if (Number.isFinite(q) && q) facts.push({ text: (q > 0 ? '+' : '−') + Math.abs(q) + ' ' + m.toUpperCase(), weight: Math.abs(q) * 2, good: q > 0 });
+    if (!Number.isFinite(q) || !q) continue;
+    if (q < 0) { facts.push({ text: '−' + Math.abs(q) + ' ' + m.toUpperCase(), weight: Math.abs(q) * 2, good: false }); continue; }
+    const g = matLand[m] || 0;
+    if (g >= q) facts.push({ text: '+' + q + ' ' + m.toUpperCase(), weight: q * 2, good: true });
+    else if (g > 0) facts.push({ text: '+' + g + ' ' + m.toUpperCase() + ' (HOLD FULL)', weight: g * 2, good: true });
+    else facts.push({ text: 'NO ROOM FOR ' + m.toUpperCase(), weight: 4, good: false });
   }
   if (o.fabricator_repair) facts.push({ text: o.fabricator_repair === 'full' ? 'FAB GOOD AS NEW' : 'FAB REPAIRED', weight: 12, good: true });
   // Only a real outbreak is cleared (a clean bay has nothing to show).
@@ -5308,10 +5376,9 @@ function applyOutcomeEffects(o) {
   // Materials grant (additive schema field, mirrors combat loot's
   // direct STATE.materials routing) — map of material id -> quantity.
   if (o.materials) {
-    for (const [mat, qty] of Object.entries(o.materials)) {
-      // Captain standing in: half the gains — materials too (rounded down).
-      STATE.materials[mat] = (STATE.materials[mat] || 0) + (STATE.halfEffect && qty > 0 ? Math.floor(qty / 2) : qty);
-    }
+    // Captain standing in: half the gains — materials too (rounded down).
+    // Capacity-enforced (materials are cargo): what fits lands, the rest is logged left behind.
+    grantMaterials(Object.fromEntries(Object.entries(o.materials).map(([mat, qty]) => [mat, STATE.halfEffect && qty > 0 ? Math.floor(qty / 2) : qty])));
   }
 
   // Stowaway resolution (outcome field on reveal-event choices):

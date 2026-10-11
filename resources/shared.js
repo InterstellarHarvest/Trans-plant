@@ -1628,9 +1628,13 @@ const MarketModal = (function() {
     wares.forEach((ware, idx) => {
       const consumed = _state.consumedWares.has(idx);
       const afford   = canAffordCost(ware.cost);
+      // A buy the hold can't take is locked up-front with the reason
+      // (owner ruling 2026-10-11: previews stay honest — materials are cargo now).
+      const fits     = consumed || !_state.opts.canAddCargo || _state.opts.canAddCargo(ware);
       const row = document.createElement('div');
-      row.className = 'market-row' + (consumed ? ' consumed' : '') + (!consumed && !afford ? ' locked' : '');
+      row.className = 'market-row' + (consumed ? ' consumed' : '') + (!consumed && (!afford || !fits) ? ' locked' : '') + (!fits ? ' no-room' : '');
       if (ware.desc) { row.dataset.tipTitle = String(ware.name || '').toUpperCase(); row.dataset.tipDescription = ware.desc; } // .ui-tip (was a 3rd, CSS ::before style)
+      if (!fits) { row.dataset.tipTitle = String(ware.name || '').toUpperCase(); row.dataset.tipDescription = _state.opts.cargoFullMsg || 'No room for that.'; row.dataset.tipTone = 'danger'; }
       row.appendChild(makeIcon(ware.icon));
       row.appendChild(makeName(ware.name));
       const costEl = document.createElement('div');
@@ -1642,13 +1646,13 @@ const MarketModal = (function() {
         costEl.textContent = formatCost(ware.cost);
         if (ware.cost.item && ware.cost.gold) costEl.classList.add('mixed');
         else if (ware.cost.item)               costEl.classList.add('barter');
-        if (!afford) costEl.classList.add('locked');
+        if (!afford || !fits) costEl.classList.add('locked');
       }
       row.appendChild(costEl);
       const btn = document.createElement('button');
       btn.className = 'market-row-btn';
-      btn.textContent = ware.cost.item ? 'TRADE' : 'BUY';
-      btn.disabled = consumed || !afford;
+      btn.textContent = consumed ? (ware.cost.item ? 'TRADE' : 'BUY') : !fits ? 'NO ROOM' : (ware.cost.item ? 'TRADE' : 'BUY');
+      btn.disabled = consumed || !afford || !fits;
       btn.addEventListener('click', () => buyWare(idx));
       row.appendChild(btn);
       list.appendChild(row);

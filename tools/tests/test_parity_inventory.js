@@ -43,6 +43,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
   {
     const page = await boot();
     const r = await page.evaluate(ids => {
+      STATE.materials = {}; // items only here (materials: their own section)
       const out = [];
       for (const id of ids) {
         const p10 = itemDef(id).cargo_slots_per_10;
@@ -58,7 +59,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
     ok(r.find(x => x.id === 'fuel_cell' && x.n === 1).got === 1 && r.find(x => x.id === 'medkit' && x.n === 10).got === 1 && r.find(x => x.id === 'fuel_cell' && x.n === 11).got === 4,
       'one fuel cell = 1 slot (was 3); ten medkits = 1; eleven fuel cells = 4 (was 6)');
     const g = await page.evaluate(() => {
-      STATE.items = [];
+      STATE.items = []; STATE.materials = {}; // (materials are cargo too — their own section below)
       const cap = cargoCapacity();
       let n = 0; while (grantItem('fuel_cell') && n < 200) n++;
       const capFull = cargoSlotsUsed();
@@ -73,6 +74,157 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
     ok(g.lock === 'No cargo space' && g.lockMedkit === 'No cargo space', 'choice lock previews the new rule (no room for one more)');
     ok(g.cap2 === g.cap + 5 && g.parts.bonus === 5 && g.m === Math.floor(g.cap2 * 10 / 3) - g.n, `cargo bay: items.json slot_bonus +5 (cap ${g.cap2}); ${g.m} more cells fit`);
     ok(!g.canBay, 'the cargo bay still cannot leave while its slots are in use');
+    await page.close();
+  }
+
+  console.log('— materials are cargo (owner ruling: Bible §14.1, cargo_slots_per_10 1)');
+  {
+    const page = await boot();
+    const d = await page.evaluate(() => ({
+      per10: MOD.materials.materials.map(m => m.id + ':' + m.cargo_slots_per_10),
+      legacy: MOD.materials.materials.some(m => 'cargo_slots' in m),
+      metal: [1, 5, 10, 11, 35].map(n => itemSlotsFor('metal', n)),
+      start: Object.assign({}, STATE.materials), startSlots: materialSlotsUsed(), used: cargoSlotsUsed(), items: STATE.items.slice(),
+    }));
+    ok(d.per10.every(x => x.endsWith(':1')) && !d.legacy, 'materials.json: every material cargo_slots_per_10 1 (' + d.per10.join(' ') + ')');
+    ok(JSON.stringify(d.metal) === '[1,1,1,2,4]', 'metal at 1/5/10/11/35 = ' + d.metal.join('/') + ' slots (ceil(n × 1 / 10))');
+    ok(d.startSlots === 2 && JSON.stringify(d.start) === '{"metal":4,"scrap":2}', `starting stores (metal 4, scrap 2) take ${d.startSlots} slots (hold ${d.used} used with ${d.items.join('+')})`);
+    // The one grant path: take what fits, log what stays behind.
+    const g = await page.evaluate(() => {
+      STATE.materials = {}; STATE.items = [];
+      while (cargoSlotsUsed() < cargoCapacity() - 1) STATE.items.push('gas_analyzer');
+      const r = grantMaterials({ metal: 25 });
+      const log = (STATE.shipLog || []).slice(-1)[0].text;
+      const full = grantMaterial('scrap', 3);
+      return { got: r.got, left: r.left, metal: STATE.materials.metal, used: cargoSlotsUsed(), cap: cargoCapacity(), log, full, log2: STATE.shipLog.slice(-1)[0].text };
+    });
+    ok(g.got.metal === 10 && g.left.metal === 15 && g.metal === 10 && g.used === g.cap, `grantMaterials: 25 metal into 1 free slot → 10 aboard, 15 left (${g.used}/${g.cap})`);
+    ok(/CARGO FULL — 15 metal left behind/.test(g.log) && g.full === 0 && /3 scrap left behind/.test(g.log2), `no silent loss: "${g.log}"`);
+    // Event outcome materials (incl. the botanist's OFFER A SAMPLE) + an honest preview.
+    const e = await page.evaluate(() => {
+      STATE.materials = {}; STATE.items = [];
+      while (cargoSlotsUsed() < cargoCapacity() - 1) STATE.items.push('gas_analyzer');
+      const facts = outcomeFacts({ materials: { biocomponent: 30 } }).map(f => f.text);
+      applyOutcomeEffects({ materials: { biocomponent: 30 } });
+      const after = STATE.materials.biocomponent;
+      const none = outcomeFacts({ materials: { exotic: 2 } }).map(f => f.text);
+      STATE.materials.biocomponent = 5; STATE.items = [];
+      const fits = outcomeFacts({ materials: { biocomponent: 3 } }).map(f => f.text);
+      const ev = EVENTS.event_station_012;
+      const sample = JSON.stringify(ev).match(/"materials":\{"biocomponent":3\}/) || JSON.stringify(ev).match(/"materials": \{"biocomponent": 3\}/);
+      const cost = (applyOutcomeEffects({ materials: { biocomponent: -2 } }), STATE.materials.biocomponent);
+      return { facts, after, none, fits, sample: !!sample, cost };
+    });
+    ok(e.facts.includes('+10 BIOCOMPONENT (HOLD FULL)') && e.after === 10, `event materials: preview "${e.facts.join(', ')}" = what lands (${e.after})`);
+    ok(e.none.includes('NO ROOM FOR EXOTIC') && e.fits.includes('+3 BIOCOMPONENT'), 'a full hold previews NO ROOM; room previews the full gain');
+    ok(e.sample && e.cost === 3, "the botanist's sample trade rides the same outcome path; material costs still subtract");
+    // MINE and SALVAGE through the real verbs (minigames stubbed to a fixed haul).
+    const verb = async (type, re, stub) => page.evaluate(async ({ type, re, stub }) => {
+      const w = ms => new Promise(r => setTimeout(r, ms));
+      returnToHub(); await w(50);
+      STATE.materials = {}; STATE.items = [];
+      while (cargoSlotsUsed() < cargoCapacity() - 2) STATE.items.push('gas_analyzer');
+      const node = STATE.byId[STATE.currentId]; node.node_type = type; STATE.traderAt = {};
+      if (stub === 'mine') window.openMining = cb => cb({ inventory: { metal: 15, minerals: 20 }, runs: 1 });
+      else window.openMinigame = (id, o, cb) => cb('good', { salvage: { scrap: 25, metal: 5 } });
+      renderCruise(); await w(50);
+      if (!document.body.classList.contains('stop-active')) document.getElementById('stop-btn').click();
+      if (typeof window.refreshStopMenu === 'function') window.refreshStopMenu(); // the verb list follows the (re-typed) node
+      await w(80);
+      const btn = [...document.querySelectorAll('#stop-choices .stop-choice:not(.locked)')].find(b => new RegExp(re).test((b.querySelector('.stop-choice-body') || b).textContent));
+      if (!btn) return { missing: [...document.querySelectorAll('#stop-choices .stop-choice')].map(b => b.textContent.trim().slice(0, 20)) };
+      btn.click(); await w(150);
+      const step = document.querySelector('#stop-choices .day-step'); if (step) { step.click(); await w(150); }
+      return { mats: Object.assign({}, STATE.materials), used: cargoSlotsUsed(), cap: cargoCapacity(), log: STATE.shipLog.slice(-4).map(x => x.text).join(' | ') };
+    }, { type, re, stub });
+    const m = await verb('asteroid_field', '^MINE', 'mine');
+    ok(!m.missing && m.mats.metal === 15 && !m.mats.minerals && m.used === m.cap && /20 minerals left behind/.test(m.log) && /no room for minerals/.test(m.log), `MINE: the haul lands as far as the hold allows (${JSON.stringify(m.mats || m.missing)}; ${(m.log || '').slice(0, 140)})`);
+    const v = await verb('derelict', '^SALVAGE', 'salvage');
+    ok(!v.missing && v.mats.scrap === 20 && !v.mats.metal && /5 scrap, 5 metal left behind/.test(v.log), `SALVAGE: same rule (${JSON.stringify(v.mats || v.missing)}; ${(v.log || '').slice(0, 140)})`);
+    await page.close();
+  }
+
+  console.log('— materials: market locks, sells and the fabricator free space, inventory');
+  {
+    const page = await boot();
+    const r = await page.evaluate(async () => {
+      const w = ms => new Promise(r => setTimeout(r, ms));
+      STATE.items = []; STATE.goldAmount = 500;
+      STATE.materials = { metal: 1 };
+      while (cargoSlotsUsed() < cargoCapacity()) STATE.items.push('gas_analyzer');
+      openMarket({}); await w(50);
+      const row = () => [...document.querySelectorAll('#market-buy-list .market-row')].find(x => /FUEL CELL/.test(x.textContent));
+      const locked = { btn: row().querySelector('.market-row-btn').textContent, dis: row().querySelector('.market-row-btn').disabled, tip: row().dataset.tipDescription };
+      const metalRow = [...document.querySelectorAll('#market-sell-list .market-row')].find(x => /METAL/.test(x.textContent));
+      metalRow.querySelector('button').click(); await w(50);
+      const after = { btn: row().querySelector('.market-row-btn').textContent, dis: row().querySelector('.market-row-btn').disabled, metal: STATE.materials.metal || 0, used: cargoSlotsUsed(), cap: cargoCapacity() };
+      MarketModal.close(); await w(50);
+      // The fabricator spends materials → space comes back.
+      STATE.items = []; STATE.materials = { metal: 11, scrap: 11, minerals: 11, biocomponent: 11, exotic: 11 }; // 2 slots each: any unit spent frees one
+      const before = materialSlotsUsed();
+      openFabricator(); await w(300);
+      const rec = MOD.recipes.recipes.find(x => x.id === 'recipe_hull_patch') || MOD.recipes.recipes[0];
+      [...document.querySelectorAll('.fb-recipe-row')].find(x => x.textContent.includes(rec.name)).click();
+      craftSelected(); await w(50);
+      const fab = { before, after: materialSlotsUsed(), mats: Object.assign({}, STATE.materials) };
+      closeFabricator(); if (window.abortFabricator) window.abortFabricator();
+      return { locked, after, fab };
+    });
+    ok(r.locked.btn === 'NO ROOM' && r.locked.dis && /No room in the hold/.test(r.locked.tip || ''), `a buy the hold can't take is locked with the reason ("${r.locked.btn}" — ${r.locked.tip})`);
+    ok(r.after.metal === 0 && r.after.used < r.after.cap && r.after.btn === 'BUY' && !r.after.dis, `selling the metal frees its slot; the buy unlocks (${r.after.used}/${r.after.cap})`);
+    ok(r.fab.after < r.fab.before, `fabricator consumption frees space (materials ${r.fab.before} → ${r.fab.after} slots)`);
+    const inv = await page.evaluate(async () => {
+      const w = ms => new Promise(r => setTimeout(r, ms));
+      STATE.items = ['gas_analyzer', 'gas_analyzer']; STATE.materials = { metal: 35, scrap: 46 };
+      openInventory();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: '2', bubbles: true })); await w(20);
+      document.querySelector('#inv-grid .inv-tile[data-id="metal"]').click();
+      const rows = [...document.querySelectorAll('#inv-detail-meta .detail-stat')].map(d => d.textContent);
+      const tip = document.getElementById('inv-slots').dataset.tipDescription;
+      const tipRows = JSON.parse(document.getElementById('inv-slots').dataset.tipRows);
+      const footer = document.getElementById('inv-footer').textContent.trim();
+      const jettShown = getComputedStyle(document.getElementById('inv-jett-btn')).display !== 'none';
+      document.querySelector('#inv-grid .inv-tile[data-id="scrap"]').click();
+      const used0 = cargoSlotsUsed();
+      document.getElementById('inv-jett-btn').click();
+      const max = document.getElementById('inv-jett-all').classList.contains('hidden') ? 0 : 1;
+      document.getElementById('inv-jett-all').click();
+      return { rows, tip, tipRows, footer, jettShown, max, scrap: STATE.materials.scrap, used0, used1: cargoSlotsUsed(), log: STATE.shipLog.slice(-1)[0].text,
+        copy: document.getElementById('inv-card').textContent, pools: JSON.stringify(MOD.flavor.ai_universal.cargo_hold.category.material) };
+    });
+    ok(inv.rows[1] === 'SLOT COST0.1 per unit 4 total', `MATERIALS detail carries the slot cost ("${inv.rows[1]}")`);
+    ok(/^2 gear · 9 materials/.test(inv.tip) && inv.tipRows[0].value === '2' && inv.tipRows[1].label === 'Materials' && inv.tipRows[1].value === '9', `readout breakdown (Bible): "${inv.tip.slice(0, 22)}"`);
+    ok(inv.footer === 'Close' && !/don.t use cargo|own stores|off the cargo manifest|don.t take cargo/i.test(inv.copy + inv.pools), 'the "materials are free" copy is gone (footer, detail, AI lines)');
+    ok(inv.jettShown && inv.max && inv.scrap === 0 && inv.used1 === inv.used0 - 5 && /Jettisoned: 46 scrap/.test(inv.log), `materials can go out the airlock too (JETTISON ALL scrap: ${inv.used0} → ${inv.used1} slots)`);
+    await page.close();
+  }
+
+  console.log('— materials: combat loot into a full hold');
+  {
+    const page = await boot({ captain: 'engineer', crew: ['botanist', 'chef'] });
+    const click = t => page.evaluate(t => { const b = [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => b.textContent.includes(t) && !b.classList.contains('combat-fading-out')); if (!b) return false; b.click(); return true; }, t);
+    const has = t => page.evaluate(t => [...document.querySelectorAll('#enc-choices .enc-choice')].some(b => b.textContent.includes(t)), t);
+    await page.evaluate(() => { Math.random = () => 0.5; enterEvent(STATE.byId[STATE.currentId], EVENTS.event_encounter_pirate_001); });
+    await page.waitForTimeout(250);
+    await page.evaluate(() => window.triggerCombat({}));
+    await page.waitForTimeout(450);
+    // Fight until the pirate is beaten (wrecked → SALVAGE WRECKAGE, or it
+    // surrenders → FINISH THEM); both pay metal/scrap through the same path.
+    let end = null;
+    for (let i = 0; i < 14 && !end; i++) {
+      if (await has('SALVAGE WRECKAGE')) end = 'SALVAGE WRECKAGE';
+      else if (await has('FINISH THEM')) end = 'FINISH THEM'; // a surrender pays no materials; finishing them does
+      else { if (await has('FIRE LASER')) { await click('FIRE LASER'); await page.waitForTimeout(80); await page.keyboard.press('Enter'); } await page.waitForTimeout(1300); }
+    }
+    // A full hold: every drop (Math.random 0.2) meets no room.
+    await page.evaluate(() => { STATE.materials = {}; STATE.items = []; while (cargoSlotsUsed() < cargoCapacity()) STATE.items.push('gas_analyzer'); Math.random = () => 0.2; });
+    await click(end || 'SALVAGE WRECKAGE');
+    for (let i = 0; i < 20 && end === 'FINISH THEM' && !(await page.evaluate(() => document.getElementById('combat-end-overlay').classList.contains('show'))); i++) { if (await has('SALVAGE WRECKAGE')) { await click('SALVAGE WRECKAGE'); break; } await page.waitForTimeout(200); }
+    await page.waitForFunction(() => document.getElementById('combat-end-overlay').classList.contains('show'), null, { timeout: 4000 }).catch(() => {});
+    const r = await page.evaluate(() => ({ mats: Object.assign({}, STATE.materials), notes: (document.querySelector('#combat-end-loot .end-loot-notes') || {}).textContent || '',
+      tiles: [...document.querySelectorAll('#combat-end-loot .end-loot-tile')].map(t => t.dataset.id + ':' + t.dataset.count) }));
+    ok(end && !Object.values(r.mats).some(v => v > 0) && /Hold full: .*× metal.*left behind/.test(r.notes) && !r.tiles.some(t => /^(metal|scrap):[1-9]/.test(t)),
+      `combat loot (${end}): metal meets a full hold → nothing lands, the card names what was left ("${r.notes.slice(0, 110)}")`);
     await page.close();
   }
 
@@ -279,7 +431,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
       out.bay = { rows: rows(), cat: document.getElementById('inv-detail-cat').textContent };
       document.dispatchEvent(new KeyboardEvent('keydown', { key: '2', bubbles: true }));
       pick('#inv-grid .inv-tile[data-id="metal"]');
-      out.metal = { rows: rows(), cat: document.getElementById('inv-detail-cat').textContent, name: document.getElementById('inv-detail-name').textContent, acts: getComputedStyle(document.getElementById('inv-detail-actions')).display };
+      out.metal = { rows: rows(), cat: document.getElementById('inv-detail-cat').textContent, name: document.getElementById('inv-detail-name').textContent, acts: getComputedStyle(document.getElementById('inv-detail-actions')).display, use: getComputedStyle(document.getElementById('inv-use-btn')).display, jett: getComputedStyle(document.getElementById('inv-jett-btn')).display, slot: rows()[1] };
       out.wantFuel = stationBuyPrice('fuel_cell'); out.wantMetal = stationBuyPrice('metal');
       out.fumes = Object.values(EVENTS).find(e => JSON.stringify(e).includes('"requires_item": "fuel_cell"') || JSON.stringify(e).includes('"requires_item":"fuel_cell"'));
       out.fumes = out.fumes && out.fumes.title;
@@ -293,7 +445,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
     ok(r.bone.corner === '??' && r.bone.rows[2] === 'SELL PRICE4–28g · fence 6–42g' && /needs a spectrometer/.test(r.bone.rows[3]) && r.bone.notes === '', 'rolled value hidden without a spectrometer (range + ??)');
     ok(r.boneKnown.corner === '17g' && r.boneKnown.rows[2] === 'SELL PRICE17g · fence 26g', 'with a spectrometer: the exact copy value');
     ok(r.bay.cat === 'UPGRADE' && r.bay.rows[1] === 'SLOT COST0 (+5 cap)', 'cargo bay: SLOT COST 0 (+5 cap)');
-    ok(r.metal.cat === 'MATERIAL' && r.metal.name === 'Metal' && r.metal.rows[2] === 'SELL PRICE' + r.wantMetal + 'g each' && r.metal.acts === 'none', 'material detail: name from materials.json, unit price, no actions');
+    ok(r.metal.cat === 'MATERIAL' && r.metal.name === 'Metal' && r.metal.rows[2] === 'SELL PRICE' + r.wantMetal + 'g each' && r.metal.use === 'none' && r.metal.jett !== 'none' && /^SLOT COST0\.1 per unit/.test(r.metal.slot), 'material detail: name from materials.json, slot cost, unit price, JETTISON (no USE)');
     await page.close();
   }
 
@@ -377,7 +529,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
     const page = await boot();
     const r = await page.evaluate(async () => {
       const w = ms => new Promise(r => setTimeout(r, ms));
-      STATE.items = []; STATE.goldAmount = 140;
+      STATE.items = []; STATE.materials = {}; STATE.goldAmount = 140;
       const cap = cargoCapacity();
       openInventory();
       const g0 = +document.getElementById('inv-gold').textContent;
@@ -406,7 +558,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
     ok(r.g0 < 140 && r.gMid > r.g0 && r.gMid < 140 && r.gEnd === 140, `gold readout rolls up (${r.g0} → ${r.gMid} → ${r.gEnd})`);
     ok(r.near.cls && r.near.color === 'rgb(216, 168, 64)' && r.near.flash, 'amber at ≥90%, number flashes on change');
     ok(r.at.cls && r.at.color === 'rgb(204, 51, 51)' && r.at.anim === 'inv-slot-pulse', 'red pulse at the cap');
-    ok(r.rows.some(x => x.label === 'Instruments' && +x.value === r.cap) && r.rows.some(x => x.label === 'Capacity'), 'slot readout tip breaks the hold down (' + JSON.stringify(r.rows) + ')');
+    ok(r.rows.some(x => x.label === 'Gear' && +x.value === r.cap) && r.rows.some(x => x.label === 'Materials' && x.value === '0') && r.rows.some(x => x.label === 'Capacity'), 'slot readout tip breaks the hold down (' + JSON.stringify(r.rows) + ')');
     ok(r.layout.cw === 816 && r.layout.ch === 600 && Math.round(r.layout.col) === 295 && r.layout.side && Math.round(r.layout.tile) === 88, 'side-column layout: 816×600 card, 88px tiles, 295px detail column right of the grid');
     ok(r.empty === 'Click an item or resource tile for details.' && r.sb === 'none', 'demo empty-detail copy; detail column uses the gold scrollbar');
     await page.close();

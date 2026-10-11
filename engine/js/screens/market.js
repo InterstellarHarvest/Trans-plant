@@ -326,7 +326,7 @@
       getGold: () => STATE.goldAmount,
       setGold: v => { STATE.goldAmount = Math.max(0, v); renderHUD(); },
       // Items, then one entry per unit of each raw material (the list
-      // stacks them) — materials sell at stations, never take hold space.
+      // stacks them) — materials sell at stations; each unit sold frees its share of hold space.
       getCargo: () => cargoEntries().concat(
         (vendor.sinister || opts.vendor === 'surplus') ? [] : allMaterialDefs().flatMap(m => Array.from({ length: STATE.materials[m.id] || 0 }, () => ({
           id: m.id, name: (m.name || m.id).toUpperCase(), icon: 'sprites/cargo/materials/' + m.id + '.png', desc: m.description || '', tags: [], material: true,
