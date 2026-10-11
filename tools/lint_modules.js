@@ -804,6 +804,17 @@ const eventOnTrail = (ev, trail) => {
     if (npc && path.basename(f) === 'spritesheet.png' && kind === 'png') {
       const w = b.readUInt32BE(16), h = b.readUInt32BE(20);
       if (w !== 392 || h !== 294) warn(`sprites/${rel}: NPC spritesheet is ${w}×${h}, not 392×294 — frames slice off-grid`);
+      // The engine slices fixed cells (scene_art.js NPC_FRAME_COORDS: 96×96,
+      // 1px border, 2px gutter) in the JSON's frame order — a right-sized
+      // sheet packed edge to edge still slices 1–5px off.
+      const CELLS = [[1, 1], [99, 1], [197, 1], [1, 99], [99, 99], [197, 99], [1, 197], [99, 197], [197, 197], [295, 1]];
+      const jf = path.join(path.dirname(f), 'spritesheet.json');
+      try {
+        const j = JSON.parse(fs.readFileSync(jf, 'utf8'));
+        const frames = Array.isArray(j.frames) ? j.frames : Object.values(j.frames || {});
+        const bad = frames.findIndex((fr, i) => !CELLS[i] || fr.frame.x !== CELLS[i][0] || fr.frame.y !== CELLS[i][1] || fr.frame.w !== 96 || fr.frame.h !== 96);
+        if (frames.length !== 10 || bad >= 0) warn(`sprites/${rel}: frame ${bad >= 0 ? bad : frames.length} is not on the engine grid (96×96 cells at 1/99/197/295, 1px border, 2px gutter) — the talk animation slices off`);
+      } catch (e) { warn(`sprites/${rel}: no readable spritesheet.json beside it`); }
     }
   };
   walk(path.join(SPR, 'backgrounds'), f => check(f, false));
