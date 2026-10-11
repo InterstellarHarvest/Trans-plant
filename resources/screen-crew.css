@@ -480,7 +480,7 @@
   flex-direction: column;
   gap: 6px;
   min-height: 96px;
-  cursor: help;
+  cursor: var(--cursor-pointer, default); /* hover-info card (.ui-tip), not the OS help cursor */
   transition: border-color 0.12s;
 }
 #overlay-crew .cd-skill-card:hover { border-color: rgba(200,168,90,0.45); }
@@ -578,7 +578,7 @@
 }
 #overlay-crew .cd-active-btn.locked {
   filter: grayscale(0.7) brightness(0.55);
-  cursor: default;
+  cursor: var(--cursor-denied, not-allowed);
   pointer-events: none;
   box-shadow: none;
 }

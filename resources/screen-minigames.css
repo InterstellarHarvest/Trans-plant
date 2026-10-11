@@ -3,6 +3,15 @@
    duplicate :root vars already in shared.css) stripped during migration. */
 
 #overlay-minigames.active { display: flex; align-items: center; justify-content: center; }
+/* demo-minigames :root + body colour, scoped (parity pass 2026-10-11):
+   --muted was never defined in the engine and the page body colour is
+   near-white, so hint text and the BRACE HUD read near-white. */
+#overlay-minigames {
+  --muted: #5a7a6a;
+  --info:  #35c6bf;
+  --body:  #8898a8;
+  color: var(--body);
+}
 
 #ov{
   position:absolute;inset:0;z-index:200;
@@ -29,7 +38,7 @@
 #mclose{
   font-family:'Press Start 2P',cursive; line-height: 1;font-size:7px;
   background:rgba(204,51,51,.12);border:1px solid rgba(204,51,51,.4);
-  color:var(--red);padding:5px 8px;cursor:pointer;border-radius:2px;
+  color:var(--red);padding:5px 8px;cursor:var(--cursor-hand,pointer);border-radius:2px;
 }
 #mclose:hover{background:rgba(204,51,51,.28)}
 #mbody{flex:1;overflow:hidden;position:relative;}
@@ -64,7 +73,7 @@
 .rbtns{display:flex;gap:10px}
 .rbtn{
   font-family:'Press Start 2P',cursive; line-height: 1;font-size:6px;letter-spacing:1.5px;
-  padding:9px 14px;border-radius:2px;cursor:pointer;border:1px solid;transition:.15s;
+  padding:9px 14px;border-radius:2px;cursor:var(--cursor-hand,pointer);border:1px solid;transition:.15s;
 }
 .rbtn.again{background:rgba(200,168,90,.1);border-color:rgba(200,168,90,.5);color:var(--gold)}
 .rbtn.again:hover{background:rgba(200,168,90,.2)}
@@ -90,7 +99,7 @@
 .eng-nodes{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:440px}
 .enode{
   background:rgba(14,21,32,.85);border:2px solid var(--slate);border-radius:4px;
-  padding:18px 10px;width:128px;text-align:center;cursor:pointer;
+  padding:18px 10px;width:128px;text-align:center;cursor:var(--cursor-hand,pointer);
   display:flex;flex-direction:column;gap:6px;align-items:center;
   transition:.12s;
 }
@@ -228,7 +237,7 @@
 .symptom-cv{
   position:absolute;width:48px;height:48px;
   margin-left:-24px;margin-top:-24px;
-  z-index:5;cursor:pointer;
+  z-index:5;cursor:var(--cursor-hand,pointer);
   image-rendering:pixelated;
 }
 .med-body-panel.scan-mode .symptom-cv{cursor:none}
@@ -257,7 +266,7 @@
 .med-supply{
   background:no-repeat center/contain;
   image-rendering:pixelated;
-  cursor:pointer;
+  cursor:var(--cursor-hand,pointer);
   transition:transform .12s, filter .15s;
 }
 .med-supply.scanner{width:140px;height:140px}
@@ -367,7 +376,7 @@
   font-family:'Press Start 2P',cursive; line-height: 1;font-size:7px;letter-spacing:1px;
   padding:6px 10px;background:rgba(200,168,90,.18);
   border:1px solid var(--gold);color:var(--gold);
-  cursor:pointer;border-radius:2px;transition:.15s;
+  cursor:var(--cursor-hand,pointer);border-radius:2px;transition:.15s;
   box-shadow:0 1px 4px rgba(0,0,0,.5);
 }
 .for-depart:hover{background:rgba(200,168,90,.35)}
@@ -677,7 +686,7 @@
 .bbtn{
   width:190px;height:190px;border-radius:50%;
   background:radial-gradient(circle,rgba(14,21,32,.84) 55%,rgba(42,48,64,.55));
-  border:3px solid var(--info);cursor:pointer;
+  border:3px solid var(--info);cursor:var(--cursor-hand,pointer);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
   user-select:none;-webkit-user-select:none;
   transition:.1s;box-shadow:0 0 20px rgba(53,198,191,.18);
@@ -831,7 +840,7 @@
 .eng-toggle{
   font-family:'Press Start 2P',cursive; line-height: 1;font-size:6px;letter-spacing:1px;
   padding:6px 9px;background:rgba(20,26,40,.8);border:1px solid var(--slate);
-  color:var(--body);cursor:pointer;border-radius:2px;margin-left:14px;
+  color:var(--body);cursor:var(--cursor-hand,pointer);border-radius:2px;margin-left:14px;
 }
 .eng-toggle.on{background:rgba(140,200,144,.12);border-color:var(--teal);color:var(--teal)}
 .eng-toggle:hover{border-color:var(--gold)}
@@ -900,8 +909,10 @@
   image-rendering:pixelated;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));
 }
-.tpatch.draggable{cursor:grab}
-.tpatch.draggable:active{cursor:grabbing}
+/* Draggables keep the hand the whole way — no closed-fist grab/grabbing
+   (owner rule, DESIGN_SYSTEM "Cursor system"). */
+.tpatch.draggable{cursor:var(--cursor-hand,pointer)}
+.tpatch.draggable:active{cursor:var(--cursor-hand,pointer)}
 
 .bhole{
   position:absolute;width:48px;height:48px;
@@ -917,19 +928,19 @@
   filter:drop-shadow(0 4px 5px rgba(0,0,0,.6));
 }
 .bpatch.dragging{pointer-events:none;opacity:.95}
-.bpatch.snapped{cursor:pointer;animation:bpsnap .3s ease-out}
+.bpatch.snapped{cursor:var(--cursor-hand,pointer);animation:bpsnap .3s ease-out}
 @keyframes bpsnap{from{transform:scale(1.35)}to{transform:scale(1)}}
 .bpatch.welded{
   /* Welded element is replaced in-place by a <canvas> at weld time.
      Sprite is 48px native; CSS displays at 1.5× = 72px. Add WELD_PAD (5px)
      each side native ≈ 7.5px CSS each side → 88×88 with -44 margin. */
-  cursor:default;animation:none;
+  cursor:var(--cursor-pointer,default);animation:none;
   width:88px;height:88px;
   margin-left:-44px;margin-top:-44px;
   background:none;filter:none;
   image-rendering:pixelated;
 }
-.bpatch.dropped{cursor:pointer}
+.bpatch.dropped{cursor:var(--cursor-hand,pointer)}
 .weld-hint{
   position:absolute;
   font-family:'Press Start 2P',cursive; line-height: 1;font-size:6px;letter-spacing:1px;color:var(--gold);
@@ -1134,7 +1145,7 @@
 .sal-haul-tile{
   width:64px;height:64px;position:relative;
   background:rgba(20,26,40,.7);border:2px solid var(--slate);
-  border-radius:2px;cursor:pointer;
+  border-radius:2px;cursor:var(--cursor-hand,pointer);
   display:flex;align-items:center;justify-content:center;
   transition:all .15s;
 }
@@ -1145,7 +1156,7 @@
   font-family:'Press Start 2P',cursive; line-height: 1;font-size:6px;
   background:rgba(0,0,0,.75);color:var(--cream);padding:1px 3px;border-radius:1px;
 }
-.sal-haul-tile.processed{opacity:.22;cursor:default;border-color:var(--muted);}
+.sal-haul-tile.processed{opacity:.22;cursor:var(--cursor-denied,not-allowed);border-color:var(--muted);}
 .sal-haul-tile.processed:hover{transform:none;border-color:var(--muted)}
 .sal-haul-tile.shaking{animation:salShake .4s ease-out}
 .sal-haul-tile.popped{animation:salPop .25s forwards}
@@ -1179,17 +1190,17 @@
 .sal-end-btn{
   font-family:'Press Start 2P',cursive; line-height: 1;font-size:7px;letter-spacing:2px;
   padding:8px 16px;background:rgba(200,168,90,.12);border:1px solid var(--gold);
-  color:var(--gold);cursor:pointer;border-radius:2px;
+  color:var(--gold);cursor:var(--cursor-hand,pointer);border-radius:2px;
 }
 .sal-end-btn:hover{background:rgba(200,168,90,.28)}
-.sal-end-btn.disabled{opacity:.35;cursor:not-allowed}
+.sal-end-btn.disabled{opacity:.35;cursor:var(--cursor-denied,not-allowed)}
 .sal-end-btn.disabled:hover{background:rgba(200,168,90,.12)}
 
 .sal-flash{
   position:absolute;inset:0;
   background:rgba(0,0,0,.86);
   display:flex;align-items:center;justify-content:center;
-  z-index:20;cursor:pointer;
+  z-index:20;cursor:var(--cursor-hand,pointer);
 }
 .sal-flash[hidden]{display:none}
 .sal-flash-card{
@@ -1269,7 +1280,7 @@
   font-family:'Press Start 2P',cursive; line-height: 1;font-size:9px;letter-spacing:3px;
   padding:12px 36px;flex-shrink:0;
   background:rgba(200,168,90,.12);border:2px solid var(--gold);color:var(--gold);
-  cursor:pointer;border-radius:3px;transition:.15s;
+  cursor:var(--cursor-hand,pointer);border-radius:3px;transition:.15s;
   animation:rpulse 1.4s ease-in-out infinite alternate;
 }
 .ready-start:hover{background:rgba(200,168,90,.25);animation:none}

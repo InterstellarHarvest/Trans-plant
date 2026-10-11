@@ -45,6 +45,15 @@
    per design call 2026-05-06. Each var has a system-cursor
    fallback so the page stays usable if cursor generation fails. */
 html, body { cursor: var(--cursor-pointer, default); }
+/* Cursor routing (parity pass 2026-10-11) — every control gets the pixel
+   set, not the OS hand/arrow: anything you can press shows the hand,
+   anything locked or disabled shows the red Denied (cursor-armory.html).
+   :where() keeps these at zero specificity, so a surface's own rule
+   (a reticle, a Wait/Scan state) still wins. Per-surface rules that set
+   a raw `cursor: pointer/default/not-allowed/grab` were converted too —
+   tools/tests/test_parity_shell.js measures the computed cursor. */
+:where(button, [role="button"], a[href], select, summary, input[type="range"], input[type="checkbox"], input[type="radio"], input[type="button"]) { cursor: var(--cursor-hand, pointer); }
+:where(button:disabled, input:disabled, [aria-disabled="true"]) { cursor: var(--cursor-denied, not-allowed); }
 
 /* ── Native scrollbar (dev sidebar + any non-custom scrollable) ──
    The 3-rule baseline used by most demos. Demos that need a denser
@@ -79,6 +88,7 @@ html, body { cursor: var(--cursor-pointer, default); }
   gap: 6px;
 }
 .panel-btn:hover { filter: brightness(1.15); }
+.panel-btn:disabled, .panel-btn.disabled, .panel-btn.locked { cursor: var(--cursor-denied, not-allowed); }
 .panel-btn:active {
   border-style: inset;
   border-color: var(--pb-lo) var(--pb-hi) var(--pb-hi) var(--pb-lo);
@@ -147,7 +157,7 @@ html, body { cursor: var(--cursor-pointer, default); }
   box-shadow:
     inset 0 1px 0 rgba(232,216,160,0.55),
     inset 0 -1px 0 rgba(40,25,5,0.5);
-  cursor: var(--cursor-hand, grab);
+  cursor: var(--cursor-hand, pointer);
   top: 0;
 }
 .scroll-host.dragging .scroll-thumb,
@@ -552,7 +562,7 @@ html, body { cursor: var(--cursor-pointer, default); }
   text-transform: uppercase;
 }
 .pause-btn:hover { background: rgba(200,168,90,0.12); color: var(--pause-amber-bright); }
-.pause-btn:disabled { opacity: 0.35; cursor: default; }
+.pause-btn:disabled { opacity: 0.35; cursor: var(--cursor-denied, not-allowed); }
 .pause-btn:disabled:hover { background: transparent; color: var(--pause-amber); }
 .pause-btn-danger { border-color: var(--pause-danger); color: var(--pause-danger); }
 .pause-btn-danger:hover { background: rgba(204,51,51,0.15); color: #e88; }
@@ -701,29 +711,9 @@ html, body { cursor: var(--cursor-pointer, default); }
   font-size: 16px;
   position: relative;
 }
-/* Item tooltip — appears below the row on hover when data-tip is set.
-   Placed below so it doesn't clip against the modal top edge. */
-.market-row[data-tip]:hover::before {
-  content: attr(data-tip);
-  position: absolute;
-  top: calc(100% + 5px);
-  left: 0;
-  right: 0;
-  background: rgba(8,12,18,0.96);
-  border: 1px solid rgba(200,168,90,0.45);
-  color: #d0c890;
-  font-family: 'VT323', monospace;
-  font-size: 15px;
-  line-height: 1.35;
-  padding: 7px 10px;
-  border-radius: 3px;
-  z-index: 200;
-  pointer-events: none;
-  white-space: normal;
-  word-wrap: break-word;
-  opacity: 1;
-}
-/* Dim only element children so the ::before tooltip keeps full opacity. */
+/* (The market's own ::before row tooltip — a third tooltip style — is
+   gone: rows carry data-tip-title/-description for the shared .ui-tip.) */
+/* Dim only the element children (the row frame keeps full opacity). */
 .market-row.locked   > * { opacity: 0.5; }
 .market-row.consumed > * { opacity: 0.4; filter: grayscale(0.6); }
 .market-row-icon {
@@ -769,13 +759,13 @@ html, body { cursor: var(--cursor-pointer, default); }
   color: #1a1410;
   border: 1px solid #1a1410;
   border-radius: 2px;
-  cursor: pointer;
+  cursor: var(--cursor-hand, pointer);
   min-width: 46px;
 }
 .market-row-btn:hover:not(:disabled) { filter: brightness(1.12); }
 .market-row-btn:disabled {
   opacity: 0.4;
-  cursor: not-allowed;
+  cursor: var(--cursor-denied, not-allowed);
   background: rgba(200,168,90,0.3);
   color: rgba(255,255,255,0.4);
 }
@@ -811,7 +801,7 @@ html, body { cursor: var(--cursor-pointer, default); }
   color: var(--gold, #c8a85a);
   border: 1px solid var(--gold, #c8a85a);
   border-radius: 2px;
-  cursor: pointer;
+  cursor: var(--cursor-hand, pointer);
 }
 .market-close:hover { background: rgba(80,55,40,0.8); }
 
@@ -880,3 +870,89 @@ html, body { cursor: var(--cursor-pointer, default); }
 .enc-market.sinister .market-log-line.system.neg { color: #8b4040; }
 .enc-market.sinister .market-log-line.deny    { color: rgba(140, 60, 60, 0.85); }
 .enc-market.sinister .market-side-sell.fence-mode .market-side-title { color: rgba(185, 60, 60, 0.95); }
+
+/* ── Tooltip (.ui-tip) — promoted from demo-tooltip.html ──────
+   (owner ruling 2026-10-11). Panel + 5 tones verbatim; the root mounts
+   inside #game (positions in game space) or at body level in demos. */
+:root {
+  --tip-border-w: 1px;
+  --tip-pad:      10px;
+  --tip-maxw:     280px;
+  --tip-title-fs: 10px;
+  --tip-body-fs:  14px;
+  --tip-fade-ms:  80ms;
+  --tip-warn:     #e88830;
+  --tip-good:     #6cc8a0;
+  --tip-cream:    #e8d8a0;
+}
+#ui-tip-root { position: fixed; inset: 0; pointer-events: none; z-index: 100000; }
+#ui-tip-root.in-game { position: absolute; }
+.ui-tip {
+  position: absolute;
+  background: rgba(17,22,34,0.95);
+  border: var(--tip-border-w) solid var(--gold);
+  border-radius: 2px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(0,0,0,0.35);
+  padding: var(--tip-pad);
+  max-width: var(--tip-maxw);
+  font-family: 'VT323', monospace;
+  font-size: var(--tip-body-fs);
+  font-style: normal;
+  line-height: 1.25;
+  color: var(--tip-cream);
+  letter-spacing: 0.4px;
+  text-transform: none;
+  text-align: left;
+  opacity: 0;
+  transition: opacity var(--tip-fade-ms) ease-out;
+  pointer-events: none;
+  white-space: normal;
+}
+.ui-tip.visible { opacity: 1; }
+.ui-tip-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--tip-title-fs);
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  margin: 0 0 6px;
+  display: block;
+  line-height: 1.3;
+}
+.ui-tip-desc { margin: 0; color: var(--tip-cream); white-space: pre-line; }
+.ui-tip-desc + .ui-tip-rows,
+.ui-tip-desc + .ui-tip-list,
+.ui-tip-rows + .ui-tip-list,
+.ui-tip-title + .ui-tip-rows,
+.ui-tip-title + .ui-tip-list { margin-top: 8px; }
+.ui-tip-rows { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; }
+.ui-tip-rows .lbl { color: rgba(232,216,160,0.7); }
+.ui-tip-rows .val { color: var(--tip-cream); text-align: right; }
+.ui-tip-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.ui-tip-list li { display: grid; grid-template-columns: 14px 1fr; align-items: baseline; color: rgba(232,216,160,0.55); }
+.ui-tip-list li .mk { color: transparent; font-size: 13px; line-height: 1; }
+.ui-tip-list li.current .mk { color: var(--gold); }
+.ui-tip-list li.current { color: var(--tip-cream); }
+.ui-tip.tone-warn   { border-color: var(--tip-warn); }
+.ui-tip.tone-warn   .ui-tip-title { color: var(--tip-warn); }
+.ui-tip.tone-warn   .ui-tip-list li.current .mk { color: var(--tip-warn); }
+.ui-tip.tone-danger { border-color: var(--red); }
+.ui-tip.tone-danger .ui-tip-title { color: var(--red); }
+.ui-tip.tone-danger .ui-tip-list li.current .mk { color: var(--red); }
+.ui-tip.tone-good   { border-color: var(--tip-good); }
+.ui-tip.tone-good   .ui-tip-title { color: var(--tip-good); }
+.ui-tip.tone-good   .ui-tip-list li.current .mk { color: var(--tip-good); }
+.ui-tip.tone-quote {
+  border-color: rgba(232,216,160,0.45);
+  background: rgba(20,16,10,0.92);
+  font-style: italic;
+  font-size: 15px;
+  color: rgba(232,216,160,0.82);
+  max-width: calc(var(--tip-maxw) - 30px);
+}
+.ui-tip.tone-quote .ui-tip-title { color: rgba(232,216,160,0.75); font-style: normal; font-size: 8px; }
+.ui-tip.tone-quote::before {
+  content: '“';
+  position: absolute; top: -6px; left: 6px;
+  font-family: 'VT323', monospace; font-size: 32px;
+  color: rgba(232,216,160,0.35); font-style: normal;
+}

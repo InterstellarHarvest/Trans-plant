@@ -5,7 +5,9 @@
    needed. */
 
 
-:root {
+/* Scoped to the overlay, not :root (parity pass 2026-10-11) — as :root
+   it overrode the growbay's frame and lost to index.html's inline :root. */
+#overlay-fabricator {
   /* Shared theme */
   --teal: #56cfd7;
   --orange: #e88830;
@@ -28,7 +30,7 @@
 
   /* Fabricator-specific knobs */
   --recipe-list-width: 400px;        /* left column width inside body */
-  --fab-slot-size:     220px;        /* sprite slot on the right (height; width = 2×) */
+  --fab-slot-size:     192px;        /* sprite slot on the right (height; width = 2×). 192 = 1.5× the frame (demo 220): the detail panel under it now carries MISFIRE, the print's effect and up to two warnings, and CRAFT must never clip (parity pass) */
   --section-gap:       10px;
   --body-padding:      12px 16px 10px;
 
@@ -42,7 +44,7 @@
   --title-size:       10px;   /* section labels: INPUTS, TIME, WEAR */
   --mono-size:        18px;   /* body text under each label (inputs/output/meta) */
   --detail-name-size: 11px;   /* recipe name in the detail-panel header */
-  --meta-row-gap:     5px;    /* vertical gap between TIME and WEAR rows */
+  --meta-row-gap:     3px;    /* vertical gap between TIME and WEAR rows (5 in the demo; 3 buys CRAFT headroom under two warnings) */
 
   /* Unlock-accent colors (left-edge bar) */
   --lock-crew:     var(--teal);
@@ -324,7 +326,7 @@ body:not(.modal-open) #fb-modal {
 .fb-recipe-row.locked-purchase {
   opacity: 0.4;
   filter: grayscale(0.7);
-  cursor: var(--cursor-pointer, default);
+  cursor: var(--cursor-denied, not-allowed);
   border-left-color: transparent;
 }
 .fb-recipe-row.locked-crew:hover,
@@ -505,11 +507,11 @@ body:not(.modal-open) #fb-modal {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 10px 12px 12px;
+  padding: 8px 12px 10px;
   background: rgba(10,14,20,0.4);
   border: 2px solid rgba(95,168,208,0.25);
   border-radius: 3px;
-  gap: 6px;
+  gap: 4px; /* parity pass: tighter so CRAFT fits under a warning */
   overflow: hidden;
 }
 /* Detail panel header: item sprite + recipe name on one row. */
@@ -517,20 +519,20 @@ body:not(.modal-open) #fb-modal {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 40px;
+  min-height: 32px;
 }
 .fb-detail-sprite {
   flex-shrink: 0;
-  width: 40px; height: 40px;
+  width: 32px; height: 32px; /* 64px art at a clean ½ */
   background-image: var(--detail-sprite, none);
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  font-size: 26px;
+  font-size: 22px;
   text-align: center;
-  line-height: 40px;
+  line-height: 32px;
   color: var(--cream);
 }
 .fb-detail-sprite.has-sprite { color: transparent; }
@@ -547,14 +549,25 @@ body:not(.modal-open) #fb-modal {
   font-size: 14px;
   color: var(--body);
   font-style: italic;
-  line-height: 1.25;
+  line-height: 1.2;
   letter-spacing: 0.5px;
-  min-height: 17px;
+  flex-shrink: 0; /* a two-line description must not be squeezed under the effect line */
 }
+/* The print's effect (items.json gameplay_effect, player-facing part). */
+.fb-detail-effect {
+  flex-shrink: 0;
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  color: var(--teal);
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+}
+.fb-detail-effect:empty { display: none; }
 .fb-detail-divider {
   height: 0;
   border-top: 1px dashed rgba(95,168,208,0.25);
-  margin: 2px 0;
+  margin: 0;
+  flex-shrink: 0;
 }
 .fb-detail-section {
   display: flex;
@@ -577,7 +590,7 @@ body:not(.modal-open) #fb-modal {
   font-size: var(--mono-size);
   letter-spacing: 0.5px;
   color: var(--cream);
-  padding-bottom: 5px;
+  padding-bottom: 0;
 }
 .fb-input-row {
   display: flex;
@@ -603,6 +616,7 @@ body:not(.modal-open) #fb-modal {
   letter-spacing: 0.5px;
 }
 .fb-meta .row { display: flex; gap: 10px; align-items: baseline; line-height: 18px; }
+.fb-meta .label.label-2 { margin-left: 18px; min-width: 0; } /* MISFIRE shares the WEAR row */
 .fb-meta .label {
   font-family: 'Press Start 2P', cursive;
   font-size: var(--title-size);
@@ -616,7 +630,7 @@ body:not(.modal-open) #fb-modal {
    hover-tooltip (recipe-specific time savings). */
 .fb-meta .bonus {
   color: var(--teal);
-  cursor: help;
+  cursor: var(--cursor-pointer, default); /* hover-info (.ui-tip) */
   margin-left: 6px;
   transition: color 0.15s, filter 0.15s;
 }
@@ -635,8 +649,9 @@ body:not(.modal-open) #fb-modal {
   font-family: 'VT323', monospace;
   font-size: 13px;
   letter-spacing: 0.5px;
-  padding: 2px 0 2px 60px;       /* align with value column (past label) */
-  line-height: 1.2;
+  padding: 0 0 0 60px;           /* align with value column (past label) */
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.15;
 }
 .fb-meta .fb-warn.overrun   { color: var(--red); }
 .fb-meta .fb-warn.overrun strong { color: #ff9999; }
@@ -648,7 +663,30 @@ body:not(.modal-open) #fb-modal {
   margin-top: auto;
   display: flex;
   justify-content: stretch;
+  flex-shrink: 0; /* never squeezed or clipped by the content above */
 }
+/* In-modal notice over the top of the fab unit — misfire / hold full
+   (fabricator.js fabNotice). */
+.fb-notice {
+  position: absolute; left: 8px; right: 8px; top: 8px;
+  padding: 6px 10px;
+  background: rgba(10,14,20,0.92);
+  border: 2px solid var(--wear-warn);
+  border-radius: 3px;
+  font-family: 'VT323', monospace; font-size: 15px; line-height: 1.2;
+  color: var(--cream);
+  opacity: 0; transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none; z-index: 6;
+}
+.fb-notice.show { opacity: 1; transform: none; }
+.fb-notice.tone-danger { border-color: var(--red); }
+.fb-notice-title {
+  display: block;
+  font-family: 'Press Start 2P', cursive; font-size: 8px; line-height: 1; letter-spacing: 1px;
+  color: var(--wear-warn); margin-bottom: 4px;
+}
+.fb-notice.tone-danger .fb-notice-title { color: var(--red); }
 .fb-craft-btn {
   width: 100%;
   font-family: 'Press Start 2P', cursive; line-height: 1;
@@ -656,7 +694,7 @@ body:not(.modal-open) #fb-modal {
   letter-spacing: 2px;
   text-transform: uppercase;
   cursor: var(--cursor-hand, pointer);
-  padding: 12px 10px;
+  padding: 9px 10px;
   background: linear-gradient(180deg, #2a6066 0%, #143038 50%, #2a6066 100%);
   border: 3px outset;
   border-color: var(--pb-cyan-hi) var(--pb-cyan-lo) var(--pb-cyan-lo) var(--pb-cyan-hi);
@@ -670,15 +708,19 @@ body:not(.modal-open) #fb-modal {
   50%      { box-shadow: 0 0 18px rgba(95,168,208,0.65), inset 0 0 0 1px rgba(127,212,220,0.4); }
 }
 .fb-craft-btn:hover { filter: brightness(1.15); }
+.fb-craft-btn.locked.busy, .fb-progress.active { cursor: var(--cursor-wait, wait); }
+.fb-progress.active .fb-progress-cancel { cursor: var(--cursor-hand, pointer); }
 .fb-craft-btn:active {
   border-style: inset;
   border-color: var(--pb-cyan-lo) var(--pb-cyan-hi) var(--pb-cyan-hi) var(--pb-cyan-lo);
   transform: translate(1px, 1px);
 }
+/* Locked CRAFT keeps hit-testing so the cursor can say why: Denied when
+   it can't run, Wait while a craft is passing days (craftSelected()
+   re-checks canCraft(), so a click does nothing). */
 .fb-craft-btn.locked {
   filter: grayscale(0.8) brightness(0.55);
-  cursor: var(--cursor-pointer, default);
-  pointer-events: none;
+  cursor: var(--cursor-denied, not-allowed);
   animation: none;
   box-shadow: none;
 }
@@ -815,8 +857,8 @@ body:not(.modal-open) #fb-modal {
 .has-sprite { background-color: transparent; }
 
 /* Dev controls sidebar */
-::-webkit-scrollbar-corner    { background: #0a0e14; }
-* {
+#overlay-fabricator ::-webkit-scrollbar-corner    { background: #0a0e14; }
+#overlay-fabricator * {
   scrollbar-width: thin;
   scrollbar-color: #2a3a48 #0a0e14;
 }

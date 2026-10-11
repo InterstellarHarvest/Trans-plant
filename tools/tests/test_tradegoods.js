@@ -131,7 +131,7 @@ const RANGED = ['pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_
     // Jettison the middle bone (the 20) from the inventory.
     const j = await page.evaluate(() => {
       openInventory();
-      const tiles = [...document.querySelectorAll('#inv-grid .inv-tile')].filter(t => /Unidentified Bone/.test(t.title));
+      const tiles = [...document.querySelectorAll('#inv-grid .inv-tile')].filter(t => /Unidentified Bone/i.test(t.getAttribute('title') || t.dataset.tipTitle || ''));
       tiles[1].click();
       document.getElementById('inv-jett-btn').click();
       document.getElementById('inv-confirm-yes').click();
@@ -172,7 +172,7 @@ const RANGED = ['pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_
     const page = await boot();
     const inv = async () => page.evaluate(() => {
       openInventory();
-      const tile = [...document.querySelectorAll('#inv-grid .inv-tile')].find(t => /Unidentified Bone/.test(t.title));
+      const tile = [...document.querySelectorAll('#inv-grid .inv-tile')].find(t => /Unidentified Bone/i.test(t.getAttribute('title') || t.dataset.tipTitle || ''));
       tile.click();
       const out = { meta: document.getElementById('inv-detail-meta').textContent, badge: (document.querySelector('#inv-grid .inv-tile.selected .inv-tile-value') || {}).textContent };
       hideOverlay('overlay-inventory');

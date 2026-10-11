@@ -98,6 +98,7 @@
   height: var(--narr-height);
   background: var(--narr-bg); border: 2px solid var(--narr-border); border-radius: 3px;
   display: flex; flex-direction: column; overflow: hidden; z-index: 20;
+  min-height: 0; max-height: none; padding: 0; gap: 0; /* global .enc-narrative (130px min + padding) beat height:112px and covered the art */
 }
 #engrepair-root #er-pip-row {
   display: flex; align-items: center; justify-content: space-around;
@@ -197,7 +198,7 @@
 #engrepair-root .enc-choice:active { transform: translateY(1px); }
 #engrepair-root .enc-choice-body { font-family: 'Press Start 2P', monospace; font-size: 8px; letter-spacing: 1.5px; color: var(--cream); line-height: 1.4; }
 #engrepair-root .enc-choice-sub { font-size: 14px; color: var(--body); letter-spacing: 0.3px; line-height: 1.1; }
-#engrepair-root .enc-choice.locked { filter: grayscale(0.6) brightness(0.55); cursor: var(--cursor-pointer, default); border-left-color: rgba(95,100,115,0.5); }
+#engrepair-root .enc-choice.locked { filter: grayscale(0.6) brightness(0.55); cursor: var(--cursor-denied, not-allowed); border-left-color: rgba(95,100,115,0.5); }
 #engrepair-root .enc-choice.locked:hover { filter: grayscale(0.6) brightness(0.6); border-color: rgba(95,168,208,0.3); }
 #engrepair-root .enc-choice.leave { border-left-color: #cc3333; }
 #engrepair-root .enc-choice.leave:not(.locked):hover { border-color: #cc3333; }

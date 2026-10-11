@@ -405,7 +405,7 @@
   function handleForageVerb() {
     const regionKey = currentRegionKey();
     const mode = REGION_TO_FORAGE_MODE[regionKey] || 'GATHER';
-    openMinigame('forage', { mode, return_to: 'cruise', origin_node: STATE.currentId }, (tier, payload) => {
+    openMinigame('forage', { mode, regionLabel: (REGIONS[regionKey] || REGIONS.deep_space).label.split(' · ')[0], return_to: 'cruise', origin_node: STATE.currentId }, (tier, payload) => { // regionLabel: forage HUD names the real stop (parity-shell)
       if (tier === 'abandoned') return settleAbandoned(mode);
       payload = payload || {};
       let foodGot = 0; // what actually lands (the tank caps)
@@ -425,12 +425,15 @@
         if (r.item) grantItem(r.item); // capacity-enforced
       });
       if (payload.sickness) payload.sickness.forEach(s => {
-        const sev = { light: 3, medium: 7, heavy: 15 }[s.severity] || 3;
+        // Owner ruling 2026-10-11: the demo's numbers (demo-minigames forage
+        // payload contract) — poisoning ~10/20/35 HP, morale 5/12/20.
+        const hpHit = { light: 10, medium: 20, heavy: 35 }[s.severity] || 10;
+        const moHit = { light: 5, medium: 12, heavy: 20 }[s.severity] || 5;
         // Poisoning hurts one crew member (the demo's "SICKNESS · -HP one
         // crew" and the briefing's "poisons a crew member"); solo, the
-        // spoiled haul costs food instead.
-        if (s.type === 'poisoning') { if (STATE.crew.length) damageCrew(null, sev); else STATE.resources.food = clamp(STATE.resources.food - sev, 0, resMax('food')); }
-        else STATE.resources.morale = clamp(STATE.resources.morale - sev, 0, 100);
+        // spoiled haul costs food instead (at the morale scale).
+        if (s.type === 'poisoning') { if (STATE.crew.length) damageCrew(null, hpHit); else STATE.resources.food = clamp(STATE.resources.food - moHit, 0, resMax('food')); }
+        else STATE.resources.morale = clamp(STATE.resources.morale - moHit, 0, 100);
       });
       let gained = foodGot > 0 ? ('+' + foodGot + ' food.') : payload.food > 0 ? 'found food, but the stores are full.' : 'came back empty-handed.';
       // A good forage on alien ground can turn up the suspicious fungus
@@ -499,7 +502,7 @@
       // One day per mining run: MINE AGAIN used to chain unlimited runs
       // for a single day (a gold and fuel faucet — hunt 5 economy sim).
       const runs = Math.max(1, haul.runs || 1);
-      settleMinigame('◆ MINE — ' + (runs > 1 ? runs + ' runs, ' + runs + ' days: ' : '') + (granted.length ? 'recovered ' + granted.join(', ') : 'the rocks gave up nothing') + '.', runs);
+      settleMinigame('◆ MINE — ' + (runs > 1 ? runs + ' runs, ' + runs + ' days: ' : '') + (granted.length ? 'recovered ' + granted.join(', ') : 'the rocks gave up nothing') + '.' + (haul.summary ? ' ' + haul.summary : ''), runs); // summary: tier · sector · crew credit (mining.js, parity-shell)
     });
   }
 

@@ -6,7 +6,11 @@
    with cruise/growbay chrome. Behavior: engine/js/screens/orders.js.
    ──────────────────────────────────────────────────────────────── */
 
-#overlay-orders { z-index: 70; }
+#overlay-orders {
+  z-index: 70;
+  /* demo-orders panel-button sizing (was the growbay's leaked :root 15px) */
+  --pb-border: 3px; --pb-padx: 12px; --pb-pady: 6px; --pb-rad: 0px; --pb-size: 16px;
+}
 
 #od-backdrop {
   position: absolute; inset: 0;
@@ -290,7 +294,7 @@
   border: 2px solid #2a3040;
   border-radius: 3px;
   position: relative;
-  cursor: var(--cursor-hand, grab);
+  cursor: var(--cursor-hand, pointer);
   overflow: visible; /* thumb pokes out for grabbability */
 }
 #overlay-orders .od-water-fill-plant {

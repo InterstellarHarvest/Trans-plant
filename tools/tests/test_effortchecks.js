@@ -18,7 +18,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     const ev = EVENTS[evId];
     enterEvent(STATE.byId[STATE.currentId], ev);
     const btn = [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => new RegExp(re, 'i').test(b.textContent));
-    const sub = btn.textContent.replace(/\s+/g, ' '), tip = btn.title || '';
+    const sub = btn.textContent.replace(/\s+/g, ' '), tip = btn.getAttribute('title') || ((btn.dataset.tipTitle ? btn.dataset.tipTitle + '\n\n' : '') + (btn.dataset.tipDescription || '')); // title= is upgraded to .ui-tip data (parity-shell)
     const before = { d: STATE.daysElapsed, m: STATE.resources.morale, h: STATE.resources.hull, mats: Object.assign({}, STATE.materials) };
     Math.random = () => rnd;
     const ch = (ev.choices || []).find(c => new RegExp(re, 'i').test(c.text || ''));
