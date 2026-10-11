@@ -37,9 +37,9 @@
       },
 
       "strengths": {
-        "growth_rate": "fast",
         "water_efficiency": "moderate",
-        "description": "Recovers health faster than other crops when conditions stabilize. +5 crop health per leg when above healthy_threshold."
+        "healthy_recovery_multiplier": 2.0,
+        "description": "Recovers health faster once it is thriving: at or above healthy_threshold, the daily health recovery from good watering is doubled (+1 health/day instead of +0.5)."
       },
 
       "arrival_bonus": {
@@ -197,11 +197,13 @@
 
       "strengths": {
         "nitrogen_fixing": {
-          "description": "Soybeans actively improve growing conditions. After contamination events, soil recovers 2x faster.",
-          "contamination_recovery_multiplier": 2.0
+          "description": "Soybeans fix nitrogen back into the beds a pest outbreak leaves behind: health recovers 2x for 10 days after a pest outbreak is cleared (by TREAT, a crop treatment, or an event that clears pests). Only recovery is doubled, never damage.",
+          "contamination_recovery_multiplier": 2.0,
+          "contamination_recovery_days": 10,
+          "duration_note": "10 days is about one travel leg (legs run ~8 days on the Lunar trail, ~12 on Mars, ~17 Interstellar). At matched water a soybean recovers +0.5 health/day, so the window is worth +5 extra health, about what three untreated pest days cost it (-1.5/day). A reward for clearing pests quickly, not a second health bar."
         },
         "self_sustaining": "Zero nutrient cost per leg — they make their own.",
-        "description": "No nutrient drain. High contamination resistance. 2x soil recovery after biological crises. The crop that helps itself."
+        "description": "No nutrient drain. High contamination resistance (a pest outbreak is half as likely as on a moderate-resistance crop). Health recovers 2x for 10 days after a pest outbreak is cleared. The crop that helps itself."
       },
 
       "arrival_bonus": {

@@ -120,7 +120,8 @@
         { id: 'wheat',        icon: '\u{1F33E}', sprite: 'sprites/interface/crops/wheat.png',    name: 'Wheat', desc: 'Reliable. Predictable. Monoculture-vulnerable.', stat: 'Food: high', flavor: 'You will never feel clever for picking wheat, but you probably won\'t regret it.' },
         { id: 'tomato',       icon: '\u{1F345}', sprite: 'sprites/interface/crops/tomato.png',   name: 'Tomatoes', desc: 'High maintenance. High reward. High drama.', stat: 'Food: highest · Morale +2', flavor: 'They will demand your attention and you will give it to them.' },
         { id: 'sweet_potato', icon: '\u{1F360}', sprite: 'sprites/interface/crops/potato.png',   name: 'Sweet Potatoes', desc: 'NASA\'s top pick.', stat: 'Hardiest', flavor: 'The ship computer approves of this choice. It will mention this.' },
-        { id: 'soybean',      icon: '\u{1FAD8}', sprite: 'sprites/interface/crops/soybeans.png', name: 'Soybeans', desc: 'Fixes nitrogen. Resists contamination.', stat: 'Pest-resistant', flavor: 'The engineer of crops.' },
+        // The recovery numbers come from crops.json (nitrogen_fixing), read at render.
+        { id: 'soybean',      icon: '\u{1FAD8}', sprite: 'sprites/interface/crops/soybeans.png', name: 'Soybeans', desc: 'Fixes nitrogen. Resists pests and bounces back from them.', get stat() { return soyStat(); }, flavor: 'The engineer of crops.' },
         { id: 'zinnia',       icon: '\u{1F338}', sprite: 'sprites/interface/crops/zinnia.png',   name: 'Zinnias', desc: 'No food value. High morale. Hard mode.', stat: 'Morale +8', flavor: 'The bravest or stupidest choice you can make.' }
       ]
     },
@@ -130,6 +131,12 @@
       nameInput: true
     }
   ];
+
+  // Soybean's card stat: pest resistance + its post-pest recovery window.
+  function soyStat() {
+    const cr = typeof window.cropContaminationRecovery === 'function' ? window.cropContaminationRecovery('soybean') : null;
+    return 'Pest-resistant' + (cr ? ' \u00b7 Recovery \u00d7' + cr.mult + ' for ' + cr.days + 'd after pests' : '');
+  }
 
   let step = 0;
   const sel = { trail: null, ai: null, captain: null, crew: [], crop: null, ship: '' };
