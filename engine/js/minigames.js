@@ -342,6 +342,7 @@ function openMinigame(id, opts, onDone){
   const token = ++minigameToken;
   showReady(id, ()=>{
     minigameStarted = true;
+    if(typeof window.onJobBegun === 'function') window.onJobBegun(); // a reload from here settles as a quit
     const mclose = document.getElementById('mclose');
     mclose.textContent = '✕ QUIT'; mclose.title = 'Quit now: nothing is kept, and the time is still spent. In a crisis, the worst outcome lands.';
     cleanupFn = inits[id](document.getElementById('ga'), (tier, payload) => { if (token === minigameToken) showResult(tier, payload); }, opts || {});
@@ -440,6 +441,7 @@ function requestCloseMinigame(){
   onMinigameDone = null;
   closeMinigameOverlay();
   if(started && cb) cb('abandoned', null);
+  else if(!started && typeof window.refundVerbTax === 'function') window.refundVerbTax(); // free cancel: nothing happened, nothing paid
 }
 document.getElementById('mclose').addEventListener('click', requestCloseMinigame);
 // Backdrop click = close — but only when the press STARTED on the
@@ -448,7 +450,10 @@ document.getElementById('mclose').addEventListener('click', requestCloseMinigame
 // game mid-drag.
 let ovPressOnBackdrop = false;
 document.getElementById('ov').addEventListener('mousedown', e=>{ ovPressOnBackdrop = (e.target===document.getElementById('ov')); });
-document.getElementById('ov').addEventListener('click', e=>{ if(e.target===document.getElementById('ov') && ovPressOnBackdrop) requestCloseMinigame(); ovPressOnBackdrop = false; });
+// Once a game has started, only ✕ QUIT ends it: a stray backdrop press
+// (a double-click on the pause menu's RESUME landing behind it) used to
+// abandon the job.
+document.getElementById('ov').addEventListener('click', e=>{ if(e.target===document.getElementById('ov') && ovPressOnBackdrop && !minigameStarted) requestCloseMinigame(); ovPressOnBackdrop = false; });
 // No "Play Again" — replaying a Stop Menu verb minigame for free without
 // re-opening the Stop Menu would let SALVAGE/FORAGE farm resources in a
 // tight loop (same exploit-avoidance concern the plan flagged for Mining's
@@ -931,7 +936,7 @@ function initMedical(container, onResult, medConfig){
     cv.dataset.idx = i;
     bodySprite.appendChild(cv);
     s.cv = cv;
-    s.ctx = cv.getContext('2d');
+    s.ctx = cv.getContext('2d', { willReadFrequently: true }); // read back on every click
     s.ctx.imageSmoothingEnabled = false;
     s.flashAt = 0;
   });

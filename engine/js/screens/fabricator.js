@@ -639,7 +639,10 @@
       if (100 - wearBefore < 20 && Math.random() < 0.5) breakFab();
       renderHUD();
       renderAll();
-      checkFailure();
+      if (checkFailure()) return;
+      // Save the misfire now (hunt 6): the autosave waited for the hub, so
+      // a reload undid it and the craft could be re-rolled.
+      if (typeof saveRun === 'function') saveRun();
       return;
     }
 

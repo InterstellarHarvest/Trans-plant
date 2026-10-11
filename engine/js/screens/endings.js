@@ -403,7 +403,7 @@
       logLines = ['◆ BEACON ANSWERED — a StellarAssist™ recovery tug. Fuel delivered, ' + fee + ' gold invoiced, satisfaction survey transmitted before the fuel line detached.'];
     } else { // hostile — rescue, in the pirate sense
       STATE.goldAmount = Math.floor(STATE.goldAmount / 2);
-      if (STATE.items.length) STATE.items.splice(Math.floor(Math.random() * STATE.items.length), 1);
+      if (STATE.items.length) removeRandomItem();
       STATE.resources.fuel = clamp(STATE.resources.fuel + 20, 0, resMax('fuel'));
       STATE.resources.morale = clamp(STATE.resources.morale - 5, 0, 100);
       logLines = ['◆ BEACON ANSWERED — by the wrong people. They refueled you, then "salvaged" half your gold and a crate at gunpoint. "Rescue fee," they called it. You are alive to resent it.'];

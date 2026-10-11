@@ -304,7 +304,20 @@
   // apply → renderHUD → checkFailure → log/render order resolveChoice()
   // uses for events, so minigame outcomes and event outcomes behave the
   // same way around the failure check.
+  // Hunt 6: the effort tax is paid on the click, so a job cancelled before
+  // it starts (closed at the briefing, LEAVE before mining, REPAIR closed
+  // untouched — or a double-click's second press on the backdrop) gets it
+  // back. Once the job begins, a reload settles it as a quit (loadRun).
+  let pendingVerbTax = 0, activeVerb = null;
+  window.refundVerbTax = function () {
+    if (pendingVerbTax) { STATE.resources.morale = clamp(STATE.resources.morale + pendingVerbTax, 0, 100); pendingVerbTax = 0; renderHUD(); }
+  };
+  window.onJobBegun = function (days) {
+    pendingVerbTax = 0;
+    if (activeVerb && !STATE.currentEvent && typeof writeSnapshot === 'function') writeSnapshot(undefined, { pendingAbandon: { verb: activeVerb, days: days || 1 } });
+  };
   function settleMinigame(logLine, days) {
+    pendingVerbTax = 0; activeVerb = null;
     passDays(days || 1); // trivial time cost (MINE: one day per run), same tier index.html's applyOutcomeEffects uses — routed through the orders daily-drain helper
     renderHUD();
     if (checkFailure()) return;
@@ -364,7 +377,7 @@
     openEngineRepair((result) => {
       result = result || {};
       const n = result.fixedCount | 0;
-      if (n === 0) { renderCruise(); return; }
+      if (n === 0) { window.refundVerbTax(); activeVerb = null; renderCruise(); return; }
       if (!result.allFixed) return settleAbandoned('REPAIR');
       for (const [mat, q] of Object.entries(REPAIR_COST)) STATE.materials[mat] = Math.max(0, (STATE.materials[mat] || 0) - q);
       // Engineer aboard: the patch goes further (+10, captain half).
@@ -454,7 +467,7 @@
         STATE.materials[mat] = (STATE.materials[mat] || 0) + qty;
         granted.push(qty + ' ' + mat);
       }
-      if (!granted.length && !(haul.runs > 0)) { renderCruise(); return; } // LEAVE with no run made — no time cost either
+      if (!granted.length && !(haul.runs > 0)) { window.refundVerbTax(); activeVerb = null; renderCruise(); return; } // LEAVE with no run made — no time cost either
       // Bible multi-path rule: asteroid ice melts into water, a nebula
       // run scoops fuel — scaled by how much was mined (cap 15).
       const mined = Object.values(inv).reduce((a, b) => a + (b || 0), 0);
@@ -666,7 +679,8 @@
         if (lockReason) return;
         // Effort tax on use (the fabricator charges per craft instead —
         // opening its screen to look costs nothing).
-        if (handler && verbId !== 'fab' && window.payEffortTax) { payEffortTax(verb.effort); renderHUD(); }
+        if (handler && verbId !== 'fab' && window.payEffortTax) { pendingVerbTax = payEffortTax(verb.effort); renderHUD(); }
+        activeVerb = labelStr;
         if (handler) handler();
         else pushLogEntry('◆ ' + labelStr + ' isn’t wired into the engine yet.');
       });

@@ -1840,9 +1840,31 @@ function loadRun(key) {
   if (pf) { endRun({ kind: 'failure', module: pf }); return true; }
   renderCruise();
   showScreen('screen-cruise');
-  // Saved at an event's entry: back into that same event.
+  // Saved after a Stop-menu job began (hunt 6): a reload is a quit —
+  // nothing kept, the day(s) spent (the effort tax was already paid).
+  if (snap.pendingAbandon) {
+    passDays(snap.pendingAbandon.days || 1);
+    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + snap.pendingAbandon.verb + ' — abandoned partway. Nothing kept; the day is gone anyway.');
+    renderHUD(); renderCruise();
+    if (checkFailure()) return true;
+    saveRun();
+    return true;
+  }
+  // Saved mid-fight (hunt 6): a reload breaks the fight off the way an
+  // FTL escape does — the hull as it stood, 15 fuel, the days.
+  if (snap.pendingCombat) {
+    STATE.resources.hull = clamp(Math.min(STATE.resources.hull, snap.pendingCombat.hull), 0, resMax('hull'));
+    applyOutcomeEffects({ resources: { fuel: -15 }, time_cost: 'medium', combat_net: true });
+    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ The fight broke off when the logs did. The ship ran for it: −15 fuel, the hull as it stood.');
+    renderHUD(); renderCruise();
+    if (checkFailure()) return true;
+    saveRun();
+    return true;
+  }
+  // Saved at an event's entry: back into that same event (same NPC, same
+  // variant — they're in the snapshot).
   const pe = snap.pendingEvent && EVENTS[snap.pendingEvent];
-  if (pe && STATE.byId[STATE.currentId]) enterEvent(STATE.byId[STATE.currentId], pe);
+  if (pe && STATE.byId[STATE.currentId]) enterEvent(STATE.byId[STATE.currentId], pe, { variantIndex: snap.pendingVariant });
   return true;
 }
 
@@ -2018,6 +2040,16 @@ function cargoCapacity() {
 
 /* Would the hold still fit without one `id`? Only the cargo bay can
    make this false (removing it takes 5 slots with it). */
+// A random item a loss can take: never one the hold can't spare (the
+// cargo bay while its extra slots are full — hunt 6 found 13/10 holds).
+function removeRandomItem() {
+  const ok = STATE.items.filter(id => canRemoveItem(id));
+  if (!ok.length) return null;
+  const id = ok[Math.floor(Math.random() * ok.length)];
+  STATE.items.splice(STATE.items.indexOf(id), 1);
+  return id;
+}
+window.removeRandomItem = removeRandomItem;
 function canRemoveItem(id) {
   const i = STATE.items.indexOf(id);
   if (i < 0) return false;
@@ -2048,6 +2080,9 @@ function cargoSlotsUsed() {
    The insulated cargo bay itself always fits — refusing the capacity
    upgrade for capacity reasons would be a paradox nobody enjoys. */
 function grantItem(shortId) {
+  // unique_instance items exist once (mystery_provisions came in twice).
+  const def0 = itemDef(shortId);
+  if (def0 && (def0.tags || []).includes('unique_instance') && STATE.items.includes(shortId)) return false;
   STATE.items.push(shortId);
   if (shortId !== 'insulated_cargo_bay' && cargoSlotsUsed() > cargoCapacity()) {
     STATE.items.pop();
@@ -2122,7 +2157,10 @@ window.ensureCrewSkillCharges = ensureCrewSkillCharges;
 
 function crewHPOf(role) {
   if (!STATE.crewHP) initCrewHP();
-  if (!(role in STATE.crewHP)) STATE.crewHP[role] = 100;
+  if (!(role in STATE.crewHP)) {
+    if (!STATE.crew.includes(role)) return 100; // asking about a role nobody holds creates no entry
+    STATE.crewHP[role] = 100;
+  }
   return STATE.crewHP[role];
 }
 
@@ -3599,12 +3637,12 @@ function travelTo(nodeId, opts) {
      choice.outcome is a STRING id into ev.outcomes here, not an inline
      object — the two schemas are disambiguated by ev.layers presence.
    ──────────────────────────────────────────────────────────────── */
-function enterEvent(node, ev) {
+function enterEvent(node, ev, opts) {
   // Owner ruling 2026-10-10 (hunt 5): save at event entry, so a reload
   // comes back into this same event — it used to refund the leg and
-  // re-roll the encounter (an undo for any bad outcome). Taken before the
-  // event's own side effects, which re-run on the way back in.
-  if (!STATE.ended && STATE.trail && STATE.nodes.length) writeSnapshot(SAVE_KEY, { pendingEvent: ev.id });
+  // re-roll the encounter (an undo for any bad outcome). Written below,
+  // once the NPC and variant are rolled (hunt 6: a reload re-rolled the
+  // pirate's species, which sets its hull and whether it surrenders).
   if (window.SceneArt && SceneArt.beginEvent) SceneArt.beginEvent();
   STATE.currentEvent     = ev;
   STATE.currentNode      = node;
@@ -3633,8 +3671,10 @@ function enterEvent(node, ev) {
   // Standard variants (event_shipboard_001's "noise in Cargo Bay 3"):
   // one is drawn uniformly per firing (owner ruling 2026-10-09) and
   // held here so every re-render of this firing shows the same one.
-  STATE.variantIndex = (ev.standard_variants && ev.standard_variants.length)
+  STATE.variantIndex = (opts && Number.isInteger(opts.variantIndex)) ? opts.variantIndex
+    : (ev.standard_variants && ev.standard_variants.length)
     ? Math.floor(Math.random() * ev.standard_variants.length) : 0;
+  if (!STATE.ended && STATE.trail && STATE.nodes.length) writeSnapshot(SAVE_KEY, { pendingEvent: ev.id, pendingVariant: STATE.variantIndex });
 
   // The delayed-crisis patient belongs to the crisis event alone.
   if (!(ev.trigger || []).includes('delayed_crisis')) STATE.crisisPatient = null;

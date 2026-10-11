@@ -42,7 +42,9 @@
   makeLayer(nearStars, cfg.near.count, 'near');
 
   function drawFrame() {
-    if (PauseBus.paused) { requestAnimationFrame(drawFrame); return; }
+    // Hidden screen: idle at a slow tick instead of drawing 60 fps all run.
+    const _scr = document.getElementById('screen-title');
+    if (PauseBus.paused || (_scr && !_scr.classList.contains('active'))) { setTimeout(() => requestAnimationFrame(drawFrame), 250); return; }
     const now = performance.now() / 1000;
 
     farCtx.clearRect(0, 0, 960, 640);

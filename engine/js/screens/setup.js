@@ -15,7 +15,9 @@
     stars.push({ x: Math.random() * 960, y: Math.random() * 640, r: Math.random() * 1 + 0.2, phase: Math.random() * Math.PI * 2, drift: Math.random() * 0.03 + 0.01 });
   }
   function drawStars() {
-    if (PauseBus.paused) { requestAnimationFrame(drawStars); return; }
+    // Hidden screen: idle at a slow tick instead of drawing 60 fps all run.
+    const _scr = document.getElementById('screen-setup');
+    if (PauseBus.paused || (_scr && !_scr.classList.contains('active'))) { setTimeout(() => requestAnimationFrame(drawStars), 250); return; }
     starCtx.clearRect(0, 0, 960, 640);
     const now = performance.now() / 1000;
     for (const s of stars) {

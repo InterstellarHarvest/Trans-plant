@@ -1261,6 +1261,7 @@
     // which used to overwrite this line before anyone could read it.
     $('aria-text').textContent = hasBotanist ? say.botanist : say.alone;
     if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('\u25c6 GROWBAY \u2014 pest outbreak treated.');
+    if (typeof saveRun === 'function') saveRun(); // a reload used to undo the treat (and its day)
   };
   // window.openOrders now lives in engine/js/screens/orders.js
   // (Restoration item 5) \u2014 the "isn't wired yet" stub is gone.

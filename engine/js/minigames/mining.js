@@ -626,6 +626,7 @@
   function startMining() {
     if (MSTATE.mining) return;
     MSTATE.mining = true;
+    if (typeof window.onJobBegun === 'function') window.onJobBegun(SESSION.runs + 1); // a reload mid-run costs the runs' days
     MSTATE.runStart = performance.now();
     MSTATE.lastClickAt = performance.now();
 

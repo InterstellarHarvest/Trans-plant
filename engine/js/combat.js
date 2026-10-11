@@ -57,6 +57,23 @@
     ajoy: 'There is a path here you have not yet considered.'
   };
 
+  /* Gameplay timers for this fight only (hunt 6): a load or abort bumps
+     COMBAT.fight so a stale shot / victory / defeat can't resolve into
+     the next run, and the chain waits while the pause menu is open. */
+  function later(fn, ms) {
+    const fight = COMBAT.fight;
+    const run = () => {
+      if (fight !== COMBAT.fight) return;
+      if (window.PauseBus && PauseBus.paused) return setTimeout(run, 150);
+      fn();
+    };
+    return setTimeout(run, ms);
+  }
+  // A reload mid-fight breaks it off like an FTL escape (index.html
+  // loadRun pendingCombat) — it used to put you back before the fight.
+  function saveFightPoint() {
+    if (typeof writeSnapshot === 'function' && !STATE.ended) writeSnapshot(undefined, { pendingCombat: { hull: COMBAT.player.hull } });
+  }
   function combatLine(slot) {
     const pools = MOD.flavor && MOD.flavor.combat_log && MOD.flavor.combat_log[slot];
     const pool = pools && pools[COMBAT.ai];
@@ -474,7 +491,7 @@
     setTimeout(() => { if (flash.parentNode) flash.parentNode.removeChild(flash); }, 900);
     // The silence after the flash is the moment the jump actually
     // lands — total elapsed before the outcome view: ~3s (demo canon).
-    setTimeout(() => { if (typeof onDone === 'function') onDone(); }, 3000);
+    later(() => { if (typeof onDone === 'function') onDone(); }, 3000);
   }
   function preExplosionShake() {
     const sp = document.getElementById('enc-backdrop-sprite');
@@ -669,14 +686,14 @@
     const ey = clamp(Number.isFinite(ty) ? ty : ec.y, WIN.top + 4, WIN.bottom - 4);
     spawnBeam({ side: 'player', sx: (WIN.left + WIN.right) / 2, sy: WIN.bottom, ex, ey });
 
-    setTimeout(() => {
+    later(() => {
       if (Math.random() < playerMissChance()) {
         spawnMissPopup('MISS!');
         setNarrCombat('COMBAT LOG', 'Shot went wide — shaky hands at the trigger.', 'Composure fraying. Crew morale showing.');
         setAiCombat(combatLine('player_fires'));
         bumpMorale(-1);
         COMBAT._firing = false;
-        setTimeout(enemyTurn, 500);
+        later(enemyTurn, 500);
         return;
       }
       let dmg = irand(COMBAT_CONFIG.player_damage.min, COMBAT_CONFIG.player_damage.max);
@@ -703,7 +720,7 @@
           `Enemy hull: ${Math.max(0, COMBAT.enemy.hull)}/${COMBAT.enemy.hullMax}. They may surrender.`);
       }
       COMBAT._firing = false;
-      setTimeout(enemyTurn, 600);
+      later(enemyTurn, 600);
     }, 280);
   }
 
@@ -715,7 +732,7 @@
     setNarrCombat('COMBAT LOG', combatLine('player_evades'), 'Evasive pattern engaged. The next hit is softened' + (bonus('evade_full_dodge') > 0 ? ', with a ' + Math.round(bonus('evade_full_dodge') * 100) + '% chance to dodge it entirely.' : '.'));
     setAiCombat(combatLine('player_evades'));
     showEnemyTurn();
-    setTimeout(enemyTurn, 500);
+    later(enemyTurn, 500);
   }
 
   function doHullPatch() {
@@ -753,7 +770,7 @@
     setAiCombat(combatLine('ftl_charging'));
     showEnemyTurn();
     renderCombatActions();
-    setTimeout(enemyTurn, 600);
+    later(enemyTurn, 600);
   }
   function abortFtl() {
     if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
@@ -788,7 +805,7 @@
     renderCombatActions();
     const terms = tributeTerms(kind), cfg = terms.cfg;
     const label = kind === 'botanist' ? 'harvest' : 'cookies';
-    setTimeout(() => {
+    later(() => {
       const success = Math.random() < terms.odds;
       if (success) {
         COMBAT.player.morale = clamp(COMBAT.player.morale + cfg.morale_on_success, 0, 100);
@@ -806,7 +823,7 @@
         // end-of-combat outcome reconciliation.
         STATE.resources.food = clamp(STATE.resources.food - cfg.tribute_food_cost, 0, resMax('food'));
         renderHUD();
-        setTimeout(enemyTurn, 600);
+        later(enemyTurn, 600);
       }
     }, 700);
   }
@@ -884,7 +901,7 @@
       ey: WIN.bottom,
     });
 
-    setTimeout(() => {
+    later(() => {
       // The fight may have resolved while the beam was in flight (stand
       // down, surrender, a kill) — a stale shot must not land.
       if (!COMBAT.active || COMBAT.state === 'END') return;
@@ -951,8 +968,8 @@
       renderCombatHud();
       if (COMBAT.state === 'PLAYER_TURN') showYourTurn();
       else if (COMBAT.state === 'MUTINY') showMutinyTurn();
-      if (COMBAT.state === 'FTL_CHARGING' && COMBAT.active) COMBAT._ftlTickTimer = setTimeout(enemyTurn, 1300);
-      if (COMBAT.state === 'MUTINY' && COMBAT.active) setTimeout(enemyTurn, 1500);
+      if (COMBAT.state === 'FTL_CHARGING' && COMBAT.active) COMBAT._ftlTickTimer = later(enemyTurn, 1300);
+      if (COMBAT.state === 'MUTINY' && COMBAT.active) later(enemyTurn, 1500);
     }, 280);
   }
 
@@ -971,7 +988,7 @@
     const sp = document.getElementById('enc-backdrop-sprite');
     sp.classList.add('combat-enemy-charge');
     spawnEnemyChargeParticles();
-    setTimeout(() => {
+    later(() => {
       sp.classList.remove('combat-enemy-charge');
       triggerFtlJumpEffect(() => endCombatToOutcome({ outcome: 'enemy_retreat' }));
     }, 1000);
@@ -993,7 +1010,7 @@
       if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
       // Beat so the enemy's final shot can be read (engine's existing
       // 700ms, demo used 800), then vanish + flash + ~3s hold.
-      setTimeout(() => {
+      later(() => {
         triggerFtlJumpEffect(() => endCombatToOutcome({ outcome: 'escape', fuelCost: 15 }));
       }, 700);
     }
@@ -1017,6 +1034,7 @@
   }
   function applyPlayerDamage(amount) {
     COMBAT.player.hull = clamp(COMBAT.player.hull - amount, 0, COMBAT.player.hullMax);
+    saveFightPoint();
     flashScreen('combat-hull-hit');
     // Full-screen shake + red hull vignette + damage floater over the
     // HULL bar (demo canon).
@@ -1054,7 +1072,7 @@
     preExplosionShake();
     setAiCombat(combatLine('enemy_destroyed'));
     setNarrCombat('TARGET DESTROYED', combatLine('enemy_destroyed'), 'Wreckage drifting.');
-    setTimeout(() => {
+    later(() => {
       spawnDestructionParticles();
       const sp = document.getElementById('enc-backdrop-sprite');
       sp.classList.remove('combat-pre-explode');
@@ -1062,7 +1080,7 @@
       sp.style.opacity = '0';
       triggerCaptainCrtOff();
     }, 380);
-    setTimeout(() => showVictoryChoice(), 2200);
+    later(() => showVictoryChoice(), 2200);
   }
   function showVictoryChoice() {
     setActionsLocked(false);
@@ -1082,7 +1100,7 @@
     setNarrCombat('TARGET DESTROYED',
       result.salvaged ? 'Wreckage cracked open. Loot pool drawn.' : 'You leave the wreck behind.',
       result.salvaged ? 'Bonus crate roll incoming…' : 'Drifting through your wake.');
-    setTimeout(() => endCombatToOutcome(result), 700);
+    later(() => endCombatToOutcome(result), 700);
   }
   function acceptSurrender() {
     if (!COMBAT.active) return;
@@ -1101,7 +1119,7 @@
     setAiCombat(combatLine('surrender_refused'));
     setNarrCombat('SURRENDER REFUSED', combatLine('surrender_refused'), 'Full loot recovered. Morale -10. The crew witnessed it.');
     renderCombatHud();
-    setTimeout(() => endCombatToOutcome({ outcome: 'victory_executed' }), 900);
+    later(() => endCombatToOutcome({ outcome: 'victory_executed' }), 900);
   }
   function onPlayerDefeat() {
     COMBAT.state = 'END';
@@ -1118,7 +1136,7 @@
     setNarrCombat('LIMP-AWAY STATE', combatLine('player_defeated'),
       `Hull set to 1. Cargo loss: ${cargoLoss}%.${died ? ' Casualty reports coming in.' : ''}`);
     renderCombatHud();
-    setTimeout(() => endCombatToOutcome({ outcome: 'defeated', cargoLoss, crewDied: died }), 700);
+    later(() => endCombatToOutcome({ outcome: 'defeated', cargoLoss, crewDied: died }), 700);
   }
 
   /* ── Loot ───────────────────────────────────────────────────── */
@@ -1309,7 +1327,7 @@
     if (result.outcome === 'defeated' && result.cargoLoss && STATE.items.length) {
       const dropCount = Math.min(STATE.items.length, Math.round(STATE.items.length * (result.cargoLoss / 100)));
       for (let i = 0; i < dropCount; i++) {
-        STATE.items.splice(Math.floor(Math.random() * STATE.items.length), 1);
+        if (!window.removeRandomItem()) break;
       }
     }
 
@@ -1364,6 +1382,7 @@
   window.abortCombat = function () {
     if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
     COMBAT.active = false; COMBAT.state = 'END'; COMBAT._firing = false;
+    COMBAT._resolved = true; COMBAT.fight = (COMBAT.fight || 0) + 1; // pending timers stand down
     const scr = document.getElementById('screen-encounter');
     scr.classList.remove('combat-mode', 'combat-targeting', 'combat-vignette', 'combat-ftl-charging', 'combat-ended', 'hostile-gone');
     document.getElementById('enc-choices').classList.remove('combat-actions', 'combat-locked');
@@ -1430,9 +1449,11 @@
     COMBAT._lastOutcome = null;
     COMBAT._narrPrefix = null;
     COMBAT._resolved = false;
+    COMBAT.fight = (COMBAT.fight || 0) + 1;
     COMBAT.rexShield = COMBAT.ai === 'rex' || STATE.activeAI === 'rex'; // REX passive: one free hit per fight
     COMBAT.active = true;
     COMBAT.state = 'PLAYER_TURN';
+    saveFightPoint();
 
     const screen = document.getElementById('screen-encounter');
     screen.classList.add('combat-mode');
@@ -1467,12 +1488,12 @@
       setAiCombat('Crew is not responding to combat orders.');
       renderCombatActions();
       showMutinyTurn();
-      setTimeout(enemyTurn, 1200);
+      later(enemyTurn, 1200);
       return;
     }
     if (ramFailed) {
       showEnemyTurn();
-      setTimeout(() => { if (COMBAT.active && COMBAT.state === 'PLAYER_TURN') enemyTurn(); }, 800);
+      later(() => { if (COMBAT.active && COMBAT.state === 'PLAYER_TURN') enemyTurn(); }, 800);
     } else {
       showYourTurn();
     }
