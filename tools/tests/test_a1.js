@@ -127,11 +127,10 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   await boot(['engineer', 'pilot']);
   const st3 = await ev(() => STATE.nodes.find(n => n.node_type === 'station' && Array.isArray(n.connects_to) && n.connects_to.length).id);
   await ev(id => { STATE.currentId = id; STATE.currentEvent = null; returnToHub(); }, st3);
-  await page.waitForTimeout(200);
-  await page.click('#stop-btn'); await page.waitForTimeout(150);
+  await page.waitForTimeout(200); // returnToHub lands stopped: the Stop menu is already open
   const reopenStop = async () => {
     await ev(() => { document.body.classList.remove('stop-active'); document.getElementById('stop-btn').textContent = 'Stop'; returnToHub(); });
-    await page.waitForTimeout(150); await page.click('#stop-btn'); await page.waitForTimeout(150);
+    await page.waitForTimeout(150);
   };
   const medbayBtn = async () => ev(() => { const b = [...document.querySelectorAll('#stop-choices .stop-choice')].find(x => /MEDBAY/.test(x.textContent)); return b ? { cls: b.className, txt: b.textContent } : null; });
   let mb = await medbayBtn();

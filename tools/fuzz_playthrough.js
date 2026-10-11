@@ -167,8 +167,11 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
         });
         await page.waitForTimeout(220);
       } else if (screen === 'screen-cruise') {
+        // After an event the ship lands stopped (Stop menu open, button
+        // "Resume" — owner ruling 2026-10-10); at launch it's cruising.
+        const stopped = () => page.evaluate(() => document.body.classList.contains('stop-active'));
         if (Math.random() < 0.25) {
-          await page.click('#stop-btn'); await page.waitForTimeout(90);
+          if (!(await stopped())) { await page.click('#stop-btn'); await page.waitForTimeout(90); }
           await page.evaluate(() => {
             const verbs = Array.from(document.querySelectorAll('.stop-choice'));
             if (verbs.length) verbs[Math.floor(Math.random() * verbs.length)].click();
@@ -181,7 +184,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
           if (await page.evaluate(() => document.body.classList.contains('stop-active'))) await page.click('#stop-btn');
           await page.waitForTimeout(200);
         } else {
-          await page.click('#stop-btn'); await page.waitForTimeout(80);
+          if (!(await stopped())) { await page.click('#stop-btn'); await page.waitForTimeout(80); }
           await page.click('#stop-btn'); await page.waitForTimeout(220);
         }
       } else {

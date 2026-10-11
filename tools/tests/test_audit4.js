@@ -44,7 +44,7 @@ const nodeOfType = (page, t) => page.evaluate(t => { const n = STATE.nodes.find(
       const st = STATE.nodes.find(n => n.node_type === 'station' && n.id !== STATE.currentId) || STATE.byId[STATE.currentId];
       STATE.currentId = st.id; renderCruise();
       STATE.goldAmount = 100; STATE.fabricator.wear = 85;
-      document.getElementById('stop-btn').click();
+      window.openStopMenu(); // (re)open on this station — the hub may already be stopped
       const b = [...document.querySelectorAll('#stop-choices .stop-choice')].find(x => /FAB SERVICE/.test(x.textContent));
       if (!b) return { err: 'no verb' };
       b.click();
@@ -191,7 +191,7 @@ const nodeOfType = (page, t) => page.evaluate(t => { const n = STATE.nodes.find(
       MarketModal.close();
       return { rows, after };
     });
-    ok(/EXOTIC/.test(m.rows) && m.after.gold === 20 && m.after.exotic === 1, `station buys materials (${JSON.stringify(m.after)})`);
+    ok(/EXOTIC/.test(m.rows) && m.after.gold === 15 && m.after.exotic === 1, `station buys materials at value × 2.5 (${JSON.stringify(m.after)})`);
     ok(!page._errs.length, 'no page errors' + (page._errs.length ? ': ' + page._errs.join(' | ') : ''));
     await page.close();
   }

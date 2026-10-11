@@ -19,8 +19,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   const st = () => page.evaluate(() => ({ day: STATE.daysElapsed, mats: JSON.stringify(STATE.materials), food: STATE.resources.food,
     log: (STATE.shipLog || []).map(e => (typeof e === 'string' ? e : e.text)).slice(-1)[0] || '', ov: document.getElementById('overlay-minigames').classList.contains('active') }));
   const verb = async (re) => {
-    await page.evaluate(() => { document.body.classList.remove('stop-active'); document.getElementById('stop-btn').textContent = 'Stop'; returnToHub(); });
-    await page.click('#stop-btn'); await page.waitForTimeout(150);
+    await page.evaluate(() => { document.body.classList.remove('stop-active'); document.getElementById('stop-btn').textContent = 'Stop'; returnToHub(); }); // lands stopped: menu open
+    await page.waitForTimeout(150);
     await page.evaluate(re => [...document.querySelectorAll('#stop-choices .stop-choice')].find(b => new RegExp(re).test(b.textContent)).click(), re);
     await page.waitForTimeout(400);
   };
