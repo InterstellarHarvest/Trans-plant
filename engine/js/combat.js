@@ -1219,6 +1219,7 @@
     const outcome = { resources: {} };
     let lootItems = null;
     let title, body, tone;
+    let scene = null; // outcome backdrop override (scene_bg), when the result takes you somewhere
 
     switch (result.outcome) {
       case 'victory_destroyed':
@@ -1232,6 +1233,8 @@
         title = 'SURRENDER ACCEPTED'; tone = 'success';
         lootItems = rollCombatLoot('surrender');
         body = 'Pirates stripped, ship intact. They live to disappoint someone else. ' + '{{LOOT}}';
+        // Stripping them means going aboard: their own interior, by species.
+        scene = 'ship_interior/pirate/' + COMBAT.species;
         outcome.time_cost = 'medium';
         break;
       case 'victory_executed':
@@ -1355,7 +1358,7 @@
       body = body.replace('{{LOOT}}', describeLoot(landed)
         + (leftBehind.length ? ' The hold was full: ' + leftBehind.map(it => `${it.count}× ${it.label}`).join(', ') + ' left behind.' : ''));
     }
-    renderOutcomeView({ title, body, tone, narrative: body });
+    renderOutcomeView(Object.assign({ title, body, tone, narrative: body }, scene ? { scene_bg: scene } : {}));
   }
 
   /* ── Entry points — called from handleChoiceClick() in index.html

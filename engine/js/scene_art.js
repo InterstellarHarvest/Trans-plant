@@ -5,8 +5,13 @@
    §16 (scene layer stack). Owns:
      - three-layer backdrop resolution (bgBase z=0 / bgSprite z=1 /
        main backdrop z=2) with probe-by-error discovery + caches
-     - scene_type → layer-spec mapping (events author no bg paths;
-       the map lives here, keyed off scene_type + node + npc context)
+     - scene_type → layer-spec mapping (the event's own scene, keyed
+       off scene_type + node + npc context)
+     - per-layer bg / bgBase / bgSprite (demo renderAll's layer view,
+       'inherit' + {species}/{crop}/{biome} tokens) and outcome
+       scene_bg* overrides, swapped in at layer change
+     - deterministic picks (run art seed + event instance + path), so
+       a reload mid-event shows the very same images
      - NPC subject frame: spritesheet variant probing (numbered
        folders per Bible §11), talk-loop animation, portrait/emoji
        fallback chain
@@ -31,11 +36,29 @@
   /* ── probing + caches ─────────────────────────────────────────────
      _listCache:  path → array of URLs that exist (null when none) —
                   survives the whole session (files don't move).
-     _picked:     pickKey → chosen URL. Keyed per event so a scene
-                  stays stable across re-renders within one event but
-                  re-rolls for the next event. Cleared per run. */
+
+     Picks are DETERMINISTIC (owner ruling 2026-10-11): a hash of the
+     run's art seed (STATE.artSeed, saved with the run) + the event
+     instance (event id @ node id) + the path. Same instance → same
+     image on every re-render, every revisit of a layer, and after a
+     reload; the next event instance (or the next run) gets its own
+     roll. The demo's path-cached random pick, made reload-proof. */
   const _listCache = new Map();
-  let _picked = new Map();
+
+  function hashStr(str) {
+    let h = 2166136261 >>> 0; // FNV-1a
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    // final avalanche so neighbouring keys don't land on neighbouring picks
+    h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b) >>> 0; h ^= h >>> 13;
+    return h >>> 0;
+  }
+  function runSeed() {
+    return (typeof STATE !== 'undefined' && STATE && STATE.artSeed) || 0;
+  }
+  function stablePick(key, list) {
+    if (!list || !list.length) return null;
+    return list[hashStr(runSeed() + '|' + key) % list.length];
+  }
 
   function probeImage(path) {
     return new Promise(resolve => {
@@ -46,13 +69,7 @@
     });
   }
 
-  function pickSticky(pickKey, list) {
-    if (!list || !list.length) return null;
-    if (_picked.has(pickKey)) return _picked.get(pickKey);
-    const chosen = list[Math.floor(Math.random() * list.length)];
-    _picked.set(pickKey, chosen);
-    return chosen;
-  }
+  function pickSticky(pickKey, list) { return stablePick(pickKey, list); }
 
   /* Backdrop resolver — flat file first (bridge.png, corridor.jpg),
      then numbered folder pool. jpg-preferred for backdrops. */
@@ -126,12 +143,37 @@
     bartender: 'station/cantina',
   };
 
-  function stickyFrom(pickKey, list) {
-    const key = 'kind:' + pickKey;
-    if (_picked.has(key)) return _picked.get(key);
-    const chosen = list[Math.floor(Math.random() * list.length)];
-    _picked.set(key, chosen);
-    return chosen;
+  function stickyFrom(pickKey, list) { return stablePick('kind:' + pickKey, list); }
+
+  /* Event instance key — the unit a pick is stable for. */
+  function instanceKey(ev, node) {
+    return ((ev && ev.id) || 'anon') + '@' + ((node && node.id) || '?');
+  }
+
+  /* A planet's biome belongs to the PLANET (node), not the event: the
+     approach view, every landing scene and any later event at that stop
+     agree on it. {biome} in authored paths resolves to this. */
+  function biomeFor(ev, node) {
+    return stickyFrom('biome:' + ((node && node.id) || (ev && ev.id) || 'anon'), PLANET_BIOMES);
+  }
+
+  /* Authored path tokens (demo expandPath + Bible §16): {species} from
+     the event's NPC, {crop} from the run, {biome} from the planet.
+     A token with nothing to fill it makes the path unusable → null
+     (the layer falls back to an empty slot, never a 404 probe). */
+  function expandPath(raw, ev, node, npcCtx) {
+    if (!raw) return null;
+    let out = String(raw);
+    if (out.indexOf('{species}') !== -1) {
+      const sp = npcCtx && npcCtx.species;
+      if (!sp) return null;
+      out = out.replace(/\{species\}/g, sp);
+    }
+    if (out.indexOf('{crop}') !== -1) {
+      out = out.replace(/\{crop\}/g, (typeof STATE !== 'undefined' && STATE.crop) || 'wheat');
+    }
+    if (out.indexOf('{biome}') !== -1) out = out.replace(/\{biome\}/g, biomeFor(ev, node));
+    return out;
   }
 
   function spaceFor(node) {
@@ -143,7 +185,7 @@
 
   function sceneSpecFor(ev, node, npcCtx) {
     const st = ev.scene_type || null;
-    const pickKey = ev.id || 'anon';
+    const pickKey = instanceKey(ev, node);
     const npc = npcCtx || null;
     const disp = npc && npc.disposition;
 
@@ -177,8 +219,9 @@
         return { bg: 'station/promenade' };
       }
       case 'planet_surface': {
-        const biome = stickyFrom(pickKey + ':biome', PLANET_BIOMES);
-        return { bg: 'planet_surface/' + biome + '/approach' };
+        // Arrival = the orbital approach; a layer/outcome that goes down
+        // to the surface swaps in planet_surface/{biome} (same biome).
+        return { bg: 'planet_surface/' + biomeFor(ev, node) + '/approach' };
       }
       case 'derelict_interior':
         return { bg: 'ship_interior/derelict' };
@@ -194,10 +237,7 @@
         // No scene_type authored — derive from where we are.
         const nt = node && node.node_type;
         if (nt === 'station')  return { bg: 'station/promenade' };
-        if (nt === 'planet') {
-          const biome = stickyFrom(pickKey + ':biome', PLANET_BIOMES);
-          return { bg: 'planet_surface/' + biome + '/approach' };
-        }
+        if (nt === 'planet') return { bg: 'planet_surface/' + biomeFor(ev, node) + '/approach' };
         if (nt === 'derelict') return { bg: 'ship_interior/derelict' };
         if (nt === 'anomaly') {
           const kind = stickyFrom(pickKey + ':anomaly', ANOMALY_KINDS);
@@ -208,10 +248,54 @@
     }
   }
 
+  /* ── per-layer backdrop (demo renderAll's layer view) ─────────────
+     A layer may author `bg` / `bgBase` / `bgSprite` (same names and
+     tokens as the demo + Bible §16). Each resolves against the event's
+     own scene (sceneSpecFor):
+       bg       — set and not 'inherit' → the layer's; otherwise the
+                  event's (an empty bg can't blank the scene — demo rule)
+       bgBase /
+       bgSprite — absent or 'inherit' → the event's; '' / null → none
+                  (a full-bleed interior drops the bridge's starfield
+                  and viewport ship, like the demo's land_* outcomes);
+                  a path → the layer's.
+     Returns a concrete {bg, bgBase, bgSprite} (tokens expanded). */
+  function layerSpecFor(ev, node, layer, npcCtx) {
+    const base = sceneSpecFor(ev, node, npcCtx);
+    if (!layer) return base;
+    const slot = (v, inherited) => (v === undefined || v === 'inherit') ? inherited
+      : (v ? expandPath(v, ev, node, npcCtx) : null);
+    return {
+      bg: (layer.bg && layer.bg !== 'inherit') ? (expandPath(layer.bg, ev, node, npcCtx) || base.bg) : base.bg,
+      bgBase: slot(layer.bgBase, base.bgBase || null),
+      bgSprite: slot(layer.bgSprite, base.bgSprite || null),
+    };
+  }
+
+  /* Outcome override (CLAUDE.md schema: scene_bg / scene_bg_base /
+     scene_bg_sprite). Any of them set → the outcome's scene replaces
+     the current one wholesale (an unset slot is empty — the demo's
+     land_* outcomes clear bgBase/bgSprite the same way). None set →
+     null: the outcome plays over the layer it resolved from. */
+  function outcomeSpecFor(outcome, ev, node, npcCtx) {
+    if (!outcome || !(outcome.scene_bg || outcome.scene_bg_base || outcome.scene_bg_sprite)) return null;
+    return {
+      bg: expandPath(outcome.scene_bg, ev, node, npcCtx),
+      bgBase: expandPath(outcome.scene_bg_base, ev, node, npcCtx),
+      bgSprite: expandPath(outcome.scene_bg_sprite, ev, node, npcCtx),
+    };
+  }
+
   /* ── backdrop painting ────────────────────────────────────────────
      Sequence counter guards in-flight resolutions against the player
      advancing to another event mid-probe (same pattern as the demo). */
   let _bgSeq = 0;
+  let _paintedKey = null; // spec + instance currently on screen (layer swaps compare against it)
+
+  function specKeyOf(spec, pickKey) {
+    spec = spec || {};
+    return pickKey + '|' + (spec.bg || '') + '|' + (spec.bgBase || '') + '|' + (spec.bgSprite || '');
+  }
 
   function applyBackdropSpec(spec, pickKey) {
     const main   = document.getElementById('enc-backdrop');
@@ -220,6 +304,8 @@
     if (!main || !base || !sprite) return;
     const mySeq = ++_bgSeq;
     spec = spec || {};
+    _paintedKey = specKeyOf(spec, pickKey);
+    main.dataset.scene = spec.bg || '';  // the authored path (tests + debugging); the image is the resolved pick
 
     if (!spec.bg) {
       main.style.backgroundImage = '';
@@ -339,7 +425,9 @@
       if (url) found.push({ url, jsonUrl: folder + '/' + i + '/spritesheet.json' });
     }
     if (!found.length) { _npcSheetCache.set(folder, null); return null; }
-    const pick = found[Math.floor(Math.random() * found.length)];
+    // One face per disposition/species for the run, stable across a
+    // reload (it re-rolled on load: same pirate, different face).
+    const pick = stablePick('npc:' + folder, found);
     let idleIdx = 9;
     const json = await fetchJSON(pick.jsonUrl);
     if (json && Array.isArray(json.frames)) {
@@ -512,6 +600,7 @@
      of the same authored event. */
   function beginEvent() {
     _currentEvKey = null;
+    _paintedKey = null;
     _currentSubjKey = null;
     stopTalking();
     _activeSheet = null;
@@ -528,9 +617,13 @@
      machinery: a cantina layer can put the off-duty engineer in the
      frame while the event's default npc stays the bartender).
      opts.pose — layer pose class (hostile/listening/pleased). */
+  let _ctx = null; // {ev, node, npcCtx} of the event on screen — outcome tokens resolve against it
+
   function render(ev, node, layer, npcCtx, line, opts) {
     opts = opts || {};
     const evKey = ev.id || 'anon';
+    const instKey = instanceKey(ev, node);
+    _ctx = { ev, node, npcCtx };
     const commMode = (layer && layer.comm_mode) || ev.comm_mode || 'in_person';
     const subjCtx = opts.subjectCtx || npcCtx;
     const subjKey = subjKeyFor(evKey, subjCtx);
@@ -552,8 +645,14 @@
       if (subjEl2) { subjEl2.classList.remove('combat-crt-off', 'combat-locking', 'combat-ftl-vanish'); subjEl2.style.opacity = ''; }
       const plate = document.getElementById('enc-subject-name');
       if (plate) { plate.classList.remove('combat-crt-off-name', 'combat-ftl-vanish'); plate.style.opacity = ''; }
-      applyBackdropSpec(sceneSpecFor(ev, node, npcCtx), evKey);
     }
+    // Per-layer backdrop (demo canon): every layer paint resolves its
+    // own bg/bgBase/bgSprite against the event's scene; a change from
+    // what's on screen repaints (the main layer cross-fades — CSS
+    // transition on .enc-backdrop, as in the demo). Same spec → no-op,
+    // so re-renders (market close, revisits) don't flicker.
+    const spec = layerSpecFor(ev, node, layer, npcCtx);
+    if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey);
     if (_currentSubjKey !== subjKey) {
       _currentSubjKey = subjKey;
       _pendingLine = null;
@@ -585,12 +684,13 @@
   /* Called from renderOutcomeView(). Outcomes may override the scene
      (scene_bg / scene_bg_base / scene_bg_sprite per CLAUDE.md schema). */
   function renderOutcome(outcome, npcCtx) {
-    if (outcome && (outcome.scene_bg || outcome.scene_bg_base || outcome.scene_bg_sprite)) {
-      applyBackdropSpec({
-        bg: outcome.scene_bg || null,
-        bgBase: outcome.scene_bg_base || null,
-        bgSprite: outcome.scene_bg_sprite || null,
-      }, (_currentEvKey || 'anon') + ':outcome');
+    const c = _ctx || {};
+    const spec = outcomeSpecFor(outcome, c.ev, c.node, c.npcCtx);
+    if (spec) {
+      // Same instance key as the layers: an outcome naming the path a
+      // layer already showed keeps that very image.
+      const instKey = instanceKey(c.ev, c.node);
+      if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey);
     }
     if (outcome && outcome.line && npcCtx) startTalking(outcome.line);
     else stopTalking();
@@ -613,7 +713,8 @@
   /* New run: forget sticky picks + rolled sheet variants so the next
      run re-rolls its own cast. File-existence cache survives. */
   function clearRunCaches() {
-    _picked = new Map();
+    _paintedKey = null;
+    _ctx = null;
     _npcSheetCache.clear();
     _currentEvKey = null;
     _currentSubjKey = null;
@@ -622,5 +723,5 @@
     _activeSheet = null;
   }
 
-  window.SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, sceneSpecFor };
+  window.SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, sceneSpecFor, layerSpecFor, outcomeSpecFor, expandPath, biomeFor };
 })();

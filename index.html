@@ -1729,6 +1729,7 @@ const SAVED_FIELDS = [
   'dayCarry',    // fractional travel day carried between legs
   'flagFirstSeen', 'calledBack', 'lastCallbackLeg', // story-flag callbacks: when each choice happened, which the AI has brought up, when it last did
   'crisisPatient', 'scanIntelEvent', // an event saved at its entry comes back with its patient / SCAN intel
+  'artSeed', // scene_art.js picks backdrop + NPC-face variants from it: a reload shows the same images
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1745,6 +1746,7 @@ window.saveBlockedReason = function () {
   if (document.querySelector('#overlay-minigames.active, #overlay-mining.active')) return 'FINISH THE JOB FIRST';
   return null;
 };
+function rollArtSeed() { return 1 + Math.floor(Math.random() * 0x7ffffffe); }
 function writeSnapshot(key, extra) {
   if (new URLSearchParams(location.search).has('debug')) return false;
   try {
@@ -1797,7 +1799,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null };
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, artSeed: rollArtSeed };
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -1875,10 +1877,10 @@ function loadRun(key) {
     saveRun();
     return true;
   }
-  // Saved at an event's entry: back into that same event (same NPC, same
-  // variant — they're in the snapshot).
+  // Saved in an event: back into that same event (same NPC, same variant,
+  // same layer — they're in the snapshot).
   const pe = snap.pendingEvent && EVENTS[snap.pendingEvent];
-  if (pe && STATE.byId[STATE.currentId]) enterEvent(STATE.byId[STATE.currentId], pe, { variantIndex: snap.pendingVariant });
+  if (pe && STATE.byId[STATE.currentId]) enterEvent(STATE.byId[STATE.currentId], pe, { variantIndex: snap.pendingVariant, layerStack: snap.pendingLayers, layerVisits: snap.pendingVisits });
   return true;
 }
 
@@ -1923,6 +1925,7 @@ function initState() {
   initCrewSkillCharges();
   STATE.orders = { pace: 'ridiculous', rations: 'standard', waterSplit: 50 };
   STATE.stowaway = null; // debug loop skips the stowaway roll — deterministic testing
+  STATE.artSeed = rollArtSeed();
   STATE.hubScreen = 'screen-map'; // legacy debug loop hub — screen-cruise is the real game's hub
 }
 
@@ -2013,6 +2016,7 @@ function applySetupToState(sel) {
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
   if (typeof window.abortFabricator === 'function') window.abortFabricator();
+  STATE.artSeed = rollArtSeed(); // this run's scene + NPC-face variants (saved: stable across reloads)
   if (window.SceneArt) SceneArt.clearRunCaches(); // re-roll scenes + NPC variants per run
 
   STATE.hubScreen = 'screen-cruise';
@@ -3663,6 +3667,14 @@ function enterEvent(node, ev, opts) {
   STATE.outcomeMode      = false;
   STATE.currentOutcomeId = null;
   STATE.layerStack       = ev.layers ? [ev.entryLayer || Object.keys(ev.layers)[0]] : null;
+  // Reload mid-event (2026-10-11): back on the layer the player had
+  // reached, not the event's opening — the layer's scene (boarded
+  // their ship, down on the surface) and anything paid to walk in
+  // (gold_cost, effort tax, one-shot actions) stay as they were.
+  if (ev.layers && opts && Array.isArray(opts.layerStack) && opts.layerStack.length &&
+      opts.layerStack.every(id => ev.layers[id])) STATE.layerStack = opts.layerStack.slice();
+  STATE._layerVisits = {}; // per-entry revisit tracking (demo machinery)
+  if (ev.layers && opts && Array.isArray(opts.layerVisits)) for (const id of opts.layerVisits) if (ev.layers[id]) STATE._layerVisits[id] = true;
   STATE.seenEventIds.add(ev.id);
   if (ev.sets_flag) STATE.flags.add(ev.sets_flag); // event-level flag: meeting the event is the fact
   STATE.npcCtx = ev.npc ? resolveNpc(ev) : null;
@@ -3688,7 +3700,7 @@ function enterEvent(node, ev, opts) {
   STATE.variantIndex = (opts && Number.isInteger(opts.variantIndex)) ? opts.variantIndex
     : (ev.standard_variants && ev.standard_variants.length)
     ? Math.floor(Math.random() * ev.standard_variants.length) : 0;
-  if (!STATE.ended && STATE.trail && STATE.nodes.length) writeSnapshot(SAVE_KEY, { pendingEvent: ev.id, pendingVariant: STATE.variantIndex });
+  saveEventProgress();
 
   // The delayed-crisis patient belongs to the crisis event alone.
   if (!(ev.trigger || []).includes('delayed_crisis')) STATE.crisisPatient = null;
@@ -3704,10 +3716,23 @@ function enterEvent(node, ev, opts) {
     STATE.stowaway.revealedByEvent = ev.id;
   }
 
-  STATE._layerVisits = {}; // per-entry revisit tracking (demo machinery)
   renderEncounterState();
   renderHUD();
   showScreen('screen-encounter');
+}
+
+/* The in-event save: which event, its drawn variant, and where in its
+   layers the player stands (written at entry and at every layer step,
+   before the new layer paints — so the visit set is the one that layer
+   was entered with). An outcome overwrites it with a hub save. */
+function saveEventProgress() {
+  const ev = STATE.currentEvent;
+  if (!ev || STATE.ended || !STATE.trail || !STATE.nodes.length) return;
+  writeSnapshot(SAVE_KEY, {
+    pendingEvent: ev.id, pendingVariant: STATE.variantIndex,
+    pendingLayers: STATE.layerStack ? STATE.layerStack.slice() : null,
+    pendingVisits: Object.keys(STATE._layerVisits || {}),
+  });
 }
 
 /* One-shot action key — demo's `consume` machinery, scoped per event
@@ -4670,11 +4695,13 @@ function handleChoiceClick(choice) {
   }
   if (choice.back) {
     if (STATE.layerStack.length > 1) STATE.layerStack.pop();
+    saveEventProgress();
     renderEncounterState();
     return;
   }
   if (choice.next) {
     STATE.layerStack.push(choice.next);
+    saveEventProgress();
     renderEncounterState();
     return;
   }
@@ -5008,7 +5035,7 @@ function resolveChoice(choice) {
       if (choice.launch_minigame === 'breach') pushAiSample('hull_breach');
       renderHUD();
       if (checkFailure()) return;
-      renderOutcomeView({ title: 'OUTCOME', body: merged.narrative || '...', tone: deltaIsBad(merged) ? 'danger' : (deltaIsGood(merged) ? 'success' : null) });
+      renderOutcomeView(Object.assign({ title: 'OUTCOME', body: merged.narrative || '...', tone: deltaIsBad(merged) ? 'danger' : (deltaIsGood(merged) ? 'success' : null) }, outcomeScene(merged)));
     });
     return;
   }
@@ -5017,7 +5044,17 @@ function resolveChoice(choice) {
   renderHUD();
   if (checkFailure()) return;
 
-  renderOutcomeView({ title: 'OUTCOME', body: o.narrative || '...', tone: deltaIsBad(o) ? 'danger' : (deltaIsGood(o) ? 'success' : null) });
+  renderOutcomeView(Object.assign({ title: 'OUTCOME', body: o.narrative || '...', tone: deltaIsBad(o) ? 'danger' : (deltaIsGood(o) ? 'success' : null) }, outcomeScene(o)));
+}
+
+/* A flat outcome's scene override (scene_bg / scene_bg_base /
+   scene_bg_sprite — "down on the surface") rides along to the outcome
+   view; the view object was rebuilt without it, so authored overrides
+   never showed. */
+function outcomeScene(o) {
+  const out = {};
+  for (const k of ['scene_bg', 'scene_bg_base', 'scene_bg_sprite']) if (o && o[k]) out[k] = o[k];
+  return out;
 }
 
 function deltaIsBad(o)  {

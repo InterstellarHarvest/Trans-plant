@@ -21,6 +21,12 @@
 }
 
 /* ── Backdrop layer stack (z via DOM order: base → sprite → main) ── */
+/* Demo canon (.enc-backdrop { transition: background 0.4s }): when a
+   layer swaps the scene (boarding their ship, landing on the surface,
+   back to the bridge) the main backdrop eases over instead of cutting. */
+#screen-encounter .enc-backdrop {
+  transition: background 0.4s;
+}
 #screen-encounter .enc-backdrop.has-bg-sprite {
   background-size: cover;
   background-position: center;

@@ -823,6 +823,106 @@ const eventOnTrail = (ev, trail) => {
   walk(path.join(SPR, 'npc'), f => { if (path.dirname(f) !== path.join(SPR, 'npc') && path.basename(f) === 'spritesheet.png') check(f, true); });
 }
 
+// ── Scene backdrops (added 2026-10-11, owner ruling "unused backdrops") ──
+// Every backdrop path an event names — layer bg / bgBase / bgSprite
+// (demo names, 'inherit' allowed) and outcome scene_bg / scene_bg_base /
+// scene_bg_sprite — must resolve on disk the way scene_art.js resolves
+// it: a flat <path>.jpg|.png, or a numbered pool <path>/1..8.jpg (bg
+// slots; sprite slots also take .png). Tokens expand over every value
+// they can take: {species} (needs an event npc), {crop}, {biome}.
+// Then an orphan report: background images that no event path and no
+// engine scene pool (below — mirror of scene_art.js sceneSpecFor +
+// combat.js + mining.js) can ever show.
+{
+  const BG = path.join(ROOT, 'resources/sprites/backgrounds');
+  const PROBE_MAX = 8; // scene_art.js BG_PROBE_MAX
+  const SPECIES = Object.keys((registry.npc_species || {}).values || {});
+  const CROPS = (readJSON('modules/crops/crops.json').crops || []).map(c => c.id.replace(/^crop_/, ''));
+  const BIOMES = ['alien', 'desert', 'habitable', 'ice', 'ocean', 'volcanic']; // scene_art.js PLANET_BIOMES
+  const TOKENS = { species: SPECIES, crop: CROPS, biome: BIOMES };
+  const expand = raw => {
+    let outs = [raw];
+    for (const [tok, vals] of Object.entries(TOKENS)) {
+      if (!raw.includes('{' + tok + '}')) continue;
+      outs = outs.flatMap(o => vals.map(v => o.split('{' + tok + '}').join(v)));
+    }
+    return outs;
+  };
+  const exists = rel => fs.existsSync(path.join(BG, rel));
+  // Files a path can show, exactly as the resolver probes (flat file wins).
+  const filesFor = (rel, sprite) => {
+    const flat = sprite ? ['.png', '.jpg'] : ['.jpg', '.png'];
+    for (const ext of flat) if (exists(rel + ext)) return [rel + ext];
+    const out = [];
+    for (let i = 1; i <= PROBE_MAX; i++) {
+      if (exists(rel + '/' + i + '.jpg')) out.push(rel + '/' + i + '.jpg');
+      if (sprite && exists(rel + '/' + i + '.png')) out.push(rel + '/' + i + '.png');
+    }
+    return out;
+  };
+  const shown = new Set();
+  const usePath = (at, field, raw, ev, sprite) => {
+    if (raw === undefined || raw === null || raw === '' || raw === 'inherit') return;
+    if (typeof raw !== 'string') { err(`${at}: ${field} must be a backdrop path string`); return; }
+    const unknown = (raw.match(/\{(\w+)\}/g) || []).filter(t => !TOKENS[t.slice(1, -1)]);
+    if (unknown.length) { err(`${at}: ${field} "${raw}" uses unknown token ${unknown.join(', ')} (scene_art.js expands {species}, {crop}, {biome})`); return; }
+    if (raw.includes('{species}') && !ev.npc) err(`${at}: ${field} "${raw}" uses {species} but the event has no npc to take it from — it never resolves`);
+    for (const rel of expand(raw)) {
+      const files = filesFor(rel, sprite);
+      if (!files.length) err(`${at}: ${field} "${raw}" → sprites/backgrounds/${rel} has no ${sprite ? '.png/.jpg' : '.jpg'} file or numbered pool on disk`);
+      files.forEach(f => shown.add(f));
+    }
+  };
+  const LAYER_FIELDS = [['bg', false], ['bgBase', false], ['bgSprite', true]];
+  const OUTCOME_FIELDS = [['scene_bg', false], ['scene_bg_base', false], ['scene_bg_sprite', true]];
+  const outcomeScenes = (at, o, ev) => {
+    if (!o || typeof o !== 'object') return;
+    for (const [f, sp] of OUTCOME_FIELDS) usePath(at, f, o[f], ev, sp);
+    for (const [t, to] of Object.entries(o.tier_outcomes || {})) outcomeScenes(at + ' tier ' + t, to, ev);
+  };
+  for (const { file, event: ev } of eventsById.values()) {
+    for (const [lid, layer] of Object.entries(ev.layers || {})) {
+      for (const [f, sp] of LAYER_FIELDS) usePath(atOf(file, ev.id, lid), f, layer[f], ev, sp);
+    }
+    for (const [oid, o] of Object.entries(ev.outcomes || {})) outcomeScenes(atOf(file, ev.id, 'outcomes.' + oid), o, ev);
+    for (const { layer, choices } of choiceSetsOf(ev)) {
+      for (const ch of choices) {
+        if (ch.outcome && typeof ch.outcome === 'object') outcomeScenes(atOf(file, ev.id, layer), ch.outcome, ev);
+        for (const [t, to] of Object.entries(ch.tier_outcomes || {})) outcomeScenes(atOf(file, ev.id, layer) + ' tier ' + t, to, ev);
+      }
+    }
+  }
+  // Engine-chosen scenes (no event names them). [path, sprite-slot?, where]
+  const ENGINE_SCENE_POOLS = [
+    ['our_ship/bridge', false, 'scene_art.js ship_exterior'], ['space/deep', false, 'scene_art.js spaceFor'],
+    ['space/nebula', false, 'scene_art.js spaceFor'], ['space/asteroid_field', false, 'scene_art.js spaceFor'],
+    ['ship_exterior/unknown', true, 'scene_art.js ship_exterior'], ['ship_exterior/drifter', true, 'scene_art.js ship_exterior'],
+    ['ship_exterior/pirate/{species}', true, 'scene_art.js ship_exterior'], ['ship_exterior/trader/{species}', true, 'scene_art.js ship_exterior'],
+    ['ship_interior/pirate/{species}', false, 'combat.js accepted surrender'], ['ship_interior/generic', false, 'scene_art.js ship_interior'],
+    ['ship_interior/derelict', false, 'scene_art.js derelict_interior'], ['our_ship/corridor', false, 'scene_art.js ship_interior'],
+    ['our_ship/growbay/{crop}', false, 'scene_art.js growbay'],
+    ['station/medbay', false, 'scene_art.js station'], ['station/office', false, 'scene_art.js station'], ['station/dock', false, 'scene_art.js station'],
+    ['station/promenade', false, 'scene_art.js station'], ['station/market/mixed', false, 'scene_art.js station'], ['station/cantina', false, 'scene_art.js station'],
+    ['planet_surface/{biome}/approach', false, 'scene_art.js planet_surface'],
+    ['anomaly/distortion', false, 'scene_art.js anomaly'], ['anomaly/fractal', false, 'scene_art.js anomaly'], ['anomaly/void', false, 'scene_art.js anomaly'],
+  ];
+  for (const [p, sp, where] of ENGINE_SCENE_POOLS) usePath('engine ' + where, 'scene pool', p, { npc: true }, sp);
+  // Orphans: images under backgrounds/ nothing above can show. endgame/
+  // belongs to endings.js (its own file naming), so it is not swept here.
+  const orphans = new Map(); // folder → count
+  const walkBg = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const f = path.join(dir, e.name), rel = path.relative(BG, f).split(path.sep).join('/');
+      if (e.isDirectory()) { if (rel !== 'endgame') walkBg(f); continue; }
+      if (!/\.(jpg|png)$/i.test(e.name) || shown.has(rel)) continue;
+      const folder = path.dirname(rel);
+      orphans.set(folder, (orphans.get(folder) || 0) + 1);
+    }
+  };
+  if (fs.existsSync(BG)) walkBg(BG);
+  for (const [folder, n] of [...orphans].sort()) warn(`orphaned backdrop: sprites/backgrounds/${folder}/ — ${n} image(s) no event path or engine scene pool can show`);
+}
+
 function printWarnings(out) {
   if (!warnings.length) return;
   out(`lint_modules: ${warnings.length} warning(s) (not failing):\n`);
