@@ -44,7 +44,7 @@
   const CAPTAIN_BG = {
     botanist:      { name: 'Botanist',      stat: 'Crop care +7%',       desc: 'You know plants. Not as well as Dr. Osei, but enough.', flavor: 'Your parents asked what you\'d do with that degree. This.' },
     engineer:      { name: 'Engineer',      stat: 'Fab wear -10%',       desc: 'You can fix things. Not as fast as Kazuki.', flavor: 'The ship makes sounds it shouldn\'t. You recognize most of them.' },
-    medic:         { name: 'Medic',         stat: '15% lethal→injury',   desc: 'You passed the exam. You are not a doctor.', flavor: 'The residency was... there were circumstances.' },
+    medic:         { name: 'Medic',         stat: '25% lethal→injury',   desc: 'You passed the exam. You are not a doctor.', flavor: 'The residency was... there were circumstances.' },
     pilot:         { name: 'Pilot',         stat: 'Fuel -5%',            desc: 'You can fly. Slightly better than expected.', flavor: 'You are statistically correct 68% of the time.' },
     chef:          { name: 'Chef',          stat: 'Food -7%',            desc: 'You can make algae taste like something other than regret.', flavor: 'You know 47 ways to prepare algae. Forty-six are bad.' },
     xenobiologist: { name: 'Xenobiologist', stat: 'Anomaly safer',       desc: 'You studied aliens. You have never met one.', flavor: 'Your thesis was theoretical. Everything is about to become very applied.' },

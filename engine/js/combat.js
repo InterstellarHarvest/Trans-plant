@@ -153,9 +153,13 @@
       const b = COMBAT_CONFIG.crew_bonuses[role];
       if (b && typeof b[key] === 'number') total += b[key] * COMBAT.crew[role];
     }
+    // A captain of the same background as a crew member doesn't stack
+    // with them: the better of the two counts (index.html specialistMult).
     if (COMBAT.captainBg) {
       const cb = COMBAT_CONFIG.captain_bonuses[COMBAT.captainBg];
-      if (cb && typeof cb[key] === 'number') total += cb[key];
+      const same = COMBAT_CONFIG.crew_bonuses[COMBAT.captainBg];
+      const crewSame = (COMBAT.crew[COMBAT.captainBg] && same && typeof same[key] === 'number') ? same[key] * COMBAT.crew[COMBAT.captainBg] : 0;
+      if (cb && typeof cb[key] === 'number') total += Math.max(0, cb[key] - crewSame);
     }
     return total;
   }
@@ -290,13 +294,14 @@
       return;
     }
 
-    // Odds shown are the real ones (a wounded crew member halves them).
-    const tribPct = k => Math.round(COMBAT_CONFIG.crew_bonuses[k].tribute_success * (COMBAT.crew[k] || 1) * 100);
-    if (COMBAT.openingTurn && COMBAT.crew.botanist) {
-      wrap.appendChild(makeActionBtn({ verb: 'OFFER HARVEST', sub: 'Botanist · ' + tribPct('botanist') + '% · -' + COMBAT_CONFIG.crew_bonuses.botanist.tribute_food_cost + ' food · opening only', cls: 'combat-tribute', onClick: () => offerTribute('botanist') }));
+    // Odds shown are the real ones (a wounded crew member halves them; a
+    // captain of that background offers at half strength).
+    const tribPct = k => Math.round(tributeTerms(k).odds * 100);
+    if (COMBAT.openingTurn && tributeTerms('botanist')) {
+      wrap.appendChild(makeActionBtn({ verb: 'OFFER HARVEST', sub: 'Botanist · ' + tribPct('botanist') + '% · -' + tributeTerms('botanist').cfg.tribute_food_cost + ' food · opening only', cls: 'combat-tribute', onClick: () => offerTribute('botanist') }));
     }
-    if (COMBAT.openingTurn && COMBAT.crew.chef) {
-      wrap.appendChild(makeActionBtn({ verb: 'OFFER COOKIES', sub: 'Chef · ' + tribPct('chef') + '% · -' + COMBAT_CONFIG.crew_bonuses.chef.tribute_food_cost + ' food · they remember you', cls: 'combat-tribute', onClick: () => offerTribute('chef') }));
+    if (COMBAT.openingTurn && tributeTerms('chef')) {
+      wrap.appendChild(makeActionBtn({ verb: 'OFFER COOKIES', sub: 'Chef · ' + tribPct('chef') + '% · -' + tributeTerms('chef').cfg.tribute_food_cost + ' food · they remember you', cls: 'combat-tribute', onClick: () => offerTribute('chef') }));
     }
 
     const fireBonusTags = [];
@@ -763,18 +768,30 @@
     renderCombatActions();
   }
 
+  // Tribute terms for a botanist/chef offer: the crew member's (halved
+  // while wounded), else a captain of that background's half-strength
+  // table — whichever is better; null when nobody aboard can offer it.
+  function tributeTerms(kind) {
+    const crewCfg = COMBAT_CONFIG.crew_bonuses[kind];
+    const capCfg = COMBAT.captainBg === kind ? COMBAT_CONFIG.captain_bonuses[kind] : null;
+    const crew = COMBAT.crew[kind] ? { cfg: crewCfg, odds: crewCfg.tribute_success * COMBAT.crew[kind] } : null;
+    const cap = capCfg ? { cfg: capCfg, odds: capCfg.tribute_success } : null;
+    if (crew && cap) return cap.odds > crew.odds ? cap : crew;
+    return crew || cap;
+  }
+
   function offerTribute(kind) {
-    if (!COMBAT.active || COMBAT.state !== 'PLAYER_TURN' || COMBAT.tributeUsed || !COMBAT.openingTurn) return;
+    if (!COMBAT.active || COMBAT.state !== 'PLAYER_TURN' || COMBAT.tributeUsed || !COMBAT.openingTurn || !tributeTerms(kind)) return;
     COMBAT.tributeUsed = true; COMBAT.openingTurn = false;
     COMBAT.state = 'ENEMY_TURN'; // no firing while they consider the offer
     setAiCombat(combatLine('tribute_offered'));
     setNarrCombat('COMBAT LOG', combatLine('tribute_offered'), 'Awaiting response.');
     showEnemyTurn();
     renderCombatActions();
-    const cfg = kind === 'botanist' ? COMBAT_CONFIG.crew_bonuses.botanist : COMBAT_CONFIG.crew_bonuses.chef;
+    const terms = tributeTerms(kind), cfg = terms.cfg;
     const label = kind === 'botanist' ? 'harvest' : 'cookies';
     setTimeout(() => {
-      const success = Math.random() < cfg.tribute_success * (COMBAT.crew[kind] || 1);
+      const success = Math.random() < terms.odds;
       if (success) {
         COMBAT.player.morale = clamp(COMBAT.player.morale + cfg.morale_on_success, 0, 100);
         setNarrCombat('TRIBUTE ACCEPTED', combatLine('tribute_success'), `-${cfg.tribute_food_cost} food · morale +${cfg.morale_on_success}`);
@@ -853,7 +870,7 @@
     if (COMBAT.state === 'FTL_CHARGING') {
       let missRate = 0.35;
       if (COMBAT.crew.pilot) missRate = 0.35 + (0.75 - 0.35) * COMBAT.crew.pilot; // wounded pilot: halved edge
-      else if (COMBAT.captainBg === 'pilot') missRate = 0.50;
+      else if (COMBAT.captainBg === 'pilot') missRate = 0.35 + (0.75 - 0.35) * 0.5; // captain: half the edge
       if (Math.random() < missRate) { dmg = 0; ftlMiss = true; }
     }
 

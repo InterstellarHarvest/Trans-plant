@@ -2188,15 +2188,14 @@ function crewSpriteIdOf(role) {
   return crewIdentityOf(role) ? null : (CREWID_OF_ROLE[role] || null);
 }
 
-/* How much of a role's passive skill is in effect: 1 healthy, 0.5
-   wounded (Bible §4.25 "passive halved"), 0 when nobody holds it. A
-   captain of that background always counts in full — the captain is
-   the player and takes no HP damage. Combat's own crew_bonuses table
-   (combat.js) is a separate system and doesn't read this. */
+/* How much of a role's passive skill is in effect — the one rule,
+   shared with specialistMult(): a crew specialist 1 (0.5 wounded, Bible
+   §4.25), a captain of that background 0.5 (Bible §4.30 skill_modifier),
+   the better of the two when both hold the role (they don't stack), 0
+   when nobody does. Combat's crew_bonuses / captain_bonuses tables
+   (combat.js) follow the same half-strength, no-stacking rule. */
 function passiveMult(role) {
-  if (STATE.captain === role) return 1;
-  if (!STATE.crew.includes(role)) return 0;
-  return crewHPOf(role) < CREW_WOUNDED_HP ? 0.5 : 1;
+  return specialistMult(role);
 }
 
 /* Deals HP damage to a crew member (role, or null for random). A
@@ -2219,11 +2218,12 @@ window.damageCrew = damageCrew;
    delayed — wounded, plus a pending crisis: still wounded when the ship
              reaches the next station → the follow-up crisis fires there
              (see dueDelayedCrisis).
-   lethal  — death, with the Bible's softer landings in turn: a medic
-             crew member's passive (50%, halved while the medic is
-             wounded), a medic captain's authored 15%, then a carried
-             medkit's authored 15% (spending the medkit). The 50% is a
-             tuning number — the roster says only "more often". */
+   lethal  — death, with the Bible's softer landings in turn: a medic's
+             passive (50% for a crew medic, halved while wounded; 25% for
+             a medic captain — the same half-strength rule as every
+             passive, the better of the two when both are aboard), then a
+             carried medkit's authored 15% (spending the medkit). The 50%
+             is a tuning number — the roster says only "more often". */
 function woundCrew(role) {
   STATE.crewHP[role] = Math.max(5, Math.min(crewHPOf(role) - 15, CREW_WOUNDED_HP - 5));
 }
@@ -2232,12 +2232,13 @@ function applySeverity(role, severity) {
   const name = crewNameOf(role);
   const log = msg => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + msg); };
   if (severity === 'lethal') {
-    const crewMedic = STATE.crew.includes('medic') ? 0.5 * (crewHPOf('medic') < CREW_WOUNDED_HP ? 0.5 : 1) : 0;
-    const medicSave = Math.random() < crewMedic;
-    if (medicSave || (STATE.captain === 'medic' && Math.random() < 0.15)) {
+    if (Math.random() < 0.5 * passiveMult('medic')) {
+      // Credit whoever's skill counted: the crew medic unless only the
+      // captain's half-strength training was in play.
+      const crewMedic = STATE.crew.includes('medic') && (STATE.captain !== 'medic' || crewHPOf('medic') >= CREW_WOUNDED_HP);
       woundCrew(role);
       log('It should have been fatal. The medic disagreed. ' + name + ' is badly hurt, but alive.');
-      STATE.lethalSaved = (medicSave ? crewNameOf('medic') + ' refused to let it end there' : 'You refused to let it end there')
+      STATE.lethalSaved = (crewMedic ? crewNameOf('medic') + ' refused to let it end there' : 'You refused to let it end there')
         + ' — ' + name + ' is badly hurt, but alive.';
       return;
     }
@@ -2579,8 +2580,8 @@ let _invJettisonPending = null;
 // Item art lives in two folders: upgrades in sprites/cargo/upgrades
 // (insulated_cargo_bay's file is extra_cargo.png), everything else in
 // sprites/cargo/items. null when no art exists yet (emoji fallback).
-const UPGRADE_SPRITES = { expanded_fuel_tank: 'expanded_fuel_tank', hull_plating: 'hull_plating', insulated_cargo_bay: 'extra_cargo', drive_coil: 'drive_coil', o2_recycler: 'o2_recycler', repair_fabricator: 'repair_fabricator', atmospheric_condenser: 'atmospheric_condenser' };
-const NO_ITEM_ART = { shield_module_upgrade: '🔰' }; // ids awaiting art (resources/ART_REQUESTS.md) — emoji until it lands
+const UPGRADE_SPRITES = { expanded_fuel_tank: 'expanded_fuel_tank', hull_plating: 'hull_plating', insulated_cargo_bay: 'extra_cargo', drive_coil: 'drive_coil', o2_recycler: 'o2_recycler', repair_fabricator: 'repair_fabricator', atmospheric_condenser: 'atmospheric_condenser', shield_module_upgrade: 'shield_module_upgrade' };
+const NO_ITEM_ART = {}; // ids awaiting art (resources/ART_REQUESTS.md) — emoji until it lands
 function itemSpritePath(id) {
   if (UPGRADE_SPRITES[id]) return 'sprites/cargo/upgrades/' + UPGRADE_SPRITES[id] + '.png';
   if (NO_ITEM_ART[id]) return null;
@@ -3193,14 +3194,23 @@ window.resMax = resMax;
    triggers_extra_events + extra_event_chance — "High drama" on the setup
    card. Each leg, a living crop that has them may throw a small growbay
    incident: one of its own narrative_hooks plus a real swing in crop
-   health or morale. */
+   health or morale. A calm crop (no extra events) only posts one of its
+   hooks to the log now and then — a line, no swing. */
+const CROP_NOTE_CHANCE = 0.08;
+let lastCropHook = null;
 function cropDrama() {
   const cg = STATE.cropGrowth;
   const def = ((MOD.crops && MOD.crops.crops) || []).find(c => c.id === 'crop_' + STATE.crop);
-  if (!def || !def.triggers_extra_events || !cg || cg.health <= 0) return;
+  if (!def || !cg || cg.health <= 0) return;
+  const hooks = (def.narrative_hooks || []).filter(h => h !== lastCropHook || def.narrative_hooks.length < 2);
+  if (!def.triggers_extra_events) {
+    if (!hooks.length || Math.random() >= CROP_NOTE_CHANCE) return;
+    lastCropHook = hooks[Math.floor(Math.random() * hooks.length)];
+    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + lastCropHook);
+    return;
+  }
   if (Math.random() >= (def.extra_event_chance || 0)) return;
-  const hooks = def.narrative_hooks || [];
-  const line = hooks.length ? hooks[Math.floor(Math.random() * hooks.length)] : 'The crop is having a moment.';
+  const line = hooks.length ? (lastCropHook = hooks[Math.floor(Math.random() * hooks.length)]) : 'The crop is having a moment.';
   const swings = [['crop', 5], ['crop', -5], ['morale', 2], ['morale', -2]];
   const [k, v] = swings[Math.floor(Math.random() * swings.length)];
   if (k === 'crop') cg.health = clamp(cg.health + v, 1, 100);

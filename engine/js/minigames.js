@@ -295,7 +295,7 @@ function showReady(id, onStart){
   const ga = document.getElementById('ga');
   let mechanicHtml = b.mechanic;
   if(id==='breach' && engineerAboard){
-    mechanicHtml += `<br><br><span style="color:var(--teal)"><strong>ENGINEER ABOARD:</strong> +${engineerMult < 1 ? 'half a second' : '1 second'} per breach${engineerMult < 1 ? ' (wounded)' : ''}.</span>`;
+    mechanicHtml += `<br><br><span style="color:var(--teal)"><strong>ENGINEER ABOARD:</strong> +${engineerMult < 1 ? 'half a second' : '1 second'} per breach${engineerMult < 1 ? (STATE.crew.includes('engineer') ? ' (wounded)' : ' (your engineering training)') : ''}.</span>`;
   }
   ga.innerHTML = `
     <div class="ready">
@@ -324,7 +324,7 @@ function showReady(id, onStart){
    doesn't need that escape hatch. */
 function openMinigame(id, opts, onDone){
   activeAi = STATE.activeAI || 'marv';
-  engineerMult = STATE.crew.includes('engineer') ? passiveMult('engineer') : 0;
+  engineerMult = passiveMult('engineer'); // a captain engineer counts at half
   engineerAboard = engineerMult > 0;
   onMinigameDone = onDone;
   minigameStarted = false; minigameEnding = false; closeAfterResult = false;

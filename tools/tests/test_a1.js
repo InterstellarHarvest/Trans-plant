@@ -78,7 +78,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   ok(await ev(() => !STATE.crew.includes('engineer')), 'wounded medic halves the save (0.3 ≥ 0.25) → dies');
   await boot(['engineer'], 'medic');
   await withRandom(0.1, () => applyOutcomeEffects({ severity: 'lethal', crew_effect: { target: 'specific_role', role: 'engineer' }, time_cost: 'trivial' }));
-  ok(await ev(() => STATE.crew.includes('engineer')), 'medic captain: authored 15% softer landing (roll 0.1)');
+  ok(await ev(() => STATE.crew.includes('engineer')), 'medic captain: half a crew medic\'s save, 25% (roll 0.1)');
 
   console.log('— delayed → crisis at station');
   await boot(['engineer', 'pilot']);

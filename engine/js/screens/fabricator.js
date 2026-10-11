@@ -117,7 +117,7 @@
     reyes:       { name:'Reyes',       role:'Chef',          fab:0,  crewId:'reyes',    emoji:'🍳' },
     hargrove:    { name:'Hargrove',    role:'Diplomat',      fab:0,  crewId:'hargrove', emoji:'🤝' },
     tanaka:      { name:'Dr. Tanaka',  role:'Xenobiologist', fab:5,  crewId:'tanaka',   emoji:'🔬' },
-    captain_eng: { name:'Captain',     role:'Engineer bg.',  fab:15, crewId:'captain',  emoji:'🧑‍✈️' },
+    captain_eng: { name:'Captain',     role:'Engineer bg.',  fab:12, crewId:'captain',  emoji:'🧑‍✈️' }, // half of Kazuki (captains.json 12)
     captain_aca: { name:'Captain',     role:'Academic bg.',  fab:10, crewId:'captain',  emoji:'🧑‍🚀' }
   };
   // Baseline — the captain (player) always contributes this much,
@@ -170,7 +170,10 @@
       // (crew_roster "halved if injured"), as everywhere else.
       if (id && CREW[id]) FSTATE.aboard[id] = (typeof specialistMult === 'function') ? (specialistMult(role) || 1) : 1;
     }
-    FSTATE.captainBg = (STATE.captain === 'engineer' || STATE.captain === 'academic') ? STATE.captain : 'none';
+    // An engineer captain adds their half-strength hands only when no crew
+    // engineer is aboard — the two don't stack (specialistMult already
+    // floors a wounded crew engineer at the captain's half).
+    FSTATE.captainBg = (STATE.captain === 'academic' || (STATE.captain === 'engineer' && !STATE.crew.includes('engineer'))) ? STATE.captain : 'none';
     FSTATE.tripDay = STATE.daysElapsed;
     FSTATE.arrivalDay = STATE.baseDays;
   }
