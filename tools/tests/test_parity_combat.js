@@ -197,7 +197,8 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
     await click(page, 'SALVAGE WRECKAGE');
     await page.waitForTimeout(820);
     const notYet = await page.evaluate(() => document.getElementById('combat-end-overlay').classList.contains('show'));
-    await page.waitForTimeout(400);
+    // Poll (up to 1.5s) rather than sample once: a loaded machine stretches the 900ms beat.
+    await page.waitForFunction(() => document.getElementById('combat-end-overlay').classList.contains('show'), null, { timeout: 1500 }).catch(() => {});
     const card = await page.evaluate(b => {
       const tiles = [...document.querySelectorAll('#combat-end-loot .end-loot-tile')].map(t => ({ id: t.dataset.id, n: +t.dataset.count, bonus: t.classList.contains('bonus'), img: (t.querySelector('img') || {}).src || '' }));
       const got = {};
