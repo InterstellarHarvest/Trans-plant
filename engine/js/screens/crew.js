@@ -411,7 +411,7 @@
     const idn = crewIdentityOf(key);
     return {
       key, isCaptain: false, crewId: idn ? null : CD_ROLE_TO_CREWID[key], emoji: CD_ROLE_EMOJI[key] || '👤',
-      name: idn ? idn.name : (r.name || key), role: key.charAt(0).toUpperCase() + key.slice(1), bgTag: idn ? 'Stowaway' : 'Crew',
+      name: idn ? idn.name : (r.name || key), role: key.charAt(0).toUpperCase() + key.slice(1), bgTag: idn ? (idn.origin === 'rescued' ? 'Rescued' : 'Stowaway') : 'Crew', // scenes B: a rescued survivor isn't a stowaway
       bio: idn ? idn.story : (r.bio || ''), hint: idn ? '' : ((r.narrative_unlocks && r.narrative_unlocks[0]) || ''),
       passiveName: PASSIVE_NAME[key] || 'Passive',
       passiveDesc: (r.passive_skill && r.passive_skill.description) || '',

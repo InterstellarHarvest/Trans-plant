@@ -649,6 +649,54 @@ const eventOnTrail = (ev, trail) => {
   }
 }
 
+// ── Scenes B fields (added 2026-10-11, demo parity batch 2) ────────
+// biome (planet biome gate, eventEligible), crew_speaker (own-crew
+// conversation: roles in preference order or "any"), body_by_speaker
+// (narrator body per speaking role, "any" fallback), npc.displayName,
+// and outcome crew_join (a named rescue: crew in join_role, else a
+// passenger to the next station with crew_join.passenger.reward).
+{
+  const BIOMES = new Set(['alien', 'desert', 'habitable', 'ice', 'ocean', 'volcanic']); // scene_art.js PLANET_BIOMES
+  const isUpper = v => typeof v === 'string' && v.trim() === v && v.length > 0 && v === v.toUpperCase();
+  const RES = new Set(['fuel', 'food', 'water', 'o2', 'hull', 'morale', 'gold']);
+  for (const { file, event: ev } of eventsById.values()) {
+    const at = `${file} ${ev.id}`;
+    if (ev.biome != null) {
+      if (!Array.isArray(ev.biome) || !ev.biome.length) err(`${at}: biome must be a non-empty array`);
+      else for (const b of ev.biome) if (!BIOMES.has(b)) err(`${at}: biome "${b}" is not a planet biome (${[...BIOMES].join('/')})`);
+      if (!(ev.node_type || []).includes('planet')) err(`${at}: biome gate on an event that never fires at a planet — it can never pass`);
+    }
+    if (ev.draw_weight != null && !(Number.isFinite(ev.draw_weight) && ev.draw_weight > 0 && ev.draw_weight <= 5)) err(`${at}: draw_weight must be a number in (0, 5]`);
+    if (ev.draw_weight != null && !ev.biome) warn(`${at}: draw_weight without a biome gate — only narrow gates should need it`);
+    if (ev.crew_speaker != null) {
+      const list = Array.isArray(ev.crew_speaker) ? ev.crew_speaker : [ev.crew_speaker];
+      if (!list.length) err(`${at}: crew_speaker is empty`);
+      for (const r of list) if (r !== 'any' && !crewRoles.has(r)) err(`${at}: crew_speaker "${r}" is not a crew role (or "any")`);
+      if (ev.crew_id) err(`${at}: crew_speaker and crew_id together — the speaker is picked, crew_id would be ignored`);
+    }
+    if (JSON.stringify(ev).includes('{speaker.') && !ev.crew_speaker) err(`${at}: {speaker.*} tokens need crew_speaker (nobody is picked to fill them)`);
+    const npcs = [ev.npc, ...Object.values(ev.layers || {}).map(l => l.npc)].filter(Boolean);
+    for (const n of npcs) if (n.displayName != null && !isUpper(n.displayName)) err(`${at}: npc.displayName must be an UPPERCASE name plate`);
+    for (const [lk, l] of Object.entries(ev.layers || {})) {
+      if (l.body_by_speaker == null) continue;
+      if (!ev.crew_speaker) err(`${at}/${lk}: body_by_speaker without crew_speaker — nobody speaks`);
+      for (const k of Object.keys(l.body_by_speaker)) if (k !== 'any' && !crewRoles.has(k)) err(`${at}/${lk}: body_by_speaker key "${k}" is not a crew role (or "any")`);
+    }
+    const outs = [...Object.entries(ev.outcomes || {}).map(([k, o]) => ['outcomes.' + k, o])];
+    for (const { layer, choices } of choiceSetsOf(ev)) for (const ch of choices) if (ch.outcome && typeof ch.outcome === 'object') outs.push([layer, ch.outcome]);
+    for (const [where, o] of outs) {
+      const cj = o && o.crew_join;
+      if (!cj) continue;
+      const cat = atOf(file, ev.id, where);
+      if (!cj.id || !cj.name || !cj.story) err(`${cat}: crew_join needs id, name and story (the crew screen shows them)`);
+      if (cj.join_role != null && !crewRoles.has(cj.join_role)) err(`${cat}: crew_join.join_role "${cj.join_role}" is not a crew role`);
+      if (cj.hp != null && !(Number.isInteger(cj.hp) && cj.hp > 0 && cj.hp <= 100)) err(`${cat}: crew_join.hp must be an integer 1-100`);
+      const r = (cj.passenger && cj.passenger.reward) || {};
+      for (const [k, v] of Object.entries(r)) if (!RES.has(k) || !Number.isFinite(v)) err(`${cat}: crew_join.passenger.reward.${k} is not a resource number`);
+    }
+  }
+}
+
 // ── Encounter presentation fields (added 2026-10-11, encounter parity) ──
 // The leave row (index.html renderLeaveRow; Bible §18 leaveLabel /
 // leaveDisabled): every layered event names its leave row (`leave_label`)
