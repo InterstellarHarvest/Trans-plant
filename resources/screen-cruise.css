@@ -140,6 +140,43 @@
   50%      { transform: translate(-50%, calc(-50% - 6px)); }
 }
 
+/* Station stop: the node's station (sprites/backgrounds/station/approach,
+   painted by scene_art.js paintStationView) hangs above and behind the
+   ship, which drops into the lower half of the scene to sit under it
+   (top clears the resource HUD floating at the scene's top-left). Same render
+   contract as the encounter's approach mode: --sprite-w/h unitless px,
+   --approach-scale an integer downscale, spritesheet frames cycled via
+   --frame-x/y, static pngs bob. */
+#cruise-station {
+  position: absolute;
+  left: 50%; top: 46px;
+  width:  calc(var(--sprite-w, 0) * var(--approach-scale, 1) * 1px);
+  height: calc(var(--sprite-h, 0) * var(--approach-scale, 1) * 1px);
+  margin-left: calc(var(--sprite-w, 0) * var(--approach-scale, 1) * -0.5px);
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+  display: none;
+}
+#cruise-station.shown { display: block; }
+#cruise-scene.at-station #ship-silhouette { top: 68%; }
+#cruise-station.static { background-size: 100% 100%; }
+#cruise-station.static.bobbing { animation: cruise-station-bob 10s ease-in-out infinite; }
+#cruise-station.animated {
+  background-size: calc(var(--sheet-w) * var(--approach-scale, 1) * 1px) calc(var(--sheet-h) * var(--approach-scale, 1) * 1px);
+  background-position: calc(var(--frame-x, 0) * var(--approach-scale, 1) * -1px) calc(var(--frame-y, 0) * var(--approach-scale, 1) * -1px);
+}
+/* demo-encounter ship-bob: off-phase drift, ~3px, 10s */
+@keyframes cruise-station-bob {
+  0%   { transform: translate(0, 0);      }
+  18%  { transform: translate(1px, -2px); }
+  37%  { transform: translate(2px, -3px); }
+  52%  { transform: translate(2px, -1px); }
+  68%  { transform: translate(0, 1px);    }
+  84%  { transform: translate(-2px, 0);   }
+  100% { transform: translate(0, 0);      }
+}
+
 #cruise-resrow {
   flex-shrink: 0;
   background: linear-gradient(180deg, rgba(20,28,40,0.9) 0%, rgba(14,20,32,0.9) 100%);

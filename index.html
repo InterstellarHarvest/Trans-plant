@@ -801,6 +801,9 @@ body {
       <div id="cruise-main">
         <div id="cruise-leftcol">
           <div id="cruise-scene">
+            <!-- At a station stop: the same station the hail showed
+                 (scene_art.js paintStationView), behind the ship. -->
+            <div id="cruise-station"></div>
             <div id="ship-silhouette"></div>
           </div>
           <div id="cruise-resrow">
@@ -892,7 +895,12 @@ body {
          art, or our_ship/bridge.png with its transparent viewport
          revealing the two layers beneath). -->
     <div class="enc-backdrop-base hidden" id="enc-backdrop-base"></div>
-    <div class="enc-backdrop-sprite hidden" id="enc-backdrop-sprite"></div>
+    <div class="enc-backdrop-sprite hidden" id="enc-backdrop-sprite">
+      <!-- Approach mode (station hails): shown only while the slot has
+           .approach-mode — the node's station at intrinsic size, centred,
+           a spritesheet cycling or a static png bobbing (scene_art.js). -->
+      <div class="enc-approach-sprite" id="enc-approach-sprite"></div>
+    </div>
     <div class="enc-backdrop" id="enc-backdrop"></div>
     <div class="enc-vignette"></div>
     <!-- Subject frame (talking head) + name plate — plate is a sibling

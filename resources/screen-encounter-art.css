@@ -283,3 +283,29 @@
   0% { filter: brightness(1.6); } 100% { filter: brightness(1); }
 }
 #screen-encounter .enc-choice.pulse { animation: enc-choice-pulse 0.25s ease-out; }
+
+/* ── Approach mode (demo-encounter station_approach) ──────────────────
+   A station hail paints the node's station from sprites/backgrounds/
+   station/approach/<N>/ into the viewport slot's child: intrinsic size
+   (--sprite-w/h, unitless px), centred by inset+margin so transform
+   stays free for the bob. .animated = spritesheet, frame offsets
+   (--frame-x/y) cycled by scene_art.js; .static = single png, bobs. */
+#screen-encounter .enc-backdrop-sprite.approach-mode { background-image: none !important; }
+#screen-encounter .enc-approach-sprite {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width:  calc(var(--sprite-w, 0) * var(--approach-scale, 1) * 1px);
+  height: calc(var(--sprite-h, 0) * var(--approach-scale, 1) * 1px);
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+  display: none;
+}
+#screen-encounter .enc-backdrop-sprite.approach-mode .enc-approach-sprite.shown { display: block; }
+#screen-encounter .enc-approach-sprite.static { background-size: 100% 100%; }
+#screen-encounter .enc-approach-sprite.static.bobbing { animation: enc-ship-bob 10s ease-in-out infinite; }
+#screen-encounter .enc-approach-sprite.animated {
+  background-size: calc(var(--sheet-w) * var(--approach-scale, 1) * 1px) calc(var(--sheet-h) * var(--approach-scale, 1) * 1px);
+  background-position: calc(var(--frame-x, 0) * var(--approach-scale, 1) * -1px) calc(var(--frame-y, 0) * var(--approach-scale, 1) * -1px);
+}

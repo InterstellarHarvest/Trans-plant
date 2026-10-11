@@ -99,11 +99,24 @@
     el.style.backgroundPosition = (-f.x * k).toFixed(2) + 'px ' + (-f.y * k).toFixed(2) + 'px';
   }
 
+  // Station stop (owner ruling 2026-10-11, demo approach mode): the
+  // station the hail showed hangs behind the ship — same node, same
+  // station (scene_art.js picks it per node from the run's art seed),
+  // above the ship (which drops lower to sit under it), at an integer
+  // downscale if it would not fit; nothing at any other kind of stop.
+  function syncStationView() {
+    if (!window.SceneArt || !SceneArt.paintStationView) return;
+    const node = STATE.byId && STATE.byId[STATE.currentId];
+    $('cruise-scene').classList.toggle('at-station', !!(node && node.node_type === 'station'));
+    SceneArt.paintStationView($('cruise-station'), node, { maxW: 330, maxH: 250 });
+  }
+
   function renderCruise() {
     // Catch crop growth/health up to today before painting the card —
     // decay must tick even if the player never opens the growbay.
     if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth();
     syncShipSprite();
+    syncStationView();
     $('cruise-ship-name').textContent = (STATE.shipName || 'THE SHIP').toUpperCase();
     // Bible §ticker: long-range scan hits replace the default line.
     const nextIds = (typeof nextAvailableNodes === 'function' && STATE.byId[STATE.currentId]) ? [...nextAvailableNodes()] : [];
