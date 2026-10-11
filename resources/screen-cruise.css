@@ -1,9 +1,12 @@
 /* ============================================================
    screen-cruise — migrated from demo-cruise.html (dev-controls
-   panel, viewport-scaling harness, and the elaborate warp-speed/
-   ticker/forced-event/wait-timer systems stripped for this pass —
-   those are Phase 3/4 territory once encounters and minigames are
-   wired). Everything scoped under #screen-cruise.
+   panel and viewport-scaling harness stripped). The demo-parity
+   pass (2026-10-11) brought over the ticker states, TIME PAUSED,
+   scene alerts, the multi-day action banner + result flash, the
+   day picker, the LOG button, readout icons, day markers, the
+   stop-pulse / bob halt / shake and the crop card's READY state.
+   Everything scoped under #screen-cruise (body.stop-active /
+   body.event-active are the cruise states, as in the demo).
    ============================================================ */
 
 #screen-cruise {
@@ -11,6 +14,11 @@
   --hdr-bg-bot: #10141e;
   --hdr-title-color: #c8a85a;
   --hdr-meta-color: #aab5c4;
+  --hdr-ticker-color: #35c6bf;
+  --hdr-ticker-event: #cc3333;
+  --hdr-paused-color: #ffac00;
+  --alert-color: #ffac00;
+  --alert-size: 11px;
 
   --ai-bg: rgba(8,12,18,0.88);
   --ai-border: rgba(200,168,90,0.25);
@@ -85,16 +93,36 @@
   text-shadow: 0 0 6px rgba(200,168,90,0.3);
   flex-shrink: 0;
 }
-#cruise-header .header-ticker {
-  flex: 1;
-  font-family: 'VT323', monospace;
-  font-size: 16px;
-  letter-spacing: 1px;
-  color: #35c6bf;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Ticker (demo canon): one stationary line; on replace the old line
+   slides out left while the new one slides in from the right (0.55s,
+   together). .event = red pulse (a during-wait event holds the ship),
+   .event-info = amber pulse (STOPPED, and AI lines / news while
+   stopped). A line wider than the ticker drifts across once landed. */
+#cruise-header .header-ticker { flex: 1; overflow: hidden; position: relative; height: 24px; min-width: 0; }
+#screen-cruise .ticker-text {
+  position: absolute; left: 0; right: 0; top: 50%;
+  transform: translate(0, -50%);
+  font-family: 'VT323', monospace; font-size: 18px; letter-spacing: 1px; line-height: 1;
+  color: var(--hdr-ticker-color);
+  text-shadow: 0 0 8px currentColor;
+  text-align: center; white-space: nowrap; overflow: hidden;
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#screen-cruise .ticker-text.enter { transform: translate(100%, -50%); }
+#screen-cruise .ticker-text.exit  { transform: translate(-100%, -50%); }
+#screen-cruise .ticker-text.event      { color: var(--hdr-ticker-event); animation: ticker-event-pulse 1.6s ease-in-out infinite; }
+#screen-cruise .ticker-text.event-info { color: var(--hdr-paused-color); animation: ticker-event-pulse 1.6s ease-in-out infinite; }
+@keyframes ticker-event-pulse {
+  0%, 100% { filter: brightness(0.9); text-shadow: 0 0 8px currentColor; }
+  50%      { filter: brightness(1.4); text-shadow: 0 0 16px currentColor; }
+}
+#screen-cruise .ticker-inner { display: inline-block; }
+#screen-cruise .ticker-text.marquee { text-align: left; }
+#screen-cruise .ticker-text.marquee .ticker-inner { animation: ticker-marquee 10s ease-in-out 0.4s infinite; }
+@keyframes ticker-marquee {
+  0%, 18%   { transform: translateX(0); }
+  70%, 88%  { transform: translateX(var(--tk-shift, 0px)); }
+  100%      { transform: translateX(0); }
 }
 .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .header-icon-btn {
@@ -112,12 +140,34 @@
 .header-pause-btn { color: var(--gold); font-family: 'VT323', monospace; font-size: 20px; line-height: 32px; letter-spacing: -2px; text-align: center; }
 .header-icon-btn:active { transform: translateY(1px); }
 
-.header-right { flex-shrink: 0; min-width: 150px; text-align: right; }
-#cruise-header .day-counter {
+.header-right { flex-shrink: 0; position: relative; min-width: 150px; text-align: right; }
+#cruise-header .day-counter, #cruise-header .paused-label {
   font-family: 'Press Start 2P', cursive; line-height: 1;
   font-size: 8px; letter-spacing: 1px;
-  color: var(--hdr-meta-color);
+  transition: opacity 0.3s;
 }
+#cruise-header .day-counter { color: var(--hdr-meta-color); }
+/* TIME PAUSED swaps in for the date target while stopped or paused
+   (a multi-day wait's days are really passing, so the counter shows). */
+#cruise-header .paused-label {
+  color: var(--hdr-paused-color);
+  text-shadow: 0 0 8px currentColor;
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  white-space: nowrap;
+  opacity: 0;
+  animation: paused-pulse 1.4s ease-in-out infinite;
+}
+@keyframes paused-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
+#screen-cruise.time-paused .day-counter  { opacity: 0; }
+#screen-cruise.time-paused .paused-label { opacity: 1; }
+
+/* Screen shake — Resume pressed while a during-wait event holds the ship. */
+@keyframes cruise-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10%, 30%, 50%, 70%, 90% { transform: translate(-5px, 2px); }
+  20%, 40%, 60%, 80%      { transform: translate(5px, -2px); }
+}
+#screen-cruise.shaking { animation: cruise-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
 
 /* ── Main split ───────────────────────────────────────────────── */
 #cruise-main { flex: 1; display: flex; min-height: 0; }
@@ -139,6 +189,63 @@
   0%, 100% { transform: translate(-50%, -50%); }
   50%      { transform: translate(-50%, calc(-50% - 6px)); }
 }
+/* Ship-bob halts when stopped — parked in space (the starfield's
+   deceleration does the rest). */
+body.stop-active #ship-silhouette, body.event-active #ship-silhouette { animation-play-state: paused; }
+
+/* Scene alert — amber line fading in at the top of the scene (the
+   demo's 24px top sits under the cruise HUD pill here, so both it and
+   the action banner start just below the pill). */
+#scene-alert {
+  position: absolute; left: 50%; top: 52px; transform: translateX(-50%);
+  font-family: 'Press Start 2P', cursive; font-size: var(--alert-size); letter-spacing: 2px; line-height: 1.4;
+  color: var(--alert-color);
+  text-shadow: 0 0 10px currentColor, 0 1px 2px #000, 0 0 2px #000;
+  text-align: center; max-width: 460px; width: max-content;
+  opacity: 0; pointer-events: none; transition: opacity 0.5s ease; z-index: 12;
+}
+#scene-alert.show { opacity: 1; }
+
+/* Action banner — multi-day action progress (verb, DAY n/N, bar). */
+#action-banner {
+  position: absolute; left: 50%; top: 52px; transform: translateX(-50%);
+  z-index: 11; pointer-events: none; text-align: center;
+  opacity: 0; transition: opacity 0.3s;
+}
+#action-banner.show { opacity: 1; }
+#screen-cruise .action-banner-label {
+  font-family: 'Press Start 2P', cursive; font-size: 10px; letter-spacing: 2px; line-height: 1;
+  color: var(--gold); text-shadow: 0 0 10px currentColor, 0 1px 2px #000; margin-bottom: 4px; white-space: nowrap;
+}
+#screen-cruise .action-banner-counter {
+  font-family: 'VT323', monospace; font-size: 16px; letter-spacing: 2px; color: var(--cream);
+  text-shadow: 0 0 6px rgba(232,216,160,0.4), 0 1px 2px #000; margin-bottom: 6px; min-height: 16px;
+}
+#screen-cruise .action-banner-bar {
+  width: 220px; height: 4px; margin: 0 auto;
+  background: rgba(20,28,40,0.9); border: 1px solid rgba(200,168,90,0.3); border-radius: 2px; overflow: hidden;
+}
+#screen-cruise .action-banner-fill { height: 100%; width: 0%; background: var(--gold); box-shadow: 0 0 6px var(--gold); transition: width 0.5s ease; }
+#action-banner.cancelled .action-banner-label { color: #d6a060; }
+#action-banner.cancelled .action-banner-fill { background: #d6a060; box-shadow: 0 0 6px #d6a060; }
+
+/* Wait result flash — TRADER APPROACHING / NO ONE CAME / REFRESHED /
+   PIRATE INBOUND (success gold pulse, timeout calm cream, event amber,
+   event-danger red). */
+#wait-flash {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  z-index: 14; pointer-events: none; opacity: 0; transition: opacity 0.5s ease;
+}
+#wait-flash.show { opacity: 1; }
+#screen-cruise .wait-flash-label {
+  font-family: 'Press Start 2P', cursive; font-size: 22px; letter-spacing: 4px; line-height: 1.2;
+  background: rgba(8,12,18,0.82); padding: 18px 28px; border: 2px solid; border-radius: 4px;
+}
+#wait-flash.success .wait-flash-label { color: var(--gold); border-color: var(--gold); text-shadow: 0 0 16px var(--gold), 0 0 4px #fff, 0 2px 4px #000; animation: wait-flash-pulse 1.4s ease-in-out infinite; }
+#wait-flash.timeout .wait-flash-label { color: #c0b48a; border-color: #6a604a; text-shadow: 0 0 8px rgba(192,180,138,0.5), 0 1px 3px #000; font-size: 20px; letter-spacing: 3px; }
+#wait-flash.event .wait-flash-label { color: #d6a060; border-color: #d6a060; text-shadow: 0 0 14px rgba(214,160,96,0.7), 0 0 4px #fff, 0 2px 4px #000; animation: wait-flash-pulse 1.4s ease-in-out infinite; }
+#wait-flash.event-danger .wait-flash-label { color: #ff6b5a; border-color: #cc3333; text-shadow: 0 0 14px rgba(204,51,51,0.85), 0 0 4px #fff, 0 2px 4px #000; animation: wait-flash-pulse 1.0s ease-in-out infinite; }
+@keyframes wait-flash-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
 
 /* Station stop: the node's station (sprites/backgrounds/station/approach,
    painted by scene_art.js paintStationView) hangs in the distance, upper
@@ -191,7 +298,20 @@
 .readout-cell:last-child { border-right: 0; }
 .readout-cell:hover { background: rgba(200,168,90,0.05); }
 .readout-label { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 7px; letter-spacing: 1px; color: var(--readout-label-color); }
-.readout-value { font-family: 'VT323', monospace; font-size: 16px; color: var(--readout-value-color); letter-spacing: 1px; white-space: nowrap; }
+.readout-value { font-family: 'VT323', monospace; font-size: 16px; color: var(--readout-value-color); letter-spacing: 1px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.readout-cell { padding: 0 10px; }
+/* Readout icons (demo canon, sprites/interface/). */
+#screen-cruise .icon {
+  display: inline-block; width: 16px; height: 16px; flex-shrink: 0;
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+  image-rendering: pixelated;
+}
+#screen-cruise .icon-engines { background-image: url('sprites/interface/engines.png'); }
+#screen-cruise .icon-rations { background-image: url('sprites/interface/rations.png'); }
+#screen-cruise .icon-water   { background-image: url('sprites/interface/water.png'); }
+#screen-cruise .icon-plant   { background-image: url('sprites/interface/plant.png'); }
+#screen-cruise .icon-crew    { background-image: url('sprites/interface/crew.png'); }
+#screen-cruise .water-sep { color: #8898a8; margin: 0 2px; opacity: 0.7; }
 
 #cruise-aidialog {
   width: 320px; flex-shrink: 0;
@@ -212,8 +332,13 @@
 }
 .ai-name { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 9px; letter-spacing: 2px; color: var(--ai-name-color); text-shadow: 0 0 6px rgba(200,168,90,0.3); }
 .ai-log { flex: 1; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; font-family: 'VT323', monospace; font-size: 17px; line-height: 1.35; color: var(--ai-text-color); padding-right: 14px; }
-.ai-entry { opacity: 0.7; }
+.ai-entry { opacity: 0.55; transition: opacity 0.3s; }
 .ai-entry.latest { opacity: 1; }
+/* "── DAY n ──" opens each day's entries (demo canon). */
+#screen-cruise .ai-day-marker {
+  font-family: 'Press Start 2P', cursive; font-size: 7px; letter-spacing: 2px; line-height: 1;
+  color: var(--ai-name-color); text-align: center; margin: 6px 0 2px; opacity: 0.75;
+}
 /* Educational link payloads (Bible §18 reserved schema, 🔗 convention) */
 .ai-entry-link {
   color: var(--teal, #8cc890);
@@ -234,6 +359,21 @@ body.stop-active #stop-menu { opacity: 1; }
 .stop-menu-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding-right: 16px; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--ai-border); }
 .stop-menu-region-label { font-family: 'Press Start 2P', cursive; font-size: 9px; letter-spacing: 1.5px; color: var(--ai-name-color); text-shadow: 0 0 6px rgba(200,168,90,0.3); line-height: 1.4; }
 .stop-menu-mood { font-family: 'VT323', monospace; font-size: 14px; font-style: italic; color: var(--ai-text-color); line-height: 1.25; margin-top: 4px; opacity: 0.85; }
+/* LOG button (Bible §18: the Ship's Log from the Stop menu header). */
+.stop-menu-log-btn {
+  background: transparent; border: 0; padding: 0; flex-shrink: 0;
+  cursor: var(--cursor-hand, pointer);
+  display: inline-flex; flex-direction: column; align-items: center; gap: 3px;
+  font-family: 'Press Start 2P', cursive; font-size: 7px; letter-spacing: 1.5px; line-height: 1;
+  color: var(--ai-name-color); text-shadow: 0 0 4px rgba(200,168,90,0.3);
+  transition: filter 0.12s;
+}
+.stop-menu-log-btn::before {
+  content: ''; display: block; width: 32px; height: 32px;
+  background: url('sprites/interface/log.png') center / contain no-repeat;
+  image-rendering: pixelated;
+}
+.stop-menu-log-btn:hover { filter: brightness(1.3) drop-shadow(0 0 5px rgba(200,168,90,0.5)); }
 
 .stop-choices { flex: 1; display: flex; flex-direction: column; gap: 7px; overflow-y: auto; padding-right: 14px; }
 .stop-choice {
@@ -250,6 +390,8 @@ body.stop-active #stop-menu { opacity: 1; }
 .stop-choice:active { transform: translateY(1px); }
 .stop-choice.locked { --strip-c: rgba(95,100,115,0.4); cursor: var(--cursor-denied, not-allowed); filter: grayscale(0.6) brightness(0.65); }
 .stop-choice.hint  { --strip-c: var(--teal); }
+.stop-choice.risky { --strip-c: var(--red); }
+.stop-choice.risky .stop-choice-gate { color: var(--red); }
 .stop-choice-gate {
   grid-row: 1 / 3; width: 32px; height: 32px;
   background-repeat: no-repeat; background-position: center; background-size: 32px 32px;
@@ -263,6 +405,23 @@ body.stop-active #stop-menu { opacity: 1; }
 .stop-choice-sub { grid-column: 2; font-size: 12px; color: var(--ai-text-color); letter-spacing: 0.5px; display: flex; gap: 8px; align-items: center; line-height: 1.1; flex-wrap: wrap; }
 .stop-choice-sub .effort { color: var(--gold); font-family: 'VT323', monospace; font-size: 11px; letter-spacing: 1px; }
 .stop-choice-sub .lock-need { color: rgba(200,168,90,0.7); font-style: italic; }
+.stop-choice-sub .verb-time { color: var(--cream); opacity: 0.85; }
+.stop-choice-sub .stop-choice-desc { flex-basis: 100%; opacity: 0.8; }
+.stop-empty { padding: 18px 6px; color: var(--ai-text-color); font-family: 'VT323', monospace; font-size: 14px; font-style: italic; opacity: 0.7; text-align: center; }
+
+/* Day picker — WAIT FOR TRADER / REST swap their rows for 1..7. */
+.stop-choice.day-picker { cursor: var(--cursor-pointer, default); background: linear-gradient(180deg, rgba(60,66,80,0.92) 0%, rgba(28,34,46,0.92) 100%); }
+.stop-choice.day-picker .stop-choice-body { color: var(--cream); }
+.day-stepper { grid-column: 2; display: flex; gap: 3px; margin-top: 4px; }
+.day-step {
+  flex: 1; min-width: 22px; padding: 5px 0; text-align: center;
+  font-family: 'Press Start 2P', cursive; font-size: 8px; letter-spacing: 1px; line-height: 1;
+  background: rgba(20,24,32,0.85); border: 1px solid rgba(200,168,90,0.4); color: var(--gold);
+  cursor: var(--cursor-hand, pointer); border-radius: 2px;
+  transition: filter 0.12s, background 0.12s, border-color 0.12s;
+}
+.day-step:hover, .day-step:focus-visible { filter: brightness(1.4); background: rgba(200,168,90,0.2); border-color: var(--gold); outline: none; }
+.day-step:active { transform: translateY(1px); }
 
 .scroll-host#ai-log-host, .scroll-host#stop-choices-host { flex: 1; min-height: 0; }
 
@@ -274,6 +433,15 @@ body.stop-active #stop-menu { opacity: 1; }
   display: flex; gap: 12px; align-items: stretch;
 }
 #crew-strip { display: flex; gap: var(--card-gap); flex-shrink: 0; }
+/* Four aboard (captain + three crew, a joined stowaway's run) used to
+   push the resource bars and the Stop button off the band: tighter
+   cards and a narrower crop card then. */
+#crew-strip.crowded { --card-icon-size: 30px; }
+#crew-strip.crowded .crew-slot { width: 104px; padding: 6px 6px; }
+#crew-strip.crowded .crew-name { letter-spacing: 0; }
+#crew-strip.crowded .crew-slot-top { gap: 4px; }
+#crew-strip.crowded ~ #crop-card-mini { width: 210px; }
+#bottom-resources { min-width: 96px; }
 .crew-slot {
   width: 130px; padding: 6px 8px;
   border: 2px solid var(--card-border); border-radius: var(--card-rad); background: var(--card-bg);
@@ -316,38 +484,72 @@ body.stop-active #stop-menu { opacity: 1; }
 .crop-name-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .crop-name { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 9px; letter-spacing: 1.5px; color: var(--crop-border-color); text-shadow: 0 0 6px rgba(200,168,90,0.3); }
 .crop-alert-led { width: 7px; height: 7px; border-radius: 50%; background: var(--crop-alert-inactive); flex-shrink: 0; }
-.crop-alert-led.on { background: var(--crop-alert-color); box-shadow: 0 0 6px var(--crop-alert-color); }
+.crop-alert-led { transition: background 0.2s, box-shadow 0.2s; }
+.crop-alert-led.on { background: var(--crop-alert-color); box-shadow: 0 0 6px var(--crop-alert-color); animation: crop-alert-pulse 1.4s ease-in-out infinite; }
+@keyframes crop-alert-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
 .crop-growing { display: flex; flex-direction: column; gap: 3px; }
 .crop-stage { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 8px; letter-spacing: 1.5px; color: var(--crop-border-color); }
-.crop-day { font-family: 'VT323', monospace; font-size: 13px; letter-spacing: 0.5px; color: var(--card-desc-color); }
+.crop-day { font-family: 'VT323', monospace; font-size: 13px; letter-spacing: 0.5px; color: var(--card-desc-color); transition: color 0.3s, text-shadow 0.3s; }
+/* Past maturity days and still not grown (poor health). */
+.crop-day.overdue { color: var(--red); text-shadow: 0 0 4px rgba(204,51,51,0.4); }
 .crop-bar-row { display: flex; align-items: center; gap: 6px; }
 .crop-bar-label { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 7px; letter-spacing: 1px; color: var(--card-desc-color); flex-shrink: 0; width: 42px; }
 .crop-growth-bar { flex: 1; height: 6px; background: var(--crop-health-bg); border: 1px solid var(--card-border); border-radius: 2px; overflow: hidden; }
 .crop-growth-fill { height: 100%; background: var(--crop-growth-fill); box-shadow: 0 0 4px var(--crop-growth-fill); }
 .crop-health-bar { flex: 1; height: 8px; background: var(--crop-health-bg); border: 1px solid var(--card-border); border-radius: 2px; overflow: hidden; }
 .crop-health-fill { height: 100%; background: var(--crop-health-fill); box-shadow: 0 0 4px var(--crop-health-fill); }
-.crop-harvest-btn { display: none; }
+/* HARVEST — replaces the growing block when mature; green fill,
+   pulsing glow, runs the growbay's own harvest. */
+.crop-harvest-btn {
+  display: none;
+  font-family: 'Press Start 2P', cursive; font-size: 10px; letter-spacing: 2px; line-height: 1;
+  padding: 8px 10px; margin: 2px 0;
+  border: 2px solid var(--crop-border-color); border-radius: 4px;
+  color: #0e1520; background: linear-gradient(180deg, var(--crop-health-fill) 0%, #6ab074 100%);
+  cursor: var(--cursor-hand, pointer);
+  transition: filter 0.12s, transform 0.08s;
+  animation: harvest-pulse 1.4s ease-in-out infinite;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+}
+.crop-harvest-btn:hover { filter: brightness(1.12); }
+.crop-harvest-btn:active { transform: translate(1px, 1px); }
+@keyframes harvest-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(140,200,144,0.4), inset 0 1px 0 rgba(255,255,255,0.2); }
+  50%      { box-shadow: 0 0 12px rgba(140,200,144,0.8), inset 0 1px 0 rgba(255,255,255,0.3); }
+}
 #crop-card-mini.mature .crop-growing { display: none; }
 #crop-card-mini.mature .crop-harvest-btn { display: block; }
 
-#bottom-resources { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 0 4px; }
-.res { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.res-label { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 7px; letter-spacing: 1px; color: var(--res-label-color); width: 36px; flex-shrink: 0; }
-.res-bar { flex: 1; height: 8px; background: var(--res-bar-bg); border: 1px solid var(--res-bar-border); border-radius: 2px; overflow: hidden; }
-.res-fill { height: 100%; transition: width 0.3s ease; }
-.res.fuel  .res-fill { background: var(--res-fuel);  box-shadow: 0 0 4px var(--res-fuel); }
-.res.food  .res-fill { background: var(--res-food);  box-shadow: 0 0 4px var(--res-food); }
-.res.water .res-fill { background: var(--res-water); box-shadow: 0 0 4px var(--res-water); }
-.res.o2    .res-fill { background: var(--res-o2);    box-shadow: 0 0 4px var(--res-o2); }
-.res.hull  .res-fill { background: var(--res-hull);  box-shadow: 0 0 4px var(--res-hull); }
-.res.morale .res-fill { background: var(--res-mor);  box-shadow: 0 0 4px var(--res-mor); }
+/* Demo's shipped sizes: 16px bars, 12px gap, 8px labels. */
+#bottom-resources { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 0 4px; }
+#bottom-resources .res { display: flex; align-items: center; gap: 8px; min-width: 0; }
+#bottom-resources .res-label { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 8px; letter-spacing: 1px; color: var(--res-label-color); width: 36px; flex-shrink: 0; }
+/* scoped: screen-end.css has its own global .res-bar (12px) that won here */
+#bottom-resources .res-bar { flex: 1; height: 16px; background: var(--res-bar-bg); border: 1px solid var(--res-bar-border); border-radius: 2px; overflow: hidden; }
+#bottom-resources .res-fill { height: 100%; transition: width 0.3s ease; }
+#bottom-resources .res.fuel .res-fill { background: var(--res-fuel);  box-shadow: 0 0 4px var(--res-fuel); }
+#bottom-resources .res.food .res-fill { background: var(--res-food);  box-shadow: 0 0 4px var(--res-food); }
+#bottom-resources .res.water .res-fill { background: var(--res-water); box-shadow: 0 0 4px var(--res-water); }
+#bottom-resources .res.o2 .res-fill { background: var(--res-o2);    box-shadow: 0 0 4px var(--res-o2); }
+#bottom-resources .res.hull .res-fill { background: var(--res-hull);  box-shadow: 0 0 4px var(--res-hull); }
+#bottom-resources .res.morale .res-fill { background: var(--res-mor);  box-shadow: 0 0 4px var(--res-mor); }
 
 #action-rail { flex: 0 0 140px; display: flex; align-items: stretch; min-width: 0; }
 #action-rail .panel-btn { width: 100%; flex: 1; justify-content: center; font-size: 16px; letter-spacing: 2px; padding: 0 12px; }
 .stop-btn { position: relative; transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s; }
-body.stop-active .stop-btn {
+/* Alert variant — pulses with a scene alert. */
+.stop-btn.alert { animation: stop-pulse 1.5s ease-in-out infinite; }
+@keyframes stop-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--stop-pulse-color); filter: brightness(1); }
+  50%      { box-shadow: 0 0 7px 1px var(--stop-pulse-color); filter: brightness(1.08); }
+}
+/* Stopped / event: inset look + the pulse; a during-wait event turns
+   it red ("this is bad, resolve it"). */
+body.stop-active .stop-btn, body.event-active .stop-btn {
   background: linear-gradient(180deg, #1a1f2a 0%, #0e1420 100%);
   border-color: var(--stop-pulse-color); color: var(--stop-pulse-color);
   text-shadow: 0 0 6px currentColor;
+  animation: stop-pulse 1.6s ease-in-out infinite;
 }
+body.event-active #screen-cruise { --stop-pulse-color: var(--red); }
 body.stop-active #cruise-resrow { filter: brightness(0.55) saturate(0.7); transition: filter 0.25s ease; }

@@ -36,6 +36,20 @@
   cursor: var(--cursor-hand, pointer);
 }
 
+/* Modal fade/scale, 0.25s (demo-crew body.modal-open gating, mapped to
+   the overlay's own .active). Class-based so it runs both ways once the
+   shell stops toggling .overlay with display:none (shell pass 2026-10-11);
+   until then @starting-style gives the opening fade in Chrome/Firefox
+   and the close is instant. */
+#overlay-crew #cd-backdrop { transition: opacity 0.25s; }
+#overlay-crew:not(.active) #cd-backdrop,
+#overlay-crew:not(.active) #cd-modal { opacity: 0; pointer-events: none; }
+#overlay-crew:not(.active) #cd-modal { transform: translate(-50%, -50%) scale(0.96); }
+@starting-style {
+  #overlay-crew.active #cd-backdrop { opacity: 0; }
+  #overlay-crew.active #cd-modal { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+}
+
 #overlay-crew #cd-modal {
   position: absolute;
   left: 50%; top: 50%;
@@ -52,6 +66,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: opacity 0.25s, transform 0.25s;
 }
 
 /* Header */
