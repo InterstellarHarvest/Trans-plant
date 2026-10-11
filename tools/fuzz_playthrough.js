@@ -77,6 +77,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
     // event's own gates against live STATE at the moment of firing.
     window.__drawViolations = [];
     window.__firedOnce = new Set();
+    window.__firedOnceAt = {}; // event id → the node it fired at (station room re-entry)
     const realEnter = window.enterEvent;
     window.enterEvent = function (node, ev) {
       const v = window.__drawViolations;
@@ -89,7 +90,10 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
       // pool-drawn — travelTo() fires one on station arrival for an
       // untreated delayed wound (dueDelayedCrisis sets the patient).
       const forcedCrisis = evTrig.includes('delayed_crisis') && STATE.crisisPatient;
-      if (!forcedCrisis && !evTrig.some(t => trig.has(t))) {
+      // Engine-forced too: the station approach (trigger station_arrival)
+      // opens every station stop — engine/js/station.js, never pool-drawn.
+      const forcedApproach = ev.station_approach && evTrig.includes('station_arrival') && node.node_type === 'station';
+      if (!forcedCrisis && !forcedApproach && !evTrig.some(t => trig.has(t))) {
         v.push(`${ev.id} fired with NO active trigger (needs ${JSON.stringify(evTrig)}, active: ${JSON.stringify([...trig])})`);
       }
       if (ev.trail && !ev.trail.includes(STATE.trail)) {
@@ -109,8 +113,13 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
         v.push(`${ev.id} fired at node_type "${node.node_type}" but targets ${JSON.stringify(nts)}`);
       }
       if (ev.once) {
-        if (window.__firedOnce.has(ev.id)) v.push(`once:true event ${ev.id} fired TWICE`);
+        // A dock room walked out of and back into during the same station
+        // visit (GO ELSEWHERE / BACK TO DOCK) is one firing, re-entered.
+        const sv = STATE.stationVisit;
+        const reentry = sv && sv.node === node.id && sv.inRoom === ev.id && window.__firedOnceAt[ev.id] === node.id;
+        if (window.__firedOnce.has(ev.id) && !reentry) v.push(`once:true event ${ev.id} fired TWICE`);
         window.__firedOnce.add(ev.id);
+        window.__firedOnceAt[ev.id] = node.id;
       }
       return realEnter(node, ev);
     };

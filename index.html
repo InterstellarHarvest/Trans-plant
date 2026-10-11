@@ -1684,6 +1684,7 @@ body {
 <script src="engine/js/screens/fabricator.js"></script>
 <script src="engine/js/combat.js"></script>
 <script src="engine/js/scene_art.js"></script>
+<script src="engine/js/station.js"></script><!-- scenes B: the station approach / dock visit -->
 <script src="engine/js/screens/market.js"></script>
 <script src="engine/js/screens/crew.js"></script>
 <script src="engine/js/screens/endings.js"></script>
@@ -1852,6 +1853,7 @@ const SAVED_FIELDS = [
   'itemValues', // trade goods: each copy's value, rolled at pickup
   'artSeed', // scene_art.js picks backdrop + NPC-face variants from it: a reload shows the same images
   'passengers', // scenes B: rescued survivors riding to the next station
+  'stationVisit', // station approach: this stop's rolls (hail-first, fee), drawn event, docked / waved off
   'traderAt', 'forcedEvent', // cruise.js: the trader-presence roll per stop; a during-wait event waiting on the player (a reload can't dodge either)
 ];
 function saveRun(key) {
@@ -1923,7 +1925,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, passengers: () => [] }; // traderAt/forcedEvent: cruise.js; passengers: scenes B
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, passengers: () => [], stationVisit: () => null }; // traderAt/forcedEvent: cruise.js; passengers: scenes B
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2144,7 +2146,7 @@ function applySetupToState(sel) {
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0;
   STATE.traderAt = {}; STATE.forcedEvent = null; // cruise.js: trader-presence rolls, during-wait event
-  STATE.passengers = []; STATE.eventSpeaker = null; STATE.joinNote = null; // scenes B
+  STATE.passengers = []; STATE.eventSpeaker = null; STATE.joinNote = null; STATE.stationVisit = null; // scenes B
   STATE.flagFirstSeen = {}; STATE.calledBack = []; STATE.lastCallbackLeg = null;
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
@@ -2489,6 +2491,24 @@ function disembarkPassengers(node) {
     if (typeof window.pushCruiseLog === 'function') {
       window.pushCruiseLog('◆ ' + String(p.farewell || '{name} steps off at {station}.').replace(/\{name\}/g, p.name).replace(/\{station\}/g, node.name || 'the station') + (paid ? ' ' + paid + '.' : ''));
     }
+  }
+}
+
+/* Station services recharge the crew's active skills — per each skill's
+   authored recharges_at in crew_roster.json (all current skills author
+   'station'). Runs on DOCK (station approach) or on arrival for stops
+   that skip the approach. Not on a wave-off: no berth, no services. */
+function stationRecharge() {
+  ensureCrewSkillCharges();
+  let restored = false;
+  for (const role of STATE.crew) {
+    const sk = crewSkillDefOf(role);
+    if (!sk || sk.recharges_at !== 'station') continue;
+    const max = sk.uses_per_leg || 1;
+    if ((STATE.crewSkillCharges[role] || 0) < max) { STATE.crewSkillCharges[role] = max; restored = true; }
+  }
+  if (restored && typeof window.pushCruiseLog === 'function') {
+    window.pushCruiseLog('◆ Station services — crew skills recharged.');
   }
 }
 
@@ -4039,17 +4059,9 @@ function travelTo(nodeId, opts) {
     STATE.researchReady = true; // Academic captain: a fresh Research preview each station leg
     // The chef's cookie tag lasts "one journey leg" — to the next station.
     for (const f of [...STATE.flags]) if (f.startsWith('friendly_with_pirate_')) STATE.flags.delete(f);
-    ensureCrewSkillCharges();
-    let restored = false;
-    for (const role of STATE.crew) {
-      const sk = crewSkillDefOf(role);
-      if (!sk || sk.recharges_at !== 'station') continue;
-      const max = sk.uses_per_leg || 1;
-      if ((STATE.crewSkillCharges[role] || 0) < max) { STATE.crewSkillCharges[role] = max; restored = true; }
-    }
-    if (restored && typeof window.pushCruiseLog === 'function') {
-      window.pushCruiseLog('◆ Station services — crew skills recharged.');
-    }
+    // Crew skills recharge when the ship DOCKS (owner ruling 2026-10-11,
+    // station approach): stationRecharge() runs on DOCK — or here below on
+    // the stops that skip the approach (delayed crisis, Push Engines).
   }
 
   // Arrival node (no outgoing connections) ends the run with the
@@ -4067,6 +4079,7 @@ function travelTo(nodeId, opts) {
   // Push Engines (pilot active skill) — the leg is flown, the node's
   // event is skipped entirely. Straight back to the hub.
   if (opts.skipEvent && !crisis) {
+    if (node.node_type === 'station') stationRecharge();
     STATE.visited.add(nodeId);
     if (STATE.scouted) delete STATE.scouted[nodeId];
     if ((STATE.postCombatLegs || 0) > 0) STATE.postCombatLegs--;
@@ -4082,9 +4095,18 @@ function travelTo(nodeId, opts) {
   if (STATE.scouted) delete STATE.scouted[node.id];
   const ev = crisis || (node.event_id && EVENTS[node.event_id]) || (scouted !== undefined ? scouted : selectEvent(node));
   STATE.scanIntelEvent = (ev && scouted === ev && scoutRec && scoutRec.intel) ? ev.id : null;
-  if (ev) {
+  // Station stop (owner ruling 2026-10-11, demo station_approach): every
+  // stop opens on the bridge with the approach — HAIL / DOCK / the wave-off
+  // warning — and the stop's one drawn event plays before it, on DOCK, or
+  // as a room in the dock (engine/js/station.js). A delayed crisis and a
+  // fixed-path event keep the old direct entry (and recharge on arrival).
+  if (node.node_type === 'station' && !crisis && !node.event_id && window.StationVisit && StationVisit.available()) {
+    StationVisit.arrive(node, ev);
+  } else if (ev) {
+    if (node.node_type === 'station') stationRecharge();
     enterEvent(node, ev);
   } else {
+    if (node.node_type === 'station') stationRecharge();
     // No event matched this node/trigger combination. Just register the
     // visit and return to the hub so the player can advance again.
     STATE.visited.add(nodeId);
@@ -4115,6 +4137,9 @@ function enterEvent(node, ev, opts) {
   // once the NPC and variant are rolled (hunt 6: a reload re-rolled the
   // pirate's species, which sets its hull and whether it surrenders).
   if (window.SceneArt && SceneArt.beginEvent) SceneArt.beginEvent();
+  // A dock room (station approach): the room's event gains GO ELSEWHERE
+  // and a BACK TO DOCK leave row (engine/js/station.js wraps a copy).
+  if (window.StationVisit) ev = StationVisit.wrap(ev, node);
   STATE.currentEvent     = ev;
   STATE.currentNode      = node;
   STATE.outcomeMode      = false;
@@ -4214,6 +4239,8 @@ function resolveLayerNpc(spec, evId, layerId) {
   // layers keeps one face (it re-rolled species per layer).
   const key = evId + '@' + STATE.currentId + '#' + (spec.displayName || (spec.disposition + '/' + (spec.job || '')));
   if (STATE.npcCache[key]) return STATE.npcCache[key];
+  const twin = !spec.species && !spec.displayName && stationCrewHere(spec.disposition, spec.job);
+  if (twin) { STATE.npcCache[key] = twin; return twin; }
   const species = spec.species || rollNpcSpecies();
   const jobNames = { captain: 'STATION CAPTAIN', medic: 'STATION MEDIC', engineer: 'STATION ENGINEER', botanist: 'STATION BOTANIST', janitor: 'JANITOR', security: 'STATION SECURITY', bartender: 'BARTENDER' };
   const ctx = {
@@ -4522,6 +4549,9 @@ function renderEncounterState(opts) {
   if (layer && layer.revisit && STATE._layerVisits && STATE._layerVisits[layerId]) {
     layer = Object.assign({}, layer, layer.revisit);
   }
+  // Station approach: the layer as this visit has it (dockmaster on the
+  // comms or not, the parking fee, the dock's rooms) — station.js.
+  if (layer && ev.station_approach && window.StationVisit) layer = StationVisit.approachLayer(layerId, layer);
   if (layerId && STATE._layerVisits) STATE._layerVisits[layerId] = true;
   // Layer-level speaker override (demo's presentNpc machinery).
   // crew_id (layer or event) puts one of our OWN crew in the frame
@@ -4794,7 +4824,10 @@ function renderChoicesInner(choices) {
     !(ch.showFlag && !STATE.flags.has(ch.showFlag)) &&
     !(ch.hideFlag && STATE.flags.has(ch.hideFlag)));
   const anyUnlocked = visible.some(ch => !lockReason(ch));
-  if (!visible.length || !anyUnlocked) {
+  // The station approach always has a way out (its leave row → the
+  // wave-off warning): a DOCK the fee locks stays on screen, locked.
+  const leaveIsTheWayOut = STATE.currentEvent && STATE.currentEvent.station_approach && visible.length;
+  if ((!visible.length || !anyUnlocked) && !leaveIsTheWayOut) {
     col.appendChild(makeAdvanceButton('Continue'));
     return;
   }
@@ -4940,6 +4973,21 @@ function renderLeaveRow(col) {
   label.className = 'ch-text';
   label.textContent = (layer && layer.leave_label) || ev.leave_label || 'LEAVE';
   leave.appendChild(label);
+  // leave_sub (demo leave.sub): what leaving means ("Skip the stop · risky").
+  const leaveSub = !forced && !STATE._shoppedThisEvent && ((layer && layer.leave_sub) || ev.leave_sub);
+  if (leaveSub) {
+    const sub = document.createElement('div');
+    sub.className = 'ch-sub';
+    sub.textContent = leaveSub;
+    leave.appendChild(sub);
+  }
+  // leave_next (demo leave.next): leaving opens a layer first — the
+  // approach's wave-off warning — instead of ending the event.
+  if (!forced && layer && layer.leave_next && ev.layers[layer.leave_next]) {
+    bindEncButton(leave, () => { snapDelivery(); STATE.layerStack.push(layer.leave_next); saveEventProgress(); renderEncounterState(); });
+    col.appendChild(leave);
+    return;
+  }
   // Browsing the wares is a stop like any other: leaving after shopping
   // costs a day (it was free — the whole market for zero days, while the
   // trader's own "buy a fuel cell" pitch cost two).
@@ -5147,6 +5195,7 @@ function lockReason(choice) {
   if (choice.consume && STATE.consumedActions && STATE.consumedActions[consumeKey(choice)]) {
     return choice.consumedLabel || 'Already done';
   }
+  if (choice.station_locked) return choice.station_locked; // a dock room already done this visit (station.js)
   // Every unmet requirement, listed (Bible §18: "Need: Diplomat + 20g") —
   // it used to name only the first one, so a player who hired the
   // diplomat then found the gold short too.
@@ -5241,6 +5290,15 @@ const BARTENDER_NAMES = ['SHOTMASTER 6000', 'TENDR-9', 'MIXBOT MK.III', 'BARKEEP
 // npcCache keys are `<event>@<node>` (event NPC) or `<event>@<node>#<who>`
 // (layer speaker): the node part says which stop the NPC was met at.
 const npcCacheNode = key => { const at = key.indexOf('@'); return at < 0 ? null : key.slice(at + 1).split('#')[0]; };
+/* One person per station job per stop (station approach, 2026-10-11): the
+   dockmaster who hailed you on approach is the one behind the desk in
+   Next of Kin — a station_crew job already met at this stop is reused. */
+function stationCrewHere(disposition, job) {
+  if (disposition !== 'station_crew' || !job) return null;
+  const here = String(STATE.currentId);
+  for (const [k, c] of Object.entries(STATE.npcCache || {})) if (c && c.disposition === 'station_crew' && c.job === job && npcCacheNode(k) === here) return c;
+  return null;
+}
 function bartenderName() {
   const here = String(STATE.currentId);
   const cache = STATE.npcCache || {};
@@ -5271,6 +5329,8 @@ function resolveNpc(ev) {
   // stop rolls a new NPC; a reload at this stop keeps the one you met.
   const npcKey = ev.id + '@' + STATE.currentId;
   if (STATE.npcCache[npcKey]) return STATE.npcCache[npcKey];
+  const twin = !ev.npc.species && !ev.npc.displayName && stationCrewHere(ev.npc.disposition, ev.npc.job);
+  if (twin) { STATE.npcCache[npcKey] = twin; return twin; }
   const species = ev.npc.species || rollNpcSpecies();
   const disposition = ev.npc.disposition;
   const coloring = MOD.flavor && MOD.flavor.npc_species_coloring && MOD.flavor.npc_species_coloring[species];
@@ -5423,6 +5483,8 @@ function handleChoiceClick(choice) {
   // Station botanist's advice (crop_advice choice field): the water split
   // and the talk-to-it habit change here, before the layer navigation.
   if (choice.crop_advice) applyCropAdvice();
+  // Station approach actions (HAIL / DOCK / a dock room / BACK TO DOCK) — station.js.
+  if (choice.station && window.StationVisit && StationVisit.act(choice)) return;
 
   // Combat hijack fields — checked BEFORE the flat-schema early-return
   // so BOTH schemas can enter combat (audit fix: these originally sat
@@ -5655,6 +5717,9 @@ function applyOutcomeEffects(o) {
     if (idx >= 0) STATE.items.splice(idx, 1);
   }
 
+  // waves_off (owner ruling 2026-10-11): skipping the station closes its
+  // TRADE / MEDBAY / DRYDOCK / FAB SERVICE for this stop (station.js).
+  if (o.waves_off && window.StationVisit) StationVisit.waveOff();
   if (o.sets_flag) STATE.flags.add(o.sets_flag);
   if (o.clears_flag) STATE.flags.delete(o.clears_flag); // one-shot armed flags (e.g. negotiation_prepared) spend here
 
@@ -5693,6 +5758,8 @@ function applyOutcomeEffects(o) {
   // Effort system (Bible §Effort, owner ruling 2026-10-10 "effort only"):
   // a repair choice's days scale by effort_required / effort available.
   const scale = STATE.effortScale || 1;
+  // time_cost "none": no day passes (a wave-off costs no time — owner ruling).
+  if (tier === 'none' && !STATE.effortCon) return;
   passDays(Math.max(1, Math.round(base * scale)) + (STATE.effortCon ? (STATE.effortCon.days || 2) : 0));
 }
 
@@ -5905,6 +5972,8 @@ function advanceAfterEvent() {
   // crew, orders, MEDBAY…) for the whole run after the first leg.
   // Forks are unchanged in effect: the branch flag the fork event set
   // makes Resume's single next node the chosen branch.
+  // A station visit routes on: arrival event → approach, room → dock (station.js).
+  if (window.StationVisit && StationVisit.afterEvent()) return;
   STATE.visited.add(STATE.currentId);
   returnToHub();
 }
