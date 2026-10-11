@@ -1,0 +1,393 @@
+/* ────────────────────────────────────────────────────────────────
+   CARGO HOLD — resources/demo-inventory.html canon (parity batch 2,
+   2026-10-11). Every selector is scoped under #overlay-inventory; the
+   tokens live on the overlay root (no :root — see the batch-1 token
+   collisions). engine/js/screens/inventory.js renders the content.
+   Layout: 816×600 card → header (slots / gold / ✕) → SHIP RESOURCES
+   row → tab strip + SORT → grid | 295px detail column → footer
+   (DESIGN_SYSTEM close path 2: the CLOSE button the demo lacks).
+   ──────────────────────────────────────────────────────────────── */
+#overlay-inventory {
+  --inv-border: #435384;
+  --inv-title: #56cfd7;
+  --inv-meta: #aab5c4;
+  --inv-label: #5a7a6a;
+  --inv-body: #aab5c4;
+  --inv-cream: #e8d8a0;
+  --inv-teal: #35c6bf;
+  --inv-orange: #e88830;
+  --inv-name: #c8a85a;
+  --inv-tile-label: #8a98a8;
+  --inv-grid-tile: 88px;
+  --inv-grid-sprite: 64px;
+  --inv-grid-bg: rgba(20,28,40,0.55);
+  --inv-grid-border: #2a3040;
+  --inv-badge: #ffac00;
+  --inv-price: #8a98a8;
+  --inv-price-hidden: #7a6a5a;
+  --inv-detail-bg: rgba(10,14,20,0.65);
+  --inv-tab-hi: #5a6070;
+  --inv-tab-lo: #1a1f2a;
+  --inv-red-hi: #cc6666;
+  --inv-red-lo: #4a1a1a;
+  --gauge-seg-low:    #c23030;
+  --gauge-seg-lowmid: #e0661a;
+  --gauge-seg-mid:    #d0a020;
+  --gauge-seg-highmid:#b4bf40;
+  --gauge-seg-high:   #78c560;
+  --gauge-seg-full:   #35c56a;
+  --gauge-unlit-alpha: 0.15;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(4,8,16,0.75);
+}
+
+/* ── Card ───────────────────────────────────────────────────── */
+#overlay-inventory #inv-card {
+  position: relative;
+  width: 816px; height: 600px;
+  background: linear-gradient(180deg, #141a28 0%, #0a0e18 100%);
+  border: 3px solid var(--inv-border);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(86,207,215,0.18), inset 0 0 0 2px rgba(14,20,32,0.5), 0 8px 40px rgba(0,0,0,0.8);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header: title · slots · gold · ✕ ───────────────────────── */
+#overlay-inventory #inv-header {
+  flex-shrink: 0; height: 42px; padding: 0 16px;
+  border-bottom: 2px solid rgba(86,207,215,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex; align-items: center; gap: 16px;
+}
+#overlay-inventory .inv-title {
+  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 14px;
+  letter-spacing: 2px; color: var(--inv-title); text-shadow: 0 0 8px rgba(86,207,215,0.35);
+  flex-shrink: 0;
+}
+#overlay-inventory .inv-header-meta { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 18px; }
+#overlay-inventory #inv-slots,
+#overlay-inventory #inv-gold-readout {
+  font-family: 'VT323', monospace; font-size: 17px; letter-spacing: 1px; color: var(--inv-meta);
+  cursor: var(--cursor-default, default);
+}
+#overlay-inventory #inv-slots strong,
+#overlay-inventory #inv-gold-readout strong { color: #d0c890; font-weight: normal; display: inline-block; transition: color 0.15s; }
+#overlay-inventory #inv-slots.near-cap strong { color: #d8a840; }      /* amber pre-warn at ≥90% */
+#overlay-inventory #inv-slots.at-cap strong { color: var(--red); }
+#overlay-inventory #inv-slots.at-cap { animation: inv-slot-pulse 1.2s ease-in-out infinite; }
+@keyframes inv-slot-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
+#overlay-inventory .readout-flash { animation: inv-readout-flash 0.45s ease-out; }
+@keyframes inv-readout-flash {
+  0%   { text-shadow: 0 0 10px currentColor; transform: scale(1.15); }
+  60%  { text-shadow: 0 0 4px currentColor;  transform: scale(1.0); }
+  100% { text-shadow: none; transform: scale(1.0); }
+}
+/* Header ✕ (DESIGN_SYSTEM close path 1). */
+#overlay-inventory .modal-x {
+  font-family: 'Press Start 2P', cursive; font-size: 10px; line-height: 1;
+  width: 26px; height: 26px; flex-shrink: 0;
+  border: 2px solid rgba(86,207,215,0.4); border-radius: 2px;
+  background: rgba(14,20,32,0.6); color: var(--inv-title);
+  cursor: var(--cursor-hand, pointer);
+  display: flex; align-items: center; justify-content: center; padding: 0;
+}
+#overlay-inventory .modal-x:hover { filter: brightness(1.25); border-color: var(--inv-border); }
+
+/* ── SHIP RESOURCES row ─────────────────────────────────────── */
+#overlay-inventory #inv-resource-row {
+  flex-shrink: 0; position: relative;
+  padding: 12px 16px;
+  background: rgba(10,14,20,0.4);
+  border-bottom: 1px solid rgba(200,168,90,0.12);
+}
+#overlay-inventory .inv-res-title {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  font-family: 'VT323', monospace; font-size: 12px; letter-spacing: 1px; line-height: 1.15;
+  color: var(--inv-label); text-transform: uppercase; pointer-events: none;
+}
+#overlay-inventory #inv-res-tiles { display: flex; gap: 16px; justify-content: center; }
+#overlay-inventory .res-tile {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 10px 4px 4px; border-radius: 4px;
+  cursor: var(--cursor-hand, pointer);
+  transition: filter 0.15s;
+}
+#overlay-inventory .res-tile:hover    { filter: brightness(1.2); }
+#overlay-inventory .res-tile.selected { filter: brightness(1.25) drop-shadow(0 0 6px rgba(200,168,90,0.55)); }
+#overlay-inventory .res-tile-frame {
+  width: 64px; height: 64px; position: relative;
+  background-size: 64px 64px; background-repeat: no-repeat; background-position: center;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+}
+#overlay-inventory .res-gauge { position: absolute; display: flex; flex-direction: column-reverse; gap: 1px; pointer-events: none; }
+#overlay-inventory .gauge-seg {
+  flex: 1; background: var(--seg-color); box-shadow: 0 0 3px var(--seg-color);
+  opacity: var(--gauge-unlit-alpha); transition: opacity 0.25s;
+}
+#overlay-inventory .gauge-seg.lit { opacity: 1; }
+#overlay-inventory .res-tile-info { display: flex; flex-direction: column; gap: 2px; min-width: 96px; }
+#overlay-inventory .res-tile-label {
+  font-family: 'Press Start 2P', cursive; line-height: 1.2; font-size: 10px; letter-spacing: 2px; color: var(--inv-tile-label);
+}
+#overlay-inventory .res-tile.selected .res-tile-label { color: var(--gold); }
+#overlay-inventory .res-tile-stat {
+  font-family: 'VT323', monospace; font-size: 14px; letter-spacing: 0.5px; line-height: 1.2;
+  color: var(--inv-label); white-space: nowrap;
+  display: flex; justify-content: space-between; gap: 8px;
+}
+#overlay-inventory .res-tile-stat strong { color: var(--inv-cream); font-weight: normal; }
+#overlay-inventory .res-tile-stat.dry strong { color: #ff8878; }
+
+/* ── Tab strip + SORT ───────────────────────────────────────── */
+#overlay-inventory #inv-tabs {
+  flex-shrink: 0; padding: 10px 16px 8px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid rgba(200,168,90,0.12);
+}
+#overlay-inventory .inv-tab {
+  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 9px; letter-spacing: 2px;
+  padding: 8px 16px; position: relative;
+  background: linear-gradient(180deg, #39404F 0%, #252A38 50%, #4B597A 100%);
+  border: 3px outset; border-color: var(--inv-tab-hi) var(--inv-tab-lo) var(--inv-tab-lo) var(--inv-tab-hi);
+  color: #8a98a8; border-radius: 0;
+  cursor: var(--cursor-hand, pointer); transition: filter 0.1s;
+}
+#overlay-inventory .inv-tab:hover { filter: brightness(1.15); }
+#overlay-inventory .inv-tab:active { border-style: inset; border-color: var(--inv-tab-lo) var(--inv-tab-hi) var(--inv-tab-hi) var(--inv-tab-lo); transform: translate(1px, 1px); }
+#overlay-inventory .inv-tab.active {
+  color: #d0c890; text-shadow: 0 0 4px rgba(208,200,144,0.4);
+  border-color: var(--pb-gold-hi) var(--pb-gold-lo) var(--pb-gold-lo) var(--pb-gold-hi);
+}
+#overlay-inventory .inv-tab.active::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 3px;
+  background: var(--inv-orange); box-shadow: 0 0 6px rgba(232,136,48,0.5);
+}
+#overlay-inventory .tab-count { font-family: 'VT323', monospace; font-size: 13px; letter-spacing: 0; color: var(--inv-label); margin-left: 4px; }
+#overlay-inventory .inv-tab.active .tab-count { color: #a89869; }
+#overlay-inventory .tab-row-spacer { flex: 1; }
+#overlay-inventory #inv-sort { position: relative; flex-shrink: 0; }
+#overlay-inventory .sort-trigger {
+  font-family: 'VT323', monospace; font-size: 14px; letter-spacing: 1px;
+  padding: 6px 24px 6px 10px; min-width: 130px; text-align: left; position: relative;
+  background: linear-gradient(180deg, var(--pb-bg-top) 0%, var(--pb-bg-mid) 50%, var(--pb-bg-bot) 100%);
+  border: 2px outset; border-color: var(--pb-hi) var(--pb-lo) var(--pb-lo) var(--pb-hi);
+  color: var(--inv-cream); border-radius: 2px;
+  cursor: var(--cursor-hand, pointer);
+}
+#overlay-inventory .sort-trigger::after {
+  content: '▾'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  font-size: 10px; color: var(--gold); transition: transform 0.15s;
+}
+#overlay-inventory #inv-sort.open .sort-trigger::after { transform: translateY(-50%) rotate(180deg); }
+#overlay-inventory .sort-trigger:hover { filter: brightness(1.15); }
+#overlay-inventory .sort-trigger-label { color: var(--inv-tile-label); font-size: 11px; margin-right: 4px; }
+#overlay-inventory .sort-flyout {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 25; min-width: 150px;
+  background: #141a28; border: 2px solid var(--gold); border-radius: 3px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.6); overflow: hidden;
+  display: none;
+}
+#overlay-inventory #inv-sort.open .sort-flyout { display: block; }
+#overlay-inventory .sort-option {
+  font-family: 'VT323', monospace; font-size: 15px; letter-spacing: 1px; padding: 6px 12px;
+  color: var(--inv-cream); cursor: var(--cursor-hand, pointer);
+  transition: background 0.1s, color 0.1s;
+}
+#overlay-inventory .sort-option:hover { background: rgba(200,168,90,0.15); color: var(--gold); }
+#overlay-inventory .sort-option.selected { color: var(--gold); background: rgba(200,168,90,0.08); box-shadow: inset 0 0 0 1px rgba(200,168,90,0.2); }
+
+/* ── Body: grid | detail column ─────────────────────────────── */
+#overlay-inventory #inv-body { flex: 1; display: flex; min-height: 0; }
+#overlay-inventory #inv-grid-host { flex: 1; min-height: 0; }
+#overlay-inventory #inv-grid {
+  padding: 12px 14px; overflow-y: auto; height: 100%;
+  display: grid; gap: 8px; justify-content: start; align-content: start;
+  grid-template-columns: repeat(auto-fill, minmax(var(--inv-grid-tile), var(--inv-grid-tile)));
+}
+#overlay-inventory .inv-tile {
+  width: var(--inv-grid-tile); height: var(--inv-grid-tile); position: relative;
+  background: var(--inv-grid-bg); border: 2px solid var(--inv-grid-border); border-radius: 4px;
+  cursor: var(--cursor-hand, pointer);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 6px 4px 4px; overflow: hidden;
+  transition: border-color 0.12s, background 0.12s;
+}
+#overlay-inventory .inv-tile:hover { border-color: rgba(200,168,90,0.45); background: rgba(200,168,90,0.05); }
+#overlay-inventory .inv-tile.selected { border-color: var(--gold); background: rgba(200,168,90,0.08); }
+#overlay-inventory .inv-tile img { width: var(--inv-grid-sprite); height: var(--inv-grid-sprite); image-rendering: pixelated; image-rendering: crisp-edges; }
+#overlay-inventory .inv-tile .inv-tile-emoji { font-size: 40px; line-height: 1; }
+/* Stack count — top-right, Minecraft-style. */
+#overlay-inventory .inv-tile-count {
+  position: absolute; top: 3px; right: 3px;
+  background: rgba(14,20,32,0.95); color: var(--inv-badge);
+  font-family: 'Press Start 2P', cursive; line-height: 1.2; font-size: 7px;
+  padding: 1px 4px; border-radius: 2px; border: 1px solid rgba(255,172,0,0.3);
+  text-shadow: 0 0 3px rgba(255,172,0,0.5);
+}
+/* Sell price — bottom-right corner. */
+#overlay-inventory .inv-tile-price {
+  position: absolute; bottom: 3px; right: 4px;
+  font-family: 'VT323', monospace; font-size: 12px; letter-spacing: 0; color: var(--inv-price);
+}
+#overlay-inventory .inv-tile-price.unknown { color: var(--inv-price-hidden); font-style: italic; }
+/* No buyer (story items) — bottom-left ⇄. */
+#overlay-inventory .inv-tile-trade { position: absolute; bottom: 3px; left: 4px; color: var(--inv-price-hidden); font-size: 12px; font-family: 'VT323', monospace; }
+/* NEW — pulsing amber pill, top-left, until the tile is clicked. */
+#overlay-inventory .inv-tile-new {
+  position: absolute; top: 3px; left: 3px; z-index: 2;
+  background: var(--inv-badge); color: #1a1408;
+  font-family: 'Press Start 2P', cursive; line-height: 1.2; font-size: 6px; letter-spacing: 0.5px;
+  padding: 2px 3px; border-radius: 2px; box-shadow: 0 0 6px rgba(255,172,0,0.6);
+  animation: inv-new-pulse 1.4s ease-in-out infinite;
+}
+@keyframes inv-new-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
+/* GEAR section divider. */
+#overlay-inventory .grid-section-header {
+  grid-column: 1 / -1;
+  font-family: 'Press Start 2P', cursive; line-height: 1.2; font-size: 7px; letter-spacing: 2px;
+  color: var(--inv-label); text-transform: uppercase;
+  padding: 6px 2px 2px; border-bottom: 1px dashed rgba(200,168,90,0.18); margin-bottom: 2px;
+}
+#overlay-inventory .inv-empty {
+  grid-column: 1 / -1;
+  font-family: 'VT323', monospace; font-size: 18px; font-style: italic; color: var(--inv-body);
+  opacity: 0.55; text-align: center; padding: 60px 20px;
+}
+/* Jettison: the vacating tile shrinks + fades (zoom-out); particles rise. */
+#overlay-inventory .inv-tile.jettisoning { animation: inv-tile-jettison 0.5s ease-out forwards; pointer-events: none; }
+@keyframes inv-tile-jettison {
+  0%   { opacity: 1;   transform: scale(1);    filter: brightness(1); }
+  40%  { opacity: 0.7; transform: scale(0.78); filter: brightness(1.2); }
+  100% { opacity: 0;   transform: scale(0.2);  filter: brightness(1.35); }
+}
+#overlay-inventory .poof-particle {
+  position: absolute; width: 6px; height: 6px; border-radius: 50%; z-index: 5; pointer-events: none;
+  background: rgba(200,180,140,0.85); box-shadow: 0 0 6px rgba(200,180,140,0.55);
+  animation: inv-poof-rise var(--poof-dur, 0.7s) ease-out forwards;
+  animation-delay: var(--poof-delay, 0s);
+}
+@keyframes inv-poof-rise {
+  0%   { opacity: 0;   transform: translate(0,0) scale(0.4); }
+  20%  { opacity: 0.9; transform: translate(calc(var(--dx) * 0.3), calc(var(--dy) * 0.3)) scale(1); }
+  100% { opacity: 0;   transform: translate(var(--dx), var(--dy)) scale(0.5); }
+}
+
+/* ── Detail column ──────────────────────────────────────────── */
+#overlay-inventory #inv-detail-col {
+  flex-shrink: 0; width: 295px; display: flex; flex-direction: column; min-height: 0;
+  border-left: 1px solid rgba(200,168,90,0.2);
+  background: var(--inv-detail-bg);
+}
+#overlay-inventory #inv-detail-host { flex: 1; min-height: 0; }
+#overlay-inventory #inv-detail-scroll { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; height: 100%; }
+#overlay-inventory #inv-detail { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+#overlay-inventory #inv-detail.hidden,
+#overlay-inventory #inv-detail-empty.hidden,
+#overlay-inventory #inv-detail > .inv-hide,
+#overlay-inventory #inv-detail-col > .inv-hide { display: none; }
+#overlay-inventory #inv-detail-empty {
+  font-family: 'VT323', monospace; font-size: 14px; font-style: italic; color: var(--inv-label);
+  text-align: center; padding: 30px 0; opacity: 0.7;
+}
+#overlay-inventory #inv-detail-name {
+  font-family: 'Press Start 2P', cursive; font-size: 10px; letter-spacing: 1.5px; line-height: 1.35;
+  color: var(--inv-name); text-shadow: 0 0 6px rgba(200,168,90,0.25);
+}
+#overlay-inventory #inv-detail-cat {
+  font-family: 'VT323', monospace; font-size: 12px; letter-spacing: 1px; color: var(--inv-label);
+  text-transform: uppercase; margin-top: -6px;
+}
+#overlay-inventory #inv-detail-desc { font-family: 'VT323', monospace; font-size: 15px; line-height: 1.35; color: var(--inv-body); }
+#overlay-inventory #inv-detail-flavor {
+  font-family: 'VT323', monospace; font-size: 14px; line-height: 1.3; font-style: italic; color: var(--inv-teal);
+  padding-top: 6px; border-top: 1px dashed rgba(53,198,191,0.2);
+}
+#overlay-inventory #inv-detail-flavor:empty { display: none; }
+#overlay-inventory #inv-detail-meta { display: flex; flex-direction: column; gap: 3px; padding-top: 6px; border-top: 1px solid rgba(200,168,90,0.15); }
+#overlay-inventory .detail-stat {
+  font-family: 'VT323', monospace; font-size: 14px; color: var(--inv-label);
+  display: flex; justify-content: space-between; gap: 10px;
+}
+#overlay-inventory .detail-stat strong { color: var(--inv-cream); font-weight: normal; text-align: right; }
+#overlay-inventory .detail-stat .detail-dim { color: var(--inv-label); font-size: 12px; margin-left: 4px; }
+#overlay-inventory .detail-stat.note { justify-content: flex-end; font-size: 12px; font-style: italic; }
+#overlay-inventory .detail-label {
+  font-family: 'Press Start 2P', cursive; font-size: 7px; letter-spacing: 1px; line-height: 1.2;
+  color: var(--inv-label); margin-right: 6px; text-transform: uppercase;
+}
+#overlay-inventory #inv-detail-used {
+  font-family: 'VT323', monospace; font-size: 13px; line-height: 1.3; color: var(--inv-body);
+  padding-top: 6px; border-top: 1px solid rgba(200,168,90,0.15);
+}
+#overlay-inventory #inv-detail-notes { padding-top: 6px; border-top: 1px solid rgba(200,168,90,0.15); display: flex; flex-direction: column; gap: 3px; }
+#overlay-inventory .detail-marker-row { font-family: 'VT323', monospace; font-size: 13px; line-height: 1.3; color: var(--inv-body); }
+#overlay-inventory .detail-marker-icon { display: inline-block; width: 16px; color: var(--inv-orange); text-align: center; margin-right: 4px; font-size: 14px; }
+#overlay-inventory #inv-detail-ai {
+  font-family: 'VT323', monospace; font-size: 14px; line-height: 1.3; font-style: italic; color: var(--inv-teal);
+  padding-top: 6px; border-top: 1px dashed rgba(53,198,191,0.2);
+}
+#overlay-inventory .detail-ai-name {
+  font-family: 'Press Start 2P', cursive; font-size: 7px; letter-spacing: 1px; font-style: normal;
+  color: var(--gold); margin-right: 4px;
+}
+#overlay-inventory .inv-detail-actions {
+  flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 10px 16px 12px; border-top: 1px solid rgba(200,168,90,0.15);
+}
+#overlay-inventory .panel-btn { --pb-size: 14px; }
+#overlay-inventory .panel-btn.accent-red {
+  border-color: var(--inv-red-hi) var(--inv-red-lo) var(--inv-red-lo) var(--inv-red-hi);
+  color: #e0a0a0;
+}
+#overlay-inventory .panel-btn:disabled { opacity: 0.4; filter: grayscale(0.6); }
+
+/* ── Jettison confirm (red ⚠ overlay over the card) ─────────── */
+#overlay-inventory #inv-confirm {
+  position: absolute; inset: 0; z-index: 30;
+  background: rgba(4,8,16,0.92);
+  display: flex; align-items: center; justify-content: center;
+}
+#overlay-inventory #inv-confirm.hidden,
+#overlay-inventory #inv-confirm .hidden { display: none; }
+#overlay-inventory .jettison-panel {
+  width: 380px; background: #141a28;
+  border: 3px solid #cc3333; border-radius: 4px; padding: 20px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.7), 0 0 16px rgba(204,51,51,0.2);
+  display: flex; flex-direction: column; gap: 14px;
+}
+#overlay-inventory .jettison-panel.route-warn { animation: inv-jettison-warn 1.2s ease-in-out infinite; }
+@keyframes inv-jettison-warn {
+  0%, 100% { box-shadow: 0 6px 24px rgba(0,0,0,0.7), 0 0 18px rgba(204,51,51,0.35); }
+  50%      { box-shadow: 0 6px 24px rgba(0,0,0,0.7), 0 0 28px rgba(204,51,51,0.75); }
+}
+#overlay-inventory .jettison-title {
+  font-family: 'Press Start 2P', cursive; font-size: 11px; letter-spacing: 2px; line-height: 1.2;
+  color: var(--red); text-align: center; text-shadow: 0 0 6px rgba(204,51,51,0.4);
+}
+#overlay-inventory #inv-confirm-text { font-family: 'VT323', monospace; font-size: 16px; line-height: 1.3; color: var(--inv-body); text-align: center; }
+#overlay-inventory #inv-route-warn {
+  font-family: 'VT323', monospace; font-size: 14px; line-height: 1.3; color: #e08080; text-align: center;
+  padding: 6px 10px; background: rgba(204,51,51,0.12); border: 1px solid rgba(204,51,51,0.4); border-radius: 3px;
+}
+#overlay-inventory #inv-route-warn strong { color: var(--inv-badge); font-weight: normal; }
+#overlay-inventory .jettison-count-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+#overlay-inventory .jettison-count-btn {
+  font-family: 'Press Start 2P', cursive; font-size: 14px; line-height: 1;
+  width: 32px; height: 32px; padding: 0;
+  background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
+  border: 2px outset; border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
+  color: var(--gold); border-radius: 2px; cursor: var(--cursor-hand, pointer);
+}
+#overlay-inventory .jettison-count-btn:active { border-style: inset; border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a; transform: translate(1px,1px); }
+#overlay-inventory .jettison-count-btn:disabled { opacity: 0.35; cursor: var(--cursor-denied, not-allowed); }
+#overlay-inventory #inv-jett-count { font-family: 'Press Start 2P', cursive; font-size: 14px; line-height: 1.2; color: var(--inv-cream); min-width: 60px; text-align: center; }
+#overlay-inventory .jettison-buttons { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+#overlay-inventory .jettison-buttons .panel-btn { --pb-size: 13px; padding: 6px 10px; }
+
+/* ── Footer: DESIGN_SYSTEM close path 2 (the demo has none) ─── */
+#overlay-inventory #inv-footer {
+  flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 16px; border-top: 1px solid rgba(200,168,90,0.12);
+}
+#overlay-inventory #inv-note { font-family: 'VT323', monospace; font-size: 14px; color: var(--inv-label); }

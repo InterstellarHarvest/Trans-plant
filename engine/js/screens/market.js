@@ -63,6 +63,15 @@
   // ×2.5 (was ×5): mining-for-sale out-earned every other gold source
   // several times over (hunt 5 economy sim).
   const materialPrice = m => Math.max(1, Math.round((m.value || 0.2) * 2.5));
+  // What a station trader pays for one unit of sid (item or material), or
+  // null when no trader buys it — the cargo hold's SELL PRICE / price
+  // corner read this (one source with stationVendor's buyPrices).
+  window.stationBuyPrice = function (sid) {
+    const m = allMaterialDefs().find(x => x.id === sid);
+    if (m) return materialPrice(m);
+    const d = defBy(sid);
+    return d && Number.isFinite(d.base_price) && d.base_price > 0 ? sellPrice(d.base_price) : null;
+  };
   function allItemDefs() {
     return (typeof MOD !== 'undefined' && MOD.items) ? MOD.items : [];
   }

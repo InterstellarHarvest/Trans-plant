@@ -21,6 +21,7 @@
 <link href="resources/screen-crew.css" rel="stylesheet">
 <link href="resources/screen-orders.css" rel="stylesheet">
 <link href="resources/screen-end.css" rel="stylesheet">
+<link href="resources/screen-inventory.css" rel="stylesheet"> <!-- cargo hold (parity batch 2) -->
 <script>
 /* Double-click launch: browsers block fetch()/XHR on file:// pages, so
    opened from disk the engine reads its JSON from a generated bundle
@@ -671,34 +672,7 @@ body {
   text-shadow: 0 1px 2px rgba(0,0,0,0.7);
 }
 
-/* ── Cargo hold overlay (minimal readout for full enforcement) ──── */
-#overlay-inventory { display: flex; align-items: center; justify-content: center; background: rgba(4,8,16,0.75); }
-/* demo-inventory modal SHELL (parity pass 2026-10-11): 816×600, 3px
-   slate-blue frame, cyan title, 42px header with the ✕. Fixed size, so
-   the stacked grid/detail/confirm can no longer spill past the border —
-   the grid scrolls instead. (The side-detail interior is a later batch.) */
-#inv-card {
-  width: 816px; height: 600px;
-  background: linear-gradient(180deg, #141a28 0%, #0a0e18 100%);
-  border: 3px solid #435384;
-  border-radius: 6px;
-  box-shadow: inset 0 0 0 1px rgba(86,207,215,0.18), inset 0 0 0 2px rgba(14,20,32,0.5), 0 8px 40px rgba(0,0,0,0.8);
-  display: flex; flex-direction: column;
-  padding: 0 0 12px;
-  gap: 10px;
-  overflow: hidden;
-}
-#inv-card > :not(#inv-header) { margin: 0 16px; }
-#inv-header {
-  flex-shrink: 0; height: 42px; padding: 0 16px;
-  border-bottom: 2px solid rgba(86,207,215,0.25);
-  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
-  display: flex; align-items: center; gap: 16px;
-  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 14px;
-  letter-spacing: 2px; color: #56cfd7; text-shadow: 0 0 8px rgba(86,207,215,0.35);
-}
-#inv-slots { margin-left: auto; font-family: 'VT323', monospace; font-size: 17px; letter-spacing: 1px; color: #aab5c4; text-shadow: none; }
-#inv-slots.full { color: #ff8878; }
+/* Cargo hold styles: resources/screen-inventory.css (parity batch 2). */
 /* Header ✕ (DESIGN_SYSTEM close path 1: 26×26, 2px accent border). */
 .modal-x {
   font-family: 'Press Start 2P', cursive; font-size: 10px; line-height: 1;
@@ -709,75 +683,6 @@ body {
   display: flex; align-items: center; justify-content: center; padding: 0;
 }
 .modal-x:hover { filter: brightness(1.25); border-color: #435384; }
-#inv-grid-host { flex: 1 1 auto; min-height: 80px; }
-/* Tabs + sprite grid + detail panel (demo-inventory.html canon —
-   tiles with cargo icons, click for detail, jettison behind confirm). */
-#inv-tabs { display: flex; gap: 8px; }
-.inv-tab {
-  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 8px; letter-spacing: 1px;
-  color: var(--body); background: rgba(10,14,20,0.6);
-  border: 1px solid rgba(95,168,208,0.25); border-radius: 3px;
-  padding: 7px 14px; cursor: var(--cursor-hand, pointer);
-}
-.inv-tab.active { color: var(--gold); border-color: rgba(200,168,90,0.6); }
-#inv-grid {
-  overflow-y: auto; flex: 1 1 auto; min-height: 0;
-  display: grid; grid-template-columns: repeat(auto-fill, 72px); gap: 8px;
-  align-content: start; padding-right: 12px; /* room for the gold thumb */
-}
-.inv-tile {
-  width: 72px; height: 72px; position: relative;
-  background: rgba(10,14,20,0.6);
-  border: 1px solid rgba(95,168,208,0.25); border-radius: 3px;
-  cursor: var(--cursor-hand, pointer);
-  display: flex; align-items: center; justify-content: center;
-}
-.inv-tile:hover, .inv-tile.selected { border-color: rgba(200,168,90,0.7); }
-.inv-tile img { width: 56px; height: 56px; image-rendering: pixelated; }
-.inv-tile .inv-tile-emoji { font-size: 34px; }
-.inv-tile .inv-tile-count {
-  position: absolute; right: 3px; bottom: 2px;
-  font-family: 'VT323', monospace; font-size: 14px; color: var(--gold);
-  background: rgba(8,12,18,0.85); border-radius: 2px; padding: 0 4px;
-}
-.inv-tile .inv-tile-count.unknown { color: var(--body); opacity: 0.8; } /* unappraised trade good: ?? */
-#inv-detail, #inv-confirm {
-  flex-shrink: 0;
-  background: rgba(10,14,20,0.6); border: 1px solid rgba(200,168,90,0.35);
-  border-radius: 3px; padding: 10px 12px;
-  display: flex; flex-direction: column; gap: 8px;
-}
-#inv-detail.hidden, #inv-confirm.hidden, #inv-confirm-yes.hidden { display: none; }
-.inv-detail-top { display: flex; gap: 12px; align-items: center; }
-#inv-detail-icon img { width: 44px; height: 44px; image-rendering: pixelated; }
-#inv-detail-icon { font-size: 30px; }
-#inv-detail-name { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 10px; letter-spacing: 1px; color: var(--gold); }
-#inv-detail-meta { font-family: 'VT323', monospace; font-size: 14px; color: var(--body); margin-top: 4px; }
-#inv-detail-desc { font-family: 'VT323', monospace; font-size: 16px; line-height: 1.3; color: var(--cream); }
-#inv-detail-flavor { font-family: 'VT323', monospace; font-size: 15px; line-height: 1.25; color: var(--body); font-style: italic; margin-top: -4px; }
-#inv-detail-flavor:empty { display: none; }
-.inv-detail-actions { display: flex; gap: 10px; justify-content: flex-end; }
-#inv-confirm-text { font-family: 'VT323', monospace; font-size: 17px; color: var(--cream); }
-#inv-rows { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
-.inv-row {
-  display: flex; align-items: center; gap: 10px;
-  font-family: 'VT323', monospace; font-size: 17px; color: var(--cream);
-  background: rgba(10,14,20,0.6); border: 1px solid rgba(95,168,208,0.2);
-  border-radius: 3px; padding: 6px 10px;
-}
-.inv-row .inv-name { flex: 1; }
-.inv-row .inv-count { color: var(--body); min-width: 40px; }
-.inv-row .inv-cost { color: var(--body); min-width: 70px; font-size: 14px; }
-.inv-row .inv-jett {
-  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 7px;
-  padding: 5px 8px; background: #2a1a1a; color: #cc7766;
-  border: 1px solid rgba(204,85,85,0.4); border-radius: 2px;
-  cursor: var(--cursor-hand, pointer);
-}
-.inv-row .inv-jett:hover { filter: brightness(1.3); }
-.inv-empty { font-family: 'VT323', monospace; font-size: 17px; color: var(--body); text-align: center; padding: 16px 0; }
-#inv-footer { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-#inv-note { font-family: 'VT323', monospace; font-size: 14px; color: var(--body); }
 </style>
 </head>
 <body>
@@ -1142,46 +1047,88 @@ body {
     </div>
   </div>
 
-  <!-- Minimal cargo readout — enough UI to live with full cargo
-       enforcement (2026-08-03 decision) until the full inventory demo
-       migrates. List, slot meter, per-row jettison. -->
+  <!-- Cargo hold — resources/demo-inventory.html canon (parity batch 2).
+       Styles: resources/screen-inventory.css; logic: engine/js/screens/inventory.js. -->
   <div id="overlay-inventory" class="overlay dim-behind">
     <div id="inv-card">
-      <div id="inv-header"><span>CARGO HOLD</span> <span id="inv-slots"></span><button class="modal-x inv-x" id="inv-x" aria-label="Close">✕</button></div>
+      <div id="inv-header">
+        <span class="inv-title">CARGO HOLD</span>
+        <div class="inv-header-meta">
+          <span id="inv-slots"><strong id="inv-slots-used">0</strong> / <strong id="inv-slots-total">0</strong> SLOTS</span>
+          <span id="inv-gold-readout"><strong id="inv-gold">0</strong> g</span>
+          <button class="modal-x inv-x" id="inv-x" aria-label="Close">✕</button>
+        </div>
+      </div>
+      <div id="inv-resource-row">
+        <div class="inv-res-title">Ship<br>Resources</div>
+        <div id="inv-res-tiles"></div>
+      </div>
       <div id="inv-tabs">
-        <button class="inv-tab active" data-tab="gear">GEAR</button>
-        <button class="inv-tab" data-tab="resources">RESOURCES</button>
-      </div>
-      <!-- Gold custom scrollbar (DESIGN_SYSTEM hard rule; wired at boot). -->
-      <div class="scroll-host" id="inv-grid-host">
-        <div id="inv-grid" class="scroll-content"></div>
-        <div class="scroll-track"><div class="scroll-thumb"></div></div>
-      </div>
-      <div id="inv-detail" class="hidden">
-        <div class="inv-detail-top">
-          <div id="inv-detail-icon"></div>
-          <div>
-            <div id="inv-detail-name"></div>
-            <div id="inv-detail-meta"></div>
+        <button class="inv-tab active" data-tab="gear">GEAR<span class="tab-count" id="inv-count-gear"></span></button>
+        <button class="inv-tab" data-tab="materials">MATERIALS<span class="tab-count" id="inv-count-materials"></span></button>
+        <button class="inv-tab" data-tab="upgrades">UPGRADES<span class="tab-count" id="inv-count-upgrades"></span></button>
+        <span class="tab-row-spacer"></span>
+        <div id="inv-sort">
+          <button class="sort-trigger" id="inv-sort-btn"><span class="sort-trigger-label">SORT:</span><span id="inv-sort-current">Recent</span></button>
+          <div class="sort-flyout">
+            <div class="sort-option selected" data-sort="recent">Recent</div>
+            <div class="sort-option" data-sort="alpha">A–Z</div>
+            <div class="sort-option" data-sort="slots">Slot cost</div>
+            <div class="sort-option" data-sort="price">Sell price</div>
           </div>
         </div>
-        <div id="inv-detail-desc"></div>
-        <div id="inv-detail-flavor"></div>
-        <div class="inv-detail-actions">
-          <button class="btn accent-gold" id="inv-use-btn">USE</button>
-          <button class="btn" id="inv-jett-btn">JETTISON</button>
+      </div>
+      <div id="inv-body">
+        <!-- Gold custom scrollbars (DESIGN_SYSTEM hard rule; wired at boot). -->
+        <div class="scroll-host" id="inv-grid-host">
+          <div id="inv-grid" class="scroll-content"></div>
+          <div class="scroll-track"><div class="scroll-thumb"></div></div>
+        </div>
+        <div id="inv-detail-col">
+        <div class="scroll-host" id="inv-detail-host">
+          <div id="inv-detail-scroll" class="scroll-content">
+            <div id="inv-detail-empty">Click an item or resource tile for details.</div>
+            <div id="inv-detail" class="hidden">
+              <div id="inv-detail-name"></div>
+              <div id="inv-detail-cat"></div>
+              <div id="inv-detail-desc"></div>
+              <div id="inv-detail-flavor"></div>
+              <div id="inv-detail-meta"></div>
+              <div id="inv-detail-used"></div>
+              <div id="inv-detail-notes"></div>
+              <div id="inv-detail-ai"></div>
+            </div>
+          </div>
+          <div class="scroll-track"><div class="scroll-thumb"></div></div>
+        </div>
+        <!-- Actions pinned under the scrolling detail: always reachable. -->
+        <div class="inv-detail-actions inv-hide" id="inv-detail-actions">
+          <button class="panel-btn accent-gold" id="inv-use-btn">USE</button>
+          <button class="panel-btn accent-red" id="inv-jett-btn">JETTISON</button>
+        </div>
         </div>
       </div>
-      <div id="inv-confirm" class="hidden">
-        <div id="inv-confirm-text"></div>
-        <div class="inv-detail-actions">
-          <button class="btn" id="inv-confirm-yes">OPEN THE AIRLOCK</button>
-          <button class="btn accent-gold" id="inv-confirm-no">KEEP IT</button>
-        </div>
-      </div>
+      <!-- DESIGN_SYSTEM close path 2 (the demo has no footer). -->
       <div id="inv-footer">
         <span id="inv-note">Materials and the crop don't use cargo slots.</span>
         <button class="btn accent-gold" id="inv-close" data-esc-close>Close</button>
+      </div>
+      <div id="inv-confirm" class="hidden">
+        <div class="jettison-panel" id="inv-jett-panel">
+          <div class="jettison-title">⚠ JETTISON?</div>
+          <div id="inv-confirm-text"></div>
+          <div id="inv-route-warn" class="hidden"></div>
+          <div class="jettison-count-row" id="inv-jett-count-row">
+            <button class="jettison-count-btn" id="inv-jett-minus" aria-label="One fewer">−</button>
+            <div id="inv-jett-count">1</div>
+            <button class="jettison-count-btn" id="inv-jett-plus" aria-label="One more">+</button>
+          </div>
+          <div class="jettison-buttons">
+            <button class="panel-btn" id="inv-confirm-no">CANCEL</button>
+            <button class="panel-btn accent-red" id="inv-jett-all">JETTISON ALL</button>
+            <button class="panel-btn accent-red" id="inv-confirm-yes">JETTISON 1</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1687,6 +1634,7 @@ body {
 <script src="engine/js/screens/market.js"></script>
 <script src="engine/js/screens/crew.js"></script>
 <script src="engine/js/screens/endings.js"></script>
+<script src="engine/js/screens/inventory.js"></script> <!-- cargo hold (parity batch 2) -->
 
 <script>
 'use strict';
@@ -1850,6 +1798,7 @@ const SAVED_FIELDS = [
   'flagFirstSeen', 'calledBack', 'lastCallbackLeg', // story-flag callbacks: when each choice happened, which the AI has brought up, when it last did
   'crisisPatient', 'scanIntelEvent', // an event saved at its entry comes back with its patient / SCAN intel
   'itemValues', // trade goods: each copy's value, rolled at pickup
+  'itemPickups', 'itemSeq', // inventory: each copy's NEW flag + pickup order (Recent sort), and the counter
   'artSeed', // scene_art.js picks backdrop + NPC-face variants from it: a reload shows the same images
   'traderAt', 'forcedEvent', // cruise.js: the trader-presence roll per stop; a during-wait event waiting on the player (a reload can't dodge either)
 ];
@@ -1874,6 +1823,7 @@ function writeSnapshot(key, extra) {
   try {
     const snap = Object.assign({ v: 1, ts: Date.now() }, extra || {});
     syncItemValues(); // every trade good in the hold is saved with its value
+    syncItemPickups(); // …and every copy with its NEW / pickup-order mark
     for (const k of SAVED_FIELDS) snap[k] = STATE[k];
     snap.visited = [...STATE.visited];
     snap.flags = [...STATE.flags];
@@ -1922,7 +1872,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null }; // traderAt/forcedEvent: cruise.js
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null }; // traderAt/forcedEvent: cruise.js
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -1936,6 +1886,7 @@ function loadRun(key) {
   STATE._itemDefs = null;
   ensureOrders(); // pre-orders saves get the defaults (seeded from cropGrowth.waterPlant)
   syncItemValues(); // pre-trade-value saves: the goods aboard are valued now, once, and saved with it
+  syncItemPickups(ITEM_PICKUP_OLD); // pre-mark saves: what's aboard is not NEW
   if (!('crewPending' in snap)) STATE.crewPending = {}; // pre-severity saves
   if (!('deprived' in snap)) STATE.deprived = {};
   if (!('crewIdentity' in snap)) STATE.crewIdentity = {};
@@ -2035,6 +1986,8 @@ function initState() {
   // choices unlock and the player sees that gating works.
   STATE.items = ['soil_sampler', 'gas_analyzer', 'repair_kit'];
   STATE.itemValues = {};
+  STATE.itemPickups = {}; STATE.itemSeq = 0;
+  syncItemPickups(ITEM_PICKUP_OLD);
   STATE.materials = {};
 
   // Active AI — pick MARV by default. Real ship/AI select screen is
@@ -2123,6 +2076,9 @@ function applySetupToState(sel) {
     for (let i = 0; i < (sb.medical_supplies || 0); i++) STATE.items.push('medkit');
     if (sb.item && !STATE.items.includes(sb.item)) STATE.items.push(sb.item);
   }
+  // Inventory marks: the launch loadout is not NEW (and oldest in Recent).
+  STATE.itemPickups = {}; STATE.itemSeq = 0;
+  syncItemPickups(ITEM_PICKUP_OLD);
 
   STATE.daysElapsed  = 0;
   STATE.visited      = new Set();
@@ -2177,14 +2133,19 @@ function itemDef(shortId) {
   return STATE._itemDefs[shortId] || null;
 }
 
-function cargoCapacity() {
+function cargoCapacity() { const p = cargoCapacityParts(); return p.base + p.bonus; }
+// { base, bonus }: the hold's base plus every held upgrade's items.json
+// slot_bonus (Bible §14.1 slots_total; the cargo bay's +5 — it was a
+// hard-coded 5). The inventory's slot readout breaks it down.
+function cargoCapacityParts() {
   // map_rules per-trail cargo_capacity (8 / 10 / 12 — longer voyages
   // pack bigger holds), falling back to the ship's base.
   const rules = MOD.map_rules && MOD.map_rules.trails && MOD.map_rules.trails[STATE.trail];
   const base = (rules && rules.cargo_capacity) || (MOD.ships && MOD.ships.ships && MOD.ships.ships[0] && MOD.ships.ships[0].base_stats
     && MOD.ships.ships[0].base_stats.cargo_capacity_base) || 8;
-  const upgrade = STATE.items.includes('insulated_cargo_bay') ? 5 : 0;
-  return base + upgrade;
+  let bonus = 0;
+  for (const id of new Set(STATE.items)) { const d = itemDef(id); if (d && Number.isFinite(d.slot_bonus)) bonus += d.slot_bonus; }
+  return { base, bonus };
 }
 
 /* Would the hold still fit without one `id`? Only the cargo bay can
@@ -2209,20 +2170,24 @@ function canRemoveItem(id) {
 }
 
 /* Sum of slots used by everything in STATE.items. Stackables author
-   cargo_slots_per_10 (N slots per 10 units, rounded up per stack);
-   everything else authors a flat cargo_slots. Unknown ids cost 1. */
+   cargo_slots_per_10 and cost ceil(count × per10 / 10) per stack — the
+   Bible/demo per-unit rule (owner ruling 2026-10-11: one fuel cell is
+   0.3 of a slot → 1, not a whole 3-slot block; was ceil(n/10) × per10).
+   Everything else authors a flat cargo_slots. Unknown ids cost 1. */
+function itemSlotsFor(id, n) {
+  const def = itemDef(id);
+  if (!def) return n;
+  if (def.cargo_slots_per_10) return Math.ceil(n * def.cargo_slots_per_10 / 10 - 1e-9);
+  return (def.cargo_slots || 0) * n;
+}
 function cargoSlotsUsed() {
   const counts = {};
   for (const id of STATE.items) counts[id] = (counts[id] || 0) + 1;
   let used = 0;
-  for (const [id, n] of Object.entries(counts)) {
-    const def = itemDef(id);
-    if (!def) { used += n; continue; }
-    if (def.cargo_slots_per_10) used += Math.ceil(n / 10) * def.cargo_slots_per_10;
-    else used += (def.cargo_slots || 0) * n;
-  }
+  for (const [id, n] of Object.entries(counts)) used += itemSlotsFor(id, n);
   return used;
 }
+window.itemSlotsFor = itemSlotsFor; window.cargoCapacityParts = cargoCapacityParts;
 
 /* Grants an item respecting capacity. Returns true if it fit; false
    (plus an honest log line) if the hold is full and it was left behind.
@@ -2233,8 +2198,10 @@ function grantItem(shortId) {
   // with its own rolled value (Bible §14.2) — not "only one aboard".
   // Refusing the second copy swallowed the trader's 15g mystery crate.
   syncItemValues(); // settle any copy that left by a path that didn't say which
+  syncItemPickups();
   STATE.items.push(shortId);
-  if (shortId !== 'insulated_cargo_bay' && cargoSlotsUsed() > cargoCapacity()) {
+  const capDef = itemDef(shortId);
+  if (!(capDef && capDef.slot_bonus) && cargoSlotsUsed() > cargoCapacity()) {
     STATE.items.pop();
     const def = itemDef(shortId);
     if (typeof window.pushCruiseLog === 'function') {
@@ -2243,8 +2210,40 @@ function grantItem(shortId) {
     return false;
   }
   syncItemValues(); // a trade good's value is rolled here, at pickup
+  syncItemPickups(); // …and it joins the hold as NEW, newest in the Recent order
   return true;
 }
+
+/* ────────────────────────────────────────────────────────────────
+   PICKUP MARKS (inventory parity, batch 2): the NEW badge and the
+   Recent sort. STATE.itemPickups[shortId] = one { s, n } per copy in
+   STATE.items, in pickup order (the same copy indexing as
+   STATE.itemValues): s = pickup sequence (STATE.itemSeq), n = still NEW
+   (unseen — cleared when its tile is clicked). No day or place: the
+   owner dropped provenance (2026-10-11). syncItemPickups() is the
+   reconciler — a copy that left by a path that didn't say which takes
+   the newest mark; one that arrived (grantItem, a fabricator claim) is
+   marked now; takeItemCopy removes the exact mark.
+   ──────────────────────────────────────────────────────────────── */
+const ITEM_PICKUP_OLD = { s: 0, n: false }; // launch loadout / pre-mark saves: oldest, not NEW
+function syncItemPickups(pad) {
+  if (!STATE.itemPickups || typeof STATE.itemPickups !== 'object' || Array.isArray(STATE.itemPickups)) STATE.itemPickups = {};
+  const counts = {};
+  for (const id of STATE.items) counts[id] = (counts[id] || 0) + 1;
+  for (const id of Object.keys(STATE.itemPickups)) if (!counts[id]) delete STATE.itemPickups[id];
+  for (const [id, n] of Object.entries(counts)) {
+    const list = (Array.isArray(STATE.itemPickups[id]) ? STATE.itemPickups[id] : []).filter(o => o && typeof o === 'object');
+    if (list.length > n) list.length = n;
+    while (list.length < n) {
+      if (pad) list.push(Object.assign({}, pad));
+      else { STATE.itemSeq = (STATE.itemSeq || 0) + 1; list.push({ s: STATE.itemSeq, n: true }); }
+    }
+    STATE.itemPickups[id] = list;
+  }
+  return STATE.itemPickups;
+}
+function itemPickupsOf(shortId) { return (syncItemPickups()[shortId] || []).slice(); }
+Object.assign(window, { syncItemPickups, itemPickupsOf });
 
 /* ────────────────────────────────────────────────────────────────
    TRADE-GOOD VALUES (owner ruling 2026-10-11). items.json sell_range
@@ -2305,12 +2304,15 @@ function itemValueRangeLabel(shortId, mult) {
 // Removes copy k of shortId (and its value). Returns the value it carried (null if none).
 function takeItemCopy(shortId, k) {
   syncItemValues();
+  syncItemPickups(); // both ledgers settled before the copy leaves
   const vals = STATE.itemValues[shortId];
   let i = -1, seen = -1;
   for (let j = 0; j < STATE.items.length; j++) if (STATE.items[j] === shortId && ++seen === (k || 0)) { i = j; break; }
   if (i < 0) i = STATE.items.lastIndexOf(shortId);
   if (i < 0) return null;
   STATE.items.splice(i, 1);
+  const marks = STATE.itemPickups[shortId];
+  if (marks && marks.length) marks.splice(Number.isInteger(k) && k >= 0 && k < marks.length ? k : marks.length - 1, 1);
   let v = null;
   if (vals && vals.length) {
     const at = Number.isInteger(k) && k >= 0 && k < vals.length ? k : vals.length - 1;
@@ -2870,222 +2872,8 @@ function fitGameToViewport() {
 fitGameToViewport();
 window.addEventListener('resize', fitGameToViewport);
 
-/* ── Cargo hold overlay ──────────────────────────────────────────
-   Minimal management UI for full cargo enforcement: grouped item
-   list with per-row jettison. Wired to Cruise's INV button. */
-/* Inventory — demo-inventory.html canon: tabbed sprite grid (GEAR =
-   cargo items, RESOURCES = material stocks), tile → detail panel,
-   jettison behind a confirm dialog. Capacity math unchanged. */
-let _invTab = 'gear';
-let _invSelected = null;
-let _invSelectedCopy = null; // trade goods with a rolled value: which copy (index into STATE.itemValues[id]) — one tile per copy
-let _invJettisonPending = null;
-let _invJettisonCopy = null; // which copy of a rolled-value trade good goes out the airlock
-// Item art lives in two folders: upgrades in sprites/cargo/upgrades
-// (insulated_cargo_bay's file is extra_cargo.png), everything else in
-// sprites/cargo/items. null when no art exists yet (emoji fallback).
-const UPGRADE_SPRITES = { expanded_fuel_tank: 'expanded_fuel_tank', hull_plating: 'hull_plating', insulated_cargo_bay: 'extra_cargo', drive_coil: 'drive_coil', o2_recycler: 'o2_recycler', repair_fabricator: 'repair_fabricator', atmospheric_condenser: 'atmospheric_condenser', shield_module_upgrade: 'shield_module_upgrade' };
-const NO_ITEM_ART = {}; // ids awaiting art (resources/ART_REQUESTS.md) — emoji until it lands
-function itemSpritePath(id) {
-  if (UPGRADE_SPRITES[id]) return 'sprites/cargo/upgrades/' + UPGRADE_SPRITES[id] + '.png';
-  if (NO_ITEM_ART[id]) return null;
-  return 'sprites/cargo/items/' + id + '.png';
-}
-function invIconHtml(id, isMaterial, px) {
-  const path = isMaterial ? 'sprites/cargo/materials/' + id + '.png' : itemSpritePath(id);
-  if (!path) return '<span class="inv-tile-emoji">' + (NO_ITEM_ART[id] || '📦') + '</span>';
-  return '<img src="' + path + '" alt="" onerror="this.outerHTML=\'<span class=&quot;inv-tile-emoji&quot;>📦</span>\'" style="width:inherit;height:inherit;max-width:56px;max-height:56px;">';
-}
-function renderInventory() {
-  _invJettisonPending = null;
-  const used = cargoSlotsUsed(), cap = cargoCapacity();
-  const slotsEl = document.getElementById('inv-slots');
-  slotsEl.textContent = `SLOTS ${used} / ${cap}`;
-  slotsEl.classList.toggle('full', used >= cap);
-  document.querySelectorAll('.inv-tab').forEach(t =>
-    t.classList.toggle('active', t.dataset.tab === _invTab));
-  const grid = document.getElementById('inv-grid');
-  grid.innerHTML = '';
-  document.getElementById('inv-confirm').classList.add('hidden');
-
-  let entries;
-  if (_invTab === 'gear') {
-    const counts = {};
-    for (const id of STATE.items) counts[id] = (counts[id] || 0) + 1;
-    // A trade good with a rolled value is one tile per copy: each copy is
-    // its own instance with its own value (sell / jettison that copy).
-    entries = Object.keys(counts).sort().flatMap(id => {
-      const vals = itemValuesOf(id);
-      if (!vals.length) return [{ id, n: counts[id], material: false }];
-      return vals.map((value, copy) => ({ id, n: 1, material: false, copy, value }));
-    });
-  } else {
-    entries = Object.keys(STATE.materials || {}).filter(m => STATE.materials[m] > 0)
-      .sort().map(id => ({ id, n: STATE.materials[id], material: true }));
-  }
-  if (!entries.length) {
-    grid.innerHTML = '<div class="inv-empty" style="grid-column:1/-1">' +
-      (_invTab === 'gear' ? 'The hold is empty. It echoes, professionally.'
-                          : 'No raw materials aboard. The fabricator sulks.') + '</div>';
-    document.getElementById('inv-detail').classList.add('hidden');
-    _invSelected = null;
-    return;
-  }
-  const isSel = en => _invSelected === en.id && (en.copy == null || en.copy === (_invSelectedCopy || 0));
-  for (const en of entries) {
-    const tile = document.createElement('div');
-    tile.className = 'inv-tile' + (isSel(en) ? ' selected' : '');
-    // Rolled-value copies wear their value (Bible §14 tile: hidden value = ??).
-    const known = en.copy != null && itemValueKnown(en.id);
-    tile.innerHTML = invIconHtml(en.id, en.material) +
-      (en.n > 1 ? '<span class="inv-tile-count">×' + en.n + '</span>' : '') +
-      (en.copy != null ? '<span class="inv-tile-count inv-tile-value' + (known ? '' : ' unknown') + '">' + (known ? en.value + 'g' : '??') + '</span>' : '');
-    // Hover (.ui-tip): the name, plus a rolled-value copy's worth.
-    tile.dataset.tipTitle = (((en.material ? materialDefOf(en.id) : itemDef(en.id)) || {}).name || prettyItem(en.id)).toUpperCase();
-    if (en.copy != null) tile.dataset.tipDescription = known ? 'Worth ' + en.value + 'g.' : 'Worth ' + itemValueRangeLabel(en.id) + ' (unappraised).';
-    tile.addEventListener('click', () => { _invSelected = en.id; _invSelectedCopy = en.copy != null ? en.copy : null; renderInvDetail(en); renderInventory(); });
-    grid.appendChild(tile);
-  }
-  // A selected copy that's gone (sold / jettisoned the last of several) falls back to the id's first tile.
-  const sel = entries.find(isSel) || entries.find(e => e.id === _invSelected);
-  if (sel && sel.copy != null) _invSelectedCopy = sel.copy;
-  if (sel) renderInvDetail(sel);
-  else document.getElementById('inv-detail').classList.add('hidden');
-}
-/* Consumables the player can use from the hold (items.json "on use"
-   effects). can() → null when usable, else the reason it isn't. */
-// Adds to a resource up to its cap; returns what actually went in (USE lines report that).
-function invAddRes(k, n) { const b = STATE.resources[k]; STATE.resources[k] = clamp(b + n, 0, resMax(k)); return Math.round(STATE.resources[k] - b); }
-function worstHurtCrew() {
-  let worst = null;
-  for (const r of STATE.crew) if (crewHPOf(r) < 100 && (!worst || crewHPOf(r) < crewHPOf(worst))) worst = r;
-  return worst;
-}
-const ITEM_USE = {
-  ration_brick:   { label: '+10 FOOD',  can: () => STATE.resources.food  >= resMax('food') ? 'Food stores are full' : null,  use: () => { return 'Ration brick unwrapped. +' + invAddRes('food', 10) + ' food. Nobody describes the flavour.'; } },
-  water_canister: { label: '+10 H2O',   can: () => STATE.resources.water >= 100 ? 'Water tanks are full' : null,  use: () => { return 'Water canister emptied into the tanks. +' + invAddRes('water', 10) + ' water.'; } },
-  fuel_cell:      { label: '+15 FUEL',  can: () => STATE.resources.fuel  >= resMax('fuel') ? 'Fuel tank is full' : null, use: () => { return 'Fuel cell slotted in. +' + invAddRes('fuel', 15) + ' fuel.'; } },
-  repair_kit:     { label: '+10 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { return 'Repair kit spent on the worst seams. +' + invAddRes('hull', 10) + ' hull.'; } },
-  hull_patch:     { label: '+15 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { return 'Hull patch applied. +' + invAddRes('hull', 15) + ' hull. It holds. Probably.'; } },
-  o2_canister:    { label: '+14 O2',    can: () => STATE.resources.o2    >= 100 ? 'O2 is full' : null,               use: () => { return 'O2 canister vented into the air supply. +' + invAddRes('o2', 14) + ' O2.'; } },
-  medkit:         { label: 'HEAL',      can: () => worstHurtCrew() ? null : 'Nobody is hurt',
-                    use: () => { const r = worstHurtCrew(); STATE.crewHP[r] = 100; delete crewPendingOf()[r]; return 'Medkit opened. ' + crewNameOf(r) + ' is patched up and back on their feet.'; } },
-  crop_treatment: { label: '+30 CROP',  can: () => !STATE.cropGrowth || STATE.cropGrowth.health <= 0 ? 'Nothing left to treat' : (STATE.cropGrowth.health >= 100 && !STATE.cropGrowth.pest ? 'The crop is healthy' : null),
-                    use: () => { const cg = STATE.cropGrowth; const had = cg.pest; if (had) clearCropPest(); cg.health = Math.min(100, cg.health + 30); return 'Crop treatment applied. +30 crop health' + (had ? '; pests cleared.' : '.'); } },
-  // items.json: "reveals the type of one future node… consumed on use" —
-  // a good SCAN's worth: the next stop(s) locked in and reported.
-  star_chart_fragment: { label: 'SCOUT', can: () => { const n = STATE.byId && STATE.byId[STATE.currentId]; return n && connectionsOf(n).length ? null : 'Nothing left to chart'; },
-                    use: () => { const r = scoutAhead(1, false); return 'Star chart fragment matched to the route. ' + (r.length ? r.join(' · ') : 'Nothing ahead but the destination.'); } },
-};
-// materials.json entry for a material id (the detail panel used to show
-// the raw id and a generic line — parity pass 2026-10-11).
-function materialDefOf(id) {
-  return ((MOD.materials && MOD.materials.materials) || []).find(m => m.id === id) || null;
-}
-function renderInvDetail(en) {
-  const box = document.getElementById('inv-detail');
-  box.classList.remove('hidden');
-  const def = en.material ? null : itemDef(en.id);
-  const mdef = en.material ? materialDefOf(en.id) : null;
-  document.getElementById('inv-detail-icon').innerHTML = invIconHtml(en.id, en.material);
-  document.getElementById('inv-detail-name').textContent =
-    ((def && def.name) || (mdef && mdef.name) || prettyItem(en.id)) + (en.n > 1 ? '  ×' + en.n : '');
-  const bits = [];
-  if (en.material) bits.push('Raw material · no cargo slot');
-  else if (def) {
-    bits.push(def.cargo_slots_per_10 ? Math.ceil(en.n / 10) * def.cargo_slots_per_10 + ' slot(s)' : ((def.cargo_slots || 0) * en.n) + ' slot(s)');
-    if (en.copy != null) {
-      // Rolled at pickup: the exact figure needs a spectrometer aboard.
-      if (itemValueKnown(en.id)) bits.push('trader pays ' + en.value + 'g · fence ' + fenceValueOf(en.value) + 'g');
-      else bits.push('trader pays ' + itemValueRangeLabel(en.id) + ' · fence ' + itemValueRangeLabel(en.id, true) + ' · exact value: needs a spectrometer');
-    } else if (def.base_price) bits.push('trader pays ~' + Math.round(def.base_price * 2 / 3) + 'g');
-  }
-  document.getElementById('inv-detail-meta').textContent = bits.join(' · ');
-  let desc = en.material ? ((mdef && mdef.description) || 'Feedstock for the fabricator. Sharp edges included at no extra charge.')
-                         : ((def && def.description) || 'Unlabeled. Confident.');
-  // Xenobiologist Field Analysis payoff — the finding travels with the item.
-  if (def && def.analysis && STATE.flags.has('analyzed_' + en.id)) desc += '  ◆ FIELD ANALYSIS: ' + def.analysis;
-  // The spectrometer (items.json: "identifies unknown items") reads the same finding.
-  else if (def && def.analysis && STATE.items.includes('spectrometer')) desc += '  ◆ SPECTROMETER: ' + def.analysis;
-  document.getElementById('inv-detail-desc').textContent = desc;
-  // items.json passive_flavor — the item's own aside, aboard.
-  document.getElementById('inv-detail-flavor').textContent = (def && def.passive_flavor) || '';
-  const jett = document.getElementById('inv-jett-btn');
-  jett.style.display = en.material ? 'none' : '';
-  const useBtn = document.getElementById('inv-use-btn');
-  const iu = !en.material && ITEM_USE[en.id];
-  useBtn.style.display = iu ? '' : 'none';
-  if (iu) {
-    const why = iu.can();
-    useBtn.textContent = 'USE · ' + iu.label;
-    useBtn.disabled = !!why;
-    if (why) { useBtn.dataset.tipDescription = why; useBtn.dataset.tipTone = 'danger'; }
-    else { delete useBtn.dataset.tipDescription; delete useBtn.dataset.tipTone; }
-  }
-}
-(function wireInventoryChrome() {
-  document.querySelectorAll('.inv-tab').forEach(t =>
-    t.addEventListener('click', () => {
-      if (t.dataset.tab === _invTab) return; // re-clicking the active tab must not wipe the selection (ui_sweep catch)
-      _invTab = t.dataset.tab; _invSelected = null; renderInventory();
-    }));
-  document.getElementById('inv-jett-btn').addEventListener('click', () => {
-    if (!_invSelected) return;
-    const def = itemDef(_invSelected);
-    const blocked = STATE.items.includes(_invSelected) && !canRemoveItem(_invSelected);
-    _invJettisonPending = blocked ? null : _invSelected;
-    _invJettisonCopy = _invSelectedCopy;
-    document.getElementById('inv-confirm-text').textContent = blocked
-      ? 'The ' + ((def && def.name) || prettyItem(_invSelected)) + ' is holding cargo. Clear some space first.'
-      : 'Jettison ' + ((def && def.name) || prettyItem(_invSelected)) + '? The airlock does not do refunds.';
-    document.getElementById('inv-confirm-yes').classList.toggle('hidden', blocked);
-    document.getElementById('inv-confirm').classList.remove('hidden');
-  });
-  document.getElementById('inv-use-btn').addEventListener('click', () => {
-    const id = _invSelected, iu = id && ITEM_USE[id];
-    if (!iu || iu.can() || !STATE.items.includes(id)) return;
-    STATE.items.splice(STATE.items.indexOf(id), 1);
-    const msg = iu.use();
-    renderHUD();
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + msg);
-    if (!STATE.items.includes(id)) _invSelected = null;
-    renderInventory();
-    if (typeof window.renderCruise === 'function' && document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();
-    if (typeof window.refreshStopMenu === 'function') window.refreshStopMenu();
-  });
-  document.getElementById('inv-confirm-no').addEventListener('click', () => {
-    _invJettisonPending = null;
-    document.getElementById('inv-confirm').classList.add('hidden');
-  });
-  document.getElementById('inv-confirm-yes').addEventListener('click', () => {
-    // Consume the confirmation before mutating or repainting. A physical
-    // double-click must still authorize exactly one unit through the airlock.
-    const id = _invJettisonPending;
-    _invJettisonPending = null;
-    if (!id) return;
-    const def = itemDef(id);
-    const idx = STATE.items.indexOf(id);
-    if (idx < 0 || !canRemoveItem(id)) return;
-    if (sellRangeOf(id)) takeItemCopy(id, _invJettisonCopy); // that copy, and its value, go together
-    else STATE.items.splice(idx, 1);
-    _invJettisonCopy = null;
-    renderHUD();
-    if (typeof window.pushCruiseLog === 'function') {
-      window.pushCruiseLog('◆ Jettisoned: ' + ((def && def.name) || id) + '. It tumbles off into the dark, unemployed.');
-    }
-    if (!STATE.items.includes(id)) _invSelected = null;
-    renderInventory();
-  });
-})();
-function openInventory() {
-  showOverlay('overlay-inventory');
-  renderInventory();
-}
-// Every close path (✕, CLOSE, backdrop, Esc) — jettisons persist.
-function closeInventory() {
-  hideOverlay('overlay-inventory');
-  if (typeof saveRun === 'function') saveRun();
-}
+/* Cargo hold overlay: engine/js/screens/inventory.js (parity batch 2,
+   demo-inventory.html canon) — openInventory / renderInventory / ITEM_USE. */
 
 /* ── Ship's Log overlay ──────────────────────────────────────────
    Browsable journal of every log entry this run (day-stamped, newest
@@ -5960,7 +5748,7 @@ function endRun(end) {
   document.getElementById('overlay-shipslog').addEventListener('click', e => { if (e.target.id === 'overlay-shipslog') hideOverlay('overlay-shipslog'); });
   document.getElementById('slog-expand-modal').addEventListener('click', e => { if (e.target.id === 'slog-expand-modal') closeShipsLogExpand(); });
   document.getElementById('slog-x').addEventListener('click', () => hideOverlay('overlay-shipslog'));
-  ['inv-grid-host', 'slog-rows-host', 'slog-expand-host'].forEach(id => wireCustomScroll(document.getElementById(id)));
+  ['inv-grid-host', 'inv-detail-host', 'slog-rows-host', 'slog-expand-host'].forEach(id => wireCustomScroll(document.getElementById(id)));
   document.getElementById('btn-pause').addEventListener('click', () => {
     if (typeof PauseMenu !== 'undefined' && !PauseMenu.isOpen()) PauseMenu.open();
   });

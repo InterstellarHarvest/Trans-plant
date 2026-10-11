@@ -1,0 +1,668 @@
+'use strict';
+/* ────────────────────────────────────────────────────────────────
+   CARGO HOLD — resources/demo-inventory.html canon (parity batch 2,
+   2026-10-11; moved out of index.html). Styles in
+   resources/screen-inventory.css; markup is #overlay-inventory in
+   index.html. Cruise's INV button calls openInventory().
+
+   What the hold shows is the engine's own state, never mock data:
+   • header — SLOTS used / capacity (cargoSlotsUsed / cargoCapacity:
+     per-unit stackable rule, owner ruling 2026-10-11) with amber ≥90%,
+     a pulse at the cap, a flash when it changes and a breakdown tip;
+     the gold readout rolls to STATE.goldAmount.
+   • SHIP RESOURCES — fuel / food / H2O tiles with the 10-segment gauge
+     and LEVEL / USE / EMPTY from the real burn (legTravelCost for fuel:
+     pace × fuelBurnMult; food: rations × foodBurnMult × mouthsMult;
+     water: ORDERS_BASE.waterPerDay). Click → detail with IN CARGO and an
+     AI line (flavor_pools ai_universal.cargo_hold.resource, 5 voices).
+   • GEAR / MATERIALS / UPGRADES tabs (1/2/3 keys), SORT (Recent / A–Z /
+     Slot cost / Sell price), GEAR sections, NEW badges + Recent order
+     from STATE.itemPickups (index.html; provenance was dropped by the
+     owner 2026-10-11 — no day/place is recorded or shown).
+   • detail column — category, COUNT / SLOT COST / SELL PRICE,
+     USED FOR (events' requires_item / gate.item), ⇄ NOTES for story
+     items no trader buys, an AI line (cargo_hold.category).
+   • jettison — −N+ picker, JETTISON ALL, the red ⚠ confirm (with a
+     "Required for:" line only when an event needs the item to fire),
+     the tile zoom-fade + poof. A rolled-value copy leaves with its value.
+
+   Load order: a classic script after the markup and before index.html's
+   main inline script — top-level declarations here are page globals
+   (tests and market.js/combat.js read itemSpritePath, ITEM_USE, …);
+   MOD/STATE and index.html helpers resolve at call time only.
+   ──────────────────────────────────────────────────────────────── */
+
+// Item art lives in two folders: upgrades in sprites/cargo/upgrades
+// (insulated_cargo_bay's file is extra_cargo.png), everything else in
+// sprites/cargo/items. null when no art exists yet (emoji fallback).
+const UPGRADE_SPRITES = { expanded_fuel_tank: 'expanded_fuel_tank', hull_plating: 'hull_plating', insulated_cargo_bay: 'extra_cargo', drive_coil: 'drive_coil', o2_recycler: 'o2_recycler', repair_fabricator: 'repair_fabricator', atmospheric_condenser: 'atmospheric_condenser', shield_module_upgrade: 'shield_module_upgrade' };
+const NO_ITEM_ART = {}; // ids awaiting art (resources/ART_REQUESTS.md) — emoji until it lands
+function itemSpritePath(id) {
+  if (UPGRADE_SPRITES[id]) return 'sprites/cargo/upgrades/' + UPGRADE_SPRITES[id] + '.png';
+  if (NO_ITEM_ART[id]) return null;
+  return 'sprites/cargo/items/' + id + '.png';
+}
+function invIconHtml(id, isMaterial) {
+  const path = isMaterial ? 'sprites/cargo/materials/' + id + '.png' : itemSpritePath(id);
+  if (!path) return '<span class="inv-tile-emoji">' + (NO_ITEM_ART[id] || '📦') + '</span>';
+  return '<img src="' + path + '" alt="" onerror="this.outerHTML=\'<span class=&quot;inv-tile-emoji&quot;>📦</span>\'">';
+}
+// materials.json entry for a material id.
+function materialDefOf(id) {
+  return ((MOD.materials && MOD.materials.materials) || []).find(m => m.id === id) || null;
+}
+
+/* ── Consumables the player can use from the hold (items.json "on use"
+   effects). can() → null when usable, else the reason it isn't. ── */
+// Adds to a resource up to its cap; returns what actually went in (USE lines report that).
+function invAddRes(k, n) { const b = STATE.resources[k]; STATE.resources[k] = clamp(b + n, 0, resMax(k)); return Math.round(STATE.resources[k] - b); }
+function worstHurtCrew() {
+  let worst = null;
+  for (const r of STATE.crew) if (crewHPOf(r) < 100 && (!worst || crewHPOf(r) < crewHPOf(worst))) worst = r;
+  return worst;
+}
+const ITEM_USE = {
+  ration_brick:   { label: '+10 FOOD',  can: () => STATE.resources.food  >= resMax('food') ? 'Food stores are full' : null,  use: () => { return 'Ration brick unwrapped. +' + invAddRes('food', 10) + ' food. Nobody describes the flavour.'; } },
+  water_canister: { label: '+10 H2O',   can: () => STATE.resources.water >= 100 ? 'Water tanks are full' : null,  use: () => { return 'Water canister emptied into the tanks. +' + invAddRes('water', 10) + ' water.'; } },
+  fuel_cell:      { label: '+15 FUEL',  can: () => STATE.resources.fuel  >= resMax('fuel') ? 'Fuel tank is full' : null, use: () => { return 'Fuel cell slotted in. +' + invAddRes('fuel', 15) + ' fuel.'; } },
+  repair_kit:     { label: '+10 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { return 'Repair kit spent on the worst seams. +' + invAddRes('hull', 10) + ' hull.'; } },
+  hull_patch:     { label: '+15 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { return 'Hull patch applied. +' + invAddRes('hull', 15) + ' hull. It holds. Probably.'; } },
+  o2_canister:    { label: '+14 O2',    can: () => STATE.resources.o2    >= 100 ? 'O2 is full' : null,               use: () => { return 'O2 canister vented into the air supply. +' + invAddRes('o2', 14) + ' O2.'; } },
+  medkit:         { label: 'HEAL',      can: () => worstHurtCrew() ? null : 'Nobody is hurt',
+                    use: () => { const r = worstHurtCrew(); STATE.crewHP[r] = 100; delete crewPendingOf()[r]; return 'Medkit opened. ' + crewNameOf(r) + ' is patched up and back on their feet.'; } },
+  crop_treatment: { label: '+30 CROP',  can: () => !STATE.cropGrowth || STATE.cropGrowth.health <= 0 ? 'Nothing left to treat' : (STATE.cropGrowth.health >= 100 && !STATE.cropGrowth.pest ? 'The crop is healthy' : null),
+                    use: () => { const cg = STATE.cropGrowth; const had = cg.pest; if (had) clearCropPest(); cg.health = Math.min(100, cg.health + 30); return 'Crop treatment applied. +30 crop health' + (had ? '; pests cleared.' : '.'); } },
+  // items.json: "reveals the type of one future node… consumed on use" —
+  // a good SCAN's worth: the next stop(s) locked in and reported.
+  star_chart_fragment: { label: 'SCOUT', can: () => { const n = STATE.byId && STATE.byId[STATE.currentId]; return n && connectionsOf(n).length ? null : 'Nothing left to chart'; },
+                    use: () => { const r = scoutAhead(1, false); return 'Star chart fragment matched to the route. ' + (r.length ? r.join(' · ') : 'Nothing ahead but the destination.'); } },
+};
+
+/* ── View state ─────────────────────────────────────────────── */
+let _invTab = 'gear';            // 'gear' | 'materials' | 'upgrades'
+let _invSelected = null;         // selected item / material id
+let _invSelectedCopy = null;     // a rolled-value trade good: which copy (index into STATE.itemValues[id]) — one tile per copy
+let _invSelectedRes = null;      // a SHIP RESOURCES tile: 'fuel' | 'food' | 'water'
+let _invSort = 'recent';
+let _invJettisonPending = null;
+let _invJettisonCopy = null;     // which copy of a rolled-value trade good goes out the airlock
+let _invJettisonCount = 1;
+let _invJettisonMax = 1;
+let _invAi = { key: null, line: '' };       // the AI line stays put across repaints; re-picked per click
+let _invReadout = { used: null, cap: null }; // last slot numbers shown (flash on change)
+let _invGold = { shown: 0, timer: null };   // rolling gold counter (demo: rolls from 0 on the first open)
+let _invRerender = null;
+
+const INV_SORT_LABELS = { recent: 'Recent', alpha: 'A–Z', slots: 'Slot cost', price: 'Sell price' };
+const INV_EMPTY = { gear: '"Bare."', materials: '"Nothing mined yet."', upgrades: '"Stock configuration."' };
+const INV_GEAR_GROUPS = [
+  { label: 'Instruments', cat: 'INSTRUMENT' },
+  { label: 'Consumables', cat: 'CONSUMABLE' },
+  { label: 'Curiosities', cat: 'CURIOSITY' },
+  { label: 'Story',       cat: 'STORY' },
+];
+// The 64×64 tank sprites + the gauge rectangle inside each (demo RESOURCES,
+// DESIGN_SYSTEM cargo/ convention). `item` = the cargo that refills it.
+const INV_RESOURCES = [
+  { key: 'fuel',  label: 'FUEL', sprite: 'sprites/cargo/cargo_fuel.png',  gauge: { x: 27, y: 18, w: 10, h: 35 }, item: 'fuel_cell',
+    desc: 'Burns on every leg flown; a faster pace burns more. A fuel cell from the hold adds 15.' },
+  { key: 'food',  label: 'FOOD', sprite: 'sprites/cargo/cargo_food.png',  gauge: { x: 27, y: 14, w: 10, h: 35 }, item: 'ration_brick',
+    desc: 'The crew eats every day; RATIONS in Orders set how much, and every mouth aboard counts. Harvests, foraging and ration bricks (+10) refill it.' },
+  { key: 'water', label: 'H2O',  sprite: 'sprites/cargo/cargo_water.png', gauge: { x: 27, y: 22, w: 10, h: 33 }, item: 'water_canister',
+    desc: 'One tank for crew and crop; the water split in Orders decides who drinks. A water canister adds 10.' },
+];
+
+/* ── Classification (GAME_BIBLE §14: the filing system IS the tab) ── */
+function invIsUpgrade(id) { const d = itemDef(id); return !!(d && (d.item_behavior || []).includes('upgrade')); }
+// Bible §14.2 authoring categories, read off the item's own data.
+function invItemCategory(id) {
+  const d = itemDef(id);
+  if (!d) return 'INSTRUMENT';
+  const beh = d.item_behavior || [], tags = d.tags || [];
+  const oneUse = !!d.one_use || beh.includes('one_use');
+  if (beh.includes('upgrade')) return 'UPGRADE';
+  if (tags.includes('story') || (!(d.base_price > 0) && !sellRangeOf(id) && !oneUse)) return 'STORY';
+  if (tags.includes('curiosity') || tags.includes('trade_good')) return 'CURIOSITY';
+  if (oneUse) return 'CONSUMABLE';
+  return 'INSTRUMENT';
+}
+function invNameOf(id, material) {
+  const d = material ? materialDefOf(id) : itemDef(id);
+  return (d && d.name) || prettyItem(id);
+}
+
+/* ── Prices: what a station trader pays (market.js stationBuyPrice —
+   the one source), the rolled value of a trade-good copy, or none. ── */
+function invPrice(en) {
+  if (en.copy != null) {
+    const r = sellRangeOf(en.id);
+    if (itemValueKnown(en.id)) return { num: en.value, label: en.value + 'g' };
+    return { num: r ? (r[0] + r[1]) / 2 : 0, label: '??', unknown: true };
+  }
+  const p = typeof window.stationBuyPrice === 'function' ? window.stationBuyPrice(en.id) : null;
+  if (p == null) return { num: 0, label: '—', none: true };
+  return { num: p, label: p + 'g' };
+}
+function invTileSlots(en) {
+  if (en.material) return 0; // materials live in their own stores (not cargo)
+  return itemSlotsFor(en.id, en.n);
+}
+
+/* ── Entries per tab ────────────────────────────────────────── */
+function invEntries(tab) {
+  if (tab === 'materials') {
+    const order = ((MOD.materials && MOD.materials.materials) || []).map(m => m.id);
+    return Object.keys(STATE.materials || {}).filter(m => STATE.materials[m] > 0)
+      .sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99))
+      .map((id, i) => ({ id, n: STATE.materials[id], material: true, seq: -i, isNew: false }));
+  }
+  syncItemPickups();
+  const counts = {};
+  for (const id of STATE.items) counts[id] = (counts[id] || 0) + 1;
+  const wantUp = tab === 'upgrades';
+  return Object.keys(counts).filter(id => invIsUpgrade(id) === wantUp).flatMap(id => {
+    const marks = itemPickupsOf(id);
+    const vals = itemValuesOf(id);
+    // A trade good with a rolled value is one tile per copy: each copy is
+    // its own instance with its own value (sell / jettison that copy).
+    if (vals.length) return vals.map((value, copy) => ({ id, n: 1, material: false, copy, value,
+      seq: (marks[copy] && marks[copy].s) || 0, isNew: !!(marks[copy] && marks[copy].n) }));
+    return [{ id, n: counts[id], material: false,
+      seq: Math.max(0, ...marks.map(o => o.s || 0)), isNew: marks.some(o => o.n) }];
+  });
+}
+function invSorted(list) {
+  const name = en => invNameOf(en.id, en.material);
+  const byName = (a, b) => name(a).localeCompare(name(b)) || ((a.copy || 0) - (b.copy || 0));
+  const cmp = {
+    recent: (a, b) => (b.seq - a.seq) || byName(a, b),
+    alpha:  byName,
+    slots:  (a, b) => (invTileSlots(b) - invTileSlots(a)) || byName(a, b),
+    price:  (a, b) => (invPrice(b).num - invPrice(a).num) || byName(a, b),
+  }[_invSort] || byName;
+  return list.slice().sort(cmp);
+}
+const invKey = en => en.id + (en.copy != null ? '#' + en.copy : '');
+
+/* ── Rendering ──────────────────────────────────────────────── */
+function renderInventory() {
+  _invJettisonPending = null;
+  document.getElementById('inv-confirm').classList.add('hidden');
+  invUpdateReadouts();
+  renderInvResources();
+  // Tabs + counts (demo: GEAR (n) · MATERIALS (n) · UPGRADES (n INSTALLED)).
+  const all = { gear: invEntries('gear'), materials: invEntries('materials'), upgrades: invEntries('upgrades') };
+  document.querySelectorAll('#overlay-inventory .inv-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === _invTab));
+  const cnt = (id, n, suffix) => { document.getElementById(id).textContent = n ? '(' + n + (suffix || '') + ')' : ''; };
+  cnt('inv-count-gear', all.gear.length); cnt('inv-count-materials', all.materials.length); cnt('inv-count-upgrades', all.upgrades.length, ' INSTALLED');
+  document.getElementById('inv-sort-current').textContent = INV_SORT_LABELS[_invSort];
+  document.querySelectorAll('#inv-sort .sort-option').forEach(o => o.classList.toggle('selected', o.dataset.sort === _invSort));
+
+  const grid = document.getElementById('inv-grid');
+  grid.innerHTML = '';
+  const entries = invSorted(all[_invTab] || []);
+  if (!entries.length) {
+    const empty = document.createElement('div');
+    empty.className = 'inv-empty';
+    empty.textContent = INV_EMPTY[_invTab];
+    grid.appendChild(empty);
+  }
+  const isSel = en => !_invSelectedRes && _invSelected === en.id && (en.copy == null || en.copy === (_invSelectedCopy || 0));
+  // GEAR reads as sorted categories; the other tabs are flat.
+  const groups = _invTab === 'gear'
+    ? INV_GEAR_GROUPS.map(g => ({ label: g.label, items: entries.filter(en => invItemCategory(en.id) === g.cat) }))
+    : [{ label: null, items: entries }];
+  for (const g of groups) {
+    if (!g.items.length) continue;
+    if (g.label) {
+      const hdr = document.createElement('div');
+      hdr.className = 'grid-section-header';
+      hdr.textContent = '— ' + g.label + ' —';
+      grid.appendChild(hdr);
+    }
+    for (const en of g.items) grid.appendChild(invTile(en, isSel(en)));
+  }
+  // Detail: the selected resource, or the selected tile (a selected copy
+  // that's gone falls back to the id's first tile), else the empty prompt.
+  if (_invSelectedRes) return renderInvResourceDetail(_invSelectedRes);
+  const sel = entries.find(isSel) || entries.find(e => e.id === _invSelected);
+  if (sel) { if (sel.copy != null) _invSelectedCopy = sel.copy; renderInvDetail(sel); }
+  else { _invSelected = null; invShowDetail(false); }
+}
+function invTile(en, selected) {
+  const tile = document.createElement('div');
+  tile.className = 'inv-tile' + (selected ? ' selected' : '');
+  tile.dataset.key = invKey(en);
+  tile.dataset.id = en.id;
+  const price = invPrice(en);
+  const story = !en.material && price.none && invItemCategory(en.id) === 'STORY';
+  tile.innerHTML = invIconHtml(en.id, en.material) +
+    (en.n > 1 ? '<span class="inv-tile-count">×' + en.n + '</span>' : '') +
+    // Rolled-value copies wear their value (Bible §14 tile: hidden value = ??).
+    '<span class="inv-tile-price' + (en.copy != null ? ' inv-tile-value' : '') + (price.unknown || price.none ? ' unknown' : '') + '">' + price.label + '</span>' +
+    (story ? '<span class="inv-tile-trade">⇄</span>' : '') +
+    (en.isNew ? '<span class="inv-tile-new">NEW</span>' : '');
+  // Hover (.ui-tip): the name, plus a rolled-value copy's worth.
+  tile.dataset.tipTitle = invNameOf(en.id, en.material).toUpperCase();
+  if (en.copy != null) tile.dataset.tipDescription = itemValueKnown(en.id) ? 'Worth ' + en.value + 'g.' : 'Worth ' + itemValueRangeLabel(en.id) + ' (unappraised).';
+  tile.addEventListener('click', () => {
+    _invSelected = en.id; _invSelectedCopy = en.copy != null ? en.copy : null; _invSelectedRes = null;
+    _invAi.key = null; // a click re-picks the AI line (demo: "re-clicking gives a different read")
+    if (en.isNew) invMarkSeen(en);
+    renderInventory();
+  });
+  return tile;
+}
+// NEW clears once the tile is clicked (demo canon); a stack clears every copy.
+function invMarkSeen(en) {
+  const list = STATE.itemPickups && STATE.itemPickups[en.id];
+  if (!Array.isArray(list)) return;
+  if (en.copy != null) { if (list[en.copy]) list[en.copy].n = false; }
+  else list.forEach(o => { o.n = false; });
+}
+
+function invShowDetail(on) {
+  document.getElementById('inv-detail').classList.toggle('hidden', !on);
+  document.getElementById('inv-detail-empty').classList.toggle('hidden', on);
+  if (!on) document.getElementById('inv-detail-actions').classList.add('inv-hide');
+}
+function invSetBlock(id, html) {
+  const el = document.getElementById(id);
+  el.innerHTML = html || '';
+  el.classList.toggle('inv-hide', !html);
+}
+const invEsc = s => (typeof escapeHTML === 'function' ? escapeHTML(s) : String(s));
+const invStat = (label, value, cls) => '<div class="detail-stat' + (cls ? ' ' + cls : '') + '"><span>' + label + '</span><strong>' + value + '</strong></div>';
+
+function renderInvDetail(en) {
+  invShowDetail(true);
+  const def = en.material ? null : itemDef(en.id);
+  const mdef = en.material ? materialDefOf(en.id) : null;
+  const cat = en.material ? 'MATERIAL' : invItemCategory(en.id);
+  document.getElementById('inv-detail-name').textContent = invNameOf(en.id, en.material);
+  document.getElementById('inv-detail-cat').textContent = cat;
+  let desc = en.material ? ((mdef && mdef.description) || 'Feedstock for the fabricator. Sharp edges included at no extra charge.')
+                         : ((def && def.description) || 'Unlabeled. Confident.');
+  // Xenobiologist Field Analysis payoff — the finding travels with the item.
+  if (def && def.analysis && STATE.flags.has('analyzed_' + en.id)) desc += '  ◆ FIELD ANALYSIS: ' + def.analysis;
+  // The spectrometer (items.json: "identifies unknown items") reads the same finding.
+  else if (def && def.analysis && STATE.items.includes('spectrometer')) desc += '  ◆ SPECTROMETER: ' + def.analysis;
+  document.getElementById('inv-detail-desc').textContent = desc;
+  // items.json passive_flavor — the item's own aside, aboard.
+  document.getElementById('inv-detail-flavor').textContent = (def && def.passive_flavor) || '';
+
+  // COUNT / SLOT COST / SELL PRICE (demo rows).
+  let slot;
+  if (en.material) slot = 'none <span class="detail-dim">own stores</span>';
+  else if (def && def.cargo_slots_per_10) {
+    // Per-unit decimal (Bible §14.3: "0.3", not the formula); the stack's total alongside.
+    slot = (def.cargo_slots_per_10 / 10).toFixed(1) + ' per unit' + (en.n > 1 ? ' <span class="detail-dim">' + itemSlotsFor(en.id, en.n) + ' total</span>' : '');
+  } else slot = String(def ? (def.cargo_slots || 0) * en.n : en.n) + (def && def.slot_bonus ? ' (+' + def.slot_bonus + ' cap)' : '');
+  let sell, note = '';
+  if (en.copy != null) {
+    // Rolled at pickup: the exact figure needs a spectrometer aboard.
+    if (itemValueKnown(en.id)) sell = en.value + 'g · fence ' + fenceValueOf(en.value) + 'g';
+    else { sell = itemValueRangeLabel(en.id) + ' · fence ' + itemValueRangeLabel(en.id, true); note = 'exact value needs a spectrometer'; }
+  } else {
+    const p = invPrice(en);
+    sell = p.none ? '—' : p.label + (en.n > 1 ? ' each' : '');
+  }
+  invSetBlock('inv-detail-meta', invStat('COUNT', '×' + en.n) + invStat('SLOT COST', slot) + invStat('SELL PRICE', sell) + (note ? invStat('', note, 'note') : ''));
+
+  // USED FOR — the events this item opens options in (real data only).
+  const used = en.material ? [] : invUsedFor(en.id);
+  invSetBlock('inv-detail-used', used.length ? '<span class="detail-label">USED FOR:</span> ' + used.map(invEsc).join(' · ') : '');
+  // NOTES — explains the ⇄ corner marker.
+  const story = !en.material && invPrice(en).none && cat === 'STORY';
+  invSetBlock('inv-detail-notes', story ? '<div class="detail-label">NOTES</div><div class="detail-marker-row"><span class="detail-marker-icon">⇄</span>Not for sale: no trader buys it. Its worth is in what it unlocks.</div>' : '');
+  invRenderAiLine('item:' + invKey(en), ['category', cat.toLowerCase()]);
+
+  // Actions (USE / JETTISON; a material has neither).
+  const jett = document.getElementById('inv-jett-btn');
+  jett.style.display = en.material ? 'none' : '';
+  const useBtn = document.getElementById('inv-use-btn');
+  const iu = !en.material && ITEM_USE[en.id];
+  useBtn.style.display = iu ? '' : 'none';
+  if (iu) {
+    const why = iu.can();
+    useBtn.textContent = 'USE · ' + iu.label;
+    useBtn.disabled = !!why;
+    if (why) { useBtn.dataset.tipDescription = why; useBtn.dataset.tipTone = 'danger'; }
+    else { delete useBtn.dataset.tipDescription; delete useBtn.dataset.tipTone; }
+  }
+  document.getElementById('inv-detail-actions').classList.toggle('inv-hide', en.material);
+}
+
+/* ── AI line: flavor_pools ai_universal.cargo_hold, the active AI's voice ── */
+function invAiPool(path) {
+  let node = MOD.flavor && MOD.flavor.ai_universal && MOD.flavor.ai_universal.cargo_hold;
+  for (const k of path) node = node && node[k];
+  const pool = node && node[STATE.activeAI];
+  return Array.isArray(pool) ? pool : [];
+}
+function invRenderAiLine(key, path) {
+  if (_invAi.key !== key) {
+    const pool = invAiPool(path);
+    _invAi = { key, line: pool.length ? pool[Math.floor(Math.random() * pool.length)] : '' };
+  }
+  const ai = (MOD.ai_companions || []).find(a => a.id === 'ai_' + STATE.activeAI);
+  const name = (ai && ai.name) || String(STATE.activeAI || '').toUpperCase();
+  invSetBlock('inv-detail-ai', _invAi.line ? '<span class="detail-ai-name">' + invEsc(name) + ':</span>' + invEsc(_invAi.line) : '');
+}
+
+/* ── USED FOR / Required for — derived from the event data ──────── */
+let _invUsedCache = null;
+function invUsedIndex() {
+  if (_invUsedCache && _invUsedCache.trail === STATE.trail) return _invUsedCache;
+  const used = {}, required = {};
+  const add = (map, id, ev) => { (map[id] = map[id] || new Map()).set(ev.id, ev); };
+  const walk = (o, ev) => {
+    if (Array.isArray(o)) { o.forEach(x => walk(x, ev)); return; }
+    if (!o || typeof o !== 'object') return;
+    if (typeof o.requires_item === 'string') add(used, o.requires_item, ev);
+    if (o.gate && typeof o.gate.item === 'string') add(used, o.gate.item, ev);
+    for (const v of Object.values(o)) if (v && typeof v === 'object') walk(v, ev);
+  };
+  for (const ev of Object.values(typeof EVENTS !== 'undefined' ? EVENTS : {})) {
+    if (!ev || ev.active === false) continue;
+    if (ev.trail && STATE.trail && !ev.trail.includes(STATE.trail)) continue;
+    walk(ev, ev);
+    // An event-level requires_item only fires while the item is aboard
+    // (eventEligible) — the payoff/delivery events the hold must keep it for.
+    if (typeof ev.requires_item === 'string') add(required, ev.requires_item, ev);
+  }
+  _invUsedCache = { trail: STATE.trail, used, required };
+  return _invUsedCache;
+}
+function invUsedFor(id) {
+  const m = invUsedIndex().used[id];
+  return m ? [...new Set([...m.values()].map(ev => ev.title || ev.id))] : [];
+}
+// Events still ahead that need this item aboard to happen at all: active,
+// on this trail, story flag met, not already spent (once + seen).
+function invRequiredFor(id) {
+  const m = invUsedIndex().required[id];
+  if (!m) return [];
+  return [...new Set([...m.values()].filter(ev =>
+    (!ev.requires_flag || STATE.flags.has(ev.requires_flag)) && !(ev.once && STATE.seenEventIds.has(ev.id))
+  ).map(ev => ev.title || ev.id))];
+}
+
+/* ── SHIP RESOURCES row ─────────────────────────────────────── */
+function invResourceStats(key) {
+  const level = Math.max(0, STATE.resources[key] || 0), max = resMax(key);
+  let perDay = 0, tip = '';
+  if (key === 'fuel' && typeof legTravelCost === 'function') {
+    const leg = legTravelCost();
+    perDay = leg.exactDays > 0 ? leg.fuel / leg.exactDays : 0;
+    tip = 'Fuel burns only in flight: ' + leg.fuel + ' per leg at ' + ordersPace().name + ' (~' + leg.exactDays.toFixed(1) + ' days). About ' + (leg.fuel > 0 ? Math.floor(level / leg.fuel) : '∞') + ' legs left.';
+  } else if (key === 'food') {
+    perDay = ORDERS_BASE.foodPerDay * ordersRations().foodMult * foodBurnMult() * mouthsMult();
+    tip = 'Eaten every day at ' + ordersRations().name + ' rations by ' + (STATE.crew.length + 1) + ' aboard.';
+  } else if (key === 'water') {
+    perDay = ORDERS_BASE.waterPerDay;
+    tip = 'Drawn every day; crew and crop share the tank.';
+  }
+  const daysLeft = perDay > 0 ? Math.floor(level / perDay) : null;
+  return { level, max, perDay, emptyDay: daysLeft == null ? null : STATE.daysElapsed + daysLeft, tip };
+}
+function invSegColor(pos) {
+  if (pos === 1) return 'var(--gauge-seg-low)';
+  if (pos <= 3) return 'var(--gauge-seg-lowmid)';
+  if (pos <= 5) return 'var(--gauge-seg-mid)';
+  if (pos <= 7) return 'var(--gauge-seg-highmid)';
+  if (pos <= 9) return 'var(--gauge-seg-high)';
+  return 'var(--gauge-seg-full)';
+}
+function renderInvResources() {
+  const row = document.getElementById('inv-res-tiles');
+  row.innerHTML = '';
+  for (const r of INV_RESOURCES) {
+    const s = invResourceStats(r.key);
+    const tile = document.createElement('div');
+    tile.className = 'res-tile' + (_invSelectedRes === r.key ? ' selected' : '');
+    tile.dataset.res = r.key;
+    const lit = Math.round(Math.min(1, s.level / (s.max || 100)) * 10);
+    let segs = '';
+    for (let i = 1; i <= 10; i++) segs += '<div class="gauge-seg' + (i <= lit ? ' lit' : '') + '" style="--seg-color:' + invSegColor(i) + '"></div>';
+    const use = s.perDay > 0 ? '~' + (s.perDay < 0.1 ? s.perDay.toFixed(2) : s.perDay.toFixed(1)) + ' / DAY' : '—';
+    const empty = s.level <= 0 ? 'NOW' : s.emptyDay == null ? '—' : 'DAY ' + s.emptyDay;
+    tile.innerHTML =
+      '<div class="res-tile-frame" style="background-image:url(\'' + r.sprite + '\')">' +
+        '<div class="res-gauge" style="left:' + r.gauge.x + 'px;top:' + r.gauge.y + 'px;width:' + r.gauge.w + 'px;height:' + r.gauge.h + 'px">' + segs + '</div></div>' +
+      '<div class="res-tile-info">' +
+        '<div class="res-tile-label">' + r.label + '</div>' +
+        '<div class="res-tile-stat"><span>LEVEL</span><strong>' + Math.round(s.level) + ' / ' + Math.round(s.max) + '</strong></div>' +
+        '<div class="res-tile-stat"><span>USE</span><strong>' + use + '</strong></div>' +
+        '<div class="res-tile-stat' + (s.level <= 0 ? ' dry' : '') + '"><span>EMPTY</span><strong>' + empty + '</strong></div>' +
+      '</div>';
+    tile.dataset.tipTitle = r.label;
+    tile.dataset.tipDescription = s.tip + ' EMPTY assumes nothing refills it.';
+    tile.addEventListener('click', () => {
+      _invSelectedRes = r.key; _invSelected = null; _invSelectedCopy = null; _invAi.key = null;
+      renderInventory();
+    });
+    row.appendChild(tile);
+  }
+}
+function renderInvResourceDetail(key) {
+  const r = INV_RESOURCES.find(x => x.key === key);
+  if (!r) return invShowDetail(false);
+  invShowDetail(true);
+  document.getElementById('inv-detail-name').textContent = r.label;
+  document.getElementById('inv-detail-cat').textContent = 'SHIP RESOURCE';
+  document.getElementById('inv-detail-desc').textContent = r.desc;
+  document.getElementById('inv-detail-flavor').textContent = '';
+  const n = STATE.items.filter(x => x === r.item).length;
+  invSetBlock('inv-detail-meta', invStat('IN CARGO', n ? '×' + n + ' ' + invEsc(invNameOf(r.item)) : 'none'));
+  invSetBlock('inv-detail-used', ''); invSetBlock('inv-detail-notes', '');
+  invRenderAiLine('res:' + key, ['resource', key]);
+  document.getElementById('inv-detail-actions').classList.add('inv-hide');
+}
+
+/* ── Header readouts ────────────────────────────────────────── */
+function invFlash(el) {
+  el.classList.remove('readout-flash');
+  void el.offsetWidth; // restart the one-shot animation
+  el.classList.add('readout-flash');
+}
+function invUpdateReadouts() {
+  const used = cargoSlotsUsed(), cap = cargoCapacity();
+  const usedEl = document.getElementById('inv-slots-used'), capEl = document.getElementById('inv-slots-total');
+  usedEl.textContent = used; capEl.textContent = cap;
+  if (_invReadout.used != null && used !== _invReadout.used) invFlash(usedEl);
+  if (_invReadout.cap != null && cap !== _invReadout.cap) invFlash(capEl);
+  _invReadout = { used, cap };
+  const slots = document.getElementById('inv-slots');
+  slots.classList.toggle('at-cap', used >= cap);
+  slots.classList.toggle('near-cap', cap > 0 && used / cap >= 0.9 && used < cap);
+  // Breakdown (.ui-tip rows): what is eating the hold.
+  const by = {};
+  for (const en of invEntries('gear')) { const c = invItemCategory(en.id); by[c] = (by[c] || 0) + itemSlotsFor(en.id, en.n); }
+  const rows = INV_GEAR_GROUPS.filter(g => by[g.cat]).map(g => ({ label: g.label, value: String(by[g.cat]) }));
+  const parts = cargoCapacityParts();
+  rows.push({ label: 'Capacity', value: parts.base + (parts.bonus ? ' + ' + parts.bonus + ' bay' : '') });
+  slots.dataset.tipTitle = 'CARGO SLOTS';
+  slots.dataset.tipDescription = 'Stackables cost a fraction of a slot per unit, rounded up per stack. Materials and the crop have their own stores.';
+  slots.dataset.tipRows = JSON.stringify(rows);
+  invRollGold(Math.round(STATE.goldAmount || 0));
+}
+// Earthbound-style rolling counter (demo animateGoldTo): ease-out over
+// ~200–900ms scaled to the change, flashing on every tick.
+function invRollGold(target) {
+  const el = document.getElementById('inv-gold');
+  if (_invGold.timer) { clearInterval(_invGold.timer); _invGold.timer = null; }
+  const start = _invGold.shown, delta = target - start;
+  if (!delta) { el.textContent = target; return; }
+  const duration = Math.min(900, 200 + Math.abs(delta) * 18);
+  const steps = Math.max(1, Math.min(Math.abs(delta), Math.floor(duration / 40)));
+  let i = 0;
+  _invGold.timer = setInterval(() => {
+    i++;
+    const t = i / steps, eased = 1 - Math.pow(1 - t, 2);
+    _invGold.shown = Math.round(start + delta * eased);
+    el.textContent = _invGold.shown;
+    invFlash(el);
+    if (i >= steps) { clearInterval(_invGold.timer); _invGold.timer = null; _invGold.shown = target; el.textContent = target; }
+  }, duration / steps);
+}
+
+/* ── Jettison ───────────────────────────────────────────────── */
+function invOpenJettison() {
+  if (!_invSelected || _invSelectedRes) return;
+  const id = _invSelected;
+  const name = invNameOf(id);
+  const blocked = STATE.items.includes(id) && !canRemoveItem(id);
+  const copyTile = _invSelectedCopy != null && sellRangeOf(id);
+  _invJettisonPending = blocked ? null : id;
+  _invJettisonCopy = _invSelectedCopy;
+  _invJettisonMax = copyTile ? 1 : STATE.items.filter(x => x === id).length;
+  _invJettisonCount = 1;
+  document.getElementById('inv-confirm-text').textContent = blocked
+    ? 'The ' + name + ' is holding cargo. Clear some space first.'
+    : (_invJettisonMax > 1 ? 'Drop some of your ' + name + ' (×' + _invJettisonMax + ') into space?' : 'Drop your ' + name + ' into space?') + ' The airlock does not do refunds.';
+  // "Required for:" — only when an event ahead needs it aboard to happen.
+  const req = blocked ? [] : invRequiredFor(id);
+  const warn = document.getElementById('inv-route-warn');
+  warn.innerHTML = req.length ? 'Required for: <strong>' + req.map(invEsc).join(' · ') + '</strong>' : '';
+  warn.classList.toggle('hidden', !req.length);
+  document.getElementById('inv-jett-panel').classList.toggle('route-warn', !!req.length);
+  document.getElementById('inv-jett-count-row').classList.toggle('hidden', blocked || _invJettisonMax < 2);
+  document.getElementById('inv-jett-all').classList.toggle('hidden', blocked || _invJettisonMax < 2);
+  document.getElementById('inv-confirm-yes').classList.toggle('hidden', blocked);
+  invUpdateJettisonCount();
+  document.getElementById('inv-confirm').classList.remove('hidden');
+}
+function invUpdateJettisonCount() {
+  document.getElementById('inv-jett-count').textContent = _invJettisonCount;
+  document.getElementById('inv-confirm-yes').textContent = 'JETTISON ' + _invJettisonCount;
+  document.getElementById('inv-jett-minus').disabled = _invJettisonCount <= 1;
+  document.getElementById('inv-jett-plus').disabled = _invJettisonCount >= _invJettisonMax;
+}
+function invCloseJettison() {
+  _invJettisonPending = null;
+  document.getElementById('inv-confirm').classList.add('hidden');
+  document.getElementById('inv-jett-panel').classList.remove('route-warn');
+}
+// Rising particles in a tile (demo spawnPoofInTile): 7–9, random drift.
+function invPoof(tileEl) {
+  const count = 7 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'poof-particle';
+    p.style.left = (20 + Math.random() * 50) + '%';
+    p.style.top = (40 + Math.random() * 30) + '%';
+    p.style.setProperty('--dx', ((Math.random() - 0.5) * 40) + 'px');
+    p.style.setProperty('--dy', (-30 - Math.random() * 25) + 'px');
+    p.style.setProperty('--poof-delay', (Math.random() * 0.08) + 's');
+    p.style.setProperty('--poof-dur', (0.55 + Math.random() * 0.25) + 's');
+    tileEl.appendChild(p);
+  }
+}
+// The state changes at once (a save or close mid-animation can't lose or
+// double it); the grid repaints after the poof has played.
+function invJettison(count) {
+  // Consume the confirmation before mutating or repainting: a physical
+  // double-click must still authorize exactly one trip through the airlock.
+  const id = _invJettisonPending;
+  _invJettisonPending = null;
+  if (!id) return;
+  const copy = _invJettisonCopy;
+  _invJettisonCopy = null;
+  const have = STATE.items.filter(x => x === id).length;
+  const n = Math.max(1, Math.min(count, have, _invJettisonMax));
+  const tileEl = document.querySelector('#inv-grid .inv-tile[data-key="' + id + (copy != null && sellRangeOf(id) ? '#' + copy : '') + '"]');
+  let gone = 0;
+  for (let i = 0; i < n; i++) {
+    if (!STATE.items.includes(id) || !canRemoveItem(id)) break;
+    if (sellRangeOf(id)) takeItemCopy(id, copy); // that copy, and its value, go together
+    else STATE.items.splice(STATE.items.lastIndexOf(id), 1);
+    gone++;
+  }
+  if (!gone) return invCloseJettison();
+  syncItemValues(); syncItemPickups();
+  renderHUD();
+  if (typeof window.pushCruiseLog === 'function') {
+    window.pushCruiseLog('◆ Jettisoned: ' + (gone > 1 ? gone + '× ' : '') + invNameOf(id) + '. ' + (gone > 1 ? 'They tumble' : 'It tumbles') + ' off into the dark, unemployed.');
+  }
+  const whole = !STATE.items.includes(id) || copy != null;
+  if (whole && _invSelected === id) { _invSelected = null; _invSelectedCopy = null; }
+  invCloseJettison();
+  if (tileEl) { invPoof(tileEl); if (whole) tileEl.classList.add('jettisoning'); }
+  invUpdateReadouts();
+  clearTimeout(_invRerender);
+  _invRerender = setTimeout(() => {
+    _invRerender = null;
+    if (document.getElementById('overlay-inventory').classList.contains('active') && document.getElementById('inv-confirm').classList.contains('hidden')) renderInventory();
+  }, whole ? 500 : 350);
+  if (!tileEl) renderInventory();
+}
+
+/* ── Tabs / sort ────────────────────────────────────────────── */
+function invSetTab(tab) {
+  if (tab === _invTab || !['gear', 'materials', 'upgrades'].includes(tab)) return; // re-clicking the active tab must not wipe the selection (ui_sweep catch)
+  _invTab = tab; _invSelected = null; _invSelectedCopy = null; _invSelectedRes = null;
+  document.getElementById('inv-sort').classList.remove('open');
+  renderInventory();
+}
+function invSetSort(key) {
+  if (!INV_SORT_LABELS[key]) return;
+  _invSort = key;
+  document.getElementById('inv-sort').classList.remove('open');
+  renderInventory();
+}
+
+(function wireInventoryChrome() {
+  document.querySelectorAll('#overlay-inventory .inv-tab').forEach(t => t.addEventListener('click', () => invSetTab(t.dataset.tab)));
+  const sort = document.getElementById('inv-sort');
+  document.getElementById('inv-sort-btn').addEventListener('click', e => { e.stopPropagation(); sort.classList.toggle('open'); });
+  sort.querySelectorAll('.sort-option').forEach(o => o.addEventListener('click', e => { e.stopPropagation(); invSetSort(o.dataset.sort); }));
+  // Outside click closes the flyout.
+  document.addEventListener('click', e => { if (sort.classList.contains('open') && !sort.contains(e.target)) sort.classList.remove('open'); });
+  document.getElementById('inv-jett-btn').addEventListener('click', invOpenJettison);
+  document.getElementById('inv-jett-minus').addEventListener('click', () => { _invJettisonCount = Math.max(1, _invJettisonCount - 1); invUpdateJettisonCount(); });
+  document.getElementById('inv-jett-plus').addEventListener('click', () => { _invJettisonCount = Math.min(_invJettisonMax, _invJettisonCount + 1); invUpdateJettisonCount(); });
+  document.getElementById('inv-jett-all').addEventListener('click', () => invJettison(_invJettisonMax));
+  document.getElementById('inv-confirm-yes').addEventListener('click', () => invJettison(_invJettisonCount));
+  document.getElementById('inv-confirm-no').addEventListener('click', () => { invCloseJettison(); renderInventory(); });
+  document.getElementById('inv-use-btn').addEventListener('click', () => {
+    const id = _invSelected, iu = id && ITEM_USE[id];
+    if (!iu || iu.can() || !STATE.items.includes(id)) return;
+    STATE.items.splice(STATE.items.indexOf(id), 1);
+    const msg = iu.use();
+    renderHUD();
+    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + msg);
+    if (!STATE.items.includes(id)) _invSelected = null;
+    renderInventory();
+    if (typeof window.renderCruise === 'function' && document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();
+    if (typeof window.refreshStopMenu === 'function') window.refreshStopMenu();
+  });
+  // Keys while the hold is open: 1/2/3 switch tabs (demo); Esc closes an
+  // open SORT flyout first (the jettison confirm's Esc lives in index.html).
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('overlay-inventory').classList.contains('active')) return;
+    if (typeof PauseMenu !== 'undefined' && PauseMenu.isOpen()) return;
+    if (e.key === 'Escape' && sort.classList.contains('open')) {
+      sort.classList.remove('open'); e.preventDefault(); e.stopImmediatePropagation(); return;
+    }
+    if (!document.getElementById('inv-confirm').classList.contains('hidden')) return;
+    const a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
+    const tab = { 1: 'gear', 2: 'materials', 3: 'upgrades' }[e.key];
+    if (tab) { invSetTab(tab); e.preventDefault(); }
+  }, true);
+})();
+
+function openInventory() {
+  _invReadout = { used: null, cap: null }; // no flash for the numbers it opens on
+  _invAi.key = null;
+  _invUsedCache = null;
+  showOverlay('overlay-inventory');
+  renderInventory();
+}
+// Every close path (✕, CLOSE, backdrop, Esc) — jettisons persist.
+function closeInventory() {
+  document.getElementById('inv-sort').classList.remove('open');
+  hideOverlay('overlay-inventory');
+  if (typeof saveRun === 'function') saveRun();
+}

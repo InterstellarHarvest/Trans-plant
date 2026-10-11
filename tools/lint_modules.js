@@ -322,6 +322,21 @@ for (const file of eventFiles) {
   }
 }
 
+// Cargo hold AI lines (parity batch 2, 2026-10-11): the inventory
+// detail panel picks flavor_pools.ai_universal.cargo_hold.resource[key]
+// (the SHIP RESOURCES tiles) or .category[cat] (the item's Bible §14.2
+// category) in the active AI's voice — every AI needs lines for every key.
+{
+  const ch = ((readJSON('modules/flavor/flavor_pools.json').ai_universal) || {}).cargo_hold;
+  const ais = readJSON('modules/ai/ai_companions.json').filter(a => a.active !== false).map(a => a.id.replace(/^ai_/, ''));
+  const need = { resource: ['fuel', 'food', 'water'], category: ['instrument', 'consumable', 'curiosity', 'story', 'material', 'upgrade'] };
+  if (!ch) err('flavor_pools.json ai_universal.cargo_hold is missing (the cargo hold detail panel reads it)');
+  else for (const [slot, keys] of Object.entries(need)) for (const k of keys) for (const ai of ais) {
+    const pool = ch[slot] && ch[slot][k] && ch[slot][k][ai];
+    if (!Array.isArray(pool) || !pool.length || pool.some(l => typeof l !== 'string' || !l.trim())) err(`flavor_pools.json ai_universal.cargo_hold.${slot}.${k}.${ai}: needs at least one line`);
+  }
+}
+
 let engineGrantedItems = {}; // filled by the item-sources block; read by the item-sinks block
 // Item sources (nothing orphaned): every item a choice, event or recipe
 // REQUIRES must be obtainable somewhere — an event grant, the station
@@ -716,12 +731,14 @@ const eventOnTrail = (ev, trail) => {
 // EFFORT_CHECKS tool slot. An item whose only sinks are event references
 // must be spendable on every trail that can grant it.
 {
-  const src = engineSrcByFile.get('index.html');
+  // ITEM_USE moved to engine/js/screens/inventory.js (parity batch 2).
+  const ITEM_USE_FILE = 'engine/js/screens/inventory.js';
+  const src = engineSrcByFile.get(ITEM_USE_FILE) || '';
   const iu = src.match(/const ITEM_USE = \{([\s\S]*?)\n\};/);
   const useKeys = new Set();
-  if (!iu) err('index.html: ITEM_USE table not found (lint parses it for item sinks)');
+  if (!iu) err(`${ITEM_USE_FILE}: ITEM_USE table not found (lint parses it for item sinks)`);
   else for (const m of iu[1].matchAll(/^  (\w+):\s*\{/gm)) useKeys.add(m[1]);
-  for (const k of useKeys) if (!itemIds.has(k)) err(`index.html ITEM_USE.${k}: not an item in items.json`);
+  for (const k of useKeys) if (!itemIds.has(k)) err(`${ITEM_USE_FILE} ITEM_USE.${k}: not an item in items.json`);
   const literals = new Set();
   for (const s of engineSrcByFile.values()) for (const m of s.matchAll(/['"]([a-z0-9_]+)['"]/g)) literals.add(m[1]);
   const effortItems = new Set();

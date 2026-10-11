@@ -91,7 +91,9 @@
     const def = (typeof itemDef === 'function' && itemDef(itemId)) || null;
     const raw = def && def.gameplay_effect;
     if (!raw) return '';
-    return (raw.match(/[^.]+(?:\.|$)/g) || [])
+    // Sentences end at a full stop + space (a decimal like "0.3 slot per
+    // unit" is not a sentence break — batch-2 per-unit slot copy).
+    return raw.split(/(?<=\.)\s+/)
       .map(s => s.trim())
       .filter(s => s && !/^(Craftable|Fabricated|Stackable)\b/i.test(s))
       .join(' ');
