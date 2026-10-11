@@ -3339,6 +3339,76 @@ function cropWaterNeed() {
     * (STATE.items.includes('water_purifier') ? 0.9 : 1);
 }
 
+/* Station botanist (event_station_012, owner ruling 2026-10-11). Their
+   advice changes two real things for the living crop: a water split the
+   growbay penalises (under the need by more than 5 stalls growth, over by
+   more than 20 rots the roots — growbay.js computeModifiers) goes to the
+   crop's need, and the crew starts talking to it (a growbay modifier,
+   +CROP_TALK_GROWTH% growth, for the rest of the run). The choice's
+   sub-label ({crop.advice}), its lock and the change all read this plan. */
+const CROP_TALK_GROWTH = 4;
+function cropName() {
+  const m = (typeof window.cropMetaOf === 'function' && STATE.crop) ? cropMetaOf(STATE.crop) : null;
+  return ((m && m.name) || String(STATE.crop || 'crop').replace(/_/g, ' ')).toLowerCase();
+}
+function cropAlive() { return !!(STATE.crop && STATE.cropGrowth && STATE.cropGrowth.health > 0); }
+function cropAdvicePlan() {
+  if (!cropAlive()) return null;
+  const needRaw = Math.round(cropWaterNeed());
+  const need = clamp(needRaw, 15, 85);
+  const split = Math.round(ensureOrders().waterSplit);
+  const d = split - needRaw;
+  return { need, split, water: (d < -5 || d > 20) ? { from: split, to: need } : null, talk: !STATE.cropGrowth.talked };
+}
+function applyCropAdvice() {
+  const p = cropAdvicePlan();
+  if (!p) return;
+  const bits = [];
+  if (p.water) { setWaterSplit(p.water.to); bits.push('water split ' + p.water.from + '% → ' + p.water.to + '%'); }
+  if (p.talk) { STATE.cropGrowth.talked = true; bits.push('the crew talks to the ' + cropName() + ' now (+' + CROP_TALK_GROWTH + '% growth)'); }
+  if (bits.length && typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ The station botanist\'s advice, taken: ' + bits.join('; ') + '.');
+}
+// gate.crop: 'alive' (a living crop), 'cuttable' (alive, health above 10
+// — a cutting costs it 5), 'ailing' (alive and hurt or infested).
+function cropGateReason(kind) {
+  if (!cropAlive()) return 'No living crop';
+  const cg = STATE.cropGrowth;
+  if (kind === 'cuttable' && cg.health <= 10) return 'Too weak to take a cutting';
+  if (kind === 'ailing' && cg.health >= 100 && !cg.pest) return 'The crop is healthy';
+  return null;
+}
+// {crop.name} / {crop.advice} / {crop.diagnosis} / {crop.verdict} text tokens.
+function cropToken(k) {
+  if (k === 'name') return cropName();
+  const p = cropAdvicePlan();
+  if (k === 'advice') {
+    if (!p) return 'No living crop';
+    const bits = [];
+    if (p.water) bits.push('Water split ' + p.water.from + '% → ' + p.water.to + '%');
+    if (p.talk) bits.push('+' + CROP_TALK_GROWTH + '% growth');
+    return bits.length ? bits.join(' · ') : 'Nothing left to change';
+  }
+  if (k === 'diagnosis') {
+    // Narrator prose for the tip layer: the botanist does the sum out loud.
+    if (!p) return 'Then they ask about your crop, and read the answer off your face before you give it.';
+    const n = cropName();
+    const sum = 'Then they ask how you water the ' + n + ', and do the sum out loud: it wants ' + p.need + ' percent of the ship\'s water, and you give it ' + p.split + '.';
+    if (STATE.resources.water <= 0) return sum + ' Then you mention the tanks are dry, and they stop doing sums.';
+    if (p.split < Math.round(cropWaterNeed()) - 5) return sum + ' They wince on its behalf.';
+    if (p.water) return sum + ' They mime drowning, politely.';
+    return sum + ' They nod. Somebody aboard can count.';
+  }
+  if (k === 'verdict') {
+    // The botanist's spoken one-liner for the same reading.
+    if (!p) return "I'm sorry. Talk to the next one.";
+    if (STATE.resources.water <= 0) return 'No split fixes an empty tank. Find water.';
+    if (p.split < Math.round(cropWaterNeed()) - 5) return 'Thirsty. Give it the water.';
+    if (p.water) return 'Drowning. Ease off.';
+    return p.talk ? 'Water is right. Now talk to it.' : 'Water is right. Keep talking to it.';
+  }
+  return '';
+}
+
 /* Demo crewDrainRate(): how hard the crew's water share is biting.
    ratio = crew share vs what the crop's need leaves them. */
 function crewWaterDrainRate() {
@@ -3939,6 +4009,8 @@ function interpolateStowawayTokens(text) {
   // {crew.<role>}: whoever holds that role now (a stowaway who joined as
   // diplomat keeps their own name — the text used to say "Hargrove").
   if (text && text.indexOf('{crew.') !== -1) text = text.replace(/\{crew\.(\w+)\}/g, (m, role) => crewNameOf(role));
+  // {crop.name|advice|diagnosis|verdict}: the run's crop as it is right now (station botanist).
+  if (text && text.indexOf('{crop.') !== -1) text = text.replace(/\{crop\.(name|advice|diagnosis|verdict)\}/g, (m, k) => cropToken(k));
   // {branch.alpha.label} / {branch.alpha.first} (and beta): a fork event
   // describes the real branches ahead — the map label (or "unmarked" for
   // a ??? branch) and the first stop on it.
@@ -4226,6 +4298,7 @@ function gateIconPath(g) {
   if (g.crew) return 'sprites/interface/careers/' + g.crew + '.png';
   if (g.item) return itemSpritePath(g.item); // upgrades live in cargo/upgrades/
   if (g.gold) return 'sprites/interface/gold.png';
+  if (g.crop) return 'sprites/interface/plant.png';
   return null;
 }
 
@@ -4453,6 +4526,13 @@ const SEVERITY_LABEL = { injury: 'AN INJURY', delayed: 'A BAD WOUND', lethal: 'A
 function effectiveCropDelta(v) {
   return v > 0 ? Math.round(v * (1 + 0.25 * specialistMult('botanist'))) : v;
 }
+// What a crop_health delta actually does to the crop now: applyOutcomeEffects
+// clamps to 1–100 and leaves a dead (or absent) crop alone.
+function cropDeltaLanding(v) {
+  const cg = STATE.cropGrowth;
+  if (!cg || !(cg.health > 0)) return 0;
+  return clamp(cg.health + effectiveCropDelta(v), 1, 100) - cg.health;
+}
 function effectiveResDelta(k, v) {
   // O2 recycler (items.json): O2 losses reduced 25%.
   let dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.trunc(v * 0.75) : v; // toward zero: a −1 loss becomes 0
@@ -4498,7 +4578,7 @@ function outcomeFacts(o) {
   else if (ce && ce.type === 'heal') facts.push({ text: 'HEALING', weight: 10, good: true });
   if (o.item_grant) facts.push({ text: '+' + prettyItem(o.item_grant).toUpperCase(), weight: 8, good: true });
   if (o.item_consume) facts.push({ text: 'USES ' + prettyItem(o.item_consume).toUpperCase(), weight: 6, good: false });
-  if (Number.isFinite(o.crop_health) && o.crop_health) { const c = effectiveCropDelta(o.crop_health); facts.push({ text: (c > 0 ? '+' : '−') + Math.abs(c) + ' CROP', weight: Math.abs(c) / 2, good: c > 0 }); }
+  if (Number.isFinite(o.crop_health) && o.crop_health) { const c = Math.round(cropDeltaLanding(o.crop_health)); if (c) facts.push({ text: (c > 0 ? '+' : '−') + Math.abs(c) + ' CROP', weight: Math.abs(c) / 2, good: c > 0 }); }
   if (Number.isFinite(o.fab_wear) && o.fab_wear > 0) facts.push({ text: '+' + o.fab_wear + '% FAB WEAR', weight: Math.max(6, o.fab_wear * 1.5), good: false });
   return facts.sort((a, b) => b.weight - a.weight);
 }
@@ -4511,8 +4591,17 @@ function choicePreviews(choices) {
   const out = new Map();
   const cands = choices.filter(ch => !lockReason(ch) && choiceOutcome(ch));
   if (!cands.length) return out;
-  if (STATE.activeAI === 'marv') {
-    const worst = cands.slice().sort((a, b) => costWeight(choiceOutcome(b)) - costWeight(choiceOutcome(a)))[0];
+  // Posted terms (choice field preview: true — the station botanist's
+  // counter): the choice always shows exactly what it does, gold aside
+  // (the price is in its text). MARV's cost read takes the others.
+  for (const ch of cands) {
+    if (!ch.preview) continue;
+    const facts = outcomeFacts(choiceOutcome(ch)).filter(f => !/ GOLD$/.test(f.text)).slice(0, 3).map(f => f.text);
+    if (facts.length) out.set(ch, facts.join(' · '));
+  }
+  const unposted = cands.filter(ch => !out.has(ch));
+  if (STATE.activeAI === 'marv' && unposted.length) {
+    const worst = unposted.slice().sort((a, b) => costWeight(choiceOutcome(b)) - costWeight(choiceOutcome(a)))[0];
     const costs = outcomeFacts(choiceOutcome(worst)).filter(f => !f.good).slice(0, 2).map(f => f.text);
     if (costs.length) out.set(worst, 'MARV · ' + costs.join(' · '));
   }
@@ -4583,6 +4672,14 @@ function lockReason(choice) {
     if (STATE.crisisPatient === choice.requires_crew) return `${choice.requires_crew} is the patient`;
   }
   if (choice.requires_item && !STATE.items.includes(choice.requires_item)) return `Needs ${prettyItem(choice.requires_item)}`;
+  // The botanist's advice locks when it would change nothing (no crop, or
+  // the water's in a band the growbay doesn't punish and the crew already
+  // talks to it) — never a no-op click.
+  if (choice.crop_advice) {
+    const p = cropAdvicePlan();
+    if (!p) return 'No living crop';
+    if (!p.water && !p.talk) return 'Already doing it their way';
+  }
   if (choice.requires_flag && !STATE.flags.has(choice.requires_flag)) return `Story-gated`;
   // A job that runs on the fabricator can't run while it's broken.
   if (choice.requires_fab && STATE.fabricator && (STATE.fabricator.broken || (STATE.fabricator.wear || 0) >= 100)) return 'Fabricator is broken';
@@ -4593,6 +4690,7 @@ function lockReason(choice) {
       if (STATE.crisisPatient === choice.gate.crew) return `${choice.gate.crew} is the patient`;
     }
     if (choice.gate.item && !STATE.items.includes(choice.gate.item)) return `Needs ${prettyItem(choice.gate.item)}`;
+    if (choice.gate.crop) { const why = cropGateReason(choice.gate.crop); if (why) return why; }
     if (choice.gate.gold && STATE.goldAmount < eventGold(choice.gate.gold)) return `Needs ${eventGold(choice.gate.gold)}g`;
   }
   // Capacity-aware lock (audit fix): a choice whose outcome grants
@@ -4811,6 +4909,9 @@ function handleChoiceClick(choice) {
     STATE.goldAmount = Math.max(0, STATE.goldAmount - eventGold(choice.gold_cost));
     renderHUD();
   }
+  // Station botanist's advice (crop_advice choice field): the water split
+  // and the talk-to-it habit change here, before the layer navigation.
+  if (choice.crop_advice) applyCropAdvice();
 
   // Combat hijack fields — checked BEFORE the flat-schema early-return
   // so BOTH schemas can enter combat (audit fix: these originally sat
