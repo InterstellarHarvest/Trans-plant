@@ -6,7 +6,10 @@
    Painted by engine/js/scene_art.js.
    ═══════════════════════════════════════════════════════════════════ */
 #screen-encounter {
-  --subj-size: 240px;
+  /* DESIGN_SYSTEM.md "Subject frame": 160px default (the demos disagreed:
+     demo-encounter's slider 160, its :root 260; the engine had 240).
+     --subj-top stays 100: it clears .enc-meta (top:60) above it. */
+  --subj-size: 160px;
   --subj-top: 100px; /* clears .enc-meta (left:14 top:60) above it */
   --subj-border: #545F5C;
   --subj-border-w: 2px;
@@ -72,13 +75,28 @@
   animation: enc-ship-bob 10s ease-in-out infinite;
 }
 
-/* With real scene art painted, the comm-mode hue-rotate placeholder
+/* With real scene art painted, the screen-mode hue-rotate placeholder
    tint (authored against the flat gradient) would recolor the art —
    the subject-frame overlays below carry the comm treatment instead.
-   Scanlines (::after) stay. */
-#screen-encounter.comm-screen .enc-backdrop.has-bg-sprite,
-#screen-encounter.comm-corrupted .enc-backdrop.has-bg-sprite {
+   Scanlines (::after) stay. Corrupted keeps a treatment on the art
+   (parity 2026-10-11: the void events looked ordinary): a purple cast
+   with the AI bar's hue flicker, and purple scanlines over it. */
+#screen-encounter.comm-screen .enc-backdrop.has-bg-sprite {
   filter: none;
+}
+#screen-encounter.comm-corrupted .enc-backdrop.has-bg-sprite {
+  filter: hue-rotate(-28deg) saturate(1.25) brightness(0.82);
+  animation: enc-corrupt-backdrop 0.8s infinite steps(3);
+}
+@keyframes enc-corrupt-backdrop {
+  0%   { filter: hue-rotate(-28deg) saturate(1.25) brightness(0.82); }
+  33%  { filter: hue-rotate(-18deg) saturate(1.3)  brightness(0.88); }
+  66%  { filter: hue-rotate(-43deg) saturate(1.2)  brightness(0.76); }
+  100% { filter: hue-rotate(-28deg) saturate(1.25) brightness(0.82); }
+}
+#screen-encounter.comm-corrupted .enc-backdrop::after {
+  background: repeating-linear-gradient(0deg, rgba(160,90,200,0.10) 0 1px, transparent 1px 3px);
+  mix-blend-mode: screen;
 }
 
 /* ── Subject frame (talking head) ─────────────────────────────────── */
@@ -132,11 +150,19 @@
   image-rendering: pixelated;
 }
 
+/* Pose variants (demo-encounter.html :381-383) — subtle filter shifts per
+   authored layer pose. Before the comm-mode rules, as in the demo: a
+   screen/corrupted head treatment wins over a pose. */
+#screen-encounter .enc-subject.pose-listening .enc-subject-head { filter: brightness(1.1); }
+#screen-encounter .enc-subject.pose-hostile   .enc-subject-head { filter: brightness(0.85) contrast(1.2) hue-rotate(-10deg); }
+#screen-encounter .enc-subject.pose-pleased   .enc-subject-head { filter: brightness(1.2) saturate(1.2); }
+
 @keyframes enc-layer-flash {
   0%   { filter: brightness(1.25); }
   100% { filter: brightness(1); }
 }
-#screen-encounter .enc-subject.flash { animation: enc-layer-flash 0.35s ease-out; }
+#screen-encounter .enc-subject.flash,
+#screen-encounter .enc-narrative.flash { animation: enc-layer-flash 0.35s ease-out; }
 
 /* ── Comm-mode overlays on the subject ────────────────────────────── */
 #screen-encounter .enc-subject-comm {
@@ -214,10 +240,55 @@
   width: max(var(--subj-size), 240px);
   border-color: rgba(200,168,90,0.4);
   box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-  white-space: pre-line;
+  line-height: 1.25; /* demo .enc-dialog */
+  white-space: normal; /* was pre-line here: the markup's own newlines became blank lines (66px for one line) */
   transition: top 0.25s;
   z-index: 16;
 }
+#screen-encounter .enc-dialog .enc-dialog-line { white-space: pre-line; } /* authored \n line breaks */
+/* Corrupted variant (demo :870-878) — matches the AI bar: split-channel
+   shadow, purple tint, hue flicker. */
+#screen-encounter .enc-dialog.corrupted {
+  border-color: rgba(160,90,200,0.55);
+  background: rgba(20,8,30,0.82);
+  color: #e0c8f0;
+  text-shadow: 2px 0 rgba(204,51,51,0.55), -2px 0 rgba(95,168,208,0.55);
+  animation: enc-corrupt-flicker 0.8s infinite steps(3);
+}
+/* Corrupted AI bar (demo :537-553) — Void / cosmic-horror register. */
+#screen-encounter .enc-ai-bar.corrupted {
+  border-color: rgba(160,90,200,0.55);
+  background: rgba(20,8,30,0.82);
+  animation: enc-corrupt-flicker 0.8s infinite steps(3);
+}
+#screen-encounter .enc-ai-bar.corrupted .enc-ai-name { color: #c8a0e8; }
+#screen-encounter .enc-ai-bar.corrupted .enc-ai-text {
+  color: #e0c8f0;
+  letter-spacing: 2px;
+  text-shadow: 2px 0 rgba(204,51,51,0.55), -2px 0 rgba(95,168,208,0.55);
+}
+@keyframes enc-corrupt-flicker {
+  0%   { filter: hue-rotate(0deg)   brightness(1);    }
+  33%  { filter: hue-rotate(10deg)  brightness(1.08); }
+  66%  { filter: hue-rotate(-15deg) brightness(0.92); }
+  100% { filter: hue-rotate(0deg)   brightness(1);    }
+}
+
+/* Typewriter (demo :918-933): the untyped rest of a line holds its final
+   place invisibly (no line-jumping), the ▍ cursor blinks at the edge.
+   Encounter keeps its own ▍ cursor (DESIGN_SYSTEM.md, Shared modules). */
+#screen-encounter .enc-tw-pending { visibility: hidden; }
+#screen-encounter .enc-tw-cursor {
+  display: inline-block;
+  color: var(--gold, #c8a85a);
+  animation: enc-tw-blink 0.6s steps(2) infinite;
+  margin: 0 1px;
+  transform: translateY(-1px);
+  font-style: normal;
+  text-shadow: none;
+  letter-spacing: 0;
+}
+@keyframes enc-tw-blink { to { opacity: 0; } }
 #screen-encounter .enc-dialog .enc-dialog-name { display: none; }
 #screen-encounter.no-subject .enc-dialog { display: none; }
 
@@ -242,7 +313,14 @@
 }
 #screen-encounter .enc-choice.has-gate .ch-text,
 #screen-encounter .enc-choice.has-gate .ch-sub { grid-column: 2; }
-#screen-encounter .enc-choice .ch-text.dialog { font-style: italic; }
+/* dialog: true choices are spoken words — mixed case, cream (demo
+   .enc-choice-body.dialog). */
+#screen-encounter .enc-choice .ch-text.dialog {
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0.3px;
+  color: var(--cream, #e8d8a0);
+}
 #screen-encounter .enc-choice .ch-sub {
   font-size: 13px;
   color: #8a93a5;
@@ -256,8 +334,40 @@
   font-size: 11px; letter-spacing: 1px; line-height: 1;
 }
 #screen-encounter .enc-choice .ch-sub .risky { color: #d06a5a; }
-#screen-encounter .enc-choice.risky { border-left-color: #d06a5a; }
-#screen-encounter .enc-choice.hint  { border-left-color: var(--teal, #5fa8d0); }
+
+/* ── Accent strip: right side, 5px (Bible §18 + DESIGN_SYSTEM default) ──
+   --strip-c carries the variant colour; hover re-borders all four sides
+   in it (risky red, hint teal, leave red — not always gold). Scoped off
+   the combat action column (screen-combat.css owns those strips). */
+#screen-encounter .enc-choices:not(.combat-actions) .enc-choice {
+  --strip-c: var(--gold, #c8a85a);
+  border: 2px solid rgba(95,168,208,0.3);
+  border-right: 5px solid var(--strip-c);
+}
+#screen-encounter .enc-choices:not(.combat-actions) .enc-choice.risky   { --strip-c: #cc3333; }
+#screen-encounter .enc-choices:not(.combat-actions) .enc-choice.hint    { --strip-c: var(--teal, #5fa8d0); }
+#screen-encounter .enc-choices:not(.combat-actions) .enc-choice.advance { --strip-c: var(--teal, #5fa8d0); }
+#screen-encounter .enc-choices:not(.combat-actions) .enc-choice:hover   { border-color: var(--strip-c); }
+#screen-encounter .enc-choices:not(.combat-actions) .enc-choice.locked {
+  --strip-c: rgba(95,100,115,0.4);
+  border-color: rgba(95,100,115,0.3);
+  border-right-color: var(--strip-c);
+}
+#screen-encounter .enc-choices:not(.combat-actions) .enc-choice.locked:hover { border-color: rgba(95,100,115,0.3); border-right-color: var(--strip-c); }
+/* Leave row (demo :720-743): the always-present exit, last in the column —
+   red gradient, uniform 3px border all round (no strip), red-tinted text.
+   Locked on forced events: "CAN'T LEAVE (HULL BREACH)". */
+#screen-encounter .enc-choices:not(.combat-actions) .enc-choice.leave {
+  --strip-c: var(--red, #cc3333);
+  margin-top: 6px;
+  background: linear-gradient(180deg, #3a2a2a 0%, #1a1010 100%);
+  border: 3px solid rgba(204,51,51,0.4);
+  color: #e8a0a0;
+}
+#screen-encounter .enc-choices:not(.combat-actions) .enc-choice.leave .ch-text { color: #e8a0a0; }
+#screen-encounter .enc-choices:not(.combat-actions) .enc-choice.leave:hover { border-color: var(--strip-c); }
+#screen-encounter .enc-choices:not(.combat-actions) .enc-choice.leave.locked,
+#screen-encounter .enc-choices:not(.combat-actions) .enc-choice.leave.locked:hover { border: 3px solid rgba(204,51,51,0.4); }
 
 /* ── Combat FX on the subject frame (scene_art.js subjectFX) ─────── */
 @keyframes enc-subject-hit {
@@ -273,16 +383,27 @@
   filter: brightness(2.5) saturate(0);
 }
 
-/* ── Choice entrance cascade + click pulse (demo canon) ─────────── */
+/* ── Choice hold, entrance cascade + click pulse (demo :640-652) ─────
+   Held (index.html prepareDelivery) until the text lands: invisible and
+   unclickable. Then top to bottom, 40ms stagger × 180ms fade, still
+   unclickable until the last one lands (.entering). */
+#screen-encounter .enc-choices.held { pointer-events: none; }
+#screen-encounter .enc-choices.held .enc-choice { opacity: 0; pointer-events: none; }
 @keyframes enc-choice-enter {
-  from { opacity: 0; transform: translateX(14px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-#screen-encounter .enc-choice.entering { animation: enc-choice-enter 0.22s ease-out backwards; }
+#screen-encounter .enc-choice.entering {
+  opacity: 0;
+  animation: enc-choice-enter 180ms forwards ease-out;
+  pointer-events: none;
+}
 @keyframes enc-choice-pulse {
-  0% { filter: brightness(1.6); } 100% { filter: brightness(1); }
+  0%   { filter: brightness(1); }
+  50%  { filter: brightness(1.5); }
+  100% { filter: brightness(1); }
 }
-#screen-encounter .enc-choice.pulse { animation: enc-choice-pulse 0.25s ease-out; }
+#screen-encounter .enc-choice.pulse { animation: enc-choice-pulse 0.4s ease-out; }
 
 /* ── Approach mode (demo-encounter station_approach) ──────────────────
    A station hail paints the node's station from sprites/backgrounds/

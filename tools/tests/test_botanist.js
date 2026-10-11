@@ -60,7 +60,8 @@ async function view(page) {
     finishAllTyping();
     const t = id => (document.getElementById(id) || {}).textContent || '';
     return {
-      title: t('enc-narr-title'), body: t('enc-narr-body'), line: t('enc-dialog-line'), ai: t('enc-ai-text'),
+      // Spoken and AI lines render in bare quotes (Bible §18, encounter parity 2026-10-11).
+      title: t('enc-narr-title'), body: t('enc-narr-body'), line: t('enc-dialog-line').replace(/^"([\s\S]*)"$/, '$1'), ai: t('enc-ai-text').replace(/^"([\s\S]*)"$/, '$1'),
       speaker: t('enc-dialog-name'),
       choices: [...document.querySelectorAll('#enc-choices .enc-choice')].map(b => ({
         text: (b.querySelector('.ch-text') || {}).textContent || '',
@@ -403,7 +404,7 @@ const snap = page => page.evaluate(() => ({
     await enter(page, { health: 60, gold: 11 });
     await click(page, 'BUY CROP TREATMENT');
     let v = await view(page);
-    ok(pick(v, 'TREAT IT HERE').locked && /Needs 12g/.test(pick(v, 'TREAT IT HERE').sub) && pick(v, 'BOTTLE').locked, 'short of gold: both locked ("Needs 12g")');
+    ok(pick(v, 'TREAT IT HERE').locked && /Need: 12g/.test(pick(v, 'TREAT IT HERE').sub) && pick(v, 'BOTTLE').locked, 'short of gold: both locked ("Need: 12g")');
     // BACK returns to the hub with the revisit copy for the counter next time.
     await click(page, 'BACK');
     await click(page, 'BUY CROP TREATMENT');

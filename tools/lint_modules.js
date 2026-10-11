@@ -611,6 +611,52 @@ const eventOnTrail = (ev, trail) => {
   }
 }
 
+// ── Encounter presentation fields (added 2026-10-11, encounter parity) ──
+// The leave row (index.html renderLeaveRow; Bible §18 leaveLabel /
+// leaveDisabled): every layered event names its leave row (`leave_label`)
+// unless `no_leave` hides it; a forced event (`leave_disabled`, layered or
+// flat) shows it locked and must say why ("CAN'T LEAVE (…)"); a flat
+// event has no free leave row, so a label there without leave_disabled
+// would never show. Layers may rename it (`leave_label`) or hide it
+// (`leaveHidden`). `timed` puts ⏱ on the title; `pose` must be a styled
+// pose; market_vendor / market_barter only mean something on open_market.
+{
+  const POSES = new Set(['hostile', 'listening', 'pleased']);
+  const MARKET_VENDORS = new Set(['surplus']);
+  const isLabel = v => typeof v === 'string' && v.trim() === v && v.length > 0 && v === v.toUpperCase();
+  for (const { file, event: ev } of eventsById.values()) {
+    const at = `${file} ${ev.id}`;
+    if (ev.leave_label != null && !isLabel(ev.leave_label)) err(`${at}: leave_label must be a non-empty UPPERCASE string`);
+    if (ev.leave_disabled != null && typeof ev.leave_disabled !== 'boolean') err(`${at}: leave_disabled must be true/false`);
+    if (ev.timed != null && typeof ev.timed !== 'boolean') err(`${at}: timed must be true/false`);
+    if (ev.leave_disabled) {
+      if (!/^CAN'T LEAVE \(.+\)$/.test(ev.leave_label || '')) err(`${at}: leave_disabled needs leave_label "CAN'T LEAVE (<why>)" — the locked row has to say why`);
+      if (ev.no_leave) err(`${at}: leave_disabled and no_leave together — the row is either locked or hidden`);
+    } else if (ev.layers) {
+      if (!ev.no_leave && ev.active !== false && !ev.leave_label) err(`${at}: layered event has no leave_label (its leave row would read "LEAVE") — name it, or no_leave: true`);
+    } else if (ev.leave_label != null) {
+      err(`${at}: flat event with leave_label but no leave_disabled — flat events have no leave row, the label never shows`);
+    }
+    for (const [lk, l] of Object.entries(ev.layers || {})) {
+      const lat = at + '/' + lk;
+      if (l.leave_label != null && !isLabel(l.leave_label)) err(`${lat}: leave_label must be a non-empty UPPERCASE string`);
+      if (l.leave_label != null && (ev.no_leave || ev.leave_disabled)) err(`${lat}: layer leave_label on an event whose leave row is ${ev.no_leave ? 'hidden' : 'locked'} — it never shows`);
+      if (l.leaveHidden != null && typeof l.leaveHidden !== 'boolean') err(`${lat}: leaveHidden must be true/false`);
+      if (l.timed != null && typeof l.timed !== 'boolean') err(`${lat}: timed must be true/false`);
+      if (l.pose != null && !POSES.has(l.pose)) err(`${lat}: pose "${l.pose}" is not styled (${[...POSES].join('/')})`);
+    }
+    for (const { layer, choices } of choiceSetsOf(ev)) {
+      for (const ch of choices) {
+        const cat = atOf(file, ev.id, layer), label = ch.text || ch.label;
+        if (ch.market_vendor != null && !MARKET_VENDORS.has(ch.market_vendor)) err(`${cat}: choice "${label}" market_vendor "${ch.market_vendor}" is not a vendor engine/js/screens/market.js builds (${[...MARKET_VENDORS].join('/')})`);
+        if ((ch.market_vendor != null || ch.market_barter) && !ch.open_market) err(`${cat}: choice "${label}" has market_vendor/market_barter but no open_market — it never opens a market`);
+        if (ch.market_barter && !ev.npc) err(`${cat}: choice "${label}" market_barter needs the event's npc (the vendor's species decides the barter stock)`);
+        if (ch.market_barter && ch.market_sinister) err(`${cat}: choice "${label}" market_barter on the black market — the sinister vendor never barters`);
+      }
+    }
+  }
+}
+
 // ── Effort contract + hands-on job types (added 2026-10-11) ────────
 // choiceEffort() only rolls effort when a choice authors BOTH
 // effort_required and requires_effort_from, or names an EFFORT_CHECKS

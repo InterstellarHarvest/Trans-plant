@@ -679,14 +679,17 @@
     if (_activeSheet) setNpcFrame(_activeSheet, _activeSheet.idleIdx);
   }
 
-  /* Engine has no typewriter — run the talk loop for a duration
-     proportional to the line length, then settle on idle. */
-  function startTalking(line) {
+  /* Runs the talk loop. The encounter's typewriter stops it when the
+     spoken line lands (stopTalking); untilLanded=false (a caller with no
+     typewriter) runs it for a duration proportional to the line. */
+  function startTalking(line, untilLanded) {
     stopTalking();
     if (!_activeSheet) return;
     const sheet = _activeSheet;
     const frameMs = TALK_LOOP_MS / sheet.talkIdxs.length;
-    _talkUntil = performance.now() + Math.min(1200 + String(line || '').length * 35, 6500);
+    // Typed lines: a 60s safety cap only (slow text speed + a long line
+    // outlasted the old length estimate, and the mouth stopped mid-line).
+    _talkUntil = performance.now() + (untilLanded ? 60000 : Math.min(1200 + String(line || '').length * 35, 6500));
     const start = performance.now();
     function tick(now) {
       if (_activeSheet !== sheet) return;
@@ -737,7 +740,7 @@
       if (sheet) {
         _activeSheet = sheet;
         setNpcFrame(sheet, sheet.idleIdx);
-        if (_pendingLine) { startTalking(_pendingLine); _pendingLine = null; }
+        if (_pendingLine) { startTalking(_pendingLine, _pendingTyped); _pendingLine = null; }
         return;
       }
       // Single-portrait fallback: folder/1/<stem>.png
@@ -775,6 +778,7 @@
   let _currentEvKey = null;
   let _currentSubjKey = null;
   let _pendingLine = null;
+  let _pendingTyped = false; // the pending line is being typed (stops when it lands)
 
   /* An event id can be drawn more than once in one run. Sticky art may
      remain keyed by id, but presentation state belongs to one entry:
@@ -854,18 +858,27 @@
       const pose = opts.pose || (layer && layer.pose);
       if (pose) subjEl.classList.add('pose-' + pose);
     }
-    if (line) {
-      if (_activeSheet) startTalking(line);
-      else _pendingLine = line;  // sheet still probing — talk when it lands
-    } else {
+    // opts.deferTalk: the encounter types its beats in order and calls
+    // talk() when the spoken line's own beat starts (owner ruling
+    // 2026-10-11: the NPC talks only during its line).
+    if (line && !opts.deferTalk) talk(line, false);
+    else {
       _pendingLine = null;
       stopTalking();
     }
   }
 
+  /* The spoken line's beat has started: talk until stopTalking(). */
+  function talk(line, typed) {
+    typed = typed !== false;
+    if (_activeSheet) startTalking(line, typed);
+    else { _pendingLine = line; _pendingTyped = typed; }  // sheet still probing — talk when it lands
+  }
+
   /* Called from renderOutcomeView(). Outcomes may override the scene
      (scene_bg / scene_bg_base / scene_bg_sprite per CLAUDE.md schema). */
-  function renderOutcome(outcome, npcCtx) {
+  function renderOutcome(outcome, npcCtx, opts) {
+    opts = opts || {};
     const c = _ctx || {};
     const spec = outcomeSpecFor(outcome, c.ev, c.node, c.npcCtx);
     if (spec) {
@@ -874,7 +887,7 @@
       const instKey = instanceKey(c.ev, c.node);
       if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey, c.node);
     }
-    if (outcome && outcome.line && npcCtx) startTalking(outcome.line);
+    if (outcome && outcome.line && npcCtx && !opts.deferTalk) startTalking(outcome.line, false);
     else stopTalking();
   }
 
@@ -905,6 +918,6 @@
     _activeSheet = null;
   }
 
-  window.SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, sceneSpecFor, layerSpecFor, outcomeSpecFor, expandPath, biomeFor,
+  window.SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, talk, sceneSpecFor, layerSpecFor, outcomeSpecFor, expandPath, biomeFor,
     stationApproachFor, paintStationView, STATION_APPROACH_POOL };
 })();

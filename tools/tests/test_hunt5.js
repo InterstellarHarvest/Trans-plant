@@ -246,7 +246,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       handleChoiceClick(browse); MarketModal.close();
       await new Promise(r => setTimeout(r, 80));
       d0 = STATE.daysElapsed;
-      const walk = [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => /WALK AWAY/.test(b.textContent));
+      // The leave row (per-event label since the encounter parity pass: NO THANKS here).
+      const walk = document.querySelector('#enc-choices .enc-choice.leave');
       out.walkSub = walk && walk.textContent; walk && walk.click();
       await new Promise(r => setTimeout(r, 400));
       out.tradeDays = STATE.daysElapsed - d0;

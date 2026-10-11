@@ -186,6 +186,63 @@
     };
   }
 
+  /* Demo trader_surplus (the space trader's surplus bin): one box of
+     fabricator surplus, sold unseen as "???" for 8 gold. It is the real
+     fab_surplus item (items.json) — the Surplus Collector and the fence
+     take it; this bin doesn't buy anything back. */
+  function surplusVendor() {
+    const d = defBy('fab_surplus');
+    return {
+      name: 'SURPLUS MYSTERY',
+      greeting: "No names. No returns. No questions. And yes, it hums.",
+      farewell: "Whatever it does, it's yours now.",
+      wares: d ? [{ id: 'fab_surplus', name: '???', icon: '📦', cost: { gold: 8 },
+                    desc: 'Fabricator surplus. Contents unknown. Warranty: void. Do not submerge.' }] : [],
+      buyPrices: {},
+      flavor: {
+        buy:  ["Hope it's useful.", "Sold.", "Try not to open it near an open flame."],
+        deny: ["Eight gold. That's the price.", "Can't negotiate on something I can't describe."],
+        no_buyback: ["I don't buy mystery boxes back. Obviously."]
+      }
+    };
+  }
+
+  /* Barter (demo xeno_merchant): an alien vendor at Market Row (the
+     choice's market_barter; the vendor's species is the event NPC's)
+     also takes goods — item for item, or gold and an item. One trade per
+     row each time the stall opens. Real items only, each with a source
+     and a use: surplus (fabricator misfires) and fungus (events) in,
+     shelf consumables out. A human vendor deals in gold only. */
+  const BARTER_WARES = [
+    { id: 'hull_patch',  cost: { item: 'fab_surplus' },              desc: 'Takes your fabricator surplus, sight unseen. Gives you a hull patch, sight very much seen.' },
+    { id: 'medkit',      cost: { item: 'suspicious_fungus' },        desc: 'They want the fungus. They do not say what for. The medkit is sealed and current.' },
+    { id: 'o2_canister', cost: { gold: 3, item: 'ration_brick' },    desc: 'A ration brick and three gold for a canister of air. They insist the brick is the valuable half.' },
+    { id: 'fuel_cell',   cost: { gold: 4, item: 'water_canister' },  desc: 'Water and four gold for a fuel cell. Out here water is the currency; gold is the tip.' },
+  ];
+  const BARTER_FLAVOR = {
+    buy:  ["*a low chime — assent*", "*chime: THE EXCHANGE IS GOOD*", "*chime: REGARD*"],
+    deny: ["*a sharp chime — regret*", "*chime: NOT POSSIBLE*"],
+  };
+  function addBarterWares(vendor) {
+    const sp = STATE.npcCtx && STATE.npcCtx.species;
+    if (!sp || sp === 'human') return vendor;
+    // Top of the rack: the trades are the stall's specialty (they sat
+    // below twenty gold rows, out of sight).
+    const barter = [];
+    for (const w of BARTER_WARES) {
+      const d = defBy(w.id);
+      if (!d || (w.cost.item && !defBy(w.cost.item))) continue; // never invent an id items.json lacks
+      barter.push({ id: w.id, name: (d.name || w.id).toUpperCase(), icon: iconOf(w.id), cost: Object.assign({}, w.cost), desc: w.desc, barter: true });
+    }
+    vendor.wares.unshift(...barter);
+    vendor.name = 'XENO MERCHANT';
+    vendor.greeting = "*a chime that resolves into the word: TRADE*";
+    vendor.farewell = "*a chime, descending — assent of farewell*";
+    vendor.flavor.buy = BARTER_FLAVOR.buy.concat(vendor.flavor.buy);
+    vendor.flavor.deny = BARTER_FLAVOR.deny.concat(vendor.flavor.deny);
+    return vendor;
+  }
+
   // STATE.items (short-id strings) → MarketModal cargo entries. A trade
   // good with a rolled value is its own entry (key id#copy) priced at
   // that copy's value — exact with a spectrometer aboard, the range without.
@@ -220,11 +277,16 @@
 
   // Trial-fit: would one more of `sid` fit the hold? Mirrors
   // grantItem's own check without committing (push → measure → pop).
-  function cargoFits(sid) {
+  // A barter ware frees its traded item's slot first (item for item
+  // must not be refused by a full hold).
+  function cargoFits(sid, tradedSid) {
     if (sid === 'insulated_cargo_bay') return !STATE.items.includes(sid); // grantItem's own paradox guard
+    const ti = tradedSid ? STATE.items.lastIndexOf(tradedSid) : -1;
+    if (ti >= 0) STATE.items.splice(ti, 1);
     STATE.items.push(sid);
     const fits = cargoSlotsUsed() <= cargoCapacity();
     STATE.items.pop();
+    if (ti >= 0) STATE.items.splice(ti, 0, tradedSid);
     return fits;
   }
 
@@ -236,7 +298,10 @@
       return;
     }
     if (MarketModal.isOpen()) return;
-    const vendor = opts.sinister ? blackMarketVendor() : stationVendor();
+    const vendor = opts.sinister ? blackMarketVendor()
+      : opts.vendor === 'surplus' ? surplusVendor()
+      : opts.barter ? addBarterWares(stationVendor())
+      : stationVendor();
 
     const marketEl = $('enc-market');
     if (marketEl) marketEl.classList.toggle('sinister', !!vendor.sinister);
@@ -254,12 +319,12 @@
       // Items, then one entry per unit of each raw material (the list
       // stacks them) — materials sell at stations, never take hold space.
       getCargo: () => cargoEntries().concat(
-        vendor.sinister ? [] : allMaterialDefs().flatMap(m => Array.from({ length: STATE.materials[m.id] || 0 }, () => ({
+        (vendor.sinister || opts.vendor === 'surplus') ? [] : allMaterialDefs().flatMap(m => Array.from({ length: STATE.materials[m.id] || 0 }, () => ({
           id: m.id, name: (m.name || m.id).toUpperCase(), icon: 'sprites/cargo/materials/' + m.id + '.png', desc: m.description || '', tags: [], material: true,
         })))),
       // Capacity gate BEFORE any cost applies — a refused buy must
       // leave gold untouched (shared.js MarketModal optional hook).
-      canAddCargo: ware => cargoFits(ware.id),
+      canAddCargo: ware => cargoFits(ware.id, ware.cost && ware.cost.item),
       cargoFullMsg: 'No room in the hold. Jettison something (INV) first.',
       addCargo: entry => { grantItem(entry.id); renderHUD(); },
       // The cargo bay can't leave while the hold needs its extra slots.
