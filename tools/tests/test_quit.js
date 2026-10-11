@@ -49,7 +49,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
 
   console.log('— Stop-menu SCAN quit');
   a = await st();
-  await page.evaluate(() => { const n = STATE.nodes.find(x => x.node_type === 'nebula' || x.node_type === 'anomaly' || x.node_type === 'void'); STATE.currentId = n.id; });
+  await page.evaluate(() => { const n = (STATE.nodes.find(x => x.node_type === 'nebula' || x.node_type === 'anomaly' || x.node_type === 'void') || Object.assign(STATE.nodes.find(x => x !== STATE.nodes[0] && !['station', 'fork'].includes(x.node_type) && (STATE.byId[STATE.currentId] !== x)), { node_type: 'nebula' })); STATE.currentId = n.id; });
   await verb('SCAN');
   await page.click('#rstart'); await page.waitForTimeout(800);
   await page.mouse.click(20, 20); // backdrop click = same as ✕

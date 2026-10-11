@@ -265,7 +265,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     const page = await boot({ crew: ['engineer', 'pilot'], crop: 'tomato' });
     const r = await page.evaluate(async () => {
       const out = {};
-      const n = STATE.nodes.find(x => x.node_type === 'asteroid_field'); STATE.currentId = n.id; renderCruise();
+      const n = (STATE.nodes.find(x => x.node_type === 'asteroid_field') || Object.assign(STATE.nodes.find(x => x !== STATE.nodes[0] && !['station', 'fork'].includes(x.node_type) && (STATE.byId[STATE.currentId] !== x)), { node_type: 'asteroid_field' })); STATE.currentId = n.id; renderCruise();
       document.body.classList.remove('stop-active'); document.getElementById('stop-btn').click();
       await new Promise(r => setTimeout(r, 80));
       window.openMining = cb => cb({ inventory: { metal: 1 }, runs: 1 });

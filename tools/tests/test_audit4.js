@@ -81,7 +81,7 @@ const nodeOfType = (page, t) => page.evaluate(t => { const n = STATE.nodes.find(
   {
     const page = await boot({ ai: 'aria' });
     const r = await page.evaluate(() => {
-      const planet = STATE.nodes.find(n => n.node_type === 'planet');
+      const planet = (STATE.nodes.find(n => n.node_type === 'planet') || Object.assign(STATE.nodes.find(x => x !== STATE.nodes[0] && !['station', 'fork'].includes(x.node_type) && (STATE.byId[STATE.currentId] !== x)), { node_type: 'planet' }));
       STATE.items.push('solar_array', 'water_purifier', 'soil_sampler', 'medical_scanner', 'repair_kit', 'geiger_counter');
       STATE.resources.water = 50; STATE.resources.fuel = 50;
       const f0 = STATE.resources.fuel;
@@ -114,9 +114,9 @@ const nodeOfType = (page, t) => page.evaluate(t => { const n = STATE.nodes.find(
     const page = await boot({ crop: 'zinnia', ai: 'marv' });
     const r = await page.evaluate(() => {
       STATE.cropGrowth.health = 80; STATE.resources.morale = 50;
-      arrivalPassives(STATE.nodes.find(n => n.node_type === 'planet'));
+      arrivalPassives((STATE.nodes.find(n => n.node_type === 'planet') || Object.assign(STATE.nodes.find(x => x !== STATE.nodes[0] && !['station', 'fork'].includes(x.node_type) && (STATE.byId[STATE.currentId] !== x)), { node_type: 'planet' })));
       const healthy = STATE.resources.morale;
-      STATE.cropGrowth.health = 20; arrivalPassives(STATE.nodes.find(n => n.node_type === 'planet'));
+      STATE.cropGrowth.health = 20; arrivalPassives((STATE.nodes.find(n => n.node_type === 'planet') || Object.assign(STATE.nodes.find(x => x !== STATE.nodes[0] && !['station', 'fork'].includes(x.node_type) && (STATE.byId[STATE.currentId] !== x)), { node_type: 'planet' })));
       return { healthy, sick: STATE.resources.morale };
     });
     ok(r.healthy === 58 && r.sick === 53, `zinnia morale +8 healthy / −5 sick per leg (${r.healthy}, ${r.sick})`);
@@ -126,7 +126,7 @@ const nodeOfType = (page, t) => page.evaluate(t => { const n = STATE.nodes.find(
       const st = STATE.byId[STATE.currentId];
       STATE.cropGrowth.health = 80;
       const atStation = cropGrowthFactorAt(60);
-      const v = STATE.nodes.find(n => n.node_type === 'void');
+      const v = (STATE.nodes.find(n => n.node_type === 'void') || Object.assign(STATE.nodes.find(x => x !== STATE.nodes[0] && !['station', 'fork'].includes(x.node_type) && (STATE.byId[STATE.currentId] !== x)), { node_type: 'void' }));
       STATE.currentId = v.id;
       const atVoid = cropGrowthFactorAt(60);
       return { atStation, atVoid };
