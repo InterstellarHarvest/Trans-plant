@@ -308,5 +308,188 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_void_004",
+    "active": true,
+    "title": "The Dark Speaks",
+    "difficulty": "hard",
+    "tone": [
+      "corrupted",
+      "cosmic"
+    ],
+    "node_type": [
+      "void",
+      "anomaly"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "bg": "anomaly/void",
+    "comm_mode": "corrupted",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "drifter",
+      "species": "unknown",
+      "variant": 1,
+      "displayName": "????"
+    },
+    "leave_label": "WITHDRAW",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE DARK SPEAKS",
+        "body": "The void bends. Something that isn't there looks at you with eyes it doesn't have. Your AI's voice comes through wrong, in a register it shouldn't own.",
+        "line": "we̷ know your n̴ame. we̶ have a̷lways kn̴own i̶t.",
+        "pose": "hostile",
+        "ai": {
+          "aria": "A l-l-lovely pl-pla[ce of deep wrong]ness! Oh!",
+          "marv": "P̷r̷obability we are ̴h̴ere: 0%. Probability I am speaking: ins̴u̶f̶ficient.",
+          "rex": "T̷a̵r̵g̴e̴t̸ acquired. Target is ever̵y̷w̶h̸ere. Weapons— weapons are also everywhere.",
+          "chip": "This experience is sponsored by [REDACTED]. Ask me about [REDACTED].",
+          "ajoy": "it already knows your name. let it finish saying it."
+        },
+        "revisit": {
+          "body": "The dark is still there, still bent toward you. It has not finished.",
+          "line": "s̷till here. s̴till ours."
+        },
+        "choices": [
+          {
+            "text": "LISTEN",
+            "dialog": true,
+            "hint": true,
+            "sub": "Let it finish",
+            "next": "listen"
+          },
+          {
+            "text": "TRANSMIT YOUR NAME",
+            "sub": "Xenobiologist · first contact",
+            "gate": {
+              "crew": "xenobiologist"
+            },
+            "risky": true,
+            "outcome": "void_name"
+          },
+          {
+            "text": "FIRE EVERYTHING",
+            "sub": "Fire on the incomprehensible",
+            "risky": true,
+            "outcome": "void_fight"
+          },
+          {
+            "text": "PULL BACK",
+            "sub": "Withdraw to sane space",
+            "outcome": "void_withdraw"
+          }
+        ]
+      },
+      "listen": {
+        "title": "A NAME",
+        "body": "The void says your mother's name. Then the captain's. Then a name none of you have heard spoken — but the AI flinches when it passes through the intercom.",
+        "pose": "listening",
+        "ai": {
+          "aria": "Su-such family fe-f-feeling!",
+          "marv": "The third name is not in my l̷exicon. And yet ̴I know it.",
+          "rex": "C̶a̷n̸n̵o̸t̸ engage a name.",
+          "chip": "Disclosing ancestral data is outside our Terms of Service.",
+          "ajoy": "answer with the third name. the one you didn't know you knew."
+        },
+        "choices": [
+          {
+            "text": "SPEAK THE THIRD NAME",
+            "dialog": true,
+            "hint": true,
+            "sub": "The one the AI flinched at",
+            "outcome": "void_third"
+          },
+          {
+            "text": "\"We are not your kin.\"",
+            "dialog": true,
+            "sub": "Refuse the recognition",
+            "risky": true,
+            "outcome": "void_refuse"
+          },
+          {
+            "text": "RECORD AND LEAVE",
+            "sub": "Spectrometer · log and run",
+            "gate": {
+              "item": "spectrometer"
+            },
+            "outcome": "void_recorded"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "void_name": {
+        "title": "GIVEN",
+        "body": "Your xenobiologist transmits the name. The dark considers. Something answers in a way that was maybe kind and maybe a warning and will not be asked to clarify. The hull rings once, softly, along a seam that was fine a minute ago.",
+        "resources": {
+          "morale": 5,
+          "hull": -3
+        },
+        "time_cost": "trivial",
+        "narrative": "Transmitted the ship's name into the void. Something answered. The hull rang once."
+      },
+      "void_fight": {
+        "title": "FOUGHT",
+        "tone": "danger",
+        "body": "The weapons discharge. Whatever was there, isn't. Whatever was here, also isn't, briefly. The crew agrees to never discuss this watch.",
+        "resources": {
+          "hull": -5,
+          "morale": -6
+        },
+        "time_cost": "trivial",
+        "narrative": "Fired every weapon into the void. The crew agreed never to discuss that watch."
+      },
+      "void_withdraw": {
+        "title": "RETREATED",
+        "body": "The readings fade. The AI's voice evens out. Someone in the galley is crying quietly and no one asks why.",
+        "resources": {
+          "fuel": -4,
+          "morale": -3
+        },
+        "time_cost": "trivial",
+        "scene_bg": "space/deep",
+        "narrative": "Pulled back from a voice in the void. Someone in the galley cried quietly afterwards."
+      },
+      "void_third": {
+        "title": "A RECOGNITION",
+        "tone": "success",
+        "body": "The dark exhales — or what passes for one. The third name was correct. Something far away files the encounter away. You will find out why in a year.",
+        "resources": {
+          "morale": 6
+        },
+        "sets_flag": "spoke_the_third_name",
+        "time_cost": "trivial",
+        "narrative": "Spoke a name nobody aboard had heard before into the void. It was the right one."
+      },
+      "void_refuse": {
+        "title": "REFUSED",
+        "tone": "danger",
+        "body": "The dark does not argue. It simply unmakes the conversation. Your logs have a six-minute gap. The crew does not.",
+        "resources": {
+          "morale": -8
+        },
+        "time_cost": "trivial",
+        "narrative": "Told the void we were not its kin. The logs lost six minutes. The crew did not."
+      },
+      "void_recorded": {
+        "title": "LOGGED",
+        "body": "The spectrometer captures what it can. Most of the file is corrupted. What survives reads like a ship's log: someone else's, from someone else's crossing, in a hand that gets worse toward the end.",
+        "item_grant": "logbook_fragment",
+        "time_cost": "low",
+        "narrative": "Recorded the voice in the void. What survived the corruption read like someone else's logbook."
+      }
+    }
   }
 ]
