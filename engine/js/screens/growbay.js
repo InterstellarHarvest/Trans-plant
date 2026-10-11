@@ -398,6 +398,9 @@
 
     // Tending crew member: their authored growth bonus.
     if (tender.growth > 0) add('positive', tender.name + (tender.wounded ? ' (wounded)' : '') + ' tending', tender.growth, 0);
+    // A station botanist's advice, taken (index.html applyCropAdvice): the
+    // crew talks to the crop now — the "4% faster" is this modifier.
+    if (GSTATE.talked) add('positive', 'Talked to daily', typeof CROP_TALK_GROWTH === 'number' ? CROP_TALK_GROWTH : 4, 0);
 
     // WATER — the ship's tanks first, then the Orders split vs the
     // crop's need.

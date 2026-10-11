@@ -1467,5 +1467,266 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_station_012",
+    "active": true,
+    "title": "The Hydroponics Display",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any",
+      "crop_sick",
+      "crop_pest"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "station_crew",
+      "job": "botanist",
+      "species": null
+    },
+    "leave_label": "BACK TO THE CONCOURSE",
+    "entryLayer": "botanist",
+    "layers": {
+      "botanist": {
+        "title": "STATION BOTANIST",
+        "body": "Real plants in real planters, all along the promenade. Halfway down, at a hydroponic display, a botanist looks up from a tray of gel-suspended sprouts. There's nutrient solution in their hair. They don't seem to notice.",
+        "line": "Hi! Sorry, just — give me one second — yes! That's the third leaf pair on the dwarf wheat. Look at that color. That's a healthy color.",
+        "pose": "pleased",
+        "ai": {
+          "aria": "Their joy is contagious!",
+          "marv": "Botanist arousal index: high. Productivity: also high.",
+          "rex": "Threat: zero. Vigilance: also zero.",
+          "chip": "Hydroponics consultations are billed at 8 credits per minute!",
+          "ajoy": "They will tell you everything you didn't ask. Listen anyway."
+        },
+        "revisit": {
+          "body": "They're still elbow-deep in the gel tray. They wave you over with a wet glove.",
+          "line": "Back! Did you have another question, or did the leaf pair convince you?"
+        },
+        "choices": [
+          {
+            "text": "\"What's the trick to healthy crops in transit?\"",
+            "dialog": true,
+            "sub": "Pry for advice",
+            "next": "botanist_tip"
+          },
+          {
+            "text": "OFFER A SAMPLE",
+            "gate": {
+              "crop": "cuttable"
+            },
+            "dialog": true,
+            "sub": "A cutting of your {crop.name} · trade",
+            "next": "botanist_sample"
+          },
+          {
+            "text": "BUY CROP TREATMENT",
+            "gate": {
+              "crop": "alive"
+            },
+            "sub": "Their crate, your gold",
+            "next": "botanist_treat"
+          }
+        ]
+      },
+      "botanist_tip": {
+        "title": "STATION BOTANIST",
+        "body": "They wipe their hands on the apron. The wipe makes things worse.",
+        "line": "Light cycles, water cycles, conversation. Plants fed conversation grow 4% faster. Don't ask me why. Talk to your crop.",
+        "pose": "listening",
+        "ai": {
+          "aria": "We do talk to it!",
+          "marv": "Anecdotal claim. Mechanism: undetermined.",
+          "rex": "Crew hour spent talking to plants: 3 weekly.",
+          "chip": "Plant-conversation training kits available!",
+          "ajoy": "It works. Don't argue."
+        },
+        "revisit": {
+          "body": "They're back at the gel tray, still talking. Not to you.",
+          "line": "{npc.line.advise}"
+        },
+        "choices": [
+          {
+            "text": "DO IT THEIR WAY",
+            "crop_advice": true,
+            "sub": "{crop.advice}",
+            "consume": "botanist_tip",
+            "consumedLabel": "Advice already taken",
+            "back": true
+          },
+          {
+            "text": "\"And my {crop.name}?\"",
+            "dialog": true,
+            "sub": "Ask about your own crop",
+            "next": "botanist_diagnose"
+          },
+          {
+            "text": "BACK",
+            "sub": "Thank them",
+            "back": true
+          }
+        ]
+      },
+      "botanist_diagnose": {
+        "title": "STATION BOTANIST",
+        "body": "{crop.diagnosis}",
+        "line": "{crop.verdict}",
+        "pose": "listening",
+        "ai": {
+          "aria": "A professional opinion! ARIA agrees with it already!",
+          "marv": "The arithmetic is correct. MARV checked it twice, out of spite.",
+          "rex": "Growbay status report received. Filed.",
+          "chip": "Free diagnosis! A rare and unrepeatable promotional event!",
+          "ajoy": "Do what they say. Then pretend it was your idea."
+        },
+        "choices": [
+          {
+            "text": "DO IT THEIR WAY",
+            "crop_advice": true,
+            "sub": "{crop.advice}",
+            "consume": "botanist_tip",
+            "consumedLabel": "Advice already taken",
+            "back": true
+          },
+          {
+            "text": "BACK",
+            "sub": "Thank them",
+            "back": true
+          }
+        ]
+      },
+      "botanist_sample": {
+        "title": "STATION BOTANIST",
+        "body": "You hand over a cutting of the {crop.name} in a sample bag. They look at it for a long time. They look at you for a shorter time.",
+        "line": "Where did you grow this? Hold on. Let me. — Yes. Trade you. Station-adapted cuttings, same family. Don't lose them.",
+        "pose": "pleased",
+        "ai": {
+          "aria": "A gift!",
+          "marv": "One cutting out, three biocomponents in. Exchange rate: favorable. Suspiciously.",
+          "rex": "Trade noted.",
+          "chip": "Station-adapted genetics retain value at participating ports!",
+          "ajoy": "Better deal than you deserved."
+        },
+        "choices": [
+          {
+            "text": "MAKE THE TRADE",
+            "dialog": true,
+            "preview": true,
+            "sub": "Your cutting for theirs",
+            "consume": "botanist_sample",
+            "consumedLabel": "Sample already exchanged",
+            "outcome": "botanist_traded"
+          },
+          {
+            "text": "TAKE IT BACK",
+            "sub": "Keep your cutting",
+            "back": true
+          }
+        ]
+      },
+      "botanist_treat": {
+        "title": "STATION BOTANIST",
+        "body": "They drag a crate out from under the display: two sprayers, a sack of something granular, and a row of brown bottles labelled mostly in exclamation marks.",
+        "line": "Two ways. I treat it now, or you take a bottle for the day it panics. Both work. One works on purpose.",
+        "pose": "listening",
+        "ai": {
+          "aria": "Medicine for the plants! ARIA would like one of each!",
+          "marv": "The treatment is real. So is the invoice. MARV recommends reading both.",
+          "rex": "Chemical support for the growbay. Approved.",
+          "chip": "Crop care at station rates! CHIP's discount applies! CHIP checked!",
+          "ajoy": "Treat it here if it's sick now. Buy the bottle if it'll be sick later. It will be sick later."
+        },
+        "revisit": {
+          "body": "The crate is still open. One of the bottles has fallen over and nobody has picked it up.",
+          "line": "Changed your mind? The crop hasn't."
+        },
+        "choices": [
+          {
+            "text": "TREAT IT HERE — 12 gold",
+            "gate": {
+              "gold": 12,
+              "crop": "ailing"
+            },
+            "preview": true,
+            "sub": "They come aboard with the sprayer",
+            "consume": "botanist_treat",
+            "consumedLabel": "Already treated",
+            "outcome": "botanist_treated"
+          },
+          {
+            "text": "A BOTTLE FOR THE ROAD — 18 gold",
+            "gate": {
+              "gold": 18,
+              "crop": "alive"
+            },
+            "preview": true,
+            "sub": "Crop treatment · use it from the hold",
+            "consume": "botanist_bottle",
+            "consumedLabel": "Already bought one",
+            "outcome": "botanist_bottle"
+          },
+          {
+            "text": "BACK",
+            "sub": "Not today",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "botanist_traded": {
+        "title": "CUTTINGS EXCHANGED",
+        "tone": "success",
+        "body": "The botanist pockets your cutting like a love letter and hands over a gel sleeve of their own: three station-adapted cuttings, rooted and furious about it. The fabricator will call them biocomponent. The {crop.name} will grow back the bit you took.",
+        "line": "{npc.line.farewell}",
+        "resources": {},
+        "crop_health": -5,
+        "materials": {
+          "biocomponent": 3
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Cuttings traded with a station botanist: a piece of the crop for three station-adapted biocomponents."
+      },
+      "botanist_treated": {
+        "title": "TREATED",
+        "tone": "success",
+        "body": "The botanist walks the whole growbay with the sprayer, talking under their breath to the {crop.name}, then to the sprayer, then to you. Whatever was living in the leaves is not, any more. The plant sits up a little.",
+        "line": "{npc.line.farewell}",
+        "resources": {
+          "gold": -12
+        },
+        "crop_health": 25,
+        "clears_pest": true,
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "A station botanist treated the crop aboard: health up, pests gone."
+      },
+      "botanist_bottle": {
+        "title": "A BOTTLE FOR THE ROAD",
+        "tone": "success",
+        "body": "One brown bottle of crop treatment, wrapped in a page torn from a seed catalogue. The label says what it does. The botanist says it again, slower, holding your wrist.",
+        "line": "{npc.line.farewell}",
+        "resources": {
+          "gold": -18
+        },
+        "item_grant": "crop_treatment",
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "A bottle of crop treatment bought from a station botanist, for the day the crop panics."
+      }
+    }
   }
 ]

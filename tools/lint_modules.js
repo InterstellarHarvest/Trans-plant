@@ -237,6 +237,16 @@ for (const file of eventFiles) {
             err(`${file} ${ev.id}${layer ? '/' + layer : ''}: choice "${ch.text || ch.label}" costs ${cost} gold but has no gate.gold ≥ ${cost} — a player with no gold could take it free`);
           }
         }
+        // Station botanist fields (2026-10-11): gate.crop kinds are the
+        // three index.html cropGateReason() knows; preview: true needs a
+        // fixed outcome to show; crop_advice applies on a navigation
+        // choice (an outcome choice would end the event first).
+        {
+          const at = `${file} ${ev.id}${layer ? '/' + layer : ''}: choice "${ch.text || ch.label}"`;
+          if (ch.gate && ch.gate.crop && !['alive', 'cuttable', 'ailing'].includes(ch.gate.crop)) err(`${at}: gate.crop "${ch.gate.crop}" is not alive/cuttable/ailing`);
+          if (ch.preview && !ch.outcome) err(`${at}: preview: true needs an outcome to preview`);
+          if (ch.crop_advice && !(ch.back || ch.next)) err(`${at}: crop_advice needs back/next (it applies before navigating)`);
+        }
         const o = ch.outcome;
         if (o && typeof o === 'object' && o.stowaway_resolve && !STOWAWAY_RESOLVES.has(o.stowaway_resolve)) {
           err(`${file} ${ev.id}${layer ? '/' + layer : ''}: stowaway_resolve "${o.stowaway_resolve}" is not welcome/welcome_replace/refuse`);

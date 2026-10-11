@@ -122,7 +122,7 @@
     captain:   'station/dock',
     engineer:  'station/dock',
     janitor:   'station/promenade',
-    botanist:  'station/market/mixed',
+    botanist:  'station/promenade', // demo canon: the promenade's hydroponic display
     bartender: 'station/cantina',
   };
 
