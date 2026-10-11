@@ -119,7 +119,9 @@ const computedIs = s => s.computed.includes(s.main.split('/').map(encodeURICompo
     let wrong = [], events = new Set();
     for (let i = 0; i < 80; i++) {
       await page.evaluate(i => {
-        STATE.artSeed = 1000 + i * 7919;
+        // A fresh run each time: NPC species (and the art seed) are fixed per stop within a run.
+        applySetupToState({ trail: 'mars', ai: 'marv', captain: 'veteran', crew: ['diplomat', 'pilot'], crop: 'wheat', ship: 'D' });
+        STATE.stowaway = null;
         const st = STATE.nodes.filter(n => n.node_type === 'station')[i % 2];
         STATE.currentId = st.id;
         if (typeof clearNpcSlot === 'function') clearNpcSlot();
