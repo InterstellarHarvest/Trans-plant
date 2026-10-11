@@ -50,7 +50,7 @@ function installHarness(policy) {
   window.__ctx = 'other';
   passDays = function (d, o) {
     const n = Math.max(0, Math.round(d));
-    if (window.__ctx === 'event') S.eventDays += n; else if (window.__ctx === 'verb') S.verbDays += n; else if (o && o.travel) S.travelDays += n;
+    if (window.__ctx === 'event') S.eventDays += n; else if (window.__ctx === 'verb' || (window.cruiseWaitActive && cruiseWaitActive())) S.verbDays += n; else if (o && o.travel) S.travelDays += n;
     const before = STATE.resources.food;
     const r = realPass(d, o);
     for (const k of ['food', 'water', 'o2']) if (STATE.resources[k] <= 0) S.deprivedDays += n;
@@ -211,6 +211,10 @@ function step() {
   // ---------- CRUISE HUB ----------
   if (scr === 'screen-cruise') {
     window.__evSteps = 0;
+    // Multi-day WAIT/REST (cruise parity 2026-10-11): let a running wait
+    // play out; answer a during-wait event the way the player must.
+    if (window.cruiseWaitActive && cruiseWaitActive()) return { wait: 700 };
+    if (STATE.forcedEvent) { S.forced = (S.forced || 0) + 1; const fb = document.querySelector('#stop-choices .stop-choice'); if (fb) fb.click(); return { wait: 80 }; }
     if (window.__pendVerb) { const p = window.__pendVerb; window.__pendVerb = null; S.vd = S.vd || [];
       const dr = {}; for (const k of Object.keys(p.r)) dr[k] = Math.round((STATE.resources[k] - p.r[k]) * 10) / 10;
       S.vd.push({ v: p.name, node: (STATE.byId[STATE.currentId] || {}).node_type, ds: Math.round((scoreValue() - p.sc) * 100) / 100, dd: STATE.daysElapsed - p.d, dr, dg: STATE.goldAmount - p.g, dm: Object.values(STATE.materials).reduce((a, b) => a + b, 0) - p.m }); }
@@ -220,6 +224,14 @@ function step() {
     const acts = window.__acts[key] = window.__acts[key] || { n: 0, did: {} };
     const stopBtn = document.getElementById('stop-btn');
     const verbBtns = () => [...document.querySelectorAll('#stop-choices .stop-choice:not(.locked)')];
+    // WAIT FOR TRADER / REST open a 1–7 day picker: REST one day (the old
+    // one-click REST), WAIT two days.
+    const pickDays = (name, n) => {
+      const steps = [...document.querySelectorAll('#stop-choices .day-step')];
+      if (!steps.length) return;
+      const d = n || (/wait/i.test(name) ? 2 : 1);
+      steps[Math.min(steps.length, d) - 1].click();
+    };
     const doVerb = (re, name) => {
       if (!document.body.classList.contains('stop-active')) stopBtn.click();
       const b = verbBtns().find(x => re.test(x.querySelector('.stop-choice-body').textContent));
@@ -228,7 +240,7 @@ function step() {
       window.__pendVerb = { name, sc: scoreValue(), d: STATE.daysElapsed, r: Object.assign({}, STATE.resources), g: STATE.goldAmount, m: Object.values(STATE.materials).reduce((a, b) => a + b, 0) };
       S.verbs[name] = (S.verbs[name] || 0) + 1;
       window.__ctx = 'verb';
-      try { b.click(); } finally { window.__ctx = 'other'; }
+      try { b.click(); pickDays(name); } finally { window.__ctx = 'other'; }
       return true;
     };
     if (greedy) {
@@ -283,7 +295,9 @@ function step() {
         if (node.node_type === 'station' && STATE.crew.some(r => crewHPOf(r) < 60) && STATE.goldAmount >= 30 && !acts.did.medbay) { S.medbay++; if (doVerb(/MEDBAY/, 'medbay')) return { wait: 50 }; }
         if (R.hull < (P === 'stopper' ? 85 : 60) && (acts.did.repair || 0) < 2 && doVerb(/^REPAIR/, 'repair')) return { wait: 50 };
         if (R.morale < (P === 'stopper' ? 80 : 40) && (acts.did.rest || 0) < 2 && doVerb(/^REST/, 'rest')) return { wait: 50 };
-        if (R.fuel < (P === 'stopper' ? 80 : 55) && STATE.goldAmount >= 12 && !acts.did.trade) { window.__wantBuy = true; if (doVerb(/^TRADE$/, 'trade')) return { wait: 50 }; }
+        if (R.fuel < (P === 'stopper' ? 80 : 55) && STATE.goldAmount >= 12 && !acts.did.trade) { window.__wantBuy = true; if (doVerb(/^TRADE$/, 'trade')) return { wait: 50 };
+          // No trader in range (presence roll): wait for one, once per stop.
+          if (!acts.did.wait_for_trader && doVerb(/^WAIT FOR TRADER$/, 'wait_for_trader')) return { wait: 50 }; }
         if (P === 'stopper') {
           if (!acts.did.forage && R.food < 90 && doVerb(/^(GATHER|HUNT|SCAVENGE|FORAGE)$/, 'forage')) return { wait: 50 };
           if (!acts.did.salvage && doVerb(/^SALVAGE/, 'salvage')) return { wait: 50 };
@@ -297,7 +311,7 @@ function step() {
       if (Math.random() < 0.25) {
         stopBtn.click();
         const vs = verbBtns().filter(b => !/FABRICATOR/.test(b.textContent));
-        if (vs.length) { const b = vs[Math.floor(Math.random() * vs.length)]; const nm = b.querySelector('.stop-choice-body').textContent; S.verbs[nm] = (S.verbs[nm] || 0) + 1; window.__ctx = 'verb'; try { b.click(); } finally { window.__ctx = 'other'; } }
+        if (vs.length) { const b = vs[Math.floor(Math.random() * vs.length)]; const nm = b.querySelector('.stop-choice-body').textContent; S.verbs[nm] = (S.verbs[nm] || 0) + 1; window.__ctx = 'verb'; try { b.click(); const st = [...document.querySelectorAll('#stop-choices .day-step')]; if (st.length) st[Math.floor(Math.random() * 3)].click(); } finally { window.__ctx = 'other'; } }
         return { wait: 50 };
       }
     }

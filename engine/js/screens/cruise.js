@@ -1,58 +1,140 @@
 'use strict';
 /* ────────────────────────────────────────────────────────────────
-   CRUISE SCREEN — migrated from resources/demo-cruise.html. This is
-   the intended default hub post-setup (GAME_BIBLE §18) — the node-
-   graph map becomes an internal data model plus a read-only overlay
-   (see renderMapOverlay() in the main script), not the primary UI.
+   CRUISE SCREEN — migrated from resources/demo-cruise.html (GAME_BIBLE
+   §18). The hub between legs: real resources/crew/crop/day data, the
+   Stop Menu (region verbs → minigames / encounters), the MAP overlay.
 
-   Scope note: demo-cruise.html's dev-controls panel, 3-layer warp-
-   speed starfield, ticker text carousel, forced-event system, and
-   wait-timer machinery are NOT ported in this pass — those need
-   real encounter/day-tick wiring that lands in Phase 3+. This is a
-   simplified but STATE-bound version: real resources/crew/crop/day
-   data, a working Stop Menu shell (verbs render gated, routing is
-   Phase 4's job), and the MAP overlay wired to the real generated
-   route.
+   Demo-parity pass (2026-10-11, owner-approved): the demo's 3-layer
+   warp starfield (pace-driven, streaks at Ludicrous/Plaid, decelerates
+   on Stop), the ticker state machine (slide replace, amber STOPPED,
+   red event, AI quips as amber "MARV: …" lines while stopped), TIME
+   PAUSED, scene alerts wired to real state, the multi-day WAIT FOR
+   TRADER / REST machinery (1–7 day picker, action banner, result
+   flash, STOP WAITING / WAKE UP, during-wait events), the trader
+   presence roll, the forced-event state those during-wait events put
+   the ship in, the LOG button, verb time labels, readout icons, day
+   markers and the 35ms typewriter in the AI log.
+
+   Engine adaptation of the demo's Stop/Resume: the ship only travels
+   on Resume (travelTo is instant), and it lands stopped after every
+   event (owner ruling 2026-10-10). So "normal" (cruising) is what the
+   player sees before the first Stop of a run; the starfield's warp is
+   re-armed on every Resume so each arrival shows the deceleration.
    ──────────────────────────────────────────────────────────────── */
 (function () {
   const $ = id => document.getElementById(id);
+  const cruiseVisible = () => { const s = $('screen-cruise'); return !!(s && s.classList.contains('active')); };
+  const isStopped = () => document.body.classList.contains('stop-active');
 
-  // ── Starfield (simple single-layer drift, same pattern as title/setup) ──
-  const starCtx = $('starfield').getContext('2d');
-  const stars = [];
-  for (let i = 0; i < 90; i++) {
-    stars.push({ x: Math.random() * 960, y: Math.random() * 640, r: Math.random() * 1.3 + 0.3, phase: Math.random() * Math.PI * 2, drift: Math.random() * 0.5 + 0.2 });
+  // ── Warp starfield (starfield-demo.html / demo-cruise.html canon) ──
+  // Three parallax layers (far/mid/near). Speed follows the ENGINES
+  // order (STATE.orders.pace); Ludicrous and Plaid streak. Stars travel
+  // left-to-right (cruise convention). Stop → linear deceleration to 0;
+  // Resume → ease back up. CPU: the loop idles (no rAF at all) while the
+  // cruise screen is hidden, while PauseBus is paused, and once a stopped
+  // ship's stars have come to rest — observers below wake it.
+  const STAR_W = 960, STAR_H = 640;
+  const starCvs = $('starfield');
+  const starCtx = starCvs.getContext('2d', { alpha: true });
+  const STAR_LAYERS = [
+    { count: 80, speed: 0.35, size: 1,   alpha: 0.55 },  // far
+    { count: 42, speed: 0.95, size: 1.6, alpha: 0.85 },  // mid
+    { count: 18, speed: 1.85, size: 2.4, alpha: 1.00 },  // near
+  ];
+  // Pace id → the demo's STAR_SPEEDS row (LIGHT/RIDICULOUS/LUDICROUS/PLAID).
+  const STAR_SPEEDS = {
+    light:      { mul: 1,  streakAt: Infinity },
+    ridiculous: { mul: 4,  streakAt: Infinity },
+    ludicrous:  { mul: 14, streakAt: 5 },
+    plaid:      { mul: 42, streakAt: 2 },
+  };
+  const STAR_STOP_DECEL = 28;   // mul-units/s: Plaid → 0 in ~1.5s
+  const STAR_ACCEL_EASE = 0.08; // per 60fps frame
+  const starLayers = STAR_LAYERS.map(L => {
+    const xs = new Float32Array(L.count), ys = new Float32Array(L.count);
+    for (let i = 0; i < L.count; i++) { xs[i] = Math.random() * STAR_W; ys[i] = Math.random() * STAR_H; }
+    return { xs, ys, cfg: L };
+  });
+  let starMul = 0, starLastT = performance.now(), starRunning = false;
+  function starSpeed() {
+    const pace = (typeof STATE !== 'undefined' && STATE.orders && STATE.orders.pace) || 'ridiculous';
+    return STAR_SPEEDS[pace] || STAR_SPEEDS.ridiculous;
   }
-  function drawStars() {
-    if (PauseBus.paused) { requestAnimationFrame(drawStars); return; }
-    starCtx.clearRect(0, 0, 960, 640);
-    const now = performance.now() / 1000;
-    for (const s of stars) {
-      s.x += s.drift;
-      if (s.x > 960) { s.x = 0; s.y = Math.random() * 640; }
-      starCtx.globalAlpha = 0.4 + Math.sin(now * 1.2 + s.phase) * 0.25;
-      starCtx.fillStyle = '#c8d0d8';
-      starCtx.beginPath(); starCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2); starCtx.fill();
+  // Stopped = parked (Stop menu open, a wait, a during-wait event).
+  const starsStopped = () => isStopped() || document.body.classList.contains('event-active');
+  function drawStars(dtFrame) {
+    starCtx.clearRect(0, 0, STAR_W, STAR_H);
+    const streakAt = starSpeed().streakAt;
+    for (const { xs, ys, cfg } of starLayers) {
+      const dx = cfg.speed * starMul * dtFrame, adx = Math.abs(dx), n = xs.length;
+      if (adx > streakAt) {
+        starCtx.strokeStyle = 'rgba(255,255,255,' + cfg.alpha + ')';
+        starCtx.lineWidth = Math.max(1, cfg.size * 0.85);
+        starCtx.lineCap = 'butt';
+        starCtx.beginPath();
+        for (let i = 0; i < n; i++) {
+          let x = xs[i] + dx;
+          if (x > STAR_W + adx) { x = -Math.random() * 40; ys[i] = Math.random() * STAR_H; }
+          xs[i] = x;
+          starCtx.moveTo(x, ys[i]);
+          starCtx.lineTo(x - dx, ys[i]);
+        }
+        starCtx.stroke();
+      } else {
+        starCtx.fillStyle = 'rgba(255,255,255,' + cfg.alpha + ')';
+        const s = cfg.size, half = s / 2;
+        for (let i = 0; i < n; i++) {
+          let x = xs[i] + dx;
+          if (x > STAR_W) { x = 0; ys[i] = Math.random() * STAR_H; }
+          xs[i] = x;
+          starCtx.fillRect((x - half) | 0, (ys[i] - half) | 0, s, s);
+        }
+      }
     }
-    starCtx.globalAlpha = 1;
-    requestAnimationFrame(drawStars);
   }
-  drawStars();
+  function starFrame(now) {
+    if (!cruiseVisible() || (window.PauseBus && PauseBus.paused)) { starRunning = false; return; }
+    let dtFrame = (now - starLastT) / 16.6667;
+    if (dtFrame > 3) dtFrame = 3;
+    const dtSec = Math.min(0.2, (now - starLastT) / 1000);
+    starLastT = now;
+    if (starsStopped()) {
+      const step = STAR_STOP_DECEL * dtSec;
+      starMul = Math.abs(starMul) <= step ? 0 : starMul - Math.sign(starMul) * step;
+    } else {
+      const target = starSpeed().mul;
+      starMul += (target - starMul) * Math.min(1, STAR_ACCEL_EASE * dtFrame);
+      if (Math.abs(starMul - target) < 0.01) starMul = target;
+    }
+    drawStars(dtFrame);
+    // A parked ship's stars have stopped: the frame just drawn holds.
+    if (starsStopped() && starMul === 0) { starRunning = false; return; }
+    requestAnimationFrame(starFrame);
+  }
+  function wakeStars() {
+    if (starRunning || !cruiseVisible() || (window.PauseBus && PauseBus.paused)) return;
+    starRunning = true;
+    starLastT = performance.now();
+    requestAnimationFrame(starFrame);
+  }
+  drawStars(0); // a still field under the first frame
+  // The leg itself is flown at the ordered pace — set on Resume so the
+  // hub (which comes back stopped after the stop's event) shows the ship
+  // decelerating out of warp.
+  function markUnderway() { starMul = starSpeed().mul; }
+  window.cruiseStarState = () => ({ mul: starMul, running: starRunning, target: starSpeed().mul, streakAt: starSpeed().streakAt, stopped: starsStopped() });
 
   wireCustomScroll($('ai-log-host'));
   wireCustomScroll($('stop-choices-host'));
 
   const AI_SPRITE = { aria: 'sprites/interface/AI/aria.png', marv: 'sprites/interface/AI/marv.png', rex: 'sprites/interface/AI/rex.png', chip: 'sprites/interface/AI/chip.png', ajoy: 'sprites/interface/AI/ajoy.png' };
-  const ROLE_TO_CREWID = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
   const NODE_TYPE_TO_REGION = { station: 'station_approach', planet: 'planet_orbit_habitable', asteroid_field: 'asteroid_field', derelict: 'debris_field', nebula: 'nebula', void: 'deep_space', anomaly: 'anomaly', fork: 'deep_space' };
+  const capWord = s => { s = String(s || '').replace(/_/g, ' '); return s.charAt(0).toUpperCase() + s.slice(1); };
 
   function crewDisplayName(role) {
     return crewNameOf(role); // index.html — a joined stowaway keeps their own name
   }
 
-  /* Binds the real STATE object to every part of the cruise screen.
-     Called on screen entry and after any STATE mutation that affects
-     what's shown here (resources, crew, day count, crop). */
   // Bible §"Ship Sprite System": the scene ship is two layered sprites —
   // shared base (ships/default.png, already the silhouette's CSS bg) +
   // a crop overlay at ships/<crop>/<stage 1-4>.png keyed to growth
@@ -65,11 +147,16 @@
     const base = "url('sprites/ships/default.png')";
     const cg = STATE.cropGrowth;
     const folder = CROP_SHIP_FOLDER[STATE.crop];
-    if (!folder || !cg || cg.health <= 0 || !(cg.growth > 0)) {
+    // Demo applyShipSprite: the empty pods only for the first days after
+    // planting (POST_HARVEST_DAYS = 3 — "nothing's grown back yet"), then
+    // the stage by growth with the card's own thresholds (≤25 sprouting,
+    // ≤50 vegetative, ≤75 flowering, else maturing).
+    if (!folder || !cg || cg.health <= 0 || (cg.day || 0) < 3) {
       sil.style.backgroundImage = base;
       return;
     }
-    const stage = Math.min(4, 1 + Math.floor((cg.growth / 100) * 4));
+    const g = cg.growth || 0;
+    const stage = g <= 25 ? 1 : g <= 50 ? 2 : g <= 75 ? 3 : 4;
     sil.style.backgroundImage = "url('sprites/ships/" + folder + "/" + stage + ".png'), " + base;
   }
 
@@ -111,122 +198,220 @@
     SceneArt.paintStationView($('cruise-station'), node, { maxW: 170, maxH: 130 });
   }
 
-  function renderCruise() {
-    // Catch crop growth/health up to today before painting the card —
-    // decay must tick even if the player never opens the growbay.
-    if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth();
-    syncShipSprite();
-    syncStationView();
-    $('cruise-ship-name').textContent = (STATE.shipName || 'THE SHIP').toUpperCase();
-    // Bible §ticker: long-range scan hits replace the default line.
-    const nextIds = (typeof nextAvailableNodes === 'function' && STATE.byId[STATE.currentId]) ? [...nextAvailableNodes()] : [];
-    const hit = nextIds.map(id => STATE.scouted && STATE.scouted[id]).find(sc => sc && sc.ev && EVENTS[sc.ev]);
-    $('header-ticker').textContent = hit ? ('SCAN · NEXT: ' + String(EVENTS[hit.ev].title || 'CONTACT').toUpperCase())
-      : STATE.mapName ? ('EN ROUTE TO ' + STATE.destination.toUpperCase()) : '';
-    const daysLeft = Math.max(0, STATE.baseDays - STATE.daysElapsed);
-    $('day-counter').textContent = 'DAY ' + STATE.daysElapsed + ' · ' + daysLeft + ' LEFT';
-
-    const ai = STATE.activeAI || 'marv';
-    const avatar = $('ai-avatar');
-    avatar.style.backgroundImage = "url('" + (AI_SPRITE[ai] || AI_SPRITE.marv) + "')";
-    $('ai-name').textContent = ai.toUpperCase();
-
-    // Resource bars (fuel/food/water at-a-glance; the full 6-resource
-    // HUD lives in the reused .hud component top-right).
-    const r = STATE.resources;
-    $('res-fill-fuel').style.width  = clampPct(r.fuel * 100 / resMax('fuel'))  + '%';
-    $('res-fill-food').style.width  = clampPct(r.food * 100 / resMax('food'))  + '%';
-    $('res-fill-water').style.width = clampPct(r.water) + '%';
-
-    // Standing-orders readout — live from STATE.orders (Restoration
-    // item 5). Clicking any cell opens the Orders modal (wired once
-    // below); the cells just mirror the committed settings here.
-    if (typeof window.ordersPace === 'function') {
-      const o = ensureOrders();
-      $('readout-engines').textContent = ordersPace().name;
-      $('readout-rations').textContent = ordersRations().name;
-      $('readout-water-plant').textContent = o.waterSplit + '%';
-      $('readout-water-crew').textContent  = (100 - o.waterSplit) + '%';
+  // ── Header ticker (Bible §18 "Header Ticker", demo writeTicker) ──
+  // One line at a time: the old line slides out left while the new one
+  // slides in from the right (0.55s). Kinds: 'normal' (teal), 'event-info'
+  // (amber pulse — STOPPED, and AI quips / news while stopped) and 'event'
+  // (red pulse — a during-wait event holding the ship). syncTicker() only
+  // rewrites when the state's own line changes, so a quip or a news line
+  // stays up until the next real replacement (Bible: "stay until the next
+  // replacement"); leaving the state restores its line.
+  let tickerEl = null, tickerKey = null, tickerWarnTimer = null, hubHiddenAt = 0, hubWasVisible = false;
+  function writeTicker(text, kind) {
+    const box = $('header-ticker');
+    if (!box) return;
+    // Written while the hub is hidden, the line is simply there; and a
+    // line left over from before the hub was last hidden doesn't slide
+    // out over the return from an encounter — it just goes.
+    const instant = !cruiseVisible();
+    const el = document.createElement('span');
+    el.className = 'ticker-text' + (instant ? '' : ' enter') + (kind === 'event' ? ' event' : kind === 'event-info' ? ' event-info' : '');
+    const inner = document.createElement('span');
+    inner.className = 'ticker-inner';
+    inner.textContent = text;
+    el.appendChild(inner);
+    el.title = text;
+    box.appendChild(el);
+    void el.offsetWidth;            // the enter transform sticks, then transitions to centre
+    el.classList.remove('enter');
+    if (tickerEl) {
+      const old = tickerEl;
+      // Replaced before it ever landed (two state changes in one beat,
+      // e.g. returnToHub's repaint then its Stop): it just goes.
+      if (instant || (old._born || 0) < hubHiddenAt || performance.now() - (old._born || 0) < 80) old.remove();
+      else { old.classList.add('exit'); setTimeout(() => old.remove(), 700); }
     }
-
-    // Crew strip: captain + STATE.crew, each a role string resolved
-    // against crew_roster.json for display name/portrait.
-    const strip = $('crew-strip');
-    strip.innerHTML = '';
-    const members = [];
-    if (STATE.captain) members.push({ role: STATE.captain, label: 'CAPTAIN', crewId: ROLE_TO_CREWID[STATE.captain] });
-    for (const role of STATE.crew) members.push({ role, label: crewDisplayName(role).toUpperCase(), crewId: crewSpriteIdOf(role) });
-    for (const m of members) {
-      const crewId = m.crewId;
-      const slot = document.createElement('div');
-      slot.className = 'crew-slot';
-      const iconHtml = crewId
-        ? '<div class="crew-icon has-sprite" style="' + crewIconCss(crewId, 'var(--card-icon-size)') + '"></div>'
-        : '<div class="crew-icon">\u{1F464}</div>';
-      // Real per-crew HP (index.html's crewHP system); the captain is
-      // the player and doesn't take HP damage — always full.
-      const hp = m.label === 'CAPTAIN' ? 100
-        : (typeof window.crewHPOf === 'function' ? crewHPOf(m.role) : 100);
-      const hpColor = hp <= CREW_CRITICAL_HP ? '#cc5555' : (hp < CREW_WOUNDED_HP ? '#d4a830' : '');
-      slot.innerHTML =
-        '<div class="crew-slot-top">' + iconHtml +
-          '<div class="crew-info"><div class="crew-name">' + m.label + '</div><div class="crew-role">' + m.role + '</div></div>' +
-        '</div>' +
-        '<div class="crew-bars">' +
-          '<div class="crew-bar hp" title="Health ' + hp + '/100"><span class="crew-bar-label">HP</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(hp) + '%' + (hpColor ? ';background:' + hpColor : '') + '"></div></div></div>' +
-          '<div class="crew-bar mo" title="Morale"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(STATE.resources.morale) + '%"></div></div></div>' +
-        '</div>';
-      // Crew dossier (Restoration item 4) — click opens the detail
-      // modal; the captain slot opens their reduced dossier.
-      const dossierKey = m.label === 'CAPTAIN' ? 'captain' : m.role;
-      slot.addEventListener('click', () => {
-        if (typeof window.openCrewDetail === 'function') openCrewDetail(dossierKey);
-      });
-      strip.appendChild(slot);
-    }
-
-    // Crop card — real growth/health from STATE.cropGrowth (persisted
-    // by growbay.js's bindGrowbayState(); undefined until the player's
-    // first growbay visit, hence the fallbacks below).
-    if (STATE.crop) {
-      const cg = STATE.cropGrowth;
-      const growth = cg ? cg.growth : 0;
-      const STAGE_NAMES = ['SPROUTING', 'VEGETATIVE', 'FLOWERING', 'MATURING'];
-      const stageIdx = growth <= 25 ? 0 : growth <= 50 ? 1 : growth <= 75 ? 2 : 3;
-      $('crop-name').textContent = STATE.crop.replace(/_/g, ' ').toUpperCase();
-      paintCropIcon(STATE.crop, stageIdx);
-      $('crop-stage').textContent = STAGE_NAMES[stageIdx];
-      $('crop-day').textContent = 'DAY ' + (cg ? cg.day : 0);
-      $('crop-growth-fill').style.width = clampPct(growth) + '%';
-      $('crop-health-fill').style.width = clampPct(cg ? cg.health : 100) + '%';
-    }
-
-    // AI universal pools — ambient/warning/crop lines into the log.
-    // All three are idempotent per condition (guards inside), so the
-    // many renderCruise() call sites stay safe. Defined further down
-    // (function declarations hoist).
-    maybePushAmbient();
-    checkResourceWarnings();
-    checkCropMilestones();
-    // Every hub repaint is a safe between-actions point — autosave, last,
-    // so the lines/flags just pushed above are in it (they used to replay
-    // with fresh text after a reload).
-    if (typeof saveRun === 'function') saveRun();
+    el._born = performance.now();
+    tickerEl = el;
+    // A line longer than the ticker drifts across once it has landed
+    // (the AI's quips are full sentences; clipping them mid-word hid the
+    // only place they show while stopped).
+    setTimeout(() => {
+      if (tickerEl !== el || !el.isConnected) return;
+      const over = inner.scrollWidth - el.clientWidth;
+      if (over > 4) {
+        el.classList.add('marquee');
+        inner.style.setProperty('--tk-shift', (-over - 8) + 'px');
+        inner.style.animationDuration = Math.max(6, (over + 8) / 28 + 4) + 's';
+      }
+    }, 600);
   }
-  function clampPct(v) { return Math.max(0, Math.min(100, v | 0)); }
+  const forcedDef = () => STATE.forcedEvent && WAIT_EVENTS[STATE.forcedEvent.kind];
+  function normalTickerLine() {
+    const here = STATE.byId && STATE.byId[STATE.currentId];
+    if (!here) return '';
+    const nextIds = typeof nextAvailableNodes === 'function' ? [...nextAvailableNodes()] : [];
+    // Long-range scan hits are news: they replace the default line.
+    const hit = nextIds.map(id => STATE.scouted && STATE.scouted[id]).find(sc => sc && sc.ev && EVENTS[sc.ev]);
+    if (hit) return 'SCAN · NEXT: ' + String(EVENTS[hit.ev].title || 'CONTACT').toUpperCase();
+    if (nextIds.length === 1) {
+      const n = STATE.byId[nextIds[0]];
+      return 'COMING UP ON ' + String((n && n.name) || STATE.destination || 'THE NEXT STOP').toUpperCase();
+    }
+    if (nextIds.length > 1) return 'ROUTES DIVERGE AHEAD — CHECK THE MAP';
+    if (here.node_type === 'fork') return 'ROUTE DECISION — CHOOSE A HEADING';
+    return STATE.destination ? 'EN ROUTE TO ' + STATE.destination.toUpperCase() : '';
+  }
+  function tickerTarget() {
+    const f = forcedDef();
+    if (f) return { text: f.ticker, kind: 'event' };
+    if (isStopped()) return { text: traderHere() && !atStation() ? 'STOPPED — TRADER IN RANGE' : 'STOPPED', kind: 'event-info' };
+    return { text: normalTickerLine(), kind: 'normal' };
+  }
+  function syncTicker(force) {
+    const t = tickerTarget();
+    const key = t.kind + '|' + t.text;
+    if (key === tickerKey && !force) return;
+    tickerKey = key;
+    writeTicker(t.text, t.kind);
+  }
+  // Something worth a line while stopped (AI quip, scan news): amber,
+  // replaces whatever is up; the state's own line returns with the next
+  // state change.
+  function tickerNews(text) {
+    if (!cruiseVisible()) return;
+    writeTicker(text, isStopped() || STATE.forcedEvent ? 'event-info' : 'normal');
+  }
+
+  // ── TIME PAUSED (Bible §18 Pause vs Stop) ───────────────────────
+  // Replaces the day counter while the ship is stopped or the game is
+  // paused (pause menu, any modal over the hub). A multi-day wait is
+  // the exception: its days really are passing, so the counter shows.
+  function overlayOpen() {
+    return !!document.querySelector('#game .overlay.active, .overlay.active');
+  }
+  function syncPaused() {
+    const scr = $('screen-cruise');
+    if (!scr) return;
+    const paused = (window.PauseBus && PauseBus.paused) || overlayOpen() ||
+      ((isStopped() || !!STATE.forcedEvent) && !activeWait);
+    scr.classList.toggle('time-paused', !!paused);
+  }
+  function dayText() {
+    const daysLeft = Math.max(0, STATE.baseDays - STATE.daysElapsed);
+    return 'DAY ' + STATE.daysElapsed + ' · ' + daysLeft + ' LEFT';
+  }
+
+  // ── Scene alert + Stop pulse (demo showSceneAlert) ─────────────
+  // Amber line fading in at the top of the scene for ~4s, the Stop
+  // button pulsing with it. Only real state raises one (arrival at a
+  // stop with a trader in range, what the route ahead shows) and each
+  // is logged, as the demo logs its alerts.
+  let alertTimer = null, alertedNode = null;
+  function showSceneAlert(msg, ms) {
+    const el = $('scene-alert');
+    el.textContent = msg;
+    el.classList.add('show');
+    $('stop-btn').classList.add('alert');
+    clearTimeout(alertTimer);
+    alertTimer = setTimeout(() => { el.classList.remove('show'); $('stop-btn').classList.remove('alert'); }, ms || 4200);
+  }
+  const NEXT_STOP_ALERT = {
+    asteroid_field: 'ASTEROID FIELD AHEAD — GOOD MINING',
+    derelict:       'DERELICT DETECTED — PROCEED WITH CAUTION',
+    anomaly:        'UNIDENTIFIED SIGNAL · PORT BOW',
+  };
+  function arrivalAlert() {
+    if (!cruiseVisible() || STATE.ended || alertedNode === STATE.currentId || activeWait || STATE.forcedEvent) return;
+    alertedNode = STATE.currentId;
+    let msg = null;
+    if (traderHere() && !atStation()) msg = 'TRADER SHIP ON APPROACH';
+    else {
+      const nextIds = typeof nextAvailableNodes === 'function' ? [...nextAvailableNodes()] : [];
+      const n = nextIds.length === 1 && STATE.byId[nextIds[0]];
+      if (n) msg = NEXT_STOP_ALERT[n.node_type] || null;
+    }
+    if (!msg) return;
+    showSceneAlert(msg);
+    pushLogEntry('▶ ' + msg);
+  }
+
+  // ── Trader presence (owner ruling 2026-10-11, Bible §18 Trader-wait) ──
+  // Each non-station stop rolls once, on the first hub visit, whether a
+  // trader is in range: TRADE when one is, WAIT FOR TRADER when not.
+  // Saved (STATE.traderAt) so a reload can't re-roll it. Stations always
+  // trade (Market Row). Odds lean civilized (Bible: "high near stations/
+  // planets, near-zero in deep space"); anomalies have no trade verbs.
+  const TRADER_PRESENT_CHANCE = {
+    planet_orbit_habitable: 0.55, debris_field: 0.45, asteroid_field: 0.40,
+    nebula: 0.35, planet_orbit_alien: 0.30, deep_space: 0.15, anomaly: 0,
+  };
+  const atStation = () => { const n = STATE.byId && STATE.byId[STATE.currentId]; return !!(n && n.node_type === 'station'); };
+  function traderHere() {
+    if (atStation()) return true;
+    STATE.traderAt = STATE.traderAt || {};
+    return !!STATE.traderAt[STATE.currentId];
+  }
+  function rollTraderPresence() {
+    const id = STATE.currentId;
+    if (!id || !STATE.byId || !STATE.byId[id] || atStation()) return;
+    STATE.traderAt = STATE.traderAt || {};
+    if (id in STATE.traderAt) return;
+    STATE.traderAt[id] = Math.random() < (TRADER_PRESENT_CHANCE[currentRegionKey()] || 0);
+  }
+  window.cruiseTraderHere = traderHere;
+
+  // ── AI log (demo pushLogEntry / pushDayMarker / typewriteInto) ──
+  // ▶ marks ship events; the AI's own lines carry its voice ("MARV: …").
+  // A "── DAY n ──" marker opens each new day's entries. The newest
+  // entry typewrites at 35ms/char behind a blinking cursor; older ones
+  // dim to 0.55. The log only follows the tail when the reader is
+  // already within 50px of the bottom — scrolled up, it stays put.
+  const TYPE_MS = 35;
+  let typing = null, markerDay = null;
+  const voiceName = () => String(STATE.activeAI || 'marv').toUpperCase();
+  const isAtBottom = el => el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+  function displayLine(text, voice) {
+    const body = String(text == null ? '' : text).replace(/^\s*[◆▶]\s*/, '');
+    return voice ? voice.toUpperCase() + ': ' + body : '▶ ' + body;
+  }
+  function finishTyping() {
+    if (!typing) return;
+    const t = typing; typing = null;
+    clearTimeout(t.timer);
+    t.span.textContent = t.text;
+    t.cursor.remove();
+    if (t.done) t.done();
+  }
+  function appendDayMarker(log, day) {
+    const m = document.createElement('div');
+    m.className = 'ai-day-marker';
+    m.textContent = '── DAY ' + day + ' ──';
+    log.appendChild(m);
+    markerDay = day;
+  }
+  function addLinkChrome(entry, link) {
+    if (!link || !link.url) return;
+    entry.classList.add('has-link');
+    const a = document.createElement('a');
+    a.className = 'ai-entry-link';
+    a.href = link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.textContent = '🔗 ' + (link.label || 'Learn more');
+    entry.appendChild(document.createTextNode(' '));
+    entry.appendChild(a);
+  }
 
   /* Accepts a plain string OR {text, link: {url, label}} per the
      Bible's reserved log-entry schema (§18 "Expandable entries &
-     external links"). Link entries get the 🔗 convention and open in
-     a new tab — the educational tie-in channel (NASA/ISS/real crop
-     science). `expand` (📖 modal) remains reserved/unwired. */
-  function pushLogEntry(entryOrText) {
+     external links"). opts.ai marks the active AI's own voice line;
+     opts.instant skips the typewriter. Link entries get the 🔗
+     convention and open in a new tab. */
+  function pushLogEntry(entryOrText, opts) {
+    opts = opts || {};
     const log = $('ai-log');
-    document.querySelectorAll('#ai-log .ai-entry.latest').forEach(e => e.classList.remove('latest'));
-    const entry = document.createElement('div');
-    entry.className = 'ai-entry latest';
     const isObj = entryOrText && typeof entryOrText === 'object';
     const text = isObj ? entryOrText.text : entryOrText;
+    const voice = opts.ai ? (STATE.activeAI || 'marv') : null;
     // Persist to the run's Ship's Log (browsable journal — pause menu →
     // SHIP'S LOG). Day-stamped; carries link/expand payloads through.
     STATE.shipLog = STATE.shipLog || [];
@@ -240,32 +425,233 @@
       type: (isObj && entryOrText.type) || (isObj && entryOrText.link ? 'sci' : null),
       crewId: (isObj && entryOrText.crewId) || null,
       crewName: (isObj && entryOrText.crewName) || null,
+      voice: voice,
     });
-    // Demo-cruise canon: entries typewrite in. Links/expand chrome
-    // append once the text lands. Cap speed so long entries don't gate.
-    entry.textContent = '';
-    (function typeLog(i) {
-      if (!entry.isConnected && i > 0) return;           // log re-rendered
-      if (window.PauseBus && PauseBus.paused) return setTimeout(() => typeLog(i), 120);
-      const step = text.length > 160 ? 3 : 2;
-      entry.textContent = text.slice(0, i + step);
-      if (i + step < text.length) { setTimeout(() => typeLog(i + step), 16); }
-      log.scrollTop = log.scrollHeight;
-    })(0);
-    if (isObj && entryOrText.link && entryOrText.link.url) {
-      entry.classList.add('has-link');
-      const a = document.createElement('a');
-      a.className = 'ai-entry-link';
-      a.href = entryOrText.link.url;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.textContent = '🔗 ' + (entryOrText.link.label || 'Learn more');
-      entry.appendChild(document.createTextNode(' '));
-      entry.appendChild(a);
-    }
+    const line = displayLine(text, voice);
+    // While stopped the log column is under the Stop menu: the AI's
+    // lines go up on the ticker instead (the entry still lands, so the
+    // log is whole on Resume).
+    if (voice && isStopped() && cruiseVisible()) tickerNews(line);
+    const sticky = isAtBottom(log);
+    finishTyping();
+    log.querySelectorAll('.ai-entry.latest').forEach(e => e.classList.remove('latest'));
+    if (STATE.daysElapsed !== markerDay) appendDayMarker(log, STATE.daysElapsed);
+    const entry = document.createElement('div');
+    entry.className = 'ai-entry latest' + (voice ? ' voice' : ' system');
     log.appendChild(entry);
-    log.scrollTop = log.scrollHeight;
+    const link = isObj ? entryOrText.link : null;
+    const follow = () => { if (sticky) log.scrollTop = log.scrollHeight; };
+    if (opts.instant || isStopped() || !cruiseVisible()) {
+      entry.textContent = line;
+      addLinkChrome(entry, link);
+      follow();
+      return entry;
+    }
+    const span = document.createElement('span');
+    const cursor = document.createElement('span');
+    cursor.className = 'tw-cursor';
+    entry.appendChild(span);
+    entry.appendChild(cursor);
+    typing = { span, cursor, text: line, timer: null, done: () => { addLinkChrome(entry, link); follow(); } };
+    const t = typing;
+    let i = 0;
+    (function tick() {
+      if (typing !== t) return;                          // finished early by the next entry
+      if (!entry.isConnected) { typing = null; return; } // log rebuilt (load)
+      if (window.PauseBus && PauseBus.paused) { t.timer = setTimeout(tick, 120); return; }
+      span.textContent += line.charAt(i++);
+      follow();
+      if (i < line.length) t.timer = setTimeout(tick, TYPE_MS);
+      else finishTyping();
+    })();
+    follow();
+    return entry;
   }
+
+  // The last n Ship's Log entries, re-rendered as the hub log (a load
+  // replaces the run, and with it the log) — same markers and prefixes.
+  window.rebuildCruiseLog = function (n) {
+    const log = $('ai-log');
+    if (!log) return;
+    finishTyping();
+    log.innerHTML = '';
+    markerDay = null;
+    const list = (STATE.shipLog || []).slice(-(n || 8));
+    list.forEach((en, i) => {
+      if (!en) return;
+      if (en.day !== markerDay) appendDayMarker(log, en.day);
+      const d = document.createElement('div');
+      d.className = 'ai-entry' + (en.voice ? ' voice' : ' system') + (i === list.length - 1 ? ' latest' : '');
+      d.textContent = displayLine(en.text, en.voice);
+      addLinkChrome(d, en.link);
+      log.appendChild(d);
+    });
+    log.scrollTop = log.scrollHeight;
+  };
+
+  function renderCruise() {
+    // Catch crop growth/health up to today before painting the card —
+    // decay must tick even if the player never opens the growbay.
+    if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth();
+    // A during-wait event belongs to the stop it happened at (anything
+    // that moved the ship — a test harness, Push Engines — drops it).
+    if (STATE.forcedEvent && STATE.forcedEvent.node !== STATE.currentId) STATE.forcedEvent = null;
+    document.body.classList.toggle('event-active', !!STATE.forcedEvent);
+    if (STATE.forcedEvent && !isStopped()) openStopMenu();
+    rollTraderPresence();
+    syncShipSprite();
+    syncStationView();
+    $('cruise-ship-name').textContent = (STATE.shipName || 'THE SHIP').toUpperCase();
+    syncTicker();
+    $('day-counter').textContent = dayText();
+    $('paused-label').title = dayText();
+    syncPaused();
+
+    const ai = STATE.activeAI || 'marv';
+    const avatar = $('ai-avatar');
+    avatar.style.backgroundImage = "url('" + (AI_SPRITE[ai] || AI_SPRITE.marv) + "')";
+    $('ai-name').textContent = ai.toUpperCase();
+
+    // Resource bars (fuel/food/water at-a-glance; the full 6-resource
+    // HUD pill lives top-left of the scene — owner-approved addition).
+    const r = STATE.resources;
+    $('res-fill-fuel').style.width  = clampPct(r.fuel * 100 / resMax('fuel'))  + '%';
+    $('res-fill-food').style.width  = clampPct(r.food * 100 / resMax('food'))  + '%';
+    $('res-fill-water').style.width = clampPct(r.water) + '%';
+    $('res-fill-fuel').parentNode.parentNode.title  = 'Fuel: '  + Math.round(r.fuel)  + ' / ' + resMax('fuel');
+    $('res-fill-food').parentNode.parentNode.title  = 'Food: '  + Math.round(r.food)  + ' / ' + resMax('food');
+    $('res-fill-water').parentNode.parentNode.title = 'Water: ' + Math.round(r.water) + ' / 100';
+
+    // Standing-orders readout — live from STATE.orders (Restoration
+    // item 5). Clicking any cell opens the Orders modal (wired once
+    // below); the cells just mirror the committed settings here.
+    if (typeof window.ordersPace === 'function') {
+      const o = ensureOrders();
+      $('readout-engines').textContent = ordersPace().name;
+      $('readout-rations').textContent = ordersRations().name;
+      $('readout-water-plant').textContent = o.waterSplit + '%';
+      $('readout-water-crew').textContent  = (100 - o.waterSplit) + '%';
+    }
+
+    // Crew strip: the captain (their own sprite — the player is not a
+    // crew specialist) + STATE.crew. Name on top, role capitalised under
+    // it (demo canon: "CAPTAIN / Botanist", "DR. OSEI / Botanist").
+    const strip = $('crew-strip');
+    strip.innerHTML = '';
+    const members = [];
+    if (STATE.captain) members.push({ key: 'captain', label: 'CAPTAIN', role: capWord(STATE.captain), crewId: 'captain' });
+    for (const role of STATE.crew) members.push({ key: role, label: crewDisplayName(role).toUpperCase(), role: capWord(role), crewId: crewSpriteIdOf(role) });
+    strip.classList.toggle('crowded', members.length > 3);
+    for (const m of members) {
+      const slot = document.createElement('div');
+      slot.className = 'crew-slot' + (m.key === 'captain' ? ' captain' : '');
+      const iconHtml = m.crewId
+        ? '<div class="crew-icon has-sprite" data-crew-id="' + m.crewId + '" style="' + crewIconCss(m.crewId, 'var(--card-icon-size)') + '"></div>'
+        : '<div class="crew-icon">\u{1F464}</div>';
+      // Real per-crew HP (index.html's crewHP system); the captain is
+      // the player and doesn't take HP damage — always full.
+      const hp = m.key === 'captain' ? 100
+        : (typeof window.crewHPOf === 'function' ? crewHPOf(m.key) : 100);
+      const hpColor = hp <= CREW_CRITICAL_HP ? '#cc5555' : (hp < CREW_WOUNDED_HP ? '#d4a830' : '');
+      slot.innerHTML =
+        '<div class="crew-slot-top">' + iconHtml +
+          '<div class="crew-info"><div class="crew-name">' + m.label + '</div><div class="crew-role">' + m.role + '</div></div>' +
+        '</div>' +
+        '<div class="crew-bars">' +
+          '<div class="crew-bar hp" title="Health ' + hp + '/100"><span class="crew-bar-label">HP</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(hp) + '%' + (hpColor ? ';background:' + hpColor : '') + '"></div></div></div>' +
+          '<div class="crew-bar mo" title="Morale"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(STATE.resources.morale) + '%"></div></div></div>' +
+        '</div>';
+      // Crew dossier (Restoration item 4) — click opens the detail
+      // modal; the captain slot opens their reduced dossier.
+      slot.addEventListener('click', () => {
+        if (typeof window.openCrewDetail === 'function') openCrewDetail(m.key);
+      });
+      strip.appendChild(slot);
+    }
+
+    renderCropCard();
+
+    // AI universal pools — ambient/warning/crop lines into the log.
+    // All three are idempotent per condition (guards inside), so the
+    // many renderCruise() call sites stay safe. Defined further down
+    // (function declarations hoist).
+    maybePushAmbient();
+    checkResourceWarnings();
+    checkCropMilestones();
+    setTimeout(arrivalAlert, 350); // once the hub is actually on screen
+    wakeStars();
+    // Every hub repaint is a safe between-actions point — autosave, last,
+    // so the lines/flags just pushed above are in it (they used to replay
+    // with fresh text after a reload).
+    if (typeof saveRun === 'function') saveRun();
+  }
+  function clampPct(v) { return Math.max(0, Math.min(100, v | 0)); }
+
+  // ── Crop card (demo renderCrop) ─────────────────────────────────
+  // Real growth/health from STATE.cropGrowth (growbay.js). At 100%
+  // growth the card goes READY / .mature and the pulsing HARVEST button
+  // takes the growing block's place — it runs the growbay's own harvest.
+  // "DAY n / maturity" goes red once the crop is past its maturity days
+  // without being grown (the growbay's own overdue rule). The LED lights
+  // for anything that wants the player: ready, sick, pests, thirst.
+  function cropAttention() {
+    const cg = STATE.cropGrowth;
+    if (!STATE.crop || !cg || cg.health <= 0) return [];
+    const why = [];
+    if (cg.growth >= 100) why.push('Ready to harvest');
+    const def = ((MOD.crops && MOD.crops.crops) || []).find(c => c.id === 'crop_' + STATE.crop);
+    if (cg.health < ((def && def.sick_threshold) || 30)) why.push('Sick');
+    if (cg.pest) why.push('Pests');
+    // The growbay's own thirst rule (pickAriaQuip): plant share >10
+    // points under the crop's need.
+    const split = STATE.orders && Number.isFinite(STATE.orders.waterSplit) ? STATE.orders.waterSplit : cg.waterPlant;
+    if (typeof cropWaterNeed === 'function' && split < Math.round(cropWaterNeed()) - 10) why.push('Thirsty');
+    return why;
+  }
+  function renderCropCard() {
+    const card = $('crop-card-mini');
+    if (!STATE.crop) return;
+    const cg = STATE.cropGrowth;
+    const growth = cg ? cg.growth : 0;
+    const alive = !cg || cg.health > 0;
+    const mature = !!cg && alive && growth >= 100;
+    const STAGE_NAMES = ['SPROUTING', 'VEGETATIVE', 'FLOWERING', 'MATURING'];
+    const stageIdx = growth <= 25 ? 0 : growth <= 50 ? 1 : growth <= 75 ? 2 : 3;
+    const meta = typeof window.cropMetaOf === 'function' ? cropMetaOf(STATE.crop) : null;
+    const maturity = (meta && meta.maturity_days) || 90;
+    const day = cg ? cg.day : 0;
+    $('crop-name').textContent = STATE.crop.replace(/_/g, ' ').toUpperCase();
+    paintCropIcon(STATE.crop, stageIdx);
+    $('crop-stage').textContent = !alive ? 'DEAD' : mature ? 'READY' : STAGE_NAMES[stageIdx];
+    const dayEl = $('crop-day');
+    dayEl.textContent = 'DAY ' + day + ' / ' + maturity;
+    const overdue = alive && day > maturity && growth < 100;
+    dayEl.classList.toggle('overdue', overdue);
+    dayEl.title = overdue ? 'Past its ' + maturity + '-day maturity and still growing — health slows growth.' : 'Days since planting / days to maturity at full health.';
+    $('crop-growth-fill').style.width = clampPct(growth) + '%';
+    $('crop-health-fill').style.width = clampPct(cg ? cg.health : 100) + '%';
+    card.classList.toggle('mature', mature);
+    const why = cropAttention();
+    const led = $('crop-alert-led');
+    led.classList.toggle('on', why.length > 0);
+    led.title = why.length ? why.join(' · ') : 'Nothing needs attention';
+  }
+  function harvestFromCard(e) {
+    if (e) e.stopPropagation(); // the card itself opens the growbay
+    if (typeof window.doHarvest !== 'function' || typeof window.tickCropGrowth !== 'function') return;
+    window.tickCropGrowth();    // binds the growbay's live crop state, caught up to today
+    const cg = STATE.cropGrowth;
+    if (!cg || cg.growth < 100 || cg.health <= 0) return;
+    const f0 = STATE.resources.food, m0 = STATE.resources.morale;
+    window.doHarvest();
+    const df = Math.round(STATE.resources.food - f0), dm = Math.round(STATE.resources.morale - m0);
+    pushLogEntry('▶ Harvested ' + STATE.crop.replace(/_/g, ' ').toUpperCase() + '. ' +
+      (df > 0 ? '+' + df + ' food' : dm > 0 ? '+' + dm + ' morale' : 'The stores were already full') + '. Cycle reset.');
+    renderHUD();
+    renderCruise();
+    if (isStopped()) renderStopMenu();
+  }
+
 
   // ── Header buttons ───────────────────────────────────────────
   $('btn-map').addEventListener('click', () => {
@@ -275,6 +661,9 @@
   $('ovmap-close').addEventListener('click', () => hideOverlay('overlay-map'));
   $('btn-inv').addEventListener('click', () => openInventory());
   $('crop-card-mini').addEventListener('click', () => { if (STATE.crop) openGrowbay(); });
+  $('crop-harvest-btn').addEventListener('click', harvestFromCard);
+  // Stop Menu header LOG button → the Ship's Log (Bible §18 "📜 LOG").
+  $('stop-log-btn').addEventListener('click', () => { if (typeof window.openShipsLog === 'function') window.openShipsLog(); });
   // Any readout cell opens the Orders modal (demo-orders.html's
   // cg-readout behavior — the whole strip is one click target).
   $('cruise-readout').addEventListener('click', () => {
@@ -282,33 +671,46 @@
   });
 
   // ── Stop Menu shell ──────────────────────────────────────────
+  // Regions + verb lists are demo canon (with the engine's station
+  // services and CONDENSE). TRADE and WAIT FOR TRADER share a slot: the
+  // stop's trader roll decides which one shows. A planet the run's art
+  // gives the 'alien' biome (scene_art.js biomeFor — the same pick its
+  // approach and landing scenes use) is PLANET ORBIT · ALIEN: FORAGE in
+  // the red risky strip, and the risk is real (an extra poison roll).
   const REGIONS = {
-    deep_space:             { label: 'DEEP SPACE',             mood: 'Stars and silence. Nothing here but thinking.',                       verbs: ['scan', 'repair', 'rest', 'wait_for_trader', 'fab'] },
-    asteroid_field:         { label: 'ASTEROID FIELD',         mood: 'Cold rocks. The kind of place that pays in chips, not stories.',      verbs: ['mine', 'forage_food', 'trade', 'repair', 'rest', 'fab'] },
-    debris_field:           { label: 'DEBRIS FIELD',           mood: 'Someone else’s bad day, scattered for kilometers.',              verbs: ['salvage', 'mine', 'forage_food', 'trade', 'repair', 'rest', 'fab'] },
-    nebula:                 { label: 'NEBULA',                 mood: 'Glowing gas in colors that probably mean something.',                 verbs: ['mine', 'condense', 'scan', 'trade', 'repair', 'rest', 'fab'] },
+    deep_space:             { label: 'DEEP SPACE',             mood: 'Stars and silence. Nothing here but thinking.',                       verbs: ['scan', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
+    asteroid_field:         { label: 'ASTEROID FIELD',         mood: 'Cold rocks. The kind of place that pays in chips, not stories.',      verbs: ['mine', 'forage_food', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
+    debris_field:           { label: 'DEBRIS FIELD',           mood: 'Someone else’s bad day, scattered for kilometers.',              verbs: ['salvage', 'mine', 'forage_food', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
+    nebula:                 { label: 'NEBULA',                 mood: 'Glowing gas in colors that probably mean something.',                 verbs: ['mine', 'condense', 'scan', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
     anomaly:                { label: 'ANOMALY',                mood: 'The instruments disagree with each other. None of them with reality.', verbs: ['scan', 'forage_food', 'repair', 'rest', 'fab'] },
-    planet_orbit_habitable: { label: 'PLANET ORBIT · HABITABLE', mood: 'Green and blue and trying. A world that knows how to grow things.', verbs: ['forage_food', 'trade', 'scan', 'repair', 'rest', 'fab'] },
+    planet_orbit_habitable: { label: 'PLANET ORBIT · HABITABLE', mood: 'Green and blue and trying. A world that knows how to grow things.', verbs: ['forage_food', 'trade', 'wait_for_trader', 'scan', 'repair', 'rest', 'fab'] },
+    planet_orbit_alien:     { label: 'PLANET ORBIT · ALIEN',   mood: 'Whatever evolved here did so without consulting Earth precedent.',   verbs: ['forage_food', 'trade', 'wait_for_trader', 'scan', 'repair', 'rest', 'fab'] },
     station_approach:       { label: 'STATION APPROACH',       mood: 'Lights and traffic. Civilization, give or take.',                     verbs: ['trade', 'medbay', 'drydock', 'fab_service', 'repair', 'rest', 'fab'] },
   };
-  const FORAGE_LABEL_BY_REGION = { planet_orbit_habitable: 'GATHER', asteroid_field: 'HUNT', debris_field: 'SCAVENGE', anomaly: 'FORAGE' };
+  const FORAGE_LABEL_BY_REGION = { planet_orbit_habitable: 'GATHER', planet_orbit_alien: 'FORAGE', asteroid_field: 'HUNT', debris_field: 'SCAVENGE', anomaly: 'FORAGE' };
+  // Time labels say what the engine really charges: whole days (the
+  // demo's hour labels — 8h, 5h — predate day-granular costs). No label
+  // on verbs that cost no days.
   const STOP_VERBS = {
     // icon: demo-cruise.html STOP_VERBS iconUrl (demo canon), sprites/interface/.
-    mine:         { label: 'MINE',      sub: 'Pull raw materials from the rocks.',              effort: 3, icon: 'mining' },
-    salvage:      { label: 'SALVAGE',   sub: 'Pick through the wreckage. Mind the sharp bits.',  effort: 3, icon: 'salvage' },
-    forage_food:  { label: (region) => FORAGE_LABEL_BY_REGION[region] || 'FORAGE', sub: 'Find something edible. Or interesting. Sometimes both.', effort: 2, icon: 'forage' },
-    trade:        { label: 'TRADE',     sub: 'Haggle. Or pretend to.',                           effort: 1, icon: 'trade' },
-    wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park a day. A trader usually turns up.',  effort: 1, hint: true, icon: 'wait' },
-    scan:         { label: 'SCAN',      sub: 'Read the signals. Find what is coming.',           effort: 2, hint: true, icon: 'scan' },
-    repair:       { label: 'REPAIR',    sub: 'Patch the hull: 2 metal + 1 scrap and a day.', effort: 3, locked: repairLockReason, icon: 'repair' },
-    rest:         { label: 'REST',      sub: 'Crew morale up. Days down.',                       effort: 1, hint: true, icon: 'rest', locked: () => STATE.resources.morale >= 95 ? 'The crew is in good spirits' : null },
+    mine:         { label: 'MINE',      sub: 'Pull raw materials from the rocks.',              effort: 3, icon: 'mining', time: '1d/run' },
+    salvage:      { label: 'SALVAGE',   sub: 'Pick through the wreckage. Mind the sharp bits.',  effort: 3, icon: 'salvage', time: '1d' },
+    forage_food:  { label: (region) => FORAGE_LABEL_BY_REGION[region] || 'FORAGE',
+                    sub: (region) => region === 'planet_orbit_alien' ? 'Alien flora. Some of it bites back: a crew member may be poisoned.' : 'Find something edible. Or interesting. Sometimes both.',
+                    effort: 2, icon: 'forage', time: '1d', variantBy: (region) => region === 'planet_orbit_alien' ? 'risky' : null },
+    trade:        { label: 'TRADE',     sub: () => atStation() ? 'Market Row is open. Haggle in person.' : 'A trader is in range. Haggle. Or pretend to.', effort: 1, icon: 'trade', time: '≤1d', requires: () => traderHere() },
+    wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park. Roll the dice. Days will pass. Things will hear you.', effort: 1, hint: true, icon: 'wait', time: '1-7d', hideWhen: () => traderHere() },
+    scan:         { label: 'SCAN',      sub: 'Read the signals. Find what is coming.',           effort: 2, hint: true, icon: 'scan', time: '1d' },
+    repair:       { label: 'REPAIR',    sub: 'Patch the hull: 2 metal + 1 scrap and a day.', effort: 3, locked: repairLockReason, icon: 'repair', time: '1d' },
+    rest:         { label: 'REST',      sub: () => 'Crew morale up (+' + restPerDay() + ' a day). Days down.', effort: 1, hint: true, icon: 'rest', time: '1-7d', locked: () => STATE.resources.morale >= 95 ? 'The crew is in good spirits' : null },
     fab:          { label: 'FABRICATOR', sub: 'Open the print queue. Long jobs need a still ship.', effort: 1, hint: true, icon: 'fab' },
     medbay:       { label: 'MEDBAY',    sub: () => 'Treat every hurt crew member. ' + medbayFee() + 'g, no days.', effort: 1, hint: true, locked: medbayLockReason, icon: 'medic' },
-    condense:     { label: 'CONDENSE',  sub: 'Wring water out of the nebula. A day for +12 water.', effort: 2, locked: condenseLockReason, icon: 'water' },
+    condense:     { label: 'CONDENSE',  sub: 'Wring water out of the nebula. A day for +12 water.', effort: 2, locked: condenseLockReason, icon: 'water', time: '1d' },
     drydock:      { label: 'DRYDOCK',   sub: () => 'Station crews patch the hull. +' + Math.min(30, Math.ceil(resMax('hull') - STATE.resources.hull)) + ' hull for ' + drydockFee() + 'g.', effort: 1, hint: true, locked: drydockLockReason, icon: 'repair' },
     fab_service:  { label: 'FAB SERVICE', sub: () => 'Station techs overhaul the fabricator. Wear to zero, ' + fabServiceFee() + 'g.', effort: 1, hint: true, locked: fabServiceLockReason, icon: 'fab' },
   };
   function effortPips(n) { n = Math.max(0, Math.min(5, n | 0)); return '●'.repeat(n) + '○'.repeat(5 - n); }
+
 
   // ── Stop Menu verb → minigame wiring (Phase 4) ────────────────
   // Applies a minigame's tier-based effects to real STATE, checks for
@@ -350,7 +752,8 @@
   }
 
   const TRAIL_TO_SCAN_DIFFICULTY = { lunar: 'easy', mars: 'medium', interstellar: 'hard' };
-  const REGION_TO_FORAGE_MODE = { asteroid_field: 'HUNT', debris_field: 'SCAVENGE', planet_orbit_habitable: 'GATHER', anomaly: 'GATHER' };
+  const REGION_TO_FORAGE_MODE = { asteroid_field: 'HUNT', debris_field: 'SCAVENGE', planet_orbit_habitable: 'GATHER', planet_orbit_alien: 'GATHER', anomaly: 'GATHER' };
+  const ALIEN_POISON_CHANCE = 0.25, ALIEN_POISON_HP = 7; // 7 = the forage minigame's 'medium' sickness (table below)
 
   function handleScanVerb() {
     const difficulty = TRAIL_TO_SCAN_DIFFICULTY[STATE.trail] || 'medium';
@@ -365,6 +768,9 @@
       const report = scoutAhead(perfect ? 2 : 1, perfect);
       const head = perfect ? 'Clean lock. Long-range picture, outcomes modelled.' : 'Partial read — the next stop, at least.';
       settleMinigame('◆ SCAN — ' + head + (report.length ? ' ' + report.join(' · ') : ' Nothing ahead but the destination.'));
+      // A long-range hit is news: up on the ticker (amber while stopped).
+      const news = normalTickerLine();
+      if (/^SCAN/.test(news)) tickerNews(news);
     });
   }
 
@@ -405,8 +811,10 @@
   function handleForageVerb() {
     const regionKey = currentRegionKey();
     const mode = REGION_TO_FORAGE_MODE[regionKey] || 'GATHER';
-    openMinigame('forage', { mode, return_to: 'cruise', origin_node: STATE.currentId }, (tier, payload) => {
-      if (tier === 'abandoned') return settleAbandoned(mode);
+    const alien = regionKey === 'planet_orbit_alien';
+    const label = (FORAGE_LABEL_BY_REGION[regionKey] || mode);
+    openMinigame('forage', { mode, return_to: 'cruise', origin_node: STATE.currentId, regionLabel: alien ? 'ALIEN WORLD · FORAGE' : undefined }, (tier, payload) => {
+      if (tier === 'abandoned') return settleAbandoned(label);
       payload = payload || {};
       let foodGot = 0; // what actually lands (the tank caps)
       if (typeof payload.food === 'number' && payload.food > 0) {
@@ -433,13 +841,21 @@
         else STATE.resources.morale = clamp(STATE.resources.morale - sev, 0, 100);
       });
       let gained = foodGot > 0 ? ('+' + foodGot + ' food.') : payload.food > 0 ? 'found food, but the stores are full.' : 'came back empty-handed.';
+      // Alien world (the red risky strip, Bible "FORAGE — clicker w/
+      // poison-roll"): one roll in four, something in the haul poisons a
+      // crew member — the minigame's medium sickness. Solo, it spoils food.
+      if (alien && Math.random() < ALIEN_POISON_CHANCE) {
+        if (STATE.crew.length) { const hit = damageCrew(null, ALIEN_POISON_HP); gained += ' Something in the haul disagreed with ' + (hit && STATE.crew.includes(hit) ? crewNameOf(hit) : 'the crew') + ' (−' + ALIEN_POISON_HP + ' HP before the medic\'s care).'; }
+        else { STATE.resources.food = clamp(STATE.resources.food - ALIEN_POISON_HP, 0, resMax('food')); gained += ' Half of it was poisonous; it went out the airlock (−' + ALIEN_POISON_HP + ' food).'; }
+      }
       // A good forage on alien ground can turn up the suspicious fungus
       // (the chef's Secret Project — event_shipboard_016).
-      if (tier !== 'poor' && (regionKey === 'anomaly' || regionKey === 'planet_orbit_habitable') &&
+      if (tier !== 'poor' && (regionKey === 'anomaly' || regionKey === 'planet_orbit_habitable' || alien) &&
           !STATE.items.includes('suspicious_fungus') && Math.random() < 0.15 && grantItem('suspicious_fungus')) {
         gained += ' Also: a fungus nobody can name. The chef has asked to keep it.';
       }
-      settleMinigame('◆ ' + mode + ' — ' + gained);
+      settleMinigame('◆ ' + label + ' — ' + gained);
+      if (STATE.crew.length === 0 && STATE.flags.has('all_crew_dead')) checkFailure();
     });
   }
 
@@ -503,17 +919,10 @@
     });
   }
 
-  // REST — a day of doing deliberately nothing. Chef aboard makes it
-  // land better (their whole thing is morale through care).
-  function handleRestVerb() {
-    const chefBonus = Math.round(2 * passiveMult('chef')); // wounded chef: halved
-    STATE.resources.morale = clamp(STATE.resources.morale + 6 + chefBonus, 0, 100);
-    settleMinigame('◆ REST — a full day off. Morale +' + (6 + chefBonus) + (chefBonus ? ' (the chef cooked the good stuff).' : '.'));
-  }
-
   // TRADE — summons the trader scenario at this node (reuses the full
   // layered encounter rather than a bare market screen; the trader IS
-  // the market). WAIT FOR TRADER — park for days and roll the dice.
+  // the market). Only offered while a trader is in range (the stop's
+  // presence roll, or one a WAIT brought in); stations always trade.
   function handleTradeVerb() {
     // Docked at a station, the market is the station's own Market Row
     // (a vendor in person at a stall); anywhere else a trader ship
@@ -524,19 +933,7 @@
     closeStopMenu();
     enterEvent(STATE.byId[STATE.currentId], ev);
   }
-  function handleWaitTraderVerb() {
-    const days = 1; // hunt 5: was 1-2 days at 55% (~2.8 days a trader, never worth it)
-    passDays(days);
-    renderHUD();
-    if (checkFailure()) return;
-    if (Math.random() < 0.75) {
-      pushLogEntry('◆ WAIT — after ' + days + ' day(s), a merchant sail lights up the scope.');
-      const ev = EVENTS['event_encounter_trader_001'];
-      if (ev) { closeStopMenu(); enterEvent(STATE.byId[STATE.currentId], ev); return; }
-    }
-    pushLogEntry('◆ WAIT — ' + days + ' day(s) parked. Nobody came. The dice do not apologize.');
-    renderCruise();
-  }
+
 
   // FABRICATOR stays a Stop Menu verb rather than moving to a separate
   // bottom-row ship-system button (Bible §18's original design) — Cruise
@@ -638,63 +1035,447 @@
     renderStopMenu();
   }
 
-  const VERB_HANDLERS = { condense: handleCondenseVerb, drydock: handleDrydockVerb, fab_service: handleFabServiceVerb, medbay: handleMedbayVerb, mine: handleMineVerb, scan: handleScanVerb, repair: handleRepairVerb, forage_food: handleForageVerb, salvage: handleSalvageVerb, fab: handleFabricatorVerb, rest: handleRestVerb, trade: handleTradeVerb, wait_for_trader: handleWaitTraderVerb };
+
+  // REST and WAIT FOR TRADER aren't one-click handlers: they open the
+  // 1–7 day picker and run as multi-day waits (below).
+  const VERB_HANDLERS = { condense: handleCondenseVerb, drydock: handleDrydockVerb, fab_service: handleFabServiceVerb, medbay: handleMedbayVerb, mine: handleMineVerb, scan: handleScanVerb, repair: handleRepairVerb, forage_food: handleForageVerb, salvage: handleSalvageVerb, fab: handleFabricatorVerb, trade: handleTradeVerb };
+  const WAIT_VERBS = { wait_for_trader: 1, rest: 1 };
 
   function currentRegionKey() {
     const node = STATE.byId && STATE.byId[STATE.currentId];
-    return NODE_TYPE_TO_REGION[node && node.node_type] || 'deep_space';
+    const region = NODE_TYPE_TO_REGION[node && node.node_type] || 'deep_space';
+    // The planet's biome is the node's own sticky pick (scene_art.js) —
+    // the same one its approach view and landing scenes show.
+    if (region === 'planet_orbit_habitable' && window.SceneArt && SceneArt.biomeFor && SceneArt.biomeFor(null, node) === 'alien') return 'planet_orbit_alien';
+    return region;
   }
+  window.cruiseRegionKey = currentRegionKey;
+
+  /* ── Multi-day waits: WAIT FOR TRADER and REST (demo ~2757-3113,
+     Bible §18 "Trader-wait twist" + "Multi-day action interrupt rule").
+     The player picks 1–7 days; each day ticks for real (passDays: food,
+     water, O2, rations morale, deprivation — the deadline moves), about
+     1.5s apiece, held while the game is paused or a modal is open.
+     • WAIT FOR TRADER rolls a region-modulated chance each day; a hit
+       brings a trader in range (TRADE now shows) and opens the trader.
+     • REST pays its morale when the rest is done: +REST_MORALE_PER_DAY
+       a day (+2 with a chef aboard). WAKE UP early gains nothing (owner
+       rule: quitting gains nothing and costs the time).
+     • Waiting is not safe (Bible): each day also rolls for a pirate, a
+       distress call or an anomalous drift — a real engine event, picked
+       only from events eligible at this stop. It ends the wait (REST
+       keeps the days it got, pro rata, per the interrupt rule) and puts
+       the ship in the forced-event state below until the player answers.
+     • STOP WAITING / WAKE UP / Resume cancel: the days spent stay spent.
+     Docked at a station nothing interrupts (and a trader is always in). */
+  const WAIT_TICK_MS = 1500, WAIT_DAY_MAX = 7;
+  const TRADER_DAILY_CHANCE = {
+    planet_orbit_habitable: 0.75, debris_field: 0.65, asteroid_field: 0.60,
+    nebula: 0.55, planet_orbit_alien: 0.45, deep_space: 0.35, anomaly: 0,
+  };
+  const INTERRUPT_DAILY_CHANCE = {
+    station_approach: 0, planet_orbit_habitable: 0.04, planet_orbit_alien: 0.06,
+    asteroid_field: 0.06, debris_field: 0.06, nebula: 0.06, deep_space: 0.08, anomaly: 0.09,
+  };
+  const REST_MORALE_PER_DAY = 6;
+  function restPerDay() { return REST_MORALE_PER_DAY + Math.round(2 * passiveMult('chef')); } // wounded chef: halved
+  const WAIT_CFG = {
+    wait_for_trader: {
+      label: 'WAITING FOR TRADER', picker: 'WAIT HOW MANY DAYS?',
+      startLog: d => '▶ Captain orders the ship parked. Waiting for a trader (' + d + ' day cap).',
+      timeoutFlash: 'NO ONE CAME', timeoutVariant: 'timeout',
+      cancelLabel: 'STOP WAITING', cancelSub: 'Call it off. No trader, and the days already spent stay spent.',
+    },
+    rest: {
+      label: 'RESTING', picker: 'REST HOW MANY DAYS?',
+      startLog: d => '▶ Crew stands down for ' + d + ' day' + (d === 1 ? '' : 's') + '. Lights low. Time soft.',
+      timeoutFlash: 'REFRESHED', timeoutVariant: 'success',
+      cancelLabel: 'WAKE UP', cancelSub: 'Cut rest short. Nobody is rested yet; the days are gone all the same.',
+    },
+  };
+  // During-wait events. Weights are relative (the daily chance above is
+  // whether anything comes at all); each kind fires a real event, drawn
+  // from those eligible here (node type, once-only, flags).
+  const WAIT_EVENTS = {
+    pirate: {
+      weight: 5, events: () => ['event_encounter_pirate_001'],
+      log: 'Pirate signature on long-range scan. They saw you sitting still.',
+      flash: 'PIRATE INBOUND', variant: 'event-danger',
+      ticker: 'PIRATE SIGNATURE — WEAPONS HOT', label: 'PIRATE SIGNATURE',
+      mood: 'They saw you sitting still. They are coming over to discuss it.',
+      verb: 'HAIL BACK', sub: 'Answer them before they answer for you.', icon: 'scan',
+    },
+    distress: {
+      weight: 3, events: () => ['event_encounter_drifter_001'],
+      log: 'Distress call on an open channel. Someone, somewhere, needs help.',
+      flash: 'DISTRESS CALL', variant: 'event',
+      ticker: 'DISTRESS CALL — OPEN CHANNEL', label: 'DISTRESS CALL',
+      mood: 'A parked ship is a ship that can hear. Somebody is counting on it.',
+      verb: 'ANSWER THE CALL', sub: 'Someone is out there. Find out who.', icon: 'scan',
+    },
+    anomaly: {
+      weight: 2, events: () => Object.keys(EVENTS).filter(id => /^event_anomaly_/.test(id)),
+      log: 'Anomalous drift current bumps the ship. Instruments disagree about which way is up.',
+      flash: 'ANOMALY', variant: 'event',
+      ticker: 'ANOMALOUS DRIFT — INSTRUMENTS DISAGREE', label: 'ANOMALOUS DRIFT',
+      mood: 'Something is happening to the ship, or near it, or about it.',
+      verb: 'INVESTIGATE', sub: 'Find out what the instruments are arguing about.', icon: 'scan',
+    },
+  };
+  function waitEventPick() {
+    const node = STATE.byId && STATE.byId[STATE.currentId];
+    if (!node || typeof eventEligible !== 'function') return null;
+    const trig = activeTriggers();
+    const kinds = [];
+    for (const [kind, d] of Object.entries(WAIT_EVENTS)) {
+      const ids = d.events().filter(id => EVENTS[id] && eventEligible(EVENTS[id], node, trig));
+      if (ids.length) kinds.push({ kind, d, ids });
+    }
+    if (!kinds.length) return null;
+    let r = Math.random() * kinds.reduce((s, k) => s + k.d.weight, 0);
+    let pick = kinds[kinds.length - 1];
+    for (const k of kinds) { r -= k.d.weight; if (r < 0) { pick = k; break; } }
+    const fresh = pick.ids.filter(id => !STATE.seenEventIds.has(id));
+    const pool = fresh.length ? fresh : pick.ids;
+    return { kind: pick.kind, ev: pool[Math.floor(Math.random() * pool.length)] };
+  }
+  window.cruiseWaitEventPick = waitEventPick;
+  window.CRUISE_WAIT_TUNING = { WAIT_TICK_MS, WAIT_DAY_MAX, TRADER_PRESENT_CHANCE, TRADER_DAILY_CHANCE, INTERRUPT_DAILY_CHANCE, REST_MORALE_PER_DAY };
+
+  let activeWait = null; // { verbId, days, day, node, region, timer, resolving, finish }
+  let bannerTimer = null;
+  const waitHeld = () => (window.PauseBus && PauseBus.paused) || !cruiseVisible() || overlayOpen();
+  function showActionBanner(label, day, days) {
+    clearTimeout(bannerTimer);
+    const b = $('action-banner');
+    b.classList.remove('cancelled');
+    $('action-banner-label').textContent = label;
+    $('action-banner-counter').textContent = 'DAY ' + day + ' / ' + days;
+    $('action-banner-fill').style.width = Math.min(100, day / days * 100).toFixed(1) + '%';
+    b.classList.add('show');
+  }
+  function hideActionBanner() { $('action-banner').classList.remove('show'); }
+  const FLASH_VARIANTS = ['success', 'timeout', 'event', 'event-danger'];
+  function showWaitFlash(text, variant) {
+    const el = $('wait-flash');
+    el.querySelector('.wait-flash-label').textContent = text;
+    el.classList.remove(...FLASH_VARIANTS);
+    el.classList.add(variant, 'show');
+  }
+  function hideWaitFlash() {
+    const el = $('wait-flash');
+    el.classList.remove('show');
+    setTimeout(() => { if (!el.classList.contains('show')) el.classList.remove(...FLASH_VARIANTS); }, 600);
+  }
+  // A timer step that waits out a pause / an open modal before it lands.
+  function whenFree(fn, ms) {
+    const a = activeWait;
+    const go = () => { if (activeWait !== a) return; if (waitHeld()) { a.timer = setTimeout(go, 250); return; } fn(); };
+    a.timer = setTimeout(go, ms);
+  }
+
+  // Day picker — the verb's button swaps its rows for a 1..7 stepper
+  // (demo enterDayPickerMode). A day commits; a click anywhere else
+  // collapses it. Steps are role=button spans, not nested <button>s.
+  function openDayPicker(btn, verbId) {
+    document.querySelectorAll('#stop-choices .stop-choice.day-picker').forEach(collapseDayPicker);
+    btn.classList.add('day-picker');
+    btn._origHTML = btn.innerHTML;
+    const gate = btn.querySelector('.stop-choice-gate');
+    btn.innerHTML = '';
+    if (gate) btn.appendChild(gate);
+    const body = document.createElement('div');
+    body.className = 'stop-choice-body';
+    body.textContent = WAIT_CFG[verbId].picker;
+    btn.appendChild(body);
+    const stepper = document.createElement('div');
+    stepper.className = 'day-stepper';
+    for (let d = 1; d <= WAIT_DAY_MAX; d++) {
+      const step = document.createElement('span');
+      step.className = 'day-step';
+      step.setAttribute('role', 'button');
+      step.tabIndex = 0;
+      step.textContent = String(d);
+      step.title = d + ' day' + (d === 1 ? '' : 's') + (verbId === 'rest' ? ' · +' + restPerDay() * d + ' morale if you sleep it through' : '');
+      step.addEventListener('click', e => { e.stopPropagation(); startWait(verbId, d); });
+      step.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); startWait(verbId, d); } });
+      stepper.appendChild(step);
+    }
+    btn.appendChild(stepper);
+    btn._outside = e => { if (!btn.contains(e.target)) collapseDayPicker(btn); };
+    setTimeout(() => document.addEventListener('click', btn._outside, true), 0);
+  }
+  function collapseDayPicker(btn) {
+    if (!btn.classList.contains('day-picker')) return;
+    btn.classList.remove('day-picker');
+    if (btn._origHTML != null) { btn.innerHTML = btn._origHTML; btn._origHTML = null; }
+    if (btn._outside) { document.removeEventListener('click', btn._outside, true); btn._outside = null; }
+  }
+
+  function startWait(verbId, days) {
+    if (activeWait || STATE.forcedEvent || STATE.ended) return;
+    const cfg = WAIT_CFG[verbId];
+    if (!cfg) return;
+    if (verbId === 'rest' && STATE.resources.morale >= 95) return;
+    if (verbId === 'wait_for_trader' && traderHere()) return;
+    document.querySelectorAll('#stop-choices .stop-choice.day-picker').forEach(collapseDayPicker);
+    days = Math.max(1, Math.min(WAIT_DAY_MAX, days | 0));
+    // The verb's effort tax, once for the whole wait (it's one decision).
+    if (window.payEffortTax) payEffortTax(STOP_VERBS[verbId].effort);
+    activeWait = { verbId, days, day: 0, node: STATE.currentId, region: currentRegionKey(), timer: null, resolving: false, finish: null };
+    pushLogEntry(cfg.startLog(days));
+    const fill = $('action-banner-fill');
+    fill.style.transition = 'none'; fill.style.width = '0%'; void fill.offsetWidth; fill.style.transition = '';
+    showActionBanner(cfg.label, 0, days);
+    renderHUD();
+    // Deferred: rebuilding the column inside the step's click would put
+    // STOP WAITING under the same click (demo note).
+    setTimeout(() => { if (isStopped()) renderStopMenu(); }, 0);
+    syncPaused();
+    activeWait.timer = setTimeout(waitTick, WAIT_TICK_MS);
+  }
+
+  function waitTick() {
+    const a = activeWait;
+    if (!a || a.resolving) return;
+    if (STATE.ended || STATE.currentId !== a.node) { stopWaitSilently(); return; }
+    if (waitHeld()) { a.timer = setTimeout(waitTick, 250); return; }
+    a.day++;
+    passDays(1);
+    renderHUD();
+    showActionBanner(WAIT_CFG[a.verbId].label, a.day, a.days);
+    if (checkFailure()) { stopWaitSilently(); return; }
+    renderCruise(); // the day's drain on the card/bars; autosave (a reload mid-wait = called off)
+    if (a.verbId === 'wait_for_trader' && Math.random() < (TRADER_DAILY_CHANCE[a.region] || 0)) return traderArrives(a);
+    if (Math.random() < (INTERRUPT_DAILY_CHANCE[a.region] || 0)) {
+      const pick = waitEventPick();
+      if (pick) return interruptWait(a, pick);
+    }
+    if (a.day >= a.days) return waitTimeout(a);
+    a.timer = setTimeout(waitTick, WAIT_TICK_MS);
+  }
+
+  function traderArrives(a) {
+    a.resolving = true;
+    STATE.traderAt = STATE.traderAt || {};
+    STATE.traderAt[a.node] = true;
+    pushLogEntry('▶ A trader has appeared after ' + a.day + ' day' + (a.day === 1 ? '' : 's') + ' of waiting.');
+    // leaving = the player Resumed during the flash: the trader stays
+    // behind at this stop (TRADE), the ship goes.
+    a.finish = leaving => {
+      clearTimeout(a.timer);
+      hideWaitFlash(); hideActionBanner();
+      activeWait = null;
+      renderCruise();
+      if (leaving || STATE.ended) return;
+      const ev = EVENTS.event_encounter_trader_001;
+      if (ev) { closeStopMenu(); enterEvent(STATE.byId[STATE.currentId], ev); }
+      else renderStopMenu();
+    };
+    whenFree(() => { showWaitFlash('TRADER APPROACHING', 'success'); whenFree(() => a.finish(false), 2000); }, 600);
+  }
+
+  function interruptWait(a, pick) {
+    a.resolving = true;
+    const d = WAIT_EVENTS[pick.kind];
+    pushLogEntry('▶ ' + d.log);
+    // Bible interrupt rule: an interrupted action yields pro rata.
+    if (a.verbId === 'rest') {
+      const m0 = STATE.resources.morale;
+      STATE.resources.morale = clamp(m0 + restPerDay() * a.day, 0, 100);
+      const got = Math.round(STATE.resources.morale - m0);
+      pushLogEntry('▶ Rest broken after ' + a.day + ' day' + (a.day === 1 ? '' : 's') + (got > 0 ? ' — morale +' + got + '.' : '.'));
+      renderHUD();
+    }
+    // The event is the ship's business from this moment (saved: a reload
+    // comes back to it).
+    STATE.forcedEvent = { kind: pick.kind, ev: pick.ev, node: a.node };
+    a.finish = () => {
+      clearTimeout(a.timer);
+      hideWaitFlash(); hideActionBanner();
+      activeWait = null;
+      renderCruise();      // arms event-active, saves
+      if (!isStopped()) openStopMenu(); else { renderStopMenu(); syncTicker(); syncPaused(); }
+    };
+    whenFree(() => { showWaitFlash(d.flash, d.variant); whenFree(() => a.finish(false), 2000); }, 600);
+  }
+
+  function waitTimeout(a) {
+    a.resolving = true;
+    const cfg = WAIT_CFG[a.verbId];
+    if (a.verbId === 'rest') {
+      const m0 = STATE.resources.morale;
+      STATE.resources.morale = clamp(m0 + restPerDay() * a.days, 0, 100);
+      const got = Math.round(STATE.resources.morale - m0);
+      pushLogEntry('▶ Crew rested ' + a.days + ' day' + (a.days === 1 ? '' : 's') + '. Morale +' + got + (restPerDay() > REST_MORALE_PER_DAY ? ' (the chef cooked the good stuff).' : '.'));
+    } else {
+      pushLogEntry('▶ No one came. ' + a.days + ' day' + (a.days === 1 ? '' : 's') + ' parked; the dice do not apologize.');
+    }
+    renderHUD();
+    a.finish = () => {
+      clearTimeout(a.timer);
+      hideWaitFlash(); hideActionBanner();
+      activeWait = null;
+      renderCruise();
+      if (isStopped()) renderStopMenu();
+      syncPaused();
+    };
+    whenFree(() => { showWaitFlash(cfg.timeoutFlash, cfg.timeoutVariant); whenFree(() => a.finish(false), 2200); }, 800);
+  }
+
+  // STOP WAITING / WAKE UP (and Resume mid-wait): the days already
+  // passed stay passed; nothing else comes of it.
+  function cancelWait() {
+    const a = activeWait;
+    if (!a || a.resolving) return;
+    clearTimeout(a.timer);
+    activeWait = null;
+    const n = a.day, dd = n + ' day' + (n === 1 ? '' : 's');
+    pushLogEntry(a.verbId === 'rest'
+      ? '▶ Rest cut short after ' + dd + '. Nobody feels any better for it.'
+      : '▶ Wait called off after ' + dd + '. No trader, and the days are gone.');
+    const banner = $('action-banner');
+    banner.classList.add('cancelled');
+    $('action-banner-label').textContent = n ? 'WASTED ' + n + ' ' + (n === 1 ? 'DAY' : 'DAYS') + '!' : (a.verbId === 'rest' ? 'REST CANCELLED' : 'WAIT CANCELLED');
+    $('action-banner-counter').textContent = '';
+    hideWaitFlash();
+    if (isStopped()) renderStopMenu();
+    syncPaused();
+    renderCruise();
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => {
+      hideActionBanner();
+      setTimeout(() => { if (!activeWait) banner.classList.remove('cancelled'); }, 400);
+    }, 1500);
+  }
+  function stopWaitSilently() {
+    if (activeWait) clearTimeout(activeWait.timer);
+    activeWait = null;
+    hideWaitFlash(); hideActionBanner();
+    syncPaused();
+  }
+  // index.html teardownLiveUI (pause → LOAD, new game): no wait may
+  // resolve into the run that replaces this one.
+  window.abortCruiseWait = function () {
+    stopWaitSilently();
+    document.body.classList.remove('event-active');
+    tickerKey = null;
+  };
+  window.cruiseWaitActive = () => !!activeWait;
+  window.cruiseWaitState = () => activeWait && { verbId: activeWait.verbId, day: activeWait.day, days: activeWait.days, resolving: activeWait.resolving };
+
+  // ── Forced-event state (demo ~1990-2062, 2131-2160; Bible Stop
+  // Button State Machine "event" row). Entered only by a during-wait
+  // event: red pulsing ticker, the Stop menu shows that event's one
+  // resolve verb, and Resume is blocked — the screen shakes and the
+  // ticker flashes CANNOT RESUME. Answering opens the real encounter;
+  // after it the ship is back at the hub, stopped, as after any event.
+  function resolveForced() {
+    const f = STATE.forcedEvent;
+    if (!f) return;
+    const ev = EVENTS[f.ev];
+    STATE.forcedEvent = null;
+    document.body.classList.remove('event-active');
+    tickerKey = null;
+    if (!ev) { renderCruise(); return; }
+    closeStopMenu();
+    enterEvent(STATE.byId[STATE.currentId], ev);
+  }
+  function shakeScreen() {
+    const g = $('screen-cruise');
+    g.classList.remove('shaking');
+    void g.offsetWidth;
+    g.classList.add('shaking');
+    setTimeout(() => g.classList.remove('shaking'), 600);
+  }
+  function flashTickerWarning() {
+    writeTicker('CANNOT RESUME — HANDLE EVENT FIRST', 'event');
+    tickerKey = 'warning';
+    clearTimeout(tickerWarnTimer);
+    tickerWarnTimer = setTimeout(() => { if (tickerKey === 'warning') { tickerKey = null; syncTicker(); } }, 2400);
+  }
+
+  function choiceButton(o) {
+    const btn = document.createElement('button');
+    btn.className = 'stop-choice' + (o.variant ? ' ' + o.variant : '');
+    const gate = document.createElement('div');
+    gate.className = 'stop-choice-gate' + (o.locked ? ' locked' : '');
+    if (o.icon) gate.style.backgroundImage = "url('sprites/interface/" + o.icon + ".png')";
+    else if (o.glyph) gate.textContent = o.glyph;
+    btn.appendChild(gate);
+    const body = document.createElement('div');
+    body.className = 'stop-choice-body';
+    body.textContent = o.label;
+    btn.appendChild(body);
+    const sub = document.createElement('div');
+    sub.className = 'stop-choice-sub';
+    for (const part of o.parts || []) sub.appendChild(part);
+    if (o.sub) {
+      const s = document.createElement('span');
+      s.className = 'stop-choice-desc';
+      s.textContent = '· ' + o.sub;
+      sub.appendChild(s);
+    }
+    btn.appendChild(sub);
+    return btn;
+  }
+  const span = (cls, text) => { const s = document.createElement('span'); if (cls) s.className = cls; s.textContent = text; return s; };
 
   function renderStopMenu() {
     const regionKey = currentRegionKey();
     const region = REGIONS[regionKey] || REGIONS.deep_space;
+    const list = $('stop-choices');
+    list.innerHTML = '';
+
+    // A during-wait event holds the ship: its own header, one way out.
+    const f = forcedDef();
+    if (f) {
+      $('stop-region-label').textContent = f.label;
+      $('stop-region-mood').textContent = f.mood;
+      const btn = choiceButton({ label: f.verb, sub: f.sub, icon: f.icon, variant: 'risky' });
+      btn.addEventListener('click', resolveForced);
+      list.appendChild(btn);
+      return;
+    }
     $('stop-region-label').textContent = region.label;
     $('stop-region-mood').textContent = region.mood;
 
-    const list = $('stop-choices');
-    list.innerHTML = '';
+    // Mid-wait the column holds only the way to call it off.
+    if (activeWait) {
+      const cfg = WAIT_CFG[activeWait.verbId];
+      const btn = choiceButton({ label: cfg.cancelLabel, sub: cfg.cancelSub, glyph: '✕', variant: 'risky' });
+      btn.classList.add('cancel-wait');
+      btn.addEventListener('click', cancelWait);
+      list.appendChild(btn);
+      return;
+    }
+
     region.verbs.forEach(verbId => {
       const verb = STOP_VERBS[verbId];
       if (!verb) return;
+      if (verb.hideWhen && verb.hideWhen()) return;
+      if (verb.requires && !verb.requires()) return;
       const labelStr = typeof verb.label === 'function' ? verb.label(regionKey) : verb.label;
-      const btn = document.createElement('button');
       const lockReason = verb.locked ? verb.locked() : null;
-      btn.className = 'stop-choice' + (verb.hint ? ' hint' : '') + (lockReason ? ' locked' : '');
-      const gate = document.createElement('div');
-      gate.className = 'stop-choice-gate' + (lockReason ? ' locked' : '');
-      // Demo canon: the verb's icon; a locked verb shows lock.png and says
-      // why in the sub-line.
-      gate.style.backgroundImage = "url('sprites/interface/" + (lockReason ? 'lock' : verb.icon || 'wait') + ".png')";
-      btn.appendChild(gate);
-      const body = document.createElement('div');
-      body.className = 'stop-choice-body';
-      body.textContent = labelStr;
-      btn.appendChild(body);
-      const sub = document.createElement('div');
-      sub.className = 'stop-choice-sub';
+      const variant = lockReason ? null : (verb.variantBy && verb.variantBy(regionKey)) || (verb.hint ? 'hint' : null);
+      const parts = [];
       if (lockReason) {
-        const need = document.createElement('span');
-        need.className = 'lock-need';
-        need.textContent = '\u{1F512} ' + lockReason;
-        sub.appendChild(need);
+        parts.push(span('lock-need', '\u{1F512} ' + lockReason));
       } else {
-        const eff = document.createElement('span');
-        eff.className = 'effort';
         // The pips cost morale (Bible effort tax); the number says how much.
-        eff.textContent = effortPips(verb.effort) + (window.effortTax && effortTax(verb.effort) ? ' −' + effortTax(verb.effort) + ' MO' : '');
-        sub.appendChild(eff);
-        const s = document.createElement('span');
-        s.textContent = '· ' + (typeof verb.sub === 'function' ? verb.sub() : verb.sub);
-        sub.appendChild(s);
+        parts.push(span('effort', effortPips(verb.effort) + (window.effortTax && effortTax(verb.effort) ? ' −' + effortTax(verb.effort) + ' MO' : '')));
+        if (verb.time) parts.push(span('verb-time', verb.time));
       }
-      btn.appendChild(sub);
-      // MINE and FABRICATOR are wired separately (mining.js / fabricator
-      // overlay); TRADE/WAIT FOR TRADER/REST have no engine-side system
-      // yet and still log honestly.
-      if (!lockReason && verb.effort && window.effortTax) btn.title = 'Effort ' + verb.effort + '/5 · costs ' + effortTax(verb.effort) + ' morale' + (verbId === 'fab' ? ' per craft' : '');
+      const subText = lockReason ? null : (typeof verb.sub === 'function' ? verb.sub(regionKey) : verb.sub);
+      const btn = choiceButton({ label: labelStr, sub: subText, parts, variant, icon: lockReason ? 'lock' : (verb.icon || 'wait'), locked: !!lockReason });
+      if (lockReason) btn.classList.add('locked');
+      btn.setAttribute('data-verb-id', verbId);
+      if (!lockReason && verb.effort && window.effortTax) btn.title = 'Effort ' + verb.effort + '/5 · costs ' + effortTax(verb.effort) + ' morale' + (verbId === 'fab' ? ' per craft' : WAIT_VERBS[verbId] ? ' for the whole wait' : '');
       btn.addEventListener('click', () => {
-        const handler = VERB_HANDLERS[verbId];
         if (lockReason) return;
+        if (btn.classList.contains('day-picker')) return; // picking days on this button
+        if (WAIT_VERBS[verbId]) { openDayPicker(btn, verbId); return; }
+        const handler = VERB_HANDLERS[verbId];
         // Effort tax on use (the fabricator charges per craft instead —
         // opening its screen to look costs nothing).
         if (handler && verbId !== 'fab' && window.payEffortTax) { pendingVerbTax = payEffortTax(verb.effort); renderHUD(); }
@@ -704,26 +1485,44 @@
       });
       list.appendChild(btn);
     });
+    if (!list.children.length) {
+      const empty = document.createElement('div');
+      empty.className = 'stop-empty';
+      empty.textContent = 'Nothing to do here.';
+      list.appendChild(empty);
+    }
   }
 
   function openStopMenu() {
     document.body.classList.add('stop-active');
     $('stop-btn').textContent = 'Resume';
     renderStopMenu();
+    syncTicker();
+    syncPaused();
+    wakeStars(); // decelerate to a stop
   }
   window.openStopMenu = openStopMenu;
   function closeStopMenu() {
+    document.querySelectorAll('#stop-choices .stop-choice.day-picker').forEach(collapseDayPicker);
+    if (activeWait && !activeWait.resolving) cancelWait();
     document.body.classList.remove('stop-active');
     $('stop-btn').textContent = 'Stop';
+    syncTicker();
+    syncPaused();
+    wakeStars(); // spool back up
   }
 
   /* Pressing Stop/Resume while stopped means "resume course" — advance
-     one leg via the real travelTo()/selectEvent() pool-draw (Phase 3),
-     same engine path the ?debug=fixed_path map screen already uses.
+     one leg via the real travelTo()/selectEvent() pool-draw (Phase 3).
      Forks resolve to 0 available targets until their own event sets
      chose_alpha/chose_beta — that's an honest content-state, not a bug
-     here, so it just logs instead of forcing a route. */
+     here, so it just logs instead of forcing a route. A during-wait
+     event blocks Resume outright (shake + CANNOT RESUME); a wait in
+     progress is called off (its days stay spent). */
   function attemptResume() {
+    if (activeWait && activeWait.resolving && activeWait.finish) activeWait.finish(true);
+    if (STATE.forcedEvent) { shakeScreen(); flashTickerWarning(); return; }
+    if (activeWait) cancelWait();
     const nextIds = [...nextAvailableNodes()];
     if (nextIds.length === 0 && typeof resolveStuckFork === 'function' && resolveStuckFork()) { closeStopMenu(); return; }
     if (nextIds.length !== 1) {
@@ -733,13 +1532,15 @@
       return;
     }
     closeStopMenu();
+    markUnderway();
     travelTo(nextIds[0]);
   }
 
   $('stop-btn').addEventListener('click', () => {
-    if (document.body.classList.contains('stop-active')) attemptResume();
-    else openStopMenu();
+    if (isStopped()) attemptResume();
+    else { openStopMenu(); pushLogEntry('▶ Ship stopped by captain.'); }
   });
+
 
   /* ── AI universal pools (flavor_pools.json → ai_universal) ─────
      Wires the previously-unconsumed ambient/warning/crop pools into
@@ -776,7 +1577,7 @@
     ready.sort((a, b) => (pay[b].weight || 1) - (pay[a].weight || 1));
     const f = ready[0];
     STATE.calledBack.push(f);
-    pushLogEntry('◆ ' + pay[f].callback[STATE.activeAI]);
+    pushLogEntry('◆ ' + pay[f].callback[STATE.activeAI], { ai: true });
     return true;
   }
 
@@ -790,7 +1591,7 @@
     const node = STATE.byId && STATE.byId[STATE.currentId];
     if (node) {
       const nodeLine = aiPool(['map_commentary', 'node_entering', node.node_type]);
-      if (nodeLine && Math.random() < 0.6) { pushLogEntry('◆ ' + nodeLine); return; }
+      if (nodeLine && Math.random() < 0.6) { pushLogEntry('◆ ' + nodeLine, { ai: true }); return; }
     }
     if (Math.random() < 0.45) {
       // One ambient beat in four is the ship computer's own note on the
@@ -806,7 +1607,7 @@
         : (Array.isArray(drift) && drift.length && roll < 0.45)
           ? 'Passing the window: ' + drift[Math.floor(Math.random() * drift.length)].replace(/^./, c => c.toLowerCase()).replace(/\.$/, '') + '.'
           : aiPool(['cruise_ambient']);
-      if (line) pushLogEntry('◆ ' + line);
+      if (line) pushLogEntry('◆ ' + line, { ai: true });
     }
   }
 
@@ -831,7 +1632,7 @@
           STATE.flags.add('ai_sampled_low_fuel'); line = aiSampleLine('low_fuel');
         }
         line = line || aiPool(['resource_warning', res, level]);
-        if (line) pushLogEntry('◆ ' + line);
+        if (line) pushLogEntry('◆ ' + line, { ai: true });
       }
       STATE.aiWarnLevels[res] = level;
     }
@@ -851,7 +1652,7 @@
       if (!beat || STATE.flags.has('zinnia_' + key) || !trig.has(trigger)) continue;
       STATE.flags.add('zinnia_' + key);
       if (morale) STATE.resources.morale = clamp(STATE.resources.morale + morale, 0, 100);
-      pushLogEntry('◆ ' + beat.first_line + (morale ? ' (+' + morale + ' morale)' : ''));
+      pushLogEntry('◆ ' + beat.first_line + (morale ? ' (+' + morale + ' morale)' : ''), { ai: true });
       return; // one beat per stop
     }
   }
@@ -866,18 +1667,18 @@
     if (health > 0 && growth < 75 && !STATE.flags.has('ai_noted_crop_planted')) {
       STATE.flags.add('ai_noted_crop_planted');
       const line = aiPool(['crop_lifecycle', 'planted']);
-      if (line) pushLogEntry('◆ ' + line);
+      if (line) pushLogEntry('◆ ' + line, { ai: true });
     }
     if (growth > 75 && !STATE.flags.has('ai_noted_crop_mature')) {
       STATE.flags.add('ai_noted_crop_mature');
       const line = aiPool(['crop_lifecycle', 'mature']);
-      if (line) pushLogEntry('◆ ' + line);
+      if (line) pushLogEntry('◆ ' + line, { ai: true });
       // Maturity is the crop's science moment — attach the real-world
       // tie-in from the science_links pool (Bible §18 link schema).
       const sci = MOD.flavor && MOD.flavor.science_links && MOD.flavor.science_links.crops
         && MOD.flavor.science_links.crops[STATE.crop];
       if (sci && sci.url) {
-        pushLogEntry({ text: '◆ ' + (sci.text || 'The ship computer files the crop\'s real history for curious minds.'), link: { url: sci.url, label: sci.label || 'Learn more' } });
+        pushLogEntry({ text: '◆ ' + (sci.text || 'The ship computer files the crop\'s real history for curious minds.'), link: { url: sci.url, label: sci.label || 'Learn more' } }, { ai: true });
       }
     }
     // Sickness announcement fires on crossing below the crop's own
@@ -893,14 +1694,14 @@
       const first = !STATE.flags.has('ai_sampled_crop_sick');
       STATE.flags.add('ai_sampled_crop_sick');
       const line = (first && window.aiSampleLine && aiSampleLine('crop_sick')) || aiPool(['crop_lifecycle', 'diseased']);
-      if (line) pushLogEntry('◆ ' + line);
+      if (line) pushLogEntry('◆ ' + line, { ai: true });
     } else if (health >= healthyAt && STATE.flags.has('ai_noted_crop_sick')) {
       STATE.flags.delete('ai_noted_crop_sick');
     }
     if (health <= 0 && !STATE.flags.has('ai_noted_crop_died')) {
       STATE.flags.add('ai_noted_crop_died');
       const line = aiPool(['crop_lifecycle', 'died']);
-      if (line) pushLogEntry('◆ ' + line);
+      if (line) pushLogEntry('◆ ' + line, { ai: true });
     }
     // Pest outbreak announcement — once per outbreak (flag cleared by
     // TREAT / an event's clears_pest, so the next outbreak re-warns).
@@ -914,5 +1715,19 @@
   // The open Stop menu re-gates after anything that changes the ship
   // from an overlay (fabricator, inventory USE) — lock reasons and fees.
   window.refreshStopMenu = () => { if (document.body.classList.contains('stop-active')) renderStopMenu(); };
+  // Other screens log through here; { ai: true } marks the AI's own voice.
   window.pushCruiseLog = pushLogEntry;
+
+  // Wake-ups: the starfield, TIME PAUSED and the wait's hold all follow
+  // the screen, the Stop state, overlays and the pause menu.
+  const mo = new MutationObserver(() => {
+    const vis = cruiseVisible();
+    if (!vis && hubWasVisible) hubHiddenAt = performance.now();
+    hubWasVisible = vis;
+    wakeStars(); syncPaused();
+  });
+  mo.observe($('screen-cruise'), { attributes: true, attributeFilter: ['class'] });
+  mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  document.querySelectorAll('.overlay').forEach(ov => mo.observe(ov, { attributes: true, attributeFilter: ['class'] }));
+  if (window.PauseBus) PauseBus.onChange(() => { wakeStars(); syncPaused(); });
 })();

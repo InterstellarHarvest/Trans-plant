@@ -141,6 +141,43 @@
   function rosterOf(role) {
     return ((typeof MOD !== 'undefined' && MOD.crew_roster) || []).find(c => c.role === role) || null;
   }
+  /* Sentence split for the epitaph card (one sentence per line, dry OT
+     rhythm). A terminator only ends a sentence when whitespace and a new
+     sentence follow it, outside quotes, and not after a title — "Dr.
+     Osei" and "'how hard can it be.'" stay whole (the demo's
+     /[^.!?]+[.!?]+/ split at every period). */
+  const TITLES = /(?:^|[\s(])(?:Dr|Mr|Mrs|Ms|Mx|St|Capt|Lt|Sgt|Cmdr|Prof|Jr|Sr|No|vs|etc|e\.g|i\.e)$/i;
+  function splitSentences(text) {
+    const out = [];
+    let start = 0, quote = null;
+    const OPEN = { '"': '"', '\u201c': '\u201d', "'": "'", '\u2018': '\u2019' };
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i], prev = text[i - 1] || ' ', next = text[i + 1] || ' ';
+      if (quote) {
+        // A closing quote: the matching mark not inside a word (it's/they're).
+        if (c === quote && !(/\w/.test(prev) && /\w/.test(next))) { quote = null; continue; }
+        // A terminator the quote closes on ('… be.' We …) can end the
+        // sentence; one mid-quote ("Go. Now.") can't.
+        if (!(/[.!?]/.test(c) && next === quote)) continue;
+        quote = null;
+      }
+      if (OPEN[c] && /[\s(\[]/.test(prev) && !/\s/.test(next)) { quote = OPEN[c]; continue; }
+      if (!/[.!?]/.test(c)) continue;
+      let j = i + 1;
+      while (j < text.length && /[.!?"'\u201d\u2019)\]]/.test(text[j])) j++;
+      if (j < text.length && !/\s/.test(text[j])) continue;          // 3.5, U.S.
+      const after = text.slice(j).trimStart().charAt(0);
+      if (after && !/[A-Z0-9"'\u201c\u2018(\[]/.test(after)) continue; // "Go. Now." and left.
+      if (c === '.' && TITLES.test(text.slice(start, i))) continue;   // Dr. Osei
+      out.push(text.slice(start, j).trim());
+      start = j;
+      i = j - 1;
+    }
+    if (text.slice(start).trim()) out.push(text.slice(start).trim());
+    return out.filter(Boolean);
+  }
+  window.crewEpitaphSentences = splitSentences;
+
   function memberList() {
     const l = [];
     if (STATE.captain) l.push('captain');
@@ -489,6 +526,7 @@
       $('cd-active-desc').textContent = m.active.description || '';
       $('cd-active-cost').textContent = SKILL_COST_TAG[m.key] || 'NO COST';
       $('cd-active-card').title = (m.active.name || '') + '\n\n' + (m.active.description || '') +
+        '\nCost: ' + (SKILL_COST_TAG[m.key] ? SKILL_COST_TAG[m.key].replace(/^COST:\s*/, '').toLowerCase() : 'none') +
         '\nUses: ' + max + ' between stations · recharges at the next ' + (m.active.recharges_at || 'station') + '.' +
         (isWounded ? '\n\nDisabled while wounded.' : '');
       const btn = $('cd-active-btn');
@@ -647,20 +685,29 @@
     if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
     if (STATE.crewPending) delete STATE.crewPending[role];
     if (STATE.crewIdentity) delete STATE.crewIdentity[role];
-    let line;
+    let line, logLine;
     if (jettisoned) {
       STATE.flags.add('crew_lost');
       // An unsafe "dismissal" is explicitly an airlock death. Preserve
       // solo-by-choice at stations/planets, but route a last-person
       // jettison through the same crew_gone failure as killCrew().
       if (STATE.crew.length === 0) STATE.flags.add('all_crew_dead');
+      // The airlock's own epitaphs (demo-crew canon, flavor_pools
+      // airlock_epitaphs) — subjectless; the card puts the name above.
+      // The general death pool (crew_epitaphs) is the fallback.
+      const air = (typeof MOD !== 'undefined' && MOD.flavor && MOD.flavor.airlock_epitaphs) || [];
       const pool = (typeof MOD !== 'undefined' && MOD.flavor && MOD.flavor.crew_epitaphs) || [];
-      line = pool.length ? pool[Math.floor(Math.random() * pool.length)].replaceAll('[Name]', name)
-                         : name + ' has joined the long line of things that used to be indoors.';
+      if (air.length) {
+        line = air[Math.floor(Math.random() * air.length)].replaceAll('[Name]', name);
+        logLine = name + ', jettisoned. ' + line;
+      } else {
+        line = pool.length ? pool[Math.floor(Math.random() * pool.length)].replaceAll('[Name]', name)
+                           : name + ' has joined the long line of things that used to be indoors.';
+      }
     } else {
       line = DISMISS_LINES[Math.floor(Math.random() * DISMISS_LINES.length)].replaceAll('[Name]', name);
     }
-    if (typeof window.pushCruiseLog === 'function') pushCruiseLog('◆ ' + line);
+    if (typeof window.pushCruiseLog === 'function') pushCruiseLog('◆ ' + (logLine || line));
     if (typeof renderHUD === 'function') renderHUD();
     return line;
   }
@@ -668,6 +715,9 @@
   function confirmDismiss() {
     closeConfirm();
     const role = cur;
+    // Demo cycleCrew(1): afterwards the dossier moves on to whoever came
+    // after the departed in the roster (wrapping), not back to the captain.
+    afterIdx = memberList().indexOf(role);
     const jettison = !canDismissSafely();
     const portraitEl = $('cd-portrait');
     departing = true;
@@ -684,9 +734,10 @@
         // strips overlays itself, so just stop here if the run ended.
         if (typeof checkFailure === 'function' && checkFailure()) { departing = false; return; }
         pendingEpitaph = { role, name: departedName };
-        const sentences = line.match(/[^.!?]+[.!?]+/g) || [line];
         $('cd-epitaph-name').textContent = pendingEpitaph.name.toUpperCase();
-        $('cd-epitaph-line').innerHTML = sentences.map(s => s.trim()).filter(Boolean).join('<br>');
+        const lineEl = $('cd-epitaph-line');
+        lineEl.textContent = '';
+        splitSentences(line).forEach((s, k) => { if (k) lineEl.appendChild(document.createElement('br')); lineEl.appendChild(document.createTextNode(s)); });
         $('cd-epitaph').classList.add('visible');
       }, 2000); // 1500ms spin + 500ms splat beat (demo timing)
     } else {
@@ -710,11 +761,14 @@
     setTimeout(() => { departing = false; afterDeparture(); }, 400);
   }
 
+  let afterIdx = -1;
   function afterDeparture() {
     const list = memberList();
     if (typeof window.renderCruise === 'function') renderCruise();
     if (!list.length) { closeCrewDetail(); return; }
-    cur = list.includes(cur) ? cur : list[0];
+    // The departed member's slot now holds the one after them.
+    cur = list.includes(cur) ? cur : list[(afterIdx < 0 ? 0 : afterIdx) % list.length];
+    afterIdx = -1;
     render();
   }
 

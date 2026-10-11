@@ -787,6 +787,8 @@ body {
     <div id="cruise-screen">
       <div id="cruise-header">
         <div class="ship-name" id="cruise-ship-name"></div>
+        <!-- Ticker: one line at a time; cruise.js writeTicker() slides the
+             old line out left and the new one in from the right. -->
         <div class="header-ticker" id="header-ticker"></div>
         <div class="header-actions">
           <button class="header-icon-btn" style="background-image:url('sprites/interface/inv.png')" id="btn-inv" title="Inventory"></button>
@@ -795,6 +797,8 @@ body {
         </div>
         <div class="header-right">
           <div class="day-counter" id="day-counter"></div>
+          <!-- Swaps in for the day counter while stopped/paused (demo canon). -->
+          <div class="paused-label" id="paused-label">TIME PAUSED</div>
         </div>
       </div>
 
@@ -804,6 +808,15 @@ body {
             <!-- At a station stop: the same station the hail showed
                  (scene_art.js paintStationView), behind the ship. -->
             <div id="cruise-station"></div>
+            <!-- Scene alert / multi-day action banner / wait result flash
+                 (demo-cruise canon; cruise.js drives all three). -->
+            <div id="scene-alert"></div>
+            <div id="action-banner">
+              <div class="action-banner-label" id="action-banner-label"></div>
+              <div class="action-banner-counter" id="action-banner-counter"></div>
+              <div class="action-banner-bar"><div class="action-banner-fill" id="action-banner-fill"></div></div>
+            </div>
+            <div id="wait-flash"><div class="wait-flash-label"></div></div>
             <div id="ship-silhouette"></div>
           </div>
           <div id="cruise-resrow">
@@ -811,9 +824,9 @@ body {
                  renderCruise() paints the cells from STATE.orders and
                  clicking any cell opens the Orders modal (orders.js). -->
             <div id="cruise-readout" title="Standing orders — click to change">
-              <div class="readout-cell"><span class="readout-label">ENGINES</span><span class="readout-value" id="readout-engines">RIDICULOUS SPEED</span></div>
-              <div class="readout-cell"><span class="readout-label">RATIONS</span><span class="readout-value" id="readout-rations">STANDARD</span></div>
-              <div class="readout-cell"><span class="readout-label">WATER</span><span class="readout-value"><span id="readout-water-plant">50%</span><span class="water-sep">/</span><span id="readout-water-crew">50%</span></span></div>
+              <div class="readout-cell"><span class="icon icon-engines"></span><span class="readout-label">ENGINES</span><span class="readout-value" id="readout-engines">RIDICULOUS SPEED</span></div>
+              <div class="readout-cell"><span class="icon icon-rations"></span><span class="readout-label">RATIONS</span><span class="readout-value" id="readout-rations">STANDARD</span></div>
+              <div class="readout-cell"><span class="icon icon-water"></span><span class="readout-label">WATER</span><span class="readout-value"><span class="icon icon-plant" title="Plant share"></span><span id="readout-water-plant">50%</span><span class="water-sep">/</span><span id="readout-water-crew">50%</span><span class="icon icon-crew" title="Crew share"></span></span></div>
             </div>
           </div>
         </div>
@@ -834,6 +847,8 @@ body {
                 <div class="stop-menu-region-label" id="stop-region-label"></div>
                 <div class="stop-menu-mood" id="stop-region-mood"></div>
               </div>
+              <!-- Ship's Log from the Stop menu (demo canon, log.png). -->
+              <button class="stop-menu-log-btn" id="stop-log-btn" title="Open Ship's Log">LOG</button>
             </div>
             <div class="scroll-host" id="stop-choices-host">
               <div class="stop-choices scroll-content" id="stop-choices"></div>
@@ -849,7 +864,7 @@ body {
         <div id="crop-card-mini">
           <div class="crop-icon" id="crop-icon">🌾</div>
           <div class="crop-info">
-            <div class="crop-name-row"><span class="crop-name" id="crop-name"></span><span class="crop-alert-led" id="crop-alert-led"></span></div>
+            <div class="crop-name-row"><span class="crop-name" id="crop-name"></span><span class="crop-alert-led" id="crop-alert-led" title="Needs attention"></span></div>
             <div class="crop-growing" id="crop-growing">
               <div class="crop-stage" id="crop-stage"></div>
               <div class="crop-day" id="crop-day"></div>
@@ -1744,6 +1759,7 @@ const SAVED_FIELDS = [
   'crisisPatient', 'scanIntelEvent', // an event saved at its entry comes back with its patient / SCAN intel
   'itemValues', // trade goods: each copy's value, rolled at pickup
   'artSeed', // scene_art.js picks backdrop + NPC-face variants from it: a reload shows the same images
+  'traderAt', 'forcedEvent', // cruise.js: the trader-presence roll per stop; a during-wait event waiting on the player (a reload can't dodge either)
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1797,7 +1813,7 @@ function hasSave() {
    LOAD can fire mid-combat, mid-minigame, with the Stop menu open…):
    none of it may resolve into, or linger over, the loaded run. */
 function teardownLiveUI() {
-  for (const fn of ['abortCombat', 'abortMinigame', 'abortMining', 'abortEngineRepair', 'abortFabricator']) {
+  for (const fn of ['abortCombat', 'abortMinigame', 'abortMining', 'abortEngineRepair', 'abortFabricator', 'abortCruiseWait']) { // abortCruiseWait: cruise.js multi-day WAIT/REST
     if (typeof window[fn] === 'function') { try { window[fn](); } catch (_) {} }
   }
   document.querySelectorAll('#game .overlay.active').forEach(o => o.classList.remove('active'));
@@ -1814,7 +1830,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), artSeed: rollArtSeed };
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null }; // traderAt/forcedEvent: cruise.js
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -1842,7 +1858,8 @@ function loadRun(key) {
   // The hub log belongs to the run being replaced — show this run's
   // recent log instead (pause → LOAD used to keep the old timeline's).
   const aiLog = document.getElementById('ai-log');
-  if (aiLog) {
+  if (typeof window.rebuildCruiseLog === 'function') window.rebuildCruiseLog(8); // cruise.js: day markers + voice/▶ prefixes
+  else if (aiLog) {
     aiLog.innerHTML = '';
     for (const en of (STATE.shipLog || []).slice(-8)) {
       const d = document.createElement('div');
@@ -2033,6 +2050,7 @@ function applySetupToState(sel) {
   STATE.crisisPatient = null; STATE.lastAmbientNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0;
+  STATE.traderAt = {}; STATE.forcedEvent = null; // cruise.js: trader-presence rolls, during-wait event
   STATE.flagFirstSeen = {}; STATE.calledBack = []; STATE.lastCallbackLeg = null;
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
