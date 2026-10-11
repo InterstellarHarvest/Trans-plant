@@ -157,6 +157,9 @@ const INERT_OK = new Set([]);
   const buttons = await page.evaluate(() =>
     [...document.querySelectorAll('#screen-cruise button, #screen-cruise [role=button], #screen-cruise .readout-cell, #screen-cruise .crew-slot, #screen-cruise #crop-card-mini')]
       .filter(b => b.offsetParent !== null && b.id !== 'stop-btn') // Stop⇄Resume is travel, swept in 2b
+      // A control inside a fully transparent, click-through container (the
+      // Stop menu while travelling) is off-screen to a player: skip it.
+      .filter(b => { for (let e = b; e && e !== document.body; e = e.parentElement) { const cs = getComputedStyle(e); if (cs.opacity === '0' && cs.pointerEvents === 'none') return false; } return true; })
       .map((b, i) => { b.setAttribute('data-sweep', String(i)); return { i, label: (b.textContent || b.title || b.id).trim().slice(0, 30) || b.id || b.className }; }));
   let swept = 0;
   for (const b of buttons) {
