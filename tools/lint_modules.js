@@ -452,6 +452,44 @@ function trailCoverage() {
   }
 }
 
+// ── Story-flag payoffs (added 2026-10-10, owner: nothing orphaned) ──
+// Every flag content sets must be READ somewhere (a gate, an event, the
+// engine) or carry a flavor_pools.flag_payoffs entry: a Ship's Record
+// epilogue line plus a callback line for each AI.
+{
+  const pay = (readJSON('modules/flavor/flavor_pools.json').flag_payoffs) || {};
+  const engineSrc = ['index.html', 'engine/js/combat.js', 'engine/js/minigames.js', 'engine/js/map.js',
+    ...fs.readdirSync(path.join(ROOT, 'engine/js/screens')).map(f => 'engine/js/screens/' + f),
+    ...fs.readdirSync(path.join(ROOT, 'engine/js/minigames')).map(f => 'engine/js/minigames/' + f)]
+    .map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
+  const AIS = ['aria', 'marv', 'rex', 'chip', 'ajoy'];
+  // Event-level setters and the other flag readers (showFlag / hideFlag /
+  // gate.flag) — not tracked by the main pass above.
+  const sets = new Set(setsFlags), reads = new Set(requiresFlags);
+  for (const { event } of eventsById.values()) {
+    if (event.sets_flag) sets.add(event.sets_flag);
+    (function walk(o) {
+      if (!o || typeof o !== 'object') return;
+      for (const k of ['showFlag', 'hideFlag', 'requires_flag']) if (typeof o[k] === 'string') reads.add(o[k]);
+      if (o.gate && o.gate.flag) reads.add(o.gate.flag);
+      if (typeof o.setFlag === 'string') sets.add(o.setFlag);
+      if (typeof o.sets_flag === 'string') sets.add(o.sets_flag);
+      for (const k in o) walk(o[k]);
+    })(event);
+  }
+  for (const f of sets) {
+    if (reads.has(f) || /^(chose_|friendly_with_pirate_|analyzed_)/.test(f)) continue;
+    if (new RegExp("flags\\.has\\(['\"]" + f + "['\"]").test(engineSrc)) continue;
+    const p = pay[f];
+    if (!p) { err(`flag "${f}" is set by content but nothing reads it — add a flag_payoffs entry (epilogue + callbacks) or a reader`); continue; }
+    if (!p.epilogue) err(`flag_payoffs.${f}: missing epilogue`);
+    for (const ai of AIS) if (!p.callback || !p.callback[ai]) err(`flag_payoffs.${f}: missing ${ai} callback`);
+    for (const ai of ['marv', 'rex', 'ajoy']) if (p.callback && /!/.test(p.callback[ai] || '')) err(`flag_payoffs.${f}: ${ai} uses "!" (only ARIA/CHIP do)`);
+    if (/!/.test(p.epilogue || '')) err(`flag_payoffs.${f}: epilogue uses "!"`);
+  }
+  for (const f of Object.keys(pay)) if (!sets.has(f)) err(`flag_payoffs.${f}: no content sets this flag`);
+}
+
 if (errors.length) {
   console.error(`lint_modules: ${errors.length} issue(s) found:\n`);
   errors.forEach(e => console.error('  - ' + e));

@@ -686,9 +686,30 @@
     return (Array.isArray(pool) && pool.length) ? pool[Math.floor(Math.random() * pool.length)] : null;
   }
 
+  // Story-flag callbacks (owner ruling 2026-10-10): the AI brings up a
+  // past choice (flavor_pools.flag_payoffs[flag].callback[ai]) — at least
+  // two legs after it happened, each choice once.
+  function maybePushCallback() {
+    const pay = MOD.flavor && MOD.flavor.flag_payoffs;
+    if (!pay) return false;
+    STATE.flagFirstSeen = STATE.flagFirstSeen || {};
+    STATE.calledBack = STATE.calledBack || [];
+    const leg = STATE.visited ? STATE.visited.size : 0;
+    for (const f of STATE.flags) if (pay[f] && !(f in STATE.flagFirstSeen)) STATE.flagFirstSeen[f] = leg;
+    const ready = [...STATE.flags].filter(f => pay[f] && !STATE.calledBack.includes(f) && leg - STATE.flagFirstSeen[f] >= 2
+      && pay[f].callback && pay[f].callback[STATE.activeAI]);
+    if (!ready.length || Math.random() >= 0.3) return false;
+    ready.sort((a, b) => (pay[b].weight || 1) - (pay[a].weight || 1));
+    const f = ready[0];
+    STATE.calledBack.push(f);
+    pushLogEntry('◆ ' + pay[f].callback[STATE.activeAI]);
+    return true;
+  }
+
   function maybePushAmbient() {
     if (STATE.lastAmbientNode === STATE.currentId) return;
     STATE.lastAmbientNode = STATE.currentId;
+    if (maybePushCallback()) return;
     // Node-specific commentary (map_commentary.node_entering — currently
     // authored for station/derelict) takes priority over generic ambient
     // when this node type has a pool.

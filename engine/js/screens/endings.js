@@ -141,6 +141,9 @@
       baseDays: STATE.baseDays,
     };
 
+    // Ship's Record — the voyage's notable choices (index.html shipsRecordLines).
+    const record = typeof shipsRecordLines === 'function' ? shipsRecordLines(5) : [];
+
     if (end.kind === 'failure') {
       const f = end.module;
       return {
@@ -148,6 +151,7 @@
         toneId: f.failure_type,
         title: f.title,
         body: f.body,
+        record,
         quote: f.epitaph ? `— ${f.epitaph}` : null,
         showReport: !CINEMATIC_ONLY_FAILURES.has(f.failure_type),
         // failures.json can author a continue_option (crop_dead does:
@@ -185,6 +189,7 @@
     }
 
     return {
+      record,
       category: 'arrival',
       toneId: bracket,
       title: TITLES[bracket],
@@ -278,6 +283,7 @@
       btn.onclick = window.showEndReport;
       bodyEl.style.display = 'none';
       quoteEl.style.display = 'none';
+      paintRecord('end-cine-quote', null); // arrivals show it on the report card
     } else {
       btn.textContent = 'New Run';
       btn.onclick = () => { if (typeof clearSave === 'function') clearSave(); location.reload(); };
@@ -285,6 +291,7 @@
       bodyEl.style.display = view.body ? 'block' : 'none';
       if (view.quote) { quoteEl.textContent = view.quote; quoteEl.style.display = 'block'; }
       else quoteEl.style.display = 'none';
+      paintRecord('end-cine-quote', view.record); // failures: the record sits under the epitaph
     }
     // continue_option (authored on the failure module, e.g. crop_dead's
     // "Keep flying"): the run isn't over unless the player says so.
@@ -307,12 +314,27 @@
     $('end-cinematic').classList.add('show');
   }
 
+  // Ship's Record block — under the failure epitaph on the cinematic, on
+  // the report card for arrivals.
+  function paintRecord(anchorId, lines) {
+    const anchor = $(anchorId);
+    if (!anchor) return;
+    let box = document.getElementById(anchorId + '-record');
+    if (!box) { box = document.createElement('div'); box.id = anchorId + '-record'; box.className = 'end-record'; anchor.insertAdjacentElement('afterend', box); }
+    box.innerHTML = '';
+    box.style.display = (lines && lines.length) ? '' : 'none';
+    if (!lines || !lines.length) return;
+    const h = document.createElement('div'); h.className = 'end-record-title'; h.textContent = "SHIP'S RECORD"; box.appendChild(h);
+    for (const l of lines) { const d = document.createElement('div'); d.className = 'end-record-line'; d.textContent = '— ' + l; box.appendChild(d); }
+  }
+
   function renderReport(view) {
     $('end-report-title').textContent = view.reportTitle || view.title;
     $('end-report-body').textContent = view.body;
     const qEl = $('end-report-quote');
     if (view.quote) { qEl.style.display = 'block'; qEl.textContent = view.quote; }
     else qEl.style.display = 'none';
+    paintRecord('end-report-quote', view.record);
     renderScorePanel(view.stats, view.showReport);
     $('end-report').classList.add('show');
   }

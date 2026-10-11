@@ -1725,6 +1725,7 @@ const SAVED_FIELDS = [
   'soilSurveys', // soil sampler planet surveys (ending score)
   'startCrew',   // crew size at launch (ending crew paragraph / score)
   'dayCarry',    // fractional travel day carried between legs
+  'flagFirstSeen', 'calledBack', // story-flag callbacks: when each choice happened, which the AI has brought up
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1962,6 +1963,7 @@ function applySetupToState(sel) {
   STATE.crisisPatient = null; STATE.lastAmbientNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0;
+  STATE.flagFirstSeen = {}; STATE.calledBack = [];
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
   if (typeof window.abortFabricator === 'function') window.abortFabricator();
@@ -4778,6 +4780,21 @@ function scoreBracket() {
   if (score >=  85) return 'good';
   if (score >=  45) return 'rough';
   return 'pyrrhic';
+}
+
+/* Ship's Record (owner ruling 2026-10-10): the end report lists up to
+   five of the voyage's most notable recorded choices
+   (flavor_pools.flag_payoffs[flag].epilogue), heaviest first, shown in
+   the order they happened (STATE.flags keeps insertion order). */
+function shipsRecordLines(max) {
+  const pay = MOD.flavor && MOD.flavor.flag_payoffs;
+  if (!pay) return [];
+  const order = [...STATE.flags];
+  const picked = order.filter(f => pay[f] && pay[f].epilogue)
+    .sort((a, b) => (pay[b].weight || 1) - (pay[a].weight || 1) || order.indexOf(a) - order.indexOf(b))
+    .slice(0, max || 5)
+    .sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  return picked.map(f => pay[f].epilogue);
 }
 
 /* Rendering (two-screen cinematic+report painting, bg matrix, tier
