@@ -924,6 +924,37 @@ const eventOnTrail = (ev, trail) => {
     }
     return out;
   };
+  // Approach pools (scene_art.js STATION_APPROACH_POOL — station hails +
+  // the cruise hub's station stop): numbered SUBFOLDERS, each either a
+  // spritesheet (spritesheet.png + a spritesheet.json with frames and
+  // meta.size — shown animated) or one static png (<N>.png, else 1.png),
+  // exactly as resolveApproach probes. A sheet's packing-source frames
+  // (loose files its json names, e.g. frame_000.png) are shown through
+  // the sheet; anything else in the folder is still an orphan.
+  const APPROACH_POOLS = ['station/approach'];
+  const approachFiles = (rel) => {
+    const out = [];
+    for (let i = 1; i <= PROBE_MAX; i++) {
+      const dir = rel + '/' + i;
+      if (exists(dir + '/spritesheet.png') && exists(dir + '/spritesheet.json')) {
+        let j = null;
+        try { j = JSON.parse(fs.readFileSync(path.join(BG, dir, 'spritesheet.json'), 'utf8')); } catch (_) { j = null; }
+        const frames = j && j.frames ? (Array.isArray(j.frames) ? j.frames.map(f => [f.filename, f]) : Object.entries(j.frames)) : [];
+        if (frames.length && frames.every(([, f]) => f && f.frame) && j.meta && j.meta.size && j.meta.size.w && j.meta.size.h) {
+          out.push(dir + '/spritesheet.png');
+          for (const [name] of frames) {
+            if (!name) continue;
+            const file = /\.png$/i.test(name) ? name : name + '.png';
+            if (exists(dir + '/' + file)) out.push(dir + '/' + file);
+          }
+          continue;
+        }
+        err(`${dir}/spritesheet.json: approach sheet needs frames[].frame {x,y,w,h} and meta.size {w,h} (scene_art.js reads both)`);
+      }
+      for (const name of [i + '.png', '1.png']) if (exists(dir + '/' + name)) { out.push(dir + '/' + name); break; }
+    }
+    return out;
+  };
   const shown = new Set();
   const usePath = (at, field, raw, ev, sprite) => {
     if (raw === undefined || raw === null || raw === '' || raw === 'inherit') return;
@@ -932,7 +963,7 @@ const eventOnTrail = (ev, trail) => {
     if (unknown.length) { err(`${at}: ${field} "${raw}" uses unknown token ${unknown.join(', ')} (scene_art.js expands {species}, {crop}, {biome})`); return; }
     if (raw.includes('{species}') && !ev.npc) err(`${at}: ${field} "${raw}" uses {species} but the event has no npc to take it from — it never resolves`);
     for (const rel of expand(raw)) {
-      const files = filesFor(rel, sprite);
+      const files = (sprite && APPROACH_POOLS.includes(rel)) ? approachFiles(rel) : filesFor(rel, sprite);
       if (!files.length) err(`${at}: ${field} "${raw}" → sprites/backgrounds/${rel} has no ${sprite ? '.png/.jpg' : '.jpg'} file or numbered pool on disk`);
       files.forEach(f => shown.add(f));
     }
@@ -968,6 +999,7 @@ const eventOnTrail = (ev, trail) => {
     ['station/medbay', false, 'scene_art.js station'], ['station/office', false, 'scene_art.js station'], ['station/dock', false, 'scene_art.js station'],
     ['station/promenade', false, 'scene_art.js station'], ['station/market/mixed', false, 'scene_art.js station'], ['station/cantina', false, 'scene_art.js station'],
     ['planet_surface/{biome}/approach', false, 'scene_art.js planet_surface'],
+    ['station/approach', true, 'scene_art.js station hail + cruise.js station stop'],
     ['anomaly/distortion', false, 'scene_art.js anomaly'], ['anomaly/fractal', false, 'scene_art.js anomaly'], ['anomaly/void', false, 'scene_art.js anomaly'],
   ];
   for (const [p, sp, where] of ENGINE_SCENE_POOLS) usePath('engine ' + where, 'scene pool', p, { npc: true }, sp);

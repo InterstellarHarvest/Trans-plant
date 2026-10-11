@@ -21,10 +21,12 @@
    Load-order rule: this file is loaded BEFORE the index.html inline
    script — never read MOD/STATE at top level; only inside functions.
 
-   Approach-mode (animated station approach sheets) is NOT ported —
-   that composition belongs to the docking sequence, which the engine
-   reaches through station events rather than a dedicated approach
-   screen. Static station approach art is reachable via the mapping.
+   Approach mode (demo-encounter's station_approach, owner ruling
+   2026-10-11): the station/approach pool — numbered subfolders, each a
+   spritesheet (animated) or a single png (static, bobs) — painted at
+   intrinsic size, centred in the bridge viewport, when a station event
+   speaks over comms; the cruise hub shows the same station at a
+   station stop. One pick per station NODE (stationApproachFor).
    ═══════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -122,6 +124,153 @@
       _listCache.set(cacheKey, found);
     }
     return _listCache.get(cacheKey);
+  }
+
+  /* ── Station approach (demo-encounter approach mode) ──────────────
+     Pool layout: <path>/1/, <path>/2/, … each holding EITHER a
+     spritesheet (spritesheet.png + spritesheet.json, TexturePacker —
+     frames in declaration order, array or keyed map) OR one static
+     png (<N>.png, else 1.png). Descriptors, demo shape:
+       { kind:'animated', folder, url, frames:[{x,y,w,h}], w, h, sheetW, sheetH }
+       { kind:'static',   folder, url, w, h }
+     The pick belongs to the station NODE, not the event: the hail, a
+     later hail at the same stop and the cruise hub's view all show the
+     same station, and a reload (same saved artSeed) shows it again. */
+  const STATION_APPROACH_POOL = 'station/approach';
+  const APPROACH_FPS = 12; // demo startApproachAnim
+
+  function imageSize(url) {
+    return new Promise(res => {
+      const img = new Image();
+      img.onload = () => res({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = () => res(null);
+      img.src = url;
+    });
+  }
+
+  async function approachDescFor(folderRel, n) {
+    const folder = BG_ROOT + folderRel + '/' + n;
+    const sheetUrl = await probeImage(folder + '/spritesheet.png');
+    if (sheetUrl) {
+      const json = await fetchJSON(folder + '/spritesheet.json');
+      const frames = json && json.frames ? Object.values(json.frames).map(f => f && f.frame).filter(Boolean) : [];
+      const size = json && json.meta && json.meta.size;
+      if (frames.length && size && size.w && size.h) {
+        return { kind: 'animated', folder: folderRel + '/' + n, url: sheetUrl, frames,
+                 w: frames[0].w, h: frames[0].h, sheetW: size.w, sheetH: size.h };
+      }
+    }
+    for (const name of [n + '.png', '1.png']) {
+      const url = await probeImage(folder + '/' + name);
+      if (!url) continue;
+      const sz = await imageSize(url);
+      if (sz) return { kind: 'static', folder: folderRel + '/' + n, url, w: sz.w, h: sz.h };
+    }
+    return null;
+  }
+
+  async function resolveApproach(raw) {
+    const cacheKey = 'approach:' + raw;
+    if (!_listCache.has(cacheKey)) {
+      const probes = [];
+      for (let i = 1; i <= BG_PROBE_MAX; i++) probes.push(approachDescFor(raw, i));
+      const found = (await Promise.all(probes)).filter(Boolean);
+      _listCache.set(cacheKey, found.length ? found : null);
+    }
+    return _listCache.get(cacheKey);
+  }
+
+  function stationKey(node) { return 'station:' + ((node && node.id) || '?'); }
+
+  /* The station this node shows (Promise → descriptor | null). */
+  function stationApproachFor(node, raw) {
+    raw = raw || STATION_APPROACH_POOL;
+    return resolveApproach(raw).then(list => stablePick(stationKey(node) + '|approach:' + raw, list));
+  }
+
+  /* Paint a descriptor into an element (the encounter's viewport child
+     or the cruise hub's station). Animated: the sheet as background,
+     frame offsets cycled at 12fps (skipped while paused or hidden).
+     Static: the png, bobbing (the demo's ship-bob; animated sheets
+     never bob — their frames are the motion). opts.scale shrinks it
+     (cruise hub); the encounter paints at 1 — intrinsic size. */
+  const _approachTimers = new Map(); // element → interval id
+  function stopApproachAnim(el) {
+    const t = _approachTimers.get(el);
+    if (t) { clearInterval(t); _approachTimers.delete(el); }
+  }
+  function clearApproachEl(el) {
+    stopApproachAnim(el);
+    el.classList.remove('animated', 'static', 'bobbing', 'shown');
+    el.style.backgroundImage = '';
+    ['--sprite-w', '--sprite-h', '--sheet-w', '--sheet-h', '--frame-x', '--frame-y', '--approach-scale']
+      .forEach(p => el.style.removeProperty(p));
+    delete el.dataset.station;
+    delete el.dataset.kind;
+    delete el.dataset.frame;
+  }
+  function paintApproachEl(el, desc, scale) {
+    clearApproachEl(el);
+    if (!desc) return;
+    el.style.backgroundImage = "url('" + desc.url + "')";
+    el.style.setProperty('--sprite-w', desc.w);
+    el.style.setProperty('--sprite-h', desc.h);
+    el.style.setProperty('--approach-scale', scale || 1);
+    el.dataset.station = desc.folder;
+    el.dataset.kind = desc.kind;
+    el.classList.add(desc.kind, 'shown');
+    if (desc.kind === 'static') { el.classList.add('bobbing'); return; }
+    el.style.setProperty('--sheet-w', desc.sheetW);
+    el.style.setProperty('--sheet-h', desc.sheetH);
+    let idx = 0;
+    const tick = () => {
+      const f = desc.frames[idx];
+      el.style.setProperty('--frame-x', f.x);
+      el.style.setProperty('--frame-y', f.y);
+      el.dataset.frame = idx;
+      idx = (idx + 1) % desc.frames.length;
+    };
+    tick();
+    if (desc.frames.length < 2) return;
+    _approachTimers.set(el, setInterval(() => {
+      if (!el.isConnected) { stopApproachAnim(el); return; }
+      if ((window.PauseBus && window.PauseBus.paused) || !el.getClientRects().length) return;
+      tick();
+    }, 1000 / APPROACH_FPS));
+  }
+
+  /* Cruise hub (cruise.js): the station at a station stop, nothing
+     elsewhere. Integer downscale (½, ⅓ …) so the largest station fits
+     opts.maxW × opts.maxH without blurring its pixels. Re-renders of
+     the same stop are no-ops. */
+  function paintStationView(el, node, opts) {
+    if (!el) return;
+    opts = opts || {};
+    const key = node && node.node_type === 'station' ? stationKey(node) + '|' + runSeed() : '';
+    if (el.dataset.approachKey === key && (key === '' || el.dataset.station)) return;
+    el.dataset.approachKey = key;
+    const seq = (el._approachSeq = (el._approachSeq || 0) + 1);
+    if (!key) { clearApproachEl(el); return; }
+    stationApproachFor(node).then(desc => {
+      if (el._approachSeq !== seq) return;
+      let div = 1;
+      while (desc && ((opts.maxW && desc.w / div > opts.maxW) || (opts.maxH && desc.h / div > opts.maxH))) div++;
+      paintApproachEl(el, desc, 1 / div);
+    });
+  }
+
+  /* Station hail: a station event (station_interior scene, or none) at
+     a station node, on a layer that speaks over comms (comm_mode
+     'screen', layer or event) is seen from our bridge — demo
+     station_approach: bridge on top, space behind, the station in the
+     viewport. In-person layers fall through to the station interior. */
+  function stationHailSpec(ev, node, layer) {
+    if (!node || node.node_type !== 'station') return null;
+    const comm = (layer && layer.comm_mode) || (ev && ev.comm_mode) || 'in_person';
+    if (comm !== 'screen') return null;
+    const st = ev && ev.scene_type;
+    if (st && st !== 'station_interior') return null;
+    return { bg: 'our_ship/bridge', bgBase: spaceFor(node), bgSprite: STATION_APPROACH_POOL };
   }
 
   /* ── scene_type → layer spec ──────────────────────────────────────
@@ -261,7 +410,7 @@
                   a path → the layer's.
      Returns a concrete {bg, bgBase, bgSprite} (tokens expanded). */
   function layerSpecFor(ev, node, layer, npcCtx) {
-    const base = sceneSpecFor(ev, node, npcCtx);
+    const base = stationHailSpec(ev, node, layer) || sceneSpecFor(ev, node, npcCtx);
     if (!layer) return base;
     const slot = (v, inherited) => (v === undefined || v === 'inherit') ? inherited
       : (v ? expandPath(v, ev, node, npcCtx) : null);
@@ -297,7 +446,7 @@
     return pickKey + '|' + (spec.bg || '') + '|' + (spec.bgBase || '') + '|' + (spec.bgSprite || '');
   }
 
-  function applyBackdropSpec(spec, pickKey) {
+  function applyBackdropSpec(spec, pickKey, node) {
     const main   = document.getElementById('enc-backdrop');
     const base   = document.getElementById('enc-backdrop-base');
     const sprite = document.getElementById('enc-backdrop-sprite');
@@ -341,10 +490,24 @@
       });
     }
 
+    // Approach mode (demo applyBackdrop opts.approachMode): the slot's own
+    // background is suppressed; its child paints the node's station.
+    const approachEl = document.getElementById('enc-approach-sprite');
+    const approach = spec.bgSprite === STATION_APPROACH_POOL;
+    sprite.classList.toggle('approach-mode', approach);
+    if (approachEl && !approach) clearApproachEl(approachEl);
     if (!spec.bgSprite) {
       sprite.classList.add('hidden');
       sprite.style.backgroundImage = '';
       sprite.classList.remove('bobbing', 'fullbleed');
+    } else if (approach) {
+      sprite.style.backgroundImage = '';
+      sprite.classList.remove('bobbing', 'fullbleed');
+      stationApproachFor(node, spec.bgSprite).then(desc => {
+        if (mySeq !== _bgSeq) return;
+        sprite.classList.toggle('hidden', !desc || !approachEl);
+        if (approachEl) paintApproachEl(approachEl, desc, 1);
+      });
     } else {
       resolveSprite(spec.bgSprite).then(list => {
         if (mySeq !== _bgSeq) return;
@@ -652,7 +815,7 @@
     // transition on .enc-backdrop, as in the demo). Same spec → no-op,
     // so re-renders (market close, revisits) don't flicker.
     const spec = layerSpecFor(ev, node, layer, npcCtx);
-    if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey);
+    if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey, node);
     if (_currentSubjKey !== subjKey) {
       _currentSubjKey = subjKey;
       _pendingLine = null;
@@ -690,7 +853,7 @@
       // Same instance key as the layers: an outcome naming the path a
       // layer already showed keeps that very image.
       const instKey = instanceKey(c.ev, c.node);
-      if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey);
+      if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey, c.node);
     }
     if (outcome && outcome.line && npcCtx) startTalking(outcome.line);
     else stopTalking();
@@ -723,5 +886,6 @@
     _activeSheet = null;
   }
 
-  window.SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, sceneSpecFor, layerSpecFor, outcomeSpecFor, expandPath, biomeFor };
+  window.SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, sceneSpecFor, layerSpecFor, outcomeSpecFor, expandPath, biomeFor,
+    stationApproachFor, paintStationView, STATION_APPROACH_POOL };
 })();
