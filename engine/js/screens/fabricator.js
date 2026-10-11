@@ -607,6 +607,8 @@
     for (const [mat, qty] of r.inputs) {
       FSTATE.stock[mat] = Math.max(0, (FSTATE.stock[mat] || 0) - qty);
     }
+    // Effort tax (Bible): a craft is a FABRICATOR action — its pip costs morale.
+    if (typeof window.payEffortTax === 'function') window.payEffortTax(1);
     // Apply wear.
     const wearBefore = FSTATE.wear;
     FSTATE.wear = Math.min(100, FSTATE.wear + recipeWear(r));

@@ -1728,6 +1728,7 @@ const SAVED_FIELDS = [
   'startCrew',   // crew size at launch (ending crew paragraph / score)
   'dayCarry',    // fractional travel day carried between legs
   'flagFirstSeen', 'calledBack', 'lastCallbackLeg', // story-flag callbacks: when each choice happened, which the AI has brought up, when it last did
+  'crisisPatient', 'scanIntelEvent', // an event saved at its entry comes back with its patient / SCAN intel
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1796,7 +1797,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true };
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null };
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -1839,6 +1840,9 @@ function loadRun(key) {
   if (pf) { endRun({ kind: 'failure', module: pf }); return true; }
   renderCruise();
   showScreen('screen-cruise');
+  // Saved at an event's entry: back into that same event.
+  const pe = snap.pendingEvent && EVENTS[snap.pendingEvent];
+  if (pe && STATE.byId[STATE.currentId]) enterEvent(STATE.byId[STATE.currentId], pe);
   return true;
 }
 
@@ -3040,7 +3044,13 @@ function returnToHub() {
   renderHUD();
   showScreen(STATE.hubScreen);
   if (STATE.hubScreen === 'screen-map') renderMap();
-  else renderCruise();
+  else {
+    renderCruise();
+    // Owner ruling 2026-10-10 (hunt 5): after an event the ship is stopped —
+    // the Stop menu is already open and Resume travels in one click (it
+    // took Stop → Resume, two clicks a leg).
+    if (!STATE.ended && typeof window.openStopMenu === 'function') window.openStopMenu();
+  }
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -3179,6 +3189,25 @@ function captainBonus() { const c = captainDef(); return c && c.starting_bonus; 
 window.resMax = resMax;
 /* Per-leg passives that depend on where the ship arrives or what it
    carries — each is an authored promise (items.json / crops.json). */
+/* Tomato drama (owner ruling 2026-10-10, hunt 5): crops.json
+   triggers_extra_events + extra_event_chance — "High drama" on the setup
+   card. Each leg, a living crop that has them may throw a small growbay
+   incident: one of its own narrative_hooks plus a real swing in crop
+   health or morale. */
+function cropDrama() {
+  const cg = STATE.cropGrowth;
+  const def = ((MOD.crops && MOD.crops.crops) || []).find(c => c.id === 'crop_' + STATE.crop);
+  if (!def || !def.triggers_extra_events || !cg || cg.health <= 0) return;
+  if (Math.random() >= (def.extra_event_chance || 0)) return;
+  const hooks = def.narrative_hooks || [];
+  const line = hooks.length ? hooks[Math.floor(Math.random() * hooks.length)] : 'The crop is having a moment.';
+  const swings = [['crop', 5], ['crop', -5], ['morale', 2], ['morale', -2]];
+  const [k, v] = swings[Math.floor(Math.random() * swings.length)];
+  if (k === 'crop') cg.health = clamp(cg.health + v, 1, 100);
+  else STATE.resources.morale = clamp(STATE.resources.morale + v, 0, 100);
+  if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + line + ' (' + (v > 0 ? '+' : '−') + Math.abs(v) + (k === 'crop' ? ' crop health)' : ' morale)'));
+}
+
 function arrivalPassives(node) {
   const log = m => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + m); };
   const t = node.node_type;
@@ -3270,6 +3299,19 @@ function legTravelCost() {
    Callers keep their own renderHUD()/checkFailure() sequencing. */
 // Per day at 0: crew HP lost (each), morale lost; failAfter = consecutive
 // days at 0 before the dedicated failure. Air kills fastest, food slowest.
+/* GAME_BIBLE §Effort + cost model, Layer 1 — the effort tax: every action's
+   pips (●●●○○) cost morale, nonlinearly (owner ruling 2026-10-10, hunt 5:
+   the pips were decorative). Stop verbs pay on use, encounter choices on
+   click, the fabricator per craft. */
+const MORALE_BY_EFFORT = [0, 1, 2, 4, 6, 9];
+function effortTax(pips) { return MORALE_BY_EFFORT[Math.max(0, Math.min(5, pips | 0))] || 0; }
+function payEffortTax(pips) {
+  const t = effortTax(pips);
+  if (t) STATE.resources.morale = clamp(STATE.resources.morale - t, 0, 100);
+  return t;
+}
+window.effortTax = effortTax; window.payEffortTax = payEffortTax;
+
 const DEPRIVATION = {
   food:  { hp: 4,  morale: 2, failAfter: 10, fail: 'starvation',  onset: 'FOOD GONE — the crew is starving. Every day without food costs health and nerve.' },
   water: { hp: 6,  morale: 3, failAfter: 5,  fail: 'dehydration', onset: 'WATER GONE — the crew is going without. Every dry day costs health and nerve.' },
@@ -3411,6 +3453,7 @@ function travelTo(nodeId, opts) {
     const chefMorale = rosterPassive('chef', 'morale_passive', 1) * specialistMult('chef');
     if (chefMorale > 0 && STATE.resources.food > 0) STATE.resources.morale = clamp(STATE.resources.morale + chefMorale, 0, 100);
     arrivalPassives(node);
+    cropDrama();
     renderHUD();
     if (checkFailure({ arriving: connectionsOf(node).length === 0 })) return;
   }
@@ -3492,6 +3535,11 @@ function travelTo(nodeId, opts) {
      object — the two schemas are disambiguated by ev.layers presence.
    ──────────────────────────────────────────────────────────────── */
 function enterEvent(node, ev) {
+  // Owner ruling 2026-10-10 (hunt 5): save at event entry, so a reload
+  // comes back into this same event — it used to refund the leg and
+  // re-roll the encounter (an undo for any bad outcome). Taken before the
+  // event's own side effects, which re-run on the way back in.
+  if (!STATE.ended && STATE.trail && STATE.nodes.length) writeSnapshot(SAVE_KEY, { pendingEvent: ev.id });
   if (window.SceneArt && SceneArt.beginEvent) SceneArt.beginEvent();
   STATE.currentEvent     = ev;
   STATE.currentNode      = node;
@@ -3775,6 +3823,9 @@ function renderEncounterState() {
    caller before this runs; this only paints. */
 function renderOutcomeView(outcome) {
   STATE.outcomeMode = true;
+  // The outcome has landed: a reload from here resumes at the hub with it
+  // applied (the entry save above would otherwise offer the choice again).
+  if (!STATE.ended && STATE.trail && STATE.nodes.length) writeSnapshot(SAVE_KEY);
   document.getElementById('enc-narr-title').textContent = outcome.title || 'OUTCOME';
   finishAllTyping();
   let bodyText = interpolateStowawayTokens(interpolateNpcTokens(outcome.body || outcome.narrative || '...', STATE.npcCtx));
@@ -3982,7 +4033,7 @@ function renderChoicesInner(choices) {
     // stopgap convention; .ui-tip primitive stays parked by design rule).
     if (!locked) {
       const tip = [];
-      if (ch.effort) tip.push('Effort ' + ch.effort + '/5');
+      if (ch.effort) tip.push('Effort ' + ch.effort + '/5 · −' + effortTax(ch.effort) + ' morale');
       if (ch.gold_cost) tip.push('-' + ch.gold_cost + ' gold');
       if (ch.gate && ch.gate.gold && !ch.gold_cost) tip.push('costs ' + ch.gate.gold + ' gold');
       if (ch.risky) tip.push('Risky — outcomes can go badly');
@@ -4407,6 +4458,8 @@ function handleChoiceClick(choice) {
 
   // One-shot actions (demo's consume machinery) — mark spent the
   // moment the choice resolves, whatever it goes on to do.
+  // Effort tax (Bible): the choice's pips cost morale the moment it's taken.
+  if (choice.effort) payEffortTax(choice.effort);
   if (choice.consume) {
     STATE.consumedActions = STATE.consumedActions || {};
     STATE.consumedActions[consumeKey(choice)] = true;

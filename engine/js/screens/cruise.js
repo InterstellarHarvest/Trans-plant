@@ -645,7 +645,8 @@
       } else {
         const eff = document.createElement('span');
         eff.className = 'effort';
-        eff.textContent = effortPips(verb.effort);
+        // The pips cost morale (Bible effort tax); the number says how much.
+        eff.textContent = effortPips(verb.effort) + (window.effortTax && effortTax(verb.effort) ? ' −' + effortTax(verb.effort) + ' MO' : '');
         sub.appendChild(eff);
         const s = document.createElement('span');
         s.textContent = '· ' + (typeof verb.sub === 'function' ? verb.sub() : verb.sub);
@@ -655,8 +656,13 @@
       // MINE and FABRICATOR are wired separately (mining.js / fabricator
       // overlay); TRADE/WAIT FOR TRADER/REST have no engine-side system
       // yet and still log honestly.
+      if (!lockReason && verb.effort && window.effortTax) btn.title = 'Effort ' + verb.effort + '/5 · costs ' + effortTax(verb.effort) + ' morale' + (verbId === 'fab' ? ' per craft' : '');
       btn.addEventListener('click', () => {
         const handler = VERB_HANDLERS[verbId];
+        if (lockReason) return;
+        // Effort tax on use (the fabricator charges per craft instead —
+        // opening its screen to look costs nothing).
+        if (handler && verbId !== 'fab' && window.payEffortTax) { payEffortTax(verb.effort); renderHUD(); }
         if (handler) handler();
         else pushLogEntry('◆ ' + labelStr + ' isn’t wired into the engine yet.');
       });
@@ -669,6 +675,7 @@
     $('stop-btn').textContent = 'Resume';
     renderStopMenu();
   }
+  window.openStopMenu = openStopMenu;
   function closeStopMenu() {
     document.body.classList.remove('stop-active');
     $('stop-btn').textContent = 'Stop';

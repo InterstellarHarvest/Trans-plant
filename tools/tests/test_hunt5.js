@@ -259,6 +259,56 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     await page.close();
   }
 
+  console.log('— owner rulings 2026-10-10 (effort tax, land stopped, save at entry, tomato drama)');
+  {
+    const page = await boot({ crew: ['engineer', 'pilot'], crop: 'tomato' });
+    const r = await page.evaluate(async () => {
+      const out = {};
+      const n = STATE.nodes.find(x => x.node_type === 'asteroid_field'); STATE.currentId = n.id; renderCruise();
+      document.body.classList.remove('stop-active'); document.getElementById('stop-btn').click();
+      await new Promise(r => setTimeout(r, 80));
+      window.openMining = cb => cb({ inventory: { metal: 1 }, runs: 1 });
+      STATE.resources.morale = 80;
+      const mine = [...document.querySelectorAll('#stop-choices .stop-choice')].find(x => /MINE/.test(x.textContent));
+      out.mineLabel = mine.querySelector('.effort').textContent;
+      mine.click();
+      out.mineTax = 80 - STATE.resources.morale;
+      // returning from an event lands stopped: the Stop menu open, Resume travels
+      document.body.classList.remove('stop-active');
+      enterEvent(STATE.byId[STATE.currentId], EVENTS.event_general_003); returnToHub();
+      out.stopped = document.body.classList.contains('stop-active') && document.getElementById('stop-btn').textContent === 'Resume';
+      // tomato drama
+      const r0 = Math.random; Math.random = () => 0.01;
+      const h0 = STATE.cropGrowth.health, m0 = STATE.resources.morale, l0 = (STATE.shipLog || []).length;
+      cropDrama(); Math.random = r0;
+      out.drama = (STATE.cropGrowth.health !== h0 || STATE.resources.morale !== m0) && (STATE.shipLog || []).length > l0;
+      return out;
+    });
+    ok(r.mineTax === 4 && /−4 MO/.test(r.mineLabel), `MINE ●●● costs 4 morale, and says so (${r.mineLabel}, −${r.mineTax})`);
+    ok(r.stopped, 'after an event the ship lands stopped: Stop menu open, button reads Resume');
+    ok(r.drama, 'tomato drama: a growbay incident with a real swing');
+    await page.close();
+  }
+  {
+    // Save at event entry (no ?debug — autosaves are live here)
+    const page = await boot();
+    const id = await page.evaluate(() => { const ev = EVENTS.event_general_003; enterEvent(STATE.byId[STATE.currentId], ev); return ev.id; });
+    await page.reload();
+    await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.items && MOD.flavor);
+    await page.evaluate(() => loadRun());
+    await page.waitForTimeout(300);
+    const back = await page.evaluate(() => STATE.currentEvent && STATE.currentEvent.id);
+    ok(back === id, `a reload mid-event comes back into the same event (${back})`);
+    await page.evaluate(() => { const ch = STATE.currentEvent.choices.find(c => !c.combat_trigger && !lockReason(c) && c.outcome && !c.microgame_type); handleChoiceClick(ch); });
+    await page.waitForTimeout(300);
+    await page.reload();
+    await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.items && MOD.flavor);
+    await page.evaluate(() => loadRun());
+    await page.waitForTimeout(300);
+    ok(await page.evaluate(() => !STATE.currentEvent && document.getElementById('screen-cruise').classList.contains('active')), 'after the outcome lands, a reload resumes at the hub (no second pick)');
+    await page.close();
+  }
+
   ok(!errs.length, 'no page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
   console.log(`\nhunt5: ${pass} passed, ${fail} failed`);
   await browser.close(); process.exit(fail ? 1 : 0);
