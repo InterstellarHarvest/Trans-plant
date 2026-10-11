@@ -32,6 +32,35 @@
   }
   drawStars();
 
+  /* The numbers in the AI and captain stat lines are read from
+     ai_companions.json / captains.json (one source of truth, owner
+     ruling 2026-10-11): {ai:type} the AI's passive value, {aicut:type}
+     its ×0.85-style modifier as a percent cut, {cut:key} / {pct:key} a
+     captain passive as a cut / a percent, {sb:key} / {sb100:key} a
+     starting bonus as itself / on top of the base 100. */
+  function liveStat(stepKey, opt) {
+    const r = n => Math.round(n * 100);
+    const capDef = () => ((MOD.captains && MOD.captains.captains) || []).find(c => c.background === opt.id) || {};
+    return String(opt.stat).replace(/\{(\w+):([\w.]+)\}/g, (m, kind, key) => {
+      let v = null;
+      if (kind === 'ai' || kind === 'aicut') v = typeof aiPassive === 'function' ? aiPassive(key, opt.id) : null;
+      else if (kind === 'cut' || kind === 'pct') v = typeof captainPassive === 'function' ? captainPassive(key, opt.id) : null;
+      else if (kind === 'sb' || kind === 'sb100') { const b = capDef().starting_bonus; v = b && Number.isFinite(b[key]) ? b[key] : null; }
+      if (v == null) return m;
+      if (kind === 'aicut' || kind === 'cut') return String(r(1 - v));
+      if (kind === 'pct') return String(r(v));
+      if (kind === 'sb100') return String(100 + v);
+      return String(v);
+    });
+  }
+  window.setupLiveStat = liveStat;
+
+  function rollShipName(current) {
+    const pool = (typeof window.shipNamePool === 'function') ? window.shipNamePool() : [];
+    const pick = pool.filter(n => n !== current);
+    return pick.length ? pick[Math.floor(Math.random() * pick.length)] : (current || '');
+  }
+
   // ── Setup data ─────────────────────────────────────────────────
   const STEPS = [
     {
@@ -47,10 +76,10 @@
       key: 'ai', label: 'Choose Your AI', cat: 'Ship Computer',
       desc: 'Your AI companion narrates the journey, comments on every decision, and has a passive effect on gameplay. You will hear from them a lot.',
       options: [
-        { id: 'aria', icon: '☀',    sprite: 'sprites/interface/AI/aria.png', name: 'ARIA', desc: 'Relentlessly positive. Factually questionable.', stat: 'Passive: Morale +1', flavor: 'ARIA believes in you. ARIA believes in everything.' },
+        { id: 'aria', icon: '☀',    sprite: 'sprites/interface/AI/aria.png', name: 'ARIA', desc: 'Relentlessly positive. Factually questionable.', stat: 'Passive: Morale +{ai:morale_bonus} per leg', flavor: 'ARIA believes in you. ARIA believes in everything.' },
         { id: 'marv', icon: '\u{1F311}', sprite: 'sprites/interface/AI/marv.png', name: 'MARV', desc: 'Clinically depressed. 400% smarter than everyone.', stat: 'Passive: Reveals hidden details', flavor: 'MARV has already calculated your odds.' },
         { id: 'rex',  icon: '⚔',    sprite: 'sprites/interface/AI/rex.png',  name: 'REX', desc: 'Retired military. Everything is a threat.', stat: 'Passive: Combat bonus', flavor: 'REX was decommissioned for "excessive initiative."' },
-        { id: 'chip', icon: '\u{1F4B0}', sprite: 'sprites/interface/AI/chip.png', name: 'CHIP', desc: 'Corporate-issued. Full of Terms of Service.', stat: 'Passive: Station prices -15%', flavor: 'CHIP was free with purchase of the ship.' },
+        { id: 'chip', icon: '\u{1F4B0}', sprite: 'sprites/interface/AI/chip.png', name: 'CHIP', desc: 'Corporate-issued. Full of Terms of Service.', stat: 'Passive: Station prices -{aicut:price_reduction}%', flavor: 'CHIP was free with purchase of the ship.' },
         { id: 'ajoy', icon: '\u{1F60F}', sprite: 'sprites/interface/AI/ajoy.png', name: 'AJOY', desc: 'Passive-aggressive. Backseat driver. A joy.', stat: 'Passive: Shows what you missed', flavor: 'AJOY will help you make better decisions. AJOY will make sure you know about it.' }
       ]
     },
@@ -58,14 +87,14 @@
       key: 'captain', label: 'Choose Your Background', cat: 'Captain',
       desc: 'What did you study? Your background gives you a discounted version of a crew specialist\'s skills.',
       options: [
-        { id: 'botanist',      icon: '\u{1F33F}', sprite: 'sprites/interface/careers/botanist.png',      name: 'Botanist',      desc: 'You know plants. Not as well as Dr. Osei, but enough.',                   stat: 'Crop care +7% · Crop +5',         flavor: 'Your parents asked what you\'d do with that degree. This.' },
-        { id: 'engineer',      icon: '\u{1F527}', sprite: 'sprites/interface/careers/engineer.png',      name: 'Engineer',      desc: 'You can fix things. Not as fast as Kazuki.',                              stat: 'Fab wear -10% · Hull 105',       flavor: 'The ship makes sounds it shouldn\'t. You recognize most of them.' },
-        { id: 'medic',         icon: '\u{1F48A}', sprite: 'sprites/interface/careers/medic.png',         name: 'Medic',         desc: 'You passed the exam. You are not a doctor.',                              stat: '25% lethal→injury · Medkit', flavor: 'The residency was... there were circumstances.' },
-        { id: 'pilot',         icon: '\u{1F680}', sprite: 'sprites/interface/careers/pilot.png',         name: 'Pilot',         desc: 'You can fly. Slightly better than expected.',                             stat: 'Fuel -5% · Fuel 105',            flavor: 'You are statistically correct 68% of the time.' },
-        { id: 'chef',          icon: '\u{1F373}', sprite: 'sprites/interface/careers/chef.png',          name: 'Chef',          desc: 'You can make algae taste like something other than regret.',              stat: 'Food -7% · Food 105',            flavor: 'You know 47 ways to prepare algae. Forty-six are bad.' },
+        { id: 'botanist',      icon: '\u{1F33F}', sprite: 'sprites/interface/careers/botanist.png',      name: 'Botanist',      desc: 'You know plants. Not as well as Dr. Osei, but enough.',                   stat: 'Crop water -{cut:crop_water_modifier}% · Crop +{sb:crop_health}',         flavor: 'Your parents asked what you\'d do with that degree. This.' },
+        { id: 'engineer',      icon: '\u{1F527}', sprite: 'sprites/interface/careers/engineer.png',      name: 'Engineer',      desc: 'You can fix things. Not as fast as Kazuki.',                              stat: 'Fab wear -{cut:fabricator_wear_modifier}% · Hull {sb100:hull}',       flavor: 'The ship makes sounds it shouldn\'t. You recognize most of them.' },
+        { id: 'medic',         icon: '\u{1F48A}', sprite: 'sprites/interface/careers/medic.png',         name: 'Medic',         desc: 'You passed the exam. You are not a doctor.',                              stat: '{pct:severity_modifier.lethal_to_injury_chance}% lethal→injury · Medkit', flavor: 'The residency was... there were circumstances.' },
+        { id: 'pilot',         icon: '\u{1F680}', sprite: 'sprites/interface/careers/pilot.png',         name: 'Pilot',         desc: 'You can fly. Slightly better than expected.',                             stat: 'Fuel -{cut:fuel_burn_modifier}% · Fuel {sb100:fuel}',            flavor: 'You are statistically correct 68% of the time.' },
+        { id: 'chef',          icon: '\u{1F373}', sprite: 'sprites/interface/careers/chef.png',          name: 'Chef',          desc: 'You can make algae taste like something other than regret.',              stat: 'Food -{cut:food_consumption_modifier}% · Food {sb100:food}',            flavor: 'You know 47 ways to prepare algae. Forty-six are bad.' },
         { id: 'xenobiologist', icon: '\u{1F9EC}', sprite: 'sprites/interface/careers/xenobiologist.png', name: 'Xenobiologist', desc: 'You studied aliens. You have never met one.',                             stat: 'Anomaly safer · Spectrometer',       flavor: 'Your thesis was theoretical. Everything is about to become very applied.' },
-        { id: 'diplomat',      icon: '\u{1F91D}', sprite: 'sprites/interface/careers/diplomat.png',      name: 'Diplomat',      desc: 'Very good at making people feel heard while doing nothing.',              stat: 'Credits +15',         flavor: 'Your crew does not find this reassuring.' },
-        { id: 'merchant',      icon: '\u{1F4CA}', sprite: 'sprites/interface/careers/merchant.png',      name: 'Merchant',      desc: 'You ran a business.',                                                     stat: 'Prices -10% · Credits +30',         flavor: 'You are going to run this mission like a business.' },
+        { id: 'diplomat',      icon: '\u{1F91D}', sprite: 'sprites/interface/careers/diplomat.png',      name: 'Diplomat',      desc: 'Very good at making people feel heard while doing nothing.',              stat: 'Credits +{sb:credits}',         flavor: 'Your crew does not find this reassuring.' },
+        { id: 'merchant',      icon: '\u{1F4CA}', sprite: 'sprites/interface/careers/merchant.png',      name: 'Merchant',      desc: 'You ran a business.',                                                     stat: 'Prices -{cut:station_price_modifier}% · Credits +{sb:credits}',         flavor: 'You are going to run this mission like a business.' },
         { id: 'academic',      icon: '\u{1F4DA}', sprite: 'sprites/interface/careers/academic.png',      name: 'Academic',      desc: 'You have a PhD. In what is not immediately relevant.',                    stat: 'Research · Gas analyzer',    flavor: 'Your grant funding was cut. You are in space. These events are related.' },
         { id: 'veteran',       icon: '\u{1F396}', sprite: 'sprites/interface/careers/veteran.png',       name: 'Veteran',       desc: 'You served. Where is classified.',                                        stat: 'Combat edge · Pressure suit', flavor: 'You don\'t talk about it.' }
       ]
@@ -188,9 +217,17 @@
         '<div id="ship-name-wrap">' +
         '<img src="sprites/ships/default.png" alt="" class="ship-bob" style="display:block; margin-bottom:8px; image-rendering:pixelated; image-rendering:crisp-edges;">' +
         '<div style="font-family:\'Press Start 2P\'; font-size:8px; color:#5a7a6a; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px">Ship Name</div>' +
-        '<input type="text" id="ship-name-input" value="' + sel.ship + '" placeholder="The Verdant Ark" maxlength="30">' +
+        '<input type="text" id="ship-name-input" value="" maxlength="30">' +
+        '<button type="button" id="ship-name-reroll" title="Another name from the colony registry">RE-ROLL</button>' +
         '</div>';
-      $('ship-name-input').addEventListener('input', e => { sel.ship = e.target.value; });
+      // ships.json name_pool: the ship arrives with a name from the pool
+      // (pre-filled once); RE-ROLL draws another, typing overrides it.
+      if (!sel.shipRolled) { sel.ship = rollShipName(''); sel.shipRolled = true; }
+      const inp = $('ship-name-input');
+      inp.value = sel.ship;
+      inp.placeholder = 'Name your ship';
+      inp.addEventListener('input', e => { sel.ship = e.target.value; });
+      $('ship-name-reroll').addEventListener('click', () => { sel.ship = rollShipName(sel.ship); inp.value = sel.ship; });
       $('setup-flavor').textContent = 'It doesn\'t know its name. It doesn\'t need to. You do.';
       return;
     }
@@ -212,7 +249,7 @@
         '<div class="card-info">' +
           '<div class="card-name">' + opt.name + '</div>' +
           '<div class="card-desc">' + opt.desc + '</div>' +
-          (opt.stat ? '<div class="card-stat">' + opt.stat + '</div>' : '') +
+          (opt.stat ? '<div class="card-stat">' + liveStat(s.key, opt) + '</div>' : '') +
         '</div>';
       card.addEventListener('click', () => {
         if (isMulti) {

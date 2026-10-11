@@ -39,17 +39,17 @@
     xenobiologist: 'Field Identification',
   };
 
-  // Captain backgrounds — copied from setup.js's wizard config (the
-  // only place backgrounds are authored; no MOD.captains module).
+  // Captain backgrounds — copied from setup.js's wizard config; the
+  // numbers in `stat` are filled from captains.json (setupLiveStat).
   const CAPTAIN_BG = {
-    botanist:      { name: 'Botanist',      stat: 'Crop care +7%',       desc: 'You know plants. Not as well as Dr. Osei, but enough.', flavor: 'Your parents asked what you\'d do with that degree. This.' },
-    engineer:      { name: 'Engineer',      stat: 'Fab wear -10%',       desc: 'You can fix things. Not as fast as Kazuki.', flavor: 'The ship makes sounds it shouldn\'t. You recognize most of them.' },
-    medic:         { name: 'Medic',         stat: '25% lethal→injury',   desc: 'You passed the exam. You are not a doctor.', flavor: 'The residency was... there were circumstances.' },
-    pilot:         { name: 'Pilot',         stat: 'Fuel -5%',            desc: 'You can fly. Slightly better than expected.', flavor: 'You are statistically correct 68% of the time.' },
-    chef:          { name: 'Chef',          stat: 'Food -7%',            desc: 'You can make algae taste like something other than regret.', flavor: 'You know 47 ways to prepare algae. Forty-six are bad.' },
+    botanist:      { name: 'Botanist',      stat: 'Crop water -{cut:crop_water_modifier}%',  desc: 'You know plants. Not as well as Dr. Osei, but enough.', flavor: 'Your parents asked what you\'d do with that degree. This.' },
+    engineer:      { name: 'Engineer',      stat: 'Fab wear -{cut:fabricator_wear_modifier}%',  desc: 'You can fix things. Not as fast as Kazuki.', flavor: 'The ship makes sounds it shouldn\'t. You recognize most of them.' },
+    medic:         { name: 'Medic',         stat: '{pct:severity_modifier.lethal_to_injury_chance}% lethal→injury',  desc: 'You passed the exam. You are not a doctor.', flavor: 'The residency was... there were circumstances.' },
+    pilot:         { name: 'Pilot',         stat: 'Fuel -{cut:fuel_burn_modifier}%',  desc: 'You can fly. Slightly better than expected.', flavor: 'You are statistically correct 68% of the time.' },
+    chef:          { name: 'Chef',          stat: 'Food -{cut:food_consumption_modifier}%',  desc: 'You can make algae taste like something other than regret.', flavor: 'You know 47 ways to prepare algae. Forty-six are bad.' },
     xenobiologist: { name: 'Xenobiologist', stat: 'Anomaly safer',       desc: 'You studied aliens. You have never met one.', flavor: 'Your thesis was theoretical. Everything is about to become very applied.' },
-    diplomat:      { name: 'Diplomat',      stat: 'Credits +15',         desc: 'Very good at making people feel heard while doing nothing.', flavor: 'Your crew does not find this reassuring.' },
-    merchant:      { name: 'Merchant',      stat: 'Prices -10%',         desc: 'You ran a business.', flavor: 'You are going to run this mission like a business.' },
+    diplomat:      { name: 'Diplomat',      stat: 'Credits +{sb:credits}',  desc: 'Very good at making people feel heard while doing nothing.', flavor: 'Your crew does not find this reassuring.' },
+    merchant:      { name: 'Merchant',      stat: 'Prices -{cut:station_price_modifier}%',  desc: 'You ran a business.', flavor: 'You are going to run this mission like a business.' },
     academic:      { name: 'Academic',      stat: 'Research options',    desc: 'You have a PhD. In what is not immediately relevant.', flavor: 'Your grant funding was cut. You are in space. These events are related.' },
     veteran:       { name: 'Veteran',       stat: 'Combat edge', desc: 'You served. Where is classified.', flavor: 'You don\'t talk about it.' },
   };
@@ -364,7 +364,7 @@
         bio: bg.flavor || bg.desc, hint: ['botanist', 'engineer', 'medic', 'pilot', 'chef', 'xenobiologist', 'diplomat'].includes(STATE.captain)
           ? 'With no specialist of your background aboard, you cover half their passive yourself.'
           : 'No crew member shares your background. What you bring, only you bring.',
-        passiveName: bg.name + ' Background', passiveDesc: (bg.stat ? bg.stat + ' — ' : '') + bg.desc,
+        passiveName: bg.name + ' Background', passiveDesc: (bg.stat ? (typeof window.setupLiveStat === 'function' ? window.setupLiveStat('captain', { id: STATE.captain, stat: bg.stat }) : bg.stat) + ' — ' : '') + bg.desc,
         active: null,
       };
     }

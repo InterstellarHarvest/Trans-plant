@@ -124,7 +124,7 @@
       // (veteran/merchant are captain backgrounds only — see captain_bonuses)
     },
     captain_bonuses: {
-      pilot:         { evade_full_dodge: 0.12, ftl_turns_override: 2 },
+      pilot:         { evade_full_dodge: 0.12 }, // + the 2-turn FTL on a coin flip (pilotFtlChance)
       engineer:      { hull_patch_pct: 0.12 },
       medic:         { defeat_death_reduction: 0.10 },
       botanist:      { tribute_success: 0.20, tribute_food_cost: 5, morale_on_success: 3 },
@@ -198,8 +198,22 @@
     }
     return false;
   }
+  /* Pilot passive (ftl_turns_override): a healthy crew pilot always
+     spools the drive in 2 turns. At half strength (a pilot captain's
+     skill_modifier, or a wounded crew pilot) the short spool is a coin
+     flip, rolled when the charge starts (owner ruling 2026-10-11): a
+     whole turn can't be halved, so it lands half the time instead. */
+  function pilotFtlChance() {
+    const cap = COMBAT.captainBg === 'pilot' ? (typeof captainSkill === 'function' ? captainSkill() : 0.5) : 0;
+    return Math.max(COMBAT.crew.pilot || 0, cap);
+  }
   function ftlTurns() {
-    return (COMBAT.crew.pilot || COMBAT.captainBg === 'pilot') ? 2 : COMBAT_CONFIG.ftl_charge_turns;
+    if (COMBAT.ftlCharge > 0 && COMBAT.ftlTurnsRolled) return COMBAT.ftlTurnsRolled;
+    return pilotFtlChance() >= 1 ? COMBAT_CONFIG.crew_bonuses.pilot.ftl_turns_override : COMBAT_CONFIG.ftl_charge_turns;
+  }
+  function ftlTurnsLabel() {
+    const c = pilotFtlChance();
+    return (c > 0 && c < 1) ? COMBAT_CONFIG.crew_bonuses.pilot.ftl_turns_override + '–' + COMBAT_CONFIG.ftl_charge_turns : String(ftlTurns());
   }
   function critChance() {
     let total = COMBAT_CONFIG.crit_chance_base;
@@ -368,7 +382,7 @@
     }));
 
     wrap.appendChild(makeActionBtn({
-      verb: 'ATTEMPT ESCAPE', sub: `${ftlTurns()}-turn FTL charge · -15 fuel`,
+      verb: 'ATTEMPT ESCAPE', sub: `${ftlTurnsLabel()}-turn FTL charge · -15 fuel`,
       cls: 'combat-special', onClick: beginFtlCharge
     }));
   }
@@ -773,6 +787,8 @@
     if (!COMBAT.active || COMBAT.state !== 'PLAYER_TURN') return;
     COMBAT.openingTurn = false;
     COMBAT.state = 'FTL_CHARGING';
+    const c = pilotFtlChance();
+    COMBAT.ftlTurnsRolled = (c >= 1 || (c > 0 && Math.random() < c)) ? COMBAT_CONFIG.crew_bonuses.pilot.ftl_turns_override : COMBAT_CONFIG.ftl_charge_turns;
     COMBAT.ftlCharge = 1;
     fxScreen().classList.add('combat-ftl-charging');
     setNarrCombat('COMBAT LOG', combatLine('ftl_charging'), `FTL spool turn 1 of ${ftlTurns()}. Enemy fire continues.`);
@@ -1447,6 +1463,7 @@
 
     COMBAT.turn = 1;
     COMBAT.ftlCharge = -1;
+    COMBAT.ftlTurnsRolled = 0;
     COMBAT.hullPatchUsed = false;
     COMBAT.shieldUsed = false;
     COMBAT.shieldArmed = false;

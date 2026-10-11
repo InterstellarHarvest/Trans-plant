@@ -823,6 +823,43 @@ const eventOnTrail = (ev, trail) => {
   walk(path.join(SPR, 'npc'), f => { if (path.dirname(f) !== path.join(SPR, 'npc') && path.basename(f) === 'spritesheet.png') check(f, true); });
 }
 
+// Difficulty weights need content (owner ruling 2026-10-11: 'ultra'
+// stays at 0 until ultra events exist): a trail can't weight a tier
+// that has no active event able to fire on it.
+{
+  const rules = readJSON('modules/maps/map_rules.json');
+  for (const [trail, t] of Object.entries(rules.trails || {})) {
+    for (const [tier, w] of Object.entries(t.event_difficulty_weights || {})) {
+      if (!(w > 0)) continue;
+      const any = [...eventsById.values()].some(({ event: ev }) => ev.active !== false
+        && (Array.isArray(ev.difficulty) ? ev.difficulty[0] : (ev.difficulty || 'medium')) === tier
+        && (!ev.trail || ev.trail.includes(trail)));
+      if (!any) err(`map_rules ${trail}: event_difficulty_weights.${tier} is ${w} but no active event of that tier can fire on ${trail} — set it to 0 or write the events`);
+    }
+  }
+}
+
+// Captain / AI numbers the engine reads (one source of truth, owner
+// ruling 2026-10-11) must be numbers where the engine looks for them.
+{
+  const caps = readJSON('modules/captains/captains.json').captains || [];
+  const NUMERIC = { botanist: ['crop_water_modifier'], engineer: ['fabricator_wear_modifier', 'fabricator_contribution'], medic: ['severity_modifier.lethal_to_injury_chance'], pilot: ['fuel_burn_modifier'], chef: ['food_consumption_modifier', 'morale_passive'], merchant: ['station_price_modifier'], academic: ['fabricator_contribution'] };
+  for (const [bg, keys] of Object.entries(NUMERIC)) {
+    const c = caps.find(x => x.background === bg);
+    if (!c) { err(`captains.json: no captain with background "${bg}"`); continue; }
+    if (!Number.isFinite(c.skill_modifier)) err(`captains.json ${c.id}: skill_modifier is not a number`);
+    for (const k of keys) {
+      const v = k.split('.').reduce((o, p) => o && o[p], c.passive_effect);
+      if (!Number.isFinite(v)) err(`captains.json ${c.id}: passive_effect.${k} must be a number (the engine reads it)`);
+    }
+  }
+  const ais = readJSON('modules/ai/ai_companions.json');
+  for (const [id, type] of [['ai_aria', 'morale_bonus'], ['ai_chip', 'price_reduction']]) {
+    const a = ais.find(x => x.id === id);
+    if (!a || !a.passive_effect || a.passive_effect.type !== type || !Number.isFinite(a.passive_effect.value)) err(`ai_companions.json ${id}: passive_effect must be { type: "${type}", value: <number> } (the engine reads it)`);
+  }
+}
+
 function printWarnings(out) {
   if (!warnings.length) return;
   out(`lint_modules: ${warnings.length} warning(s) (not failing):\n`);

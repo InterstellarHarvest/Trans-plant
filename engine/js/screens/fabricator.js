@@ -117,7 +117,8 @@
     reyes:       { name:'Reyes',       role:'Chef',          fab:0,  crewId:'reyes',    emoji:'🍳' },
     hargrove:    { name:'Hargrove',    role:'Diplomat',      fab:0,  crewId:'hargrove', emoji:'🤝' },
     tanaka:      { name:'Dr. Tanaka',  role:'Xenobiologist', fab:5,  crewId:'tanaka',   emoji:'🔬' },
-    captain_eng: { name:'Captain',     role:'Engineer bg.',  fab:12, crewId:'captain',  emoji:'🧑‍✈️' }, // half of Kazuki (captains.json 12)
+    // fab: captains.json passive_effect.fabricator_contribution (read on open)
+    captain_eng: { name:'Captain',     role:'Engineer bg.',  fab:12, crewId:'captain',  emoji:'🧑‍✈️' },
     captain_aca: { name:'Captain',     role:'Academic bg.',  fab:10, crewId:'captain',  emoji:'🧑‍🚀' }
   };
   // Baseline — the captain (player) always contributes this much,
@@ -174,6 +175,10 @@
     // engineer is aboard — the two don't stack (specialistMult already
     // floors a wounded crew engineer at the captain's half).
     FSTATE.captainBg = (STATE.captain === 'academic' || (STATE.captain === 'engineer' && !STATE.crew.includes('engineer'))) ? STATE.captain : 'none';
+    if (typeof captainPassive === 'function') {
+      CREW.captain_eng.fab = captainPassive('fabricator_contribution', 'engineer') ?? CREW.captain_eng.fab;
+      CREW.captain_aca.fab = captainPassive('fabricator_contribution', 'academic') ?? CREW.captain_aca.fab;
+    }
     FSTATE.tripDay = STATE.daysElapsed;
     FSTATE.arrivalDay = STATE.baseDays;
   }
@@ -215,15 +220,16 @@
     return Math.max(1, Math.ceil(baseDays * BASE_EFFORT / avail));
   }
 
-  // Wear a craft adds: engineer passive −20% (crew_roster; a captain
-  // engineer half that — setup "Fab wear -10%"), the field repair
-  // fabricator −10% (items.json). Never below 0.5.
+  // Wear a craft adds: engineer passive −20% (crew_roster
+  // fabricator_wear_modifier; a captain engineer's own −10% from
+  // captains.json), the field repair fabricator −10% (items.json).
+  // Never below 0.5.
   function recipeWear(r) {
-    const eng = typeof specialistMult === 'function' ? specialistMult('engineer') : 0;
+    const cut = typeof roleAmount === 'function' ? roleAmount('engineer', 'fabricator_wear_modifier', 'fabricator_wear_modifier', 0.8, true) : 0;
     const kit = STATE.items.includes('repair_fabricator') ? 0.9 : 1;
     // Kept to a tenth: whole-number rounding ate the engineer's cut on
     // every 1–3% recipe (2 × 0.8 = 1.6 → 2).
-    return Math.max(0.5, Math.round(r.wear * (1 - 0.2 * eng) * kit * 10) / 10);
+    return Math.max(0.5, Math.round(r.wear * (1 - cut) * kit * 10) / 10);
   }
 
   // Material satisfaction — is every input satisfied by current stock?

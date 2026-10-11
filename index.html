@@ -688,6 +688,8 @@ body {
 #inv-detail-name { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 10px; letter-spacing: 1px; color: var(--gold); }
 #inv-detail-meta { font-family: 'VT323', monospace; font-size: 14px; color: var(--body); margin-top: 4px; }
 #inv-detail-desc { font-family: 'VT323', monospace; font-size: 16px; line-height: 1.3; color: var(--cream); }
+#inv-detail-flavor { font-family: 'VT323', monospace; font-size: 15px; line-height: 1.25; color: var(--body); font-style: italic; margin-top: -4px; }
+#inv-detail-flavor:empty { display: none; }
 .inv-detail-actions { display: flex; gap: 10px; justify-content: flex-end; }
 #inv-confirm-text { font-family: 'VT323', monospace; font-size: 17px; color: var(--cream); }
 #inv-rows { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
@@ -1051,6 +1053,7 @@ body {
           </div>
         </div>
         <div id="inv-detail-desc"></div>
+        <div id="inv-detail-flavor"></div>
         <div class="inv-detail-actions">
           <button class="btn accent-gold" id="inv-use-btn">USE</button>
           <button class="btn" id="inv-jett-btn">JETTISON</button>
@@ -1973,7 +1976,10 @@ function applySetupToState(sel) {
     const cropDef = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + sel.crop);
     STATE.cropGrowth = { growth: 0, health: (cropDef && cropDef.starting_health) || 80, pest: false, waterPlant: 50, tenderId: 'none', day: 0, lastTickDay: 0 };
   }
-  STATE.shipName  = sel.ship || 'The Verdant Ark';
+  // ships.json: "the ship has a name — generated from name_pool at run
+  // start". A blank name field draws one.
+  const namePool = shipNamePool();
+  STATE.shipName  = (sel.ship && String(sel.ship).trim()) || (namePool.length ? namePool[Math.floor(Math.random() * namePool.length)] : 'The Ship');
 
   // Starting items — no items step in the setup wizard yet; keep the
   // same placeholder loadout initState() used, so item-gated choices
@@ -2284,7 +2290,7 @@ function applySeverity(role, severity) {
   const name = crewNameOf(role);
   const log = msg => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + msg); };
   if (severity === 'lethal') {
-    if (Math.random() < 0.5 * passiveMult('medic')) {
+    if (Math.random() < roleAmount('medic', 'severity_modifier.lethal_to_injury_chance', 'severity_modifier.lethal_to_injury_chance', 0.5)) {
       // Credit whoever's skill counted: the crew medic unless only the
       // captain's half-strength training was in play.
       const crewMedic = STATE.crew.includes('medic') && (STATE.captain !== 'medic' || crewHPOf('medic') >= CREW_WOUNDED_HP);
@@ -2770,6 +2776,8 @@ function renderInvDetail(en) {
   // The spectrometer (items.json: "identifies unknown items") reads the same finding.
   else if (def && def.analysis && STATE.items.includes('spectrometer')) desc += '  ◆ SPECTROMETER: ' + def.analysis;
   document.getElementById('inv-detail-desc').textContent = desc;
+  // items.json passive_flavor — the item's own aside, aboard.
+  document.getElementById('inv-detail-flavor').textContent = (def && def.passive_flavor) || '';
   const jett = document.getElementById('inv-jett-btn');
   jett.style.display = en.material ? 'none' : '';
   const useBtn = document.getElementById('inv-use-btn');
@@ -3214,10 +3222,10 @@ function setWaterSplit(pct) {
    export); 50 when no crop/meta (demo's CROP_WATER_NEED). */
 function cropWaterNeed() {
   const m = (typeof window.cropMetaOf === 'function' && STATE.crop) ? cropMetaOf(STATE.crop) : null;
-  // Botanist passive "crop water consumption reduced 15%" (captain half);
+  // Botanist passive "crop water consumption reduced 15%" (captain 7%);
   // the water purifier's passive −10% (items.json).
   return ((m && m.water_need) || 50)
-    * (1 - 0.15 * specialistMult('botanist'))
+    * (1 - roleAmount('botanist', 'crop_water_modifier', 'crop_water_modifier', 0.85, true))
     * (STATE.items.includes('water_purifier') ? 0.9 : 1);
 }
 
@@ -3272,6 +3280,11 @@ function resMax(k) {
   if (b && Number.isFinite(b[k]) && (k === 'fuel' || k === 'hull' || k === 'food')) max += b[k];
   return max;
 }
+function shipNamePool() {
+  const ship = ((MOD.ships && MOD.ships.ships) || []).find(x => x.active !== false);
+  return (ship && Array.isArray(ship.name_pool)) ? ship.name_pool.slice() : [];
+}
+window.shipNamePool = shipNamePool;
 function captainDef(bg) {
   const list = (MOD.captains && MOD.captains.captains) || [];
   return list.find(c => c.background === (bg || STATE.captain)) || null;
@@ -3345,12 +3358,52 @@ function arrivalPassives(node) {
    (Bible §4.30 skill_modifier 0.5 — setup's "Fuel -5%" / "Food -7%"). */
 function specialistMult(role) {
   const crew = STATE.crew.includes(role) ? (crewHPOf(role) < CREW_WOUNDED_HP ? 0.5 : 1) : 0;
-  return Math.max(crew, STATE.captain === role ? 0.5 : 0);
+  return Math.max(crew, STATE.captain === role ? captainSkill() : 0);
 }
-// Station price discount (setup: CHIP "Station prices -15%", Merchant
-// captain "Prices -10%") — the market, MEDBAY and FAB SERVICE all use it.
+/* One source of truth (owner ruling 2026-10-11): the captain's numbers
+   live in captains.json, the AI's in ai_companions.json, the crew's in
+   crew_roster.json — the engine reads them there, and setup's labels
+   are written from the same numbers. */
+function captainSkill() {
+  const c = captainDef();
+  return c && Number.isFinite(c.skill_modifier) ? c.skill_modifier : 0.5;
+}
+function pathOf(o, key) { return String(key).split('.').reduce((v, k) => (v && typeof v === 'object') ? v[k] : undefined, o); }
+function captainPassive(key, bg) {
+  const c = captainDef(bg);
+  const v = c && pathOf(c.passive_effect, key);
+  return Number.isFinite(v) ? v : null;
+}
+function aiPassive(type, ai) {
+  const a = (MOD.ai_companions || []).find(x => x.id === 'ai_' + (ai || STATE.activeAI));
+  const p = a && a.passive_effect;
+  return (p && p.type === type && Number.isFinite(p.value)) ? p.value : null;
+}
+window.captainPassive = captainPassive;
+window.aiPassive = aiPassive;
+/* A role's passive amount: the crew specialist's (crew_roster, halved
+   while wounded), the captain's own (captains.json passive_effect; a
+   captain with no number of their own gets the crew's × skill_modifier),
+   the better of the two — they never stack. `cut` turns a ×0.85-style
+   modifier into the 0.15 it takes off. */
+function roleAmount(role, rosterKey, captainKey, dflt, cut) {
+  const conv = v => cut ? 1 - v : v;
+  const c = (MOD.crew_roster || []).find(x => x.role === role);
+  const rv = c && pathOf(c.passive_skill, rosterKey);
+  const crewAmt = conv(Number.isFinite(rv) ? rv : dflt);
+  const crew = STATE.crew.includes(role) ? crewAmt * (crewHPOf(role) < CREW_WOUNDED_HP ? 0.5 : 1) : 0;
+  let cap = 0;
+  if (STATE.captain === role) {
+    const v = captainPassive(captainKey);
+    cap = v != null ? conv(v) : crewAmt * captainSkill();
+  }
+  return Math.max(crew, cap);
+}
+// Station price discount (setup: CHIP's price_reduction, the Merchant
+// captain's station_price_modifier) — the market, MEDBAY and FAB
+// SERVICE all use it.
 function stationPriceMult() {
-  return (STATE.activeAI === 'chip' ? 0.85 : 1) * (STATE.captain === 'merchant' ? 0.9 : 1);
+  return (aiPassive('price_reduction') ?? 1) * (STATE.captain === 'merchant' ? (captainPassive('station_price_modifier') ?? 1) : 1);
 }
 function stationPrice(g) { return Math.max(1, Math.round(g * stationPriceMult())); }
 // Gold spent inside a station event takes the same CHIP / Merchant
@@ -3391,11 +3444,11 @@ function mouthsMult() {
 }
 window.mouthsMult = mouthsMult;
 function foodBurnMult() {
-  return (1 - (1 - rosterPassive('chef', 'food_consumption_modifier', 0.85)) * specialistMult('chef'))
+  return (1 - roleAmount('chef', 'food_consumption_modifier', 'food_consumption_modifier', 0.85, true))
     * (STATE.items.includes('insulated_cargo_bay') ? 0.85 : 1);
 }
 function fuelBurnMult() {
-  return (1 - (1 - rosterPassive('pilot', 'fuel_burn_modifier', 0.9)) * specialistMult('pilot'))
+  return (1 - roleAmount('pilot', 'fuel_burn_modifier', 'fuel_burn_modifier', 0.9, true))
     * (STATE.items.includes('drive_coil') ? 0.8 : 1);
 }
 function legTravelCost() {
@@ -3563,11 +3616,12 @@ function travelTo(nodeId, opts) {
       if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ The drive coil misfires mid-burn. A bang, a smell, three points of hull. It keeps working, unrepentant.');
     }
     passDays(leg.days, { travel: true });
-    // ARIA's passive (ai_companions morale_bonus 1): +1 morale per leg.
-    if (STATE.activeAI === 'aria') STATE.resources.morale = clamp(STATE.resources.morale + 1, 0, 100);
+    // ARIA's passive (ai_companions morale_bonus): +1 morale per leg.
+    const ariaMorale = aiPassive('morale_bonus');
+    if (ariaMorale) STATE.resources.morale = clamp(STATE.resources.morale + ariaMorale, 0, 100);
     // Chef's passive (crew_roster morale_passive: "+1 from actual meals") —
     // only while there is food to cook; a captain chef at half strength.
-    const chefMorale = rosterPassive('chef', 'morale_passive', 1) * specialistMult('chef');
+    const chefMorale = roleAmount('chef', 'morale_passive', 'morale_passive', 1);
     if (chefMorale > 0 && STATE.resources.food > 0) STATE.resources.morale = clamp(STATE.resources.morale + chefMorale, 0, 100);
     arrivalPassives(node);
     cropDrama();
