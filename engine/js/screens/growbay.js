@@ -22,7 +22,9 @@
 (function() {
   'use strict';
   const $ = id => document.getElementById(id);
-  const root = document.documentElement;
+  // The growbay's tokens live on its overlay, not :root (parity pass
+  // 2026-10-11) — runtime var writes go there too or the scoped value wins.
+  const root = document.getElementById('overlay-growbay') || document.documentElement;
 
   // ── Crew sprite atlas (shared icon/portrait helper) ─────────────
   // Crew icons + portraits live PACKED inside spritesheet_<id>.png at
@@ -600,25 +602,23 @@
   // species name and the stage label in the banner. Current stage
   // is marked with ▸ so the tooltip is stage-aware without needing
   // separate variants.
+  // Structured for the .ui-tip panel (demo-tooltip growbay_species_*:
+  // title, blurb, stat rows, 4-stage list with the current one marked).
   function buildCropTooltip() {
     const crop = CROP_META[GSTATE.cropId];
     const curIdx = GSTATE.growth >= 100 ? crop.stages.length - 1 : stageIndex(GSTATE.growth);
     const [tMin, tMax] = idealBand();
-    const lines = [
-      crop.name.toUpperCase(),
-      crop.blurb,
-      '',
-      'Maturity: ' + crop.maturity_days + ' days  ·  Water: ' + waterNeed() + '%  ·  Temp: ' + tMin + '–' + tMax + '°C',
-      'Yield: +' + crop.yield_amount + ' ' + crop.yield_label,
-      '',
-      'STAGES'
-    ];
-    crop.stages.forEach((s, i) => {
-      const marker = i === curIdx ? '▸ ' : '  ';
-      const name = s.name.charAt(0) + s.name.slice(1).toLowerCase();
-      lines.push(marker + name.padEnd(12) + '— ' + s.tip);
-    });
-    return lines.join('\n');
+    return {
+      title: crop.name.toUpperCase(),
+      description: crop.blurb,
+      rows: [
+        { label: 'Maturity', value: crop.maturity_days + ' days' },
+        { label: 'Water', value: waterNeed() + '%' },
+        { label: 'Temp', value: tMin + '–' + tMax + '°C' },
+        { label: 'Yield', value: '+' + crop.yield_amount + ' ' + crop.yield_label },
+      ],
+      list: crop.stages.map((s, i) => ({ text: s.name.charAt(0) + s.name.slice(1).toLowerCase() + ' — ' + s.tip, current: i === curIdx })),
+    };
   }
 
   function nextStageLine() {
@@ -1104,14 +1104,15 @@
     $('day-display').textContent = GSTATE.day;
     $('maturity-display').textContent = crop.maturity_days;
     $('banner-day').classList.toggle('overdue', GSTATE.day > crop.maturity_days && GSTATE.growth < 100);
-    $('banner-day').title = 'Days since planting. Base maturity is ' + crop.maturity_days +
-                            ' days, but growth rate shifts with plant health and tending.';
+    Tooltip.attach($('banner-day'), { title: 'GROWTH DAY', description: 'Days since planting. Base maturity is ' + crop.maturity_days +
+                            ' days, but growth rate shifts with plant health and tending.' });
 
-    // Combined species + stage tooltip — applied to both hover
-    // targets in the banner so either word opens the same info.
+    // Combined species + stage tooltip — on both banner words and on the
+    // specimen itself (Scan cursor), so any of them opens the same info.
     const cropTip = buildCropTooltip();
-    $('crop-display-name').title = cropTip;
-    $('stage-label-box').title   = cropTip;
+    Tooltip.attach($('crop-display-name'), cropTip);
+    Tooltip.attach($('stage-label-box'), cropTip);
+    Tooltip.attach($('plant-sprite'), cropTip);
 
     // Plant stage label
     $('plant-stage-label').textContent = stageName(GSTATE.growth);
@@ -1180,7 +1181,7 @@
     for (const m of active) {
       const row = document.createElement('div');
       row.className = 'gb-mod-row ' + m.kind + (m.boost ? ' boost' : '');
-      if (m.tip) row.title = m.tip;
+      if (m.tip) Tooltip.attach(row, { title: String(m.name).toUpperCase(), description: m.tip, tone: m.kind === 'positive' ? 'good' : m.kind === 'critical' ? 'danger' : m.kind === 'negative' ? 'warn' : 'default' });
       row.innerHTML = '<span class="mod-name">' + m.name + '</span>' +
                       '<span class="mod-delta">' + m.delta + '</span>';
       activeEl.appendChild(row);
@@ -1325,6 +1326,8 @@
     }
   };
   window.openTreat = function() {
+    // Locked TREAT now hit-tests (it shows the Denied cursor) — ignore it.
+    if ($('treat-btn') && $('treat-btn').classList.contains('locked')) return;
     const say = GROWBAY_TREAT_LINES[growbayAI()];
     if (!GSTATE || !GSTATE.pest) {
       $('aria-text').textContent = say.nothing;

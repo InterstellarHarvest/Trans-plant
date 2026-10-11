@@ -10,7 +10,10 @@
 #overlay-mining.active { display: block; }
 
 
-:root {
+/* Scoped to the overlay, not :root (parity pass 2026-10-11) — the same
+   leak engine-repair already fixed (its --narr-*/--choice-*/--ai-* tokens
+   reached every screen). */
+#overlay-mining {
   --teal: #8cc890;
   --orange: #e88830;
   --cream: #e8d8a0;
@@ -265,6 +268,7 @@
   gap: 8px;
   overflow: hidden;
   z-index: 12;
+  min-height: 0; max-height: none; /* global .enc-narrative min-height:130px beat height:110px and covered the art */
 }
 #mining-root .enc-narr-title {
   font-family: 'Press Start 2P', cursive; line-height: 1;
@@ -318,7 +322,7 @@
   border-radius: 2px;
   color: var(--choice-text);
   font-family: 'VT323', monospace;
-  cursor: pointer;
+  cursor: var(--cursor-hand, pointer);
   text-align: left;
   transition: border-color 0.12s, filter 0.12s, transform 0.08s;
 }
@@ -348,7 +352,7 @@
 /* Disabled state — used on BEGIN MINING until a crew is selected. */
 #mining-root .enc-choice.disabled {
   filter: grayscale(0.7) brightness(0.6);
-  cursor: default;
+  cursor: var(--cursor-denied, not-allowed);
   pointer-events: none;
 }
 #mining-root .enc-choice.disabled .enc-choice-sub { color: #8a7a55; }

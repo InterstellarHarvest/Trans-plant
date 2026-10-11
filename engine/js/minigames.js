@@ -329,7 +329,7 @@ function openMinigame(id, opts, onDone){
   onMinigameDone = onDone;
   minigameStarted = false; minigameEnding = false; closeAfterResult = false;
   const mclose = document.getElementById('mclose');
-  mclose.textContent = '✕ CLOSE'; mclose.title = 'Back out — nothing has started yet.';
+  mclose.textContent = '✕ CLOSE'; Tooltip.attach(mclose, { description: 'Back out — nothing has started yet.' });
   currentGame = id;
   if(cleanupFn){ cleanupFn(); cleanupFn=null; }
   document.getElementById('mtitle').textContent = NAMES[id]||id.toUpperCase();
@@ -344,7 +344,7 @@ function openMinigame(id, opts, onDone){
     minigameStarted = true;
     if(typeof window.onJobBegun === 'function') window.onJobBegun(); // a reload from here settles as a quit
     const mclose = document.getElementById('mclose');
-    mclose.textContent = '✕ QUIT'; mclose.title = 'Quit now: nothing is kept, and the time is still spent. In a crisis, the worst outcome lands.';
+    mclose.textContent = '✕ QUIT'; Tooltip.attach(mclose, { description: 'Quit now: nothing is kept, and the time is still spent. In a crisis, the worst outcome lands.', tone: 'danger' });
     cleanupFn = inits[id](document.getElementById('ga'), (tier, payload) => { if (token === minigameToken) showResult(tier, payload); }, opts || {});
   });
 }
@@ -1485,11 +1485,11 @@ const FORAGE_FALLBACK_ANCHORS = {
 function initForage(container, onResult, ctx){
   ctx = ctx || {};
   const MODE = ctx.mode || ['HUNT','GATHER','SCAVENGE'][_forageCycle++ % 3];
-  const REGION = ctx.regionLabel || ({
-    HUNT:'ASTEROID FIELD · HUNT',
-    GATHER:'ALIEN FOREST · GATHER',
-    SCAVENGE:'MAINTENANCE DECK · SCAVENGE'
-  })[MODE];
+  // HUD region text (parity pass 2026-10-11): the cruise passes where the
+  // ship actually stopped (ctx.regionLabel, e.g. 'ASTEROID FIELD'); the
+  // demo's fixed per-mode table is only the fallback for a launch with no
+  // caller context. Set once the bg (and its biome) is picked, below.
+  let REGION;
 
   // Pick a bg from the registry (or null = placeholder mode)
   const bgList = FORAGE_BG_REGISTRY[MODE] || [];
@@ -1503,6 +1503,14 @@ function initForage(container, onResult, ctx){
   const BIOME = pickedBg
     ? pickedBg.biome
     : placeholderBiomes[Math.floor(Math.random() * placeholderBiomes.length)];
+  // A HUNT on a desert or ice rock is that rock, not "ASTEROID FIELD"
+  // (parity audit) — the biome names the ground the crew is standing on.
+  const BIOME_PLACE = { desert: 'DESERT ROCK', ice: 'ICE ROCK' };
+  REGION = (BIOME_PLACE[BIOME] || ctx.regionLabel || ({
+    HUNT:'ASTEROID FIELD',
+    GATHER:'ALIEN FOREST',
+    SCAVENGE:'MAINTENANCE DECK'
+  })[MODE]) + ' · ' + MODE;
 
   // Cover glyphs only show in placeholder mode (no real bg art). When real
   // art loads, covers are baked into the painting; placeholder covers hide.

@@ -5,7 +5,11 @@
    self-centers (left/top 50% + transform), no overlay-active override
    needed like screen-minigames.css required. */
 
-:root {
+/* Scoped to the overlay, not :root (parity pass 2026-10-11): as :root these
+   tokens were overridden by screen-fabricator.css + index.html's inline
+   :root (growbay drew in the fabricator's 880×600 bronze frame, dimmed
+   body text) and leaked --pb-* into every .panel-btn in the game. */
+#overlay-growbay {
   /* Shared theme */
   --teal: #35c6bf;
   --orange: #e88830;
@@ -812,7 +816,7 @@ body:not(.modal-open) #gb-modal {
 }
 
 /* Panel buttons */
-.panel-btn {
+#overlay-growbay .panel-btn {
   font-family: 'VT323', monospace;
   font-size: var(--pb-size);
   letter-spacing: 1px;
@@ -826,32 +830,33 @@ body:not(.modal-open) #gb-modal {
   border-radius: 0;
   transition: filter 0.1s;
 }
-.panel-btn:hover { filter: brightness(1.15); }
-.panel-btn:active {
+#overlay-growbay .panel-btn:hover { filter: brightness(1.15); }
+#overlay-growbay .panel-btn:active {
   border-style: inset;
   border-color: var(--pb-lo) var(--pb-hi) var(--pb-hi) var(--pb-lo);
   transform: translate(1px, 1px);
 }
-.panel-btn.accent-gold {
+#overlay-growbay .panel-btn.accent-gold {
   border-color: var(--pb-gold-hi) var(--pb-gold-lo) var(--pb-gold-lo) var(--pb-gold-hi);
   color: var(--pb-gold-hi);
 }
-.panel-btn.harvest {
+#overlay-growbay .panel-btn.harvest {
   border-color: var(--pb-green-hi) var(--pb-green-lo) var(--pb-green-lo) var(--pb-green-hi);
   color: #c8f0a0;
   background: linear-gradient(180deg, #3e5e3e 0%, #1a3520 50%, #4a6a4e 100%);
   animation: harvest-ready 1.6s ease-in-out infinite;
 }
-.panel-btn.harvest.locked {
+#overlay-growbay .panel-btn.harvest.locked {
   filter: grayscale(0.7) brightness(0.6);
-  cursor: var(--cursor-pointer, default);
-  pointer-events: none;
+  cursor: var(--cursor-denied, not-allowed); /* clicks are ignored in doHarvest() */
   animation: none;
 }
-.panel-btn.locked {
+/* Scan cursor (cursor-armory: "the botanist's specimen identification
+   tool") on the specimen itself and the INSPECT control. */
+#overlay-growbay #plant-sprite, #overlay-growbay #inspect-btn { cursor: var(--cursor-scan, crosshair); }
+#overlay-growbay .panel-btn.locked {
   filter: grayscale(0.7) brightness(0.6);
-  cursor: var(--cursor-pointer, default);
-  pointer-events: none;
+  cursor: var(--cursor-denied, not-allowed); /* clicks are ignored (growbay.js guards) */
 }
 @keyframes harvest-ready {
   0%, 100% { box-shadow: 0 0 0 0 rgba(133,210,112,0); }
@@ -885,11 +890,11 @@ body:not(.modal-open) #gb-modal {
 /* Dev controls sidebar */
 
 /* Scrollbars — same baseline as inventory demo. */
-::-webkit-scrollbar           { width: 6px; height: 6px; }
-::-webkit-scrollbar-track     { background: #0a0e14; border-radius: 0; }
-::-webkit-scrollbar-thumb     { background: #2a3a48; border-radius: 0; }
-::-webkit-scrollbar-corner    { background: #0a0e14; }
-* {
+#overlay-growbay ::-webkit-scrollbar           { width: 6px; height: 6px; }
+#overlay-growbay ::-webkit-scrollbar-track     { background: #0a0e14; border-radius: 0; }
+#overlay-growbay ::-webkit-scrollbar-thumb     { background: #2a3a48; border-radius: 0; }
+#overlay-growbay ::-webkit-scrollbar-corner    { background: #0a0e14; }
+#overlay-growbay * {
   scrollbar-width: thin;
   scrollbar-color: #2a3a48 #0a0e14;
 }

@@ -4,13 +4,16 @@
    see index.html's #game). Painted by engine/js/screens/endings.js. */
 
 #screen-end {
-  background: #020408;
+  /* demo-endings #stars: navy radial under the star drift — a failure's
+     whole backdrop (arrival art covers it). */
+  background: radial-gradient(ellipse at center, #0a1322 0%, #020408 80%);
   overflow: hidden;
   --cine-x: 480px;
   --cine-y: 320px;
   --cine-title-size: 28px;
 }
 
+#end-stars { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 #end-scene {
   position: absolute; inset: 0; z-index: 1;
   background-position: center; background-size: cover; background-repeat: no-repeat;
@@ -51,6 +54,18 @@
   text-align: center;
   white-space: pre-line;
   line-height: 1.25;
+  text-transform: uppercase; /* stingers are ALL CAPS (failures.json titles are mixed case) */
+  animation: end-cine-rise 700ms cubic-bezier(0.2,0.6,0.3,1) both;
+}
+/* demo-endings entrance: title rises, body/quote follow staggered, the
+   button last. Replays each time #end-cinematic goes display:none→block. */
+@keyframes end-cine-rise {
+  0%   { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes end-btn-rise {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 #end-cine-body {
   display: none;
@@ -60,6 +75,7 @@
   text-align: center;
   max-width: 560px;
   text-shadow: 0 0 14px rgba(0,0,0,0.95), 0 2px 0 rgba(0,0,0,0.85);
+  animation: end-cine-rise 700ms cubic-bezier(0.2,0.6,0.3,1) 120ms both;
 }
 #end-cine-quote {
   display: none;
@@ -69,11 +85,28 @@
   text-align: center;
   max-width: 540px;
   text-shadow: 0 0 14px rgba(0,0,0,0.95), 0 2px 0 rgba(0,0,0,0.85);
+  animation: end-cine-rise 800ms cubic-bezier(0.2,0.6,0.3,1) 200ms both;
 }
-#end-cine-btn {
+#end-cinematic .end-record { animation: end-cine-rise 800ms cubic-bezier(0.2,0.6,0.3,1) 260ms both; }
+/* demo-endings #cine-btn: Press Start 2P on navy, cream text + rim
+   (it was a 10px VT323 .btn — unreadable over the art). */
+#screen-end .end-cine-btn {
+  position: relative;
+  font-family: 'Press Start 2P', cursive; line-height: 1;
   font-size: 10px; letter-spacing: 2px;
+  padding: 12px 22px;
+  background: linear-gradient(180deg, #1a2030 0%, #0a0e18 100%);
+  color: var(--cream);
+  border: 2px solid rgba(232,216,160,0.6);
+  border-radius: 3px;
+  cursor: var(--cursor-hand, pointer);
+  text-transform: uppercase;
+  text-align: center;
   box-shadow: 0 0 18px rgba(0,0,0,0.6);
+  animation: end-btn-rise 900ms cubic-bezier(0.2,0.6,0.3,1) 200ms both;
 }
+#screen-end .end-cine-btn:hover { background: linear-gradient(180deg, #232b3e 0%, #10162a 100%); filter: brightness(1.15); }
+#screen-end .end-cine-btn:active { transform: translateY(1px); }
 
 /* ── Screen 2: report card ───────────────────────────────────── */
 #end-report {
@@ -83,7 +116,13 @@
   align-items: center; justify-content: center;
   padding: 30px;
 }
-#end-report.show { display: flex; }
+#end-report.show { display: flex; animation: end-fade-in 380ms ease-out both; }
+@keyframes end-fade-in { 0% { opacity: 0; } 100% { opacity: 1; } }
+#end-report.show #end-report-card { animation: end-card-rise 520ms cubic-bezier(0.2, 0.6, 0.3, 1) both; }
+@keyframes end-card-rise {
+  0%   { opacity: 0; transform: translateY(18px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
 #end-report-card {
   background: linear-gradient(180deg, #1a2030, #0e1320);
   border: 2px solid rgba(200,168,90,0.6);
@@ -119,6 +158,7 @@
   white-space: pre-line;
   line-height: 1.35;
 }
+#screen-end.is-failure #end-report-title { text-transform: uppercase; }
 #end-report-body {
   width: 100%; text-align: center;
   font-family: 'VT323', monospace;
@@ -156,28 +196,47 @@
   width: 76px; text-align: right;
 }
 #end-report-score .val { font-family: 'VT323', monospace; font-size: 15px; color: #d8c890; min-width: 44px; }
-.crew-pips { display: flex; gap: 6px; }
-.crew-pip { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(200,168,90,0.65); }
-.crew-pip.filled { background: var(--gold); box-shadow: 0 0 5px rgba(200,168,90,0.45); }
-.crew-pip.empty  { background: transparent; opacity: 0.55; }
-.res-bars { display: flex; gap: 6px; flex: 1; }
-.res-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.res-bar-label { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 6px; letter-spacing: 0.8px; color: #7a8898; }
-.res-bar { width: 100%; height: 12px; background: rgba(10,14,20,0.7); border: 1px solid rgba(95,168,208,0.2); position: relative; overflow: hidden; }
-.res-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 50%; background: var(--gold); }
-.res-bar-fill.fuel  { background: #e88830; }
-.res-bar-fill.food  { background: #8cc890; }
-.res-bar-fill.water { background: #5fa8d0; }
-.res-bar-fill.hull  { background: #b4b091; }
-.res-bar-fill.morale { background: #d08ab4; }
-.day-line .score-extras { display: block; margin-top: 2px; font-size: 14px; color: #8f9aa8; }
-.day-line { font-family: 'VT323', monospace; font-size: 16px; color: #aab5c4; text-align: center; letter-spacing: 1px; }
-.day-line .day-num { color: var(--cream); }
-.day-line .day-cmp { color: var(--gold); }
-.day-line .day-cmp.late  { color: #cc6c4c; }
-.day-line .day-cmp.early { color: var(--teal); }
+#screen-end .crew-pips { display: flex; gap: 6px; }
+#screen-end .crew-pip { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(200,168,90,0.65); }
+#screen-end .crew-pip.filled { background: var(--gold); box-shadow: 0 0 5px rgba(200,168,90,0.45); }
+#screen-end .crew-pip.empty  { background: transparent; opacity: 0.55; }
+#screen-end .res-bars { display: flex; gap: 6px; flex: 1; }
+#screen-end .res-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+#screen-end .res-bar-label { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 6px; letter-spacing: 0.8px; color: #7a8898; }
+/* flex:none — screen-cruise.css's bare `.res-bar { flex: 1 }` leaked in and,
+   in this column flexbox, collapsed every bar to its 2px border. The
+   generic classes below are scoped to #screen-end for the same reason:
+   this file's bare .res-bar used to restyle the cruise resource bars. */
+#end-report-score .res-bar { flex: none; }
+#screen-end .res-bar { width: 100%; height: 12px; background: rgba(10,14,20,0.7); border: 1px solid rgba(95,168,208,0.2); position: relative; overflow: hidden; }
+#screen-end .res-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 50%; background: var(--gold); }
+#screen-end .res-bar-fill.fuel  { background: #e88830; }
+#screen-end .res-bar-fill.food  { background: #8cc890; }
+#screen-end .res-bar-fill.water { background: #5fa8d0; }
+#screen-end .res-bar-fill.hull  { background: #b4b091; }
+#screen-end .res-bar-fill.morale { background: #d08ab4; }
+#screen-end .day-line .score-extras { display: block; margin-top: 2px; font-size: 14px; color: #8f9aa8; }
+#screen-end .day-line { font-family: 'VT323', monospace; font-size: 16px; color: #aab5c4; text-align: center; letter-spacing: 1px; }
+#screen-end .day-line .day-num { color: var(--cream); }
+#screen-end .day-line .day-cmp { color: var(--gold); }
+#screen-end .day-line .day-cmp.late  { color: #cc6c4c; }
+#screen-end .day-line .day-cmp.early { color: var(--teal); }
 
 #end-report-actions { display: flex; gap: 12px; margin-top: 4px; flex-shrink: 0; }
+/* demo-endings .endings-btn — gold pixel buttons. */
+#end-report-actions .end-btn {
+  font-family: 'Press Start 2P', cursive; line-height: 1;
+  font-size: 9px; letter-spacing: 1.5px;
+  padding: 11px 20px;
+  background: linear-gradient(180deg, #2a3040 0%, #141820 100%);
+  color: var(--cream);
+  border: 2px solid rgba(200,168,90,0.45);
+  border-radius: 3px;
+  cursor: var(--cursor-hand, pointer);
+  text-transform: uppercase;
+}
+#end-report-actions .end-btn:hover { filter: brightness(1.2); border-color: var(--gold); }
+#end-report-actions .end-btn:active { transform: translate(1px, 1px); }
 
 /* ── Tier / failure colour table — drives title colour + card border.
    Failure ids share the table via a --fail- prefix (see
@@ -215,6 +274,6 @@
 }
 
 /* Ship's Record (story-flag epilogue, 2026-10-10) */
-.end-record { max-width: 560px; margin: 14px auto 0; text-align: left; font-family: 'VT323', monospace; }
-.end-record-title { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 9px; letter-spacing: 2px; color: #c8a85a; margin-bottom: 6px; text-align: center; }
-.end-record-line { font-size: 16px; line-height: 1.35; color: #c9cfb4; text-shadow: 0 0 10px rgba(0,0,0,0.9); margin: 2px 0; }
+#screen-end .end-record { max-width: 560px; margin: 14px auto 0; text-align: left; font-family: 'VT323', monospace; }
+#screen-end .end-record-title { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 9px; letter-spacing: 2px; color: #c8a85a; margin-bottom: 6px; text-align: center; }
+#screen-end .end-record-line { font-size: 16px; line-height: 1.35; color: #c9cfb4; text-shadow: 0 0 10px rgba(0,0,0,0.9); margin: 2px 0; }

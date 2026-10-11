@@ -61,6 +61,19 @@
   // avoid this because they only ever touch MOD/STATE inside functions
   // that run later, after boot() has finished).
   const MATERIAL_ICONS = { metal: '🔩', scrap: '♻️', exotic: '✨', biocomponent: '🌱', minerals: '💎' };
+  // Where-to-get-it prose for the input hover (demo-fabricator MATERIALS
+  // .source, parity pass 2026-10-11) — the hover used to print the raw
+  // materials.json source ids ("mining · salvage"). Written against what
+  // the engine actually grants (mining.js crate pools, cruise SALVAGE,
+  // combat wreck loot, event `materials` outcomes, forage finds); no
+  // station sells materials, so none of these lines says "buy".
+  const MATERIAL_SOURCES = {
+    metal:        'Mine asteroids · SALVAGE wrecks · pirate wreckage · derelict and asteroid finds.',
+    scrap:        'Mine asteroids · pirate wreckage · derelict and wreck finds.',
+    minerals:     'Mine asteroids — the main yield · asteroid finds · salt crystals on a forage.',
+    exotic:       'Rare: rich asteroid veins · SALVAGE wrecks · anomaly and asteroid finds.',
+    biocomponent: 'Rare in asteroid rock · planet, derelict and station finds · pirate wreckage.',
+  };
   const RECIPE_PRESENTATION = {
     recipe_hull_patch:     { icon: '🛠️', sprite: 'sprites/cargo/items/hull_patch.png' },
     recipe_repair_kit:     { icon: '🧰', sprite: 'sprites/cargo/items/repair_kit.png' },
@@ -74,6 +87,15 @@
     if (real) return real.name;
     return itemId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
+  function outputEffectText(itemId) {
+    const def = (typeof itemDef === 'function' && itemDef(itemId)) || null;
+    const raw = def && def.gameplay_effect;
+    if (!raw) return '';
+    return (raw.match(/[^.]+(?:\.|$)/g) || [])
+      .map(s => s.trim())
+      .filter(s => s && !/^(Craftable|Fabricated|Stackable)\b/i.test(s))
+      .join(' ');
+  }
   let MATERIALS = {};
   let RECIPES = [];
   function loadFabricatorData() {
@@ -84,7 +106,7 @@
         name: m.name,
         icon: MATERIAL_ICONS[m.id] || '📦',
         sprite: 'sprites/cargo/materials/' + m.id + '.png',
-        source: (m.sources || []).join(' · '),
+        source: MATERIAL_SOURCES[m.id] || '',
       };
     }
     RECIPES = ((MOD.recipes && MOD.recipes.recipes) || []).filter(r => r.active !== false).map(raw => {
@@ -179,7 +201,11 @@
       CREW.captain_eng.fab = captainPassive('fabricator_contribution', 'engineer') ?? CREW.captain_eng.fab;
       CREW.captain_aca.fab = captainPassive('fabricator_contribution', 'academic') ?? CREW.captain_aca.fab;
     }
-    FSTATE.tripDay = STATE.daysElapsed;
+    // Mid-craft the header replays the craft's days from the day it
+    // started: STATE.daysElapsed already holds the lump-sum days, so
+    // re-reading it on reopen made the animation count past it (parity
+    // audit: "header day overshoots on reopen").
+    FSTATE.tripDay = FSTATE.craft ? craftDayNow() : STATE.daysElapsed;
     FSTATE.arrivalDay = STATE.baseDays;
   }
 
@@ -387,6 +413,11 @@
 
     $('fb-detail-name').textContent = r.name.toUpperCase();
     $('fb-detail-desc').textContent = r.desc;
+    // What the print does (items.json gameplay_effect, parity pass) —
+    // only the player-facing sentences: the authoring notes about how
+    // it's made / how it stacks are dropped.
+    const eff = outputEffectText(r.output.item);
+    $('fb-detail-effect').textContent = eff ? '▸ ' + eff : '';
 
     // Item sprite in the detail header (emoji fallback).
     const spriteEl = $('fb-detail-sprite');
@@ -419,9 +450,11 @@
       const row = document.createElement('div');
       row.className = 'fb-input-row' + (miss ? ' missing' : '');
       const m = MATERIALS[mat];
-      // Hover tooltip: material name + where to get it + current stock.
-      row.title = m.name + '\n' + (m.source || '') +
-                  '\nIn cargo: ' + have;
+      // Hover tooltip (.ui-tip): material name + where to get it + stock.
+      row.dataset.tipTitle = m.name.toUpperCase();
+      row.dataset.tipDescription = m.source || '';
+      row.dataset.tipRows = JSON.stringify([{ label: 'In cargo', value: String(have) }, { label: 'Needed', value: String(qty) }]);
+      if (miss) row.dataset.tipTone = 'warn'; else delete row.dataset.tipTone;
       row.innerHTML =
         '<span class="fb-input-icon">' + m.icon + '</span>' +
         '<span class="fb-input-count">' + have + '/' + qty + '</span>' +
@@ -444,7 +477,7 @@
     const timeSavedPct = r.days > 0 ? Math.round((r.days - act) / r.days * 100) : 0;
     const showBonus = bonusPct > 0 && timeSavedPct > 0;
     const bonusSpan = showBonus
-      ? '<span class="bonus" title="Reduces fab time by ' + timeSavedPct + '% on this recipe.">' +
+      ? '<span class="bonus" data-tip-title="CREW ENGINEERING BONUS" data-tip-tone="good" data-tip-description="Reduces fab time by ' + timeSavedPct + '% on this recipe.">' +
           '+' + bonusPct + '% Crew Engineering Bonus' +
         '</span>'
       : '';
@@ -468,13 +501,17 @@
     const postWear = Math.min(100, FSTATE.wear + recipeWear(r));
     let wearWarn = '';
     if (postWear >= 100) {
-      wearWarn = '<div class="fb-warn wear-crit">⚠ Will break the fab (100% wear) · FAB SERVICE at a station fixes it</div>';
+      wearWarn = '<div class="fb-warn wear-crit">⚠ Will break the fab (100% wear) · FAB SERVICE fixes it</div>';
     } else if (postWear >= 80 && FSTATE.wear < 80) {
       wearWarn = '<div class="fb-warn wear-warn">⚠ Will push wear to ' + Math.round(postWear) + '% · service soon</div>';
     }
 
+    // WEAR and MISFIRE share one row (parity pass): with the misfire row,
+    // a two-line description and a warning, the CRAFT button used to be
+    // pushed out of the panel and clipped.
+    const assist = crewAssistTooltip().split('\n');
     meta.innerHTML =
-      '<div class="row" title="' + escAttr(crewAssistTooltip()) + '">' +
+      '<div class="row" data-tip-title="' + escAttr(assist[0]) + '" data-tip-description="' + escAttr(assist.slice(1).join('\n').trim()) + '">' +
         '<span class="label">TIME</span>' +
         timeDisplay +
         bonusSpan +
@@ -483,9 +520,7 @@
       '<div class="row">' +
         '<span class="label">WEAR</span>' +
         '<span class="wear-add">+' + recipeWear(r) + '%</span>' +
-      '</div>' +
-      '<div class="row" title="A misfire spends the days and materials. Wear raises the odds; FAB SERVICE at a station resets them.">' +
-        '<span class="label">MISFIRE</span>' +
+        '<span class="label label-2" data-tip-title="MISFIRE" data-tip-description="A misfire spends the days and materials. Wear raises the odds; FAB SERVICE at a station resets them.">MISFIRE</span>' +
         '<span class="wear-add">' + Math.round(misfireChance(FSTATE.wear) * 100) + '%</span>' +
       '</div>' +
       wearWarn;
@@ -493,6 +528,7 @@
     // CRAFT button — enabled only if canCraft() true.
     const btn = $('fb-craft-btn');
     const lock = recipeLockState(r);
+    btn.classList.toggle('busy', !!FSTATE.craft); // Wait cursor while a craft passes days
     if (lock === 'locked-crew') {
       btn.classList.add('locked');
       btn.textContent = 'LOCKED · CREW';
@@ -534,7 +570,7 @@
   // Scale factor = slot_height / 128.
   function setFabFrame(name) {
     const f = FAB_FRAMES[name]; if (!f) return;
-    const h = parseFloat(getComputedStyle(document.documentElement)
+    const h = parseFloat(getComputedStyle($('fb-slot')) // scoped token (overlay, not :root)
                          .getPropertyValue('--fab-slot-size')) || 128;
     const scale = h / 128;
     $('fb-slot').style.backgroundPosition =
@@ -611,8 +647,9 @@
     // output bay is clear before this one finishes. If the hold is too
     // full to claim it (capacity enforcement), refuse the new craft —
     // otherwise the new output would clobber the unclaimed one.
+    clearFabNotice();
     autoClaimIfPending();
-    if (FSTATE.pendingOutput) return;
+    if (FSTATE.pendingOutput) return; // claim refused — fabNotice says why
 
     // Deduct materials — real STATE.materials via the FSTATE.stock live ref.
     for (const [mat, qty] of r.inputs) {
@@ -636,13 +673,16 @@
       const log = m => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + m); };
       const lines = MOD.flavor && MOD.flavor.fabricator_misfire_descriptions;
       const line = Array.isArray(lines) && lines.length ? lines[Math.floor(Math.random() * lines.length)] + ' ' : '';
+      const dWord = days + (days === 1 ? ' day' : ' days');
       if (Math.random() < 0.15 && typeof grantItem === 'function' && grantItem('fab_surplus')) {
-        log('MISFIRE — ' + line + 'No ' + r.output.name + '; a piece of Fabricator Surplus instead. (' + days + (days === 1 ? ' day' : ' days') + ', materials spent.)');
+        log('MISFIRE — ' + line + 'No ' + r.output.name + '; a piece of Fabricator Surplus instead. (' + dWord + ', materials spent.)');
+        fabNotice('MISFIRE', 'No ' + r.output.name + ' — a piece of Fabricator Surplus instead. ' + dWord + ', materials spent.', 'warn');
       } else {
-        log('MISFIRE — ' + line + 'The ' + r.output.name + ' comes out as slag. ' + days + (days === 1 ? ' day' : ' days') + ' and the materials, gone.');
+        log('MISFIRE — ' + line + 'The ' + r.output.name + ' comes out as slag. ' + dWord + ' and the materials, gone.');
+        fabNotice('MISFIRE', 'The ' + r.output.name + ' came out as slag. ' + dWord + ' and the materials, gone.', 'danger');
       }
       if (typeof window.pushAiSample === 'function') window.pushAiSample('fabricator_misfire');
-      if (100 - wearBefore < 20 && Math.random() < 0.5) breakFab();
+      if (100 - wearBefore < 20 && Math.random() < 0.5) { breakFab(); fabNotice('MISFIRE — FAB BROKEN', 'The misfire took the fabricator with it. FAB SERVICE at a station fixes it.', 'danger'); }
       renderHUD();
       renderAll();
       if (checkFailure()) return;
@@ -660,6 +700,7 @@
     // Owed before the days pass: a failure those days trigger (crop death
     // → Keep flying) must not swallow the materials with no output.
     STATE.fabricator.owedOutput = r.id;
+    const startDay = STATE.daysElapsed;
     passDays(totalDays); // routed through the orders daily-drain helper (Restoration item 5)
     renderHUD();
     if (checkFailure()) return;
@@ -672,6 +713,7 @@
     FSTATE.craft = {
       recipeId:  r.id,
       daysTotal: totalDays,
+      startDay,                       // trip day the craft began (header replay)
       startMs:   performance.now(),
       timer:     null,
       rafId:     null
@@ -731,6 +773,10 @@
     }
   }
 
+  // The header's day while a craft runs: start day + whole days done.
+  function craftDayNow() {
+    return FSTATE.craft ? FSTATE.craft.startDay + currentDaysDone() : STATE.daysElapsed;
+  }
   function currentDaysDone() {
     if (!FSTATE.craft) return 0;
     const elapsed = performance.now() - FSTATE.craft.startMs;
@@ -740,8 +786,8 @@
 
   function advanceCraftDay() {
     if (!FSTATE.craft) return;
-    // Bump the shared trip calendar + pulse the day number.
-    FSTATE.tripDay++;
+    // Advance the header calendar + pulse the day number.
+    FSTATE.tripDay = craftDayNow();
     const dEl = $('fb-trip-day');
     dEl.textContent = FSTATE.tripDay;
     dEl.classList.remove('ticking');
@@ -848,8 +894,8 @@
       slot.style.setProperty('--output-sprite', 'none');
       emo.textContent = recipe.output.icon || '📦';
     }
-    slot.title = 'Claim ' + recipe.output.count + '× ' +
-                 recipe.output.name + ' → cargo';
+    slot.dataset.tipTitle = 'CLAIM';
+    slot.dataset.tipDescription = recipe.output.count + '× ' + recipe.output.name + ' → cargo';
     slot.classList.add('ready');
   }
   window.claimOutput = function(animated = true) {
@@ -865,6 +911,8 @@
         if (typeof window.pushCruiseLog === 'function') {
           window.pushCruiseLog('◆ FABRICATOR — output ready but the hold is full. Make room, then claim it.');
         }
+        // In-modal too (parity pass): the log line sat behind the modal.
+        fabNotice('HOLD FULL', 'The ' + r.output.name + ' stays in the output bay. Make room in the hold, then claim it.', 'warn');
         return;
       }
     } else {
@@ -887,6 +935,7 @@
       // taken over the slot — leave its .ready + sprite alone.
       if (!FSTATE.pendingOutput) {
         slot.classList.remove('ready');
+        delete slot.dataset.tipTitle; delete slot.dataset.tipDescription;
         $('fb-output-emoji').textContent = '';
         slot.style.removeProperty('--output-sprite');
       }
@@ -932,6 +981,26 @@
       setProgressIdle();
     }
   }
+
+  // In-modal notice strip over the fab unit (parity pass 2026-10-11): a
+  // misfire or a refused claim used to report only to the cruise log,
+  // hidden behind the modal. Stays up until the next craft / close.
+  let noticeTimer = 0;
+  function fabNotice(title, text, tone) {
+    const n = $('fb-notice');
+    if (!n) return;
+    n.className = 'fb-notice show tone-' + (tone || 'warn');
+    n.innerHTML = '<span class="fb-notice-title"></span><span class="fb-notice-text"></span>';
+    n.firstChild.textContent = title;
+    n.lastChild.textContent = text;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(clearFabNotice, 6000);
+  }
+  function clearFabNotice() {
+    clearTimeout(noticeTimer);
+    const n = $('fb-notice'); if (n) n.classList.remove('show');
+  }
+  window.fabNoticeText = () => { const n = $('fb-notice'); return n && n.classList.contains('show') ? n.textContent : ''; };
 
   // ═════ Render pipeline ═══════════════════════════════════
   function renderAll() {
@@ -987,6 +1056,7 @@
 
   // ═════ Modal open/close ═════════════════════════════════
   window.closeFabricator = function() {
+    clearFabNotice();
     document.body.classList.remove('modal-open');
     hideOverlay('overlay-fabricator');
     // A craft spent days and materials — repaint the hub (day counter,

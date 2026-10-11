@@ -697,6 +697,13 @@ function refreshCursorVars(playerSettings) {
   if (!root) return;
   root.style.setProperty('--cursor-pointer', generateCursor('pointer', playerSettings));
   root.style.setProperty('--cursor-hand',    generateCursor('hand',    playerSettings));
+  // Parity pass 2026-10-11 (cursor-armory): the rest of the sprite set,
+  // wired — Denied on locked/disabled controls, Wait while the game is
+  // busy passing time, Scan on specimen-inspection surfaces. Denied keeps
+  // its designer red (it's the ship computer saying no).
+  root.style.setProperty('--cursor-denied',  generateCursor('denied'));
+  root.style.setProperty('--cursor-wait',    generateCursor('wait',    playerSettings));
+  root.style.setProperty('--cursor-scan',    generateCursor('scan'));
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => refreshCursorVars());
@@ -1623,7 +1630,7 @@ const MarketModal = (function() {
       const afford   = canAffordCost(ware.cost);
       const row = document.createElement('div');
       row.className = 'market-row' + (consumed ? ' consumed' : '') + (!consumed && !afford ? ' locked' : '');
-      if (ware.desc) row.dataset.tip = ware.desc;
+      if (ware.desc) { row.dataset.tipTitle = String(ware.name || '').toUpperCase(); row.dataset.tipDescription = ware.desc; } // .ui-tip (was a 3rd, CSS ::before style)
       row.appendChild(makeIcon(ware.icon));
       row.appendChild(makeName(ware.name));
       const costEl = document.createElement('div');
@@ -1674,7 +1681,7 @@ const MarketModal = (function() {
           : fencePrices[entry.id] != null ? fencePrices[entry.id] : defaultValue;
         const row = document.createElement('div');
         row.className = 'market-row';
-        if (entry.desc) row.dataset.tip = entry.desc;
+        if (entry.desc) { row.dataset.tipTitle = String(entry.name || '').toUpperCase(); row.dataset.tipDescription = entry.desc; }
         row.appendChild(makeIcon(entry.icon));
         row.appendChild(makeName(entry.name));
         const costEl = document.createElement('div');
@@ -1724,7 +1731,7 @@ const MarketModal = (function() {
 
         const row = document.createElement('div');
         row.className = 'market-row' + (offer ? '' : ' locked');
-        if (entry.desc) row.dataset.tip = entry.desc;
+        if (entry.desc) { row.dataset.tipTitle = String(entry.name || '').toUpperCase(); row.dataset.tipDescription = entry.desc; }
         row.appendChild(makeIcon(entry.icon));
 
         // Name cell with optional stack-count badge.
@@ -1874,4 +1881,297 @@ const MarketModal = (function() {
   }
 
   return { mount, close, isOpen, appendLog };
+})();
+
+
+/* ============================================================
+   Tooltip (.ui-tip) — promoted from demo-tooltip.html (owner ruling
+   2026-10-11: "port the demo .ui-tip system now, one style
+   everywhere"). Five tones (default/warn/danger/good/quote), element-
+   or cursor-anchored, flip + clamp, 50ms open delay / 80ms fade, a
+   registry + data-tip-* authoring API, hidden on scroll / resize /
+   Esc / pointer-down / PauseBus pause.
+
+   API:
+     Tooltip.register(key, def | fn(el) → def)   (fn = live values)
+     Tooltip.attach(el, def)   write def onto el as data-tip-* attrs
+     Tooltip.show(el, def?) / Tooltip.hide()
+     Tooltip.upgradeTitles(root?)  convert native title= now
+   Schema: { title?, description?, rows?: [{label,value}],
+             list?: [{text, current?}], tone?, anchor?: 'element'|'cursor' }
+   Element attrs: data-tip="<key>", data-tip-title, data-tip-description,
+     data-tip-tone, data-tip-anchor, data-tip-rows / data-tip-list (JSON).
+
+   NATIVE title= IS UPGRADED AUTOMATICALLY: a MutationObserver moves any
+   title attribute set anywhere in the page (markup or `el.title = …`
+   from any screen) onto data-tip-* and removes it, so the browser's own
+   tooltip never shows. "Head\n\nbody" titles become title + description;
+   anything else becomes the description (newlines kept).
+
+   In the engine the panel mounts inside #game and positions in the
+   960×640 game space, so it scales with the cabinet; standalone demos
+   without #game fall back to a fixed, body-level root.
+   ============================================================ */
+// A window property, not a top-level const: demo-tooltip.html (the design
+// surface) still declares its own `const Tooltip`, which a shared const
+// would turn into a SyntaxError.
+window.Tooltip = (() => {
+  const REGISTRY = {};
+  let root = null, panel = null, host = null;
+  let currentTarget = null, currentDef = null;
+  let openTimer = 0;
+  let mouseX = 0, mouseY = 0;
+  const OPEN_DELAY = 50;   // ms — near-instant, guards fly-throughs
+  const OFFSET = 10, EDGE = 8;
+
+  function register(key, def) { REGISTRY[key] = def; return def; }
+  function get(key) { return REGISTRY[key]; }
+  function keys() { return Object.keys(REGISTRY); }
+
+  function ensurePanel() {
+    if (panel && panel.isConnected) return panel;
+    host = document.getElementById('game');
+    root = document.getElementById('ui-tip-root');
+    if (!root) {
+      root = document.createElement('div');
+      root.id = 'ui-tip-root';
+      if (host) root.classList.add('in-game');
+      (host || document.body).appendChild(root);
+    }
+    panel = document.createElement('div');
+    panel.className = 'ui-tip';
+    root.appendChild(panel);
+    return panel;
+  }
+
+  function tryJSON(s, fallback) {
+    if (!s) return fallback;
+    try { return JSON.parse(s); } catch (e) { return fallback; }
+  }
+
+  function resolve(el) {
+    const key = el.dataset.tip || '';
+    let base = {};
+    if (key && REGISTRY[key]) {
+      const r = REGISTRY[key];
+      base = Object.assign({}, typeof r === 'function' ? (r(el) || {}) : r);
+    }
+    if ('tipTitle'       in el.dataset) base.title       = el.dataset.tipTitle;
+    if ('tipDescription' in el.dataset) base.description = el.dataset.tipDescription;
+    if ('tipTone'        in el.dataset) base.tone        = el.dataset.tipTone;
+    if ('tipAnchor'      in el.dataset) base.anchor      = el.dataset.tipAnchor;
+    if ('tipRows'        in el.dataset) base.rows        = tryJSON(el.dataset.tipRows, base.rows);
+    if ('tipList'        in el.dataset) base.list        = tryJSON(el.dataset.tipList, base.list);
+    if (!base.title && !base.description && !(base.rows && base.rows.length) && !(base.list && base.list.length)) return null;
+    base.tone = base.tone || 'default';
+    base.anchor = base.anchor || 'element';
+    return base;
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function render(def) {
+    const p = ensurePanel();
+    const wasVisible = p.classList.contains('visible');
+    p.className = 'ui-tip tone-' + def.tone + (wasVisible ? ' visible' : '');
+    let html = '';
+    if (def.title) html += '<div class="ui-tip-title">' + esc(def.title) + '</div>';
+    if (def.description) html += '<div class="ui-tip-desc">' + esc(def.description) + '</div>';
+    if (def.rows && def.rows.length) {
+      html += '<div class="ui-tip-rows">';
+      for (const r of def.rows) html += '<span class="lbl">' + esc(r.label || '') + '</span><span class="val">' + esc(r.value == null ? '' : r.value) + '</span>';
+      html += '</div>';
+    }
+    if (def.list && def.list.length) {
+      html += '<ul class="ui-tip-list">';
+      for (const it of def.list) html += '<li class="' + (it.current ? 'current' : '') + '"><span class="mk">▸</span><span>' + esc(it.text || '') + '</span></li>';
+      html += '</ul>';
+    }
+    p.innerHTML = html;
+    return p;
+  }
+
+  // Frame the panel is positioned in: the game's 960×640 space (the
+  // cabinet is CSS-scaled, so client coords are divided back out), or
+  // the viewport for a demo without #game.
+  function frame() {
+    if (host && root && root.classList.contains('in-game')) {
+      const r = host.getBoundingClientRect();
+      const s = r.width / (host.offsetWidth || 960) || 1;
+      return { x0: r.left, y0: r.top, s, w: host.offsetWidth || 960, h: host.offsetHeight || 640 };
+    }
+    return { x0: 0, y0: 0, s: 1, w: window.innerWidth, h: window.innerHeight };
+  }
+
+  function position(el, def) {
+    if (!panel) return;
+    const f = frame();
+    const pw = panel.offsetWidth, ph = panel.offsetHeight;
+    let x, y;
+    if (def.anchor === 'cursor') {
+      const mx = (mouseX - f.x0) / f.s, my = (mouseY - f.y0) / f.s;
+      x = mx + 14; y = my + 18;
+      if (x + pw > f.w - EDGE) x = mx - pw - 14;
+      if (y + ph > f.h - EDGE) y = my - ph - 14;
+    } else {
+      const c = el.getBoundingClientRect();
+      const left = (c.left - f.x0) / f.s, top = (c.top - f.y0) / f.s;
+      const w = c.width / f.s, bottom = (c.bottom - f.y0) / f.s;
+      x = left + w / 2 - pw / 2;
+      y = top - ph - OFFSET;                 // above-centre…
+      if (y < EDGE) y = bottom + OFFSET;     // …flip below when clipped
+      if (x < EDGE) x = EDGE;                // horizontal clamp
+      if (x + pw > f.w - EDGE) x = f.w - EDGE - pw;
+    }
+    if (y < EDGE) y = EDGE;
+    if (y + ph > f.h - EDGE) y = f.h - EDGE - ph;
+    panel.style.left = Math.round(x) + 'px';
+    panel.style.top = Math.round(y) + 'px';
+    panel.dataset.flip = (def.anchor !== 'cursor' && y > ((el.getBoundingClientRect().top - f.y0) / f.s)) ? 'below' : 'above';
+  }
+
+  function show(el, overrideDef) {
+    const def = overrideDef || resolve(el);
+    if (!def) { hide(); return; }
+    currentTarget = el; currentDef = def;
+    render(def);
+    panel.style.left = '-9999px'; panel.style.top = '-9999px';
+    panel.classList.add('visible');
+    position(el, def);
+  }
+
+  function hide() {
+    currentTarget = null; currentDef = null;
+    if (panel) panel.classList.remove('visible');
+    if (openTimer) { clearTimeout(openTimer); openTimer = 0; }
+  }
+
+  function attach(el, def) {
+    if (!el) return;
+    const d = el.dataset;
+    delete d.tipTitle; delete d.tipDescription; delete d.tipRows; delete d.tipList; delete d.tipTone; delete d.tipAnchor;
+    if (!def) return;
+    if (def.title) d.tipTitle = def.title;
+    if (def.description) d.tipDescription = def.description;
+    if (def.rows && def.rows.length) d.tipRows = JSON.stringify(def.rows);
+    if (def.list && def.list.length) d.tipList = JSON.stringify(def.list);
+    if (def.tone && def.tone !== 'default') d.tipTone = def.tone;
+    if (def.anchor && def.anchor !== 'element') d.tipAnchor = def.anchor;
+    if (el === currentTarget) show(el);
+  }
+
+  /* ── title= upgrade ─────────────────────────────────────────── */
+  function upgradeOne(el) {
+    if (!el || el.nodeType !== 1 || !el.hasAttribute('title')) return;
+    if (el.closest && el.closest('head, svg')) return;
+    const t = el.getAttribute('title');
+    el.removeAttribute('title');
+    if (!t || !t.trim()) { delete el.dataset.tipDescription; delete el.dataset.tipTitle; return; }
+    const m = /^([^\n]{1,40})\n\n([\s\S]+)$/.exec(t.trim());
+    if (m) { el.dataset.tipTitle = m[1].trim(); el.dataset.tipDescription = m[2].trim(); }
+    else { delete el.dataset.tipTitle; el.dataset.tipDescription = t.trim(); }
+    el.dataset.tipAuto = '1';
+    if (!el.hasAttribute('aria-label') && !el.textContent.trim()) el.setAttribute('aria-label', (m ? m[1] : t).trim().split('\n')[0]);
+    if (el === currentTarget) show(el);
+  }
+  function upgradeTitles(scope) {
+    const s = scope || document.body;
+    if (!s) return;
+    if (s.nodeType === 1 && s.hasAttribute('title')) upgradeOne(s);
+    if (s.querySelectorAll) s.querySelectorAll('[title]').forEach(upgradeOne);
+  }
+
+  /* ── Event delegation ───────────────────────────────────────── */
+  function findTipTarget(node) {
+    while (node && node.nodeType === 1) {
+      const d = node.dataset;
+      if (d && (d.tip != null || 'tipTitle' in d || 'tipDescription' in d || 'tipRows' in d || 'tipList' in d)) return node;
+      node = node.parentElement;
+    }
+    return null;
+  }
+
+  function init() {
+    upgradeTitles(document.body);
+    new MutationObserver(muts => {
+      for (const m of muts) {
+        if (m.type === 'attributes') upgradeOne(m.target);
+        else for (const n of m.addedNodes) if (n.nodeType === 1) upgradeTitles(n);
+      }
+    }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['title'] });
+
+    document.addEventListener('mouseover', e => {
+      const t = findTipTarget(e.target);
+      if (!t) { hide(); return; }
+      if (t === currentTarget) return;
+      if (openTimer) clearTimeout(openTimer);
+      openTimer = setTimeout(() => { openTimer = 0; if (t.isConnected && !(window.PauseBus && PauseBus.paused)) show(t); }, OPEN_DELAY);
+    });
+    document.addEventListener('mouseout', e => {
+      const t = findTipTarget(e.target);
+      if (!t) return;
+      const to = e.relatedTarget;
+      if (to && t.contains(to)) return;
+      hide();
+    });
+    document.addEventListener('mousemove', e => {
+      mouseX = e.clientX; mouseY = e.clientY;
+      if (!currentTarget) return;
+      // A re-render can pull the hovered element out from under the panel.
+      if (!currentTarget.isConnected) { hide(); return; }
+      if (currentDef && currentDef.anchor === 'cursor') position(currentTarget, currentDef);
+    }, { passive: true });
+    document.addEventListener('pointerdown', () => hide(), true);
+    document.addEventListener('scroll', () => hide(), true);
+    window.addEventListener('resize', () => hide());
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') hide(); }, true);
+    if (typeof PauseBus !== 'undefined') PauseBus.onChange(p => { if (p) hide(); });
+  }
+  // A page that ships its own #ui-tip-root in markup runs its own engine
+  // (demo-tooltip.html) — don't double up there.
+  const boot = () => { if (!document.getElementById('ui-tip-root')) init(); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+
+  return { register, get, keys, show, hide, attach, upgradeTitles, resolve,
+           get current() { return currentTarget; }, get panel() { return panel; } };
+})();
+
+/* Shared registry — copy ported from the demos (DESIGN_SYSTEM
+   "Tooltips": migration is verbatim). Live values come from the
+   engine's STATE when it exists (functions run at hover time). */
+(function registerSharedTips() {
+  const Tooltip = window.Tooltip;
+  const st = () => (typeof STATE !== 'undefined' && STATE && STATE.resources) ? STATE : null;
+  const max = k => (typeof resMax === 'function') ? resMax(k) : 100;
+  const cur = (k, label) => () => { const s = st(); return s ? [{ label: label || 'Current', value: Math.round(s.resources[k]) + ' / ' + max(k) }] : []; };
+  // Resource HUD — demo-tooltip resource_fuel/resource_morale + the
+  // demo-encounter enc-res copy for the rest.
+  const RES = {
+    fuel:   ['FUEL', 'Engine reserves. Burns on travel and certain actions.'],
+    food:   ['FOOD', 'Crew rations. Depleted daily.'],
+    water:  ['WATER', 'Ship water. Split each day between the crop and the crew (standing orders).'],
+    o2:     ['OXYGEN', 'Life support. Depleted daily, critical at low levels.'],
+    hull:   ['HULL', 'Structural integrity. Damaged by combat and hazards.'],
+    morale: ['MORALE', 'Crew spirit. Effort actions tax it; mutiny at zero.'],
+  };
+  for (const [k, [title, description]] of Object.entries(RES)) {
+    Tooltip.register('resource_' + k, () => ({ title, description, rows: cur(k)() }));
+  }
+  Tooltip.register('resource_gold', () => {
+    const s = st();
+    return { title: 'GOLD', description: 'Universal currency. Accepted at all stations. Cannot be fabricated.', rows: s ? [{ label: 'Purse', value: s.goldAmount + 'g' }] : [] };
+  });
+  // Cruise bottom bars — demo-cruise "Fuel: 75 / 100" hovers, live.
+  const BAR = { fuel: 'Fuel', food: 'Food', water: 'Water' };
+  for (const [k, name] of Object.entries(BAR)) {
+    Tooltip.register('bar_' + k, () => { const s = st(); return { description: s ? name + ': ' + Math.round(s.resources[k]) + ' / ' + max(k) : name }; });
+  }
+  // Cruise crop card — demo-cruise crop-strip hovers.
+  const crop = () => { const s = st(); return s && s.cropGrowth ? s.cropGrowth : null; };
+  Tooltip.register('crop_alert', { description: 'Needs attention', tone: 'warn' });
+  Tooltip.register('crop_growth', () => { const c = crop(); return { description: 'Growth cycle', rows: c ? [{ label: 'Growth', value: Math.round(c.growth || 0) + '%' }] : [] }; });
+  Tooltip.register('crop_health', () => { const c = crop(); return { description: 'Plant health', rows: c ? [{ label: 'Health', value: Math.round(c.health || 0) + ' / 100' }] : [] }; });
 })();

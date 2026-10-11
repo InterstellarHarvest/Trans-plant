@@ -96,8 +96,36 @@ body {
 /* Overlays sit on top of screen-cruise without hiding it underneath
    (Stop Menu, Map, Market, minigames) — a separate stacking layer
    from the screen-swap system above. */
-.overlay { position: absolute; inset: 0; display: none; z-index: 60; }
-.overlay.active { display: block; }
+/* Parity pass 2026-10-11 (shell): overlays no longer toggle display:none.
+   That killed every modal's 0.25s fade + 0.96→1 scale (DESIGN_SYSTEM
+   "Modal popup conventions") and restarted every CSS animation inside a
+   modal on each reopen (the fabricator's "+1 ITEM" badge, its day pulse).
+   A closed overlay is visibility:hidden + transparent + inert; the
+   visibility flip is delayed by the fade so closing plays too. Logic
+   still keys off .active alone (showOverlay/hideOverlay). */
+.overlay {
+  position: absolute; inset: 0; z-index: 60;
+  visibility: hidden; opacity: 0; pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+.overlay.active {
+  visibility: visible; opacity: 1; pointer-events: auto;
+  transition: opacity 0.25s ease, visibility 0s linear 0s;
+}
+/* Each modal's panel scales 0.96 → 1 with the fade. `scale` (not
+   transform) so it composes with panels centred by translate(). */
+#gb-modal, #fb-modal, #od-modal, #inv-card, #slog-card,
+#overlay-crew #cd-modal, #overlay-market .enc-market, #ovmap-viewport {
+  scale: 0.96;
+  transition: opacity 0.25s ease, transform 0.25s ease, scale 0.25s ease;
+}
+.overlay.active :is(#gb-modal, #fb-modal, #od-modal, #inv-card, #slog-card, #cd-modal, .enc-market, #ovmap-viewport) { scale: 1; }
+/* The scene behind a cruise modal dims (DESIGN_SYSTEM "Backdrop":
+   brightness 0.35 under the modal's own rgba(4,8,16,0.75) backdrop —
+   the demos' cruise-ghost). Market / minigames / mining keep their
+   scene lit: the vendor portrait and the bridge art are part of them. */
+#game > .screen { transition: filter 0.25s ease; }
+#game:has(> .overlay.dim-behind.active) > .screen.active { filter: brightness(0.35); }
 
 /* ── HUD (resource bar, top of map+encounter screens) ───────────── */
 .hud {
@@ -298,7 +326,7 @@ body {
 .btn.accent-gold { border-color: #b4b091 #363733 #363733 #b4b091; color: var(--gold-bright); text-shadow: 0 0 4px rgba(180,176,145,0.3); }
 .btn:hover { filter: brightness(1.15); }
 .btn:active { border-style: inset; transform: translate(1px,1px); }
-.btn:disabled { filter: brightness(0.5); cursor: default; }
+.btn:disabled { filter: brightness(0.5); cursor: var(--cursor-denied, not-allowed); }
 
 /* Map touches (Restoration item 9) — ship marker + branch flavor */
 .map-here {
@@ -485,7 +513,7 @@ body {
 }
 .enc-choice .ch-sub .lock { color: #cc5555; }
 .enc-choice.locked {
-  cursor: default;
+  cursor: var(--cursor-denied, not-allowed);
   filter: grayscale(0.6) brightness(0.55);
   border-left-color: rgba(95,100,115,0.4);
   border-color: rgba(95,100,115,0.3);
@@ -521,8 +549,7 @@ body {
    resources/screen-end.css, matching every other migrated screen. */
 
 /* ── Ship's Log overlay (engine-backed journal) ─────────────────── */
-#overlay-shipslog { display: none; align-items: center; justify-content: center; background: rgba(2,4,8,0.72); }
-#overlay-shipslog.active { display: flex; }
+#overlay-shipslog { display: flex; align-items: center; justify-content: center; background: rgba(4,8,16,0.75); }
 /* Parchment journal chrome (demo-shipslog.html canon): the Ship's
    Log is a JOURNAL, so it reads like paper — deliberately divergent
    from the dark modal palette. Death entries + memorial expand swap
@@ -549,10 +576,15 @@ body {
 #slog-header {
   font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 12px;
   letter-spacing: 2px; color: var(--log-ink);
-  display: flex; justify-content: space-between; align-items: baseline;
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
 }
-#slog-count { font-size: 8px; color: var(--log-ink-dim); }
-#slog-rows { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; min-height: 80px; }
+#slog-count { font-size: 8px; color: var(--log-ink-dim); margin-left: auto; }
+.slog-x { border-color: rgba(90,66,38,0.55); background: rgba(90,66,38,0.08); color: var(--log-ink); }
+.slog-x:hover { border-color: var(--log-edge); }
+/* Gold custom scrollbar on the journal (DESIGN_SYSTEM hard rule). */
+#slog-rows-host { flex: 1 1 auto; min-height: 80px; }
+#slog-rows { overflow-y: auto; flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px; min-height: 0; padding-right: 12px; }
+#slog-footer { flex-shrink: 0; }
 .slog-row {
   font-family: 'VT323', monospace; font-size: 17px; line-height: 1.3;
   color: var(--log-ink);
@@ -587,8 +619,11 @@ body {
   background: rgba(2,4,8,0.85);
   align-items: center; justify-content: center;
 }
+#slog-expand-host { flex: 1 1 auto; min-height: 0; }
+#slog-expand-body { overflow-y: auto; min-height: 0; padding-right: 12px; }
+#slog-expand-card > .slog-death-header, #slog-expand-card > .btn { flex-shrink: 0; }
 #slog-expand-card {
-  width: 480px; max-height: 440px; overflow-y: auto;
+  width: 480px; max-height: 440px; overflow: hidden;
   background: linear-gradient(180deg, var(--log-paper) 0%, var(--log-paper-dark) 100%);
   border: 3px solid var(--log-edge); border-radius: 6px;
   padding: 20px; display: flex; flex-direction: column; gap: 14px;
@@ -628,24 +663,44 @@ body {
 }
 
 /* ── Cargo hold overlay (minimal readout for full enforcement) ──── */
-#overlay-inventory { display: none; align-items: center; justify-content: center; background: rgba(2,4,8,0.7); }
-#overlay-inventory.active { display: flex; }
+#overlay-inventory { display: flex; align-items: center; justify-content: center; background: rgba(4,8,16,0.75); }
+/* demo-inventory modal SHELL (parity pass 2026-10-11): 816×600, 3px
+   slate-blue frame, cyan title, 42px header with the ✕. Fixed size, so
+   the stacked grid/detail/confirm can no longer spill past the border —
+   the grid scrolls instead. (The side-detail interior is a later batch.) */
 #inv-card {
-  width: 480px; max-height: 480px;
-  background: linear-gradient(180deg, #1a2030, #0e1320);
-  border: 2px solid rgba(200,168,90,0.55);
-  border-radius: 4px;
+  width: 816px; height: 600px;
+  background: linear-gradient(180deg, #141a28 0%, #0a0e18 100%);
+  border: 3px solid #435384;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(86,207,215,0.18), inset 0 0 0 2px rgba(14,20,32,0.5), 0 8px 40px rgba(0,0,0,0.8);
   display: flex; flex-direction: column;
-  padding: 18px 20px 14px;
-  gap: 12px;
+  padding: 0 0 12px;
+  gap: 10px;
+  overflow: hidden;
 }
+#inv-card > :not(#inv-header) { margin: 0 16px; }
 #inv-header {
-  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 12px;
-  letter-spacing: 2px; color: var(--gold);
-  display: flex; justify-content: space-between; align-items: baseline;
+  flex-shrink: 0; height: 42px; padding: 0 16px;
+  border-bottom: 2px solid rgba(86,207,215,0.25);
+  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
+  display: flex; align-items: center; gap: 16px;
+  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 14px;
+  letter-spacing: 2px; color: #56cfd7; text-shadow: 0 0 8px rgba(86,207,215,0.35);
 }
-#inv-slots { font-size: 9px; color: var(--cream); }
+#inv-slots { margin-left: auto; font-family: 'VT323', monospace; font-size: 17px; letter-spacing: 1px; color: #aab5c4; text-shadow: none; }
 #inv-slots.full { color: #ff8878; }
+/* Header ✕ (DESIGN_SYSTEM close path 1: 26×26, 2px accent border). */
+.modal-x {
+  font-family: 'Press Start 2P', cursive; font-size: 10px; line-height: 1;
+  width: 26px; height: 26px; flex-shrink: 0;
+  border: 2px solid rgba(86,207,215,0.4); border-radius: 2px;
+  background: rgba(14,20,32,0.6); color: #56cfd7;
+  cursor: var(--cursor-hand, pointer);
+  display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.modal-x:hover { filter: brightness(1.25); border-color: #435384; }
+#inv-grid-host { flex: 1 1 auto; min-height: 80px; }
 /* Tabs + sprite grid + detail panel (demo-inventory.html canon —
    tiles with cargo icons, click for detail, jettison behind confirm). */
 #inv-tabs { display: flex; gap: 8px; }
@@ -657,9 +712,9 @@ body {
 }
 .inv-tab.active { color: var(--gold); border-color: rgba(200,168,90,0.6); }
 #inv-grid {
-  overflow-y: auto; min-height: 60px; max-height: 240px;
+  overflow-y: auto; flex: 1 1 auto; min-height: 0;
   display: grid; grid-template-columns: repeat(auto-fill, 72px); gap: 8px;
-  align-content: start;
+  align-content: start; padding-right: 12px; /* room for the gold thumb */
 }
 .inv-tile {
   width: 72px; height: 72px; position: relative;
@@ -678,6 +733,7 @@ body {
 }
 .inv-tile .inv-tile-count.unknown { color: var(--body); opacity: 0.8; } /* unappraised trade good: ?? */
 #inv-detail, #inv-confirm {
+  flex-shrink: 0;
   background: rgba(10,14,20,0.6); border: 1px solid rgba(200,168,90,0.35);
   border-radius: 3px; padding: 10px 12px;
   display: flex; flex-direction: column; gap: 8px;
@@ -711,7 +767,7 @@ body {
 }
 .inv-row .inv-jett:hover { filter: brightness(1.3); }
 .inv-empty { font-family: 'VT323', monospace; font-size: 17px; color: var(--body); text-align: center; padding: 16px 0; }
-#inv-footer { display: flex; justify-content: space-between; align-items: center; }
+#inv-footer { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
 #inv-note { font-family: 'VT323', monospace; font-size: 14px; color: var(--body); }
 </style>
 </head>
@@ -789,9 +845,9 @@ body {
         <div class="ship-name" id="cruise-ship-name"></div>
         <div class="header-ticker" id="header-ticker"></div>
         <div class="header-actions">
-          <button class="header-icon-btn" style="background-image:url('sprites/interface/inv.png')" id="btn-inv" title="Inventory"></button>
-          <button class="header-icon-btn" style="background-image:url('sprites/interface/map.png')" id="btn-map" title="Map"></button>
-          <button class="header-icon-btn header-pause-btn" id="btn-pause" title="Pause menu — save, load, settings, quit (Esc)" aria-label="Pause menu">❚❚</button>
+          <button class="header-icon-btn" style="background-image:url('sprites/interface/inv.png')" id="btn-inv" aria-label="Inventory" data-tip-description="Inventory"></button>
+          <button class="header-icon-btn" style="background-image:url('sprites/interface/map.png')" id="btn-map" aria-label="Map" data-tip-description="Map"></button>
+          <button class="header-icon-btn header-pause-btn" id="btn-pause" data-tip-title="PAUSE" data-tip-description="Save, load, settings, quit (Esc)" aria-label="Pause menu">❚❚</button>
         </div>
         <div class="header-right">
           <div class="day-counter" id="day-counter"></div>
@@ -810,7 +866,7 @@ body {
             <!-- Standing-orders readout (Restoration item 5). Live —
                  renderCruise() paints the cells from STATE.orders and
                  clicking any cell opens the Orders modal (orders.js). -->
-            <div id="cruise-readout" title="Standing orders — click to change">
+            <div id="cruise-readout" data-tip-title="STANDING ORDERS" data-tip-description="Click to change.">
               <div class="readout-cell"><span class="readout-label">ENGINES</span><span class="readout-value" id="readout-engines">RIDICULOUS SPEED</span></div>
               <div class="readout-cell"><span class="readout-label">RATIONS</span><span class="readout-value" id="readout-rations">STANDARD</span></div>
               <div class="readout-cell"><span class="readout-label">WATER</span><span class="readout-value"><span id="readout-water-plant">50%</span><span class="water-sep">/</span><span id="readout-water-crew">50%</span></span></div>
@@ -849,21 +905,21 @@ body {
         <div id="crop-card-mini">
           <div class="crop-icon" id="crop-icon">🌾</div>
           <div class="crop-info">
-            <div class="crop-name-row"><span class="crop-name" id="crop-name"></span><span class="crop-alert-led" id="crop-alert-led"></span></div>
+            <div class="crop-name-row"><span class="crop-name" id="crop-name"></span><span class="crop-alert-led" id="crop-alert-led" data-tip="crop_alert"></span></div>
             <div class="crop-growing" id="crop-growing">
               <div class="crop-stage" id="crop-stage"></div>
               <div class="crop-day" id="crop-day"></div>
-              <div class="crop-bar-row"><span class="crop-bar-label">GROWTH</span><div class="crop-growth-bar"><div class="crop-growth-fill" id="crop-growth-fill"></div></div></div>
+              <div class="crop-bar-row" data-tip="crop_growth"><span class="crop-bar-label">GROWTH</span><div class="crop-growth-bar"><div class="crop-growth-fill" id="crop-growth-fill"></div></div></div>
             </div>
             <button class="crop-harvest-btn" id="crop-harvest-btn">HARVEST</button>
-            <div class="crop-bar-row"><span class="crop-bar-label">HEALTH</span><div class="crop-health-bar"><div class="crop-health-fill" id="crop-health-fill"></div></div></div>
+            <div class="crop-bar-row" data-tip="crop_health"><span class="crop-bar-label">HEALTH</span><div class="crop-health-bar"><div class="crop-health-fill" id="crop-health-fill"></div></div></div>
           </div>
         </div>
 
         <div id="bottom-resources">
-          <div class="res fuel"  title="Fuel"><span class="res-label">FUEL</span><div class="res-bar"><div class="res-fill" id="res-fill-fuel"></div></div></div>
-          <div class="res food"  title="Food"><span class="res-label">FOOD</span><div class="res-bar"><div class="res-fill" id="res-fill-food"></div></div></div>
-          <div class="res water" title="Water"><span class="res-label">H2O</span><div class="res-bar"><div class="res-fill" id="res-fill-water"></div></div></div>
+          <div class="res fuel"  data-tip="bar_fuel"><span class="res-label">FUEL</span><div class="res-bar"><div class="res-fill" id="res-fill-fuel"></div></div></div>
+          <div class="res food"  data-tip="bar_food"><span class="res-label">FOOD</span><div class="res-bar"><div class="res-fill" id="res-fill-food"></div></div></div>
+          <div class="res water" data-tip="bar_water"><span class="res-label">H2O</span><div class="res-bar"><div class="res-fill" id="res-fill-water"></div></div></div>
         </div>
 
         <div id="action-rail">
@@ -965,6 +1021,9 @@ body {
        .screen (like the encounter screen's layer/outcome toggle) rather
        than the global overlay system, which is Cruise-specific. -->
   <div id="screen-end" class="screen">
+    <!-- demo-endings: slow two-layer star drift under everything (a
+         failure has no scene art, so this is its whole backdrop). -->
+    <canvas id="end-stars" width="960" height="640"></canvas>
     <div id="end-scene"></div>
     <div id="end-vignette"></div>
 
@@ -973,8 +1032,8 @@ body {
         <div id="end-cine-title"></div>
         <div id="end-cine-body"></div>
         <div id="end-cine-quote"></div>
-        <button class="btn accent-gold" id="end-cine-btn"></button>
-        <button class="btn" id="end-cine-btn2" style="display:none;"></button>
+        <button class="end-cine-btn" id="end-cine-btn"></button>
+        <button class="end-cine-btn" id="end-cine-btn2" style="display:none;"></button>
       </div>
     </div>
 
@@ -999,15 +1058,15 @@ body {
         </div>
         </div>
         <div id="end-report-actions">
-          <button class="btn" onclick="endBackToCinematic()">Back</button>
-          <button class="btn accent-gold" onclick="if (typeof clearSave === 'function') clearSave(); location.reload()">New Run</button>
+          <button class="btn end-btn" onclick="endBackToCinematic()">Back</button>
+          <button class="btn end-btn" onclick="if (typeof clearSave === 'function') clearSave(); location.reload()">New Run</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- OVERLAYS — mounted on top of screen-cruise; Phase 4 fills the rest in -->
-  <div id="overlay-map" class="overlay">
+  <div id="overlay-map" class="overlay dim-behind">
     <div id="ovmap-header"></div>
     <div id="ovmap-viewport">
       <svg id="ovmap-connections"></svg>
@@ -1025,10 +1084,13 @@ body {
        pause menu's SHIP'S LOG panel. The demo's full parchment chrome
        (demo-shipslog.html) remains future polish; this is the live,
        engine-backed surface. -->
-  <div id="overlay-shipslog" class="overlay">
+  <div id="overlay-shipslog" class="overlay dim-behind">
     <div id="slog-card">
-      <div id="slog-header">SHIP'S LOG <span id="slog-count"></span></div>
-      <div id="slog-rows"></div>
+      <div id="slog-header"><span>SHIP'S LOG</span> <span id="slog-count"></span><button class="modal-x slog-x" id="slog-x" aria-label="Close">✕</button></div>
+      <div class="scroll-host" id="slog-rows-host">
+        <div id="slog-rows" class="scroll-content"></div>
+        <div class="scroll-track"><div class="scroll-thumb"></div></div>
+      </div>
       <div id="slog-footer">
         <span id="slog-note">Recorded in your AI's voice, since launch.</span>
         <button class="btn accent-gold" id="slog-close" data-esc-close>Close</button>
@@ -1036,7 +1098,10 @@ body {
     </div>
     <div id="slog-expand-modal" style="display:none;">
       <div id="slog-expand-card">
-        <div id="slog-expand-body"></div>
+        <div class="scroll-host" id="slog-expand-host">
+          <div id="slog-expand-body" class="scroll-content"></div>
+          <div class="scroll-track"><div class="scroll-thumb"></div></div>
+        </div>
         <button class="btn" id="slog-expand-close">Back to Log</button>
       </div>
     </div>
@@ -1045,14 +1110,18 @@ body {
   <!-- Minimal cargo readout — enough UI to live with full cargo
        enforcement (2026-08-03 decision) until the full inventory demo
        migrates. List, slot meter, per-row jettison. -->
-  <div id="overlay-inventory" class="overlay">
+  <div id="overlay-inventory" class="overlay dim-behind">
     <div id="inv-card">
-      <div id="inv-header">CARGO HOLD <span id="inv-slots"></span></div>
+      <div id="inv-header"><span>CARGO HOLD</span> <span id="inv-slots"></span><button class="modal-x inv-x" id="inv-x" aria-label="Close">✕</button></div>
       <div id="inv-tabs">
         <button class="inv-tab active" data-tab="gear">GEAR</button>
         <button class="inv-tab" data-tab="resources">RESOURCES</button>
       </div>
-      <div id="inv-grid"></div>
+      <!-- Gold custom scrollbar (DESIGN_SYSTEM hard rule; wired at boot). -->
+      <div class="scroll-host" id="inv-grid-host">
+        <div id="inv-grid" class="scroll-content"></div>
+        <div class="scroll-track"><div class="scroll-thumb"></div></div>
+      </div>
       <div id="inv-detail" class="hidden">
         <div class="inv-detail-top">
           <div id="inv-detail-icon"></div>
@@ -1150,7 +1219,7 @@ body {
   <!-- Crew detail dossier (Restoration item 4). Shell only — engine/js/
        screens/crew.js injects the .cd-* modal on first openCrewDetail()
        (same empty-shell pattern as #overlay-engrepair). -->
-  <div id="overlay-crew" class="overlay">
+  <div id="overlay-crew" class="overlay dim-behind">
     <div id="crewdetail-root"></div>
   </div>
   <!-- Standing Orders modal (Restoration item 5) — chrome ported from
@@ -1159,7 +1228,7 @@ body {
        ids od-prefixed to keep clear of cruise/growbay lookups; CSS in
        resources/screen-orders.css scoped under this overlay; behavior
        in engine/js/screens/orders.js (window.openOrders()). -->
-  <div id="overlay-orders" class="overlay">
+  <div id="overlay-orders" class="overlay dim-behind">
     <div id="od-backdrop"></div>
     <div id="od-modal" role="dialog" aria-labelledby="od-title">
       <div class="od-header">
@@ -1209,7 +1278,7 @@ body {
             <div class="od-water-side">
               <span class="emoji icon icon-inline icon-plant">&#127793;</span><span>PLANT</span><span class="pct" id="od-water-plant-pct">50%</span>
             </div>
-            <div class="od-water-track" id="od-water-track" title="Drag to allocate">
+            <div class="od-water-track" id="od-water-track" data-tip-description="Drag to allocate">
               <div class="od-water-fill-plant" id="od-water-fill-plant" style="width:50%"></div>
               <div class="od-water-fill-crew"  id="od-water-fill-crew"  style="width:50%"></div>
               <div class="od-water-midmark"></div>
@@ -1237,7 +1306,7 @@ body {
       </div>
     </div>
   </div>
-  <div id="overlay-growbay" class="overlay">
+  <div id="overlay-growbay" class="overlay dim-behind">
   <div id="gb-backdrop" onclick="onBackdropClick()"></div>
 
   <!-- Growbay modal -->
@@ -1251,7 +1320,7 @@ body {
         <span class="dot"> · </span>
         <span class="stage-name" id="stage-label-box"><span id="stage-display">FLOWERING</span> STAGE</span>
         <span class="dot"> · </span>
-        <span class="banner-day" id="banner-day" title="Days since planting. Base maturity is 90 days, but growth rate shifts with plant health and tending.">GROWTH DAY <span id="day-display">47</span> / <span id="maturity-display">90</span></span>
+        <span class="banner-day" id="banner-day">GROWTH DAY <span id="day-display">47</span> / <span id="maturity-display">90</span></span>
       </div>
       <button class="gb-back" onclick="closeInspect()">‹ BACK</button>
       <button class="gb-close" onclick="closeGrowbay()">X</button>
@@ -1324,7 +1393,7 @@ body {
             </div>
             <div class="gb-crew-actions">
               <button class="panel-btn locked" id="treat-btn" onclick="openTreat()">Treat</button>
-              <button class="panel-btn" onclick="openInspect()">Inspect</button>
+              <button class="panel-btn" id="inspect-btn" onclick="openInspect()">Inspect</button>
             </div>
           </div>
         </div>
@@ -1357,10 +1426,10 @@ body {
             <div class="gb-water-top">
               <span class="gb-strip-label">WATER</span>
             </div>
-            <div class="gb-water-track" id="gb-water-track" title="Drag to adjust">
+            <div class="gb-water-track" id="gb-water-track" data-tip-description="Drag to adjust">
               <div class="gb-water-fill-plant" id="gb-water-fill-plant"></div>
               <div class="gb-water-fill-crew"  id="gb-water-fill-crew"></div>
-              <div class="gb-water-ideal-tick" id="gb-water-ideal-tick" title="Crop's ideal"></div>
+              <div class="gb-water-ideal-tick" id="gb-water-ideal-tick" data-tip-description="Crop's ideal"></div>
               <div class="gb-water-thumb" id="gb-water-thumb"></div>
             </div>
             <div class="gb-water-readout">
@@ -1410,7 +1479,7 @@ body {
 
   </div>
   </div>
-  <div id="overlay-fabricator" class="overlay">
+  <div id="overlay-fabricator" class="overlay dim-behind">
   <div id="fb-backdrop" onclick="closeFabricator()"></div>
 
   <!-- Fabricator modal -->
@@ -1497,6 +1566,8 @@ body {
                 <span class="fb-output-emoji" id="fb-output-emoji"></span>
               </div>
               <div class="fb-spark-field" id="fb-spark-field"></div>
+              <!-- In-modal notice: misfire / hold full (fabricator.js fabNotice) -->
+              <div class="fb-notice" id="fb-notice"></div>
             </div>
           </div>
 
@@ -1506,6 +1577,7 @@ body {
               <div class="fb-detail-name" id="fb-detail-name">HULL PATCH</div>
             </div>
             <div class="fb-detail-desc" id="fb-detail-desc">Basic hull repair material.</div>
+            <div class="fb-detail-effect" id="fb-detail-effect"></div>
             <div class="fb-detail-divider"></div>
 
             <!-- Inputs list — no label. Material rows + counts read as
@@ -1531,7 +1603,7 @@ body {
         </span>
         <div class="fb-progress-track"><div class="fb-progress-fill" id="fb-progress-fill"></div></div>
         <span class="fb-progress-days" id="fb-progress-days">—</span>
-        <button class="fb-progress-cancel" id="fb-progress-cancel" onclick="cancelCraft()" title="Cancel craft — refunds materials, keeps incurred wear">CANCEL</button>
+        <button class="fb-progress-cancel" id="fb-progress-cancel" onclick="cancelCraft()" data-tip-title="CANCEL CRAFT" data-tip-description="Refunds the materials. The wear and the days already spent stay spent.">CANCEL</button>
       </div>
 
     </div>
@@ -2716,13 +2788,13 @@ function renderHUD() {
   // tank at 0.4 used to read 0 while it still had something in it.
   const sh = v => v > 0 ? Math.max(1, Math.round(v)) : 0;
   const html = `
-    <div class="hud-r fuel${crit.fuel?' crit':''}"  title="FUEL">  <span class="dot"></span>FU ${sh(r.fuel)}</div>
-    <div class="hud-r food${crit.food?' crit':''}"  title="FOOD">  <span class="dot"></span>FD ${sh(r.food)}</div>
-    <div class="hud-r water${crit.water?' crit':''}" title="WATER"> <span class="dot"></span>H2 ${sh(r.water)}</div>
-    <div class="hud-r o2${crit.o2?' crit':''}"      title="OXYGEN"><span class="dot"></span>O2 ${sh(r.o2)}</div>
-    <div class="hud-r hull${crit.hull?' crit':''}"  title="HULL">  <span class="dot"></span>HL ${sh(r.hull)}</div>
-    <div class="hud-r mor${crit.mor?' crit':''}"    title="MORALE"><span class="dot"></span>MO ${sh(r.morale)}</div>
-    <div class="hud-r gold" title="GOLD"><span class="dot"></span>${STATE.goldAmount}g</div>
+    <div class="hud-r fuel${crit.fuel?' crit':''}"  data-tip="resource_fuel">  <span class="dot"></span>FU ${sh(r.fuel)}</div>
+    <div class="hud-r food${crit.food?' crit':''}"  data-tip="resource_food">  <span class="dot"></span>FD ${sh(r.food)}</div>
+    <div class="hud-r water${crit.water?' crit':''}" data-tip="resource_water"> <span class="dot"></span>H2 ${sh(r.water)}</div>
+    <div class="hud-r o2${crit.o2?' crit':''}"      data-tip="resource_o2"><span class="dot"></span>O2 ${sh(r.o2)}</div>
+    <div class="hud-r hull${crit.hull?' crit':''}"  data-tip="resource_hull">  <span class="dot"></span>HL ${sh(r.hull)}</div>
+    <div class="hud-r mor${crit.mor?' crit':''}"    data-tip="resource_morale"><span class="dot"></span>MO ${sh(r.morale)}</div>
+    <div class="hud-r gold" data-tip="resource_gold"><span class="dot"></span>${STATE.goldAmount}g</div>
   `;
   for (const id of ['hud-map', 'hud-enc', 'hud-cruise', 'hud-mining']) {
     const el = document.getElementById(id);
@@ -2830,8 +2902,9 @@ function renderInventory() {
     tile.innerHTML = invIconHtml(en.id, en.material) +
       (en.n > 1 ? '<span class="inv-tile-count">×' + en.n + '</span>' : '') +
       (en.copy != null ? '<span class="inv-tile-count inv-tile-value' + (known ? '' : ' unknown') + '">' + (known ? en.value + 'g' : '??') + '</span>' : '');
-    tile.title = ((itemDef(en.id) || {}).name || prettyItem(en.id)) +
-      (en.copy != null ? (known ? ' · worth ' + en.value + 'g' : ' · worth ' + itemValueRangeLabel(en.id) + ' (unappraised)') : '');
+    // Hover (.ui-tip): the name, plus a rolled-value copy's worth.
+    tile.dataset.tipTitle = (((en.material ? materialDefOf(en.id) : itemDef(en.id)) || {}).name || prettyItem(en.id)).toUpperCase();
+    if (en.copy != null) tile.dataset.tipDescription = known ? 'Worth ' + en.value + 'g.' : 'Worth ' + itemValueRangeLabel(en.id) + ' (unappraised).';
     tile.addEventListener('click', () => { _invSelected = en.id; _invSelectedCopy = en.copy != null ? en.copy : null; renderInvDetail(en); renderInventory(); });
     grid.appendChild(tile);
   }
@@ -2866,13 +2939,19 @@ const ITEM_USE = {
   star_chart_fragment: { label: 'SCOUT', can: () => { const n = STATE.byId && STATE.byId[STATE.currentId]; return n && connectionsOf(n).length ? null : 'Nothing left to chart'; },
                     use: () => { const r = scoutAhead(1, false); return 'Star chart fragment matched to the route. ' + (r.length ? r.join(' · ') : 'Nothing ahead but the destination.'); } },
 };
+// materials.json entry for a material id (the detail panel used to show
+// the raw id and a generic line — parity pass 2026-10-11).
+function materialDefOf(id) {
+  return ((MOD.materials && MOD.materials.materials) || []).find(m => m.id === id) || null;
+}
 function renderInvDetail(en) {
   const box = document.getElementById('inv-detail');
   box.classList.remove('hidden');
   const def = en.material ? null : itemDef(en.id);
+  const mdef = en.material ? materialDefOf(en.id) : null;
   document.getElementById('inv-detail-icon').innerHTML = invIconHtml(en.id, en.material);
   document.getElementById('inv-detail-name').textContent =
-    ((def && def.name) || prettyItem(en.id)) + (en.n > 1 ? '  ×' + en.n : '');
+    ((def && def.name) || (mdef && mdef.name) || prettyItem(en.id)) + (en.n > 1 ? '  ×' + en.n : '');
   const bits = [];
   if (en.material) bits.push('Raw material · no cargo slot');
   else if (def) {
@@ -2884,7 +2963,7 @@ function renderInvDetail(en) {
     } else if (def.base_price) bits.push('trader pays ~' + Math.round(def.base_price * 2 / 3) + 'g');
   }
   document.getElementById('inv-detail-meta').textContent = bits.join(' · ');
-  let desc = en.material ? 'Feedstock for the fabricator. Sharp edges included at no extra charge.'
+  let desc = en.material ? ((mdef && mdef.description) || 'Feedstock for the fabricator. Sharp edges included at no extra charge.')
                          : ((def && def.description) || 'Unlabeled. Confident.');
   // Xenobiologist Field Analysis payoff — the finding travels with the item.
   if (def && def.analysis && STATE.flags.has('analyzed_' + en.id)) desc += '  ◆ FIELD ANALYSIS: ' + def.analysis;
@@ -2902,7 +2981,8 @@ function renderInvDetail(en) {
     const why = iu.can();
     useBtn.textContent = 'USE · ' + iu.label;
     useBtn.disabled = !!why;
-    useBtn.title = why || '';
+    if (why) { useBtn.dataset.tipDescription = why; useBtn.dataset.tipTone = 'danger'; }
+    else { delete useBtn.dataset.tipDescription; delete useBtn.dataset.tipTone; }
   }
 }
 (function wireInventoryChrome() {
@@ -2962,6 +3042,11 @@ function renderInvDetail(en) {
 function openInventory() {
   showOverlay('overlay-inventory');
   renderInventory();
+}
+// Every close path (✕, CLOSE, backdrop, Esc) — jettisons persist.
+function closeInventory() {
+  hideOverlay('overlay-inventory');
+  if (typeof saveRun === 'function') saveRun();
 }
 
 /* ── Ship's Log overlay ──────────────────────────────────────────
@@ -3026,7 +3111,7 @@ function renderShipsLog() {
           nm.className = 'slog-death-name';
           nm.textContent = 'IN MEMORIAM' + (e.crewName ? ' · ' + e.crewName.toUpperCase() : '');
           hdr.appendChild(nm);
-          card.insertBefore(hdr, body);
+          card.insertBefore(hdr, document.getElementById('slog-expand-host'));
         }
         body.textContent = e.expand;
         document.getElementById('slog-expand-modal').style.display = 'flex';
@@ -3037,9 +3122,32 @@ function renderShipsLog() {
   }
 }
 window.openShipsLog = function () {
+  // A memorial/expand left open last time must not reappear (parity audit).
+  closeShipsLogExpand();
   showOverlay('overlay-shipslog');
   renderShipsLog();
 };
+function closeShipsLogExpand() {
+  document.getElementById('slog-expand-modal').style.display = 'none';
+}
+function shipsLogExpandOpen() {
+  return document.getElementById('slog-expand-modal').style.display === 'flex';
+}
+/* Esc peels one layer at a time (parity audit: Esc with a memorial or
+   expand open closed the whole log; Esc in the jettison confirm closed
+   the whole hold). Capture phase, so it runs before shared.js's
+   [data-esc-close] handler; only stops the event when it consumed it. */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (typeof PauseMenu !== 'undefined' && PauseMenu.isOpen()) return;
+  if (document.getElementById('overlay-shipslog').classList.contains('active') && shipsLogExpandOpen()) {
+    closeShipsLogExpand(); e.preventDefault(); e.stopImmediatePropagation(); return;
+  }
+  const conf = document.getElementById('inv-confirm');
+  if (document.getElementById('overlay-inventory').classList.contains('active') && !conf.classList.contains('hidden')) {
+    document.getElementById('inv-confirm-no').click(); e.preventDefault(); e.stopImmediatePropagation();
+  }
+}, true);
 
 /* ────────────────────────────────────────────────────────────────
    MAP RENDERER
@@ -5547,15 +5655,20 @@ function endRun(end) {
   try { await loadAllModules(); }
   catch (e) { console.error(e); return; }
 
-  document.getElementById('inv-close').addEventListener('click', () => {
-    hideOverlay('overlay-inventory');
-    if (typeof saveRun === 'function') saveRun(); // jettisons persist
-  });
+  document.getElementById('inv-close').addEventListener('click', closeInventory);
+  document.getElementById('inv-x').addEventListener('click', closeInventory);
+  // Backdrop click closes (DESIGN_SYSTEM close path 3) — the dimmed area
+  // outside the card, not a click inside it.
+  document.getElementById('overlay-inventory').addEventListener('click', e => { if (e.target.id === 'overlay-inventory') closeInventory(); });
+  document.getElementById('overlay-shipslog').addEventListener('click', e => { if (e.target.id === 'overlay-shipslog') hideOverlay('overlay-shipslog'); });
+  document.getElementById('slog-expand-modal').addEventListener('click', e => { if (e.target.id === 'slog-expand-modal') closeShipsLogExpand(); });
+  document.getElementById('slog-x').addEventListener('click', () => hideOverlay('overlay-shipslog'));
+  ['inv-grid-host', 'slog-rows-host', 'slog-expand-host'].forEach(id => wireCustomScroll(document.getElementById(id)));
   document.getElementById('btn-pause').addEventListener('click', () => {
     if (typeof PauseMenu !== 'undefined' && !PauseMenu.isOpen()) PauseMenu.open();
   });
   document.getElementById('slog-close').addEventListener('click', () => hideOverlay('overlay-shipslog'));
-  document.getElementById('slog-expand-close').addEventListener('click', () => { document.getElementById('slog-expand-modal').style.display = 'none'; });
+  document.getElementById('slog-expand-close').addEventListener('click', closeShipsLogExpand);
 
   // ?debug=fixed_path skips title/setup and boots straight into the
   // old hardcoded lunar_test_path loop — kept for regression-testing

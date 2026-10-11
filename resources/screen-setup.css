@@ -34,7 +34,23 @@
   --card-stat-size: 15px;
   --card-stat-color: #5a7a6a;
 
+  /* Panel-button sizing + gold/teal accents (demo-setup :root). These used
+     to come from the growbay's leaked :root (15px); setup's are 18px. */
+  --pb-border: 3px;
+  --pb-padx: 8px;
+  --pb-pady: 4px;
+  --pb-rad: 0px;
+  --pb-size: 18px;
+
   background: linear-gradient(180deg, #0e1520 0%, #080c14 100%);
+  /* The gold 3px frame is SETUP-ONLY chrome (DESIGN_SYSTEM "Frame / Window
+     Treatment"): drawn on this screen, not on #game, so no other screen
+     wears it. border-box keeps the screen at 960×640; the content sits
+     inside the frame exactly as in demo-setup. */
+  border: 3px solid var(--gold);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 2px #1a2030, inset 0 0 0 4px rgba(140,200,144,0.15);
+  overflow: hidden;
 }
 
 #screen-setup .halftone {
@@ -51,6 +67,7 @@
 #setup-screen {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
+  z-index: 10; /* above the halftone corners (z 2) — they're decoration UNDER the UI */
 }
 
 #setup-header {
@@ -86,9 +103,11 @@
   border-color: var(--pip-active);
   box-shadow: 0 0 6px rgba(140,200,144,0.4);
 }
+/* DESIGN_SYSTEM "Progress Indicators": the active step is a gold RING
+   (the demo filled it gold). */
 #screen-setup .progress-pip.active {
   border-color: var(--gold);
-  background: var(--gold);
+  background: var(--pip-inactive-bg);
   animation: setup-pip-pulse 1.8s ease-in-out infinite;
 }
 @keyframes setup-pip-pulse {
@@ -232,7 +251,7 @@
   font-family: 'Press Start 2P', cursive; font-size: 8px; line-height: 1; letter-spacing: 2px;
   color: var(--teal); background: rgba(20,28,40,0.8);
   border: 1px solid rgba(140,200,144,0.45); border-radius: 4px;
-  padding: 8px 14px; cursor: pointer;
+  padding: 8px 14px; cursor: var(--cursor-hand, pointer);
 }
 #ship-name-reroll:hover { border-color: var(--teal); box-shadow: 0 0 10px rgba(140,200,144,0.18); }
 
@@ -256,7 +275,7 @@
    required choice was missing. */
 #screen-setup .panel-btn.disabled {
   filter: grayscale(0.7) brightness(0.55);
-  cursor: var(--cursor-pointer, default);
+  cursor: var(--cursor-denied, not-allowed);
 }
 @keyframes setup-btn-shake {
   0%, 100% { transform: translateX(0); }

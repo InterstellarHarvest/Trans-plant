@@ -275,13 +275,17 @@
 
   function renderCinematic(view) {
     const scene = $('end-scene');
+    // The scene fades in (360ms) — but only if .show lands AFTER the
+    // screen is displayed: added while #screen-end was display:none, the
+    // transition had no start state and never played (parity audit).
+    // revealScene() adds it once the screen is up.
+    scene.classList.remove('show');
     if (view.category === 'arrival') {
       scene.style.backgroundImage = `url("${sceneBgPath(view.trail, view.cropBgId)}")`;
-      scene.classList.add('show');
     } else {
       scene.style.backgroundImage = '';
-      scene.classList.remove('show');
     }
+    $('screen-end').classList.toggle('is-failure', view.category === 'failure');
     setTierColours(view.toneId, view.category === 'failure');
 
     $('end-cine-title').textContent = view.title;
@@ -357,10 +361,50 @@
   }
 
   /* ── Entry points ─────────────────────────────────────────── */
+  function revealScene(view) {
+    const scene = $('end-scene');
+    void scene.offsetWidth; // flush the opacity:0 start state
+    if (view.category === 'arrival') scene.classList.add('show');
+  }
+
+  /* demo-endings star drift: two slow parallax layers, no acceleration.
+     Runs only while the end screen is up; idles under the pause menu. */
+  const STAR_W = 960, STAR_H = 640;
+  const starLayers = [
+    { count: 80, speed: 0.06, size: 1, alpha: 0.55, xs: [], ys: [] },
+    { count: 40, speed: 0.14, size: 2, alpha: 0.85, xs: [], ys: [] },
+  ];
+  for (const L of starLayers) for (let i = 0; i < L.count; i++) { L.xs.push(Math.random() * STAR_W); L.ys.push(Math.random() * STAR_H); }
+  let starLast = 0, starRunning = false;
+  function drawStars(now) {
+    const cv = $('end-stars'), scr = $('screen-end');
+    if (!cv || !scr || !scr.classList.contains('active')) { starRunning = false; return; }
+    if (window.PauseBus && PauseBus.paused) { starLast = now; requestAnimationFrame(drawStars); return; }
+    let dt = starLast ? (now - starLast) / 16.6667 : 1;
+    if (dt > 3) dt = 3;
+    starLast = now;
+    const ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, STAR_W, STAR_H);
+    for (const L of starLayers) {
+      ctx.fillStyle = 'rgba(255,255,255,' + L.alpha + ')';
+      const half = L.size / 2;
+      for (let i = 0; i < L.count; i++) {
+        let x = L.xs[i] + L.speed * dt;
+        if (x > STAR_W) { x = 0; L.ys[i] = Math.random() * STAR_H; }
+        L.xs[i] = x;
+        ctx.fillRect((x - half) | 0, (L.ys[i] - half) | 0, L.size, L.size);
+      }
+    }
+    requestAnimationFrame(drawStars);
+  }
+  function startStars() { if (starRunning) return; starRunning = true; starLast = 0; requestAnimationFrame(drawStars); }
+
   window.renderEndScreen = function (end) {
     currentView = buildEndView(end);
     renderCinematic(currentView);
     showScreen('screen-end');
+    revealScene(currentView);
+    startStars();
   };
   window.showEndReport = function () {
     // Reading the report accepts the ending (owner ruling 2026-10-10) — a

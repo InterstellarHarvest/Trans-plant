@@ -405,7 +405,7 @@
   function handleForageVerb() {
     const regionKey = currentRegionKey();
     const mode = REGION_TO_FORAGE_MODE[regionKey] || 'GATHER';
-    openMinigame('forage', { mode, return_to: 'cruise', origin_node: STATE.currentId }, (tier, payload) => {
+    openMinigame('forage', { mode, regionLabel: (REGIONS[regionKey] || REGIONS.deep_space).label.split(' · ')[0], return_to: 'cruise', origin_node: STATE.currentId }, (tier, payload) => { // regionLabel: forage HUD names the real stop (parity-shell)
       if (tier === 'abandoned') return settleAbandoned(mode);
       payload = payload || {};
       let foodGot = 0; // what actually lands (the tank caps)
