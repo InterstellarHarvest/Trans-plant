@@ -713,6 +713,23 @@ const eventOnTrail = (ev, trail) => {
   }
 }
 
+// ── Trade-good values (added 2026-10-11, owner ruling) ─────────────
+// sell_range is rolled per copy at pickup (index.html TRADE-GOOD VALUES)
+// and replaces base_price; the spectrometer_reveals_value tag hides that
+// value until a spectrometer is aboard, so it needs a sell_range to hide.
+{
+  for (const it of readJSON('modules/items/items.json').filter(i => !i._section && i.id)) {
+    const r = it.sell_range, tags = it.tags || [];
+    if (r !== undefined && r !== null) {
+      if (!Array.isArray(r) || r.length !== 2 || !r.every(v => Number.isInteger(v) && v > 0) || r[0] > r[1]) err(`items.json ${it.id}: sell_range must be [lo, hi] — positive integers, lo <= hi (got ${JSON.stringify(r)})`);
+      if (it.base_price != null) err(`items.json ${it.id}: has a sell_range AND base_price ${it.base_price} — the rolled value replaces the fixed price (set base_price null)`);
+      if (!tags.includes('trade_good')) err(`items.json ${it.id}: sell_range on an item without the trade_good tag — nobody would buy it`);
+      if (it.item_source === 'purchasable') err(`items.json ${it.id}: a purchasable item can't have a sell_range — the station shelves it at base_price`);
+    }
+    if (tags.includes('spectrometer_reveals_value') && !(Array.isArray(r) && r.length === 2)) err(`items.json ${it.id}: tagged spectrometer_reveals_value but has no sell_range — there's no rolled value to reveal`);
+  }
+}
+
 // ── Engine flags documented (added 2026-10-11) ─────────────────────
 // Every literal flag the engine sets must have prose in gen_flags.js
 // (that's what puts it in registry/flags.md), and the ENGINE_SET_FLAGS

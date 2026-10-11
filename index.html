@@ -676,6 +676,7 @@ body {
   font-family: 'VT323', monospace; font-size: 14px; color: var(--gold);
   background: rgba(8,12,18,0.85); border-radius: 2px; padding: 0 4px;
 }
+.inv-tile .inv-tile-count.unknown { color: var(--body); opacity: 0.8; } /* unappraised trade good: ?? */
 #inv-detail, #inv-confirm {
   background: rgba(10,14,20,0.6); border: 1px solid rgba(200,168,90,0.35);
   border-radius: 3px; padding: 10px 12px;
@@ -1679,6 +1680,7 @@ const STATE = {
   crop:         null, // crop id selected at setup, for growbay
   shipName:     null,
   items:        [],   // item ids in cargo
+  itemValues:   {},   // trade goods with a sell_range: shortId → [rolled value of copy 1, copy 2, …] (syncItemValues)
   materials:    {},   // material id -> quantity (mining/salvage yields, fabricator inputs)
   goldAmount:   50,
   resources: {
@@ -1732,6 +1734,7 @@ const SAVED_FIELDS = [
   'dayCarry',    // fractional travel day carried between legs
   'flagFirstSeen', 'calledBack', 'lastCallbackLeg', // story-flag callbacks: when each choice happened, which the AI has brought up, when it last did
   'crisisPatient', 'scanIntelEvent', // an event saved at its entry comes back with its patient / SCAN intel
+  'itemValues', // trade goods: each copy's value, rolled at pickup
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1752,6 +1755,7 @@ function writeSnapshot(key, extra) {
   if (new URLSearchParams(location.search).has('debug')) return false;
   try {
     const snap = Object.assign({ v: 1, ts: Date.now() }, extra || {});
+    syncItemValues(); // every trade good in the hold is saved with its value
     for (const k of SAVED_FIELDS) snap[k] = STATE[k];
     snap.visited = [...STATE.visited];
     snap.flags = [...STATE.flags];
@@ -1800,7 +1804,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null };
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}) };
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -1813,6 +1817,7 @@ function loadRun(key) {
   STATE.npcCtx = null; STATE.outcomeMode = false; STATE.ended = false;
   STATE._itemDefs = null;
   ensureOrders(); // pre-orders saves get the defaults (seeded from cropGrowth.waterPlant)
+  syncItemValues(); // pre-trade-value saves: the goods aboard are valued now, once, and saved with it
   if (!('crewPending' in snap)) STATE.crewPending = {}; // pre-severity saves
   if (!('deprived' in snap)) STATE.deprived = {};
   if (!('crewIdentity' in snap)) STATE.crewIdentity = {};
@@ -1910,6 +1915,7 @@ function initState() {
   // Starting items — same reasoning as crew. A couple so item-gated
   // choices unlock and the player sees that gating works.
   STATE.items = ['soil_sampler', 'gas_analyzer', 'repair_kit'];
+  STATE.itemValues = {};
   STATE.materials = {};
 
   // Active AI — pick MARV by default. Real ship/AI select screen is
@@ -1985,6 +1991,7 @@ function applySetupToState(sel) {
   // same placeholder loadout initState() used, so item-gated choices
   // still unlock somewhere in the loop.
   STATE.items = ['soil_sampler', 'repair_kit']; // the gas analyzer is the Academic captain's starting bonus
+  STATE.itemValues = {};
   STATE.materials = { metal: 4, scrap: 2 }; // ship stores: two hull patches' worth (REPAIR costs 2 metal + 1 scrap)
   // captains.json starting_bonus — each captain's setup promise ("Hull
   // starts at 105", "Start with a spectrometer", "extra credits"…).
@@ -2100,9 +2107,10 @@ function cargoSlotsUsed() {
    The insulated cargo bay itself always fits — refusing the capacity
    upgrade for capacity reasons would be a paradox nobody enjoys. */
 function grantItem(shortId) {
-  // unique_instance items exist once (mystery_provisions came in twice).
-  const def0 = itemDef(shortId);
-  if (def0 && (def0.tags || []).includes('unique_instance') && STATE.items.includes(shortId)) return false;
+  // unique_instance (curiosities) means each pickup is its own instance
+  // with its own rolled value (Bible §14.2) — not "only one aboard".
+  // Refusing the second copy swallowed the trader's 15g mystery crate.
+  syncItemValues(); // settle any copy that left by a path that didn't say which
   STATE.items.push(shortId);
   if (shortId !== 'insulated_cargo_bay' && cargoSlotsUsed() > cargoCapacity()) {
     STATE.items.pop();
@@ -2112,8 +2120,84 @@ function grantItem(shortId) {
     }
     return false;
   }
+  syncItemValues(); // a trade good's value is rolled here, at pickup
   return true;
 }
+
+/* ────────────────────────────────────────────────────────────────
+   TRADE-GOOD VALUES (owner ruling 2026-10-11). items.json sell_range
+   [lo, hi]: each copy's value is rolled once, when it comes aboard,
+   and kept in STATE.itemValues[shortId] — one value per copy of that
+   id in STATE.items, in pickup order (copy k = the k-th value).
+   A station trader pays exactly that value (CHIP / Merchant / talked-
+   down discounts touch only what the station SELLS, never what it
+   pays); a fence pays FENCE_MULT × it. Items tagged
+   spectrometer_reveals_value show only the range until a
+   spectrometer is aboard; with one, the exact value (INV detail and
+   the sell offers). syncItemValues() is the one reconciler: a copy
+   with no value yet is rolled (grants, pre-ruling saves); a copy that
+   left by a path that didn't name which (item_consume, random loss)
+   takes the newest value with it. Sell and jettison remove the exact
+   copy (takeItemCopy).
+   ──────────────────────────────────────────────────────────────── */
+const FENCE_MULT = 1.5; // items.json: "a fence pays half again as much"
+function sellRangeOf(shortId) {
+  const d = itemDef(shortId), r = d && d.sell_range;
+  return (Array.isArray(r) && r.length === 2 && Number.isFinite(r[0]) && Number.isFinite(r[1]) && r[0] <= r[1]) ? r : null;
+}
+function rollItemValue(shortId) {
+  const r = sellRangeOf(shortId);
+  return r[0] + Math.floor(Math.random() * (r[1] - r[0] + 1));
+}
+function syncItemValues() {
+  if (!STATE.itemValues || typeof STATE.itemValues !== 'object' || Array.isArray(STATE.itemValues)) STATE.itemValues = {};
+  const counts = {};
+  for (const id of STATE.items) counts[id] = (counts[id] || 0) + 1;
+  for (const id of Object.keys(STATE.itemValues)) if (!counts[id] || !sellRangeOf(id)) delete STATE.itemValues[id];
+  for (const [id, n] of Object.entries(counts)) {
+    const r = sellRangeOf(id);
+    if (!r) continue;
+    const vals = (Array.isArray(STATE.itemValues[id]) ? STATE.itemValues[id] : [])
+      .filter(Number.isFinite).map(v => Math.min(r[1], Math.max(r[0], Math.round(v))));
+    if (vals.length > n) vals.length = n;
+    while (vals.length < n) vals.push(rollItemValue(id));
+    STATE.itemValues[id] = vals;
+  }
+  return STATE.itemValues;
+}
+// The values of every copy of shortId aboard (pickup order); [] if it has no sell_range.
+function itemValuesOf(shortId) { return (syncItemValues()[shortId] || []).slice(); }
+// Can the player see this copy's exact value? (spectrometer_reveals_value hides it until one is aboard)
+function itemValueKnown(shortId) {
+  const d = itemDef(shortId);
+  return !(d && (d.tags || []).includes('spectrometer_reveals_value')) || STATE.items.includes('spectrometer');
+}
+function fenceValueOf(v) { return Math.max(1, Math.round(v * FENCE_MULT)); }
+// "15–45g" — what an unappraised copy is shown as (mult: the fence's premium).
+function itemValueRangeLabel(shortId, mult) {
+  const r = sellRangeOf(shortId);
+  if (!r) return '';
+  const f = v => mult ? fenceValueOf(v) : v;
+  return f(r[0]) + '–' + f(r[1]) + 'g';
+}
+// Removes copy k of shortId (and its value). Returns the value it carried (null if none).
+function takeItemCopy(shortId, k) {
+  syncItemValues();
+  const vals = STATE.itemValues[shortId];
+  let i = -1, seen = -1;
+  for (let j = 0; j < STATE.items.length; j++) if (STATE.items[j] === shortId && ++seen === (k || 0)) { i = j; break; }
+  if (i < 0) i = STATE.items.lastIndexOf(shortId);
+  if (i < 0) return null;
+  STATE.items.splice(i, 1);
+  let v = null;
+  if (vals && vals.length) {
+    const at = Number.isInteger(k) && k >= 0 && k < vals.length ? k : vals.length - 1;
+    v = vals.splice(at, 1)[0];
+  }
+  syncItemValues();
+  return v;
+}
+Object.assign(window, { syncItemValues, itemValuesOf, itemValueKnown, fenceValueOf, itemValueRangeLabel, takeItemCopy, sellRangeOf, FENCE_MULT });
 
 /* ────────────────────────────────────────────────────────────────
    CREW HP (user decision 2026-08-03: per-crew HP over binary injury).
@@ -2672,7 +2756,9 @@ window.addEventListener('resize', fitGameToViewport);
    jettison behind a confirm dialog. Capacity math unchanged. */
 let _invTab = 'gear';
 let _invSelected = null;
+let _invSelectedCopy = null; // trade goods with a rolled value: which copy (index into STATE.itemValues[id]) — one tile per copy
 let _invJettisonPending = null;
+let _invJettisonCopy = null; // which copy of a rolled-value trade good goes out the airlock
 // Item art lives in two folders: upgrades in sprites/cargo/upgrades
 // (insulated_cargo_bay's file is extra_cargo.png), everything else in
 // sprites/cargo/items. null when no art exists yet (emoji fallback).
@@ -2704,7 +2790,13 @@ function renderInventory() {
   if (_invTab === 'gear') {
     const counts = {};
     for (const id of STATE.items) counts[id] = (counts[id] || 0) + 1;
-    entries = Object.keys(counts).sort().map(id => ({ id, n: counts[id], material: false }));
+    // A trade good with a rolled value is one tile per copy: each copy is
+    // its own instance with its own value (sell / jettison that copy).
+    entries = Object.keys(counts).sort().flatMap(id => {
+      const vals = itemValuesOf(id);
+      if (!vals.length) return [{ id, n: counts[id], material: false }];
+      return vals.map((value, copy) => ({ id, n: 1, material: false, copy, value }));
+    });
   } else {
     entries = Object.keys(STATE.materials || {}).filter(m => STATE.materials[m] > 0)
       .sort().map(id => ({ id, n: STATE.materials[id], material: true }));
@@ -2717,16 +2809,23 @@ function renderInventory() {
     _invSelected = null;
     return;
   }
+  const isSel = en => _invSelected === en.id && (en.copy == null || en.copy === (_invSelectedCopy || 0));
   for (const en of entries) {
     const tile = document.createElement('div');
-    tile.className = 'inv-tile' + (_invSelected === en.id ? ' selected' : '');
+    tile.className = 'inv-tile' + (isSel(en) ? ' selected' : '');
+    // Rolled-value copies wear their value (Bible §14 tile: hidden value = ??).
+    const known = en.copy != null && itemValueKnown(en.id);
     tile.innerHTML = invIconHtml(en.id, en.material) +
-      (en.n > 1 ? '<span class="inv-tile-count">×' + en.n + '</span>' : '');
-    tile.title = (itemDef(en.id) || {}).name || prettyItem(en.id);
-    tile.addEventListener('click', () => { _invSelected = en.id; renderInvDetail(en); renderInventory(); });
+      (en.n > 1 ? '<span class="inv-tile-count">×' + en.n + '</span>' : '') +
+      (en.copy != null ? '<span class="inv-tile-count inv-tile-value' + (known ? '' : ' unknown') + '">' + (known ? en.value + 'g' : '??') + '</span>' : '');
+    tile.title = ((itemDef(en.id) || {}).name || prettyItem(en.id)) +
+      (en.copy != null ? (known ? ' · worth ' + en.value + 'g' : ' · worth ' + itemValueRangeLabel(en.id) + ' (unappraised)') : '');
+    tile.addEventListener('click', () => { _invSelected = en.id; _invSelectedCopy = en.copy != null ? en.copy : null; renderInvDetail(en); renderInventory(); });
     grid.appendChild(tile);
   }
-  const sel = entries.find(e => e.id === _invSelected);
+  // A selected copy that's gone (sold / jettisoned the last of several) falls back to the id's first tile.
+  const sel = entries.find(isSel) || entries.find(e => e.id === _invSelected);
+  if (sel && sel.copy != null) _invSelectedCopy = sel.copy;
   if (sel) renderInvDetail(sel);
   else document.getElementById('inv-detail').classList.add('hidden');
 }
@@ -2766,7 +2865,11 @@ function renderInvDetail(en) {
   if (en.material) bits.push('Raw material · no cargo slot');
   else if (def) {
     bits.push(def.cargo_slots_per_10 ? Math.ceil(en.n / 10) * def.cargo_slots_per_10 + ' slot(s)' : ((def.cargo_slots || 0) * en.n) + ' slot(s)');
-    if (def.base_price) bits.push('trader pays ~' + Math.round(def.base_price * 2 / 3) + 'g');
+    if (en.copy != null) {
+      // Rolled at pickup: the exact figure needs a spectrometer aboard.
+      if (itemValueKnown(en.id)) bits.push('trader pays ' + en.value + 'g · fence ' + fenceValueOf(en.value) + 'g');
+      else bits.push('trader pays ' + itemValueRangeLabel(en.id) + ' · fence ' + itemValueRangeLabel(en.id, true) + ' · exact value: needs a spectrometer');
+    } else if (def.base_price) bits.push('trader pays ~' + Math.round(def.base_price * 2 / 3) + 'g');
   }
   document.getElementById('inv-detail-meta').textContent = bits.join(' · ');
   let desc = en.material ? 'Feedstock for the fabricator. Sharp edges included at no extra charge.'
@@ -2801,6 +2904,7 @@ function renderInvDetail(en) {
     const def = itemDef(_invSelected);
     const blocked = STATE.items.includes(_invSelected) && !canRemoveItem(_invSelected);
     _invJettisonPending = blocked ? null : _invSelected;
+    _invJettisonCopy = _invSelectedCopy;
     document.getElementById('inv-confirm-text').textContent = blocked
       ? 'The ' + ((def && def.name) || prettyItem(_invSelected)) + ' is holding cargo. Clear some space first.'
       : 'Jettison ' + ((def && def.name) || prettyItem(_invSelected)) + '? The airlock does not do refunds.';
@@ -2832,7 +2936,9 @@ function renderInvDetail(en) {
     const def = itemDef(id);
     const idx = STATE.items.indexOf(id);
     if (idx < 0 || !canRemoveItem(id)) return;
-    STATE.items.splice(idx, 1);
+    if (sellRangeOf(id)) takeItemCopy(id, _invJettisonCopy); // that copy, and its value, go together
+    else STATE.items.splice(idx, 1);
+    _invJettisonCopy = null;
     renderHUD();
     if (typeof window.pushCruiseLog === 'function') {
       window.pushCruiseLog('◆ Jettisoned: ' + ((def && def.name) || id) + '. It tumbles off into the dark, unemployed.');

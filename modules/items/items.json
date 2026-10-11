@@ -128,7 +128,7 @@
     "id": "item_spectrometer_001",
     "active": true,
     "name": "Spectrometer",
-    "description": "Material analysis. Reads what unknown cargo really is (inventory detail).",
+    "description": "Material analysis. Reads what unknown cargo really is, and appraises trade goods to the gold (inventory detail and sell offers).",
     "real_purpose": "Spectral analysis of material composition",
     "item_source": "purchasable",
     "item_behavior": [
@@ -140,7 +140,7 @@
     "passive_flavor": "The spectrometer has identified the substance. You may not want to know.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "While aboard, the inventory detail shows the analysis of unknown items (classified cargo, unidentified bone, alien seed pod). Also unlocks spectrometer choices in events."
+    "gameplay_effect": "While aboard, the inventory detail shows the analysis of unknown items (classified cargo, unidentified bone, alien seed pod) and the exact value of each copy of a trade good whose value is rolled at pickup (pre-collapse artifact, corporate memorabilia, unidentified bone, mystery provisions), in the inventory and on station and fence sell offers. Without it those show only the range. Also unlocks spectrometer choices in events."
   },
   {
     "id": "item_medical_scanner_001",
@@ -384,7 +384,7 @@
     "one_use": false,
     "effort_contribution": null,
     "gameplay_effect": "Unknown effects until identified by spectrometer. May trigger station inspection events. Contents randomized from a pool.",
-    "analysis": "Spectrometer through the seal: organic, kept cold, and shielded against exactly this kind of scan. The readout gives up and recommends delivering it on time."
+    "analysis": "Through the seal: organic, kept cold, and shielded against exactly this kind of scan. The readout gives up and recommends delivering it on time."
   },
   {
     "_section": "EVENT REWARD ITEMS — granted by specific events"
@@ -597,19 +597,20 @@
     ],
     "item_location_condition": "any",
     "cargo_slots": 1,
-    "base_price": 45,
+    "base_price": null,
     "sell_range": [
-      40,
-      120
+      15,
+      45
     ],
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Pure trade good. Sell price rolled at pickup (40-120cr). Each pickup is a unique instance.",
+    "gameplay_effect": "Pure trade good. Value rolled at pickup (15-45g). Each copy keeps its own value. A station trader pays exactly that value; a fence pays half again as much. Without a spectrometer aboard, the inventory and sell offers show only the range.",
     "tags": [
       "curiosity",
       "trade_good",
-      "unique_instance"
+      "unique_instance",
+      "spectrometer_reveals_value"
     ]
   },
   {
@@ -626,17 +627,18 @@
     "cargo_slots": 1,
     "base_price": null,
     "sell_range": [
-      10,
-      35
+      8,
+      20
     ],
     "passive_flavor": "The crate of unlabeled cans sits in cargo, assorted at everyone.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Pure trade good. Sell price rolled at pickup (10-35cr). Granted by event_crisis_006 when the cans are saved for trade instead of eaten.",
+    "gameplay_effect": "Pure trade good. Value rolled at pickup (8-20g). Each copy keeps its own value. A station trader pays exactly that value; a fence pays half again as much. Without a spectrometer aboard, the inventory and sell offers show only the range. Granted by event_crisis_006 when the cans are saved for trade, or bought sealed from the travelling trader (event_encounter_trader_001); event_general_009 opens it or sells it sealed for a flat 22g.",
     "tags": [
       "curiosity",
       "trade_good",
-      "unique_instance"
+      "unique_instance",
+      "spectrometer_reveals_value"
     ]
   },
   {
@@ -654,7 +656,7 @@
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Pure trade good. Fixed sell price 25cr.",
+    "gameplay_effect": "Pure trade good. Fixed value: a station trader pays 17g (two-thirds of its 25g price), a fence pays the full 25g.",
     "tags": [
       "curiosity",
       "trade_good"
@@ -671,19 +673,20 @@
     ],
     "item_location_condition": "any",
     "cargo_slots": 1,
-    "base_price": 15,
+    "base_price": null,
     "sell_range": [
-      10,
-      30
+      5,
+      15
     ],
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Pure trade good. Sell price rolled at pickup (10-30cr). Each pickup is a unique instance.",
+    "gameplay_effect": "Pure trade good. Value rolled at pickup (5-15g). Each copy keeps its own value. A station trader pays exactly that value; a fence pays half again as much. Without a spectrometer aboard, the inventory and sell offers show only the range.",
     "tags": [
       "curiosity",
       "trade_good",
-      "unique_instance"
+      "unique_instance",
+      "spectrometer_reveals_value"
     ]
   },
   {
@@ -697,22 +700,22 @@
     ],
     "item_location_condition": "any",
     "cargo_slots": 1,
-    "base_price": 24,
+    "base_price": null,
     "sell_range": [
-      5,
-      80
+      4,
+      28
     ],
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Pure trade good. Sell price rolled at pickup (5-80cr). Spectrometer reveals real value before sale.",
+    "gameplay_effect": "Pure trade good. Value rolled at pickup (4-28g). Each copy keeps its own value. A station trader pays exactly that value; a fence pays half again as much. Without a spectrometer aboard, the inventory and sell offers show only the range.",
     "tags": [
       "curiosity",
       "trade_good",
       "unique_instance",
       "spectrometer_reveals_value"
     ],
-    "analysis": "Spectrometer: not bone. A mineral cast of something that grew in low gravity, very slowly. Collectors pay for the story; a fence pays better than a station."
+    "analysis": "Not bone. A mineral cast of something that grew in low gravity, very slowly. Collectors pay for the story; a fence pays better than a station."
   },
   {
     "_section": "STORY ITEMS — info-only, advance events or reveal options"

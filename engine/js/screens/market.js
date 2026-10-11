@@ -13,7 +13,12 @@
      demo's black-market ware slots are refilled with real loot_only
      ids at the demo's price points.
    • Sell side: the vendor pays ~2/3 of an item's base_price — the
-     demo outpost_trader convention (18→12, 22→15, 6→4).
+     demo outpost_trader convention (18→12, 22→15, 6→4). Trade goods
+     with a sell_range have no base_price: each copy carries the value
+     rolled when it came aboard (index.html TRADE-GOOD VALUES), the
+     trader pays exactly that and the fence FENCE_MULT × it. Without a
+     spectrometer aboard the offer shows the range; the sale pays (and
+     logs) the real figure. Standing discounts never touch selling.
    • Gold is STATE.goldAmount; every transaction renderHUD()s.
    • Buying routes through window.grantItem (capacity-enforced —
      NEVER pushes to STATE.items directly). The canAddCargo hook
@@ -166,9 +171,11 @@
       wares,
       // Fence mode: buys tagged curiosities only (items.json's
       // trade_good tag — the engine's stand-in for the demo's
-      // black_market tag, which no real item carries).
+      // black_market tag, which no real item carries). Rolled-value
+      // goods carry their own fencePrice (cargoEntry); these are the
+      // fixed-value ones.
       wantedTags: ['trade_good'],
-      fencePrices: { pre_collapse_artifact: 40, unidentified_bone: 30, sealed_vinyl: 25 },
+      fencePrices: { sealed_vinyl: 25 },
       defaultFenceValue: 20,
       flavor: {
         buy:  ["No receipt.", "Yours. We never spoke.", "Keep it away from port authority scanners."],
@@ -179,16 +186,36 @@
     };
   }
 
-  // STATE.items (short-id strings) → MarketModal cargo entries.
-  function cargoEntry(sid) {
+  // STATE.items (short-id strings) → MarketModal cargo entries. A trade
+  // good with a rolled value is its own entry (key id#copy) priced at
+  // that copy's value — exact with a spectrometer aboard, the range without.
+  function cargoEntry(sid, copy) {
     const d = defBy(sid);
-    return {
+    const e = {
       id: sid,
       name: ((d && d.name) || sid.replace(/_/g, ' ')).toUpperCase(),
       icon: iconOf(sid),
       desc: (d && d.description) || '',
       tags: (d && d.tags) || []
     };
+    const vals = typeof itemValuesOf === 'function' ? itemValuesOf(sid) : [];
+    if (vals.length && copy != null && copy < vals.length) {
+      const v = vals[copy];
+      e.key = sid + '#' + copy;
+      e.copy = copy;
+      e.price = v;
+      e.fencePrice = fenceValueOf(v);
+      if (!itemValueKnown(sid)) {
+        e.priceLabel = itemValueRangeLabel(sid);
+        e.fenceLabel = itemValueRangeLabel(sid, true);
+        e.desc += (e.desc ? '  ' : '') + 'Unappraised: pays its real value, somewhere in that range. A spectrometer aboard reads the exact figure.';
+      }
+    }
+    return e;
+  }
+  function cargoEntries() {
+    const seen = {};
+    return STATE.items.map(sid => { const k = seen[sid] = (seen[sid] == null ? 0 : seen[sid] + 1); return cargoEntry(sid, k); });
   }
 
   // Trial-fit: would one more of `sid` fit the hold? Mirrors
@@ -226,7 +253,7 @@
       setGold: v => { STATE.goldAmount = Math.max(0, v); renderHUD(); },
       // Items, then one entry per unit of each raw material (the list
       // stacks them) — materials sell at stations, never take hold space.
-      getCargo: () => STATE.items.map(cargoEntry).concat(
+      getCargo: () => cargoEntries().concat(
         vendor.sinister ? [] : allMaterialDefs().flatMap(m => Array.from({ length: STATE.materials[m.id] || 0 }, () => ({
           id: m.id, name: (m.name || m.id).toUpperCase(), icon: 'sprites/cargo/materials/' + m.id + '.png', desc: m.description || '', tags: [], material: true,
         })))),
@@ -238,11 +265,13 @@
       // The cargo bay can't leave while the hold needs its extra slots.
       canRemoveCargo: sid => allMaterialDefs().some(m => m.id === sid) || typeof canRemoveItem !== 'function' || canRemoveItem(sid),
       cargoLockedMsg: 'The cargo bay is holding things. Clear some space first.',
-      removeCargo: sid => {
+      removeCargo: (sid, entry) => {
         if (allMaterialDefs().some(m => m.id === sid)) {
           STATE.materials[sid] = Math.max(0, (STATE.materials[sid] || 0) - 1);
           renderHUD(); return;
         }
+        // A rolled-value copy leaves with its own value (the one just paid for).
+        if (entry && entry.copy != null && typeof takeItemCopy === 'function') { takeItemCopy(sid, entry.copy); renderHUD(); return; }
         const i = STATE.items.indexOf(sid);
         if (i >= 0) STATE.items.splice(i, 1);
         renderHUD();
