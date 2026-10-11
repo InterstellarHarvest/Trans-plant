@@ -164,16 +164,19 @@ const btn = (page, re) => page.evaluate(src => { const b = [...document.querySel
     const r = await page.evaluate(() => {
       crewHPOf('medic');
       const phantom = 'medic' in STATE.crewHP;
+      // unique_instance = each pickup its own instance with its own rolled
+      // value (owner ruling 2026-10-11, Bible §14.2) — a second crate lands.
       const g1 = grantItem('mystery_provisions'), g2 = grantItem('mystery_provisions');
+      const copies = STATE.items.filter(x => x === 'mystery_provisions').length, vals = itemValuesOf('mystery_provisions').length;
       // the cargo bay can't be taken while its slots are in use
       STATE.items = ['insulated_cargo_bay']; while (cargoSlotsUsed() < cargoCapacity()) STATE.items.push('medkit');
       for (let i = 0; i < 40; i++) removeRandomItem();
       const bay = STATE.items.includes('insulated_cargo_bay') || cargoSlotsUsed() <= cargoCapacity();
       const tb = getComputedStyle(document.querySelector('#screen-title .title-buttons'));
-      return { phantom, g1, g2, bay, over: cargoSlotsUsed() > cargoCapacity() };
+      return { phantom, g1, g2, copies, vals, bay, over: cargoSlotsUsed() > cargoCapacity() };
     });
     ok(!r.phantom, 'asking about an absent role creates no HP entry');
-    ok(r.g1 && r.g2 === false, 'a unique_instance item is granted once');
+    ok(r.g1 && r.g2 && r.copies === 2 && r.vals === 2, 'a unique_instance item lands twice, each copy with its own value');
     ok(!r.over, 'random item loss never leaves the hold over capacity');
     const pe = await page.evaluate(() => { const el = document.querySelector('#screen-title .title-buttons'); el.classList.remove('visible'); return getComputedStyle(el).pointerEvents; });
     ok(pe === 'none', 'title buttons ignore clicks until they are visible');

@@ -1386,11 +1386,22 @@ const PauseMenu = (() => {
      - vendor:    { name, greeting, farewell, wares: [...], buyPrices: {id: g}, flavor: { buy/sell/deny/no_buyback: [...] } }
      - getGold/setGold  callbacks
      - getCargo:  () => Array<{ id, name, icon }>
+                    Optional per-entry pricing (an instance with its own
+                    value, e.g. a trade good rolled at pickup):
+                      key        — row identity (default id); entries
+                                   with their own key never stack
+                      price      — exact station offer (overrides buyPrices)
+                      fencePrice — exact fence offer (overrides fencePrices)
+                      priceLabel / fenceLabel — shown INSTEAD of the
+                                   number when the player can't see it
+                                   (e.g. '15–45g'); the sale still pays
+                                   price / fencePrice and logs it.
      - addCargo:  (entry) => void
      - canAddCargo: (ware) => bool  (OPTIONAL pre-buy gate, checked
                     before any cost applies — engine cargo capacity.
                     Refusal logs cargoFullMsg (optional string) as deny.)
-     - removeCargo: (id) => void   (removes one matching id)
+     - removeCargo: (id, entry) => void   (removes one matching id —
+                    the exact entry when the cargo entry carries a key)
      - logEl:     element to receive .market-log-line children (the running log)
      - hostEl:    element that receives .market-mode class (drives reflow)
      - rootId:    DOM id of the .enc-market element (default 'enc-market')
@@ -1424,7 +1435,7 @@ const MarketModal = (function() {
       opts: Object.assign({}, opts, { rootId, closeBtn, buyId, sellId, goldId }),
       consumedWares:      new Set(),
       soldCargoIdxs:      new Set(),   // fence-mode: index-based deferred removal
-      soldCargoById:      new Map(),   // normal-mode: id → count sold this session
+      soldCargoById:      new Map(),   // normal-mode: row key (id unless the entry has its own) → count sold this session
       purchasedWareCosts: new Map(),   // id → cost obj, for discounted buyback
       originalSubjectName: null
     };
@@ -1486,8 +1497,10 @@ const MarketModal = (function() {
           .filter(Boolean)
           .forEach(id => opts.removeCargo(id));
       }
-      _state.soldCargoById.forEach((count, id) => {
-        for (let i = 0; i < count; i++) opts.removeCargo(id);
+      const byKey = new Map(opts.getCargo().map(c => [c.key || c.id, c]));
+      _state.soldCargoById.forEach((count, key) => {
+        const entry = byKey.get(key);
+        for (let i = 0; i < count; i++) opts.removeCargo(entry ? entry.id : key, entry);
       });
     }
     // Hide the modal element.
@@ -1649,7 +1662,7 @@ const MarketModal = (function() {
     if (isFence) {
       // Fence mode: only show items the vendor wants (tagged cargo).
       if (titleEl) titleEl.textContent = 'FENCE ITEM';
-      const fencePrices  = vendor.fencePrices  || {};
+      const fencePrices  = vendor.fencePrices  || {};  // per-id fixed offers; entry.fencePrice wins
       const wantedTags   = vendor.wantedTags;
       const defaultValue = vendor.defaultFenceValue || 10;
       let hasAny = false;
@@ -1657,7 +1670,8 @@ const MarketModal = (function() {
         if (_state.soldCargoIdxs.has(idx)) return;
         if (!entry.tags || !entry.tags.some(t => wantedTags.includes(t))) return;
         hasAny = true;
-        const offer = fencePrices[entry.id] != null ? fencePrices[entry.id] : defaultValue;
+        const offer = entry.fencePrice != null ? entry.fencePrice
+          : fencePrices[entry.id] != null ? fencePrices[entry.id] : defaultValue;
         const row = document.createElement('div');
         row.className = 'market-row';
         if (entry.desc) row.dataset.tip = entry.desc;
@@ -1665,7 +1679,8 @@ const MarketModal = (function() {
         row.appendChild(makeName(entry.name));
         const costEl = document.createElement('div');
         costEl.className = 'market-row-cost';
-        costEl.textContent = '+' + offer + 'g';
+        costEl.textContent = '+' + (entry.fenceLabel || (offer + 'g'));
+        if (entry.fenceLabel) costEl.classList.add('unknown');
         row.appendChild(costEl);
         const btn = document.createElement('button');
         btn.className = 'market-row-btn';
@@ -1684,19 +1699,22 @@ const MarketModal = (function() {
       if (side) side.classList.remove('hidden');
       const buyPrices = (vendor && vendor.buyPrices) || {};
 
-      // Count how many of each id remain in cargo (total minus sold).
-      const groups = new Map(); // id → { entry, total }
+      // Count how many of each row key remain in cargo (total minus
+      // sold). The key is the id, unless an entry is its own instance.
+      const groups = new Map(); // key → { entry, total }
       cargo.forEach(entry => {
-        if (!groups.has(entry.id)) groups.set(entry.id, { entry, total: 0 });
-        groups.get(entry.id).total++;
+        const key = entry.key || entry.id;
+        if (!groups.has(key)) groups.set(key, { entry, total: 0 });
+        groups.get(key).total++;
       });
 
-      groups.forEach(({ entry, total }, id) => {
-        const sold      = _state.soldCargoById.get(id) || 0;
+      groups.forEach(({ entry, total }, key) => {
+        const id        = entry.id;
+        const sold      = _state.soldCargoById.get(key) || 0;
         const available = total - sold;
         if (available <= 0) return;
 
-        const regularOffer  = buyPrices[id];
+        const regularOffer  = entry.price != null ? entry.price : buyPrices[id];
         const purchasedCost = _state.purchasedWareCosts.get(id);
         const buybackOffer  = (purchasedCost && purchasedCost.gold)
           ? Math.max(1, Math.floor(purchasedCost.gold * 0.6))
@@ -1723,7 +1741,10 @@ const MarketModal = (function() {
 
         const costEl = document.createElement('div');
         costEl.className = 'market-row-cost';
-        if (offer) {
+        if (offer && entry.priceLabel) {
+          costEl.textContent = '+' + entry.priceLabel;   // the sale pays the real figure
+          costEl.classList.add('unknown');
+        } else if (offer) {
           costEl.textContent = '+' + offer + 'g' + (isBuyback ? ' ↩' : '');
         } else {
           costEl.textContent = 'no offer';
@@ -1735,7 +1756,7 @@ const MarketModal = (function() {
         btn.className = 'market-row-btn';
         btn.textContent = 'SELL';
         btn.disabled = !offer;
-        btn.addEventListener('click', () => sellCargoStacked(id, offer, entry.name));
+        btn.addEventListener('click', () => sellCargoStacked(key, offer, entry.name));
         row.appendChild(btn);
         list.appendChild(row);
       });
@@ -1749,7 +1770,7 @@ const MarketModal = (function() {
     if (!entry || _state.soldCargoIdxs.has(idx)) return;
     if (refuseRemoval(entry.id) || sellGuarded()) return;
     _state.opts.setGold(_state.opts.getGold() + offer);
-    if (_state.opts.removeCargo) _state.opts.removeCargo(entry.id);
+    if (_state.opts.removeCargo) _state.opts.removeCargo(entry.id, entry);
     else _state.soldCargoIdxs.add(idx);
     appendLog('Fenced ' + entry.name + ' · +' + offer + 'g', 'system pos');
     const flavor = pickFlavor('fence');
@@ -1823,20 +1844,23 @@ const MarketModal = (function() {
     appendLog(_state.opts.cargoLockedMsg || "Can't part with that right now.", 'deny');
     return true;
   }
-  function sellCargoStacked(id, offer, name) {
+  function sellCargoStacked(key, offer, name) {
     if (!_state || !offer) return;
     const cargo  = _state.opts.getCargo();
-    const sold   = _state.soldCargoById.get(id) || 0;
-    const available = cargo.filter(e => e.id === id).length - sold;
+    const sold   = _state.soldCargoById.get(key) || 0;
+    const mine   = cargo.filter(e => (e.key || e.id) === key);
+    const available = mine.length - sold;
     if (available <= 0) return;
+    const entry = mine[0];
+    const id    = entry.id;
     if (refuseRemoval(id) || sellGuarded()) return;
-    if (_state.opts.removeCargo) _state.opts.removeCargo(id);
-    else _state.soldCargoById.set(id, sold + 1);
+    if (_state.opts.removeCargo) _state.opts.removeCargo(id, entry);
+    else _state.soldCargoById.set(key, sold + 1);
     _state.opts.setGold(_state.opts.getGold() + offer);
     // Buyback: item was purchased from this vendor, vendor has no standing
     // buy-price for it. Restore the ware slot so it re-appears as available.
     const buyPrices = (_state.opts.vendor && _state.opts.vendor.buyPrices) || {};
-    const isBuyback = !buyPrices[id] && _state.purchasedWareCosts.has(id);
+    const isBuyback = entry.price == null && !buyPrices[id] && _state.purchasedWareCosts.has(id);
     if (isBuyback) {
       const wares = (_state.opts.vendor && _state.opts.vendor.wares) || [];
       const wareIdx = wares.findIndex(w => w.id === id);
