@@ -84,7 +84,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       const ev = Object.values(EVENTS).find(e => JSON.stringify(e).includes('"triggerCombat":true'));
       enterEvent(STATE.byId[STATE.currentId], ev); window.triggerCombat({});
     });
-    await page.waitForTimeout(250);
+    await page.waitForTimeout(450); // after the 200ms choices → actions cross-dissolve
     const btn = await page.evaluate(() => { const b = [...document.querySelectorAll('#enc-choices .enc-choice')].find(x => /BOOST SHIELDS/.test(x.textContent)); return b && !b.classList.contains('locked'); });
     ok(btn, 'BOOST SHIELDS unlocked with the module aboard');
     await page.evaluate(() => [...document.querySelectorAll('#enc-choices .enc-choice')].find(x => /BOOST SHIELDS/.test(x.textContent)).click());
