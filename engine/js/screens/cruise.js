@@ -401,22 +401,40 @@
     entry.appendChild(a);
   }
 
+  // 📖 on entries with an expand payload (Bible §AI Log Panel): opens
+  // that entry's page in the Ship's Log journal.
+  function addExpandChrome(entry, en) {
+    if (!en || !en.expand || !window.ShipLog) return;
+    const b = document.createElement('span');
+    b.className = 'ai-entry-expand';
+    b.textContent = '📖';
+    b.setAttribute('title', 'Read more');
+    b.addEventListener('click', ev => { ev.stopPropagation(); ShipLog.openEntry(en); });
+    entry.appendChild(document.createTextNode(' '));
+    entry.appendChild(b);
+  }
+
   /* Accepts a plain string OR {text, link: {url, label}} per the
      Bible's reserved log-entry schema (§18 "Expandable entries &
      external links"). opts.ai marks the active AI's own voice line;
      opts.instant skips the typewriter. Link entries get the 🔗
      convention and open in a new tab. */
   function pushLogEntry(entryOrText, opts) {
+    // Ship's Log (engine/js/shipslog.js): while an outcome is being
+    // applied, lines are held and replayed after its choice/outcome
+    // entries, so the record reads in order.
+    if (window.ShipLog && ShipLog.capture(entryOrText, opts)) return null;
     opts = opts || {};
     const log = $('ai-log');
     const isObj = entryOrText && typeof entryOrText === 'object';
     const text = isObj ? entryOrText.text : entryOrText;
     const voice = opts.ai ? (STATE.activeAI || 'marv') : null;
+    const day = (isObj && Number.isFinite(entryOrText.day)) ? entryOrText.day : STATE.daysElapsed;
     // Persist to the run's Ship's Log (browsable journal — pause menu →
     // SHIP'S LOG). Day-stamped; carries link/expand payloads through.
     STATE.shipLog = STATE.shipLog || [];
-    STATE.shipLog.push({
-      day: STATE.daysElapsed,
+    const stored = {
+      day: day,
       text: text,
       link: (isObj && entryOrText.link) || null,
       expand: (isObj && entryOrText.expand) || null,
@@ -426,7 +444,9 @@
       crewId: (isObj && entryOrText.crewId) || null,
       crewName: (isObj && entryOrText.crewName) || null,
       voice: voice,
-    });
+    };
+    STATE.shipLog.push(window.ShipLog ? ShipLog.store(stored) : stored);
+    if (window.ShipLog) ShipLog.compact();
     const line = displayLine(text, voice);
     // While stopped the log column is under the Stop menu: the AI's
     // lines go up on the ticker instead (the entry still lands, so the
@@ -435,15 +455,17 @@
     const sticky = isAtBottom(log);
     finishTyping();
     log.querySelectorAll('.ai-entry.latest').forEach(e => e.classList.remove('latest'));
-    if (STATE.daysElapsed !== markerDay) appendDayMarker(log, STATE.daysElapsed);
+    if (day !== markerDay) appendDayMarker(log, day);
     const entry = document.createElement('div');
     entry.className = 'ai-entry latest' + (voice ? ' voice' : ' system');
     log.appendChild(entry);
     const link = isObj ? entryOrText.link : null;
+    const saved = STATE.shipLog[STATE.shipLog.length - 1];
     const follow = () => { if (sticky) log.scrollTop = log.scrollHeight; };
     if (opts.instant || isStopped() || !cruiseVisible()) {
       entry.textContent = line;
       addLinkChrome(entry, link);
+      addExpandChrome(entry, saved);
       follow();
       return entry;
     }
@@ -452,7 +474,7 @@
     cursor.className = 'tw-cursor';
     entry.appendChild(span);
     entry.appendChild(cursor);
-    typing = { span, cursor, text: line, timer: null, done: () => { addLinkChrome(entry, link); follow(); } };
+    typing = { span, cursor, text: line, timer: null, done: () => { addLinkChrome(entry, link); addExpandChrome(entry, saved); follow(); } };
     const t = typing;
     let i = 0;
     (function tick() {
@@ -484,6 +506,7 @@
       d.className = 'ai-entry' + (en.voice ? ' voice' : ' system') + (i === list.length - 1 ? ' latest' : '');
       d.textContent = displayLine(en.text, en.voice);
       addLinkChrome(d, en.link);
+      addExpandChrome(d, en);
       log.appendChild(d);
     });
     log.scrollTop = log.scrollHeight;
@@ -1692,6 +1715,7 @@
   function checkCropMilestones() {
     if (!STATE.crop || !STATE.cropGrowth) return;
     checkZinniaArc();
+    if (window.ShipLog) ShipLog.cropCheck(); // Ship's Log: growth-stage milestones (shipslog.js)
     const growth = STATE.cropGrowth.growth || 0;
     const health = STATE.cropGrowth.health;
     // A fresh growth cycle (launch, or the replant after a harvest —

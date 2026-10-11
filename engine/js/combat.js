@@ -1482,6 +1482,9 @@
     const crewBefore = STATE.crew.slice();
     const namesBefore = Object.fromEntries(crewBefore.map(r => [r, crewNameOf(r)]));
     const before = { hull: STATE.resources.hull, morale: STATE.resources.morale, fuel: STATE.resources.fuel, food: STATE.resources.food, gold: STATE.goldAmount };
+    // Ship's Log: the fight's record (won/lost/fled/paid + real effects,
+    // loot and cargo loss included) is closed below, before checkFailure.
+    const slog = window.ShipLog && ShipLog.begin();
     applyOutcomeEffects(outcome);
     const lethalSaved = !!STATE.lethalSaved;
     STATE.lethalSaved = null; // combat writes its own crew line below
@@ -1535,6 +1538,7 @@
       }
     }
 
+    if (slog) ShipLog.fightEnd(slog, result.outcome, title);
     renderHUD();
     if (checkFailure()) return;
 
@@ -1580,7 +1584,9 @@
   function resolveToOutcome(choice, opts) {
     const ev = STATE.currentEvent;
     const outcome = ev.outcomes[choice.outcome];
+    const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: choice + outcome + real effects
     applyOutcomeEffects(outcome);
+    if (slog) ShipLog.resolved(slog, ev, choice, outcome, { line: outcome && (outcome.body || outcome.narrative) });
     renderHUD();
     if (checkFailure()) return;
     STATE.currentOutcomeId = choice.outcome;
@@ -1599,6 +1605,7 @@
   window.triggerRamResolve = function (choice) {
     const RAM_FAIL_CHANCE = 0.30;
     if (Math.random() < RAM_FAIL_CHANCE) {
+      if (window.ShipLog) ShipLog.fightStart(choice); // the fight's log entry names the ram
       window.triggerCombat(choice, { ramFailed: true, ramHull: choice.hull || 18 });
     } else {
       resolveToOutcome(choice, { hostileGone: true });
@@ -1662,7 +1669,9 @@
     if (!opts.ramFailed && STATE.flags.has('friendly_with_pirate_' + sp)) {
       const o = { time_cost: 'trivial', resources: { morale: 2 },
         narrative: 'Their weapons stay cold. Comms crackle: someone is still talking about the cookies. They wave you through and ask, quietly, whether there are more.' };
+      const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: waved through
       applyOutcomeEffects(o);
+      if (slog) ShipLog.resolved(slog, STATE.currentEvent, choice, Object.assign({ tone: 'success' }, o));
       renderHUD();
       renderOutcomeView({ title: 'OLD FRIENDS', body: o.narrative, tone: 'success' });
       return;

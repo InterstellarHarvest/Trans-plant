@@ -280,6 +280,25 @@ for (const file of eventFiles) {
     if (ev.science_link && !(ev.science_link.url && /^https?:\/\//.test(ev.science_link.url))) {
       err(`${file} ${ev.id}: science_link.url missing or not http(s)`);
     }
+    // log_lore (Ship's Log, engine/js/shipslog.js): an outcome's long-form
+    // page behind the journal's 📖 — { title ≤ 40 chars, text ≥ 80 }.
+    // Only on outcomes (inline, layered ev.outcomes, tier_outcomes).
+    {
+      const outs = [];
+      for (const { layer, choices } of choiceSets) for (const ch of choices) {
+        if (ch.log_lore) err(`${file} ${ev.id}${layer ? '/' + layer : ''}: log_lore belongs on the outcome, not the choice "${ch.text}"`);
+        if (ch.outcome && typeof ch.outcome === 'object') outs.push([`choice "${ch.text}"`, ch.outcome]);
+        for (const [t, to] of Object.entries(ch.tier_outcomes || {})) outs.push([`choice "${ch.text}" tier ${t}`, to]);
+      }
+      for (const [id, o] of Object.entries(ev.outcomes || {})) outs.push([`outcome ${id}`, o]);
+      for (const [at, o] of outs) {
+        const l = o && o.log_lore;
+        if (l == null) continue;
+        if (typeof l !== 'object' || typeof l.title !== 'string' || !l.title.trim() || l.title.length > 40 || typeof l.text !== 'string' || l.text.trim().length < 80) {
+          err(`${file} ${ev.id} ${at}: log_lore must be { title: <1–40 chars>, text: <80+ chars> }`);
+        }
+      }
+    }
 
     // requires_item values (choice, gate.item, event-level) must be
     // registered like any other tag (nine had drifted unregistered).
@@ -1027,6 +1046,29 @@ const eventOnTrail = (ev, trail) => {
   for (const [id, type] of [['ai_aria', 'morale_bonus'], ['ai_chip', 'price_reduction']]) {
     const a = ais.find(x => x.id === id);
     if (!a || !a.passive_effect || a.passive_effect.type !== type || !Number.isFinite(a.passive_effect.value)) err(`ai_companions.json ${id}: passive_effect must be { type: "${type}", value: <number> } (the engine reads it)`);
+  }
+  // log_templates (Ship's Log voicing, engine/js/shipslog.js): every AI
+  // authors every key, and each carries the tokens that state the REAL
+  // effect (no decorative claims). Fixed text stays short so the filled
+  // entry fits the Bible §19 120-char cap.
+  const LOG_TEMPLATE_TOKENS = {
+    choice: ['title', 'choice'], outcome_good: ['line', 'effects'], outcome_bad: ['line', 'effects'],
+    death: ['name', 'crew_left'], memorial_title: ['name'],
+    stowaway_join: ['name', 'role', 'crew_count'], stowaway_passenger: ['name', 'crew_count'],
+    crop_stage: ['crop', 'stage', 'growth', 'health'], crop_ready: ['crop', 'health'],
+    arrival: ['place', 'costs'],
+    fight_won: ['title', 'effects'], fight_lost: ['title', 'effects'], fight_fled: ['title', 'effects'], fight_paid: ['title', 'effects'],
+  };
+  for (const a of ais) {
+    const t = a.log_templates;
+    if (!t || typeof t !== 'object') { err(`ai_companions.json ${a.id}: log_templates missing (the Ship's Log voices every entry from it)`); continue; }
+    for (const [k, toks] of Object.entries(LOG_TEMPLATE_TOKENS)) {
+      if (typeof t[k] !== 'string' || !t[k].trim()) { err(`ai_companions.json ${a.id}: log_templates.${k} missing`); continue; }
+      for (const tok of toks) if (!t[k].includes('{' + tok + '}')) err(`ai_companions.json ${a.id}: log_templates.${k} must use {${tok}} (states the real effect)`);
+      const fixed = t[k].replace(/\{\w+\}/g, '').length;
+      if (fixed > 60) err(`ai_companions.json ${a.id}: log_templates.${k} fixed text is ${fixed} chars (≤ 60 leaves room under the 120 cap)`);
+    }
+    for (const k of Object.keys(t)) if (!(k in LOG_TEMPLATE_TOKENS)) err(`ai_companions.json ${a.id}: log_templates.${k} is not a key the engine reads`);
   }
 }
 

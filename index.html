@@ -21,6 +21,7 @@
 <link href="resources/screen-crew.css" rel="stylesheet">
 <link href="resources/screen-orders.css" rel="stylesheet">
 <link href="resources/screen-end.css" rel="stylesheet">
+<link href="resources/screen-shipslog.css" rel="stylesheet">
 <script>
 /* Double-click launch: browsers block fetch()/XHR on file:// pages, so
    opened from disk the engine reads its JSON from a generated bundle
@@ -578,119 +579,7 @@ body {
 /* End screen (Phase 6 two-screen cinematic+report flow) now lives in
    resources/screen-end.css, matching every other migrated screen. */
 
-/* ── Ship's Log overlay (engine-backed journal) ─────────────────── */
-#overlay-shipslog { display: flex; align-items: center; justify-content: center; background: rgba(4,8,16,0.75); }
-/* Parchment journal chrome (demo-shipslog.html canon): the Ship's
-   Log is a JOURNAL, so it reads like paper — deliberately divergent
-   from the dark modal palette. Death entries + memorial expand swap
-   to dark slate + ember (a memorial, not a journal page). */
-#overlay-shipslog {
-  --log-paper: #e8d8a0; --log-paper-dark: #d8c888;
-  --log-ink: #2a1f10; --log-ink-dim: #6a5430;
-  --log-edge: #5a4226; --log-payload: #b85a18;
-  --death-bg-top: #1a1620; --death-bg-bot: #0a0810;
-  --death-edge: #4a3030; --death-ember: #c89050; --death-ash: #c0b8a8;
-}
-#slog-card {
-  width: 560px; max-height: 540px;
-  background:
-    radial-gradient(ellipse at 25% 20%, rgba(90,66,38,0.04) 0%, transparent 55%),
-    radial-gradient(ellipse at 75% 80%, rgba(90,66,38,0.04) 0%, transparent 55%),
-    linear-gradient(180deg, var(--log-paper) 0%, var(--log-paper-dark) 100%);
-  border: 3px solid var(--log-edge);
-  border-radius: 6px;
-  display: flex; flex-direction: column;
-  padding: 18px 20px 14px; gap: 12px;
-  box-shadow: inset 0 0 0 1px rgba(232,216,160,0.4), inset 0 0 0 2px rgba(90,66,38,0.4), 0 8px 40px rgba(0,0,0,0.8);
-}
-#slog-header {
-  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 12px;
-  letter-spacing: 2px; color: var(--log-ink);
-  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-}
-#slog-count { font-size: 8px; color: var(--log-ink-dim); margin-left: auto; }
-.modal-x.slog-x { border-color: rgba(90,66,38,0.55); background: rgba(90,66,38,0.08); color: var(--log-ink); }
-.modal-x.slog-x:hover { border-color: var(--log-edge); }
-/* Gold custom scrollbar on the journal (DESIGN_SYSTEM hard rule). */
-#slog-rows-host { flex: 1 1 auto; min-height: 80px; }
-#slog-rows { overflow-y: auto; flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px; min-height: 0; padding-right: 12px; }
-#slog-footer { flex-shrink: 0; }
-.slog-row {
-  font-family: 'VT323', monospace; font-size: 17px; line-height: 1.3;
-  color: var(--log-ink);
-  background: rgba(90,66,38,0.06); border-left: 3px solid var(--log-edge);
-  border-radius: 2px; padding: 7px 10px 7px 22px;
-  position: relative;
-}
-.slog-led {
-  position: absolute; left: 8px; top: 12px;
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--log-edge);
-}
-.slog-row.death { border-left-color: #a02828; }
-.slog-row.death .slog-led { background: #a02828; box-shadow: 0 0 4px rgba(160,40,40,0.5); }
-.slog-row.sci .slog-led { background: var(--log-payload); box-shadow: 0 0 4px rgba(184,90,24,0.4); }
-.slog-day {
-  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 7px; letter-spacing: 1px;
-  color: var(--log-ink-dim); display: block; margin-bottom: 3px;
-}
-.slog-row .ai-entry-link { font-size: 15px; color: var(--log-payload); }
-.slog-expand-btn {
-  font-family: 'VT323', monospace; font-size: 15px;
-  color: var(--log-payload); background: none; border: none;
-  border-bottom: 1px dotted var(--log-payload);
-  cursor: var(--cursor-hand, pointer); padding: 0; margin-left: 6px;
-}
-.slog-empty { font-family: 'VT323', monospace; font-size: 17px; color: var(--log-ink-dim); text-align: center; padding: 18px 0; }
-#slog-footer { display: flex; justify-content: space-between; align-items: center; }
-#slog-note { font-family: 'VT323', monospace; font-size: 14px; color: var(--log-ink-dim); }
-#slog-expand-modal {
-  position: absolute; inset: 0; z-index: 5;
-  background: rgba(2,4,8,0.85);
-  align-items: center; justify-content: center;
-}
-#slog-expand-host { flex: 1 1 auto; min-height: 0; }
-#slog-expand-body { overflow-y: auto; min-height: 0; padding-right: 12px; }
-#slog-expand-card > .slog-death-header, #slog-expand-card > .btn { flex-shrink: 0; }
-#slog-expand-card {
-  width: 480px; max-height: 440px; overflow: hidden;
-  background: linear-gradient(180deg, var(--log-paper) 0%, var(--log-paper-dark) 100%);
-  border: 3px solid var(--log-edge); border-radius: 6px;
-  padding: 20px; display: flex; flex-direction: column; gap: 14px;
-  box-shadow: inset 0 0 0 1px rgba(232,216,160,0.4), 0 8px 40px rgba(0,0,0,0.9);
-}
-#slog-expand-body { font-family: 'VT323', monospace; font-size: 18px; line-height: 1.4; color: var(--log-ink); white-space: pre-wrap; }
-/* Memorial variant */
-#slog-expand-card.death-mode {
-  background:
-    radial-gradient(ellipse at 30% 0%, rgba(140,80,60,0.10) 0%, transparent 65%),
-    linear-gradient(180deg, var(--death-bg-top) 0%, var(--death-bg-bot) 100%);
-  border-color: var(--death-edge);
-  box-shadow: inset 0 0 0 1px rgba(180,110,80,0.35), inset 0 0 0 2px rgba(0,0,0,0.4), 0 8px 40px rgba(0,0,0,0.9);
-}
-#slog-expand-card.death-mode #slog-expand-body { color: var(--death-ash); }
-.slog-death-header {
-  display: flex; align-items: center; gap: 16px;
-  padding: 4px 2px 14px;
-  border-bottom: 1px dashed rgba(180,110,80,0.25);
-}
-.slog-portrait {
-  width: 50px; height: 120px; flex-shrink: 0; overflow: hidden;
-  border: 2px solid var(--death-edge);
-  background: rgba(10,8,12,0.85);
-  filter: grayscale(0.85) brightness(0.7) contrast(1.1) sepia(0.15);
-}
-.slog-candle {
-  font-size: 56px; color: var(--death-ember); line-height: 1;
-  width: 50px; text-align: center; flex-shrink: 0;
-  font-family: 'Times New Roman', Georgia, serif;
-  text-shadow: 0 0 14px rgba(200,144,80,0.55), 0 1px 2px rgba(0,0,0,0.8);
-}
-.slog-death-name {
-  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 11px;
-  letter-spacing: 2px; color: var(--death-ember);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
-}
+/* Ship's Log journal + memorial: resources/screen-shipslog.css. */
 
 /* ── Cargo hold overlay (minimal readout for full enforcement) ──── */
 #overlay-inventory { display: flex; align-items: center; justify-content: center; background: rgba(4,8,16,0.75); }
@@ -1136,30 +1025,34 @@ body {
   </div>
   <div id="overlay-stopmenu" class="overlay"></div>
 
-  <!-- Ship's Log — the run's browsable journal (every AI-log entry,
-       day-stamped, with 🔗 link / 📖 expand payloads). Opened from the
-       pause menu's SHIP'S LOG panel. The demo's full parchment chrome
-       (demo-shipslog.html) remains future polish; this is the live,
-       engine-backed surface. -->
+  <!-- Ship's Log — the voyage's journal (demo-shipslog.html canon,
+       engine/js/shipslog.js): 340×540 parchment docked over the AI-log
+       column; 📖 opens a lore page or the memorial. -->
   <div id="overlay-shipslog" class="overlay dim-behind">
     <div id="slog-card">
-      <div id="slog-header"><span>SHIP'S LOG</span> <span id="slog-count"></span><button class="modal-x slog-x" id="slog-x" aria-label="Close">✕</button></div>
+      <header class="log-header">
+        <h1 class="log-title">SHIP'S LOG</h1>
+        <span class="log-meta" id="slog-meta"></span>
+        <button class="log-close-x" id="slog-x" aria-label="Close" data-esc-close>×</button>
+      </header>
       <div class="scroll-host" id="slog-rows-host">
         <div id="slog-rows" class="scroll-content"></div>
         <div class="scroll-track"><div class="scroll-thumb"></div></div>
       </div>
-      <div id="slog-footer">
-        <span id="slog-note">Recorded in your AI's voice, since launch.</span>
-        <button class="btn accent-gold" id="slog-close" data-esc-close>Close</button>
-      </div>
+      <footer class="log-footer">
+        <span class="log-footer-meta">VOICED BY <strong id="slog-voice">MARV</strong> · <span id="slog-day">DAY 0</span></span>
+      </footer>
     </div>
     <div id="slog-expand-modal" style="display:none;">
       <div id="slog-expand-card">
+        <header class="expand-header">
+          <h2 class="expand-title" id="slog-expand-title">FROM THE LOG</h2>
+          <button class="log-close-x" id="slog-expand-close" aria-label="Close">×</button>
+        </header>
         <div class="scroll-host" id="slog-expand-host">
           <div id="slog-expand-body" class="scroll-content"></div>
           <div class="scroll-track"><div class="scroll-thumb"></div></div>
         </div>
-        <button class="btn" id="slog-expand-close">Back to Log</button>
       </div>
     </div>
   </div>
@@ -1709,6 +1602,7 @@ body {
 <script src="engine/js/screens/market.js"></script>
 <script src="engine/js/screens/crew.js"></script>
 <script src="engine/js/screens/endings.js"></script>
+<script src="engine/js/shipslog.js"></script>
 
 <script>
 'use strict';
@@ -2435,6 +2329,11 @@ function killCrew(role) {
   const idx = STATE.crew.indexOf(role);
   if (idx < 0) return;
   const name = crewNameOf(role), crewId = crewSpriteIdOf(role);
+  // Ship's Log memorial — composed before they leave the roster (it
+  // reads who they were); pushed below, after the bookkeeping.
+  const pool = MOD.flavor && MOD.flavor.crew_epitaphs;
+  const epitaph = pool && pool.length ? pool[Math.floor(Math.random() * pool.length)].replaceAll('[Name]', name) : '';
+  const memorial = window.ShipLog ? ShipLog.deathEntry(role, epitaph) : null;
   STATE.crew.splice(idx, 1);
   if (STATE.crewIdentity) delete STATE.crewIdentity[role];
   delete STATE.crewHP[role];
@@ -2445,18 +2344,11 @@ function killCrew(role) {
   // that you have none. Solo launches (wizard-permitted, with authored
   // solo_run content) and deliberate dismissals never trip it.
   if (STATE.crew.length === 0) STATE.flags.add('all_crew_dead');
-  const pool = MOD.flavor && MOD.flavor.crew_epitaphs;
-  if (pool && pool.length && typeof window.pushCruiseLog === 'function') {
-    const epitaph = pool[Math.floor(Math.random() * pool.length)].replaceAll('[Name]', name);
-    // Death entries carry crew identity so the journal can render the
-    // memorial page (portrait if we have one, candle if not).
-    window.pushCruiseLog({
-      text: '◆ ' + epitaph,
-      type: 'death',
-      crewId,
-      crewName: name,
-      expand: epitaph,
-    });
+  // Death entries carry crew identity so the journal can render the
+  // memorial page (portrait if we have one, candle if not); the voiced
+  // line states the real loss, the 📖 page holds the epitaph and more.
+  if (typeof window.pushCruiseLog === 'function') {
+    window.pushCruiseLog(memorial || { text: '◆ ' + (epitaph || name + ' is gone.'), type: 'death', crewId, crewName: name, expand: epitaph }, memorial ? { ai: true } : undefined);
   }
   pushAiSample('crew_death');
 }
@@ -3114,90 +3006,7 @@ function closeInventory() {
   if (typeof saveRun === 'function') saveRun();
 }
 
-/* ── Ship's Log overlay ──────────────────────────────────────────
-   Browsable journal of every log entry this run (day-stamped, newest
-   first), with the Bible's 🔗 link and 📖 expand payloads live.
-   Opened from the pause menu's SHIP'S LOG panel via window.openShipsLog. */
-function renderShipsLog() {
-  const rows = document.getElementById('slog-rows');
-  const entries = STATE.shipLog || [];
-  document.getElementById('slog-count').textContent = entries.length + ' ENTRIES · DAY ' + STATE.daysElapsed;
-  rows.innerHTML = '';
-  if (!entries.length) {
-    rows.innerHTML = '<div class="slog-empty">Nothing logged yet. The voyage is young and the AI is saving its material.</div>';
-    return;
-  }
-  for (let i = entries.length - 1; i >= 0; i--) {
-    const e = entries[i];
-    const row = document.createElement('div');
-    row.className = 'slog-row' + (e.type ? ' ' + e.type : '');
-    const led = document.createElement('span');
-    led.className = 'slog-led';
-    row.appendChild(led);
-    const day = document.createElement('span');
-    day.className = 'slog-day';
-    day.textContent = 'DAY ' + e.day;
-    row.appendChild(day);
-    row.appendChild(document.createTextNode(e.text));
-    if (e.link && e.link.url) {
-      const a = document.createElement('a');
-      a.className = 'ai-entry-link';
-      a.href = e.link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-      a.textContent = ' 🔗 ' + (e.link.label || 'Learn more');
-      row.appendChild(a);
-    }
-    if (e.expand) {
-      const b = document.createElement('button');
-      b.className = 'slog-expand-btn';
-      b.textContent = '📖 read more';
-      b.addEventListener('click', () => {
-        const card = document.getElementById('slog-expand-card');
-        const body = document.getElementById('slog-expand-body');
-        // Wipe any previous memorial header.
-        card.querySelectorAll('.slog-death-header').forEach(h => h.remove());
-        card.classList.toggle('death-mode', e.type === 'death');
-        if (e.type === 'death') {
-          // Memorial page: desaturated portrait when the crew id has
-          // one, candle otherwise (demo-shipslog canon).
-          const hdr = document.createElement('div');
-          hdr.className = 'slog-death-header';
-          if (e.crewId && typeof crewIconCss === 'function') {
-            const p = document.createElement('div');
-            p.className = 'slog-portrait';
-            p.innerHTML = '<div class="has-sprite" style="width:100%;height:100%;' + crewIconCss(e.crewId, '50px') + '"></div>';
-            hdr.appendChild(p);
-          } else {
-            const c = document.createElement('div');
-            c.className = 'slog-candle';
-            c.textContent = '†';
-            hdr.appendChild(c);
-          }
-          const nm = document.createElement('div');
-          nm.className = 'slog-death-name';
-          nm.textContent = 'IN MEMORIAM' + (e.crewName ? ' · ' + e.crewName.toUpperCase() : '');
-          hdr.appendChild(nm);
-          card.insertBefore(hdr, document.getElementById('slog-expand-host'));
-        }
-        body.textContent = e.expand;
-        document.getElementById('slog-expand-modal').style.display = 'flex';
-      });
-      row.appendChild(b);
-    }
-    rows.appendChild(row);
-  }
-}
-window.openShipsLog = function () {
-  // A memorial/expand left open last time must not reappear (parity audit).
-  closeShipsLogExpand();
-  showOverlay('overlay-shipslog');
-  renderShipsLog();
-};
-function closeShipsLogExpand() {
-  document.getElementById('slog-expand-modal').style.display = 'none';
-}
-function shipsLogExpandOpen() {
-  return document.getElementById('slog-expand-modal').style.display === 'flex';
-}
+/* Ship's Log journal (render / open / expand): engine/js/shipslog.js. */
 /* Esc peels one layer at a time (parity audit: Esc with a memorial or
    expand open closed the whole log; Esc in the jettison confirm closed
    the whole hold). Capture phase, so it runs before shared.js's
@@ -3441,6 +3250,7 @@ function returnToHub() {
   // after the first encounter of every run (bug hunt 2026-10-09).
   STATE.currentEvent = null; STATE.currentNode = null;
   STATE.layerStack = null; STATE.currentOutcomeId = null; STATE.outcomeMode = false;
+  if (window.ShipLog) ShipLog.eventEnd();
   STATE.npcCtx = null;
   STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.effortScale = 1; STATE.effortCon = null;
   STATE.researchKey = null; // a Research preview lasts for its encounter only
@@ -3977,6 +3787,7 @@ function travelTo(nodeId, opts) {
   // (Restoration item 5). Paid on every leg — including the final hop
   // to the arrival node, and Push Engines' skipEvent legs. Running the
   // tank (or the clock) dry mid-leg ends the run right here.
+  const legLog = window.ShipLog && ShipLog.begin({ fresh: true }); // Ship's Log: the arrival entry states the leg's real cost
   {
     const leg = legTravelCost();
     // Fractional days carry leg to leg (rounding each leg distorted the
@@ -4001,6 +3812,7 @@ function travelTo(nodeId, opts) {
     if (chefMorale > 0 && STATE.resources.food > 0) STATE.resources.morale = clamp(STATE.resources.morale + chefMorale, 0, 100);
     arrivalPassives(node);
     cropDrama();
+    if (legLog) ShipLog.arrival(legLog, node);
     renderHUD();
     if (checkFailure({ arriving: connectionsOf(node).length === 0 })) return;
   }
@@ -4088,6 +3900,7 @@ function enterEvent(node, ev, opts) {
   // once the NPC and variant are rolled (hunt 6: a reload re-rolled the
   // pirate's species, which sets its hull and whether it surrenders).
   if (window.SceneArt && SceneArt.beginEvent) SceneArt.beginEvent();
+  if (window.ShipLog) ShipLog.eventStart(); // Ship's Log: the event's real effects are measured from here
   STATE.currentEvent     = ev;
   STATE.currentNode      = node;
   STATE.outcomeMode      = false;
@@ -4899,9 +4712,15 @@ function renderLeaveRow(col) {
     leave.appendChild(sub);
   }
   if (!forced) bindEncButton(leave, () => {
-    if (STATE._shoppedThisEvent) {
+    const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: "we chose LEAVE" + what the visit really cost
+    const shopped = STATE._shoppedThisEvent;
+    if (shopped) {
       STATE._shoppedThisEvent = false;
-      passDays(1); renderHUD();
+      passDays(1);
+    }
+    if (slog) ShipLog.resolved(slog, ev, { text: label.textContent }, { narrative: '' });
+    if (shopped) {
+      renderHUD();
       if (checkFailure()) return;
     }
     advanceAfterEvent();
@@ -5409,6 +5228,7 @@ function handleChoiceClick(choice) {
   // honored here as an alias).
   if ((choice.triggerCombat || choice.combat_trigger) && typeof window.triggerCombat === 'function') {
     if (choice.setFlag) STATE.flags.add(choice.setFlag);
+    if (window.ShipLog) ShipLog.fightStart(choice); // the fight's log entry names the choice that started it
     window.triggerCombat(choice);
     return;
   }
@@ -5461,7 +5281,9 @@ function handleChoiceClick(choice) {
   }
   if (choice.outcome) {
     const outcome = ev.outcomes[choice.outcome];
+    const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: choice + outcome + real effects
     applyOutcomeEffects(outcome);
+    if (slog) ShipLog.resolved(slog, ev, choice, outcome, { line: outcome && (outcome.body || outcome.narrative) });
     renderHUD();
     if (checkFailure()) return;
     STATE.currentOutcomeId = choice.outcome;
@@ -5578,10 +5400,12 @@ function applyOutcomeEffects(o) {
         STATE.crew.push(idn.join_role);
         STATE.crewHP[idn.join_role] = 100;
         if (!STATE.crewIdentity) STATE.crewIdentity = {};
-        STATE.crewIdentity[idn.join_role] = { id: idn.id, name: idn.name, story: idn.story };
+        STATE.crewIdentity[idn.join_role] = { id: idn.id, name: idn.name, story: idn.story, joinedDay: STATE.daysElapsed };
         ensureCrewSkillCharges(); // a full crew member gets their skill charges too
+        if (window.ShipLog) ShipLog.stowaway(idn.name || 'The stowaway', idn.join_role);
       } else {
         STATE.flags.add('stowaway_passenger');
+        if (window.ShipLog) ShipLog.stowaway(idn.name || 'The stowaway', null);
       }
       STATE.flags.add('stowaway_welcomed');
     }
@@ -5660,7 +5484,9 @@ function applyOutcomeEffects(o) {
   // Effort system (Bible §Effort, owner ruling 2026-10-10 "effort only"):
   // a repair choice's days scale by effort_required / effort available.
   const scale = STATE.effortScale || 1;
+  if (window.ShipLog) ShipLog.timeStart(); // Ship's Log: the ship's own daily draw isn't the outcome's effect
   passDays(Math.max(1, Math.round(base * scale)) + (STATE.effortCon ? (STATE.effortCon.days || 2) : 0));
+  if (window.ShipLog) ShipLog.timeEnd();
 }
 
 /* Effort a repair choice can draw on (GAME_BIBLE §The Effort System):
@@ -5781,7 +5607,9 @@ function resolveChoice(choice) {
       eventMinigameChoice = null;
       const base = choice.outcome || {};
       if (tier === 'abandoned') {
+        const slogQ = window.ShipLog && ShipLog.begin();
         const quit = eventMinigameQuit(choice);
+        if (slogQ) ShipLog.resolved(slogQ, STATE.currentEvent, choice, Object.assign({ tone: 'danger' }, quit));
         renderHUD();
         if (checkFailure()) return;
         renderOutcomeView({ title: 'ABANDONED', body: quit.narrative, tone: 'danger' });
@@ -5796,6 +5624,7 @@ function resolveChoice(choice) {
         resources: Object.assign({}, base.resources || {}, t.resources || {}),
         narrative: t.narrative || base.narrative,
       });
+      const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: closed below, once the patient's HP has landed too
       applyOutcomeEffects(merged);
       if (patient && STATE.crew.includes(patient)) {
         const before = crewHPOf(patient);
@@ -5811,6 +5640,7 @@ function resolveChoice(choice) {
         }
       }
       if (choice.launch_minigame === 'breach') pushAiSample('hull_breach');
+      if (slog) ShipLog.resolved(slog, STATE.currentEvent, choice, merged);
       renderHUD();
       if (checkFailure()) return;
       renderOutcomeView(Object.assign({ title: 'OUTCOME', body: merged.narrative || '...', tone: deltaIsBad(merged) ? 'danger' : (deltaIsGood(merged) ? 'success' : null) }, outcomeScene(merged)));
@@ -5818,7 +5648,9 @@ function resolveChoice(choice) {
     return;
   }
   const o = choice.outcome || {};
+  const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: choice + outcome + real effects
   applyOutcomeEffects(o);
+  if (slog) ShipLog.resolved(slog, STATE.currentEvent, choice, o);
   renderHUD();
   if (checkFailure()) return;
 
@@ -6039,7 +5871,6 @@ function endRun(end) {
   document.getElementById('btn-pause').addEventListener('click', () => {
     if (typeof PauseMenu !== 'undefined' && !PauseMenu.isOpen()) PauseMenu.open();
   });
-  document.getElementById('slog-close').addEventListener('click', () => hideOverlay('overlay-shipslog'));
   document.getElementById('slog-expand-close').addEventListener('click', closeShipsLogExpand);
 
   // ?debug=fixed_path skips title/setup and boots straight into the
