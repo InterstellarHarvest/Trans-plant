@@ -54,9 +54,9 @@
       fallback_icon: '🌾',
       stages: [
         { max: 25,  name: 'SPROUTING',  tip: 'Seeds break dormancy. Cold or overwatering wipes the bed.' },
-        { max: 50,  name: 'VEGETATIVE', tip: 'Leaves and stems build. Fertilizer now multiplies final yield.' },
+        { max: 50,  name: 'VEGETATIVE', tip: 'Leaves and stems build. The harvest is being decided now, quietly.' },
         { max: 75,  name: 'FLOWERING',  tip: 'Heads form. Heat stress shrinks grain size.' },
-        { max: 100, name: 'MATURING',   tip: 'Grain hardens. Water demand drops; pests peak.' }
+        { max: 100, name: 'MATURING',   tip: 'Grain hardens and goes gold. Nearly there.' }
       ]
     },
     tomato: {
@@ -71,9 +71,9 @@
       fallback_icon: '🍅',
       stages: [
         { max: 25,  name: 'SPROUTING',  tip: 'Seedlings emerge. Cold is lethal — keep warm.' },
-        { max: 50,  name: 'VEGETATIVE', tip: 'Vines sprawl. Stake early or the growth pattern breaks.' },
+        { max: 50,  name: 'VEGETATIVE', tip: 'Vines sprawl in every direction at once, like the crew\'s opinions.' },
         { max: 75,  name: 'FLOWERING',  tip: 'Blossoms set. A heat wave now aborts fruit entirely.' },
-        { max: 100, name: 'MATURING',   tip: 'Fruit swells and colors. Blight risk peaks — inspect often.' }
+        { max: 100, name: 'MATURING',   tip: 'Fruit swells and colors. Everyone has a favourite. Nobody admits it.' }
       ]
     },
     sweet_potato: {
@@ -104,10 +104,10 @@
       sprite: 'sprites/interface/crops/soybeans.png',
       fallback_icon: '🌱',
       stages: [
-        { max: 25,  name: 'SPROUTING',  tip: 'Cotyledons break soil. Protect from cold and slugs.' },
-        { max: 50,  name: 'VEGETATIVE', tip: 'Canopy closes. Nitrogen-fixer — low fertilizer demand.' },
+        { max: 25,  name: 'SPROUTING',  tip: 'Cotyledons break soil. Protect from cold.' },
+        { max: 50,  name: 'VEGETATIVE', tip: 'Canopy closes. A nitrogen-fixer: it feeds its own soil.' },
         { max: 75,  name: 'FLOWERING',  tip: 'Pods form. Heat stress aborts pods; keep temp tight.' },
-        { max: 100, name: 'MATURING',   tip: 'Pods fill out. Water demand drops; pests peak.' }
+        { max: 100, name: 'MATURING',   tip: 'Pods fill out. Nearly ready to pick.' }
       ]
     },
     zinnia: {
@@ -121,10 +121,10 @@
       sprite: 'sprites/interface/crops/zinnia.png',
       fallback_icon: '🌼',
       stages: [
-        { max: 25,  name: 'SPROUTING',  tip: 'First true leaves. Damping-off is the early killer.' },
-        { max: 50,  name: 'VEGETATIVE', tip: 'Bushy growth. Pinch top (specialist bonus) for stronger stems.' },
-        { max: 75,  name: 'FLOWERING',  tip: 'Blooms open — morale boost begins. Powdery mildew rises.' },
-        { max: 100, name: 'MATURING',   tip: 'Peak bloom. Deadheading extends the harvest window.' }
+        { max: 25,  name: 'SPROUTING',  tip: 'First true leaves. Small, green, and already somebody\'s favourite.' },
+        { max: 50,  name: 'VEGETATIVE', tip: 'Bushy growth. A good tender makes the difference now.' },
+        { max: 75,  name: 'FLOWERING',  tip: 'Blooms open. Orange, pink, and entirely unreasonable.' },
+        { max: 100, name: 'MATURING',   tip: 'Peak bloom. The crew will argue about which ones to pick.' }
       ]
     }
   };
@@ -1273,7 +1273,7 @@
     wheat:        'The safe grain. Predictable yield, predictable risks.',
     tomato:       'High morale payload, finicky environment. Drama-prone.',
     sweet_potato: 'Biggest yield per cycle. Slow grower, drought-tolerant.',
-    soybean:      'Fixes its own nitrogen — light fertilizer demand.',
+    soybean:      'Fixes its own nitrogen. Shrugs off contamination better than most.',
     zinnia:       'No food value; crew mood payload. Fastest cycle.'
   };
 
