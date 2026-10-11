@@ -143,10 +143,7 @@ function invPrice(en) {
   if (p == null) return { num: 0, label: '—', none: true };
   return { num: p, label: p + 'g' };
 }
-function invTileSlots(en) {
-  if (en.material) return 0; // materials live in their own stores (not cargo)
-  return itemSlotsFor(en.id, en.n);
-}
+function invTileSlots(en) { return itemSlotsFor(en.id, en.n); } // materials are cargo too (owner ruling 2026-10-11)
 
 /* ── Entries per tab ────────────────────────────────────────── */
 function invEntries(tab) {
@@ -293,10 +290,10 @@ function renderInvDetail(en) {
 
   // COUNT / SLOT COST / SELL PRICE (demo rows).
   let slot;
-  if (en.material) slot = 'none <span class="detail-dim">own stores</span>';
-  else if (def && def.cargo_slots_per_10) {
+  const per10 = en.material ? materialPer10(en.id) : def && def.cargo_slots_per_10;
+  if (per10) {
     // Per-unit decimal (Bible §14.3: "0.3", not the formula); the stack's total alongside.
-    slot = (def.cargo_slots_per_10 / 10).toFixed(1) + ' per unit' + (en.n > 1 ? ' <span class="detail-dim">' + itemSlotsFor(en.id, en.n) + ' total</span>' : '');
+    slot = (per10 / 10).toFixed(1) + ' per unit' + (en.n > 1 ? ' <span class="detail-dim">' + itemSlotsFor(en.id, en.n) + ' total</span>' : '');
   } else slot = String(def ? (def.cargo_slots || 0) * en.n : en.n) + (def && def.slot_bonus ? ' (+' + def.slot_bonus + ' cap)' : '');
   let sell, note = '';
   if (en.copy != null) {
@@ -319,7 +316,7 @@ function renderInvDetail(en) {
 
   // Actions (USE / JETTISON; a material has neither).
   const jett = document.getElementById('inv-jett-btn');
-  jett.style.display = en.material ? 'none' : '';
+  jett.style.display = ''; // materials too: they take hold space now, so the airlock is their way back
   const useBtn = document.getElementById('inv-use-btn');
   const iu = !en.material && ITEM_USE[en.id];
   useBtn.style.display = iu ? '' : 'none';
@@ -330,7 +327,7 @@ function renderInvDetail(en) {
     if (why) { useBtn.dataset.tipDescription = why; useBtn.dataset.tipTone = 'danger'; }
     else { delete useBtn.dataset.tipDescription; delete useBtn.dataset.tipTone; }
   }
-  document.getElementById('inv-detail-actions').classList.toggle('inv-hide', en.material);
+  document.getElementById('inv-detail-actions').classList.remove('inv-hide');
 }
 
 /* ── AI line: flavor_pools ai_universal.cargo_hold, the active AI's voice ── */
@@ -476,15 +473,15 @@ function invUpdateReadouts() {
   const slots = document.getElementById('inv-slots');
   slots.classList.toggle('at-cap', used >= cap);
   slots.classList.toggle('near-cap', cap > 0 && used / cap >= 0.9 && used < cap);
-  // Breakdown (.ui-tip rows): what is eating the hold.
-  const by = {};
-  for (const en of invEntries('gear')) { const c = invItemCategory(en.id); by[c] = (by[c] || 0) + itemSlotsFor(en.id, en.n); }
-  const rows = INV_GEAR_GROUPS.filter(g => by[g.cat]).map(g => ({ label: g.label, value: String(by[g.cat]) }));
+  // Breakdown (.ui-tip, Bible: "22 gear · 6.6 materials"): what is eating the hold.
+  let gear = 0;
+  for (const en of invEntries('gear')) gear += itemSlotsFor(en.id, en.n);
+  const mats = materialSlotsUsed();
   const parts = cargoCapacityParts();
-  rows.push({ label: 'Capacity', value: parts.base + (parts.bonus ? ' + ' + parts.bonus + ' bay' : '') });
   slots.dataset.tipTitle = 'CARGO SLOTS';
-  slots.dataset.tipDescription = 'Stackables cost a fraction of a slot per unit, rounded up per stack. Materials and the crop have their own stores.';
-  slots.dataset.tipRows = JSON.stringify(rows);
+  slots.dataset.tipDescription = gear + ' gear · ' + mats + ' materials. Stackables (consumables and every material) cost a fraction of a slot per unit, rounded up per stack. The crop lives in the growbay, not the hold.';
+  slots.dataset.tipRows = JSON.stringify([{ label: 'Gear', value: String(gear) }, { label: 'Materials', value: String(mats) },
+    { label: 'Capacity', value: parts.base + (parts.bonus ? ' + ' + parts.bonus + ' bay' : '') }]);
   invRollGold(Math.round(STATE.goldAmount || 0));
 }
 // Earthbound-style rolling counter (demo animateGoldTo): ease-out over
@@ -511,18 +508,19 @@ function invRollGold(target) {
 function invOpenJettison() {
   if (!_invSelected || _invSelectedRes) return;
   const id = _invSelected;
-  const name = invNameOf(id);
-  const blocked = STATE.items.includes(id) && !canRemoveItem(id);
-  const copyTile = _invSelectedCopy != null && sellRangeOf(id);
+  const isMat = materialPer10(id) != null; // a materials stack (STATE.materials), not an item
+  const name = invNameOf(id, isMat);
+  const blocked = !isMat && STATE.items.includes(id) && !canRemoveItem(id);
+  const copyTile = !isMat && _invSelectedCopy != null && sellRangeOf(id);
   _invJettisonPending = blocked ? null : id;
-  _invJettisonCopy = _invSelectedCopy;
-  _invJettisonMax = copyTile ? 1 : STATE.items.filter(x => x === id).length;
+  _invJettisonCopy = isMat ? null : _invSelectedCopy;
+  _invJettisonMax = isMat ? (STATE.materials[id] || 0) : copyTile ? 1 : STATE.items.filter(x => x === id).length;
   _invJettisonCount = 1;
   document.getElementById('inv-confirm-text').textContent = blocked
     ? 'The ' + name + ' is holding cargo. Clear some space first.'
     : (_invJettisonMax > 1 ? 'Drop some of your ' + name + ' (×' + _invJettisonMax + ') into space?' : 'Drop your ' + name + ' into space?') + ' The airlock does not do refunds.';
   // "Required for:" — only when an event ahead needs it aboard to happen.
-  const req = blocked ? [] : invRequiredFor(id);
+  const req = blocked || isMat ? [] : invRequiredFor(id);
   const warn = document.getElementById('inv-route-warn');
   warn.innerHTML = req.length ? 'Required for: <strong>' + req.map(invEsc).join(' · ') + '</strong>' : '';
   warn.classList.toggle('hidden', !req.length);
@@ -569,6 +567,7 @@ function invJettison(count) {
   if (!id) return;
   const copy = _invJettisonCopy;
   _invJettisonCopy = null;
+  if (materialPer10(id) != null) return invJettisonMaterial(id, count);
   const have = STATE.items.filter(x => x === id).length;
   const n = Math.max(1, Math.min(count, have, _invJettisonMax));
   const tileEl = document.querySelector('#inv-grid .inv-tile[data-key="' + id + (copy != null && sellRangeOf(id) ? '#' + copy : '') + '"]');
@@ -588,6 +587,23 @@ function invJettison(count) {
   const whole = !STATE.items.includes(id) || copy != null;
   if (whole && _invSelected === id) { _invSelected = null; _invSelectedCopy = null; }
   invCloseJettison();
+  invJettisonFx(tileEl, whole);
+}
+// Materials out the airlock (they're cargo now): N units of the stack.
+function invJettisonMaterial(id, count) {
+  const have = STATE.materials[id] || 0;
+  const n = Math.max(0, Math.min(count, have));
+  if (!n) return invCloseJettison();
+  const tileEl = document.querySelector('#inv-grid .inv-tile[data-key="' + id + '"]');
+  STATE.materials[id] = have - n;
+  renderHUD();
+  if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ Jettisoned: ' + n + ' ' + invNameOf(id, true).toLowerCase() + '. The hold breathes a little easier.');
+  const whole = !STATE.materials[id];
+  if (whole && _invSelected === id) _invSelected = null;
+  invCloseJettison();
+  invJettisonFx(tileEl, whole);
+}
+function invJettisonFx(tileEl, whole) {
   if (tileEl) { invPoof(tileEl); if (whole) tileEl.classList.add('jettisoning'); }
   invUpdateReadouts();
   clearTimeout(_invRerender);

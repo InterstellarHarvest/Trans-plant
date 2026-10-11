@@ -1522,7 +1522,13 @@
           }
           if (landed < it.count) { leftBehind.push({ label: it.label, count: it.count - landed }); it.count = landed; }
         }
-        else { it.material = true; STATE.materials[it.id] = (STATE.materials[it.id] || 0) + it.count; }
+        else {
+          // Materials are cargo (owner ruling 2026-10-11): what fits lands; the
+          // card's notes name the rest (leftBehind), the tile shows what landed.
+          it.material = true;
+          const landed = typeof window.grantMaterial === 'function' ? window.grantMaterial(it.id, it.count, { quiet: true }) : ((STATE.materials[it.id] = (STATE.materials[it.id] || 0) + it.count), it.count);
+          if (landed < it.count) { leftBehind.push({ label: it.label, count: it.count - landed }); it.count = landed; }
+        }
       }
     }
     // Cargo loss on defeat — drop a random slice of carried items.

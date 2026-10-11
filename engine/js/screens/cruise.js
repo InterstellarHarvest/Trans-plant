@@ -831,7 +831,7 @@
       if (payload.rare_drops) payload.rare_drops.forEach(d => {
         const r = RARE_TO_REAL[d.id] || {};
         if (r.gold) STATE.goldAmount += r.gold;
-        if (r.material) STATE.materials[r.material] = (STATE.materials[r.material] || 0) + (r.qty || 1);
+        if (r.material) grantMaterial(r.material, r.qty || 1); // materials are cargo: capacity-enforced, a refusal is logged
         if (r.item) grantItem(r.item); // capacity-enforced
       });
       if (payload.sickness) payload.sickness.forEach(s => {
@@ -874,9 +874,12 @@
       const MATS = new Set(((MOD.materials && MOD.materials.materials) || []).map(m => m.id));
       const TANK_O2 = { tank_s: 4, tank_m: 8, tank_l: 12 };
       const got = [];
+      // Materials are cargo (owner ruling 2026-10-11): one capacity-enforced
+      // grant for the whole haul; grantMaterials logs what stays behind.
+      const matRes = grantMaterials(Object.fromEntries(Object.entries(haul).filter(([k, q]) => q && MATS.has(k))));
       for (const [key, qty] of Object.entries(haul)) {
         if (!qty) continue;
-        if (MATS.has(key)) { STATE.materials[key] = (STATE.materials[key] || 0) + qty; got.push(qty + ' ' + key); }
+        if (MATS.has(key)) { if (matRes.got[key]) got.push(matRes.got[key] + ' ' + key); }
         else if (key in TANK_O2) { const o0 = STATE.resources.o2; STATE.resources.o2 = clamp(STATE.resources.o2 + TANK_O2[key] * qty, 0, 100); const d = Math.round(STATE.resources.o2 - o0); got.push(d > 0 ? '+' + d + ' O₂' : 'O₂ tanks, but the air is full'); }
         else if (key === 'gold') { STATE.goldAmount += 5 * qty; got.push(5 * qty + 'g'); }
         else if (key !== 'useless_scrap') { let n = 0; for (let i = 0; i < qty; i++) if (grantItem(key) !== false) n++; if (n) got.push(key.replace(/_/g, ' ')); }
@@ -897,10 +900,13 @@
       haul = haul || {};
       const inv = haul.inventory || {};
       const granted = [];
+      // Materials are cargo (owner ruling 2026-10-11): the haul comes aboard
+      // as far as the hold allows; grantMaterials logs what stays behind.
+      const res = grantMaterials(inv);
       for (const [mat, qty] of Object.entries(inv)) {
         if (!qty) continue;
-        STATE.materials[mat] = (STATE.materials[mat] || 0) + qty;
-        granted.push(qty + ' ' + mat);
+        if (res.got[mat]) granted.push(res.got[mat] + ' ' + mat);
+        else granted.push('no room for ' + mat);
       }
       if (!granted.length && !(haul.runs > 0)) { window.refundVerbTax(); activeVerb = null; renderCruise(); return; } // LEAVE with no run made — no time cost either
       // Bible multi-path rule: asteroid ice melts into water, a nebula

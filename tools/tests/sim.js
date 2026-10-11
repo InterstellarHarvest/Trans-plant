@@ -62,6 +62,12 @@ function installHarness(policy) {
   const realGrant = grantItem;
   grantItem = function (id) { const ok = realGrant(id); if (!ok) { S.cargoRefused = (S.cargoRefused || 0) + 1; S.refusedIds = S.refusedIds || {}; S.refusedIds[id] = (S.refusedIds[id] || 0) + 1; } return ok; };
   window.grantItem = grantItem;
+  // Materials are cargo too (owner ruling 2026-10-11): units left behind.
+  if (typeof grantMaterials === 'function') {
+    const realGM = grantMaterials;
+    grantMaterials = function (want, opts) { const r = realGM(want, opts); for (const n of Object.values(r.left || {})) S.matLeft = (S.matLeft || 0) + n; if (Object.keys(r.left || {}).length) S.matRefusals = (S.matRefusals || 0) + 1; return r; };
+    window.grantMaterials = grantMaterials;
+  }
   const realChoices = renderChoicesInner;
   renderChoicesInner = function (choices) {
     const visible = choices.filter(ch => !(ch.showFlag && !STATE.flags.has(ch.showFlag)) && !(ch.hideFlag && STATE.flags.has(ch.hideFlag)));
