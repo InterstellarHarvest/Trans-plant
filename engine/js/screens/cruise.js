@@ -447,6 +447,10 @@
     };
     STATE.shipLog.push(window.ShipLog ? ShipLog.store(stored) : stored);
     if (window.ShipLog) ShipLog.compact();
+    // An entry that lands while the journal is open shows at once (a scene
+    // alert fires a beat after returning to the hub, e.g.).
+    const slog = document.getElementById('overlay-shipslog');
+    if (slog && slog.classList.contains('active') && typeof window.renderShipsLog === 'function') window.renderShipsLog();
     const line = displayLine(text, voice);
     // While stopped the log column is under the Stop menu: the AI's
     // lines go up on the ticker instead (the entry still lands, so the
