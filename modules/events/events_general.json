@@ -1698,6 +1698,7 @@
       "planet",
       "derelict",
       "asteroid_field",
+      "anomaly",
       "nebula",
       "void"
     ],
@@ -1705,79 +1706,167 @@
       "any"
     ],
     "event_presentation": "fullscreen",
-    "scene_type": "ship_interior",
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
     "once": true,
     "test_path": false,
     "sets_flag": null,
     "requires_flag": "pirate_sympathy",
-    "ai_flavor": {
-      "aria": "It's the pirates! The ones we DIDN'T fight! They're hailing! Politely! ARIA's threat board doesn't have a color for this!",
-      "marv": "MARV confirms the vessel: same pirates, same rust, marginally improved weld work. Their weapons are cold. Their hail begins with 'so.' MARV has never trusted a 'so' less, or needed to less.",
-      "rex": "REX remembers this crew. We had them dead to rights and let them walk on a medic's word. He has kept their hull profile in his files under 'pending.' He is updating the folder name now. Slowly.",
-      "chip": "Returning customers! CHIP KNEW mercy had a loyalty coefficient! He has been saying this in meetings! There are no meetings! He says it anyway!",
-      "ajoy": "AJOY notes their approach vector is deliberately unthreatening — wide, slow, weapons visibly stowed. Someone aboard that ship thought carefully about how this would look. She finds that more persuasive than the hail itself."
+    "npc": {
+      "disposition": "pirate",
+      "species": null,
+      "recall": "pirate_sympathy",
+      "displayName": "FAMILIAR CAPTAIN"
     },
-    "body": "The rust-pocked ship on the scope is familiar. So is the captain on the channel — the one who lowered their weapons over an injured-crew story and let you pass.\n\n'So,' they say. 'You're still flying. Good. We, ah.' A pause, the sound of someone being elbowed off-screen. 'We owe you one. We know we do. We'd rather owe you zero. What do you need?'\n\nPirates, it turns out, keep ledgers too. Theirs are just written in different ink.",
-    "choices": [
-      {
-        "text": "Take fuel — square the ledger",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
-        "outcome": {
-          "resources": {
-            "fuel": 12,
-            "morale": 3
+    "leave_label": "PART WAYS",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "SEEN YOU BEFORE",
+        "body": "A rust-pocked ship — the same rust-pocked ship — pulls alongside. Weapons cold this time. The captain on the channel smiles like they remembered something.",
+        "pose": "listening",
+        "ai": {
+          "aria": "An old friend!",
+          "marv": "Vessel matches a prior encounter. Disposition: shifted.",
+          "rex": "Weapons cold. Keeping an eye.",
+          "chip": "Recurring-contact loyalty discounts are NOT a real thing.",
+          "ajoy": "They're paying you back. Let them."
+        },
+        "revisit": {
+          "body": "The familiar ship holds station off your bow. The crate is still docked at your airlock, waiting."
+        },
+        "choices": [
+          {
+            "text": "\"What do you want?\"",
+            "dialog": true,
+            "sub": "Flat, cautious",
+            "next": "what"
           },
-          "crew_effect": null,
-          "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": "pirates_squared",
-          "time_cost": "low",
-          "narrative": "They transfer the fuel with the brisk relief of debtors closing an account. 'Square,' their captain says, twice, to be sure it's on record. Before breaking off, they transmit one more thing: a chart overlay of every ambush point on the trail ahead, annotated in a pirate's practical shorthand. That part was free."
-        }
+          {
+            "text": "\"Last time worked out, then?\"",
+            "dialog": true,
+            "hint": true,
+            "sub": "Let them repay",
+            "next": "what"
+          },
+          {
+            "text": "WEAPONS HOT",
+            "sub": "Trust nothing · combat",
+            "risky": true,
+            "triggerCombat": true,
+            "combat_intro": "recur_fight",
+            "setFlag": "fired_on_old_debtors"
+          },
+          {
+            "text": "IGNORE THE HAIL",
+            "sub": "Fly past",
+            "outcome": "recur_ignore"
+          }
+        ]
       },
-      {
-        "text": "Take nothing — the mercy was free",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
-        "outcome": {
-          "resources": {
-            "morale": 6
+      "what": {
+        "title": "A DEBT",
+        "body": "A crate docks itself to your airlock. They salute — less mocking this time.",
+        "line": "You let us off clean. We've been running ahead of you for two weeks looking for this.",
+        "pose": "pleased",
+        "ai": {
+          "aria": "What a lovely surprise!",
+          "marv": "Scan indicates: a repair kit, one drive coil, one unmarked jar.",
+          "rex": "Gift, not trap. Confirmed.",
+          "chip": "Unexpected cargo is still subject to import declarations.",
+          "ajoy": "Ask about the jar. The jar matters."
+        },
+        "choices": [
+          {
+            "text": "THANK THEM",
+            "dialog": true,
+            "sub": "Take the gift",
+            "outcome": "recur_thanks"
           },
-          "crew_effect": null,
-          "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": "pirates_indebted",
-          "time_cost": "trivial",
-          "narrative": "You wave off the debt entirely, which produces thirty seconds of genuine confusion on their bridge. 'That's not how—' the captain starts, then stops, then laughs. 'Fine. FINE. But we're telling people about you. That's happening. You don't get a say.' They burn off. Somewhere ahead, your reputation is being written by pirates, favorably, and there is nothing you can do about it."
-        }
-      },
-      {
-        "text": "Ask them to escort you one leg",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
-        "outcome": {
-          "resources": {
-            "morale": 4
+          {
+            "text": "\"The jar. What is it?\"",
+            "dialog": true,
+            "hint": true,
+            "sub": "Ask, then take it",
+            "outcome": "recur_jar"
           },
-          "crew_effect": null,
-          "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": "pirates_squared",
-          "time_cost": "low",
-          "narrative": "They fall in off your port side for a full leg — the strangest formation this trail has seen, a colony hauler and its pirate escort. Nothing troubles you the entire stretch. Nothing would dare. At the leg's end they peel away with a rock of their wings, ledger closed, and the aft scope watches them go with something like regret."
-        }
+          {
+            "text": "REFUSE THE GIFT",
+            "dialog": true,
+            "sub": "Don't owe them back",
+            "risky": true,
+            "outcome": "recur_refuse"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
       }
-    ]
+    },
+    "outcomes": {
+      "recur_fight": {
+        "title": "FIRED ON A FRIEND",
+        "tone": "danger",
+        "body": "The first volley lands before their shields are up. They take it, and a second, before they answer. The log in your captain's quarters gets shorter tonight.",
+        "line": "...Really?"
+      },
+      "recur_ignore": {
+        "title": "PASSED BY",
+        "body": "You burn past. The hail cycles three times and stops. You tell yourself you had reasons.",
+        "resources": {
+          "fuel": -3,
+          "morale": -2
+        },
+        "time_cost": "trivial",
+        "scene_bg": "space/deep",
+        "narrative": "Burned past the pirates who owed you one. The hail cycled three times and stopped."
+      },
+      "recur_thanks": {
+        "title": "A GIFT",
+        "tone": "success",
+        "body": "The crate opens: a repair kit, one drive coil, a jar. Somebody whistles. The jar, you'll get to.",
+        "item_grant": [
+          "repair_kit",
+          "drive_coil",
+          "pre_collapse_artifact"
+        ],
+        "resources": {
+          "morale": 3
+        },
+        "sets_flag": "pirates_squared",
+        "time_cost": "trivial",
+        "narrative": "The pirates you spared came back with a crate: a repair kit, a drive coil and a jar. Ledger square."
+      },
+      "recur_jar": {
+        "title": "THE JAR",
+        "tone": "success",
+        "body": "The crate opens: a repair kit, one drive coil, and the jar. The jar hums when you hold it. Pre-collapse, by the glaze. You'll find the buyer.",
+        "line": "It was worth a lot to someone. We don't know who. Figure it's owed to you now.",
+        "item_grant": [
+          "repair_kit",
+          "drive_coil",
+          "pre_collapse_artifact"
+        ],
+        "resources": {
+          "morale": 5
+        },
+        "sets_flag": "pirates_squared",
+        "time_cost": "trivial",
+        "narrative": "The pirates you spared came back with a crate and a humming pre-collapse jar, owed to you, they said. Ledger square."
+      },
+      "recur_refuse": {
+        "title": "EVEN",
+        "body": "They salute, undock the crate, and leave without the gift. Your crew disagrees. Somewhere ahead, the story of the ship that wouldn't take a pirate's crate is already being told.",
+        "line": "Keeps things simple.",
+        "resources": {
+          "morale": -3
+        },
+        "sets_flag": "pirates_indebted",
+        "time_cost": "trivial",
+        "narrative": "Refused a crate from the pirates you once spared. They left still owing you, and telling people so."
+      }
+    }
   },
   {
     "id": "event_general_022",

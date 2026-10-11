@@ -576,23 +576,42 @@ const eventOnTrail = (ev, trail) => {
     if (!(registry[dim] && registry[dim].values && v in registry[dim].values)) err(`${at}: ${field} "${v}" is not registered in tag_registry.json's ${dim} dimension`);
     else if (registry[dim].values[v].status === 'deprecated') err(`${at}: ${field} "${v}" is deprecated in tag_registry.json's ${dim} dimension`);
   };
-  const npcCheck = (at, npc) => {
+  const npcCheck = (at, npc, ev) => {
     if (!npc) return;
     if (npc.disposition == null) err(`${at}: npc has no disposition (resolveNpc needs one)`);
     regCheck(at, 'npc.disposition', 'npc_disposition', npc.disposition);
     regCheck(at, 'npc.species', 'npc_species', npc.species);
     regCheck(at, 'npc.job', 'npc_station_job', npc.job);
+    // Scenes pass 2026-10-11 (index.html resolveNpc / scene_art pickNpcSheet):
+    // displayName = the subject's name plate (demo subjectName: 'INTRUDER',
+    // '????'); variant = one pinned sprite folder (needs a pinned species,
+    // and the folder must hold a spritesheet); recall = a flag whose NPC
+    // comes back (some outcome must set it, and the event should wait for it).
+    if (npc.displayName != null && !(typeof npc.displayName === 'string' && npc.displayName.trim() === npc.displayName && npc.displayName && npc.displayName === npc.displayName.toUpperCase())) err(`${at}: npc.displayName must be a non-empty UPPERCASE string (it is the name plate)`);
+    if (npc.variant != null) {
+      if (!Number.isInteger(npc.variant) || npc.variant < 1 || npc.variant > 6) err(`${at}: npc.variant must be an integer 1-6 (scene_art.js probes numbered folders 1..6)`);
+      else if (!npc.species) err(`${at}: npc.variant pins one species' folder — it needs a pinned npc.species`);
+      else {
+        const dir = ['resources/sprites/npc', npc.disposition, ...(npc.disposition === 'station_crew' ? [npc.job || 'janitor'] : []), npc.species, String(npc.variant)].join('/');
+        if (!fs.existsSync(path.join(ROOT, dir, 'spritesheet.png'))) err(`${at}: npc.variant ${npc.variant} → ${dir}/spritesheet.png does not exist`);
+      }
+    }
+    if (npc.recall != null) {
+      if (typeof npc.recall !== 'string' || !setsFlags.has(npc.recall)) err(`${at}: npc.recall "${npc.recall}" is not a flag any outcome sets — the NPC it recalls is never met`);
+      else if (ev && ev.requires_flag !== npc.recall) warn(`${at}: npc.recall "${npc.recall}" on an event that doesn't require that flag — it can fire before the NPC was ever met (falls back to a fresh roll)`);
+    }
   };
   for (const { file, event: ev } of eventsById.values()) {
     const at = `${file} ${ev.id}`;
     regCheck(at, 'scene_type', 'scene_type', ev.scene_type);
     regCheck(at, 'comm_mode', 'comm_mode', ev.comm_mode);
     regCheck(at, 'event_presentation', 'event_presentation', ev.event_presentation);
-    npcCheck(at, ev.npc);
+    npcCheck(at, ev.npc, ev);
     for (const [lk, l] of Object.entries(ev.layers || {})) {
       regCheck(at + '/' + lk, 'comm_mode', 'comm_mode', l.comm_mode);
       regCheck(at + '/' + lk, 'scene_type', 'scene_type', l.scene_type);
       npcCheck(at + '/' + lk, l.npc);
+      if (l.npc && l.npc.recall != null) err(`${at}/${lk}: npc.recall on a layer npc — only the event's npc is recalled (index.html resolveNpc)`);
     }
     for (const { layer, choices } of choiceSetsOf(ev)) {
       for (const ch of choices) {

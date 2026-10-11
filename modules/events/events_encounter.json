@@ -813,5 +813,331 @@
         "narrative": "You left the squatters their wreck. The salvage charts get one more annotation: OCCUPIED. DISPUTED. SKIP."
       }
     }
+  },
+  {
+    "id": "event_encounter_boarding_002",
+    "active": true,
+    "title": "They're Inside",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "bg": "our_ship/cargo",
+    "comm_mode": "screen",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "pirate",
+      "species": null,
+      "displayName": "INTRUDER"
+    },
+    "leave_label": "CAN'T LEAVE (THEY'RE HERE)",
+    "leave_disabled": true,
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THEY'RE INSIDE",
+        "body": "Airlock forced. Two armed figures in the cargo corridor. One waves at you through the security feed. That's probably not a good sign.",
+        "pose": "hostile",
+        "ai": {
+          "aria": "Guests! How unexpected!",
+          "marv": "Their weapons are mid-grade. Their intent is not.",
+          "rex": "Engaging. Stand clear of the cargo hatch.",
+          "chip": "Unlawful boarding is covered by our Silver tier. You have Bronze.",
+          "ajoy": "The vents lead to the bridge. They don't know that."
+        },
+        "revisit": {
+          "body": "The feed still shows them in the cargo corridor. Nobody has waved again."
+        },
+        "choices": [
+          {
+            "text": "SEAL THE DECK",
+            "sub": "Engineer locks the cargo bay",
+            "gate": {
+              "crew": "engineer"
+            },
+            "effort": 2,
+            "outcome": "boarding_seal"
+          },
+          {
+            "text": "FIGHT",
+            "sub": "Hand to hand · risky",
+            "effort": 3,
+            "risky": true,
+            "outcome": "boarding_fight"
+          },
+          {
+            "text": "NEGOTIATE",
+            "sub": "Diplomat tries",
+            "gate": {
+              "crew": "diplomat"
+            },
+            "next": "talk"
+          },
+          {
+            "text": "HIDE",
+            "sub": "Vents → bridge, they pass through",
+            "hint": true,
+            "outcome": "boarding_hide"
+          }
+        ]
+      },
+      "talk": {
+        "title": "COMMS OPEN",
+        "bg": "our_ship/bridge",
+        "bgBase": "space/deep",
+        "body": "You cycle the intercom. A voice responds, calmly. One of those is not like the others.",
+        "line": "Fuel. Food. Your medic.",
+        "pose": "listening",
+        "ai": {
+          "aria": "They sound reasonable!",
+          "marv": "They specifically asked for the medic. That is a targeted extraction.",
+          "rex": "They are listening. Use it.",
+          "chip": "This conversation is being recorded for quality purposes.",
+          "ajoy": "They want the medic because someone they love is dying. Ask."
+        },
+        "choices": [
+          {
+            "text": "\"Who is sick?\"",
+            "dialog": true,
+            "sub": "Ask before refusing",
+            "gate": {
+              "crew": "medic"
+            },
+            "outcome": "boarding_who"
+          },
+          {
+            "text": "\"Take the fuel. Leave.\"",
+            "dialog": true,
+            "sub": "Give them half",
+            "outcome": "boarding_fuel_only"
+          },
+          {
+            "text": "\"Not the medic.\"",
+            "dialog": true,
+            "sub": "Line in the sand",
+            "risky": true,
+            "outcome": "boarding_refuse"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "boarding_seal": {
+        "title": "LOCKED OUT",
+        "tone": "success",
+        "body": "Your engineer cycles the bulkheads. The intruders end up trapped in the cargo bay with a week of rations and no door. They eat the rations. At the next airlock you let them go, fed and furious.",
+        "resources": {
+          "food": -8,
+          "morale": 3
+        },
+        "time_cost": "low",
+        "scene_bg": "our_ship/cargo",
+        "narrative": "Boarders sealed into the cargo bay by the engineer. They ate a week of rations in there and left fed and furious."
+      },
+      "boarding_fight": {
+        "title": "MESS",
+        "tone": "danger",
+        "body": "The cargo deck is a mess. You hold the ship. You don't hold all your crew together doing it: someone takes a wound that will need watching.",
+        "resources": {
+          "hull": -6
+        },
+        "severity": "injury",
+        "time_cost": "low",
+        "scene_bg": "our_ship/cargo",
+        "narrative": "Fought boarders hand to hand on the cargo deck. Held the ship; somebody bled for it."
+      },
+      "boarding_hide": {
+        "title": "PAST YOU",
+        "tone": "success",
+        "body": "They pass through your ship looking for someone who isn't there, and leave empty-handed. The crew spends the rest of the day climbing out of the vents and agreeing it was dignified.",
+        "resources": {
+          "morale": 2
+        },
+        "time_cost": "low",
+        "scene_bg": "our_ship/corridor",
+        "narrative": "Hid in the vents while boarders searched the ship. They left empty-handed."
+      },
+      "boarding_who": {
+        "title": "AN ANSWER",
+        "tone": "success",
+        "body": "The voice breaks a little. {crew.medic} volunteers before you decide, crosses to their ship with a kit, and comes back the next morning saying only that she'll live. The intruders leave the way they came and close the airlock behind them.",
+        "line": "Her name is Isa.",
+        "resources": {
+          "morale": 5
+        },
+        "sets_flag": "treated_isa",
+        "time_cost": "low",
+        "scene_bg": "our_ship/bridge",
+        "scene_bg_base": "space/deep",
+        "narrative": "Asked the boarders who was sick. {crew.medic} treated a pirate named Isa, and the boarders left without taking anything."
+      },
+      "boarding_fuel_only": {
+        "title": "FUEL TAKEN",
+        "body": "They take half your fuel and leave. Their ship is already listing on the way out.",
+        "resources": {},
+        "resources_pct": {
+          "fuel": -50
+        },
+        "time_cost": "trivial",
+        "scene_bg": "our_ship/cargo",
+        "narrative": "Paid boarders off with half the fuel."
+      },
+      "boarding_refuse": {
+        "title": "NO DEAL",
+        "tone": "danger",
+        "body": "They kick the door in anyway. This was always going to end in a fight. You win it on the cargo deck, and it costs more than the medic would have.",
+        "resources": {
+          "hull": -10,
+          "morale": -4
+        },
+        "severity": "injury",
+        "time_cost": "low",
+        "scene_bg": "our_ship/cargo",
+        "narrative": "Refused to hand over the medic. The boarders kicked the door in and lost the fight that followed, expensively for everyone."
+      }
+    }
+  },
+  {
+    "id": "event_encounter_unknown_001",
+    "active": true,
+    "title": "Unidentified Vessel",
+    "difficulty": "medium",
+    "tone": [
+      "cosmic",
+      "heartwarming"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "bgSprite": "ship_exterior/unknown",
+    "comm_mode": "screen",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "drifter",
+      "species": "unknown",
+      "variant": 2,
+      "displayName": "????"
+    },
+    "leave_label": "IGNORE",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "UNIDENTIFIED VESSEL",
+        "body": "A ship of no design you recognize hangs at the edge of sensor range. It hails you in a format your translator hasn't seen.",
+        "line": "[the comm crackles, then a pulse of clean tone, twice]",
+        "pose": "hostile",
+        "ai": {
+          "aria": "How exciting!",
+          "marv": "Ship class: unrecognized. Material composition: unrecognized. Behavior: patient.",
+          "rex": "Targeting it would be a mistake.",
+          "chip": "First-contact protocols are not in our basic plan.",
+          "ajoy": "Two pulses. That's a question. Answer with one."
+        },
+        "choices": [
+          {
+            "text": "RESPOND WITH ONE PULSE",
+            "sub": "Xenobiologist · answer the question",
+            "gate": {
+              "crew": "xenobiologist"
+            },
+            "hint": true,
+            "outcome": "unknown_yes"
+          },
+          {
+            "text": "SCAN THEM",
+            "sub": "Spectrometer · gather data",
+            "gate": {
+              "item": "spectrometer"
+            },
+            "outcome": "unknown_scan"
+          },
+          {
+            "text": "WEAPONS HOT",
+            "sub": "Fire on the unknown",
+            "risky": true,
+            "outcome": "unknown_fight"
+          },
+          {
+            "text": "WITHDRAW",
+            "sub": "Nope",
+            "outcome": "unknown_withdraw"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "unknown_yes": {
+        "title": "CONTACT",
+        "tone": "success",
+        "body": "Your single pulse reaches them. They send back something complex. Your xenobiologist starts crying — joy, you think.",
+        "line": "[a long warm chord]",
+        "resources": {
+          "morale": 8
+        },
+        "sets_flag": "answered_the_pulses",
+        "time_cost": "low",
+        "narrative": "Answered an unknown vessel's two pulses with one. It answered back with a long warm chord."
+      },
+      "unknown_scan": {
+        "title": "DATA",
+        "body": "The spectrometer chokes on most of it but holds onto fragments, among them what looks like their navigation plot laid over your own route ahead.",
+        "item_grant": "star_chart_fragment",
+        "time_cost": "low",
+        "narrative": "Scanned an unknown vessel. The spectrometer kept a fragment of their navigation plot."
+      },
+      "unknown_fight": {
+        "title": "FOUGHT",
+        "tone": "danger",
+        "body": "They return fire with energy you cannot reproduce. You survive. They leave.",
+        "resources": {
+          "hull": -12,
+          "morale": -3
+        },
+        "time_cost": "trivial",
+        "narrative": "Fired on an unknown vessel. It fired back with something nobody aboard can name, and left."
+      },
+      "unknown_withdraw": {
+        "title": "PASSED",
+        "body": "You burn away. Their ship doesn't follow. The pulse repeats once, then silence.",
+        "resources": {
+          "fuel": -4
+        },
+        "time_cost": "trivial",
+        "scene_bg": "space/deep",
+        "narrative": "Burned away from an unknown vessel. The pulse repeated once, then silence."
+      }
+    }
   }
 ]

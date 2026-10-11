@@ -4191,6 +4191,7 @@ function resolveLayerNpc(spec, evId, layerId) {
       || NPC_DISPOSITION_NAME[spec.disposition] || spec.disposition.toUpperCase(),
     quirk: '',
   };
+  if (Number.isInteger(spec.variant)) ctx.variant = spec.variant; // pinned sprite folder (resolveNpc)
   STATE.npcCache[key] = ctx;
   return ctx;
 }
@@ -5218,7 +5219,12 @@ function resolveNpc(ev) {
   // stop rolls a new NPC; a reload at this stop keeps the one you met.
   const npcKey = ev.id + '@' + STATE.currentId;
   if (STATE.npcCache[npcKey]) return STATE.npcCache[npcKey];
-  const species = ev.npc.species || rollNpcSpecies();
+  // npc.recall (scenes pass 2026-10-11, demo returning_pirate "FAMILIAR
+  // CAPTAIN"): the NPC who was on screen when that flag was set comes
+  // back — same species (so the same face), same quirk, same ship image
+  // (artKey = the instance their ship was first painted under).
+  const met = ev.npc.recall ? STATE.npcCache[FLAG_NPC_PREFIX + ev.npc.recall] : null;
+  const species = ev.npc.species || (met && met.species) || rollNpcSpecies();
   const disposition = ev.npc.disposition;
   const coloring = MOD.flavor && MOD.flavor.npc_species_coloring && MOD.flavor.npc_species_coloring[species];
   const quirkPool = coloring && Array.isArray(coloring.quirks) && coloring.quirks.length ? coloring.quirks : null;
@@ -5226,13 +5232,40 @@ function resolveNpc(ev) {
   const ctx = {
     species, disposition,
     job: ev.npc.job || null,
-    displayName: (disposition === 'station_crew' && ev.npc.job === 'bartender' && bartenderName())
+    // npc.displayName (demo subjectName: 'INTRUDER', '????', 'FAMILIAR CAPTAIN').
+    displayName: ev.npc.displayName
+      || (disposition === 'station_crew' && ev.npc.job === 'bartender' && bartenderName())
       || (disposition === 'station_crew' && ev.npc.job && jobNames[ev.npc.job])
       || NPC_DISPOSITION_NAME[disposition] || disposition.toUpperCase(),
-    quirk: quirkPool ? quirkPool[Math.floor(Math.random() * quirkPool.length)] : (NPC_QUIRKS[species] || ''),
+    quirk: (met && met.species === species && met.quirk != null) ? met.quirk
+      : quirkPool ? quirkPool[Math.floor(Math.random() * quirkPool.length)] : (NPC_QUIRKS[species] || ''),
   };
+  // npc.variant: a pinned sprite folder (sprites/npc/<disposition>/<species>/<N>/)
+  // — the void entity is drifter/unknown/1, never the other unknown face.
+  if (Number.isInteger(ev.npc.variant)) ctx.variant = ev.npc.variant;
+  if (met && met.species === species && met.artKey) ctx.artKey = met.artKey;
   STATE.npcCache[npcKey] = ctx;
   return ctx;
+}
+/* npc.recall's memory: when an outcome sets a flag some event recalls
+   (npc.recall), the event NPC on screen is kept in npcCache under
+   'flag:<flag>' (saved with the run; the key has no '@', so the per-stop
+   species/bartender rules never count it as met at a stop). */
+const FLAG_NPC_PREFIX = 'flag:';
+let _recalledFlags = null;
+function rememberFlagNpc(flag) {
+  if (!flag || !STATE.npcCtx || !STATE.currentEvent || STATE.npcCtx.disposition === 'crew') return;
+  if (!_recalledFlags) {
+    _recalledFlags = new Set();
+    for (const e of Object.values(EVENTS)) if (e && e.npc && e.npc.recall) _recalledFlags.add(e.npc.recall);
+  }
+  if (!_recalledFlags.has(flag)) return;
+  const npc = STATE.npcCtx, node = STATE.currentNode;
+  STATE.npcCache = STATE.npcCache || {};
+  STATE.npcCache[FLAG_NPC_PREFIX + flag] = {
+    species: npc.species, disposition: npc.disposition, quirk: npc.quirk,
+    artKey: npc.artKey || (STATE.currentEvent.id + '@' + (node ? node.id : STATE.currentId)),
+  };
 }
 
 /* Species coloring — Bible §11's renderer contract, steps 3–4.
@@ -5589,7 +5622,7 @@ function applyOutcomeEffects(o) {
     if (idx >= 0) STATE.items.splice(idx, 1);
   }
 
-  if (o.sets_flag) STATE.flags.add(o.sets_flag);
+  if (o.sets_flag) { STATE.flags.add(o.sets_flag); rememberFlagNpc(o.sets_flag); }
   if (o.clears_flag) STATE.flags.delete(o.clears_flag); // one-shot armed flags (e.g. negotiation_prepared) spend here
 
   // Crew effect + severity — routed through the per-crew HP system.

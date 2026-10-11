@@ -465,7 +465,10 @@
     return pickKey + '|' + (spec.bg || '') + '|' + (spec.bgBase || '') + '|' + (spec.bgSprite || '');
   }
 
-  function applyBackdropSpec(spec, pickKey, node) {
+  /* spriteKey (optional): the instance the viewport ship is picked under
+     — a recalled NPC (npc.recall, npcCtx.artKey) brings back the very
+     ship image first met; everything else picks under pickKey. */
+  function applyBackdropSpec(spec, pickKey, node, spriteKey) {
     const main   = document.getElementById('enc-backdrop');
     const base   = document.getElementById('enc-backdrop-base');
     const sprite = document.getElementById('enc-backdrop-sprite');
@@ -530,7 +533,7 @@
     } else {
       resolveSprite(spec.bgSprite).then(list => {
         if (mySeq !== _bgSeq) return;
-        const path = pickSticky(pickKey + '|vs:' + spec.bgSprite, list);
+        const path = pickSticky((spriteKey || pickKey) + '|vs:' + spec.bgSprite, list);
         if (path) {
           sprite.style.backgroundImage = "url('" + path + "')";
           sprite.classList.remove('hidden');
@@ -600,13 +603,17 @@
   async function pickNpcSheet(npcCtx) {
     const folder = npcFolderPath(npcCtx);
     if (!folder) return null;
-    if (_npcSheetCache.has(folder)) return _npcSheetCache.get(folder);
+    // npc.variant (scenes pass 2026-10-11): one pinned numbered folder —
+    // the void entity is always drifter/unknown/1, never the other face.
+    const pinned = Number.isInteger(npcCtx.variant) ? npcCtx.variant : null;
+    const cacheKey = pinned ? folder + '#' + pinned : folder;
+    if (_npcSheetCache.has(cacheKey)) return _npcSheetCache.get(cacheKey);
     const found = [];
-    for (let i = 1; i <= NPC_PROBE_MAX; i++) {
+    for (let i = pinned || 1; i <= (pinned || NPC_PROBE_MAX); i++) {
       const url = await probeImage(folder + '/' + i + '/spritesheet.png');
       if (url) found.push({ url, jsonUrl: folder + '/' + i + '/spritesheet.json' });
     }
-    if (!found.length) { _npcSheetCache.set(folder, null); return null; }
+    if (!found.length) { _npcSheetCache.set(cacheKey, null); return null; }
     // One face per disposition/species for the run, stable across a
     // reload (it re-rolled on load: same pirate, different face).
     const pick = stablePick('npc:' + folder, found);
@@ -623,7 +630,7 @@
       if (f !== idleIdx) talkIdxs.push(f);
     }
     const desc = { url: pick.url, idleIdx, talkIdxs };
-    _npcSheetCache.set(folder, desc);
+    _npcSheetCache.set(cacheKey, desc);
     return desc;
   }
 
@@ -755,7 +762,7 @@
         head.textContent = emoji;
         return;
       }
-      const path = folder + '/1/' + stem + '.png';
+      const path = folder + '/' + (Number.isInteger(npcCtx.variant) ? npcCtx.variant : 1) + '/' + stem + '.png';
       const img = new Image();
       img.onload = () => {
         if (_currentSubjKey !== startedKey) return;
@@ -794,7 +801,7 @@
 
   function subjKeyFor(evKey, ctx) {
     return evKey + '|' + (ctx
-      ? ctx.disposition + '/' + (ctx.job || '') + '/' + ctx.species + '/' + (ctx.displayName || '')
+      ? ctx.disposition + '/' + (ctx.job || '') + '/' + ctx.species + '/' + (ctx.variant || '') + '/' + (ctx.displayName || '')
       : 'none');
   }
 
@@ -839,7 +846,7 @@
     // transition on .enc-backdrop, as in the demo). Same spec → no-op,
     // so re-renders (market close, revisits) don't flicker.
     const spec = layerSpecFor(ev, node, layer, npcCtx);
-    if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey, node);
+    if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey, node, npcCtx && npcCtx.artKey);
     if (_currentSubjKey !== subjKey) {
       _currentSubjKey = subjKey;
       _pendingLine = null;
@@ -886,7 +893,7 @@
       // Same instance key as the layers: an outcome naming the path a
       // layer already showed keeps that very image.
       const instKey = instanceKey(c.ev, c.node);
-      if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey, c.node);
+      if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey, c.node, c.npcCtx && c.npcCtx.artKey);
     }
     if (outcome && outcome.line && npcCtx && !opts.deferTalk) startTalking(outcome.line, false);
     else stopTalking();
