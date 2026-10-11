@@ -103,7 +103,7 @@ const COSTED = `Object.values(EVENTS).find(e => !e.layers && e.active !== false 
       const ev = Object.values(EVENTS).find(e => JSON.stringify(e).includes('"triggerCombat":true'));
       enterEvent(STATE.byId[STATE.currentId], ev); window.triggerCombat({});
     });
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(450); // the panel paints after the 200ms choices → actions cross-dissolve
     await page.evaluate(() => [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => /EVASIVE/.test(b.textContent)).click());
     await page.waitForTimeout(1500);
     const h1 = await page.evaluate(() => document.getElementById('combat-num-hull').textContent);

@@ -13,32 +13,22 @@
      triggerFleeResolve: true   → window.triggerFleeResolve(choice)
    See CLAUDE.md's layered Event Module section for the choice schema.
 
-   Scope cuts vs. the demo (documented, not hidden — see
-   ENGINE_INTEGRATION_HANDOFF.md Phase 5 for the full rationale):
-   - No canvas FX (laser beams/particles/crosshair) and no subject
-     sprite frame — Phase 3 never built one (no NPC portrait art
-     exists yet). Hit feedback is a CSS flash/shake on the screen
-     itself instead of sprite-targeted classes.
-   - No click-to-target: the demo's click coordinates never affected
-     hit/damage math anyway (purely cosmetic beam endpoints). FIRE
-     LASER auto-resolves through a brief TARGETING state instead of
-     waiting for a viewport click.
-   - No separate end-of-combat modal card / loot tile grid. Combat
-     resolution reuses renderOutcomeView() — the same terminal screen
-     every other encounter choice already lands on — with loot
-     described as text and routed into real STATE (materials/items/
-     gold) via the existing applyOutcomeEffects() pipeline.
-   - No "injured" crew mechanic — the engine has zero support for it
-     even in the flat schema (applyOutcomeEffects only implements
-     crew_effect.type === 'kill'). Only crew death is modeled.
-   - Bonus salvage crate pool trimmed to items that exist in
-     items.json/materials.json (dropped invented circuit-board/O2-
-     tank drops) — same "don't invent content" rule Phase 4 applied
-     to Fabricator's recipe list.
-   - AI_FALLBACK is NOT deduplicated into shared.js (the plan's
-     original suggestion) — that object only ever existed in the two
-     now-frozen demo files, never in the engine. A small local
-     fallback below covers the one place the engine actually needs it.
+   Parity with the demo (2026-10-11 pass): canvas FX, click-to-aim
+   targeting, the demo's FX classes on the ship / captain, the demo's
+   pacing, the full-width HP banner, the combat end card (loot tiles,
+   notes, CLEAR view after an escape) and the demo's defeat-injury
+   rule are all ported. Engine-side differences that remain, each an
+   owner ruling: FIRE AT CENTER + Enter while targeting; STAND DOWN
+   pays a toll; the pilot captain's coin-flip FTL and FTL miss rate;
+   captain half-strength bonuses; REX's shield; BOOST SHIELDS is real
+   (Shield Module). Loot is restricted to items that exist in
+   items.json/materials.json (no invented circuit-board/O2-tank drops).
+   Any fight — wherever the event started (a corridor, a derelict, a
+   flat event with no NPC) — is fought from the bridge with their ship
+   in the window and a pirate captain on the feed (ensureCombatStage).
+   A choice may carry combat_intro: "<outcome id>" — that outcome's
+   title/body/line open the fight (the pirate bluff's CALLED beat); it
+   has no effects of its own (lint enforces both).
 
    Load-order note: this file loads via <script src> before
    index.html's inline script has declared MOD/STATE. Everything below
@@ -264,12 +254,6 @@
   function showEnemyTurn() { setTurnIndicator("ENEMY'S TURN", 'enemy-turn'); setActionsLocked(COMBAT.state !== 'FTL_CHARGING'); }
   function showMutinyTurn() { setTurnIndicator('CREW MUTINY', 'enemy-turn'); setActionsLocked(false); }
 
-  function flashScreen(cls) {
-    const el = document.getElementById('screen-encounter');
-    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
-    setTimeout(() => el.classList.remove(cls), 420);
-  }
-
   function renderCombatHud() {
     const hPct = clamp(Math.round((COMBAT.player.hull / COMBAT.player.hullMax) * 100), 0, 100);
     const fPct = clamp(Math.round((COMBAT.enemy.hull  / COMBAT.enemy.hullMax)  * 100), 0, 100);
@@ -289,13 +273,33 @@
     document.getElementById('combat-num-mor').textContent = Math.round(mPct); // morale is fractional (daily ration drift); show it whole like the main HUD
   }
 
+  // Demo makeActionBtn: a crew/item-gated action shows the requirement's
+  // icon (padlock when locked) — the encounter's own gate badge
+  // (index.html gateIconPath + .enc-choice-gate / .has-gate grid).
   function makeActionBtn(opts) {
     const btn = document.createElement('button');
     btn.className = 'enc-choice' + (opts.locked ? ' locked' : '') + (opts.cls ? ' ' + opts.cls : '');
-    btn.innerHTML = `
-      <div class="ch-text">${opts.verb}</div>
-      ${opts.sub ? `<div class="ch-sub"><span${opts.locked ? ' class="lock"' : ''}>${opts.sub}</span></div>` : ''}
-    `;
+    if (opts.gate) {
+      const g = document.createElement('div');
+      g.className = 'enc-choice-gate' + (opts.locked ? ' locked' : '');
+      const icon = opts.locked ? 'sprites/interface/lock.png' : (typeof gateIconPath === 'function' ? gateIconPath(opts.gate) : null);
+      if (icon) g.style.backgroundImage = "url('" + icon + "')";
+      btn.appendChild(g);
+      btn.classList.add('has-gate');
+    }
+    const text = document.createElement('div');
+    text.className = 'ch-text';
+    text.textContent = opts.verb;
+    btn.appendChild(text);
+    if (opts.sub) {
+      const sub = document.createElement('div');
+      sub.className = 'ch-sub';
+      const span = document.createElement('span');
+      if (opts.locked) span.className = 'lock';
+      span.textContent = opts.sub;
+      sub.appendChild(span);
+      btn.appendChild(sub);
+    }
     if (!opts.locked && opts.onClick) btn.addEventListener('click', opts.onClick);
     return btn;
   }
@@ -303,6 +307,28 @@
   function renderCombatActions() {
     const wrap = document.getElementById('enc-choices');
     if (!COMBAT.active) { wrap.innerHTML = ''; return; }
+    // Entry cross-dissolve still running: it paints the panel when the
+    // old choices have faded (triggerCombat).
+    if (COMBAT._dissolving) return;
+
+    // Combat is over (destroyed, FTL'd out, they jumped, we lost): the
+    // buttons fade out and STAY out through the wreck / escape hold —
+    // never a repaint of the PLAYER_TURN column (demo D:5236-5250).
+    if (COMBAT.state === 'END') {
+      const existing = Array.from(wrap.children).filter(el => !el.classList.contains('combat-fading-out'));
+      existing.forEach((el, i) => {
+        el.style.animationDelay = (i * 40) + 'ms';
+        el.classList.add('combat-fading-out');
+      });
+      if (existing.length) {
+        later(() => {
+          // Only clear what faded — the victory choice / end card may
+          // have painted the column since.
+          if ([...wrap.children].every(el => el.classList.contains('combat-fading-out'))) wrap.innerHTML = '';
+        }, 700);
+      }
+      return;
+    }
     wrap.innerHTML = '';
 
     if (COMBAT.state === 'MUTINY') {
@@ -319,7 +345,8 @@
       const pct = Math.round((COMBAT.ftlCharge / turns) * 100);
       const pane = document.createElement('div');
       pane.className = 'combat-ftl-progress';
-      pane.innerHTML = `FTL CHARGE: ${pct}%<div class="ftl-bar"><div class="ftl-bar-fill" style="width:${pct}%"></div></div>TURN ${COMBAT.ftlCharge} / ${turns}`;
+      pane.innerHTML = `FTL CHARGE: ${pct}%<br><span class="ftl-turn">TURN ${COMBAT.ftlCharge} / ${turns}</span>` +
+        `<div class="ftl-bar"><div class="ftl-bar-fill" style="width:${pct}%"></div></div>`;
       wrap.appendChild(pane);
       wrap.appendChild(makeActionBtn({ verb: 'FIRE LASER', sub: 'Locked — FTL spinup in progress', locked: true }));
       wrap.appendChild(makeActionBtn({ verb: 'EVASIVE MANEUVERS', sub: 'Locked', locked: true }));
@@ -331,15 +358,17 @@
       wrap.appendChild(makeActionBtn({ verb: 'CANCEL', sub: 'Hold fire', cls: 'combat-danger', onClick: cancelTargeting }));
       return;
     }
+    // ENEMY_TURN / RESOLVING: the panel keeps the PLAYER_TURN buttons,
+    // locked (showEnemyTurn dims it) — fall through.
 
     // Odds shown are the real ones (a wounded crew member halves them; a
     // captain of that background offers at half strength).
     const tribPct = k => Math.round(tributeTerms(k).odds * 100);
     if (COMBAT.openingTurn && tributeTerms('botanist')) {
-      wrap.appendChild(makeActionBtn({ verb: 'OFFER HARVEST', sub: 'Botanist · ' + tribPct('botanist') + '% · -' + tributeTerms('botanist').cfg.tribute_food_cost + ' food · opening only', cls: 'combat-tribute', onClick: () => offerTribute('botanist') }));
+      wrap.appendChild(makeActionBtn({ verb: 'OFFER HARVEST', sub: 'Botanist · ' + tribPct('botanist') + '% · -' + tributeTerms('botanist').cfg.tribute_food_cost + ' food · opening only', cls: 'combat-tribute', gate: { crew: 'botanist' }, onClick: () => offerTribute('botanist') }));
     }
     if (COMBAT.openingTurn && tributeTerms('chef')) {
-      wrap.appendChild(makeActionBtn({ verb: 'OFFER COOKIES', sub: 'Chef · ' + tribPct('chef') + '% · -' + tributeTerms('chef').cfg.tribute_food_cost + ' food · they remember you', cls: 'combat-tribute', onClick: () => offerTribute('chef') }));
+      wrap.appendChild(makeActionBtn({ verb: 'OFFER COOKIES', sub: 'Chef · ' + tribPct('chef') + '% · -' + tributeTerms('chef').cfg.tribute_food_cost + ' food · they remember you', cls: 'combat-tribute', gate: { crew: 'chef' }, onClick: () => offerTribute('chef') }));
     }
 
     const fireBonusTags = [];
@@ -365,20 +394,21 @@
         verb: 'HULL PATCH',
         sub: COMBAT.hullPatchUsed ? 'Already used this combat'
              : (hpRatio > 0.50 ? `Available below 50% hull · +${patchPct}%` : `Engineer · +${patchPct}% hull · free action`),
-        locked: !avail, cls: 'combat-special', onClick: doHullPatch
+        locked: !avail, cls: 'combat-special', gate: { crew: 'engineer' }, onClick: doHullPatch
       }));
     }
 
     // BOOST SHIELDS (COMBAT_SYSTEM_HANDOFF.md §v2): the station-bought
     // Shield Module arms a full block of the next incoming hit. Free
-    // action, once per fight, item not consumed.
+    // action, once per fight, item not consumed. Item-gated like the
+    // encounter's item gates (module icon, padlock without it).
     const hasShield = STATE.items.includes('shield_module_upgrade');
     wrap.appendChild(makeActionBtn({
       verb: 'BOOST SHIELDS',
       sub: !hasShield ? 'Requires Shield Module (stations)'
            : COMBAT.shieldArmed ? 'Shields up · next hit blocked'
            : COMBAT.shieldUsed ? 'Already used this combat' : 'Block the next hit · free action · once per fight',
-      locked: !hasShield || COMBAT.shieldUsed, cls: 'combat-special', onClick: doBoostShields
+      locked: !hasShield || COMBAT.shieldUsed, cls: 'combat-special', gate: { item: 'shield_module_upgrade' }, onClick: doBoostShields
     }));
 
     wrap.appendChild(makeActionBtn({
@@ -522,8 +552,15 @@
     void sp.offsetWidth;
     sp.classList.add('combat-pre-explode');
   }
+  // Their feed dies with their ship (demo D:6421-6450): static flicker,
+  // CRT collapse, name plate shrink-fade, then an inline opacity pin so
+  // nothing that later strips a class can bring the face back before the
+  // next event resets the stage. The frame's entrance .flash is dropped
+  // first — it is an animation too, and must not hold the frame.
   function triggerCaptainCrtOff() {
     const subject = document.getElementById('enc-subject');
+    if (!subject) return;
+    subject.classList.remove('flash', 'combat-locking');
     const stat = document.createElement('div');
     stat.className = 'combat-crt-static';
     subject.appendChild(stat);
@@ -532,7 +569,29 @@
     void subject.offsetWidth;
     subject.classList.add('combat-crt-off');
     const namePlate = document.getElementById('enc-subject-name');
-    namePlate.classList.add('combat-crt-off-name');
+    if (namePlate) {
+      namePlate.classList.remove('combat-crt-off-name');
+      void namePlate.offsetWidth;
+      namePlate.classList.add('combat-crt-off-name');
+    }
+    later(() => {
+      if (subject.classList.contains('combat-crt-off')) subject.style.opacity = '0';
+      if (namePlate && namePlate.classList.contains('combat-crt-off-name')) namePlate.style.opacity = '0';
+    }, 800);
+  }
+  // Destruction beat shared by a kill shot and FINISH THEM (demo
+  // D:5985-5996, 6036-6059): rattle 380ms, then particles + the ship
+  // fading out + the captain's CRT-off.
+  function destroyEnemyShip() {
+    preExplosionShake();
+    later(() => {
+      spawnDestructionParticles();
+      const sp = document.getElementById('enc-backdrop-sprite');
+      sp.classList.remove('combat-pre-explode', 'combat-low-hp', 'combat-shake', 'combat-hit');
+      sp.style.transition = 'opacity 0.30s ease';
+      sp.style.opacity = '0';
+      triggerCaptainCrtOff();
+    }, 380);
   }
   let _fxLastTs = 0;
   function combatFxLoop(ts) {
@@ -713,10 +772,11 @@
       if (Math.random() < playerMissChance()) {
         spawnMissPopup('MISS!');
         setNarrCombat('COMBAT LOG', 'Shot went wide — shaky hands at the trigger.', 'Composure fraying. Crew morale showing.');
-        setAiCombat(combatLine('player_fires'));
+        // The AI reports the miss (demo D:5450) — not a player_fires brag.
+        setAiCombat('Shot missed. The crew\'s hands are unsteady.');
         bumpMorale(-1);
         COMBAT._firing = false;
-        later(enemyTurn, 500);
+        later(enemyTurn, 700);
         return;
       }
       let dmg = irand(COMBAT_CONFIG.player_damage.min, COMBAT_CONFIG.player_damage.max);
@@ -743,7 +803,7 @@
           `Enemy hull: ${Math.max(0, COMBAT.enemy.hull)}/${COMBAT.enemy.hullMax}. They may surrender.`);
       }
       COMBAT._firing = false;
-      later(enemyTurn, 600);
+      later(enemyTurn, 700);
     }, 280);
   }
 
@@ -755,7 +815,7 @@
     setNarrCombat('COMBAT LOG', combatLine('player_evades'), 'Evasive pattern engaged. The next hit is softened' + (bonus('evade_full_dodge') > 0 ? ', with a ' + Math.round(bonus('evade_full_dodge') * 100) + '% chance to dodge it entirely.' : '.'));
     setAiCombat(combatLine('player_evades'));
     showEnemyTurn();
-    later(enemyTurn, 500);
+    later(enemyTurn, 600);
   }
 
   function doHullPatch() {
@@ -795,7 +855,7 @@
     setAiCombat(combatLine('ftl_charging'));
     showEnemyTurn();
     renderCombatActions();
-    later(enemyTurn, 600);
+    later(enemyTurn, 700);
   }
   function abortFtl() {
     if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
@@ -846,11 +906,13 @@
         // (COMBAT_SYSTEM_HANDOFF.md §5) — combat continues on failure,
         // so this deducts immediately rather than through the deferred
         // end-of-combat outcome reconciliation.
+        const foodBefore = STATE.resources.food;
         STATE.resources.food = clamp(STATE.resources.food - cfg.tribute_food_cost, 0, resMax('food'));
+        COMBAT.foodSpent = (COMBAT.foodSpent || 0) + (foodBefore - STATE.resources.food); // end-card notes
         renderHUD();
-        later(enemyTurn, 600);
+        later(enemyTurn, 700);
       }
-    }, 700);
+    }, 900);
   }
 
   function resolveMutinyStandDown() {
@@ -993,9 +1055,9 @@
       renderCombatHud();
       if (COMBAT.state === 'PLAYER_TURN') showYourTurn();
       else if (COMBAT.state === 'MUTINY') showMutinyTurn();
-      if (COMBAT.state === 'FTL_CHARGING' && COMBAT.active) COMBAT._ftlTickTimer = later(enemyTurn, 1300);
-      if (COMBAT.state === 'MUTINY' && COMBAT.active) later(enemyTurn, 1500);
-    }, 280);
+      if (COMBAT.state === 'FTL_CHARGING' && COMBAT.active) COMBAT._ftlTickTimer = later(enemyTurn, 1500);
+      if (COMBAT.state === 'MUTINY' && COMBAT.active) later(enemyTurn, 1800);
+    }, 320);
   }
 
   // Enemy FTLs out instead of surrendering — same pinpoint-bloom flash
@@ -1010,6 +1072,7 @@
     fxScreen().classList.add('combat-ended');
     setAiCombat('Enemy drive spool detected. They are leaving.');
     setNarrCombat('ENEMY RETREAT', "Their drive lights up. They're jumping out — saving their hide instead of waiting to be looted.", 'No loot. No morale change.');
+    renderCombatActions(); // actions fade out and stay out through the hold
     const sp = document.getElementById('enc-backdrop-sprite');
     sp.classList.add('combat-enemy-charge');
     spawnEnemyChargeParticles();
@@ -1033,23 +1096,29 @@
       fxScreen().classList.add('combat-ended');
       hideTurnIndicator();
       if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
-      // Beat so the enemy's final shot can be read (engine's existing
-      // 700ms, demo used 800), then vanish + flash + ~3s hold.
+      // Beat so the enemy's final shot can be read (demo 800ms), then
+      // vanish + flash + ~3s hold. The action column fades out now and
+      // stays out through the hold (renderCombatActions END branch).
       later(() => {
         triggerFtlJumpEffect(() => endCombatToOutcome({ outcome: 'escape', fuelCost: 15 }));
-      }, 700);
+      }, 800);
     }
   }
 
   /* ── Damage / morale ────────────────────────────────────────── */
   function applyEnemyDamage(amount) {
     COMBAT.enemy.hull = clamp(COMBAT.enemy.hull - amount, 0, COMBAT.enemy.hullMax);
-    flashScreen('combat-hit-pulse');
-    // Their portrait AND their ship take the hit — portrait shake via
-    // scene_art, hit-flash on the viewport sprite (demo canon).
+    // Their ship AND their captain take the hit (demo applyEnemyDamage):
+    // red flash 150ms + shake on the viewport sprite, the same flinch on
+    // the captain's head (scene_art subjectFX). Both self-clear, so the
+    // ship's idle bob resumes once the shake has played.
     if (window.SceneArt) SceneArt.subjectFX('hit');
     const sp = document.getElementById('enc-backdrop-sprite');
-    sp.classList.remove('combat-hit'); void sp.offsetWidth; sp.classList.add('combat-hit');
+    sp.classList.add('combat-hit');
+    setTimeout(() => sp.classList.remove('combat-hit'), 150);
+    sp.classList.remove('combat-shake'); void sp.offsetWidth; sp.classList.add('combat-shake');
+    clearTimeout(sp._shakeT);
+    sp._shakeT = setTimeout(() => sp.classList.remove('combat-shake'), 420);
     // Low-HP red glow — telegraphs the surrender/critical zone (≤35%,
     // demo D:5826-5828).
     const ratio = COMBAT.enemy.hull / COMBAT.enemy.hullMax;
@@ -1060,7 +1129,6 @@
   function applyPlayerDamage(amount) {
     COMBAT.player.hull = clamp(COMBAT.player.hull - amount, 0, COMBAT.player.hullMax);
     saveFightPoint();
-    flashScreen('combat-hull-hit');
     // Full-screen shake + red hull vignette + damage floater over the
     // HULL bar (demo canon).
     const screen = fxScreen();
@@ -1090,21 +1158,13 @@
     hideTurnIndicator();
     fxScreen().classList.remove('combat-targeting', 'combat-ftl-charging');
     fxScreen().classList.add('combat-ended');
-    renderCombatActions();
+    renderCombatActions(); // fade out; nothing comes back until the victory choice
     // Demo-canon destruction sequence: pre-explosion rattle (380ms) →
     // particle scatter + ship sprite fade + CRT-off on the captain's
     // feed → hold on the empty space → victory choice.
-    preExplosionShake();
     setAiCombat(combatLine('enemy_destroyed'));
     setNarrCombat('TARGET DESTROYED', combatLine('enemy_destroyed'), 'Wreckage drifting.');
-    later(() => {
-      spawnDestructionParticles();
-      const sp = document.getElementById('enc-backdrop-sprite');
-      sp.classList.remove('combat-pre-explode');
-      sp.style.transition = 'opacity 0.30s ease';
-      sp.style.opacity = '0';
-      triggerCaptainCrtOff();
-    }, 380);
+    destroyEnemyShip();
     later(() => showVictoryChoice(), 2200);
   }
   function showVictoryChoice() {
@@ -1121,47 +1181,81 @@
     }));
   }
   function resolveVictoryChoice(result) {
+    if (COMBAT._resolved || COMBAT._victoryPicked) return;
+    COMBAT._victoryPicked = true;
     document.getElementById('enc-choices').innerHTML = '';
     setNarrCombat('TARGET DESTROYED',
       result.salvaged ? 'Wreckage cracked open. Loot pool drawn.' : 'You leave the wreck behind.',
       result.salvaged ? 'Bonus crate roll incoming…' : 'Drifting through your wake.');
-    later(() => endCombatToOutcome(result), 700);
+    later(() => endCombatToOutcome(result), 900);
   }
   function acceptSurrender() {
-    if (!COMBAT.active) return;
+    if (!COMBAT.active || COMBAT.state !== 'SURRENDER_DECISION') return;
     COMBAT.state = 'END';
     COMBAT.player.morale = clamp(COMBAT.player.morale + 5, 0, 100);
+    hideTurnIndicator();
+    fxScreen().classList.add('combat-ended');
     setAiCombat(combatLine('surrender_accepted'));
     setNarrCombat('SURRENDER ACCEPTED', combatLine('surrender_accepted'), '40% of the loot · morale +5');
     endCombatToOutcome({ outcome: 'victory_surrendered' });
   }
+  // FINISH THEM — the surrendered ship is destroyed on screen like any
+  // kill (demo D:6036-6059): red alert off at once, actions fade out,
+  // rattle → particles → ship fade → CRT-off, end card at 1500ms.
   function finishSurrendered() {
     if (!COMBAT.active || COMBAT.state !== 'SURRENDER_DECISION') return;
     COMBAT.state = 'END';
     COMBAT.player.morale = clamp(COMBAT.player.morale - 10, 0, 100);
     COMBAT.enemy.hull = 0; COMBAT.enemy.alive = false;
     hideTurnIndicator();
+    fxScreen().classList.add('combat-ended');
+    renderCombatActions();
     setAiCombat(combatLine('surrender_refused'));
     setNarrCombat('SURRENDER REFUSED', combatLine('surrender_refused'), 'Full loot recovered. Morale -10. The crew witnessed it.');
     renderCombatHud();
-    later(() => endCombatToOutcome({ outcome: 'victory_executed' }), 900);
+    destroyEnemyShip();
+    later(() => endCombatToOutcome({ outcome: 'victory_executed' }), 1500);
+  }
+  /* Defeat casualties — demo rule (owner ruling 2026-10-11; demo
+     D:6069-6099). Death is rare, injury the norm:
+       death   12% − medic bonus − high-morale bonus, floor 3%
+       injury  75%, × 0.5 with a crew medic (× 0.75 at half strength: a
+               medic captain or a wounded medic — the passive rule)
+       second  30% for a second injured crew member once one is hurt
+       death with nobody injured → 50% one injury anyway
+     Counts are clamped to the crew actually aboard. What an injury DOES
+     is the engine's severity model: applySeverity(role, 'injury'). */
+  function rollDefeatCasualties() {
+    let deathChance = 0.12 - bonus('defeat_death_reduction');
+    if (COMBAT.player.morale >= 70) deathChance -= 0.04;
+    if (COMBAT.player.morale >= 90) deathChance -= 0.02;
+    deathChance = Math.max(0.03, deathChance);
+    const aboard = STATE.crew.length;
+    const died = aboard > 0 && Math.random() < deathChance;
+    const medic = typeof passiveMult === 'function' ? passiveMult('medic')
+      : Math.max(COMBAT.crew.medic || 0, COMBAT.captainBg === 'medic' ? 0.5 : 0);
+    const injuryChance = 0.75 * (1 - 0.5 * medic);
+    let injured = Math.random() < injuryChance ? 1 : 0;
+    if (injured > 0 && Math.random() < 0.30) injured = 2;
+    if (died && injured === 0 && Math.random() < 0.50) injured = 1;
+    injured = Math.min(injured, aboard - (died ? 1 : 0));
+    return { died, injured, deathChance, injuryChance };
   }
   function onPlayerDefeat() {
     COMBAT.state = 'END';
     COMBAT._firing = false;
     hideTurnIndicator();
+    fxScreen().classList.remove('combat-targeting', 'combat-ftl-charging');
+    fxScreen().classList.add('combat-ended'); // red alert stops the moment it's decided
+    renderCombatActions();
     COMBAT.player.hull = 1;
     const cargoLoss = irand(30, 50);
-    let deathChance = 0.12 - bonus('defeat_death_reduction');
-    if (COMBAT.player.morale >= 70) deathChance -= 0.04;
-    if (COMBAT.player.morale >= 90) deathChance -= 0.02;
-    deathChance = Math.max(0.03, deathChance);
-    const died = STATE.crew.length > 0 && Math.random() < deathChance;
+    const cas = rollDefeatCasualties();
     setAiCombat(combatLine('player_defeated'));
     setNarrCombat('LIMP-AWAY STATE', combatLine('player_defeated'),
-      `Hull set to 1. Cargo loss: ${cargoLoss}%.${died ? ' Casualty reports coming in.' : ''}`);
+      `Hull set to 1. Cargo loss: ${cargoLoss}%.${cas.died || cas.injured ? ' Casualty reports coming in.' : ' All crew accounted for.'}`);
     renderCombatHud();
-    later(() => endCombatToOutcome({ outcome: 'defeated', cargoLoss, crewDied: died }), 700);
+    later(() => endCombatToOutcome({ outcome: 'defeated', cargoLoss, crewDied: cas.died, crewInjured: cas.injured }), 800);
   }
 
   /* ── Loot ───────────────────────────────────────────────────── */
@@ -1185,7 +1279,7 @@
           { id: 'repair_kit',  label: 'Repair Kit',  isItem: true },
           { id: 'biocomponent',label: 'biocomponent' }
         ]);
-        items.push(Object.assign({ count: 1 }, crate));
+        items.push(Object.assign({ count: 1, bonus: true }, crate)); // the card's BONUS tile
       }
     } else if (outcome === 'destroyed_leave') {
       items.push({ id: 'gold', label: 'gold', count: irand(4, 9) });
@@ -1197,15 +1291,86 @@
     }
     return items;
   }
-  function describeLoot(items) {
-    if (!items || !items.length) return 'No loot recovered.';
-    return 'Recovered: ' + items.map(it => `${it.count}× ${it.label}`).join(', ') + '.';
+  /* ── End card (demo D:1355-1473, 6156-6323) ─────────────────────
+     Every ending lands on one card: title, body, a tile grid of exactly
+     what came aboard, a notes line of what the fight cost. Continue →
+     on to the next leg; after an escape (ours or theirs) Continue first
+     shows the demo's CLEAR view — the empty bridge — then moves on. */
+  const END_CLASS = {
+    victory_destroyed: 'victory', victory_surrendered: 'tribute', victory_executed: 'defeat',
+    tribute: 'tribute', escape: 'escape', enemy_retreat: 'escape', defeated: 'defeat', yielded: 'defeat',
+  };
+  function lootSprite(it) {
+    if (it.material || it.id === 'gold') return 'sprites/cargo/materials/' + it.id + '.png';
+    return typeof itemSpritePath === 'function' ? itemSpritePath(it.id) : 'sprites/cargo/items/' + it.id + '.png';
+  }
+  function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
+  function renderLootTiles(items) {
+    if (!items.length) return '<div class="end-loot-empty">No loot recovered.</div>';
+    return '<div class="end-loot-grid">' + items.map(it => {
+      const src = lootSprite(it);
+      return `<div class="end-loot-tile${it.bonus ? ' bonus' : ''}" data-id="${esc(it.id)}" data-count="${it.count}">` +
+        (src ? `<img src="${esc(src)}" alt="" onerror="this.style.visibility='hidden'">` : '') +
+        `<span class="lt-count">×${it.count}</span><span class="lt-label">${esc(it.label)}</span></div>`;
+    }).join('') + '</div>';
+  }
+  function hideEndCard() {
+    const ov = document.getElementById('combat-end-overlay');
+    if (ov) ov.classList.remove('show');
+  }
+  window.hideCombatEndCard = hideEndCard;
+  function showEndCard(card) {
+    const ov = document.getElementById('combat-end-overlay');
+    if (!ov) return;
+    const cls = END_CLASS[card.outcome] || '';
+    document.getElementById('combat-end-card').className = 'combat-end-card ' + cls;
+    const t = document.getElementById('combat-end-title');
+    t.className = 'end-title ' + cls;
+    t.textContent = card.title;
+    document.getElementById('combat-end-body').textContent = card.body;
+    let html = '';
+    if (card.loot) html += '<div class="end-loot-title">RECOVERED</div>' + renderLootTiles(card.loot);
+    if (card.notes) html += `<div class="end-loot-notes">${esc(card.notes)}</div>`;
+    const lootEl = document.getElementById('combat-end-loot');
+    lootEl.innerHTML = html;
+    lootEl.style.display = html ? 'flex' : 'none';
+    const btn = document.getElementById('combat-end-continue');
+    const fresh = btn.cloneNode(true); // one listener per card
+    btn.replaceWith(fresh);
+    fresh.addEventListener('click', () => {
+      hideEndCard();
+      if (card.outcome === 'escape' || card.outcome === 'enemy_retreat') renderPostEscapeState();
+      else if (typeof runChoiceAction === 'function') runChoiceAction(advanceAfterEvent);
+      else advanceAfterEvent();
+    });
+    ov.classList.add('show');
+  }
+  // CLEAR (demo renderPostEscapeState): the bridge stays, starfield and
+  // all; the pirate ship, captain and plate are gone; one Continue on.
+  function renderPostEscapeState() {
+    fxScreen().classList.add('hostile-gone');
+    document.getElementById('enc-narr-title').textContent = 'CLEAR';
+    if (typeof finishAllTyping === 'function') finishAllTyping();
+    document.getElementById('enc-narr-body').textContent = 'The pirate falls behind. The bridge is quiet again — your stars, undisturbed.';
+    document.getElementById('enc-narrative').classList.remove('tone-success', 'tone-danger');
+    document.getElementById('enc-dialog').classList.add('hidden');
+    setAiCombat('No further contacts. Threat vector resolved.');
+    const col = document.getElementById('enc-choices');
+    col.innerHTML = '';
+    col.appendChild(makeAdvanceButton('Continue'));
+  }
+  // What the fight cost, in the demo's notes register ("-15 fuel ·
+  // Morale +5"): the real net changes, rounded as the HUD shows them.
+  function costNotes(d) {
+    const sgn = (n, label, pre) => n ? (pre ? `${label} ${n > 0 ? '+' : '−'}${Math.abs(n)}` : `${n > 0 ? '+' : '−'}${Math.abs(n)} ${label}`) : null;
+    return [sgn(d.hull, 'Hull', true), sgn(d.morale, 'Morale', true), sgn(d.fuel, 'fuel'), sgn(d.food, 'food'),
+      sgn(d.gold, 'gold'), d.itemsLost ? `${d.itemsLost} cargo item${d.itemsLost > 1 ? 's' : ''} lost` : null,
+      d.leftBehind || null].filter(Boolean).join(' · ');
   }
 
-  /* ── Exit: reconcile COMBAT.* back into real STATE, then hand off
-     to the same terminal outcome screen every other encounter choice
-     uses (renderOutcomeView) so combat's resolution matches the rest
-     of the game's UX instead of a bespoke modal. ──────────────── */
+  /* ── Exit: reconcile COMBAT.* back into real STATE, paint the
+     encounter's own outcome view underneath (save point, Continue,
+     AJOY's hindsight), then raise the end card over it. ─────────── */
   function endCombatToOutcome(result) {
     // One resolution per fight — late timers (an in-flight enemy shot,
     // a double-clicked choice) must not apply a second outcome.
@@ -1215,9 +1380,12 @@
     COMBAT.state = 'END';
     COMBAT.active = false;
     COMBAT._firing = false;
+    COMBAT._lastOutcome = result.outcome;
 
-    document.getElementById('screen-encounter').classList.remove('combat-mode', 'combat-targeting', 'combat-vignette', 'combat-ftl-charging');
-    document.getElementById('enc-choices').classList.remove('combat-actions', 'combat-locked');
+    const scr = document.getElementById('screen-encounter');
+    scr.classList.remove('combat-mode', 'combat-targeting', 'combat-vignette', 'combat-ftl-charging');
+    scr.classList.add('combat-ended'); // every END entrypoint kills the red alert
+    document.getElementById('enc-choices').classList.remove('combat-actions', 'combat-locked', 'combat-fade-in', 'combat-fade-out');
     document.getElementById('enc-subject').classList.remove('combat-locking');
     // Defensive sweep of transient FTL/retreat FX: the flash overlay
     // self-removes at 900ms and the charge class at 1000ms, but any
@@ -1225,11 +1393,10 @@
     document.querySelectorAll('#screen-encounter .combat-ftl-flash').forEach(el => el.remove());
     const spEnd = document.getElementById('enc-backdrop-sprite');
     if (spEnd) spEnd.classList.remove('combat-enemy-charge', 'combat-low-hp');
-    // combat-ended (dims alert chrome) + the destroyed ship's inline
-    // opacity/CRT classes + the escaped/retreated ship's combat-ftl-
-    // vanish classes persist through the OUTCOME view on purpose — the
-    // wreck/vanished ship stays gone while the player reads the result.
-    // SceneArt fully resets them when the NEXT event renders.
+    // combat-ended + the destroyed ship's inline opacity/CRT classes +
+    // the escaped/retreated ship's combat-ftl-vanish persist through the
+    // outcome on purpose — the wreck/vanished ship stays gone while the
+    // player reads the result. SceneArt resets them on the NEXT event.
     hideTurnIndicator();
 
     const outcome = { resources: {} };
@@ -1242,13 +1409,13 @@
         title = result.salvaged ? 'VICTORY · SALVAGED' : 'VICTORY · DEPARTED'; tone = 'success';
         lootItems = rollCombatLoot(result.salvaged ? 'destroyed_salvage' : 'destroyed_leave',
           result.salvaged ? { bonusChance: 0.45 + bonus('salvage_bonus_rolls') * 0.10 } : {});
-        body = (result.salvaged ? 'Wreckage cracked open. Drives still warm. ' : 'You leave the wreck behind. The galaxy is full of wrecks. ') + '{{LOOT}}';
+        body = result.salvaged ? 'Wreckage cracked open. Drives still warm.' : 'You leave the wreck behind. The galaxy is full of wrecks.';
         outcome.time_cost = result.salvaged ? 'high' : 'low'; // leaving the wreck is the quick way out
         break;
       case 'victory_surrendered':
         title = 'SURRENDER ACCEPTED'; tone = 'success';
         lootItems = rollCombatLoot('surrender');
-        body = 'Pirates stripped, ship intact. They live to disappoint someone else. ' + '{{LOOT}}';
+        body = 'Pirates stripped, ship intact. They live to disappoint someone else.';
         // Stripping them means going aboard: their own interior, by species.
         scene = 'ship_interior/pirate/' + COMBAT.species;
         outcome.time_cost = 'medium';
@@ -1256,7 +1423,7 @@
       case 'victory_executed':
         title = 'SURRENDER REFUSED'; tone = 'danger';
         lootItems = rollCombatLoot('executed', { bonusChance: 0.45 });
-        body = 'You finished a surrendered combatant. The crew noticed. The galaxy noticed. ' + '{{LOOT}}';
+        body = 'You finished a surrendered combatant. The crew noticed. The galaxy noticed.';
         outcome.sets_flag = 'executed_surrendered_pirate';
         outcome.time_cost = 'high';
         break;
@@ -1288,19 +1455,14 @@
         outcome.time_cost = 'low';
         break;
       case 'defeated': {
-        // Injury roll on top of the death roll — a lost fight usually
-        // hurts somebody even when it kills nobody (60% chance, HP
-        // damage softened by a medic inside damageCrew itself).
-        let injuredRole = null;
-        if (!result.crewDied && typeof window.damageCrew === 'function' && Math.random() < 0.6) {
-          injuredRole = window.damageCrew(null, 30);
-        }
         title = 'LIMP AWAY'; tone = 'danger';
-        // Crew line is written after applyOutcomeEffects (below): the
-        // kill can be saved by a medic, and the injury can be fatal.
+        // Crew line is written after the effects land (below): the kill
+        // can be saved by a medic, injuries go to whoever is left.
         body = `Hull at 1. Cargo loss ${result.cargoLoss}%.`;
-        result._injured = injuredRole;
-        if (result.crewDied) outcome.crew_effect = { type: 'kill', target: 'random' };
+        if (result.crewDied && STATE.crew.length) {
+          result._deathRole = STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
+          outcome.crew_effect = { type: 'kill', target: 'specific_role', role: result._deathRole };
+        }
         outcome.time_cost = 'high';
         break;
       }
@@ -1319,28 +1481,40 @@
 
     const crewBefore = STATE.crew.slice();
     const namesBefore = Object.fromEntries(crewBefore.map(r => [r, crewNameOf(r)]));
+    const before = { hull: STATE.resources.hull, morale: STATE.resources.morale, fuel: STATE.resources.fuel, food: STATE.resources.food, gold: STATE.goldAmount };
     applyOutcomeEffects(outcome);
+    const lethalSaved = !!STATE.lethalSaved;
     STATE.lethalSaved = null; // combat writes its own crew line below
     if (result.outcome === 'defeated') {
+      // Injuries (demo rule, rolled in onPlayerDefeat) land on crew other
+      // than the one the death roll picked, through the engine's own
+      // severity model.
+      const pool = STATE.crew.filter(r => r !== result._deathRole);
+      const hurt = [];
+      for (let i = 0; i < (result.crewInjured || 0) && pool.length; i++) {
+        const role = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+        applySeverity(role, 'injury');
+        hurt.push(role);
+      }
       const lost = crewBefore.filter(r => !STATE.crew.includes(r));
-      if (result._injured && !lost.includes(result._injured) && !STATE.crew.includes(result._injured)) lost.push(result._injured);
-      if (lost.length) body += ' ' + lost.map(r => namesBefore[r] || crewNameOf(r)).join(' and ') + (lost.length > 1 ? " didn't make it." : " didn't make it.");
-      else if (result.crewDied) body += ' It should have cost a life. The medic disagreed.';
-      else if (result._injured) body += ` ${namesBefore[result._injured] || crewNameOf(result._injured)} is hurt.`;
-      else body += ' All crew accounted for.';
+      const nameOf = r => namesBefore[r] || crewNameOf(r);
+      const parts = [];
+      if (lost.length) parts.push(lost.map(nameOf).join(' and ') + " didn't make it.");
+      else if (result.crewDied && lethalSaved) parts.push('It should have cost a life. The medic disagreed.');
+      if (hurt.length) parts.push(hurt.map(nameOf).join(' and ') + (hurt.length > 1 ? ' are hurt.' : ' is hurt.'));
+      body += ' ' + (parts.length ? parts.join(' ') : 'All crew accounted for.');
     }
 
     // Materials/items loot isn't part of the standard outcome schema
     // (applyOutcomeEffects only knows resources/item_grant/crew_effect/
     // sets_flag) — applied directly here rather than extending that
-    // shared contract for a Phase-5-only need.
+    // shared contract for a combat-only need.
     const leftBehind = [];
     if (lootItems) {
       for (const it of lootItems) {
         if (it.id === 'gold') continue;
         if (it.isItem) {
-          // Capacity-enforced (audit fix — this used to bypass the
-          // cargo limit); grantItem logs anything left with the wreck.
+          // Capacity-enforced: grantItem logs anything left with the wreck.
           let landed = 0;
           for (let i = 0; i < it.count; i++) {
             if (typeof window.grantItem !== 'function') { STATE.items.push(it.id); landed++; }
@@ -1348,14 +1522,16 @@
           }
           if (landed < it.count) { leftBehind.push({ label: it.label, count: it.count - landed }); it.count = landed; }
         }
-        else { STATE.materials[it.id] = (STATE.materials[it.id] || 0) + it.count; }
+        else { it.material = true; STATE.materials[it.id] = (STATE.materials[it.id] || 0) + it.count; }
       }
     }
     // Cargo loss on defeat — drop a random slice of carried items.
+    let itemsLost = 0;
     if (result.outcome === 'defeated' && result.cargoLoss && STATE.items.length) {
       const dropCount = Math.min(STATE.items.length, Math.round(STATE.items.length * (result.cargoLoss / 100)));
       for (let i = 0; i < dropCount; i++) {
         if (!window.removeRandomItem()) break;
+        itemsLost++;
       }
     }
 
@@ -1367,32 +1543,57 @@
     // (decremented in selectEvent()).
     STATE.postCombatLegs = 2;
 
-    // The loot line reports what actually made it aboard (a full hold
-    // leaves items with the wreck).
-    if (body.includes('{{LOOT}}')) {
-      const landed = (lootItems || []).filter(it => it.count > 0);
-      body = body.replace('{{LOOT}}', describeLoot(landed)
-        + (leftBehind.length ? ' The hold was full: ' + leftBehind.map(it => `${it.count}× ${it.label}`).join(', ') + ' left behind.' : ''));
-    }
-    renderOutcomeView(Object.assign({ title, body, tone, narrative: body }, scene ? { scene_bg: scene } : {}));
+    // What actually came aboard (a full hold leaves items with the wreck).
+    // Gold is what the purse really gained (the loot roll, net of a toll).
+    const landed = (lootItems || []).filter(it => it.count > 0 && it.id !== 'gold');
+    const goldDelta = Math.round(STATE.goldAmount - before.gold);
+    const tiles = lootItems ? (goldDelta > 0 ? [{ id: 'gold', label: 'Gold', count: goldDelta }] : []).concat(landed) : null;
+    const leftLine = leftBehind.length ? 'Hold full: ' + leftBehind.map(it => `${it.count}× ${it.label}`).join(', ') + ' left behind' : '';
+    const deltas = {
+      hull: Math.round(STATE.resources.hull - before.hull),
+      morale: Math.round(COMBAT.player.morale - before.morale),
+      fuel: Math.round(STATE.resources.fuel - before.fuel),
+      food: -Math.round((result.outcome === 'tribute' ? Math.min(result.foodCost || 0, before.food) : 0) + (COMBAT.foodSpent || 0)),
+      gold: lootItems ? 0 : goldDelta,
+      itemsLost, leftBehind: leftLine,
+    };
+
+    // The outcome view underneath: its text names what came aboard (the
+    // log / save / a reader under the card see the same result).
+    const lootText = tiles ? (tiles.length ? ' Recovered: ' + tiles.map(it => `${it.count}× ${it.label}`).join(', ') + '.' : ' No loot recovered.') : '';
+    const viewBody = body + lootText + (leftLine ? ' ' + leftLine + '.' : '');
+    renderOutcomeView(Object.assign({ title, body: viewBody, tone, narrative: viewBody }, scene ? { scene_bg: scene } : {}));
+    // Continuing from the column (keyboard / harness) also takes the card down.
+    const adv = document.querySelector('#enc-choices .enc-choice.advance');
+    if (adv) adv.addEventListener('click', hideEndCard);
+    showEndCard({ outcome: result.outcome, title, body, loot: tiles, notes: costNotes(deltas) });
   }
 
   /* ── Entry points — called from handleChoiceClick() in index.html
      for choices carrying triggerCombat/triggerRamResolve/
      triggerFleeResolve. See CLAUDE.md's layered Event Module section
      for the choice schema these three fields belong to. ─────────── */
-  function resolveToOutcome(choice) {
+  // FLEE / a RAM that gets through (demo resolveFleeAction /
+  // resolveRamAction): they're behind us now — the ship, captain, plate
+  // and dialog go (.hostile-gone) and the view cuts from the bridge to
+  // open space (this node's: deep space, a nebula, the asteroid field).
+  function resolveToOutcome(choice, opts) {
     const ev = STATE.currentEvent;
     const outcome = ev.outcomes[choice.outcome];
     applyOutcomeEffects(outcome);
     renderHUD();
     if (checkFailure()) return;
     STATE.currentOutcomeId = choice.outcome;
+    if (opts && opts.hostileGone) fxScreen().classList.add('hostile-gone');
     renderEncounterState();
+    if (opts && opts.hostileGone && window.SceneArt) {
+      const space = SceneArt.sceneSpecFor({ id: ev.id, scene_type: 'deep_void' }, STATE.currentNode, STATE.npcCtx).bg;
+      SceneArt.renderOutcome(Object.assign({}, outcome, { scene_bg: space, line: null }), STATE.npcCtx);
+    }
   }
 
   window.triggerFleeResolve = function (choice) {
-    resolveToOutcome(choice);
+    resolveToOutcome(choice, { hostileGone: true });
   };
 
   window.triggerRamResolve = function (choice) {
@@ -1400,7 +1601,7 @@
     if (Math.random() < RAM_FAIL_CHANCE) {
       window.triggerCombat(choice, { ramFailed: true, ramHull: choice.hull || 18 });
     } else {
-      resolveToOutcome(choice);
+      resolveToOutcome(choice, { hostileGone: true });
     }
   };
 
@@ -1409,20 +1610,51 @@
   // replaced (it used to bleed into the next ordinary event).
   window.abortCombat = function () {
     if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
-    COMBAT.active = false; COMBAT.state = 'END'; COMBAT._firing = false;
+    COMBAT.active = false; COMBAT.state = 'END'; COMBAT._firing = false; COMBAT._dissolving = false;
     COMBAT._resolved = true; COMBAT.fight = (COMBAT.fight || 0) + 1; // pending timers stand down
     const scr = document.getElementById('screen-encounter');
     scr.classList.remove('combat-mode', 'combat-targeting', 'combat-vignette', 'combat-ftl-charging', 'combat-ended', 'hostile-gone');
-    document.getElementById('enc-choices').classList.remove('combat-actions', 'combat-locked');
+    document.getElementById('enc-choices').classList.remove('combat-actions', 'combat-locked', 'combat-fade-in', 'combat-fade-out');
     document.getElementById('enc-subject').classList.remove('combat-locking');
     scr.querySelectorAll('.combat-ftl-flash').forEach(el => el.remove());
     const sp = document.getElementById('enc-backdrop-sprite');
     if (sp) sp.classList.remove('combat-enemy-charge', 'combat-low-hp');
+    hideEndCard();
   };
+
+  /* Any fight is fought from the bridge (demo canon: combat is always the
+     bridge view, their ship in the window, their captain on the feed) —
+     wherever the event that started it was set. A flat event with no NPC
+     (event_general_003's "Vessel Approaching") gets a pirate captain
+     rolled here, through the same resolveNpc as authored NPCs (sticky
+     per stop, so a reload meets the same one); a fight launched from a
+     corridor or a derelict cuts to the bridge. `line` (the bluff's
+     CALLED reply) sets the captain talking. */
+  function ensureCombatStage(line) {
+    const ev = STATE.currentEvent, node = STATE.currentNode;
+    if (!ev) return;
+    if (!STATE.npcCtx && typeof resolveNpc === 'function') {
+      STATE.npcCtx = resolveNpc({ id: ev.id, npc: { disposition: 'pirate', species: null } });
+    }
+    if (!window.SceneArt) return;
+    const spec = SceneArt.sceneSpecFor({ id: ev.id, scene_type: 'ship_exterior' }, node, STATE.npcCtx);
+    const scr = fxScreen();
+    scr.classList.remove('comm-corrupted');
+    scr.classList.add('comm-screen'); // their captain hails us over the screen
+    SceneArt.render(ev, node, Object.assign({ comm_mode: 'screen', pose: 'hostile' }, spec), STATE.npcCtx, line || null);
+  }
 
   window.triggerCombat = function (choice, opts) {
     if (COMBAT.active) return;
     opts = opts || {};
+    choice = choice || {};
+    hideEndCard();
+    // The bridge, their ship, their captain — before anything reads the
+    // NPC (species decides hull, surrender and the cookie memory below).
+    const ev = STATE.currentEvent;
+    const intro = choice.combat_intro && ev && ev.outcomes ? ev.outcomes[choice.combat_intro] : null;
+    const introLine = intro && intro.line && typeof interpolateNpcTokens === 'function' ? interpolateNpcTokens(intro.line, STATE.npcCtx) : (intro && intro.line) || null;
+    ensureCombatStage(introLine);
     // The chef's cookies (OFFER COOKIES success sets a friendly tag for
     // one journey leg — COMBAT_SYSTEM_HANDOFF §5): the same crew, met
     // again before the next station, wave you through instead.
@@ -1486,13 +1718,41 @@
 
     const screen = document.getElementById('screen-encounter');
     screen.classList.add('combat-mode');
+    screen.classList.remove('combat-ended', 'hostile-gone');
+    COMBAT.foodSpent = 0;
+    COMBAT._victoryPicked = false;
     startCombatFx();
-    document.getElementById('enc-choices').classList.add('combat-actions');
     const dialogEl = document.getElementById('enc-dialog');
     if (dialogEl) dialogEl.classList.add('hidden');
+    // The encounter's column/narrative fit (fitEncounterColumns) leaves
+    // inline max-heights sized for the previous layer; combat has its
+    // own fixed homes for the log, the HP banner and the actions.
+    const wrap = document.getElementById('enc-choices');
+    wrap.style.maxHeight = '';
+    document.getElementById('enc-narrative').style.maxHeight = '';
+    // Choices → actions cross-dissolve (demo D:5111-5119): the old
+    // choices fade out over 200ms — inert from this moment (clones carry
+    // no listeners, so nothing resolves mid-fade) — then the action
+    // panel paints and fades in.
+    wrap.querySelectorAll('.enc-choice').forEach(b => b.replaceWith(b.cloneNode(true)));
+    wrap.classList.remove('combat-fade-in');
+    wrap.classList.add('combat-fade-out');
+    COMBAT._dissolving = true;
+    later(() => {
+      COMBAT._dissolving = false;
+      wrap.classList.remove('combat-fade-out');
+      wrap.classList.add('combat-actions', 'combat-fade-in');
+      renderCombatActions();
+      setTimeout(() => wrap.classList.remove('combat-fade-in'), 220);
+    }, 200);
 
     if (ramFailed) {
       setNarrCombat('RAM FAILED — COMBAT', `Your bow glanced off their armor. The pirates wheel back, weapons hot. Hull -${ramHull}.`);
+    } else if (intro) {
+      // A combat_intro outcome opens the fight (the bluff's CALLED beat).
+      const quote = introLine ? '“' + introLine + '”' : undefined;
+      const introBody = typeof interpolateNpcTokens === 'function' ? interpolateNpcTokens(intro.body || '', STATE.npcCtx) : (intro.body || '');
+      setNarrCombat(intro.title || 'COMBAT LOG', introBody, quote);
     } else {
       setNarrCombat('COMBAT LOG', combatLine('intro'), pirateSays('refuse').trim() || undefined);
     }
@@ -1517,12 +1777,12 @@
       setAiCombat('Crew is not responding to combat orders.');
       renderCombatActions();
       showMutinyTurn();
-      later(enemyTurn, 1200);
+      later(enemyTurn, 1800);
       return;
     }
     if (ramFailed) {
       showEnemyTurn();
-      later(() => { if (COMBAT.active && COMBAT.state === 'PLAYER_TURN') enemyTurn(); }, 800);
+      later(() => { if (COMBAT.active && COMBAT.state === 'PLAYER_TURN') enemyTurn(); }, 1100);
     } else {
       showYourTurn();
     }

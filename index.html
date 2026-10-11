@@ -996,8 +996,9 @@ body {
       <div class="enc-narr-body" id="enc-narr-body"></div>
     </div>
 
-    <!-- Combat-mode-only chrome (Phase 5) — hidden unless #screen-encounter
-         has .combat-mode, set/cleared by engine/js/combat.js. -->
+    <!-- Combat-mode-only chrome — hidden unless #screen-encounter has
+         .combat-mode, set/cleared by engine/js/combat.js. The HP bars are
+         a full-width banner above the COMBAT LOG (screen-combat.css). -->
     <div class="combat-turn-indicator your-turn" id="combat-turn-indicator" style="display:none;">YOUR TURN</div>
     <div class="combat-hpbars" id="combat-hpbars">
       <div class="row">
@@ -1022,6 +1023,17 @@ body {
     <div class="combat-alert-strip bottom"></div>
     <div class="combat-alert-strip left"></div>
     <div class="combat-alert-strip right"></div>
+    <!-- Combat end card (demo-combat D:1580-1589, combat parity 2026-10-11):
+         raised over the outcome view by combat.js showEndCard — title,
+         body, loot tiles (what came aboard), notes (what it cost). -->
+    <div id="combat-end-overlay">
+      <div class="combat-end-card" id="combat-end-card">
+        <div class="end-title" id="combat-end-title"></div>
+        <div class="end-body" id="combat-end-body"></div>
+        <div class="end-loot" id="combat-end-loot"></div>
+        <div class="end-actions"><button class="end-btn" id="combat-end-continue">Continue</button></div>
+      </div>
+    </div>
   </div>
 
   <!-- END — two-screen cinematic + report flow (Phase 6), painted by

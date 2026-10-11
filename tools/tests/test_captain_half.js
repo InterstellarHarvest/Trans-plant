@@ -103,7 +103,7 @@ const withRandom = (page, v, fn) => page.evaluate(({ v, src }) => {
       const ev = Object.values(EVENTS).find(e => JSON.stringify(e).includes('"triggerCombat":true'));
       enterEvent(STATE.byId[STATE.currentId], ev); window.triggerCombat({});
     });
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(450); // after the 200ms choices → actions cross-dissolve
     const harvest = await page.evaluate(() => { const b = [...document.querySelectorAll('#enc-choices .enc-choice')].find(x => /OFFER HARVEST/.test(x.textContent)); return b ? b.textContent : ''; });
     ok(/20%/.test(harvest), `botanist captain can OFFER HARVEST at half odds (${harvest.replace(/\s+/g, ' ').trim()})`);
     errors.push(...page._errs); await page.close();
@@ -112,7 +112,7 @@ const withRandom = (page, v, fn) => page.evaluate(({ v, src }) => {
       const ev = Object.values(EVENTS).find(e => JSON.stringify(e).includes('"triggerCombat":true'));
       enterEvent(STATE.byId[STATE.currentId], ev); window.triggerCombat({});
     });
-    await p2.waitForTimeout(300);
+    await p2.waitForTimeout(450); // after the 200ms choices → actions cross-dissolve
     const cookies = await p2.evaluate(() => { const b = [...document.querySelectorAll('#enc-choices .enc-choice')].find(x => /OFFER COOKIES/.test(x.textContent)); return b ? b.textContent : ''; });
     ok(/25%/.test(cookies), `chef captain + crew chef: the crew chef's 25% counts (${cookies.replace(/\s+/g, ' ').trim()})`);
     errors.push(...p2._errs); await p2.close();

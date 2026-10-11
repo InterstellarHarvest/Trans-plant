@@ -16,12 +16,9 @@
   --subj-corner: #c8a85a;
   --subj-glow: rgba(200,168,90,0.25);
 }
-/* Combat mode swaps .combat-hpbars in at top:60 left:14 (90px tall) —
-   drop the subject below them so the pirate stays visible while the
-   bars do their work. Frame + name plate both track --subj-top. */
-#screen-encounter.combat-mode {
-  --subj-top: 168px;
-}
+/* (Combat parity 2026-10-11: the combat HP bars are a banner above the
+   COMBAT LOG now — demo canon — so the captain keeps --subj-top in a
+   fight; the old 168px push-down for a top-left HP box is gone.) */
 
 /* ── Backdrop layer stack (z via DOM order: base → sprite → main) ── */
 /* Demo canon (.enc-backdrop { transition: background 0.4s }): when a
@@ -369,19 +366,10 @@
 #screen-encounter .enc-choices:not(.combat-actions) .enc-choice.leave.locked,
 #screen-encounter .enc-choices:not(.combat-actions) .enc-choice.leave.locked:hover { border: 3px solid rgba(204,51,51,0.4); }
 
-/* ── Combat FX on the subject frame (scene_art.js subjectFX) ─────── */
-@keyframes enc-subject-hit {
-  0%   { transform: translate(0, 0);    filter: brightness(0.6); }
-  25%  { transform: translate(-4px, 2px); }
-  50%  { transform: translate(4px, -2px); filter: brightness(1.3); }
-  75%  { transform: translate(-2px, -1px); }
-  100% { transform: translate(0, 0);    filter: brightness(1); }
-}
-#screen-encounter .enc-subject.fx-hit { animation: enc-subject-hit 0.35s linear; }
-#screen-encounter .enc-subject.fx-destroyed {
-  opacity: 0;
-  filter: brightness(2.5) saturate(0);
-}
+/* (Combat parity 2026-10-11: the subject-frame fx-hit / fx-destroyed
+   stand-ins are gone — the demo's head flinch, lock ring and CRT-off
+   live in screen-combat.css, keyed on element ids so this file's
+   .flash / .bobbing rules can't override them.) */
 
 /* ── Choice hold, entrance cascade + click pulse (demo :640-652) ─────
    Held (index.html prepareDelivery) until the text lands: invisible and

@@ -691,6 +691,19 @@ const eventOnTrail = (ev, trail) => {
         if ((ch.triggerCombat || ch.combat_trigger) && 'outcome' in ch) {
           err(`${at}: choice "${label}" is a combat hijack (${ch.triggerCombat ? 'triggerCombat' : 'combat_trigger'}) but carries an outcome — combat resolves its own outcome, this one never applies`);
         }
+        // combat_intro (2026-10-11): an outcome id whose title/body/line
+        // open the fight (combat.js triggerCombat) — only on a combat
+        // hijack, must exist, and may carry no effects (none apply).
+        if (ch.combat_intro != null) {
+          const io = (ev.outcomes || {})[ch.combat_intro];
+          if (!(ch.triggerCombat || ch.combat_trigger)) err(`${at}: choice "${label}" has combat_intro but is not a combat hijack — combat_intro is only read when a fight starts`);
+          if (!io) err(`${at}: choice "${label}" combat_intro "${ch.combat_intro}" names no outcome in this event's outcomes`);
+          else {
+            const fx = ['resources', 'sets_flag', 'clears_flag', 'item_grant', 'item_consume', 'crew_effect', 'severity', 'materials', 'time_cost', 'set_orders']
+              .filter(k => io[k] != null && !(typeof io[k] === 'object' && !Object.keys(io[k]).length));
+            if (fx.length) err(`${at}: combat_intro outcome "${ch.combat_intro}" carries ${fx.join('/')} — an intro only opens the fight, those never apply`);
+          }
+        }
       }
     }
   }

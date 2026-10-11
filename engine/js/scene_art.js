@@ -718,9 +718,9 @@
 
     stopTalking();
     _activeSheet = null;
-    // A destroyed pirate must not leave the frame faded for the next
-    // event's guest.
-    subj.classList.remove('fx-hit', 'fx-destroyed');
+    // A fought pirate's flinch must not carry over to the next guest
+    // (combat parity 2026-10-11: the demo's head flinch replaced fx-hit).
+    head.classList.remove('combat-hit', 'combat-shake');
 
     if (!npcCtx) {
       screen.classList.add('no-subject');
@@ -824,9 +824,10 @@
       if (screen) {
         screen.classList.remove('hostile-gone', 'combat-ended');
         screen.querySelectorAll('.combat-ftl-flash').forEach(el => el.remove());
+        if (window.hideCombatEndCard) window.hideCombatEndCard(); // combat parity: the end card never outlives its fight
       }
       const sp = document.getElementById('enc-backdrop-sprite');
-      if (sp) { sp.style.opacity = ''; sp.style.transition = ''; sp.classList.remove('combat-hit', 'combat-pre-explode', 'combat-ftl-vanish', 'combat-enemy-charge', 'combat-low-hp'); }
+      if (sp) { sp.style.opacity = ''; sp.style.transition = ''; sp.classList.remove('combat-hit', 'combat-shake', 'combat-pre-explode', 'combat-ftl-vanish', 'combat-enemy-charge', 'combat-low-hp'); }
       const subjEl2 = document.getElementById('enc-subject');
       if (subjEl2) { subjEl2.classList.remove('combat-crt-off', 'combat-locking', 'combat-ftl-vanish'); subjEl2.style.opacity = ''; }
       const plate = document.getElementById('enc-subject-name');
@@ -891,18 +892,18 @@
     else stopTalking();
   }
 
-  /* Combat FX hook — shake/dim the subject frame on enemy hits,
-     fade it out on destruction. Called from combat.js. */
+  /* Combat FX hook (combat.js): when we land a shot the captain's head
+     flinches with their ship — red flash 150ms + shake (demo-combat
+     applyEnemyDamage). Both classes clear themselves so the head never
+     keeps a stale flash or a finished shake into the next beat. */
   function subjectFX(kind) {
-    const subj = document.getElementById('enc-subject');
-    if (!subj) return;
-    if (kind === 'hit') {
-      subj.classList.remove('fx-hit'); void subj.offsetWidth; subj.classList.add('fx-hit');
-    } else if (kind === 'destroyed') {
-      subj.classList.add('fx-destroyed');
-    } else if (kind === 'reset') {
-      subj.classList.remove('fx-hit', 'fx-destroyed');
-    }
+    const head = document.getElementById('enc-subject-head');
+    if (!head || kind !== 'hit') return;
+    head.classList.add('combat-hit');
+    setTimeout(() => head.classList.remove('combat-hit'), 150);
+    head.classList.remove('combat-shake'); void head.offsetWidth; head.classList.add('combat-shake');
+    clearTimeout(head._shakeT);
+    head._shakeT = setTimeout(() => head.classList.remove('combat-shake'), 420);
   }
 
   /* New run: forget sticky picks + rolled sheet variants so the next
