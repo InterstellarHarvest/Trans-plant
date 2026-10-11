@@ -969,6 +969,7 @@ body {
 
     <div id="end-report">
       <div id="end-report-card">
+        <div id="end-report-scroll">
         <div id="end-report-title"></div>
         <div id="end-report-body"></div>
         <div id="end-report-quote"></div>
@@ -984,6 +985,7 @@ body {
             <div class="res-bars" id="end-res-bars"></div>
           </div>
           <div class="day-line" id="end-day-line"></div>
+        </div>
         </div>
         <div id="end-report-actions">
           <button class="btn" onclick="endBackToCinematic()">Back</button>
@@ -3249,15 +3251,23 @@ function passDays(days, opts) {
   const r = STATE.resources;
   const pace = ordersPace(), ra = ordersRations();
 
+  // Stock and daily draw before the days pass — deprivation below counts
+  // only the days spent at 0, not the whole span (a leg is 6–10 days, longer
+  // than the O2/water limits: counting every day ended runs on the leg a
+  // resource merely ran out on).
+  const before = { food: r.food, water: r.water, o2: r.o2 };
+  const draw = {};
   // RATIONS — food burn + morale drift, every day.
-  r.food = clamp(r.food - ORDERS_BASE.foodPerDay * ra.foodMult * foodBurnMult() * mouthsMult() * days, 0, resMax('food'));
+  draw.food = ORDERS_BASE.foodPerDay * ra.foodMult * foodBurnMult() * mouthsMult();
+  r.food = clamp(r.food - draw.food * days, 0, resMax('food'));
   // O2 (owner ruling 2026-10-10): the crew breathe — a slow daily draw,
   // halved by the O2 recycler. Events, tanks and canisters refill it.
   // A healthy crop makes air (the growbay is the ship's lung — the AI's
   // own warning lines say so): it halves the draw too.
   const cropMeta = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
   const cropBreathes = STATE.cropGrowth && cropMeta && STATE.cropGrowth.health >= (cropMeta.healthy_threshold || 65);
-  r.o2 = clamp(r.o2 - ORDERS_BASE.o2PerDay * (STATE.items.includes('o2_recycler') ? 0.5 : 1) * (cropBreathes ? 0.5 : 1) * days, 0, 100);
+  draw.o2 = ORDERS_BASE.o2PerDay * (STATE.items.includes('o2_recycler') ? 0.5 : 1) * (cropBreathes ? 0.5 : 1);
+  r.o2 = clamp(r.o2 - draw.o2 * days, 0, 100);
   let morale = ra.moralePerDay * days;
 
   // PACE — crew drain while actually flying (drainMult < 1 rests them).
@@ -3265,7 +3275,8 @@ function passDays(days, opts) {
 
   // WATER — stock draw + crew-side pressure (the plant side of the
   // dual-drain lives in growbay's own per-day tick off waterPlant).
-  r.water = clamp(r.water - ORDERS_BASE.waterPerDay * days, 0, 100);
+  draw.water = ORDERS_BASE.waterPerDay;
+  r.water = clamp(r.water - draw.water * days, 0, 100);
   const rate = crewWaterDrainRate();
   morale -= (ORDERS_BASE.crewWaterMorale[rate] || 0) * days;
   if (rate >= ORDERS_BASE.crewWaterHPTier && STATE.crew.length) {
@@ -3281,10 +3292,19 @@ function passDays(days, opts) {
   if (!STATE.deprived) STATE.deprived = {};
   for (const [res, d] of Object.entries(DEPRIVATION)) {
     if (r[res] > 0) { STATE.deprived[res] = 0; continue; }
-    if (!STATE.deprived[res] && typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + d.onset);
-    STATE.deprived[res] = (STATE.deprived[res] || 0) + days;
-    morale -= d.morale * days;
-    for (const role of STATE.crew.slice()) damageCrew(role, d.hp * days);
+    // Days of this span actually spent at 0 (the stock lasted the rest).
+    const lasted = before[res] > 0 && draw[res] > 0 ? Math.floor(before[res] / draw[res]) : 0;
+    let dry = Math.max(0, days - lasted);
+    if (!dry) continue;
+    const onset = !STATE.deprived[res];
+    if (onset && typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + d.onset);
+    // Grace: the span a resource first runs out in can't by itself reach
+    // the failure — the crew always gets one stop to react (USE a
+    // canister, a station, MINE ice) before the counter can end the run.
+    if (onset) dry = Math.min(dry, d.failAfter - 1);
+    STATE.deprived[res] = (STATE.deprived[res] || 0) + dry;
+    morale -= d.morale * dry;
+    for (const role of STATE.crew.slice()) damageCrew(role, d.hp * dry);
   }
 
   r.morale = clamp(r.morale + morale, 0, 100);

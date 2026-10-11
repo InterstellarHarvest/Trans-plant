@@ -111,6 +111,21 @@ async function click(css) { const el = await wd('POST', `/session/${sid}/element
     ok(end.screen === 'screen-end', 'auto-play reaches an end screen');
     ok(!end.errs.length, 'no JS errors during auto-play' + (end.errs.length ? ': ' + end.errs.join(' | ') : ''));
     await shot('08_end');
+
+    // A long arrival report (12 story flags → full Ship's Record) stays in
+    // the frame: the card scrolls and Back / New Run stay reachable.
+    await js(() => { localStorage.removeItem('transplant_save_v1'); applySetupToState({ trail: 'interstellar', ai: 'marv', captain: 'veteran', crew: ['engineer', 'pilot'], crop: 'wheat', ship: 'Safari' }); STATE.stowaway = null; });
+    await sleep(500);
+    await js(() => { Object.keys(MOD.flavor.flag_payoffs).slice(0, 12).forEach(f => STATE.flags.add(f)); STATE.daysElapsed = 100; triggerArrival(STATE.nodes.find(n => connectionsOf(n).length === 0)); });
+    await sleep(900);
+    await js(() => window.showEndReport()); await sleep(400);
+    const rep = await js(() => {
+      const g = document.getElementById('game').getBoundingClientRect(), c = document.getElementById('end-report-scroll');
+      const btns = [...document.querySelectorAll('#end-report-actions .btn')].map(b => b.getBoundingClientRect());
+      return { inFrame: btns.length === 2 && btns.every(r => r.top >= g.top - 1 && r.bottom <= g.bottom + 1), sh: c.scrollHeight, ch: c.clientHeight };
+    });
+    ok(rep.inFrame && rep.sh >= rep.ch, `end report: Back / New Run inside the frame (card ${rep.ch}px, content ${rep.sh}px)`);
+    await shot('09_end_report');
   } catch (e) {
     fail++; console.log('  ✗ EXCEPTION ' + e.message);
     try { await shot('99_exception'); } catch (_) {}

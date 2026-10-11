@@ -38,6 +38,7 @@
      no-width element shrinks to the space between left and the
      container's right edge, wrapping the title as --cine-x moves. */
   width: max-content; max-width: 920px;
+  max-height: calc(100% - 24px); overflow-y: auto; scrollbar-width: thin; /* five long record lines clipped the button */
   display: flex; flex-direction: column;
   align-items: center; gap: 24px;
 }
@@ -91,7 +92,25 @@
   display: flex; flex-direction: column; align-items: center; gap: 16px;
   width: 100%; max-width: 600px;
   box-shadow: 0 0 28px rgba(0,0,0,0.55), 0 6px 32px rgba(0,0,0,0.55);
+  /* Long bodies + the Ship's Record outgrow the 640px frame: the card
+     caps at the frame, its text scrolls, Back / New Run stay at its foot.
+     (position: sticky inside the scaled #game didn't hold in Safari.) */
+  max-height: 100%; overflow: hidden;
 }
+#end-report-scroll {
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  width: 100%; flex: 0 1 auto; min-height: 0; overflow-y: auto;
+  padding-right: 6px;
+}
+/* An always-visible gold rail: macOS overlay scrollbars hide, and the
+   score + Ship's Record below the fold need a cue that they're there.
+   Standard props for Chromium/Firefox (they also override the global
+   `* { scrollbar-color }` from screen-growbay.css); ::-webkit-scrollbar
+   for Safari. */
+#end-report-scroll { scrollbar-width: thin; scrollbar-color: rgba(200,168,90,0.6) rgba(200,168,90,0.1); }
+#end-report-scroll::-webkit-scrollbar { width: 6px; }
+#end-report-scroll::-webkit-scrollbar-track { background: rgba(200,168,90,0.1); border-radius: 3px; }
+#end-report-scroll::-webkit-scrollbar-thumb { background: rgba(200,168,90,0.6); border-radius: 3px; }
 #end-report-title {
   font-family: 'Press Start 2P', cursive;
   font-size: 16px; letter-spacing: 2px;
@@ -156,7 +175,7 @@
 .day-line .day-cmp.late  { color: #cc6c4c; }
 .day-line .day-cmp.early { color: var(--teal); }
 
-#end-report-actions { display: flex; gap: 12px; margin-top: 4px; }
+#end-report-actions { display: flex; gap: 12px; margin-top: 4px; flex-shrink: 0; }
 
 /* ── Tier / failure colour table — drives title colour + card border.
    Failure ids share the table via a --fail- prefix (see
