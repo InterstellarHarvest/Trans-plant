@@ -137,7 +137,7 @@
   function spaceFor(node) {
     const nt = node && node.node_type;
     if (nt === 'nebula') return 'space/nebula';
-    if (nt === 'asteroid') return 'space/asteroid_field';
+    if (nt === 'asteroid_field' || nt === 'asteroid') return 'space/asteroid_field';
     return 'space/deep';
   }
 

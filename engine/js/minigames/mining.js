@@ -195,6 +195,11 @@
   // and only roles CREW_ASSIST actually has a bias for show up as chips.
   // Empty array is valid: the picker is skipped and BEGIN starts enabled.
   const ROLE_TO_CREWID = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
+  // Live crew name (a stowaway who joined in that role keeps their own).
+  function assistName(id) {
+    const role = Object.keys(ROLE_TO_CREWID).find(r => ROLE_TO_CREWID[r] === id);
+    return ((role && typeof crewNameOf === 'function') ? crewNameOf(role) : CREW_ASSIST[id].name).toUpperCase();
+  }
   function computeCrewOrder() {
     return STATE.crew.map(role => ROLE_TO_CREWID[role]).filter(id => CREW_ASSIST[id]);
   }
@@ -521,7 +526,7 @@
         chip.innerHTML = `
           <div class="portrait" style="${portraitCss}"></div>
           <div class="meta">
-            <span class="name">${c.name}</span>
+            <span class="name">${assistName(id)}</span>
             <span class="bias">${c.bias}</span>
           </div>`;
         chip.addEventListener('click', () => {
@@ -1372,7 +1377,7 @@
       const c = CREW_ASSIST[crewId];
       const note = document.createElement('div');
       note.className = 'haul-hollow-tally';
-      note.textContent = 'Crew assist: ' + c.name + ' (' + c.role + ' · ' + c.bias + ')';
+      note.textContent = 'Crew assist: ' + assistName(crewId) + ' (' + c.role + ' · ' + c.bias + ')';
       card.appendChild(note);
     }
 

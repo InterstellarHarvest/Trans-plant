@@ -98,7 +98,7 @@ async function boot(setup) {
     });
     ok(r.start.metal === 4 && r.start.scrap === 2, `ship stores: 4 metal, 2 scrap (${JSON.stringify(r.start)})`);
     ok(r.after.metal === 2 && r.after.scrap === 1 && r.hull === 70, `REPAIR spends 2 metal + 1 scrap, +20 hull (${JSON.stringify(r.after)}, hull ${r.hull})`);
-    ok(r.locked && /2 METAL \+ 1 SCRAP/.test(r.lockedText), 'without materials REPAIR is locked and says why (' + r.lockedText.replace(/\s+/g, ' ').slice(0, 60) + ' locked=' + r.locked + ')');
+    ok(r.locked && /2 metal \+ 1 scrap/i.test(r.lockedText), 'without materials REPAIR is locked and says why (' + r.lockedText.replace(/\s+/g, ' ').slice(0, 60) + ' locked=' + r.locked + ')');
     await page.close();
   }
 

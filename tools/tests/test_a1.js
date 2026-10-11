@@ -135,7 +135,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   };
   const medbayBtn = async () => ev(() => { const b = [...document.querySelectorAll('#stop-choices .stop-choice')].find(x => /MEDBAY/.test(x.textContent)); return b ? { cls: b.className, txt: b.textContent } : null; });
   let mb = await medbayBtn();
-  ok(mb && /locked/.test(mb.cls) && /HEALTHY/.test(mb.txt), 'MEDBAY present at station, locked with nobody hurt');
+  ok(mb && /locked/.test(mb.cls) && /Nobody is hurt/.test(mb.txt), 'MEDBAY present at station, locked with nobody hurt');
   await ev(() => { STATE.crewHP.pilot = 30; STATE.crewPending.pilot = true; STATE.goldAmount = 10; });
   await reopenStop();
   mb = await medbayBtn();

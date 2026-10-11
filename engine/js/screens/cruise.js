@@ -280,19 +280,20 @@
   };
   const FORAGE_LABEL_BY_REGION = { planet_orbit_habitable: 'GATHER', asteroid_field: 'HUNT', debris_field: 'SCAVENGE', anomaly: 'FORAGE' };
   const STOP_VERBS = {
-    mine:         { label: 'MINE',      sub: 'Pull raw materials from the rocks.',              effort: 3 },
-    salvage:      { label: 'SALVAGE',   sub: 'Pick through the wreckage. Mind the sharp bits.',  effort: 3 },
-    forage_food:  { label: (region) => FORAGE_LABEL_BY_REGION[region] || 'FORAGE', sub: 'Find something edible. Or interesting. Sometimes both.', effort: 2 },
-    trade:        { label: 'TRADE',     sub: 'Haggle. Or pretend to.',                           effort: 1 },
-    wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park. Roll the dice. Days will pass.',    effort: 1, hint: true },
-    scan:         { label: 'SCAN',      sub: 'Read the signals. Find what is coming.',           effort: 2, hint: true },
-    repair:       { label: 'REPAIR',    sub: 'Patch the hull: 2 metal + 1 scrap and a day.', effort: 3, locked: repairLockReason },
-    rest:         { label: 'REST',      sub: 'Crew morale up. Days down.',                       effort: 1, hint: true },
-    fab:          { label: 'FABRICATOR', sub: 'Open the print queue. Long jobs need a still ship.', effort: 1, hint: true },
-    medbay:       { label: 'MEDBAY',    sub: 'Station rates. Cash up front. Mostly sterile.',   effort: 1, hint: true, locked: medbayLockReason },
-    condense:     { label: 'CONDENSE',  sub: 'Wring water out of the nebula. A day for +12 water.', effort: 2, locked: condenseLockReason },
-    drydock:      { label: 'DRYDOCK',   sub: 'Station crews patch the hull. +30 hull, paid in gold.', effort: 1, hint: true, locked: drydockLockReason },
-    fab_service:  { label: 'FAB SERVICE', sub: 'Station techs overhaul the fabricator. Wear to zero.', effort: 1, hint: true, locked: fabServiceLockReason },
+    // icon: demo-cruise.html STOP_VERBS iconUrl (demo canon), sprites/interface/.
+    mine:         { label: 'MINE',      sub: 'Pull raw materials from the rocks.',              effort: 3, icon: 'mining' },
+    salvage:      { label: 'SALVAGE',   sub: 'Pick through the wreckage. Mind the sharp bits.',  effort: 3, icon: 'salvage' },
+    forage_food:  { label: (region) => FORAGE_LABEL_BY_REGION[region] || 'FORAGE', sub: 'Find something edible. Or interesting. Sometimes both.', effort: 2, icon: 'forage' },
+    trade:        { label: 'TRADE',     sub: 'Haggle. Or pretend to.',                           effort: 1, icon: 'trade' },
+    wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park. Roll the dice. Days will pass.',    effort: 1, hint: true, icon: 'wait' },
+    scan:         { label: 'SCAN',      sub: 'Read the signals. Find what is coming.',           effort: 2, hint: true, icon: 'scan' },
+    repair:       { label: 'REPAIR',    sub: 'Patch the hull: 2 metal + 1 scrap and a day.', effort: 3, locked: repairLockReason, icon: 'repair' },
+    rest:         { label: 'REST',      sub: 'Crew morale up. Days down.',                       effort: 1, hint: true, icon: 'rest' },
+    fab:          { label: 'FABRICATOR', sub: 'Open the print queue. Long jobs need a still ship.', effort: 1, hint: true, icon: 'fab' },
+    medbay:       { label: 'MEDBAY',    sub: () => 'Treat the worst-hurt crew member. ' + medbayFee() + 'g, no days.', effort: 1, hint: true, locked: medbayLockReason, icon: 'medic' },
+    condense:     { label: 'CONDENSE',  sub: 'Wring water out of the nebula. A day for +12 water.', effort: 2, locked: condenseLockReason, icon: 'water' },
+    drydock:      { label: 'DRYDOCK',   sub: () => 'Station crews patch the hull. +30 hull for ' + drydockFee() + 'g.', effort: 1, hint: true, locked: drydockLockReason, icon: 'repair' },
+    fab_service:  { label: 'FAB SERVICE', sub: () => 'Station techs overhaul the fabricator. Wear to zero, ' + fabServiceFee() + 'g.', effort: 1, hint: true, locked: fabServiceLockReason, icon: 'fab' },
   };
   function effortPips(n) { n = Math.max(0, Math.min(5, n | 0)); return '●'.repeat(n) + '○'.repeat(5 - n); }
 
@@ -354,7 +355,7 @@
   const REPAIR_COST = { metal: 2, scrap: 1 };
   function repairLockReason() {
     const m = STATE.materials || {};
-    if ((m.metal || 0) < REPAIR_COST.metal || (m.scrap || 0) < REPAIR_COST.scrap) return '2 METAL + 1 SCRAP';
+    if ((m.metal || 0) < REPAIR_COST.metal || (m.scrap || 0) < REPAIR_COST.scrap) return 'Need 2 metal + 1 scrap';
     return null;
   }
   function handleRepairVerb() {
@@ -518,8 +519,8 @@
     return worst;
   }
   function medbayLockReason() {
-    if (!medbayPatient()) return 'HEALTHY';
-    if (STATE.goldAmount < medbayFee()) return medbayFee() + 'g';
+    if (!medbayPatient()) return 'Nobody is hurt';
+    if (STATE.goldAmount < medbayFee()) return 'Costs ' + medbayFee() + 'g';
     return null;
   }
   function handleMedbayVerb() {
@@ -542,8 +543,8 @@
   const fabServiceFee = () => stationPrice(FAB_SERVICE_BASE);
   function fabServiceLockReason() {
     const f = STATE.fabricator || {};
-    if (!f.broken && (f.wear || 0) < 10) return 'GOOD AS NEW';
-    if (STATE.goldAmount < fabServiceFee()) return fabServiceFee() + 'g';
+    if (!f.broken && (f.wear || 0) < 10) return 'Fabricator is good as new';
+    if (STATE.goldAmount < fabServiceFee()) return 'Costs ' + fabServiceFee() + 'g';
     return null;
   }
   function handleFabServiceVerb() {
@@ -561,7 +562,7 @@
   // rule's canonical upgrade-gated verb): a day of work, +12 water.
   function condenseLockReason() {
     if (!STATE.items.includes('atmospheric_condenser')) return 'Need: Atmospheric Condenser';
-    if (STATE.resources.water >= 100) return 'TANKS FULL';
+    if (STATE.resources.water >= 100) return 'Water tanks are full';
     return null;
   }
   function handleCondenseVerb() {
@@ -573,8 +574,8 @@
   const DRYDOCK_BASE = 30;
   const drydockFee = () => stationPrice(DRYDOCK_BASE);
   function drydockLockReason() {
-    if (STATE.resources.hull >= resMax('hull')) return 'HULL INTACT';
-    if (STATE.goldAmount < drydockFee()) return drydockFee() + 'g';
+    if (STATE.resources.hull >= resMax('hull')) return 'Hull is intact';
+    if (STATE.goldAmount < drydockFee()) return 'Costs ' + drydockFee() + 'g';
     return null;
   }
   function handleDrydockVerb() {
@@ -612,7 +613,9 @@
       btn.className = 'stop-choice' + (verb.hint ? ' hint' : '') + (lockReason ? ' locked' : '');
       const gate = document.createElement('div');
       gate.className = 'stop-choice-gate' + (lockReason ? ' locked' : '');
-      if (lockReason) gate.textContent = lockReason;
+      // Demo canon: the verb's icon; a locked verb shows lock.png and says
+      // why in the sub-line.
+      gate.style.backgroundImage = "url('sprites/interface/" + (lockReason ? 'lock' : verb.icon || 'wait') + ".png')";
       btn.appendChild(gate);
       const body = document.createElement('div');
       body.className = 'stop-choice-body';
@@ -620,13 +623,20 @@
       btn.appendChild(body);
       const sub = document.createElement('div');
       sub.className = 'stop-choice-sub';
-      const eff = document.createElement('span');
-      eff.className = 'effort';
-      eff.textContent = effortPips(verb.effort);
-      sub.appendChild(eff);
-      const s = document.createElement('span');
-      s.textContent = '· ' + verb.sub;
-      sub.appendChild(s);
+      if (lockReason) {
+        const need = document.createElement('span');
+        need.className = 'lock-need';
+        need.textContent = '\u{1F512} ' + lockReason;
+        sub.appendChild(need);
+      } else {
+        const eff = document.createElement('span');
+        eff.className = 'effort';
+        eff.textContent = effortPips(verb.effort);
+        sub.appendChild(eff);
+        const s = document.createElement('span');
+        s.textContent = '· ' + (typeof verb.sub === 'function' ? verb.sub() : verb.sub);
+        sub.appendChild(s);
+      }
       btn.appendChild(sub);
       // MINE and FABRICATOR are wired separately (mining.js / fabricator
       // overlay); TRADE/WAIT FOR TRADER/REST have no engine-side system

@@ -191,8 +191,9 @@
     return Math.max(1, depth);
   }
   function baseLegDays() {
-    const nodeCount = Math.max(1, (STATE.nodes && STATE.nodes.length) || 10);
-    return Math.max(1, (STATE.baseDays * ORDERS_BASE.legDaysFrac) / nodeCount);
+    // Same leg count travel uses (index.html pathLegs: legs actually flown;
+    // STATE.nodes counts both fork branches, which made ETAs ~20% early).
+    return Math.max(1, (STATE.baseDays * ORDERS_BASE.legDaysFrac) / pathLegs());
   }
   function perLegDays(paceIdx) {
     return baseLegDays() * ORDERS_PACE[paceIdx].etaMult + AVG_EVENT_DAYS;

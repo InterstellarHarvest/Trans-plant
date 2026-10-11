@@ -3152,7 +3152,7 @@ function arrivalPassives(node) {
   const log = m => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + m); };
   const t = node.node_type;
   // Solar array: "+2 fuel per leg when near a star. Zero in void or deep space."
-  if (STATE.items.includes('solar_array') && !{ void: 1, nebula: 1, anomaly: 1 }[t]) {
+  if (STATE.items.includes('solar_array') && !{ void: 1, nebula: 1, anomaly: 1, fork: 1 }[t]) { // fork = "deep space" on the cruise screen
     STATE.resources.fuel = clamp(STATE.resources.fuel + 2, 0, resMax('fuel'));
   }
   // Water purifier: "On planet nodes: converts local water to ship water supply."
@@ -3375,6 +3375,10 @@ function travelTo(nodeId, opts) {
     passDays(leg.days, { travel: true });
     // ARIA's passive (ai_companions morale_bonus 1): +1 morale per leg.
     if (STATE.activeAI === 'aria') STATE.resources.morale = clamp(STATE.resources.morale + 1, 0, 100);
+    // Chef's passive (crew_roster morale_passive: "+1 from actual meals") —
+    // only while there is food to cook; a captain chef at half strength.
+    const chefMorale = rosterPassive('chef', 'morale_passive', 1) * specialistMult('chef');
+    if (chefMorale > 0 && STATE.resources.food > 0) STATE.resources.morale = clamp(STATE.resources.morale + chefMorale, 0, 100);
     arrivalPassives(node);
     renderHUD();
     if (checkFailure({ arriving: connectionsOf(node).length === 0 })) return;
@@ -3904,10 +3908,14 @@ function renderChoicesInner(choices) {
       const authoredTime = Number.isFinite(ch.effort_required);
       subText = 'Effort ' + effort.available + ' / ' + effort.required
         + (authoredTime || !effort.check ? ' · ' + days + (days === 1 ? ' day' : ' days') : '')
-        + (effort.check ? ' · ' + Math.round(effort.chance * 100) + '% clean' : '');
+        + (effort.check ? ' · ' + Math.round(effort.chance * 100) + '% clean' : '')
+        + (effort.kit ? ' · uses ' + prettyItem(effort.kit) : '');
     }
     const preview = !locked && previews.get(ch);
-    if (preview) { subText = preview; btn.classList.add('previewed'); }
+    // A preview takes the one-line sub-label; what it displaced (stand-in,
+    // effort odds, kit) moves to the tooltip rather than vanishing.
+    let displaced = null;
+    if (preview) { displaced = subText; subText = preview; btn.classList.add('previewed'); }
     if (ch.effort || subText) {
       const sub = document.createElement('div');
       sub.className = 'ch-sub';
@@ -3937,6 +3945,8 @@ function renderChoicesInner(choices) {
       if (ch.gate && ch.gate.gold && !ch.gold_cost) tip.push('costs ' + ch.gate.gold + ' gold');
       if (ch.risky) tip.push('Risky — outcomes can go badly');
       if (preview) tip.push(preview);
+      if (displaced) tip.push(displaced);
+      if (effort && effort.kit) tip.push('Uses up one ' + prettyItem(effort.kit) + ' — it counts toward the effort.');
       if (welcomes && idn.join_note) tip.push(idn.join_note);
       if (effort && effort.check) tip.push('Short of effort: half the gains, two more days, ' + Object.entries(effort.check.con).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).join(', ') + '. Crew and tools raise the odds.');
       if (tip.length) btn.title = tip.join('\n');
@@ -4441,7 +4451,8 @@ function applyOutcomeEffects(o) {
   // direct STATE.materials routing) — map of material id -> quantity.
   if (o.materials) {
     for (const [mat, qty] of Object.entries(o.materials)) {
-      STATE.materials[mat] = (STATE.materials[mat] || 0) + qty;
+      // Captain standing in: half the gains — materials too (rounded down).
+      STATE.materials[mat] = (STATE.materials[mat] || 0) + (STATE.halfEffect && qty > 0 ? Math.floor(qty / 2) : qty);
     }
   }
 
@@ -4569,7 +4580,7 @@ function applyOutcomeEffects(o) {
    setback). The button shows the odds before you commit. */
 const EFFORT_CHECKS = {
   wrench:             { required: 35, from: ['engineer', 'item:repair_kit'], con: { hull: -3 },   line: 'Short of skilled hands, the work goes in wrong twice before it goes in right. It holds — mostly — and it took longer than anyone wanted.' },
-  fab_align:          { required: 30, from: ['engineer', 'item:repair_kit'], con: { hull: -3 },   line: 'The first print comes out misaligned and the second is only passable. It will do. It took a while.' },
+  fab_align:          { required: 30, from: ['engineer', 'item:repair_kit', 'item:repair_fabricator'], con: { hull: -3 },   line: 'The first print comes out misaligned and the second is only passable. It will do. It took a while.' },
   drill_target:       { required: 30, from: ['item:portable_drill'],         con: { morale: -2 }, line: 'The bit binds halfway in and shears. You pull out less than you hoped, and later than you hoped.' },
   pressure_gauge:     { required: 30, from: ['engineer'],                    con: { o2: -3 },     line: 'The gauge needle never settles. You win some of it back, and lose a little more doing it.' },
   airlock_seal:       { required: 30, from: ['engineer'],                    con: { o2: -3 },     line: 'The seal takes on the third try. The first two cost air.' },

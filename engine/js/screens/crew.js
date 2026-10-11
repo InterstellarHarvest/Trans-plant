@@ -51,7 +51,7 @@
     diplomat:      { name: 'Diplomat',      stat: 'Credits +15',         desc: 'Very good at making people feel heard while doing nothing.', flavor: 'Your crew does not find this reassuring.' },
     merchant:      { name: 'Merchant',      stat: 'Prices -10%',         desc: 'You ran a business.', flavor: 'You are going to run this mission like a business.' },
     academic:      { name: 'Academic',      stat: 'Research options',    desc: 'You have a PhD. In what is not immediately relevant.', flavor: 'Your grant funding was cut. You are in space. These events are related.' },
-    veteran:       { name: 'Veteran',       stat: 'Combat screen-clear', desc: 'You served. Where is classified.', flavor: 'You don\'t talk about it.' },
+    veteran:       { name: 'Veteran',       stat: 'Combat edge', desc: 'You served. Where is classified.', flavor: 'You don\'t talk about it.' },
   };
 
   // AI quips — demo's per-crew pool, voiced by whichever AI is active.

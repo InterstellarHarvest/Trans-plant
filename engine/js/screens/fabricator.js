@@ -62,7 +62,7 @@
   // that run later, after boot() has finished).
   const MATERIAL_ICONS = { metal: '🔩', scrap: '♻️', exotic: '✨', biocomponent: '🌱', minerals: '💎' };
   const RECIPE_PRESENTATION = {
-    recipe_hull_patch:     { icon: '🛠️', sprite: null },
+    recipe_hull_patch:     { icon: '🛠️', sprite: 'sprites/cargo/items/hull_patch.png' },
     recipe_repair_kit:     { icon: '🧰', sprite: 'sprites/cargo/items/repair_kit.png' },
     recipe_crop_treatment: { icon: '💧', sprite: 'sprites/cargo/items/crop_treatment.png' },
     recipe_ration_brick:   { icon: '🧱', sprite: 'sprites/cargo/items/ration_brick.png' },
@@ -160,13 +160,15 @@
   };
   /* Refreshes the fields that must always reflect current reality —
      called every time the overlay opens (see window.openFabricator()). */
+  const ROLE_OF = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
   function bindFabricatorState() {
     STATE.fabricator = STATE.fabricator || { wear: 0, broken: false };
-    const ROLE_TO_CREWID = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
     FSTATE.aboard = {};
     for (const role of STATE.crew) {
-      const id = ROLE_TO_CREWID[role];
-      if (id && CREW[id]) FSTATE.aboard[id] = true;
+      const id = ROLE_OF[role];
+      // Value = contribution share: a wounded specialist works at half
+      // (crew_roster "halved if injured"), as everywhere else.
+      if (id && CREW[id]) FSTATE.aboard[id] = (typeof specialistMult === 'function') ? (specialistMult(role) || 1) : 1;
     }
     FSTATE.captainBg = (STATE.captain === 'engineer' || STATE.captain === 'academic') ? STATE.captain : 'none';
     FSTATE.tripDay = STATE.daysElapsed;
@@ -196,7 +198,7 @@
   function totalFabContribution() {
     let total = BASE_EFFORT;    // captain always adds baseline
     for (const [id, on] of Object.entries(FSTATE.aboard)) {
-      if (on) total += CREW[id].fab;
+      if (on) total += CREW[id].fab * on;
     }
     if (FSTATE.captainBg === 'engineer') total += CREW.captain_eng.fab;
     else if (FSTATE.captainBg === 'academic') total += CREW.captain_aca.fab;
@@ -223,6 +225,19 @@
   function hasMaterials(recipe) {
     return recipe.inputs.every(([mat, qty]) => (FSTATE.stock[mat] || 0) >= qty);
   }
+
+  // recipes.json _meta misfire_curve: fabricator health → misfire odds
+  // (100→0%, 80→2%, 60→8%, 40→18%, 20→35%, 10→55%, 0→80%), interpolated.
+  const MISFIRE_CURVE = [[100, 0], [80, 0.02], [60, 0.08], [40, 0.18], [20, 0.35], [10, 0.55], [0, 0.80]];
+  function misfireChance(wear) {
+    const h = Math.max(0, Math.min(100, 100 - (wear || 0)));
+    for (let i = 1; i < MISFIRE_CURVE.length; i++) {
+      const [h0, p0] = MISFIRE_CURVE[i - 1], [h1, p1] = MISFIRE_CURVE[i];
+      if (h >= h1) return p1 + (p0 - p1) * (h - h1) / (h0 - h1);
+    }
+    return 0.80;
+  }
+  window.fabMisfireChance = () => misfireChance(FSTATE.wear);
 
   // Fab-is-functional check. Broken = wear 100% OR hard toggle.
   function fabFunctional() {
@@ -251,7 +266,10 @@
     for (const [id, on] of Object.entries(FSTATE.aboard)) {
       if (!on) continue;
       const c = CREW[id];
-      if (c.fab > 0) { lines.push('  ' + c.name + ' (' + c.role + ')  ' + pct(c.fab)); anyContributor = true; }
+      // Live names (a stowaway who joined keeps their own) + the wounded half.
+      const role = Object.keys(ROLE_OF).find(r => ROLE_OF[r] === id);
+      const nm = (role && typeof crewNameOf === 'function') ? crewNameOf(role) : c.name;
+      if (c.fab > 0) { lines.push('  ' + nm + ' (' + c.role + ')  ' + pct(c.fab * on) + (on < 1 ? ' · wounded' : '')); anyContributor = true; }
     }
     if (FSTATE.captainBg === 'engineer') {
       const c = CREW.captain_eng;
@@ -455,6 +473,10 @@
         '<span class="label">WEAR</span>' +
         '<span class="wear-add">+' + recipeWear(r) + '%</span>' +
       '</div>' +
+      '<div class="row" title="A misfire spends the days and materials. Wear raises the odds; FAB SERVICE at a station resets them.">' +
+        '<span class="label">MISFIRE</span>' +
+        '<span class="wear-add">' + Math.round(misfireChance(FSTATE.wear) * 100) + '%</span>' +
+      '</div>' +
       wearWarn;
 
     // CRAFT button — enabled only if canCraft() true.
@@ -465,7 +487,7 @@
       btn.textContent = 'LOCKED · CREW';
     } else if (lock === 'locked-purchase') {
       btn.classList.add('locked');
-      btn.textContent = 'LOCKED · BLUEPRINT';
+      btn.textContent = 'LOCKED · ' + String(r.unlock_note || 'Requires an upgrade').replace(/^Requires /, 'NEEDS ').toUpperCase();
     } else if (!fabFunctional()) {
       btn.classList.add('locked');
       btn.textContent = 'FAB BROKEN';
@@ -586,23 +608,30 @@
       FSTATE.stock[mat] = Math.max(0, (FSTATE.stock[mat] || 0) - qty);
     }
     // Apply wear.
+    const wearBefore = FSTATE.wear;
     FSTATE.wear = Math.min(100, FSTATE.wear + recipeWear(r));
 
-    // Fail roll — 0.5% base + up to +5% scaling past wear=50. Over 80%
-    // wear this gets nasty.
-    const failChance = 0.005 + Math.max(0, (FSTATE.wear - 50) / 100) * 0.005;
-    if (Math.random() < failChance) {
-      breakFab();
-      // A misfire sometimes leaves something behind: items.json's
-      // fab_surplus ("produced by fabricator misfires (15% of misfires)"),
-      // logged with a line from flavor_pools.fabricator_misfire_descriptions.
+    // Misfire roll — recipes.json _meta misfire_curve (by fabricator
+    // health = 100 − wear, read before this craft's wear). A misfire
+    // spends the time and materials: ~85% waste, ~15% fab_surplus (the
+    // Surplus Collector buys it); below 20% health it can also break
+    // the fabricator outright.
+    if (Math.random() < misfireChance(wearBefore)) {
+      const days = actualDays(r.days);
+      passDays(days);
+      FSTATE.tripDay = STATE.daysElapsed;
+      const log = m => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + m); };
+      const lines = MOD.flavor && MOD.flavor.fabricator_misfire_descriptions;
+      const line = Array.isArray(lines) && lines.length ? lines[Math.floor(Math.random() * lines.length)] + ' ' : '';
       if (Math.random() < 0.15 && typeof grantItem === 'function' && grantItem('fab_surplus')) {
-        const lines = MOD.flavor && MOD.flavor.fabricator_misfire_descriptions;
-        if (Array.isArray(lines) && lines.length && typeof window.pushCruiseLog === 'function') {
-          window.pushCruiseLog('◆ ' + lines[Math.floor(Math.random() * lines.length)] + ' (Fabricator Surplus added to cargo.)');
-        }
+        log('MISFIRE — ' + line + 'No ' + r.output.name + '; a piece of Fabricator Surplus instead. (' + days + (days === 1 ? ' day' : ' days') + ', materials spent.)');
+      } else {
+        log('MISFIRE — ' + line + 'The ' + r.output.name + ' comes out as slag. ' + days + (days === 1 ? ' day' : ' days') + ' and the materials, gone.');
       }
+      if (100 - wearBefore < 20 && Math.random() < 0.5) breakFab();
+      renderHUD();
       renderAll();
+      checkFailure();
       return;
     }
 
