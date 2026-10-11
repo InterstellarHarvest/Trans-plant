@@ -1388,7 +1388,7 @@
     buttons.className = 'haul-buttons';
     const again = document.createElement('button');
     again.className = 'haul-btn';
-    again.textContent = 'MINE AGAIN';
+    again.textContent = 'MINE AGAIN · +1 DAY';
     again.addEventListener('click', resetToArmed);
     buttons.appendChild(again);
     const ret = document.createElement('button');
@@ -1414,6 +1414,7 @@
   function finishMining() {
     const haul = {
       inventory: sessionInventory,
+      runs: SESSION.runs, // each run costs the ship a day (cruise.js MINE)
       hollowsHit: SESSION.totalHollows,
       sector: MSTATE.sector,
       crewAssist: MSTATE.crewAssist,

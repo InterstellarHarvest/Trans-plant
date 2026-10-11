@@ -216,6 +216,49 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     await page.close();
   }
 
+  console.log('— economy (hunt 5 sim findings)');
+  {
+    const page = await boot({ crew: ['engineer', 'pilot'] });
+    const r = await page.evaluate(async () => {
+      const verbAt = async (type, name) => {
+        const n = STATE.nodes.find(x => x.node_type === type); STATE.currentId = n.id; renderCruise();
+        document.body.classList.remove('stop-active'); document.getElementById('stop-btn').click();
+        await new Promise(r => setTimeout(r, 80));
+        return [...document.querySelectorAll('#stop-choices .stop-choice')].find(x => x.textContent.includes(name));
+      };
+      const out = {};
+      // MINE: one day per run
+      window.openMining = cb => cb({ inventory: { metal: 3 }, runs: 3 });
+      let d0 = STATE.daysElapsed; (await verbAt('asteroid_field', 'MINE')).click();
+      out.mineDays = STATE.daysElapsed - d0;
+      // REPAIR locked at full hull; REST locked when morale is high
+      STATE.resources.hull = resMax('hull'); STATE.materials = { metal: 9, scrap: 9 }; STATE.resources.morale = 98;
+      const rep = await verbAt('station', 'REPAIR'); out.repairLocked = rep.classList.contains('locked');
+      const rest = await verbAt('station', 'REST'); out.restLocked = rest.classList.contains('locked');
+      // MEDBAY treats every hurt crew member
+      STATE.crewHP.engineer = 50; STATE.crewHP.pilot = 60; STATE.goldAmount = 100;
+      (await verbAt('station', 'MEDBAY')).click();
+      out.medbay = STATE.crewHP.engineer === 100 && STATE.crewHP.pilot === 100;
+      // TRADE: browsing the wares then walking away costs a day
+      document.body.classList.remove('stop-active');
+      const ev = EVENTS.event_encounter_trader_001; enterEvent(STATE.byId[STATE.currentId], ev);
+      const browse = ev.layers[ev.entryLayer].choices.find(c => c.open_market) || Object.values(ev.layers).flatMap(l => l.choices).find(c => c.open_market);
+      handleChoiceClick(browse); MarketModal.close();
+      await new Promise(r => setTimeout(r, 80));
+      d0 = STATE.daysElapsed;
+      const walk = [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => /WALK AWAY/.test(b.textContent));
+      out.walkSub = walk && walk.textContent; walk && walk.click();
+      await new Promise(r => setTimeout(r, 400));
+      out.tradeDays = STATE.daysElapsed - d0;
+      return out;
+    });
+    ok(r.mineDays === 3, `MINE: three runs cost three days (${r.mineDays})`);
+    ok(r.repairLocked && r.restLocked, 'REPAIR locks at full hull; REST locks when the crew is in good spirits');
+    ok(r.medbay, 'MEDBAY treats every hurt crew member for one fee');
+    ok(r.tradeDays === 1 && /haggling/.test(r.walkSub || ''), `shopping the trader's wares costs a day (${r.tradeDays})`);
+    await page.close();
+  }
+
   ok(!errs.length, 'no page errors' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
   console.log(`\nhunt5: ${pass} passed, ${fail} failed`);
   await browser.close(); process.exit(fail ? 1 : 0);

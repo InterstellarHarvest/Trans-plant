@@ -55,7 +55,9 @@
   function allMaterialDefs() {
     return (typeof MOD !== 'undefined' && MOD.materials && MOD.materials.materials) || [];
   }
-  const materialPrice = m => Math.max(1, Math.round((m.value || 0.2) * 5));
+  // ×2.5 (was ×5): mining-for-sale out-earned every other gold source
+  // several times over (hunt 5 economy sim).
+  const materialPrice = m => Math.max(1, Math.round((m.value || 0.2) * 2.5));
   function allItemDefs() {
     return (typeof MOD !== 'undefined' && MOD.items) ? MOD.items : [];
   }

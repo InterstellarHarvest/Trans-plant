@@ -285,12 +285,12 @@
     salvage:      { label: 'SALVAGE',   sub: 'Pick through the wreckage. Mind the sharp bits.',  effort: 3, icon: 'salvage' },
     forage_food:  { label: (region) => FORAGE_LABEL_BY_REGION[region] || 'FORAGE', sub: 'Find something edible. Or interesting. Sometimes both.', effort: 2, icon: 'forage' },
     trade:        { label: 'TRADE',     sub: 'Haggle. Or pretend to.',                           effort: 1, icon: 'trade' },
-    wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park. Roll the dice. Days will pass.',    effort: 1, hint: true, icon: 'wait' },
+    wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park a day. A trader usually turns up.',  effort: 1, hint: true, icon: 'wait' },
     scan:         { label: 'SCAN',      sub: 'Read the signals. Find what is coming.',           effort: 2, hint: true, icon: 'scan' },
     repair:       { label: 'REPAIR',    sub: 'Patch the hull: 2 metal + 1 scrap and a day.', effort: 3, locked: repairLockReason, icon: 'repair' },
-    rest:         { label: 'REST',      sub: 'Crew morale up. Days down.',                       effort: 1, hint: true, icon: 'rest' },
+    rest:         { label: 'REST',      sub: 'Crew morale up. Days down.',                       effort: 1, hint: true, icon: 'rest', locked: () => STATE.resources.morale >= 95 ? 'The crew is in good spirits' : null },
     fab:          { label: 'FABRICATOR', sub: 'Open the print queue. Long jobs need a still ship.', effort: 1, hint: true, icon: 'fab' },
-    medbay:       { label: 'MEDBAY',    sub: () => 'Treat the worst-hurt crew member. ' + medbayFee() + 'g, no days.', effort: 1, hint: true, locked: medbayLockReason, icon: 'medic' },
+    medbay:       { label: 'MEDBAY',    sub: () => 'Treat every hurt crew member. ' + medbayFee() + 'g, no days.', effort: 1, hint: true, locked: medbayLockReason, icon: 'medic' },
     condense:     { label: 'CONDENSE',  sub: 'Wring water out of the nebula. A day for +12 water.', effort: 2, locked: condenseLockReason, icon: 'water' },
     drydock:      { label: 'DRYDOCK',   sub: () => 'Station crews patch the hull. +30 hull for ' + drydockFee() + 'g.', effort: 1, hint: true, locked: drydockLockReason, icon: 'repair' },
     fab_service:  { label: 'FAB SERVICE', sub: () => 'Station techs overhaul the fabricator. Wear to zero, ' + fabServiceFee() + 'g.', effort: 1, hint: true, locked: fabServiceLockReason, icon: 'fab' },
@@ -304,8 +304,8 @@
   // apply → renderHUD → checkFailure → log/render order resolveChoice()
   // uses for events, so minigame outcomes and event outcomes behave the
   // same way around the failure check.
-  function settleMinigame(logLine) {
-    passDays(1); // trivial time cost, same tier index.html's applyOutcomeEffects uses — routed through the orders daily-drain helper
+  function settleMinigame(logLine, days) {
+    passDays(days || 1); // trivial time cost (MINE: one day per run), same tier index.html's applyOutcomeEffects uses — routed through the orders daily-drain helper
     renderHUD();
     if (checkFailure()) return;
     pushLogEntry(logLine);
@@ -355,6 +355,7 @@
   const REPAIR_COST = { metal: 2, scrap: 1 };
   function repairLockReason() {
     const m = STATE.materials || {};
+    if (STATE.resources.hull >= resMax('hull')) return 'Hull is intact';
     if ((m.metal || 0) < REPAIR_COST.metal || (m.scrap || 0) < REPAIR_COST.scrap) return 'Need 2 metal + 1 scrap';
     return null;
   }
@@ -465,7 +466,10 @@
         const got = gain('fuel', resMax('fuel'));
         granted.push(got > 0 ? '+' + got + ' fuel scooped from the gas' : 'gas, but the fuel tank is full');
       }
-      settleMinigame('◆ MINE — recovered ' + granted.join(', ') + '.');
+      // One day per mining run: MINE AGAIN used to chain unlimited runs
+      // for a single day (a gold and fuel faucet — hunt 5 economy sim).
+      const runs = Math.max(1, haul.runs || 1);
+      settleMinigame('◆ MINE — ' + (runs > 1 ? runs + ' runs, ' + runs + ' days: ' : '') + 'recovered ' + granted.join(', ') + '.', runs);
     });
   }
 
@@ -487,11 +491,11 @@
     enterEvent(STATE.byId[STATE.currentId], ev);
   }
   function handleWaitTraderVerb() {
-    const days = 1 + Math.floor(Math.random() * 2); // 1-2 days parked
+    const days = 1; // hunt 5: was 1-2 days at 55% (~2.8 days a trader, never worth it)
     passDays(days);
     renderHUD();
     if (checkFailure()) return;
-    if (Math.random() < 0.55) {
+    if (Math.random() < 0.75) {
       pushLogEntry('◆ WAIT — after ' + days + ' day(s), a merchant sail lights up the scope.');
       const ev = EVENTS['event_encounter_trader_001'];
       if (ev) { closeStopMenu(); enterEvent(STATE.byId[STATE.currentId], ev); return; }
@@ -529,10 +533,12 @@
     const r = medbayPatient();
     if (!r) { pushLogEntry('◆ MEDBAY — the duty nurse looks your crew over and finds nothing to bill. They seem disappointed.'); return; }
     if (STATE.goldAmount < medbayFee()) { pushLogEntry('◆ MEDBAY — treatment is ' + medbayFee() + 'g, payable in advance. You have ' + STATE.goldAmount + 'g. The nurse has heard every story.'); return; }
+    // The whole crew, for one fee: one patient for 30g was strictly worse
+    // than a 12g medkit from the same station's shelf (hunt 5 economy).
     STATE.goldAmount -= medbayFee();
-    STATE.crewHP[r] = 100;
-    if (STATE.crewPending) delete STATE.crewPending[r];
-    pushLogEntry('◆ MEDBAY — ' + crewNameOf(r) + ' is treated, stitched and discharged with a lollipop. −' + medbayFee() + 'g.');
+    const treated = STATE.crew.filter(x => crewHPOf(x) < 100);
+    for (const x of treated) { STATE.crewHP[x] = 100; if (STATE.crewPending) delete STATE.crewPending[x]; }
+    pushLogEntry('◆ MEDBAY — ' + treated.map(crewNameOf).join(', ') + (treated.length > 1 ? ' are' : ' is') + ' treated, stitched and discharged with a lollipop each. −' + medbayFee() + 'g.');
     renderHUD();
     renderCruise();
     renderStopMenu(); // the verb re-gates (nobody hurt / can't afford)
@@ -564,7 +570,7 @@
   // rule's canonical upgrade-gated verb): a day of work, +12 water.
   function condenseLockReason() {
     if (!STATE.items.includes('atmospheric_condenser')) return 'Need: Atmospheric Condenser';
-    if (STATE.resources.water >= 97) return 'Water tanks are full'; // a day for under 3 water isn't a trade
+    if (STATE.resources.water > 92) return 'Water tanks are nearly full'; // a day for under 8 water isn't a trade
     return null;
   }
   function handleCondenseVerb() {

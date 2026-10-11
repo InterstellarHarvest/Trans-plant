@@ -3035,6 +3035,7 @@ function returnToHub() {
   STATE.npcCtx = null;
   STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.effortScale = 1; STATE.effortCon = null;
   STATE.researchKey = null; // a Research preview lasts for its encounter only
+  STATE._shoppedThisEvent = false;
   STATE.scanIntelEvent = null;
   renderHUD();
   showScreen(STATE.hubScreen);
@@ -3061,7 +3062,7 @@ const ORDERS_PACE = [
   { id: 'light',      name: 'LIGHT SPEED',      etaMult: 1.35, fuelMult: 0.6, drainMult: 0.6 },
   { id: 'ridiculous', name: 'RIDICULOUS SPEED', etaMult: 1.0,  fuelMult: 1.0, drainMult: 1.0 },
   { id: 'ludicrous',  name: 'LUDICROUS SPEED',  etaMult: 0.78, fuelMult: 1.6, drainMult: 1.4 },
-  { id: 'plaid',      name: 'PLAID',            etaMult: 0.55, fuelMult: 2.4, drainMult: 2.0 },
+  { id: 'plaid',      name: 'PLAID',            etaMult: 0.55, fuelMult: 3.0, drainMult: 2.0 }, // hunt 5: 2.4 made PLAID strictly best (fuel never bit)
 ];
 const ORDERS_RATIONS = [
   { id: 'vending',  name: 'VENDING MACHINE', foodMult: 0.5, moralePerDay: -0.3, morale: 'FALLING' },
@@ -3073,7 +3074,7 @@ const ORDERS_BASE = {
   // ~95% of arrivals were legendary): travel is spread over the legs
   // actually flown (pathLegs), and consumption bites.
   legDaysFrac:      0.60, // travel-day budget ≈ 60% of baseDays at RIDICULOUS along the path
-  travelFuelBudget: 45,   // RIDICULOUS fuel along the whole path (PLAID needs fuel cells)
+  travelFuelBudget: 55,   // RIDICULOUS fuel along the whole path (PLAID needs fuel cells) — hunt 5 sim: 45 never pressed even at PLAID
                           // (a flat 3/leg starved the 15-node trail — two independent Interstellar runs ended fuel-dry)
   foodPerDay:       0.5,  // food per day at STANDARD (× rations foodMult) — harvests/forage matter
   waterPerDay:      0.35, // ship water stock draw per day (both sides drink from it)
@@ -4012,7 +4013,18 @@ function renderChoicesInner(choices) {
     leave.className = 'enc-choice advance entering';
     leave.style.animationDelay = (col.children.length * 55) + 'ms';
     leave.innerHTML = '<div class="ch-text">' + escapeHTML(ev2.leave_label || 'WALK AWAY') + '</div><div class="ch-sub">Leave it be</div>';
-    leave.addEventListener('click', () => runChoiceAction(advanceAfterEvent));
+    // Browsing the wares is a stop like any other: leaving after shopping
+    // costs a day (it was free — the whole market for zero days, while the
+    // trader's own "buy a fuel cell" pitch cost two).
+    if (STATE._shoppedThisEvent) leave.querySelector('.ch-sub').textContent = 'A day spent haggling';
+    leave.addEventListener('click', () => runChoiceAction(() => {
+      if (STATE._shoppedThisEvent) {
+        STATE._shoppedThisEvent = false;
+        passDays(1); renderHUD();
+        if (checkFailure()) return;
+      }
+      advanceAfterEvent();
+    }));
     col.appendChild(leave);
   }
 }
@@ -4436,6 +4448,7 @@ function handleChoiceClick(choice) {
   // layer stack + npc slot inside openMarket by then.
   if (choice.open_market && typeof window.openMarket === 'function') {
     if (choice.setFlag) STATE.flags.add(choice.setFlag);
+    STATE._shoppedThisEvent = true; // walking away after shopping costs the day (below)
     window.openMarket({ sinister: !!choice.market_sinister }, () => renderEncounterState());
     return;
   }

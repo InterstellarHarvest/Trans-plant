@@ -1,5 +1,8 @@
 'use strict';
 // Economy simulator: drives many full runs in-page with policies.
+// Hunt 5 (2026-10-10): realistic mining yields (13±, measured from the real
+// minigame), station shopping (policy suffix :shop), mining runs per visit
+// (policy suffix :N), a per-cause resource ledger, and a verb sampler policy.
 // usage: node sim.js <runsPerCell> <policies,comma> <trails,comma> [outfile]
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -16,8 +19,8 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 
 function installHarness(policy) {
   /* eslint-disable no-undef */
-  const P = policy;
-  window.__pol = P;
+  const P = policy.split(':')[0];
+  window.__pol = P; window.__mineRuns = +(policy.split(':')[1] || 1); window.__shop = policy.includes(':shop'); window.__farm = policy.includes(':farm');
   const T = () => { const r = Math.random(); return r < 0.3 ? 'perfect' : r < 0.7 ? 'good' : r < 0.95 ? 'poor' : 'abandoned'; };
   const S = window.__stats = {
     forageFood: 0, harvests: 0, harvestFood: 0, harvestMorale: 0, verbs: {}, events: 0, eventDays: 0, verbDays: 0, travelDays: 0,
@@ -32,7 +35,9 @@ function installHarness(policy) {
     if (id === 'forage' && tier !== 'abandoned') S.forageFood += payload.food;
     onDone(tier, payload);
   };
-  window.openMining = (onDone) => { const n = 2 + Math.floor(Math.random() * 4); S.matsGained += n + 2; onDone({ inventory: { minerals: n, metal: 2 } }); };
+  window.openMining = (onDone) => { const runs = window.__mineRuns || 1; const inv = {}; let tot = 0;
+    for (let r = 0; r < runs; r++) { const n = Math.max(3, Math.round(13 + (Math.random() + Math.random() + Math.random() - 1.5) * 6)); for (let i = 0; i < n; i++) { const x = Math.random() * 17; const m = x < 6 ? 'minerals' : x < 12 ? 'scrap' : x < 15 ? 'metal' : x < 16 ? 'exotic' : 'biocomponent'; inv[m] = (inv[m] || 0) + 1; } tot += n; }
+    S.matsGained += tot; S.mineVisits = (S.mineVisits || 0) + 1; onDone({ inventory: inv, runs }); };
   window.openEngineRepair = (onDone) => { const ok = Math.random() < 0.75; onDone({ fixedCount: ok ? 4 : 2, allFixed: ok }); };
   window.openMarket = (opts, onClose) => { if (onClose) onClose(); };
   const realEnd = window.endRun;
@@ -76,6 +81,39 @@ function installHarness(policy) {
     }
     return r;
   };
+}
+
+
+function installLedger() {
+  const S = window.__stats;
+  S.ledger = {}; S.fuelTrace = []; S.goldTrace = [];
+  const IGN = new Set(['set', 'clamp', 'Object.set', 'invAddRes', 'Array.forEach', 'Object.entries', 'eval', '']);
+  const src = () => {
+    const lines = (new Error().stack || '').split('\n').slice(3, 12);
+    const names = lines.map(l => { const m = l.match(/at (?:async )?([^\s(]+)\s*\(/); return m ? m[1] : (/at http/.test(l) ? '<anon>' : ''); });
+    const keep = names.filter(n => n && !IGN.has(n));
+    return keep.slice(0, 3).join('<');
+  };
+  const add = (res, d) => {
+    if (!d) return;
+    const k = res + '|' + (window.__ctxTag || '') + '|' + src();
+    const L = S.ledger[k] = S.ledger[k] || [0, 0, 0];
+    if (d > 0) L[0] += d; else L[1] += d; L[2]++;
+  };
+  const R = STATE.resources; const store = Object.assign({}, R);
+  for (const key of Object.keys(store)) {
+    Object.defineProperty(R, key, { enumerable: true, configurable: true, get: () => store[key], set: v => {
+      if (!Number.isFinite(v)) S.nan.push(key + '<-' + v + ' ' + src());
+      const d = v - store[key]; store[key] = v; if (Math.abs(d) > 1e-9) add(key, d);
+      if (v < 0) S.neg = (S.neg || []).concat([key + '=' + v + ' ' + src()]).slice(0, 5);
+    } });
+  }
+  let g = STATE.goldAmount;
+  Object.defineProperty(STATE, 'goldAmount', { enumerable: true, configurable: true, get: () => g, set: v => {
+    if (!Number.isFinite(v)) S.nan.push('gold<-' + v + ' ' + src());
+    const d = v - g; g = v; if (d) add('gold', d);
+    if (d > 0) S.goldIn2 = (S.goldIn2 || 0) + d; else S.goldOut2 = (S.goldOut2 || 0) - d;
+  } });
 }
 
 function step() {
@@ -173,6 +211,9 @@ function step() {
   // ---------- CRUISE HUB ----------
   if (scr === 'screen-cruise') {
     window.__evSteps = 0;
+    if (window.__pendVerb) { const p = window.__pendVerb; window.__pendVerb = null; S.vd = S.vd || [];
+      const dr = {}; for (const k of Object.keys(p.r)) dr[k] = Math.round((STATE.resources[k] - p.r[k]) * 10) / 10;
+      S.vd.push({ v: p.name, node: (STATE.byId[STATE.currentId] || {}).node_type, ds: Math.round((scoreValue() - p.sc) * 100) / 100, dd: STATE.daysElapsed - p.d, dr, dg: STATE.goldAmount - p.g, dm: Object.values(STATE.materials).reduce((a, b) => a + b, 0) - p.m }); }
     const node = STATE.byId[STATE.currentId];
     window.__acts = window.__acts || {};
     const key = STATE.currentId;
@@ -184,6 +225,7 @@ function step() {
       const b = verbBtns().find(x => re.test(x.querySelector('.stop-choice-body').textContent));
       if (!b) return false;
       acts.n++; acts.did[name] = (acts.did[name] || 0) + 1;
+      window.__pendVerb = { name, sc: scoreValue(), d: STATE.daysElapsed, r: Object.assign({}, STATE.resources), g: STATE.goldAmount, m: Object.values(STATE.materials).reduce((a, b) => a + b, 0) };
       S.verbs[name] = (S.verbs[name] || 0) + 1;
       window.__ctx = 'verb';
       try { b.click(); } finally { window.__ctx = 'other'; }
@@ -192,12 +234,28 @@ function step() {
     if (greedy) {
       // orders
       if (P === 'fast') { STATE.orders.pace = 'plaid'; STATE.orders.rations = 'pigout'; }
+      else if (P === 'plaid') { STATE.orders.pace = 'plaid'; }
+      else if (P === 'ludi') { STATE.orders.pace = 'ludicrous'; }
       else if (P === 'frugal') { STATE.orders.pace = 'light'; STATE.orders.rations = 'vending'; }
+      // station shopping (emulates the market modal at real prices)
+      if (window.__shop && node.node_type === 'station' && !acts.shopped) {
+        acts.shopped = true;
+        // the station's real buy-back (market.js materialPrice: value × 2.5, min 1)
+        const MATP = window.__matp || Object.fromEntries(((MOD.materials && MOD.materials.materials) || []).map(m => [m.id, Math.max(1, Math.round((m.value || 0.2) * 2.5))]));
+        const keep = { metal: 4, scrap: 2 };
+        for (const [m, q] of Object.entries(STATE.materials)) { const sell = Math.max(0, q - (keep[m] || 0)); if (sell > 0) { STATE.materials[m] -= sell; window.__ctxTag = 'shopSell'; STATE.goldAmount += sell * MATP[m]; window.__ctxTag = ''; S.matsSold = (S.matsSold || 0) + sell; } }
+        const buy = (id, base, want) => { let n = 0; while (want() && STATE.goldAmount >= stationPrice(base) && n < 8) { if (!grantItem(id)) break; window.__ctxTag = 'shopBuy:' + id; STATE.goldAmount -= stationPrice(base); window.__ctxTag = ''; n++; S.shopBuys = S.shopBuys || {}; S.shopBuys[id] = (S.shopBuys[id] || 0) + 1; } };
+        const cnt = id => STATE.items.filter(x => x === id).length;
+        const fuelNeed = (P === 'fast' || P === 'plaid') ? 90 : P === 'ludi' ? 70 : 50;
+        buy('fuel_cell', (window.__prices || {}).fuel_cell || 12, () => R.fuel + 15 * cnt('fuel_cell') < fuelNeed + 30);
+        buy('ration_brick', 6, () => R.food + 10 * cnt('ration_brick') < 70);
+        buy('water_canister', 8, () => R.water + 10 * cnt('water_canister') < 70);
+      }
       if (typeof cropWaterNeed === 'function') setWaterSplit(cropWaterNeed());
       // consumables
       const useIt = (id, cond) => {
         if (!cond || !STATE.items.includes(id) || !ITEM_USE[id] || ITEM_USE[id].can()) return;
-        ITEM_USE[id].use(); STATE.items.splice(STATE.items.indexOf(id), 1); S.itemUses[id] = (S.itemUses[id] || 0) + 1;
+        window.__ctxTag = 'item:' + id; ITEM_USE[id].use(); window.__ctxTag = ''; STATE.items.splice(STATE.items.indexOf(id), 1); S.itemUses[id] = (S.itemUses[id] || 0) + 1;
       };
       useIt('fuel_cell', R.fuel < resMax('fuel') - 15); useIt('ration_brick', R.food < 85); useIt('water_canister', R.water < 85);
       useIt('hull_patch', R.hull < 80); useIt('o2_canister', R.o2 < 80); useIt('medkit', STATE.crew.some(r => crewHPOf(r) < 50));
@@ -212,6 +270,14 @@ function step() {
         closeGrowbay();
         if (STATE.ended) return { wait: 50 };
       }
+      if (P === 'sampler' && !acts.sampled) {
+        acts.sampled = true;
+        if (!document.body.classList.contains('stop-active')) stopBtn.click();
+        const opts = verbBtns().map(b => b.querySelector('.stop-choice-body').textContent).filter(t => !/FABRICATOR|FAB SERVICE/.test(t));
+        if (opts.length && Math.random() < 0.7) { const t = opts[Math.floor(Math.random() * opts.length)]; const nm = t.toLowerCase().replace(/ /g, '_');
+          if (doVerb({ test: x => x === t }, nm)) return { wait: 50 }; }
+      }
+      if (window.__farm && ['asteroid_field', 'nebula', 'derelict'].includes(node.node_type) && !acts.did.mine && doVerb(/^MINE/, 'mine')) return { wait: 50 };
       const cap = P === 'stopper' ? 4 : 2;
       if (acts.n < cap) {
         if (node.node_type === 'station' && STATE.crew.some(r => crewHPOf(r) < 60) && STATE.goldAmount >= 30 && !acts.did.medbay) { S.medbay++; if (doVerb(/MEDBAY/, 'medbay')) return { wait: 50 }; }
@@ -222,7 +288,9 @@ function step() {
           if (!acts.did.forage && R.food < 90 && doVerb(/^(GATHER|HUNT|SCAVENGE|FORAGE)$/, 'forage')) return { wait: 50 };
           if (!acts.did.salvage && doVerb(/^SALVAGE/, 'salvage')) return { wait: 50 };
           if (!acts.did.mine && doVerb(/^MINE/, 'mine')) return { wait: 50 };
-        } else if (R.food < 40 && !acts.did.forage && doVerb(/^(GATHER|HUNT|SCAVENGE|FORAGE)$/, 'forage')) return { wait: 50 };
+        } else if (node.node_type === 'nebula' && R.fuel < 70 && !acts.did.mine && doVerb(/^MINE/, 'mine')) return { wait: 50 };
+        else if (node.node_type === 'asteroid_field' && R.water < 60 && !acts.did.mine && doVerb(/^MINE/, 'mine')) return { wait: 50 };
+        else if (R.food < 40 && !acts.did.forage && doVerb(/^(GATHER|HUNT|SCAVENGE|FORAGE)$/, 'forage')) return { wait: 50 };
       }
     } else if (!acts.rolled) {
       acts.rolled = true;
@@ -262,6 +330,8 @@ function step() {
     await page.waitForFunction(() => typeof EVENTS !== 'undefined' && Object.keys(EVENTS).length > 0);
     await page.evaluate(installHarness, policy);
     await page.evaluate(c => applySetupToState(c), cfg);
+    await page.evaluate(installLedger);
+    if (process.env.OVR) await page.evaluate(code => { (0, eval)(code); }, process.env.OVR);
     await page.clock.runFor(300);
     let res = null, steps = 0;
     for (; steps < 1500; steps++) {
