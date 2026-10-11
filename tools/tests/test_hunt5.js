@@ -145,9 +145,9 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     const page = await boot();
     await page.evaluate(() => { STATE.cropGrowth.health = 0; checkFailure(); });
     await page.waitForTimeout(500);
-    const r = await page.evaluate(() => { window.showEndReport(); return { line: document.getElementById('end-day-line').textContent, save: hasSave() }; });
+    const r = await page.evaluate(() => { window.showEndReport(); window.endBackToCinematic(); return { line: document.getElementById('end-day-line').textContent, save: hasSave(), keep: getComputedStyle(document.getElementById('end-cine-btn2')).display !== 'none' }; });
     ok(!/EARLY/.test(r.line), `failure report doesn't say "days early" (${r.line})`);
-    ok(r.save, 'reading the report of a resumable failure keeps the save (Keep flying still offered)');
+    ok(!r.save && !r.keep, 'reading the report accepts the end: save cleared AND Keep flying withdrawn (no stranded run)');
     await page.close();
   }
 

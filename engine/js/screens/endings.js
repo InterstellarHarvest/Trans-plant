@@ -350,11 +350,14 @@
     showScreen('screen-end');
   };
   window.showEndReport = function () {
-    // Reading the report accepts a final ending. A resumable failure's
-    // pending save stays while Keep flying / the beacon is still offered
-    // (Back returns to it); New Run clears it.
-    const resumable = currentView && (currentView.continueOption || currentView.beaconOption);
-    if (!resumable && typeof clearSave === 'function') clearSave();
+    // Reading the report accepts the ending (owner ruling 2026-10-10) — a
+    // resumable failure's pending save goes now, and so does the way on:
+    // Back no longer offers Keep flying / the beacon (it used to, and a
+    // reload then lost a run the screen still said could continue).
+    if (typeof clearSave === 'function') clearSave();
+    STATE._resumableEnd = false;
+    const b2 = $('end-cine-btn2');
+    if (b2) { b2.style.display = 'none'; b2.onclick = null; }
     if (currentView) renderReport(currentView);
   };
   window.endBackToCinematic = function () {
