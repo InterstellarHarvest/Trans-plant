@@ -44,6 +44,13 @@ async function enter(page, pre) {
     // The outcome's day would tick the crop's own daily health change on
     // top; hold that tick so each check sees exactly the choice's effect.
     STATE.cropGrowth.lastTickDay = 1e9;
+    // clearCropPest() catches the growbay up first (soybean ruling), which
+    // re-anchors lastTickDay — hold the tick again after it.
+    if (!window._clearHeld) {
+      const real = window.clearCropPest;
+      window.clearCropPest = function () { const r = real.apply(this, arguments); STATE.cropGrowth.lastTickDay = 1e9; return r; };
+      window._clearHeld = true;
+    }
     enterEvent(st, EVENTS['event_station_012']);
     await new Promise(r => setTimeout(r, 350));
   }, pre || null);
