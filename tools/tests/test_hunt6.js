@@ -31,7 +31,7 @@ const click = (page, t) => page.evaluate(t => {
 const choiceText = (page, t) => page.evaluate(t => {
   if (typeof finishAllTyping === 'function') finishAllTyping();
   const b = [...document.querySelectorAll('#enc-choices .enc-choice')].find(x => x.textContent.includes(t));
-  return b ? { txt: b.textContent, locked: b.classList.contains('locked'), title: b.getAttribute('title') || '' } : null;
+  return b ? { txt: b.textContent, locked: b.classList.contains('locked'), title: b.getAttribute('title') || ((b.dataset.tipTitle ? b.dataset.tipTitle + '\n\n' : '') + (b.dataset.tipDescription || '')) } /* title= → .ui-tip data (parity-shell) */ : null;
 }, t);
 
 (async () => {

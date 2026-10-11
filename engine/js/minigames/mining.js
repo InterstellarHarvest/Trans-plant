@@ -438,6 +438,15 @@
     bestTier: null,  // 'perfect' / 'adequate' / 'insufficient', highest reached
   };
   const TIER_RANK = { insufficient: 0, adequate: 1, perfect: 2 };
+  // Lifetime stats (parity pass 2026-10-11 — the [STUB] above, now that
+  // saves exist): SESSION stays per-visit (its run count prices the days
+  // and labels LEAVE); LIFE accumulates every run of the voyage on
+  // STATE.miningLifetime, which index.html's SAVED_FIELDS persists. The
+  // haul card's session row reads LIFE.
+  function lifeStats() {
+    if (!STATE.miningLifetime) STATE.miningLifetime = { runs: 0, totalCracks: 0, totalMaterials: 0, totalHollows: 0, totalFragmentsLost: 0, bestChainEver: 0, bestTier: null };
+    return STATE.miningLifetime;
+  }
   let sessionInventory = {}; // material -> count, accumulated across MINE AGAIN loops within one openMining() visit
 
   const stage = $('mining-stage');
@@ -1276,6 +1285,16 @@
     if (SESSION.bestTier == null || TIER_RANK[tier] > TIER_RANK[SESSION.bestTier]) {
       SESSION.bestTier = tier;
     }
+    const LIFE = lifeStats();
+    LIFE.runs++;
+    LIFE.totalCracks        += MSTATE.rocks;
+    LIFE.totalMaterials     += MSTATE.materials;
+    LIFE.totalHollows       += MSTATE.hollowsHit;
+    LIFE.totalFragmentsLost += _s.fragmentsLost;
+    if (_s.bestChain > LIFE.bestChainEver) LIFE.bestChainEver = _s.bestChain;
+    if (LIFE.bestTier == null || TIER_RANK[tier] > TIER_RANK[LIFE.bestTier]) LIFE.bestTier = tier;
+    SESSION.lastTier = tier;
+    if (MSTATE.crewAssist) SESSION.crewUsed = MSTATE.crewAssist;
 
     // Merge this run's haul into the whole-visit total — RETURN TO SHIP
     // applies sessionInventory (every run made since openMining()), not
@@ -1352,21 +1371,21 @@
     // Session stats — accumulates across BEGIN cycles in this
     // playthrough. Only show on the 2nd run onward (skip on first run
     // since the session totals would be identical to the current run).
-    if (SESSION.runs >= 2) {
+    if (LIFE.runs >= 2) {
       const sessLabel = document.createElement('div');
       sessLabel.className = 'haul-session-label';
-      sessLabel.textContent = '— SESSION · ' + SESSION.runs + ' RUNS —';
+      sessLabel.textContent = '— SESSION · ' + LIFE.runs + ' RUNS —';
       card.appendChild(sessLabel);
 
-      const bestTierLabel = SESSION.bestTier
-        ? TIER_LABELS[SESSION.bestTier]
+      const bestTierLabel = LIFE.bestTier
+        ? TIER_LABELS[LIFE.bestTier]
         : '—';
       const sessRow = document.createElement('div');
       sessRow.className = 'haul-stats session';
       sessRow.innerHTML = `
-        <span class="stat"><span class="lbl">CRACKS</span><span class="val">${SESSION.totalCracks}</span></span>
-        <span class="stat"><span class="lbl">MATERIALS</span><span class="val">${SESSION.totalMaterials}</span></span>
-        <span class="stat"><span class="lbl">BEST CHAIN</span><span class="val">${SESSION.bestChainEver}</span></span>
+        <span class="stat"><span class="lbl">CRACKS</span><span class="val">${LIFE.totalCracks}</span></span>
+        <span class="stat"><span class="lbl">MATERIALS</span><span class="val">${LIFE.totalMaterials}</span></span>
+        <span class="stat"><span class="lbl">BEST CHAIN</span><span class="val">${LIFE.bestChainEver}</span></span>
         <span class="stat"><span class="lbl">BEST TIER</span><span class="val">${bestTierLabel}</span></span>
       `;
       card.appendChild(sessRow);
@@ -1420,6 +1439,10 @@
       sector: MSTATE.sector,
       crewAssist: MSTATE.crewAssist,
       stats: MSTATE.stats,
+      tier: SESSION.lastTier || null,
+      // The cruise-log payload (parity audit: "mining log payload thin") —
+      // the visit's best tier, the sector when it mattered, who helped.
+      summary: miningSummary(),
     };
     $('haul-overlay').classList.remove('visible');
     $('haul-overlay').innerHTML = '';
@@ -1427,6 +1450,16 @@
     const cb = onMiningDone;
     onMiningDone = null;
     if (cb) cb(haul);
+  }
+
+  function miningSummary() {
+    if (!SESSION.runs) return '';
+    const bits = [TIER_LABELS[SESSION.bestTier] || ''];
+    if (MSTATE.sector && MSTATE.sector.id === 'dead_zone') bits.push('a dead zone, ' + SESSION.totalHollows + ' hollow' + (SESSION.totalHollows === 1 ? '' : 's'));
+    else if (MSTATE.sector && MSTATE.sector.label) bits.push(MSTATE.sector.label.toLowerCase());
+    const c = SESSION.crewUsed && CREW_ASSIST[SESSION.crewUsed];
+    if (c) bits.push(assistName(SESSION.crewUsed) + ' assisting (' + c.bias + ')');
+    return '[' + bits.filter(Boolean).join(' · ') + ']';
   }
 
   // ── Entry point ──────────────────────────────────────────────
@@ -1445,7 +1478,7 @@
   window.openMining = function (onDone) {
     onMiningDone = onDone;
     sessionInventory = {};
-    Object.assign(SESSION, { runs: 0, totalCracks: 0, totalMaterials: 0, totalHollows: 0, totalFragmentsLost: 0, bestChainEver: 0, bestTier: null });
+    Object.assign(SESSION, { runs: 0, totalCracks: 0, totalMaterials: 0, totalHollows: 0, totalFragmentsLost: 0, bestChainEver: 0, bestTier: null, lastTier: null, crewUsed: null });
     showOverlay('overlay-mining');
     renderArmed();
   };

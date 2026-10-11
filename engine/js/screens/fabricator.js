@@ -866,6 +866,10 @@
     // Force the full read before tearing the strip down.
     $('fb-progress-days').textContent = FSTATE.craft.daysTotal + 'd / ' + FSTATE.craft.daysTotal + 'd';
     $('fb-progress-fill').style.width = '100%';
+    // Same for the header day: a timer landing a hair before the boundary
+    // must not leave it a day short of the trip calendar.
+    FSTATE.tripDay = FSTATE.craft.startDay + FSTATE.craft.daysTotal;
+    $('fb-trip-day').textContent = FSTATE.tripDay;
     FSTATE.craft = null;
     setProgressIdle();
 

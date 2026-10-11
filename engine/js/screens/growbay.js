@@ -1326,8 +1326,6 @@
     }
   };
   window.openTreat = function() {
-    // Locked TREAT now hit-tests (it shows the Denied cursor) — ignore it.
-    if ($('treat-btn') && $('treat-btn').classList.contains('locked')) return;
     const say = GROWBAY_TREAT_LINES[growbayAI()];
     if (!GSTATE || !GSTATE.pest) {
       $('aria-text').textContent = say.nothing;

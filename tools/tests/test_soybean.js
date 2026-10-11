@@ -203,7 +203,7 @@ const SOY = () => MOD.crops.crops.find(c => c.id === 'crop_soybean').strengths.n
       const read = () => {
         openGrowbay();
         const row = document.querySelector('#mod-list-active .gb-mod-row.boost');
-        const out = row ? { name: row.querySelector('.mod-name').textContent, delta: row.querySelector('.mod-delta').textContent, tip: row.title, cls: row.className } : null;
+        const out = row ? { name: row.querySelector('.mod-name').textContent, delta: row.querySelector('.mod-delta').textContent, tip: row.getAttribute('title') || row.dataset.tipDescription || '', cls: row.className } : null;
         openInspect();
         const vit = [...document.querySelectorAll('.ins-vital')].map(v => v.textContent).find(t => /^Recovery/.test(t)) || null;
         const notes = (document.querySelector('.ins-notes') || {}).textContent || '';

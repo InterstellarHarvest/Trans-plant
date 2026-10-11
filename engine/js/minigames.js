@@ -459,12 +459,19 @@ document.getElementById('ov').addEventListener('click', e=>{ if(e.target===docum
 // tight loop (same exploit-avoidance concern the plan flagged for Mining's
 // sector modifier). rbquit is the only exit; it hands (tier, payload) back
 // to whoever called openMinigame() so STATE gets the real result applied.
+// Salvage's VIEW INVENTORY: finish the run (the haul is granted by the
+// caller's callback) and then open the real Cargo Hold over the hub.
+let openCargoAfterClose = false;
 document.getElementById('rbquit').addEventListener('click', ()=>{
   const cb = onMinigameDone;
   onMinigameDone = null;
   const tier = lastTier, payload = lastPayload;
   closeMinigameOverlay();
   if (cb) cb(tier, payload);
+  if (openCargoAfterClose) {
+    openCargoAfterClose = false;
+    if (typeof openInventory === 'function' && !(typeof STATE !== 'undefined' && STATE.ended)) openInventory();
+  }
 });
 
 
@@ -853,7 +860,15 @@ function initMedical(container, onResult, medConfig){
   //   startingHp,         // patient HP at entry (default 100)
   //   damageCap,          // max % MAX HP this event can take (default 30)
   // }
-  const cfg = medConfig || {};
+  // Difficulty (parity pass 2026-10-11): the caller passes the event's
+  // own difficulty; 'medium' is the tuned baseline (the demo's defaults).
+  const MED_DIFFICULTY = {
+    easy:   { minN: 2, maxN: 3, sevRamp: 0.04,  baseDrain: 0.45 },
+    medium: {},
+    hard:   { minN: 3, maxN: 5, sevRamp: 0.065, baseDrain: 0.75 },
+    ultra:  { minN: 4, maxN: 5, sevRamp: 0.08,  baseDrain: 0.9 },
+  };
+  const cfg = Object.assign({}, MED_DIFFICULTY[(medConfig || {}).difficulty] || {}, medConfig || {});
   const minN = cfg.minN ?? 2, maxN = cfg.maxN ?? 4;
   const N = minN + Math.floor(Math.random() * (maxN - minN + 1));
   const locShuffled = BODY_LOCATIONS.slice().sort(()=>Math.random()-0.5);
@@ -1365,11 +1380,14 @@ function initMedical(container, onResult, medConfig){
     //                           survival-branch outcome.
     // Fedup: patient slides off-screen before result modal hits. Other tiers
     // get a brief end-state pause for the moment to land before the result.
+    // The caller applies the HP result (index.html resolveChoice): it
+    // needs where the patient ended up.
+    const medPayload = { hp: Math.round(hp), startingHp };
     if(tier === 'fedup'){
       bodySprite.classList.add('fedup-slide');
-      endBeat(()=>onResult(tier), 900);
+      endBeat(()=>onResult(tier, medPayload), 900);
     } else {
-      endBeat(()=>onResult(tier), 750);
+      endBeat(()=>onResult(tier, medPayload), 750);
     }
   }
 
@@ -2807,11 +2825,16 @@ function initBreach(container, onResult){
   // Patch a hole and its share is removed from the running drain.
   // Math: N * R * T = cap  →  R = cap / (T * N)
   // Where T = N * perHole_seconds, so R = cap / (perHole_seconds * N²).
-  let o2 = 100;
+  // The bar starts at the ship's real O2 (parity audit: it always read
+  // 100% — a breach on a half-empty tank showed a full one).
+  const O2_START = (typeof STATE !== 'undefined' && STATE && STATE.resources && typeof STATE.resources.o2 === 'number')
+    ? Math.max(0, Math.min(100, Math.round(STATE.resources.o2))) : 100;
+  let o2 = O2_START;
   const O2_MAX_LOSS = 10; // % cap — total failure leaves 90% atmosphere,
                           // so a breach event can stack with prior O2 loss
                           // without ever soft-locking the run.
   const O2_DRAIN_PER_HOLE = O2_MAX_LOSS / ((perHole / 1000) * N * N);
+  o2Fill.style.width = o2 + '%'; o2Val.textContent = o2;
 
   // ── Tray rendering ────────────────────────────
   function renderTray(){
@@ -3030,12 +3053,13 @@ function initBreach(container, onResult){
     o2 = Math.max(0, o2 - open * O2_DRAIN_PER_HOLE * dt);
     o2Fill.style.width = o2 + '%';
     o2Val.textContent = Math.round(o2);
-    // Bar sits in [90..100] thanks to the 10% cap. Thresholds map onto
-    // "how much of the allowable damage you've taken."
-    if(o2 < 93){
+    // Bar sits in [start-10..start] thanks to the 10% cap. Thresholds map
+    // onto "how much of the allowable damage you've taken."
+    const lost = O2_START - o2;
+    if(lost > 7){
       o2Fill.style.background = 'var(--red)';
       o2Bar.classList.add('danger');
-    } else if(o2 < 96){
+    } else if(lost > 4){
       o2Fill.style.background = 'var(--orange)';
       o2Bar.classList.remove('danger');
     } else {
@@ -3959,18 +3983,12 @@ function initSalvage(container, onResult){
     if (closeAfterResult) setTimeout(() => closeBtn.click(), 0); // showResult then closes through rbquit
     viewBtn.addEventListener('click', () => {
       if (viewBtn.classList.contains('disabled')) return;
-      // [STUB] In the real engine this routes to the cargo/inventory modal
-      // (demo-inventory.html surface) so the player can see the salvage haul
-      // alongside their full ship inventory. For this self-contained demo
-      // we toggle to a fullscreen view of just-this-run's inventory in place.
-      const haul = endEl.querySelector('.sal-end-haul');
-      if (haul.style.display === 'none') {
-        haul.style.display = '';
-        viewBtn.textContent = 'VIEW INVENTORY';
-      } else {
-        haul.style.display = 'none';
-        viewBtn.textContent = 'BACK TO HAUL';
-      }
+      // Routes to the real Cargo Hold (the demo's [STUB] contract): the run
+      // closes exactly like CLOSE — haul banked, result card, the caller
+      // grants it — then the hold opens with the haul in it.
+      openCargoAfterClose = true;
+      closeAfterResult = true;
+      closeBtn.click();
     });
   }
 

@@ -79,8 +79,10 @@ const withRandom = (page, v, fn) => page.evaluate(({ v, src }) => {
   {
     const tip = async page => page.evaluate(() => {
       openFabricator();
-      const el = [...document.querySelectorAll('[title]')].find(e => /FAB SPEED BREAKDOWN/.test(e.getAttribute('title')));
-      const t = el ? el.getAttribute('title') : '';
+      // The TIME row's breakdown is a .ui-tip now (parity-shell): title + description.
+      const tt = e => e.getAttribute('title') || ((e.dataset.tipTitle || '') + '\n' + (e.dataset.tipDescription || ''));
+      const el = [...document.querySelectorAll('[title],[data-tip-title]')].find(e => /FAB SPEED BREAKDOWN/.test(tt(e)));
+      const t = el ? tt(el) : '';
       closeFabricator();
       return t;
     });

@@ -115,16 +115,25 @@ body {
 /* Each modal's panel scales 0.96 → 1 with the fade. `scale` (not
    transform) so it composes with panels centred by translate(). */
 #gb-modal, #fb-modal, #od-modal, #inv-card, #slog-card,
-#overlay-crew #cd-modal, #overlay-market .enc-market, #ovmap-viewport {
+#overlay-crew #cd-modal, #ovmap-viewport {
   scale: 0.96;
   transition: opacity 0.25s ease, transform 0.25s ease, scale 0.25s ease;
 }
-.overlay.active :is(#gb-modal, #fb-modal, #od-modal, #inv-card, #slog-card, #cd-modal, .enc-market, #ovmap-viewport) { scale: 1; }
+.overlay.active :is(#gb-modal, #fb-modal, #od-modal, #inv-card, #slog-card, #ovmap-viewport),
+#overlay-crew.active #cd-modal { scale: 1; animation: modal-pop 0.25s ease both; } /* injected on first open: a transition has no start state */
+/* The market panel is display-toggled by MarketModal (.hidden), which a
+   transition can't start from — it pops in with a one-shot animation. */
+#overlay-market .enc-market { scale: 1; }
+#overlay-market.active .enc-market:not(.hidden) { animation: modal-pop 0.25s ease both; }
+@keyframes modal-pop { from { scale: 0.96; opacity: 0; } to { scale: 1; opacity: 1; } }
 /* The scene behind a cruise modal dims (DESIGN_SYSTEM "Backdrop":
    brightness 0.35 under the modal's own rgba(4,8,16,0.75) backdrop —
    the demos' cruise-ghost). Market / minigames / mining keep their
    scene lit: the vendor portrait and the bridge art are part of them. */
 #game > .screen { transition: filter 0.25s ease; }
+/* demo-crew panel-button sizing — it came from the growbay's leaked :root
+   (same 15px) before the tokens were scoped. */
+#overlay-crew { --pb-border: 3px; --pb-padx: 12px; --pb-pady: 6px; --pb-size: 15px; }
 #game:has(> .overlay.dim-behind.active) > .screen.active { filter: brightness(0.35); }
 
 /* ── HUD (resource bar, top of map+encounter screens) ───────────── */
@@ -579,8 +588,8 @@ body {
   display: flex; align-items: center; gap: 12px; flex-shrink: 0;
 }
 #slog-count { font-size: 8px; color: var(--log-ink-dim); margin-left: auto; }
-.slog-x { border-color: rgba(90,66,38,0.55); background: rgba(90,66,38,0.08); color: var(--log-ink); }
-.slog-x:hover { border-color: var(--log-edge); }
+.modal-x.slog-x { border-color: rgba(90,66,38,0.55); background: rgba(90,66,38,0.08); color: var(--log-ink); }
+.modal-x.slog-x:hover { border-color: var(--log-edge); }
 /* Gold custom scrollbar on the journal (DESIGN_SYSTEM hard rule). */
 #slog-rows-host { flex: 1 1 auto; min-height: 80px; }
 #slog-rows { overflow-y: auto; flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px; min-height: 0; padding-right: 12px; }
@@ -1392,7 +1401,7 @@ body {
               <div class="gb-picker" id="tender-picker"></div>
             </div>
             <div class="gb-crew-actions">
-              <button class="panel-btn locked" id="treat-btn" onclick="openTreat()">Treat</button>
+              <button class="panel-btn locked" id="treat-btn" onclick="if (!this.classList.contains('locked')) openTreat()">Treat</button><!-- locked TREAT hit-tests now (Denied cursor), so the click is ignored here -->
               <button class="panel-btn" id="inspect-btn" onclick="openInspect()">Inspect</button>
             </div>
           </div>
@@ -1804,7 +1813,7 @@ const SAVED_FIELDS = [
   'hardStreak', 'pityRelief', 'npcCache', 'crewHP', 'shipLog',
   'stowaway', 'cropGrowth', 'postCombatLegs', 'aiWarnLevels', 'fabricator',
   'consumedActions', 'crewSkillCharges', 'orders', 'crewPending',
-  'miningSectors', 'lastAmbientNode', // sector re-roll on reload defeated mining's anti-reroll; ambient repeated
+  'miningSectors', 'lastAmbientNode', 'miningLifetime', // miningLifetime: the haul card's voyage stats (parity-shell) // sector re-roll on reload defeated mining's anti-reroll; ambient repeated
   'deprived', // consecutive days at 0 food/water/O2
   'crewIdentity', // joined stowaways keep their own name in a crew role
   'researchReady', // Academic captain: one Research preview per station leg
@@ -2101,7 +2110,7 @@ function applySetupToState(sel) {
   // Every other per-run field starts clean too (a run started in-page
   // after another used to inherit its log, fabricator, sectors…).
   STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
-  STATE.postCombatLegs = 0; STATE.miningSectors = {}; STATE.aiWarnLevels = {};
+  STATE.postCombatLegs = 0; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.lastAmbientNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0;
@@ -5418,7 +5427,18 @@ window.eventMinigameBegun = function () {
 function resolveChoice(choice) {
   if (choice.launch_minigame && typeof window.openMinigame === 'function') {
     eventMinigameChoice = choice;
-    openMinigame(choice.launch_minigame, choice.minigame_opts || {}, (tier) => {
+    // MEDICAL (parity pass 2026-10-11): the game plays at the event's own
+    // difficulty, on a real patient — the worst-hurt crew member (else
+    // anyone aboard) — starting at their real HP; the result lands on
+    // them (demo contract: perfect +25 HP, good +10, poor keeps the loss).
+    const isMed = choice.launch_minigame === 'medical';
+    const patient = isMed && STATE.crew.length ? (worstHurtCrew() || STATE.crew[Math.floor(Math.random() * STATE.crew.length)]) : null;
+    const mgOpts = Object.assign({}, choice.minigame_opts || {});
+    if (isMed) {
+      if (!mgOpts.difficulty) mgOpts.difficulty = (STATE.currentEvent && STATE.currentEvent.difficulty) || 'medium';
+      if (patient && mgOpts.startingHp == null) mgOpts.startingHp = crewHPOf(patient);
+    }
+    openMinigame(choice.launch_minigame, mgOpts, (tier, mgPayload) => {
       eventMinigameChoice = null;
       const base = choice.outcome || {};
       if (tier === 'abandoned') {
@@ -5438,6 +5458,19 @@ function resolveChoice(choice) {
         narrative: t.narrative || base.narrative,
       });
       applyOutcomeEffects(merged);
+      if (patient && STATE.crew.includes(patient)) {
+        const before = crewHPOf(patient);
+        let after = before;
+        if (tier === 'perfect') after = Math.min(100, before + 25);
+        else if (tier === 'good') after = Math.min(100, before + 10);
+        else if (mgPayload && typeof mgPayload.hp === 'number' && typeof mgPayload.startingHp === 'number') after = Math.max(5, before + (mgPayload.hp - mgPayload.startingHp));
+        after = Math.round(after);
+        if (after !== before) {
+          STATE.crewHP[patient] = after;
+          const d = after - before;
+          merged.narrative = (merged.narrative || '') + '\n\n' + crewNameOf(patient) + ', the worst case: ' + (d > 0 ? '+' : '') + d + ' HP.';
+        }
+      }
       if (choice.launch_minigame === 'breach') pushAiSample('hull_breach');
       renderHUD();
       if (checkFailure()) return;
