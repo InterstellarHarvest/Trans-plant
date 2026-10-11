@@ -96,7 +96,7 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
     await page.waitForTimeout(500);
     t = await ticker(page);
     ok(t && /^STOPPED/.test(t.text) && /event-info/.test(t.cls) && t.color === 'rgb(255, 172, 0)' && t.anim === 'ticker-event-pulse', 'Stop: amber pulsing ' + (t && t.text));
-    const st1 = await page.evaluate(() => ({ dc: getComputedStyle(document.getElementById('day-counter')).opacity, pl: getComputedStyle(document.getElementById('paused-label')).opacity, plText: document.getElementById('paused-label').textContent, plTitle: document.getElementById('paused-label').title, bob: getComputedStyle(document.getElementById('ship-silhouette')).animationPlayState, btn: getComputedStyle(document.getElementById('stop-btn')).animationName, label: document.getElementById('stop-btn').textContent }));
+    const st1 = await page.evaluate(() => ({ dc: getComputedStyle(document.getElementById('day-counter')).opacity, pl: getComputedStyle(document.getElementById('paused-label')).opacity, plText: document.getElementById('paused-label').textContent, plTitle: ((e => e.getAttribute('title') || [e.dataset.tipTitle, e.dataset.tipDescription].filter(Boolean).join('\n\n'))(document.getElementById('paused-label'))), bob: getComputedStyle(document.getElementById('ship-silhouette')).animationPlayState, btn: getComputedStyle(document.getElementById('stop-btn')).animationName, label: document.getElementById('stop-btn').textContent }));
     ok(st1.dc === '0' && st1.pl === '1' && st1.plText === 'TIME PAUSED', 'stopped: TIME PAUSED replaces the day counter');
     ok(/^DAY \d+ · \d+ LEFT$/.test(st1.plTitle), 'TIME PAUSED keeps the date on hover (' + st1.plTitle + ')');
     ok(st1.bob === 'paused', 'stopped: ship-bob halted');
@@ -186,7 +186,7 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
       mature: document.getElementById('crop-card-mini').classList.contains('mature'),
       btn: getComputedStyle(document.getElementById('crop-harvest-btn')).display, btnAnim: getComputedStyle(document.getElementById('crop-harvest-btn')).animationName,
       growing: getComputedStyle(document.getElementById('crop-growing')).display,
-      led: document.getElementById('crop-alert-led').classList.contains('on'), ledTitle: document.getElementById('crop-alert-led').title,
+      led: document.getElementById('crop-alert-led').classList.contains('on'), ledTitle: ((e => e.getAttribute('title') || [e.dataset.tipTitle, e.dataset.tipDescription].filter(Boolean).join('\n\n'))(document.getElementById('crop-alert-led'))),
       ledBg: getComputedStyle(document.getElementById('crop-alert-led')).backgroundColor,
     }));
     const setCrop = async o => { await page.evaluate(o => { tickCropGrowth(); Object.assign(STATE.cropGrowth, { pest: false, health: 80 }, o); setWaterSplit(cropWaterNeed()); renderCruise(); }, o); await page.waitForTimeout(450); }; // colour transitions settle
@@ -543,7 +543,7 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
     await parkAt(page, 'asteroid_field');
     await page.evaluate(() => { MOD.flavor.airlock_epitaphs = ['Last seen drifting. Dr. Vasquez waved. Still drifting, one assumes.']; openCrewDetail('botanist'); });
     await page.waitForTimeout(500);
-    const title = await page.evaluate(() => ({ cost: document.getElementById('cd-active-card').title, trans: getComputedStyle(document.getElementById('cd-modal')).transitionDuration, op: getComputedStyle(document.getElementById('cd-modal')).opacity }));
+    const title = await page.evaluate(() => ({ cost: ((e => e.getAttribute('title') || [e.dataset.tipTitle, e.dataset.tipDescription].filter(Boolean).join('\n\n'))(document.getElementById('cd-active-card'))), trans: getComputedStyle(document.getElementById('cd-modal')).transitionDuration, op: getComputedStyle(document.getElementById('cd-modal')).opacity }));
     ok(/\nCost: none\n/.test(title.cost), 'active card title carries the Cost line');
     ok(/0\.25s/.test(title.trans) && parseFloat(title.op) > 0.98, 'dossier fades/scales in over 0.25s (' + title.trans + ', opacity ' + title.op + ')');
     const closed = await page.evaluate(() => { hideOverlay('overlay-crew'); const m = getComputedStyle(document.getElementById('cd-modal')); const r = { op: m.opacity, pe: m.pointerEvents }; showOverlay('overlay-crew'); return r; });
