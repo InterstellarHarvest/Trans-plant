@@ -2743,7 +2743,7 @@ const ITEM_USE = {
   medkit:         { label: 'HEAL',      can: () => worstHurtCrew() ? null : 'Nobody is hurt',
                     use: () => { const r = worstHurtCrew(); STATE.crewHP[r] = 100; delete crewPendingOf()[r]; return 'Medkit opened. ' + crewNameOf(r) + ' is patched up and back on their feet.'; } },
   crop_treatment: { label: '+30 CROP',  can: () => !STATE.cropGrowth || STATE.cropGrowth.health <= 0 ? 'Nothing left to treat' : (STATE.cropGrowth.health >= 100 && !STATE.cropGrowth.pest ? 'The crop is healthy' : null),
-                    use: () => { const cg = STATE.cropGrowth; cg.health = Math.min(100, cg.health + 30); cg.pest = false; STATE.flags.delete('ai_noted_pest'); return 'Crop treatment applied. +30 crop health; pests cleared.'; } },
+                    use: () => { const cg = STATE.cropGrowth; const had = cg.pest; if (had) clearCropPest(); cg.health = Math.min(100, cg.health + 30); return 'Crop treatment applied. +30 crop health' + (had ? '; pests cleared.' : '.'); } },
   // items.json: "reveals the type of one future node… consumed on use" —
   // a good SCAN's worth: the next stop(s) locked in and reported.
   star_chart_fragment: { label: 'SCOUT', can: () => { const n = STATE.byId && STATE.byId[STATE.currentId]; return n && connectionsOf(n).length ? null : 'Nothing left to chart'; },
@@ -4303,7 +4303,8 @@ function outcomeFacts(o) {
     if (Number.isFinite(q) && q) facts.push({ text: (q > 0 ? '+' : '−') + Math.abs(q) + ' ' + m.toUpperCase(), weight: Math.abs(q) * 2, good: q > 0 });
   }
   if (o.fabricator_repair) facts.push({ text: o.fabricator_repair === 'full' ? 'FAB GOOD AS NEW' : 'FAB REPAIRED', weight: 12, good: true });
-  if (o.clears_pest) facts.push({ text: 'PESTS CLEARED', weight: 10, good: true });
+  // Only a real outbreak is cleared (a clean bay has nothing to show).
+  if (o.clears_pest && STATE.cropGrowth && STATE.cropGrowth.pest) facts.push({ text: 'PESTS CLEARED', weight: 10, good: true });
   if (o.set_orders) facts.push({ text: 'ORDERS CHANGE', weight: 4, good: false });
   if (o.severity && SEVERITY_LABEL[o.severity]) facts.push({ text: SEVERITY_LABEL[o.severity], weight: o.severity === 'lethal' ? 40 : 15, good: false });
   const ce = o.crew_effect;
@@ -4810,6 +4811,10 @@ function applyOutcomeEffects(o) {
   // Crop/system effect fields (additive): clears_pest ends an active
   // pest outbreak; fabricator_repair un-breaks the fabricator and
   // relieves wear (the flip side of fabricator.js's breakFab()).
+  // A pest this outcome clears is cleared FIRST (growbay.js
+  // clearCropPest charges the days it was really there, then opens
+  // soybean's recovery window).
+  if (o.clears_pest && STATE.cropGrowth) clearCropPest();
   // crop_health (additive outcome field): nudges the living crop's
   // health — crisis care choices said the crop recovered but changed
   // nothing. A dead crop stays dead.
@@ -4818,10 +4823,6 @@ function applyOutcomeEffects(o) {
     // on crop recovery (captain botanist half).
     const ch = effectiveCropDelta(o.crop_health);
     STATE.cropGrowth.health = clamp(STATE.cropGrowth.health + ch, 1, 100);
-  }
-  if (o.clears_pest && STATE.cropGrowth) {
-    STATE.cropGrowth.pest = false;
-    STATE.flags.delete('ai_noted_pest');
   }
   if (o.fabricator_repair && STATE.fabricator) {
     STATE.fabricator.broken = false;

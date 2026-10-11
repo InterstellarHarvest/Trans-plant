@@ -285,8 +285,10 @@
     // imperfect care only stalls recovery, never kills.
     const realCrop = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + GSTATE.cropId) || {};
     const daysPassed = Math.max(0, STATE.daysElapsed - (GSTATE.lastTickDay || 0));
+    const firstDay = (GSTATE.lastTickDay || 0) + 1;
     for (let i = 0; i < daysPassed; i++) {
       GSTATE.day++;
+      tickDay = firstDay + i; // the ship day being ticked (soybean recovery window)
       const mods = computeModifiers(); // the same list the panel shows
       if (GSTATE.growth < 100 && GSTATE.health > 0) {
         const dailyRate = (100 / crop.maturity_days) * growthFactor(mods);
@@ -307,8 +309,66 @@
         }
       }
     }
+    tickDay = null;
     GSTATE.lastTickDay = STATE.daysElapsed;
   }
+
+  /* Soybean nitrogen fixing (crops.json strengths.nitrogen_fixing):
+     for contamination_recovery_days days after a pest outbreak is
+     cleared, every daily health recovery (each positive health
+     modifier) runs at contamination_recovery_multiplier. The window is
+     STATE.cropGrowth.recoveryBoostUntil, an absolute ship day: the
+     daily ticks for ship days clearDay+1 … clearDay+N are boosted.
+     null for crops without the strength. */
+  let tickDay = null;   // set only inside bindGrowbayState's catch-up loop
+  function contaminationRecovery(cropId) {
+    const def = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + cropId);
+    const nf = def && def.strengths && def.strengths.nitrogen_fixing;
+    const mult = nf ? Number(nf.contamination_recovery_multiplier) : 0;
+    const days = nf ? Number(nf.contamination_recovery_days) : 0;
+    return mult > 1 && days > 0 ? { mult, days } : null;
+  }
+  window.cropContaminationRecovery = contaminationRecovery;
+  // The boost for the day being ticked (or, outside a tick, the next
+  // day to be ticked): { mult, daysLeft } — daysLeft counts that day.
+  function recoveryBoost() {
+    const cg = GSTATE || STATE.cropGrowth;
+    if (!cg || !cg.recoveryBoostUntil) return null;
+    const day = tickDay != null ? tickDay : STATE.daysElapsed + 1;
+    if (day > cg.recoveryBoostUntil) return null;
+    const cr = contaminationRecovery(cg.cropId || currentCropId());
+    return cr ? { mult: cr.mult, days: cr.days, daysLeft: cg.recoveryBoostUntil - day + 1 } : null;
+  }
+  // Boosted days left right now (0 = no window) — for tests / the hub.
+  window.cropRecoveryBoostDaysLeft = function () {
+    if (!STATE.cropGrowth) return 0;
+    const b = recoveryBoost();
+    return b ? b.daysLeft : 0;
+  };
+  const fmtMult = m => '\u00d7' + (Math.round(m * 10) / 10);
+
+  /* THE pest-clearing path — growbay TREAT, the crop treatment item and
+     an event outcome's clears_pest all come through here. Days the
+     outbreak was really there are charged first (the growbay ticks
+     lazily — an event could otherwise erase the damage of the days
+     since the last tick); then the pest is gone, the AI may warn about
+     the next one, and a soybean crop opens its recovery window. */
+  window.clearCropPest = function () {
+    const cg = STATE.cropGrowth;
+    if (!cg) return false;
+    const had = !!cg.pest;
+    if (had && STATE.crop) bindGrowbayState();
+    cg.pest = false;
+    STATE.flags.delete('ai_noted_pest');
+    const cr = had && cg.health > 0 ? contaminationRecovery(STATE.crop) : null;
+    if (cr) {
+      cg.recoveryBoostUntil = Math.max(cg.recoveryBoostUntil || 0, STATE.daysElapsed + cr.days);
+      if (typeof window.pushCruiseLog === 'function') {
+        window.pushCruiseLog('\u25c6 GROWBAY \u2014 the soybeans fix nitrogen into the cleared beds: health recovery ' + fmtMult(cr.mult) + ' for ' + cr.days + ' days.');
+      }
+    }
+    return had;
+  };
 
   // Previously-observed stage — used to fire stage-transition flash
   // only when the plant actually crosses a boundary, not on every
@@ -363,8 +423,9 @@
       lightDep: (vuln.light_dependency && vuln.light_dependency.damage_multiplier) || 1.0, // soybean
       light: ((realCrop.resource_consumption_per_leg || {}).light) || 'standard',
       tol: vuln.temperature_tolerance || 'moderate',
-      // wheat: "recovers health faster once conditions stabilize"
-      fastRecovery: /recovers health faster/i.test(strong.description || '') ? 2 : 1,
+      // wheat: recovery from good watering ×healthy_recovery_multiplier
+      // while at/above healthy_threshold
+      fastRecovery: Number(strong.healthy_recovery_multiplier) > 0 ? Number(strong.healthy_recovery_multiplier) : 1,
       healthy: realCrop.healthy_threshold || 65,
     };
   }
@@ -451,6 +512,25 @@
     if (GSTATE.pest) {
       add('critical', 'Pest outbreak', -15, -1.5 * v.dmg * v.blight);
       promoted.add('pests');
+    }
+
+    // SOYBEAN NITROGEN FIXING — inside the window after a pest is
+    // cleared, every recovery above (positive health) counts again
+    // (mult − 1) times. Shown for the whole window, even on a day with
+    // nothing to recover.
+    const boost = recoveryBoost();
+    if (boost) {
+      const recovery = active.reduce((s, m) => s + (m.health > 0 ? m.health : 0), 0);
+      const extra = recovery * (boost.mult - 1);
+      active.push({
+        kind: 'positive', boost: true,
+        name: 'Nitrogen fix ' + fmtMult(boost.mult) + ' \u00b7 ' + boost.daysLeft + 'd',
+        growth: 0, health: extra,
+        delta: extra > 0 ? modDelta(0, extra) : 'nothing to recover',
+        tip: 'Soybeans fix nitrogen into the beds a pest outbreak left behind: for ' + boost.days +
+             ' days after an outbreak is cleared, health recovery runs ' + fmtMult(boost.mult) + '. ' +
+             boost.daysLeft + (boost.daysLeft === 1 ? ' day' : ' days') + ' left.'
+      });
     }
 
     // MONITORED = canonical threats NOT currently firing.
@@ -1096,7 +1176,8 @@
     monEl.innerHTML = '';
     for (const m of active) {
       const row = document.createElement('div');
-      row.className = 'gb-mod-row ' + m.kind;
+      row.className = 'gb-mod-row ' + m.kind + (m.boost ? ' boost' : '');
+      if (m.tip) row.title = m.tip;
       row.innerHTML = '<span class="mod-name">' + m.name + '</span>' +
                       '<span class="mod-delta">' + m.delta + '</span>';
       activeEl.appendChild(row);
@@ -1246,8 +1327,7 @@
       $('aria-text').textContent = say.nothing;
       return;
     }
-    GSTATE.pest = false;
-    STATE.flags.delete('ai_noted_pest');
+    clearCropPest();
     // Botanist passive saves the day; a wounded botanist's halved
     // passive saves it half the time.
     const hasBotanist = Math.random() < passiveMult('botanist');
@@ -1274,9 +1354,16 @@
     wheat:        'The safe grain. Predictable yield, predictable risks.',
     tomato:       'High morale payload, finicky environment. Drama-prone.',
     sweet_potato: 'Joint-biggest yield per cycle (with tomatoes). Slow grower, drought-tolerant.',
-    soybean:      'Fixes its own nitrogen. Shrugs off contamination better than most.',
+    soybean:      'Fixes its own nitrogen. Shrugs off pests better than most.',
     zinnia:       'No food value; crew mood payload. Fastest cycle.'
   };
+
+  // The note plus any crops.json strength with numbers (soybean's
+  // recovery window), so the copy can't drift from the rule.
+  function cropNote(id) {
+    const cr = contaminationRecovery(id);
+    return (CROP_NOTES[id] || '') + (cr ? ' Once a pest outbreak is cleared, its health recovers ' + fmtMult(cr.mult) + ' for ' + cr.days + ' days.' : '');
+  }
 
   // Per-threat copy. Keys match the `name` field produced by
   // computeModifiers().active for negative/critical entries.
@@ -1471,6 +1558,7 @@
     const stageMax = stages[curIdx].max;
     const stagePct = Math.round((GSTATE.growth - stageMin) / (stageMax - stageMin) * 100);
     const overdue = GSTATE.day > crop.maturity_days && GSTATE.growth < 100;
+    const boost = recoveryBoost();
 
     const vital = (key, val, cls) =>
       '<div class="ins-vital">' +
@@ -1485,6 +1573,7 @@
           vital('Stage', '<span class="ins-v-marker">▸</span>' + ihEsc(stages[curIdx].name) + ' <span class="ins-v-sub">(' + stagePct + '% through)</span>') +
           vital('Growth', Math.round(GSTATE.growth) + '%') +
           vital('Health', Math.round(GSTATE.health) + '%') +
+          (boost ? vital('Recovery', fmtMult(boost.mult) + ' <span class="ins-v-sub">(nitrogen fix, ' + boost.daysLeft + 'd left)</span>') : '') +
           vital('Rate', curRate.toFixed(2) + '%/day' + (curRate <= 0.01 ? ' <span class="ins-v-sub">(stalled)</span>' : '')) +
           vital('Day', GSTATE.day + ' / ' + crop.maturity_days, overdue ? 'overdue' : '') +
           vital('Ready on',
@@ -1502,7 +1591,7 @@
       '<div class="ins-section">' +
         '<div class="ins-section-title">SPECIES — ' + ihEsc(crop.name.toUpperCase()) + '</div>' +
         '<div class="ins-blurb">' + ihEsc(crop.blurb) + '</div>' +
-        (CROP_NOTES[GSTATE.cropId] ? '<div class="ins-notes">' + ihEsc(CROP_NOTES[GSTATE.cropId]) + '</div>' : '') +
+        (cropNote(GSTATE.cropId) ? '<div class="ins-notes">' + ihEsc(cropNote(GSTATE.cropId)) + '</div>' : '') +
         '<div class="ins-row"><span class="ins-key">Maturity</span><span class="ins-val">' + crop.maturity_days + ' days</span></div>' +
         '<div class="ins-row"><span class="ins-key">Water need</span><span class="ins-val">' + waterNeed() + '%</span></div>' +
         '<div class="ins-row"><span class="ins-key">Ideal temp</span><span class="ins-val">' + tMin + '–' + tMax + '°C</span></div>' +
