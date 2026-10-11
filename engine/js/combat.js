@@ -74,6 +74,15 @@
   function saveFightPoint() {
     if (typeof writeSnapshot === 'function' && !STATE.ended) writeSnapshot(undefined, { pendingCombat: { hull: COMBAT.player.hull } });
   }
+  // The pirate's own voice (flavor_pools npc_disposition_lines.pirate,
+  // species-coloured by index.html interpolateNpcTokens): their answer
+  // when you open fire instead of paying, and their line when they give up.
+  function pirateSays(slot) {
+    const npc = STATE.npcCtx;
+    if (!npc || npc.disposition !== 'pirate' || typeof interpolateNpcTokens !== 'function') return '';
+    const line = interpolateNpcTokens('{npc.line.' + slot + '}', npc);
+    return line && !/\{npc\./.test(line) ? '“' + line + '” ' : '';
+  }
   function combatLine(slot) {
     const pools = MOD.flavor && MOD.flavor.combat_log && MOD.flavor.combat_log[slot];
     const pool = pools && pools[COMBAT.ai];
@@ -856,7 +865,7 @@
         COMBAT.state = 'SURRENDER_DECISION';
         fxScreen().classList.remove('combat-ftl-charging');
         setAiCombat(combatLine('enemy_surrenders'));
-        setNarrCombat('SURRENDER OFFERED', combatLine('enemy_surrenders'), 'Their fire ceases. They wait.');
+        setNarrCombat('SURRENDER OFFERED', combatLine('enemy_surrenders'), pirateSays('defeated') + 'Their fire ceases. They wait.');
         showYourTurn();
         renderCombatActions();
         return;
@@ -1465,7 +1474,7 @@
     if (ramFailed) {
       setNarrCombat('RAM FAILED — COMBAT', `Your bow glanced off their armor. The pirates wheel back, weapons hot. Hull -${ramHull}.`);
     } else {
-      setNarrCombat('COMBAT LOG', combatLine('intro'));
+      setNarrCombat('COMBAT LOG', combatLine('intro'), pirateSays('refuse').trim() || undefined);
     }
     setAiCombat(combatLine('intro'));
 

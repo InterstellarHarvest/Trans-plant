@@ -89,7 +89,7 @@
   font-family: 'VT323', monospace; font-size: var(--ai-size); letter-spacing: 0.5px;
   display: flex; gap: 8px; align-items: baseline; z-index: 30;
 }
-#engrepair-root .enc-ai-name { font-family: 'Press Start 2P', cursive; font-size: 8px; letter-spacing: 2px; color: var(--ai-name-color); flex-shrink: 0; }
+#engrepair-root .enc-ai-name { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 8px; letter-spacing: 2px; color: var(--ai-name-color); flex-shrink: 0; }
 #engrepair-root .enc-ai-text { color: var(--ai-text-color); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* narrative — pip row prepended inside the border */
@@ -111,11 +111,11 @@
   image-rendering: pixelated; animation: er-blk-blink 0.72s step-end infinite;
 }
 #engrepair-root .pip.ok .pip-dot { background: var(--fixed-color); animation: none; box-shadow: 0 0 5px rgba(53,198,191,0.6); }
-#engrepair-root .pip-name { font-family: 'Press Start 2P', monospace; font-size: var(--pip-name-size); color: #8898a8; white-space: nowrap; }
+#engrepair-root .pip-name { font-family: 'Press Start 2P', monospace; line-height: 1; font-size: var(--pip-name-size); color: #8898a8; white-space: nowrap; }
 #engrepair-root .pip-state { color: var(--fault-color); font-size: var(--pip-state-size); }
 #engrepair-root .pip.ok .pip-state { color: var(--fixed-color); }
 #engrepair-root #er-narr-text { padding: 10px 16px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
-#engrepair-root .enc-narr-title { font-family: 'Press Start 2P', cursive; font-size: var(--title-size); letter-spacing: 2px; color: var(--gold); text-shadow: 0 0 6px rgba(200,168,90,0.3); }
+#engrepair-root .enc-narr-title { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: var(--title-size); letter-spacing: 2px; color: var(--gold); text-shadow: 0 0 6px rgba(200,168,90,0.3); }
 #engrepair-root .enc-narr-body { font-family: 'VT323', monospace; font-size: var(--body-size); line-height: 1.25; letter-spacing: 0.5px; color: var(--cream); }
 
 /* fault sprites — full-frame transparent PNGs, one per fault component */
@@ -162,7 +162,7 @@
 #engrepair-root .hotspot.fixed .hs-tl, #engrepair-root .hotspot.fixed .hs-tr,
 #engrepair-root .hotspot.fixed .hs-bl, #engrepair-root .hotspot.fixed .hs-br { border-color: var(--fixed-color); animation: none; opacity: 1; box-shadow: 0 0 4px rgba(53,198,191,0.5); }
 #engrepair-root .hs-inner { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
-#engrepair-root .hs-lbl { font-family: 'Press Start 2P', monospace; font-size: var(--hs-lbl-size); color: var(--fault-color); white-space: nowrap; text-shadow: 0 0 8px #000, 0 1px 3px #000; animation: er-brk-blink 1.1s step-end infinite; }
+#engrepair-root .hs-lbl { font-family: 'Press Start 2P', monospace; line-height: 1; font-size: var(--hs-lbl-size); color: var(--fault-color); white-space: nowrap; text-shadow: 0 0 8px #000, 0 1px 3px #000; animation: er-brk-blink 1.1s step-end infinite; }
 #engrepair-root .hotspot.fixed .hs-lbl { color: var(--fixed-color); animation: none; }
 #engrepair-root .hs-state { font-size: var(--hs-state-size); color: #ff8888; text-shadow: 0 0 8px #000, 0 1px 3px #000; }
 #engrepair-root .hotspot.fixed .hs-state { color: var(--fixed-color); }
@@ -177,7 +177,7 @@
 #engrepair-root #er-comp-box { width: 460px; background: linear-gradient(180deg, #131a27, #09100e); border: 2px solid #e88830; border-radius: 4px; overflow: hidden; box-shadow: 0 0 0 1px rgba(232,136,48,0.1), 0 0 50px rgba(0,0,0,0.95), 0 0 28px rgba(232,136,48,0.12); transform: scale(0.96); transition: transform 0.2s; }
 #engrepair-root #er-comp-panel.open #er-comp-box { transform: scale(1); }
 #engrepair-root #er-comp-hdr { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 14px; background: rgba(232,136,48,0.08); border-bottom: 1px solid rgba(232,136,48,0.22); }
-#engrepair-root #er-comp-title { font-family: 'Press Start 2P', monospace; font-size: 8px; color: #e88830; letter-spacing: 1px; }
+#engrepair-root #er-comp-title { font-family: 'Press Start 2P', monospace; line-height: 1; font-size: 8px; color: #e88830; letter-spacing: 1px; }
 #engrepair-root #er-comp-status { font-size: 13px; color: #5a7a6a; margin-top: 2px; }
 #engrepair-root #er-comp-close { background: none; border: 1px solid rgba(204,51,51,0.4); color: #cc3333; font-family: 'VT323', monospace; font-size: 14px; padding: 3px 9px; cursor: var(--cursor-hand, pointer); border-radius: 2px; transition: background 0.15s; }
 #engrepair-root #er-comp-close:hover { background: rgba(204,51,51,0.15); }
@@ -209,16 +209,16 @@
 #engrepair-root .breaker { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: var(--cursor-hand, pointer); }
 #engrepair-root .breaker.br-fixed { cursor: var(--cursor-pointer, default); }
 #engrepair-root .br-sprite { width: 90px; height: 142px; image-rendering: pixelated; user-select: none; }
-#engrepair-root .br-label { font-family: 'Press Start 2P', monospace; font-size: 5px; color: #5a7a6a; letter-spacing: 0.5px; }
+#engrepair-root .br-label { font-family: 'Press Start 2P', monospace; line-height: 1; font-size: 5px; color: #5a7a6a; letter-spacing: 0.5px; }
 #engrepair-root .sw-ref-box { background: rgba(200,168,90,0.06); border: 1px solid rgba(200,168,90,0.2); border-radius: 2px; padding: 7px 12px; margin-bottom: 10px; }
-#engrepair-root .sw-ref-label { font-family: 'Press Start 2P', monospace; font-size: 7px; color: #c8a85a; margin-bottom: 7px; letter-spacing: 1px; }
+#engrepair-root .sw-ref-label { font-family: 'Press Start 2P', monospace; line-height: 1; font-size: 7px; color: #c8a85a; margin-bottom: 7px; letter-spacing: 1px; }
 #engrepair-root .sw-row { display: flex; gap: 10px; justify-content: center; }
 #engrepair-root .sw-toggle { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: var(--cursor-hand, pointer); }
 #engrepair-root .sw-toggle.ref-item { cursor: var(--cursor-pointer, default); }
 #engrepair-root .sw-sprite { width: 50px; height: 135px; image-rendering: pixelated; user-select: none; }
-#engrepair-root .sw-lbl { font-family: 'Press Start 2P', monospace; font-size: 8px; color: #8a9aa8; letter-spacing: 0.5px; }
+#engrepair-root .sw-lbl { font-family: 'Press Start 2P', monospace; line-height: 1; font-size: 8px; color: #8a9aa8; letter-spacing: 0.5px; }
 #engrepair-root .gauge-section { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
-#engrepair-root .gauge-nom-msg { font-family: 'Press Start 2P', monospace; font-size: 6px; letter-spacing: 1px; color: #8cc890; opacity: 0; transition: opacity 0.3s; min-height: 14px; }
+#engrepair-root .gauge-nom-msg { font-family: 'Press Start 2P', monospace; line-height: 1; font-size: 6px; letter-spacing: 1px; color: #8cc890; opacity: 0; transition: opacity 0.3s; min-height: 14px; }
 #engrepair-root .gauge-nom-msg.show { opacity: 1; }
 /* valve button: 110×108 sprite; steam canvas centered on it so side jets
    can emerge from L/R edges. */
@@ -232,4 +232,4 @@
 #engrepair-root .jn-sprite { width: 120px; height: 96px; image-rendering: pixelated; user-select: none; animation: er-jn-blink 0.9s step-end infinite; }
 #engrepair-root .jnode.jn-fixed .jn-sprite { animation: none; }
 @keyframes er-jn-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
-#engrepair-root .jn-lbl { font-family: 'Press Start 2P', monospace; font-size: 9px; color: #8a9aa8; letter-spacing: 1px; }
+#engrepair-root .jn-lbl { font-family: 'Press Start 2P', monospace; line-height: 1; font-size: 9px; color: #8a9aa8; letter-spacing: 1px; }

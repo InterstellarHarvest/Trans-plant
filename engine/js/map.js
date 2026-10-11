@@ -133,8 +133,13 @@ function generateMap(trailKey) {
     const isEdge = (i === 0 || i === spineLen - 1);
     const t = spineLen <= 1 ? 0 : i / (spineLen - 1);
     const weights = interpWeights(rules.node_weights_start, rules.node_weights, t);
-    const nextForced = (i === spineLen - 2) ? 'station' : null; // avoid colliding with the forced-station final node
-    const type = isEdge ? 'station' : pickSpineType(weights, prevType, i, nextForced);
+    // map_rules final_node_rule: the last stop before the destination is a
+    // station (arriving at the destination ends the run at once — it used
+    // to be the only station-typed node there, and the stop before it was
+    // barred from being one). The stop before that can't repeat it.
+    const lastStop = spineLen >= 3 && i === spineLen - 2;
+    const nextForced = (i === spineLen - 3) ? 'station' : null;
+    const type = (isEdge || lastStop) ? 'station' : pickSpineType(weights, prevType, i, nextForced);
     prevType = type;
     spine.push(add({
       id: 'node_spine_' + i,
@@ -143,6 +148,21 @@ function generateMap(trailKey) {
       description: TYPE_DESCS[type] || '',
       node_type: type, position: i, connects_to: [], event_id: null,
     }));
+  }
+
+  // map_rules station_guarantee: at least one station in the first third
+  // of the route (the origin doesn't count — you leave it). Converts a
+  // stop whose neighbours aren't stations, so no-repeat still holds.
+  const third = Math.max(2, Math.floor((spineLen - 1) / 3));
+  if (!spine.slice(1, third + 1).some(n => n.node_type === 'station')) {
+    const cands = [];
+    for (let i = 2; i <= third && i < spineLen - 2; i++) {
+      if (spine[i - 1].node_type !== 'station' && spine[i + 1].node_type !== 'station') cands.push(i);
+    }
+    if (cands.length) {
+      const i = cands[Math.floor(Math.random() * cands.length)];
+      Object.assign(spine[i], { node_type: 'station', name: nodeName('station', i, rules), short: TYPE_LABELS.station + ' ' + i, description: TYPE_DESCS.station });
+    }
   }
 
   // Pick which spine gaps (between spine[i] and spine[i+1]) get a fork.

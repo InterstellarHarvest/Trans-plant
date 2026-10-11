@@ -314,7 +314,8 @@
   };
   window.onJobBegun = function (days) {
     pendingVerbTax = 0;
-    if (activeVerb && !STATE.currentEvent && typeof writeSnapshot === 'function') writeSnapshot(undefined, { pendingAbandon: { verb: activeVerb, days: days || 1 } });
+    if (STATE.currentEvent) { if (typeof window.eventMinigameBegun === 'function') window.eventMinigameBegun(); return; }
+    if (activeVerb && typeof writeSnapshot === 'function') writeSnapshot(undefined, { pendingAbandon: { verb: activeVerb, days: days || 1 } });
   };
   function settleMinigame(logLine, days) {
     pendingVerbTax = 0; activeVerb = null;
