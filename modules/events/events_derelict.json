@@ -505,5 +505,252 @@
       "label": "Veggie: growing food on the ISS",
       "url": "https://en.wikipedia.org/wiki/Vegetable_Production_System"
     }
+  },
+  {
+    "id": "event_derelict_005",
+    "active": true,
+    "title": "A Pulse",
+    "difficulty": "medium",
+    "tone": [
+      "heartwarming",
+      "grim"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "comm_mode": "in_person",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "drifter",
+      "species": null,
+      "displayName": "SURVIVOR"
+    },
+    "leave_label": "LEAVE THEM",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "A PULSE",
+        "body": "In the wreck's last operating compartment — one person. Hooked to a battery that's been rationing itself for three weeks. Eyes open when you knock.",
+        "pose": "listening",
+        "bg": "ship_interior/derelict",
+        "ai": {
+          "aria": "Alive! How wonderful!",
+          "marv": "Vitals: poor but stable. Psychological profile: three-week solo. Expect confusion.",
+          "rex": "Unarmed. Don't startle them.",
+          "chip": "Rescue services are unbilled at point of rescue. Billing follows.",
+          "ajoy": "Ask their name first. Not their story."
+        },
+        "choices": [
+          {
+            "text": "\"What's your name?\"",
+            "dialog": true,
+            "hint": true,
+            "sub": "Ajoy · name first",
+            "next": "name"
+          },
+          {
+            "text": "TRIAGE",
+            "gate": {
+              "crew": "medic"
+            },
+            "effort": 2,
+            "sub": "Medic stabilizes",
+            "next": "triage"
+          },
+          {
+            "text": "OFFER WATER",
+            "dialog": true,
+            "sub": "Immediate comfort",
+            "next": "triage"
+          },
+          {
+            "text": "ASK WHAT HAPPENED",
+            "dialog": true,
+            "risky": true,
+            "sub": "Straight to story",
+            "next": "story"
+          }
+        ]
+      },
+      "name": {
+        "title": "A NAME",
+        "body": "A long pause. She says it like someone trying a word out in a new language.",
+        "line": "Mira. Mira Kastel. My ship was called the Bluejay.",
+        "pose": "listening",
+        "bg": "ship_interior/derelict",
+        "ai": {
+          "aria": "A name is a gift!",
+          "marv": "Mira Kastel. Registered crew of the Bluejay, missing 41 days. Family contactable.",
+          "rex": "Civilian. Friendly.",
+          "chip": "Reunification services are a paid add-on in this sector.",
+          "ajoy": "Tell her yours. That's the trade."
+        },
+        "choices": [
+          {
+            "text": "TELL HER YOUR NAMES",
+            "dialog": true,
+            "hint": true,
+            "sub": "Ajoy · the trade",
+            "next": "triage"
+          },
+          {
+            "text": "TAKE HER ABOARD",
+            "sub": "Rescue · costs O2",
+            "outcome": "surv_rescue"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      },
+      "triage": {
+        "title": "STABLE",
+        "body": "She drinks. She blinks. Color returns. Her hands are still wrapped around the cup two minutes later.",
+        "line": "I'm okay. I think I'm okay.",
+        "pose": "pleased",
+        "bg": "ship_interior/derelict",
+        "ai": {
+          "aria": "Recovery!",
+          "marv": "Vitals improving. Safe to transport.",
+          "rex": "Good work.",
+          "chip": "Medical services rendered. Itemized invoice available.",
+          "ajoy": "Ask about the Bluejay's last course. Useful."
+        },
+        "choices": [
+          {
+            "text": "TAKE HER ABOARD",
+            "sub": "Rescue · costs O2",
+            "outcome": "surv_rescue"
+          },
+          {
+            "text": "\"What was the Bluejay's heading?\"",
+            "dialog": true,
+            "hint": true,
+            "sub": "Ajoy · intel",
+            "next": "story"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      },
+      "story": {
+        "title": "HER STORY",
+        "body": "She doesn't cry. It's been weeks.",
+        "line": "We were running cargo — unlicensed, don't ask. Something came out of the nebula. I was in the back. When I came forward, I was alone.",
+        "pose": "listening",
+        "bg": "ship_interior/derelict",
+        "ai": {
+          "aria": "A brave woman!",
+          "marv": "Her account matches a wildcat freighter distress, 41 days ago. No one claimed it.",
+          "rex": "Believe her.",
+          "chip": "Unlicensed cargo disclosures may trigger manifest audits.",
+          "ajoy": "The 'something from the nebula' is your next problem. Take the data."
+        },
+        "choices": [
+          {
+            "text": "COPY HER FLIGHT RECORDER",
+            "gate": {
+              "item": "gas_analyzer"
+            },
+            "sub": "Analyzer pulls the logs",
+            "outcome": "surv_logs"
+          },
+          {
+            "text": "TAKE HER ABOARD",
+            "sub": "Rescue · costs O2",
+            "outcome": "surv_rescue"
+          },
+          {
+            "text": "LEAVE HER WITH SUPPLIES",
+            "risky": true,
+            "sub": "Can't afford the O2",
+            "outcome": "surv_leave"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "surv_rescue": {
+        "title": "ABOARD",
+        "tone": "success",
+        "body": "She steps onto your ship, looks at your crew — her voice will be better by next week. O2 reserves dip.",
+        "line": "Thank you.",
+        "scene_bg": "our_ship/medbay",
+        "resources": {
+          "o2": -8
+        },
+        "crew_join": {
+          "id": "survivor_mira",
+          "name": "Mira Kastel",
+          "story": "Crew of the Bluejay, a wildcat freighter running unlicensed cargo. Something came out of the nebula; when she came forward from the hold, she was alone. She kept the last working compartment alive on a rationed battery for three weeks, and she still knows that freighter's engines better than its owners did.",
+          "join_role": "engineer",
+          "join_note": "Three weeks keeping a dead freighter's last battery alive. Knows engines from the inside.",
+          "hp": 50,
+          "passenger": {
+            "reward": {
+              "gold": 20,
+              "morale": 4
+            },
+            "farewell": "{name} steps off at {station}. Her family's reunification transfer clears before she's out of sight of the airlock"
+          }
+        },
+        "sets_flag": "rescued_mira",
+        "time_cost": "trivial"
+      },
+      "surv_logs": {
+        "title": "LOGS PULLED",
+        "body": "Her flight recorder is a horror novel. You file it in your private drive and walk her to your airlock. Someone, somewhere, will pay a lot for what's in it. O2 reserves dip.",
+        "line": "Thank you.",
+        "scene_bg": "our_ship/medbay",
+        "resources": {
+          "o2": -8
+        },
+        "item_grant": "logbook_fragment",
+        "crew_join": {
+          "id": "survivor_mira",
+          "name": "Mira Kastel",
+          "story": "Crew of the Bluejay, a wildcat freighter running unlicensed cargo. Something came out of the nebula; when she came forward from the hold, she was alone. She kept the last working compartment alive on a rationed battery for three weeks, and she still knows that freighter's engines better than its owners did.",
+          "join_role": "engineer",
+          "join_note": "Three weeks keeping a dead freighter's last battery alive. Knows engines from the inside.",
+          "hp": 50,
+          "passenger": {
+            "reward": {
+              "gold": 20,
+              "morale": 4
+            },
+            "farewell": "{name} steps off at {station}. Her family's reunification transfer clears before she's out of sight of the airlock"
+          }
+        },
+        "sets_flag": "rescued_mira",
+        "time_cost": "trivial"
+      },
+      "surv_leave": {
+        "title": "LEFT",
+        "tone": "danger",
+        "body": "You leave her with supplies and a promise to send rescue coords at the next station. You'll keep it. Probably.",
+        "scene_bg": "ship_interior/derelict",
+        "resources": {
+          "food": -4,
+          "water": -4
+        },
+        "sets_flag": "promised_mira",
+        "time_cost": "trivial"
+      }
+    }
   }
 ]

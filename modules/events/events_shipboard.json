@@ -1449,5 +1449,206 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_shipboard_017",
+    "active": true,
+    "title": "A Word, Captain",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any",
+      "low_morale"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "comm_mode": "in_person",
+    "bg": "our_ship/medbay",
+    "crew_speaker": [
+      "medic",
+      "any"
+    ],
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "leave_label": "NOT NOW",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "A WORD, CAPTAIN",
+        "body": "Your medic closes the medbay door behind you.",
+        "body_by_speaker": {
+          "medic": "Your medic closes the medbay door behind you.",
+          "any": "{speaker.name} closes the medbay door behind you. On a ship this size the med locker goes to whoever will keep it. {speaker.name} kept it."
+        },
+        "line": "The morale meds are half what they should be. I've been cutting doses. I didn't tell you. I'm telling you now.",
+        "pose": "listening",
+        "ai": {
+          "aria": "Honesty! Wonderful!",
+          "marv": "Morale meds at 48%. Cut-dose protocol is sustainable for 12 more days.",
+          "rex": "Personnel matter. Not my lane.",
+          "chip": "Crew mental health surcharges apply in all cargo tiers.",
+          "ajoy": "They're asking permission, not forgiveness. Rare crew."
+        },
+        "choices": [
+          {
+            "text": "\"Keep cutting.\"",
+            "dialog": true,
+            "sub": "Ration to last",
+            "outcome": "crew_ration"
+          },
+          {
+            "text": "\"Full dose. We'll find more.\"",
+            "dialog": true,
+            "risky": true,
+            "gate": {
+              "item": "medkit"
+            },
+            "sub": "Trust the supply chain",
+            "outcome": "crew_full"
+          },
+          {
+            "text": "\"Who's worst off?\"",
+            "dialog": true,
+            "hint": true,
+            "sub": "Triage first",
+            "next": "triage"
+          },
+          {
+            "text": "\"Why tell me now?\"",
+            "dialog": true,
+            "sub": "Ask the real question",
+            "next": "why"
+          }
+        ]
+      },
+      "triage": {
+        "title": "THE LIST",
+        "body": "{speaker.name} hands you a small screen. A short list of names. Most of them you guessed. The last one surprises you.",
+        "line": "They haven't said anything. They wouldn't.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A caring captain!",
+          "marv": "The quiet one is the highest risk. Statistically.",
+          "rex": "Watch the quiet one.",
+          "chip": "Crew retention programs are a Silver-tier feature.",
+          "ajoy": "Priority dose to the quiet one. Say nothing."
+        },
+        "choices": [
+          {
+            "text": "FULL DOSE, WHOLE LIST",
+            "gate": {
+              "item": "medkit"
+            },
+            "sub": "Burn through the supply",
+            "outcome": "crew_triage_all"
+          },
+          {
+            "text": "PRIORITY DOSE, QUIET ONE",
+            "hint": true,
+            "sub": "Ajoy · stealth",
+            "outcome": "crew_quiet"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      },
+      "why": {
+        "title": "BECAUSE",
+        "body": "{speaker.name} exhales.",
+        "line": "Because if I keep hiding it and someone breaks, that's on me. It should be on both of us. Or just you. You're the captain.",
+        "pose": "listening",
+        "ai": {
+          "aria": "What integrity!",
+          "marv": "Recording this conversation for the log. Recommended.",
+          "rex": "Good crew.",
+          "chip": "Confidentiality waivers can be filed at your leisure.",
+          "ajoy": "Say something you mean. Not the captain answer."
+        },
+        "choices": [
+          {
+            "text": "\"Thank you for telling me.\"",
+            "dialog": true,
+            "sub": "Plain honesty",
+            "outcome": "crew_thanks"
+          },
+          {
+            "text": "\"We share it. Always.\"",
+            "dialog": true,
+            "hint": true,
+            "sub": "Ajoy · real answer",
+            "outcome": "crew_share"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "crew_ration": {
+        "title": "CUT DOSE",
+        "body": "The meds stretch. The crew grumbles but holds. You buy time. Time has a cost.",
+        "resources": {
+          "morale": -2
+        },
+        "time_cost": "trivial"
+      },
+      "crew_full": {
+        "title": "FULL DOSE",
+        "body": "The crew's mood lifts. The medbay empties. The supply will not last to the next station unless something falls into your lap.",
+        "resources": {
+          "morale": 6
+        },
+        "item_consume": "medkit",
+        "time_cost": "trivial"
+      },
+      "crew_triage_all": {
+        "title": "THE WHOLE LIST",
+        "body": "{speaker.name} dispenses quietly. Everyone on the list sleeps better tonight. The meds deplete faster than the math suggested.",
+        "resources": {
+          "morale": 8
+        },
+        "item_consume": "medkit",
+        "time_cost": "trivial"
+      },
+      "crew_quiet": {
+        "title": "QUIETLY DONE",
+        "body": "{speaker.name} nods. The dose goes out without ceremony. The quiet one shows up to breakfast, says nothing, eats everything.",
+        "resources": {
+          "morale": 4
+        },
+        "time_cost": "trivial"
+      },
+      "crew_thanks": {
+        "title": "NODDED",
+        "tone": "success",
+        "body": "{speaker.name} nods once, sharply, and goes back to work. The medbay door closes. Something good happened here.",
+        "resources": {
+          "morale": 2
+        },
+        "time_cost": "trivial"
+      },
+      "crew_share": {
+        "title": "SHARED",
+        "tone": "success",
+        "body": "{speaker.name} exhales. You leave the medbay knowing one more thing about how your ship actually works.",
+        "line": "Good.",
+        "resources": {
+          "morale": 3
+        },
+        "time_cost": "trivial"
+      }
+    }
   }
 ]

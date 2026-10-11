@@ -1851,6 +1851,7 @@ const SAVED_FIELDS = [
   'crisisPatient', 'scanIntelEvent', // an event saved at its entry comes back with its patient / SCAN intel
   'itemValues', // trade goods: each copy's value, rolled at pickup
   'artSeed', // scene_art.js picks backdrop + NPC-face variants from it: a reload shows the same images
+  'passengers', // scenes B: rescued survivors riding to the next station
   'traderAt', 'forcedEvent', // cruise.js: the trader-presence roll per stop; a during-wait event waiting on the player (a reload can't dodge either)
 ];
 function saveRun(key) {
@@ -1922,7 +1923,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null }; // traderAt/forcedEvent: cruise.js
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, passengers: () => [] }; // traderAt/forcedEvent: cruise.js; passengers: scenes B
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2005,7 +2006,7 @@ function loadRun(key) {
   // Saved in an event: back into that same event (same NPC, same variant,
   // same layer — they're in the snapshot).
   const pe = snap.pendingEvent && EVENTS[snap.pendingEvent];
-  if (pe && STATE.byId[STATE.currentId]) enterEvent(STATE.byId[STATE.currentId], pe, { variantIndex: snap.pendingVariant, layerStack: snap.pendingLayers, layerVisits: snap.pendingVisits });
+  if (pe && STATE.byId[STATE.currentId]) enterEvent(STATE.byId[STATE.currentId], pe, { variantIndex: snap.pendingVariant, layerStack: snap.pendingLayers, layerVisits: snap.pendingVisits, speaker: snap.pendingSpeaker });
   return true;
 }
 
@@ -2143,6 +2144,7 @@ function applySetupToState(sel) {
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0;
   STATE.traderAt = {}; STATE.forcedEvent = null; // cruise.js: trader-presence rolls, during-wait event
+  STATE.passengers = []; STATE.eventSpeaker = null; STATE.joinNote = null; // scenes B
   STATE.flagFirstSeen = {}; STATE.calledBack = []; STATE.lastCallbackLeg = null;
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
@@ -2452,6 +2454,60 @@ function crewSpriteIdOf(role) {
   return crewIdentityOf(role) ? null : (CREWID_OF_ROLE[role] || null);
 }
 
+/* One way aboard for a named newcomer (scenes B, 2026-10-11): a welcomed
+   stowaway and a rescued survivor (outcome crew_join) both come through
+   here. An identity with a join_role takes that role when the crew has
+   room (max 2 chosen crew) and nobody holds it — real crew: HP, skill
+   charges, their own name and story (STATE.crewIdentity). Returns the
+   role taken, or null (no room / no role → the caller's passenger path). */
+function crewJoinRole(idn) {
+  return (idn && idn.join_role && STATE.crew.length < 2 && !STATE.crew.includes(idn.join_role)) ? idn.join_role : null;
+}
+function joinAsCrew(idn, hp) {
+  const role = crewJoinRole(idn);
+  if (!role) return null;
+  STATE.crew.push(role);
+  STATE.crewHP[role] = Number.isFinite(hp) ? hp : 100;
+  if (!STATE.crewIdentity) STATE.crewIdentity = {};
+  STATE.crewIdentity[role] = { id: idn.id, name: idn.name, story: idn.story, origin: idn.origin || 'stowaway' };
+  ensureCrewSkillCharges(); // a full crew member gets their skill charges too
+  return role;
+}
+
+/* Passengers (crew_join with no room aboard): ride to the next station,
+   eat like anyone else (mouthsMult), and step off there — the rescued
+   survivor's family pays the reunification reward (crew_join.passenger). */
+function disembarkPassengers(node) {
+  const list = STATE.passengers || [];
+  if (!list.length) return;
+  STATE.passengers = [];
+  for (const p of list) {
+    const r = p.reward || {};
+    if (Number.isFinite(r.gold)) STATE.goldAmount = Math.max(0, STATE.goldAmount + r.gold);
+    if (Number.isFinite(r.morale)) STATE.resources.morale = clamp(STATE.resources.morale + r.morale, 0, 100);
+    const paid = [Number.isFinite(r.gold) && r.gold ? '+' + r.gold + ' gold' : null, Number.isFinite(r.morale) && r.morale ? '+' + r.morale + ' morale' : null].filter(Boolean).join(', ');
+    if (typeof window.pushCruiseLog === 'function') {
+      window.pushCruiseLog('◆ ' + String(p.farewell || '{name} steps off at {station}.').replace(/\{name\}/g, p.name).replace(/\{station\}/g, node.name || 'the station') + (paid ? ' ' + paid + '.' : ''));
+    }
+  }
+}
+
+/* crew_speaker (scenes B — the demo's crew_request): an own-crew
+   conversation lists who should say it, in order — crew roles, or "any"
+   (anyone aboard). The first that's aboard speaks ("any" picks at random
+   when roll is set); null when nobody aboard can (the event can't fire). */
+function crewSpeakerFor(ev, roll) {
+  const prefs = Array.isArray(ev.crew_speaker) ? ev.crew_speaker : [ev.crew_speaker];
+  for (const p of prefs) {
+    if (p === 'any') {
+      if (!STATE.crew.length) continue;
+      return roll ? STATE.crew[Math.floor(Math.random() * STATE.crew.length)] : STATE.crew[0];
+    }
+    if (STATE.crew.includes(p)) return p;
+  }
+  return null;
+}
+
 /* How much of a role's passive skill is in effect — the one rule,
    shared with specialistMult(): a crew specialist 1 (0.5 wounded, Bible
    §4.25), a captain of that background 0.5 (Bible §4.30 skill_modifier),
@@ -2719,6 +2775,12 @@ function eventEligible(ev, node, triggers) {
     // the pool on those trails. Gives each difficulty its own exclusive
     // texture — lunar's busy corridor vs interstellar's deep quiet.
     if (ev.trail && !ev.trail.includes(STATE.trail)) return false;
+    // Planet biome gate (scenes B): the event's copy describes one kind of
+    // world — it only fires on a planet whose biome (scene_art biomeFor,
+    // the same pick its approach + surface art show) is listed.
+    if (ev.biome && !(node.node_type === 'planet' && window.SceneArt && ev.biome.includes(SceneArt.biomeFor(null, node)))) return false;
+    // A crew member has to be aboard to say it (crew_speaker).
+    if (ev.crew_speaker && !crewSpeakerFor(ev)) return false;
     const nodeTypes = ev.node_type || ['any'];
     // Fork nodes are the one node_type that MUST resolve chose_alpha/
     // chose_beta to keep the run moving forward — a generic node_type:
@@ -2739,6 +2801,10 @@ function drawWeightedEvent(candidates, triggers, baseWeights, branch) {
   const chosen = weightedDraw(candidates, ev => {
     const tier = Array.isArray(ev.difficulty) ? ev.difficulty[0] : (ev.difficulty || 'medium');
     let w = (baseWeights[tier] ?? 1) * branchEventMult(ev, branch);
+    // draw_weight (scenes B): an event gated to a narrow slice of its node
+    // type (event_planet_006 — habitable planets only, ~1 in 6) is scaled
+    // back up so it still turns up; 1 when unauthored.
+    if (Number.isFinite(ev.draw_weight) && ev.draw_weight > 0) w *= ev.draw_weight;
     const evTriggers = ev.trigger || ['any'];
     // Positional triggers (journey_start/journey_end) exist for
     // reachability, not urgency — they get a mild bump so they surface
@@ -3402,6 +3468,7 @@ function returnToHub() {
   STATE.npcCtx = null;
   STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.effortScale = 1; STATE.effortCon = null;
   STATE.researchKey = null; // a Research preview lasts for its encounter only
+  STATE.eventSpeaker = null; STATE.joinNote = null;
   STATE._shoppedThisEvent = false;
   STATE.scanIntelEvent = null;
   renderHUD();
@@ -3774,6 +3841,7 @@ function mouthsMult() {
     const c = (MOD.crew_roster || []).find(x => x.role === r);
     mouths += (c && c.eats_double && !crewIdentityOf(r)) ? 2 : 1; // a stowaway in the role eats normally
   }
+  mouths += (STATE.passengers || []).length; // a rescued passenger eats too (scenes B)
   return mouths / 3;
 }
 window.mouthsMult = mouthsMult;
@@ -3967,6 +4035,7 @@ function travelTo(nodeId, opts) {
   // authored recharges_at in crew_roster.json (all current skills author
   // 'station'; a future 'leg' value would recharge in the leg tick above).
   if (node.node_type === 'station') {
+    disembarkPassengers(node); // scenes B: a rescued passenger steps off at the next station
     STATE.researchReady = true; // Academic captain: a fresh Research preview each station leg
     // The chef's cookie tag lasts "one journey leg" — to the next station.
     for (const f of [...STATE.flags]) if (f.startsWith('friendly_with_pirate_')) STATE.flags.delete(f);
@@ -4081,6 +4150,11 @@ function enterEvent(node, ev, opts) {
   // Standard variants (event_shipboard_001's "noise in Cargo Bay 3"):
   // one is drawn uniformly per firing (owner ruling 2026-10-09) and
   // held here so every re-render of this firing shows the same one.
+  // crew_speaker: who of OUR crew is saying it — picked per entry, saved
+  // with the in-event save so a reload keeps the same face.
+  STATE.eventSpeaker = ev.crew_speaker
+    ? ((opts && opts.speaker && STATE.crew.includes(opts.speaker)) ? opts.speaker : crewSpeakerFor(ev, true))
+    : null;
   STATE.variantIndex = (opts && Number.isInteger(opts.variantIndex)) ? opts.variantIndex
     : (ev.standard_variants && ev.standard_variants.length)
     ? Math.floor(Math.random() * ev.standard_variants.length) : 0;
@@ -4116,6 +4190,7 @@ function saveEventProgress() {
     pendingEvent: ev.id, pendingVariant: STATE.variantIndex,
     pendingLayers: STATE.layerStack ? STATE.layerStack.slice() : null,
     pendingVisits: Object.keys(STATE._layerVisits || {}),
+    pendingSpeaker: STATE.eventSpeaker || null,
   });
 }
 
@@ -4163,6 +4238,8 @@ function interpolateStowawayTokens(text) {
   // {crew.<role>}: whoever holds that role now (a stowaway who joined as
   // diplomat keeps their own name — the text used to say "Hargrove").
   if (text && text.indexOf('{crew.') !== -1) text = text.replace(/\{crew\.(\w+)\}/g, (m, role) => crewNameOf(role));
+  // {speaker.name|role}: the crew member a crew_speaker event put in the frame.
+  if (text && text.indexOf('{speaker.') !== -1) text = text.replace(/\{speaker\.(name|role)\}/g, (m, k) => !STATE.eventSpeaker ? (k === 'name' ? 'your crew member' : 'crew member') : k === 'name' ? crewNameOf(STATE.eventSpeaker) : STATE.eventSpeaker);
   // {crop.name|advice|diagnosis|verdict}: the run's crop as it is right now (station botanist).
   if (text && text.indexOf('{crop.') !== -1) text = text.replace(/\{crop\.(name|advice|diagnosis|verdict)\}/g, (m, k) => cropToken(k));
   // {branch.alpha.label} / {branch.alpha.first} (and beta): a fork event
@@ -4458,8 +4535,17 @@ function renderEncounterState(opts) {
     const rosterEntry = (MOD.crew_roster || []).find(c => c.role === crewRole);
     layerNpcCtx = { crewId, displayName: (rosterEntry && rosterEntry.name || crewId).toUpperCase(), species: null, disposition: 'crew', quirk: '' };
   }
+  // crew_speaker (scenes B): whichever of our crew the entry picked — their
+  // talking-head sheet (a joined stowaway / rescue: the role's emoji).
+  if (ev.crew_speaker && STATE.eventSpeaker && !layerNpcCtx) {
+    const r = STATE.eventSpeaker;
+    layerNpcCtx = { crewId: crewSpriteIdOf(r), displayName: crewNameOf(r).toUpperCase(), species: null, disposition: 'crew', job: r, quirk: '' };
+  }
 
   let body    = layer ? layer.body : ev.body;
+  // body_by_speaker: the narrator line that depends on who's talking
+  // (role → body; "any" covers the rest).
+  if (layer && layer.body_by_speaker && STATE.eventSpeaker) body = layer.body_by_speaker[STATE.eventSpeaker] || layer.body_by_speaker.any || body;
   let line    = layer ? layer.line : null;
   let choices = layer ? layer.choices : ev.choices;
 
@@ -4592,6 +4678,7 @@ function renderOutcomeView(outcome) {
   // as a death in authored text — say what actually happened.
   if (STATE.lethalSaved) bodyText += '\n\n' + STATE.lethalSaved;
   if (STATE.effortCon) bodyText += '\n\n' + STATE.effortCon.line;
+  if (STATE.joinNote) bodyText += '\n\n' + STATE.joinNote; // crew_join: crew or passenger, as it landed
   const narr = document.getElementById('enc-narrative');
   narr.classList.remove('tone-success', 'tone-danger');
   if (outcome.tone === 'success' || deltaIsGood(outcome)) narr.classList.add('tone-success');
@@ -4761,6 +4848,12 @@ function renderChoicesInner(choices) {
         : (STATE.crew.length < 2 && !STATE.crew.includes(idn.join_role)) ? 'Joins the crew as ' + idn.join_role
         : 'Rides along as a passenger';
     }
+    // A rescue (crew_join): say where they'll land — crew or passenger.
+    const cj = stowOut && stowOut.crew_join;
+    if (!locked && cj && cj.name) {
+      const r = crewJoinRole(cj);
+      subText = (subText ? subText + ' · ' : '') + (r ? 'joins as ' + r : 'rides to the next station');
+    }
     const effort = !locked && choiceEffort(ch);
     if (effort && !subText) {
       const o = choiceOutcome(ch);
@@ -4814,6 +4907,7 @@ function renderChoicesInner(choices) {
       if (displaced) tip.push(displaced);
       if (effort && effort.kit) tip.push('Uses up one ' + prettyItem(effort.kit) + ' — it counts toward the effort.');
       if (welcomes && idn.join_note) tip.push(idn.join_note);
+      if (cj && cj.name) tip.push(crewJoinRole(cj) ? cj.name + ' joins the crew as ' + cj.join_role + (cj.join_note ? ' — ' + cj.join_note : '') : 'No room in the crew: ' + cj.name + ' rides to the next station as a passenger and eats with everyone' + ((cj.passenger && cj.passenger.reward && cj.passenger.reward.gold) ? '; their family pays ' + cj.passenger.reward.gold + ' gold there' : '') + '.');
       if (effort && effort.check) tip.push('Short of effort: half the resource gains, ' + (effort.authored ? 'a day more' : 'two more days') + ', ' + Object.entries(effort.check.con).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).join(', ') + '. Crew and tools raise the odds.');
       if (tip.length) btn.title = tip.join('\n');
     }
@@ -4963,6 +5057,7 @@ function outcomeFacts(o) {
   else if (ce && ce.type === 'injure') facts.push({ text: 'AN INJURY', weight: 15, good: false });
   else if (ce && ce.type === 'heal') facts.push({ text: 'HEALING', weight: 10, good: true });
   if (o.item_grant) facts.push({ text: '+' + prettyItem(o.item_grant).toUpperCase(), weight: 8, good: true });
+  if (o.crew_join && o.crew_join.name) facts.push({ text: crewJoinRole(o.crew_join) ? '+' + o.crew_join.join_role.toUpperCase() : '+PASSENGER', weight: 10, good: true }); // scenes B rescue
   if (o.item_consume) facts.push({ text: 'USES ' + prettyItem(o.item_consume).toUpperCase(), weight: 6, good: false });
   if (Number.isFinite(o.crop_health) && o.crop_health) { const c = Math.round(cropDeltaLanding(o.crop_health)); if (c) facts.push({ text: (c > 0 ? '+' : '−') + Math.abs(c) + ' CROP', weight: Math.abs(c) / 2, good: c > 0 }); }
   if (Number.isFinite(o.fab_wear) && o.fab_wear > 0) facts.push({ text: '+' + o.fab_wear + '% FAB WEAR', weight: Math.max(6, o.fab_wear * 1.5), good: false });
@@ -5184,7 +5279,8 @@ function resolveNpc(ev) {
   const ctx = {
     species, disposition,
     job: ev.npc.job || null,
-    displayName: (disposition === 'station_crew' && ev.npc.job === 'bartender' && bartenderName())
+    // An authored displayName (scenes B: the derelict's SURVIVOR) wins.
+    displayName: ev.npc.displayName || (disposition === 'station_crew' && ev.npc.job === 'bartender' && bartenderName())
       || (disposition === 'station_crew' && ev.npc.job && jobNames[ev.npc.job])
       || NPC_DISPOSITION_NAME[disposition] || disposition.toUpperCase(),
     quirk: quirkPool ? quirkPool[Math.floor(Math.random() * quirkPool.length)] : (NPC_QUIRKS[species] || ''),
@@ -5295,6 +5391,7 @@ function handleChoiceClick(choice) {
   snapDelivery();
   const ev = STATE.currentEvent;
   STATE.lethalSaved = null;
+  STATE.joinNote = null;
   STATE.halfEffect = choiceStandIn(choice);
   const eff = choiceEffort(choice);
   STATE.effortScale = eff ? eff.ratio : 1;
@@ -5499,18 +5596,29 @@ function applyOutcomeEffects(o) {
       }
     }
     if (resolve === 'welcome' || resolve === 'welcome_replace') {
-      if (idn.join_role && STATE.crew.length < 2 && !STATE.crew.includes(idn.join_role)) {
-        STATE.crew.push(idn.join_role);
-        STATE.crewHP[idn.join_role] = 100;
-        if (!STATE.crewIdentity) STATE.crewIdentity = {};
-        STATE.crewIdentity[idn.join_role] = { id: idn.id, name: idn.name, story: idn.story };
-        ensureCrewSkillCharges(); // a full crew member gets their skill charges too
-      } else {
-        STATE.flags.add('stowaway_passenger');
-      }
+      if (!joinAsCrew(idn, 100)) STATE.flags.add('stowaway_passenger');
       STATE.flags.add('stowaway_welcomed');
     }
     if (resolve === 'refuse') STATE.flags.add('stowaway_refused');
+  }
+
+  // crew_join (scenes B — the derelict survivor): a named rescue comes
+  // aboard. Room in the crew → they join in their join_role (at their
+  // authored HP); no room → a passenger to the next station (eats, steps
+  // off there, crew_join.passenger.reward paid). The outcome view says
+  // which (STATE.joinNote) — the choice's sub said it first.
+  if (o.crew_join && o.crew_join.name) {
+    const cj = o.crew_join;
+    const role = joinAsCrew(Object.assign({ origin: 'rescued' }, cj), cj.hp);
+    if (role) {
+      STATE.joinNote = cj.name + ' joins the crew as ' + role + '.';
+    } else {
+      const pas = cj.passenger || {};
+      STATE.passengers = (STATE.passengers || []).filter(p => p.id !== cj.id);
+      STATE.passengers.push({ id: cj.id, name: cj.name, reward: pas.reward || null, farewell: pas.farewell || null, boardedDay: STATE.daysElapsed || 0 });
+      STATE.joinNote = cj.name + ' rides along as a passenger to the next station.';
+    }
+    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + STATE.joinNote);
   }
 
   // Crop/system effect fields (additive): clears_pest ends an active

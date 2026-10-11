@@ -522,5 +522,216 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_planet_006",
+    "active": true,
+    "title": "Not Alone",
+    "difficulty": "easy",
+    "tone": [
+      "cosmic",
+      "heartwarming"
+    ],
+    "node_type": [
+      "planet"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "biome": [
+      "habitable"
+    ],
+    "draw_weight": 4,
+    "event_presentation": "fullscreen",
+    "scene_type": "planet_surface",
+    "comm_mode": "in_person",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "leave_label": "RETURN TO ORBIT",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "TOUCHDOWN",
+        "body": "The surface is greener than any planetologist promised. Something watches from the tree line. It hasn't moved in six minutes. Neither have you.",
+        "pose": "listening",
+        "bg": "planet_surface/{biome}",
+        "ai": {
+          "aria": "A welcoming world!",
+          "marv": "Atmospheric composition: breathable. Gravity: tolerable. Microbial surveys: incomplete.",
+          "rex": "No weapons signatures. Standing by.",
+          "chip": "Uncharted surface exploration is NOT covered under our Bronze tier.",
+          "ajoy": "The tree line. Watch it, don't approach it. Not yet."
+        },
+        "choices": [
+          {
+            "text": "SURVEY",
+            "gate": {
+              "item": "gas_analyzer"
+            },
+            "effort": 2,
+            "sub": "Analyzer maps the biome",
+            "next": "survey"
+          },
+          {
+            "text": "APPROACH CAREFULLY",
+            "effort": 2,
+            "risky": true,
+            "sub": "Walk toward the tree line",
+            "next": "contact"
+          },
+          {
+            "text": "COLLECT SAMPLES",
+            "gate": {
+              "item": "soil_sampler"
+            },
+            "effort": 1,
+            "sub": "Kit · flora & soil",
+            "outcome": "planet_samples"
+          },
+          {
+            "text": "WAVE",
+            "dialog": true,
+            "hint": true,
+            "sub": "An honest, unarmed hello",
+            "next": "contact"
+          }
+        ]
+      },
+      "survey": {
+        "title": "THE READINGS",
+        "body": "The analyzer paints the valley. Four biomes in the space of a kilometer. Water table high. One signal near the tree line is warm and moving.",
+        "pose": "listening",
+        "bg": "planet_surface/{biome}",
+        "ai": {
+          "aria": "So many lovely data points!",
+          "marv": "Energy signature suggests mid-size metabolism. Probably curious. Possibly hungry.",
+          "rex": "One contact. Close. Watching.",
+          "chip": "Detailed planet data qualifies you for a LandingPlus™ rebate.",
+          "ajoy": "It's not a predator. You already knew that."
+        },
+        "choices": [
+          {
+            "text": "APPROACH CONTACT",
+            "effort": 2,
+            "sub": "Close the distance",
+            "next": "contact"
+          },
+          {
+            "text": "SET UP CAMP",
+            "effort": 5,
+            "sub": "2 days · all hands · settle, study the biome",
+            "outcome": "planet_camp"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      },
+      "contact": {
+        "title": "NOT ALONE",
+        "body": "Something steps from the green. It's not hostile. It's not quite curious. It is waiting to see what you'll do.",
+        "pose": "listening",
+        "bg": "planet_surface/{biome}",
+        "npc": {
+          "disposition": "drifter",
+          "species": "rock",
+          "displayName": "LOCAL LIFEFORM"
+        },
+        "ai": {
+          "aria": "A new friend!",
+          "marv": "Bipedal. Silicate-based. Temperature regulated. Not eating you.",
+          "rex": "Non-threatening posture. Staying on it.",
+          "chip": "First-contact disclaimers are inside your welcome packet.",
+          "ajoy": "Offer first. Don't ask first."
+        },
+        "choices": [
+          {
+            "text": "OFFER A TRADE",
+            "gate": {
+              "crew": "diplomat"
+            },
+            "sub": "Diplomat leads",
+            "outcome": "planet_trade"
+          },
+          {
+            "text": "TAKE A SAMPLE",
+            "gate": {
+              "item": "medkit"
+            },
+            "risky": true,
+            "sub": "Kit · genetic swab",
+            "outcome": "planet_sample"
+          },
+          {
+            "text": "\"We come in peace.\"",
+            "dialog": true,
+            "sub": "The classic line",
+            "outcome": "planet_peace"
+          },
+          {
+            "text": "BACK AWAY",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "planet_samples": {
+        "title": "COLLECTED",
+        "body": "Three vials of alien flora, two jars of soil, one thing that keeps humming. The surveyors will argue about them for years.",
+        "materials": {
+          "biocomponent": 3,
+          "minerals": 2,
+          "exotic": 1
+        },
+        "time_cost": "trivial"
+      },
+      "planet_camp": {
+        "title": "CAMP SET",
+        "tone": "success",
+        "body": "Two days on the surface. Readings, readings, readings. You leave with three times the data, a hold of things that grow, and two minor rashes.",
+        "resources": {
+          "food": 8,
+          "water": 6
+        },
+        "materials": {
+          "biocomponent": 4
+        },
+        "time_cost": "low"
+      },
+      "planet_trade": {
+        "title": "A TRADE",
+        "tone": "success",
+        "body": "Your diplomat offers a ration bar. The being offers back something warm that later tests as a power source.",
+        "resources": {
+          "fuel": 10,
+          "food": -2
+        },
+        "time_cost": "trivial"
+      },
+      "planet_sample": {
+        "title": "A SAMPLE",
+        "body": "It allows the swab. It stares at you afterward with an expression you'll think about on the way home.",
+        "resources": {
+          "morale": -2
+        },
+        "materials": {
+          "biocomponent": 3
+        },
+        "time_cost": "trivial"
+      },
+      "planet_peace": {
+        "title": "UNDERSTOOD",
+        "tone": "success",
+        "body": "The being does not speak. It bows once, exactly, and returns to the green. You'll remember the bow.",
+        "resources": {
+          "morale": 5
+        },
+        "time_cost": "trivial"
+      }
+    }
   }
 ]
