@@ -679,6 +679,9 @@
      story; charges + HP entries go with them. */
   function removeCrew(role, jettisoned) {
     const name = crewNameOf(role);
+    // Ship's Log: an airlock death gets the memorial page (read before
+    // the identity goes; shipslog.js).
+    const memo = jettisoned && window.ShipLog ? ShipLog.deathEntry(role, '', { cause: 'out the airlock' }) : null;
     const idx = STATE.crew.indexOf(role);
     if (idx >= 0) STATE.crew.splice(idx, 1);
     if (STATE.crewHP) delete STATE.crewHP[role];
@@ -707,7 +710,13 @@
     } else {
       line = DISMISS_LINES[Math.floor(Math.random() * DISMISS_LINES.length)].replaceAll('[Name]', name);
     }
-    if (typeof window.pushCruiseLog === 'function') pushCruiseLog('◆ ' + (logLine || line));
+    if (typeof window.pushCruiseLog === 'function') {
+      if (memo) {
+        memo.text = '◆ ' + (logLine || line);
+        memo.expand.text = line + '\n\n' + memo.expand.text;
+        pushCruiseLog(memo);
+      } else pushCruiseLog('◆ ' + (logLine || line));
+    }
     if (typeof renderHUD === 'function') renderHUD();
     return line;
   }

@@ -1,0 +1,261 @@
+/* ── Ship's Log journal (demo-shipslog.html canon) ────────────────
+   A JOURNAL, so it reads like paper — deliberately divergent from the
+   dark modal palette. 340×540, docked over the cruise AI-log column
+   (right: 30px, vertically centred) so it reads as the column expanded,
+   not a new screen. Deaths open the memorial page (dark slate + ember);
+   lore opens on parchment. Tokens scoped to the overlay. */
+#overlay-shipslog {
+  --log-paper:        #e8d8a0;
+  --log-paper-dark:   #d8c888;
+  --log-ink:          #2a1f10;
+  --log-ink-dim:      #6a5430;
+  --log-ink-mute:     #8a7350;
+  --log-edge:         #5a4226;
+  --log-day-line:     rgba(90,66,38,0.35);
+  --log-payload:      #b85a18;
+  --log-payload-bg:   rgba(184,90,24,0.12);
+  --death-bg-top:     #1a1620;
+  --death-bg-bot:     #0a0810;
+  --death-edge:       #4a3030;
+  --death-edge-hi:    rgba(180,110,80,0.35);
+  --death-ember:      #c89050;
+  --death-ash:        #c0b8a8;
+  --death-ash-dim:    #8a8275;
+  background: rgba(4,8,16,0.75);
+}
+
+#slog-card {
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 340px;
+  height: 540px;
+  background:
+    radial-gradient(ellipse at 25% 20%, rgba(90,66,38,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse at 75% 80%, rgba(90,66,38,0.04) 0%, transparent 55%),
+    linear-gradient(180deg, var(--log-paper) 0%, var(--log-paper-dark) 100%);
+  border: 3px solid var(--log-edge);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(232,216,160,0.4),
+    inset 0 0 0 2px rgba(90,66,38,0.4),
+    0 8px 40px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header — title, SHIP · TRAIL sub-line, ✕ top-right. */
+#slog-card .log-header {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 14px 8px;
+  border-bottom: 2px solid var(--log-day-line);
+  background: linear-gradient(180deg, rgba(232,216,160,0.4), transparent);
+  flex-shrink: 0;
+  position: relative;
+}
+#slog-card .log-title {
+  font-family: 'Press Start 2P', monospace; font-weight: normal;
+  font-size: 11px; line-height: 1.4; letter-spacing: 2px;
+  color: var(--log-edge);
+  text-shadow: 1px 1px 0 rgba(232,216,160,0.6);
+  padding-right: 30px; margin: 0;
+}
+#slog-card .log-meta {
+  font-family: 'VT323', monospace; font-size: 13px; letter-spacing: 1px;
+  color: var(--log-ink-dim);
+  padding-right: 30px;
+}
+#overlay-shipslog .log-close-x {
+  position: absolute; top: 9px; right: 9px;
+  width: 22px; height: 22px;
+  border: 2px solid var(--log-edge);
+  background: transparent;
+  color: var(--log-edge);
+  font-size: 14px; line-height: 1;
+  cursor: var(--cursor-hand, pointer);
+  font-family: inherit;
+  padding: 0;
+  border-radius: 2px;
+}
+#overlay-shipslog .log-close-x:hover { background: rgba(90,66,38,0.15); }
+
+/* Body — flat LED lines under ── DAY N ── dividers, oldest first. */
+#slog-rows-host { flex: 1; min-height: 0; }
+#slog-rows {
+  flex: 1; min-height: 0;
+  padding: 12px 14px;
+  font-family: 'VT323', monospace; font-size: 17px; line-height: 1.4;
+  color: var(--log-ink);
+  overflow-y: auto;
+}
+#slog-rows .log-day {
+  display: flex; align-items: center; gap: 10px;
+  margin: 10px 0 6px;
+  font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 1; letter-spacing: 2px;
+  color: var(--log-edge);
+}
+#slog-rows .log-day:first-child { margin-top: 0; }
+#slog-rows .log-day::before, #slog-rows .log-day::after {
+  content: ''; flex: 1;
+  border-top: 1px dashed var(--log-day-line);
+}
+#slog-rows .log-entry { display: flex; align-items: flex-start; gap: 8px; padding: 3px 0; }
+#slog-rows .log-entry-led {
+  flex: 0 0 6px; width: 6px; height: 6px; margin-top: 8px;
+  border-radius: 50%;
+  background: var(--log-ink-mute);
+}
+#slog-rows .log-entry.event  .log-entry-led { background: var(--log-edge); }
+#slog-rows .log-entry.choice .log-entry-led { background: #2f6a3f; box-shadow: 0 0 4px rgba(47,106,63,0.5); }
+#slog-rows .log-entry.death  .log-entry-led { background: #a02828; box-shadow: 0 0 4px rgba(160,40,40,0.5); }
+#slog-rows .log-entry-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+#slog-rows .log-entry-payload {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; margin-left: 2px;
+  background: var(--log-payload-bg);
+  color: var(--log-payload);
+  font-size: 12px;
+  border-radius: 3px;
+  cursor: var(--cursor-hand, pointer);
+}
+#slog-rows .log-entry.has-payload { cursor: var(--cursor-hand, pointer); }
+#slog-rows .log-entry.has-payload:hover { background: rgba(90,66,38,0.06); }
+#slog-rows .log-entry.has-payload:hover .log-entry-payload { background: var(--log-payload); color: #fff; }
+#slog-rows .slog-empty { font-size: 17px; color: var(--log-ink-dim); text-align: center; padding: 18px 0; }
+
+/* Gold thumb on a cream-darker track (demo). */
+#slog-rows-host .scroll-track { background: rgba(90,66,38,0.18); }
+#slog-rows-host .scroll-thumb {
+  background: linear-gradient(180deg, #6a5232 0%, #3a2818 100%);
+  box-shadow: inset 0 1px 0 rgba(200,168,90,0.4), inset 0 -1px 0 rgba(20,12,4,0.5);
+}
+
+/* Footer — VOICED BY <AI> · DAY N. */
+#slog-card .log-footer {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  border-top: 2px solid var(--log-day-line);
+  background: linear-gradient(0deg, rgba(232,216,160,0.4), transparent);
+  flex-shrink: 0;
+}
+#slog-card .log-footer-meta {
+  flex: 1;
+  font-family: 'VT323', monospace; font-size: 12px; letter-spacing: 1px;
+  color: var(--log-ink-dim);
+}
+#slog-card .log-footer-meta strong { color: var(--log-edge); letter-spacing: 1.5px; font-weight: normal; }
+
+/* ── Expand page (📖) — parchment lore, or the memorial ──────────── */
+#slog-expand-modal {
+  position: absolute; inset: 0; z-index: 5;
+  background: rgba(4,8,16,0.85);
+  align-items: center; justify-content: center;
+}
+#slog-expand-card {
+  width: 600px; max-height: 480px;
+  background: linear-gradient(180deg, var(--log-paper) 0%, var(--log-paper-dark) 100%);
+  border: 3px solid var(--log-edge);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(232,216,160,0.4), 0 8px 40px rgba(0,0,0,0.8);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  animation: slog-expand-pop 0.25s ease-out;
+}
+@keyframes slog-expand-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+#slog-expand-card .expand-header {
+  display: flex; align-items: center;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--log-day-line);
+  background: linear-gradient(180deg, rgba(232,216,160,0.4), transparent);
+  position: relative; flex-shrink: 0;
+}
+#slog-expand-card .expand-title {
+  flex: 1;
+  font-family: 'Press Start 2P', monospace; font-weight: normal;
+  font-size: 11px; line-height: 1.4; letter-spacing: 2px;
+  color: var(--log-edge);
+  margin: 0; padding-right: 30px;
+}
+#slog-expand-host { flex: 1 1 auto; min-height: 0; }
+#slog-expand-body {
+  flex: 1; min-height: 0;
+  padding: 18px 22px;
+  overflow-y: auto;
+  font-family: 'VT323', monospace; font-size: 18px; line-height: 1.55;
+  color: var(--log-ink);
+}
+#slog-expand-body p { margin: 0 0 12px; }
+#slog-expand-body p:last-child { margin-bottom: 0; }
+
+/* Memorial — somber dark palette, NOT cream. */
+#slog-expand-card.death-mode {
+  background:
+    radial-gradient(ellipse at 30% 0%, rgba(140,80,60,0.10) 0%, transparent 65%),
+    linear-gradient(180deg, var(--death-bg-top) 0%, var(--death-bg-bot) 100%);
+  border-color: var(--death-edge);
+  box-shadow: inset 0 0 0 1px var(--death-edge-hi), inset 0 0 0 2px rgba(0,0,0,0.4), 0 8px 40px rgba(0,0,0,0.9);
+}
+#slog-expand-card.death-mode .expand-header {
+  background: linear-gradient(180deg, rgba(180,110,80,0.10), transparent);
+  border-bottom-color: rgba(180,110,80,0.25);
+}
+#slog-expand-card.death-mode .expand-title { color: var(--death-ember); text-shadow: 0 1px 2px rgba(0,0,0,0.7); }
+#slog-expand-card.death-mode .log-close-x { border-color: var(--death-edge); color: var(--death-ember); }
+#slog-expand-card.death-mode .log-close-x:hover { background: rgba(180,110,80,0.18); }
+#slog-expand-card.death-mode #slog-expand-body { color: var(--death-ash); }
+#slog-expand-card.death-mode .scroll-track { background: rgba(180,110,80,0.12); }
+.slog-death-header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 22px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0));
+  border-bottom: 1px dashed rgba(180,110,80,0.25);
+  flex-shrink: 0;
+}
+/* 50×120 = the portrait sheet's 80×192 (1:2.4): the full figure. */
+.slog-portrait {
+  position: relative;
+  width: 50px; height: 120px; flex-shrink: 0; overflow: hidden;
+  border: 2px solid var(--death-edge);
+  background: rgba(10,8,12,0.85);
+  filter: grayscale(0.85) brightness(0.7) contrast(1.1) sepia(0.15);
+}
+.slog-candle {
+  font-size: 56px; line-height: 1;
+  color: var(--death-ember);
+  text-shadow: 0 0 14px rgba(200,144,80,0.55), 0 1px 2px rgba(0,0,0,0.8);
+  font-family: 'Times New Roman', Georgia, serif;
+  flex-shrink: 0;
+  width: 50px; height: 120px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid rgba(180,110,80,0.2);
+  background: rgba(10,8,12,0.5);
+}
+.slog-death-meta {
+  flex: 1;
+  font-family: 'VT323', monospace; font-size: 14px; letter-spacing: 1.5px; line-height: 1.3;
+  color: var(--death-ash-dim);
+  font-style: italic;
+}
+.slog-death-meta strong {
+  display: block;
+  font-style: normal; font-weight: normal;
+  font-family: 'Press Start 2P', monospace; font-size: 9px; letter-spacing: 2px;
+  color: var(--death-ember);
+  margin-bottom: 4px;
+}
+.slog-death-meta .slog-death-sub { font-size: 12px; opacity: 0.75; }
+
+/* The cruise AI-log column's 📖 (Bible §AI Log Panel): same entry,
+   opens its page in the journal. */
+#ai-log .ai-entry-expand {
+  display: inline-block; margin-left: 4px;
+  font-size: 13px; cursor: var(--cursor-hand, pointer);
+  opacity: 0.85;
+}
+#ai-log .ai-entry-expand:hover { opacity: 1; }
