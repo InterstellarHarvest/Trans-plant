@@ -985,6 +985,27 @@
   100% {opacity:0; box-shadow:0 0 32px 14px rgba(153,255,255,0), 0 0 18px 8px rgba(153,255,255,0) inset}
 }
 @keyframes salPulse {0%,100%{opacity:1}50%{opacity:.25}}
+/* Derelict salvage (opts.setting 'derelict'): no ship is painted into
+   the interior backdrop, so the stowage hatch is marked — a dashed,
+   faintly lit drop zone with its label. The drop pulse still plays. */
+.sal-bay-glow.sal-bay-mark{
+  opacity:1;
+  border:2px dashed rgba(153,255,255,.55);
+  background:rgba(153,255,255,.07);
+  box-shadow:0 0 12px rgba(153,255,255,.25) inset;
+}
+.sal-bay-glow.sal-bay-mark::after{
+  content:'STOW';
+  position:absolute;left:50%;bottom:calc(100% + 4px);transform:translateX(-50%);
+  font-family:'Press Start 2P',cursive;font-size:7px;line-height:1;letter-spacing:2px;
+  color:rgba(153,255,255,.85);text-shadow:0 1px 2px #000;white-space:nowrap;
+}
+.sal-bay-glow.sal-bay-mark.pulse{animation:salBayPulseMark .65s ease-out}
+@keyframes salBayPulseMark {
+  0%   {box-shadow:0 0 12px rgba(153,255,255,.25) inset}
+  20%  {box-shadow:0 0 18px 6px rgba(153,255,255,.85), 0 0 14px 4px rgba(153,255,255,.7) inset}
+  100% {box-shadow:0 0 12px rgba(153,255,255,.25) inset}
+}
 
 .sal-canvas{
   position:absolute;inset:0;width:100%;height:100%;

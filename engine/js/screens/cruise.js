@@ -343,7 +343,7 @@
   // trade (Market Row). Odds lean civilized (Bible: "high near stations/
   // planets, near-zero in deep space"); anomalies have no trade verbs.
   const TRADER_PRESENT_CHANCE = {
-    planet_orbit_habitable: 0.55, debris_field: 0.45, asteroid_field: 0.40,
+    planet_orbit_habitable: 0.55, debris_field: 0.45, derelict: 0.45, asteroid_field: 0.40,
     nebula: 0.35, planet_orbit_alien: 0.30, deep_space: 0.15, anomaly: 0,
   };
   const atStation = () => { const n = STATE.byId && STATE.byId[STATE.currentId]; return !!(n && n.node_type === 'station'); };
@@ -681,20 +681,24 @@
     deep_space:             { label: 'DEEP SPACE',             mood: 'Stars and silence. Nothing here but thinking.',                       verbs: ['scan', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
     asteroid_field:         { label: 'ASTEROID FIELD',         mood: 'Cold rocks. The kind of place that pays in chips, not stories.',      verbs: ['mine', 'forage_food', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
     debris_field:           { label: 'DEBRIS FIELD',           mood: 'Someone else’s bad day, scattered for kilometers.',              verbs: ['salvage', 'mine', 'forage_food', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
+    // A derelict stop whose hulk is still in one piece (derelictFormOf):
+    // the debris field's verbs, but SALVAGE boards it — the derelict
+    // salvage game (owner ruling 2026-10-11 #12).
+    derelict:               { label: 'DERELICT',               mood: 'A dead ship, still in one piece. Whatever its crew left aboard is still aboard.', verbs: ['salvage', 'mine', 'forage_food', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
     nebula:                 { label: 'NEBULA',                 mood: 'Glowing gas in colors that probably mean something.',                 verbs: ['mine', 'condense', 'scan', 'trade', 'wait_for_trader', 'repair', 'rest', 'fab'] },
     anomaly:                { label: 'ANOMALY',                mood: 'The instruments disagree with each other. None of them with reality.', verbs: ['scan', 'forage_food', 'repair', 'rest', 'fab'] },
     planet_orbit_habitable: { label: 'PLANET ORBIT · HABITABLE', mood: 'Green and blue and trying. A world that knows how to grow things.', verbs: ['forage_food', 'trade', 'wait_for_trader', 'scan', 'repair', 'rest', 'fab'] },
     planet_orbit_alien:     { label: 'PLANET ORBIT · ALIEN',   mood: 'Whatever evolved here did so without consulting Earth precedent.',   verbs: ['forage_food', 'trade', 'wait_for_trader', 'scan', 'repair', 'rest', 'fab'] },
     station_approach:       { label: 'STATION APPROACH',       mood: 'Lights and traffic. Civilization, give or take.',                     verbs: ['trade', 'medbay', 'drydock', 'fab_service', 'repair', 'rest', 'fab'] },
   };
-  const FORAGE_LABEL_BY_REGION = { planet_orbit_habitable: 'GATHER', planet_orbit_alien: 'FORAGE', asteroid_field: 'HUNT', debris_field: 'SCAVENGE', anomaly: 'FORAGE' };
+  const FORAGE_LABEL_BY_REGION = { planet_orbit_habitable: 'GATHER', planet_orbit_alien: 'FORAGE', asteroid_field: 'HUNT', debris_field: 'SCAVENGE', derelict: 'SCAVENGE', anomaly: 'FORAGE' };
   // Time labels say what the engine really charges: whole days (the
   // demo's hour labels — 8h, 5h — predate day-granular costs). No label
   // on verbs that cost no days.
   const STOP_VERBS = {
     // icon: demo-cruise.html STOP_VERBS iconUrl (demo canon), sprites/interface/.
     mine:         { label: 'MINE',      sub: 'Pull raw materials from the rocks.',              effort: 3, icon: 'mining', time: '1d/run' },
-    salvage:      { label: 'SALVAGE',   sub: 'Pick through the wreckage. Mind the sharp bits.',  effort: 3, icon: 'salvage', time: '1d' },
+    salvage:      { label: 'SALVAGE',   sub: (region) => region === 'derelict' ? 'Board the hulk. Fuel cells, ration cans, the odd medkit.' : 'Pick through the wreckage. Mind the sharp bits.',  effort: 3, icon: 'salvage', time: '1d' },
     forage_food:  { label: (region) => FORAGE_LABEL_BY_REGION[region] || 'FORAGE',
                     sub: (region) => region === 'planet_orbit_alien' ? 'Alien flora. Some of it bites back: a crew member may be poisoned.' : 'Find something edible. Or interesting. Sometimes both.',
                     effort: 2, icon: 'forage', time: '1d', variantBy: (region) => region === 'planet_orbit_alien' ? 'risky' : null },
@@ -752,7 +756,7 @@
   }
 
   const TRAIL_TO_SCAN_DIFFICULTY = { lunar: 'easy', mars: 'medium', interstellar: 'hard' };
-  const REGION_TO_FORAGE_MODE = { asteroid_field: 'HUNT', debris_field: 'SCAVENGE', planet_orbit_habitable: 'GATHER', planet_orbit_alien: 'GATHER', anomaly: 'GATHER' };
+  const REGION_TO_FORAGE_MODE = { asteroid_field: 'HUNT', debris_field: 'SCAVENGE', derelict: 'SCAVENGE', planet_orbit_habitable: 'GATHER', planet_orbit_alien: 'GATHER', anomaly: 'GATHER' };
   const ALIEN_POISON_CHANCE = 0.25, ALIEN_POISON_HP = 7; // 7 = the forage minigame's 'medium' sickness (table below)
 
   function handleScanVerb() {
@@ -865,7 +869,9 @@
   }
 
   function handleSalvageVerb() {
-    openMinigame('salvage', {}, (tier, payload) => {
+    // In a hulk the game plays inside it, with the derelict's loot set.
+    const inHulk = currentRegionKey() === 'derelict';
+    openMinigame('salvage', inHulk ? { setting: 'derelict' } : {}, (tier, payload) => {
       if (tier === 'abandoned') return settleAbandoned('SALVAGE');
       // Grant exactly the haul card's contents: materials stock, upgrade
       // items (capacity-enforced), O₂ tanks as air, gold chips as gold;
@@ -877,6 +883,9 @@
       for (const [key, qty] of Object.entries(haul)) {
         if (!qty) continue;
         if (MATS.has(key)) { STATE.materials[key] = (STATE.materials[key] || 0) + qty; got.push(qty + ' ' + key); }
+        // Derelict hold: fuel cells and ration cans arrive as units of
+        // fuel / food (the haul card's numbers); the tanks cap.
+        else if (key === 'fuel' || key === 'food') { const b = STATE.resources[key]; STATE.resources[key] = clamp(b + qty, 0, resMax(key)); const d = Math.round(STATE.resources[key] - b); got.push(d > 0 ? '+' + d + ' ' + key : key + ', but the tank is full'); }
         else if (key in TANK_O2) { const o0 = STATE.resources.o2; STATE.resources.o2 = clamp(STATE.resources.o2 + TANK_O2[key] * qty, 0, 100); const d = Math.round(STATE.resources.o2 - o0); got.push(d > 0 ? '+' + d + ' O₂' : 'O₂ tanks, but the air is full'); }
         else if (key === 'gold') { STATE.goldAmount += 5 * qty; got.push(5 * qty + 'g'); }
         else if (key !== 'useless_scrap') { let n = 0; for (let i = 0; i < qty; i++) if (grantItem(key) !== false) n++; if (n) got.push(key.replace(/_/g, ' ')); }
@@ -1052,8 +1061,26 @@
     // The planet's biome is the node's own sticky pick (scene_art.js) —
     // the same one its approach view and landing scenes show.
     if (region === 'planet_orbit_habitable' && window.SceneArt && SceneArt.biomeFor && SceneArt.biomeFor(null, node) === 'alien') return 'planet_orbit_alien';
+    if (region === 'debris_field' && derelictFormOf(node) === 'hulk') return 'derelict';
     return region;
   }
+  /* A derelict stop is one of two things, fixed per stop (the run's art
+     seed + the node, so a reload or revisit agrees): a hulk still in one
+     piece (DERELICT — SALVAGE boards it: the derelict salvage game, owner
+     ruling 2026-10-11 #12) or one already broken up (DEBRIS FIELD —
+     SALVAGE sweeps the drift outside: the space salvage game). Derelict
+     nodes are the only debris fields the map makes, so the split keeps
+     both games (and both sprite sets) in play. Three in five are hulks. */
+  const DERELICT_HULK_SHARE = 0.6;
+  function derelictFormOf(node) {
+    if (!node || node.node_type !== 'derelict') return null;
+    const key = String((STATE && STATE.artSeed) || 0) + '|derelict-form|' + node.id;
+    let h = 2166136261 >>> 0; // FNV-1a, as scene_art.js's stable picks
+    for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b) >>> 0; h ^= h >>> 13;
+    return ((h >>> 0) % 1000) / 1000 < DERELICT_HULK_SHARE ? 'hulk' : 'debris';
+  }
+  window.derelictFormOf = derelictFormOf;
   window.cruiseRegionKey = currentRegionKey;
 
   /* ── Multi-day waits: WAIT FOR TRADER and REST (demo ~2757-3113,
@@ -1075,12 +1102,12 @@
      Docked at a station nothing interrupts (and a trader is always in). */
   const WAIT_TICK_MS = 1500, WAIT_DAY_MAX = 7;
   const TRADER_DAILY_CHANCE = {
-    planet_orbit_habitable: 0.75, debris_field: 0.65, asteroid_field: 0.60,
+    planet_orbit_habitable: 0.75, debris_field: 0.65, derelict: 0.65, asteroid_field: 0.60,
     nebula: 0.55, planet_orbit_alien: 0.45, deep_space: 0.35, anomaly: 0,
   };
   const INTERRUPT_DAILY_CHANCE = {
     station_approach: 0, planet_orbit_habitable: 0.04, planet_orbit_alien: 0.06,
-    asteroid_field: 0.06, debris_field: 0.06, nebula: 0.06, deep_space: 0.08, anomaly: 0.09,
+    asteroid_field: 0.06, debris_field: 0.06, derelict: 0.06, nebula: 0.06, deep_space: 0.08, anomaly: 0.09,
   };
   const REST_MORALE_PER_DAY = 6;
   function restPerDay() { return REST_MORALE_PER_DAY + Math.round(2 * passiveMult('chef')); } // wounded chef: halved

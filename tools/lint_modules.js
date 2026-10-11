@@ -605,7 +605,7 @@ const eventOnTrail = (ev, trail) => {
   for (const c of (Array.isArray(caps) ? caps : caps.captains || [])) regCheck(`captains.json ${c.id}`, 'background', 'captain_background', c.background);
   const crops = readJSON('modules/crops/crops.json');
   for (const c of (crops.crops || [])) regCheck(`crops.json ${c.id}`, 'crop id', 'crop_type', String(c.id).replace(/^crop_/, ''));
-  for (const e of readJSON('modules/endings/endings.json')) {
+  for (const e of readJSON('modules/endings/endings.json').filter(e => !e._section)) {
     regCheck(`endings.json ${e.id}`, 'ending_score', 'ending_score', e.ending_score);
     regCheck(`endings.json ${e.id}`, 'event_presentation', 'event_presentation', e.event_presentation);
   }
@@ -824,7 +824,7 @@ const eventOnTrail = (ev, trail) => {
   const brackets = new Set(Object.keys((registry.ending_score || {}).values || {}));
   const CROP_KEYS = new Set(['thriving', 'sick', 'dead']), CREW_KEYS = new Set(['full', 'partial', 'solo']);
   for (const e of readJSON('modules/endings/endings.json')) {
-    if (e.active === false) continue;
+    if (e._section || e.active === false) continue;
     const at = `endings.json ${e.id}`, body = e.body_template || '';
     if (e.crop_paragraphs) {
       if (!body.includes('{crop_paragraph}')) warn(`${at}: authors crop_paragraphs but body_template has no {crop_paragraph} token — they never show`);
@@ -833,6 +833,71 @@ const eventOnTrail = (ev, trail) => {
     }
     for (const k of Object.keys(e.crew_paragraphs || {})) if (!CREW_KEYS.has(k)) err(`${at}: crew_paragraphs key "${k}" is not full/partial/solo`);
     for (const k of Object.keys(e.score_paragraphs || {})) if (!brackets.has(k)) err(`${at}: score_paragraphs key "${k}" is not a registered ending_score bracket`);
+  }
+}
+
+// ── Salvage sprite sets (added 2026-10-11, parity batch 2) ──────────
+// SALVAGE plays sprites/minigames/salvage/ in a debris field and
+// sprites/minigames/derelict/ inside a hulk (owner ruling #12): every file
+// in both folders must be named in minigames.js (nothing orphaned), and no
+// sprite filename may carry stray whitespace (four derelict files once
+// ended in a space and could never load by their clean name).
+{
+  const src = fs.readFileSync(path.join(ROOT, 'engine/js/minigames.js'), 'utf8');
+  for (const dir of ['sprites/minigames/salvage', 'sprites/minigames/derelict']) {
+    for (const f of fs.readdirSync(path.join(ROOT, dir))) {
+      if (f.startsWith('.')) continue;
+      if (f !== f.trim()) { err(`${dir}/${JSON.stringify(f)}: filename has leading/trailing whitespace`); continue; }
+      if (!src.includes(f)) err(`${dir}/${f}: not named in engine/js/minigames.js — no salvage run can show it`);
+    }
+  }
+  const walk = d => { for (const e of fs.readdirSync(path.join(ROOT, d), { withFileTypes: true })) {
+    if (e.name !== e.name.trim()) err(`${d}/${JSON.stringify(e.name)}: sprite path has leading/trailing whitespace`);
+    else if (e.isDirectory()) walk(d + '/' + e.name);
+  } };
+  walk('sprites');
+}
+
+// ── Player-facing item text (added 2026-10-11, parity batch 2) ─────
+// items.json gameplay_effect is shown to the player as written (the
+// fabricator's detail line; any future inventory row). Authoring notes —
+// stacking rules, recipes, event ids, "gate item" — go in design_note.
+{
+  const NOTE = /\b(Stackable|Craftable|Fabricated|Pure trade good|Info-only|Gate item|Key for)\b|\b(event|recipe|item|crop)_[a-z0-9_]+|\b[a-z]+_[a-z][a-z_]*\b/;
+  for (const it of readJSON('modules/items/items.json').filter(i => !i._section && i.id)) {
+    const ge = it.gameplay_effect;
+    if (ge == null) continue;
+    const m = String(ge).match(NOTE);
+    if (m) err(`items.json ${it.id}: gameplay_effect carries an authoring note ("${m[0]}") — players see this text; move it to design_note`);
+  }
+}
+
+// ── Arrival lines + tier quotes (added 2026-10-11, parity batch 2) ──
+// endings.json's { _section: 'arrival_lines' } entry (index.html moves it
+// to MOD.endingLines; endings.js reads it): every trail × every crop (+
+// 'noplant') needs its destination line, and every bracket scoreBracket()
+// can return needs its quote — a gap would leave an arrival report short.
+{
+  const all = readJSON('modules/endings/endings.json');
+  const secs = all.filter(e => e._section);
+  for (const e of secs) if (e._section !== 'arrival_lines') err(`endings.json: unknown _section "${e._section}" (only arrival_lines is read)`);
+  const sec = secs.find(e => e._section === 'arrival_lines');
+  if (!sec) err('endings.json: no { _section: "arrival_lines" } entry — arrivals would show no destination line or quote');
+  else {
+    const trails = Object.keys(readJSON('modules/maps/map_rules.json').trails || {});
+    const crops = (readJSON('modules/crops/crops.json').crops || []).map(c => String(c.id).replace(/^crop_/, '')).concat('noplant');
+    const al = sec.arrival_lines || {};
+    for (const t of trails) for (const c of crops) {
+      const line = (al[t] || {})[c];
+      if (typeof line !== 'string' || !line.trim()) err(`endings.json arrival_lines.${t}.${c}: missing — that arrival shows no destination line`);
+    }
+    for (const t of Object.keys(al)) {
+      if (!trails.includes(t)) err(`endings.json arrival_lines.${t}: not a trail in map_rules.json`);
+      for (const c of Object.keys(al[t] || {})) if (!crops.includes(c)) err(`endings.json arrival_lines.${t}.${c}: not a crop id (or noplant)`);
+    }
+    const brackets = Object.keys((registry.ending_score || {}).values || {}).filter(b => b !== 'any');
+    for (const b of brackets) if (typeof (sec.tier_quotes || {})[b] !== 'string' || !sec.tier_quotes[b].trim()) err(`endings.json tier_quotes.${b}: missing — that bracket's arrival shows no quote`);
+    for (const b of Object.keys(sec.tier_quotes || {})) if (!brackets.includes(b)) err(`endings.json tier_quotes.${b}: not a registered ending_score bracket`);
   }
 }
 

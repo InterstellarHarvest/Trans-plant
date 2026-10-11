@@ -87,14 +87,11 @@
     if (real) return real.name;
     return itemId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
+  // items.json gameplay_effect is player-facing text only (authoring
+  // notes live in design_note, parity batch 2) — shown as written.
   function outputEffectText(itemId) {
     const def = (typeof itemDef === 'function' && itemDef(itemId)) || null;
-    const raw = def && def.gameplay_effect;
-    if (!raw) return '';
-    return (raw.match(/[^.]+(?:\.|$)/g) || [])
-      .map(s => s.trim())
-      .filter(s => s && !/^(Craftable|Fabricated|Stackable)\b/i.test(s))
-      .join(' ');
+    return (def && def.gameplay_effect) || '';
   }
   let MATERIALS = {};
   let RECIPES = [];
@@ -413,9 +410,7 @@
 
     $('fb-detail-name').textContent = r.name.toUpperCase();
     $('fb-detail-desc').textContent = r.desc;
-    // What the print does (items.json gameplay_effect, parity pass) —
-    // only the player-facing sentences: the authoring notes about how
-    // it's made / how it stacks are dropped.
+    // What the print does (items.json gameplay_effect, parity pass).
     const eff = outputEffectText(r.output.item);
     $('fb-detail-effect').textContent = eff ? '▸ ' + eff : '';
 

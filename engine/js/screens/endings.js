@@ -6,7 +6,11 @@
 
    Scope notes (see ENGINE_INTEGRATION_HANDOFF.md for the full
    Phase 6 rundown):
-   - The demo's TITLES/ARRIVAL_BODY/TIER_QUOTE/FAILURES tables were
+   - The demo's ARRIVAL_BODY (destination × crop) and TIER_QUOTE tables
+     now live in endings.json's arrival_lines section (MOD.endingLines,
+     parity batch 2): an arrival report leads with its line and closes
+     with its tier quote.
+   - The demo's TITLES/FAILURES tables were
      dev-placeholder copy that never made it into the real module
      JSON — modules/endings/endings.json and modules/failures/
      failures.json diverged into richer, differently-structured
@@ -196,14 +200,22 @@
       if (zm && zm.additional_paragraph) body += '\n\n' + zm.additional_paragraph;
     }
 
+    // demo-endings ARRIVAL_BODY + TIER_QUOTE, authored in endings.json's
+    // arrival_lines section (MOD.endingLines): the destination × crop
+    // lead line under the report title, and the bracket's closing quote.
+    const lines = MOD.endingLines || {};
+    const cropKey = cropInfo.status === 'dead' || !STATE.crop ? 'noplant' : STATE.crop;
+    const arrival = ((lines.arrival_lines || {})[STATE.trail] || {})[cropKey] || '';
+
     return {
       record,
       category: 'arrival',
       toneId: bracket,
       title: TITLES[bracket],
       reportTitle: m.title,
+      arrival: arrival.replaceAll('{day}', stats.days),
       body,
-      quote: null,
+      quote: (lines.tier_quotes || {})[bracket] || null,
       showReport: true,
       trail: STATE.trail,
       cropBgId: cropInfo.cropBgId,
@@ -351,6 +363,8 @@
 
   function renderReport(view) {
     $('end-report-title').textContent = view.reportTitle || view.title;
+    const arrEl = $('end-report-arrival');
+    if (arrEl) { arrEl.textContent = view.arrival || ''; arrEl.style.display = view.arrival ? 'block' : 'none'; }
     $('end-report-body').textContent = view.body;
     const qEl = $('end-report-quote');
     if (view.quote) { qEl.style.display = 'block'; qEl.textContent = view.quote; }

@@ -337,29 +337,50 @@ body {
 .btn:active { border-style: inset; transform: translate(1px,1px); }
 .btn:disabled { filter: brightness(0.5); cursor: var(--cursor-denied, not-allowed); }
 
-/* Map touches (Restoration item 9) — ship marker + branch flavor */
+/* Map touches (Restoration item 9; demo-map.html 502-547, 574-593,
+   owner-approved) — the stacked amber YOU / ARE / HERE / ▼ pointer
+   above the current node, and branch-flavor pills: dim grey ??? until
+   the fork is reached, red ??? for an uncharted branch, else the
+   flavor's own colour. */
 .map-here {
-  /* opposite side from the node's label, so they never collide */
-  position: absolute; bottom: calc(100% + 24px); left: 50%;
+  position: absolute; bottom: calc(100% + 4px); left: 50%;
   transform: translateX(-50%);
-  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 6px;
-  letter-spacing: 1px; color: var(--teal, #5fa8d0);
-  text-shadow: 0 0 6px rgba(95,168,208,0.6);
-  white-space: nowrap; pointer-events: none;
-  animation: map-here-bob 2s ease-in-out infinite;
+  font-family: 'Press Start 2P', cursive; font-size: 8px;
+  letter-spacing: 2px; line-height: 1.35; text-align: center;
+  color: #ffac00;
+  text-shadow: 0 0 8px currentColor, 0 1px 2px #000;
+  white-space: nowrap; pointer-events: none; z-index: 4;
+  animation: map-here-bounce 1.2s ease-in-out infinite;
 }
-@keyframes map-here-bob {
+@keyframes map-here-bounce {
   0%, 100% { transform: translateX(-50%) translateY(0); }
-  50%      { transform: translateX(-50%) translateY(-3px); }
+  50%      { transform: translateX(-50%) translateY(-4px); }
 }
-.map-node.label-above .map-here { bottom: auto; top: calc(100% + 24px); }
+/* Stack clear of whatever already sits above the node: its label, then
+   an alpha branch's flavor pill. */
+.map-node.label-above .map-here { bottom: calc(100% + 24px); }
+.map-node.br-alpha.has-flavor .map-here { bottom: calc(100% + 46px); }
 .map-branch-flavor {
   position: absolute; top: calc(100% + 26px); left: 50%;
   transform: translateX(-50%);
-  font-family: 'VT323', monospace; font-size: 12px;
-  letter-spacing: 1px; color: rgba(200,168,90,0.75);
-  white-space: nowrap; pointer-events: none;
+  font-family: 'Press Start 2P', cursive; font-size: 6px; line-height: 1;
+  letter-spacing: 1px;
+  padding: 3px 6px;
+  background: rgba(14,21,32,0.7);
+  border: 1px solid; border-radius: 3px;
+  text-shadow: 0 0 8px currentColor, 0 1px 2px #000;
+  white-space: nowrap; pointer-events: none; z-index: 3;
 }
+.map-branch-flavor.hidden { color: #7a8898; border-color: rgba(122,136,152,0.3); text-shadow: 0 1px 2px #000; }
+.map-branch-flavor.uncharted { color: #cc3333; border-color: rgba(204,51,51,0.4); }
+.map-branch-flavor.revealed { color: var(--flavor-color); border-color: color-mix(in srgb, var(--flavor-color) 40%, transparent); }
+.map-branch-flavor.flavor-lucrative      { --flavor-color: #ffac00; } /* amber */
+.map-branch-flavor.flavor-derelict_heavy { --flavor-color: #5d5a61; } /* slate */
+.map-branch-flavor.flavor-hostile        { --flavor-color: #cb2f34; } /* crimson */
+.map-branch-flavor.flavor-safe           { --flavor-color: #8cc890; } /* soft green */
+.map-branch-flavor.flavor-corporate      { --flavor-color: #35c6bf; } /* teal */
+.map-branch-flavor.flavor-scientific     { --flavor-color: #8c7fc8; } /* purple */
+.map-branch-flavor.flavor-agricultural   { --flavor-color: #cb9c5d; } /* earthy amber */
 .map-node.br-alpha .map-branch-flavor { top: auto; bottom: calc(100% + 26px); } /* outer side of the row */
 .map-node.br-beta  .map-branch-flavor { bottom: auto; top: calc(100% + 26px); }
 
@@ -1076,6 +1097,7 @@ body {
       <div id="end-report-card">
         <div id="end-report-scroll">
         <div id="end-report-title"></div>
+        <div id="end-report-arrival" style="display:none;"></div><!-- destination × crop line (endings.json arrival_lines) -->
         <div id="end-report-body"></div>
         <div id="end-report-quote"></div>
         <div id="end-report-score">
@@ -1753,6 +1775,11 @@ async function loadAllModules() {
     // Filter them out per items.json loading spec.
     const rawItems = MOD.items;
     MOD.items = rawItems.filter(e => !e._section);
+    // endings.json carries one { _section: 'arrival_lines' } entry (the
+    // destination × crop lines + tier quotes endings.js shows) — not an
+    // ending, so it moves to MOD.endingLines before anything draws one.
+    MOD.endingLines = MOD.endings.find(e => e._section === 'arrival_lines') || {};
+    MOD.endings = MOD.endings.filter(e => !e._section);
 
     // Build flat event lookup across every events_*.json file.
     for (const k of keys) {
@@ -3233,6 +3260,17 @@ function nodePositions(viewportId) {
   return pos;
 }
 
+/* demo-map branchFlavorDisplay: a branch's label stays a dim grey ???
+   until the ship reaches the fork it leaves from; then an uncharted
+   branch (branch_hidden) reads red ???, a charted one its flavor. */
+function branchFlavorDisplay(n) {
+  const fork = STATE.nodes.find(f => connectionsOf(f).includes(n.id));
+  const reached = !!fork && (STATE.visited.has(fork.id) || STATE.currentId === fork.id);
+  if (!reached) return { text: '???', state: 'hidden' };
+  if (n.branch_hidden) return { text: '???', state: 'uncharted' };
+  return { text: String(n.branch_flavor).replace(/_/g, ' ').toUpperCase(), state: 'revealed' };
+}
+
 function renderMap(ids) {
   ids = ids || MAP_IDS_DEFAULT;
   const readOnly = !ids.advanceBtn; // overlay-map is look-only — no click-to-travel
@@ -3299,22 +3337,26 @@ function renderMap(ids) {
     // apart, on the spine or a branch row) never share a side.
     if (p.col % 2 === 1) el.classList.add('label-above');
     el.title = n.name;
+    el.dataset.node = n.id;
     el.innerHTML = `<div class="shape"></div><div class="map-node-label">${labelText}</div>`;
     // YOU ARE HERE — the demo-map ship marker, kept dead simple per
     // the user's super-simple-map ruling: a pointer on the current node.
     if (n.id === STATE.currentId) {
       const here = document.createElement('div');
       here.className = 'map-here';
-      here.textContent = '▲ YOU ARE HERE';
+      here.innerHTML = 'YOU<br>ARE<br>HERE<br>\u25BC'; // demo-map: four stacked lines, the arrow points at the node
       el.appendChild(here);
     }
-    // Branch-flavor label (generated by map.js since Phase 2, rendered
-    // by nothing until now — nothing-orphaned rule): tag the first
-    // node of each branch arc with its flavor.
+    // Branch-flavor label (generated by map.js; demo-map
+    // branchFlavorDisplay): grey ??? until the fork is reached, then the
+    // flavor in its colour — or red ??? on the branch map.js left
+    // uncharted (branch_hidden, ~35% of forks hide one).
     if (n.branch_flavor) {
+      const disp = branchFlavorDisplay(n);
       const bf = document.createElement('div');
-      bf.className = 'map-branch-flavor';
-      bf.textContent = n.branch_hidden ? '???' : String(n.branch_flavor).replace(/_/g, ' ').toUpperCase();
+      bf.className = 'map-branch-flavor ' + disp.state + (disp.state === 'revealed' ? ' flavor-' + n.branch_flavor : '');
+      bf.textContent = disp.text;
+      el.classList.add('has-flavor');
       el.appendChild(bf);
     }
     if (!readOnly && available.has(n.id)) {

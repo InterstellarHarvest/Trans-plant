@@ -140,7 +140,8 @@
     "passive_flavor": "The spectrometer has identified the substance. You may not want to know.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "While aboard, the inventory detail shows the analysis of unknown items (classified cargo, unidentified bone, alien seed pod) and the exact value of each copy of a trade good whose value is rolled at pickup (pre-collapse artifact, corporate memorabilia, unidentified bone, mystery provisions), in the inventory and on station and fence sell offers. Without it those show only the range. Also unlocks spectrometer choices in events."
+    "gameplay_effect": "While aboard, it appraises your cargo: the inventory shows what unknown items really are, and the exact value of every trade good whose worth varies from piece to piece, in the hold and on station and fence sell offers. Without it, you see only the range. Some events offer spectrometer-only choices.",
+    "design_note": "Analyses classified cargo, unidentified bone, alien seed pod; exact value for the sell_range curios (pre-collapse artifact, corporate memorabilia, unidentified bone, mystery provisions). Unlocks requires_item spectrometer choices."
   },
   {
     "id": "item_medical_scanner_001",
@@ -181,7 +182,8 @@
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Required for derelict boarding, hull exterior repair, and EVA events. Gate item — no suit, no option."
+    "gameplay_effect": "Required for derelict boarding, hull exterior repair, and EVA events. No suit, no option.",
+    "design_note": "Gate item."
   },
   {
     "id": "item_solar_array_001",
@@ -200,7 +202,7 @@
     "passive_flavor": "The solar array unfolds near a star. It drinks light. The power gauge twitches upward.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Passive fuel +2 per leg when near a star. Zero effect in void or deep space."
+    "gameplay_effect": "Passive fuel +2 per leg when near a star. No effect in void or deep space."
   },
   {
     "id": "item_emergency_beacon_001",
@@ -218,7 +220,8 @@
     "passive_flavor": null,
     "one_use": true,
     "effort_contribution": null,
-    "gameplay_effect": "Available as a choice in no_fuel failure state. Triggers rescue event — rescue may be friendly, hostile, or corporate."
+    "gameplay_effect": "If the fuel runs out, the beacon becomes your last option: someone will answer. They may be friendly, hostile, or corporate.",
+    "design_note": "A choice on the no_fuel failure screen (endings.js endTriggerBeacon); the rescue roll is friendly / corporate / hostile."
   },
   {
     "_section": "SHIP UPGRADES — purchasable at stations, active while in cargo"
@@ -383,7 +386,8 @@
     "passive_flavor": "The classified cargo sits in the hold. It hasn't done anything. You check on it anyway.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Unknown effects until identified by spectrometer. May trigger station inspection events. Contents randomized from a pool.",
+    "gameplay_effect": "Unknown effects until a spectrometer identifies it. May draw a station inspection.",
+    "design_note": "Contents randomized from a pool.",
     "analysis": "Through the seal: organic, kept cold, and shielded against exactly this kind of scan. The readout gives up and recommends delivering it on time."
   },
   {
@@ -405,7 +409,8 @@
     "passive_flavor": "The seed pod pulses faintly. It is warm. It should not be warm.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Key for the diplomatic gate at a deep-space anomaly (requires xenobiologist). Collectors and station labs pay for it; a fence pays best.",
+    "gameplay_effect": "Opens a diplomatic option at a deep-space anomaly, if a xenobiologist is aboard. Collectors and station labs pay for it; a fence pays best.",
+    "design_note": "Key for the diplomatic gate at a deep-space anomaly (requires xenobiologist).",
     "tags": [
       "biological",
       "alien",
@@ -431,7 +436,8 @@
     "passive_flavor": "The fungus is growing. Slowly. The chef checks on it daily. The medic checks on the chef daily.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Key for Chef's Secret Project event (requires chef). Produces artisanal_space_cheese.",
+    "gameplay_effect": "With a chef aboard, it may turn into something remarkable.",
+    "design_note": "Key for event_shipboard_016, the Chef's Secret Project (requires chef). Produces artisanal_space_cheese.",
     "tags": [
       "food",
       "biological",
@@ -456,7 +462,8 @@
     "passive_flavor": "The surplus object sits in the hold. Nobody can identify what it was supposed to be.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Junk item produced by fabricator misfires (15% of misfires). Accumulates. The Surplus Collector at outposts pays above market value for these. Mystery is the feature.",
+    "gameplay_effect": "Leftovers from fabricator misfires. The Surplus Collector at outposts pays above market value for these.",
+    "design_note": "Junk item from 15% of fabricator misfires. Accumulates. Mystery is the feature.",
     "tags": [
       "fab_surplus",
       "junk",
@@ -484,7 +491,8 @@
     "passive_flavor": null,
     "one_use": true,
     "effort_contribution": null,
-    "gameplay_effect": "Restores +10 FOOD on use. Stackable (2 slots per 10).",
+    "gameplay_effect": "Restores +10 FOOD on use.",
+    "design_note": "Stackable (2 slots per 10).",
     "tags": [
       "consumable",
       "food_restore",
@@ -507,7 +515,8 @@
     "passive_flavor": null,
     "one_use": true,
     "effort_contribution": null,
-    "gameplay_effect": "Restores +10 H2O on use. Stackable (3 slots per 10).",
+    "gameplay_effect": "Restores +10 H2O on use.",
+    "design_note": "Stackable (3 slots per 10).",
     "tags": [
       "consumable",
       "h2o_restore",
@@ -530,7 +539,8 @@
     "passive_flavor": null,
     "one_use": true,
     "effort_contribution": null,
-    "gameplay_effect": "Restores +15 FUEL on use. Stackable (3 slots per 10).",
+    "gameplay_effect": "Restores +15 FUEL on use.",
+    "design_note": "Stackable (3 slots per 10).",
     "tags": [
       "consumable",
       "fuel_restore",
@@ -553,7 +563,8 @@
     "passive_flavor": null,
     "one_use": true,
     "effort_contribution": null,
-    "gameplay_effect": "Heals one injured crew member. Converts 15% of would-be-lethal outcomes into injuries. Stackable (1 slot per 10).",
+    "gameplay_effect": "Heals one injured crew member. Turns 15% of would-be-lethal outcomes into injuries instead.",
+    "design_note": "Stackable (1 slot per 10).",
     "tags": [
       "consumable",
       "crew_heal",
@@ -576,7 +587,8 @@
     "passive_flavor": null,
     "one_use": true,
     "effort_contribution": null,
-    "gameplay_effect": "Restores +15 HULL when consumed by a hull-crisis event. Craftable at the fabricator (recipe_hull_patch). Stackable (2 slots per 10).",
+    "gameplay_effect": "Restores +15 HULL when used in a hull crisis.",
+    "design_note": "Craftable at the fabricator (recipe_hull_patch). Stackable (2 slots per 10).",
     "tags": [
       "consumable",
       "hull_restore",
@@ -605,7 +617,8 @@
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Pure trade good. Value rolled at pickup (15-45g). Each copy keeps its own value. A station trader pays exactly that value; a fence pays half again as much. Without a spectrometer aboard, the inventory and sell offers show only the range.",
+    "gameplay_effect": "Worth 15-45g; each piece has its own value. A station trader pays exactly that; a fence pays half again as much. Without a spectrometer aboard, the hold and sell offers show only the range.",
+    "design_note": "Pure trade good. Value rolled at pickup (sell_range, STATE.itemValues).",
     "tags": [
       "curiosity",
       "trade_good",
@@ -633,7 +646,8 @@
     "passive_flavor": "The crate of unlabeled cans sits in cargo, assorted at everyone.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Pure trade good. Value rolled at pickup (8-20g). Each copy keeps its own value. A station trader pays exactly that value; a fence pays half again as much. Without a spectrometer aboard, the inventory and sell offers show only the range. Granted by event_crisis_006 when the cans are saved for trade, or bought sealed from the travelling trader (event_encounter_trader_001); event_general_009 opens it or sells it sealed for a flat 22g.",
+    "gameplay_effect": "Worth 8-20g; each crate has its own value. A station trader pays exactly that; a fence pays half again as much. Without a spectrometer aboard, the hold and sell offers show only the range.",
+    "design_note": "Pure trade good. Value rolled at pickup (sell_range, STATE.itemValues). Granted by event_crisis_006 when the cans are saved for trade, or bought sealed from the travelling trader (event_encounter_trader_001); event_general_009 opens it or sells it sealed for a flat 22g.",
     "tags": [
       "curiosity",
       "trade_good",
@@ -656,7 +670,8 @@
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Pure trade good. Fixed value: a station trader pays 17g (two-thirds of its 25g price), a fence pays the full 25g.",
+    "gameplay_effect": "Fixed value: a station trader pays 17g (two-thirds of its 25g price), a fence pays the full 25g.",
+    "design_note": "Pure trade good.",
     "tags": [
       "curiosity",
       "trade_good"
@@ -681,7 +696,8 @@
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Pure trade good. Value rolled at pickup (5-15g). Each copy keeps its own value. A station trader pays exactly that value; a fence pays half again as much. Without a spectrometer aboard, the inventory and sell offers show only the range.",
+    "gameplay_effect": "Worth 5-15g; each piece has its own value. A station trader pays exactly that; a fence pays half again as much. Without a spectrometer aboard, the hold and sell offers show only the range.",
+    "design_note": "Pure trade good. Value rolled at pickup (sell_range, STATE.itemValues).",
     "tags": [
       "curiosity",
       "trade_good",
@@ -708,7 +724,8 @@
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Pure trade good. Value rolled at pickup (4-28g). Each copy keeps its own value. A station trader pays exactly that value; a fence pays half again as much. Without a spectrometer aboard, the inventory and sell offers show only the range.",
+    "gameplay_effect": "Worth 4-28g; each piece has its own value. A station trader pays exactly that; a fence pays half again as much. Without a spectrometer aboard, the hold and sell offers show only the range.",
+    "design_note": "Pure trade good. Value rolled at pickup (sell_range, STATE.itemValues).",
     "tags": [
       "curiosity",
       "trade_good",
@@ -735,7 +752,8 @@
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Info-only. Unlocks additional options in narrative events tied to the previous crew.",
+    "gameplay_effect": "Unlocks extra options in events tied to the ship's previous crew.",
+    "design_note": "Info-only.",
     "tags": [
       "story",
       "info_only",
@@ -757,7 +775,7 @@
     "passive_flavor": null,
     "one_use": true,
     "effort_contribution": null,
-    "gameplay_effect": "USE from inventory: locks in and reports the event at the next stop (like a good SCAN). Consumed on use.",
+    "gameplay_effect": "Use it from the inventory: locks in and reports the event at the next stop (like a good SCAN). Consumed on use.",
     "tags": [
       "story",
       "info_only",
@@ -779,7 +797,8 @@
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Triggers a station follow-up event when docked (delivered to station authority). No direct sell value; resolves a narrative thread.",
+    "gameplay_effect": "Deliver it to the station authority the next time you dock. No sell value.",
+    "design_note": "Triggers a station follow-up event when docked; resolves a narrative thread.",
     "tags": [
       "story",
       "triggers_station_followup"
@@ -802,7 +821,8 @@
       "craftable"
     ],
     "cargo_slots_per_10": 2,
-    "gameplay_effect": "Fabricated (2 biocomponent + 1 minerals). Used from the inventory or in a sick-crop crisis: crop health +30 and any pest outbreak cleared. Stackable (2 slots per 10).",
+    "gameplay_effect": "Use it from the inventory or in a sick-crop crisis: crop health +30 and any pest outbreak cleared.",
+    "design_note": "Fabricated (2 biocomponent + 1 minerals). Stackable (2 slots per 10).",
     "tags": [
       "consumable",
       "crop_heal",
@@ -826,7 +846,8 @@
       "craftable"
     ],
     "cargo_slots_per_10": 3,
-    "gameplay_effect": "Fabricated (3 minerals + 2 metal; needs the Repair Fabricator upgrade). Opened in a low-O2 crisis: O2 +14. Stackable (3 slots per 10).",
+    "gameplay_effect": "Opened in a low-O2 crisis: O2 +14.",
+    "design_note": "Fabricated (3 minerals + 2 metal; needs the Repair Fabricator upgrade). Stackable (3 slots per 10).",
     "tags": [
       "consumable",
       "o2_restore",

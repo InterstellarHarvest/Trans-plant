@@ -179,6 +179,32 @@ const Q = {
       chip:'Low yield! ScrapRight™ Targeting Beacons would have helped. Ask about our subscription tier!',
       ajoy:'The drift moves at its own pace. Today, you moved at yours.'
     }
+  },
+  // SALVAGE inside a derelict (owner ruling 2026-10-11 #12): the same game
+  // with the hulk's own loot — fuel cells, ration cans, a component, a
+  // medkit — and its own voice.
+  salvage_derelict:{
+    perfect:{
+      aria:'We cleaned that ship out! Fuel, food, everything! Whoever lived here would be so proud! Probably!',
+      marv:'Hold stripped. Recovery exceeds projection. The previous crew left more than they took. They did not take much.',
+      rex:'Clean sweep. Every useful thing in that compartment is aboard. Model run.',
+      chip:'Outstanding recovery! ScrapRight™ Interior Edition — Their Loss, Your Manifest®.',
+      ajoy:'The ship gave what it had kept. It had been waiting for someone to ask.'
+    },
+    good:{
+      aria:'A good haul! Some of it floated off into the dark, but we got plenty!',
+      marv:'Adequate recovery. Several items lost to the corridors. Energy budget acceptable.',
+      rex:'Solid recovery. Some of it got away down the passage. Tighter grabs next time.',
+      chip:'Solid haul! ScrapRight™ Pro users recover up to 22% more per derelict. Ask your station rep.',
+      ajoy:'Some things came with you. Some stayed with the ship. Both are where they belong.'
+    },
+    poor:{
+      aria:'Not much this time! But we got a little! And nobody touched the sparky stuff! Mostly!',
+      marv:'Minimal recovery. Most of the hold drifted past the beam. The ship keeps its secrets.',
+      rex:'Low yield. The dark won this one. Work closer to the hatch next time.',
+      chip:'Low yield! ScrapRight™ Interior Lighting Packs would have helped. Ask about our subscription tier!',
+      ajoy:'The dead ship kept most of what it had. It is allowed to.'
+    }
   }
 };
 
@@ -262,6 +288,17 @@ const BRIEF = {
       ajoy:'The drift offers what it has lost. Take what you can carry. The bay will accept it.'
     },
     mechanic:'<strong>Click and hold</strong> over a drifting item to tractor it. Drag it into the <strong>glowing cargo bay</strong> at the bottom of the ship and release. Energy drains while the beam is on — <strong>longer drags cost more</strong>. Items that drift off-screen are gone. <strong>Crates open on the end screen</strong> — you don\'t know what\'s inside until then.'
+  },
+  salvage_derelict:{
+    icon:'🔦',
+    situation:{
+      aria:'We\'re inside! It\'s dark and floaty and there\'s STUFF everywhere! Fuel cells! Food! Tractor it all to the hatch!',
+      marv:'Interior hold of the derelict. No gravity, no power. Fuel cells, ration cans and parts adrift. The stowage hatch is marked below.',
+      rex:'Boarding salvage. Beam is online. Grab what floats, put it through the hatch. Leave the sparking junk alone.',
+      chip:'Derelict detected! ScrapRight™ Interior Recovery is go. Everything not bolted down is a business opportunity!',
+      ajoy:'The ship is quiet. Its things still drift where its people left them. Take them gently.'
+    },
+    mechanic:'<strong>Click and hold</strong> over a floating item to tractor it. Drag it into the <strong>marked stowage hatch</strong> at the bottom and release. Energy drains while the beam is on — <strong>longer drags cost more</strong>. Items that drift out of reach are gone. <strong>Fuel cells</strong> refuel the ship (small +5, medium +10, large +15), <strong>ration cans</strong> are +5 food, a <strong>component</strong> strips to 1 metal + 1 exotic, a <strong>medkit</strong> goes to the hold. Sparking junk is worthless.'
   }
 };
 
@@ -330,9 +367,12 @@ function openMinigame(id, opts, onDone){
   minigameStarted = false; minigameEnding = false; closeAfterResult = false;
   const mclose = document.getElementById('mclose');
   mclose.textContent = '✕ CLOSE'; Tooltip.attach(mclose, { description: 'Back out — nothing has started yet.' });
-  currentGame = id;
+  // SALVAGE inside a derelict plays the salvage game with the hulk's own
+  // briefing, quips and title (opts.setting, cruise.js handleSalvageVerb).
+  const variant = (id === 'salvage' && opts && opts.setting === 'derelict') ? 'salvage_derelict' : id;
+  currentGame = variant;
   if(cleanupFn){ cleanupFn(); cleanupFn=null; }
-  document.getElementById('mtitle').textContent = NAMES[id]||id.toUpperCase();
+  document.getElementById('mtitle').textContent = variant === 'salvage_derelict' ? 'DERELICT SALVAGE' : (NAMES[id]||id.toUpperCase());
   document.getElementById('result').classList.remove('show');
   document.getElementById('ga').innerHTML = '';
   document.getElementById('ov').classList.toggle('bigmodal', BIGMODAL_GAMES.has(id));
@@ -340,7 +380,7 @@ function openMinigame(id, opts, onDone){
   showOverlay('overlay-minigames');
   const inits = {scan:initScan,engine:initEngine,medical:initMedical,forage:initForage,brace:initBrace,breach:initBreach,salvage:initSalvage};
   const token = ++minigameToken;
-  showReady(id, ()=>{
+  showReady(variant, ()=>{
     minigameStarted = true;
     if(typeof window.onJobBegun === 'function') window.onJobBegun(); // a reload from here settles as a quit
     const mclose = document.getElementById('mclose');
@@ -3148,7 +3188,36 @@ function initBreach(container, onResult){
 // ─────────────────────────────────────────────
 // GAME 8 — SALVAGE
 // ─────────────────────────────────────────────
-function initSalvage(container, onResult){
+/* The derelict's hold (owner ruling 2026-10-11 #12; SALVAGE inside a hulk,
+   opts.setting 'derelict'): all 11 sprites in sprites/minigames/derelict/
+   — fuel cells by size, three ration cans, a component, a medkit, three
+   hazards. Payouts are fixed, so the haul card shows exactly what lands
+   (fuel/food as units; the briefing quotes the same numbers). Exposed as
+   window.SALVAGE_DERELICT so lint/tests can read the set; initSalvage
+   reads it at the start of each run. */
+const SALVAGE_DERELICT = (() => {
+  const DD = 'sprites/minigames/derelict/';
+  return {
+    items: [
+      {key:'fuelcell_s', cat:'fuel',      sz:'s', sprite:DD+'derelict_fuelcell_s.png', wt:6},
+      {key:'fuelcell_m', cat:'fuel',      sz:'m', sprite:DD+'derelict_fuelcell_m.png', wt:4},
+      {key:'fuelcell_l', cat:'fuel',      sz:'l', sprite:DD+'derelict_fuelcell_l.png', wt:2},
+      {key:'foodcan',    cat:'food',      sz:'m', sized:false, sprite:DD+'derelict_foodcan.png',   wt:3},
+      {key:'foodcan2',   cat:'food',      sz:'m', sized:false, sprite:DD+'derelict_foodcan2.png',  wt:3},
+      {key:'foodcan3',   cat:'food',      sz:'m', sized:false, sprite:DD+'derelict_foodcan3.png',  wt:3},
+      {key:'component',  cat:'component', sz:'m', sized:false, sprite:DD+'derelict_component.png', wt:4},
+      {key:'medkit',     cat:'medkit',    sz:'m', sized:false, sprite:DD+'derelict_medkit.png',    wt:1},
+    ],
+    hazards: [DD+'derelict_hazard.png', DD+'derelict_hazard2.png', DD+'derelict_hazard3.png'],
+    pay: { fuel:{s:5, m:10, l:15}, food:5, component:{metal:1, exotic:1}, medkit:'medkit' },
+  };
+})();
+window.SALVAGE_DERELICT = SALVAGE_DERELICT;
+function initSalvage(container, onResult, opts){
+  // opts.setting 'derelict' (owner ruling 2026-10-11 #12): the same game
+  // inside a derelict's hold — interior backdrop, no ship bay painted in,
+  // a marked stowage hatch, and sprites/minigames/derelict/'s loot set.
+  const DERELICT = !!(opts && opts.setting === 'derelict');
   // ── Tuned values (from salvage-devtool.html JSON exports) ──
   const BAY    = {x:0.4447, y:0.7905, w:0.1417, h:0.1437};
   const EMIT   = {fx:0.52, fy:0.75};
@@ -3165,14 +3234,18 @@ function initSalvage(container, onResult){
   const ENERGY_DRAIN_PER_PX  = 0.020; // moving cursor while holding
 
   const SD = 'sprites/minigames/salvage/';
+  const DD = 'sprites/minigames/derelict/';
   const MD = 'sprites/cargo/materials/';
   const UD = 'sprites/cargo/upgrades/';
 
-  // Random-pick a scene bg.
+  // Random-pick a scene bg (a derelict: one of its interior rooms).
   const BGS = ['salvage_bg_space.jpg','salvage_bg_deepspace.jpg',
                'salvage_bg_asteroid.jpg','salvage_bg_planet.jpg'];
-  const sceneBg = BGS[Math.floor(Math.random()*BGS.length)];
-  const sceneType = sceneBg.replace('salvage_bg_','').replace('.jpg','');
+  const DERELICT_BGS = ['sprites/backgrounds/ship_interior/derelict/1.jpg',
+                        'sprites/backgrounds/ship_interior/derelict/2.jpg'];
+  const sceneBg = DERELICT ? DERELICT_BGS[Math.floor(Math.random()*DERELICT_BGS.length)]
+                           : SD + BGS[Math.floor(Math.random()*BGS.length)];
+  const sceneType = DERELICT ? 'derelict' : sceneBg.replace(SD + 'salvage_bg_','').replace('.jpg','');
 
   // Drift vector per scene type (fractional units / sec).
   // Asteroid scene = random direction per item.
@@ -3181,6 +3254,7 @@ function initSalvage(container, onResult){
     deepspace:{dx:-0.05,  dy: 0.005, jx: 0.012},
     asteroid: {random:true},
     planet:   {dx: 0.04,  dy: 0.015, jx: 0.008},
+    derelict: {random:true},  // zero-g hold: things float in from every side
   };
   const drift = DRIFTS[sceneType];
 
@@ -3199,7 +3273,9 @@ function initSalvage(container, onResult){
     {key:'crate_m',  cat:'crate',  sz:'m', sprite:SD+'salvage_crate_m.png',   wt:2},
     {key:'crate_l',  cat:'crate',  sz:'l', sprite:SD+'salvage_crate_l.png',   wt:1},
   ];
-  const ITEMS_TOTAL_WT = ITEMS.reduce((s,i)=>s+i.wt,0);
+  const DERELICT_PAY = SALVAGE_DERELICT.pay;
+  const SPAWN_ITEMS = DERELICT ? SALVAGE_DERELICT.items : ITEMS;
+  const ITEMS_TOTAL_WT = SPAWN_ITEMS.reduce((s,i)=>s+i.wt,0);
 
   // CRATE_POOLS defined in shared.js — resolved from the shared global scope.
   const UPGRADES = ['drive_coil','o2_recycler','repair_fabricator'];
@@ -3208,7 +3284,7 @@ function initSalvage(container, onResult){
   // Bgs WITHOUT asteroid clutter (asteroid-surface, planet) get more
   // hazards to fill the visual noise role; bgs WITH clutter (space,
   // deepspace) get fewer so the asteroid parallax does the gunking-up.
-  const HAZARD_SPRITES = [
+  const HAZARD_SPRITES = DERELICT ? SALVAGE_DERELICT.hazards : [
     SD+'salvage_hazard.png', SD+'salvage_hazard2.png', SD+'salvage_hazard3.png',
   ];
   const wantsAsteroids = (sceneType === 'space' || sceneType === 'deepspace');
@@ -3222,8 +3298,8 @@ function initSalvage(container, onResult){
   // update, so we just keep the call as-is and skip the DOM element.
   container.innerHTML = `
     <div class="sal-stage" id="sal-stage">
-      <img class="sal-bg" id="sal-bg" src="${SD}${sceneBg}" alt="">
-      <div class="sal-bay-glow" id="sal-bay-glow"></div>
+      <img class="sal-bg" id="sal-bg" src="${sceneBg}" alt="">
+      <div class="sal-bay-glow${DERELICT ? ' sal-bay-mark' : ''}" id="sal-bay-glow"></div>
       <div class="sal-items" id="sal-items"></div>
       <canvas class="sal-canvas" id="sal-canvas" width="720" height="480"></canvas>
       <div class="sal-hud">
@@ -3339,8 +3415,8 @@ function initSalvage(container, onResult){
 
   function pickItemType() {
     let r = Math.random() * ITEMS_TOTAL_WT;
-    for (const t of ITEMS) { if ((r -= t.wt) <= 0) return t; }
-    return ITEMS[0];
+    for (const t of SPAWN_ITEMS) { if ((r -= t.wt) <= 0) return t; }
+    return SPAWN_ITEMS[0];
   }
 
   function spawnItem() {
@@ -3486,7 +3562,7 @@ function initSalvage(container, onResult){
       if (held.fx >= BAY.x && held.fx <= BAY.x + BAY.w &&
           held.fy >= BAY.y && held.fy <= BAY.y + BAY.h) {
         cargo.push({key:held.type.key, cat:held.type.cat,
-                    sz:held.type.sz, sprite:held.type.sprite});
+                    sz:held.type.sz, sized:held.type.sized !== false, sprite:held.type.sprite});
         countEl.textContent = cargo.length;
         held.alive = false;
         held.el.classList.add('stowed');
@@ -3738,7 +3814,7 @@ function initSalvage(container, onResult){
     const haulHtml = cargo.map((c, i) => `
       <div class="sal-haul-tile" data-idx="${i}" data-cat="${c.cat}">
         <img src="${c.sprite}" alt="">
-        <span class="sal-haul-sz">${c.sz === '-' ? '?' : c.sz.toUpperCase()}</span>
+        ${c.sized ? `<span class="sal-haul-sz">${c.sz === '-' ? '?' : c.sz.toUpperCase()}</span>` : ''}
       </div>`).join('');
 
     endEl.innerHTML = `
@@ -3782,6 +3858,37 @@ function initSalvage(container, onResult){
       };
       flashEl.addEventListener('click', advance);
       const autoT = setTimeout(advance, 2200);
+    }
+
+    // Derelict hold items: fixed yields (DERELICT_PAY) — the same numbers
+    // for the click-through reveal and the silent CLOSE / PROCESS ALL pass.
+    function derelictYield(item) {
+      const sizes = {s:'Small', m:'Medium', l:'Large'};
+      if (item.cat === 'fuel') {
+        const n = DERELICT_PAY.fuel[item.sz];
+        return { adds:[['fuel', DD+'derelict_fuelcell_m.png', 'Fuel', n]],
+                 html:`<img src="${item.sprite}" class="sal-flash-sprite"><div class="sal-flash-arrow">→ fuel tank</div><div class="sal-flash-label">${sizes[item.sz]} fuel cell · +${n} FUEL</div>` };
+      }
+      if (item.cat === 'food') {
+        const n = DERELICT_PAY.food;
+        return { adds:[['food', DD+'derelict_foodcan.png', 'Food', n]],
+                 html:`<img src="${item.sprite}" class="sal-flash-sprite"><div class="sal-flash-arrow">→ galley</div><div class="sal-flash-label">Ration can · +${n} FOOD</div>` };
+      }
+      if (item.cat === 'component') {
+        const c = DERELICT_PAY.component;
+        return { adds:[['metal', MD+'metal.png', 'Metal', c.metal], ['exotic', MD+'exotic.png', 'Exotic', c.exotic]],
+                 html:`<img src="${item.sprite}" class="sal-flash-sprite"><div class="sal-flash-arrow">→</div><div class="sal-flash-result"><img src="${MD}metal.png" class="sal-flash-resource"><span class="sal-flash-label">×${c.metal} metal</span></div><div class="sal-flash-result"><img src="${MD}exotic.png" class="sal-flash-resource"><span class="sal-flash-label">×${c.exotic} exotic</span></div>` };
+      }
+      if (item.cat === 'medkit') {
+        return { adds:[['medkit', item.sprite, 'Medkit', 1]],
+                 html:`<img src="${item.sprite}" class="sal-flash-sprite"><div class="sal-flash-arrow">→ the hold</div><div class="sal-flash-label">Medkit</div>` };
+      }
+      return null;
+    }
+    function processDerelict(item, finish) {
+      const y = derelictYield(item);
+      for (const a of y.adds) addToInv(a[0], a[1], a[2], a[3]);
+      showFlash(y.html, finish);
     }
 
     function processTank(item, finish) {
@@ -3902,6 +4009,7 @@ function initSalvage(container, onResult){
         else if (item.cat === 'coil')    processCoil(item, finish);
         else if (item.cat === 'crate')   processCrate(item, tile, finish);
         else if (item.cat === 'hazard')  processHazard(item, finish);
+        else                             processDerelict(item, finish); // fuel / food / component / medkit
       });
     });
 
@@ -3936,6 +4044,8 @@ function initSalvage(container, onResult){
           if (exotic > 0) addToInv('exotic', MD+'exotic.png', 'Exotic', exotic);
         } else if (item.cat === 'hazard') {
           addToInv('useless_scrap', item.sprite, 'Useless Scrap', 1);
+        } else if (derelictYield(item)) {
+          for (const a of derelictYield(item).adds) addToInv(a[0], a[1], a[2], a[3]);
         } else if (item.cat === 'crate') {
           const range = {s:[1,2], m:[3,4], l:[4,6]}[item.sz];
           const n = range[0] + Math.floor(Math.random() * (range[1]-range[0]+1));
