@@ -139,6 +139,7 @@
       hull:  STATE.resources.hull,
       days:  STATE.daysElapsed,
       baseDays: STATE.baseDays,
+      failed: end.kind === 'failure',
     };
 
     // Ship's Record — the voyage's notable choices (index.html shipsRecordLines).
@@ -246,9 +247,12 @@
     }
 
     const delta = stats.baseDays - stats.days;
+    const nDays = n => n + (n === 1 ? ' DAY' : ' DAYS');
     let cmp, cmpClass;
-    if (delta > 0) { cmp = delta + ' DAYS EARLY'; cmpClass = 'early'; }
-    else if (delta < 0) { cmp = (-delta) + ' DAYS LATE'; cmpClass = 'late'; }
+    // A failure never arrived: "N days early" read as praise.
+    if (stats.failed) { cmp = 'THE VOYAGE ENDED HERE'; cmpClass = 'late'; }
+    else if (delta > 0) { cmp = nDays(delta) + ' EARLY'; cmpClass = 'early'; }
+    else if (delta < 0) { cmp = nDays(-delta) + ' LATE'; cmpClass = 'late'; }
     else { cmp = 'ON TIME'; cmpClass = ''; }
     $('end-day-line').innerHTML =
       `DAY <span class="day-num">${stats.days}</span> OF ${stats.baseDays} · <span class="day-cmp ${cmpClass}">${cmp}</span>`;
@@ -346,9 +350,11 @@
     showScreen('screen-end');
   };
   window.showEndReport = function () {
-    // Reading the report accepts the ending — a resumable failure's
-    // pending save goes now (index.html endRun kept it for this choice).
-    if (typeof clearSave === 'function') clearSave();
+    // Reading the report accepts a final ending. A resumable failure's
+    // pending save stays while Keep flying / the beacon is still offered
+    // (Back returns to it); New Run clears it.
+    const resumable = currentView && (currentView.continueOption || currentView.beaconOption);
+    if (!resumable && typeof clearSave === 'function') clearSave();
     if (currentView) renderReport(currentView);
   };
   window.endBackToCinematic = function () {

@@ -57,7 +57,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   await boot(['engineer']);
   await ev(() => {
     STATE.stowaway = { identity: MOD.flavor.stowaway_identities.find(i => i.id === 'stowaway_inspector'), revealed: false };
-    STATE.daysElapsed = Math.ceil(STATE.baseDays * 0.3);
+    // Journey position is legs flown (index.html activeTriggers).
+    STATE.visited = new Set(STATE.nodes.slice(0, Math.ceil(pathLegs() * 0.3)).map(n => n.id));
   });
   ok(await ev(() => STATE.stowaway.identity.join_role) === 'diplomat', 'identity join_role is diplomat');
   ok(await ev(() => activeTriggers().has('stowaway_aboard')), 'reveal window open past 20%');

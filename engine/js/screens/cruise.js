@@ -456,12 +456,14 @@
       const mined = Object.values(inv).reduce((a, b) => a + (b || 0), 0);
       const side = Math.min(15, Math.round(mined / 2));
       const region = currentRegionKey();
+      // The log reports what actually went in (tanks cap).
+      const gain = (k, max) => { const b = STATE.resources[k]; STATE.resources[k] = clamp(b + side, 0, max); return Math.round(STATE.resources[k] - b); };
       if (side > 0 && region === 'asteroid_field') {
-        STATE.resources.water = clamp(STATE.resources.water + side, 0, 100);
-        granted.push('ice melted for +' + side + ' water');
+        const got = gain('water', 100);
+        granted.push(got > 0 ? 'ice melted for +' + got + ' water' : 'ice, but the water tanks are full');
       } else if (side > 0 && region === 'nebula') {
-        STATE.resources.fuel = clamp(STATE.resources.fuel + side, 0, resMax('fuel'));
-        granted.push('+' + side + ' fuel scooped from the gas');
+        const got = gain('fuel', resMax('fuel'));
+        granted.push(got > 0 ? '+' + got + ' fuel scooped from the gas' : 'gas, but the fuel tank is full');
       }
       settleMinigame('◆ MINE — recovered ' + granted.join(', ') + '.');
     });
@@ -562,17 +564,23 @@
   // rule's canonical upgrade-gated verb): a day of work, +12 water.
   function condenseLockReason() {
     if (!STATE.items.includes('atmospheric_condenser')) return 'Need: Atmospheric Condenser';
-    if (STATE.resources.water >= 100) return 'Water tanks are full';
+    if (STATE.resources.water >= 97) return 'Water tanks are full'; // a day for under 3 water isn't a trade
     return null;
   }
   function handleCondenseVerb() {
     if (condenseLockReason()) return;
-    STATE.resources.water = clamp(STATE.resources.water + 12, 0, 100);
-    settleMinigame('◆ CONDENSE — a day of the condenser hissing at the nebula. +12 water, faintly violet.');
+    const before = STATE.resources.water;
+    STATE.resources.water = clamp(before + 12, 0, 100);
+    settleMinigame('◆ CONDENSE — a day of the condenser hissing at the nebula. +' + Math.round(STATE.resources.water - before) + ' water, faintly violet.');
   }
   // DRYDOCK (stations — Bible multi-path rule "station drydock (gold)").
   const DRYDOCK_BASE = 30;
-  const drydockFee = () => stationPrice(DRYDOCK_BASE);
+  // Pro-rated: the full fee buys +30; topping off a few points costs less
+  // (it charged 30g for +1 at 104/105).
+  const drydockFee = () => {
+    const missing = Math.max(0, resMax('hull') - STATE.resources.hull);
+    return stationPrice(Math.max(5, Math.ceil(DRYDOCK_BASE * Math.min(30, missing) / 30)));
+  };
   function drydockLockReason() {
     if (STATE.resources.hull >= resMax('hull')) return 'Hull is intact';
     if (STATE.goldAmount < drydockFee()) return 'Costs ' + drydockFee() + 'g';
@@ -708,7 +716,14 @@
     for (const f of STATE.flags) if (pay[f] && !(f in STATE.flagFirstSeen)) STATE.flagFirstSeen[f] = leg;
     const ready = [...STATE.flags].filter(f => pay[f] && !STATE.calledBack.includes(f) && leg - STATE.flagFirstSeen[f] >= 2
       && pay[f].callback && pay[f].callback[STATE.activeAI]);
-    if (!ready.length || Math.random() >= 0.3) return false;
+    if (!ready.length) return false;
+    // Pacing (hunt 5, measured over 36 real runs): 35% per new stop, at
+    // least two legs apart, and guaranteed after four quiet legs while a
+    // memory is waiting — lunar runs often went without any.
+    const since = leg - (STATE.lastCallbackLeg != null ? STATE.lastCallbackLeg : -99);
+    if (since < 2) return false;
+    if (since < 4 && Math.random() >= 0.35) return false;
+    STATE.lastCallbackLeg = leg;
     ready.sort((a, b) => (pay[b].weight || 1) - (pay[a].weight || 1));
     const f = ready[0];
     STATE.calledBack.push(f);
@@ -761,15 +776,40 @@
       if (rank[level] > rank[prev]) {
         // Pool only covers fuel/food/water/o2/hull/morale where authored —
         // missing pools just skip (water/o2 land in the same pass as this wiring).
-        const line = aiPool(['resource_warning', res, level]);
+        // First time fuel runs low: the AI's signature low_fuel line.
+        let line = null;
+        if (res === 'fuel' && !STATE.flags.has('ai_sampled_low_fuel') && window.aiSampleLine) {
+          STATE.flags.add('ai_sampled_low_fuel'); line = aiSampleLine('low_fuel');
+        }
+        line = line || aiPool(['resource_warning', res, level]);
         if (line) pushLogEntry('◆ ' + line);
       }
       STATE.aiWarnLevels[res] = level;
     }
   }
 
+  // crops.json zinnia_arc — a three-beat background story for zinnia runs
+  // (bloom at the start, a name mid-journey, a scare when it sickens).
+  // The first two are morale events in fact, not just in the log.
+  const ZINNIA_BEATS = [['beat_1', 'journey_start', 2], ['beat_2', 'journey_mid', 3], ['beat_3', 'crop_sick', 0]];
+  function checkZinniaArc() {
+    if (STATE.crop !== 'zinnia' || !STATE.cropGrowth || STATE.cropGrowth.health <= 0) return;
+    const arc = ((MOD.crops && MOD.crops.crops) || []).find(c => c.id === 'crop_zinnia');
+    if (!arc || !arc.zinnia_arc) return;
+    const trig = activeTriggers();
+    for (const [key, trigger, morale] of ZINNIA_BEATS) {
+      const beat = arc.zinnia_arc[key];
+      if (!beat || STATE.flags.has('zinnia_' + key) || !trig.has(trigger)) continue;
+      STATE.flags.add('zinnia_' + key);
+      if (morale) STATE.resources.morale = clamp(STATE.resources.morale + morale, 0, 100);
+      pushLogEntry('◆ ' + beat.first_line + (morale ? ' (+' + morale + ' morale)' : ''));
+      return; // one beat per stop
+    }
+  }
+
   function checkCropMilestones() {
     if (!STATE.crop || !STATE.cropGrowth) return;
+    checkZinniaArc();
     const growth = STATE.cropGrowth.growth || 0;
     const health = STATE.cropGrowth.health;
     // A fresh growth cycle (launch, or the replant after a harvest —
@@ -799,7 +839,11 @@
     const healthyAt = (cropDef && cropDef.healthy_threshold) || 70;
     if (health > 0 && health < sickAt && !STATE.flags.has('ai_noted_crop_sick')) {
       STATE.flags.add('ai_noted_crop_sick');
-      const line = aiPool(['crop_lifecycle', 'diseased']);
+      // The AI's signature crop_sick line (ai_companions) the first time;
+      // the crop_lifecycle pool for relapses.
+      const first = !STATE.flags.has('ai_sampled_crop_sick');
+      STATE.flags.add('ai_sampled_crop_sick');
+      const line = (first && window.aiSampleLine && aiSampleLine('crop_sick')) || aiPool(['crop_lifecycle', 'diseased']);
       if (line) pushLogEntry('◆ ' + line);
     } else if (health >= healthyAt && STATE.flags.has('ai_noted_crop_sick')) {
       STATE.flags.delete('ai_noted_crop_sick');
@@ -818,5 +862,8 @@
   }
 
   window.renderCruise = renderCruise;
+  // The open Stop menu re-gates after anything that changes the ship
+  // from an overlay (fabricator, inventory USE) — lock reasons and fees.
+  window.refreshStopMenu = () => { if (document.body.classList.contains('stop-active')) renderStopMenu(); };
   window.pushCruiseLog = pushLogEntry;
 })();

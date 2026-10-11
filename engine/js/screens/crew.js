@@ -90,22 +90,26 @@
     '[Name] is now somebody else\'s specialist. The bunk is already suspiciously tidy.',
   ];
 
-  // Monitored statuses — demo's canonical list. The engine currently
-  // promotes wounded (crew HP), pending_crisis (an untreated delayed-
-  // severity wound) and morale_crisis (ship morale); the rest render as
-  // dim monitored stubs until their systems land.
+  // Monitored statuses — the demo's panel, holding only conditions the
+  // engine really tracks, each with its real effect (owner rule: nothing
+  // decorative). Sick / infected / exhausted / traumatized / radiation
+  // had no system behind them and could never fire; malnourished /
+  // dehydrated / suffocating are the deprivation counters (index.html
+  // DEPRIVATION), shown with the numbers that table applies.
+  // (read at render: DEPRIVATION is declared by index.html after this file loads)
+  const dep = (res, verb) => {
+    const d = (typeof DEPRIVATION !== 'undefined' && DEPRIVATION[res]) || { hp: 0, morale: 0, failAfter: 0 };
+    return '−' + d.hp + ' HP & −' + d.morale + ' morale a day · ' + d.failAfter + ' days = ' + verb;
+  };
   const MONITORED_STATUSES = [
     { id: 'wounded',            name: 'Wounded',            kind: 'critical', effect: 'Active skill disabled · passive halved' },
-    { id: 'sick',               name: 'Sick',               kind: 'negative', effect: '−10% strength regen · morale −1/day' },
-    { id: 'infected',           name: 'Infected',           kind: 'critical', effect: 'Contagious · spreads without a Medic' },
-    { id: 'exhausted',          name: 'Exhausted',          kind: 'negative', effect: 'Strength actions cost double' },
-    { id: 'morale_crisis',      name: 'Morale crisis',      kind: 'critical', effect: 'Unstable · event rolls trend bad' },
-    { id: 'traumatized',        name: 'Traumatized',        kind: 'negative', effect: 'Morale cap ≤ 60 until processed' },
-    { id: 'malnourished',       name: 'Malnourished',       kind: 'negative', effect: 'HP regen halted · morale −1/day' },
-    { id: 'dehydrated',         name: 'Dehydrated',         kind: 'negative', effect: 'Strength −10/day · HP at risk' },
-    { id: 'radiation_exposure', name: 'Radiation exposure', kind: 'critical', effect: 'Accumulating damage · see Medic' },
+    { id: 'morale_crisis',      name: 'Morale crisis',      kind: 'critical', effect: 'Ship morale under 25 · at 0 the crew mutinies' },
+    { id: 'malnourished',       name: 'Malnourished',       kind: 'negative', get effect() { return dep('food', 'starvation'); } },
+    { id: 'dehydrated',         name: 'Dehydrated',         kind: 'negative', get effect() { return dep('water', 'dehydration'); } },
+    { id: 'suffocating',        name: 'Suffocating',        kind: 'critical', get effect() { return dep('o2', 'suffocation'); } },
     { id: 'pending_crisis',     name: 'Pending crisis',     kind: 'critical', effect: 'Untreated by next station → follow-up event' },
   ];
+
 
   // HEALTH-driven glow stops — growbay's HEALTH_STOPS (demo copy).
   const GLOW_STOPS = [
@@ -371,6 +375,11 @@
       fired.add('pending_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'pending_crisis'));
     }
     if (mo < 25) { fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'morale_crisis')); }
+    // Ship-wide deprivation: everyone aboard goes without.
+    const dpv = STATE.deprived || {};
+    for (const [res, id] of [['food', 'malnourished'], ['water', 'dehydrated'], ['o2', 'suffocating']]) {
+      if (dpv[res] > 0) { fired.add(id); const st = MONITORED_STATUSES.find(s => s.id === id); active.push(Object.assign({}, st, { name: st.name + ' · day ' + dpv[res] })); }
+    }
     return { active, monitored: MONITORED_STATUSES.filter(s => !fired.has(s.id)) };
   }
 

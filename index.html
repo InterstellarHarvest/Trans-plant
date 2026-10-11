@@ -989,7 +989,7 @@ body {
         </div>
         <div id="end-report-actions">
           <button class="btn" onclick="endBackToCinematic()">Back</button>
-          <button class="btn accent-gold" onclick="location.reload()">New Run</button>
+          <button class="btn accent-gold" onclick="if (typeof clearSave === 'function') clearSave(); location.reload()">New Run</button>
         </div>
       </div>
     </div>
@@ -1727,7 +1727,7 @@ const SAVED_FIELDS = [
   'soilSurveys', // soil sampler planet surveys (ending score)
   'startCrew',   // crew size at launch (ending crew paragraph / score)
   'dayCarry',    // fractional travel day carried between legs
-  'flagFirstSeen', 'calledBack', // story-flag callbacks: when each choice happened, which the AI has brought up
+  'flagFirstSeen', 'calledBack', 'lastCallbackLeg', // story-flag callbacks: when each choice happened, which the AI has brought up, when it last did
 ];
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
@@ -1739,7 +1739,7 @@ function saveRun(key) {
 // Why a pause-menu SAVE was refused, in the player's terms.
 window.saveBlockedReason = function () {
   if (!STATE.trail || !STATE.nodes.length) return 'NO VOYAGE TO SAVE YET';
-  if (STATE.ended) return 'THE VOYAGE IS OVER';
+  if (STATE.ended) return STATE._resumableEnd ? 'ALREADY SAVED — KEEP FLYING OR START OVER' : 'THE VOYAGE IS OVER';
   if (STATE.currentEvent) return 'FINISH THIS ENCOUNTER FIRST';
   if (document.querySelector('#overlay-minigames.active, #overlay-mining.active')) return 'FINISH THE JOB FIRST';
   return null;
@@ -1794,6 +1794,10 @@ function loadRun(key) {
   if (!validSave(snap)) return false;
   teardownLiveUI();
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
+  // A save from before a field existed must not inherit the run that was
+  // in memory (Continue after a finished run kept its callbacks/carry).
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true };
+  for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
   STATE.seenEventIds = new Set(snap.seenEventIds || []);
@@ -1965,7 +1969,7 @@ function applySetupToState(sel) {
   STATE.crisisPatient = null; STATE.lastAmbientNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0;
-  STATE.flagFirstSeen = {}; STATE.calledBack = [];
+  STATE.flagFirstSeen = {}; STATE.calledBack = []; STATE.lastCallbackLeg = null;
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
   if (typeof window.abortFabricator === 'function') window.abortFabricator();
@@ -2118,6 +2122,20 @@ function crewHPOf(role) {
   return STATE.crewHP[role];
 }
 
+/* modules/ai/ai_companions.json sample_lines — each AI's signature line
+   for a handful of moments (hull_breach, crew_death, crop_sick, low_fuel,
+   fabricator_misfire). Loaded since day one, read by nothing until now. */
+function aiSampleLine(moment) {
+  const a = (MOD.ai_companions || []).find(x => x.id === 'ai_' + STATE.activeAI);
+  return (a && a.sample_lines && a.sample_lines[moment]) || null;
+}
+window.aiSampleLine = aiSampleLine;
+function pushAiSample(moment) {
+  const line = aiSampleLine(moment);
+  if (line && typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + line);
+}
+window.pushAiSample = pushAiSample;
+
 function killCrew(role) {
   const idx = STATE.crew.indexOf(role);
   if (idx < 0) return;
@@ -2145,6 +2163,7 @@ function killCrew(role) {
       expand: epitaph,
     });
   }
+  pushAiSample('crew_death');
 }
 
 /* A stowaway who joins as crew fills a role but keeps their own
@@ -2327,7 +2346,7 @@ function activeTriggers() {
    the matches (not first-match) — closes audit A6, reused for both
    event selection and ending/failure selection. */
 function filterThenRandomDraw(pool, predicate) {
-  const matches = pool.filter(predicate);
+  const matches = pool.filter(x => x && x.active !== false && predicate(x)); // authored active:false retires an entry
   if (!matches.length) return null;
   return matches[Math.floor(Math.random() * matches.length)];
 }
@@ -2359,7 +2378,14 @@ function selectEvent(node) {
     ? { easy: (rules.event_difficulty_weights.easy || 0) * 3 + 10, medium: (rules.event_difficulty_weights.medium || 0) * 2 + 5, hard: (rules.event_difficulty_weights.hard || 0) * 0.3, ultra: (rules.event_difficulty_weights.ultra || 0) * 0.1 }
     : rules.event_difficulty_weights;
 
-  const candidates = Object.values(EVENTS).filter(ev => eventEligible(ev, node, triggers));
+  let candidates = Object.values(EVENTS).filter(ev => eventEligible(ev, node, triggers));
+  // Departure comes first: until the ship has 'departed', a launch event
+  // takes the first ordinary stop (not a station or fork, whose events
+  // the run needs) — one of them, and only one (they share the flag).
+  if (!STATE.flags.has('departed') && node.node_type !== 'station' && node.node_type !== 'fork') {
+    const launch = candidates.filter(ev => /^event_launch_/.test(ev.id));
+    if (launch.length) candidates = launch;
+  }
   if (!candidates.length) return null;
   return drawWeightedEvent(candidates, triggers, baseWeights);
 }
@@ -2379,6 +2405,8 @@ function eventEligible(ev, node, triggers) {
     // Handoff) only fire while the story object is actually in cargo
     // (jettisoning it un-schedules the payoff, as it should).
     if (ev.requires_item && !STATE.items.includes(ev.requires_item)) return false;
+    // Launch events are mutually exclusive: either one is the departure.
+    if (/^event_launch_/.test(ev.id) && STATE.flags.has('departed')) return false;
     // Trail targeting (registry dim 4.29 `trail`, previously unused by
     // any content or engine path): an event listing trails only enters
     // the pool on those trails. Gives each difficulty its own exclusive
@@ -2603,19 +2631,20 @@ function renderInventory() {
 }
 /* Consumables the player can use from the hold (items.json "on use"
    effects). can() → null when usable, else the reason it isn't. */
-function invAddRes(k, n) { STATE.resources[k] = clamp(STATE.resources[k] + n, 0, resMax(k)); }
+// Adds to a resource up to its cap; returns what actually went in (USE lines report that).
+function invAddRes(k, n) { const b = STATE.resources[k]; STATE.resources[k] = clamp(b + n, 0, resMax(k)); return Math.round(STATE.resources[k] - b); }
 function worstHurtCrew() {
   let worst = null;
   for (const r of STATE.crew) if (crewHPOf(r) < 100 && (!worst || crewHPOf(r) < crewHPOf(worst))) worst = r;
   return worst;
 }
 const ITEM_USE = {
-  ration_brick:   { label: '+10 FOOD',  can: () => STATE.resources.food  >= resMax('food') ? 'Food stores are full' : null,  use: () => { invAddRes('food', 10);  return 'Ration brick unwrapped. +10 food. Nobody describes the flavour.'; } },
-  water_canister: { label: '+10 H2O',   can: () => STATE.resources.water >= 100 ? 'Water tanks are full' : null,  use: () => { invAddRes('water', 10); return 'Water canister emptied into the tanks. +10 water.'; } },
-  fuel_cell:      { label: '+15 FUEL',  can: () => STATE.resources.fuel  >= resMax('fuel') ? 'Fuel tank is full' : null, use: () => { invAddRes('fuel', 15); return 'Fuel cell slotted in. +15 fuel.'; } },
-  repair_kit:     { label: '+10 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { invAddRes('hull', 10); return 'Repair kit spent on the worst seams. +10 hull.'; } },
-  hull_patch:     { label: '+15 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { invAddRes('hull', 15); return 'Hull patch applied. +15 hull. It holds. Probably.'; } },
-  o2_canister:    { label: '+14 O2',    can: () => STATE.resources.o2    >= 100 ? 'O2 is full' : null,               use: () => { invAddRes('o2', 14);   return 'O2 canister vented into the air supply. +14 O2.'; } },
+  ration_brick:   { label: '+10 FOOD',  can: () => STATE.resources.food  >= resMax('food') ? 'Food stores are full' : null,  use: () => { return 'Ration brick unwrapped. +' + invAddRes('food', 10) + ' food. Nobody describes the flavour.'; } },
+  water_canister: { label: '+10 H2O',   can: () => STATE.resources.water >= 100 ? 'Water tanks are full' : null,  use: () => { return 'Water canister emptied into the tanks. +' + invAddRes('water', 10) + ' water.'; } },
+  fuel_cell:      { label: '+15 FUEL',  can: () => STATE.resources.fuel  >= resMax('fuel') ? 'Fuel tank is full' : null, use: () => { return 'Fuel cell slotted in. +' + invAddRes('fuel', 15) + ' fuel.'; } },
+  repair_kit:     { label: '+10 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { return 'Repair kit spent on the worst seams. +' + invAddRes('hull', 10) + ' hull.'; } },
+  hull_patch:     { label: '+15 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { return 'Hull patch applied. +' + invAddRes('hull', 15) + ' hull. It holds. Probably.'; } },
+  o2_canister:    { label: '+14 O2',    can: () => STATE.resources.o2    >= 100 ? 'O2 is full' : null,               use: () => { return 'O2 canister vented into the air supply. +' + invAddRes('o2', 14) + ' O2.'; } },
   medkit:         { label: 'HEAL',      can: () => worstHurtCrew() ? null : 'Nobody is hurt',
                     use: () => { const r = worstHurtCrew(); STATE.crewHP[r] = 100; delete crewPendingOf()[r]; return 'Medkit opened. ' + crewNameOf(r) + ' is patched up and back on their feet.'; } },
   crop_treatment: { label: '+30 CROP',  can: () => !STATE.cropGrowth || STATE.cropGrowth.health <= 0 ? 'Nothing left to treat' : (STATE.cropGrowth.health >= 100 && !STATE.cropGrowth.pest ? 'The crop is healthy' : null),
@@ -2685,6 +2714,7 @@ function renderInvDetail(en) {
     if (!STATE.items.includes(id)) _invSelected = null;
     renderInventory();
     if (typeof window.renderCruise === 'function' && document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();
+    if (typeof window.refreshStopMenu === 'function') window.refreshStopMenu();
   });
   document.getElementById('inv-confirm-no').addEventListener('click', () => {
     _invJettisonPending = null;
@@ -3550,6 +3580,9 @@ function resolveLayerNpc(spec, evId, layerId) {
 function interpolateStowawayTokens(text) {
   // Run-identity tokens: {stowaway.*} (the hidden passenger) and
   // {patient.*} (a delayed_crisis event's wounded crew member).
+  // {crew.<role>}: whoever holds that role now (a stowaway who joined as
+  // diplomat keeps their own name — the text used to say "Hargrove").
+  if (text && text.indexOf('{crew.') !== -1) text = text.replace(/\{crew\.(\w+)\}/g, (m, role) => crewNameOf(role));
   if (text && text.indexOf('{patient.') !== -1) {
     const p = STATE.crisisPatient;
     text = text
@@ -3644,9 +3677,11 @@ function renderEncounterState() {
   // (demo's growbay_visit archetype — CREW_SHEETS talking head).
   let layerNpcCtx = (layer && layer.npc) ? resolveLayerNpc(layer.npc, ev.id, layerId) : null;
   const crewId = (layer && layer.crew_id) || ev.crew_id || null;
-  if (crewId && !layerNpcCtx) {
-    const rosterEntry = (MOD.crew_roster || []).find(c =>
-      ({ osei:'botanist', kazuki:'engineer', vasquez:'medic', reeves:'pilot', reyes:'chef', tanaka:'xenobiologist', hargrove:'diplomat' })[crewId] === c.role);
+  const crewRole = crewId && ({ osei:'botanist', kazuki:'engineer', vasquez:'medic', reeves:'pilot', reyes:'chef', tanaka:'xenobiologist', hargrove:'diplomat' })[crewId];
+  // Only when that very crew member is aboard (no Dr. Osei on a ship with
+  // no botanist, nor in place of a stowaway who took the role).
+  if (crewId && !layerNpcCtx && crewRole && STATE.crew.includes(crewRole) && !crewIdentityOf(crewRole)) {
+    const rosterEntry = (MOD.crew_roster || []).find(c => c.role === crewRole);
     layerNpcCtx = { crewId, displayName: (rosterEntry && rosterEntry.name || crewId).toUpperCase(), species: null, disposition: 'crew', quirk: '' };
   }
 
@@ -3787,7 +3822,7 @@ function showHindsight() {
     : /^−/.test(top.text) ? 'cost you ' + top.text.slice(1).toLowerCase()
     : 'meant ' + top.text.toLowerCase();
   const pool = (MOD.flavor && MOD.flavor.ajoy_hindsight) || ['For the record, “{choice}” would have {result}.'];
-  const label = String(ch.text || ch.label || '').replace(/\s+/g, ' ').trim();
+  const label = String(interpolateStowawayTokens(ch.text || ch.label || '')).replace(/\s+/g, ' ').trim();
   const line = pool[Math.floor(Math.random() * pool.length)]
     .replaceAll('{choice}', label.length > 48 ? label.slice(0, 46) + '…' : label)
     .replaceAll('{result}', result);
@@ -3877,11 +3912,11 @@ function renderChoicesInner(choices) {
 
     const bodyEl = document.createElement('div');
     bodyEl.className = 'ch-text' + (ch.dialog ? ' dialog' : '');
-    bodyEl.textContent = ch.text || ch.label;
+    bodyEl.textContent = interpolateStowawayTokens(ch.text || ch.label);
     btn.appendChild(bodyEl);
 
     // Sub row: effort pips + one-line sub text (lock reason wins).
-    let subText = locked || ch.sub || '';
+    let subText = locked || interpolateStowawayTokens(ch.sub || '');
     // Field Analysis payoff: a choice that spends/needs an analysed item
     // shows the finding before the player commits (one line; CSS ellipsis).
     const gateItem = ch.requires_item || (ch.gate && ch.gate.item) || ch.item_consume || (ch.outcome && ch.outcome.item_consume) || null;
@@ -3915,7 +3950,13 @@ function renderChoicesInner(choices) {
     // A preview takes the one-line sub-label; what it displaced (stand-in,
     // effort odds, kit) moves to the tooltip rather than vanishing.
     let displaced = null;
-    if (preview) { displaced = subText; subText = preview; btn.classList.add('previewed'); }
+    if (preview) {
+      displaced = subText;
+      // A hands-on job keeps its odds beside the preview (the preview shows
+      // the clean result; short of effort is about half).
+      subText = preview + (effort && effort.check ? ' · ' + Math.round(effort.chance * 100) + '% clean' : '');
+      btn.classList.add('previewed');
+    }
     if (ch.effort || subText) {
       const sub = document.createElement('div');
       sub.className = 'ch-sub';
@@ -4014,12 +4055,46 @@ function choiceOutcome(choice) {
 const RES_LABEL = { fuel: 'FUEL', food: 'FOOD', water: 'H2O', o2: 'O2', hull: 'HULL', morale: 'MORALE', gold: 'GOLD' };
 const SEVERITY_LABEL = { injury: 'AN INJURY', delayed: 'A BAD WOUND', lethal: 'A DEATH RISK' };
 // [{text, weight, good}] — every effect of an outcome a player would care about.
+/* What a resource delta really does aboard this ship — shared by the
+   outcome itself and every preview (MARV, SCAN, RESEARCH, scanners), so
+   a preview never promises the authored number when the ship changes it. */
+function effectiveResDelta(k, v) {
+  // O2 recycler (items.json): O2 losses reduced 25%.
+  let dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.trunc(v * 0.75) : v; // toward zero: a −1 loss becomes 0
+  // Engineer passive: hull repairs land 25% further (captain half).
+  if (k === 'hull' && dv > 0) dv = Math.round(dv * (1 + 0.25 * specialistMult('engineer')));
+  return dv;
+}
+/* resources_pct (outcome field): a share of what's aboard — "thirty
+   percent fuel" — resolved against the current stock. */
+function withPctResources(o) {
+  if (!o || !o.resources_pct) return o;
+  const res = Object.assign({}, o.resources || {});
+  for (const [k, pct] of Object.entries(o.resources_pct)) {
+    if (!Number.isFinite(pct)) continue;
+    const have = k === 'gold' ? STATE.goldAmount : (STATE.resources[k] || 0);
+    res[k] = (res[k] || 0) + Math.round(have * pct / 100);
+  }
+  return Object.assign({}, o, { resources: res, resources_pct: null });
+}
 function outcomeFacts(o) {
   const facts = [];
-  for (const [k, v] of Object.entries(o.resources || {})) {
-    if (!Number.isFinite(v) || !v || !RES_LABEL[k]) continue;
+  for (const [k, pct] of Object.entries((o && o.resources_pct) || {})) {
+    if (!Number.isFinite(pct) || !pct || !RES_LABEL[k]) continue;
+    facts.push({ text: (pct > 0 ? '+' : '−') + Math.abs(pct) + '% ' + RES_LABEL[k], weight: Math.abs(pct) / (k === 'gold' ? 5 : 1), good: pct > 0 });
+  }
+  for (const [k, v0] of Object.entries(o.resources || {})) {
+    if (!Number.isFinite(v0) || !v0 || !RES_LABEL[k]) continue;
+    const v = k === 'gold' ? v0 : effectiveResDelta(k, v0);
+    if (!v) continue;
     facts.push({ text: (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + RES_LABEL[k], weight: Math.abs(v) / (k === 'gold' ? 5 : 1), good: v > 0 });
   }
+  for (const [m, q] of Object.entries(o.materials || {})) {
+    if (Number.isFinite(q) && q) facts.push({ text: (q > 0 ? '+' : '−') + Math.abs(q) + ' ' + m.toUpperCase(), weight: Math.abs(q) * 2, good: q > 0 });
+  }
+  if (o.fabricator_repair) facts.push({ text: 'FAB REPAIRED', weight: 12, good: true });
+  if (o.clears_pest) facts.push({ text: 'PESTS CLEARED', weight: 10, good: true });
+  if (o.set_orders) facts.push({ text: 'ORDERS CHANGE', weight: 4, good: false });
   if (o.severity && SEVERITY_LABEL[o.severity]) facts.push({ text: SEVERITY_LABEL[o.severity], weight: o.severity === 'lethal' ? 40 : 15, good: false });
   const ce = o.crew_effect;
   if (ce && ce.type === 'kill') facts.push({ text: 'A DEATH', weight: 50, good: false });
@@ -4309,7 +4384,9 @@ function handleChoiceClick(choice) {
   STATE.halfEffect = choiceStandIn(choice);
   const eff = choiceEffort(choice);
   STATE.effortScale = eff ? eff.ratio : 1;
-  STATE.effortCon = (eff && eff.check && Math.random() >= eff.chance) ? eff.check : null;
+  // Short of effort: the job's setback, and the extra days (one when the
+  // job already scales its time by effort, two otherwise).
+  STATE.effortCon = (eff && eff.check && Math.random() >= eff.chance) ? Object.assign({}, eff.check, { days: eff.authored ? 1 : 2 }) : null;
   if (eff && eff.kit) {
     const i = STATE.items.indexOf(eff.kit);
     if (i >= 0) { STATE.items.splice(i, 1); if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ A ' + prettyItem(eff.kit) + ' went into the job.'); }
@@ -4411,12 +4488,17 @@ function applyOutcomeEffects(o) {
     if (Number.isFinite(o.set_orders.waterSplit)) setWaterSplit(o.set_orders.waterSplit);
     if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ Standing orders changed — check ORDERS.');
   }
-  // Short of effort on a hands-on job: the job's own setback on top.
+  // Short of effort on a hands-on job: thinner gains (halved below, in
+  // the resources loop and here for materials), then the job's own
+  // setback as a separate step — folding it into the authored numbers
+  // first let the halving and the engineer bonus water it down.
+  let conSetback = null;
   if (STATE.effortCon && !o._conApplied) {
-    o = Object.assign({}, o, { _conApplied: true, resources: Object.assign({}, o.resources || {}) });
-    for (const [k, v] of Object.entries(STATE.effortCon.con)) o.resources[k] = (o.resources[k] || 0) + v;
+    o = Object.assign({}, o, { _conApplied: true });
+    conSetback = STATE.effortCon.con;
     if (o.materials) o.materials = Object.fromEntries(Object.entries(o.materials).map(([m, q]) => [m, Math.floor(q / 2)]));
   }
+  o = withPctResources(o);
   if (o.resources) {
     for (const [k, v] of Object.entries(o.resources)) {
       if (!Number.isFinite(v)) continue; // authored typo can't NaN-poison STATE
@@ -4431,15 +4513,17 @@ function applyOutcomeEffects(o) {
           window.pushCruiseLog('◆ The emergency patch holds — ' + (-v) + ' hull damage never lands. The patch does not survive the experience.');
         }
       } else if (k in STATE.resources) {
-        // O2 recycler (items.json): O2 losses reduced 25%.
-        let dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.trunc(v * 0.75) : v; // toward zero: a −1 loss becomes 0
-        // Engineer passive "hull repair events cost less time and
-        // resources": hull repairs land 25% further (captain half).
-        if (k === 'hull' && dv > 0) dv = Math.round(dv * (1 + 0.25 * specialistMult('engineer')));
+        let dv = effectiveResDelta(k, v);
         if (STATE.halfEffect && dv > 0) dv = Math.floor(dv / 2); // captain standing in: half the gains (rounded down)
         if (STATE.effortCon && dv > 0) dv = Math.floor(dv / 2);  // short of effort: thinner gains
         STATE.resources[k] = clamp(STATE.resources[k] + dv, 0, resMax(k));
       }
+    }
+  }
+  if (conSetback) {
+    for (const [k, v] of Object.entries(conSetback)) {
+      if (k === 'gold') STATE.goldAmount = Math.max(0, STATE.goldAmount + v);
+      else if (k in STATE.resources) STATE.resources[k] = clamp(STATE.resources[k] + v, 0, resMax(k));
     }
   }
 
@@ -4562,7 +4646,7 @@ function applyOutcomeEffects(o) {
   // Effort system (Bible §Effort, owner ruling 2026-10-10 "effort only"):
   // a repair choice's days scale by effort_required / effort available.
   const scale = STATE.effortScale || 1;
-  passDays(Math.max(1, Math.round(base * scale)) + (STATE.effortCon ? 2 : 0));
+  passDays(Math.max(1, Math.round(base * scale)) + (STATE.effortCon ? (STATE.effortCon.days || 2) : 0));
 }
 
 /* Effort a repair choice can draw on (GAME_BIBLE §The Effort System):
@@ -4601,7 +4685,7 @@ function choiceEffort(choice) {
   if (!authored && !check) return null;
   const required = authored ? choice.effort_required : check.required;
   const from = authored ? choice.requires_effort_from : check.from;
-  let available = 10, kit = null;
+  let available = 10, kit = null, kitValue = 0;
   const listed = new Set();
   for (const src of from) {
     if (src.startsWith('item:')) {
@@ -4609,7 +4693,11 @@ function choiceEffort(choice) {
       const d = itemDef(id);
       // The right tool for the job (Bible benchmark +20 when the item
       // authors no contribution of its own — e.g. the portable drill).
-      if (STATE.items.includes(id) && d) { available += (d.effort_contribution && d.effort_contribution.value) || 20; if ((d.item_behavior || []).includes('one_use')) kit = id; }
+      if (STATE.items.includes(id) && d) {
+        const v = (d.effort_contribution && d.effort_contribution.value) || 20;
+        available += v;
+        if ((d.item_behavior || []).includes('one_use')) { kit = id; kitValue = v; }
+      }
     } else {
       listed.add(src);
       const c = (MOD.crew_roster || []).find(x => x.role === src);
@@ -4620,9 +4708,16 @@ function choiceEffort(choice) {
   for (const r of STATE.crew) if (!listed.has(r)) available += 10;
   // Time scaling (Bible §Effort) applies to the authored repair choices;
   // the clean-result odds to every hands-on job.
-  const ratio = authored ? Math.min(2, Math.max(0.5, required / Math.max(1, available))) : 1;
-  const chance = check ? Math.max(0.15, Math.min(0.95, available / (required * 1.3))) : null;
-  return { available: Math.round(available), required, ratio, kit, chance, check };
+  const ratioOf = a => authored ? Math.min(2, Math.max(0.5, required / Math.max(1, a))) : 1;
+  // Clean odds cap at 90%: a well-equipped crew still feels the risk.
+  const chanceOf = a => check ? Math.max(0.15, Math.min(0.90, a / (required * 1.3))) : null;
+  let ratio = ratioOf(available), chance = chanceOf(available);
+  // A one-use kit is spent only when it changes the result — not on a job
+  // the crew already has at the cap (the kit stays in the hold).
+  if (kit && ratioOf(available - kitValue) === ratio && chanceOf(available - kitValue) === chance) {
+    available -= kitValue; kit = null;
+  }
+  return { available: Math.round(available), required, ratio, kit, chance, check, authored };
 }
 
 /* Flat-schema resolution: choice.outcome is an inline object. Apply →
@@ -4663,6 +4758,7 @@ function resolveChoice(choice) {
         narrative: t.narrative || base.narrative,
       });
       applyOutcomeEffects(merged);
+      if (choice.launch_minigame === 'breach') pushAiSample('hull_breach');
       renderHUD();
       if (checkFailure()) return;
       renderOutcomeView({ title: 'OUTCOME', body: merged.narrative || '...', tone: deltaIsBad(merged) ? 'danger' : (deltaIsGood(merged) ? 'success' : null) });
@@ -4850,6 +4946,7 @@ function endRun(end) {
   // Every other end clears it: no resurrecting a finished voyage.
   const f = end.kind === 'failure' && end.module;
   const resumable = f && (f.continue_option || (f.emergency_beacon_option && STATE.items.includes('emergency_beacon')));
+  STATE._resumableEnd = !!resumable; // pause-menu SAVE says why it's refused
   if (resumable && STATE.trail && STATE.nodes.length) writeSnapshot(SAVE_KEY, { pendingFailure: f.id });
   else clearSave();
   // A failure can fire while an overlay is open (growbay TREAT and

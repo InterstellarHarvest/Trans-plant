@@ -14,7 +14,7 @@ for t in test_*.js; do
 done
 cd ../..
 $NVM/bin/node tools/lint_modules.js 2>&1 | tail -1
-$NVM/bin/node tools/fuzz_playthrough.js 2>&1 | tail -2
+FUZZ_URL="${URL%index.html}index.html?debug=fixed_path" $NVM/bin/node tools/fuzz_playthrough.js 2>&1 | tail -2
 FUZZ_URL="$FILE?debug=fixed_path" $NVM/bin/node tools/fuzz_playthrough.js 2>&1 | tail -2
-$NVM/bin/node tools/ui_sweep.js 2>&1 | tail -2
+SWEEP_URL="$URL" $NVM/bin/node tools/ui_sweep.js 2>&1 | tail -2
 SWEEP_URL="$FILE" $NVM/bin/node tools/ui_sweep.js 2>&1 | tail -2

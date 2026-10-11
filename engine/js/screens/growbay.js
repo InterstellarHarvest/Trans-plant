@@ -175,8 +175,13 @@
     // botanist captain) tends nothing.
     if (TENDER_ROLE[id] && !STATE.crew.includes(TENDER_ROLE[id])) return CREW.none;
     if (id === 'captain-botanist' && STATE.captain !== 'botanist') return CREW.none;
-    const c = CREW[id] || CREW.none;
-    const idn = TENDER_ROLE[id] && typeof crewIdentityOf === 'function' ? crewIdentityOf(TENDER_ROLE[id]) : null;
+    let c = CREW[id] || CREW.none;
+    // A wounded tender works at half (crew_roster "halved if injured").
+    const role = TENDER_ROLE[id];
+    if (role && typeof crewHPOf === 'function' && crewHPOf(role) < CREW_WOUNDED_HP) {
+      c = Object.assign({}, c, { growth: c.growth / 2, yield: c.yield / 2, wounded: true });
+    }
+    const idn = role && typeof crewIdentityOf === 'function' ? crewIdentityOf(role) : null;
     return idn ? Object.assign({}, c, { name: idn.name, crewId: null, emoji: '🧑' }) : c;
   }
 
@@ -363,6 +368,14 @@
       healthy: realCrop.healthy_threshold || 65,
     };
   }
+  // The ideal temperature band the crop model actually uses: crops.json
+  // ideal_temp widened/narrowed by temperature_tolerance. Every display
+  // reads this too (they showed the raw band: tomato 20–28 vs a real 22–26).
+  function idealBand() {
+    const crop = CROP_META[GSTATE.cropId];
+    const tolPad = { narrow: -2, moderate: 0, wide: 3 }[cropVuln().tol] || 0;
+    return [crop.ideal_temp[0] - tolPad, crop.ideal_temp[1] + tolPad];
+  }
   const fmtNum = n => String(Math.round(Math.abs(n) * 10) / 10);
   function modDelta(growth, health) {
     const bits = [];
@@ -384,7 +397,7 @@
     const add = (kind, name, growth, health) => active.push({ kind, name, growth, health, delta: modDelta(growth, health) });
 
     // Tending crew member: their authored growth bonus.
-    if (tender.growth > 0) add('positive', tender.name + ' tending', tender.growth, 0);
+    if (tender.growth > 0) add('positive', tender.name + (tender.wounded ? ' (wounded)' : '') + ' tending', tender.growth, 0);
 
     // WATER — the ship's tanks first, then the Orders split vs the
     // crop's need.
@@ -410,8 +423,7 @@
     // which side of the ideal range we're on.
     // crops.json temperature_tolerance widens/narrows the ideal band;
     // the insulated cargo bay takes 20% off temperature damage.
-    const tolPad = { narrow: -2, moderate: 0, wide: 3 }[v.tol] || 0;
-    const tMin = crop.ideal_temp[0] - tolPad, tMax = crop.ideal_temp[1] + tolPad;
+    const [tMin, tMax] = idealBand();
     const insul = STATE.items.includes('insulated_cargo_bay') ? 0.8 : 1;
     if (GSTATE.temp < tMin - 4) {
       add('critical', 'Cold snap CRITICAL', -30 * insul, -1 * v.dmg * insul);
@@ -508,7 +520,7 @@
   function buildCropTooltip() {
     const crop = CROP_META[GSTATE.cropId];
     const curIdx = GSTATE.growth >= 100 ? crop.stages.length - 1 : stageIndex(GSTATE.growth);
-    const [tMin, tMax] = crop.ideal_temp;
+    const [tMin, tMax] = idealBand();
     const lines = [
       crop.name.toUpperCase(),
       crop.blurb,
@@ -791,7 +803,7 @@
     if (GSTATE.growth >= 100) return randPick(ARIA_QUIPS.ready);
     if (active.some(m => m.kind === 'critical')) return randPick(ARIA_QUIPS.critical);
     if (GSTATE.pest) return randPick(ARIA_QUIPS.pests);
-    const [tMin, tMax] = CROP_META[GSTATE.cropId].ideal_temp;
+    const [tMin, tMax] = idealBand();
     if (GSTATE.temp > tMax) return randPick(ARIA_QUIPS.hot);
     if (GSTATE.temp < tMin) return randPick(ARIA_QUIPS.cold);
     const crop = CROP_META[GSTATE.cropId];
@@ -1445,7 +1457,7 @@
     const { active } = computeModifiers();
     const stages = crop.stages;
     const curIdx = GSTATE.growth >= 100 ? stages.length - 1 : stageIndex(GSTATE.growth);
-    const [tMin, tMax] = crop.ideal_temp;
+    const [tMin, tMax] = idealBand();
 
     // ── Vital signs (left column) ─────────────────────────────
     // Match the demo's actual growth math — base × health_factor —
@@ -1470,8 +1482,8 @@
         '<div class="ins-section-title">VITAL SIGNS</div>' +
         '<div class="ins-vitals">' +
           vital('Stage', '<span class="ins-v-marker">▸</span>' + ihEsc(stages[curIdx].name) + ' <span class="ins-v-sub">(' + stagePct + '% through)</span>') +
-          vital('Growth', GSTATE.growth + '%') +
-          vital('Health', GSTATE.health + '%') +
+          vital('Growth', Math.round(GSTATE.growth) + '%') +
+          vital('Health', Math.round(GSTATE.health) + '%') +
           vital('Rate', curRate.toFixed(2) + '%/day' + (curRate <= 0.01 ? ' <span class="ins-v-sub">(stalled)</span>' : '')) +
           vital('Day', GSTATE.day + ' / ' + crop.maturity_days, overdue ? 'overdue' : '') +
           vital('Ready on',

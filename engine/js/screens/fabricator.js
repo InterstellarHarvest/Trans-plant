@@ -628,6 +628,7 @@
       } else {
         log('MISFIRE — ' + line + 'The ' + r.output.name + ' comes out as slag. ' + days + (days === 1 ? ' day' : ' days') + ' and the materials, gone.');
       }
+      if (typeof window.pushAiSample === 'function') window.pushAiSample('fabricator_misfire');
       if (100 - wearBefore < 20 && Math.random() < 0.5) breakFab();
       renderHUD();
       renderAll();
@@ -640,6 +641,9 @@
     // time flavor for watching the fabricator work, not a second, racing
     // day-advancement system.
     const totalDays = actualDays(r.days);
+    // Owed before the days pass: a failure those days trigger (crop death
+    // → Keep flying) must not swallow the materials with no output.
+    STATE.fabricator.owedOutput = r.id;
     passDays(totalDays); // routed through the orders daily-drain helper (Restoration item 5)
     renderHUD();
     if (checkFailure()) return;
@@ -647,9 +651,8 @@
     // Success path — kick off the craft. Timestamp-driven so the
     // progress bar can animate smoothly per-frame rather than
     // stepping at day boundaries.
-    // The craft is paid for (days + materials) — record the output as owed
-    // in saved STATE so a reload can't lose it (FSTATE is memory-only).
-    STATE.fabricator.owedOutput = r.id;
+    // (The craft is paid for — the output was recorded as owed above, in
+    // saved STATE, so a reload can't lose it; FSTATE is memory-only.)
     FSTATE.craft = {
       recipeId:  r.id,
       daysTotal: totalDays,
@@ -970,6 +973,13 @@
   window.closeFabricator = function() {
     document.body.classList.remove('modal-open');
     hideOverlay('overlay-fabricator');
+    // A craft spent days and materials — repaint the hub (day counter,
+    // HUD) and autosave through it, and re-gate an open Stop menu.
+    if (typeof window.renderCruise === 'function' && !STATE.ended &&
+        document.getElementById('screen-cruise').classList.contains('active')) {
+      window.renderCruise();
+      if (typeof window.refreshStopMenu === 'function') window.refreshStopMenu();
+    }
   };
   // Arrow keys cycle through selectable recipes (skipping locked rows);
   // Enter crafts the current selection if craftable; Escape closes the

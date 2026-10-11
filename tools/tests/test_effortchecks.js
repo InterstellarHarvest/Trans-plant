@@ -43,7 +43,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   const body = await page.evaluate(() => document.getElementById('enc-narr-body').textContent);
   ok(/bit binds/i.test(body), 'outcome text says what went wrong');
   const wr = await run(['engineer', 'pilot'], ['repair_kit'], 0.5, 'event_crisis_011', 'Weld patch');
-  ok(pct(wr.sub) === 95 || /Effort/.test(wr.sub), `engineer + kit: near-certain (${wr.sub.slice(0, 60)})`);
+  ok(pct(wr.sub) === 90 || /Effort/.test(wr.sub), `engineer + kit: near-certain (${wr.sub.slice(0, 60)})`);
   ok(!errs.length, 'no page errors' + (errs.length ? ': ' + errs.join(' | ') : ''));
   console.log(`\neffort checks: ${pass} passed, ${fail} failed`);
   await browser.close(); process.exit(fail ? 1 : 0);

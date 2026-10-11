@@ -115,6 +115,12 @@
         if (w.cost && w.cost.gold) w.cost.gold = Math.max(1, Math.round(w.cost.gold * 0.85));
       }
     }
+    // Stacked discounts (CHIP × Merchant × Negotiation = 0.65) went under
+    // the 2/3 buy-back: buy a hull patch at 9, sell it at 10, forever.
+    // Nothing on the shelf sells for less than the trader pays for it.
+    for (const w of wares) {
+      if (w.cost && w.cost.gold && buyPrices[w.id] != null) w.cost.gold = Math.max(w.cost.gold, buyPrices[w.id] + 1);
+    }
     return {
       name: 'OUTPOST TRADER',
       greeting: negotiated
@@ -243,11 +249,12 @@
         if (log) { log.innerHTML = ''; log.classList.add('hidden'); }
         hideOverlay('overlay-market');
         if (vendor.sinister && STATE.currentEvent && STATE.currentEvent.layers) {
-          // Sinister close (demo): navigate back to the scenario entry
-          // and clear the npc slot so the intro renders without an NPC
-          // visible. npcCache stays — re-approaching meets the same face.
+          // Sinister close (demo): navigate back to the scenario entry with
+          // the event's own speaker restored (nulling it blanked the
+          // intro's and later outcomes' speaker names). npcCache keeps
+          // the same face.
           STATE.layerStack = [STATE.currentEvent.entryLayer || Object.keys(STATE.currentEvent.layers)[0]];
-          STATE.npcCtx = null;
+          STATE.npcCtx = (STATE.currentEvent.npc && typeof resolveNpc === 'function') ? resolveNpc(STATE.currentEvent) : null;
         }
         if (typeof onClose === 'function') onClose();
       }
