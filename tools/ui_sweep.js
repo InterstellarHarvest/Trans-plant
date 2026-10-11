@@ -46,7 +46,10 @@ const INERT_OK = new Set([]);
     // only its LENGTH called a button inert when its effect happened to
     // swap in a same-length line (Orders' LUDICROUS preview).
     const logText = (document.getElementById('ai-log') || { innerText: '' }).innerText;
-    const text = document.body.innerText.replace(logText, '');
+    // The cargo hold's gold readout rolls up for ~1s after opening (demo
+    // counter); gold itself is already in `st`, so its ticking digits stay out of the hash.
+    const goldRoll = (document.getElementById('inv-gold-readout') || { innerText: '' }).innerText;
+    const text = document.body.innerText.replace(logText, '').replace(goldRoll, '');
     let h = 0; for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) | 0;
     return (active ? active.id : '') + '#' + overlays + '#' + modal + '#' + st + '#' + h;
   });

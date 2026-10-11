@@ -57,6 +57,11 @@ function installHarness(policy) {
     return r;
   };
   window.passDays = passDays;
+  // Cargo pressure (per-unit slot ruling 2026-10-11): pickups refused for
+  // a full hold, and the fullest the hold got.
+  const realGrant = grantItem;
+  grantItem = function (id) { const ok = realGrant(id); if (!ok) { S.cargoRefused = (S.cargoRefused || 0) + 1; S.refusedIds = S.refusedIds || {}; S.refusedIds[id] = (S.refusedIds[id] || 0) + 1; } return ok; };
+  window.grantItem = grantItem;
   const realChoices = renderChoicesInner;
   renderChoicesInner = function (choices) {
     const visible = choices.filter(ch => !(ch.showFlag && !STATE.flags.has(ch.showFlag)) && !(ch.hideFlag && STATE.flags.has(ch.hideFlag)));
@@ -126,6 +131,7 @@ function step() {
     if (!Number.isFinite(v)) S.nan.push(k);
     else if (Math.abs(v * 10 - Math.round(v * 10)) > 1e-6 && S.floats.length < 5) S.floats.push(k + '=' + v);
   }
+  { const su = cargoSlotsUsed(), sc = cargoCapacity(); S.slotPeak = Math.max(S.slotPeak || 0, su / sc); if (su >= sc) S.fullSteps = (S.fullSteps || 0) + 1; S.steps = (S.steps || 0) + 1; }
   if (STATE.cropGrowth && STATE.cropGrowth.health <= 0 && S.cropDeadAt == null) S.cropDeadAt = STATE.daysElapsed;
   if (STATE.ended || scr === 'screen-end') return { done: true };
   for (const ov of document.querySelectorAll('.overlay.active')) { if (ov.id !== 'overlay-market') ov.classList.remove('active'); }

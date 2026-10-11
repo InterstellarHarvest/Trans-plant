@@ -187,13 +187,13 @@ const RANGED = ['pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_
     }, sinister);
     await page.evaluate(() => { grantItem('unidentified_bone'); STATE.itemValues.unidentified_bone = [17]; });
     let a = await inv();
-    ok(/trader pays 4–28g/.test(a.meta) && /needs a spectrometer/.test(a.meta) && !/\b17g/.test(a.meta), `INV detail without a spectrometer: the range, not the number ("${a.meta}")`);
+    ok(/SELL PRICE4–28g · fence 6–42g/.test(a.meta) && /needs a spectrometer/.test(a.meta) && !/\b17g/.test(a.meta), `INV detail without a spectrometer: the range, not the number ("${a.meta}")`); // batch-2 inventory: SELL PRICE row
     ok(a.badge === '??', 'INV tile without a spectrometer: ??');
     let s = await offer(false), f = await offer(true);
     ok(s === '+4–28g' && f === '+6–42g', `sell offers without a spectrometer: station "${s}", fence "${f}"`);
     await page.evaluate(() => grantItem('spectrometer'));
     a = await inv();
-    ok(/trader pays 17g · fence 26g/.test(a.meta), `INV detail with a spectrometer: exact ("${a.meta}")`);
+    ok(/SELL PRICE17g · fence 26g/.test(a.meta), `INV detail with a spectrometer: exact ("${a.meta}")`);
     ok(a.badge === '17g', 'INV tile with a spectrometer: 17g');
     s = await offer(false); f = await offer(true);
     ok(s === '+17g' && f === '+26g', `sell offers with a spectrometer: station "${s}", fence "${f}"`);

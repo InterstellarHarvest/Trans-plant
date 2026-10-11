@@ -321,7 +321,7 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
       STATE.materials = { metal: 3 };
       for (let i = 0; i < 4; i++) STATE.items.push('medkit', 'fuel_cell', 'ration_brick', 'repair_kit');
       openInventory(); await w(300);
-      document.querySelector('.inv-tab[data-tab="resources"]').click(); await w(30);
+      document.querySelector('.inv-tab[data-tab="materials"]').click(); // was "resources" (batch-2 inventory: GEAR / MATERIALS / UPGRADES) await w(30);
       document.querySelector('#inv-grid .inv-tile').click(); await w(30);
       const mat = { name: document.getElementById('inv-detail-name').textContent, desc: document.getElementById('inv-detail-desc').textContent };
       document.querySelector('.inv-tab[data-tab="gear"]').click(); await w(30);
