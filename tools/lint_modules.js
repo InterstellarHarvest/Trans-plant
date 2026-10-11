@@ -712,6 +712,49 @@ const eventOnTrail = (ev, trail) => {
   }
 }
 
+// ── Station approach (added 2026-10-11, owner ruling — engine/js/station.js) ──
+// leave_next names a layer of the event; leave_sub is a one-line string;
+// waves_off is boolean (closes the stop's services); choice.station is one
+// of the station.js actions; station_room names a room the approach
+// defines; exactly one station_approach event, engine-forced (trigger
+// station_arrival) with its room table, fee pool and captain.
+{
+  const ACTIONS = new Set(['hail', 'dock', 'room', 'to_dock']);
+  const approaches = [...eventsById.values()].filter(x => x.event.station_approach);
+  if (approaches.length !== 1) err(`station approach: ${approaches.length} events carry station_approach (engine/js/station.js reads exactly one, event_station_014)`);
+  const ap = approaches[0] && approaches[0].event;
+  const roomKeys = new Set(Object.keys((ap && ap.station_rooms) || {}));
+  if (ap) {
+    const at = `${approaches[0].file} ${ap.id}`;
+    if (ap.id !== 'event_station_014') err(`${at}: station.js looks the approach up as event_station_014`);
+    if (JSON.stringify(ap.trigger) !== '["station_arrival"]') err(`${at}: the approach is engine-forced — trigger must be ["station_arrival"]`);
+    for (const k of ['cantina', 'market', 'clinic', 'office', 'promenade', 'dockmaster']) if (!roomKeys.has(k)) err(`${at}: station_rooms.${k} missing (station.js maps NPC jobs to it)`);
+    for (const [k, r] of Object.entries(ap.station_rooms || {})) for (const f of ['label', 'sub', 'nav', 'back']) if (typeof r[f] !== 'string' || !r[f]) err(`${at}: station_rooms.${k}.${f} missing`);
+    if (!Array.isArray(ap.parking_fees) || !ap.parking_fees.length || !ap.parking_fees.every(f => f.reason && f.detail)) err(`${at}: parking_fees must be [{reason, detail}, …]`);
+    if (!(Number.isInteger(ap.parking_cost) && ap.parking_cost > 0)) err(`${at}: parking_cost must be a positive integer`);
+    if (!ap.station_captain || ap.station_captain.job !== 'captain') err(`${at}: station_captain must be a station_crew captain npc spec`);
+    for (const l of ['intro', 'hail', 'hail_polite', 'hail_brief', 'waveoff_warn', 'docked']) if (!(ap.layers || {})[l]) err(`${at}: layer "${l}" missing (station.js shapes it)`);
+  }
+  for (const { file, event: ev } of eventsById.values()) {
+    const at = `${file} ${ev.id}`;
+    if ((ev.trigger || []).includes('station_arrival') && !ev.station_approach) err(`${at}: trigger station_arrival is the approach's alone`);
+    if (ev.station_room != null && !roomKeys.has(ev.station_room)) err(`${at}: station_room "${ev.station_room}" is not a room the approach defines`);
+    if (ev.leave_sub != null && typeof ev.leave_sub !== 'string') err(`${at}: leave_sub must be a string`);
+    for (const [lk, l] of Object.entries(ev.layers || {})) {
+      if (l.leave_next != null && !(ev.layers || {})[l.leave_next]) err(`${at}/${lk}: leave_next "${l.leave_next}" is not a layer of this event`);
+      if (l.leave_sub != null && typeof l.leave_sub !== 'string') err(`${at}/${lk}: leave_sub must be a string`);
+    }
+    for (const { layer, choices } of choiceSetsOf(ev)) for (const ch of choices) {
+      if (ch.station != null && !ACTIONS.has(ch.station)) err(`${atOf(file, ev.id, layer)}: choice "${ch.text || ch.label}" station "${ch.station}" is not ${[...ACTIONS].join('/')}`);
+      if (ch.station != null && !ev.station_approach) err(`${atOf(file, ev.id, layer)}: choice.station only works on the approach event`);
+      const o = ch.outcome && typeof ch.outcome === 'object' ? ch.outcome : null;
+      if (o && o.waves_off != null && typeof o.waves_off !== 'boolean') err(`${atOf(file, ev.id, layer)}: waves_off must be true/false`);
+      if (o && o.waves_off && !(ev.node_type || []).includes('station')) err(`${atOf(file, ev.id, layer)}: waves_off outside a station event`);
+    }
+    for (const [k, o] of Object.entries(ev.outcomes || {})) if (o && o.waves_off != null && typeof o.waves_off !== 'boolean') err(`${at}/outcomes.${k}: waves_off must be true/false`);
+  }
+}
+
 // ── Encounter presentation fields (added 2026-10-11, encounter parity) ──
 // The leave row (index.html renderLeaveRow; Bible §18 leaveLabel /
 // leaveDisabled): every layered event names its leave row (`leave_label`)

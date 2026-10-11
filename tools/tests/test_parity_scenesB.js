@@ -10,6 +10,11 @@
 //   event_shipboard_017 "A Word, Captain" — demo crew_request: whichever
 //     of OUR crew is aboard (crew_speaker: medic first, else anyone) in the
 //     frame on their own sprite sheet, in the medbay.
+//   The station approach (event_station_014 + engine/js/station.js, owner
+//     ruling 2026-10-11 design A): every stop opens on the bridge, HAIL /
+//     DOCK, dockmaster first 1 in 3, parking fee 1 in 3 (eventGold), the
+//     wave-off warning (closes the stop's services, no time), the dock's
+//     rooms + GO ELSEWHERE + BACK TO DOCK, LEAVE STATION → the hub.
 // Plus draw rates over many generated maps (selectEvent, fresh-state walk).
 // SHOT_DIR=<dir> saves screenshots for the visual comparison.
 const { chromium } = require('playwright');
@@ -386,7 +391,278 @@ const settleSubject = page => page.waitForFunction(() => {
     await page.close();
   }
 
-  // ─────────────────────────────────────────── 4. DRAW RATES
+  // ─────────────────────────────────────────── 4. STATION APPROACH
+  console.log('— station approach (event_station_014 + engine/js/station.js, demo station_approach; owner ruling design A)');
+  // Arrive at a station whose drawn event is evId (null = nothing drawn);
+  // `set` overrides this visit's rolls, then the approach repaints.
+  const arriveAt = (page, evId, set) => page.evaluate(([evId, set]) => {
+    let s = STATE.nodes.find(n => n.node_type === 'station' && n.connects_to && Object.keys(n.connects_to).length && n.id !== STATE.currentId);
+    if (!s) { s = STATE.nodes.find(n => Array.isArray(n.connects_to) && n.connects_to.length && n.id !== STATE.currentId); s.node_type = 'station'; }
+    const realSel = selectEvent;
+    selectEvent = () => (evId ? EVENTS[evId] : null);
+    try { travelTo(s.id); } finally { selectEvent = realSel; }
+    if (set && STATE.stationVisit) {
+      Object.assign(STATE.stationVisit, set);
+      if ('hailedFirst' in set) STATE.stationVisit.captainHere = set.hailedFirst;
+      if (STATE.currentEvent && STATE.currentEvent.id === 'event_station_014') enterEvent(s, EVENTS.event_station_014, { layerStack: ['intro'] });
+    }
+    finishAllTyping();
+    return s.id;
+  }, [evId, set || null]);
+  const leaveRow = page => page.evaluate(() => {
+    const l = document.querySelector('#enc-choices .enc-choice.leave');
+    return l ? { text: l.querySelector('.ch-text').textContent, sub: (l.querySelector('.ch-sub') || {}).textContent || '' } : null;
+  });
+  const clickLeave = async page => { await page.evaluate(() => { finishAllTyping(); document.querySelector('#enc-choices .enc-choice.leave').click(); }); await page.waitForTimeout(340); await page.evaluate(() => finishAllTyping()); };
+  const continueOn = async page => { await page.evaluate(() => { finishAllTyping(); const b = document.querySelector('#enc-choices .enc-choice.advance'); if (b) b.click(); }); await page.waitForTimeout(340); };
+  const stopVerbs = page => page.evaluate(() => {
+    if (typeof renderStopMenu === 'function') renderStopMenu();
+    const out = {};
+    document.querySelectorAll('#stop-choices [data-verb-id]').forEach(b => { out[b.dataset.verbId] = b.classList.contains('locked') ? 'locked:' + b.innerText.replace(/\s+/g, ' ') : 'open'; });
+    return out;
+  });
+  const approachArt = page => page.waitForFunction(() => document.getElementById('enc-approach-sprite').dataset.station, null, { timeout: 4000 }).then(() => true).catch(() => false);
+  {
+    // Every station arrival opens the approach; rolls ≈ 1 in 3.
+    const page = await boot({ crew: ['engineer', 'pilot'], ai: 'aria' });
+    const r = await page.evaluate(() => {
+      const s = STATE.nodes.find(n => n.node_type === 'station' && n.connects_to && Object.keys(n.connects_to).length) || STATE.nodes.find(n => Array.isArray(n.connects_to) && n.connects_to.length);
+      s.node_type = 'station';
+      let approach = 0, hailed = 0, fee = 0, first = 0, N = 600;
+      const from = STATE.nodes.find(n => n.id !== s.id).id;
+      const realEnter = enterEvent, realEnd = endRun, realFail = checkFailure;
+      let entered = null;
+      enterEvent = (n, ev) => { entered = ev && ev.id; };
+      // 600 legs into one stop: the clock / crop would end the run partway —
+      // this loop only measures the arrival routing.
+      endRun = () => {}; checkFailure = () => false;
+      for (let i = 0; i < N; i++) {
+        STATE.currentId = from; STATE.stationVisit = null; entered = null; STATE.ended = false;
+        Object.assign(STATE.resources, { fuel: 100, food: 100, water: 100, o2: 100, hull: 100, morale: 100 }); STATE.daysElapsed = 0;
+        travelTo(s.id);
+        const v = STATE.stationVisit;
+        if (!v || v.node !== s.id) continue;
+        // The approach opens now, or right after a non-station event that plays first.
+        if (entered === 'event_station_014' || (v.phase === 'arrival' && v.kind === 'arrival' && entered === v.roomEv)) approach++;
+        if (v.phase === 'arrival') first++;
+        if (v.hailedFirst) hailed++; if (v.fee) fee++;
+      }
+      enterEvent = realEnter; endRun = realEnd; checkFailure = realFail; STATE.ended = false;
+      return { approach, hailed: hailed / N, fee: fee / N, first, N };
+    });
+    ok(r.approach === r.N, 'every station arrival opens the approach (' + r.approach + '/' + r.N + '; ' + r.first + ' after a non-station event played first)');
+    ok(r.hailed > 0.27 && r.hailed < 0.40, 'the dockmaster hails first about 1 in 3 (' + r.hailed.toFixed(3) + ')');
+    ok(r.fee > 0.27 && r.fee < 0.40, 'a parking fee about 1 in 3 (' + r.fee.toFixed(3) + ')');
+    await page.close();
+  }
+  {
+    // Bypasses: delayed crisis and Push Engines skip the approach (and recharge on arrival).
+    const page = await boot({ crew: ['engineer', 'pilot'], ai: 'aria' });
+    const r = await page.evaluate(() => {
+      const s = STATE.nodes.find(n => n.node_type === 'station' && n.connects_to && Object.keys(n.connects_to).length) || STATE.nodes.find(n => Array.isArray(n.connects_to) && n.connects_to.length);
+      s.node_type = 'station';
+      STATE.crewHP.pilot = 30; STATE.crewPending = { pilot: true }; STATE.crewSkillCharges.engineer = 0;
+      travelTo(s.id);
+      const crisis = { ev: STATE.currentEvent && STATE.currentEvent.id, trig: STATE.currentEvent && STATE.currentEvent.trigger, charged: STATE.crewSkillCharges.engineer };
+      returnToHub();
+      const t = STATE.nodes.find(n => n.id !== s.id && Array.isArray(n.connects_to) && n.connects_to.length && n.node_type !== 'fork');
+      t.node_type = 'station'; STATE.crewSkillCharges.engineer = 0;
+      travelTo(t.id, { skipEvent: true });
+      return { crisis, push: { ev: STATE.currentEvent, charged: STATE.crewSkillCharges.engineer } };
+    });
+    ok(r.crisis.trig && r.crisis.trig.includes('delayed_crisis') && r.crisis.charged === 1, 'a delayed crisis still takes the arrival directly (no approach), skills recharged on arrival');
+    ok(r.push.ev === null && r.push.charged === 1, 'Push Engines skips the approach too, skills recharged on arrival');
+    await page.close();
+  }
+  {
+    // The silent approach: bridge + station, HAIL, the hail layers, DOCK, the dock, a room, Market Row, LEAVE STATION.
+    const page = await boot({ crew: ['engineer', 'pilot'], ai: 'aria' });
+    await page.evaluate(() => { STATE.crewSkillCharges.engineer = 0; });
+    await arriveAt(page, 'event_station_009', { hailedFirst: false, fee: null });
+    await approachArt(page);
+    await settleSubject(page);
+    let v = await view(page);
+    const art = await page.evaluate(() => ({ base: document.getElementById('enc-backdrop-base').classList.contains('hidden') ? null : 'shown', station: document.getElementById('enc-approach-sprite').dataset.station, comm: document.getElementById('screen-encounter').classList.contains('comm-screen') }));
+    ok(v.title === 'STATION INBOUND' && v.scene === 'our_ship/bridge' && art.base && art.station && art.comm, 'arrival: our bridge, space behind, the node\'s station in the viewport (' + art.station + '), comm screen');
+    ok(v.noSubject && /make the first move/.test(v.body) && v.line === null, 'nobody on comms yet (2 in 3): no subject, the silent body');
+    ok(JSON.stringify(v.choices) === '["HAIL"]', 'only HAIL until comms open');
+    let lr = await leaveRow(page);
+    ok(lr && lr.text === 'LEAVE STATION' && /Skip the stop · risky/.test(lr.sub), 'leave row: LEAVE STATION · Skip the stop · risky');
+    ok(/All those people/.test(v.ai), 'ARIA voices the demo line');
+    await shot(page, 'station_approach_silent');
+    await click(page, 'HAIL');
+    await settleSubject(page);
+    v = await view(page);
+    ok(v.layer === 'hail' && v.plate === 'STATION CAPTAIN' && /Identify, state intent/.test(v.line || '') && /Three coffees deep/.test(v.body), 'HAIL: the station captain on screen, the demo line');
+    ok(!(await leaveRow(page)), 'hail layers hide the leave row (demo leaveHidden)');
+    await click(page, '"Standard cargo, peaceful intent."');
+    v = await view(page);
+    ok(v.layer === 'hail_polite' && /Ring three is open/.test(v.line || '') && JSON.stringify(v.choices) === '["DOCK","BACK"]', 'polite reply → "Ring three is open", DOCK right there');
+    await click(page, 'BACK'); await click(page, 'BACK');
+    v = await view(page);
+    ok(v.layer === 'intro' && /Comms are open/.test(v.body) && JSON.stringify(v.choices) === '["DOCK"]' && !v.noSubject, 'back on the intro: comms open, the captain stays, DOCK replaces HAIL');
+    const d0 = await page.evaluate(() => STATE.daysElapsed);
+    await click(page, 'DOCK');
+    await page.waitForTimeout(200);
+    v = await view(page);
+    const dock = await page.evaluate(() => ({ charged: STATE.crewSkillCharges.engineer, days: STATE.daysElapsed, log: STATE.shipLog.slice(-3).map(e => e.text).join('|') }));
+    ok(v.layer === 'docked' && v.scene === 'station/dock' && v.noSubject, 'DOCK → DOCKED: station/dock, no talking head');
+    ok(JSON.stringify(v.choices) === '["CANTINA","MARKET"]', 'the dock: this stop\'s room (the bar → CANTINA) + MARKET');
+    ok(dock.charged === 1 && /crew skills recharged/.test(dock.log), 'crew skills recharge on DOCK');
+    ok(dock.days === d0, 'docking costs no day');
+    lr = await leaveRow(page);
+    ok(lr && lr.text === 'LEAVE STATION' && /Back to the bridge/.test(lr.sub), 'dock leave row: LEAVE STATION · Back to the bridge');
+    await shot(page, 'station_docked');
+    await click(page, 'CANTINA');
+    v = await view(page);
+    lr = await leaveRow(page);
+    ok(v.title === 'THE LONG DARK BAR' && v.choices.includes('GO ELSEWHERE'), 'CANTINA → The Long Dark Bar, with GO ELSEWHERE');
+    ok(lr && lr.text === 'BACK TO DOCK' && /Pay the tab/.test(lr.sub), 'its leave row: BACK TO DOCK · Pay the tab. Such as it is');
+    await shot(page, 'station_room_cantina');
+    await click(page, 'GO ELSEWHERE');
+    v = await view(page);
+    ok(v.layer === '_elsewhere' && JSON.stringify(v.choices) === '["MARKET","BACK TO DOCK","BACK"]' && v.title === 'ELSEWHERE ON THE STATION', 'GO ELSEWHERE: MARKET / BACK TO DOCK / BACK');
+    await click(page, 'MARKET');
+    v = await view(page);
+    ok(v.title === 'MARKET ROW' && v.choices.includes('GO ELSEWHERE') && (await leaveRow(page)).text === 'BACK TO DOCK', 'MARKET → Market Row, GO ELSEWHERE + BACK TO DOCK');
+    // Shopping then walking to another room costs the haggling day.
+    const d1 = await page.evaluate(() => { STATE._shoppedThisEvent = true; return STATE.daysElapsed; });
+    await click(page, 'GO ELSEWHERE'); await click(page, 'CANTINA');
+    ok(await page.evaluate(d => STATE.daysElapsed === d + 1 && STATE.currentEvent.id === 'event_station_009', d1), 'shopping, then GO ELSEWHERE: the haggling day is charged');
+    // Resolve the bar: its outcome's Continue goes back to the dock; the room is done.
+    const out = await page.evaluate(() => { const ev = STATE.currentEvent; const id = Object.keys(ev.outcomes)[0]; applyOutcomeEffects(ev.outcomes[id]); STATE.currentOutcomeId = id; renderEncounterState(); finishAllTyping(); return id; });
+    await continueOn(page);
+    v = await view(page);
+    const cant = await choiceInfo(page, 'CANTINA');
+    ok(v.layer === 'docked' && /Back at the airlock/.test(v.body), 'a room\'s outcome → Continue → back at the dock (revisit copy)');
+    ok(cant && cant.locked && /Nothing more for you here/.test(cant.sub), 'the resolved room is done for the visit (' + out + ')');
+    // A reload in the dock resumes there with the same visit.
+    await page.evaluate(() => saveEventProgress());
+    await page.reload();
+    await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.flavor);
+    await page.evaluate(() => loadRun()); await page.waitForTimeout(250);
+    v = await view(page);
+    ok(v.layer === 'docked' && await page.evaluate(() => STATE.stationVisit && STATE.stationVisit.phase === 'docked' && STATE.stationVisit.roomsDone.includes('event_station_009')), 'a reload in the dock comes back to the dock, the visit intact');
+    await clickLeave(page);
+    const hub = await page.evaluate(() => ({ ev: STATE.currentEvent, scr: document.querySelector('#screen-cruise.active') ? 'cruise' : null, log: STATE.shipLog.slice(-4).map(e => e.text).join('|'), station: document.getElementById('cruise-station').dataset.station || null }));
+    ok(!hub.ev && hub.scr === 'cruise' && /Safe burns out there/.test(hub.log), 'LEAVE STATION → the hub (intro_returning): the captain\'s farewell on the log');
+    const sv = await stopVerbs(page);
+    ok(sv.trade === 'open' && !/Waved off/.test(sv.medbay || '') && !/Waved off/.test(sv.drydock || ''), 'after docking the Stop menu keeps TRADE / MEDBAY / DRYDOCK / FAB SERVICE');
+    await page.waitForTimeout(400);
+    await shot(page, 'station_intro_returning_hub');
+    await page.close();
+  }
+  {
+    // Dockmaster first + fee: the welcome names the fee; CHIP's discount applies to gate, sub, line and charge.
+    const page = await boot({ crew: ['engineer', 'pilot'], ai: 'chip' });
+    await arriveAt(page, null, { hailedFirst: true, fee: { reason: 'AIR-TAX', detail: "You're breathing their air on approach. Itemized.", cost: 5 } });
+    await settleSubject(page);
+    const disc = await page.evaluate(() => eventGold(5));
+    let v = await view(page);
+    ok(!v.noSubject && v.plate === 'STATION CAPTAIN' && /Comms light up/.test(v.body), 'the dockmaster hails first: on screen as we arrive');
+    ok(new RegExp('Mind the air-tax on the manifest — ' + disc + ' gold').test(v.line || ''), 'their welcome names the fee: "' + v.line + '"');
+    const dk = await choiceInfo(page, 'DOCK');
+    ok(JSON.stringify(v.choices) === '["DOCK"]' && new RegExp('AIR-TAX · ' + disc + ' gold').test(dk.sub), 'DOCK carries the fee (CHIP-discounted: ' + disc + 'g): ' + dk.sub.trim());
+    await shot(page, 'station_approach_hailed_fee');
+    const g0 = await page.evaluate(() => STATE.goldAmount);
+    await click(page, 'DOCK');
+    ok(await page.evaluate(([g, d]) => STATE.goldAmount === g - d, [g0, disc]), 'DOCK charges ' + disc + 'g once');
+    // Nothing drawn: the dock is just MARKET.
+    v = await view(page);
+    ok(JSON.stringify(v.choices) === '["MARKET"]', 'nothing drawn at this stop: the dock holds MARKET only');
+    await page.close();
+  }
+  {
+    // Broke + fee: DOCK locked, the leave row is the way out (no stray Continue).
+    const page = await boot({ crew: ['engineer', 'pilot'], ai: 'aria' });
+    await page.evaluate(() => { STATE.goldAmount = 2; });
+    await arriveAt(page, null, { hailedFirst: true, fee: { reason: 'BERTHING FEE', detail: 'Standard. Probably.', cost: 5 } });
+    const dk = await choiceInfo(page, 'DOCK');
+    const adv = await page.evaluate(() => !!document.querySelector('#enc-choices .enc-choice.advance'));
+    ok(dk && dk.locked && /Need: 5g/.test(dk.sub) && !adv && (await leaveRow(page)).text === 'LEAVE STATION', 'broke: DOCK locked "Need: 5g", the leave row still there');
+    await page.close();
+  }
+  {
+    // Wave-off: the warning, NEVERMIND, CONFIRM — no time, the services close, no recharge.
+    const page = await boot({ crew: ['engineer', 'pilot'], ai: 'marv' });
+    await page.evaluate(() => { STATE.crewSkillCharges.engineer = 0; });
+    await arriveAt(page, 'event_station_007', { hailedFirst: false, fee: null });
+    await clickLeave(page);
+    let v = await view(page);
+    ok(v.layer === 'waveoff_warn' && v.title === 'WAVE OFF?' && v.noSubject && /Probability of regret/.test(v.ai), 'LEAVE STATION → WAVE OFF? (the AI pleads; nobody on comms)');
+    ok(!(await leaveRow(page)) && JSON.stringify(v.choices) === '["CONFIRM · WAVE OFF","NEVERMIND"]', 'CONFIRM · WAVE OFF / NEVERMIND');
+    await shot(page, 'station_waveoff_warn');
+    await click(page, 'NEVERMIND');
+    ok((await view(page)).layer === 'intro', 'NEVERMIND → back to the approach');
+    await clickLeave(page);
+    const d0 = await page.evaluate(() => STATE.daysElapsed);
+    await click(page, 'CONFIRM · WAVE OFF');
+    v = await view(page);
+    ok(v.title === 'BACK TO THE BLACK' && v.scene === 'space/deep', 'BACK TO THE BLACK');
+    ok(await page.evaluate(d => STATE.daysElapsed === d, d0), 'a wave-off costs no time');
+    await continueOn(page);
+    const sv = await stopVerbs(page);
+    ok(['trade', 'medbay', 'drydock', 'fab_service'].every(k => /Waved off — no berth here/.test(sv[k] || '')), 'the stop\'s TRADE / MEDBAY / DRYDOCK / FAB SERVICE close: "Waved off — no berth here"');
+    ok(sv.repair && !/Waved off/.test(sv.repair) && sv.rest && !/Waved off/.test(sv.rest), 'ship-side verbs (REPAIR, REST) stay');
+    ok(await page.evaluate(() => STATE.crewSkillCharges.engineer === 0 && !STATE.seenEventIds.has('event_station_007')), 'no berth, no recharge; the clinic never happened (still drawable later)');
+    await page.close();
+  }
+  {
+    // Docking-moment event (the docking queue) plays on DOCK; its skip closes services, costs no time.
+    const page = await boot({ crew: ['engineer', 'pilot'], ai: 'aria' });
+    await arriveAt(page, 'event_station_004', { hailedFirst: true, fee: null });
+    await click(page, 'DOCK');
+    let v = await view(page);
+    ok(v.title === 'The Docking Queue' || /DOCKING QUEUE/i.test(v.title), 'DOCK → the docking queue plays as the docking itself (' + v.title + ')');
+    ok(v.scene === 'our_ship/bridge', 'still on the bridge (it is a comm-screen event)');
+    await click(page, 'Wait your turn like a civilized vessel');
+    await continueOn(page);
+    v = await view(page);
+    ok(v.layer === 'docked' && JSON.stringify(v.choices) === '["MARKET"]', 'its outcome → Continue → the dock (MARKET)');
+    await page.close();
+  }
+  for (const id of ['event_station_004', 'event_station_003']) {
+    const page = await boot({ crew: ['engineer', 'pilot'], ai: 'aria' });
+    await arriveAt(page, id, { hailedFirst: true, fee: null });
+    await click(page, 'DOCK');
+    const label = await page.evaluate(() => [...document.querySelectorAll('#enc-choices .enc-choice .ch-text')].map(e => e.textContent.trim()).find(t => t.startsWith('Skip the station')));
+    const d0 = await page.evaluate(() => STATE.daysElapsed);
+    await click(page, label);
+    const days = await page.evaluate(d => STATE.daysElapsed - d, d0);
+    await continueOn(page);
+    const sv = await stopVerbs(page);
+    ok(days === 0 && await page.evaluate(() => !STATE.currentEvent) && /Waved off/.test(sv.medbay || '') && /Waved off/.test(sv.trade || ''), id + ' "' + label + '": no time, straight to the hub, services closed');
+    await page.close();
+  }
+  {
+    // An any-node event drawn at a station plays first, then the approach.
+    const page = await boot({ crew: ['engineer', 'pilot'], ai: 'aria' });
+    await arriveAt(page, 'event_shipboard_002');
+    ok(await page.evaluate(() => STATE.currentEvent.id === 'event_shipboard_002' && STATE.stationVisit.phase === 'arrival'), 'a ship-board event drawn at a station plays first');
+    await click(page, 'Acknowledge the report and continue');
+    await continueOn(page);
+    ok(await page.evaluate(() => STATE.currentEvent && STATE.currentEvent.id === 'event_station_014'), '… then the approach');
+    await page.close();
+  }
+  {
+    // Room names, and one dockmaster per stop.
+    const page = await boot({ crew: ['engineer', 'pilot'], ai: 'aria' });
+    const rooms = await page.evaluate(() => Object.fromEntries(['event_station_006', 'event_station_007', 'event_station_008', 'event_station_009', 'event_station_010', 'event_station_012', 'event_station_013', 'event_station_004', 'event_station_001'].map(id => [id, StationVisit.roomOf(EVENTS[id]) + '/' + StationVisit.kindOf(EVENTS[id])])));
+    ok(rooms.event_station_009 === 'cantina/room' && rooms.event_station_007 === 'clinic/room' && rooms.event_station_010 === 'office/room' && rooms.event_station_006 === 'promenade/room' && rooms.event_station_012 === 'promenade/room' && rooms.event_station_008 === 'dockmaster/room' && rooms.event_station_013 === 'market/room', 'rooms: bar CANTINA, clinic CLINIC, security OFFICE, janitor/botanist PROMENADE, Next of Kin DOCKMASTER, Market Row MARKET');
+    ok(rooms.event_station_004 === 'null/docking' && rooms.event_station_001 === 'null/docking', 'flat / comm-screen station events play on DOCK');
+    await arriveAt(page, 'event_station_007', { hailedFirst: true, fee: null });
+    const clinic = await page.evaluate(() => { const c = EVENTS.event_station_014.station_rooms.clinic; return c.label; });
+    ok(clinic === 'CLINIC', 'the Walk-In Clinic room is CLINIC (MEDBAY stays the Stop-menu service)');
+    const same = await page.evaluate(() => {
+      const appr = Object.entries(STATE.npcCache).find(([k]) => k.startsWith('event_station_014@'));
+      const kin = resolveNpc(EVENTS.event_station_008);
+      return appr && kin && appr[1].species === kin.species;
+    });
+    ok(same, 'one dockmaster per stop: Next of Kin\'s desk has the captain who hailed you');
+    await page.close();
+  }
+
+  // ─────────────────────────────────────────── 5. DRAW RATES
   console.log('— draw rates over generated runs (selectEvent along random paths, fresh state)');
   {
     const page = await open();
@@ -397,7 +673,7 @@ const settleSubject = page => page.waitForFunction(() => {
       const out = {};
       for (const trail of ['lunar', 'mars', 'interstellar']) {
         const hit = Object.fromEntries(ids.map(i => [i, 0]));
-        let habitable = 0, derelicts = 0;
+        let habitable = 0, derelicts = 0; const kinds = { room: 0, docking: 0, arrival: 0, none: 0 };
         for (let r = 0; r < RUNS; r++) {
           const c = CREW.slice().sort(() => Math.random() - 0.5).slice(0, 2);
           applySetupToState({ trail, ai: 'marv', captain: 'veteran', crew: c, crop: 'wheat', ship: 'D' });
@@ -414,6 +690,7 @@ const settleSubject = page => page.waitForFunction(() => {
             if (n.node_type === 'derelict') derelicts++;
             if (n.node_type === 'planet' && SceneArt.biomeFor(null, n) === 'habitable') habitable++;
             const ev = selectEvent(n);
+            if (n.node_type === 'station') kinds[StationVisit.kindOf(ev) || 'none']++;
             if (ev) {
               STATE.seenEventIds.add(ev.id);
               if (ev.sets_flag) STATE.flags.add(ev.sets_flag);
@@ -423,11 +700,12 @@ const settleSubject = page => page.waitForFunction(() => {
             id = nid;
           }
         }
-        out[trail] = { hit: Object.fromEntries(Object.entries(hit).map(([k, v]) => [k, Math.round(1000 * v / RUNS) / 10])), habitablePerRun: Math.round(100 * habitable / RUNS) / 100, derelictsPerRun: Math.round(100 * derelicts / RUNS) / 100 };
+        out[trail] = { hit: Object.fromEntries(Object.entries(hit).map(([k, v]) => [k, Math.round(1000 * v / RUNS) / 10])), habitablePerRun: Math.round(100 * habitable / RUNS) / 100, derelictsPerRun: Math.round(100 * derelicts / RUNS) / 100, kinds };
       }
       return out;
     }, RUNS);
     for (const [t, r] of Object.entries(rates)) console.log('    ' + t + ': % of runs — survivor ' + r.hit.event_derelict_005 + ', lifeform ' + r.hit.event_planet_006 + ', crew request ' + r.hit.event_shipboard_017 + '  (derelicts/run ' + r.derelictsPerRun + ', habitable planets/run ' + r.habitablePerRun + ')');
+    for (const [t, r] of Object.entries(rates)) { const k = r.kinds, n = Object.values(k).reduce((a, b) => a + b, 0) || 1; console.log('    ' + t + ' station stops: drawn event as a dock room ' + Math.round(100 * k.room / n) + '%, plays on DOCK ' + Math.round(100 * k.docking / n) + '%, plays first ' + Math.round(100 * k.arrival / n) + '%, nothing drawn ' + Math.round(100 * k.none / n) + '%'); }
     const all = Object.values(rates);
     ok(all.some(r => r.hit.event_derelict_005 > 0), 'the survivor is drawn on real maps');
     ok(all.some(r => r.hit.event_planet_006 > 0), 'the lifeform is drawn on real maps');

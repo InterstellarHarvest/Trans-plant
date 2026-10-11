@@ -740,6 +740,7 @@
     drydock:      { label: 'DRYDOCK',   sub: () => 'Station crews patch the hull. +' + Math.min(30, Math.ceil(resMax('hull') - STATE.resources.hull)) + ' hull for ' + drydockFee() + 'g.', effort: 1, hint: true, locked: drydockLockReason, icon: 'repair' },
     fab_service:  { label: 'FAB SERVICE', sub: () => 'Station techs overhaul the fabricator. Wear to zero, ' + fabServiceFee() + 'g.', effort: 1, hint: true, locked: fabServiceLockReason, icon: 'fab' },
   };
+  const STATION_SERVICE_VERBS = new Set(['trade', 'medbay', 'drydock', 'fab_service']); // closed by a wave-off (owner ruling 2026-10-11)
   function effortPips(n) { n = Math.max(0, Math.min(5, n | 0)); return '●'.repeat(n) + '○'.repeat(5 - n); }
 
 
@@ -1515,7 +1516,9 @@
       if (verb.hideWhen && verb.hideWhen()) return;
       if (verb.requires && !verb.requires()) return;
       const labelStr = typeof verb.label === 'function' ? verb.label(regionKey) : verb.label;
-      const lockReason = verb.locked ? verb.locked() : null;
+      // A waved-off station (station.js): no berth, so its services are closed this stop.
+      const lockReason = (STATION_SERVICE_VERBS.has(verbId) && atStation() && window.stationServicesClosed && window.stationServicesClosed())
+        ? 'Waved off — no berth here' : (verb.locked ? verb.locked() : null);
       const variant = lockReason ? null : (verb.variantBy && verb.variantBy(regionKey)) || (verb.hint ? 'hint' : null);
       const parts = [];
       if (lockReason) {

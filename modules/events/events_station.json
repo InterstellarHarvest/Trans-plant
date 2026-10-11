@@ -352,8 +352,9 @@
           "item_grant": null,
           "item_consume": null,
           "sets_flag": "skipped_last_station",
-          "time_cost": "trivial",
-          "narrative": "You have enough. Probably. The ship computer notes that the word 'enough' is 'doing significant work in this context.' You leave."
+          "time_cost": "none",
+          "narrative": "You have enough. Probably. The ship computer notes that the word 'enough' is 'doing significant work in this context.' You leave.",
+          "waves_off": true
         }
       }
     ]
@@ -467,8 +468,9 @@
           "item_grant": null,
           "item_consume": null,
           "sets_flag": null,
-          "time_cost": "trivial",
-          "narrative": "You pull out of the queue and burn for the next marker. The controller logs your departure with palpable relief: one less ship. The crew watches the station lights recede with the specific melancholy of a port not visited."
+          "time_cost": "none",
+          "narrative": "You pull out of the queue and burn for the next marker. The controller logs your departure with palpable relief: one less ship. The crew watches the station lights recede with the specific melancholy of a port not visited.",
+          "waves_off": true
         }
       }
     ]
@@ -1789,5 +1791,311 @@
       }
     },
     "outcomes": {}
+  },
+  {
+    "id": "event_station_014",
+    "active": true,
+    "title": "Station Inbound",
+    "difficulty": "easy",
+    "tone": [
+      "corporate",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "station_arrival"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "comm_mode": "screen",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "station_approach": true,
+    "station_captain": {
+      "disposition": "station_crew",
+      "job": "captain",
+      "species": null
+    },
+    "parking_cost": 5,
+    "parking_fees": [
+      {
+        "reason": "BERTHING FEE",
+        "detail": "Standard. Probably."
+      },
+      {
+        "reason": "COURTESY DONATION",
+        "detail": "Festival week. The festival is mandatory."
+      },
+      {
+        "reason": "AIR-TAX",
+        "detail": "You're breathing their air on approach. Itemized."
+      },
+      {
+        "reason": "RECIPROCITY FEE",
+        "detail": "Cultural-exchange ledger. Non-negotiable, unfortunately."
+      },
+      {
+        "reason": "WELCOMING COMMITTEE",
+        "detail": "Three people. One of them is wearing a hat."
+      },
+      {
+        "reason": "ENVIRONMENTAL IMPACT",
+        "detail": "Your hull's emissions are theoretically rude."
+      },
+      {
+        "reason": "SAFETY DEPOSIT",
+        "detail": "Returnable, in theory. The form is on backorder."
+      },
+      {
+        "reason": "ADMINISTRATIVE SURCHARGE",
+        "detail": "Administered by an administrator. The fee is the answer."
+      }
+    ],
+    "station_rooms": {
+      "cantina": {
+        "label": "CANTINA",
+        "sub": "Drinks · rumors",
+        "nav": "Three corridors and the smell of lemon disinfectant",
+        "back": "Pay the tab. Such as it is"
+      },
+      "market": {
+        "label": "MARKET",
+        "sub": "Wares · haggling",
+        "nav": "Past the noise complaint, around the chime stalls",
+        "back": "Decline the chime. Politely"
+      },
+      "clinic": {
+        "label": "CLINIC",
+        "sub": "Checkups · supplies",
+        "nav": "Down the hall the lights blink in. Two left turns",
+        "back": "Sign the discharge form. Twice"
+      },
+      "office": {
+        "label": "OFFICE",
+        "sub": "Permits · officials",
+        "nav": "Up one level. The carpet gets sadder",
+        "back": "Bow once. Walk slowly"
+      },
+      "promenade": {
+        "label": "PROMENADE",
+        "sub": "Vendors · loiterers",
+        "nav": "Back into the noise and the planters and the music",
+        "back": "Cut through the planters"
+      },
+      "dockmaster": {
+        "label": "DOCKMASTER",
+        "sub": "Paperwork · the dockmaster",
+        "nav": "Back along the berths. The coffee smell gets stronger",
+        "back": "Leave the paperwork where it lies"
+      }
+    },
+    "elsewhere": {
+      "title": "ELSEWHERE ON THE STATION",
+      "body": "Where to next? The corridors are well-signed. Mostly.",
+      "sub": "Pick another corner of the ring",
+      "dock_sub": "Return to the airlock — the only way off the ring",
+      "ai": {
+        "aria": "So many places!",
+        "marv": "Time-cost per traverse: negligible. Patience-cost: unmeasured.",
+        "rex": "Stay on main corridors. Avoid maintenance routes.",
+        "chip": "Sponsored shortcuts available for premium members.",
+        "ajoy": "You're going to forget which way you came. You always do."
+      }
+    },
+    "farewell": "The station captain pings the comms once on your way out: “Safe burns out there, captain. The ring'll still be here next pass.”",
+    "leave_label": "LEAVE STATION",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "STATION INBOUND",
+        "body": "The ring grows in the viewport. Comms haven't lit up — looks like you'll need to make the first move.",
+        "variants": {
+          "hailed": {
+            "body": "The ring grows in the viewport. Comms light up before you can find the channel — the captain's already on the line.",
+            "line": "Welcome to the ring, captain. Drift in slow, standard berth's open, and try not to scratch the paint.",
+            "line_fee": "Welcome to the ring, captain. Mind the {fee.reason_lc} on the manifest — {fee.cost} gold. {fee.detail}",
+            "pose": "pleased"
+          },
+          "open": {
+            "body": "Comms are open. The captain's standing by for your call.",
+            "pose": "listening"
+          },
+          "silent": {
+            "body": "The ring grows in the viewport. Comms haven't lit up — looks like you'll need to make the first move.",
+            "pose": "listening"
+          }
+        },
+        "pose": "listening",
+        "ai": {
+          "aria": "Look at it! All those people, just living!",
+          "marv": "Docking probability: 94%. Surviving the paperwork: lower.",
+          "rex": "No threats from the ring. Hostiles unlikely.",
+          "chip": "Premium berths available for a small surcharge!",
+          "ajoy": "Don't make a scene at customs. You always make a scene at customs."
+        },
+        "choices": [
+          {
+            "text": "HAIL",
+            "sub": "Open station comms",
+            "station": "hail",
+            "next": "hail"
+          },
+          {
+            "text": "DOCK",
+            "sub": "Slot in · standard berth",
+            "station": "dock"
+          }
+        ],
+        "leave_label": "LEAVE STATION",
+        "leave_sub": "Skip the stop · risky",
+        "leave_next": "waveoff_warn"
+      },
+      "hail": {
+        "title": "STATION CONTROL",
+        "body": "The captain leans into frame. Three coffees deep, six hours into a four-hour shift.",
+        "line": "Identify, state intent, mind the chatter. We've had a day.",
+        "line_fee": "Identify, state intent, mind the chatter. And the {fee.reason_lc} is {fee.cost} gold this cycle — {fee.detail}",
+        "pose": "listening",
+        "leaveHidden": true,
+        "ai": {
+          "aria": "They sound tired. Should we send a snack?",
+          "marv": "Dockmaster vitals consistent with sustained boredom.",
+          "rex": "Standard ID query. Nothing irregular.",
+          "chip": "Sponsored greetings cost twelve credits. Decline.",
+          "ajoy": "Don't volunteer information. Don't."
+        },
+        "choices": [
+          {
+            "text": "\"Standard cargo, peaceful intent.\"",
+            "dialog": true,
+            "sub": "The honest answer",
+            "next": "hail_polite"
+          },
+          {
+            "text": "\"Any berth is fine.\"",
+            "dialog": true,
+            "sub": "Move it along",
+            "next": "hail_brief"
+          },
+          {
+            "text": "BACK",
+            "back": true
+          }
+        ]
+      },
+      "hail_polite": {
+        "title": "STATION CONTROL",
+        "body": "The dockmaster types something with one hand and waves with the other. Both motions look professional.",
+        "line": "Acknowledged. Ring three is open. Don't make me come down there.",
+        "pose": "pleased",
+        "leaveHidden": true,
+        "ai": {
+          "aria": "She likes us!",
+          "marv": "Acknowledgment received.",
+          "rex": "Cleared.",
+          "chip": "Ring three has 3.2-star reviews.",
+          "ajoy": "Don't push it."
+        },
+        "choices": [
+          {
+            "text": "DOCK",
+            "sub": "Slot in · standard berth",
+            "station": "dock"
+          },
+          {
+            "text": "BACK",
+            "sub": "Step away from the comms",
+            "back": true
+          }
+        ]
+      },
+      "hail_brief": {
+        "title": "STATION CONTROL",
+        "body": "The dockmaster nods once, an entire sentence compressed into a chin movement.",
+        "line": "Berth's berth. Welcome to the ring.",
+        "pose": "listening",
+        "leaveHidden": true,
+        "ai": {
+          "aria": "Efficient!",
+          "marv": "Communication minimized.",
+          "rex": "Acceptable.",
+          "chip": "Brevity discount: 0%.",
+          "ajoy": "She liked that."
+        },
+        "choices": [
+          {
+            "text": "DOCK",
+            "sub": "Slot in · standard berth",
+            "station": "dock"
+          },
+          {
+            "text": "BACK",
+            "sub": "Step away from the comms",
+            "back": true
+          }
+        ]
+      },
+      "waveoff_warn": {
+        "title": "WAVE OFF?",
+        "body": "Out in the black, a ship is what its hold can hold. Stations sell things. Stations heal things. Stations remember names.",
+        "pose": "listening",
+        "leaveHidden": true,
+        "ai": {
+          "aria": "Are you sure? They have so many things in there!",
+          "marv": "Probability of regret: high. Of fuel cell remorse: 78%.",
+          "rex": "Resupply ratio out here drops to one third. Reconsider.",
+          "chip": "Skipping the station forfeits all loyalty rewards. Sad face!",
+          "ajoy": "You will need something. You always need something."
+        },
+        "choices": [
+          {
+            "text": "CONFIRM · WAVE OFF",
+            "sub": "On to the black, then · no market, medbay or drydock",
+            "risky": true,
+            "outcome": "left_station"
+          },
+          {
+            "text": "NEVERMIND",
+            "sub": "Back to the approach",
+            "back": true
+          }
+        ]
+      },
+      "docked": {
+        "title": "DOCKED",
+        "body": "The umbilical hisses, the corridor lights cycle on, and a cool gust of station air announces itself. Below the chatter, a low metronome of footfalls and a station's worth of business waiting.",
+        "pose": "pleased",
+        "comm_mode": "in_person",
+        "bg": "station/dock",
+        "bgBase": "",
+        "bgSprite": "",
+        "ai": {
+          "aria": "We made it! Where to first?",
+          "marv": "Ambient social load: high. Brace.",
+          "rex": "Stay together. Watch the corners.",
+          "chip": "Spending recommendations available on request!",
+          "ajoy": "Cantina. Trust me. Cantina."
+        },
+        "revisit": {
+          "body": "Back at the airlock. The corridor lights hum; the station's business goes on without you."
+        },
+        "choices": [],
+        "leave_label": "LEAVE STATION",
+        "leave_sub": "Back to the bridge"
+      }
+    },
+    "outcomes": {
+      "left_station": {
+        "title": "BACK TO THE BLACK",
+        "body": "The ring shrinks in the viewport. Whatever the station had, the station keeps.",
+        "scene_bg": "space/deep",
+        "time_cost": "none",
+        "waves_off": true
+      }
+    }
   }
 ]
