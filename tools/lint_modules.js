@@ -478,7 +478,11 @@ function trailCoverage() {
     })(event);
   }
   for (const f of sets) {
-    if (reads.has(f) || /^(chose_|friendly_with_pirate_|analyzed_)/.test(f)) continue;
+    // Engine-read families: fork branches, per-species pirate goodwill, and
+    // analyzed_<item> (inventory/gate FIELD ANALYSIS). Anything else under
+    // these prefixes (chose_drift, analyzed_green_planet) needs a reader.
+    if (reads.has(f) || /^(chose_(alpha|beta)$|friendly_with_pirate_)/.test(f)
+        || (f.startsWith('analyzed_') && itemIds.has(f.slice(9)))) continue;
     if (new RegExp("flags\\.has\\(['\"]" + f + "['\"]").test(engineSrc)) continue;
     const p = pay[f];
     if (!p) { err(`flag "${f}" is set by content but nothing reads it — add a flag_payoffs entry (epilogue + callbacks) or a reader`); continue; }

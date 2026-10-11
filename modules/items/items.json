@@ -128,7 +128,7 @@
     "id": "item_spectrometer_001",
     "active": true,
     "name": "Spectrometer",
-    "description": "Material analysis. Identifies unknown items. Reveals classified_cargo contents.",
+    "description": "Material analysis. Reads what unknown cargo really is (inventory detail).",
     "real_purpose": "Spectral analysis of material composition",
     "item_source": "purchasable",
     "item_behavior": [
@@ -140,7 +140,7 @@
     "passive_flavor": "The spectrometer has identified the substance. You may not want to know.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Identifies unknown items, reveals classified_cargo, determines biological sample properties."
+    "gameplay_effect": "While aboard, the inventory detail shows the analysis of unknown items (classified cargo, unidentified bone, alien seed pod). Also unlocks spectrometer choices in events."
   },
   {
     "id": "item_medical_scanner_001",
@@ -293,6 +293,23 @@
     "gameplay_effect": "Unlocks the CONDENSE verb in nebulae: a day of work for +12 water. Active while in cargo."
   },
   {
+    "id": "item_shield_module_upgrade_001",
+    "active": true,
+    "name": "Shield Module",
+    "description": "A bolt-on shield emitter. In a fight, BOOST SHIELDS blocks the next hit completely. Once per fight.",
+    "item_source": "purchasable",
+    "item_behavior": [
+      "upgrade"
+    ],
+    "item_location_condition": "any",
+    "cargo_slots": 0,
+    "base_price": 110,
+    "passive_flavor": null,
+    "one_use": false,
+    "effort_contribution": null,
+    "gameplay_effect": "Enables BOOST SHIELDS in combat: the next incoming enemy hit is fully blocked. Once per combat. Not consumed."
+  },
+  {
     "_section": "LOOT-ONLY ITEMS — never in shops, found via salvage/events/minigames"
   },
   {
@@ -306,7 +323,7 @@
     ],
     "item_location_condition": "any",
     "cargo_slots": 0,
-    "base_price": null,
+    "base_price": 60,
     "passive_flavor": "The drive coil hums. Sometimes it hums differently. You try not to think about it.",
     "one_use": false,
     "effort_contribution": null,
@@ -323,7 +340,7 @@
     ],
     "item_location_condition": "any",
     "cargo_slots": 0,
-    "base_price": null,
+    "base_price": 45,
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
@@ -340,7 +357,7 @@
     ],
     "item_location_condition": "any",
     "cargo_slots": 0,
-    "base_price": null,
+    "base_price": 50,
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": {
@@ -366,7 +383,8 @@
     "passive_flavor": "The classified cargo sits in the hold. It hasn't done anything. You check on it anyway.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Unknown effects until identified by spectrometer. May trigger station inspection events. Contents randomized from a pool."
+    "gameplay_effect": "Unknown effects until identified by spectrometer. May trigger station inspection events. Contents randomized from a pool.",
+    "analysis": "Spectrometer through the seal: organic, kept cold, and shielded against exactly this kind of scan. The readout gives up and recommends delivering it on time."
   },
   {
     "_section": "EVENT REWARD ITEMS — granted by specific events"
@@ -576,7 +594,7 @@
     ],
     "item_location_condition": "any",
     "cargo_slots": 1,
-    "base_price": null,
+    "base_price": 45,
     "sell_range": [
       40,
       120
@@ -650,7 +668,7 @@
     ],
     "item_location_condition": "any",
     "cargo_slots": 1,
-    "base_price": null,
+    "base_price": 15,
     "sell_range": [
       10,
       30
@@ -676,7 +694,7 @@
     ],
     "item_location_condition": "any",
     "cargo_slots": 1,
-    "base_price": null,
+    "base_price": 24,
     "sell_range": [
       5,
       80
@@ -690,7 +708,8 @@
       "trade_good",
       "unique_instance",
       "spectrometer_reveals_value"
-    ]
+    ],
+    "analysis": "Spectrometer: not bone. A mineral cast of something that grew in low gravity, very slowly. Collectors pay for the story; a fence pays better than a station."
   },
   {
     "_section": "STORY ITEMS — info-only, advance events or reveal options"
@@ -721,7 +740,7 @@
     "id": "item_star_chart_fragment_001",
     "active": true,
     "name": "Star Chart Fragment",
-    "description": "Partial nav data from an older run. Someone else's best guess about where things are.",
+    "description": "Partial nav data from an older run. USE it to scout the next stop on the route.",
     "item_source": "loot_only",
     "item_behavior": [
       "one_use"
@@ -732,7 +751,7 @@
     "passive_flavor": null,
     "one_use": true,
     "effort_contribution": null,
-    "gameplay_effect": "Info-only. Reveals the type of one future (not-yet-scanned) node on the map. Consumed on use.",
+    "gameplay_effect": "USE from inventory: locks in and reports the event at the next stop (like a good SCAN). Consumed on use.",
     "tags": [
       "story",
       "info_only",

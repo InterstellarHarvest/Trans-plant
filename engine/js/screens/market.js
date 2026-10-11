@@ -47,7 +47,7 @@
   };
   // Upgrades have their own art in sprites/cargo/upgrades (it existed
   // all along — the market showed emoji); emoji only where no art exists.
-  const iconOf = sid => (typeof itemSpritePath === 'function' && itemSpritePath(sid)) || ICON_FALLBACK[sid] || ('sprites/cargo/items/' + sid + '.png');
+  const iconOf = sid => (typeof itemSpritePath === 'function' && itemSpritePath(sid)) || (typeof NO_ITEM_ART !== 'undefined' && NO_ITEM_ART[sid]) || ICON_FALLBACK[sid] || ('sprites/cargo/items/' + sid + '.png');
 
   // Demo sell-price convention: vendors pay ~2/3 of asking price.
   const sellPrice = bp => Math.max(1, Math.round(bp * 2 / 3));
@@ -133,9 +133,10 @@
   }
 
   function blackMarketVendor() {
-    // Demo black_market ware slots (45/60/35g) refilled with real
-    // loot_only ids — off-manifest gear no honest shop shelves.
-    const stock = [['drive_coil', 60], ['o2_recycler', 45], ['classified_cargo', 35]];
+    // Demo black_market ware slots (45/60/50g) refilled with real
+    // loot_only ids — off-manifest gear no honest shop shelves. (Classified
+    // cargo left the rack: bought here it had no courier job to pay it off.)
+    const stock = [['drive_coil', 60], ['o2_recycler', 45], ['repair_fabricator', 50]];
     const wares = [];
     for (const [sid, gold] of stock) {
       const d = defBy(sid);

@@ -326,9 +326,17 @@
       }));
     }
 
-    // Stub for v2 per COMBAT_SYSTEM_HANDOFF.md §3 — always locked, no
-    // shield_module_upgrade item exists yet.
-    wrap.appendChild(makeActionBtn({ verb: 'BOOST SHIELDS', sub: 'Requires Shield Module Upgrade [v2]', locked: true }));
+    // BOOST SHIELDS (COMBAT_SYSTEM_HANDOFF.md §v2): the station-bought
+    // Shield Module arms a full block of the next incoming hit. Free
+    // action, once per fight, item not consumed.
+    const hasShield = STATE.items.includes('shield_module_upgrade');
+    wrap.appendChild(makeActionBtn({
+      verb: 'BOOST SHIELDS',
+      sub: !hasShield ? 'Requires Shield Module (stations)'
+           : COMBAT.shieldArmed ? 'Shields up · next hit blocked'
+           : COMBAT.shieldUsed ? 'Already used this combat' : 'Block the next hit · free action · once per fight',
+      locked: !hasShield || COMBAT.shieldUsed, cls: 'combat-special', onClick: doBoostShields
+    }));
 
     wrap.appendChild(makeActionBtn({
       verb: 'ATTEMPT ESCAPE', sub: `${ftlTurns()}-turn FTL charge · -15 fuel`,
@@ -721,6 +729,17 @@
     renderCombatActions();
   }
 
+  function doBoostShields() {
+    if (!COMBAT.active || COMBAT.state !== 'PLAYER_TURN' || COMBAT.shieldUsed) return;
+    if (!STATE.items.includes('shield_module_upgrade')) return;
+    COMBAT.shieldUsed = true;
+    COMBAT.shieldArmed = true;
+    COMBAT.openingTurn = false;
+    setNarrCombat('COMBAT LOG', 'Shield module spun up. The emitters hum at a pitch the crew will hear in their sleep.', 'Shields up: the next incoming hit is blocked completely. Free action — fire when ready.');
+    setAiCombat('Shields at full. One hit. Make it count.');
+    renderCombatActions();
+  }
+
   function beginFtlCharge() {
     if (!COMBAT.active || COMBAT.state !== 'PLAYER_TURN') return;
     COMBAT.openingTurn = false;
@@ -866,6 +885,13 @@
       } else if (dmg <= 0) {
         setNarrCombat('COMBAT LOG', pfx + combatLine('enemy_fires'), 'No effective damage.');
         COMBAT._narrPrefix = null;
+      } else if (COMBAT.shieldArmed && !COMBAT.rexShield) {
+        COMBAT.shieldArmed = false;
+        spawnMissPopup('BLOCKED');
+        setNarrCombat('COMBAT LOG', pfx + combatLine('enemy_fires'), 'The shield module takes the shot and gives it back as light. Hull untouched.');
+        setAiCombat('Shield held. It will not hold again this fight.');
+        COMBAT._narrPrefix = null;
+        renderCombatActions();
       } else if (COMBAT.rexShield) {
         // REX's passive (ai_companions combat_bonus — "an extra life"):
         // the first hit of every fight lands on point-defense instead.
@@ -1348,6 +1374,8 @@
     COMBAT.turn = 1;
     COMBAT.ftlCharge = -1;
     COMBAT.hullPatchUsed = false;
+    COMBAT.shieldUsed = false;
+    COMBAT.shieldArmed = false;
     COMBAT.tributeUsed = false;
     COMBAT.openingTurn = !ramFailed;
     COMBAT.evadingNextHit = false;

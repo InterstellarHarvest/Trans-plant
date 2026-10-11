@@ -2280,10 +2280,13 @@ function activeTriggers() {
   if (r.hull   < 30) active.add('low_hull');
   if (r.morale < 30) active.add('low_morale');
   // Position-based (not threshold-based): first/last ~15% of the
-  // journey by days elapsed; journey_mid covers the long middle third.
-  const frac = STATE.baseDays > 0 ? STATE.daysElapsed / STATE.baseDays : 0;
-  if (frac <= 0.15) active.add('journey_start');
-  if (frac >= 0.85) active.add('journey_end');
+  // journey by LEGS flown (registry: "first/final two legs"); journey_mid
+  // covers the long middle third. (Days elapsed stopped working once the
+  // balance pass flew only 60% of baseDays: journey_end never fired.)
+  const legs = STATE.visited ? STATE.visited.size : 0, P = pathLegs();
+  const frac = legs / P;
+  if (frac <= 0.15 || legs <= 1) active.add('journey_start');
+  if (frac >= 0.85 || P - legs <= 2) active.add('journey_end');
   if (frac >= 0.35 && frac <= 0.65) active.add('journey_mid');
   // Crop state — thresholds from the selected crop's own crops.json
   // entry. crop_dead only activates AFTER the player accepts the loss
@@ -2294,6 +2297,7 @@ function activeTriggers() {
     const sickAt = (cropDef && cropDef.sick_threshold) || 30;
     const h = STATE.cropGrowth.health;
     if (h > 0 && h < sickAt) active.add('crop_sick');
+    if (h > 0 && STATE.cropGrowth.pest) active.add('crop_pest'); // a real infestation (growbay pest roll)
     if (h <= 0 && STATE.flags.has('crop_death_accepted')) active.add('crop_dead');
   }
   // Crew state — solo_run is a standing condition; crew_dead activates
@@ -2544,7 +2548,7 @@ let _invJettisonPending = null;
 // (insulated_cargo_bay's file is extra_cargo.png), everything else in
 // sprites/cargo/items. null when no art exists yet (emoji fallback).
 const UPGRADE_SPRITES = { expanded_fuel_tank: 'expanded_fuel_tank', hull_plating: 'hull_plating', insulated_cargo_bay: 'extra_cargo', drive_coil: 'drive_coil', o2_recycler: 'o2_recycler', repair_fabricator: 'repair_fabricator', atmospheric_condenser: 'atmospheric_condenser' };
-const NO_ITEM_ART = {}; // ids awaiting art (resources/ART_REQUESTS.md) — emoji until it lands
+const NO_ITEM_ART = { shield_module_upgrade: '🔰' }; // ids awaiting art (resources/ART_REQUESTS.md) — emoji until it lands
 function itemSpritePath(id) {
   if (UPGRADE_SPRITES[id]) return 'sprites/cargo/upgrades/' + UPGRADE_SPRITES[id] + '.png';
   if (NO_ITEM_ART[id]) return null;
@@ -2552,7 +2556,7 @@ function itemSpritePath(id) {
 }
 function invIconHtml(id, isMaterial, px) {
   const path = isMaterial ? 'sprites/cargo/materials/' + id + '.png' : itemSpritePath(id);
-  if (!path) return '<span class="inv-tile-emoji">📦</span>';
+  if (!path) return '<span class="inv-tile-emoji">' + (NO_ITEM_ART[id] || '📦') + '</span>';
   return '<img src="' + path + '" alt="" onerror="this.outerHTML=\'<span class=&quot;inv-tile-emoji&quot;>📦</span>\'" style="width:inherit;height:inherit;max-width:56px;max-height:56px;">';
 }
 function renderInventory() {
@@ -2616,6 +2620,10 @@ const ITEM_USE = {
                     use: () => { const r = worstHurtCrew(); STATE.crewHP[r] = 100; delete crewPendingOf()[r]; return 'Medkit opened. ' + crewNameOf(r) + ' is patched up and back on their feet.'; } },
   crop_treatment: { label: '+30 CROP',  can: () => !STATE.cropGrowth || STATE.cropGrowth.health <= 0 ? 'Nothing left to treat' : (STATE.cropGrowth.health >= 100 && !STATE.cropGrowth.pest ? 'The crop is healthy' : null),
                     use: () => { const cg = STATE.cropGrowth; cg.health = Math.min(100, cg.health + 30); cg.pest = false; STATE.flags.delete('ai_noted_pest'); return 'Crop treatment applied. +30 crop health; pests cleared.'; } },
+  // items.json: "reveals the type of one future node… consumed on use" —
+  // a good SCAN's worth: the next stop(s) locked in and reported.
+  star_chart_fragment: { label: 'SCOUT', can: () => { const n = STATE.byId && STATE.byId[STATE.currentId]; return n && connectionsOf(n).length ? null : 'Nothing left to chart'; },
+                    use: () => { const r = scoutAhead(1, false); return 'Star chart fragment matched to the route. ' + (r.length ? r.join(' · ') : 'Nothing ahead but the destination.'); } },
 };
 function renderInvDetail(en) {
   const box = document.getElementById('inv-detail');
@@ -2635,6 +2643,8 @@ function renderInvDetail(en) {
                          : ((def && def.description) || 'Unlabeled. Confident.');
   // Xenobiologist Field Analysis payoff — the finding travels with the item.
   if (def && def.analysis && STATE.flags.has('analyzed_' + en.id)) desc += '  ◆ FIELD ANALYSIS: ' + def.analysis;
+  // The spectrometer (items.json: "identifies unknown items") reads the same finding.
+  else if (def && def.analysis && STATE.items.includes('spectrometer')) desc += '  ◆ SPECTROMETER: ' + def.analysis;
   document.getElementById('inv-detail-desc').textContent = desc;
   const jett = document.getElementById('inv-jett-btn');
   jett.style.display = en.material ? 'none' : '';
@@ -3796,7 +3806,7 @@ function showHindsight() {
 function gateIconPath(g) {
   if (!g) return null;
   if (g.crew) return 'sprites/interface/careers/' + g.crew + '.png';
-  if (g.item) return 'sprites/cargo/items/' + g.item + '.png';
+  if (g.item) return itemSpritePath(g.item); // upgrades live in cargo/upgrades/
   if (g.gold) return 'sprites/interface/gold.png';
   return null;
 }

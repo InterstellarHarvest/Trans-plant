@@ -39,7 +39,8 @@
         "outcome": {
           "resources": {
             "fuel": 15,
-            "food": 15
+            "food": 15,
+            "gold": -18
           },
           "crew_effect": null,
           "severity": null,
@@ -48,6 +49,9 @@
           "sets_flag": null,
           "time_cost": "low",
           "narrative": "You resupplied at fair prices. The attendant wished you well. You will think about this station later, when prices are not fair."
+        },
+        "gate": {
+          "gold": 18
         }
       },
       {
@@ -133,7 +137,8 @@
         "outcome": {
           "resources": {
             "food": 10,
-            "morale": -2
+            "morale": -2,
+            "gold": -4
           },
           "crew_effect": null,
           "severity": null,
@@ -142,6 +147,9 @@
           "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "It's algae. Green. Tastes like what you'd expect. The crew eats it. Nobody comments. This is worse than complaining."
+        },
+        "gate": {
+          "gold": 4
         }
       },
       {
@@ -153,7 +161,8 @@
         "outcome": {
           "resources": {
             "food": 10,
-            "morale": -1
+            "morale": -1,
+            "gold": -6
           },
           "crew_effect": null,
           "severity": null,
@@ -162,6 +171,9 @@
           "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "It's algae. Also green. The word 'artisanal' appears to mean 'slightly warmer.' Morale loss is slightly less. This counts as a win now."
+        },
+        "gate": {
+          "gold": 6
         }
       },
       {
@@ -244,7 +256,8 @@
         "outcome": {
           "resources": {
             "fuel": 15,
-            "food": 10
+            "food": 10,
+            "gold": -25
           },
           "crew_effect": null,
           "severity": null,
@@ -253,6 +266,9 @@
           "sets_flag": null,
           "time_cost": "low",
           "narrative": "You paid premium. The attendant thanked you with the enthusiasm of someone who knows you had no choice. Your credit balance hurts to look at."
+        },
+        "gate": {
+          "gold": 25
         }
       },
       {
@@ -263,7 +279,8 @@
         "microgame_type": null,
         "outcome": {
           "resources": {
-            "hull": 20
+            "hull": 20,
+            "gold": -25
           },
           "crew_effect": null,
           "severity": null,
@@ -272,6 +289,9 @@
           "sets_flag": null,
           "time_cost": "low",
           "narrative": "Hull repaired. The mechanic did good work. The invoice did bad things to your budget. Both are true."
+        },
+        "gate": {
+          "gold": 25
         }
       },
       {
@@ -281,7 +301,9 @@
         "requires_flag": null,
         "microgame_type": null,
         "outcome": {
-          "resources": {},
+          "resources": {
+            "gold": 35
+          },
           "crew_effect": null,
           "severity": null,
           "item_grant": null,
@@ -299,7 +321,8 @@
         "microgame_type": null,
         "outcome": {
           "resources": {
-            "water": 10
+            "water": 10,
+            "gold": -14
           },
           "crew_effect": null,
           "severity": null,
@@ -307,7 +330,13 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "trivial",
-          "narrative": "Water acquired. A small supply of biocomponents available at extortionate rates. The crop doesn't know what you paid. The crop doesn't care. The crop just needs water."
+          "narrative": "Water acquired. A small supply of biocomponents available at extortionate rates. The crop doesn't know what you paid. The crop doesn't care. The crop just needs water.",
+          "materials": {
+            "biocomponent": 2
+          }
+        },
+        "gate": {
+          "gold": 14
         }
       },
       {
@@ -849,7 +878,7 @@
     "event_presentation": "fullscreen",
     "scene_type": "station_interior",
     "comm_mode": "in_person",
-    "once": true,
+    "once": false,
     "sets_flag": null,
     "requires_flag": "recovered_beacon_tag",
     "requires_item": "distress_beacon_tag",
@@ -976,7 +1005,6 @@
             "risky": true,
             "effort": 4,
             "sub": "They have work",
-            "hideFlag": "courier_job_taken",
             "next": "watchers"
           },
           {
@@ -1017,9 +1045,9 @@
           {
             "text": "TAKE THE JOB",
             "dialog": true,
-            "risky": true,
             "sub": "Sealed cargo, 1 slot, paid on handoff",
-            "outcome": "cantina_job"
+            "outcome": "cantina_job",
+            "hideFlag": "courier_job_taken"
           },
           {
             "text": "SEE THE GOODS",
@@ -1057,7 +1085,8 @@
             "text": "TAKE THE JOB",
             "dialog": true,
             "sub": "OK, fair enough",
-            "outcome": "cantina_job"
+            "outcome": "cantina_job",
+            "hideFlag": "courier_job_taken"
           },
           {
             "text": "BACK",
@@ -1246,7 +1275,7 @@
     "event_presentation": "fullscreen",
     "scene_type": "station_interior",
     "comm_mode": "in_person",
-    "once": true,
+    "once": false,
     "sets_flag": null,
     "requires_flag": "courier_job_taken",
     "requires_item": "classified_cargo",
