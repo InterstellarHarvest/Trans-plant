@@ -343,7 +343,7 @@ function openMinigame(id, opts, onDone){
   showReady(id, ()=>{
     minigameStarted = true;
     const mclose = document.getElementById('mclose');
-    mclose.textContent = '✕ QUIT'; mclose.title = 'Quit now: nothing is kept, and the time is still spent.';
+    mclose.textContent = '✕ QUIT'; mclose.title = 'Quit now: nothing is kept, and the time is still spent. In a crisis, the worst outcome lands.';
     cleanupFn = inits[id](document.getElementById('ga'), (tier, payload) => { if (token === minigameToken) showResult(tier, payload); }, opts || {});
   });
 }

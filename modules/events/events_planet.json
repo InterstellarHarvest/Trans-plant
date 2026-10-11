@@ -47,7 +47,8 @@
           "narrative": "The soil sampler confirms: rich in nitrogen, phosphorus, and trace minerals. Biocomponents extracted. Your crop will benefit. The ship computer logs the data and notes this planet would make an 'acceptable secondary colony site.' High praise.",
           "materials": {
             "biocomponent": 1
-          }
+          },
+          "crop_health": 6
         }
       },
       {
@@ -103,7 +104,8 @@
           "narrative": "The botanist kneels in the dirt for seventeen minutes. They stand up. 'This is good soil,' they say, with the quiet intensity of someone who has waited their entire career to say this on another planet. Biocomponents collected. Crop health will benefit.",
           "materials": {
             "biocomponent": 1
-          }
+          },
+          "crop_health": 6
         }
       }
     ]
@@ -355,7 +357,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "medium",
-          "narrative": "A full day of measurement and photography. The settlement's layout is sensible, efficient, almost familiar — a plan any colonist would recognize. The final log entry writes itself and then sits there, cursor blinking: 'They did everything right.' You file it anyway."
+          "narrative": "Four days of measurement and photography. The settlement's layout is sensible, efficient, almost familiar — a plan any colonist would recognize. The final log entry writes itself and then sits there, cursor blinking: 'They did everything right.' You file it anyway."
         }
       },
       {
@@ -411,6 +413,97 @@
           "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You lift off without touching the ruins. Some places have finished their story, and walking through them mid-sentence would be a kind of interruption. The tower stump watches you go. That is a strange thing to write in a log, so you don't. But it did."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_planet_005",
+    "active": true,
+    "title": "Local Soil",
+    "difficulty": "easy",
+    "tone": [
+      "cosmic",
+      "absurd"
+    ],
+    "node_type": [
+      "planet"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "planet_surface",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_item": "alien_seed_pod",
+    "ai_flavor": {
+      "aria": "The pod wants to go outside! ARIA has always said every seed deserves a home! She has said it three times today, and she meant it every time!",
+      "marv": "MARV has run every soil test the ship can run. The soil is ordinary. The pod is leaning toward it anyway. He has added 'leaning' to the list of things seeds should not do. The list is now four items long.",
+      "rex": "REX has established a perimeter around a seed. He is aware of how that sounds. He is maintaining the perimeter.",
+      "chip": "Planting unregistered biologicals voids all agricultural warranties! CHIP notes this one never had a warranty! Plant freely! Liability is entirely yours!",
+      "ajoy": "AJOY notes the pod only does this here. She notes nothing on any chart says this planet is special. She would put it back in the hold and let it sulk. Your call."
+    },
+    "body": "The seed pod has been warmer since you made orbit.\n\nOn the surface it is warmer still. Carried from the hold to the airlock, it pulses faster, the way a dog walks faster near a park. Set down on the loose dark soil outside the ship, it leans. Not much. Enough that everyone sees it, and nobody says anything, and then everyone says something at once.\n\nThe soil here is ordinary by every instrument aboard. The pod disagrees.",
+    "choices": [
+      {
+        "text": "Plant it",
+        "requires_crew": null,
+        "requires_item": "alien_seed_pod",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "alien_seed_pod",
+          "sets_flag": "planted_seed_pod",
+          "time_cost": "medium",
+          "narrative": "You dig a hole a hand deep and set the pod in it. It splits before the soil is back over it. By dusk there is a pale shoot the height of a boot; by morning, three. The split husk is good for two lots of biocomponent. Back aboard, the crop in the growbay has perked up the way plants do when they hear good news secondhand, and so has the crew. Whatever was meant to come back for the pod will now have to come here, which is at least somewhere you are not.",
+          "materials": {
+            "biocomponent": 2
+          },
+          "crop_health": 10
+        }
+      },
+      {
+        "text": "Let {crew.botanist} run a germination test",
+        "requires_crew": "botanist",
+        "requires_item": "alien_seed_pod",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "germination_tested_pod",
+          "time_cost": "low",
+          "narrative": "{crew.botanist} sets the pod on a tray of local soil for one hour, timed. It puts down a single root hair, tastes the dirt, and draws the root back in like a hand from a stove. Whatever it left in the tray turns out to be the best fertilizer the growbay has seen all voyage, and the crop gets all of it. The pod goes back in the hold, sealed, warm, and apparently holding out for better soil than this. {crew.botanist} does not enjoy being out-judged on soil by a seed.",
+          "crop_health": 6
+        }
+      },
+      {
+        "text": "Keep it sealed",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The pod goes back in its case and the case goes back in the hold. It stays warm for the rest of the day. Nobody takes this personally except, possibly, the pod."
         }
       }
     ]

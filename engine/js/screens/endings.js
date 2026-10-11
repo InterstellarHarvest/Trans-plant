@@ -137,6 +137,13 @@
       food:  STATE.resources.food,
       water: STATE.resources.water,
       hull:  STATE.resources.hull,
+      morale: STATE.resources.morale,
+      soil:  STATE.soilSurveys || 0,
+      cropBonus: (() => { // crops.json arrival_bonus, as scoreValue applies it
+        const meta = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
+        const ab = meta && meta.arrival_bonus;
+        return (ab && ab.ending_score_modifier && STATE.cropGrowth && STATE.cropGrowth.health > (ab.health_condition || 0)) ? ab.ending_score_modifier : 1;
+      })(),
       days:  STATE.daysElapsed,
       baseDays: STATE.baseDays,
       failed: end.kind === 'failure',
@@ -236,6 +243,7 @@
       { key: 'food', label: 'FOOD', pct: stats.food },
       { key: 'water', label: 'H2O', pct: stats.water },
       { key: 'hull', label: 'HULL', pct: stats.hull },
+      { key: 'morale', label: 'MO', pct: stats.morale },
     ];
     for (const r of res) {
       const wrap = document.createElement('div');
@@ -255,7 +263,12 @@
     else if (delta < 0) { cmp = nDays(-delta) + ' LATE'; cmpClass = 'late'; }
     else { cmp = 'ON TIME'; cmpClass = ''; }
     $('end-day-line').innerHTML =
-      `DAY <span class="day-num">${stats.days}</span> OF ${stats.baseDays} · <span class="day-cmp ${cmpClass}">${cmp}</span>`;
+      `DAY <span class="day-num">${stats.days}</span> OF ${stats.baseDays} · <span class="day-cmp ${cmpClass}">${cmp}</span>` +
+      // The rest of what the score counts (index.html scoreValue).
+      ((stats.soil || stats.cropBonus > 1) ? '<span class="score-extras">' + [
+        stats.soil ? 'SOIL SURVEYS +' + stats.soil * 2 : '',
+        stats.cropBonus > 1 ? 'CROP BONUS +' + Math.round((stats.cropBonus - 1) * 100) + '%' : '',
+      ].filter(Boolean).join(' · ') + '</span>' : '');
   }
 
   let currentView = null;

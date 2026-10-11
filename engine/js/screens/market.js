@@ -126,7 +126,7 @@
     return {
       name: 'OUTPOST TRADER',
       greeting: negotiated
-        ? "Your diplomat already talked my ear off. Fine. Fifteen percent. Don't tell the other captains."
+        ? "Your diplomat already talked my ear off. Fine. Up to fifteen percent, and not a credit under what I pay for it. Don't tell the other captains."
         : "Welcome, welcome. What do you need today — or what are you selling?",
       farewell: "Come back when you've got more to spend.",
       wares,
@@ -149,6 +149,7 @@
     for (const [sid, gold] of stock) {
       const d = defBy(sid);
       if (!d) continue; // defensive: never invent an id items.json lacks
+      if (STATE.items.includes(sid)) continue; // an upgrade you carry does nothing twice
       wares.push({
         id: sid,
         name: (d.name || sid).toUpperCase(),

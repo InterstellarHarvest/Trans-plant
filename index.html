@@ -2392,7 +2392,45 @@ function selectEvent(node) {
     if (launch.length) candidates = launch;
   }
   if (!candidates.length) return null;
-  return drawWeightedEvent(candidates, triggers, baseWeights);
+  return drawWeightedEvent(candidates, triggers, baseWeights, node.branch);
+}
+
+/* Branch labels are real (owner ruling 2026-10-11, Bible §9 Fork System):
+   on a labelled branch the event pool leans toward the label's kind of
+   trouble or reward. Tags are worked out once per event from its data. */
+const _evBranchTags = new Map();
+function eventBranchTags(ev) {
+  if (_evBranchTags.has(ev.id)) return _evBranchTags.get(ev.id);
+  const js = JSON.stringify(ev);
+  const outs = [];
+  const walk = o => { if (o && typeof o === 'object') { if (o.resources || o.materials || o.item_grant || o.crop_health) outs.push(o); for (const v of Object.values(o)) walk(v); } };
+  walk(ev);
+  const INSTR = ['gas_analyzer', 'spectrometer', 'soil_sampler', 'geiger_counter', 'medical_scanner'];
+  const tags = {
+    combat: /"(triggerCombat|combat_trigger|triggerRamResolve)":true/.test(js) || (ev.npc && ev.npc.disposition === 'pirate'),
+    reward: outs.some(o => (o.materials && Object.values(o.materials).some(v => v > 0)) || o.item_grant || (o.resources && o.resources.gold > 0)),
+    science: !!ev.science_link || INSTR.some(i => js.includes('"' + i + '"')) || js.includes('"xenobiologist"'),
+    crop: outs.some(o => o.crop_health > 0 || (o.resources && o.resources.food > 0)),
+    corporate: (ev.tone || []).includes('corporate') || (ev.npc && (ev.npc.disposition === 'station_crew' || ev.npc.disposition === 'trader')),
+  };
+  _evBranchTags.set(ev.id, tags);
+  return tags;
+}
+function branchEventMult(ev, branch) {
+  if (!branch) return 1;
+  const t = eventBranchTags(ev);
+  const tier = Array.isArray(ev.difficulty) ? ev.difficulty[0] : (ev.difficulty || 'medium');
+  const hard = tier === 'hard' || tier === 'ultra';
+  switch (branch) {
+    case 'hostile':        return (t.combat ? 3 : 1) * (hard ? 1.5 : 1);
+    case 'lucrative':      return (t.reward ? 2 : 1) * (hard ? 1.3 : 1);
+    case 'safe':           return (tier === 'easy' ? 2 : 1) * (hard ? 0.4 : 1) * (t.combat ? 0.3 : 1);
+    case 'corporate':      return t.corporate ? 2.5 : 1;
+    case 'derelict_heavy': return t.reward ? 1.3 : 1;
+    case 'scientific':     return t.science ? 3 : 1;
+    case 'agricultural':   return t.crop ? 2.5 : 1;
+  }
+  return 1;
 }
 
 /* Can this event fire at this node right now? (selectEvent's pool rule —
@@ -2433,10 +2471,10 @@ function eventEligible(ev, node, triggers) {
     return evTriggers.some(t => triggers.has(t));
 }
 
-function drawWeightedEvent(candidates, triggers, baseWeights) {
+function drawWeightedEvent(candidates, triggers, baseWeights, branch) {
   const chosen = weightedDraw(candidates, ev => {
     const tier = Array.isArray(ev.difficulty) ? ev.difficulty[0] : (ev.difficulty || 'medium');
-    let w = baseWeights[tier] ?? 1;
+    let w = (baseWeights[tier] ?? 1) * branchEventMult(ev, branch);
     const evTriggers = ev.trigger || ['any'];
     // Positional triggers (journey_start/journey_end) exist for
     // reachability, not urgency — they get a mild bump so they surface
@@ -2670,7 +2708,7 @@ function renderInvDetail(en) {
   if (en.material) bits.push('Raw material · no cargo slot');
   else if (def) {
     bits.push(def.cargo_slots_per_10 ? Math.ceil(en.n / 10) * def.cargo_slots_per_10 + ' slot(s)' : ((def.cargo_slots || 0) * en.n) + ' slot(s)');
-    if (def.base_price) bits.push('fence value ~' + Math.round(def.base_price * 2 / 3) + 'g');
+    if (def.base_price) bits.push('trader pays ~' + Math.round(def.base_price * 2 / 3) + 'g');
   }
   document.getElementById('inv-detail-meta').textContent = bits.join(' · ');
   let desc = en.material ? 'Feedstock for the fabricator. Sharp edges included at no extra charge.'
@@ -2952,7 +2990,7 @@ function renderMap(ids) {
     if (n.branch_flavor) {
       const bf = document.createElement('div');
       bf.className = 'map-branch-flavor';
-      bf.textContent = String(n.branch_flavor).replace(/_/g, ' ').toUpperCase();
+      bf.textContent = n.branch_hidden ? '???' : String(n.branch_flavor).replace(/_/g, ' ').toUpperCase();
       el.appendChild(bf);
     }
     if (!readOnly && available.has(n.id)) {
@@ -3263,6 +3301,23 @@ function stationPriceMult() {
   return (STATE.activeAI === 'chip' ? 0.85 : 1) * (STATE.captain === 'merchant' ? 0.9 : 1);
 }
 function stationPrice(g) { return Math.max(1, Math.round(g * stationPriceMult())); }
+// Gold spent inside a station event takes the same CHIP / Merchant
+// discount (owner ruling 2026-10-11): the charge, the gate, the preview
+// and the price written in the choice text all agree.
+function eventGoldMult() {
+  const node = STATE.byId && STATE.byId[STATE.currentId];
+  return (STATE.currentEvent && node && node.node_type === 'station') ? stationPriceMult() : 1;
+}
+function eventGold(g) { return eventGoldMult() < 1 ? Math.max(1, Math.round(g * eventGoldMult())) : g; }
+function choiceGoldCost(ch) {
+  const o = choiceOutcome(ch);
+  return ch.gold_cost || (ch.gate && ch.gate.gold) || (o && o.resources && o.resources.gold < 0 ? -o.resources.gold : 0);
+}
+function pricedText(str, ch) {
+  const c = choiceGoldCost(ch);
+  if (!c || !str || eventGoldMult() >= 1) return str;
+  return String(str).replace(new RegExp('\\b' + c + '(\\s?gold|g)\\b', 'g'), eventGold(c) + '$1');
+}
 function rosterPassive(role, key, dflt) {
   const c = (MOD.crew_roster || []).find(x => x.role === role);
   const v = c && c.passive_skill && c.passive_skill[key];
@@ -3559,6 +3614,7 @@ function enterEvent(node, ev) {
   STATE.seenEventIds.add(ev.id);
   if (ev.sets_flag) STATE.flags.add(ev.sets_flag); // event-level flag: meeting the event is the fact
   STATE.npcCtx = ev.npc ? resolveNpc(ev) : null;
+  STATE.lastSpeaker = null;
 
   // Educational tie-in (Bible §18's reserved link schema): events can
   // author science_link {url, label, text} — pushed into the cruise AI
@@ -3616,7 +3672,9 @@ function consumeKey(choice) {
 function resolveLayerNpc(spec, evId, layerId) {
   if (!spec) return null;
   STATE.npcCache = STATE.npcCache || {};
-  const key = evId + '#' + layerId;
+  // Keyed by WHO speaks, not which layer: the same watcher across three
+  // layers keeps one face (it re-rolled species per layer).
+  const key = evId + '@' + STATE.currentId + '#' + (spec.displayName || (spec.disposition + '/' + (spec.job || '')));
   if (STATE.npcCache[key]) return STATE.npcCache[key];
   const species = spec.species || NPC_SPECIES_POOL[Math.floor(Math.random() * NPC_SPECIES_POOL.length)];
   const jobNames = { captain: 'STATION CAPTAIN', medic: 'STATION MEDIC', engineer: 'STATION ENGINEER', botanist: 'STATION BOTANIST', janitor: 'JANITOR', security: 'STATION SECURITY', bartender: 'BARTENDER' };
@@ -3642,6 +3700,19 @@ function interpolateStowawayTokens(text) {
   // {crew.<role>}: whoever holds that role now (a stowaway who joined as
   // diplomat keeps their own name — the text used to say "Hargrove").
   if (text && text.indexOf('{crew.') !== -1) text = text.replace(/\{crew\.(\w+)\}/g, (m, role) => crewNameOf(role));
+  // {branch.alpha.label} / {branch.alpha.first} (and beta): a fork event
+  // describes the real branches ahead — the map label (or "unmarked" for
+  // a ??? branch) and the first stop on it.
+  if (text && text.indexOf('{branch.') !== -1) text = text.replace(/\{branch\.(alpha|beta)\.(label|first)\}/g, (m, key, part) => {
+    const fork = STATE.byId && STATE.byId[STATE.currentId];
+    const firstId = fork && fork.connects_to && fork.connects_to[key] && fork.connects_to[key][0];
+    const first = firstId && STATE.byId[firstId];
+    if (!first) return part === 'label' ? 'unmarked' : 'somewhere';
+    if (part === 'label') return first.branch_hidden ? 'unmarked' : String(first.branch_flavor || 'unmarked').replace(/_/g, ' ').toUpperCase();
+    if (first.branch_hidden) return 'nothing the scanners will commit to';
+    const A = { station: 'a station', planet: 'a planet', asteroid_field: 'an asteroid field', derelict: 'a derelict', nebula: 'a nebula', void: 'empty void', anomaly: 'an anomaly' };
+    return A[first.node_type] || 'somewhere';
+  });
   if (text && text.indexOf('{patient.') !== -1) {
     const p = STATE.crisisPatient;
     text = text
@@ -3669,7 +3740,12 @@ function currentLayer() {
    cancels in-flight typing; clicking the target completes it.
    Honors PauseBus. */
 const _typeActive = new Map(); // el → cancel fn
+// Pause menu SETTINGS → TEXT SPEED (shared.js tpLoadSettings).
+const TEXT_SPEED_MULT = { slow: 1.8, normal: 1, fast: 0.35 };
 function typeInto(el, text, ms, onDone) {
+  let speed = 'normal';
+  try { speed = (typeof tpLoadSettings === 'function' && tpLoadSettings().textSpeed) || 'normal'; } catch (e) {}
+  ms = Math.max(4, Math.round((ms || 12) * (TEXT_SPEED_MULT[speed] || 1)));
   const prev = _typeActive.get(el);
   if (prev) prev(true); // silent cancel — no onDone
   text = String(text || '');
@@ -3779,6 +3855,7 @@ function renderEncounterState() {
 
   const dialogEl = document.getElementById('enc-dialog');
   const speaker = layerNpcCtx || STATE.npcCtx;
+  if (line && speaker) STATE.lastSpeaker = speaker; // the outcome's line comes from whoever was talking
   if (line) {
     document.getElementById('enc-dialog-name').textContent = speaker ? speaker.displayName : '';
     // Dialog types slower than narration (spoken cadence); the talk
@@ -3852,16 +3929,17 @@ function renderOutcomeView(outcome) {
 
   const dialogEl = document.getElementById('enc-dialog');
   if (outcome.line) {
-    document.getElementById('enc-dialog-name').textContent = STATE.npcCtx ? STATE.npcCtx.displayName : '';
+    const who = STATE.lastSpeaker || STATE.npcCtx;
+    document.getElementById('enc-dialog-name').textContent = who ? who.displayName : '';
     typeInto(document.getElementById('enc-dialog-line'),
-             interpolateStowawayTokens(interpolateNpcTokens(outcome.line, STATE.npcCtx)), 26,
+             interpolateStowawayTokens(interpolateNpcTokens(outcome.line, who)), 26,
              () => { if (window.SceneArt) SceneArt.stopTalking(); });
     dialogEl.classList.remove('hidden');
   } else {
     dialogEl.classList.add('hidden');
   }
 
-  if (window.SceneArt) SceneArt.renderOutcome(outcome, STATE.npcCtx);
+  if (window.SceneArt) SceneArt.renderOutcome(outcome, (outcome.line && STATE.lastSpeaker) || STATE.npcCtx);
 
   const col = document.getElementById('enc-choices');
   col.innerHTML = '';
@@ -3974,11 +4052,11 @@ function renderChoicesInner(choices) {
 
     const bodyEl = document.createElement('div');
     bodyEl.className = 'ch-text' + (ch.dialog ? ' dialog' : '');
-    bodyEl.textContent = interpolateStowawayTokens(ch.text || ch.label);
+    bodyEl.textContent = pricedText(interpolateStowawayTokens(ch.text || ch.label), ch);
     btn.appendChild(bodyEl);
 
     // Sub row: effort pips + one-line sub text (lock reason wins).
-    let subText = locked || interpolateStowawayTokens(ch.sub || '');
+    let subText = locked || pricedText(interpolateStowawayTokens(ch.sub || ''), ch);
     // Field Analysis payoff: a choice that spends/needs an analysed item
     // shows the finding before the player commits (one line; CSS ellipsis).
     const gateItem = ch.requires_item || (ch.gate && ch.gate.item) || ch.item_consume || (ch.outcome && ch.outcome.item_consume) || null;
@@ -3994,7 +4072,7 @@ function renderChoicesInner(choices) {
     const welcomes = stowOut && /^welcome/.test(stowOut.stowaway_resolve || '') && idn;
     if (!locked && welcomes && !subText) {
       subText = !idn.join_role ? 'Rides along as a passenger'
-        : stowOut.stowaway_resolve === 'welcome_replace' ? 'Joins as ' + idn.join_role + ' · one crew disembarks'
+        : stowOut.stowaway_resolve === 'welcome_replace' ? 'Joins as ' + idn.join_role + ' · one crew steps down'
         : (STATE.crew.length < 2 && !STATE.crew.includes(idn.join_role)) ? 'Joins the crew as ' + idn.join_role
         : 'Rides along as a passenger';
     }
@@ -4005,8 +4083,8 @@ function renderChoicesInner(choices) {
       const authoredTime = Number.isFinite(ch.effort_required);
       subText = 'Effort ' + effort.available + ' / ' + effort.required
         + (authoredTime || !effort.check ? ' · ' + days + (days === 1 ? ' day' : ' days') : '')
-        + (effort.check ? ' · ' + Math.round(effort.chance * 100) + '% clean' : '')
-        + (effort.kit ? ' · uses ' + prettyItem(effort.kit) : '');
+        + (effort.check ? ' · ' + Math.round(effort.chance * 100) + '% clean' : '');
+      // (the kit it spends is in the tooltip — sub-labels stay one line)
     }
     const preview = !locked && previews.get(ch);
     // A preview takes the one-line sub-label; what it displaced (stand-in,
@@ -4044,14 +4122,14 @@ function renderChoicesInner(choices) {
     if (!locked) {
       const tip = [];
       if (ch.effort) tip.push('Effort ' + ch.effort + '/5 · −' + effortTax(ch.effort) + ' morale');
-      if (ch.gold_cost) tip.push('-' + ch.gold_cost + ' gold');
-      if (ch.gate && ch.gate.gold && !ch.gold_cost) tip.push('costs ' + ch.gate.gold + ' gold');
+      if (ch.gold_cost) tip.push('-' + eventGold(ch.gold_cost) + ' gold');
+      if (ch.gate && ch.gate.gold && !ch.gold_cost) tip.push('costs ' + eventGold(ch.gate.gold) + ' gold');
       if (ch.risky) tip.push('Risky — outcomes can go badly');
       if (preview) tip.push(preview);
       if (displaced) tip.push(displaced);
       if (effort && effort.kit) tip.push('Uses up one ' + prettyItem(effort.kit) + ' — it counts toward the effort.');
       if (welcomes && idn.join_note) tip.push(idn.join_note);
-      if (effort && effort.check) tip.push('Short of effort: half the gains, two more days, ' + Object.entries(effort.check.con).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).join(', ') + '. Crew and tools raise the odds.');
+      if (effort && effort.check) tip.push('Short of effort: half the resource gains, ' + (effort.authored ? 'a day more' : 'two more days') + ', ' + Object.entries(effort.check.con).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).join(', ') + '. Crew and tools raise the odds.');
       if (tip.length) btn.title = tip.join('\n');
     }
     // Entrance cascade + click pulse (demo canon).
@@ -4131,6 +4209,11 @@ const SEVERITY_LABEL = { injury: 'AN INJURY', delayed: 'A BAD WOUND', lethal: 'A
 /* What a resource delta really does aboard this ship — shared by the
    outcome itself and every preview (MARV, SCAN, RESEARCH, scanners), so
    a preview never promises the authored number when the ship changes it. */
+// Crop health as it will land: recovery goes 25% further with a botanist
+// (captain botanist half) — previews and the outcome share this.
+function effectiveCropDelta(v) {
+  return v > 0 ? Math.round(v * (1 + 0.25 * specialistMult('botanist'))) : v;
+}
 function effectiveResDelta(k, v) {
   // O2 recycler (items.json): O2 losses reduced 25%.
   let dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.trunc(v * 0.75) : v; // toward zero: a −1 loss becomes 0
@@ -4158,14 +4241,14 @@ function outcomeFacts(o) {
   }
   for (const [k, v0] of Object.entries(o.resources || {})) {
     if (!Number.isFinite(v0) || !v0 || !RES_LABEL[k]) continue;
-    const v = k === 'gold' ? v0 : effectiveResDelta(k, v0);
+    const v = k === 'gold' ? (v0 < 0 ? -eventGold(-v0) : v0) : effectiveResDelta(k, v0);
     if (!v) continue;
     facts.push({ text: (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + RES_LABEL[k], weight: Math.abs(v) / (k === 'gold' ? 5 : 1), good: v > 0 });
   }
   for (const [m, q] of Object.entries(o.materials || {})) {
     if (Number.isFinite(q) && q) facts.push({ text: (q > 0 ? '+' : '−') + Math.abs(q) + ' ' + m.toUpperCase(), weight: Math.abs(q) * 2, good: q > 0 });
   }
-  if (o.fabricator_repair) facts.push({ text: 'FAB REPAIRED', weight: 12, good: true });
+  if (o.fabricator_repair) facts.push({ text: o.fabricator_repair === 'full' ? 'FAB GOOD AS NEW' : 'FAB REPAIRED', weight: 12, good: true });
   if (o.clears_pest) facts.push({ text: 'PESTS CLEARED', weight: 10, good: true });
   if (o.set_orders) facts.push({ text: 'ORDERS CHANGE', weight: 4, good: false });
   if (o.severity && SEVERITY_LABEL[o.severity]) facts.push({ text: SEVERITY_LABEL[o.severity], weight: o.severity === 'lethal' ? 40 : 15, good: false });
@@ -4175,7 +4258,8 @@ function outcomeFacts(o) {
   else if (ce && ce.type === 'heal') facts.push({ text: 'HEALING', weight: 10, good: true });
   if (o.item_grant) facts.push({ text: '+' + prettyItem(o.item_grant).toUpperCase(), weight: 8, good: true });
   if (o.item_consume) facts.push({ text: 'USES ' + prettyItem(o.item_consume).toUpperCase(), weight: 6, good: false });
-  if (Number.isFinite(o.crop_health) && o.crop_health) facts.push({ text: (o.crop_health > 0 ? '+' : '−') + Math.abs(o.crop_health) + ' CROP', weight: Math.abs(o.crop_health) / 2, good: o.crop_health > 0 });
+  if (Number.isFinite(o.crop_health) && o.crop_health) { const c = effectiveCropDelta(o.crop_health); facts.push({ text: (c > 0 ? '+' : '−') + Math.abs(c) + ' CROP', weight: Math.abs(c) / 2, good: c > 0 }); }
+  if (Number.isFinite(o.fab_wear) && o.fab_wear > 0) facts.push({ text: '+' + o.fab_wear + '% FAB WEAR', weight: Math.max(6, o.fab_wear * 1.5), good: false });
   return facts.sort((a, b) => b.weight - a.weight);
 }
 function costWeight(o) { return outcomeFacts(o).filter(f => !f.good).reduce((s, f) => s + f.weight, 0); }
@@ -4260,6 +4344,8 @@ function lockReason(choice) {
   }
   if (choice.requires_item && !STATE.items.includes(choice.requires_item)) return `Needs ${prettyItem(choice.requires_item)}`;
   if (choice.requires_flag && !STATE.flags.has(choice.requires_flag)) return `Story-gated`;
+  // A job that runs on the fabricator can't run while it's broken.
+  if (choice.requires_fab && STATE.fabricator && (STATE.fabricator.broken || (STATE.fabricator.wear || 0) >= 100)) return 'Fabricator is broken';
   if (choice.gate) {
     if (choice.gate.crew) {
       if (!hasRoleFor(choice.gate.crew)) return `Needs ${choice.gate.crew}`;
@@ -4267,7 +4353,7 @@ function lockReason(choice) {
       if (STATE.crisisPatient === choice.gate.crew) return `${choice.gate.crew} is the patient`;
     }
     if (choice.gate.item && !STATE.items.includes(choice.gate.item)) return `Needs ${prettyItem(choice.gate.item)}`;
-    if (choice.gate.gold && STATE.goldAmount < choice.gate.gold) return `Needs ${choice.gate.gold}g`;
+    if (choice.gate.gold && STATE.goldAmount < eventGold(choice.gate.gold)) return `Needs ${eventGold(choice.gate.gold)}g`;
   }
   // Capacity-aware lock (audit fix): a choice whose outcome grants
   // items that can't fit locks up-front — otherwise the player pays
@@ -4337,7 +4423,10 @@ function bartenderName() {
 }
 function resolveNpc(ev) {
   STATE.npcCache = STATE.npcCache || {};
-  if (STATE.npcCache[ev.id]) return STATE.npcCache[ev.id];
+  // One face per stop (owner ruling 2026-10-11): the same event at a new
+  // stop rolls a new NPC; a reload at this stop keeps the one you met.
+  const npcKey = ev.id + '@' + STATE.currentId;
+  if (STATE.npcCache[npcKey]) return STATE.npcCache[npcKey];
   const species = ev.npc.species || NPC_SPECIES_POOL[Math.floor(Math.random() * NPC_SPECIES_POOL.length)];
   const disposition = ev.npc.disposition;
   const coloring = MOD.flavor && MOD.flavor.npc_species_coloring && MOD.flavor.npc_species_coloring[species];
@@ -4351,7 +4440,7 @@ function resolveNpc(ev) {
       || NPC_DISPOSITION_NAME[disposition] || disposition.toUpperCase(),
     quirk: quirkPool ? quirkPool[Math.floor(Math.random() * quirkPool.length)] : (NPC_QUIRKS[species] || ''),
   };
-  STATE.npcCache[ev.id] = ctx;
+  STATE.npcCache[npcKey] = ctx;
   return ctx;
 }
 
@@ -4479,7 +4568,7 @@ function handleChoiceClick(choice) {
   // drink walks you INTO a layer, not an outcome — the charge can't
   // ride on outcome.resources). gate.gold affords it; this spends it.
   if (Number.isFinite(choice.gold_cost) && choice.gold_cost > 0) {
-    STATE.goldAmount = Math.max(0, STATE.goldAmount - choice.gold_cost);
+    STATE.goldAmount = Math.max(0, STATE.goldAmount - eventGold(choice.gold_cost));
     renderHUD();
   }
 
@@ -4579,7 +4668,12 @@ function applyOutcomeEffects(o) {
     for (const [k, v] of Object.entries(o.resources)) {
       if (!Number.isFinite(v)) continue; // authored typo can't NaN-poison STATE
       if (k === 'gold') {
-        STATE.goldAmount = Math.max(0, STATE.goldAmount + v);
+        STATE.goldAmount = Math.max(0, STATE.goldAmount + (v < 0 && !o.combat_net ? -eventGold(-v) : v));
+      } else if (k === 'hull' && o.combat_net) {
+        // Combat's net hull change: every hit and patch already happened
+        // inside the fight (the emergency patch absorbs one landed hit
+        // there; the engineer's HULL PATCH is its own action).
+        STATE.resources.hull = clamp(STATE.resources.hull + v, 0, resMax('hull'));
       } else if (k === 'hull' && v < 0 && STATE.flags.has('emergency_patch_armed')) {
         // Emergency Patch (engineer active skill) — absorbs one hull
         // damage event, then it's spent. crew_roster.json's authored
@@ -4641,7 +4735,7 @@ function applyOutcomeEffects(o) {
       if (STATE.crewIdentity) delete STATE.crewIdentity[gone];
       delete crewPendingOf()[gone];
       if (typeof window.pushCruiseLog === 'function') {
-        window.pushCruiseLog('◆ ' + goneName + ' will disembark at the next stop. Nobody discusses it at dinner.');
+        window.pushCruiseLog('◆ ' + goneName + ' steps down from the crew today and rides as a passenger to the next stop. Nobody discusses it at dinner.');
       }
     }
     if (resolve === 'welcome' || resolve === 'welcome_replace') {
@@ -4668,7 +4762,7 @@ function applyOutcomeEffects(o) {
   if (Number.isFinite(o.crop_health) && STATE.cropGrowth && STATE.cropGrowth.health > 0) {
     // Botanist passive "crop health events resolve more favorably": +25%
     // on crop recovery (captain botanist half).
-    const ch = o.crop_health > 0 ? Math.round(o.crop_health * (1 + 0.25 * specialistMult('botanist'))) : o.crop_health;
+    const ch = effectiveCropDelta(o.crop_health);
     STATE.cropGrowth.health = clamp(STATE.cropGrowth.health + ch, 1, 100);
   }
   if (o.clears_pest && STATE.cropGrowth) {
@@ -4677,7 +4771,16 @@ function applyOutcomeEffects(o) {
   }
   if (o.fabricator_repair && STATE.fabricator) {
     STATE.fabricator.broken = false;
-    STATE.fabricator.wear = Math.min(STATE.fabricator.wear || 0, 50);
+    // 'full' (an engineer's rebuild, owner ruling 2026-10-11): factory
+    // fresh; any other repair gets it half-way.
+    STATE.fabricator.wear = o.fabricator_repair === 'full' ? 0 : Math.min(STATE.fabricator.wear || 0, 50);
+  }
+  // fab_wear (additive outcome field): an event job run on the fabricator
+  // wears it like a craft does; 100 breaks it.
+  if (Number.isFinite(o.fab_wear) && o.fab_wear > 0) {
+    STATE.fabricator = STATE.fabricator || { wear: 0, broken: false };
+    STATE.fabricator.wear = Math.min(100, (STATE.fabricator.wear || 0) + o.fab_wear);
+    if (STATE.fabricator.wear >= 100) STATE.fabricator.broken = true;
   }
   if (o.item_consume) {
     const idx = STATE.items.indexOf(o.item_consume);
@@ -4748,7 +4851,7 @@ const EFFORT_CHECKS = {
   override:           { required: 30, from: ['engineer'],                    con: { morale: -3 }, line: 'The override fights back. You win, eventually, and nobody enjoys how.' },
   negotiation_wobble: { required: 30, from: ['diplomat'],                    con: { gold: -10, morale: -2 }, line: 'The pitch wobbles at the worst moment. They hear weakness, and they charge you for it.' },
   calibration:        { required: 30, from: ['pilot'],                       con: { fuel: -3 },   line: 'The calibration drifts. You correct it, then correct the correction. It costs fuel.' },
-  navigation:         { required: 30, from: ['pilot'],                       con: { fuel: -3 },   line: 'The line through drifts wide twice before it holds. It costs fuel and a day.' },
+  navigation:         { required: 30, from: ['pilot'],                       con: { fuel: -3 },   line: 'The line through drifts wide twice before it holds. It costs fuel and days.' },
 };
 function effortCheckOf(choice) {
   const t = choice && (choice.microgame_type || choice.minigame_type);

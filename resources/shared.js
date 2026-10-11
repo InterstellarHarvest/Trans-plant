@@ -1085,16 +1085,27 @@ const PauseMenu = (() => {
     w.className = 'pause-panel';
     w.innerHTML =
       '<h2 class="pause-h">WELCOME, CAPTAIN.</h2>' +
-      '<pre class="pause-pre">' +
-        '[ SYSTEMS NOMINAL ]\n' +
-        '> ALL HANDS ACCOUNTED FOR.\n' +
-        '> CROP STATUS  · pending readout\n' +
-        '> TRAIL        · in transit\n' +
-        '> JOURNAL DRIVE· offline\n\n' +
+      '<pre class="pause-pre">' + welcomeStatus() +
         'Select an option from the panel at left.\n' +
         'Press ESC or RESUME to return to your post.' +
       '</pre>';
     return w;
+  }
+  // Live readout of the run (the engine's STATE); demo pages without a
+  // run show the generic header only.
+  function welcomeStatus() {
+    const S = (typeof STATE !== 'undefined' && STATE && STATE.resources) ? STATE : null;
+    if (!S || !S.crop) return '[ SYSTEMS NOMINAL ]\n\n';
+    const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+    const lost = S.flags && S.flags.has && S.flags.has('crew_lost');
+    const n = (S.crew || []).length;
+    const cg = S.cropGrowth;
+    const crop = !cg ? 'no readout' : cg.health <= 0 ? 'lost' : 'health ' + Math.round(cg.health) + '%' + (cg.pest ? ', pests' : '');
+    return '[ SHIP STATUS ]\n' +
+      '> CREW         · ' + (n ? n + ' aboard' : 'captain alone') + (lost ? ', losses logged' : ', all hands accounted for') + '\n' +
+      '> CROP         · ' + esc(String(S.crop).replace(/_/g, ' ')) + ', ' + crop + '\n' +
+      '> TRAIL        · day ' + Math.round(S.daysElapsed || 0) + (S.baseDays ? ' of ~' + S.baseDays : '') + '\n' +
+      '> SHIP\'S LOG   · ' + ((S.shipLog || []).length) + ' entries\n\n';
   }
 
   function panelSettings() {
@@ -1119,8 +1130,8 @@ const PauseMenu = (() => {
             (s.cursorOutline === false ? 'OFF' : 'ON') +
           '</button>' +
         '</div>' +
-        '<div class="pause-row stub">' +
-          '<label>TEXT SPEED <span class="pause-stub">·STUB</span></label>' +
+        '<div class="pause-row">' +
+          '<label>TEXT SPEED</label>' +
           '<div class="pause-radios" data-field="textSpeed">' +
             ['slow','normal','fast'].map(v =>
               '<button type="button" class="pause-radio' + ((s.textSpeed||'normal') === v ? ' on' : '') + '" data-val="' + v + '">' + v.toUpperCase() + '</button>'

@@ -95,8 +95,7 @@
       chef:          { tribute_success: 0.25, tribute_food_cost: 3, morale_on_success: 5 },
       diplomat:      { surrender_chance_bonus: 0.15, opening_dmg_reduction: 0.25 },
       xenobiologist: { identify_enemy: true, fire_dmg_bonus: 0.10, crit_bonus_on_identify: 0.04 },
-      veteran:       { fire_dmg_bonus_flat: 0.15, surrender_chance_bonus: 0.10, crit_bonus: 0.05 },
-      merchant:      { salvage_bonus_rolls: 1 }
+      // (veteran/merchant are captain backgrounds only — see captain_bonuses)
     },
     captain_bonuses: {
       pilot:         { evade_full_dodge: 0.12, ftl_turns_override: 2 },
@@ -178,7 +177,6 @@
   }
   function critChance() {
     let total = COMBAT_CONFIG.crit_chance_base;
-    if (COMBAT.crew.veteran) total += COMBAT_CONFIG.crew_bonuses.veteran.crit_bonus;
     if (COMBAT.captainBg === 'veteran') total += COMBAT_CONFIG.captain_bonuses.veteran.crit_bonus;
     if (COMBAT.identifiedByXeno) {
       if (COMBAT.crew.xenobiologist) total += COMBAT_CONFIG.crew_bonuses.xenobiologist.crit_bonus_on_identify * COMBAT.crew.xenobiologist;
@@ -268,7 +266,7 @@
     wrap.innerHTML = '';
 
     if (COMBAT.state === 'MUTINY') {
-      wrap.appendChild(makeActionBtn({ verb: 'STAND DOWN', sub: 'Surrender or limp away — crew is done', cls: 'combat-danger', onClick: resolveMutinyStandDown }));
+      wrap.appendChild(makeActionBtn({ verb: 'STAND DOWN', sub: COMBAT_CONFIG.surrenders[COMBAT.species] ? 'Yield: they take a toll (−25% fuel, −20% gold)' : 'They won\'t take a yield: limp away', cls: 'combat-danger', onClick: resolveMutinyStandDown }));
       return;
     }
     if (COMBAT.state === 'SURRENDER_DECISION') {
@@ -714,7 +712,7 @@
     COMBAT.state = 'ENEMY_TURN'; // committed — a second activation is a no-op
     COMBAT.openingTurn = false;
     COMBAT.evadingNextHit = true;
-    setNarrCombat('COMBAT LOG', combatLine('player_evades'), 'Evasive pattern engaged. Incoming damage halved (or fully dodged with Pilot).');
+    setNarrCombat('COMBAT LOG', combatLine('player_evades'), 'Evasive pattern engaged. The next hit is softened' + (bonus('evade_full_dodge') > 0 ? ', with a ' + Math.round(bonus('evade_full_dodge') * 100) + '% chance to dodge it entirely.' : '.'));
     setAiCombat(combatLine('player_evades'));
     showEnemyTurn();
     setTimeout(enemyTurn, 500);
@@ -816,8 +814,11 @@
   function resolveMutinyStandDown() {
     if (!COMBAT.active || COMBAT.state !== 'MUTINY') return;
     if (COMBAT_CONFIG.surrenders[COMBAT.species]) {
-      COMBAT.enemy.surrenderOffered = true;
-      acceptSurrender();
+      // Owner ruling 2026-10-11: yielding is survivable, never profitable —
+      // they let you go for a toll (−25% fuel, −20% gold), no loot.
+      COMBAT.state = 'END';
+      setAiCombat(combatLine('player_defeated'));
+      endCombatToOutcome({ outcome: 'yielded' });
     } else {
       COMBAT.player.hull = 1;
       onPlayerDefeat();
@@ -917,6 +918,14 @@
         setNarrCombat('COMBAT LOG', pfx + combatLine('enemy_fires'), 'REX’s point-defense eats the shot. Hull untouched. Once.');
         setAiCombat('Point-defense engaged. That was the free one. Do not get comfortable.');
         COMBAT._narrPrefix = null;
+      } else if (typeof STATE !== 'undefined' && STATE.flags.has('emergency_patch_armed')) {
+        // Emergency Patch (engineer active skill): one hull damage event
+        // absorbed — in a fight, that's one landed hit.
+        STATE.flags.delete('emergency_patch_armed');
+        spawnMissPopup('PATCHED');
+        setNarrCombat('COMBAT LOG', pfx + combatLine('enemy_fires'), 'The emergency patch takes the hit and does not survive it. Hull untouched.');
+        COMBAT._narrPrefix = null;
+        renderCombatActions();
       } else {
         const dealt = Math.max(1, Math.round(dmg));
         applyPlayerDamage(dealt);
@@ -1080,7 +1089,7 @@
     COMBAT.state = 'END';
     COMBAT.player.morale = clamp(COMBAT.player.morale + 5, 0, 100);
     setAiCombat(combatLine('surrender_accepted'));
-    setNarrCombat('SURRENDER ACCEPTED', combatLine('surrender_accepted'), '+40% loot · morale +5');
+    setNarrCombat('SURRENDER ACCEPTED', combatLine('surrender_accepted'), '40% of the loot · morale +5');
     endCombatToOutcome({ outcome: 'victory_surrendered' });
   }
   function finishSurrendered() {
@@ -1189,19 +1198,19 @@
         title = result.salvaged ? 'VICTORY · SALVAGED' : 'VICTORY · DEPARTED'; tone = 'success';
         lootItems = rollCombatLoot(result.salvaged ? 'destroyed_salvage' : 'destroyed_leave',
           result.salvaged ? { bonusChance: 0.45 + bonus('salvage_bonus_rolls') * 0.10 } : {});
-        body = (result.salvaged ? 'Wreckage cracked open. Drives still warm. ' : 'You leave the wreck behind. The galaxy is full of wrecks. ') + describeLoot(lootItems);
+        body = (result.salvaged ? 'Wreckage cracked open. Drives still warm. ' : 'You leave the wreck behind. The galaxy is full of wrecks. ') + '{{LOOT}}';
         outcome.time_cost = result.salvaged ? 'high' : 'low'; // leaving the wreck is the quick way out
         break;
       case 'victory_surrendered':
         title = 'SURRENDER ACCEPTED'; tone = 'success';
         lootItems = rollCombatLoot('surrender');
-        body = 'Pirates stripped, ship intact. They live to disappoint someone else. ' + describeLoot(lootItems);
+        body = 'Pirates stripped, ship intact. They live to disappoint someone else. ' + '{{LOOT}}';
         outcome.time_cost = 'medium';
         break;
       case 'victory_executed':
         title = 'SURRENDER REFUSED'; tone = 'danger';
         lootItems = rollCombatLoot('executed', { bonusChance: 0.45 });
-        body = 'You finished a surrendered combatant. The crew noticed. The galaxy noticed. ' + describeLoot(lootItems);
+        body = 'You finished a surrendered combatant. The crew noticed. The galaxy noticed. ' + '{{LOOT}}';
         outcome.sets_flag = 'executed_surrendered_pirate';
         outcome.time_cost = 'high';
         break;
@@ -1218,6 +1227,15 @@
         outcome.resources.fuel = -(result.fuelCost || 15);
         outcome.time_cost = 'medium';
         break;
+      case 'yielded': {
+        title = 'STOOD DOWN'; tone = 'danger';
+        const fuelToll = Math.round(STATE.resources.fuel * 0.25), goldToll = Math.round(STATE.goldAmount * 0.2);
+        outcome.resources.fuel = -fuelToll;
+        outcome.resources.gold = -goldToll;
+        body = 'The crew is done, and the pirates can tell. They take a toll for the courtesy of letting you leave: ' + fuelToll + ' fuel siphoned and ' + goldToll + ' gold transferred. Nobody aboard looks at anybody else.';
+        outcome.time_cost = 'low';
+        break;
+      }
       case 'enemy_retreat':
         title = 'ENEMY FLED'; tone = 'success';
         body = 'They jumped before you could finish them. Faster ship, smaller pride.';
@@ -1246,6 +1264,7 @@
     // live on COMBAT.player.* every turn), not a flat per-case
     // constant — reconcile against STATE's pre-fight snapshot here.
     outcome.resources.hull   = (outcome.resources.hull   || 0) + (COMBAT.player.hull   - STATE.resources.hull);
+    outcome.combat_net = true; // hull lands as fought: no second engineer bonus, no whole-fight patch
     outcome.resources.morale = (outcome.resources.morale || 0) + (COMBAT.player.morale - STATE.resources.morale);
     if (lootItems) {
       const goldItem = lootItems.find(it => it.id === 'gold');
@@ -1269,16 +1288,19 @@
     // (applyOutcomeEffects only knows resources/item_grant/crew_effect/
     // sets_flag) — applied directly here rather than extending that
     // shared contract for a Phase-5-only need.
+    const leftBehind = [];
     if (lootItems) {
       for (const it of lootItems) {
         if (it.id === 'gold') continue;
         if (it.isItem) {
           // Capacity-enforced (audit fix — this used to bypass the
           // cargo limit); grantItem logs anything left with the wreck.
+          let landed = 0;
           for (let i = 0; i < it.count; i++) {
-            if (typeof window.grantItem === 'function') window.grantItem(it.id);
-            else STATE.items.push(it.id);
+            if (typeof window.grantItem !== 'function') { STATE.items.push(it.id); landed++; }
+            else if (window.grantItem(it.id) !== false) landed++;
           }
+          if (landed < it.count) { leftBehind.push({ label: it.label, count: it.count - landed }); it.count = landed; }
         }
         else { STATE.materials[it.id] = (STATE.materials[it.id] || 0) + it.count; }
       }
@@ -1299,6 +1321,13 @@
     // (decremented in selectEvent()).
     STATE.postCombatLegs = 2;
 
+    // The loot line reports what actually made it aboard (a full hold
+    // leaves items with the wreck).
+    if (body.includes('{{LOOT}}')) {
+      const landed = (lootItems || []).filter(it => it.count > 0);
+      body = body.replace('{{LOOT}}', describeLoot(landed)
+        + (leftBehind.length ? ' The hold was full: ' + leftBehind.map(it => `${it.count}× ${it.label}`).join(', ') + ' left behind.' : ''));
+    }
     renderOutcomeView({ title, body, tone, narrative: body });
   }
 

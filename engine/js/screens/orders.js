@@ -55,7 +55,7 @@
         'Slow is safe. Safety is a warm hug.',
         'Steady as she goes. An acceptable compromise.',
         'Bold. I support boldness, even when it is alarming.',
-        'PLAID selected. Fuel consumption up 140%. I am personally excited about this.'
+        'PLAID selected. Fuel consumption up 200%. I am personally excited about this.'
       ],
       rations: [
         'Vending Machine mode. A proud tradition of thin men.',
@@ -71,7 +71,7 @@
         'Slow. We will arrive eventually. I have modeled "eventually." You will not enjoy the model.',
         'The default setting. Statistically the least bad option. That is the entire compliment.',
         'Faster arrival, 60% more burn. I ran the numbers twice. They did not improve.',
-        'PLAID. Fuel consumption up 140%. I have pre-drafted the distress beacon message.'
+        'PLAID. Fuel consumption up 200%. I have pre-drafted the distress beacon message.'
       ],
       rations: [
         'Half rations. Morale will decline. I have charted it. The chart is very straight.',
@@ -312,10 +312,11 @@
 
     const foodDelta = dayDelta(foodEmpty, savedEmpty, true);
 
-    const fpd = ORDERS_BASE.foodPerDay * r.foodMult * (typeof window.foodBurnMult === 'function' ? foodBurnMult() : 1) * (typeof window.mouthsMult === 'function' ? mouthsMult() : 1);
+    const crewFoodMult = (typeof window.foodBurnMult === 'function' ? foodBurnMult() : 1) * (typeof window.mouthsMult === 'function' ? mouthsMult() : 1);
+    const fpd = ORDERS_BASE.foodPerDay * r.foodMult * crewFoodMult;
     let fpdText = null;
     if (r.foodMult !== s.foodMult) {
-      const d = fpd - ORDERS_BASE.foodPerDay * s.foodMult;
+      const d = fpd - ORDERS_BASE.foodPerDay * s.foodMult * crewFoodMult; // same chef/bay/mouths terms on both sides
       fpdText = (d > 0 ? '+' : '') + (Math.round(d * 100) / 100);
     }
 

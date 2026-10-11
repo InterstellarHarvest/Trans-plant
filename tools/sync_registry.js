@@ -18,7 +18,15 @@ const REG = 'registry/tag_registry.json';
 // Module keys whose values belong to a differently-named dimension.
 // time_cost carries effort_cost values (CLAUDE.md "Resources Reference");
 // gate.crew / gate.item are the layered schema's requires_crew / _item.
-const ALIAS = { time_cost: 'effort_cost', 'gate.crew': 'requires_crew', 'gate.item': 'requires_item' };
+// "parent.key" entries match a key inside an object (or array of objects)
+// stored under `parent` — npc.* on events and layers, captains[].background,
+// crops[].id. A [dim, fn] value maps the raw value first (crop_wheat → wheat).
+const ALIAS = {
+  time_cost: 'effort_cost', 'gate.crew': 'requires_crew', 'gate.item': 'requires_item',
+  'npc.job': 'npc_station_job', 'npc.disposition': 'npc_disposition', 'npc.species': 'npc_species',
+  'captains.background': 'captain_background',
+  'crops.id': ['crop_type', v => v.replace(/^crop_/, '')],
+};
 
 function moduleFiles() {
   const out = [];
@@ -37,9 +45,10 @@ function usedValues(registry) {
     if (Array.isArray(o)) { o.forEach(x => walk(x, parentKey)); return; }
     if (!o || typeof o !== 'object') return;
     for (const [k, v] of Object.entries(o)) {
-      const dim = ALIAS[parentKey ? parentKey + '.' + k : k] || ALIAS[k] || k;
-      if (typeof v === 'string') note(dim, v);
-      else if (Array.isArray(v) && v.every(x => typeof x === 'string')) v.forEach(x => note(dim, x));
+      const a = ALIAS[parentKey ? parentKey + '.' + k : k] || ALIAS[k] || k;
+      const [dim, map] = Array.isArray(a) ? a : [a, x => x];
+      if (typeof v === 'string') note(dim, map(v));
+      else if (Array.isArray(v) && v.every(x => typeof x === 'string')) v.forEach(x => note(dim, map(x)));
       walk(v, k);
     }
   };

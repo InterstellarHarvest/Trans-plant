@@ -27,10 +27,10 @@
       "chip": "CHIP notes that Route Alpha passes through a mining zone with potential mineral extraction opportunities! Route Beta is 'off-brand.'",
       "ajoy": "AJOY has opinions about both routes. She'll share them after you choose. That way she can explain why the other one was better."
     },
-    "body": "Long-range scans show two routes forward.\n\nRoute Alpha passes through an asteroid field — mineral-rich, well-charted, tedious.\n\nRoute Beta passes near a derelict vessel registry match — the Optimistic Projection, last reported operational 14 months ago. The ship computer presents both options without commentary.",
+    "body": "Long-range scans show two routes forward.\n\nRoute Alpha is marked {branch.alpha.label}. Its first stop reads as {branch.alpha.first}.\n\nRoute Beta is marked {branch.beta.label}. Its first stop reads as {branch.beta.first}.\n\nThe ship computer presents both options without commentary.",
     "choices": [
       {
-        "text": "Route Alpha — the asteroid field",
+        "text": "Route Alpha — {branch.alpha.label}",
         "requires_crew": null,
         "requires_item": null,
         "requires_flag": null,
@@ -43,11 +43,11 @@
           "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
-          "narrative": "Route Alpha selected. The asteroid field is ahead. It is exactly as exciting as it sounds. The ship computer logs your choice as 'pragmatic.'"
+          "narrative": "Route Alpha selected. The ship computer logs your choice as 'pragmatic' and declines to elaborate."
         }
       },
       {
-        "text": "Route Beta — the derelict",
+        "text": "Route Beta — {branch.beta.label}",
         "requires_crew": null,
         "requires_item": null,
         "requires_flag": null,
@@ -60,7 +60,7 @@
           "item_consume": null,
           "sets_flag": "chose_beta",
           "time_cost": "trivial",
-          "narrative": "Route Beta selected. The Optimistic Projection awaits. The ship computer logs your choice as 'interesting.' It does not define 'interesting.'"
+          "narrative": "Route Beta selected. The ship computer logs your choice as 'interesting.' It does not define 'interesting.'"
         }
       }
     ]
@@ -93,7 +93,7 @@
       "chip": "CHIP STRONGLY recommends the Corporate Approved route! As a brand partner, CHIP is contractually required to say this!",
       "ajoy": "AJOY notes the 'NOT CORPORATE APPROVED' label is doing a lot of emotional work. She wonders who labeled it. She wonders why."
     },
-    "body": "A navigation beacon broadcasts two route options.\n\nOne is labeled 'CORPORATE APPROVED — SAFE, PRODUCTIVE, INSURED.'\n\nThe other is labeled 'NOT CORPORATE APPROVED.'\n\nThe first leads through an asteroid field. The second leads to an uncharted contact on long-range sensors. The beacon's insurance disclaimer is longer than the route data.",
+    "body": "A navigation beacon broadcasts two route options.\n\nOne is labeled 'CORPORATE APPROVED — SAFE, PRODUCTIVE, INSURED.' The route data underneath marks it {branch.alpha.label}, first stop {branch.alpha.first}.\n\nThe other is labeled 'NOT CORPORATE APPROVED.' Its data marks it {branch.beta.label}, first stop {branch.beta.first}.\n\nThe beacon's insurance disclaimer is longer than the route data.",
     "choices": [
       {
         "text": "Corporate Approved route",
@@ -169,16 +169,6 @@
         "requires_flag": null,
         "microgame_type": null,
         "combat_trigger": true,
-        "outcome": {
-          "resources": {},
-          "crew_effect": null,
-          "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
-          "time_cost": "high",
-          "narrative": "Weapons online. The other ship is not backing down. Neither are you. The ship computer has stopped filing recommendations and started filing damage reports."
-        },
         "setFlag": "entered_combat"
       },
       {
@@ -253,7 +243,9 @@
         "microgame_type": null,
         "outcome": {
           "resources": {
-            "fuel": -12
+            "fuel": -12,
+            "hull": -5,
+            "morale": -2
           },
           "crew_effect": null,
           "severity": null,
@@ -569,7 +561,7 @@
     "body": "The cargo hold has reached the state the manual calls 'capacity' and the crew calls 'Tetris.'\n\nEvery slot is spoken for. The door still closes — barely, with a shoulder against it — but the next salvage find, market bargain, or grateful gift is going to bounce off a full manifest.\n\nA full hold is a good problem. It is still a problem.",
     "choices": [
       {
-        "text": "Audit and jettison the dead weight",
+        "text": "Audit the manifest",
         "requires_crew": null,
         "requires_item": null,
         "requires_flag": null,
@@ -584,7 +576,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "An honest afternoon with the manifest: everything justified stays, everything 'archaeological' goes out the airlock with brief ceremony. The hold breathes again. Two crew members are not speaking to you about specific jettisoned items. They'll recover. Space was made."
+          "narrative": "An honest afternoon with the manifest: every item justified, every 'archaeological' one tagged for the airlock the moment something better turns up. Two crew members are not speaking to you about specific tags. They'll recover. The hold is still full. Now it is full on purpose."
         }
       },
       {
@@ -594,14 +586,16 @@
         "requires_flag": null,
         "microgame_type": null,
         "outcome": {
-          "resources": {},
+          "resources": {
+            "morale": 2
+          },
           "crew_effect": null,
           "severity": null,
           "item_grant": null,
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "A proper cargo-master's repack: nested containers, weight-balanced racks, three slots conjured out of geometry that the manual says shouldn't exist. The hold contains the same things in less space, which is either logistics or magic. No one checks which."
+          "narrative": "A proper cargo-master's repack: nested containers, weight-balanced racks, every strap tensioned. The manifest still reads FULL, but the door finally closes without a shoulder against it, and the crew stops flinching every time the ship turns."
         }
       },
       {
@@ -663,15 +657,17 @@
           "resources": {},
           "crew_effect": null,
           "severity": null,
-          "item_grant": null,
+          "item_grant": [
+            "ration_brick",
+            "ration_brick"
+          ],
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
           "narrative": "The fabricator hums for a day, turning raw stock into a neat row of sellable staples. The hold gains its first tenants. The echo shortens by a measurable amount, which ARIA logs with what can only be called grief.",
-          "materials": {
-            "scrap": 1
-          }
-        }
+          "fab_wear": 3
+        },
+        "requires_fab": true
       },
       {
         "text": "Hold a zero-G game night in it",
@@ -1416,7 +1412,7 @@
           "item_consume": null,
           "sets_flag": "saved_the_provident",
           "time_cost": "high",
-          "narrative": "You come alongside and spend two days lending hands, welders, and water. Their engineer and yours develop a friendship conducted entirely in grunts. When the Provident's drive relights, their whole crew lines their viewports as you separate. Nobody says the word 'debt.' It's said anyway."
+          "narrative": "You come alongside and spend the better part of a week lending hands, welders, and water. Their engineer and yours develop a friendship conducted entirely in grunts. When the Provident's drive relights, their whole crew lines their viewports as you separate. Nobody says the word 'debt.' It's said anyway."
         }
       },
       {
@@ -1905,7 +1901,7 @@
     "body": "Back when the water ran low, you told the crew you'd find more at the next opportunity. This planet is the opportunity.\n\nThe scans light up before you've even settled into orbit: sub-surface ice, clean and shallow, exactly where a promise needs it to be. The drill goes down through frost and gravel and comes up dripping.\n\nThe tanks fill. The rationing schedule comes off the galley wall — taken down slowly, folded, and thrown away with ceremony by the crew member who hated it most.",
     "choices": [
       {
-        "text": "Fill the tanks to the brim",
+        "text": "Melt and filter until the tanks run high",
         "requires_crew": null,
         "requires_item": null,
         "requires_flag": null,
@@ -1921,7 +1917,7 @@
           "item_consume": null,
           "sets_flag": "water_promise_kept",
           "time_cost": "medium",
-          "narrative": "A full day of melt-and-filter. The tanks reach a number they haven't shown since the trail began, and the ship's plumbing, asked to carry abundance for once, gurgles like it's celebrating. First full showers in weeks. The hot water lottery is won by the chef, who trades it to the engineer for reasons nobody questions."
+          "narrative": "Four days of melt-and-filter. The tanks reach a number they haven't shown since the trail began, and the ship's plumbing, asked to carry abundance for once, gurgles like it's celebrating. First full showers in weeks. The hot water lottery is won by the chef, who trades it to the engineer for reasons nobody questions."
         }
       },
       {
@@ -2570,7 +2566,7 @@
     "body": "Halfway to Mars, somebody is building the future, slowly, out of girders.\n\nA comm relay hangs half-finished against the dark — the project that's supposed to make this corridor safe enough for families someday. A work crew of six waves you down: their tug blew a coupling and the next supply run is nine days out.\n\nThey need an hour of a working ship's time. They can pay in the only currency construction crews have: fuel from their reserve, and the right to say you helped.",
     "choices": [
       {
-        "text": "Give them the hour",
+        "text": "Give them the time",
         "requires_crew": null,
         "requires_item": null,
         "requires_flag": null,
@@ -2606,7 +2602,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "medium",
-          "narrative": "Your engineer fixes the tug's coupling in forty minutes and spends twenty more arguing joyfully with their chief about torque specs. The crew leaves with full tanks, a standing dinner invitation, and the particular glow of people whose competence got witnessed."
+          "narrative": "Your engineer fixes the tug's coupling over a long shift and spends the evenings arguing joyfully with their chief about torque specs. The crew leaves with topped-up tanks, a standing dinner invitation, and the particular glow of people whose competence got witnessed."
         }
       },
       {
@@ -2682,7 +2678,7 @@
           "item_grant": null,
           "item_consume": null,
           "sets_flag": null,
-          "time_cost": "medium",
+          "time_cost": "trivial",
           "narrative": "For one hour the ship is a phone booth. Laughter from the mess. Long silences from the bunks, which are also calls. When the window closes, nobody says anything for a while, and then everybody starts cooking at once, which is how crews hug."
         }
       },

@@ -14,6 +14,15 @@ function readJSON(rel) { return JSON.parse(fs.readFileSync(path.join(ROOT, rel),
 
 let errors = [];
 function err(msg) { errors.push(msg); }
+// Warnings print but don't fail the run — for open owner decisions and
+// art/content debt someone is already on. Promote to err() once fixed.
+let warnings = [];
+function warn(msg) { warnings.push(msg); }
+// Engine source scan (index.html + engine/js/**, portable_data.js
+// excluded) shared with gen_flags.js.
+const genFlags = require('./gen_flags.js');
+const engineSrcByFile = new Map(genFlags.engineSources().map(f => [f.rel, f.src]));
+const quotedIn = (src, id) => src.includes("'" + id + "'") || src.includes('"' + id + '"');
 
 const eventFiles = fs.readdirSync(path.join(ROOT, 'modules/events')).filter(f => f.endsWith('.json'));
 const crewRoles = new Set(readJSON('modules/crew/crew_roster.json').map(c => c.role));
@@ -46,15 +55,20 @@ function checkOutcomeRefs(file, evId, where, o) {
 }
 
 // Flags the ENGINE sets (no JSON setter exists) — exempt from the
-// dangling-requires_flag check. Keep in sync with registry/flags.md's
-// engine table when new engine-set flags land.
-const ENGINE_SET_FLAGS = new Set([
-  'chose_alpha', 'chose_beta', 'crop_death_accepted', 'crew_lost',
-  'ai_noted_crop_mature', 'ai_noted_crop_sick', 'ai_noted_crop_died', 'ai_noted_crop_planted', 'ai_noted_pest',
-  'stowaway_welcomed', 'stowaway_passenger', 'stowaway_refused',
-  'executed_surrendered_pirate',
-  'emergency_patch_armed', 'negotiation_prepared',
-]);
+// dangling-requires_flag check. flag -> the file that sets it; each entry
+// is verified against that file (flags.add('x') / sets_flag = 'x'), so a
+// moved or deleted setter fails here instead of silently allowlisting.
+// chose_alpha/chose_beta are content-set (fork events), not listed.
+const ENGINE_SET_FLAGS = {
+  crop_death_accepted: 'engine/js/screens/endings.js',
+  crew_lost: 'index.html',
+  ai_noted_crop_mature: 'engine/js/screens/cruise.js', ai_noted_crop_sick: 'engine/js/screens/cruise.js',
+  ai_noted_crop_died: 'engine/js/screens/cruise.js', ai_noted_crop_planted: 'engine/js/screens/cruise.js',
+  ai_noted_pest: 'engine/js/screens/cruise.js',
+  stowaway_welcomed: 'index.html', stowaway_passenger: 'index.html', stowaway_refused: 'index.html',
+  executed_surrendered_pirate: 'engine/js/combat.js',
+  emergency_patch_armed: 'engine/js/screens/crew.js', negotiation_prepared: 'engine/js/screens/crew.js',
+};
 
 // Minigame ids openMinigame() accepts (engine/js/minigames.js) — for
 // launch_minigame validation.
@@ -298,22 +312,33 @@ for (const file of eventFiles) {
   }
 }
 
+let engineGrantedItems = {}; // filled by the item-sources block; read by the item-sinks block
 // Item sources (nothing orphaned): every item a choice, event or recipe
 // REQUIRES must be obtainable somewhere — an event grant, the station
 // market (purchasable), a recipe, or one of the engine's own grant paths
 // below. Five items were required but unobtainable until 2026-10-09.
 {
-  const ENGINE_GRANTED_ITEMS = new Set([
-    'drive_coil', 'o2_recycler', 'repair_fabricator', // salvage minigame upgrades (minigames.js UPGRADES)
-    'fuel_cell', 'repair_kit',                        // combat loot (combat.js)
-    'classified_cargo',                               // sinister market back inventory (market.js)
-    'logbook_fragment', 'medkit',                     // forage rare finds (cruise.js RARE_TO_REAL)
-    'fab_surplus',                                    // fabricator misfires (fabricator.js)
-    'suspicious_fungus',                              // good forage on alien ground (cruise.js)
-    'pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_bone', // salvage curiosities (cruise.js)
-  ]);
+  // id -> the engine file that grants it; verified below (the id must
+  // appear there as a quoted literal). classified_cargo is gone: the
+  // sinister market (market.js) no longer stocks it — event_station_009's
+  // item_grant is its source, which the event scan already counts.
+  const ENGINE_GRANTED_ITEMS = {
+    drive_coil: 'engine/js/minigames.js', o2_recycler: 'engine/js/minigames.js', repair_fabricator: 'engine/js/minigames.js', // salvage minigame upgrades (UPGRADES)
+    fuel_cell: 'engine/js/combat.js', repair_kit: 'engine/js/combat.js',                     // combat loot
+    logbook_fragment: 'engine/js/screens/cruise.js', medkit: 'engine/js/screens/cruise.js',  // forage rare finds (RARE_TO_REAL)
+    fab_surplus: 'engine/js/screens/fabricator.js',                                          // fabricator misfires
+    suspicious_fungus: 'engine/js/screens/cruise.js',                                        // good forage on alien ground
+    pre_collapse_artifact: 'engine/js/screens/cruise.js', corporate_memorabilia: 'engine/js/screens/cruise.js', unidentified_bone: 'engine/js/screens/cruise.js', // salvage curiosities
+  };
+  for (const [id, file] of Object.entries(ENGINE_GRANTED_ITEMS)) {
+    const src = engineSrcByFile.get(file);
+    if (src == null) err(`ENGINE_GRANTED_ITEMS.${id}: ${file} does not exist`);
+    else if (!quotedIn(src, id)) err(`ENGINE_GRANTED_ITEMS.${id}: '${id}' never appears in ${file} — the engine grant moved or is gone; fix the entry`);
+    if (!itemIds.has(id)) err(`ENGINE_GRANTED_ITEMS.${id}: not an item in items.json`);
+  }
+  engineGrantedItems = ENGINE_GRANTED_ITEMS;
   const items = readJSON('modules/items/items.json').filter(i => !i._section);
-  const sourced = new Set(ENGINE_GRANTED_ITEMS);
+  const sourced = new Set(Object.keys(ENGINE_GRANTED_ITEMS));
   for (const i of items) if (i.item_source === 'purchasable') sourced.add(i.id.replace(/^item_/, '').replace(/_\d+$/, ''));
   const recipesRaw = readJSON('modules/recipes/recipes.json');
   const recipes = Array.isArray(recipesRaw) ? recipesRaw : (recipesRaw.recipes || []);
@@ -372,7 +397,7 @@ for (const { file, event: ev } of eventsById.values()) {
 }
 
 for (const flag of requiresFlags) {
-  if (!setsFlags.has(flag) && !ENGINE_SET_FLAGS.has(flag)) {
+  if (!setsFlags.has(flag) && !(flag in ENGINE_SET_FLAGS)) {
     err(`Dangling requires_flag "${flag}" — no event's sets_flag (and no engine path) ever sets it`);
   }
 }
@@ -448,7 +473,7 @@ function trailCoverage() {
   // repo), so a fresh clone without it skips this check.
   const gen = require('./gen_flags.js');
   if (fs.existsSync(path.join(ROOT, gen.OUT)) && fs.readFileSync(path.join(ROOT, gen.OUT), 'utf8') !== gen.render()) {
-    err(`${gen.OUT} content-set table is stale vs modules/events — run: node tools/gen_flags.js`);
+    err(`${gen.OUT} is stale vs modules/ + the engine's flag setters — run: node tools/gen_flags.js`);
   }
 }
 
@@ -494,11 +519,312 @@ function trailCoverage() {
   for (const f of Object.keys(pay)) if (!sets.has(f)) err(`flag_payoffs.${f}: no content sets this flag`);
 }
 
+// ── Shared helpers for the 2026-10-11 open-loop checks ─────────────
+const atOf = (file, evId, layer) => `${file} ${evId}${layer ? '/' + layer : ''}`;
+const shortItem = id => id.replace(/^item_/, '').replace(/_\d+$/, '');
+// Every choice set of an event (flat, layered, standard_variants).
+function choiceSetsOf(ev) {
+  const sets = [];
+  if (ev.choices) sets.push({ layer: null, choices: ev.choices });
+  for (const [lk, l] of Object.entries(ev.layers || {})) if (l.choices) sets.push({ layer: lk, choices: l.choices });
+  for (const v of (ev.standard_variants || [])) if (v.choices) sets.push({ layer: 'variant:' + v.variant_id, choices: v.choices });
+  return sets;
+}
+// EFFORT_CHECKS (index.html): hands-on job types → { from: [...] }.
+const EFFORT_CHECKS = (() => {
+  const src = engineSrcByFile.get('index.html');
+  const m = src.match(/const EFFORT_CHECKS = \{([\s\S]*?)\n\};/);
+  const out = new Map();
+  if (!m) { err('index.html: EFFORT_CHECKS table not found (lint parses it for the effort contract)'); return out; }
+  for (const km of m[1].matchAll(/^\s*(\w+):\s*\{([^\n]*)/gm)) {
+    const fm = km[2].match(/from:\s*\[([^\]]*)\]/);
+    out.set(km[1], fm ? [...fm[1].matchAll(/['"]([^'"]+)['"]/g)].map(x => x[1]) : []);
+  }
+  return out;
+})();
+// Trail → node types its generated maps can spawn (weights > 0, plus the
+// structural fork/station every map gets).
+const trailTypes = new Map();
+for (const [trail, r] of Object.entries(readJSON('modules/maps/map_rules.json').trails)) {
+  const types = new Set(['fork', 'station']);
+  for (const tbl of ['node_weights', 'node_weights_start']) for (const [t, w] of Object.entries(r[tbl] || {})) if (w > 0) types.add(t);
+  trailTypes.set(trail, types);
+}
+const eventOnTrail = (ev, trail) => {
+  if (ev.active === false) return false;
+  if (ev.trail && !ev.trail.includes('any') && !ev.trail.includes(trail)) return false;
+  const nts = ev.node_type || ['any'];
+  return nts.includes('any') || nts.some(t => trailTypes.get(trail).has(t));
+};
+
+// ── Tag-registry membership for every tagged field (added 2026-10-11) ──
+// The per-event pass above covers difficulty/tone/node_type/trigger/
+// trail/requires_item; these are the rest of the tagged fields.
+{
+  const regCheck = (at, field, dim, v) => {
+    if (v == null) return;
+    if (!(registry[dim] && registry[dim].values && v in registry[dim].values)) err(`${at}: ${field} "${v}" is not registered in tag_registry.json's ${dim} dimension`);
+    else if (registry[dim].values[v].status === 'deprecated') err(`${at}: ${field} "${v}" is deprecated in tag_registry.json's ${dim} dimension`);
+  };
+  const npcCheck = (at, npc) => {
+    if (!npc) return;
+    if (npc.disposition == null) err(`${at}: npc has no disposition (resolveNpc needs one)`);
+    regCheck(at, 'npc.disposition', 'npc_disposition', npc.disposition);
+    regCheck(at, 'npc.species', 'npc_species', npc.species);
+    regCheck(at, 'npc.job', 'npc_station_job', npc.job);
+  };
+  for (const { file, event: ev } of eventsById.values()) {
+    const at = `${file} ${ev.id}`;
+    regCheck(at, 'scene_type', 'scene_type', ev.scene_type);
+    regCheck(at, 'comm_mode', 'comm_mode', ev.comm_mode);
+    regCheck(at, 'event_presentation', 'event_presentation', ev.event_presentation);
+    npcCheck(at, ev.npc);
+    for (const [lk, l] of Object.entries(ev.layers || {})) {
+      regCheck(at + '/' + lk, 'comm_mode', 'comm_mode', l.comm_mode);
+      regCheck(at + '/' + lk, 'scene_type', 'scene_type', l.scene_type);
+      npcCheck(at + '/' + lk, l.npc);
+    }
+    for (const { layer, choices } of choiceSetsOf(ev)) {
+      for (const ch of choices) {
+        regCheck(atOf(file, ev.id, layer), 'microgame_type', 'microgame_type', ch.microgame_type);
+        regCheck(atOf(file, ev.id, layer), 'minigame_type', 'minigame_type', ch.minigame_type);
+      }
+    }
+  }
+  const caps = readJSON('modules/captains/captains.json');
+  for (const c of (Array.isArray(caps) ? caps : caps.captains || [])) regCheck(`captains.json ${c.id}`, 'background', 'captain_background', c.background);
+  const crops = readJSON('modules/crops/crops.json');
+  for (const c of (crops.crops || [])) regCheck(`crops.json ${c.id}`, 'crop id', 'crop_type', String(c.id).replace(/^crop_/, ''));
+  for (const e of readJSON('modules/endings/endings.json')) {
+    regCheck(`endings.json ${e.id}`, 'ending_score', 'ending_score', e.ending_score);
+    regCheck(`endings.json ${e.id}`, 'event_presentation', 'event_presentation', e.event_presentation);
+  }
+}
+
+// ── Effort contract + hands-on job types (added 2026-10-11) ────────
+// choiceEffort() only rolls effort when a choice authors BOTH
+// effort_required and requires_effort_from, or names an EFFORT_CHECKS
+// job type — an effort_required alone is dead data (no odds, no roll).
+// Job types must be EFFORT_CHECKS keys (index.html) or launch_minigame
+// ids; anything else is silently a plain choice. Combat hijacks resolve
+// their own outcome, so an `outcome` on them never applies.
+{
+  for (const [type, from] of EFFORT_CHECKS) {
+    for (const src of from) {
+      if (src.startsWith('item:') ? !itemIds.has(src.slice(5)) : !crewRoles.has(src)) err(`index.html EFFORT_CHECKS.${type}: from "${src}" is not a crew role or item:<items.json id>`);
+    }
+  }
+  for (const { file, event: ev } of eventsById.values()) {
+    for (const { layer, choices } of choiceSetsOf(ev)) {
+      for (const ch of choices) {
+        const at = atOf(file, ev.id, layer), label = ch.text || ch.label;
+        const job = ch.microgame_type || ch.minigame_type;
+        if (ch.effort_required != null && !Array.isArray(ch.requires_effort_from) && !(job && EFFORT_CHECKS.has(job))) {
+          err(`${at}: choice "${label}" has effort_required ${ch.effort_required} but no requires_effort_from array and no EFFORT_CHECKS microgame_type/minigame_type — choiceEffort() never reads it`);
+        }
+        for (const k of ['microgame_type', 'minigame_type']) {
+          if (ch[k] != null && !EFFORT_CHECKS.has(ch[k]) && !MINIGAME_IDS.has(ch[k])) {
+            err(`${at}: choice "${label}" ${k} "${ch[k]}" is neither an EFFORT_CHECKS job (${[...EFFORT_CHECKS.keys()].join('/')}) nor a minigame id — it does nothing`);
+          }
+        }
+        if (Array.isArray(ch.requires_effort_from)) {
+          for (const src of ch.requires_effort_from) {
+            if (src.startsWith('item:') ? !itemIds.has(src.slice(5)) : !crewRoles.has(src)) err(`${at}: choice "${label}" requires_effort_from "${src}" is not a crew role or item:<items.json id>`);
+          }
+        }
+        if ((ch.triggerCombat || ch.combat_trigger) && 'outcome' in ch) {
+          err(`${at}: choice "${label}" is a combat hijack (${ch.triggerCombat ? 'triggerCombat' : 'combat_trigger'}) but carries an outcome — combat resolves its own outcome, this one never applies`);
+        }
+      }
+    }
+  }
+}
+
+// ── Item sinks, per trail (added 2026-10-11, owner: nothing orphaned) ──
+// Every item needs somewhere to GO: a USE button (index.html ITEM_USE), a
+// sale price, the fence's trade_good tag, a content reference that needs
+// or spends it, a recipe input, an engine read (quoted literal), or an
+// EFFORT_CHECKS tool slot. An item whose only sinks are event references
+// must be spendable on every trail that can grant it.
+{
+  const src = engineSrcByFile.get('index.html');
+  const iu = src.match(/const ITEM_USE = \{([\s\S]*?)\n\};/);
+  const useKeys = new Set();
+  if (!iu) err('index.html: ITEM_USE table not found (lint parses it for item sinks)');
+  else for (const m of iu[1].matchAll(/^  (\w+):\s*\{/gm)) useKeys.add(m[1]);
+  for (const k of useKeys) if (!itemIds.has(k)) err(`index.html ITEM_USE.${k}: not an item in items.json`);
+  const literals = new Set();
+  for (const s of engineSrcByFile.values()) for (const m of s.matchAll(/['"]([a-z0-9_]+)['"]/g)) literals.add(m[1]);
+  const effortItems = new Set();
+  for (const from of EFFORT_CHECKS.values()) for (const f of from) if (f.startsWith('item:')) effortItems.add(f.slice(5));
+  const recipesRaw = readJSON('modules/recipes/recipes.json');
+  const recipes = Array.isArray(recipesRaw) ? recipesRaw : (recipesRaw.recipes || []);
+  const recipeSinks = new Set();
+  for (const r of recipes) {
+    if (r.active === false) continue;
+    if (r.requires_item) recipeSinks.add(r.requires_item);
+    for (const inp of (r.inputs || [])) if (inp.item_id) recipeSinks.add(inp.item_id);
+  }
+  // Per-event sink and grant references (active events only).
+  const eventSinks = new Map(), eventGrants = new Map(); // item -> Set(event id)
+  const addTo = (m, id, evId) => { if (!id) return; if (!m.has(id)) m.set(id, new Set()); m.get(id).add(evId); };
+  for (const { event: ev } of eventsById.values()) {
+    if (ev.active === false) continue;
+    addTo(eventSinks, ev.requires_item, ev.id);
+    const outs = [];
+    for (const { choices } of choiceSetsOf(ev)) {
+      for (const ch of choices) {
+        addTo(eventSinks, ch.requires_item, ev.id);
+        addTo(eventSinks, ch.gate && ch.gate.item, ev.id);
+        for (const f of (Array.isArray(ch.requires_effort_from) ? ch.requires_effort_from : [])) if (f.startsWith('item:')) addTo(eventSinks, f.slice(5), ev.id);
+        if (ch.outcome && typeof ch.outcome === 'object') outs.push(ch.outcome);
+      }
+    }
+    for (const o of Object.values(ev.outcomes || {})) if (o && typeof o === 'object') outs.push(o);
+    for (const ch of ((ev.stowaway_variant || {}).stowaway_choices || [])) if (ch.outcome) outs.push(ch.outcome);
+    for (const o of outs) {
+      addTo(eventSinks, o.item_consume, ev.id);
+      for (const g of (Array.isArray(o.item_grant) ? o.item_grant : [o.item_grant])) addTo(eventGrants, g, ev.id);
+    }
+  }
+  const recipeOutputs = new Set(recipes.filter(r => r.active !== false).map(r => r.output && r.output.item_id).filter(Boolean));
+  for (const it of readJSON('modules/items/items.json').filter(i => !i._section && i.active !== false)) {
+    const id = shortItem(it.id);
+    const global = [];
+    if (useKeys.has(id)) global.push('USE');
+    if (it.base_price > 0) global.push('price');
+    if ((it.tags || []).includes('trade_good')) global.push('trade_good');
+    if (recipeSinks.has(id)) global.push('recipe');
+    if (literals.has(id)) global.push('engine');
+    if (effortItems.has(id)) global.push('EFFORT_CHECKS');
+    if (global.length) continue;
+    const sinks = eventSinks.get(id);
+    if (!sinks) { err(`item "${id}" has no sink — no USE handler, no price, no trade_good tag, nothing requires/consumes it, no recipe input, no engine read, no EFFORT_CHECKS slot`); continue; }
+    // Only event references spend it: each trail that can grant it must
+    // also reach one of those events.
+    const grantAll = it.item_source === 'purchasable' || id in engineGrantedItems || recipeOutputs.has(id);
+    for (const trail of trailTypes.keys()) {
+      const grants = grantAll || [...(eventGrants.get(id) || [])].some(e => eventOnTrail(eventsById.get(e).event, trail));
+      if (!grants) continue;
+      if (![...sinks].some(e => eventOnTrail(eventsById.get(e).event, trail))) {
+        warn(`item "${id}": grantable on ${trail} (${[...(eventGrants.get(id) || ['engine/market'])].filter(e => grantAll || eventOnTrail(eventsById.get(e).event, trail)).join(', ')}) but its only sinks (${[...sinks].join(', ')}) can't spawn on ${trail} — dead cargo there`);
+      }
+    }
+  }
+}
+
+// ── Engine flags documented (added 2026-10-11) ─────────────────────
+// Every literal flag the engine sets must have prose in gen_flags.js
+// (that's what puts it in registry/flags.md), and the ENGINE_SET_FLAGS
+// allowlist must name the file that really sets each flag.
+{
+  const { literals, families } = genFlags.scanEngine();
+  for (const [flag, file] of Object.entries(ENGINE_SET_FLAGS)) {
+    if (!(literals.get(flag) || new Set()).has(file)) err(`ENGINE_SET_FLAGS.${flag}: ${file} never sets it (no flags.add('${flag}') / sets_flag = '${flag}')${literals.has(flag) ? ' — it is set in ' + [...literals.get(flag)].join(', ') : ''} — fix the entry`);
+  }
+  for (const [flag, files] of literals) if (!genFlags.ENGINE_FLAG_NOTES[flag]) err(`engine flag "${flag}" (set in ${[...files].join(', ')}) is undocumented — add it to tools/gen_flags.js ENGINE_FLAG_NOTES, then run node tools/gen_flags.js`);
+  for (const [p, files] of families) if (!genFlags.FAMILY_NOTES[p]) err(`engine flag family "${p}<…>" (set in ${[...files].join(', ')}) is undocumented — add it to tools/gen_flags.js FAMILY_NOTES`);
+  for (const flag of Object.keys(genFlags.ENGINE_FLAG_NOTES)) if (!literals.has(flag)) warn(`tools/gen_flags.js ENGINE_FLAG_NOTES.${flag}: the engine no longer sets it — drop the note`);
+  for (const p of Object.keys(genFlags.FAMILY_NOTES)) if (!families.has(p)) warn(`tools/gen_flags.js FAMILY_NOTES.${p}: the engine no longer sets this family — drop the note`);
+}
+
+// ── Ending reachability (added 2026-10-11) ─────────────────────────
+// endings.js fills body_template's {crop_paragraph} from
+// crop_paragraphs[thriving|sick|dead] and {crew_paragraph} from
+// crew_paragraphs[full|partial|solo]; score_paragraphs is keyed by
+// bracket. scoreBracket() (index.html) returns 'hollow' whenever the crop
+// is dead, so a numeric-bracket ending's crop_paragraphs.dead never shows.
+{
+  const brackets = new Set(Object.keys((registry.ending_score || {}).values || {}));
+  const CROP_KEYS = new Set(['thriving', 'sick', 'dead']), CREW_KEYS = new Set(['full', 'partial', 'solo']);
+  for (const e of readJSON('modules/endings/endings.json')) {
+    if (e.active === false) continue;
+    const at = `endings.json ${e.id}`, body = e.body_template || '';
+    if (e.crop_paragraphs) {
+      if (!body.includes('{crop_paragraph}')) warn(`${at}: authors crop_paragraphs but body_template has no {crop_paragraph} token — they never show`);
+      for (const k of Object.keys(e.crop_paragraphs)) if (!CROP_KEYS.has(k)) err(`${at}: crop_paragraphs key "${k}" is not thriving/sick/dead`);
+      if ('dead' in e.crop_paragraphs && e.ending_score !== 'hollow' && e.ending_score !== 'any') warn(`${at}: crop_paragraphs.dead on a "${e.ending_score}" ending is unreachable — a dead crop forces the hollow bracket`);
+    }
+    for (const k of Object.keys(e.crew_paragraphs || {})) if (!CREW_KEYS.has(k)) err(`${at}: crew_paragraphs key "${k}" is not full/partial/solo`);
+    for (const k of Object.keys(e.score_paragraphs || {})) if (!brackets.has(k)) err(`${at}: score_paragraphs key "${k}" is not a registered ending_score bracket`);
+  }
+}
+
+// ── NPC line tokens (added 2026-10-11) ─────────────────────────────
+// {npc.line.<slot>} resolves against the EVENT's npc (index.html
+// interpolateNpcTokens): npc_disposition_lines[disposition][slot], and for
+// station_crew one level deeper by job (default janitor). An empty pool
+// drops the token to ''; an event with no npc shows the raw token.
+// Outcome lines may be spoken by a layer npc (STATE.lastSpeaker).
+{
+  const pools = readJSON('modules/flavor/flavor_pools.json').npc_disposition_lines || {};
+  const resolves = (npc, slot) => {
+    if (!npc) return false;
+    let pool = pools[npc.disposition];
+    if (pool && npc.disposition === 'station_crew') pool = pool[npc.job || 'janitor'];
+    return !!(pool && Array.isArray(pool[slot]) && pool[slot].length);
+  };
+  const tokens = o => { const out = []; (function walk(x) { if (typeof x === 'string') { for (const m of x.matchAll(/\{npc\.line\.(\w+)\}/g)) out.push(m[1]); } else if (x && typeof x === 'object') for (const k in x) walk(x[k]); })(o); return out; };
+  const usedJobs = new Set();
+  for (const { file, event: ev } of eventsById.values()) {
+    if (ev.npc && ev.npc.job) usedJobs.add(ev.npc.job);
+    const layerNpcs = Object.values(ev.layers || {}).map(l => l.npc).filter(Boolean);
+    layerNpcs.forEach(n => n.job && usedJobs.add(n.job));
+    const desc = n => n ? n.disposition + (n.disposition === 'station_crew' ? '/' + (n.job || 'janitor') : '') : 'no npc';
+    const { outcomes, ...rest } = ev;
+    for (const slot of new Set(tokens(rest))) {
+      if (!resolves(ev.npc, slot)) err(`${file} ${ev.id}: {npc.line.${slot}} has no line pool for ${desc(ev.npc)} in flavor_pools.npc_disposition_lines`);
+    }
+    for (const slot of new Set(tokens(outcomes || {}))) {
+      if (![ev.npc, ...layerNpcs].some(n => resolves(n, slot))) err(`${file} ${ev.id}/outcomes: {npc.line.${slot}} has no line pool for any speaker (${[ev.npc, ...layerNpcs].map(desc).join(', ')})`);
+    }
+  }
+  for (const [job, v] of Object.entries((registry.npc_station_job || {}).values || {})) {
+    if (v.status !== 'deprecated' && !usedJobs.has(job)) warn(`npc_station_job "${job}" is registered but no event or layer npc uses it`);
+  }
+}
+
+// ── Sprite assets (added 2026-10-11) ───────────────────────────────
+// Header reads only: an image's extension must match its magic bytes
+// (a PNG named .jpg), and every NPC spritesheet.png must be the 392×294
+// 3×3 grid of 130×98 frames scene_art.js slices.
+{
+  const SPR = path.join(ROOT, 'resources/sprites');
+  const magic = b => b[0] === 0x89 && b.toString('latin1', 1, 4) === 'PNG' ? 'png'
+    : b[0] === 0xff && b[1] === 0xd8 ? 'jpg'
+    : b.toString('latin1', 0, 3) === 'GIF' ? 'gif'
+    : b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP' ? 'webp' : 'unknown';
+  const head = f => { const fd = fs.openSync(f, 'r'), b = Buffer.alloc(24); fs.readSync(fd, b, 0, 24, 0); fs.closeSync(fd); return b; };
+  const walk = (dir, fn) => { if (!fs.existsSync(dir)) return; for (const e of fs.readdirSync(dir, { withFileTypes: true })) { const f = path.join(dir, e.name); if (e.isDirectory()) walk(f, fn); else fn(f); } };
+  const check = (f, npc) => {
+    const ext = path.extname(f).toLowerCase().replace('jpeg', 'jpg').slice(1);
+    if (!['png', 'jpg', 'gif', 'webp'].includes(ext)) return;
+    const b = head(f), kind = magic(b), rel = path.relative(SPR, f);
+    if (kind !== ext) warn(`sprites/${rel}: .${ext} file holds ${kind.toUpperCase()} data — rename it (or re-export)`);
+    if (npc && path.basename(f) === 'spritesheet.png' && kind === 'png') {
+      const w = b.readUInt32BE(16), h = b.readUInt32BE(20);
+      if (w !== 392 || h !== 294) warn(`sprites/${rel}: NPC spritesheet is ${w}×${h}, not 392×294 — frames slice off-grid`);
+    }
+  };
+  walk(path.join(SPR, 'backgrounds'), f => check(f, false));
+  // NPC art the engine loads: <disposition>/[<job>/]<species>/<N>/spritesheet.png
+  // (the loose source images at the npc/ root are never referenced).
+  walk(path.join(SPR, 'npc'), f => { if (path.dirname(f) !== path.join(SPR, 'npc') && path.basename(f) === 'spritesheet.png') check(f, true); });
+}
+
+function printWarnings(out) {
+  if (!warnings.length) return;
+  out(`lint_modules: ${warnings.length} warning(s) (not failing):\n`);
+  warnings.forEach(w => out('  ~ ' + w));
+  out('');
+}
 if (errors.length) {
+  printWarnings(console.error);
   console.error(`lint_modules: ${errors.length} issue(s) found:\n`);
   errors.forEach(e => console.error('  - ' + e));
   process.exit(1);
 } else {
+  printWarnings(console.log);
   console.log('trail coverage — ' + trailCoverage());
-  console.log(`lint_modules: clean — ${eventsById.size} events across ${eventFiles.length} files, ${allChoices.length} choices checked.`);
+  console.log(`lint_modules: clean — ${eventsById.size} events across ${eventFiles.length} files, ${allChoices.length} choices checked${warnings.length ? ` (${warnings.length} warning(s))` : ''}.`);
 }

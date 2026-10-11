@@ -1272,7 +1272,7 @@
   const CROP_NOTES = {
     wheat:        'The safe grain. Predictable yield, predictable risks.',
     tomato:       'High morale payload, finicky environment. Drama-prone.',
-    sweet_potato: 'Biggest yield per cycle. Slow grower, drought-tolerant.',
+    sweet_potato: 'Joint-biggest yield per cycle (with tomatoes). Slow grower, drought-tolerant.',
     soybean:      'Fixes its own nitrogen. Shrugs off contamination better than most.',
     zinnia:       'No food value; crew mood payload. Fastest cycle.'
   };
@@ -1287,7 +1287,7 @@
     'Heat wave CRITICAL': { cause: 'Far above the crop\'s ideal — anomaly heat.', fix: 'Move on to a cooler region; an insulated cargo bay softens it.' },
     'Low light':          { cause: 'Nebulae and the void are dim.',        fix: 'Growth recovers in brighter regions. High-light crops feel it most.' },
     'Ship water dry':     { cause: 'The ship\'s water tanks are empty.',   fix: 'Resupply water — a station, an event, a purifier at a planet.' },
-    'Pest outbreak':      { cause: 'Pests in the bay. Slows growth, eats health.', fix: 'TREAT clears them (a day of work; a botanist does it free).' },
+    'Pest outbreak':      { cause: 'Pests in the bay. Slows growth, eats health.', fix: 'TREAT clears them (a day of work; a botanist spares the day, half the time if wounded or if the botanist is you).' },
     'Root rot risk':      { cause: 'Plant overwatered (>20% above need).', fix: 'Drop plant water back toward the ideal tick.' }
   };
 

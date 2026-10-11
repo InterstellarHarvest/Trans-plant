@@ -1045,7 +1045,7 @@
           {
             "text": "TAKE THE JOB",
             "dialog": true,
-            "sub": "Sealed cargo, 1 slot, paid on handoff",
+            "sub": "Sealed cargo, 1 slot, half up front",
             "outcome": "cantina_job",
             "hideFlag": "courier_job_taken"
           },
@@ -1356,5 +1356,116 @@
         "time_cost": "low"
       }
     }
+  },
+  {
+    "id": "event_station_011",
+    "active": true,
+    "title": "Accession Pending",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "cosmic"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_item": "alien_seed_pod",
+    "ai_flavor": {
+      "aria": "A seed bank! Forty thousand seeds and they want OURS! ARIA always knew the pod was special! She has already drafted its museum placard!",
+      "marv": "MARV notes the biosecurity scanner has one chime for 'known' and one for 'unknown.' It has never used both on the same object before. He checked the logs back to installation.",
+      "rex": "REX has assessed the curator. Unarmed. Highly motivated. He rates highly motivated as the more dangerous of the two.",
+      "chip": "CHIP values the pod at forty-five credits retail! The seed bank is offering more! CHIP is contractually obliged to recommend the higher number! Minus his commission!",
+      "ajoy": "AJOY notes the curator walked here very fast for someone who is only curious. She would open the bidding higher. She would also, on balance, not open it at all."
+    },
+    "body": "The docking clamps have barely engaged when the station's biosecurity scanner chimes, then chimes again in a different key, then sends a person.\n\nThe person is the curator of the station's seed bank: forty thousand varieties of everything humanity ever wanted to eat, filed in cold drawers three decks down. She is holding a tablet that shows a warm smudge in your cargo hold. She would like to know what it is. She would like it very much.\n\nThe pod, for its part, is pulsing a little faster than usual. It may be the station's heating. It may not.",
+    "choices": [
+      {
+        "text": "Sell it to the seed bank",
+        "requires_crew": null,
+        "requires_item": "alien_seed_pod",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": 55
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "alien_seed_pod",
+          "sets_flag": "seed_pod_banked",
+          "time_cost": "low",
+          "narrative": "The curator pays fifty-five credits without haggling, which tells you that you should have haggled. The pod goes into a cold drawer with a brass label that reads PENDING. It pulses once as the drawer closes. The curator writes that down too. Whatever out in the deep void wanted it back will now have to go through a filing system."
+        }
+      },
+      {
+        "text": "Trade it for the seed bank's medical stores",
+        "requires_crew": null,
+        "requires_item": "alien_seed_pod",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": [
+            "medkit",
+            "medkit"
+          ],
+          "item_consume": "alien_seed_pod",
+          "sets_flag": "seed_pod_banked",
+          "time_cost": "low",
+          "narrative": "The seed bank's infirmary is overstocked and its budget is not. The curator takes the pod with both hands, the way people hold things they have been warned about, and pays in the only currency the department has to spare: two sealed medkits. The pod goes into a cold drawer marked PENDING. The medkits go into your hold."
+        }
+      },
+      {
+        "text": "Let {crew.xenobiologist} compare notes with the curator",
+        "requires_crew": "xenobiologist",
+        "requires_item": "alien_seed_pod",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": 20,
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "seed_pod_catalogued",
+          "time_cost": "medium",
+          "narrative": "{crew.xenobiologist} and the curator spend six hours in the cold vault with the pod between them and the door shut. They come out with a scan series, a co-authored paper titled 'Preliminary Notes on an Object That Is Not, Strictly, a Seed,' and a twenty-credit sampling fee the seed bank insists on paying for the data. The curator's conclusion is in the margin: it is built like a key. The pod goes back in your hold. The crew is in good spirits and very quiet about the keyhole."
+        }
+      },
+      {
+        "text": "Decline — the pod stays with the ship",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You decline. The curator nods the way people nod at a closing door and leaves a card in case you change your mind. The crew is oddly pleased about it. Nobody can say when the pod started to feel like crew. Nobody tries."
+        }
+      }
+    ]
   }
 ]

@@ -332,13 +332,27 @@
     // boarding_001, general pirate tribute — free, clean passage) or
     // the next station market (−15%, the skill's other authored line).
     diplomat() {
-      if (STATE.flags.has('negotiation_prepared')) return { ok: false, refusal: 'Hargrove has already prepared the ground. Patience.' };
+      if (STATE.flags.has('negotiation_prepared')) return { ok: false, refusal: crewNameOf('diplomat') + ' has already prepared the ground. Patience.' };
       STATE.flags.add('negotiation_prepared');
-      return { ok: true, log: 'NEGOTIATION — Hargrove works the channels ahead. The next hostile hail can be settled on prepared terms, or the next station market sees reason (−15%). Whichever comes first.' };
+      return { ok: true, log: 'NEGOTIATION — ' + crewNameOf('diplomat') + ' works the channels ahead. The next hostile hail can be settled on prepared terms, or the next trader sees reason (up to 15% off; no trader sells below what they buy at). Whichever comes first.' };
     },
   };
 
   const SKILL_COST_TAG = { chef: 'COST: 5 FOOD', pilot: 'COST: DOUBLE FUEL' };
+
+  // Skill lines and quips name the roster crew ("Dr. Osei"); a joined
+  // stowaway holding the role keeps their own name (index.html crewNameOf).
+  function liveNames(str) {
+    if (!str || typeof crewIdentityOf !== 'function') return str;
+    for (const c of (MOD.crew_roster || [])) {
+      const idn = crewIdentityOf(c.role);
+      if (!idn || !c.name) continue;
+      const bare = c.name.replace(/^Dr\.\s+/, '');
+      str = str.split(c.name).join(idn.name);
+      if (bare !== c.name) str = str.replace(new RegExp('\\b' + bare + '\\b', 'g'), idn.name);
+    }
+    return str;
+  }
 
   // ── Render ─────────────────────────────────────────────────────
   function memberData(key) {
@@ -347,7 +361,9 @@
       return {
         key, isCaptain: true, crewId: 'captain', emoji: CD_ROLE_EMOJI.captain,
         name: 'Captain', role: 'Captain', bgTag: bg.name,
-        bio: bg.flavor || bg.desc, hint: 'With no specialist of your background aboard, you cover half their passive yourself.',
+        bio: bg.flavor || bg.desc, hint: ['botanist', 'engineer', 'medic', 'pilot', 'chef', 'xenobiologist', 'diplomat'].includes(STATE.captain)
+          ? 'With no specialist of your background aboard, you cover half their passive yourself.'
+          : 'No crew member shares your background. What you bring, only you bring.',
         passiveName: bg.name + ' Background', passiveDesc: (bg.stat ? bg.stat + ' — ' : '') + bg.desc,
         active: null,
       };
@@ -500,7 +516,7 @@
     $('cd-ai-icon').style.backgroundImage = "url('" + (AI_SPRITE[ai] || AI_SPRITE.marv) + "')";
     $('cd-ai-name').textContent = ai.toUpperCase() + ':';
     const quips = CD_QUIPS[m.isCaptain ? 'captain' : m.key] || CD_QUIPS.captain;
-    setAiText(quips[Math.floor(Math.random() * quips.length)], false);
+    setAiText(liveNames(quips[Math.floor(Math.random() * quips.length)]), false);
     const dBtn = $('cd-dismiss-btn');
     if (!m.isCaptain) {
       const safe = canDismissSafely();
@@ -563,7 +579,8 @@
     const fx = SKILL_EFFECTS[cur];
     if (!fx) return;
     const res = fx();
-    if (!res.ok) { setAiText(res.refusal, true); return; }
+    if (res.log) res.log = liveNames(res.log);
+    if (!res.ok) { setAiText(liveNames(res.refusal), true); return; }
     STATE.crewSkillCharges[cur] = uses - 1;
     if (typeof window.pushCruiseLog === 'function') pushCruiseLog('◆ ' + res.log);
     if (typeof renderHUD === 'function') renderHUD();

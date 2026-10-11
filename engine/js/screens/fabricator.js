@@ -217,11 +217,13 @@
 
   // Wear a craft adds: engineer passive −20% (crew_roster; a captain
   // engineer half that — setup "Fab wear -10%"), the field repair
-  // fabricator −10% (items.json). Never below 1.
+  // fabricator −10% (items.json). Never below 0.5.
   function recipeWear(r) {
     const eng = typeof specialistMult === 'function' ? specialistMult('engineer') : 0;
     const kit = STATE.items.includes('repair_fabricator') ? 0.9 : 1;
-    return Math.max(1, Math.round(r.wear * (1 - 0.2 * eng) * kit));
+    // Kept to a tenth: whole-number rounding ate the engineer's cut on
+    // every 1–3% recipe (2 × 0.8 = 1.6 → 2).
+    return Math.max(0.5, Math.round(r.wear * (1 - 0.2 * eng) * kit * 10) / 10);
   }
 
   // Material satisfaction — is every input satisfied by current stock?
@@ -462,7 +464,7 @@
     if (postWear >= 100) {
       wearWarn = '<div class="fb-warn wear-crit">⚠ Will break the fab (100% wear) · FAB SERVICE at a station fixes it</div>';
     } else if (postWear >= 80 && FSTATE.wear < 80) {
-      wearWarn = '<div class="fb-warn wear-warn">⚠ Will push wear to ' + postWear + '% · service soon</div>';
+      wearWarn = '<div class="fb-warn wear-warn">⚠ Will push wear to ' + Math.round(postWear) + '% · service soon</div>';
     }
 
     meta.innerHTML =
@@ -614,7 +616,7 @@
     if (typeof window.payEffortTax === 'function') window.payEffortTax(1);
     // Apply wear.
     const wearBefore = FSTATE.wear;
-    FSTATE.wear = Math.min(100, FSTATE.wear + recipeWear(r));
+    FSTATE.wear = Math.min(100, Math.round((FSTATE.wear + recipeWear(r)) * 10) / 10);
 
     // Misfire roll — recipes.json _meta misfire_curve (by fabricator
     // health = 100 − wear, read before this craft's wear). A misfire

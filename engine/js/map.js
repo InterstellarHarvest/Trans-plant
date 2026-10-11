@@ -27,6 +27,26 @@ const TYPE_DESCS = {
   anomaly:        'Sensor readings disagree. Reality is debatable here.',
 };
 const BRANCH_FLAVORS = ['hostile', 'lucrative', 'safe', 'corporate', 'derelict_heavy', 'scientific', 'agricultural'];
+/* What a branch label means for its stops (Bible §4.5 / §9 Fork System —
+   owner ruling 2026-10-11: the labels are real). Multiplies the trail's
+   node weights along that branch; a type the trail can't spawn stays at
+   zero. The event pool is weighted by the same label (index.html
+   branchEventMult). */
+const BRANCH_NODE_MULT = {
+  hostile:        { void: 2, derelict: 1.5, asteroid_field: 1.3, station: 0.4 },
+  lucrative:      { asteroid_field: 2.5, derelict: 1.5, planet: 1.2 },
+  safe:           { station: 2, planet: 1.5, void: 0.2, anomaly: 0.2, derelict: 0.6 },
+  corporate:      { station: 4 },
+  derelict_heavy: { derelict: 4 },
+  scientific:     { planet: 2, anomaly: 2.5, nebula: 2 },
+  agricultural:   { planet: 3, station: 1.2 },
+};
+function branchWeights(weights, flavor) {
+  const m = BRANCH_NODE_MULT[flavor] || {};
+  const out = {};
+  for (const k in weights) out[k] = weights[k] * (m[k] != null ? m[k] : 1);
+  return out;
+}
 
 function pickWeighted(weights) {
   let total = 0;
@@ -151,12 +171,15 @@ function generateMap(trailKey) {
 
     const branchLen = rules.branch_len_min + Math.floor(Math.random() * (rules.branch_len_max - rules.branch_len_min + 1));
     const flavors = shuffle(BRANCH_FLAVORS.slice());
+    // Bible §9: one branch may go unlabeled — the player sees "???" (its
+    // label still shapes it).
+    const hiddenKey = Math.random() < 0.35 ? (Math.random() < 0.5 ? 'alpha' : 'beta') : null;
     for (const key of ['alpha', 'beta']) {
       const flavor = flavors.pop();
       const branchIds = [];
       for (let j = 0; j < branchLen; j++) {
         const t = (gap + j + 1) / (spineLen - 1);
-        const weights = interpWeights(rules.node_weights_start, rules.node_weights, t);
+        const weights = branchWeights(interpWeights(rules.node_weights_start, rules.node_weights, t), flavor);
         const type = pickWeighted(weights);
         const id = 'node_branch_' + branchNum + '_' + key + '_' + j;
         branchIds.push(id);
@@ -169,6 +192,8 @@ function generateMap(trailKey) {
           // overlapped illegibly (Phase 7's map-overlay nit).
           node_type: type, position: gap + 0.5 + (j + 1) * (0.5 / (branchLen + 1)), connects_to: [], event_id: null,
           branch_flavor: j === 0 ? flavor : undefined,
+          branch_hidden: (j === 0 && hiddenKey === key) || undefined,
+          branch: flavor, // every stop on the branch: weights its event pool
         });
       }
       forkNode.connects_to[key] = [branchIds[0]];

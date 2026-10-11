@@ -292,7 +292,7 @@
     fab:          { label: 'FABRICATOR', sub: 'Open the print queue. Long jobs need a still ship.', effort: 1, hint: true, icon: 'fab' },
     medbay:       { label: 'MEDBAY',    sub: () => 'Treat every hurt crew member. ' + medbayFee() + 'g, no days.', effort: 1, hint: true, locked: medbayLockReason, icon: 'medic' },
     condense:     { label: 'CONDENSE',  sub: 'Wring water out of the nebula. A day for +12 water.', effort: 2, locked: condenseLockReason, icon: 'water' },
-    drydock:      { label: 'DRYDOCK',   sub: () => 'Station crews patch the hull. +30 hull for ' + drydockFee() + 'g.', effort: 1, hint: true, locked: drydockLockReason, icon: 'repair' },
+    drydock:      { label: 'DRYDOCK',   sub: () => 'Station crews patch the hull. +' + Math.min(30, Math.ceil(resMax('hull') - STATE.resources.hull)) + ' hull for ' + drydockFee() + 'g.', effort: 1, hint: true, locked: drydockLockReason, icon: 'repair' },
     fab_service:  { label: 'FAB SERVICE', sub: () => 'Station techs overhaul the fabricator. Wear to zero, ' + fabServiceFee() + 'g.', effort: 1, hint: true, locked: fabServiceLockReason, icon: 'fab' },
   };
   function effortPips(n) { n = Math.max(0, Math.min(5, n | 0)); return '●'.repeat(n) + '○'.repeat(5 - n); }
@@ -381,8 +381,11 @@
     openMinigame('forage', { mode, return_to: 'cruise', origin_node: STATE.currentId }, (tier, payload) => {
       if (tier === 'abandoned') return settleAbandoned(mode);
       payload = payload || {};
+      let foodGot = 0; // what actually lands (the tank caps)
       if (typeof payload.food === 'number' && payload.food > 0) {
+        const f0 = STATE.resources.food;
         STATE.resources.food = clamp(STATE.resources.food + payload.food, 0, resMax('food'));
+        foodGot = Math.round(STATE.resources.food - f0);
       }
       // Forage's rare finds are demo ids with no items.json entry — granting
       // them raw put phantom, unsellable cargo in the hold. Map each to a
@@ -402,7 +405,7 @@
         if (s.type === 'poisoning') { if (STATE.crew.length) damageCrew(null, sev); else STATE.resources.food = clamp(STATE.resources.food - sev, 0, resMax('food')); }
         else STATE.resources.morale = clamp(STATE.resources.morale - sev, 0, 100);
       });
-      let gained = payload.food ? ('+' + payload.food + ' food.') : 'came back empty-handed.';
+      let gained = foodGot > 0 ? ('+' + foodGot + ' food.') : payload.food > 0 ? 'found food, but the stores are full.' : 'came back empty-handed.';
       // A good forage on alien ground can turn up the suspicious fungus
       // (the chef's Secret Project — event_shipboard_016).
       if (tier !== 'poor' && (regionKey === 'anomaly' || regionKey === 'planet_orbit_habitable') &&
@@ -426,9 +429,9 @@
       for (const [key, qty] of Object.entries(haul)) {
         if (!qty) continue;
         if (MATS.has(key)) { STATE.materials[key] = (STATE.materials[key] || 0) + qty; got.push(qty + ' ' + key); }
-        else if (key in TANK_O2) { STATE.resources.o2 = clamp(STATE.resources.o2 + TANK_O2[key] * qty, 0, 100); got.push('+' + TANK_O2[key] * qty + ' O₂'); }
+        else if (key in TANK_O2) { const o0 = STATE.resources.o2; STATE.resources.o2 = clamp(STATE.resources.o2 + TANK_O2[key] * qty, 0, 100); const d = Math.round(STATE.resources.o2 - o0); got.push(d > 0 ? '+' + d + ' O₂' : 'O₂ tanks, but the air is full'); }
         else if (key === 'gold') { STATE.goldAmount += 5 * qty; got.push(5 * qty + 'g'); }
-        else if (key !== 'useless_scrap') { for (let i = 0; i < qty; i++) grantItem(key); got.push(key.replace(/_/g, ' ')); }
+        else if (key !== 'useless_scrap') { let n = 0; for (let i = 0; i < qty; i++) if (grantItem(key) !== false) n++; if (n) got.push(key.replace(/_/g, ' ')); }
       }
       // Wrecks hold curiosities the fence pays for (items.json "pure trade
       // good" — they had no source).
@@ -451,7 +454,7 @@
         STATE.materials[mat] = (STATE.materials[mat] || 0) + qty;
         granted.push(qty + ' ' + mat);
       }
-      if (!granted.length) { renderCruise(); return; } // LEAVE with no run made — no time cost either
+      if (!granted.length && !(haul.runs > 0)) { renderCruise(); return; } // LEAVE with no run made — no time cost either
       // Bible multi-path rule: asteroid ice melts into water, a nebula
       // run scoops fuel — scaled by how much was mined (cap 15).
       const mined = Object.values(inv).reduce((a, b) => a + (b || 0), 0);
@@ -469,7 +472,7 @@
       // One day per mining run: MINE AGAIN used to chain unlimited runs
       // for a single day (a gold and fuel faucet — hunt 5 economy sim).
       const runs = Math.max(1, haul.runs || 1);
-      settleMinigame('◆ MINE — ' + (runs > 1 ? runs + ' runs, ' + runs + ' days: ' : '') + 'recovered ' + granted.join(', ') + '.', runs);
+      settleMinigame('◆ MINE — ' + (runs > 1 ? runs + ' runs, ' + runs + ' days: ' : '') + (granted.length ? 'recovered ' + granted.join(', ') : 'the rocks gave up nothing') + '.', runs);
     });
   }
 
@@ -594,10 +597,11 @@
   }
   function handleDrydockVerb() {
     if (drydockLockReason()) return;
-    STATE.goldAmount -= drydockFee();
+    const fee = drydockFee(); // priced on the gap before the weld (the log reports what was charged)
+    STATE.goldAmount -= fee;
     const before = STATE.resources.hull;
     STATE.resources.hull = clamp(STATE.resources.hull + 30, 0, resMax('hull'));
-    pushLogEntry('◆ DRYDOCK — station crews weld, rivet and invoice. +' + Math.round(STATE.resources.hull - before) + ' hull, −' + drydockFee() + 'g.');
+    pushLogEntry('◆ DRYDOCK — station crews weld, rivet and invoice. +' + Math.round(STATE.resources.hull - before) + ' hull, −' + fee + 'g.');
     renderHUD();
     renderCruise();
     renderStopMenu();

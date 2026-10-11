@@ -64,8 +64,10 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "The fabricator produces a hull patch. The fabricator's health decreases slightly. The hull's health increases significantly. The math works. The sound stops."
-        }
+          "narrative": "The fabricator produces a hull patch. The fabricator's health decreases slightly. The hull's health increases significantly. The math works. The sound stops.",
+          "fab_wear": 5
+        },
+        "requires_fab": true
       },
       {
         "text": "Attempt manual repair",
@@ -559,7 +561,8 @@
           "item_consume": null,
           "sets_flag": "early_harvest",
           "time_cost": "trivial",
-          "narrative": "You take from the growbay ahead of schedule. The plants surrender their almost-ready yield with what a less careful captain would call reproach. The crop will recover. Probably. The botanist, if aboard, updates the growth chart in silence."
+          "narrative": "You take from the growbay ahead of schedule. The plants surrender their almost-ready yield with what a less careful captain would call reproach. The crop will recover. Probably. The botanist, if aboard, updates the growth chart in silence.",
+          "crop_health": -5
         }
       }
     ],
@@ -708,7 +711,7 @@
     "body": "The oxygen recyclers are running behind demand, and the gap is no longer theoretical.\n\nIt is not dramatic yet. Nobody is gasping. It is just that the air has started to feel like something being spent rather than something that is simply there — a subtle accounting change with enormous implications.\n\nThe ship computer displays the O2 curve. The curve slopes the wrong way.",
     "choices": [
       {
-        "text": "Install the spare O2 recycler",
+        "text": "Put the O2 recycler on full duty",
         "requires_crew": null,
         "requires_item": "o2_recycler",
         "requires_flag": null,
@@ -723,7 +726,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "The spare recycler comes out of storage and goes into the loop. It hums. The main unit hums back. Together they claw the O2 curve back toward horizontal. The air stops feeling like an expense account. Mostly."
+          "narrative": "The recycler comes off its economy cycle and into the main loop at full duty. It hums. The old scrubbers hum back. Together they claw the O2 curve back toward horizontal. The air stops feeling like an expense account. Mostly."
         }
       },
       {
@@ -973,7 +976,7 @@
           "item_grant": null,
           "item_consume": null,
           "sets_flag": null,
-          "time_cost": "high",
+          "time_cost": "trivial",
           "narrative": "One full day of nothing. No drills, no rotations, no schedule. The crew is suspicious for the first hour, asleep for the next six, and human again by evening. Someone winds the clock. Someone else laughs at something. The ship drifts one day further from the deadline and several days back from the edge."
         }
       },
@@ -1181,7 +1184,7 @@
     "body": "The hull plating has been sandblasted by micro-debris for weeks, and the cumulative damage report has crossed the line from 'cosmetic' to 'load-bearing.'\n\nViewed from outside — nobody has, but the cameras have — the plating has the texture of something that has been through weather. Space does not have weather. That is what makes the texture alarming.",
     "choices": [
       {
-        "text": "Install the reinforced hull plating",
+        "text": "Shift the reinforced plating over the damage",
         "requires_crew": null,
         "requires_item": "hull_plating",
         "requires_flag": null,
@@ -1196,7 +1199,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "medium",
-          "narrative": "The reinforced plating bolts over the worst sections like armor over old scars. The ship is heavier now, and slower to complain. The cameras confirm: the texture is gone. In its place, the smug gleam of metal that has not yet been tested. It will be."
+          "narrative": "The reinforced plating is unbolted, walked over and bolted back across the worst sections like armor over old scars. The cameras confirm: the texture is gone. In its place, the smug gleam of metal that has not yet been tested. It will be."
         }
       },
       {
@@ -1411,7 +1414,7 @@
     "body": "The crop is sick.\n\nNot dramatically — plants don't do drama. It does it in small greys and slow curls, leaves angling down like flags at half-mast, growth ticking along at a fraction of its rate. The growbay smells different. Nobody can say what the difference is. Everybody noticed it.\n\nThe mission is in that room, and the mission is not feeling well.",
     "choices": [
       {
-        "text": "Full care protocol — all hands, all day",
+        "text": "Full care protocol — all hands, for days",
         "requires_crew": null,
         "requires_item": null,
         "requires_flag": null,
@@ -1426,7 +1429,7 @@
           "item_consume": null,
           "sets_flag": "crop_care_protocol",
           "time_cost": "medium",
-          "narrative": "A day of soil work, foliar spray, filter scrubbing, and quiet talking-to. By evening the leaves have made no promises, but they've stopped declining. Recovery is now a direction instead of a hope. The crew sleeps in shifts near the glass. Nobody assigned them to.",
+          "narrative": "Four days of soil work, foliar spray, filter scrubbing, and quiet talking-to. By evening the leaves have made no promises, but they've stopped declining. Recovery is now a direction instead of a hope. The crew sleeps in shifts near the glass. Nobody assigned them to.",
           "crop_health": 15
         }
       },
@@ -2019,7 +2022,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "medium",
-          "narrative": "A full day in the bay with swabs, traps, and a magnifier: every leaf turned, every intruder evicted. Tedious beyond description. Effective beyond argument. The crop stands cleaner than it has in weeks.",
+          "narrative": "Four days in the bay with swabs, traps, and a magnifier: every leaf turned, every intruder evicted. Tedious beyond description. Effective beyond argument. The crop stands cleaner than it has in weeks.",
           "clears_pest": true
         }
       },
@@ -2115,7 +2118,7 @@
     "body": "The fabricator has stopped mid-print.\n\nNot paused — stopped, with the particular finality of a machine that has been asked for one thing too many. Its status light shows the color the manual calls 'service required' and the crew calls 'the bad orange.' Half a hull patch protrudes from the output slot like a rude gesture.\n\nEvery future repair, refill, and crafted comfort now waits on this box.",
     "choices": [
       {
-        "text": "Install the fabricator repair kit",
+        "text": "Run the field repair rig over it",
         "requires_crew": null,
         "requires_item": "repair_fabricator",
         "requires_flag": null,
@@ -2128,7 +2131,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "The repair kit — carried this whole voyage for exactly this shelf-shaped emergency — gives the fabricator new feed lines, a fresh platen, and a second wind. The bad orange yields to a chastened green. The half-patch is completed first, out of principle.",
+          "narrative": "The field repair rig, bolted in for exactly this shelf-shaped emergency, gives the fabricator new feed lines, a fresh platen and a second wind. The bad orange yields to a chastened green. The half-patch is completed first, out of principle.",
           "fabricator_repair": true
         }
       },
@@ -2147,7 +2150,7 @@
           "sets_flag": null,
           "time_cost": "medium",
           "narrative": "The engineer disassembles the fabricator across two days and one tarp, and rebuilds it with the scored parts lapped flat and the feed path polished. It runs quieter than it did new. The engineer says nothing, but wipes it down twice.",
-          "fabricator_repair": true
+          "fabricator_repair": "full"
         }
       },
       {
@@ -2256,7 +2259,7 @@
           "sets_flag": null,
           "time_cost": "low",
           "narrative": "The engineer goes past the checklist into the parts of the manual with warnings in them, and emerges two hours later having reset the fabricator to something near factory temper. The grindy one, the clicky one, and the concerning hum are all retired from the discography.",
-          "fabricator_repair": true
+          "fabricator_repair": "full"
         }
       },
       {
@@ -2571,7 +2574,7 @@
           "sets_flag": null,
           "time_cost": "medium",
           "narrative": "The engineer takes the fabricator apart on the galley table, finds a feed gear worn smooth, and turns a new one by hand from scrap. The next print is a test cube. It does not say anything. Everyone claps anyway.",
-          "fabricator_repair": true
+          "fabricator_repair": "full"
         }
       },
       {
@@ -2678,7 +2681,7 @@
           "sets_flag": null,
           "time_cost": "low",
           "narrative": "The engineer finds the drift in a worn bearing, replaces it, then quietly reprints the crooked hinge as well. The corridor is straight again. The engineer is visibly relieved; it had been bothering them more than anyone.",
-          "fabricator_repair": true
+          "fabricator_repair": "full"
         }
       },
       {
