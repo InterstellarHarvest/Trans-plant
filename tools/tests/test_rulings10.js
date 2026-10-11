@@ -218,7 +218,7 @@ const close = (a, b) => Math.abs(a - b) < 1e-9;
         const ev = Object.values(EVENTS).find(e => JSON.stringify(e).includes('"triggerCombat":true'));
         enterEvent(STATE.byId[STATE.currentId], ev);
         window.triggerCombat({});
-        await wait(150);
+        await wait(450); // choices → actions cross-dissolve: the panel paints at 200ms
         const btn = [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => b.textContent.includes('ATTEMPT ESCAPE'));
         out.label = btn && btn.textContent;
         const rnd = Math.random; Math.random = () => roll;
@@ -242,7 +242,7 @@ const close = (a, b) => Math.abs(a - b) < 1e-9;
       const ev = Object.values(EVENTS).find(e => JSON.stringify(e).includes('"triggerCombat":true'));
       enterEvent(STATE.byId[STATE.currentId], ev);
       window.triggerCombat({});
-      await new Promise(r => setTimeout(r, 150));
+      await new Promise(r => setTimeout(r, 450)); // after the 200ms cross-dissolve
       const btn = [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => b.textContent.includes('ATTEMPT ESCAPE'));
       return btn && btn.textContent;
     });

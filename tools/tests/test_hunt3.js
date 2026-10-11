@@ -27,7 +27,7 @@ async function startCombat(page, pre) {
     enterEvent(STATE.byId[STATE.currentId], ev);
     window.triggerCombat({});
   }, pre || null);
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(450); // the choices → actions cross-dissolve paints the panel at 200ms (demo canon)
 }
 const hud = page => page.evaluate(() => document.getElementById('combat-num-foe').textContent + '/' + document.getElementById('combat-num-hull').textContent);
 
