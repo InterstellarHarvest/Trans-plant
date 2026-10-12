@@ -11,8 +11,7 @@
  *     stopped drawing them.
  *   - every "ruling N" a comment cites is in docs/RULINGS.md.
  *   - comments carry no process tags (batch/hunt/audit names): they say
- *     why, not which pass wrote them. Warning-only until the comment pass
- *     lands; LINT_CHATTER=error (or CHATTER_IS_ERROR) makes it fail.
+ *     why, not which pass wrote them.
  *   - the game's thresholds live once, in index.html's THRESHOLDS script:
  *     a bare resource / morale / HP / fab-wear line, a crew cap of 2, a
  *     crops.json fallback or a second copy of the wounded multiplier or
@@ -232,19 +231,20 @@ allComments.sort((a, b) => fileOrder.indexOf(a.file) - fileOrder.indexOf(b.file)
   for (const [num, where] of missing) err(`${where}: cites ruling ${num}, which is not in ${RULINGS}`);
 }
 
-// ── Comments: no process tags (warning until the comment pass) ──────
+// ── Comments: no process tags ───────────────────────────────────────
 // Batch/hunt/audit/pass names and hotfix shas say which pass wrote a
 // line, not why the code is the way it is. Hex colours are skipped; bare
 // A9/B4 audit items only count inside parentheses.
-const CHATTER_IS_ERROR = false;
+const CHATTER_IS_ERROR = true;
 {
   const TAGS = [
     /\bb[1-9]\b/g,                        // b4, b5 (lower case: the batch names)
     /\bbatch\s*\d+\b/gi,
     /\bhunt\s*(?:20\d\d-\d\d-\d\d|\d+[a-z]?)\b/gi,
     /\b(?:re-)?audit\s+[AB]\s?\d+\b/gi,
+    /\bre-audit\b|\baudit\s+fix\b/gi,
     /\bCodex\s+[A-Z]\d+\b/g,
-    /\bparity\s+(?:pass|batch)\b/gi,
+    /\bparity\s+(?:pass|batch|audit)\b/gi,
     /\bscenes\s?[AB]\b/g,
     /\bhotfix\s+[0-9a-f]{6,}\b/gi,
   ];

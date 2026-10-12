@@ -691,9 +691,9 @@ function refreshCursorVars(playerSettings) {
   if (!root) return;
   root.style.setProperty('--cursor-pointer', generateCursor('pointer', playerSettings));
   root.style.setProperty('--cursor-hand',    generateCursor('hand',    playerSettings));
-  // Parity pass 2026-10-11 (cursor-armory): the rest of the sprite set,
-  // wired — Denied on locked/disabled controls, Wait while the game is
-  // busy passing time, Scan on specimen-inspection surfaces. Denied keeps
+  // The rest of the cursor-armory sprite set: Denied on locked/disabled
+  // controls, Wait while the game is busy passing time, Scan on
+  // specimen-inspection surfaces. Denied keeps
   // its designer red (it's the ship computer saying no).
   root.style.setProperty('--cursor-denied',  generateCursor('denied'));
   root.style.setProperty('--cursor-wait',    generateCursor('wait',    playerSettings));

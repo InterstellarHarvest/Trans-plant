@@ -28,7 +28,7 @@ const eventFiles = fs.readdirSync(path.join(ROOT, 'modules/events')).filter(f =>
 const crewRoles = new Set(readJSON('modules/crew/crew_roster.json').map(c => c.role));
 // items.json ids are the long form (item_gas_analyzer_001); every event,
 // STATE.items, and lockReason() already use the short form (gas_analyzer)
-// per the established convention (audit item B2) — derive short ids
+// per the established convention — derive short ids
 // rather than requiring events to match the long form.
 const itemIds = new Set(readJSON('modules/items/items.json').filter(i => !i._section).map(i => i.id.replace(/^item_/, '').replace(/_\d+$/, '')));
 const materialIds = new Set((readJSON('modules/materials/materials.json').materials || []).map(m => m.id));
@@ -183,9 +183,9 @@ for (const file of eventFiles) {
       }
     }
 
-    // Event-level flag gate participates in the dangling check (audit
-    // fix: only choice-level gates were collected before, so every
-    // consequence event's gate went unverified).
+    // Event-level flag gate participates in the dangling check too —
+    // with only choice-level gates collected, every consequence event's
+    // gate would go unverified.
     if (ev.requires_flag) requiresFlags.add(ev.requires_flag);
 
     // Reachability: an event whose node_type targets can never spawn on
@@ -343,7 +343,7 @@ for (const file of eventFiles) {
   }
 }
 
-// Cargo hold AI lines (parity batch 2, 2026-10-11): the inventory
+// Cargo hold AI lines: the inventory
 // detail panel picks flavor_pools.ai_universal.cargo_hold.resource[key]
 // (the SHIP RESOURCES tiles) or .category[cat] (the item's Bible §14.2
 // category) in the active AI's voice — every AI needs lines for every key.
@@ -364,14 +364,14 @@ for (const file of eventFiles) {
 for (const m of (readJSON('modules/materials/materials.json').materials || [])) {
   if ('cargo_slots' in m) err(`materials.json ${m.id}: "cargo_slots" is the item field — materials stack: use cargo_slots_per_10`);
   if ('cargo_slots_per_10' in m && !(Number.isFinite(m.cargo_slots_per_10) && m.cargo_slots_per_10 >= 0)) err(`materials.json ${m.id}: cargo_slots_per_10 must be a number ≥ 0`);
-  // flavor (b4 re-audit B6): the cargo hold's player-facing line. It may
+  // flavor: the cargo hold's player-facing line. It may
   // not state a price — the trader's price lives in market.js, and the
   // old "5 metal = 1g" notes contradicted the 1g a unit it pays.
   if ('flavor' in m && (typeof m.flavor !== 'string' || !m.flavor.trim())) err(`materials.json ${m.id}: flavor must be a non-empty string`);
   if (typeof m.flavor === 'string' && /\d\s*(g|cr|gold|credits?)\b|=\s*\d/i.test(m.flavor)) err(`materials.json ${m.id}: flavor states a price ("${m.flavor}") — prices live in market.js`);
   if ('notes' in m) err(`materials.json ${m.id}: "notes" is retired — player-facing text goes in flavor (no prices)`);
 }
-// passive_skill.fabricator_contribution (b4): the fabricator's crew speed
+// passive_skill.fabricator_contribution: the fabricator's crew speed
 // — the one source fabricator.js reads (absent = 0).
 for (const c of readJSON('modules/crew/crew_roster.json')) {
   const v = c && c.passive_skill && c.passive_skill.fabricator_contribution;
@@ -698,7 +698,7 @@ const eventOnTrail = (ev, trail) => {
   }
 }
 
-// ── Scenes B fields (added 2026-10-11, demo parity batch 2) ────────
+// ── Scene fields (added 2026-10-11) ────────────────────────────────
 // biome (planet biome gate, eventEligible), crew_speaker (own-crew
 // conversation: roles in preference order or "any"), body_by_speaker
 // (narrator body per speaking role, "any" fallback), npc.displayName,
@@ -801,7 +801,7 @@ const eventOnTrail = (ev, trail) => {
   }
 }
 
-// ── Encounter presentation fields (added 2026-10-11, encounter parity) ──
+// ── Encounter presentation fields (added 2026-10-11) ───────────────
 // The leave row (index.html renderLeaveRow; Bible §18 leaveLabel /
 // leaveDisabled): every layered event names its leave row (`leave_label`)
 // unless `no_leave` hides it; a forced event (`leave_disabled`, layered or
@@ -827,7 +827,7 @@ const eventOnTrail = (ev, trail) => {
     } else if (ev.leave_label != null) {
       err(`${at}: flat event with leave_label but no leave_disabled — flat events have no leave row, the label never shows`);
     }
-    // leave_as (b4 ruling 39): the leave row runs a choice-shaped exit —
+    // leave_as (ruling 39): the leave row runs a choice-shaped exit —
     // a flee/ram/combat hijack or an outcome id of this event, never free.
     if (ev.leave_as != null) {
       const la = ev.leave_as;
@@ -922,7 +922,7 @@ const eventOnTrail = (ev, trail) => {
 // EFFORT_CHECKS tool slot. An item whose only sinks are event references
 // must be spendable on every trail that can grant it.
 {
-  // ITEM_USE moved to engine/js/screens/inventory.js (parity batch 2).
+  // ITEM_USE lives in engine/js/screens/inventory.js.
   const ITEM_USE_FILE = 'engine/js/screens/inventory.js';
   const src = engineSrcByFile.get(ITEM_USE_FILE) || '';
   const iu = src.match(/const ITEM_USE = \{([\s\S]*?)\n\};/);
@@ -1044,7 +1044,7 @@ const eventOnTrail = (ev, trail) => {
   }
 }
 
-// ── Salvage sprite sets (added 2026-10-11, parity batch 2) ──────────
+// ── Salvage sprite sets (added 2026-10-11) ─────────────────────────
 // SALVAGE plays sprites/minigames/salvage/ in a debris field and
 // sprites/minigames/derelict/ inside a hulk (owner ruling #12): every file
 // in both folders must be named in minigames.js (nothing orphaned), and no
@@ -1066,7 +1066,7 @@ const eventOnTrail = (ev, trail) => {
   walk('sprites');
 }
 
-// ── Player-facing item text (added 2026-10-11, parity batch 2) ─────
+// ── Player-facing item text (added 2026-10-11) ─────────────────────
 // items.json gameplay_effect is shown to the player as written (the
 // fabricator's detail line; any future inventory row). Authoring notes —
 // stacking rules, recipes, event ids, "gate item" — go in design_note.
@@ -1080,7 +1080,7 @@ const eventOnTrail = (ev, trail) => {
   }
 }
 
-// ── Arrival lines + tier quotes (added 2026-10-11, parity batch 2) ──
+// ── Arrival lines + tier quotes (added 2026-10-11) ─────────────────
 // endings.json's { _section: 'arrival_lines' } entry (index.html moves it
 // to MOD.endingLines; endings.js reads it): every trail × every crop (+
 // 'noplant') needs its destination line, and every bracket scoreBracket()

@@ -47,7 +47,7 @@
     ajoy: 'There is a path here you have not yet considered.'
   };
 
-  /* Gameplay timers for this fight only (hunt 6): a load or abort bumps
+  /* Gameplay timers for this fight only: a load or abort bumps
      COMBAT.fight so a stale shot / victory / defeat can't resolve into
      the next run, and the chain waits while the pause menu is open. */
   function later(fn, ms) {
@@ -284,8 +284,8 @@
     window.placeBelowAiBar();
   }
   /* The YOUR TURN banner sits at top 50 (demo) — below the AI bar when a
-     long line wraps the bar past that (b4 B11: AJOY's 123-char intro ran
-     under the banner). Measured in stage px (offsetTop/Height). */
+     long line wraps the bar past that (AJOY's 123-char intro does).
+     Measured in stage px (offsetTop/Height). */
   function placeTurnIndicator() {
     const el = document.getElementById('combat-turn-indicator');
     const bar = document.getElementById('enc-ai-bar');
@@ -519,7 +519,7 @@
   function spawnDamageFloater(amount, x, y, variant) {
     const el = document.createElement('div');
     el.className = 'combat-dmg-float ' + (variant || 'normal');
-    // ASCII "-": Press Start 2P draws U+2212 as an underscore (b4 B9).
+    // ASCII "-": Press Start 2P draws U+2212 as an underscore.
     el.textContent = variant === 'crit' ? `-${amount}!` : `-${amount}`;
     el.style.left = Math.round(x) + 'px';
     el.style.top = Math.round(y) + 'px';
@@ -1312,7 +1312,7 @@
     fxScreen().classList.add('combat-ended'); // red alert stops the moment it's decided
     renderCombatActions();
     COMBAT.player.hull = 1;
-    // b4 A3: the shown loss IS the loss — the roll (30–50%) takes that
+    // The shown loss IS the loss — the roll (30–50%) takes that
     // share of the items and of every material stack, decided here and
     // applied as-is in endCombatToOutcome ("Cargo lost: 2 items, 5 Metal").
     const cargoLoss = planCargoLoss(irand(30, 50));
@@ -1485,7 +1485,7 @@
     const items = [];
     const maybe = (chance, fn) => { if (Math.random() < chance) fn(); };
     if (outcome === 'destroyed_salvage' || outcome === 'executed') {
-      // Capitalised labels, as the demo's card (b4 B8: "×4 Metal").
+      // Capitalised labels, as the demo's card ("×4 Metal").
       items.push({ id: 'gold', label: 'Gold', count: irand(8, 16) });
       maybe(0.75, () => items.push({ id: 'fuel_cell', label: 'Fuel Cell', count: irand(1, 2), isItem: true }));
       maybe(0.65, () => items.push({ id: 'metal', label: 'Metal', count: irand(2, 5) }));
@@ -1577,7 +1577,7 @@
   // What the fight cost, in the demo's notes register ("-15 fuel ·
   // Morale +5"): the real net changes, rounded as the HUD shows them.
   // The notes are Press Start 2P, which draws U+2212 as an underscore:
-  // ASCII "-", as the demo writes them (b4 B9).
+  // ASCII "-", as the demo writes them.
   function costNotes(d) {
     const sgn = (n, label, pre) => n ? (pre ? `${label} ${n > 0 ? '+' : '-'}${Math.abs(n)}` : `${n > 0 ? '+' : '-'}${Math.abs(n)} ${label}`) : null;
     return [sgn(d.hull, 'Hull', true), sgn(d.morale, 'Morale', true), sgn(d.fuel, 'fuel'), sgn(d.food, 'food'),

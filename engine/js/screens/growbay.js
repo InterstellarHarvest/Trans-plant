@@ -22,8 +22,8 @@
 (function() {
   'use strict';
   const $ = id => document.getElementById(id);
-  // The growbay's tokens live on its overlay, not :root (parity pass
-  // 2026-10-11) — runtime var writes go there too or the scoped value wins.
+  // The growbay's tokens live on its overlay, not :root — runtime var
+  // writes go there too or the scoped value wins.
   const root = document.getElementById('overlay-growbay') || document.documentElement;
 
   // ── Crew sprite atlas (shared icon/portrait helper) ─────────────
@@ -202,8 +202,8 @@
     if (!cg.tenderChosen && (!cg.tenderId || cg.tenderId === 'none' || gone)) cg.tenderId = defaultTenderId();
   }
   // The tender's growbay sheet — from who really tends (tenderOf), never
-  // the stored id alone (re-audit A2): a stowaway holding the role has no
-  // sheet (it showed Osei), a dead or departed tender shows nobody.
+  // the stored id alone: a stowaway holding the role has no sheet (the
+  // stored id would show Osei), a dead or departed tender shows nobody.
   function tenderSheetKey(id) {
     const t = tenderOf(id);
     if (t === CREW.none || !t.crewId) return null;
@@ -428,7 +428,7 @@
   // botanist −15%, water purifier −10%), rounded for display.
   function waterNeed() { return Math.round(cropWaterNeed()); }
 
-  /* THE water badges (re-audit A4) — read off the real model, shared by
+  /* THE water badges — read off the real model, shared by
      the growbay's mini track and the Orders headline so the two surfaces
      always agree:
        plant (computeModifiers): tanks dry or more than 20 under the need
@@ -462,7 +462,7 @@
   }
 
   /* What a harvest pays, tender bonus included — the same sum doHarvest
-     grants (re-audit A5: the preview said +40, the harvest paid +46). */
+     grants, so the preview and the harvest never disagree. */
   function harvestYield() {
     const crop = CROP_META[GSTATE.cropId];
     const tender = tenderOf(GSTATE.tenderId);
@@ -615,9 +615,9 @@
     return { active, monitored };
   }
 
-  /* What the panel shows (re-audit A3): a dead crop has no modifiers —
-     the daily tick skips them all at health 0, so listing them (a tender's
-     +15%, "well-watered +0.5 health/day") was decorative. One honest row,
+  /* What the panel shows: a dead crop has no modifiers — the daily tick
+     skips them all at health 0, so listing them (a tender's +15%,
+     "well-watered +0.5 health/day") would be decorative. One honest row,
      and no threats left to monitor. */
   function displayModifiers() {
     if (GSTATE.health > 0) return computeModifiers();
@@ -675,7 +675,7 @@
     $('plant-sprite').style.backgroundPosition = '-' + frame.x + 'px -' + frame.y + 'px';
   }
   function stageName(growth) {
-    if (GSTATE && GSTATE.health <= 0) return 'DEAD'; // re-audit A3
+    if (GSTATE && GSTATE.health <= 0) return 'DEAD';
     if (growth >= 100) return 'READY';
     return CROP_META[GSTATE.cropId].stages[stageIndex(growth)].name;
   }
@@ -985,7 +985,7 @@
     if (has('Low light')) return randPick(GROWBAY_EXTRA_QUIPS[growbayAI()].dark);
     return randPick(ARIA_QUIPS.healthy);
   }
-  // Footer lines the demo never needed (re-audit A3/A6): a dead crop and a
+  // Footer lines the demo never needed: a dead crop and a
   // dim region. Each AI in its own register.
   const GROWBAY_EXTRA_QUIPS = {
     aria: {
@@ -1256,7 +1256,7 @@
     const ready = projectedReadyDay();
     const readyLine = $('ready-line');
     const dead = GSTATE.health <= 0;
-    // A dead crop: grey, still — no sway, no stage flash (re-audit A3).
+    // A dead crop: grey, still — no sway, no stage flash.
     $('plant-sprite').classList.toggle('dead', dead);
     $('plant-stage-label').classList.toggle('dead', dead);
     if (dead) {
@@ -1345,7 +1345,7 @@
   function doHarvest() {
     if (GSTATE.growth < 100 || GSTATE.health <= 0) return null;
     const crop = CROP_META[GSTATE.cropId];
-    const total = harvestYield().total; // the same sum the preview shows (A5)
+    const total = harvestYield().total; // the same sum the preview shows
 
     // Grant the real resource — Food for every crop except Zinnia
     // (Morale), per crop.yield_label.
@@ -1362,7 +1362,7 @@
       let spare = Math.max(0, total - room);
       while (spare >= 10 && grantItem('ration_brick')) { spare -= 10; banked++; }
     }
-    // What actually landed (re-audit A15): the food the stores took, the
+    // What actually landed: the food the stores took, the
     // bricks pressed from the rest, the morale the crew really gained.
     const gotFood = Math.round(STATE.resources.food - f0);
     const gotMo = Math.round(gotMorale);
@@ -1396,8 +1396,8 @@
     GSTATE.health = (realCropDef && realCropDef.starting_health) || 80;
     lastStageIdx = -1;  // allow the next stage transition to flash
     // Re-arm the AI lifecycle announcements for the fresh cycle
-    // (audit fix — without this, the second crop's maturity/sickness
-    // milestones never announced).
+    // (without this, the second crop's maturity/sickness milestones
+    // never announce).
     STATE.flags.delete('ai_noted_crop_mature');
     STATE.flags.delete('ai_noted_crop_sick');
     STATE.flags.delete('ai_noted_crop_died');
@@ -1646,8 +1646,8 @@
       ]
     }
   });
-  // Every threat the engine can raise has a read (re-audit A6 — "Ship water
-  // dry" and "Low light" fell through to "No active threats"). The worst
+  // Every threat the engine can raise has a read (none falls through to
+  // "No active threats"). The worst
   // first: critical before negative, in computeModifiers' own order.
   const INSPECT_CLASS_OF = [
     ['Crop dead', 'dead'], ['Ship water dry', 'water_dry'], ['Pest', 'pest'], ['Cold', 'cold'], ['Heat', 'heat'],

@@ -7,8 +7,8 @@
    Scope notes (see ENGINE_INTEGRATION_HANDOFF.md for the full
    Phase 6 rundown):
    - The demo's ARRIVAL_BODY (destination × crop) and TIER_QUOTE tables
-     now live in endings.json's arrival_lines section (MOD.endingLines,
-     parity batch 2): an arrival report leads with its line and closes
+     now live in endings.json's arrival_lines section (MOD.endingLines):
+     an arrival report leads with its line and closes
      with its tier quote.
    - The demo's TITLES/FAILURES tables were
      dev-placeholder copy that never made it into the real module
@@ -281,7 +281,7 @@
     $('end-day-line').innerHTML =
       `DAY <span class="day-num">${stats.days}</span> OF ${stats.baseDays} · <span class="day-cmp ${cmpClass}">${cmp}</span>` +
       // The rest of what the score counts (index.html scoreValue). A
-      // failure has no score, so no score extras either (b4 re-audit A2).
+      // failure has no score, so no score extras either.
       (!stats.failed && (stats.soil || stats.cropBonus > 1) ? '<span class="score-extras">' + [
         stats.soil ? 'SOIL SURVEYS +' + stats.soil * 2 : '',
         stats.cropBonus > 1 ? 'CROP BONUS +' + Math.round((stats.cropBonus - 1) * 100) + '%' : '',
@@ -294,7 +294,7 @@
     const scene = $('end-scene');
     // The scene fades in (360ms) — but only if .show lands AFTER the
     // screen is displayed: added while #screen-end was display:none, the
-    // transition had no start state and never played (parity audit).
+    // transition had no start state and never played.
     // revealScene() adds it once the screen is up.
     scene.classList.remove('show');
     if (view.category === 'arrival') {

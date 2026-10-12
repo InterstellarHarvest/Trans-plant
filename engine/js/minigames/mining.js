@@ -426,7 +426,7 @@
   // Lifetime stats: SESSION stays per-visit (its run count prices the days
   // and labels LEAVE); LIFE accumulates every run of the voyage on
   // STATE.miningLifetime, which index.html's SAVED_FIELDS persists. The
-  // haul card's SESSION row reads SESSION (demo wording, b4 re-audit);
+  // haul card's SESSION row reads SESSION (demo wording);
   // LIFE closes the cruise log line (miningSummary).
   function lifeStats() {
     if (!STATE.miningLifetime) STATE.miningLifetime = { runs: 0, totalCracks: 0, totalMaterials: 0, totalHollows: 0, totalFragmentsLost: 0, bestChainEver: 0, bestTier: null };
@@ -1335,9 +1335,8 @@
     // Session stats — the demo's row (demo-mining ~2226): what THIS
     // mining session (this stop's BEGIN → MINE AGAIN loop) has added up.
     // Only from the 2nd run on (the first would repeat the run above).
-    // It read the voyage totals (LIFE) under the SESSION label (b4
-    // re-audit B3); the voyage totals now ride the cruise log line
-    // (miningSummary) instead.
+    // The voyage totals (LIFE) don't belong under the SESSION label; they
+    // ride the cruise log line (miningSummary).
     if (SESSION.runs >= 2) {
       const sessLabel = document.createElement('div');
       sessLabel.className = 'haul-session-label';
@@ -1407,8 +1406,7 @@
       crewAssist: MSTATE.crewAssist,
       stats: MSTATE.stats,
       tier: SESSION.lastTier || null,
-      // The cruise-log payload (parity audit: "mining log payload thin") —
-      // the visit's best tier, the sector when it mattered, who helped.
+      // The cruise-log payload — the visit's best tier, the sector when it mattered, who helped.
       summary: miningSummary(),
     };
     $('haul-overlay').classList.remove('visible');

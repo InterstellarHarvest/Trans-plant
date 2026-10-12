@@ -46,10 +46,10 @@
   let running = false;        // true while the overlay is open (gates rAF loops)
   let mounted = false;        // markup injected once, reset per visit
   let onRepairDone = null;
-  // The job has begun once the first fault is cleared (b4 re-audit A1):
-  // from then a reload settles the visit as a quit — cruise.js
-  // window.onJobBegun saves pendingAbandon (the day spent, the effort tax
-  // kept), as forage/mine already did. Walking out before anything is
+  // The job has begun once the first fault is cleared: from then a reload
+  // settles the visit as a quit — cruise.js window.onJobBegun saves
+  // pendingAbandon (the day spent, the effort tax kept), as forage/mine
+  // do. Walking out before anything is
   // fixed stays a free cancel (handleRepairVerb refunds the tax).
   let jobBegun = false;
 
@@ -641,9 +641,9 @@
     onRepairDone = onDone || null;
     sctx = $('er-spark-canvas').getContext('2d');
     resetScene();
-    // Resource HUD mirrors live STATE (demo hardcoded these values):
-    // the engine's shared five-dot rows (batch 3, ruling 16 — crew-average
-    // morale, crit pulse, tooltips).
+    // Resource HUD mirrors live STATE (the demo hardcodes these values):
+    // the engine's shared five-dot rows (ruling 16 — crew-average morale,
+    // crit pulse, tooltips).
     if (typeof STATE !== 'undefined' && STATE.resources) $('er-resources').innerHTML = hudRowsHTML();
     showOverlay('overlay-engrepair');
     running = true;

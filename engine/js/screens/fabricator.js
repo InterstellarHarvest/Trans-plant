@@ -36,7 +36,7 @@
    from the wear before it). A job is never stopped by its own wear: one
    that takes the fab to 100% runs on and breaks it when it comes out.
    A job whose days are all spent comes out without another day. The
-   deadline lock (hotfix e79a0b2) stands: a craft that would finish
+   deadline lock holds: a craft that would finish
    past STATE.baseDays can't start, and a held job that no longer fits
    waits instead of ticking into time_expired.
    Entry point: window.openFabricator(). No onDone callback needed —
@@ -70,8 +70,8 @@
   // that run later, after boot() has finished).
   const MATERIAL_ICONS = { metal: '🔩', scrap: '♻️', exotic: '✨', biocomponent: '🌱', minerals: '💎' };
   // Where-to-get-it prose for the input hover (demo-fabricator MATERIALS
-  // .source, parity pass 2026-10-11) — the hover used to print the raw
-  // materials.json source ids ("mining · salvage"). Written against what
+  // .source), not the raw materials.json source ids ("mining ·
+  // salvage"). Written against what
   // the engine actually grants (mining.js crate pools, cruise SALVAGE,
   // combat wreck loot, event `materials` outcomes, forage finds); no
   // station sells materials, so none of these lines says "buy".
@@ -96,7 +96,7 @@
     return itemId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
   // items.json gameplay_effect is player-facing text only (authoring
-  // notes live in design_note, parity batch 2) — shown as written.
+  // notes live in design_note) — shown as written.
   function outputEffectText(itemId) {
     const def = (itemDef(itemId)) || null;
     return (def && def.gameplay_effect) || '';
@@ -399,7 +399,7 @@
       const name = document.createElement('span');
       name.className = 'fb-recipe-name';
       let nameHtml = r.name;
-      // No $ (re-audit B8): every engine item lock is a loot-only part
+      // No $: every engine item lock is a loot-only part
       // (requires_item) — there is no blueprint to buy, so no buy glyph.
       if (lock === 'locked-purchase') nameHtml = '<span class="lock-glyph">🔒</span> ' + r.name;
       name.innerHTML = nameHtml;
@@ -439,7 +439,7 @@
 
     $('fb-detail-name').textContent = r.name.toUpperCase();
     $('fb-detail-desc').textContent = r.desc;
-    // What the print does (items.json gameplay_effect, parity pass).
+    // What the print does (items.json gameplay_effect).
     const eff = outputEffectText(r.output.item);
     $('fb-detail-effect').textContent = eff ? '▸ ' + eff : '';
 
@@ -530,10 +530,9 @@
       wearWarn = '<div class="fb-warn wear-warn">⚠ Will push wear to ' + Math.round(postWear) + '% · service soon</div>';
     }
 
-    // WEAR and MISFIRE share one row (parity pass): with the misfire row,
-    // a two-line description and a warning, the CRAFT button used to be
-    // pushed out of the panel and clipped. The craft's effort tax rides
-    // the same row (re-audit B7): a craft is a 1-pip FABRICATOR action,
+    // WEAR and MISFIRE share one row: on a row of its own, the misfire
+    // plus a two-line description and a warning push the CRAFT button out
+    // of the panel. The craft's effort tax rides the same row: a craft is a 1-pip FABRICATOR action,
     // every crew member pays it at CRAFT (none aboard: no tax, no cell).
     const assist = crewAssistTooltip().split('\n');
     const tax = window.effortTax(1);
@@ -558,7 +557,7 @@
       wearWarn;
 
     // CRAFT button — enabled only if canCraft() true. Every label fits
-    // one line (re-audit A7); the reason in full goes to the tooltip.
+    // one line; the reason in full goes to the tooltip.
     const btn = $('fb-craft-btn');
     const lock = recipeLockState(r);
     let label = 'CRAFT', why = '';
@@ -584,7 +583,7 @@
     fitDetail();
   }
 
-  // Demo sizes by default (art 220, CRAFT 41…, re-audit B1). Only when
+  // Demo sizes by default (art 220, CRAFT 41…). Only when
   // this recipe's panel would push CRAFT out (a two-line description +
   // the effect line + warnings) does it tighten: first the panel's own
   // spacing (.fit-tight), then the art (.fit-small, 192).
@@ -1018,11 +1017,11 @@
   function claimOutput(animated = true) {
     if (!FSTATE.pendingOutput) return;
     const r = FSTATE.pendingOutput;
-    // Capacity check (audit fix): a full hold leaves the print in the
+    // Capacity check: a full hold leaves the print in the
     // output bay — pendingOutput stays set, so the player can jettison
     // something (INV) and claim again. Nothing is silently lost. A trial
     // fit first, then the print comes aboard through grantItem like any
-    // other pickup (NEW badge, Recent order, values — b4 audit).
+    // other pickup (NEW badge, Recent order, values).
     const fits = (() => {
       for (let i = 0; i < r.output.count; i++) STATE.items.push(r.output.item);
       const ok = cargoSlotsUsed() <= cargoCapacity();
@@ -1031,7 +1030,7 @@
     })();
     if (!fits) {
       window.pushCruiseLog('◆ FABRICATOR — output ready but the hold is full. Make room, then claim it.');
-      // In-modal too (parity pass): the log line sat behind the modal.
+      // In-modal too: the log line sits behind the modal.
       fabNotice('HOLD FULL', 'The ' + r.output.name + ' stays in the output bay. Make room in the hold, then claim it.', 'warn');
       return;
     }
@@ -1097,9 +1096,9 @@
     }
   }
 
-  // In-modal notice strip over the fab unit (parity pass 2026-10-11): a
-  // misfire or a refused claim used to report only to the cruise log,
-  // hidden behind the modal. Stays up until the next craft / close.
+  // In-modal notice strip over the fab unit: a misfire or a refused claim
+  // reports here as well as to the cruise log, which is hidden behind the
+  // modal. Stays up until the next craft / close.
   let noticeTimer = 0;
   function fabNotice(title, text, tone) {
     const n = $('fb-notice');

@@ -60,8 +60,8 @@
   function allMaterialDefs() {
     return (typeof MOD !== 'undefined' && MOD.materials && MOD.materials.materials) || [];
   }
-  // ×2.5 (was ×5): mining-for-sale out-earned every other gold source
-  // several times over (hunt 5 economy sim).
+  // ×2.5: at ×5, mining-for-sale out-earned every other gold source
+  // several times over (economy sim).
   const materialPrice = m => Math.max(1, Math.round((m.value || 0.2) * 2.5));
   // What a station trader pays for one unit of sid (item or material), or
   // null when no trader buys it — the cargo hold's SELL PRICE / price
@@ -72,9 +72,9 @@
     const d = defBy(sid);
     return d && Number.isFinite(d.base_price) && d.base_price > 0 ? sellPrice(d.base_price) : null;
   }
-  // What a fence pays for one sid (b4 re-audit A11: one rule for every
-  // trade good, the one items.json states — "a fence pays half again as
-  // much" as a station trader): a rolled copy FENCE_MULT × its value, a
+  // What a fence pays for one sid (one rule for every trade good, the one
+  // items.json states — "a fence pays half again as much" as a station
+  // trader): a rolled copy FENCE_MULT × its value, a
   // fixed-value good FENCE_MULT × the trader's ⅔ of base_price (= its
   // base price: vinyl 17 → 25). null when the fence doesn't take it
   // (only trade_good-tagged cargo). The black market's offers and the

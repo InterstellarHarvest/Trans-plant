@@ -5,8 +5,8 @@
    needed. */
 
 
-/* Scoped to the overlay, not :root (parity pass 2026-10-11) — as :root
-   it overrode the growbay's frame and lost to index.html's inline :root. */
+/* Scoped to the overlay, not :root — as :root it overrides the growbay's
+   frame and loses to index.html's inline :root. */
 #overlay-fabricator {
   /* Shared theme */
   --teal: #56cfd7;
@@ -29,7 +29,7 @@
 
   /* Fabricator-specific knobs */
   --recipe-list-width: 400px;        /* left column width inside body */
-  --fab-slot-size:     220px;        /* sprite slot on the right (height; width = 2×) — the demo's 220 (re-audit B1); .fb-right.fit-small drops it to 192 only when a recipe's panel needs the room */
+  --fab-slot-size:     220px;        /* sprite slot on the right (height; width = 2×) — the demo's 220; .fb-right.fit-small drops it to 192 only when a recipe's panel needs the room */
   --section-gap:       10px;
   --body-padding:      12px 16px 10px;
 
@@ -95,7 +95,7 @@ body:not(.modal-open) #fb-modal {
   gap: 14px;
 }
 .fb-title {
-  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo (re-audit B2) */
+  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo line-height */
   font-size: var(--header-title-size);
   letter-spacing: 2px;
   color: var(--header-title-color);
@@ -114,7 +114,7 @@ body:not(.modal-open) #fb-modal {
   flex-shrink: 0;
 }
 .fb-day-label {
-  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo (re-audit B2) */
+  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo line-height */
   font-size: 8px;
   letter-spacing: 2px;
   color: var(--gold);
@@ -128,7 +128,7 @@ body:not(.modal-open) #fb-modal {
 .fb-day-sep { color: #5a7a8a; }
 .fb-arrival { color: #aab5c4; letter-spacing: 1px; }
 .fb-close {
-  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo (re-audit B2) */
+  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo line-height */
   font-size: 10px;
   width: 26px; height: 26px;
   border: 2px solid rgba(95,168,208,0.4);
@@ -673,7 +673,7 @@ body:not(.modal-open) #fb-modal {
 .fb-notice.tone-danger .fb-notice-title { color: var(--red); }
 .fb-craft-btn {
   width: 100%;
-  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo (re-audit B2) */
+  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo line-height */
   font-size: 11px;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -692,7 +692,7 @@ body:not(.modal-open) #fb-modal {
   50%      { box-shadow: 0 0 18px rgba(95,168,208,0.65), inset 0 0 0 1px rgba(127,212,220,0.4); }
 }
 .fb-craft-btn:hover { filter: brightness(1.15); }
-/* Fit (re-audit B1, fabricator.js fitDetail): the demo's visible sizes
+/* Fit (fabricator.js fitDetail): the demo's visible sizes
    — art 220 (output bay 88), item sprite 40, CRAFT 41 — always, unless
    two warnings would push CRAFT out. The engine's panel carries more
    than the demo's (two-line descriptions, the print's effect line, the
@@ -753,7 +753,7 @@ body:not(.modal-open) #fb-modal {
 .fb-progress:not(.active) .fb-progress-label .item { color: #7a8898; }
 .fb-progress:not(.active) .fb-progress-days { color: #7a8898; }
 .fb-progress-label {
-  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo (re-audit B2) */
+  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo line-height */
   font-size: 7px;
   letter-spacing: 1px;
   color: var(--teal);
@@ -817,7 +817,7 @@ body:not(.modal-open) #fb-modal {
   background: linear-gradient(180deg, rgba(133,210,96,0.95) 0%, rgba(90,160,70,0.95) 100%);
   border: 2px solid #c5f2a4;
   border-radius: 3px;
-  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo (re-audit B2) */
+  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo line-height */
   font-size: 9px;
   letter-spacing: 2px;
   color: #0a2010;

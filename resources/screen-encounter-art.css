@@ -7,9 +7,9 @@
    ═══════════════════════════════════════════════════════════════════ */
 #screen-encounter {
   /* DESIGN_SYSTEM.md "Subject frame": 160px at top 60 (the demos disagreed:
-     demo-encounter's slider 160/60, its :root 260/90). b4 ruling 35: the
-     location label moved into the narrative title row, so the portrait
-     is back at 60. index.html placeBelowAiBar() lowers it inline only
+     demo-encounter's slider 160/60, its :root 260/90). Ruling 35: the
+     location label sits in the narrative title row, so the portrait
+     stays at 60. index.html placeBelowAiBar() lowers it inline only
      when a long AI line wraps the bar past that. */
   --subj-size: 160px;
   --subj-top: 60px;
@@ -156,7 +156,7 @@
 #screen-encounter .enc-subject.pose-hostile   .enc-subject-head { filter: brightness(0.85) contrast(1.2) hue-rotate(-10deg); }
 #screen-encounter .enc-subject.pose-pleased   .enc-subject-head { filter: brightness(1.2) saturate(1.2); }
 
-/* Talking bob (demo :946-956, b4 B10): a head with no spritesheet (emoji
+/* Talking bob (demo :946-956): a head with no spritesheet (emoji
    or a single portrait) bobs 2px while its line types; a spritesheet's
    frame cycle IS the talk, so it never bobs. scene_art.js toggles
    .talking with the talk loop. */
@@ -333,7 +333,7 @@
   color: var(--cream, #e8d8a0);
 }
 #screen-encounter .enc-choice .ch-sub {
-  font-size: 12px;   /* demo --sub-size (b4 B6) */
+  font-size: 12px;   /* demo --sub-size */
   color: var(--body, #8898a8);
   letter-spacing: 0.5px;
   display: flex; gap: 8px; align-items: center;

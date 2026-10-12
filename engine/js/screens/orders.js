@@ -232,7 +232,7 @@
   }
 
   // The headline reads the same bands as the growbay's water badges
-  // (growbay.js waterStatusAt — re-audit A4, b4-crew): it never says
+  // (growbay.js waterStatusAt): it never says
   // "both fine" above a morale-drain row, and PARCHED only where the
   // plant takes damage.
   function waterDesc(plantPct) {

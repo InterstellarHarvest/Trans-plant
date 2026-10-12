@@ -27,8 +27,8 @@
   --cdw-mod-stub:     #4a4f5a;
   --cdw-pb-red-hi: #c67878;
   --cdw-pb-red-lo: #3a1a1a;
-  /* demo-crew's own cream (re-audit B3): a page-level --cream (#e8d8a0)
-     won over every var(--cream, #e6d4a8) fallback in this file. */
+  /* demo-crew's own cream: without it a page-level --cream (#e8d8a0)
+     wins over every var(--cream, #e6d4a8) fallback in this file. */
   --cream: #e6d4a8;
   z-index: 70; /* above stop menu / map, below pause (PauseBus mounts at 200) */
 }
@@ -47,7 +47,7 @@
 #overlay-crew #cd-backdrop { transition: opacity 0.25s; }
 #overlay-crew:not(.active) #cd-backdrop { opacity: 0; pointer-events: none; }
 /* The modal's close fade + scale come from the shared .overlay rule in
-   index.html (batch 4 A14) — a second scale here made it end at 0.92. */
+   index.html — a second scale here would make it end at 0.92. */
 #overlay-crew:not(.active) #cd-modal { pointer-events: none; }
 @starting-style {
   #overlay-crew.active #cd-backdrop { opacity: 0; }
@@ -106,7 +106,7 @@
   letter-spacing: 2px;
 }
 /* The subtitle "·" inherits the subtitle's cream (demo: only .cd-role .dot
-   is green-grey) — re-audit B3. */
+   is green-grey). */
 #overlay-crew .cd-close {
   font-family: 'Press Start 2P', cursive; line-height: 1;
   font-size: 10px;
@@ -456,9 +456,9 @@
 #overlay-crew .cd-status-row .s-name  { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #overlay-crew .cd-status-row .s-eff   { color: inherit; }
 /* The engine's effects state real numbers and run longer than the demo's
-   stubs — the name keeps its width (it was ellipsised to "Pending …") and
+   stubs — the name keeps its width (ellipsised, it reads "Pending …") and
    the effect takes the ellipsis instead; the whole effect is on the row's
-   tooltip (b4-crew). One line per row, so three statuses still fit. */
+   tooltip. One line per row, so three statuses still fit. */
 #overlay-crew .cd-status-row .s-name  { flex-shrink: 0; margin-right: 8px; }
 #overlay-crew .cd-status-row .s-eff   { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #overlay-crew .cd-status-row.stub .s-eff { color: var(--cdw-mod-stub); }

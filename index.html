@@ -22,7 +22,7 @@
 <link href="resources/screen-orders.css" rel="stylesheet">
 <link href="resources/screen-end.css" rel="stylesheet">
 <link href="resources/screen-shipslog.css" rel="stylesheet">
-<link href="resources/screen-inventory.css" rel="stylesheet"> <!-- cargo hold (parity batch 2) -->
+<link href="resources/screen-inventory.css" rel="stylesheet"> <!-- cargo hold -->
 <script>
 /* Double-click launch: browsers block fetch()/XHR on file:// pages, so
    opened from disk the engine reads its JSON from a generated bundle
@@ -127,10 +127,10 @@ body {
 /* Overlays sit on top of screen-cruise without hiding it underneath
    (Stop Menu, Map, Market, minigames) — a separate stacking layer
    from the screen-swap system above. */
-/* Parity pass 2026-10-11 (shell): overlays no longer toggle display:none.
-   That killed every modal's 0.25s fade + 0.96→1 scale (DESIGN_SYSTEM
-   "Modal popup conventions") and restarted every CSS animation inside a
-   modal on each reopen (the fabricator's "+1 ITEM" badge, its day pulse).
+/* Overlays never toggle display:none: that kills every modal's 0.25s
+   fade + 0.96→1 scale (DESIGN_SYSTEM "Modal popup conventions") and
+   restarts every CSS animation inside a modal on each reopen (the
+   fabricator's "+1 ITEM" badge, its day pulse).
    A closed overlay is visibility:hidden + transparent + inert; the
    visibility flip is delayed by the fade so closing plays too. Logic
    still keys off .active alone (showOverlay/hideOverlay). */
@@ -145,11 +145,11 @@ body {
 }
 /* Each modal's panel scales 0.96 → 1 with the fade. `scale` (not
    transform) so it composes with panels centred by translate().
-   b4 re-audit A14: one transition, both ways, like the demos (close
-   eases 1 → 0.977 → 0.960 while the overlay fades). The old open-only
-   modal-pop animation (fill: both) was dropped on close, so the panel
-   snapped to 0.96 on the first close frame; @starting-style covers a
-   panel opened before it was ever styled. */
+   One transition, both ways, like the demos (close eases 1 → 0.977 →
+   0.960 while the overlay fades) — an open-only animation (fill: both)
+   is dropped on close, so the panel would snap to 0.96 on the first
+   close frame; @starting-style covers a panel opened before it was ever
+   styled. */
 #gb-modal, #fb-modal, #od-modal, #inv-card, #slog-card,
 #overlay-crew #cd-modal, #ovmap-viewport {
   scale: 0.96;
@@ -164,8 +164,9 @@ body {
 /* …and the overlay's fade + this scale are the only close motion: the
    screen sheets' own demo gating (body:not(.modal-open) / crew :not(.active)
    → panel opacity 0 + transform scale(0.96)) doubled both — the panel
-   ended at 0.92 and faded at opacity². Neutralised here; screen-crew.css
-   :47/:50 can drop its scale(0.96) + opacity:0 (b4-crew's file). */
+   ended at 0.92 and faded at opacity². Neutralised here, so
+   screen-crew.css's @starting-style scale(0.96) + opacity:0 is
+   redundant. */
 body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
 #game #overlay-crew:not(.active) #cd-modal { transform: translate(-50%, -50%); opacity: 1; }
 @starting-style { #game #overlay-crew.active #cd-modal { transform: translate(-50%, -50%); opacity: 1; } }
@@ -185,7 +186,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
 #game:has(> .overlay.dim-behind.active) > .screen.active { filter: brightness(0.35); }
 
 /* ── HUD (resource dots, top-right of encounter / map / mining) ──
-   Batch 3 (owner ruling 16): the encounter demo's five — fuel, food,
+   Owner ruling 16: the encounter demo's five — fuel, food,
    O2, hull, morale (crew average) — dots + numbers, no letter codes
    (demo-encounter .enc-resources / .enc-res, same box, font and dot).
    Not on the cruise hub (its bars + crew cards carry all of it). The
@@ -543,10 +544,10 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
   font-family: 'Press Start 2P', cursive; line-height: 1;
   font-size: 14px; letter-spacing: 2px; color: var(--gold);
   text-shadow: 0 0 6px rgba(200,168,90,0.3);
-  text-transform: uppercase; /* b4 B1: the demo's titles are all caps; ~110 authored mixed-case titles */
+  text-transform: uppercase; /* the demo's titles are all caps; ~110 authored titles are mixed-case */
 }
-/* b4 ruling 35: the title row carries the location label (was .enc-meta
-   at top:60, which pushed the portrait down to 100). */
+/* Ruling 35: the title row carries the location label (a separate
+   .enc-meta at top:60 would push the portrait down to 100). */
 .enc-narr-head { display: flex; align-items: baseline; gap: 14px; }
 .enc-narr-head .enc-narr-title { flex: 1 1 auto; min-width: 0; }
 .enc-narr-body {
@@ -558,7 +559,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
   min-height: 0; /* lets the flex item actually shrink so overflow-y engages at the panel cap */
 }
 .enc-narrative.tone-success { border-color: #7fb8a8; box-shadow: 0 0 14px rgba(127,184,168,0.18); }
-.enc-narrative.tone-success .enc-narr-title { color: #a8d8c8; text-shadow: 0 0 6px rgba(127,184,168,0.45); } /* b4 B2: demo :792-803 glow per tone */
+.enc-narrative.tone-success .enc-narr-title { color: #a8d8c8; text-shadow: 0 0 6px rgba(127,184,168,0.45); } /* demo :792-803 glow per tone */
 .enc-narrative.tone-danger  { border-color: #c25555; box-shadow: 0 0 14px rgba(194,85,85,0.18); }
 .enc-narrative.tone-danger  .enc-narr-title { color: #ff8878; text-shadow: 0 0 6px rgba(204,51,51,0.5); }
 
@@ -567,7 +568,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
   right: 14px; top: 60px;
   bottom: 170px;
   width: 320px;
-  display: flex; flex-direction: column; gap: 8px; /* demo-encounter .enc-choices (b4 B6) */
+  display: flex; flex-direction: column; gap: 8px; /* demo-encounter .enc-choices */
   overflow-y: auto;
   z-index: 30;
 }
@@ -604,9 +605,9 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
 }
 .enc-choice.locked:hover { filter: grayscale(0.6) brightness(0.7); border-color: rgba(95,100,115,0.3); }
 /* .advance (CONTINUE) is a plain gold choice, as the demo's
-   renderOutcomeContinue (b4 B4) — the class stays as the hook. */
+   renderOutcomeContinue — the class stays as the hook. */
 
-/* Location label, right end of the narrative title row (b4 ruling 35):
+/* Location label, right end of the narrative title row (ruling 35):
    "Kepler's Rest · ASTEROID FIELD" — place name in VT323, the node's
    display type in small Press Start. */
 .enc-meta {
@@ -630,7 +631,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
 
 /* Ship's Log journal + memorial: resources/screen-shipslog.css. */
 
-/* Cargo hold styles: resources/screen-inventory.css (parity batch 2). */
+/* Cargo hold styles: resources/screen-inventory.css. */
 /* Header ✕ (DESIGN_SYSTEM close path 1: 26×26, 2px accent border). */
 .modal-x {
   font-family: 'Press Start 2P', cursive; font-size: 10px; line-height: 1;
@@ -871,7 +872,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
          white-space: pre-line, and markup newlines became blank lines. -->
     <div class="enc-dialog hidden" id="enc-dialog"><span class="enc-dialog-name" id="enc-dialog-name"></span><span class="enc-dialog-line" id="enc-dialog-line"></span></div>
     <div class="enc-narrative" id="enc-narrative">
-      <!-- b4 ruling 35: the location label lives in the title row -->
+      <!-- ruling 35: the location label lives in the title row -->
       <div class="enc-narr-head"><div class="enc-narr-title" id="enc-narr-title"></div><div class="enc-meta" id="enc-meta"></div></div>
       <div class="enc-narr-body" id="enc-narr-body"></div>
     </div>
@@ -1019,7 +1020,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
     </div>
   </div>
 
-  <!-- Cargo hold — resources/demo-inventory.html canon (parity batch 2).
+  <!-- Cargo hold — resources/demo-inventory.html canon.
        Styles: resources/screen-inventory.css; logic: engine/js/screens/inventory.js. -->
   <div id="overlay-inventory" class="overlay dim-behind">
     <div id="inv-card">
@@ -1671,12 +1672,12 @@ const CROP_MATURITY_DEFAULT = 90;
 <script src="engine/js/screens/fabricator.js"></script>
 <script src="engine/js/combat.js"></script>
 <script src="engine/js/scene_art.js"></script>
-<script src="engine/js/station.js"></script><!-- scenes B: the station approach / dock visit -->
+<script src="engine/js/station.js"></script><!-- the station approach / dock visit -->
 <script src="engine/js/screens/market.js"></script>
 <script src="engine/js/screens/crew.js"></script>
 <script src="engine/js/screens/endings.js"></script>
 <script src="engine/js/shipslog.js"></script>
-<script src="engine/js/screens/inventory.js"></script> <!-- cargo hold (parity batch 2) -->
+<script src="engine/js/screens/inventory.js"></script> <!-- cargo hold -->
 
 <script>
 'use strict';
@@ -1850,9 +1851,9 @@ const SAVED_FIELDS = [
   'crisisPatient', 'scanIntelEvent', // an event saved at its entry comes back with its patient / SCAN intel
   'itemValues', // trade goods: each copy's value, rolled at pickup
   'itemPickups', 'itemSeq', // inventory: each copy's NEW flag + pickup order (Recent sort), and the counter
-  'materialPickups', // inventory (b4 B5): each material stack's NEW flag + last pickup (Recent sort) — same counter
+  'materialPickups', // inventory: each material stack's NEW flag + last pickup (Recent sort) — same counter
   'artSeed', // scene_art.js picks backdrop + NPC-face variants from it: a reload shows the same images
-  'passengers', // scenes B: rescued survivors riding to the next station
+  'passengers', // rescued survivors riding to the next station
   'stationVisit', // station approach: this stop's rolls (hail-first, fee), drawn event, docked / waved off
   'alertedNode', // cruise.js: the stop whose arrival alert has shown (a reload logged it again)
   'traderAt', 'forcedEvent', // cruise.js: the trader-presence roll per stop; a during-wait event waiting on the player (a reload can't dodge either)
@@ -1931,7 +1932,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, captainHP: () => 100 }; // traderAt/forcedEvent: cruise.js; passengers: scenes B; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, captainHP: () => 100 }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -1973,7 +1974,7 @@ function loadRun(key) {
   if (pf) { endRun({ kind: 'failure', module: pf }); return true; }
   renderCruise();
   showScreen('screen-cruise');
-  // Saved after a Stop-menu job began (hunt 6): a reload is a quit —
+  // Saved after a Stop-menu job began: a reload is a quit —
   // nothing kept, the day(s) spent (the effort tax was already paid).
   if (snap.pendingAbandon) {
     passDays(snap.pendingAbandon.days || 1);
@@ -2002,7 +2003,7 @@ function loadRun(key) {
       return true;
     }
   }
-  // Saved mid-fight (hunt 6): a reload settles as ATTEMPT ESCAPE played
+  // Saved mid-fight: a reload settles as ATTEMPT ESCAPE played
   // out — the charge turns under fire, 15 fuel, the days (owner ruling 53).
   if (snap.pendingCombat) {
     const pc = snap.pendingCombat;
@@ -2172,7 +2173,7 @@ function applySetupToState(sel) {
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.goneNames = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0;
   STATE.traderAt = {}; STATE.forcedEvent = null; // cruise.js: trader-presence rolls, during-wait event
-  STATE.passengers = []; STATE.eventSpeaker = null; STATE.joinNote = null; STATE.stationVisit = null; // scenes B
+  STATE.passengers = []; STATE.eventSpeaker = null; STATE.joinNote = null; STATE.stationVisit = null;
   STATE.flagFirstSeen = {}; STATE.calledBack = []; STATE.lastCallbackLeg = null;
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
@@ -2227,7 +2228,7 @@ function cargoCapacityParts() {
 /* Would the hold still fit without one `id`? Only the cargo bay can
    make this false (removing it takes 5 slots with it). */
 // A random item a loss can take: never one the hold can't spare (the
-// cargo bay while its extra slots are full — hunt 6 found 13/10 holds).
+// cargo bay while its extra slots are full, which would leave a 13/10 hold).
 function removeRandomItem() {
   const ok = STATE.items.filter(id => canRemoveItem(id));
   if (!ok.length) return null;
@@ -2321,7 +2322,7 @@ function grantMaterials(want, opts) {
   }
   return { got, left };
 }
-// Inventory NEW badge + Recent order for materials (b4 re-audit B5): a
+// Inventory NEW badge + Recent order for materials: a
 // stack that gains units is NEW again and newest, on the items' counter.
 function markMaterialPickup(id) {
   if (!STATE.materialPickups || typeof STATE.materialPickups !== 'object') STATE.materialPickups = {};
@@ -2354,7 +2355,7 @@ function grantItem(shortId) {
 }
 
 /* ────────────────────────────────────────────────────────────────
-   PICKUP MARKS (inventory parity, batch 2): the NEW badge and the
+   PICKUP MARKS: the NEW badge and the
    Recent sort. STATE.itemPickups[shortId] = one { s, n } per copy in
    STATE.items, in pickup order (the same copy indexing as
    STATE.itemValues): s = pickup sequence (STATE.itemSeq), n = still NEW
@@ -2617,8 +2618,8 @@ function pushAiSample(moment) {
    dismissal, stepping down for a stowaway (welcome_replace), desertion —
    takes everything that was theirs: the roster place, HP, skill charges,
    a pending crisis, a stowaway identity, their morale, and any active
-   skill they had ARMED and not yet spent (re-audit A9: Kazuki's patch and
-   Hargrove's prepared terms outlived them). One place, every path. */
+   skill they had ARMED and not yet spent (otherwise Kazuki's patch and
+   Hargrove's prepared terms outlive them). One place, every path. */
 const ARMED_SKILL_FLAGS = { engineer: ['emergency_patch_armed'], diplomat: ['negotiation_prepared'] };
 function releaseCrewRole(role) {
   const idx = STATE.crew.indexOf(role);
@@ -2678,7 +2679,7 @@ function crewSpriteIdOf(role) {
   return crewIdentityOf(role) ? null : (CREWID_OF_ROLE[role] || null);
 }
 
-/* One way aboard for a named newcomer (scenes B, 2026-10-11): a welcomed
+/* One way aboard for a named newcomer: a welcomed
    stowaway and a rescued survivor (outcome crew_join) both come through
    here. An identity with a join_role takes that role when the crew has
    room (max 2 chosen crew) and nobody holds it — real crew: HP, skill
@@ -2847,7 +2848,7 @@ function crewDesertions(node) {
     // The log entry reads who they were — composed before they go.
     const entry = window.ShipLog ? ShipLog.desertionEntry(role, node) : null;
     const name = crewNameOf(role);
-    releaseCrewRole(role); // HP, charges, pending, identity, morale, armed skills (A9)
+    releaseCrewRole(role); // HP, charges, pending, identity, morale, armed skills
     window.pushCruiseLog(entry || ('◆ ' + name + ' walked off at ' + ((node && node.name) || 'the station') + '.'), entry ? { ai: true, instant: true } : undefined);
   }
   return gone;
@@ -2871,7 +2872,7 @@ function stationRecharge() {
   }
 }
 
-/* crew_speaker (scenes B — the demo's crew_request): an own-crew
+/* crew_speaker (the demo's crew_request): an own-crew
    conversation lists who should say it, in order — crew roles, or "any"
    (anyone aboard). The first that's aboard speaks ("any" picks at random
    when roll is set); null when nobody aboard can (the event can't fire). */
@@ -3008,8 +3009,7 @@ function dueDelayedCrisis() {
 }
 
 /* ────────────────────────────────────────────────────────────────
-   CRISIS TRIGGERS + EVENT POOL-DRAW (closes audit A1's engine half
-   and A9). Thresholds match tag_registry.json's trigger notes
+   CRISIS TRIGGERS + EVENT POOL-DRAW. Thresholds match tag_registry.json's trigger notes
    (RES_LOW, MORALE_LOW, FAB_LOW_WEAR — tools/lint_code.js checks).
    ──────────────────────────────────────────────────────────────── */
 function activeTriggers() {
@@ -3069,7 +3069,7 @@ function activeTriggers() {
 }
 
 /* Filters `pool` by `predicate`, then picks uniformly at random among
-   the matches (not first-match) — closes audit A6, reused for both
+   the matches (not first-match) — reused for both
    event selection and ending/failure selection. */
 function filterThenRandomDraw(pool, predicate) {
   const matches = pool.filter(x => x && x.active !== false && predicate(x)); // authored active:false retires an entry
@@ -3161,9 +3161,7 @@ function eventEligible(ev, node, triggers) {
     if (ev.once && STATE.seenEventIds.has(ev.id)) return false;
     // Event-level flag gate — consequence events (choices made earlier
     // affecting what appears later, per CLAUDE.md's Flags section)
-    // only enter the pool once their flag is set. (Audit fix: this
-    // field existed on the schema from day one but the pool-draw never
-    // read it.)
+    // only enter the pool once their flag is set.
     if (ev.requires_flag && !STATE.flags.has(ev.requires_flag)) return false;
     // Event-level item gate — delivery/payoff events (Next of Kin, The
     // Handoff) only fire while the story object is actually in cargo
@@ -3176,7 +3174,7 @@ function eventEligible(ev, node, triggers) {
     // the pool on those trails. Gives each difficulty its own exclusive
     // texture — lunar's busy corridor vs interstellar's deep quiet.
     if (ev.trail && !ev.trail.includes(STATE.trail)) return false;
-    // Planet biome gate (scenes B): the event's copy describes one kind of
+    // Planet biome gate: the event's copy describes one kind of
     // world — it only fires on a planet whose biome (scene_art biomeFor,
     // the same pick its approach + surface art show) is listed.
     if (ev.biome && !(node.node_type === 'planet' && window.SceneArt && ev.biome.includes(SceneArt.biomeFor(null, node)))) return false;
@@ -3205,7 +3203,7 @@ function drawWeightedEvent(candidates, triggers, baseWeights, branch) {
   const chosen = weightedDraw(candidates, ev => {
     const tier = Array.isArray(ev.difficulty) ? ev.difficulty[0] : (ev.difficulty || 'medium');
     let w = (baseWeights[tier] ?? 1) * branchEventMult(ev, branch);
-    // draw_weight (scenes B): an event gated to a narrow slice of its node
+    // draw_weight: an event gated to a narrow slice of its node
     // type (event_planet_006 — habitable planets only, ~1 in 6) is scaled
     // back up so it still turns up; 1 when unauthored.
     if (Number.isFinite(ev.draw_weight) && ev.draw_weight > 0) w *= ev.draw_weight;
@@ -3279,7 +3277,7 @@ function scoutedEventFor(node) {
 
 /* ────────────────────────────────────────────────────────────────
    HUD — resource dots on encounter / map / mining (+ the engine room)
-   Batch 3, owner ruling 16: the encounter demo's five (fuel, food, O2,
+   Owner ruling 16: the encounter demo's five (fuel, food, O2,
    hull, morale), dots + numbers, no letter codes; the tooltip names
    each dot. Not on the cruise hub. Gold lives in the cruise header
    (ruling 17), which renderHUD() also keeps current.
@@ -3345,7 +3343,7 @@ function hideOverlay(id) {
 /* Keep the canonical 960×640 coordinate system used by every demo and
    canvas, and scale the finished cabinet as one unit to fill the window
    (largest fit, letterboxed) — the demos' "Actual Size" mode. Up on big
-   screens, down on small ones (Codex C9). Pointer coordinates continue to
+   screens, down on small ones. Pointer coordinates continue to
    map through the CSS transform (every mapping divides by the rendered
    rect, so any scale works). */
 function fitGameToViewport() {
@@ -3355,13 +3353,13 @@ function fitGameToViewport() {
 fitGameToViewport();
 window.addEventListener('resize', fitGameToViewport);
 
-/* Cargo hold overlay: engine/js/screens/inventory.js (parity batch 2,
-   demo-inventory.html canon) — openInventory / renderInventory / ITEM_USE. */
+/* Cargo hold overlay: engine/js/screens/inventory.js
+   (demo-inventory.html canon) — openInventory / renderInventory / ITEM_USE. */
 
 /* Ship's Log journal (render / open / expand): engine/js/shipslog.js. */
-/* Esc peels one layer at a time (parity audit: Esc with a memorial or
-   expand open closed the whole log; Esc in the jettison confirm closed
-   the whole hold). Capture phase, so it runs before shared.js's
+/* Esc peels one layer at a time: with a memorial or expand open it
+   closes that, not the whole log; in the jettison confirm it closes the
+   confirm, not the whole hold. Capture phase, so it runs before shared.js's
    [data-esc-close] handler; only stops the event when it consumed it. */
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
@@ -3597,9 +3595,9 @@ function nextAvailableNodes() {
    Called whenever travel/event-resolution has nothing further to do
    and control returns to the player outside an encounter. */
 function returnToHub() {
-  // Back at the hub, no event is in progress. These were never cleared,
-  // so saveRun() (which refuses mid-event) silently stopped autosaving
-  // after the first encounter of every run (bug hunt 2026-10-09).
+  // Back at the hub, no event is in progress. Uncleared, these make
+  // saveRun() (which refuses mid-event) silently stop autosaving after
+  // the first encounter of every run.
   STATE.currentEvent = null; STATE.currentNode = null;
   STATE.layerStack = null; STATE.currentOutcomeId = null; STATE.outcomeMode = false;
   if (window.ShipLog) ShipLog.eventEnd();
@@ -3615,9 +3613,9 @@ function returnToHub() {
   if (STATE.hubScreen === 'screen-map') renderMap();
   else {
     renderCruise();
-    // Owner ruling 2026-10-10 (hunt 5): after an event the ship is stopped —
-    // the Stop menu is already open and Resume travels in one click (it
-    // took Stop → Resume, two clicks a leg).
+    // Owner ruling 2026-10-10: after an event the ship is stopped — the
+    // Stop menu is already open and Resume travels in one click (not
+    // Stop → Resume, two clicks a leg).
     if (!STATE.ended) window.openStopMenu();
   }
 }
@@ -3641,7 +3639,7 @@ const ORDERS_PACE = [
   { id: 'light',      name: 'LIGHT SPEED',      etaMult: 1.35, fuelMult: 0.6, drainMult: 0.6 },
   { id: 'ridiculous', name: 'RIDICULOUS SPEED', etaMult: 1.0,  fuelMult: 1.0, drainMult: 1.0 },
   { id: 'ludicrous',  name: 'LUDICROUS SPEED',  etaMult: 0.78, fuelMult: 1.6, drainMult: 1.4 },
-  { id: 'plaid',      name: 'PLAID',            etaMult: 0.55, fuelMult: 3.0, drainMult: 2.0 }, // hunt 5: 2.4 made PLAID strictly best (fuel never bit)
+  { id: 'plaid',      name: 'PLAID',            etaMult: 0.55, fuelMult: 3.0, drainMult: 2.0 }, // at 2.4 PLAID was strictly best (fuel never bit)
 ];
 const ORDERS_RATIONS = [
   { id: 'vending',  name: 'VENDING MACHINE', foodMult: 0.5, moralePerDay: -0.3, morale: 'FALLING' },
@@ -3653,7 +3651,7 @@ const ORDERS_BASE = {
   // ~95% of arrivals were legendary): travel is spread over the legs
   // actually flown (pathLegs), and consumption bites.
   legDaysFrac:      0.60, // travel-day budget ≈ 60% of baseDays at RIDICULOUS along the path
-  travelFuelBudget: 55,   // RIDICULOUS fuel along the whole path (PLAID needs fuel cells) — hunt 5 sim: 45 never pressed even at PLAID
+  travelFuelBudget: 55,   // RIDICULOUS fuel along the whole path (PLAID needs fuel cells) — at 45 fuel never pressed, even at PLAID
                           // (a flat 3/leg starved the 15-node trail — two independent Interstellar runs ended fuel-dry)
   foodPerDay:       0.5,  // food per day at STANDARD (× rations foodMult) — harvests/forage matter
   waterPerDay:      0.35, // ship water stock draw per day (both sides drink from it)
@@ -3835,7 +3833,7 @@ function captainDef(bg) {
 function captainBonus() { const c = captainDef(); return c && c.starting_bonus; }
 /* Per-leg passives that depend on where the ship arrives or what it
    carries — each is an authored promise (items.json / crops.json). */
-/* Tomato drama (owner ruling 2026-10-10, hunt 5): crops.json
+/* Tomato drama (owner ruling 2026-10-10): crops.json
    triggers_extra_events + extra_event_chance — "High drama" on the setup
    card. Each leg, a living crop that has them may throw a small growbay
    incident: one of its own narrative_hooks plus a real swing in crop
@@ -3976,7 +3974,7 @@ function mouthsMult() {
     const c = (MOD.crew_roster || []).find(x => x.role === r);
     mouths += (c && c.eats_double && !crewIdentityOf(r)) ? 2 : 1; // a stowaway in the role eats normally
   }
-  mouths += (STATE.passengers || []).length; // a rescued passenger eats too (scenes B)
+  mouths += (STATE.passengers || []).length; // a rescued passenger eats too
   return mouths / 3;
 }
 // items.json gameplay_effect prose: insulated_cargo_bay "Food consumption
@@ -4010,8 +4008,8 @@ function legTravelCost() {
 // Per day at 0: crew HP lost (each), morale lost; failAfter = consecutive
 // days at 0 before the dedicated failure. Air kills fastest, food slowest.
 /* GAME_BIBLE §Effort + cost model, Layer 1 — the effort tax: every action's
-   pips (●●●○○) cost morale, nonlinearly (owner ruling 2026-10-10, hunt 5:
-   the pips were decorative). Stop verbs pay on use, encounter choices on
+   pips (●●●○○) cost morale, nonlinearly (owner ruling 2026-10-10:
+   otherwise the pips are decorative). Stop verbs pay on use, encounter choices on
    click, the fabricator per craft. */
 const MORALE_BY_EFFORT = [0, 1, 2, 4, 6, 9];
 // Per crew member (owner ruling 15): every member pays it. No crew
@@ -4190,7 +4188,7 @@ function travelTo(nodeId, opts) {
   // authored recharges_at in crew_roster.json (all current skills author
   // 'station'; a future 'leg' value would recharge in the leg tick above).
   if (node.node_type === 'station') {
-    disembarkPassengers(node); // scenes B: a rescued passenger steps off at the next station
+    disembarkPassengers(node); // a rescued passenger steps off at the next station
     // Per-crew morale (owner ruling 15): anyone warned at 0 and still at 0
     // walks off here — before the stop's event, never inside one.
     if (crewDesertions(node).length) renderHUD();
@@ -4271,11 +4269,11 @@ function travelTo(nodeId, opts) {
      object — the two schemas are disambiguated by ev.layers presence.
    ──────────────────────────────────────────────────────────────── */
 function enterEvent(node, ev, opts) {
-  // Owner ruling 2026-10-10 (hunt 5): save at event entry, so a reload
-  // comes back into this same event — it used to refund the leg and
-  // re-roll the encounter (an undo for any bad outcome). Written below,
-  // once the NPC and variant are rolled (hunt 6: a reload re-rolled the
-  // pirate's species, which sets its hull and whether it surrenders).
+  // Owner ruling 2026-10-10: save at event entry, so a reload comes back
+  // into this same event — never a refunded leg and a re-rolled encounter
+  // (an undo for any bad outcome). Written below, once the NPC and variant
+  // are rolled (a reload must not re-roll the pirate's species, which sets
+  // its hull and whether it surrenders).
   if (window.SceneArt && SceneArt.beginEvent) SceneArt.beginEvent();
   // A dock room (station approach): the room's event gains GO ELSEWHERE
   // and a BACK TO DOCK leave row (engine/js/station.js wraps a copy).
@@ -4481,7 +4479,7 @@ function currentLayer() {
    input can't reach a held choice (pointer-events: none), so this never
    changes what a player can do. */
 const _typeActive = new Map(); // el → finish(silent, foreign)
-// Per-character beat speeds = demo-encounter runBeats cps (b4 B5): AI 70 cps,
+// Per-character beat speeds = demo-encounter runBeats cps: AI 70 cps,
 // narrator 55 cps, spoken line 45 cps.
 const TYPE_MS = { ai: 14, narrator: 18, spoken: 22 };
 // Pause menu SETTINGS → TEXT SPEED (shared.js tpLoadSettings).
@@ -4555,8 +4553,8 @@ function typeInto(el, text, ms, onDone) {
     if (!silent && onDone) onDone();
   };
   _typeActive.set(el, finish);
-  // One character per tick, as the demo's typewriter (b4 B5: the long-body
-  // 2–3 chars/tick speed-up is gone; a click snaps it all in).
+  // One character per tick, as the demo's typewriter (no speed-up for long
+  // bodies; a click snaps it all in).
   const perTick = 1;
   if (!text.length) { finish(false); return finish; }
   timer = setInterval(() => {
@@ -4729,7 +4727,7 @@ function renderEncounterState(opts) {
     const rosterEntry = (MOD.crew_roster || []).find(c => c.role === crewRole);
     layerNpcCtx = { crewId, displayName: (rosterEntry && rosterEntry.name || crewId).toUpperCase(), species: null, disposition: 'crew', quirk: '' };
   }
-  // crew_speaker (scenes B): whichever of our crew the entry picked — their
+  // crew_speaker: whichever of our crew the entry picked — their
   // talking-head sheet (a joined stowaway / rescue: the role's emoji).
   if (ev.crew_speaker && STATE.eventSpeaker && !layerNpcCtx) {
     const r = STATE.eventSpeaker;
@@ -4839,7 +4837,7 @@ function renderEncounterState(opts) {
   if (opts && opts.instant) snapDelivery();
 }
 
-/* Location label (b4 A2 + ruling 35): the narrative title row's right end
+/* Location label (ruling 35): the narrative title row's right end
    — the place's name and its node type's display name (map.js
    TYPE_LABELS: "ASTEROID FIELD", never the raw "ASTEROID_FIELD"). */
 function nodeTypeLabel(t) {
@@ -4903,7 +4901,7 @@ function renderOutcomeView(outcome) {
   // applied (the entry save above would otherwise offer the choice again).
   if (!STATE.ended && STATE.trail && STATE.nodes.length) writeSnapshot(SAVE_KEY);
   _renderGen++;
-  // An untitled outcome takes the event's own title (b4 ruling 37).
+  // An untitled outcome takes the event's own title (ruling 37).
   document.getElementById('enc-narr-title').textContent = outcome.title || eventOutcomeTitle();
   let bodyText = interpolateStowawayTokens(interpolateNpcTokens(outcome.body || outcome.narrative || '...', STATE.npcCtx));
   // A lethal outcome the medic/medkit turned into an injury still reads
@@ -4951,7 +4949,7 @@ function renderOutcomeView(outcome) {
   delivery.run();
 }
 /* Flat events' outcomes carry no title of their own: they read under the
-   event's title (b4 ruling 37 — every one used to say "OUTCOME"). */
+   event's title (ruling 37), not a generic "OUTCOME". */
 function eventOutcomeTitle() {
   const ev = STATE.currentEvent;
   return (ev && ev.title) || 'OUTCOME';
@@ -5020,10 +5018,10 @@ function fitEncounterColumns() {
   narr.style.maxHeight = ''; ch.style.maxHeight = '';
   const narrBottom = narr.offsetTop + narr.offsetHeight;
   // The panel keeps what its own (reserved, full-length) text needs, up to
-  // 190px (it scrolls past that) — a two-line body no longer holds 200px
-  // and pushes the last choice (the pirate's BREAK OFF row, b4 ruling 39)
-  // below a scroll; 190 (was 200) leaves six gated choices room at the
-  // demo's 8px gap (b4 B6).
+  // 190px (it scrolls past that), so a two-line body never holds 200px
+  // and pushes the last choice (the pirate's BREAK OFF row, ruling 39)
+  // below a scroll; 190 leaves six gated choices room at the demo's 8px
+  // gap.
   const MIN_NARR = Math.max(130, Math.min(190, narr.offsetHeight)), GAP = 8;
   ch.style.maxHeight = Math.max(80, narrBottom - MIN_NARR - GAP - ch.offsetTop) + 'px';
   const chBottom = ch.offsetTop + ch.offsetHeight;
@@ -5040,10 +5038,10 @@ function renderChoicesInner(choices) {
   col.innerHTML = '';
   // Flag-based visibility (demo machinery): showFlag hides until the
   // flag is set; hideFlag hides once it is (collapse-after-unlock).
-  // A choice's requires_flag is a showFlag too (b4 ruling 36, demo
-  // showFlag :4987-4991): story-gated choices don't show, locked, before
-  // the story opens them — "Need: Diplomat" on a choice the diplomat
-  // alone could never unlock was a false promise.
+  // A choice's requires_flag is a showFlag too (ruling 36, demo showFlag
+  // :4987-4991): story-gated choices don't show, locked, before the story
+  // opens them — "Need: Diplomat" on a choice the diplomat alone could
+  // never unlock would be a false promise.
   // The A8 softlock guard MUST judge the visible list, not the raw one.
   const visible = choices.filter(ch =>
     !(ch.showFlag && !STATE.flags.has(ch.showFlag)) &&
@@ -5068,8 +5066,8 @@ function renderChoicesInner(choices) {
       + (ch.hint ? ' hint' : '');
 
     // Gate badge (demo-canon 32×32 cell): requirement icon when met,
-    // padlock when locked — every locked choice gets the padlock (b4 B6:
-    // it replaces the old red "🔒 " text prefix on the sub-label).
+    // padlock when locked — every locked choice gets the padlock (no red
+    // "🔒 " text prefix on the sub-label).
     // Flat-schema requires_* synthesize a spec. Icons draw at an integer
     // scale (ruling 43): 32px interface icons 1:1, 64px cargo sprites
     // 1:2, the 48px career portraits 1:2 at 24px — never 48→32.
@@ -5168,7 +5166,7 @@ function renderChoicesInner(choices) {
       const tip = [];
       if (ch.effort) tip.push('Effort ' + ch.effort + '/5' + (effortTax(ch.effort) ? ' · −' + effortTax(ch.effort) + ' morale' : '')); // no crew aboard: no morale to tax
       if (ch.gold_cost) tip.push('-' + eventGold(ch.gold_cost) + ' gold');
-      // Time + resource costs, for everyone (b4 ruling 34, demo composeTooltip
+      // Time + resource costs, for everyone (ruling 34, demo composeTooltip
       // :4122-4153) — the same numbers the outcome applies.
       const costs = choiceCostLines(ch);
       if (ch.gate && ch.gate.gold && !ch.gold_cost && !costs.some(l => / GOLD\b/.test(l))) tip.push('costs ' + eventGold(ch.gate.gold) + ' gold');
@@ -5220,7 +5218,7 @@ function renderLeaveRow(col) {
     sub.textContent = leaveSub;
     leave.appendChild(sub);
   }
-  // leave_as (b4 ruling 39): the row IS one of the event's own exits — the
+  // leave_as (ruling 39): the row IS one of the event's own exits — the
   // pirate's BREAK OFF does exactly what Flee does (never a free exit).
   // A choice-shaped object, run through handleChoiceClick like the choice,
   // with the same cost tooltip.
@@ -5267,7 +5265,7 @@ function renderLeaveRow(col) {
 }
 
 function makeAdvanceButton(label) {
-  // Demo renderOutcomeContinue (b4 B4): a plain gold choice reading
+  // Demo renderOutcomeContinue: a plain gold choice reading
   // CONTINUE (.ch-text uppercases it), no arrow, no teal.
   const btn = document.createElement('button');
   btn.className = 'enc-choice advance';
@@ -5383,9 +5381,9 @@ function outcomeFacts(o) {
   // "Someone has to go": a crew member steps down for the stowaway.
   if (o.stowaway_resolve === 'welcome_replace' && STATE.stowaway && STATE.stowaway.identity && STATE.stowaway.identity.join_role && STATE.crew.length) facts.push({ text: '−1 CREW', weight: 30, good: false });
   if (o.item_grant) facts.push({ text: '+' + prettyItem(o.item_grant).toUpperCase(), weight: 8, good: true });
-  if (o.crew_join && o.crew_join.name) facts.push({ text: crewJoinRole(o.crew_join) ? '+' + o.crew_join.join_role.toUpperCase() : '+PASSENGER', weight: 10, good: true }); // scenes B rescue
+  if (o.crew_join && o.crew_join.name) facts.push({ text: crewJoinRole(o.crew_join) ? '+' + o.crew_join.join_role.toUpperCase() : '+PASSENGER', weight: 10, good: true }); // a rescue
   // Only what's aboard is spent (applyOutcomeEffects skips a missing item):
-  // the preview never promises a loss that can't happen (b4, haggle kit).
+  // the preview never promises a loss that can't happen (the haggle kit).
   if (o.item_consume && STATE.items.includes(o.item_consume)) facts.push({ text: 'USES ' + prettyItem(o.item_consume).toUpperCase(), weight: 6, good: false });
   if (Number.isFinite(o.crop_health) && o.crop_health) { const c = Math.round(cropDeltaLanding(o.crop_health)); if (c) facts.push({ text: (c > 0 ? '+' : '−') + Math.abs(c) + ' CROP', weight: Math.abs(c) / 2, good: c > 0 }); }
   if (Number.isFinite(o.fab_wear) && o.fab_wear > 0) facts.push({ text: '+' + o.fab_wear + '% FAB WEAR', weight: Math.max(6, o.fab_wear * 1.5), good: false });
@@ -5492,7 +5490,7 @@ function choiceCostOutcome(ch) {
   if ((ch.triggerFleeResolve || ch.triggerRamResolve) && typeof ch.outcome === 'string' && ev && ev.outcomes) return ev.outcomes[ch.outcome] || null;
   return null;
 }
-/* Tooltip lines (b4 ruling 34): "Takes N days" + every cost the outcome
+/* Tooltip lines (ruling 34): "Takes N days" + every cost the outcome
    carries (outcomeFacts — what applyOutcomeEffects will really do), and
    for the fight choices what the fight risks. MARV's sub-label preview
    stays his perk; this is the hover, for everyone. */
@@ -5572,7 +5570,7 @@ function lockReason(choice) {
   // A job that runs on the fabricator can't run while it's broken.
   if (choice.requires_fab && STATE.fabricator && (STATE.fabricator.broken || (STATE.fabricator.wear || 0) >= FAB_WEAR_MAX)) return 'Fabricator is broken';
   if (choice.gate && choice.gate.crop) { const why = cropGateReason(choice.gate.crop); if (why) return why; }
-  // Capacity-aware lock (audit fix): a choice whose outcome grants
+  // Capacity-aware lock: a choice whose outcome grants
   // items that can't fit locks up-front — otherwise the player pays
   // the outcome's costs and grantItem() refuses the goods afterward
   // (gold spent, fuel cell left on the trader's shelf).
@@ -5688,7 +5686,7 @@ function resolveNpc(ev) {
   const ctx = {
     species, disposition,
     job: ev.npc.job || null,
-    // An authored displayName (scenes B: the derelict's SURVIVOR) wins.
+    // An authored displayName (the derelict's SURVIVOR) wins.
     displayName: ev.npc.displayName || (disposition === 'station_crew' && ev.npc.job === 'bartender' && bartenderName())
       || (disposition === 'station_crew' && ev.npc.job && jobNames[ev.npc.job])
       || NPC_DISPOSITION_NAME[disposition] || disposition.toUpperCase(),
@@ -5878,10 +5876,9 @@ function handleChoiceClick(choice) {
   if (choice.station && window.StationVisit && StationVisit.act(choice)) return;
 
   // Combat hijack fields — checked BEFORE the flat-schema early-return
-  // so BOTH schemas can enter combat (audit fix: these originally sat
-  // after the flat return, silently disabling flat-event combat —
-  // which orphaned event_general_003's authored combat_trigger field,
-  // honored here as an alias).
+  // so BOTH schemas can enter combat (after the flat return they would
+  // silently disable flat-event combat; event_general_003's authored
+  // combat_trigger field is honored here as an alias).
   if ((choice.triggerCombat || choice.combat_trigger)) {
     if (choice.setFlag) STATE.flags.add(choice.setFlag);
     if (window.ShipLog) ShipLog.fightStart(choice); // the fight's log entry names the choice that started it
@@ -6064,7 +6061,7 @@ function applyOutcomeEffects(o) {
         ? idn.join_role
         : STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
       const goneName = crewNameOf(gone);
-      releaseCrewRole(gone); // HP, charges, pending, identity, morale, armed skills (A9)
+      releaseCrewRole(gone); // HP, charges, pending, identity, morale, armed skills
       // A passenger to the next station, as the line says: they eat until
       // then and step off there (disembarkPassengers).
       const pid = 'crew_' + gone;
@@ -6087,7 +6084,7 @@ function applyOutcomeEffects(o) {
     if (resolve === 'refuse') STATE.flags.add('stowaway_refused');
   }
 
-  // crew_join (scenes B — the derelict survivor): a named rescue comes
+  // crew_join (the derelict survivor): a named rescue comes
   // aboard. Room in the crew → they join in their join_role (at their
   // authored HP); no room → a passenger to the next station (eats, steps
   // off there, crew_join.passenger.reward paid). The outcome view says
@@ -6283,7 +6280,7 @@ function eventMinigameQuit(choice, harm) {
   const worst = Object.assign({}, base.resources || {}, ((choice.tier_outcomes || {}).poor || {}).resources || {});
   const losses = Object.fromEntries(Object.entries(worst).filter(([, v]) => Number.isFinite(v) && v < 0));
   // The time too: a poor tier that costs extra days (engine_fault's limp
-  // mode) is what a quit costs — the base time would undercut it (b4).
+  // mode) is what a quit costs — the base time would undercut it.
   const TC = Object.keys(TIME_COST_DAYS);
   const poorTime = ((choice.tier_outcomes || {}).poor || {}).time_cost;
   const time_cost = TC.indexOf(poorTime) > TC.indexOf(base.time_cost || 'trivial') ? poorTime : base.time_cost;
@@ -6303,8 +6300,8 @@ function eventMinigameQuit(choice, harm) {
   }
   return quit;
 }
-// A reload after BEGIN settles the game as a quit (hunt 6 follow-up: it
-// returned to the event's entry and the minigame could be replayed).
+// A reload after BEGIN settles the game as a quit, never a return to the
+// event's entry with the minigame there to replay.
 let eventMinigameChoice = null, eventMinigamePatient = null;
 function eventMinigameBegun(harm) {
   const ev = STATE.currentEvent, ch = eventMinigameChoice;
@@ -6319,7 +6316,7 @@ function eventMinigameHarm(harm) { eventMinigameBegun(harm); }
 function resolveChoice(choice) {
   if (choice.launch_minigame) {
     eventMinigameChoice = choice;
-    // MEDICAL (parity pass 2026-10-11): the game plays at the event's own
+    // MEDICAL: the game plays at the event's own
     // difficulty, on a real patient — the worst-hurt crew member (else
     // anyone aboard) — starting at their real HP; the result lands on
     // them (demo contract MEDICAL_HEAL_HP: perfect +25 HP, good +10, poor keeps the loss).
@@ -6582,7 +6579,7 @@ function endRun(end) {
   if (resumable && STATE.trail && STATE.nodes.length) writeSnapshot(SAVE_KEY, { pendingFailure: f.id });
   else clearSave();
   // A failure can fire while an overlay is open (growbay TREAT and
-  // fabricator crafts both advance days → time_expired; audit fix) —
+  // fabricator crafts both advance days → time_expired) —
   // overlays are independent of showScreen(), so without this the end
   // screen renders BURIED under the open overlay.
   for (const ov of document.querySelectorAll('.overlay.active')) ov.classList.remove('active');

@@ -1,12 +1,12 @@
 /* ────────────────────────────────────────────────────────────────
-   CARGO HOLD — resources/demo-inventory.html canon (parity batch 2,
-   2026-10-11). Every selector is scoped under #overlay-inventory; the
-   tokens live on the overlay root (no :root — see the batch-1 token
-   collisions). engine/js/screens/inventory.js renders the content.
+   CARGO HOLD — resources/demo-inventory.html canon. Every selector is
+   scoped under #overlay-inventory; the tokens live on the overlay root
+   (no :root — screen tokens on :root collide across screens).
+   engine/js/screens/inventory.js renders the content.
    Layout: 816×600 card → header (slots / gold / ✕) → SHIP RESOURCES
    row → tab strip + SORT → grid | 295px detail column. No footer
    (ruling 42: ✕ / backdrop / Esc close, as in the demos). Press Start
-   labels keep the demo's line-height (normal, re-audit B2).
+   labels keep the demo's line-height (normal).
    ──────────────────────────────────────────────────────────────── */
 #overlay-inventory {
   --inv-border: #435384;
@@ -217,7 +217,7 @@
 #overlay-inventory .inv-tile:hover { border-color: rgba(200,168,90,0.45); background: rgba(200,168,90,0.05); }
 #overlay-inventory .inv-tile.selected { border-color: var(--gold); background: rgba(200,168,90,0.08); }
 #overlay-inventory .inv-tile img { width: var(--inv-grid-sprite); height: var(--inv-grid-sprite); image-rendering: pixelated; image-rendering: crisp-edges; }
-#overlay-inventory .inv-tile .inv-tile-emoji { font-size: var(--inv-grid-sprite); line-height: 1; } /* demo: the emoji stands in at the sprite's 64px (B4) */
+#overlay-inventory .inv-tile .inv-tile-emoji { font-size: var(--inv-grid-sprite); line-height: 1; } /* demo: the emoji stands in at the sprite's 64px */
 /* Stack count — top-right, Minecraft-style. */
 #overlay-inventory .inv-tile-count {
   position: absolute; top: 3px; right: 3px;
@@ -229,7 +229,7 @@
 /* Sell price — bottom-right corner. */
 #overlay-inventory .inv-tile-price {
   position: absolute; bottom: 3px; right: 3px;
-  font-family: 'VT323', monospace; font-size: 10px; letter-spacing: 0; color: var(--inv-price); /* demo 10px (B4) */
+  font-family: 'VT323', monospace; font-size: 10px; letter-spacing: 0; color: var(--inv-price); /* demo 10px */
 }
 #overlay-inventory .inv-tile-price.unknown { color: var(--inv-price-hidden); font-style: italic; }
 /* No buyer (story items) — bottom-left ⇄. */
