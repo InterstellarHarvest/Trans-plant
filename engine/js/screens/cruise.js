@@ -829,12 +829,10 @@
 
   const TRAIL_TO_SCAN_DIFFICULTY = { lunar: 'easy', mars: 'medium', interstellar: 'hard' };
   const REGION_TO_FORAGE_MODE = { asteroid_field: 'HUNT', debris_field: 'SCAVENGE', derelict: 'SCAVENGE', planet_orbit_habitable: 'GATHER', planet_orbit_alien: 'GATHER', anomaly: 'GATHER' };
-  // Forage sickness, owner ruling 3 (demo numbers): poisoning 10/20/35 HP,
-  // morale 5/12/20 by severity. The alien-world roll is a 'medium'
-  // poisoning (b4 re-audit B6: it was 7 HP); solo, the spoiled haul costs
-  // food at the morale scale, as a solo forage poisoning does.
-  const POISON_HP = { light: 10, medium: 20, heavy: 35 }, POISON_MO = { light: 5, medium: 12, heavy: 20 };
-  const ALIEN_POISON_CHANCE = 0.25, ALIEN_POISON_HP = POISON_HP.medium, ALIEN_POISON_FOOD = POISON_MO.medium;
+  // Alien-world poison roll: a 'medium' forage poisoning — owner ruling 3
+  // (demo numbers, the sickness table below): light 10 / medium 20 /
+  // heavy 35 HP. It was 7 HP, under "medium" (b4 re-audit B6).
+  const ALIEN_POISON_CHANCE = 0.25, ALIEN_POISON_HP = 20;
 
   function handleScanVerb() {
     const difficulty = TRAIL_TO_SCAN_DIFFICULTY[STATE.trail] || 'medium';
@@ -918,8 +916,8 @@
       if (payload.sickness) payload.sickness.forEach(s => {
         // Owner ruling 2026-10-11: the demo's numbers (demo-minigames forage
         // payload contract) — poisoning ~10/20/35 HP, morale 5/12/20.
-        const hpHit = POISON_HP[s.severity] || POISON_HP.light;
-        const moHit = POISON_MO[s.severity] || POISON_MO.light;
+        const hpHit = { light: 10, medium: 20, heavy: 35 }[s.severity] || 10;
+        const moHit = { light: 5, medium: 12, heavy: 20 }[s.severity] || 5;
         // Poisoning hurts one crew member (the demo's "SICKNESS · -HP one
         // crew" and the briefing's "poisons a crew member"); solo, the
         // spoiled haul costs food instead (at the morale scale).
@@ -929,10 +927,10 @@
       let gained = foodGot > 0 ? ('+' + foodGot + ' food.') : payload.food > 0 ? 'found food, but the stores are full.' : 'came back empty-handed.';
       // Alien world (the red risky strip, Bible "FORAGE — clicker w/
       // poison-roll"): one roll in four, something in the haul poisons a
-      // crew member — a medium poisoning. Solo, it spoils food.
+      // crew member — the minigame's medium sickness. Solo, it spoils food.
       if (alien && Math.random() < ALIEN_POISON_CHANCE) {
         if (STATE.crew.length) { const hit = damageCrew(null, ALIEN_POISON_HP); gained += ' Something in the haul disagreed with ' + (hit && STATE.crew.includes(hit) ? crewNameOf(hit) : 'the crew') + ' (−' + ALIEN_POISON_HP + ' HP before the medic\'s care).'; }
-        else { STATE.resources.food = clamp(STATE.resources.food - ALIEN_POISON_FOOD, 0, resMax('food')); gained += ' Half of it was poisonous; it went out the airlock (−' + ALIEN_POISON_FOOD + ' food).'; }
+        else { STATE.resources.food = clamp(STATE.resources.food - ALIEN_POISON_HP, 0, resMax('food')); gained += ' Half of it was poisonous; it went out the airlock (−' + ALIEN_POISON_HP + ' food).'; }
       }
       // A good forage on alien ground can turn up the suspicious fungus
       // (the chef's Secret Project — event_shipboard_016).

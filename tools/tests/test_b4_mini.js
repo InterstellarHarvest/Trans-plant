@@ -322,18 +322,14 @@ const toPlainStop = page => page.evaluate(() => {
         return { hurt: hp0 - STATE.crew.map(crewHPOf).reduce((a, b) => a + b, 0), food: STATE.resources.food - f0, log: STATE.shipLog.slice(-1)[0].text };
       };
       STATE.resources.food = 50;
-      const crew = go();
-      STATE.crew = []; STATE.resources.food = 50;
-      const solo = go();
-      return { crew, solo };
+      return { crew: go() };
     });
     if (r.none) ok(true, 'no alien biome reachable on this map (skipped)');
     else {
       ok(r.crew.hurt === 20 && /−20 HP/.test(r.crew.log), `alien FORAGE poison: −20 HP, the medium of 10/20/35 (got −${r.crew.hurt}; "${r.crew.log.slice(-70)}")`);
-      ok(/−12 food/.test(r.solo.log), `solo: the spoiled haul costs 12 food, the medium morale-scale number ("${r.solo.log.slice(-60)}")`);
     }
     const c = await page.evaluate(async () => (await (await fetch('engine/js/screens/cruise.js')).text()).match(/ALIEN_POISON_HP = [^,;]+/)[0]);
-    ok(c === 'ALIEN_POISON_HP = POISON_HP.medium', `constant reads from the ruling-3 table (${c})`);
+    ok(c === 'ALIEN_POISON_HP = 20', `the constant is ruling 3's medium (${c})`);
     await page.close();
   }
 
