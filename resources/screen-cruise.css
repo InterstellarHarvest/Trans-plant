@@ -43,7 +43,7 @@
   --readout-value-color: #d0c890;
   --readout-divider: rgba(200,168,90,0.15);
 
-  --stop-pulse-color: #5AA354;
+  --stop-pulse-color: #44AE3E; /* demo-cruise c-stop-pulse */
 
   --card-padx: 14px;
   --card-pady: 10px;
@@ -177,7 +177,7 @@
   background-image: url('sprites/ships/default.png');
   image-rendering: pixelated;
   font-size: 0; color: transparent;
-  filter: drop-shadow(0 0 12px rgba(127,127,92,0.43));
+  filter: drop-shadow(0 0 12px rgba(127,127,92,0.25)); /* demo c-ship-glow-alpha .25 */
   animation: cruise-ship-drift 6s ease-in-out infinite;
   pointer-events: none;
 }
@@ -189,11 +189,14 @@
    deceleration does the rest). */
 body.stop-active #ship-silhouette, body.event-active #ship-silhouette { animation-play-state: paused; }
 
-/* Scene alert — amber line fading in at the top of the scene (the
-   demo's 24px top sits under the cruise HUD pill here, so both it and
-   the action banner start just below the pill). */
+/* Scene alert — amber line fading in at the top of the scene, at the
+   demo's 24px (the cruise HUD pill it used to clear is gone, owner
+   ruling 16). At a station stop the station hangs top-right (up to
+   170 × 130 at right 28 / top 40, #cruise-station below): the alert and
+   the action banner move into the free strip left of it, so neither
+   is ever drawn over the station. */
 #scene-alert {
-  position: absolute; left: 50%; top: 52px; transform: translateX(-50%);
+  position: absolute; left: 50%; top: 24px; transform: translateX(-50%);
   font-family: 'Press Start 2P', cursive; font-size: var(--alert-size); letter-spacing: 2px; line-height: 1.4;
   color: var(--alert-color);
   text-shadow: 0 0 10px currentColor, 0 1px 2px #000, 0 0 2px #000;
@@ -204,11 +207,17 @@ body.stop-active #ship-silhouette, body.event-active #ship-silhouette { animatio
 
 /* Action banner — multi-day action progress (verb, DAY n/N, bar). */
 #action-banner {
-  position: absolute; left: 50%; top: 52px; transform: translateX(-50%);
+  position: absolute; left: 50%; top: 24px; transform: translateX(-50%);
   z-index: 11; pointer-events: none; text-align: center;
   opacity: 0; transition: opacity 0.3s;
 }
 #action-banner.show { opacity: 1; }
+/* Station in view: the strip left of it (16px gutter, station box 170 +
+   right 28 + 16px gap). Centred in that strip; long alerts wrap there. */
+#cruise-scene.at-station #scene-alert,
+#cruise-scene.at-station #action-banner {
+  left: 16px; right: calc(28px + 170px + 16px); width: auto; max-width: none; transform: none;
+}
 #screen-cruise .action-banner-label {
   font-family: 'Press Start 2P', cursive; font-size: 10px; letter-spacing: 2px; line-height: 1;
   color: var(--gold); text-shadow: 0 0 10px currentColor, 0 1px 2px #000; margin-bottom: 4px; white-space: nowrap;
@@ -322,9 +331,9 @@ body.stop-active #ship-silhouette, body.event-active #ship-silhouette { animatio
 .ai-avatar {
   font-size: 22px; width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 50%;
+  border-radius: 0; /* demo .ai-avatar.has-sprite: the portrait square, unclipped */
   background-size: cover; background-position: center; background-repeat: no-repeat;
-  color: transparent; image-rendering: pixelated;
+  color: transparent; image-rendering: pixelated; image-rendering: crisp-edges;
 }
 .ai-name { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 9px; letter-spacing: 2px; color: var(--ai-name-color); text-shadow: 0 0 6px rgba(200,168,90,0.3); }
 .ai-log { flex: 1; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; font-family: 'VT323', monospace; font-size: 17px; line-height: 1.35; color: var(--ai-text-color); padding-right: 14px; }
@@ -332,18 +341,20 @@ body.stop-active #ship-silhouette, body.event-active #ship-silhouette { animatio
 .ai-entry.latest { opacity: 1; }
 /* "── DAY n ──" opens each day's entries (demo canon). */
 #screen-cruise .ai-day-marker {
-  font-family: 'Press Start 2P', cursive; font-size: 7px; letter-spacing: 2px; line-height: 1;
+  font-family: 'Press Start 2P', cursive; font-size: 7px; letter-spacing: 2px; /* inherits the log's 1.35 line-height, as in the demo */
   color: var(--ai-name-color); text-align: center; margin: 6px 0 2px; opacity: 0.75;
 }
-/* Educational link payloads (Bible §18 reserved schema, 🔗 convention) */
-.ai-entry-link {
-  color: var(--teal, #8cc890);
-  text-decoration: none;
-  border-bottom: 1px dotted var(--teal, #8cc890);
-  cursor: var(--cursor-hand, pointer);
-  white-space: nowrap;
+/* Payload entries (Bible §18/§19, demo-cruise .has-payload): the whole
+   entry is the control — hand cursor, full opacity + gold underline on
+   hover — and the 📖 (expand) or 🔗 (external link) sits at its end. */
+.ai-entry.has-payload { cursor: var(--cursor-hand, pointer); }
+.ai-entry.has-payload:hover {
+  opacity: 1;
+  text-decoration: underline;
+  text-decoration-color: rgba(200,168,90,0.5);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
-.ai-entry-link:hover { filter: brightness(1.3); }
 
 /* Stop Menu — replaces the AI log while body.stop-active */
 .ai-log, .ai-header, #stop-menu { transition: opacity 0.2s ease; }
@@ -488,7 +499,7 @@ body.stop-active #stop-menu { opacity: 1; }
 .crop-alert-led.on { background: var(--crop-alert-color); box-shadow: 0 0 6px var(--crop-alert-color); animation: crop-alert-pulse 1.4s ease-in-out infinite; }
 @keyframes crop-alert-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
 .crop-growing { display: flex; flex-direction: column; gap: 3px; }
-.crop-stage { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 8px; letter-spacing: 1.5px; color: var(--crop-border-color); }
+.crop-stage { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 8px; letter-spacing: 1.5px; color: var(--crop-border-color); text-shadow: 0 0 4px rgba(200,168,90,0.25); }
 .crop-day { font-family: 'VT323', monospace; font-size: 13px; letter-spacing: 0.5px; color: var(--card-desc-color); transition: color 0.3s, text-shadow 0.3s; }
 /* Past maturity days and still not grown (poor health). */
 .crop-day.overdue { color: var(--red); text-shadow: 0 0 4px rgba(204,51,51,0.4); }

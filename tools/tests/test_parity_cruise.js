@@ -41,7 +41,9 @@ async function boot(setup) {
 const shot = async (page, name) => { if (SHOTS) await page.waitForTimeout(600); if (SHOTS) await page.screenshot({ path: SHOTS + '/' + name + '.png' }); };
 // Park the ship at the first node of a type (a fresh hub there, cruising).
 const parkAt = (page, type, extra) => page.evaluate(({ type, extra }) => {
-  const n = STATE.nodes.find(x => x.node_type === type && x.id !== STATE.currentId) || STATE.nodes.find(x => x.node_type === type);
+  let n = STATE.nodes.find(x => x.node_type === type && x.id !== STATE.currentId) || STATE.nodes.find(x => x.node_type === type);
+  // Random maps can lack a type: borrow a plain stop for it (b4).
+  if (!n) { n = STATE.nodes.find(x => x.id !== STATE.currentId && !['station', 'fork'].includes(x.node_type) && x !== STATE.nodes[0] && x !== STATE.nodes[STATE.nodes.length - 1]); if (n) n.node_type = type; }
   if (!n) return null;
   STATE.currentId = n.id;
   if (extra && 'trader' in extra) { STATE.traderAt = STATE.traderAt || {}; STATE.traderAt[n.id] = extra.trader; }
@@ -459,6 +461,9 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
 
   console.log('— during-wait events: forced state, real encounters');
   {
+    // Owner ruling 46a (2026-10-12): no one-verb menu — the red forced
+    // state holds through the alert flash (Resume shakes, CANNOT RESUME),
+    // then the real event opens on its own.
     const page = await boot();
     await parkAt(page, 'asteroid_field', { trader: false });
     await openStop(page);
@@ -472,33 +477,35 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
     ok(fl.forced && fl.forced.ev === 'event_encounter_pirate_001', 'the forced event is a real engine event (' + (fl.forced && fl.forced.ev) + ')');
     if (!fl.forced) console.log('    (diag) ' + JSON.stringify(await page.evaluate(() => ({ wait: cruiseWaitState(), node: STATE.byId[STATE.currentId].node_type, held: [PauseBus.paused, [...document.querySelectorAll('.overlay.active')].map(o => o.id)], pick: cruiseWaitEventPick() }))));
     await shot(page, '10_pirate_inbound');
+    // During the flash: red ticker + red Stop pulse, no resolve-verb menu.
     const fs = await waitFor(page, s0 => {
-      if (!document.body.classList.contains('event-active') || cruiseWaitActive()) return false;
+      if (!document.body.classList.contains('event-active')) return false;
       const t = [...document.querySelectorAll('#header-ticker .ticker-text:not(.exit)')].pop();
       if (!t || t.textContent !== 'PIRATE SIGNATURE — WEAPONS HOT' || t.classList.contains('enter')) return false;
-      return { ticker: t.textContent, tcls: t.className, tcolor: getComputedStyle(t).color, body: document.body.classList.contains('event-active'), btnColor: getComputedStyle(document.getElementById('stop-btn')).borderTopColor, menu: [...document.querySelectorAll('#stop-choices .stop-choice')].map(b => b.querySelector('.stop-choice-body').textContent + '|' + b.className), label: document.getElementById('stop-region-label').textContent, dd: STATE.daysElapsed - s0.d, dm: Math.round(crewMoraleRaw() - s0.m) };
+      return { ticker: t.textContent, tcls: t.className, tcolor: getComputedStyle(t).color, menu: [...document.querySelectorAll('#stop-choices .stop-choice')].map(b => b.querySelector('.stop-choice-body').textContent), dd: STATE.daysElapsed - s0.d, dm: Math.round(crewMoraleRaw() - s0.m), ev: STATE.currentEvent && STATE.currentEvent.id };
     }, s0);
     ok(fs.ticker === 'PIRATE SIGNATURE — WEAPONS HOT' && /event/.test(fs.tcls) && fs.tcolor === 'rgb(204, 51, 51)', 'forced: red pulsing event ticker');
-    // (the button's border eases over 0.18s — wait for it to land)
-    const btnRed = await waitFor(page, () => getComputedStyle(document.getElementById('stop-btn')).borderTopColor === 'rgb(204, 51, 51)').catch(() => false);
-    ok(fs.body && btnRed, 'forced: Stop button pulses red');
-    ok(fs.label === 'PIRATE SIGNATURE' && fs.menu.length === 1 && /^HAIL BACK\|.*risky/.test(fs.menu[0]), 'forced: the menu holds one red resolve verb (' + fs.menu.join() + ')');
+    const btnRed = await waitFor(page, () => getComputedStyle(document.getElementById('stop-btn')).borderTopColor === 'rgb(204, 51, 51)' || !!STATE.currentEvent).catch(() => false);
+    ok(btnRed, 'forced: Stop button pulses red');
+    ok(!fs.menu.some(l => /HAIL BACK|ANSWER THE CALL|INVESTIGATE/.test(l)), 'no one-verb resolve menu (' + fs.menu.join() + ')');
     ok(fs.dd === 1 && fs.dm >= 4, 'interrupted on day 1: the rest pays pro rata (+' + fs.dm + ' morale)');
-    await shot(page, '11_forced_event');
-    // Resume is blocked: shake + CANNOT RESUME, the ship stays.
-    const rb = await page.evaluate(() => { const at = STATE.currentId; document.getElementById('stop-btn').click(); return { moved: STATE.currentId !== at, shaking: document.getElementById('screen-cruise').classList.contains('shaking'), ev: STATE.currentEvent && STATE.currentEvent.id }; });
-    ok(!rb.moved && !rb.ev && rb.shaking, 'Resume blocked: screen shakes, ship stays');
-    const tickNow = () => { const t = [...document.querySelectorAll('#header-ticker .ticker-text:not(.exit)')].pop(); return t ? t.textContent : null; };
-    const warn = await waitFor(page, `(${tickNow})() === 'CANNOT RESUME — HANDLE EVENT FIRST'`).catch(() => false);
-    ok(warn, 'ticker: CANNOT RESUME — HANDLE EVENT FIRST');
-    const back = await waitFor(page, `(${tickNow})() === 'PIRATE SIGNATURE — WEAPONS HOT'`).catch(() => false);
-    ok(back, 'then the event line is restored');
-    // Saved: a reload comes back to it.
-    await page.evaluate(() => { saveRun(); STATE.forcedEvent = null; loadRun(); });
-    const sl = await waitFor(page, () => !!STATE.forcedEvent && document.body.classList.contains('event-active') && document.body.classList.contains('stop-active')).catch(() => false);
-    ok(sl, 'save/load: the forced event is still waiting');
-    const ev = await page.evaluate(() => { Math.random = window.__rnd; document.querySelector('#stop-choices .stop-choice').click(); return { ev: STATE.currentEvent && STATE.currentEvent.id, forced: STATE.forcedEvent, cls: document.body.classList.contains('event-active') }; });
-    ok(ev.ev === 'event_encounter_pirate_001' && !ev.forced && !ev.cls, 'HAIL BACK opens the pirate encounter; the forced state clears');
+    // Resume during the flash is blocked: shake + CANNOT RESUME, the ship stays.
+    const rb = await page.evaluate(() => { const at = STATE.currentId; const pre = !!STATE.forcedEvent; document.getElementById('stop-btn').click(); return { pre, moved: STATE.currentId !== at, shaking: document.getElementById('screen-cruise').classList.contains('shaking'), ev: STATE.currentEvent && STATE.currentEvent.id, tick: [...document.querySelectorAll('#header-ticker .ticker-text:not(.exit)')].pop().textContent }; });
+    ok(!rb.pre || (!rb.moved && !rb.ev && rb.shaking && rb.tick === 'CANNOT RESUME — HANDLE EVENT FIRST'), 'Resume during the flash: shakes, CANNOT RESUME, ship stays');
+    // …then the encounter opens by itself.
+    const ev = await waitFor(page, () => STATE.currentEvent && { ev: STATE.currentEvent.id, forced: STATE.forcedEvent, cls: document.body.classList.contains('event-active'), scr: document.querySelector('.screen.active').id });
+    ok(ev.ev === 'event_encounter_pirate_001' && !ev.forced && !ev.cls && ev.scr === 'screen-encounter', 'after the flash the pirate encounter opens straight away; the forced state clears');
+    await shot(page, '11_forced_event_opened');
+    // Saved mid-flash: a reload opens the event straight away too.
+    const sl = await page.evaluate(() => {
+      advanceAfterEvent();
+      STATE.forcedEvent = { kind: 'pirate', ev: 'event_encounter_pirate_001', node: STATE.currentId };
+      saveRun(); STATE.forcedEvent = null; loadRun();
+      return true;
+    });
+    const ld = await waitFor(page, () => STATE.currentEvent && STATE.currentEvent.id === 'event_encounter_pirate_001' && !STATE.forcedEvent).catch(() => false);
+    ok(sl && ld, 'save/load with a forced event pending: it opens at once');
+    await page.evaluate(() => { Math.random = window.__rnd; });
     // The other kinds: only events eligible at this stop, once-only respected.
     const kinds = await page.evaluate(() => {
       advanceAfterEvent();

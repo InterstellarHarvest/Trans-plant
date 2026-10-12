@@ -55,8 +55,14 @@
     const a = aiDef();
     return (a && a.log_templates && a.log_templates[key]) || FALLBACK[key] || '';
   }
+  // Every filled sentence starts with a capital: an empty {line} leaves
+  // "{effects}." leading ("nothing aboard changed." → "Nothing aboard
+  // changed."), and a token can open any sentence after . ! ? or …
+  // (closing quotes/brackets allowed). Only lowercase a–z is raised.
+  const capSentences = s => s.replace(/^([\s"'“‘(]*)([a-z])/, (m, p, c) => p + c.toUpperCase())
+    .replace(/([.!?…]["'”’)]*\s+["'“‘(]*)([a-z])/g, (m, p, c) => p + c.toUpperCase());
   function fill(t, tok) {
-    return String(t).replace(/\{(\w+)\}/g, (m, k) => (k in tok ? String(tok[k]) : '')).replace(/\s+/g, ' ').replace(/\s+([.,!?])/g, '$1').trim();
+    return capSentences(String(t).replace(/\{(\w+)\}/g, (m, k) => (k in tok ? String(tok[k]) : '')).replace(/\s+/g, ' ').replace(/\s+([.,!?])/g, '$1').trim());
   }
   const voiced = (key, tok) => fill(template(key), tok);
   const cap1 = s => { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); };
@@ -247,6 +253,7 @@
 
   // ── Public recording API (index.html / combat.js / crew.js hooks) ──
   const ShipLog = {
+    fill, // test hook: the template fill (sentence capitals)
     capture, begin, timeStart, timeEnd, snapshot, facts,
     // An event begins: the record measures from here.
     eventStart() { eventSnap = snapshot(); fightChoice = null; },

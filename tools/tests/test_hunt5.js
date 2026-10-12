@@ -231,9 +231,9 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       window.openMining = cb => cb({ inventory: { metal: 3 }, runs: 3 });
       let d0 = STATE.daysElapsed; (await verbAt('asteroid_field', 'MINE')).click();
       out.mineDays = STATE.daysElapsed - d0;
-      // REPAIR locked at full hull; REST locked when morale is high
+      // REPAIR not offered at full hull (b4: demo hideWhen); REST locked when morale is high
       STATE.resources.hull = resMax('hull'); STATE.materials = { metal: 9, scrap: 9 }; setCrewMorale(98);
-      const rep = await verbAt('station', 'REPAIR'); out.repairLocked = rep.classList.contains('locked');
+      const rep = await verbAt('station', 'REPAIR'); out.repairHidden = !rep;
       const rest = await verbAt('station', 'REST'); out.restLocked = rest.classList.contains('locked');
       // MEDBAY treats every hurt crew member
       STATE.crewHP.engineer = 50; STATE.crewHP.pilot = 60; STATE.goldAmount = 100;
@@ -254,7 +254,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       return out;
     });
     ok(r.mineDays === 3, `MINE: three runs cost three days (${r.mineDays})`);
-    ok(r.repairLocked && r.restLocked, 'REPAIR locks at full hull; REST locks when the crew is in good spirits');
+    ok(r.repairHidden && r.restLocked, 'REPAIR is not offered at full hull (demo hideWhen); REST locks when the crew is in good spirits');
     ok(r.medbay, 'MEDBAY treats every hurt crew member for one fee');
     ok(r.tradeDays === 1 && /haggling/.test(r.walkSub || ''), `shopping the trader's wares costs a day (${r.tradeDays})`);
     await page.close();

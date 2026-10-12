@@ -134,7 +134,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   };
   const medbayBtn = async () => ev(() => { const b = [...document.querySelectorAll('#stop-choices .stop-choice')].find(x => /MEDBAY/.test(x.textContent)); return b ? { cls: b.className, txt: b.textContent } : null; });
   let mb = await medbayBtn();
-  ok(mb && /locked/.test(mb.cls) && /Nobody is hurt/.test(mb.txt), 'MEDBAY present at station, locked with nobody hurt');
+  ok(!mb, 'nobody hurt: MEDBAY not offered at the station (b4, demo hideWhen)');
   await ev(() => { STATE.crewHP.pilot = 30; STATE.crewPending.pilot = true; STATE.goldAmount = 10; });
   await reopenStop();
   mb = await medbayBtn();
@@ -147,7 +147,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   await page.waitForTimeout(200);
   ok(await ev(() => STATE.crewHP.pilot === 100 && STATE.goldAmount === 20 && !STATE.crewPending.pilot), 'treated: pilot 100 HP, −30g, pending cleared');
   mb = await medbayBtn();
-  ok(mb && /locked/.test(mb.cls), 'verb re-gates to locked after treatment');
+  ok(!mb, 'verb re-gates after treatment: nobody hurt, MEDBAY gone (b4 hideWhen)');
   const deepSpace = await ev(() => {
     const n = STATE.nodes.find(x => x.node_type === 'void' || x.node_type === 'nebula' || x.node_type === 'derelict');
     return n && n.id;

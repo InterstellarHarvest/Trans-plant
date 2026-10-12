@@ -504,14 +504,18 @@
   function closeOrders(result) {
     if (!isOpen()) return;
     if (result === 'apply') {
+      const was = savedIdx();
       const o = ensureOrders();
       o.pace = ORDERS_PACE[preview.pace].id;
       o.rations = ORDERS_RATIONS[preview.rations].id;
-      setWaterSplit(preview.water); // keeps growbay's cropGrowth.waterPlant in lockstep
+      const water = setWaterSplit(preview.water); // keeps growbay's cropGrowth.waterPlant in lockstep
+      // One ▶ line per setting that actually changed, in the demo's words
+      // (demo-cruise renderReadouts); an APPLY that changed nothing logs
+      // nothing.
       if (typeof window.pushCruiseLog === 'function') {
-        window.pushCruiseLog('◆ ORDERS — ' + ORDERS_PACE[preview.pace].name +
-          ' · ' + ORDERS_RATIONS[preview.rations].name +
-          ' · water ' + preview.water + '/' + (100 - preview.water) + '.');
+        if (preview.pace !== was.pace) window.pushCruiseLog('▶ ENGINES set to ' + ORDERS_PACE[preview.pace].name + '.', { instant: true });
+        if (preview.rations !== was.rations) window.pushCruiseLog('▶ RATIONS set to ' + ORDERS_RATIONS[preview.rations].name + '.', { instant: true });
+        if (water !== was.water) window.pushCruiseLog('▶ WATER split → ' + water + '% plant / ' + (100 - water) + '% crew.', { instant: true });
       }
     }
     hideOverlay('overlay-orders');

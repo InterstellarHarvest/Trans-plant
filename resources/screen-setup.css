@@ -270,13 +270,20 @@
 
 #crew-count-badge { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 8px; color: #5a7a6a; letter-spacing: 1px; }
 
-/* Disabled nav buttons (bug fix 2026-08-04): the class was being set
-   by render() with no rule backing it — buttons looked live while a
-   required choice was missing. */
+/* Disabled nav buttons — the demo's look (demo-setup .panel-btn.disabled):
+   40% opacity, grey bevel, grey text, no glow. Unlike the demo they stay
+   clickable: a click on a disabled Next shakes it (setup.js), the only
+   hint at what's missing. */
 #screen-setup .panel-btn.disabled {
-  filter: grayscale(0.7) brightness(0.55);
+  opacity: 0.4;
+  border-color: #3a3a3a #1a1a1a #1a1a1a #3a3a3a;
+  color: #5a5a5a; text-shadow: none;
   cursor: var(--cursor-denied, not-allowed);
 }
+#screen-setup .panel-btn.disabled:hover { filter: none; }
+/* The ◀ / ▶ chevrons (demo-setup .panel-btn .chevron): 14px on a line
+   of their own height, so the button keeps the demo's 32px. */
+#screen-setup .panel-btn .chevron { font-size: 14px; line-height: 1; }
 @keyframes setup-btn-shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-4px); }

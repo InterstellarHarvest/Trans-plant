@@ -398,6 +398,10 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
       const root = n => nrm(getComputedStyle(document.documentElement).getPropertyValue(n));
       const out = {};
       out.denied = root('--cursor-denied'); out.wait = root('--cursor-wait'); out.scan = root('--cursor-scan'); out.hand = root('--cursor-hand');
+      // A locked row needs a real need now (b4: REPAIR hides on an intact
+      // hull, demo hideWhen): a dented hull and no metal locks it.
+      STATE.resources.hull = Math.min(STATE.resources.hull, 50); STATE.materials = Object.assign({}, STATE.materials, { metal: 0 });
+      openStopMenu(); // (re-)renders the menu
       out.stopLocked = cur(document.querySelector('.stop-choice.locked'));
       out.stopBtn = cur(document.getElementById('stop-btn'));
       openMarket({}); await w(300);
