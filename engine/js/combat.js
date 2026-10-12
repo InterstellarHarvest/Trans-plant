@@ -212,13 +212,16 @@
       if (COMBAT.crew.xenobiologist) total += COMBAT_CONFIG.crew_bonuses.xenobiologist.crit_bonus_on_identify * COMBAT.crew.xenobiologist;
       else if (COMBAT.captainBg === 'xenobiologist') total += COMBAT_CONFIG.captain_bonuses.xenobiologist.crit_bonus_on_identify;
     }
-    if (COMBAT.player.morale >= 90) total += 0.05;
-    else if (COMBAT.player.morale >= 75) total += 0.03;
+    // Per-crew morale (owner ruling 15): the crew average, seeded at the
+    // fight's start. No crew aboard (null): no morale edge either way.
+    const m = COMBAT.player.morale;
+    if (m != null && m >= 90) total += 0.05;
+    else if (m != null && m >= 75) total += 0.03;
     return total;
   }
   function playerMissChance() {
     const m = COMBAT.player.morale;
-    if (m >= 70) return 0;
+    if (m == null || m >= 70) return 0; // the captain alone: no shaky crew
     if (m >= 40) return 0.05;
     if (m >= 20) return 0.15;
     return 0.25;
@@ -257,7 +260,8 @@
   function renderCombatHud() {
     const hPct = clamp(Math.round((COMBAT.player.hull / COMBAT.player.hullMax) * 100), 0, 100);
     const fPct = clamp(Math.round((COMBAT.enemy.hull  / COMBAT.enemy.hullMax)  * 100), 0, 100);
-    const mPct = clamp(COMBAT.player.morale, 0, 100);
+    const noMo = COMBAT.player.morale == null; // no crew aboard: no morale ("—")
+    const mPct = noMo ? 0 : clamp(COMBAT.player.morale, 0, 100);
     const fillH = document.getElementById('combat-fill-hull');
     if (!fillH) return;
     fillH.style.width = hPct + '%';
@@ -269,8 +273,8 @@
     const fillM = document.getElementById('combat-fill-mor');
     fillM.style.width = mPct + '%';
     fillM.classList.remove('warn', 'crit');
-    if (mPct <= 25) fillM.classList.add('crit'); else if (mPct <= 50) fillM.classList.add('warn');
-    document.getElementById('combat-num-mor').textContent = Math.round(mPct); // morale is fractional (daily ration drift); show it whole like the main HUD
+    if (!noMo) { if (mPct <= 25) fillM.classList.add('crit'); else if (mPct <= 50) fillM.classList.add('warn'); }
+    document.getElementById('combat-num-mor').textContent = noMo ? '—' : (mPct > 0 ? Math.max(1, Math.round(mPct)) : 0); // fractional (daily ration drift): shown whole like the main HUD (crewMoraleAvg)
   }
 
   // Demo makeActionBtn: a crew/item-gated action shows the requirement's
@@ -336,8 +340,9 @@
       return;
     }
     if (COMBAT.state === 'SURRENDER_DECISION') {
-      wrap.appendChild(makeActionBtn({ verb: 'ACCEPT SURRENDER', sub: '40% loot · morale +5', cls: 'combat-tribute', onClick: acceptSurrender }));
-      wrap.appendChild(makeActionBtn({ verb: 'FINISH THEM', sub: 'Full loot · morale -10 · sets flag', cls: 'combat-danger', onClick: finishSurrendered }));
+      const crewMo = COMBAT.player.morale != null; // no crew aboard: no morale to promise
+      wrap.appendChild(makeActionBtn({ verb: 'ACCEPT SURRENDER', sub: '40% loot' + (crewMo ? ' · morale +5' : ''), cls: 'combat-tribute', onClick: acceptSurrender }));
+      wrap.appendChild(makeActionBtn({ verb: 'FINISH THEM', sub: 'Full loot' + (crewMo ? ' · morale -10' : '') + ' · sets flag', cls: 'combat-danger', onClick: finishSurrendered }));
       return;
     }
     if (COMBAT.state === 'FTL_CHARGING') {
@@ -381,7 +386,7 @@
     }));
     wrap.appendChild(makeActionBtn({
       verb: 'EVASIVE MANEUVERS',
-      sub: (COMBAT.player.morale < 30 ? 'Soften next hit (shaky crew)' : 'Halve next hit') + (bonus('evade_full_dodge') > 0 ? ' · ' + Math.round(bonus('evade_full_dodge') * 100) + '% full dodge' : ''),
+      sub: (COMBAT.player.morale != null && COMBAT.player.morale < 30 ? 'Soften next hit (shaky crew)' : 'Halve next hit') + (bonus('evade_full_dodge') > 0 ? ' · ' + Math.round(bonus('evade_full_dodge') * 100) + '% full dodge' : ''),
       cls: 'combat-evade', onClick: doEvade
     }));
 
@@ -893,8 +898,9 @@
     later(() => {
       const success = Math.random() < terms.odds;
       if (success) {
-        COMBAT.player.morale = clamp(COMBAT.player.morale + cfg.morale_on_success, 0, 100);
-        setNarrCombat('TRIBUTE ACCEPTED', combatLine('tribute_success'), `-${cfg.tribute_food_cost} food · morale +${cfg.morale_on_success}`);
+        const crewMo = COMBAT.player.morale != null;
+        if (crewMo) COMBAT.player.morale = clamp(COMBAT.player.morale + cfg.morale_on_success, 0, 100);
+        setNarrCombat('TRIBUTE ACCEPTED', combatLine('tribute_success'), `-${cfg.tribute_food_cost} food` + (crewMo ? ` · morale +${cfg.morale_on_success}` : ''));
         endCombatToOutcome({ outcome: 'tribute', foodCost: cfg.tribute_food_cost, moraleDelta: cfg.morale_on_success, friendly: kind === 'chef' });
       } else {
         const rejectLead = `${label[0].toUpperCase() + label.slice(1)} thrown back. -${cfg.tribute_food_cost} food.`;
@@ -964,8 +970,8 @@
       if (fullDodge > 0 && Math.random() < fullDodge) { dmg = 0; dodgedFull = true; }
       else {
         let evadeFactor = 0.5;
-        if (COMBAT.player.morale < 15) evadeFactor = 0.75;
-        else if (COMBAT.player.morale < 30) evadeFactor = 0.65;
+        if (COMBAT.player.morale != null && COMBAT.player.morale < 15) evadeFactor = 0.75;
+        else if (COMBAT.player.morale != null && COMBAT.player.morale < 30) evadeFactor = 0.65;
         dmg *= evadeFactor;
       }
       COMBAT.evadingNextHit = false;
@@ -1045,7 +1051,7 @@
       if (COMBAT.state !== 'END') {
         COMBAT.state = (COMBAT.ftlCharge > 0) ? 'FTL_CHARGING' : 'PLAYER_TURN';
         if (COMBAT.state === 'PLAYER_TURN') fxScreen().classList.remove('combat-ftl-charging');
-        if (COMBAT.state === 'PLAYER_TURN' && COMBAT.player.morale <= 10) {
+        if (COMBAT.state === 'PLAYER_TURN' && COMBAT.player.morale != null && COMBAT.player.morale <= 10) {
           COMBAT.state = 'MUTINY';
           setNarrCombat('CREW MUTINY', 'The crew refuses to fire. Morale is gone.', "They're looking at you. Stand down or wait for the next shot.");
           setAiCombat('Crew has stopped responding to combat orders.');
@@ -1146,7 +1152,7 @@
     renderCombatHud();
   }
   function bumpMorale(delta) {
-    if (!COMBAT.active) return;
+    if (!COMBAT.active || COMBAT.player.morale == null) return;
     COMBAT.player.morale = clamp(COMBAT.player.morale + delta, 0, 100);
     renderCombatHud();
   }
@@ -1192,11 +1198,12 @@
   function acceptSurrender() {
     if (!COMBAT.active || COMBAT.state !== 'SURRENDER_DECISION') return;
     COMBAT.state = 'END';
-    COMBAT.player.morale = clamp(COMBAT.player.morale + 5, 0, 100);
+    const crewMo = COMBAT.player.morale != null;
+    if (crewMo) COMBAT.player.morale = clamp(COMBAT.player.morale + 5, 0, 100);
     hideTurnIndicator();
     fxScreen().classList.add('combat-ended');
     setAiCombat(combatLine('surrender_accepted'));
-    setNarrCombat('SURRENDER ACCEPTED', combatLine('surrender_accepted'), '40% of the loot · morale +5');
+    setNarrCombat('SURRENDER ACCEPTED', combatLine('surrender_accepted'), '40% of the loot' + (crewMo ? ' · morale +5' : ''));
     endCombatToOutcome({ outcome: 'victory_surrendered' });
   }
   // FINISH THEM — the surrendered ship is destroyed on screen like any
@@ -1205,13 +1212,14 @@
   function finishSurrendered() {
     if (!COMBAT.active || COMBAT.state !== 'SURRENDER_DECISION') return;
     COMBAT.state = 'END';
-    COMBAT.player.morale = clamp(COMBAT.player.morale - 10, 0, 100);
+    const crewMo = COMBAT.player.morale != null;
+    if (crewMo) COMBAT.player.morale = clamp(COMBAT.player.morale - 10, 0, 100);
     COMBAT.enemy.hull = 0; COMBAT.enemy.alive = false;
     hideTurnIndicator();
     fxScreen().classList.add('combat-ended');
     renderCombatActions();
     setAiCombat(combatLine('surrender_refused'));
-    setNarrCombat('SURRENDER REFUSED', combatLine('surrender_refused'), 'Full loot recovered. Morale -10. The crew witnessed it.');
+    setNarrCombat('SURRENDER REFUSED', combatLine('surrender_refused'), crewMo ? 'Full loot recovered. Morale -10. The crew witnessed it.' : 'Full loot recovered. Nobody aboard to witness it but you.');
     renderCombatHud();
     destroyEnemyShip();
     later(() => endCombatToOutcome({ outcome: 'victory_executed' }), 1500);
@@ -1227,8 +1235,8 @@
      is the engine's severity model: applySeverity(role, 'injury'). */
   function rollDefeatCasualties() {
     let deathChance = 0.12 - bonus('defeat_death_reduction');
-    if (COMBAT.player.morale >= 70) deathChance -= 0.04;
-    if (COMBAT.player.morale >= 90) deathChance -= 0.02;
+    if (COMBAT.player.morale != null && COMBAT.player.morale >= 70) deathChance -= 0.04;
+    if (COMBAT.player.morale != null && COMBAT.player.morale >= 90) deathChance -= 0.02;
     deathChance = Math.max(0.03, deathChance);
     const aboard = STATE.crew.length;
     const died = aboard > 0 && Math.random() < deathChance;
@@ -1473,7 +1481,9 @@
     // constant — reconcile against STATE's pre-fight snapshot here.
     outcome.resources.hull   = (outcome.resources.hull   || 0) + (COMBAT.player.hull   - STATE.resources.hull);
     outcome.combat_net = true; // hull lands as fought: no second engineer bonus, no whole-fight patch
-    outcome.resources.morale = (outcome.resources.morale || 0) + (COMBAT.player.morale - STATE.resources.morale);
+    // Morale: the fight's net change on the crew average, applied to every
+    // crew member (per-crew morale, owner ruling 15). No crew: none.
+    if (COMBAT.player.morale != null) outcome.resources.morale = (outcome.resources.morale || 0) + (COMBAT.player.morale - COMBAT.player.moraleStart);
     if (lootItems) {
       const goldItem = lootItems.find(it => it.id === 'gold');
       if (goldItem) outcome.resources.gold = (outcome.resources.gold || 0) + goldItem.count;
@@ -1481,7 +1491,7 @@
 
     const crewBefore = STATE.crew.slice();
     const namesBefore = Object.fromEntries(crewBefore.map(r => [r, crewNameOf(r)]));
-    const before = { hull: STATE.resources.hull, morale: STATE.resources.morale, fuel: STATE.resources.fuel, food: STATE.resources.food, gold: STATE.goldAmount };
+    const before = { hull: STATE.resources.hull, morale: COMBAT.player.moraleStart, fuel: STATE.resources.fuel, food: STATE.resources.food, gold: STATE.goldAmount };
     // Ship's Log: the fight's record (won/lost/fled/paid + real effects,
     // loot and cargo loss included) is closed below, before checkFailure.
     const slog = window.ShipLog && ShipLog.begin();
@@ -1561,7 +1571,7 @@
     const leftLine = leftBehind.length ? 'Hold full: ' + leftBehind.map(it => `${it.count}× ${it.label}`).join(', ') + ' left behind' : '';
     const deltas = {
       hull: Math.round(STATE.resources.hull - before.hull),
-      morale: Math.round(COMBAT.player.morale - before.morale),
+      morale: COMBAT.player.morale == null ? 0 : Math.round(COMBAT.player.morale - before.morale),
       fuel: Math.round(STATE.resources.fuel - before.fuel),
       food: -Math.round((result.outcome === 'tribute' ? Math.min(result.foodCost || 0, before.food) : 0) + (COMBAT.foodSpent || 0)),
       gold: lootItems ? 0 : goldDelta,
@@ -1699,7 +1709,9 @@
     COMBAT.player.hullMax = Math.round(COMBAT_CONFIG.player_hp_max * resMax('hull') / 100); // hull plating
     COMBAT.player.hull = clamp(STATE.resources.hull, 1, COMBAT.player.hullMax);
     if (ramFailed) COMBAT.player.hull = clamp(COMBAT.player.hull - ramHull, 1, COMBAT.player.hullMax);
-    COMBAT.player.morale = clamp(STATE.resources.morale, 0, 100);
+    // The crew average (unrounded) — null with no crew aboard (owner ruling 15).
+    COMBAT.player.morale = typeof crewMoraleRaw === 'function' ? crewMoraleRaw() : null;
+    COMBAT.player.moraleStart = COMBAT.player.morale;
 
     const speciesMul = speciesHpMod(COMBAT.species);
     const trailMul = COMBAT_CONFIG.trail_scaling[COMBAT.trail] || COMBAT_CONFIG.trail_scaling.mars;
@@ -1786,7 +1798,7 @@
     renderCombatHud();
     renderCombatActions();
 
-    if (COMBAT.player.morale <= 10 && !ramFailed) {
+    if (COMBAT.player.morale != null && COMBAT.player.morale <= 10 && !ramFailed) {
       COMBAT.state = 'MUTINY';
       setNarrCombat('CREW MUTINY', 'The crew refuses to fire. Morale is gone before the fight even starts.', 'Stand down or wait for them to start shooting.');
       setAiCombat('Crew is not responding to combat orders.');

@@ -69,10 +69,10 @@ const mark = page => page.evaluate(() => { window.__mark = STATE.shipLog.length;
     await mark(page);
     const r2 = await page.evaluate(() => {
       const ev = EVENTS.event_crisis_007;
-      STATE.resources.o2 = 50; STATE.resources.morale = 60;
+      STATE.resources.o2 = 50; setCrewMorale(60);
       const d0 = STATE.daysElapsed;
       enterEvent(STATE.byId[STATE.currentId], ev);
-      const o0 = STATE.resources.o2, m0 = STATE.resources.morale;
+      const o0 = STATE.resources.o2, m0 = crewMoraleRaw();
       handleChoiceClick(ev.choices.find(c => /Seal off/.test(c.text)));
       const r = { o2: Math.round(STATE.resources.o2 - o0), day0: d0 };
       advanceAfterEvent();

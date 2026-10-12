@@ -377,7 +377,7 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
   console.log('— 10. morale miss: the AI reports the miss');
   {
     const page = await boot();
-    await page.evaluate(() => { STATE.resources.morale = 30; });
+    await page.evaluate(() => { setCrewMorale(30); });
     await startCombat(page);
     await page.evaluate(() => { Math.random = () => 0.01; });
     await click(page, 'FIRE LASER'); await page.waitForTimeout(80);
@@ -420,7 +420,7 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
   {
     // mutiny: first shot at 1800 (+320)
     const page = await boot();
-    await page.evaluate(() => { Math.random = () => 0.5; STATE.resources.morale = 5; });
+    await page.evaluate(() => { Math.random = () => 0.5; setCrewMorale(5); });
     await startCombat(page);
     const t0 = await page.evaluate(() => performance.now());
     const hit = await page.evaluate(async () => {
@@ -454,7 +454,7 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
         for (const k of Object.keys(STATE.resources)) STATE.resources[k] = 100;
         let s = seed;
         Math.random = () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-        STATE.resources.hull = 1; STATE.resources.morale = 50;
+        STATE.resources.hull = 1; setCrewMorale(50);
         enterEvent(STATE.byId[STATE.currentId], EVENTS.event_encounter_pirate_001);
         STATE.npcCtx.species = 'human';
         window.triggerCombat({}, { ramFailed: true, ramHull: 0 });

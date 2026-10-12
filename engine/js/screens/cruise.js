@@ -568,8 +568,20 @@
     const members = [];
     if (STATE.captain) members.push({ key: 'captain', label: 'CAPTAIN', role: capWord(STATE.captain), crewId: 'captain' });
     for (const role of STATE.crew) members.push({ key: role, label: crewDisplayName(role).toUpperCase(), role: capWord(role), crewId: crewSpriteIdOf(role) });
-    strip.classList.toggle('crowded', members.length > 3);
+    // Always three slots — captain + the two crew places (the cap,
+    // crewJoinRole). An empty place keeps its card-sized spot, so the crop
+    // card and everything right of it never shift (owner, batch 3).
+    const CREW_PLACES = 3;
+    while (members.length < CREW_PLACES) members.push({ key: null, empty: true });
     for (const m of members) {
+      if (m.empty) {
+        const slot = document.createElement('div');
+        slot.className = 'crew-slot empty';
+        slot.title = 'Empty crew slot — a stowaway you welcome or a survivor you rescue can take it.';
+        slot.innerHTML = '<div class="crew-empty-label">— vacant —</div>';
+        strip.appendChild(slot);
+        continue;
+      }
       const slot = document.createElement('div');
       slot.className = 'crew-slot' + (m.key === 'captain' ? ' captain' : '');
       const iconHtml = m.crewId
@@ -580,13 +592,18 @@
       const hp = m.key === 'captain' ? 100
         : (typeof window.crewHPOf === 'function' ? crewHPOf(m.key) : 100);
       const hpColor = hp <= CREW_CRITICAL_HP ? '#cc5555' : (hp < CREW_WOUNDED_HP ? '#d4a830' : '');
+      // Their OWN morale (owner ruling 15). The captain has none: no MO bar.
+      const mo = m.key === 'captain' ? null : crewMoraleOf(m.key);
+      const moTip = mo == null ? '' : 'Morale ' + Math.round(mo) + '/100' + (mo <= 0 ? ' — walks off at the next station unless it rises' : '');
+      const moBar = mo == null ? ''
+        : '<div class="crew-bar mo' + (mo <= 0 ? ' zero' : '') + '" title="' + moTip + '"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(mo) + '%"></div></div></div>';
       slot.innerHTML =
         '<div class="crew-slot-top">' + iconHtml +
           '<div class="crew-info"><div class="crew-name">' + m.label + '</div><div class="crew-role">' + m.role + '</div></div>' +
         '</div>' +
         '<div class="crew-bars">' +
           '<div class="crew-bar hp" title="Health ' + hp + '/100"><span class="crew-bar-label">HP</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(hp) + '%' + (hpColor ? ';background:' + hpColor : '') + '"></div></div></div>' +
-          '<div class="crew-bar mo" title="Morale"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(STATE.resources.morale) + '%"></div></div></div>' +
+          moBar +
         '</div>';
       // Crew dossier (Restoration item 4) — click opens the detail
       // modal; the captain slot opens their reduced dossier.
@@ -604,6 +621,7 @@
     // (function declarations hoist).
     maybePushAmbient();
     checkResourceWarnings();
+    if (typeof window.crewMoraleWatch === 'function') crewMoraleWatch(); // per-crew morale: the 0-morale warning / all-clear (owner ruling 15)
     checkCropMilestones();
     setTimeout(arrivalAlert, 350); // once the hub is actually on screen
     wakeStars();
@@ -669,11 +687,12 @@
     window.tickCropGrowth();    // binds the growbay's live crop state, caught up to today
     const cg = STATE.cropGrowth;
     if (!cg || cg.growth < 100 || cg.health <= 0) return;
-    const f0 = STATE.resources.food, m0 = STATE.resources.morale;
+    const f0 = STATE.resources.food, m0 = crewMoraleRaw();
     window.doHarvest();
-    const df = Math.round(STATE.resources.food - f0), dm = Math.round(STATE.resources.morale - m0);
+    const df = Math.round(STATE.resources.food - f0), dm = m0 == null ? 0 : Math.round(crewMoraleRaw() - m0);
+    // A morale crop (zinnia) with nobody aboard to enjoy it lifts nothing.
     pushLogEntry('▶ Harvested ' + STATE.crop.replace(/_/g, ' ').toUpperCase() + '. ' +
-      (df > 0 ? '+' + df + ' food' : dm > 0 ? '+' + dm + ' morale' : 'The stores were already full') + '. Cycle reset.');
+      (df > 0 ? '+' + df + ' food' : dm > 0 ? '+' + dm + ' morale' : m0 == null && STATE.crop === 'zinnia' ? 'No crew aboard to enjoy them' : 'The stores were already full') + '. Cycle reset.');
     renderHUD();
     renderCruise();
     if (isStopped()) renderStopMenu();
@@ -733,13 +752,21 @@
     wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park. Roll the dice. Days will pass. Things will hear you.', effort: 1, hint: true, icon: 'wait', time: '1-7d', hideWhen: () => traderHere() },
     scan:         { label: 'SCAN',      sub: 'Read the signals. Find what is coming.',           effort: 2, hint: true, icon: 'scan', time: '1d' },
     repair:       { label: 'REPAIR',    sub: 'Patch the hull: 2 metal + 1 scrap and a day.', effort: 3, locked: repairLockReason, icon: 'repair', time: '1d' },
-    rest:         { label: 'REST',      sub: () => 'Crew morale up (+' + restPerDay() + ' a day). Days down.', effort: 1, hint: true, icon: 'rest', time: '1-7d', locked: () => STATE.resources.morale >= 95 ? 'The crew is in good spirits' : null },
+    rest:         { label: 'REST',      sub: () => 'Crew morale up (+' + restPerDay() + ' a day). Days down.', effort: 1, hint: true, icon: 'rest', time: '1-7d', locked: restLockReason },
     fab:          { label: 'FABRICATOR', sub: 'Open the print queue. Long jobs need a still ship.', effort: 1, hint: true, icon: 'fab' },
     medbay:       { label: 'MEDBAY',    sub: () => 'Treat every hurt crew member. ' + medbayFee() + 'g, no days.', effort: 1, hint: true, locked: medbayLockReason, icon: 'medic' },
     condense:     { label: 'CONDENSE',  sub: 'Wring water out of the nebula. A day for +12 water.', effort: 2, locked: condenseLockReason, icon: 'water', time: '1d' },
     drydock:      { label: 'DRYDOCK',   sub: () => 'Station crews patch the hull. +' + Math.min(30, Math.ceil(resMax('hull') - STATE.resources.hull)) + ' hull for ' + drydockFee() + 'g.', effort: 1, hint: true, locked: drydockLockReason, icon: 'repair' },
     fab_service:  { label: 'FAB SERVICE', sub: () => 'Station techs overhaul the fabricator. Wear to zero, ' + fabServiceFee() + 'g.', effort: 1, hint: true, locked: fabServiceLockReason, icon: 'fab' },
   };
+  // REST raises every crew member's morale (owner ruling 15). No crew
+  // aboard: nothing to raise — locked, not offered as a morale verb.
+  // Locked only when EVERYONE is in good spirits (one low member is
+  // reason enough to rest).
+  function restLockReason() {
+    if (!STATE.crew.length) return 'No crew aboard to rest';
+    return STATE.crew.every(r => crewMoraleOf(r) >= 95) ? 'The crew is in good spirits' : null;
+  }
   const STATION_SERVICE_VERBS = new Set(['trade', 'medbay', 'drydock', 'fab_service']); // closed by a wave-off (owner ruling 2026-10-11)
   function effortPips(n) { n = Math.max(0, Math.min(5, n | 0)); return '●'.repeat(n) + '○'.repeat(5 - n); }
 
@@ -757,7 +784,8 @@
   // back. Once the job begins, a reload settles it as a quit (loadRun).
   let pendingVerbTax = 0, activeVerb = null;
   window.refundVerbTax = function () {
-    if (pendingVerbTax) { STATE.resources.morale = clamp(STATE.resources.morale + pendingVerbTax, 0, 100); pendingVerbTax = 0; renderHUD(); }
+    // Exactly what each crew member paid comes back (refundEffortTax).
+    if (pendingVerbTax) { refundEffortTax(pendingVerbTax); pendingVerbTax = 0; renderHUD(); }
   };
   window.onJobBegun = function (days) {
     pendingVerbTax = 0;
@@ -875,7 +903,7 @@
         // crew" and the briefing's "poisons a crew member"); solo, the
         // spoiled haul costs food instead (at the morale scale).
         if (s.type === 'poisoning') { if (STATE.crew.length) damageCrew(null, hpHit); else STATE.resources.food = clamp(STATE.resources.food - moHit, 0, resMax('food')); }
-        else STATE.resources.morale = clamp(STATE.resources.morale - moHit, 0, 100);
+        else addCrewMorale(-moHit); // morale_drop 'all_crew': every crew member (none aboard: nobody to sour)
       });
       let gained = foodGot > 0 ? ('+' + foodGot + ' food.') : payload.food > 0 ? 'found food, but the stores are full.' : 'came back empty-handed.';
       // Alien world (the red risky strip, Bible "FORAGE — clicker w/
@@ -1282,7 +1310,7 @@
     if (activeWait || STATE.forcedEvent || STATE.ended) return;
     const cfg = WAIT_CFG[verbId];
     if (!cfg) return;
-    if (verbId === 'rest' && STATE.resources.morale >= 95) return;
+    if (verbId === 'rest' && restLockReason()) return;
     if (verbId === 'wait_for_trader' && traderHere()) return;
     document.querySelectorAll('#stop-choices .stop-choice.day-picker').forEach(collapseDayPicker);
     days = Math.max(1, Math.min(WAIT_DAY_MAX, days | 0));
@@ -1347,9 +1375,7 @@
     pushLogEntry('▶ ' + d.log);
     // Bible interrupt rule: an interrupted action yields pro rata.
     if (a.verbId === 'rest') {
-      const m0 = STATE.resources.morale;
-      STATE.resources.morale = clamp(m0 + restPerDay() * a.day, 0, 100);
-      const got = Math.round(STATE.resources.morale - m0);
+      const got = Math.round(addCrewMorale(restPerDay() * a.day)); // every crew member
       pushLogEntry('▶ Rest broken after ' + a.day + ' day' + (a.day === 1 ? '' : 's') + (got > 0 ? ' — morale +' + got + '.' : '.'));
       renderHUD();
     }
@@ -1370,9 +1396,7 @@
     a.resolving = true;
     const cfg = WAIT_CFG[a.verbId];
     if (a.verbId === 'rest') {
-      const m0 = STATE.resources.morale;
-      STATE.resources.morale = clamp(m0 + restPerDay() * a.days, 0, 100);
-      const got = Math.round(STATE.resources.morale - m0);
+      const got = Math.round(addCrewMorale(restPerDay() * a.days)); // every crew member
       pushLogEntry('▶ Crew rested ' + a.days + ' day' + (a.days === 1 ? '' : 's') + '. Morale +' + got + (restPerDay() > REST_MORALE_PER_DAY ? ' (the chef cooked the good stuff).' : '.'));
     } else {
       pushLogEntry('▶ No one came. ' + a.days + ' day' + (a.days === 1 ? '' : 's') + ' parked; the dice do not apologize.');
@@ -1538,7 +1562,7 @@
       const btn = choiceButton({ label: labelStr, sub: subText, parts, variant, icon: lockReason ? 'lock' : (verb.icon || 'wait'), locked: !!lockReason });
       if (lockReason) btn.classList.add('locked');
       btn.setAttribute('data-verb-id', verbId);
-      if (!lockReason && verb.effort && window.effortTax) btn.title = 'Effort ' + verb.effort + '/5 · costs ' + effortTax(verb.effort) + ' morale' + (verbId === 'fab' ? ' per craft' : WAIT_VERBS[verbId] ? ' for the whole wait' : '');
+      if (!lockReason && verb.effort && window.effortTax) btn.title = 'Effort ' + verb.effort + '/5' + (effortTax(verb.effort) ? ' · costs ' + effortTax(verb.effort) + ' morale' + (verbId === 'fab' ? ' per craft' : WAIT_VERBS[verbId] ? ' for the whole wait' : '') : ''); // no crew aboard: no tax to state
       btn.addEventListener('click', () => {
         if (lockReason) return;
         if (btn.classList.contains('day-picker')) return; // picking days on this button
@@ -1546,7 +1570,7 @@
         const handler = VERB_HANDLERS[verbId];
         // Effort tax on use (the fabricator charges per craft instead —
         // opening its screen to look costs nothing).
-        if (handler && verbId !== 'fab' && window.payEffortTax) { pendingVerbTax = payEffortTax(verb.effort); renderHUD(); }
+        if (handler && verbId !== 'fab' && window.payEffortTax) { const rc = {}; pendingVerbTax = payEffortTax(verb.effort, rc) ? rc : 0; renderHUD(); }
         activeVerb = labelStr;
         if (handler) handler();
         else pushLogEntry('◆ ' + labelStr + ' isn’t wired into the engine yet.');
@@ -1685,8 +1709,9 @@
   function checkResourceWarnings() {
     STATE.aiWarnLevels = STATE.aiWarnLevels || {};
     for (const [res, lowAt] of Object.entries(WARN_THRESHOLDS)) {
-      const v = STATE.resources[res];
-      const level = v < 12 ? 'critical' : (v < lowAt ? 'low' : 'ok');
+      // Morale = the crew average (owner ruling 15); no crew, no warning.
+      const v = res === 'morale' ? crewMoraleAvg() : STATE.resources[res];
+      const level = v == null ? 'ok' : v < 12 ? 'critical' : (v < lowAt ? 'low' : 'ok');
       const prev = STATE.aiWarnLevels[res] || 'ok';
       // Fire only on a downward crossing (ok→low, ok→critical, low→critical);
       // recovery resets silently so the next dip warns again.
@@ -1719,8 +1744,8 @@
       const beat = arc.zinnia_arc[key];
       if (!beat || STATE.flags.has('zinnia_' + key) || !trig.has(trigger)) continue;
       STATE.flags.add('zinnia_' + key);
-      if (morale) STATE.resources.morale = clamp(STATE.resources.morale + morale, 0, 100);
-      pushLogEntry('◆ ' + beat.first_line + (morale ? ' (+' + morale + ' morale)' : ''), { ai: true });
+      const got = morale ? Math.round(addCrewMorale(morale)) : 0; // every crew member; none aboard, no claim
+      pushLogEntry('◆ ' + beat.first_line + (got ? ' (+' + got + ' morale)' : ''), { ai: true });
       return; // one beat per stop
     }
   }

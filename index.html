@@ -1669,8 +1669,10 @@ const STATE = {
   goldAmount:   50,
   resources: {
     fuel: 100, food: 100, water: 100, o2: 100,
-    hull: 100, morale: 75,
+    hull: 100, // morale is per crew member: STATE.crewMorale (owner ruling 15)
   },
+  crewMorale:   {},   // role -> 0-100 (the captain has none); crewMoraleAvg() is the crew average
+  moraleWarned: {},   // role -> true: warned at 0 morale, walks off at the next station unless raised
   daysElapsed: 0,
   baseDays:    120,
   // Standing orders (Restoration item 5, demo-orders.html) — pace id,
@@ -1706,6 +1708,7 @@ const SAVED_FIELDS = [
   'crew', 'captain', 'crop', 'shipName', 'items', 'materials', 'goldAmount',
   'resources', 'daysElapsed', 'baseDays', 'activeAI',
   'hardStreak', 'pityRelief', 'npcCache', 'crewHP', 'shipLog',
+  'crewMorale', 'moraleWarned', // per-crew morale + who is warned at 0 (owner ruling 15)
   'stowaway', 'cropGrowth', 'postCombatLegs', 'aiWarnLevels', 'fabricator',
   'consumedActions', 'crewSkillCharges', 'orders', 'crewPending',
   'miningSectors', 'lastAmbientNode', 'miningLifetime', // miningLifetime: the haul card's voyage stats (parity-shell) // sector re-roll on reload defeated mining's anti-reroll; ambient repeated
@@ -1811,6 +1814,13 @@ function loadRun(key) {
   syncItemValues(); // pre-trade-value saves: the goods aboard are valued now, once, and saved with it
   syncItemPickups(ITEM_PICKUP_OLD); // pre-mark saves: what's aboard is not NEW
   if (!('crewPending' in snap)) STATE.crewPending = {}; // pre-severity saves
+  // Pre-ruling-15 saves carried one ship morale: every crew member starts
+  // from it. resources.morale is gone either way (never a second source).
+  if (!snap.crewMorale || typeof snap.crewMorale !== 'object') {
+    const old = snap.resources && Number.isFinite(snap.resources.morale) ? snap.resources.morale : trailStartMorale();
+    initCrewMorale(old);
+  } else if (!snap.moraleWarned || typeof snap.moraleWarned !== 'object') STATE.moraleWarned = {};
+  if (STATE.resources) delete STATE.resources.morale;
   if (!('deprived' in snap)) STATE.deprived = {};
   if (!('crewIdentity' in snap)) STATE.crewIdentity = {};
   if (!('scouted' in snap)) STATE.scouted = {};
@@ -1895,7 +1905,6 @@ function initState() {
     water:  rules.starting_resources.water,
     o2:     rules.starting_resources.o2,
     hull:   rules.starting_resources.hull,
-    morale: rules.starting_resources.morale,
   };
   // Captain-dependent credits: ship-only build, default 50 gold.
   STATE.goldAmount = 50;
@@ -1903,7 +1912,10 @@ function initState() {
   // Default crew loadout: engineer + medic + botanist. Captain + 2 crew
   // selection screens come in a later pass — for this first build the
   // gated choices need *some* roles aboard so the loop isn't sterile.
-  STATE.crew = ['engineer', 'medic', 'botanist'];
+  // Captain + 2 crew is the cap everywhere (crewJoinRole); the fixed
+  // path's crew-gated choices (event_planet_001 / event_derelict_001)
+  // want the botanist, the engineer covers the repair jobs.
+  STATE.crew = ['engineer', 'botanist'];
 
   // Starting items — same reasoning as crew. A couple so item-gated
   // choices unlock and the player sees that gating works.
@@ -1924,6 +1936,7 @@ function initState() {
   STATE.visited = new Set();
   STATE.flags   = new Set();
   initCrewHP();
+  initCrewMorale(rules.starting_resources.morale); // per crew member (owner ruling 15)
   initCrewSkillCharges();
   STATE.orders = { pace: 'ridiculous', rations: 'standard', waterSplit: 50 };
   STATE.stowaway = null; // debug loop skips the stowaway roll — deterministic testing
@@ -1952,7 +1965,6 @@ function applySetupToState(sel) {
     water:  rules.starting_resources.water,
     o2:     rules.starting_resources.o2,
     hull:   rules.starting_resources.hull,
-    morale: rules.starting_resources.morale,
   };
   STATE.goldAmount = 50;
 
@@ -1961,6 +1973,7 @@ function applySetupToState(sel) {
   STATE.crew      = sel.crew.slice();
   STATE.startCrew = sel.crew.length; // the ending measures losses against this
   initCrewHP();
+  initCrewMorale(rules.starting_resources.morale); // per crew member (owner ruling 15)
   initCrewSkillCharges();
   // Stowaway roll (full-arc decision 2026-08-03): ~35% of runs carry a
   // hidden extra passenger, identity drawn from the flavor pool. They
@@ -2406,6 +2419,7 @@ function killCrew(role) {
   delete STATE.crewHP[role];
   if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
   delete crewPendingOf()[role];
+  forgetCrewMorale(role);
   STATE.flags.add('crew_lost');
   // The 'Autopilot' failure (crew_gone) means your crew all DIED — not
   // that you have none. Solo launches (wizard-permitted, with authored
@@ -2452,6 +2466,10 @@ function joinAsCrew(idn, hp) {
   if (!role) return null;
   STATE.crew.push(role);
   STATE.crewHP[role] = Number.isFinite(hp) ? hp : 100;
+  // Fresh aboard: their own morale starts at the trail's starting morale
+  // (per-crew morale, owner ruling 15), not the mood they walked into.
+  forgetCrewMorale(role);
+  crewMoraleMap()[role] = clamp(trailStartMorale(), 0, 100);
   if (!STATE.crewIdentity) STATE.crewIdentity = {};
   STATE.crewIdentity[role] = { id: idn.id, name: idn.name, story: idn.story, origin: idn.origin || 'stowaway', joinedDay: STATE.daysElapsed }; // joinedDay: the Ship's Log memorial counts days served
   ensureCrewSkillCharges(); // a full crew member gets their skill charges too
@@ -2468,13 +2486,156 @@ function disembarkPassengers(node) {
   for (const p of list) {
     const r = p.reward || {};
     if (Number.isFinite(r.gold)) STATE.goldAmount = Math.max(0, STATE.goldAmount + r.gold);
-    if (Number.isFinite(r.morale)) STATE.resources.morale = clamp(STATE.resources.morale + r.morale, 0, 100);
-    const paid = [Number.isFinite(r.gold) && r.gold ? '+' + r.gold + ' gold' : null, Number.isFinite(r.morale) && r.morale ? '+' + r.morale + ' morale' : null].filter(Boolean).join(', ');
+    // The family's thanks lifts the crew (every member); no crew, no lift — and no claim.
+    const mo = Number.isFinite(r.morale) && r.morale ? Math.round(addCrewMorale(r.morale)) : 0;
+    const paid = [Number.isFinite(r.gold) && r.gold ? '+' + r.gold + ' gold' : null, mo ? (mo > 0 ? '+' : '−') + Math.abs(mo) + ' morale' : null].filter(Boolean).join(', ');
     if (typeof window.pushCruiseLog === 'function') {
       window.pushCruiseLog('◆ ' + String(p.farewell || '{name} steps off at {station}.').replace(/\{name\}/g, p.name).replace(/\{station\}/g, node.name || 'the station') + (paid ? ' ' + paid + '.' : ''));
     }
   }
 }
+
+/* ────────────────────────────────────────────────────────────────
+   PER-CREW MORALE (owner ruling 15, 2026-10-11; GAME_BIBLE §8 "Morale
+   is per-crew member — the MO bar on each crew slot").
+   STATE.crewMorale = { role: 0–100 } is the one source of truth;
+   STATE.resources.morale no longer exists (old saves migrate in
+   loadRun). The captain has no morale and is never averaged.
+   - Group changes (event/outcome "morale", REST, rations, pace, water,
+     deprivation, chef, ARIA, effort tax, combat, crop swings, rewards…)
+     hit EVERY crew member: addCrewMorale(delta).
+   - A named change hits one member: addCrewMorale(delta, role) (an
+     outcome's morale_to: "lowest" | "speaker" | a role).
+   - crewMoraleAvg() — the crew average as the HUD shows it (rounded,
+     anything above 0 reads at least 1), or null with nobody aboard —
+     drives low_morale (<30), mutiny (0), every display and threshold.
+   - Desertion: a member whose own morale is 0 is warned at the hub
+     (crewMoraleWatch, the cruise log) and walks off at the next station
+     arrival (crewDesertions, from travelTo — never mid-encounter). Any
+     raise above 0 before then cancels it (the warning clears with a
+     line). Their role is freed exactly as if they were gone.
+   - No crew aboard (solo, or the last one lost): no morale at all —
+     null average, no low_morale / mutiny, the effort tax costs nothing,
+     REST is locked.
+   ──────────────────────────────────────────────────────────────── */
+function crewMoraleMap() {
+  if (!STATE.crewMorale || typeof STATE.crewMorale !== 'object') STATE.crewMorale = {};
+  return STATE.crewMorale;
+}
+function trailStartMorale(trail) {
+  const t = MOD.map_rules && MOD.map_rules.trails && MOD.map_rules.trails[trail || STATE.trail];
+  const v = t && t.starting_resources && t.starting_resources.morale;
+  return Number.isFinite(v) ? v : 75;
+}
+function initCrewMorale(v) {
+  STATE.crewMorale = {};
+  STATE.moraleWarned = {};
+  for (const role of STATE.crew) STATE.crewMorale[role] = clamp(Number.isFinite(v) ? v : trailStartMorale(), 0, 100);
+}
+// A member's own morale (null for anyone not aboard — the captain
+// included). A member with no entry yet (joined without one) is
+// backfilled at the trail's starting morale.
+function crewMoraleOf(role) {
+  if (!STATE.crew.includes(role)) return null;
+  const m = crewMoraleMap();
+  if (!Number.isFinite(m[role])) m[role] = clamp(trailStartMorale(), 0, 100);
+  return m[role];
+}
+// The unrounded crew average (null with nobody aboard).
+function crewMoraleRaw() {
+  if (!STATE.crew.length) return null;
+  let s = 0;
+  for (const r of STATE.crew) s += crewMoraleOf(r);
+  return s / STATE.crew.length;
+}
+// THE accessor: the crew average with the HUD's rounding (anything
+// above 0 reads at least 1, so 0 means the crew is truly at nothing).
+function crewMoraleAvg() {
+  const v = crewMoraleRaw();
+  return v == null ? null : (v > 0 ? Math.max(1, Math.round(v)) : 0);
+}
+// Applies a morale change — to every crew member (who omitted) or to one
+// (who = a role aboard). Clamped 0–100, kept to 0.01. Returns the real
+// change per member (the average over those it touched), 0 when nobody
+// was there to feel it.
+function addCrewMorale(delta, who) {
+  if (!Number.isFinite(delta) || !delta || !STATE.crew.length) return 0;
+  const roles = who ? (STATE.crew.includes(who) ? [who] : []) : STATE.crew.slice();
+  if (!roles.length) return 0;
+  const m = crewMoraleMap();
+  let moved = 0;
+  for (const r of roles) {
+    const b = crewMoraleOf(r);
+    m[r] = Math.round(clamp(b + delta, 0, 100) * 100) / 100;
+    moved += m[r] - b;
+  }
+  return moved / roles.length;
+}
+// Sets morale outright — every member, or one (save migration, tests).
+function setCrewMorale(v, who) {
+  if (!Number.isFinite(v)) return;
+  const m = crewMoraleMap();
+  for (const r of (who ? [who] : STATE.crew)) if (STATE.crew.includes(r)) m[r] = Math.round(clamp(v, 0, 100) * 100) / 100;
+}
+// The crew member an outcome's morale_to names: "lowest" (whoever is in
+// the worst way — event_shipboard_017's "quiet one") or a role. null
+// when that person isn't aboard: the change then lands on nobody (the
+// preview says so).
+function moraleTargetRole(spec) {
+  if (!spec || !STATE.crew.length) return null;
+  if (spec === 'lowest') return STATE.crew.reduce((a, r) => (crewMoraleOf(r) < crewMoraleOf(a) ? r : a), STATE.crew[0]);
+  return STATE.crew.includes(spec) ? spec : null;
+}
+// A member leaving the ship by any road (death, airlock, dismissal,
+// stepping down, desertion) takes their morale and any warning along.
+function forgetCrewMorale(role) {
+  if (STATE.crewMorale) delete STATE.crewMorale[role];
+  if (STATE.moraleWarned) delete STATE.moraleWarned[role];
+}
+// Hub check (cruise.js renderCruise, every safe between-actions point):
+// a member newly at 0 gets the warning line; one raised back above 0
+// gets the all-clear and the desertion is off.
+function crewMoraleWatch() {
+  if (!STATE.moraleWarned || typeof STATE.moraleWarned !== 'object') STATE.moraleWarned = {};
+  const w = STATE.moraleWarned;
+  for (const r of Object.keys(w)) if (!STATE.crew.includes(r)) delete w[r];
+  for (const r of STATE.crew) {
+    const zero = crewMoraleOf(r) <= 0;
+    if (zero && !w[r]) {
+      w[r] = true;
+      if (window.ShipLog) ShipLog.moraleZero(r);
+      else if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + crewNameOf(r) + '’s morale is at zero. At the next station they walk.');
+    } else if (!zero && w[r]) {
+      delete w[r];
+      if (window.ShipLog) ShipLog.moraleBack(r);
+      else if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + crewNameOf(r) + ' is back above zero. Nobody is leaving.');
+    }
+  }
+}
+// Station arrival (travelTo, before the stop's event): everyone warned
+// at 0 who is still at 0 walks off here. The warning always comes first
+// — someone who hit 0 on the leg in is warned at the hub and leaves at
+// the station after. Returns the roles that left.
+function crewDesertions(node) {
+  const w = STATE.moraleWarned || {};
+  const gone = STATE.crew.filter(r => w[r] && crewMoraleOf(r) <= 0);
+  for (const role of gone) {
+    // The log entry reads who they were — composed before they go.
+    const entry = window.ShipLog ? ShipLog.desertionEntry(role, node) : null;
+    const name = crewNameOf(role);
+    STATE.crew.splice(STATE.crew.indexOf(role), 1);
+    if (STATE.crewHP) delete STATE.crewHP[role];
+    if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
+    delete crewPendingOf()[role];
+    if (STATE.crewIdentity) delete STATE.crewIdentity[role];
+    forgetCrewMorale(role);
+    if (typeof window.pushCruiseLog === 'function') {
+      window.pushCruiseLog(entry || ('◆ ' + name + ' walked off at ' + ((node && node.name) || 'the station') + '.'), entry ? { ai: true, instant: true } : undefined);
+    }
+  }
+  return gone;
+}
+Object.assign(window, { crewMoraleOf, crewMoraleRaw, crewMoraleAvg, addCrewMorale, setCrewMorale, initCrewMorale, moraleTargetRole, forgetCrewMorale, crewMoraleWatch, crewDesertions, trailStartMorale });
 
 /* Station services recharge the crew's active skills — per each skill's
    authored recharges_at in crew_roster.json (all current skills author
@@ -2624,7 +2785,10 @@ function activeTriggers() {
   if (r.water  < 25) active.add('low_water');
   if (r.o2     < 25) active.add('low_o2');
   if (r.hull   < 30) active.add('low_hull');
-  if (r.morale < 30) active.add('low_morale');
+  // Per-crew morale (owner ruling 15): the crew AVERAGE drives it; no
+  // crew aboard, no morale — never low.
+  const mo = crewMoraleAvg();
+  if (mo != null && mo < 30) active.add('low_morale');
   // Position-based (not threshold-based): first/last ~15% of the
   // journey by LEGS flown (registry: "first/final two legs"); journey_mid
   // covers the long middle third. (Days elapsed stopped working once the
@@ -2888,7 +3052,7 @@ function renderHUD() {
     water: r.water < 25,
     o2:    r.o2    < 25,
     hull:  r.hull  < 30,
-    mor:   r.morale < 30,
+    mor:   crewMoraleAvg() != null && crewMoraleAvg() < 30, // crew average (owner ruling 15)
   };
   // Shown values: rounded, but anything above zero reads at least 1 — a
   // tank at 0.4 used to read 0 while it still had something in it.
@@ -2899,7 +3063,7 @@ function renderHUD() {
     <div class="hud-r water${crit.water?' crit':''}" data-tip="resource_water"> <span class="dot"></span>H2 ${sh(r.water)}</div>
     <div class="hud-r o2${crit.o2?' crit':''}"      data-tip="resource_o2"><span class="dot"></span>O2 ${sh(r.o2)}</div>
     <div class="hud-r hull${crit.hull?' crit':''}"  data-tip="resource_hull">  <span class="dot"></span>HL ${sh(r.hull)}</div>
-    <div class="hud-r mor${crit.mor?' crit':''}"    data-tip="resource_morale"><span class="dot"></span>MO ${sh(r.morale)}</div>
+    <div class="hud-r mor${crit.mor?' crit':''}"    data-tip="resource_morale"><span class="dot"></span>MO ${crewMoraleAvg() == null ? '—' : crewMoraleAvg()}</div>
     <div class="hud-r gold" data-tip="resource_gold"><span class="dot"></span>${STATE.goldAmount}g</div>
   `;
   for (const id of ['hud-map', 'hud-enc', 'hud-cruise', 'hud-mining']) {
@@ -3436,10 +3600,11 @@ function cropDrama() {
   }
   if (Math.random() >= (def.extra_event_chance || 0)) return;
   const line = hooks.length ? (lastCropHook = hooks[Math.floor(Math.random() * hooks.length)]) : 'The crop is having a moment.';
-  const swings = [['crop', 5], ['crop', -5], ['morale', 2], ['morale', -2]];
+  // No crew aboard: nobody's mood to swing — the crop takes the drama.
+  const swings = STATE.crew.length ? [['crop', 5], ['crop', -5], ['morale', 2], ['morale', -2]] : [['crop', 5], ['crop', -5]];
   const [k, v] = swings[Math.floor(Math.random() * swings.length)];
   if (k === 'crop') cg.health = clamp(cg.health + v, 1, 100);
-  else STATE.resources.morale = clamp(STATE.resources.morale + v, 0, 100);
+  else addCrewMorale(v); // the whole crew
   if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + line + ' (' + (v > 0 ? '+' : '−') + Math.abs(v) + (k === 'crop' ? ' crop health)' : ' morale)'));
 }
 
@@ -3468,9 +3633,9 @@ function arrivalPassives(node) {
   if (meta && cg && cg.health > 0) {
     const eng = (meta.strengths || {}).morale_engine;
     if (meta.morale_bonus && cg.health >= (meta.healthy_threshold || 65)) {
-      STATE.resources.morale = clamp(STATE.resources.morale + meta.morale_bonus, 0, 100);
+      addCrewMorale(meta.morale_bonus);
     } else if (eng && eng.morale_penalty_when_sick && cg.health <= (meta.sick_threshold || 30)) {
-      STATE.resources.morale = clamp(STATE.resources.morale + eng.morale_penalty_when_sick, 0, 100);
+      addCrewMorale(eng.morale_penalty_when_sick);
     }
   }
 }
@@ -3597,13 +3762,23 @@ function legTravelCost() {
    the pips were decorative). Stop verbs pay on use, encounter choices on
    click, the fabricator per craft. */
 const MORALE_BY_EFFORT = [0, 1, 2, 4, 6, 9];
-function effortTax(pips) { return MORALE_BY_EFFORT[Math.max(0, Math.min(5, pips | 0))] || 0; }
-function payEffortTax(pips) {
+// Per crew member (owner ruling 15): every member pays it. No crew
+// aboard, no morale to tax — every label then shows no cost.
+function effortTax(pips) { return STATE.crew && STATE.crew.length ? (MORALE_BY_EFFORT[Math.max(0, Math.min(5, pips | 0))] || 0) : 0; }
+// receipt (optional object): filled with what each member actually paid
+// (the 0 floor can take less) so a cancelled job refunds it exactly.
+function payEffortTax(pips, receipt) {
   const t = effortTax(pips);
-  if (t) STATE.resources.morale = clamp(STATE.resources.morale - t, 0, 100);
+  if (!t) return 0;
+  const before = Object.fromEntries(STATE.crew.map(r => [r, crewMoraleOf(r)]));
+  addCrewMorale(-t);
+  if (receipt) for (const r of STATE.crew) receipt[r] = Math.round((before[r] - crewMoraleOf(r)) * 100) / 100;
   return t;
 }
-window.effortTax = effortTax; window.payEffortTax = payEffortTax;
+function refundEffortTax(receipt) {
+  for (const [r, paid] of Object.entries(receipt || {})) if (paid > 0) addCrewMorale(paid, r);
+}
+window.effortTax = effortTax; window.payEffortTax = payEffortTax; window.refundEffortTax = refundEffortTax;
 
 const DEPRIVATION = {
   food:  { hp: 4,  morale: 2, failAfter: 10, fail: 'starvation',  onset: 'FOOD GONE — the crew is starving. Every day without food costs health and nerve.' },
@@ -3683,9 +3858,9 @@ function passDays(days, opts) {
     for (const role of STATE.crew.slice()) damageCrew(role, d.hp * dry);
   }
 
-  r.morale = clamp(r.morale + morale, 0, 100);
+  addCrewMorale(morale); // every crew member (kept to 0.01 there)
   // No float drift (83.79999999999997): resources are kept to 0.01.
-  for (const k of ['fuel', 'food', 'water', 'o2', 'hull', 'morale']) r[k] = Math.round(r[k] * 100) / 100;
+  for (const k of ['fuel', 'food', 'water', 'o2', 'hull']) r[k] = Math.round(r[k] * 100) / 100;
 }
 window.ensureOrders = ensureOrders;
 window.ordersPace = ordersPace;
@@ -3742,11 +3917,11 @@ function travelTo(nodeId, opts) {
     passDays(leg.days, { travel: true });
     // ARIA's passive (ai_companions morale_bonus): +1 morale per leg.
     const ariaMorale = aiPassive('morale_bonus');
-    if (ariaMorale) STATE.resources.morale = clamp(STATE.resources.morale + ariaMorale, 0, 100);
+    if (ariaMorale) addCrewMorale(ariaMorale); // every crew member
     // Chef's passive (crew_roster morale_passive: "+1 from actual meals") —
     // only while there is food to cook; a captain chef at half strength.
     const chefMorale = roleAmount('chef', 'morale_passive', 'morale_passive', 1);
-    if (chefMorale > 0 && STATE.resources.food > 0) STATE.resources.morale = clamp(STATE.resources.morale + chefMorale, 0, 100);
+    if (chefMorale > 0 && STATE.resources.food > 0) addCrewMorale(chefMorale); // every crew member
     arrivalPassives(node);
     cropDrama();
     if (legLog) ShipLog.arrival(legLog, node);
@@ -3759,6 +3934,9 @@ function travelTo(nodeId, opts) {
   // 'station'; a future 'leg' value would recharge in the leg tick above).
   if (node.node_type === 'station') {
     disembarkPassengers(node); // scenes B: a rescued passenger steps off at the next station
+    // Per-crew morale (owner ruling 15): anyone warned at 0 and still at 0
+    // walks off here — before the stop's event, never inside one.
+    if (crewDesertions(node).length) renderHUD();
     STATE.researchReady = true; // Academic captain: a fresh Research preview each station leg
     // The chef's cookie tag lasts "one journey leg" — to the next station.
     for (const f of [...STATE.flags]) if (f.startsWith('friendly_with_pirate_')) STATE.flags.delete(f);
@@ -4637,7 +4815,7 @@ function renderChoicesInner(choices) {
     // stopgap convention; .ui-tip primitive stays parked by design rule).
     if (!locked) {
       const tip = [];
-      if (ch.effort) tip.push('Effort ' + ch.effort + '/5 · −' + effortTax(ch.effort) + ' morale');
+      if (ch.effort) tip.push('Effort ' + ch.effort + '/5' + (effortTax(ch.effort) ? ' · −' + effortTax(ch.effort) + ' morale' : '')); // no crew aboard: no morale to tax
       if (ch.gold_cost) tip.push('-' + eventGold(ch.gold_cost) + ' gold');
       if (ch.gate && ch.gate.gold && !ch.gold_cost) tip.push('costs ' + eventGold(ch.gate.gold) + ' gold');
       if (ch.detail) tip.push(ch.detail); // detail that doesn't fit the one-line sub-label
@@ -4647,7 +4825,7 @@ function renderChoicesInner(choices) {
       if (effort && effort.kit) tip.push('Uses up one ' + prettyItem(effort.kit) + ' — it counts toward the effort.');
       if (welcomes && idn.join_note) tip.push(idn.join_note);
       if (cj && cj.name) tip.push(crewJoinRole(cj) ? cj.name + ' joins the crew as ' + cj.join_role + (cj.join_note ? ' — ' + cj.join_note : '') : 'No room in the crew: ' + cj.name + ' rides to the next station as a passenger and eats with everyone' + ((cj.passenger && cj.passenger.reward && cj.passenger.reward.gold) ? '; their family pays ' + cj.passenger.reward.gold + ' gold there' : '') + '.');
-      if (effort && effort.check) tip.push('Short of effort: half the resource gains, ' + (effort.authored ? 'a day more' : 'two more days') + ', ' + Object.entries(effort.check.con).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).join(', ') + '. Crew and tools raise the odds.');
+      if (effort && effort.check) { const con = Object.entries(effort.check.con).filter(([k]) => k !== 'morale' || STATE.crew.length).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).join(', '); tip.push('Short of effort: half the resource gains, ' + (effort.authored ? 'a day more' : 'two more days') + (con ? ', ' + con : '') + '. Crew and tools raise the odds.'); } // no crew aboard: a morale setback lands on nobody
       if (tip.length) btn.title = tip.join('\n');
     }
     // Held until the text lands, then the cascade (prepareDelivery /
@@ -4787,7 +4965,7 @@ function withPctResources(o) {
   const res = Object.assign({}, o.resources || {});
   for (const [k, pct] of Object.entries(o.resources_pct)) {
     if (!Number.isFinite(pct)) continue;
-    const have = k === 'gold' ? STATE.goldAmount : (STATE.resources[k] || 0);
+    const have = k === 'gold' ? STATE.goldAmount : k === 'morale' ? (crewMoraleRaw() || 0) : (STATE.resources[k] || 0);
     res[k] = (res[k] || 0) + Math.round(have * pct / 100);
   }
   return Object.assign({}, o, { resources: res, resources_pct: null });
@@ -4802,7 +4980,14 @@ function outcomeFacts(o) {
     if (!Number.isFinite(v0) || !v0 || !RES_LABEL[k]) continue;
     const v = k === 'gold' ? (v0 < 0 ? -eventGold(-v0) : v0) : effectiveResDelta(k, v0);
     if (!v) continue;
-    facts.push({ text: (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + RES_LABEL[k], weight: Math.abs(v) / (k === 'gold' ? 5 : 1), good: v > 0 });
+    // Morale (owner ruling 15): no crew aboard, nothing lands — no claim.
+    // morale_to names one member: the preview names them too.
+    let label = RES_LABEL[k];
+    if (k === 'morale') {
+      if (!STATE.crew.length) continue;
+      if (o.morale_to) { const who = moraleTargetRole(o.morale_to); if (!who) continue; label = crewNameOf(who).toUpperCase() + ' MORALE'; }
+    }
+    facts.push({ text: (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + label, weight: Math.abs(v) / (k === 'gold' ? 5 : 1), good: v > 0 });
   }
   // Materials are cargo: a gain shows only what the hold can take now.
   const matLand = materialLandings(o.materials || {});
@@ -5354,6 +5539,15 @@ function applyOutcomeEffects(o) {
         if (typeof window.pushCruiseLog === 'function') {
           window.pushCruiseLog('◆ The emergency patch holds — ' + (-v) + ' hull damage never lands. The patch does not survive the experience.');
         }
+      } else if (k === 'morale') {
+        // Per-crew morale (owner ruling 15): a group change hits every
+        // crew member; morale_to names the one it lands on. Combat's net
+        // change is already the fight's own number (no halving).
+        let dv = v;
+        if (!o.combat_net && STATE.halfEffect && dv > 0) dv = Math.floor(dv / 2);
+        if (!o.combat_net && STATE.effortCon && dv > 0) dv = Math.floor(dv / 2);
+        if (o.morale_to) { const who = moraleTargetRole(o.morale_to); if (who) addCrewMorale(dv, who); }
+        else addCrewMorale(dv);
       } else if (k in STATE.resources) {
         let dv = effectiveResDelta(k, v);
         if (STATE.halfEffect && dv > 0) dv = Math.floor(dv / 2); // captain standing in: half the gains (rounded down)
@@ -5365,6 +5559,7 @@ function applyOutcomeEffects(o) {
   if (conSetback) {
     for (const [k, v] of Object.entries(conSetback)) {
       if (k === 'gold') STATE.goldAmount = Math.max(0, STATE.goldAmount + v);
+      else if (k === 'morale') addCrewMorale(v); // the whole crew feels the botched job
       else if (k in STATE.resources) STATE.resources[k] = clamp(STATE.resources[k] + v, 0, resMax(k));
     }
   }
@@ -5405,6 +5600,7 @@ function applyOutcomeEffects(o) {
       if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[gone];
       if (STATE.crewIdentity) delete STATE.crewIdentity[gone];
       delete crewPendingOf()[gone];
+      forgetCrewMorale(gone);
       if (typeof window.pushCruiseLog === 'function') {
         window.pushCruiseLog('◆ ' + goneName + ' steps down from the crew today and rides as a passenger to the next stop. Nobody discusses it at dinner.');
       }
@@ -5764,7 +5960,7 @@ function checkFailure(opts) {
   let type = null;
   if (r.fuel   <= 0 && !arriving) type = 'no_fuel';
   else if (r.hull   <= 0) type = 'hull_zero';
-  else if (r.morale <= 0) type = 'mutiny';
+  else if (crewMoraleAvg() === 0) type = 'mutiny'; // the crew AVERAGE at 0 (owner ruling 15); no crew, no mutiny
   else if (STATE.crew.length === 0 && STATE.flags.has('all_crew_dead')) type = 'crew_gone'; // death only — solo-by-choice is a valid run (ui_sweep catch 2026-08-04)
   else if (deprivationFailure()) type = deprivationFailure();
   else if (STATE.daysElapsed > STATE.baseDays && !arriving) type = 'time_expired';
@@ -5827,7 +6023,10 @@ function scoreValue() {
   // (interstellar arrivals scored "good" with no crew at all) and O2 was
   // always full — weights rebalanced, time as a share of the deadline,
   // O2 out of the average. Thresholds below recalibrated to match.
-  const resNoO2 = (r.fuel + r.food + r.water + r.hull + r.morale) / 5;
+  // Morale is the crew average (owner ruling 15); with no crew aboard
+  // there is none, and the average is of the four ship resources.
+  const mo = crewMoraleRaw();
+  const resNoO2 = mo == null ? (r.fuel + r.food + r.water + r.hull) / 4 : (r.fuel + r.food + r.water + r.hull + mo) / 5;
   let score = 0.6 * crewTerm + 0.4 * resNoO2 + 50 * (STATE.baseDays - STATE.daysElapsed) / Math.max(1, STATE.baseDays);
   score += (STATE.soilSurveys || 0) * 2; // soil sampler surveys (items.json "affects ending score")
   // crops.json arrival_bonus: the crop's colony value (wheat +10%, tomato

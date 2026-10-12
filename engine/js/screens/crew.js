@@ -103,7 +103,9 @@
   };
   const MONITORED_STATUSES = [
     { id: 'wounded',            name: 'Wounded',            kind: 'critical', effect: 'Active skill disabled · passive halved' },
-    { id: 'morale_crisis',      name: 'Morale crisis',      kind: 'critical', effect: 'Ship morale under 25 · at 0 the crew mutinies' },
+    // Per-crew morale (owner ruling 15): this member's own morale.
+    { id: 'morale_crisis',      name: 'Morale crisis',      kind: 'critical', effect: 'Morale under 25 · at 0 they walk off at the next station' },
+    { id: 'deserting',          name: 'Deserting',          kind: 'critical', effect: 'Morale 0 · leaves at the next station unless it rises' },
     { id: 'malnourished',       name: 'Malnourished',       kind: 'negative', get effect() { return dep('food', 'starvation'); } },
     { id: 'dehydrated',         name: 'Dehydrated',         kind: 'negative', get effect() { return dep('water', 'dehydration'); } },
     { id: 'suffocating',        name: 'Suffocating',        kind: 'critical', get effect() { return dep('o2', 'suffocation'); } },
@@ -336,11 +338,12 @@
       STATE.resources.fuel = Math.max(0, STATE.resources.fuel - legFuel);
       return { ok: true, log: 'PUSH ENGINES — Reeves burns double fuel for the leg (−' + (legFuel * 2) + ' total) and blows straight past ' + ((next && next.name) || 'the next stop') + '. Statistically correct, this time.', skipTo: nextIds[0] };
     },
-    // Special Meal — effect {morale: 10, food_cost: 5}.
+    // Special Meal — effect {morale: 10, food_cost: 5} — every crew member.
     chef() {
       if (STATE.resources.food < 5) return { ok: false, refusal: 'Not enough food for a special meal. Reyes takes this personally.' };
+      if (STATE.crew.every(r => crewMoraleOf(r) >= 100)) return { ok: false, refusal: 'Everyone is already in top spirits. Reyes saves the good stuff.' };
       STATE.resources.food = Math.max(0, STATE.resources.food - 5);
-      STATE.resources.morale = Math.min(100, STATE.resources.morale + 10);
+      addCrewMorale(10);
       return { ok: true, log: 'SPECIAL MEAL — Reyes cooks the good stuff (−5 food, +10 morale). The crew is civil again.' };
     },
     // Field Analysis — effect {reveal_biological_properties: true}.
@@ -427,7 +430,10 @@
     if (role && STATE.crewPending && STATE.crewPending[role]) {
       fired.add('pending_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'pending_crisis'));
     }
-    if (mo < 25) { fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'morale_crisis')); }
+    // The captain has no morale (mo null): neither status applies.
+    if (mo != null && mo <= 0) { fired.add('deserting'); fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'deserting')); }
+    else if (mo != null && mo < 25) { fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'morale_crisis')); }
+    if (mo == null) { fired.add('morale_crisis'); fired.add('deserting'); } // not monitored for the captain either
     // Ship-wide deprivation: everyone aboard goes without.
     const dpv = STATE.deprived || {};
     for (const [res, id] of [['food', 'malnourished'], ['water', 'dehydrated'], ['o2', 'suffocating']]) {
@@ -455,7 +461,9 @@
   function render() {
     const m = memberData(cur);
     const hp = m.isCaptain ? 100 : ((typeof crewHPOf === 'function') ? crewHPOf(m.key) : 100);
-    const mo = Math.round(STATE.resources.morale);
+    // Their own morale (owner ruling 15); the captain has none — no row.
+    const moRaw = m.isCaptain ? null : crewMoraleOf(m.key);
+    const mo = moRaw == null ? null : Math.round(moRaw);
 
     $('cd-name-banner').textContent = m.name.toUpperCase();
     $('cd-role-banner').textContent = m.role.toUpperCase();
@@ -477,14 +485,15 @@
     // Stats + HP-driven glow (bar fill tracks the same hue).
     $('cd-stat-hp-fill').style.width = hp + '%';
     $('cd-stat-hp-val').textContent = hp;
-    $('cd-stat-mo-fill').style.width = mo + '%';
-    $('cd-stat-mo-val').textContent = mo;
+    $('cd-stat-mo-fill').parentNode.parentNode.style.display = mo == null ? 'none' : '';
+    $('cd-stat-mo-fill').style.width = (mo || 0) + '%';
+    $('cd-stat-mo-val').textContent = mo == null ? '' : mo;
     const rgb = glowRGB(hp);
     $('overlay-crew').style.setProperty('--cdw-glow-color', rgb.join(','));
     $('cd-stat-hp-fill').style.background = 'rgb(' + rgb.join(',') + ')';
 
     // Status band
-    const { active, monitored } = computeStatuses(hp, mo, cur);
+    const { active, monitored } = computeStatuses(hp, moRaw, cur);
     const activeEl = $('cd-status-active');
     const monEl = $('cd-status-monitored');
     activeEl.innerHTML = '';
@@ -688,6 +697,7 @@
     if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
     if (STATE.crewPending) delete STATE.crewPending[role];
     if (STATE.crewIdentity) delete STATE.crewIdentity[role];
+    if (typeof forgetCrewMorale === 'function') forgetCrewMorale(role); // per-crew morale goes with them
     let line, logLine;
     if (jettisoned) {
       STATE.flags.add('crew_lost');

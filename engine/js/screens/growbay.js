@@ -1242,8 +1242,9 @@
     // Grant the real resource — Food for every crop except Zinnia
     // (Morale), per crop.yield_label.
     let banked = 0;
+    const cheerless = crop.yield_label === 'Morale' && !STATE.crew.length; // no crew aboard: nobody's morale to lift
     if (crop.yield_label === 'Morale') {
-      STATE.resources.morale = clamp(STATE.resources.morale + total, 0, 100);
+      addCrewMorale(total); // every crew member (per-crew morale, owner ruling 15)
     } else {
       // Food past a full store is packed as ration bricks (10 food each)
       // instead of vanishing at the 100 cap — capacity permitting.
@@ -1259,7 +1260,7 @@
 
     // Burst animation — amber number rises and fades
     const burst = $('harvest-burst');
-    burst.textContent = '+' + total + ' ' + crop.yield_label.toUpperCase();
+    burst.textContent = cheerless ? 'NO CREW TO CHEER' : '+' + total + ' ' + crop.yield_label.toUpperCase();
     burst.classList.remove('fire');
     void burst.offsetWidth;
     burst.classList.add('fire');

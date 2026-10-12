@@ -190,14 +190,14 @@ const settleSubject = page => page.waitForFunction(() => {
     const off = await page.evaluate(() => {
       const st = STATE.nodes.find(n => n.node_type === 'station' && Array.isArray(n.connects_to) && n.connects_to.length) || STATE.nodes.find(n => Array.isArray(n.connects_to) && n.connects_to.length && n.id !== STATE.currentId);
       st.node_type = 'station';
-      STATE.resources.morale = 50;
+      setCrewMorale(50);
       const g0 = STATE.goldAmount;
       const realEnter = window.enterEvent; let entered = null;
       enterEvent = (n, ev) => { entered = ev && ev.id; };
       travelTo(st.id);
       enterEvent = realEnter;
       const log = (STATE.shipLog || []).map(e => e.text || '').join('\n');
-      return { pas: STATE.passengers.length, gold: STATE.goldAmount - g0, morale: STATE.resources.morale, log: /Mira Kastel steps off at/.test(log) };
+      return { pas: STATE.passengers.length, gold: STATE.goldAmount - g0, morale: crewMoraleRaw(), log: /Mira Kastel steps off at/.test(log) };
     });
     ok(off.pas === 0 && off.gold === 20 && off.log, 'next station: she steps off, +20 gold reunification transfer, logged');
     ok(off.morale >= 50, 'and +4 morale (net of the leg: ' + off.morale + ')');
@@ -228,9 +228,9 @@ const settleSubject = page => page.waitForFunction(() => {
     await enter(page, 'event_derelict_005');
     const tri = await choiceInfo(page, 'TRIAGE');
     ok(tri && !tri.locked && /●●○○○/.test(tri.sub), 'TRIAGE open with a medic, effort ●●○○○');
-    const mo = await page.evaluate(() => STATE.resources.morale);
+    const mo = await page.evaluate(() => crewMoraleRaw());
     await click(page, 'TRIAGE');
-    ok(await page.evaluate(m => STATE.resources.morale === m - 2, mo), 'TRIAGE pays the effort tax (−2 morale)');
+    ok(await page.evaluate(m => crewMoraleRaw() === m - 2, mo), 'TRIAGE pays the effort tax (−2 morale)');
     await click(page, '"What was the Bluejay\'s heading?"');
     await click(page, 'COPY HER FLIGHT RECORDER');
     const r = await page.evaluate(() => ({ out: STATE.currentOutcomeId, log: STATE.items.includes('logbook_fragment'), mira: crewNameOf('engineer') }));
@@ -280,10 +280,10 @@ const settleSubject = page => page.waitForFunction(() => {
     const tr = await choiceInfo(page, 'OFFER A TRADE');
     ok(tr.locked && /Need: Diplomat/.test(tr.sub), 'OFFER A TRADE needs a diplomat');
     await shot(page, 'lifeform_contact');
-    const mo = await page.evaluate(() => STATE.resources.morale);
+    const mo = await page.evaluate(() => crewMoraleRaw());
     await click(page, '"We come in peace."');
     v = await view(page);
-    ok(v.title === 'UNDERSTOOD' && await page.evaluate(m => STATE.resources.morale === Math.min(100, m + 5), mo), 'UNDERSTOOD: +5 morale');
+    ok(v.title === 'UNDERSTOOD' && await page.evaluate(m => crewMoraleRaw() === Math.min(100, m + 5), mo), 'UNDERSTOOD: +5 morale');
     await page.close();
   }
   {
@@ -315,9 +315,9 @@ const settleSubject = page => page.waitForFunction(() => {
     await click(page, 'WAVE');
     const s = await choiceInfo(page, 'TAKE A SAMPLE');
     ok(/MARV · −2 MORALE/.test(s.sub), 'MARV previews TAKE A SAMPLE: ' + s.sub.trim());
-    const mo = await page.evaluate(() => STATE.resources.morale);
+    const mo = await page.evaluate(() => crewMoraleRaw());
     await click(page, 'TAKE A SAMPLE');
-    ok(await page.evaluate(m => STATE.resources.morale === m - 2 && STATE.items.includes('medkit'), mo), 'the swab lands as previewed (−2 morale), the medkit is not used up');
+    ok(await page.evaluate(m => crewMoraleRaw() === m - 2 && STATE.items.includes('medkit'), mo), 'the swab lands as previewed (−2 morale), the medkit is not used up');
     await page.close();
   }
 
@@ -341,11 +341,11 @@ const settleSubject = page => page.waitForFunction(() => {
     await click(page, '"Why tell me now?"');
     v = await view(page);
     ok(v.body === 'Dr. Vasquez exhales.' && /You're the captain/.test(v.line || ''), 'BECAUSE: {speaker.name} → "Dr. Vasquez exhales."');
-    const mo = await page.evaluate(() => STATE.resources.morale);
+    const mo = await page.evaluate(() => crewMoraleRaw());
     await click(page, '"We share it. Always."');
     v = await view(page);
     ok(v.title === 'SHARED' && /Good/.test(v.line || '') && v.speaker === 'DR. VASQUEZ', 'SHARED, she answers "Good."');
-    ok(await page.evaluate(m => STATE.resources.morale === Math.min(100, m + 3), mo), '+3 morale');
+    ok(await page.evaluate(m => crewMoraleRaw() === Math.min(100, m + 3), mo), '+3 morale');
     await page.close();
   }
   {
@@ -438,7 +438,7 @@ const settleSubject = page => page.waitForFunction(() => {
       endRun = () => {}; checkFailure = () => false;
       for (let i = 0; i < N; i++) {
         STATE.currentId = from; STATE.stationVisit = null; entered = null; STATE.ended = false;
-        Object.assign(STATE.resources, { fuel: 100, food: 100, water: 100, o2: 100, hull: 100, morale: 100 }); STATE.daysElapsed = 0;
+        Object.assign(STATE.resources, { fuel: 100, food: 100, water: 100, o2: 100, hull: 100 }); setCrewMorale(100); STATE.daysElapsed = 0;
         travelTo(s.id);
         const v = STATE.stationVisit;
         if (!v || v.node !== s.id) continue;

@@ -131,6 +131,12 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
       const cap = typeof resMax === "function" ? resMax(k) : 100; // upgrades / captain bonuses raise ceilings
       if (!Number.isFinite(v) || v < 0 || v > cap) bad.push(`resources.${k}=${v}`);
     }
+    // Per-crew morale (owner ruling 15): one 0-100 entry per crew member,
+    // none for anyone else, and no ship-wide morale left in resources.
+    if ('morale' in STATE.resources) bad.push('resources.morale exists (per-crew morale is STATE.crewMorale)');
+    for (const r of STATE.crew) { const m = (STATE.crewMorale || {})[r]; if (!Number.isFinite(m) || m < 0 || m > 100) bad.push(`crewMorale.${r}=${m}`); }
+    for (const r of Object.keys(STATE.crewMorale || {})) if (!STATE.crew.includes(r)) bad.push(`crewMorale.${r} for someone not aboard`);
+    if (STATE.crew.length > 2) bad.push(`crew of ${STATE.crew.length} (cap is captain + 2)`);
     if (!Number.isFinite(STATE.goldAmount) || STATE.goldAmount < 0) bad.push(`gold=${STATE.goldAmount}`);
     if (!Number.isFinite(STATE.daysElapsed) || STATE.daysElapsed < 0) bad.push(`days=${STATE.daysElapsed}`);
     for (const it of STATE.items) { if (typeof it !== 'string') bad.push(`items has ${typeof it}`); }

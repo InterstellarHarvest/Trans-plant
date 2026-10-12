@@ -677,7 +677,8 @@ const eventOnTrail = (ev, trail) => {
 // conversation: roles in preference order or "any"), body_by_speaker
 // (narrator body per speaking role, "any" fallback), npc.displayName,
 // and outcome crew_join (a named rescue: crew in join_role, else a
-// passenger to the next station with crew_join.passenger.reward).
+// passenger to the next station with crew_join.passenger.reward), and
+// outcome morale_to (per-crew morale: the one member a change names).
 {
   const BIOMES = new Set(['alien', 'desert', 'habitable', 'ice', 'ocean', 'volcanic']); // scene_art.js PLANET_BIOMES
   const isUpper = v => typeof v === 'string' && v.trim() === v && v.length > 0 && v === v.toUpperCase();
@@ -708,6 +709,14 @@ const eventOnTrail = (ev, trail) => {
     const outs = [...Object.entries(ev.outcomes || {}).map(([k, o]) => ['outcomes.' + k, o])];
     for (const { layer, choices } of choiceSetsOf(ev)) for (const ch of choices) if (ch.outcome && typeof ch.outcome === 'object') outs.push([layer, ch.outcome]);
     for (const [where, o] of outs) {
+      // morale_to (per-crew morale, owner ruling 15): the outcome's morale
+      // lands on one named crew member — "lowest" or a crew role — so it
+      // needs a morale change to carry.
+      if (o && o.morale_to != null) {
+        const mat = atOf(file, ev.id, where);
+        if (o.morale_to !== 'lowest' && !crewRoles.has(o.morale_to)) err(`${mat}: morale_to "${o.morale_to}" must be "lowest" or a crew role`);
+        if (!(o.resources && Number.isFinite(o.resources.morale) && o.resources.morale)) err(`${mat}: morale_to without a resources.morale change — it moves nothing`);
+      }
       const cj = o && o.crew_join;
       if (!cj) continue;
       const cat = atOf(file, ev.id, where);
@@ -1174,6 +1183,7 @@ const eventOnTrail = (ev, trail) => {
     crop_stage: ['crop', 'stage', 'growth', 'health'], crop_ready: ['crop', 'health'],
     arrival: ['place', 'costs'],
     fight_won: ['title', 'effects'], fight_lost: ['title', 'effects'], fight_fled: ['title', 'effects'], fight_paid: ['title', 'effects'],
+    morale_zero: ['name'], morale_back: ['name'], desertion: ['name', 'role', 'place', 'crew_left'], // per-crew morale (owner ruling 15)
   };
   for (const a of ais) {
     const t = a.log_templates;

@@ -14,16 +14,16 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     localStorage.clear();
     applySetupToState({ trail: 'mars', ai: 'aria', captain: 'veteran', crew, crop: 'wheat', ship: 'D' });
     STATE.stowaway = null; STATE.items = items.slice(); STATE.cropGrowth.lastTickDay = 0;
-    STATE.resources.morale = 60; STATE.resources.hull = 60; STATE.goldAmount = 50;
+    setCrewMorale(60); STATE.resources.hull = 60; STATE.goldAmount = 50;
     const ev = EVENTS[evId];
     enterEvent(STATE.byId[STATE.currentId], ev);
     const btn = [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => new RegExp(re, 'i').test(b.textContent));
     const sub = btn.textContent.replace(/\s+/g, ' '), tip = btn.getAttribute('title') || ((btn.dataset.tipTitle ? btn.dataset.tipTitle + '\n\n' : '') + (btn.dataset.tipDescription || '')); // title= is upgraded to .ui-tip data (parity-shell)
-    const before = { d: STATE.daysElapsed, m: STATE.resources.morale, h: STATE.resources.hull, mats: Object.assign({}, STATE.materials) };
+    const before = { d: STATE.daysElapsed, m: crewMoraleRaw(), h: STATE.resources.hull, mats: Object.assign({}, STATE.materials) };
     Math.random = () => rnd;
     const ch = (ev.choices || []).find(c => new RegExp(re, 'i').test(c.text || ''));
     handleChoiceClick(ch); // direct: the UI's double-click guard ignores a click right after render
-    return { sub, tip, days: STATE.daysElapsed - before.d, morale: STATE.resources.morale - before.m, hull: STATE.resources.hull - before.h,
+    return { sub, tip, days: STATE.daysElapsed - before.d, morale: crewMoraleRaw() - before.m, hull: STATE.resources.hull - before.h,
       matsGained: Object.entries(STATE.materials).reduce((a, [k, v]) => a + v - (before.mats[k] || 0), 0), body: document.getElementById('enc-narr-body').textContent };
   }, { crew, items, rnd, evId, re });
 

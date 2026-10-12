@@ -29,7 +29,7 @@ const COSTED = `Object.values(EVENTS).find(e => !e.layers && e.active !== false 
   console.log('— ARIA: +1 morale per leg');
   const legMorale = async ai => {
     const page = await boot({ ai });
-    const m = await page.evaluate(() => { Math.random = () => 0.99; STATE.resources.morale = 50; const n = [...nextAvailableNodes()][0]; travelTo(n, { skipEvent: true }); return STATE.resources.morale; });
+    const m = await page.evaluate(() => { Math.random = () => 0.99; setCrewMorale(50); const n = [...nextAvailableNodes()][0]; travelTo(n, { skipEvent: true }); return crewMoraleRaw(); });
     await page.close(); return m;
   };
   const mA = await legMorale('aria'), mM = await legMorale('marv');
@@ -130,12 +130,12 @@ const COSTED = `Object.values(EVENTS).find(e => !e.layers && e.active !== false 
         const ev = eval(find);
         const ch = ev.choices.find(c => c.requires_crew === 'xenobiologist' && Object.values(c.outcome.resources||{}).some(v => v > 1));
         const k = Object.entries(ch.outcome.resources).find(([, v]) => v > 1)[0];
-        STATE.resources[k] = 10; if (k === 'gold') STATE.goldAmount = 10;
+        if (k === 'morale') setCrewMorale(10); else STATE.resources[k] = 10; if (k === 'gold') STATE.goldAmount = 10; // morale is per crew member (owner ruling 15)
         enterEvent(STATE.byId[STATE.currentId], ev);
         const btn = [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => b.textContent.includes((ch.text || '').slice(0, 20)));
         const sub = btn.innerText; const locked = btn.classList.contains('locked');
         if (!locked) btn.click();
-        return { ev: ev.id, k, authored: ch.outcome.resources[k], after: k === 'gold' ? STATE.goldAmount : STATE.resources[k], locked, sub };
+        return { ev: ev.id, k, authored: ch.outcome.resources[k], after: k === 'gold' ? STATE.goldAmount : k === 'morale' ? crewMoraleRaw() : STATE.resources[k], locked, sub };
       }, find);
       await page.close(); return r;
     };

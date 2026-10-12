@@ -30,7 +30,7 @@ async function boot(setup) {
     const r = await page.evaluate(async () => {
       const ev = Object.values(EVENTS).find(e => (e.choices || []).some(c => c.launch_minigame));
       const ch = ev.choices.find(c => c.launch_minigame);
-      STATE.resources.morale = 60; STATE.resources.food = 60;
+      setCrewMorale(60); STATE.resources.food = 60;
       enterEvent(STATE.byId[STATE.currentId], ev);
       await new Promise(r => setTimeout(r, 300));
       if (typeof finishAllTyping === 'function') finishAllTyping();
@@ -40,12 +40,12 @@ async function boot(setup) {
       begin && begin.click(); await new Promise(r => setTimeout(r, 300));
       const base = ch.outcome || {}, poor = ((ch.tier_outcomes || {}).poor || {}).resources || {};
       const worst = Object.assign({}, base.resources || {}, poor);
-      return { id: ev.id, day: STATE.daysElapsed, res: Object.assign({}, STATE.resources), losses: Object.fromEntries(Object.entries(worst).filter(([, v]) => v < 0)) };
+      return { id: ev.id, day: STATE.daysElapsed, res: Object.assign({}, STATE.resources, { morale: crewMoraleRaw() }) /* per-crew morale: the crew average */, losses: Object.fromEntries(Object.entries(worst).filter(([, v]) => v < 0)) };
     });
     await page.reload();
     await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.items && MOD.flavor);
     await page.evaluate(() => loadRun()); await page.waitForTimeout(400);
-    const after = await page.evaluate(() => ({ ev: STATE.currentEvent && STATE.currentEvent.id, day: STATE.daysElapsed, res: Object.assign({}, STATE.resources), log: JSON.stringify((STATE.shipLog || []).slice(-2)) }));
+    const after = await page.evaluate(() => ({ ev: STATE.currentEvent && STATE.currentEvent.id, day: STATE.daysElapsed, res: Object.assign({}, STATE.resources, { morale: crewMoraleRaw() }) /* per-crew morale: the crew average */, log: JSON.stringify((STATE.shipLog || []).slice(-2)) }));
     const lossOk = Object.entries(r.losses).every(([k, v]) => after.res[k] < r.res[k]);
     ok(!after.ev && after.day > r.day && lossOk && /abandoned partway/.test(after.log), `${r.id}: reload settles as a quit at the hub (days +${after.day - r.day}, losses ${JSON.stringify(r.losses)})`);
     await page.close();

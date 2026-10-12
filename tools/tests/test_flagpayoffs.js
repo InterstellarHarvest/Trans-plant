@@ -27,7 +27,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     const lines = [];
     for (let i = 0; i < 6; i++) {
       STATE.cropGrowth.lastTickDay = STATE.daysElapsed;
-      Object.assign(STATE.resources, { fuel: 100, food: 100, water: 100, o2: 100, hull: 100, morale: 100 });
+      Object.assign(STATE.resources, { fuel: 100, food: 100, water: 100, o2: 100, hull: 100 }); setCrewMorale(100);
       if (STATE.byId[STATE.currentId].node_type === 'fork') STATE.flags.add('chose_alpha');
       const n = [...nextAvailableNodes()][0];
       if (!n) break;

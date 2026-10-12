@@ -113,11 +113,11 @@ const nodeOfType = (page, t) => page.evaluate(t => { const n = STATE.nodes.find(
   {
     const page = await boot({ crop: 'zinnia', ai: 'marv' });
     const r = await page.evaluate(() => {
-      STATE.cropGrowth.health = 80; STATE.resources.morale = 50;
+      STATE.cropGrowth.health = 80; setCrewMorale(50);
       arrivalPassives((STATE.nodes.find(n => n.node_type === 'planet') || Object.assign(STATE.nodes.find(x => x !== STATE.nodes[0] && !['station', 'fork'].includes(x.node_type) && (STATE.byId[STATE.currentId] !== x)), { node_type: 'planet' })));
-      const healthy = STATE.resources.morale;
+      const healthy = crewMoraleRaw();
       STATE.cropGrowth.health = 20; arrivalPassives((STATE.nodes.find(n => n.node_type === 'planet') || Object.assign(STATE.nodes.find(x => x !== STATE.nodes[0] && !['station', 'fork'].includes(x.node_type) && (STATE.byId[STATE.currentId] !== x)), { node_type: 'planet' })));
-      return { healthy, sick: STATE.resources.morale };
+      return { healthy, sick: crewMoraleRaw() };
     });
     ok(r.healthy === 58 && r.sick === 53, `zinnia morale +8 healthy / −5 sick per leg (${r.healthy}, ${r.sick})`);
     await page.close();

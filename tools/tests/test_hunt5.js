@@ -19,7 +19,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     await page.evaluate(o => {
       localStorage.removeItem('transplant_save_v1');
       applySetupToState(Object.assign({ trail: 'mars', ai: 'marv', captain: 'veteran', crew: ['engineer', 'pilot'], crop: 'wheat', ship: 'T' }, o));
-      STATE.stowaway = null; STATE.resources.morale = 80;
+      STATE.stowaway = null; setCrewMorale(80);
     }, o);
     await page.waitForTimeout(150);
     return page;
@@ -194,7 +194,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       return interpolateStowawayTokens(EVENTS.event_general_003.choices[3].text);
     });
     ok(/Wembly/.test(r) && !/Hargrove/.test(r), `{crew.diplomat} names who holds the role (${r})`);
-    const z = await page.evaluate(() => { STATE.visited = new Set(); STATE.flags.delete('zinnia_beat_1'); const m = STATE.resources.morale; renderCruise(); return { d: STATE.resources.morale - m, f: STATE.flags.has('zinnia_beat_1') }; });
+    const z = await page.evaluate(() => { STATE.visited = new Set(); STATE.flags.delete('zinnia_beat_1'); const m = crewMoraleRaw(); renderCruise(); return { d: crewMoraleRaw() - m, f: STATE.flags.has('zinnia_beat_1') }; });
     ok(z.f && z.d >= 2, `zinnia arc: bloom beat fires with a real morale bump (+${z.d})`);
     const st = await page.evaluate(() => {
       STATE.deprived = { food: 3 }; openCrewDetail('engineer');
@@ -232,7 +232,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       let d0 = STATE.daysElapsed; (await verbAt('asteroid_field', 'MINE')).click();
       out.mineDays = STATE.daysElapsed - d0;
       // REPAIR locked at full hull; REST locked when morale is high
-      STATE.resources.hull = resMax('hull'); STATE.materials = { metal: 9, scrap: 9 }; STATE.resources.morale = 98;
+      STATE.resources.hull = resMax('hull'); STATE.materials = { metal: 9, scrap: 9 }; setCrewMorale(98);
       const rep = await verbAt('station', 'REPAIR'); out.repairLocked = rep.classList.contains('locked');
       const rest = await verbAt('station', 'REST'); out.restLocked = rest.classList.contains('locked');
       // MEDBAY treats every hurt crew member
@@ -269,20 +269,20 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       document.body.classList.remove('stop-active'); document.getElementById('stop-btn').click();
       await new Promise(r => setTimeout(r, 80));
       window.openMining = cb => cb({ inventory: { metal: 1 }, runs: 1 });
-      STATE.resources.morale = 80;
+      setCrewMorale(80);
       const mine = [...document.querySelectorAll('#stop-choices .stop-choice')].find(x => /MINE/.test(x.textContent));
       out.mineLabel = mine.querySelector('.effort').textContent;
       mine.click();
-      out.mineTax = 80 - STATE.resources.morale;
+      out.mineTax = 80 - crewMoraleRaw();
       // returning from an event lands stopped: the Stop menu open, Resume travels
       document.body.classList.remove('stop-active');
       enterEvent(STATE.byId[STATE.currentId], EVENTS.event_general_003); returnToHub();
       out.stopped = document.body.classList.contains('stop-active') && document.getElementById('stop-btn').textContent === 'Resume';
       // tomato drama
       const r0 = Math.random; Math.random = () => 0.01;
-      const h0 = STATE.cropGrowth.health, m0 = STATE.resources.morale, l0 = (STATE.shipLog || []).length;
+      const h0 = STATE.cropGrowth.health, m0 = crewMoraleRaw(), l0 = (STATE.shipLog || []).length;
       cropDrama(); Math.random = r0;
-      out.drama = (STATE.cropGrowth.health !== h0 || STATE.resources.morale !== m0) && (STATE.shipLog || []).length > l0;
+      out.drama = (STATE.cropGrowth.health !== h0 || crewMoraleRaw() !== m0) && (STATE.shipLog || []).length > l0;
       return out;
     });
     ok(r.mineTax === 4 && /−4 MO/.test(r.mineLabel), `MINE ●●● costs 4 morale, and says so (${r.mineLabel}, −${r.mineTax})`);

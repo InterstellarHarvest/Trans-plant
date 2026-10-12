@@ -27,7 +27,7 @@
   const $ = id => document.getElementById(id);
   const MAX_ENTRY = 120;            // Bible §19 hard cap per entry
   const LOG_CAP = 600;              // journal entries kept in the save (see compact())
-  const RES_KEYS = ['fuel', 'food', 'water', 'o2', 'hull', 'morale'];
+  const RES_KEYS = ['fuel', 'food', 'water', 'o2', 'hull']; // morale is per crew member: 'mo.<role>' (owner ruling 15)
   const RES_NAME = { fuel: 'FUEL', food: 'FOOD', water: 'H2O', o2: 'O2', hull: 'HULL', morale: 'MORALE', gold: 'GOLD' };
   // Growth stages — same 25/50/75/100 cut points and names every crop
   // uses in growbay.js CROP_META.stages.
@@ -42,6 +42,8 @@
     choice: '{title}: chose “{choice}”.', outcome_good: '{line} {effects}.', outcome_bad: '{line} {effects}.',
     death: '{name} died. {crew_left}.', memorial_title: 'IN MEMORY OF {name}',
     stowaway_join: '{name} joined as {role}. Crew {crew_count}.', stowaway_passenger: '{name} rides as a passenger. Crew {crew_count}.',
+    morale_zero: '{name} is at zero morale: leaves at the next station.', morale_back: '{name} is back above zero. Staying.',
+    desertion: '{name} ({role}) walked off at {place}. {crew_left}.',
     crop_stage: '{crop}: {stage}, {growth}% grown, health {health}.', crop_ready: '{crop} ready to harvest. Health {health}.',
     arrival: 'Arrived at {place}. The leg cost {costs}.',
     fight_won: '{title}: won. {effects}.', fight_lost: '{title}: lost. {effects}.', fight_fled: '{title}: fled. {effects}.', fight_paid: '{title}: paid them off. {effects}.',
@@ -97,7 +99,10 @@
     for (const [m, q] of Object.entries(STATE.materials || {})) n['mat.' + m] = Number(q) || 0;
     for (const id of STATE.items || []) n['item.' + id] = (n['item.' + id] || 0) + 1;
     const names = {};
-    for (const r of STATE.crew || []) { n['hp.' + r] = typeof crewHPOf === 'function' ? crewHPOf(r) : 100; names[r] = typeof crewNameOf === 'function' ? crewNameOf(r) : r; }
+    for (const r of STATE.crew || []) {
+      n['hp.' + r] = typeof crewHPOf === 'function' ? crewHPOf(r) : 100; names[r] = typeof crewNameOf === 'function' ? crewNameOf(r) : r;
+      if (typeof crewMoraleOf === 'function') n['mo.' + r] = crewMoraleOf(r); // per-crew morale (owner ruling 15)
+    }
     if (STATE.cropGrowth && STATE.cropGrowth.health > 0) n.crop = STATE.cropGrowth.health;
     if (STATE.fabricator) n.fab = STATE.fabricator.wear || 0;
     return { n, crew: (STATE.crew || []).slice(), names, broken: !!(STATE.fabricator && STATE.fabricator.broken), day: STATE.daysElapsed };
@@ -113,7 +118,17 @@
     const joined = b.crew.filter(r => !a.crew.includes(r));
     for (const r of lost) out.push({ text: 'LOST ' + String(a.names[r] || r).toUpperCase(), w: 1000 });
     for (const r of joined) out.push({ text: '+' + String(b.names[r] || r).toUpperCase() + ' ABOARD', w: 900 });
+    // Morale (owner ruling 15): a change every member shared reads as one
+    // "+N MORALE"; anything else names who it moved.
+    const moKeys = [...keys].filter(k => k.startsWith('mo.') && a.crew.includes(k.slice(3)) && b.crew.includes(k.slice(3)));
+    const moD = moKeys.map(d);
+    if (moD.length && moD.every(v => v === moD[0])) {
+      if (moD[0]) out.push({ text: (moD[0] > 0 ? '+' : '−') + Math.abs(moD[0]) + ' MORALE', w: Math.abs(moD[0]) });
+    } else {
+      moKeys.forEach((k, i) => { const v = moD[i]; if (v) out.push({ text: String(b.names[k.slice(3)] || k.slice(3)).toUpperCase() + ' ' + (v > 0 ? '+' : '−') + Math.abs(v) + ' MORALE', w: Math.abs(v) }); });
+    }
     for (const k of keys) {
+      if (k.startsWith('mo.')) continue;
       const v = d(k);
       if (!v) continue;
       const sgn = v > 0 ? '+' : '−', av = Math.abs(v);
@@ -268,6 +283,23 @@
       const text = role ? voiced('stowaway_join', { name, role: roleTitle(role), crew_count: n })
                         : voiced('stowaway_passenger', { name, crew_count: n });
       push({ text, type: 'event' }, { ai: true, instant: true });
+    },
+    // Per-crew morale (owner ruling 15): the warning when a member hits 0,
+    // the all-clear when they're raised back, and the desertion entry
+    // (composed BEFORE they leave — it reads who they were).
+    moraleZero(role) {
+      const name = typeof crewNameOf === 'function' ? crewNameOf(role) : role;
+      push({ text: voiced('morale_zero', { name }), type: 'event' }, { ai: true, instant: true });
+    },
+    moraleBack(role) {
+      const name = typeof crewNameOf === 'function' ? crewNameOf(role) : role;
+      push({ text: voiced('morale_back', { name }), type: 'event' }, { ai: true, instant: true });
+    },
+    desertionEntry(role, node) {
+      const name = typeof crewNameOf === 'function' ? crewNameOf(role) : role;
+      const left = Math.max(0, (STATE.crew || []).filter(r => r !== role).length);
+      const place = clip((node && node.name) || 'the station', 40);
+      return { text: clip(voiced('desertion', { name, role: roleTitle(role), place, crew_left: crewLeft(left) }), MAX_ENTRY), type: 'event', day: STATE.daysElapsed };
     },
     // A travel leg landed at `node` (r = begin({fresh:true}) before the
     // leg): "Arrived at X. The leg cost …", then whatever the leg logged.

@@ -11,14 +11,14 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   const boot = async (crew = ['engineer', 'pilot']) => {
     await page.goto(URL);
     await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.items && MOD.crew_roster);
-    await ev(c => { localStorage.removeItem('transplant_save_v1'); applySetupToState({ trail: 'interstellar', ai: 'marv', captain: 'veteran', crew: c, crop: 'wheat', ship: 'D' }); STATE.stowaway = null; STATE.resources.morale = 100; }, crew);
+    await ev(c => { localStorage.removeItem('transplant_save_v1'); applySetupToState({ trail: 'interstellar', ai: 'marv', captain: 'veteran', crew: c, crop: 'wheat', ship: 'D' }); STATE.stowaway = null; setCrewMorale(100); }, crew);
     await page.waitForTimeout(200);
   };
 
   console.log('— food');
   await boot();
   await ev(() => { STATE.resources.food = 0; passDays(1); });
-  let s = await ev(() => ({ hp: STATE.crewHP.engineer, mo: STATE.resources.morale, dep: STATE.deprived.food, log: (STATE.shipLog || []).map(e => e.text || e).join('|') }));
+  let s = await ev(() => ({ hp: STATE.crewHP.engineer, mo: crewMoraleRaw(), dep: STATE.deprived.food, log: (STATE.shipLog || []).map(e => e.text || e).join('|') }));
   ok(s.hp === 96 && s.dep === 1, `one day at 0 food: crew −4 HP (${s.hp}), counter 1`);
   ok(s.mo < 100, `morale drops (${s.mo.toFixed(1)})`);
   ok(/FOOD GONE/.test(s.log), 'onset warning logged once');

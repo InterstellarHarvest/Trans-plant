@@ -110,7 +110,7 @@ async function boot(setup) {
       // walk the path at RIDICULOUS with no events: total travel days ≈ 60% of baseDays
       let days = 0, guard = 0;
       while (connectionsOf(STATE.byId[STATE.currentId]).length && guard++ < 80) {
-        STATE.resources.fuel = 100; STATE.resources.food = 100; STATE.resources.water = 100; STATE.resources.o2 = 100; STATE.resources.hull = 100; STATE.resources.morale = 100; STATE.cropGrowth.health = 90; STATE.cropGrowth.pest = false; STATE.flags.add('crop_death_accepted');
+        STATE.resources.fuel = 100; STATE.resources.food = 100; STATE.resources.water = 100; STATE.resources.o2 = 100; STATE.resources.hull = 100; setCrewMorale(100); STATE.cropGrowth.health = 90; STATE.cropGrowth.pest = false; STATE.flags.add('crop_death_accepted');
         const d0 = STATE.daysElapsed;
         const n = [...nextAvailableNodes()][0] || connectionsOf(STATE.byId[STATE.currentId])[0];
         if (STATE.byId[STATE.currentId].node_type === 'fork') STATE.flags.add('chose_alpha');
@@ -124,10 +124,10 @@ async function boot(setup) {
     await page.close();
     const p2 = await boot();
     const sc = await p2.evaluate(() => {
-      Object.assign(STATE.resources, { fuel: 60, food: 60, water: 60, o2: 60, hull: 60, morale: 60 });
+      Object.assign(STATE.resources, { fuel: 60, food: 60, water: 60, o2: 60, hull: 60 }); setCrewMorale(60);
       STATE.daysElapsed = Math.round(STATE.baseDays * 0.7);
       const mid = { v: scoreValue(), b: scoreBracket() };
-      Object.assign(STATE.resources, { fuel: 95, food: 95, water: 95, o2: 95, hull: 95, morale: 95 });
+      Object.assign(STATE.resources, { fuel: 95, food: 95, water: 95, o2: 95, hull: 95 }); setCrewMorale(95);
       STATE.daysElapsed = Math.round(STATE.baseDays * 0.4);
       const top = { v: scoreValue(), b: scoreBracket() };
       return { mid, top };

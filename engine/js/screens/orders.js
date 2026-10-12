@@ -277,9 +277,11 @@
     const arrDelta  = dayDelta(arrival, savedArr, false);   // sooner is better
     const fuelDelta = dayDelta(fuelEmpty, savedFuel, true); // later is better
 
-    const crewLabel = p.drainMult < 1 ? 'EASING' : (p.drainMult > 1 ? 'RISING' : 'STEADY');
+    // Pace drains crew MORALE (index.html passDays) — no crew aboard, no drain (owner ruling 15).
+    const noCrew = !STATE.crew.length;
+    const crewLabel = noCrew ? 'NO CREW' : p.drainMult < 1 ? 'EASING' : (p.drainMult > 1 ? 'RISING' : 'STEADY');
     let crewDeltaText = null, crewDeltaCls = null;
-    if (p.drainMult !== s.drainMult) {
+    if (!noCrew && p.drainMult !== s.drainMult) {
       crewDeltaText = p.drainMult > s.drainMult ? '▲' : '▼';
       crewDeltaCls  = p.drainMult > s.drainMult ? 'bad' : 'good';
     }
@@ -322,7 +324,8 @@
 
     const moraleOrder = { FALLING: 0, STEADY: 1, RISING: 2 };
     let moraleDelta = null, moraleCls = null;
-    if (r.morale !== s.morale) {
+    const noCrew = !STATE.crew.length; // per-crew morale: nobody aboard, no morale drift (owner ruling 15)
+    if (!noCrew && r.morale !== s.morale) {
       const up = moraleOrder[r.morale] > moraleOrder[s.morale];
       moraleDelta = up ? '▲' : '▼';
       moraleCls   = up ? 'good' : 'bad';
@@ -333,7 +336,7 @@
     $('od-rations-preview').innerHTML =
       statLine('FOOD EMPTY', 'DAY ' + foodEmpty,          foodDelta.text, foodDelta.cls, foodWarn) +
       statLine('FOOD / DAY', Math.round(fpd * 100) / 100, fpdText,        'neutral',     false) +
-      statLine('MORALE',     r.morale,                    moraleDelta,    moraleCls,     false);
+      statLine('MORALE',     noCrew ? 'NO CREW' : r.morale, moraleDelta,  moraleCls,     false);
 
     $('od-rations-desc').textContent = RATIONS_DESCS[preview.rations];
     $('od-rations-warn').classList.toggle('on', foodWarn);
@@ -374,7 +377,7 @@
     const savedDrain = crewDrainRate(sv.water);
     // What the dry tiers actually do (index.html ORDERS_BASE): morale
     // per day, and at the driest tier 1 HP per crew member per day.
-    const crewLabel  = drain === 0 ? 'NOMINAL'
+    const crewLabel  = !STATE.crew.length ? 'NO CREW' : drain === 0 ? 'NOMINAL'
       : 'MORALE −' + ((ORDERS_BASE.crewWaterMorale || {})[drain] || 0) + '/DAY' + (drain >= (ORDERS_BASE.crewWaterHPTier || 6) ? ' · HP −1/DAY' : '');
 
     let crewDeltaText = null, crewDeltaCls = null;
@@ -386,7 +389,8 @@
       crewDeltaText = d.text; crewDeltaCls = d.cls;
     }
 
-    const crewWarn = drain >= (ORDERS_BASE.crewWaterHPTier || 6);
+    const crewWarn = !!STATE.crew.length && drain >= (ORDERS_BASE.crewWaterHPTier || 6);
+    if (!STATE.crew.length) { crewDeltaText = null; crewDeltaCls = null; } // no crew aboard: the crew side changes nothing
 
     $('od-water-preview').innerHTML =
       statLine('PLANT MATURES', matureStr, matureDelta.text, matureDelta.cls, plantWarn) +

@@ -2162,8 +2162,17 @@ window.Tooltip = (() => {
     morale: ['MORALE', 'Crew spirit. Effort actions tax it; mutiny at zero.'],
   };
   for (const [k, [title, description]] of Object.entries(RES)) {
+    if (k === 'morale') continue; // per crew member — registered below
     Tooltip.register('resource_' + k, () => ({ title, description, rows: cur(k)() }));
   }
+  // Morale is per crew member (owner ruling 15): the HUD shows the crew
+  // average; the captain has none, and with nobody aboard there is none.
+  Tooltip.register('resource_morale', () => {
+    const avg = typeof crewMoraleAvg === 'function' ? crewMoraleAvg() : null;
+    const s = st();
+    if (s && avg == null) return { title: 'MORALE', description: 'No crew aboard — no morale to keep up.', rows: [] };
+    return { title: 'MORALE', description: RES.morale[1] + ' The crew average; each member has their own — at zero they walk off at the next station.', rows: s ? [{ label: 'Crew average', value: avg + ' / 100' }] : [] };
+  });
   Tooltip.register('resource_gold', () => {
     const s = st();
     return { title: 'GOLD', description: 'Universal currency. Accepted at all stations. Cannot be fabricated.', rows: s ? [{ label: 'Purse', value: s.goldAmount + 'g' }] : [] };

@@ -383,19 +383,19 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
     // REST: 2 days, morale paid on completion.
     await parkAt(page, 'asteroid_field', { trader: false });
     await openStop(page);
-    const r0 = await page.evaluate(() => { STATE.resources.morale = 50; Math.random = () => 0.99; [...document.querySelectorAll('#stop-choices .stop-choice')].find(b => /^REST/.test(b.textContent)).click(); [...document.querySelectorAll('.day-step')][1].click(); return { m: STATE.resources.morale, d: STATE.daysElapsed, per: CRUISE_WAIT_TUNING.REST_MORALE_PER_DAY }; });
+    const r0 = await page.evaluate(() => { setCrewMorale(50); Math.random = () => 0.99; [...document.querySelectorAll('#stop-choices .stop-choice')].find(b => /^REST/.test(b.textContent)).click(); [...document.querySelectorAll('.day-step')][1].click(); return { m: crewMoraleRaw(), d: STATE.daysElapsed, per: CRUISE_WAIT_TUNING.REST_MORALE_PER_DAY }; });
     await page.waitForTimeout(1600);
-    const mid = await page.evaluate(() => STATE.resources.morale);
+    const mid = await page.evaluate(() => crewMoraleRaw());
     await page.waitForTimeout(2600);
-    const rr = await page.evaluate(r0 => ({ dm: Math.round(STATE.resources.morale - r0.m), dd: STATE.daysElapsed - r0.d, flash: document.querySelector('#wait-flash .wait-flash-label').textContent }), r0);
+    const rr = await page.evaluate(r0 => ({ dm: Math.round(crewMoraleRaw() - r0.m), dd: STATE.daysElapsed - r0.d, flash: document.querySelector('#wait-flash .wait-flash-label').textContent }), r0);
     ok(mid <= r0.m + 0.5, 'REST pays nothing mid-rest (morale ' + r0.m + ' → ' + mid + ')');
     ok(rr.dd === 2 && rr.dm >= 2 * r0.per - 2 && rr.flash === 'REFRESHED', 'REST 2 days: +' + rr.dm + ' morale (≈2×' + r0.per + ' less rations drift), REFRESHED');
     await page.waitForTimeout(2600);
 
     // WAKE UP after one day: the day is spent, nothing gained, WASTED 1 DAY!
-    const c0 = await page.evaluate(() => { STATE.resources.morale = 50; [...document.querySelectorAll('#stop-choices .stop-choice')].find(b => /^REST/.test(b.textContent)).click(); [...document.querySelectorAll('.day-step')][4].click(); return { m: STATE.resources.morale, d: STATE.daysElapsed }; });
+    const c0 = await page.evaluate(() => { setCrewMorale(50); [...document.querySelectorAll('#stop-choices .stop-choice')].find(b => /^REST/.test(b.textContent)).click(); [...document.querySelectorAll('.day-step')][4].click(); return { m: crewMoraleRaw(), d: STATE.daysElapsed }; });
     await page.waitForTimeout(1700);
-    const cx = await page.evaluate(c0 => { const b = [...document.querySelectorAll('#stop-choices .stop-choice')].find(x => /WAKE UP/.test(x.textContent)); const had = !!b; b && b.click(); return { had, dd: STATE.daysElapsed - c0.d, dm: Math.round((STATE.resources.morale - c0.m) * 10) / 10, banner: document.getElementById('action-banner-label').textContent, cancelled: document.getElementById('action-banner').classList.contains('cancelled'), active: cruiseWaitActive(), log: STATE.shipLog.slice(-1)[0].text }; }, c0);
+    const cx = await page.evaluate(c0 => { const b = [...document.querySelectorAll('#stop-choices .stop-choice')].find(x => /WAKE UP/.test(x.textContent)); const had = !!b; b && b.click(); return { had, dd: STATE.daysElapsed - c0.d, dm: Math.round((crewMoraleRaw() - c0.m) * 10) / 10, banner: document.getElementById('action-banner-label').textContent, cancelled: document.getElementById('action-banner').classList.contains('cancelled'), active: cruiseWaitActive(), log: STATE.shipLog.slice(-1)[0].text }; }, c0);
     ok(cx.had && !cx.active && cx.dd === 1, 'WAKE UP after a day: the day stays spent (' + cx.dd + ')');
     ok(cx.dm <= 0, 'quitting the rest gains nothing (morale Δ ' + cx.dm + ')');
     ok(cx.banner === 'WASTED 1 DAY!' && cx.cancelled, 'banner: WASTED 1 DAY! (amber, cancelled)');
@@ -426,7 +426,7 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
     const page = await boot();
     await parkAt(page, 'asteroid_field', { trader: false });
     await openStop(page);
-    const s0 = await page.evaluate(() => { STATE.resources.morale = 40; window.__rnd = Math.random; Math.random = () => 0.01; [...document.querySelectorAll('#stop-choices .stop-choice')].find(b => /^REST/.test(b.textContent)).click(); [...document.querySelectorAll('.day-step')][3].click(); return { m: STATE.resources.morale, d: STATE.daysElapsed }; });
+    const s0 = await page.evaluate(() => { setCrewMorale(40); window.__rnd = Math.random; Math.random = () => 0.01; [...document.querySelectorAll('#stop-choices .stop-choice')].find(b => /^REST/.test(b.textContent)).click(); [...document.querySelectorAll('.day-step')][3].click(); return { m: crewMoraleRaw(), d: STATE.daysElapsed }; });
     await page.waitForFunction(() => document.getElementById('wait-flash').classList.contains('show'), null, { timeout: 8000 }).catch(() => {});
     const fl = await page.evaluate(() => ({ flash: document.querySelector('#wait-flash .wait-flash-label').textContent, cls: document.getElementById('wait-flash').className, forced: STATE.forcedEvent }));
     ok(fl.flash === 'PIRATE INBOUND' && /event-danger/.test(fl.cls), 'a pirate interrupts the rest: PIRATE INBOUND (red)');
@@ -437,7 +437,7 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
     await page.waitForTimeout(300);
     const fs = await page.evaluate(s0 => {
       const t = [...document.querySelectorAll('#header-ticker .ticker-text:not(.exit)')].pop();
-      return { ticker: t.textContent, tcls: t.className, tcolor: getComputedStyle(t).color, body: document.body.classList.contains('event-active'), btnColor: getComputedStyle(document.getElementById('stop-btn')).borderTopColor, menu: [...document.querySelectorAll('#stop-choices .stop-choice')].map(b => b.querySelector('.stop-choice-body').textContent + '|' + b.className), label: document.getElementById('stop-region-label').textContent, dd: STATE.daysElapsed - s0.d, dm: Math.round(STATE.resources.morale - s0.m) };
+      return { ticker: t.textContent, tcls: t.className, tcolor: getComputedStyle(t).color, body: document.body.classList.contains('event-active'), btnColor: getComputedStyle(document.getElementById('stop-btn')).borderTopColor, menu: [...document.querySelectorAll('#stop-choices .stop-choice')].map(b => b.querySelector('.stop-choice-body').textContent + '|' + b.className), label: document.getElementById('stop-region-label').textContent, dd: STATE.daysElapsed - s0.d, dm: Math.round(crewMoraleRaw() - s0.m) };
     }, s0);
     ok(fs.ticker === 'PIRATE SIGNATURE — WEAPONS HOT' && /event/.test(fs.tcls) && fs.tcolor === 'rgb(204, 51, 51)', 'forced: red pulsing event ticker');
     ok(fs.body && fs.btnColor === 'rgb(204, 51, 51)', 'forced: Stop button pulses red');

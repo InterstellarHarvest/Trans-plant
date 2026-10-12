@@ -124,11 +124,11 @@ const withRandom = (page, v, fn) => page.evaluate(({ v, src }) => {
     const r = await page.evaluate(() => {
       const def = MOD.crops.crops.find(c => c.id === 'crop_' + STATE.crop);
       const r0 = Math.random; Math.random = () => 0.01;
-      const h0 = STATE.cropGrowth.health, m0 = STATE.resources.morale, l0 = (STATE.shipLog || []).length;
+      const h0 = STATE.cropGrowth.health, m0 = crewMoraleRaw(), l0 = (STATE.shipLog || []).length;
       cropDrama(); Math.random = r0;
       const log = STATE.shipLog || [];
       const last = log.length > l0 ? JSON.stringify(log[log.length - 1]) : '';
-      return { swing: STATE.cropGrowth.health !== h0 || STATE.resources.morale !== m0, logged: def.narrative_hooks.some(h => last.includes(h.slice(0, 30))), designy: def.narrative_hooks.some(h => /\bif present\b|in this game|will remind you/.test(h)) };
+      return { swing: STATE.cropGrowth.health !== h0 || crewMoraleRaw() !== m0, logged: def.narrative_hooks.some(h => last.includes(h.slice(0, 30))), designy: def.narrative_hooks.some(h => /\bif present\b|in this game|will remind you/.test(h)) };
     });
     ok(r.logged && !r.swing && !r.designy, `${crop}: a hook reaches the log as a plain line, no stat change`);
     errors.push(...page._errs); await page.close();

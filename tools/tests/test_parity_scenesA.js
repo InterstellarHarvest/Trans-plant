@@ -118,7 +118,7 @@ async function shot(page, name) {
 // Applies a layered outcome through the real click and returns the
 // before/after state the outcome touched.
 const snap = page => page.evaluate(() => ({
-  res: Object.assign({}, STATE.resources), gold: STATE.goldAmount, items: STATE.items.slice(),
+  res: Object.assign({}, STATE.resources, { morale: crewMoraleRaw() }) /* per-crew morale: the crew average */, gold: STATE.goldAmount, items: STATE.items.slice(),
   flags: [...STATE.flags], day: STATE.daysElapsed, crewHP: Object.assign({}, STATE.crewHP), mats: Object.assign({}, STATE.materials),
 }));
 

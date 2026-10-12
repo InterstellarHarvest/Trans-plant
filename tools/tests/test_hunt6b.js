@@ -131,13 +131,13 @@ const btn = (page, re) => page.evaluate(src => { const b = [...document.querySel
         b = [...document.querySelectorAll('#stop-choices .stop-choice')].find(x => RE.test(x.textContent) && !x.classList.contains('locked'));
         if (b) break;
       }
-      STATE.resources.morale = 70;
+      setCrewMorale(70);
       const label = b.textContent; b.click();
       await new Promise(r => setTimeout(r, 300));
-      const taxed = STATE.resources.morale;
+      const taxed = crewMoraleRaw();
       document.getElementById('mclose').click();             // closed at the briefing
       await new Promise(r => setTimeout(r, 200));
-      return { label, taxed, refunded: STATE.resources.morale };
+      return { label, taxed, refunded: crewMoraleRaw() };
     });
     ok(r0.taxed < 70 && r0.refunded === 70, `a free cancel refunds the effort tax (${r0.taxed} → ${r0.refunded})`);
     const r1 = await page.evaluate(async () => {
@@ -149,11 +149,11 @@ const btn = (page, re) => page.evaluate(src => { const b = [...document.querySel
       PauseBus.pause(); PauseBus.resume();                   // RESUME's first press…
       ov.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); ov.dispatchEvent(new MouseEvent('click', { bubbles: true })); // …and its second
       await new Promise(r => setTimeout(r, 200));
-      return { stillOpen: ov.classList.contains('open'), day: STATE.daysElapsed, morale: STATE.resources.morale };
+      return { stillOpen: ov.classList.contains('open'), day: STATE.daysElapsed, morale: crewMoraleRaw() };
     });
     ok(r1.stillOpen, 'a double-clicked RESUME does not quit the running job behind it');
     await reloadAndContinue(page);
-    const r2 = await page.evaluate(() => ({ day: STATE.daysElapsed, morale: STATE.resources.morale, log: JSON.stringify((STATE.shipLog || []).slice(-2)) }));
+    const r2 = await page.evaluate(() => ({ day: STATE.daysElapsed, morale: crewMoraleRaw(), log: JSON.stringify((STATE.shipLog || []).slice(-2)) }));
     ok(r2.day === r1.day + 1 && r2.morale === r1.morale && /abandoned partway/.test(r2.log), `a reload mid-job settles as a quit (day +${r2.day - r1.day}, tax kept)`);
     await page.close();
   }

@@ -84,7 +84,7 @@ async function click(page, t) {
 const snap = page => page.evaluate(() => ({
   gold: STATE.goldAmount, day: STATE.daysElapsed, health: STATE.cropGrowth.health, pest: STATE.cropGrowth.pest,
   talked: !!STATE.cropGrowth.talked, split: STATE.orders.waterSplit, plant: STATE.cropGrowth.waterPlant,
-  bio: STATE.materials.biocomponent || 0, items: STATE.items.slice(), morale: STATE.resources.morale,
+  bio: STATE.materials.biocomponent || 0, items: STATE.items.slice(), morale: crewMoraleRaw(),
   outcome: STATE.currentOutcomeId, layer: STATE.layerStack && STATE.layerStack[STATE.layerStack.length - 1],
 }));
 

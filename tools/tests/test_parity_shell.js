@@ -583,14 +583,14 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
       node.node_type = 'asteroid_field'; STATE.currentId = node.id;
       const res = {};
       for (const sev of ['light', 'medium', 'heavy']) {
-        STATE.crewHP.engineer = 100; STATE.crewHP.pilot = 100; STATE.resources.morale = 60;
+        STATE.crewHP.engineer = 100; STATE.crewHP.pilot = 100; setCrewMorale(60);
         renderCruise(); if (window.openStopMenu) openStopMenu(); await w(60);
         const real = window.openMinigame;
         window.openMinigame = (id, o, cb) => cb('good', { food: 0, sickness: [{ type: 'poisoning', target: 'random_crew', severity: sev }, { type: 'morale_drop', target: 'all_crew', severity: sev }] });
         [...document.querySelectorAll('#stop-choices button')].find(b => /HUNT/.test(b.textContent)).click();
         window.openMinigame = real;
         await w(60);
-        res[sev] = { hp: 200 - STATE.crewHP.engineer - STATE.crewHP.pilot, mo: 60 - STATE.resources.morale };
+        res[sev] = { hp: 200 - STATE.crewHP.engineer - STATE.crewHP.pilot, mo: 60 - crewMoraleRaw() };
       }
       return res;
     });

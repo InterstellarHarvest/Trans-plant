@@ -63,7 +63,7 @@ const hud = page => page.evaluate(() => document.getElementById('combat-num-foe'
   console.log('— combat: one resolution');
   for (const hull of [60, 10]) {
     const page = await boot();
-    await page.evaluate(h => { Math.random = () => 0.5; STATE.resources.morale = 10; STATE.resources.hull = h; }, hull);
+    await page.evaluate(h => { Math.random = () => 0.5; setCrewMorale(10); STATE.resources.hull = h; }, hull);
     await startCombat(page);
     await page.waitForTimeout(1050);
     await click(page, 'STAND DOWN');
@@ -89,8 +89,8 @@ const hud = page => page.evaluate(() => document.getElementById('combat-num-foe'
     await click(page, which);
     // The demo's finish beat is 1500ms (combat parity): wait for the
     // morale change to land instead of sampling right at the boundary.
-    await page.waitForFunction(([s0, d]) => Math.abs(Math.round(STATE.resources.morale) - (s0 + d)) <= 1, [shown, delta], { timeout: 5000 }).catch(() => {});
-    const after = await page.evaluate(() => Math.round(STATE.resources.morale));
+    await page.waitForFunction(([s0, d]) => Math.abs(Math.round(crewMoraleRaw()) - (s0 + d)) <= 1, [shown, delta], { timeout: 5000 }).catch(() => {});
+    const after = await page.evaluate(() => Math.round(crewMoraleRaw()));
     ok(Math.abs(after - (shown + delta)) <= 1, `${which}: morale ${shown} → ${after} (expected ≈${shown + delta})`);
     await page.close();
   }
@@ -108,7 +108,7 @@ const hud = page => page.evaluate(() => document.getElementById('combat-num-foe'
   for (const crew of [[], ['engineer', 'medic']]) {
     const page = await boot({ crew });
     await page.evaluate(() => {
-      STATE.resources.morale = 10;
+      setCrewMorale(10);
       const ev = Object.values(EVENTS).find(e => JSON.stringify(e).includes('"triggerCombat":true'));
       enterEvent(STATE.byId[STATE.currentId], ev);
       STATE.npcCtx.species = 'insect';

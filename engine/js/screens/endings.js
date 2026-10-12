@@ -141,7 +141,7 @@
       food:  STATE.resources.food,
       water: STATE.resources.water,
       hull:  STATE.resources.hull,
-      morale: STATE.resources.morale,
+      morale: typeof crewMoraleAvg === 'function' ? crewMoraleAvg() : null, // crew average; null = no crew aboard (owner ruling 15)
       soil:  STATE.soilSurveys || 0,
       cropBonus: (() => { // crops.json arrival_bonus, as scoreValue applies it
         const meta = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
@@ -256,7 +256,7 @@
       { key: 'water', label: 'H2O', pct: stats.water },
       { key: 'hull', label: 'HULL', pct: stats.hull },
       { key: 'morale', label: 'MO', pct: stats.morale },
-    ];
+    ].filter(r => r.pct != null); // no crew aboard: no morale bar (owner ruling 15)
     for (const r of res) {
       const wrap = document.createElement('div');
       wrap.className = 'res-bar-wrap';
@@ -451,19 +451,19 @@
     let logLines;
     if (roll < 0.45) { // friendly — a hauler with fuel and no agenda
       STATE.resources.fuel = clamp(STATE.resources.fuel + 25, 0, resMax('fuel'));
-      STATE.resources.morale = clamp(STATE.resources.morale + 4, 0, 100);
+      addCrewMorale(4); // every crew member
       logLines = ['◆ BEACON ANSWERED — a long-hauler heard you. Fuel transferred, no charge. "Pass it on," they said, and burned off.'];
     } else if (roll < 0.80) { // corporate — rescue with an invoice
       const fee = Math.min(STATE.goldAmount, 25);
       STATE.goldAmount -= fee;
       STATE.resources.fuel = clamp(STATE.resources.fuel + 25, 0, resMax('fuel'));
-      STATE.resources.morale = clamp(STATE.resources.morale - 2, 0, 100);
+      addCrewMorale(-2);
       logLines = ['◆ BEACON ANSWERED — a StellarAssist™ recovery tug. Fuel delivered, ' + fee + ' gold invoiced, satisfaction survey transmitted before the fuel line detached.'];
     } else { // hostile — rescue, in the pirate sense
       STATE.goldAmount = Math.floor(STATE.goldAmount / 2);
       if (STATE.items.length) removeRandomItem();
       STATE.resources.fuel = clamp(STATE.resources.fuel + 20, 0, resMax('fuel'));
-      STATE.resources.morale = clamp(STATE.resources.morale - 5, 0, 100);
+      addCrewMorale(-5);
       logLines = ['◆ BEACON ANSWERED — by the wrong people. They refueled you, then "salvaged" half your gold and a crate at gunpoint. "Rescue fee," they called it. You are alive to resent it.'];
     }
 

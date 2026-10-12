@@ -233,7 +233,7 @@ const choiceText = (page, t) => page.evaluate(t => {
     // STAND DOWN: a toll, no loot
     const page = await boot({ crew: ['engineer', 'pilot'] });
     const r = await page.evaluate(async () => {
-      STATE.resources.fuel = 80; STATE.goldAmount = 50; STATE.resources.morale = 5;
+      STATE.resources.fuel = 80; STATE.goldAmount = 50; setCrewMorale(5);
       const ev = Object.values(EVENTS).find(e => JSON.stringify(e).includes('"triggerCombat":true'));
       enterEvent(STATE.byId[STATE.currentId], ev);
       STATE.npcCtx = Object.assign({}, STATE.npcCtx, { species: 'human' });

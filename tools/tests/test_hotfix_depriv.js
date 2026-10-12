@@ -14,7 +14,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   const boot = async (trail) => {
     await page.goto(URL);
     await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.items && MOD.crew_roster);
-    await ev(t => { localStorage.removeItem('transplant_save_v1'); applySetupToState({ trail: t, ai: 'marv', captain: 'veteran', crew: ['engineer', 'pilot'], crop: 'wheat', ship: 'D' }); STATE.stowaway = null; STATE.resources.morale = 100; }, trail);
+    await ev(t => { localStorage.removeItem('transplant_save_v1'); applySetupToState({ trail: t, ai: 'marv', captain: 'veteran', crew: ['engineer', 'pilot'], crop: 'wheat', ship: 'D' }); STATE.stowaway = null; setCrewMorale(100); }, trail);
     await page.waitForTimeout(150);
   };
 

@@ -433,14 +433,6 @@ body.stop-active #stop-menu { opacity: 1; }
   display: flex; gap: 12px; align-items: stretch;
 }
 #crew-strip { display: flex; gap: var(--card-gap); flex-shrink: 0; }
-/* Four aboard (captain + three crew, a joined stowaway's run) used to
-   push the resource bars and the Stop button off the band: tighter
-   cards and a narrower crop card then. */
-#crew-strip.crowded { --card-icon-size: 30px; }
-#crew-strip.crowded .crew-slot { width: 104px; padding: 6px 6px; }
-#crew-strip.crowded .crew-name { letter-spacing: 0; }
-#crew-strip.crowded .crew-slot-top { gap: 4px; }
-#crew-strip.crowded ~ #crop-card-mini { width: 210px; }
 #bottom-resources { min-width: 96px; }
 .crew-slot {
   width: 130px; padding: 6px 8px;
@@ -449,6 +441,15 @@ body.stop-active #stop-menu { opacity: 1; }
   cursor: var(--cursor-hand, pointer); transition: all 0.15s;
 }
 .crew-slot:hover { border-color: rgba(140,200,144,0.3); background: rgba(140,200,144,0.04); }
+/* An empty crew place (always captain + 2 slots): same 130px card, dim
+   dashed outline, a muted label — no bars, no hover, not clickable. */
+.crew-slot.empty {
+  border: 2px dashed rgba(42,48,64,0.75); border-color: color-mix(in srgb, var(--card-border) 75%, transparent);
+  background: transparent; cursor: var(--cursor-pointer, default);
+  justify-content: center; align-items: center;
+}
+.crew-slot.empty:hover { border-color: color-mix(in srgb, var(--card-border) 75%, transparent); background: transparent; }
+.crew-empty-label { font-family: 'VT323', monospace; font-size: 13px; letter-spacing: 1px; color: var(--card-desc-color); opacity: 0.55; }
 .crew-slot-top { display: flex; align-items: center; gap: 6px; }
 .crew-icon { font-size: var(--card-icon-size); line-height: 1; flex-shrink: 0; }
 .crew-icon.has-sprite { width: var(--card-icon-size); height: var(--card-icon-size); color: transparent; }
@@ -462,6 +463,9 @@ body.stop-active #stop-menu { opacity: 1; }
 .crew-bar-fill { height: 100%; }
 .crew-bar.hp .crew-bar-fill { background: var(--res-food); }
 .crew-bar.mo .crew-bar-fill { background: var(--crew-mo); }
+/* Per-crew morale at 0 (owner ruling 15): the label goes red — this one
+   walks off at the next station unless their morale rises first. */
+.crew-bar.mo.zero .crew-bar-label { color: #cc5555; }
 
 #crop-card-mini {
   width: 250px; padding: 8px 12px;

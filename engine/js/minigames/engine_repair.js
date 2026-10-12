@@ -637,7 +637,7 @@
       $('er-res-food').textContent = Math.round(R.food);
       $('er-res-o2').textContent = Math.round(R.o2);
       $('er-res-hull').textContent = Math.round(R.hull);
-      $('er-res-mor').textContent = Math.round(R.morale);
+      $('er-res-mor').textContent = typeof crewMoraleAvg === 'function' && crewMoraleAvg() != null ? crewMoraleAvg() : '—'; // crew average (owner ruling 15)
     }
     showOverlay('overlay-engrepair');
     running = true;

@@ -76,9 +76,9 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
 
   console.log('— event-launched minigame quit (crisis_017 BREACH)');
   await boot();
-  await page.evaluate(() => { STATE.resources.hull = 20; STATE.resources.o2 = 60; STATE.resources.morale = 60; enterEvent(STATE.byId[STATE.currentId], EVENTS.event_crisis_017); });
+  await page.evaluate(() => { STATE.resources.hull = 20; STATE.resources.o2 = 60; setCrewMorale(60); enterEvent(STATE.byId[STATE.currentId], EVENTS.event_crisis_017); });
   await page.waitForTimeout(500);
-  a = await page.evaluate(() => ({ hull: STATE.resources.hull, o2: STATE.resources.o2, mo: STATE.resources.morale, day: STATE.daysElapsed }));
+  a = await page.evaluate(() => ({ hull: STATE.resources.hull, o2: STATE.resources.o2, mo: crewMoraleRaw(), day: STATE.daysElapsed }));
   await page.evaluate(() => [...document.querySelectorAll('#enc-choices .enc-choice:not(.locked)')][0].click());
   await page.waitForTimeout(500);
   await page.click('#mclose'); await page.waitForTimeout(250);
@@ -88,7 +88,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   await page.waitForTimeout(500);
   await page.click('#rstart'); await page.waitForTimeout(700);
   await page.click('#mclose'); await page.waitForTimeout(400);
-  b = await page.evaluate(() => ({ hull: STATE.resources.hull, o2: STATE.resources.o2, mo: STATE.resources.morale, day: STATE.daysElapsed, outcome: STATE.outcomeMode,
+  b = await page.evaluate(() => ({ hull: STATE.resources.hull, o2: STATE.resources.o2, mo: crewMoraleRaw(), day: STATE.daysElapsed, outcome: STATE.outcomeMode,
     title: document.getElementById('enc-narr-title').textContent }));
   ok(b.outcome && b.title === 'ABANDONED', 'quit resolves the choice as ABANDONED');
   ok(b.hull === a.hull && Math.abs(b.o2 - (a.o2 - 8)) <= 0.2 * (b.day - a.day) + 0.01 && b.mo === a.mo - 4 && b.day > a.day, `poor-tier losses only, no gains (hull ${a.hull}→${b.hull}, o2 ${a.o2}→${b.o2}, morale ${a.mo}→${b.mo})`);

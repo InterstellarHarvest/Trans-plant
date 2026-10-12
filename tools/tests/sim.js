@@ -77,12 +77,12 @@ function installHarness(policy) {
   };
   const realApply = applyOutcomeEffects;
   applyOutcomeEffects = function (o) {
-    const before = Object.assign({}, STATE.resources, { gold: STATE.goldAmount });
+    const before = Object.assign({}, STATE.resources, { gold: STATE.goldAmount, morale: crewMoraleRaw() || 0 }); // morale: the crew average (owner ruling 15)
     const prev = window.__ctx; window.__ctx = 'event';
     const r = realApply(o);
     window.__ctx = prev;
     for (const k of Object.keys(before)) {
-      const now = k === 'gold' ? STATE.goldAmount : STATE.resources[k];
+      const now = k === 'gold' ? STATE.goldAmount : k === 'morale' ? (crewMoraleRaw() || 0) : STATE.resources[k];
       const d = now - before[k];
       S.resDelta[k] = S.resDelta[k] || { pos: 0, neg: 0 };
       if (k === 'gold') { if (d > 0) S.goldIn += d; else S.goldOut -= d; }
@@ -119,6 +119,16 @@ function installLedger() {
       if (v < 0) S.neg = (S.neg || []).concat([key + '=' + v + ' ' + src()]).slice(0, 5);
     } });
   }
+  // Per-crew morale (owner ruling 15): STATE.crewMorale, every change
+  // through addCrewMorale — the ledger books the crew-average change.
+  const realAddMo = window.addCrewMorale;
+  window.addCrewMorale = function (d, who) {
+    const b = crewMoraleRaw(); const r = realAddMo(d, who); const a = crewMoraleRaw();
+    if (b != null && a != null && Math.abs(a - b) > 1e-9) add('morale', a - b);
+    return r;
+  };
+  const realDesert = window.crewDesertions;
+  window.crewDesertions = function (node) { const gone = realDesert(node); S.desertions = (S.desertions || 0) + gone.length; return gone; };
   let g = STATE.goldAmount;
   Object.defineProperty(STATE, 'goldAmount', { enumerable: true, configurable: true, get: () => g, set: v => {
     if (!Number.isFinite(v)) S.nan.push('gold<-' + v + ' ' + src());
@@ -131,7 +141,7 @@ function step() {
   const P = window.__pol, S = window.__stats;
   const scr = (document.querySelector('.screen.active') || {}).id;
   const R = STATE.resources;
-  for (const k of Object.keys(S.mins)) S.mins[k] = Math.min(S.mins[k], R[k]);
+  for (const k of Object.keys(S.mins)) S.mins[k] = Math.min(S.mins[k], k === 'morale' ? (crewMoraleRaw() ?? 999) : R[k]);
   S.goldMax = Math.max(S.goldMax, STATE.goldAmount);
   for (const [k, v] of Object.entries(R)) {
     if (!Number.isFinite(v)) S.nan.push(k);
@@ -181,7 +191,7 @@ function step() {
         if (!want) window.__wantBuy = false;
       }
       if (!ch) {
-        const w = k => k === 'gold' ? 0.25 : k === 'morale' ? 1 + (100 - R.morale) / 30 : 1 + (100 - Math.min(100, R[k])) / 20;
+        const w = k => k === 'gold' ? 0.25 : k === 'morale' ? (crewMoraleRaw() == null ? 0 : 1 + (100 - crewMoraleRaw()) / 30) : 1 + (100 - Math.min(100, R[k])) / 20;
         const dayCost = { trivial: 1, low: 2, medium: 4, high: 8, extreme: 14 };
         const scoreOut = (o) => {
           if (!o) return 0;
@@ -228,7 +238,7 @@ function step() {
     if (window.cruiseWaitActive && cruiseWaitActive()) return { wait: 700 };
     if (STATE.forcedEvent) { S.forced = (S.forced || 0) + 1; const fb = document.querySelector('#stop-choices .stop-choice'); if (fb) fb.click(); return { wait: 80 }; }
     if (window.__pendVerb) { const p = window.__pendVerb; window.__pendVerb = null; S.vd = S.vd || [];
-      const dr = {}; for (const k of Object.keys(p.r)) dr[k] = Math.round((STATE.resources[k] - p.r[k]) * 10) / 10;
+      const dr = {}; for (const k of Object.keys(p.r)) dr[k] = Math.round(((k === 'morale' ? (crewMoraleRaw() || 0) : STATE.resources[k]) - p.r[k]) * 10) / 10;
       S.vd.push({ v: p.name, node: (STATE.byId[STATE.currentId] || {}).node_type, ds: Math.round((scoreValue() - p.sc) * 100) / 100, dd: STATE.daysElapsed - p.d, dr, dg: STATE.goldAmount - p.g, dm: Object.values(STATE.materials).reduce((a, b) => a + b, 0) - p.m }); }
     const node = STATE.byId[STATE.currentId];
     window.__acts = window.__acts || {};
@@ -249,7 +259,7 @@ function step() {
       const b = verbBtns().find(x => re.test(x.querySelector('.stop-choice-body').textContent));
       if (!b) return false;
       acts.n++; acts.did[name] = (acts.did[name] || 0) + 1;
-      window.__pendVerb = { name, sc: scoreValue(), d: STATE.daysElapsed, r: Object.assign({}, STATE.resources), g: STATE.goldAmount, m: Object.values(STATE.materials).reduce((a, b) => a + b, 0) };
+      window.__pendVerb = { name, sc: scoreValue(), d: STATE.daysElapsed, r: Object.assign({}, STATE.resources, { morale: crewMoraleRaw() || 0 }), g: STATE.goldAmount, m: Object.values(STATE.materials).reduce((a, b) => a + b, 0) };
       S.verbs[name] = (S.verbs[name] || 0) + 1;
       window.__ctx = 'verb';
       try { b.click(); pickDays(name); } finally { window.__ctx = 'other'; }
@@ -289,7 +299,7 @@ function step() {
         openGrowbay();
         if (STATE.cropGrowth.pest) { S.pests++; window.__ctx = 'verb'; openTreat(); window.__ctx = 'other'; }
         if (STATE.cropGrowth.growth >= 100) {
-          const f0 = R.food, m0 = R.morale; doHarvest(); S.harvests++; S.harvestFood += R.food - f0; S.harvestMorale += R.morale - m0;
+          const f0 = R.food, m0 = crewMoraleRaw() || 0; doHarvest(); S.harvests++; S.harvestFood += R.food - f0; S.harvestMorale += (crewMoraleRaw() || 0) - m0;
         }
         closeGrowbay();
         if (STATE.ended) return { wait: 50 };
@@ -306,7 +316,7 @@ function step() {
       if (acts.n < cap) {
         if (node.node_type === 'station' && STATE.crew.some(r => crewHPOf(r) < 60) && STATE.goldAmount >= 30 && !acts.did.medbay) { S.medbay++; if (doVerb(/MEDBAY/, 'medbay')) return { wait: 50 }; }
         if (R.hull < (P === 'stopper' ? 85 : 60) && (acts.did.repair || 0) < 2 && doVerb(/^REPAIR/, 'repair')) return { wait: 50 };
-        if (R.morale < (P === 'stopper' ? 80 : 40) && (acts.did.rest || 0) < 2 && doVerb(/^REST/, 'rest')) return { wait: 50 };
+        if (crewMoraleRaw() != null && crewMoraleRaw() < (P === 'stopper' ? 80 : 40) && (acts.did.rest || 0) < 2 && doVerb(/^REST/, 'rest')) return { wait: 50 };
         if (R.fuel < (P === 'stopper' ? 80 : 55) && STATE.goldAmount >= 12 && !acts.did.trade) { window.__wantBuy = true; if (doVerb(/^TRADE$/, 'trade')) return { wait: 50 };
           // No trader in range (presence roll): wait for one, once per stop.
           if (!acts.did.wait_for_trader && doVerb(/^WAIT FOR TRADER$/, 'wait_for_trader')) return { wait: 50 }; }
