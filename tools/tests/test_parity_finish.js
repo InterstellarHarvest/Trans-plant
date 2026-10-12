@@ -7,7 +7,7 @@
 //     what the haul card says, quitting keeps nothing; a broken-up derelict
 //     (DEBRIS FIELD) keeps the space game;
 //  3. map touches: stacked amber YOU ARE HERE, flavor pills — grey ???
-//     before the fork, red ??? uncharted, per-flavor colour after; ~35% of
+//     before the fork, cream ??? in a red frame uncharted (ruling 47a), per-flavor colour after; ~35% of
 //     forks hide one label;
 //  4. items.json gameplay_effect is player text only (design_note holds the
 //     authoring notes); no note shows anywhere.
@@ -209,7 +209,7 @@ const NOTE = /\b(Stackable|Craftable|Fabricated|Pure trade good|Info-only|Gate i
       const grey = 'rgb(122, 136, 152)';
       ok(r.before.every(x => x && x.text === '???' && x.color === grey), `before the fork both labels are dim grey ??? (${r.before.map(x => x && x.text + ' ' + x.color).join(' | ')})`);
       ok(r.after[0].text === 'LUCRATIVE' && r.after[0].color === 'rgb(255, 172, 0)', `after: lucrative reads LUCRATIVE in amber (${r.after[0].text} ${r.after[0].color})`);
-      ok(r.after[1].text === '???' && r.after[1].color === 'rgb(204, 51, 51)', `after: the uncharted branch reads red ??? (${r.after[1].text} ${r.after[1].color})`);
+      ok(r.after[1].text === '???' && r.after[1].color === 'rgb(211, 196, 140)', `after: the uncharted branch reads cream ??? in its red frame — owner ruling 47a (${r.after[1].text} ${r.after[1].color})`);
       const p = r.after[0];
       ok(p.bw === '1px' && p.bs === 'solid' && p.radius === '3px' && p.bg === 'rgba(14, 21, 32, 0.7)' && p.pad === '3px 6px' && /Press Start 2P/.test(p.font), `pill chrome: 1px border, 3px radius, navy glass, 3×6 padding, pixel font (${p.bw} ${p.radius} ${p.bg} ${p.pad})`);
       const want = { lucrative: 'rgb(255, 172, 0)', hostile: 'rgb(203, 47, 52)', safe: 'rgb(140, 200, 144)', corporate: 'rgb(53, 198, 191)', derelict_heavy: 'rgb(93, 90, 97)', scientific: 'rgb(140, 127, 200)', agricultural: 'rgb(203, 156, 93)' };

@@ -415,12 +415,21 @@ const settleSubject = page => page.waitForFunction(() => {
   });
   const clickLeave = async page => { await page.evaluate(() => { finishAllTyping(); document.querySelector('#enc-choices .enc-choice.leave').click(); }); await page.waitForTimeout(340); await page.evaluate(() => finishAllTyping()); };
   const continueOn = async page => { await page.evaluate(() => { finishAllTyping(); const b = document.querySelector('#enc-choices .enc-choice.advance'); if (b) b.click(); }); await page.waitForTimeout(340); };
-  const stopVerbs = page => page.evaluate(() => {
+  // needy: give every station service something to do first — since b4
+  // (demo hideWhen) MEDBAY / DRYDOCK / FAB SERVICE / REPAIR are hidden
+  // when nobody is hurt / the hull is intact / the fabricator is fresh.
+  const stopVerbs = (page, needy) => page.evaluate(needy => {
+    if (needy) {
+      STATE.resources.hull = Math.min(STATE.resources.hull, 60);
+      if (STATE.crew[0]) STATE.crewHP[STATE.crew[0]] = Math.min(crewHPOf(STATE.crew[0]), 80);
+      STATE.fabricator = Object.assign({}, STATE.fabricator, { wear: Math.max(40, (STATE.fabricator && STATE.fabricator.wear) || 0) });
+      if (document.body.classList.contains('stop-active')) openStopMenu();
+    }
     if (typeof renderStopMenu === 'function') renderStopMenu();
     const out = {};
     document.querySelectorAll('#stop-choices [data-verb-id]').forEach(b => { out[b.dataset.verbId] = b.classList.contains('locked') ? 'locked:' + b.innerText.replace(/\s+/g, ' ') : 'open'; });
     return out;
-  });
+  }, !!needy);
   const approachArt = page => page.waitForFunction(() => document.getElementById('enc-approach-sprite').dataset.station, null, { timeout: 4000 }).then(() => true).catch(() => false);
   {
     // Every station arrival opens the approach; rolls ≈ 1 in 3.
@@ -601,7 +610,7 @@ const settleSubject = page => page.waitForFunction(() => {
     ok(v.title === 'BACK TO THE BLACK' && v.scene === 'space/deep', 'BACK TO THE BLACK');
     ok(await page.evaluate(d => STATE.daysElapsed === d, d0), 'a wave-off costs no time');
     await continueOn(page);
-    const sv = await stopVerbs(page);
+    const sv = await stopVerbs(page, true);
     ok(['trade', 'medbay', 'drydock', 'fab_service'].every(k => /Waved off — no berth here/.test(sv[k] || '')), 'the stop\'s TRADE / MEDBAY / DRYDOCK / FAB SERVICE close: "Waved off — no berth here"');
     ok(sv.repair && !/Waved off/.test(sv.repair) && sv.rest && !/Waved off/.test(sv.rest), 'ship-side verbs (REPAIR, REST) stay');
     ok(await page.evaluate(() => STATE.crewSkillCharges.engineer === 0 && !STATE.seenEventIds.has('event_station_007')), 'no berth, no recharge; the clinic never happened (still drawable later)');
@@ -630,7 +639,7 @@ const settleSubject = page => page.waitForFunction(() => {
     await click(page, label);
     const days = await page.evaluate(d => STATE.daysElapsed - d, d0);
     await continueOn(page);
-    const sv = await stopVerbs(page);
+    const sv = await stopVerbs(page, true);
     ok(days === 0 && await page.evaluate(() => !STATE.currentEvent) && /Waved off/.test(sv.medbay || '') && /Waved off/.test(sv.trade || ''), id + ' "' + label + '": no time, straight to the hub, services closed');
     await page.close();
   }
