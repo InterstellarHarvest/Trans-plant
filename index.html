@@ -138,17 +138,22 @@ body {
 #overlay-crew { --pb-border: 3px; --pb-padx: 12px; --pb-pady: 6px; --pb-size: 15px; }
 #game:has(> .overlay.dim-behind.active) > .screen.active { filter: brightness(0.35); }
 
-/* ── HUD (resource bar, top of map+encounter screens) ───────────── */
+/* ── HUD (resource dots, top-right of encounter / map / mining) ──
+   Batch 3 (owner ruling 16): the encounter demo's five — fuel, food,
+   O2, hull, morale (crew average) — dots + numbers, no letter codes
+   (demo-encounter .enc-resources / .enc-res, same box, font and dot).
+   Not on the cruise hub (its bars + crew cards carry all of it). The
+   crit pulse is the engine's own warning on top of the demo look. */
 .hud {
   position: absolute;
   top: 14px; right: 14px;
   display: flex; gap: 6px;
   padding: 6px 10px;
-  background: rgba(8,12,18,0.78);
-  border: 1px solid rgba(95,168,208,0.25);
+  background: rgba(8,12,18,0.7);
+  border: 1px solid rgba(95,168,208,0.2);
   border-radius: 3px;
   font-family: 'VT323', monospace;
-  font-size: 14px;
+  font-size: 13px;
   letter-spacing: 0.5px;
   z-index: 50;
 }
@@ -159,11 +164,9 @@ body {
 }
 .hud-r.fuel  { --c: var(--res-fuel); }
 .hud-r.food  { --c: var(--res-food); }
-.hud-r.water { --c: var(--res-water); }
 .hud-r.o2    { --c: var(--res-o2); }
 .hud-r.hull  { --c: var(--res-hull); }
 .hud-r.mor   { --c: var(--res-mor); }
-.hud-r.gold  { --c: var(--res-gold); }
 .hud-r.crit { color: #ff8878; }
 .hud-r.crit .dot { box-shadow: 0 0 8px var(--res-fuel), 0 0 14px #ff5050; animation: hud-warn 0.9s ease-in-out infinite; }
 @keyframes hud-warn { 50% { filter: brightness(1.6); } }
@@ -406,7 +409,7 @@ body {
 .enc-ai-bar {
   position: absolute;
   top: 14px; left: 14px;
-  right: 395px; /* stop short of the resource HUD (it starts at x≈571); the bar used to run under it */
+  right: 215px; /* stop short of the resource HUD: the five-dot HUD (ruling 16) is ≤192px wide even at 120/115 caps, starting at x≥753 (demo right:200px; was 395px for the old 7-row pill) */
   padding: 6px 12px;
   background: rgba(10,14,20,0.72);
   border: 1px solid rgba(200,168,90,0.25);
@@ -662,7 +665,6 @@ body {
   <!-- CRUISE — the default hub post-setup -->
   <div id="screen-cruise" class="screen">
     <canvas id="starfield" width="960" height="640"></canvas>
-    <div class="hud" id="hud-cruise"></div>
 
     <div id="cruise-screen">
       <div id="cruise-header">
@@ -670,15 +672,18 @@ body {
         <!-- Ticker: one line at a time; cruise.js writeTicker() slides the
              old line out left and the new one in from the right. -->
         <div class="header-ticker" id="header-ticker"></div>
+        <!-- Gold (owner ruling 17): left of the inventory box, the day
+             text's font + centring. renderHUD() keeps it current. -->
+        <div class="header-gold" id="cruise-gold" data-tip="resource_gold"></div>
         <div class="header-actions">
           <button class="header-icon-btn" style="background-image:url('sprites/interface/inv.png')" id="btn-inv" aria-label="Inventory" data-tip-description="Inventory"></button>
           <button class="header-icon-btn" style="background-image:url('sprites/interface/map.png')" id="btn-map" aria-label="Map" data-tip-description="Map"></button>
           <button class="header-icon-btn header-pause-btn" id="btn-pause" data-tip-title="PAUSE" data-tip-description="Save, load, settings, quit (Esc)" aria-label="Pause menu">❚❚</button>
         </div>
         <div class="header-right">
+          <!-- Stays up while stopped/paused (owner ruling 17 overrides the
+               demo's TIME PAUSED swap: STOPPED in the ticker is the signal). -->
           <div class="day-counter" id="day-counter"></div>
-          <!-- Swaps in for the day counter while stopped/paused (demo canon). -->
-          <div class="paused-label" id="paused-label">TIME PAUSED</div>
         </div>
       </div>
 
@@ -755,13 +760,14 @@ body {
           </div>
         </div>
 
+        <!-- Owner ruling 18: 2 columns × 3 rows — crew needs (FOOD, H2O,
+             O2) | ship (FUEL, HULL, Stop/Resume). Grid fills by column. -->
         <div id="bottom-resources">
-          <div class="res fuel"  data-tip="bar_fuel"><span class="res-label">FUEL</span><div class="res-bar"><div class="res-fill" id="res-fill-fuel"></div></div></div>
           <div class="res food"  data-tip="bar_food"><span class="res-label">FOOD</span><div class="res-bar"><div class="res-fill" id="res-fill-food"></div></div></div>
           <div class="res water" data-tip="bar_water"><span class="res-label">H2O</span><div class="res-bar"><div class="res-fill" id="res-fill-water"></div></div></div>
-        </div>
-
-        <div id="action-rail">
+          <div class="res o2"    data-tip="bar_o2"><span class="res-label">O2</span><div class="res-bar"><div class="res-fill" id="res-fill-o2"></div></div></div>
+          <div class="res fuel"  data-tip="bar_fuel"><span class="res-label">FUEL</span><div class="res-bar"><div class="res-fill" id="res-fill-fuel"></div></div></div>
+          <div class="res hull"  data-tip="bar_hull"><span class="res-label">HULL</span><div class="res-bar"><div class="res-fill" id="res-fill-hull"></div></div></div>
           <button class="panel-btn accent-gold stop-btn" id="stop-btn">Stop</button>
         </div>
       </div>
@@ -1970,7 +1976,7 @@ function applySetupToState(sel) {
 
   STATE.activeAI  = sel.ai;
   STATE.captain   = sel.captain;
-  STATE.crew      = sel.crew.slice();
+  STATE.crew      = sel.crew.slice(0, 2); // captain + 2 crew, never more (ruling 23)
   STATE.startCrew = sel.crew.length; // the ending measures losses against this
   initCrewHP();
   initCrewMorale(rules.starting_resources.morale); // per crew member (owner ruling 15)
@@ -3040,36 +3046,50 @@ function scoutedEventFor(node) {
 }
 
 /* ────────────────────────────────────────────────────────────────
-   HUD — resource bar shared by map + encounter screens
+   HUD — resource dots on encounter / map / mining (+ the engine room)
+   Batch 3, owner ruling 16: the encounter demo's five (fuel, food, O2,
+   hull, morale), dots + numbers, no letter codes; the tooltip names
+   each dot. Not on the cruise hub. Gold lives in the cruise header
+   (ruling 17), which renderHUD() also keeps current.
    ──────────────────────────────────────────────────────────────── */
-function renderHUD() {
+// The HUD's morale = the crew average (ruling 15/16); null = no crew
+// aboard, shown as "—".
+function hudMorale() {
+  const mo = crewMoraleAvg();
+  return (mo == null || !Number.isFinite(mo)) ? null : mo;
+}
+function hudRowsHTML() {
   const r = STATE.resources;
-  // An upgrade sold/jettisoned/lost takes its headroom with it.
-  for (const k of ['fuel', 'hull', 'food']) if (r[k] > resMax(k)) r[k] = resMax(k);
+  const mo = hudMorale();
   const crit = {
     fuel:  r.fuel  < 25,
     food:  r.food  < 25,
-    water: r.water < 25,
     o2:    r.o2    < 25,
     hull:  r.hull  < 30,
-    mor:   crewMoraleAvg() != null && crewMoraleAvg() < 30, // crew average (owner ruling 15)
+    mor:   mo != null && mo < 30,
   };
   // Shown values: rounded, but anything above zero reads at least 1 — a
   // tank at 0.4 used to read 0 while it still had something in it.
   const sh = v => v > 0 ? Math.max(1, Math.round(v)) : 0;
-  const html = `
-    <div class="hud-r fuel${crit.fuel?' crit':''}"  data-tip="resource_fuel">  <span class="dot"></span>FU ${sh(r.fuel)}</div>
-    <div class="hud-r food${crit.food?' crit':''}"  data-tip="resource_food">  <span class="dot"></span>FD ${sh(r.food)}</div>
-    <div class="hud-r water${crit.water?' crit':''}" data-tip="resource_water"> <span class="dot"></span>H2 ${sh(r.water)}</div>
-    <div class="hud-r o2${crit.o2?' crit':''}"      data-tip="resource_o2"><span class="dot"></span>O2 ${sh(r.o2)}</div>
-    <div class="hud-r hull${crit.hull?' crit':''}"  data-tip="resource_hull">  <span class="dot"></span>HL ${sh(r.hull)}</div>
-    <div class="hud-r mor${crit.mor?' crit':''}"    data-tip="resource_morale"><span class="dot"></span>MO ${crewMoraleAvg() == null ? '—' : crewMoraleAvg()}</div>
-    <div class="hud-r gold" data-tip="resource_gold"><span class="dot"></span>${STATE.goldAmount}g</div>
-  `;
-  for (const id of ['hud-map', 'hud-enc', 'hud-cruise', 'hud-mining']) {
+  const row = (cls, tip, v) => `<div class="hud-r ${cls}${crit[cls] ? ' crit' : ''}" data-tip="${tip}"><span class="dot"></span><span class="hud-v">${v}</span></div>`;
+  return row('fuel', 'resource_fuel', sh(r.fuel))
+       + row('food', 'resource_food', sh(r.food))
+       + row('o2',   'resource_o2',   sh(r.o2))
+       + row('hull', 'resource_hull', sh(r.hull))
+       + row('mor',  'resource_morale', mo == null ? '\u2014' : sh(mo));
+}
+function renderHUD() {
+  const r = STATE.resources;
+  // An upgrade sold/jettisoned/lost takes its headroom with it.
+  for (const k of ['fuel', 'hull', 'food']) if (r[k] > resMax(k)) r[k] = resMax(k);
+  const html = hudRowsHTML();
+  for (const id of ['hud-map', 'hud-enc', 'hud-mining']) {
     const el = document.getElementById(id);
     if (el) el.innerHTML = html;
   }
+  const gold = document.getElementById('cruise-gold');
+  if (gold) gold.textContent = STATE.goldAmount + 'g';
+  if (typeof window.paintCruiseBars === 'function') window.paintCruiseBars(); // cruise bottom bars (ruling 18)
 }
 
 /* ────────────────────────────────────────────────────────────────

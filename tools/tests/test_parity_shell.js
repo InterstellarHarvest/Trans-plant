@@ -602,9 +602,12 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
   console.log('— tooltips (.ui-tip)');
   {
     const page = await boot(null, { width: 1440, height: 960 });
+    // The dot HUD left the cruise hub (ruling 16): probe it on the map.
+    await page.evaluate(() => { showScreen('screen-map'); renderMap(); renderHUD(); });
+    await wait(page, 200);
     const early = await page.evaluate(async () => {
       const w = ms => new Promise(r => setTimeout(r, ms));
-      const el = document.querySelector('#hud-cruise .hud-r.food');
+      const el = document.querySelector('#hud-map .hud-r.food');
       el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
       await w(15);
       const p = document.querySelector('#ui-tip-root .ui-tip');
@@ -612,12 +615,12 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
       el.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }));
       return at15;
     });
-    const hud = await page.$('#hud-cruise .hud-r.fuel');
+    const hud = await page.$('#hud-map .hud-r.fuel');
     await hud.hover();
     await wait(page, 150);
     const t = await page.evaluate(() => {
       const p = document.querySelector('#ui-tip-root .ui-tip'), g = document.getElementById('game');
-      const pr = p.getBoundingClientRect(), gr = g.getBoundingClientRect(), hr = document.querySelector('#hud-cruise .hud-r.fuel').getBoundingClientRect();
+      const pr = p.getBoundingClientRect(), gr = g.getBoundingClientRect(), hr = document.querySelector('#hud-map .hud-r.fuel').getBoundingClientRect();
       return { vis: p.classList.contains('visible'), tone: p.className, title: (p.querySelector('.ui-tip-title') || {}).textContent, desc: (p.querySelector('.ui-tip-desc') || {}).textContent, rows: p.querySelector('.ui-tip-rows') && p.querySelector('.ui-tip-rows').textContent,
         fade: getComputedStyle(p).transitionDuration, inGame: pr.left >= gr.left && pr.right <= gr.right && pr.top >= gr.top && pr.bottom <= gr.bottom, below: pr.top >= hr.bottom, centred: Math.abs((pr.left + pr.right) / 2 - (hr.left + hr.right) / 2) < 2 || pr.left - gr.left < 12 * (gr.width / 960) };
     });
@@ -625,6 +628,8 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
     ok(t.title === 'FUEL' && /Engine reserves/.test(t.desc) && /Current\s*\d+ \/ \d+/.test(t.rows), `resource HUD copy ported (${t.title}: ${t.desc} · ${t.rows})`);
     ok(/tone-default/.test(t.tone) && t.fade === '0.08s', `default tone, 80ms fade (${t.fade})`);
     ok(t.inGame && t.below, 'element-anchored, flipped below when the top clips, clamped inside the game frame');
+    await page.evaluate(() => { showScreen('screen-cruise'); renderCruise(); });
+    await wait(page, 200);
     const bar = await page.$('#bottom-resources .res.fuel');
     await bar.hover(); await wait(page, 150);
     const b = await page.evaluate(() => document.querySelector('#ui-tip-root .ui-tip .ui-tip-desc').textContent);

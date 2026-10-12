@@ -2152,17 +2152,16 @@ window.Tooltip = (() => {
   const max = k => (typeof resMax === 'function') ? resMax(k) : 100;
   const cur = (k, label) => () => { const s = st(); return s ? [{ label: label || 'Current', value: Math.round(s.resources[k]) + ' / ' + max(k) }] : []; };
   // Resource HUD — demo-tooltip resource_fuel/resource_morale + the
-  // demo-encounter enc-res copy for the rest.
+  // demo-encounter enc-res copy for the rest. The dots carry no letter
+  // codes (owner ruling 16), so the title names each one.
   const RES = {
     fuel:   ['FUEL', 'Engine reserves. Burns on travel and certain actions.'],
     food:   ['FOOD', 'Crew rations. Depleted daily.'],
     water:  ['WATER', 'Ship water. Split each day between the crop and the crew (standing orders).'],
     o2:     ['OXYGEN', 'Life support. Depleted daily, critical at low levels.'],
     hull:   ['HULL', 'Structural integrity. Damaged by combat and hazards.'],
-    morale: ['MORALE', 'Crew spirit. Effort actions tax it; mutiny at zero.'],
   };
   for (const [k, [title, description]] of Object.entries(RES)) {
-    if (k === 'morale') continue; // per crew member — registered below
     Tooltip.register('resource_' + k, () => ({ title, description, rows: cur(k)() }));
   }
   // Morale is per crew member (owner ruling 15): the HUD shows the crew
@@ -2171,14 +2170,15 @@ window.Tooltip = (() => {
     const avg = typeof crewMoraleAvg === 'function' ? crewMoraleAvg() : null;
     const s = st();
     if (s && avg == null) return { title: 'MORALE', description: 'No crew aboard — no morale to keep up.', rows: [] };
-    return { title: 'MORALE', description: RES.morale[1] + ' The crew average; each member has their own — at zero they walk off at the next station.', rows: s ? [{ label: 'Crew average', value: avg + ' / 100' }] : [] };
+    return { title: 'MORALE', description: 'Crew spirit, the crew average. Each member has their own: effort actions tax it, mutiny when the average hits zero, and anyone at zero walks off at the next station.', rows: s ? [{ label: 'Crew average', value: Math.round(avg) + ' / 100' }] : [] };
   });
   Tooltip.register('resource_gold', () => {
     const s = st();
     return { title: 'GOLD', description: 'Universal currency. Accepted at all stations. Cannot be fabricated.', rows: s ? [{ label: 'Purse', value: s.goldAmount + 'g' }] : [] };
   });
-  // Cruise bottom bars — demo-cruise "Fuel: 75 / 100" hovers, live.
-  const BAR = { fuel: 'Fuel', food: 'Food', water: 'Water' };
+  // Cruise bottom bars — demo-cruise "Fuel: 75 / 100" hovers, live
+  // (2 × 3 grid, owner ruling 18: + O2 and HULL).
+  const BAR = { fuel: 'Fuel', food: 'Food', water: 'Water', o2: 'Oxygen', hull: 'Hull' };
   for (const [k, name] of Object.entries(BAR)) {
     Tooltip.register('bar_' + k, () => { const s = st(); return { description: s ? name + ': ' + Math.round(s.resources[k]) + ' / ' + max(k) : name }; });
   }

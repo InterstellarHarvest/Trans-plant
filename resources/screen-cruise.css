@@ -1,10 +1,12 @@
 /* ============================================================
    screen-cruise — migrated from demo-cruise.html (dev-controls
    panel and viewport-scaling harness stripped). The demo-parity
-   pass (2026-10-11) brought over the ticker states, TIME PAUSED,
-   scene alerts, the multi-day action banner + result flash, the
-   day picker, the LOG button, readout icons, day markers, the
-   stop-pulse / bob halt / shake and the crop card's READY state.
+   pass (2026-10-11) brought over the ticker states, scene alerts,
+   the multi-day action banner + result flash, the day picker, the
+   LOG button, readout icons, day markers, the stop-pulse / bob
+   halt / shake and the crop card's READY state.
+   Batch 3 (rulings 16–18): no dot HUD here, no TIME PAUSED swap,
+   gold in the header, the 2 × 3 bottom-right grid.
    Everything scoped under #screen-cruise (body.stop-active /
    body.event-active are the cruise states, as in the demo).
    ============================================================ */
@@ -66,11 +68,8 @@
 
 #screen-cruise #starfield { position: absolute; inset: 0; pointer-events: none; }
 
-/* The shared .hud (all 6 resources as compact dots, reused from
-   map/encounter) floats top-right by default, which collides with
-   both cruise's own header row and the AI panel's avatar/name in
-   this layout. Move it to the empty top-left of the scene instead. */
-#screen-cruise .hud { top: 54px; left: 14px; right: auto; }
+/* No dot HUD on the hub (owner ruling 16): the bottom bars, the crew
+   cards and the header gold carry everything it showed. */
 
 #cruise-screen { position: absolute; inset: 0; display: flex; flex-direction: column; }
 
@@ -141,25 +140,23 @@
 .header-icon-btn:active { transform: translateY(1px); }
 
 .header-right { flex-shrink: 0; position: relative; min-width: 150px; text-align: right; }
-#cruise-header .day-counter, #cruise-header .paused-label {
+/* Day + days left stay visible while stopped/paused — they just don't
+   tick (owner ruling 17 overrides the demo's TIME PAUSED swap). */
+#cruise-header .day-counter, #cruise-header .header-gold {
   font-family: 'Press Start 2P', cursive; line-height: 1;
   font-size: 8px; letter-spacing: 1px;
-  transition: opacity 0.3s;
 }
 #cruise-header .day-counter { color: var(--hdr-meta-color); }
-/* TIME PAUSED swaps in for the date target while stopped or paused
-   (a multi-day wait's days are really passing, so the counter shows). */
-#cruise-header .paused-label {
-  color: var(--hdr-paused-color);
-  text-shadow: 0 0 8px currentColor;
-  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
-  white-space: nowrap;
-  opacity: 0;
-  animation: paused-pulse 1.4s ease-in-out infinite;
+/* Gold (ruling 17): left of the inventory box, the day text's font and
+   centring; a coin dot in the old HUD's gold colour marks what it is. */
+#cruise-header .header-gold {
+  flex-shrink: 0; display: flex; align-items: center; gap: 5px;
+  color: var(--gold); white-space: nowrap; cursor: var(--cursor-pointer, default);
 }
-@keyframes paused-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
-#screen-cruise.time-paused .day-counter  { opacity: 0; }
-#screen-cruise.time-paused .paused-label { opacity: 1; }
+#cruise-header .header-gold::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--res-gold, #c8a85a); box-shadow: 0 0 4px var(--res-gold, #c8a85a);
+}
 
 /* Screen shake — Resume pressed while a during-wait event holds the ship. */
 @keyframes cruise-shake {
@@ -524,8 +521,16 @@ body.stop-active #stop-menu { opacity: 1; }
 #crop-card-mini.mature .crop-growing { display: none; }
 #crop-card-mini.mature .crop-harvest-btn { display: block; }
 
-/* Demo's shipped sizes: 16px bars, 12px gap, 8px labels. */
-#bottom-resources { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 0 4px; }
+/* Owner ruling 18 (2026-10-11 mockup): 2 columns × 3 rows — crew needs
+   FOOD / H2O / O2 on the left, ship FUEL / HULL / Stop-Resume on the
+   right. Demo-cruise bar style (16px bars, 8px labels left of them);
+   the rows tighten from the demo's 12px gap to fit three in the band. */
+#bottom-resources {
+  flex: 1; min-width: 0; padding: 0 4px;
+  display: grid; grid-auto-flow: column;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, 1fr);
+  column-gap: 14px; row-gap: 8px;
+}
 #bottom-resources .res { display: flex; align-items: center; gap: 8px; min-width: 0; }
 #bottom-resources .res-label { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 8px; letter-spacing: 1px; color: var(--res-label-color); width: 36px; flex-shrink: 0; }
 /* scoped: screen-end.css has its own global .res-bar (12px) that won here */
@@ -536,10 +541,14 @@ body.stop-active #stop-menu { opacity: 1; }
 #bottom-resources .res.water .res-fill { background: var(--res-water); box-shadow: 0 0 4px var(--res-water); }
 #bottom-resources .res.o2 .res-fill { background: var(--res-o2);    box-shadow: 0 0 4px var(--res-o2); }
 #bottom-resources .res.hull .res-fill { background: var(--res-hull);  box-shadow: 0 0 4px var(--res-hull); }
-#bottom-resources .res.morale .res-fill { background: var(--res-mor);  box-shadow: 0 0 4px var(--res-mor); }
+/* Low (fuel/food/water/O2 <25, hull <30 — the old dot HUD's crit
+   thresholds): red label, red-rimmed bar, the HUD's warning pulse. */
+#bottom-resources .res.crit .res-label { color: #ff8878; }
+#bottom-resources .res.crit .res-bar { border-color: rgba(255,80,80,0.65); }
+#bottom-resources .res.crit .res-fill { animation: hud-warn 0.9s ease-in-out infinite; }
 
-#action-rail { flex: 0 0 140px; display: flex; align-items: stretch; min-width: 0; }
-#action-rail .panel-btn { width: 100%; flex: 1; justify-content: center; font-size: 16px; letter-spacing: 2px; padding: 0 12px; }
+/* Stop / Resume: row 3 of the ship column, the full cell. */
+#bottom-resources .stop-btn { width: 100%; min-width: 0; height: 100%; min-height: 0; justify-content: center; font-size: 16px; letter-spacing: 2px; padding: 0 8px; line-height: 1; }
 .stop-btn { position: relative; transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s; }
 /* Alert variant — pulses with a scene alert. */
 .stop-btn.alert { animation: stop-pulse 1.5s ease-in-out infinite; }

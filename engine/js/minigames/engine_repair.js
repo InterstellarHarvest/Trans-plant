@@ -630,15 +630,10 @@
     onRepairDone = onDone || null;
     sctx = $('er-spark-canvas').getContext('2d');
     resetScene();
-    // Resource HUD mirrors live STATE (demo hardcoded these values)
-    if (typeof STATE !== 'undefined' && STATE.resources) {
-      const R = STATE.resources;
-      $('er-res-fuel').textContent = Math.round(R.fuel);
-      $('er-res-food').textContent = Math.round(R.food);
-      $('er-res-o2').textContent = Math.round(R.o2);
-      $('er-res-hull').textContent = Math.round(R.hull);
-      $('er-res-mor').textContent = typeof crewMoraleAvg === 'function' && crewMoraleAvg() != null ? crewMoraleAvg() : '—'; // crew average (owner ruling 15)
-    }
+    // Resource HUD mirrors live STATE (demo hardcoded these values):
+    // the engine's shared five-dot rows (batch 3, ruling 16 — crew-average
+    // morale, crit pulse, tooltips).
+    if (typeof STATE !== 'undefined' && STATE.resources && typeof hudRowsHTML === 'function') $('er-resources').innerHTML = hudRowsHTML();
     showOverlay('overlay-engrepair');
     running = true;
     lastBurstTime = -1000;

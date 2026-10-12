@@ -140,8 +140,8 @@ async function boot(setup) {
       return { food: STATE.resources.food, bricks: STATE.items.filter(i => i === 'ration_brick').length };
     });
     ok(h.food === 100 && h.bricks === 3, `full stores: wheat surplus becomes ration bricks (${JSON.stringify(h)})`);
-    const d = await p2.evaluate(() => { STATE.resources.food = 0.4; renderHUD(); return document.querySelector('#hud-cruise .hud-r.food, .hud .hud-r.food').textContent; });
-    ok(/FD 1\b/.test(d), `a sliver of food reads 1, not 0 (${d.trim()})`);
+    const d = await p2.evaluate(() => { STATE.resources.food = 0.4; renderHUD(); return document.querySelector('#hud-enc .hud-r.food, .hud .hud-r.food').textContent; });
+    ok(/^\s*1\s*$/.test(d), `a sliver of food reads 1, not 0 (${d.trim()})`); // dots + numbers, no letter codes (ruling 16)
     ok(!p2._errs.length, 'no page errors' + (p2._errs.length ? ': ' + p2._errs.join(' | ') : ''));
     await p2.close();
   }
