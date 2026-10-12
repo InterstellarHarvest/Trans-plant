@@ -1109,11 +1109,12 @@ const PauseMenu = (() => {
     const n = (S.crew || []).length;
     const cg = S.cropGrowth;
     const crop = !cg ? 'no readout' : cg.health <= 0 ? 'lost' : 'health ' + Math.round(cg.health) + '%' + (cg.pest ? ', pests' : '');
+    const nLog = (S.shipLog || []).length;
     return '[ SHIP STATUS ]\n' +
       '> CREW         · ' + (n ? n + ' aboard' : 'captain alone') + (lost ? ', losses logged' : ', all hands accounted for') + '\n' +
       '> CROP         · ' + esc(String(S.crop).replace(/_/g, ' ')) + ', ' + crop + '\n' +
       '> TRAIL        · day ' + Math.round(S.daysElapsed || 0) + (S.baseDays ? ' of ~' + S.baseDays : '') + '\n' +
-      '> SHIP\'S LOG   · ' + ((S.shipLog || []).length) + ' entries\n\n';
+      '> SHIP\'S LOG   · ' + nLog + (nLog === 1 ? ' entry' : ' entries') + '\n\n';
   }
 
   function panelSettings() {
@@ -1250,27 +1251,18 @@ const PauseMenu = (() => {
     return w;
   }
 
-  // Pause SHIP'S LOG sub-panel. In the engine (window.openShipsLog
-  // exists), it previews the last few live entries and opens the
-  // engine-backed journal overlay. On standalone demo pages it falls
-  // back to launching demo-shipslog.html as before.
+  // Pause SHIP'S LOG sub-panel — the demo's blurb + OPEN button, no
+  // preview (the journal is the place to read entries, in the AI's
+  // voice). In the engine (window.openShipsLog exists) it opens the
+  // engine-backed journal overlay; on standalone demo pages it falls
+  // back to launching demo-shipslog.html.
   function panelLog() {
     const w = document.createElement('div');
     w.className = 'pause-panel';
     const inEngine = typeof window.openShipsLog === 'function';
-    let previewHtml = '';
-    // NB: index.html declares STATE with const — global binding, but NOT
-    // window.STATE. typeof-check reaches it across script boundaries.
-    if (inEngine && typeof STATE !== 'undefined' && Array.isArray(STATE.shipLog) && STATE.shipLog.length) {
-      const recent = STATE.shipLog.slice(-4).reverse();
-      previewHtml = '<div class="pause-log-preview">' + recent.map(e =>
-        '<div class="pause-log-line">D' + e.day + ' · ' + String(e.text).replace(/</g, '&lt;').slice(0, 90) + '</div>'
-      ).join('') + '</div>';
-    }
     w.innerHTML =
       '<h2 class="pause-h">SHIP\'S LOG</h2>' +
       '<p class="pause-log-blurb">Live log accumulating since launch — your decisions, discoveries, and quiet days, recorded in your AI\'s voice.</p>' +
-      previewHtml +
       '<div class="pause-log-actions">' +
         '<button type="button" class="pause-btn" data-act="open-log">OPEN SHIP\'S LOG' + (inEngine ? '' : ' ↗') + '</button>' +
       '</div>';
@@ -2161,8 +2153,24 @@ window.Tooltip = (() => {
     o2:     ['OXYGEN', 'Life support. Depleted daily, critical at low levels.'],
     hull:   ['HULL', 'Structural integrity. Damaged by combat and hazards.'],
   };
+  // "Per day" (demo-tooltip resource_fuel): the engine's real daily draw
+  // right now (index.html dailyDraw — what passDays spends). Fuel only
+  // burns in flight: the next leg's fuel over its days at this pace.
+  // Hull has no daily draw, so no row (no decorative numbers).
+  const num = v => String(Math.round(v * 100) / 100);
+  const perDay = k => {
+    if (!st()) return [];
+    if (k === 'fuel') {
+      if (typeof legTravelCost !== 'function') return [];
+      const leg = legTravelCost();
+      return leg.exactDays > 0 ? [{ label: 'Per day', value: num(leg.fuel / leg.exactDays) + ' in flight' }] : [];
+    }
+    if (typeof dailyDraw !== 'function') return [];
+    const d = dailyDraw();
+    return Number.isFinite(d[k]) ? [{ label: 'Per day', value: num(d[k]) }] : [];
+  };
   for (const [k, [title, description]] of Object.entries(RES)) {
-    Tooltip.register('resource_' + k, () => ({ title, description, rows: cur(k)() }));
+    Tooltip.register('resource_' + k, () => ({ title, description, rows: cur(k)().concat(perDay(k)) }));
   }
   // Morale is per crew member (owner ruling 15): the HUD shows the crew
   // average; the captain has none, and with nobody aboard there is none.
@@ -2170,7 +2178,18 @@ window.Tooltip = (() => {
     const avg = typeof crewMoraleAvg === 'function' ? crewMoraleAvg() : null;
     const s = st();
     if (s && avg == null) return { title: 'MORALE', description: 'No crew aboard — no morale to keep up.', rows: [] };
-    return { title: 'MORALE', description: 'Crew spirit, the crew average. Each member has their own: effort actions tax it, mutiny when the average hits zero, and anyone at zero walks off at the next station.', rows: s ? [{ label: 'Crew average', value: Math.round(avg) + ' / 100' }] : [] };
+    // demo rows: Average + Lowest NAME n (the member nearest walking off).
+    const rows = [];
+    if (s) {
+      rows.push({ label: 'Average', value: Math.round(avg) + ' / 100' });
+      const crew = (s.crew || []).filter(r => typeof crewMoraleOf === 'function' && Number.isFinite(crewMoraleOf(r)));
+      if (crew.length) {
+        const low = crew.reduce((a, b) => crewMoraleOf(b) < crewMoraleOf(a) ? b : a);
+        const name = typeof crewNameOf === 'function' ? crewNameOf(low) : low;
+        rows.push({ label: 'Lowest', value: name + ' ' + Math.round(crewMoraleOf(low)) });
+      }
+    }
+    return { title: 'MORALE', description: 'Crew spirit, the crew average. Each member has their own: effort actions tax it, mutiny when the average hits zero, and anyone at zero walks off at the next station.', rows };
   });
   Tooltip.register('resource_gold', () => {
     const s = st();
@@ -2186,5 +2205,27 @@ window.Tooltip = (() => {
   const crop = () => { const s = st(); return s && s.cropGrowth ? s.cropGrowth : null; };
   Tooltip.register('crop_alert', { description: 'Needs attention', tone: 'warn' });
   Tooltip.register('crop_growth', () => { const c = crop(); return { description: 'Growth cycle', rows: c ? [{ label: 'Growth', value: Math.round(c.growth || 0) + '%' }] : [] }; });
-  Tooltip.register('crop_health', () => { const c = crop(); return { description: 'Plant health', rows: c ? [{ label: 'Health', value: Math.round(c.health || 0) + ' / 100' }] : [] }; });
+  // A healthy crop (at/above its healthy threshold — it's making air) reads
+  // in the good tone with its real growth per day (demo crop_healthy):
+  // maturity pace × growbay's live growth factor (cropGrowthFactorAt).
+  Tooltip.register('crop_health', () => {
+    const c = crop(), s = st();
+    if (!c) return { description: 'Plant health', rows: [] };
+    const healthRow = { label: 'Health', value: Math.round(c.health || 0) + ' / 100' };
+    const meta = s && typeof cropMetaOf === 'function' ? cropMetaOf(s.crop) : null;
+    const real = s && typeof MOD !== 'undefined' && MOD.crops ? (MOD.crops.crops || []).find(x => x.id === 'crop_' + s.crop) : null;
+    const healthyAt = (real && real.healthy_threshold) || 65;
+    if (c.health >= healthyAt && meta && typeof cropGrowthFactorAt === 'function') {
+      const f = cropGrowthFactorAt(Number.isFinite(c.waterPlant) ? c.waterPlant : 50);
+      const growing = (c.growth || 0) < 100;
+      const perDay = (100 / (meta.maturity_days || 90)) * f;
+      return {
+        title: 'CROP — HEALTHY',
+        description: growing ? 'Growth rate at ' + Math.round(f * 100) + '%.' : 'Fully grown. Ready to harvest.',
+        rows: [healthRow].concat(growing ? [{ label: 'Growth', value: '+' + (Math.round(perDay * 100) / 100).toFixed(2) + '/day' }] : []),
+        tone: 'good',
+      };
+    }
+    return { description: 'Plant health', rows: [healthRow] };
+  });
 })();

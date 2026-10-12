@@ -207,7 +207,9 @@
   // stays up until the next real replacement (Bible: "stay until the next
   // replacement"); leaving the state restores its line.
   let tickerEl = null, tickerKey = null, tickerWarnTimer = null, hubHiddenAt = 0, hubWasVisible = false;
-  function writeTicker(text, kind) {
+  // tip (optional): the line's own hover — an AI quip reads in the
+  // tooltip's quote tone under the AI's name (demo-tooltip ai_quip_*).
+  function writeTicker(text, kind, tip) {
     const box = $('header-ticker');
     if (!box) return;
     // Written while the hub is hidden, the line is simply there; and a
@@ -220,7 +222,8 @@
     inner.className = 'ticker-inner';
     inner.textContent = text;
     el.appendChild(inner);
-    el.title = text;
+    if (tip && window.Tooltip) Tooltip.attach(el, tip);
+    else el.title = text;
     box.appendChild(el);
     void el.offsetWidth;            // the enter transform sticks, then transitions to centre
     el.classList.remove('enter');
@@ -278,9 +281,9 @@
   // Something worth a line while stopped (AI quip, scan news): amber,
   // replaces whatever is up; the state's own line returns with the next
   // state change.
-  function tickerNews(text) {
+  function tickerNews(text, tip) {
     if (!cruiseVisible()) return;
-    writeTicker(text, isStopped() || STATE.forcedEvent ? 'event-info' : 'normal');
+    writeTicker(text, isStopped() || STATE.forcedEvent ? 'event-info' : 'normal', tip);
   }
 
   // ── Time held (Bible §18 Pause vs Stop) ────────────────────────
@@ -318,6 +321,7 @@
     clearTimeout(alertTimer);
     alertTimer = setTimeout(() => { el.classList.remove('show'); $('stop-btn').classList.remove('alert'); }, ms || 4200);
   }
+  window.cruiseSceneAlert = showSceneAlert; // test hook
   const NEXT_STOP_ALERT = {
     asteroid_field: 'ASTEROID FIELD AHEAD — GOOD MINING',
     derelict:       'DERELICT DETECTED — PROCEED WITH CAUTION',
@@ -373,10 +377,22 @@
   let typing = null, markerDay = null;
   const voiceName = () => String(STATE.activeAI || 'marv').toUpperCase();
   const isAtBottom = el => el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+  // Owner ruling 32 (2026-10-12): no "NAME: " prefix when the line
+  // already names the AI — any of the five (most ai_universal lines are
+  // third person: "ARIA notes…") — or says "the ship computer".
+  const AI_NAMES = ['ARIA', 'MARV', 'REX', 'CHIP', 'AJOY'];
+  function namesTheAI(body) {
+    const names = ((typeof MOD !== 'undefined' && MOD.ai_companions) || []).map(a => a && a.name).filter(Boolean);
+    const all = [...new Set([...AI_NAMES, ...names.map(n => String(n).toUpperCase())])];
+    const cap = n => n.charAt(0) + n.slice(1).toLowerCase();
+    return new RegExp('\\b(' + all.map(n => n + '|' + cap(n)).join('|') + ')\\b').test(body) || /\bthe ship computer\b/i.test(body);
+  }
   function displayLine(text, voice) {
     const body = String(text == null ? '' : text).replace(/^\s*[◆▶]\s*/, '');
-    return voice ? voice.toUpperCase() + ': ' + body : '▶ ' + body;
+    if (!voice) return '▶ ' + body;
+    return namesTheAI(body) ? body : voice.toUpperCase() + ': ' + body;
   }
+  window.cruiseDisplayLine = displayLine; // test hook (ruling 32)
   function finishTyping() {
     if (!typing) return;
     const t = typing; typing = null;
@@ -392,26 +408,43 @@
     log.appendChild(m);
     markerDay = day;
   }
-  function addLinkChrome(entry, link) {
+  // Payload entries (Bible §18/§19, demo-cruise pushLogEntry): the
+  // WHOLE entry is clickable, with 📖 (expand: opens that entry's page in
+  // the Ship's Log journal) or 🔗 (link: opens the page in a new tab and
+  // pauses the game — the Bridge Terminal comes up, so the player returns
+  // to a held game) at its end. An entry carrying both opens its page,
+  // as the journal does.
+  const payloadOf = en => {
+    if (!en) return null;
+    if (en.expand && window.ShipLog) return { kind: 'expand' };
+    if (en.link && en.link.url) return { kind: 'link', link: en.link };
+    return null;
+  };
+  function openLogLink(link) {
     if (!link || !link.url) return;
-    entry.classList.add('has-link');
-    const a = document.createElement('a');
-    a.className = 'ai-entry-link';
-    a.href = link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-    a.textContent = '🔗 ' + (link.label || 'Learn more');
-    entry.appendChild(document.createTextNode(' '));
-    entry.appendChild(a);
+    window.open(link.url, '_blank', 'noopener');
+    if (typeof PauseMenu !== 'undefined' && PauseMenu.open && !(PauseMenu.isOpen && PauseMenu.isOpen())) PauseMenu.open();
+    else if (window.PauseBus) PauseBus.pause();
   }
-
-  // 📖 on entries with an expand payload (Bible §AI Log Panel): opens
-  // that entry's page in the Ship's Log journal.
-  function addExpandChrome(entry, en) {
-    if (!en || !en.expand || !window.ShipLog) return;
+  window.openLogLink = openLogLink;
+  function armPayload(entry, en) {
+    const p = payloadOf(en);
+    if (!p) return null;
+    entry.classList.add('has-payload');
+    entry.setAttribute('title', p.kind === 'expand' ? 'Read more' : (p.link.label || 'Learn more') + ' — opens in a new tab; the game pauses');
+    entry.addEventListener('click', ev => {
+      ev.stopPropagation();
+      if (p.kind === 'expand') ShipLog.openEntry(en);
+      else openLogLink(p.link);
+    });
+    return p;
+  }
+  function addPayloadIcon(entry, en) {
+    const p = payloadOf(en);
+    if (!p) return;
     const b = document.createElement('span');
-    b.className = 'ai-entry-expand';
-    b.textContent = '📖';
-    b.setAttribute('title', 'Read more');
-    b.addEventListener('click', ev => { ev.stopPropagation(); ShipLog.openEntry(en); });
+    b.className = 'ai-entry-payload';
+    b.textContent = p.kind === 'expand' ? '\u{1F4D6}' : '\u{1F517}';
     entry.appendChild(document.createTextNode(' '));
     entry.appendChild(b);
   }
@@ -457,7 +490,7 @@
     // While stopped the log column is under the Stop menu: the AI's
     // lines go up on the ticker instead (the entry still lands, so the
     // log is whole on Resume).
-    if (voice && isStopped() && cruiseVisible()) tickerNews(line);
+    if (voice && isStopped() && cruiseVisible()) tickerNews(line, { title: String(voice).toUpperCase(), description: String(text == null ? '' : text).replace(/^\s*[◆▶]\s*/, ''), tone: 'quote' });
     const sticky = isAtBottom(log);
     finishTyping();
     log.querySelectorAll('.ai-entry.latest').forEach(e => e.classList.remove('latest'));
@@ -465,13 +498,12 @@
     const entry = document.createElement('div');
     entry.className = 'ai-entry latest' + (voice ? ' voice' : ' system');
     log.appendChild(entry);
-    const link = isObj ? entryOrText.link : null;
     const saved = STATE.shipLog[STATE.shipLog.length - 1];
+    armPayload(entry, saved);
     const follow = () => { if (sticky) log.scrollTop = log.scrollHeight; };
     if (opts.instant || isStopped() || !cruiseVisible()) {
       entry.textContent = line;
-      addLinkChrome(entry, link);
-      addExpandChrome(entry, saved);
+      addPayloadIcon(entry, saved);
       follow();
       return entry;
     }
@@ -480,7 +512,7 @@
     cursor.className = 'tw-cursor';
     entry.appendChild(span);
     entry.appendChild(cursor);
-    typing = { span, cursor, text: line, timer: null, done: () => { addLinkChrome(entry, link); addExpandChrome(entry, saved); follow(); } };
+    typing = { span, cursor, text: line, timer: null, done: () => { addPayloadIcon(entry, saved); follow(); } };
     const t = typing;
     let i = 0;
     (function tick() {
@@ -511,8 +543,8 @@
       const d = document.createElement('div');
       d.className = 'ai-entry' + (en.voice ? ' voice' : ' system') + (i === list.length - 1 ? ' latest' : '');
       d.textContent = displayLine(en.text, en.voice);
-      addLinkChrome(d, en.link);
-      addExpandChrome(d, en);
+      armPayload(d, en);
+      addPayloadIcon(d, en);
       log.appendChild(d);
     });
     log.scrollTop = log.scrollHeight;
@@ -548,7 +580,9 @@
     // that moved the ship — a test harness, Push Engines — drops it).
     if (STATE.forcedEvent && STATE.forcedEvent.node !== STATE.currentId) STATE.forcedEvent = null;
     document.body.classList.toggle('event-active', !!STATE.forcedEvent);
-    if (STATE.forcedEvent && !isStopped()) openStopMenu();
+    // A during-wait event saved before its flash finished (a reload, a
+    // load) opens straight away (owner ruling 46a) — no menu between.
+    if (STATE.forcedEvent && !activeWait) setTimeout(() => { if (STATE.forcedEvent && !activeWait && cruiseVisible()) resolveForced(); }, 0);
     rollTraderPresence();
     syncShipSprite();
     syncStationView();
@@ -767,14 +801,22 @@
     trade:        { label: 'TRADE',     sub: () => atStation() ? 'Market Row is open. Haggle in person.' : 'A trader is in range. Haggle. Or pretend to.', effort: 1, icon: 'trade', time: '≤1d', requires: () => traderHere() },
     wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park. Roll the dice. Days will pass. Things will hear you.', effort: 1, hint: true, icon: 'wait', time: '1-7d', hideWhen: () => traderHere() },
     scan:         { label: 'SCAN',      sub: 'Read the signals. Find what is coming.',           effort: 2, hint: true, icon: 'scan', time: '1d' },
-    repair:       { label: 'REPAIR',    sub: 'Patch the hull: 2 metal + 1 scrap and a day.', effort: 3, locked: repairLockReason, icon: 'repair', time: '1d' },
+    repair:       { label: 'REPAIR',    sub: 'Patch the hull: 2 metal + 1 scrap and a day.', effort: 3, locked: repairLockReason, icon: 'repair', time: '1d', hideWhen: () => hullIntact() },
     rest:         { label: 'REST',      sub: () => 'Crew morale up (+' + restPerDay() + ' a day). Days down.', effort: 1, hint: true, icon: 'rest', time: '1-7d', locked: restLockReason },
     fab:          { label: 'FABRICATOR', sub: 'Open the print queue. Long jobs need a still ship.', effort: 1, hint: true, icon: 'fab' },
-    medbay:       { label: 'MEDBAY',    sub: () => 'Treat every hurt crew member. ' + medbayFee() + 'g, no days.', effort: 1, hint: true, locked: medbayLockReason, icon: 'medic' },
+    medbay:       { label: 'MEDBAY',    sub: () => 'Treat every hurt crew member. ' + medbayFee() + 'g, no days.', effort: 1, hint: true, locked: medbayLockReason, icon: 'medic', hideWhen: () => !medbayPatient() },
     condense:     { label: 'CONDENSE',  sub: 'Wring water out of the nebula. A day for +12 water.', effort: 2, locked: condenseLockReason, icon: 'water', time: '1d' },
-    drydock:      { label: 'DRYDOCK',   sub: () => 'Station crews patch the hull. +' + Math.min(30, Math.ceil(resMax('hull') - STATE.resources.hull)) + ' hull for ' + drydockFee() + 'g.', effort: 1, hint: true, locked: drydockLockReason, icon: 'repair' },
-    fab_service:  { label: 'FAB SERVICE', sub: () => 'Station techs overhaul the fabricator. Wear to zero, ' + fabServiceFee() + 'g.', effort: 1, hint: true, locked: fabServiceLockReason, icon: 'fab' },
+    drydock:      { label: 'DRYDOCK',   sub: () => 'Station crews patch the hull. +' + Math.min(30, Math.ceil(resMax('hull') - STATE.resources.hull)) + ' hull for ' + drydockFee() + 'g.', effort: 1, hint: true, locked: drydockLockReason, icon: 'repair', hideWhen: () => hullIntact() },
+    fab_service:  { label: 'FAB SERVICE', sub: () => 'Station techs overhaul the fabricator. Wear to zero, ' + fabServiceFee() + 'g.', effort: 1, hint: true, locked: fabServiceLockReason, icon: 'fab', hideWhen: () => fabGoodAsNew() },
   };
+  // demo-cruise hideWhen (REPAIR: !hullDamaged): a verb with nothing to
+  // work on isn't offered at all — no locked row saying so. The same rule
+  // covers the station services the demo never drew: DRYDOCK (hull
+  // intact), MEDBAY (nobody hurt), FAB SERVICE (good as new). Rows locked
+  // for a NEED the player can meet (materials, gold, an item, a berth)
+  // stay, with their Need rows on hover.
+  const hullIntact = () => STATE.resources.hull >= resMax('hull');
+  const fabGoodAsNew = () => { const f = STATE.fabricator || {}; return !f.broken && (f.wear || 0) < 10; };
   // REST raises every crew member's morale (owner ruling 15). No crew
   // aboard: nothing to raise — locked, not offered as a morale verb.
   // Locked only when EVERYONE is in good spirits (one low member is
@@ -1211,25 +1253,19 @@
       weight: 5, events: () => ['event_encounter_pirate_001'],
       log: 'Pirate signature on long-range scan. They saw you sitting still.',
       flash: 'PIRATE INBOUND', variant: 'event-danger',
-      ticker: 'PIRATE SIGNATURE — WEAPONS HOT', label: 'PIRATE SIGNATURE',
-      mood: 'They saw you sitting still. They are coming over to discuss it.',
-      verb: 'HAIL BACK', sub: 'Answer them before they answer for you.', icon: 'scan',
+      ticker: 'PIRATE SIGNATURE — WEAPONS HOT',
     },
     distress: {
       weight: 3, events: () => ['event_encounter_drifter_001'],
       log: 'Distress call on an open channel. Someone, somewhere, needs help.',
       flash: 'DISTRESS CALL', variant: 'event',
-      ticker: 'DISTRESS CALL — OPEN CHANNEL', label: 'DISTRESS CALL',
-      mood: 'A parked ship is a ship that can hear. Somebody is counting on it.',
-      verb: 'ANSWER THE CALL', sub: 'Someone is out there. Find out who.', icon: 'scan',
+      ticker: 'DISTRESS CALL — OPEN CHANNEL',
     },
     anomaly: {
       weight: 2, events: () => Object.keys(EVENTS).filter(id => /^event_anomaly_/.test(id)),
       log: 'Anomalous drift current bumps the ship. Instruments disagree about which way is up.',
       flash: 'ANOMALY', variant: 'event',
-      ticker: 'ANOMALOUS DRIFT — INSTRUMENTS DISAGREE', label: 'ANOMALOUS DRIFT',
-      mood: 'Something is happening to the ship, or near it, or about it.',
-      verb: 'INVESTIGATE', sub: 'Find out what the instruments are arguing about.', icon: 'scan',
+      ticker: 'ANOMALOUS DRIFT — INSTRUMENTS DISAGREE',
     },
   };
   function waitEventPick() {
@@ -1396,14 +1432,17 @@
       renderHUD();
     }
     // The event is the ship's business from this moment (saved: a reload
-    // comes back to it).
+    // opens it). Red ticker + Stop pulse through the alert flash; Resume
+    // there shakes (CANNOT RESUME). After the flash the event opens
+    // straight away (owner ruling 46a — no one-verb menu in between).
     STATE.forcedEvent = { kind: pick.kind, ev: pick.ev, node: a.node };
+    document.body.classList.add('event-active');
+    syncTicker();
     a.finish = () => {
       clearTimeout(a.timer);
       hideWaitFlash(); hideActionBanner();
       activeWait = null;
-      renderCruise();      // arms event-active, saves
-      if (!isStopped()) openStopMenu(); else { renderStopMenu(); syncTicker(); syncPaused(); }
+      resolveForced();
     };
     whenFree(() => { showWaitFlash(d.flash, d.variant); whenFree(() => a.finish(false), 2000); }, 600);
   }
@@ -1472,10 +1511,11 @@
 
   // ── Forced-event state (demo ~1990-2062, 2131-2160; Bible Stop
   // Button State Machine "event" row). Entered only by a during-wait
-  // event: red pulsing ticker, the Stop menu shows that event's one
-  // resolve verb, and Resume is blocked — the screen shakes and the
-  // ticker flashes CANNOT RESUME. Answering opens the real encounter;
-  // after it the ship is back at the hub, stopped, as after any event.
+  // event: red pulsing ticker and Stop button through the alert flash,
+  // Resume blocked (the screen shakes, the ticker flashes CANNOT
+  // RESUME), then the real encounter opens on its own (owner ruling 46a:
+  // the demo's resolve-verb menu is skipped). After it the ship is back
+  // at the hub, stopped, as after any event.
   function resolveForced() {
     const f = STATE.forcedEvent;
     if (!f) return;
@@ -1527,22 +1567,23 @@
   }
   const span = (cls, text) => { const s = document.createElement('span'); if (cls) s.className = cls; s.textContent = text; return s; };
 
+  // Locked verb hover (demo-tooltip action_locked_*): danger tone, one
+  // "Need" row per missing thing; a lock that isn't a need (a waved-off
+  // berth, nobody to rest) just says why.
+  function lockTip(label, reason) {
+    let m, rows = [];
+    if ((m = /^Need:?\s+(.+)$/.exec(reason))) rows = m[1].split(/\s+\+\s+/).map(v => ({ label: 'Need', value: v }));
+    else if ((m = /^Costs (\d+)g$/.exec(reason))) rows = [{ label: 'Need', value: m[1] + ' gold' }];
+    return { title: 'LOCKED — ' + label, description: rows.length ? 'You lack the resources to perform this action.' : reason + '.', rows, tone: 'danger' };
+  }
+  window.cruiseLockTip = lockTip; // test hook
+
   function renderStopMenu() {
     const regionKey = currentRegionKey();
     const region = REGIONS[regionKey] || REGIONS.deep_space;
     const list = $('stop-choices');
     list.innerHTML = '';
 
-    // A during-wait event holds the ship: its own header, one way out.
-    const f = forcedDef();
-    if (f) {
-      $('stop-region-label').textContent = f.label;
-      $('stop-region-mood').textContent = f.mood;
-      const btn = choiceButton({ label: f.verb, sub: f.sub, icon: f.icon, variant: 'risky' });
-      btn.addEventListener('click', resolveForced);
-      list.appendChild(btn);
-      return;
-    }
     $('stop-region-label').textContent = region.label;
     $('stop-region-mood').textContent = region.mood;
 
@@ -1577,6 +1618,7 @@
       const subText = lockReason ? null : (typeof verb.sub === 'function' ? verb.sub(regionKey) : verb.sub);
       const btn = choiceButton({ label: labelStr, sub: subText, parts, variant, icon: lockReason ? 'lock' : (verb.icon || 'wait'), locked: !!lockReason });
       if (lockReason) btn.classList.add('locked');
+      if (lockReason && window.Tooltip) Tooltip.attach(btn, lockTip(labelStr, lockReason));
       btn.setAttribute('data-verb-id', verbId);
       if (!lockReason && verb.effort && window.effortTax) btn.title = 'Effort ' + verb.effort + '/5' + (effortTax(verb.effort) ? ' · costs ' + effortTax(verb.effort) + ' morale' + (verbId === 'fab' ? ' per craft' : WAIT_VERBS[verbId] ? ' for the whole wait' : '') : ''); // no crew aboard: no tax to state
       btn.addEventListener('click', () => {
@@ -1628,8 +1670,8 @@
      event blocks Resume outright (shake + CANNOT RESUME); a wait in
      progress is called off (its days stay spent). */
   function attemptResume() {
+    if (STATE.forcedEvent) { shakeScreen(); flashTickerWarning(); return; } // the event opens when its flash ends
     if (activeWait && activeWait.resolving && activeWait.finish) activeWait.finish(true);
-    if (STATE.forcedEvent) { shakeScreen(); flashTickerWarning(); return; }
     if (activeWait) cancelWait();
     const nextIds = [...nextAvailableNodes()];
     if (nextIds.length === 0 && typeof resolveStuckFork === 'function' && resolveStuckFork()) { closeStopMenu(); return; }

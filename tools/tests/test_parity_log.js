@@ -304,7 +304,9 @@ const mark = page => page.evaluate(() => { window.__mark = STATE.shipLog.length;
       rebuildCruiseLog(8);
       const col = [...document.querySelectorAll('#ai-log .ai-entry')].map(e => e.textContent);
       const tail = STATE.shipLog.slice(-8).map(e => e.text.replace(/^\s*[◆▶]\s*/, ''));
-      return { col, tail, book: !!document.querySelector('#ai-log .ai-entry-expand') };
+      // b4 (demo-cruise .has-payload): the whole entry is clickable, 📖 at its end.
+      const pe = [...document.querySelectorAll('#ai-log .ai-entry.has-payload')].find(e => { const i = e.querySelector('.ai-entry-payload'); return i && i.textContent === '\u{1F4D6}' && e.lastElementChild === i; });
+      return { col, tail, book: !!pe };
     });
     ok(C.tail.every((t, i) => C.col[i] && C.col[i].includes(t)), 'the column\'s lines are the journal\'s latest entries');
     ok(C.book, 'the column shows 📖 on entries with a page');

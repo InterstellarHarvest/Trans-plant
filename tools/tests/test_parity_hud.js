@@ -91,7 +91,7 @@ const DEMO_TITLES = ['FUEL', 'FOOD', 'OXYGEN', 'HULL', 'MORALE'];
     ok(enc.rows.slice(0, 4).map(x => x.text).join() === '62,48,71,55', 'the numbers are the real fuel/food/O2/hull');
     ok(enc.rows[4].text === String(Math.max(1, Math.round(avg))), 'morale dot = the crew average (' + enc.rows[4].text + ' vs ' + avg + ')');
     ok(enc.rows.map(x => x.tipTitle).join() === DEMO_TITLES.join(), 'each dot\'s tooltip names it: ' + enc.rows.map(x => x.tipTitle).join('/'));
-    ok(/crew average/i.test(enc.rows[4].tipDesc) && /Crew average \d+ \/ 100/.test(enc.rows[4].tipRows), 'morale tooltip: crew average (' + enc.rows[4].tipRows + ')');
+    ok(/crew average/i.test(enc.rows[4].tipDesc) && /^Average \d+ \/ 100; Lowest \S.* \d+$/.test(enc.rows[4].tipRows), 'morale tooltip: Average + Lowest NAME n (' + enc.rows[4].tipRows + ')');
     ok(/VT323/.test(enc.font) && enc.size === '13px' && enc.gap === '6px' && enc.pad === '6px 10px', 'demo box: VT323 13px, 6px gap, 6px 10px padding (' + [enc.size, enc.gap, enc.pad].join(' ') + ')');
     ok(enc.bg === 'rgba(8, 12, 18, 0.7)' && enc.border === 'rgba(95, 168, 208, 0.2)' && enc.rad === '3px', 'demo box colours: ' + enc.bg + ' / ' + enc.border);
     ok(enc.rows.every(x => x.dotW === '8px' && x.dotH === '8px' && x.dotRad === '50%' && x.gap === '4px'), 'dots 8px round, 4px from the number');
@@ -155,7 +155,7 @@ const DEMO_TITLES = ['FUEL', 'FOOD', 'OXYGEN', 'HULL', 'MORALE'];
     }, v);
     await page.evaluate(() => { enterEvent(STATE.byId[STATE.currentId], EVENTS.event_encounter_pirate_001); });
     let m = await mo(63.4);
-    ok(m.text === '63' && m.rows === 'Crew average 63 / 100', 'average 63.4 → "63"');
+    ok(m.text === '63' && /^Average 63 \/ 100,Lowest /.test(m.rows), 'average 63.4 → "63" (' + m.rows + ')');
     m = await mo(22);
     ok(m.text === '22' && m.color === 'rgb(255, 136, 120)' && m.anim === 'hud-warn', 'average 22 (<30) → crit');
     m = await mo(null);
@@ -277,11 +277,15 @@ const DEMO_TITLES = ['FUEL', 'FOOD', 'OXYGEN', 'HULL', 'MORALE'];
     await page.waitForTimeout(300);
     const after = await page.evaluate(() => ({ id: STATE.currentId, ev: STATE.currentEvent && STATE.currentEvent.id, scr: document.querySelector('.screen.active').id }));
     ok(res.skip || after.id !== at, 'Resume travels on (' + at + ' → ' + after.id + ')');
-    // Forced-event: Resume blocked + shake (behaviour kept)
+    // Forced-event: Resume blocked + shake (behaviour kept). The forced
+    // state now lives only through the alert flash before the event opens
+    // (owner ruling 46a), so it is armed by hand here, without a repaint
+    // (renderCruise would open the event at once).
     const p2 = await boot();
     const fb = await p2.evaluate(() => {
       STATE.forcedEvent = { kind: 'pirate', ev: 'event_encounter_pirate_001', node: STATE.currentId };
-      renderCruise();
+      document.body.classList.add('event-active');
+      openStopMenu(); // a forced event only ever arrives mid-wait, stopped
       const b = [...document.querySelectorAll('#bottom-resources button')][0];
       const at = STATE.currentId; b.click();
       return { moved: STATE.currentId !== at, shaking: document.getElementById('screen-cruise').classList.contains('shaking'), text: b.textContent };

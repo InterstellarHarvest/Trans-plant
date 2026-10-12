@@ -236,7 +236,7 @@ function step() {
     // Multi-day WAIT/REST (cruise parity 2026-10-11): let a running wait
     // play out; answer a during-wait event the way the player must.
     if (window.cruiseWaitActive && cruiseWaitActive()) return { wait: 700 };
-    if (STATE.forcedEvent) { S.forced = (S.forced || 0) + 1; const fb = document.querySelector('#stop-choices .stop-choice'); if (fb) fb.click(); return { wait: 80 }; }
+    if (STATE.forcedEvent) { S.forced = (S.forced || 0) + 1; return { wait: 80 }; } // the event opens on its own after the alert flash (owner ruling 46a)
     if (window.__pendVerb) { const p = window.__pendVerb; window.__pendVerb = null; S.vd = S.vd || [];
       const dr = {}; for (const k of Object.keys(p.r)) dr[k] = Math.round(((k === 'morale' ? (crewMoraleRaw() || 0) : STATE.resources[k]) - p.r[k]) * 10) / 10;
       S.vd.push({ v: p.name, node: (STATE.byId[STATE.currentId] || {}).node_type, ds: Math.round((scoreValue() - p.sc) * 100) / 100, dd: STATE.daysElapsed - p.d, dr, dg: STATE.goldAmount - p.g, dm: Object.values(STATE.materials).reduce((a, b) => a + b, 0) - p.m }); }
