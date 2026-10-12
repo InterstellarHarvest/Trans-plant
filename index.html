@@ -51,7 +51,7 @@ if (location.protocol === 'file:') document.write('<script src="engine/js/portab
   --res-fuel:  #e88830;
   --res-food:  #8cc890;
   --res-water: #5fa8d0;
-  --res-o2:    #5fa8d0;
+  --res-o2:    #b8e6ee; /* pale ice — never the water blue (owner 2026-10-11) */
   --res-hull:  #b4b091;
   --res-mor:   #5e9ec7;
   --res-gold:  #c8a85a;
@@ -678,7 +678,6 @@ body {
         <div class="header-actions">
           <button class="header-icon-btn" style="background-image:url('sprites/interface/inv.png')" id="btn-inv" aria-label="Inventory" data-tip-description="Inventory"></button>
           <button class="header-icon-btn" style="background-image:url('sprites/interface/map.png')" id="btn-map" aria-label="Map" data-tip-description="Map"></button>
-          <button class="header-icon-btn header-pause-btn" id="btn-pause" data-tip-title="PAUSE" data-tip-description="Save, load, settings, quit (Esc)" aria-label="Pause menu">❚❚</button>
         </div>
         <div class="header-right">
           <!-- Stays up while stopped/paused (owner ruling 17 overrides the
@@ -6122,9 +6121,6 @@ function endRun(end) {
   document.getElementById('slog-expand-modal').addEventListener('click', e => { if (e.target.id === 'slog-expand-modal') closeShipsLogExpand(); });
   document.getElementById('slog-x').addEventListener('click', () => hideOverlay('overlay-shipslog'));
   ['inv-grid-host', 'inv-detail-host', 'slog-rows-host', 'slog-expand-host'].forEach(id => wireCustomScroll(document.getElementById(id)));
-  document.getElementById('btn-pause').addEventListener('click', () => {
-    if (typeof PauseMenu !== 'undefined' && !PauseMenu.isOpen()) PauseMenu.open();
-  });
   document.getElementById('slog-expand-close').addEventListener('click', closeShipsLogExpand);
 
   // ?debug=fixed_path skips title/setup and boots straight into the

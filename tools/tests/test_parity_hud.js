@@ -57,7 +57,7 @@ const readHud = (page, id) => page.evaluate(id => {
   return { display: hs.display, vis: hs.visibility, font: hs.fontFamily, size: hs.fontSize, gap: hs.columnGap, pad: hs.padding, bg: hs.backgroundColor, border: hs.borderTopColor, rad: hs.borderTopLeftRadius, left: (box.left - g.left) / k, right: (box.right - g.left) / k, top: (box.top - g.top) / k, w: box.width / k, rows };
 }, id);
 // demo-encounter tokens (--res-fuel/food/o2/hull/mor).
-const DEMO_DOTS = ['rgb(232, 136, 48)', 'rgb(140, 200, 144)', 'rgb(95, 168, 208)', 'rgb(180, 176, 145)', 'rgb(94, 158, 199)'];
+const DEMO_DOTS = ['rgb(232, 136, 48)', 'rgb(140, 200, 144)', 'rgb(184, 230, 238)', 'rgb(180, 176, 145)', 'rgb(94, 158, 199)'];
 const DEMO_TITLES = ['FUEL', 'FOOD', 'OXYGEN', 'HULL', 'MORALE'];
 
 (async () => {
@@ -257,6 +257,9 @@ const DEMO_TITLES = ['FUEL', 'FOOD', 'OXYGEN', 'HULL', 'MORALE'];
       ok(right[2].box.w >= right[0].box.w - 1 && right[2].box.h >= 18, tag + ' Stop fills its cell (' + right[2].box.w.toFixed(0) + '×' + right[2].box.h.toFixed(0) + ')');
       const fills = await page.evaluate(() => ['food', 'water', 'o2', 'fuel', 'hull'].map(k => Math.round(parseFloat(document.getElementById('res-fill-' + k).style.width))));
       ok(Math.abs(fills[0] - 60) <= 2 && Math.abs(fills[1] - 40) <= 2 && Math.abs(fills[2] - 70) <= 2 && Math.abs(fills[3] - 80) <= 2 && Math.abs(fills[4] - 90) <= 2, tag + ' fills = food 60 / water 40 / O2 70 / fuel 80 / hull 90 (' + fills.join('/') + ')');
+      const hues = await page.evaluate(() => ({ water: getComputedStyle(document.getElementById('res-fill-water')).backgroundColor, o2: getComputedStyle(document.getElementById('res-fill-o2')).backgroundColor, pause: !!document.querySelector('#screen-cruise .header-actions button:not(#btn-inv):not(#btn-map)') }));
+      ok(hues.water !== hues.o2, tag + ' H2O and O2 bars are different colours (' + hues.water + ' / ' + hues.o2 + ')');
+      ok(!hues.pause, tag + ' no II pause button in the header (STOP stops time; Esc opens the menu)');
       if (vp.width === 1280 && name === '2 crew') await shot(page, 'cruise_bottom');
       await page.close();
     }
