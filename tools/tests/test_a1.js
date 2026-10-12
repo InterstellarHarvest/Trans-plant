@@ -169,7 +169,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   const content = await ev(() => ({
     planet: EVENTS.event_planet_002.choices[1].outcome.severity,
     anomaly1: EVENTS.event_anomaly_001.choices[3].outcome.severity,
-    injuredPool: Object.values(EVENTS).filter(e => (e.trigger || []).includes('crew_injured')).length,
+    // crew_injured counts the captain; crewmate_injured is a crew member (hunt A A5).
+    injuredPool: Object.values(EVENTS).filter(e => (e.trigger || []).some(t => t === 'crew_injured' || t === 'crewmate_injured')).length,
     crisisPool: Object.values(EVENTS).filter(e => (e.trigger || []).includes('delayed_crisis')).length,
   }));
   ok(content.planet === 'injury' && content.anomaly1 === null, 'planet_002 injury kept; anomaly_001 "trivial" removed');

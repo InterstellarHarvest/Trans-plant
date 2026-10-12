@@ -170,7 +170,12 @@
       },
       "crew_injured": {
         "status": "populated",
-        "threshold": "any crew member below 40 HP (CREW_WOUNDED_HP — the wound line)"
+        "threshold": "anyone aboard below 40 HP (CREW_WOUNDED_HP — the wound line), the captain included"
+      },
+      "crewmate_injured": {
+        "status": "populated",
+        "threshold": "a crew member (not the captain) below 40 HP",
+        "notes": "For copy about tending someone else (event_shipboard_006)"
       },
       "crew_dead": {
         "status": "populated"
@@ -310,7 +315,7 @@
         "notes": "Negotiation, peaceful resolutions, station relations"
       },
       "any": {
-        "status": "empty",
+        "status": "populated",
         "notes": "Any crew member satisfies this"
       }
     }

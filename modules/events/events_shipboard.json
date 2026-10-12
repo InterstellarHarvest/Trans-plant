@@ -33,19 +33,19 @@
       "stowaway_body": "There is a person in Cargo Bay 3. They look cold. They look hungry. They do not look like they have a boarding pass.\n\nThey give their name as {stowaway.name}.\n\n{stowaway.story}\n\n“{stowaway.line}”\n\nYour ship can support three humans. The math depends on how many you already have.",
       "stowaway_choices": [
         {
-          "text": "Welcome aboard (if crew < 2)",
+          "text": "Welcome aboard",
           "condition": "crew_count < max",
           "outcome": {
             "resources": {
               "food": -5
             },
             "sets_flag": null,
-            "narrative": "You have a new crew member. They are grateful. They are also hungry. The food reserves notice.",
+            "narrative": "Someone new is aboard for good. They are grateful. They are also hungry. The food reserves notice.",
             "stowaway_resolve": "welcome"
           }
         },
         {
-          "text": "Welcome aboard — but someone has to go (if crew = 2)",
+          "text": "Welcome aboard — but someone has to go",
           "condition": "crew_count = max",
           "outcome": {
             "resources": {
@@ -468,7 +468,7 @@
       "any"
     ],
     "trigger": [
-      "crew_injured"
+      "crewmate_injured"
     ],
     "event_presentation": "modal",
     "scene_type": "ship_interior",
@@ -594,6 +594,7 @@
     "test_path": false,
     "sets_flag": null,
     "requires_flag": null,
+    "requires_crew_aboard": true,
     "ai_flavor": {
       "aria": "ARIA has drafted a get-well card on behalf of the whole ship! It is forty pages long! Page nine is a word search!",
       "marv": "MARV notes that recovery improves with rest and worsens with company. He has shared this with the company. The company stayed.",

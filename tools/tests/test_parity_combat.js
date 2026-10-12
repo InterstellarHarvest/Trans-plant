@@ -436,10 +436,14 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
   }
 
   console.log('— defeat injuries: demo odds over seeded runs (fake clock)');
+  // P(2 injured): the second-injury roll lands whether or not someone also
+  // died (three aboard leave two to hurt) — only a captain's death (a third
+  // of deaths) drops the run, as the run ends there. It was inj × 0.30 ×
+  // (1 − death), which left out the crew-death runs that also hurt two.
   for (const [label, setup, pInj, pTwo] of [
-    ['no medic', { captain: 'veteran', crew: ['engineer', 'pilot'] }, 0.75 + 0.25 * 0.12 * 0.5, 0.75 * 0.30 * 0.88],
-    ['crew medic', { captain: 'veteran', crew: ['medic', 'pilot'] }, 0.375 + 0.625 * 0.03 * 0.5, 0.375 * 0.30 * 0.97],
-    ['medic captain', { captain: 'medic', crew: ['engineer', 'pilot'] }, 0.5625 + 0.4375 * 0.03 * 0.5, 0.5625 * 0.30 * 0.97],
+    ['no medic', { captain: 'veteran', crew: ['engineer', 'pilot'] }, 0.75 + 0.25 * 0.12 * 0.5, 0.75 * 0.30 * (1 - 0.12 / 3)],
+    ['crew medic', { captain: 'veteran', crew: ['medic', 'pilot'] }, 0.375 + 0.625 * 0.03 * 0.5, 0.375 * 0.30 * (1 - 0.03 / 3)],
+    ['medic captain', { captain: 'medic', crew: ['engineer', 'pilot'] }, 0.5625 + 0.4375 * 0.03 * 0.5, 0.5625 * 0.30 * (1 - 0.03 / 3)],
   ]) {
     const page = await boot(setup);
     await page.clock.install();
@@ -451,7 +455,7 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
         // Fresh crew each run without re-running setup (a full setup per
         // run piles up the hub's timers under the fake clock).
         STATE.crew = setup.crew.slice(); initCrewHP(); STATE.crewIdentity = {};
-        STATE.items = []; STATE.npcCache = {}; STATE.ended = false; STATE.daysElapsed = 0;
+        STATE.items = []; STATE.npcCache = {}; STATE.ended = false; STATE.daysElapsed = 0; STATE.captainHP = 100; // a captain killed or hurt last run is back (they are in the casualty pool)
         for (const k of Object.keys(STATE.resources)) STATE.resources[k] = 100;
         let s = seed;
         Math.random = () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
@@ -460,12 +464,21 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
         STATE.npcCtx.species = 'human';
         window.triggerCombat({}, { ramFailed: true, ramHull: 0 });
       }, [setup, 1000 + i * 7919]);
-      for (let k = 0; k < 24; k++) await page.clock.fastForward(100); // 1100 + 320 + 800 + slack, in 100ms steps (runFor plays in ~real time)
+      // Until this fight has resolved (its outcome passes the days, or the
+      // captain's death ends the run): an enemy miss adds a turn, so a
+      // fixed 2.4s read a stale card from the previous run (its names no
+      // longer wounded, its injuries counted twice). 100ms steps (runFor
+      // plays in ~real time).
+      for (let k = 0; k < 120; k++) {
+        await page.clock.fastForward(100);
+        if (await page.evaluate(() => STATE.ended || STATE.daysElapsed > 0)) break;
+      }
       const r = await page.evaluate(() => {
         const body = document.getElementById('combat-end-body').textContent;
         // Names can carry periods ("Dr. Vasquez"): cut the clause after the
         // last fixed sentence, then split the names.
-        const tail = body.split(/(?:Cargo lost: [^.]*|Nothing in the hold worth taking)\. |didn't make it\. |disagreed\. /).pop(); // b4 A3: the cargo line names the loss
+        // A save's line ends "…badly hurt, but alive." (it names who lived).
+        const tail = body.split(/(?:Cargo lost: [^.]*|Nothing in the hold worth taking)\. |didn't make it\. |but alive\. /).pop(); // b4 A3: the cargo line names the loss
         const hurtM = tail.match(/^(.*) (?:is|are) hurt\.$/);
         const hurt = hurtM ? hurtM[1].split(' and ').map(x => x.trim()) : [];
         const lost = /didn't make it/.test(body);

@@ -254,7 +254,7 @@ const BRIEF = {
       chip:'Foraging time! ForageRight™ — turning alien ecosystems into caloric content since 2144.',
       ajoy:'Things hide. Things ripen. Things mimic. Choose only what is willing to be chosen.'
     },
-    mechanic:'Targets emerge from cover at fixed spots. <strong>Fauna</strong> vanish in ~1s — click fast. <strong>Flora ripens</strong>: wait for the gold glow for max yield, but past the glow it spoils (low food + crew morale hit). <strong>Decoys</strong> are eye-marked or off-tinted — clicking one poisons a crew member. Tap <strong>DEPART</strong> any time to lock your haul early; decoy rate climbs as the timer runs down.'
+    mechanic:'Targets emerge from cover at fixed spots. <strong>Fauna</strong> vanish in ~1s — click fast. <strong>Flora ripens</strong>: wait for the gold glow for max yield, but past the glow it spoils (low food + crew morale hit). <strong>Decoys</strong> are eye-marked or off-tinted — clicking one poisons someone aboard. Tap <strong>DEPART</strong> any time to lock your haul early; decoy rate climbs as the timer runs down.'
   },
   brace:{
     icon:'☀',
@@ -448,7 +448,9 @@ function showResult(tier, payload){
       payload.sickness.forEach(s=>{
         const tone = s.type==='poisoning' ? 'red' : 'orange';
         const head = s.type==='poisoning' ? 'POISONING' : 'MORALE';
-        const target = s.target.replace(/_/g,' ');
+        // 'random_crew' is anyone aboard — the captain too, and a captain
+        // flying alone always (index.html damageCrew).
+        const target = s.target === 'random_crew' ? 'someone aboard' : s.target.replace(/_/g,' ');
         lines.push(`<span class="rh-line ${tone}">${head} · ${target} · ${s.severity} <em>(${s.reason})</em></span>`);
       });
     }
@@ -2215,7 +2217,7 @@ function initForage(container, onResult, ctx){
           tEl.className = 'for-target decoy-burst';
           clearSprite();
           tEl.textContent = '☠';
-          flashStatus('SICKNESS · -HP one crew', 'red');
+          flashStatus('SICKNESS · -HP someone aboard', 'red');
           // Red vignette flash across the scene for "ouch" feedback. Removes
           // itself when the .42s animation ends.
           const scene = document.querySelector('.for-scene');

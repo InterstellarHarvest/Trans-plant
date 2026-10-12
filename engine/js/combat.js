@@ -1389,7 +1389,7 @@
     const nameOf = (r, i) => r === 'captain' ? (i ? 'the captain' : 'The captain') : (namesBefore[r] || crewNameOf(r));
     const parts = [];
     if (lost.length) parts.push(lost.map(nameOf).join(' and ') + " didn't make it.");
-    else if (result.crewDied && lethalSaved) parts.push('It should have cost a life. The medic disagreed.');
+    else if (result.crewDied && lethalSaved) parts.push('It should have cost a life. ' + lethalSaved);
     if (hurt.length) parts.push(hurt.map(nameOf).join(' and ') + (hurt.length > 1 ? ' are hurt.' : ' is hurt.'));
     return parts.length ? parts.join(' ') : 'All crew accounted for.';
   }
@@ -1459,7 +1459,7 @@
     const crewBefore = STATE.crew.slice();
     const namesBefore = Object.fromEntries(crewBefore.map(r => [r, crewNameOf(r)]));
     applyOutcomeEffects(outcome);
-    const lethalSaved = !!STATE.lethalSaved;
+    const lethalSaved = STATE.lethalSaved;
     STATE.lethalSaved = null;
     const crewLine = defeatInjuries(result, crewBefore, namesBefore, lethalSaved);
     applyCargoLoss(result.cargoLoss);
@@ -1693,13 +1693,20 @@
 
     const crewBefore = STATE.crew.slice();
     const namesBefore = Object.fromEntries(crewBefore.map(r => [r, crewNameOf(r)]));
-    const before = { hull: STATE.resources.hull, morale: COMBAT.player.moraleStart, fuel: STATE.resources.fuel, food: STATE.resources.food, gold: STATE.goldAmount };
+    const before = { hull: STATE.resources.hull, fuel: STATE.resources.fuel, food: STATE.resources.food, gold: STATE.goldAmount };
     // Ship's Log: the fight's record (won/lost/fled/paid + real effects,
     // loot and cargo loss included) is closed below, before checkFailure.
     const slog = window.ShipLog && ShipLog.begin();
+    // What the fight's morale change really does to each member (floored
+    // at 0, capped at 100) — the card shows that, not the raw net.
+    const moraleIn = outcome.resources.morale;
+    const moraleApplied = Number.isFinite(moraleIn) && moraleIn && STATE.crew.length
+      ? STATE.crew.reduce((s, r) => s + clamp(crewMoraleOf(r) + moraleIn, 0, 100) - crewMoraleOf(r), 0) / STATE.crew.length : 0;
     applyOutcomeEffects(outcome);
-    const lethalSaved = !!STATE.lethalSaved;
-    STATE.lethalSaved = null; // combat writes its own crew line below
+    // The save's own line (the medic's or the medkit's, naming who lived);
+    // combat writes it into its own crew line.
+    const lethalSaved = STATE.lethalSaved;
+    STATE.lethalSaved = null;
     if (result.outcome === 'defeated') body += ' ' + defeatInjuries(result, crewBefore, namesBefore, lethalSaved);
 
     // Materials/items loot isn't part of the standard outcome schema
@@ -1753,7 +1760,7 @@
     const leftLine = leftBehind.length ? 'Hold full: ' + leftBehind.map(it => `${it.count}× ${it.label}`).join(', ') + ' left behind' : '';
     const deltas = {
       hull: Math.round(STATE.resources.hull - before.hull),
-      morale: COMBAT.player.morale == null ? 0 : Math.round(COMBAT.player.morale - before.morale),
+      morale: Math.round(moraleApplied),
       fuel: Math.round(STATE.resources.fuel - before.fuel),
       food: -Math.round((result.outcome === 'tribute' ? Math.min(result.foodCost || 0, before.food) : 0) + (COMBAT.foodSpent || 0)),
       gold: lootItems ? 0 : goldDelta,
@@ -1873,6 +1880,7 @@
       applyOutcomeEffects(o);
       if (slog) ShipLog.resolved(slog, STATE.currentEvent, choice, Object.assign({ tone: 'success' }, o));
       renderHUD();
+      if (checkFailure()) return; // the day it costs can end the run like any other
       renderOutcomeView({ title: 'OLD FRIENDS', body: o.narrative, tone: 'success' });
       return;
     }

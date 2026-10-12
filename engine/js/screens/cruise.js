@@ -981,6 +981,7 @@
         if (r.material) grantMaterial(r.material, r.qty || 1); // materials are cargo: capacity-enforced, a refusal is logged
         if (r.item) grantItem(r.item); // capacity-enforced
       });
+      const poisoned = [];
       if (payload.sickness) payload.sickness.forEach(s => {
         // Owner ruling 2026-10-11: the demo's numbers (demo-minigames forage
         // payload contract) — poisoning ~10/20/35 HP, morale 5/12/20.
@@ -988,18 +989,19 @@
         const moHit = { light: 5, medium: 12, heavy: 20 }[s.severity] || 5;
         // Poisoning hurts one person aboard (the demo's "SICKNESS · -HP one
         // crew") — the captain can be the one (owner ruling 29), and a
-        // solo captain always is.
-        if (s.type === 'poisoning') damageCrew(null, hpHit);
+        // solo captain always is. The log names who, and what it cost.
+        if (s.type === 'poisoning') poisoned.push(poisonLine(hpHit));
         else addCrewMorale(-moHit); // morale_drop 'all_crew': every crew member (none aboard: nobody to sour)
       });
       let gained = foodGot > 0 ? ('+' + foodGot + ' food.') : payload.food > 0 ? 'found food, but the stores are full.' : 'came back empty-handed.';
+      for (const line of poisoned) if (line) gained += ' ' + line;
       // Alien world (the red risky strip, Bible "FORAGE — clicker w/
       // poison-roll"): one roll in four, something in the haul poisons a
       // crew member — the minigame's medium sickness (anyone aboard, the captain too).
       if (alien && Math.random() < ALIEN_POISON_CHANCE) {
         // Anyone aboard — the captain included (owner ruling 29).
-        const hit = damageCrew(null, ALIEN_POISON_HP);
-        gained += ' Something in the haul disagreed with ' + (hit === 'captain' ? 'you' : hit && STATE.crew.includes(hit) ? crewNameOf(hit) : hit ? 'the one who ate it' : 'the crew') + ' (−' + ALIEN_POISON_HP + ' HP before the medic\'s care).';
+        const line = poisonLine(ALIEN_POISON_HP);
+        if (line) gained += ' ' + line;
       }
       // A good forage on alien ground can turn up the suspicious fungus
       // (the chef's Secret Project — event_shipboard_016).
@@ -1008,8 +1010,20 @@
         gained += ' Also: a fungus nobody can name. The chef has asked to keep it.';
       }
       settleMinigame('◆ ' + label + ' — ' + gained);
-      if (STATE.crew.length === 0 && STATE.flags.has('all_crew_dead')) checkFailure();
     });
+  }
+  // One poisoning on someone aboard at random (the captain included): the
+  // forage log line naming who it was and the HP it really cost (after a
+  // medic's softening), or that it killed them. '' with nobody aboard.
+  function poisonLine(hp) {
+    const pool = peopleAboard();
+    if (!pool.length) return '';
+    const who = pool[Math.floor(Math.random() * pool.length)];
+    const name = who === 'captain' ? 'you' : crewNameOf(who);
+    const before = hpOf(who);
+    damageCrew(who, hp);
+    if (!peopleAboard().includes(who)) return 'Something in the haul killed ' + name + '.';
+    return 'Something in the haul disagreed with ' + name + ' (−' + Math.round(before - hpOf(who)) + ' HP).';
   }
 
   function handleSalvageVerb() {
