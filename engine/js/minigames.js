@@ -326,7 +326,7 @@ let minigameToken = 0;       // bumps per open/close: a quit game's delayed resu
 let jobHarm = null;
 function reportJobHarm(h){
   jobHarm = h;
-  if(typeof window.onJobHarm === 'function') window.onJobHarm(h);
+  window.onJobHarm(h);
 }
 let lastTier = null, lastPayload = null;
 
@@ -390,7 +390,7 @@ function openMinigame(id, opts, onDone){
   const token = ++minigameToken;
   showReady(variant, ()=>{
     minigameStarted = true;
-    if(typeof window.onJobBegun === 'function') window.onJobBegun(); // a reload from here settles as a quit
+    window.onJobBegun(); // a reload from here settles as a quit
     const mclose = document.getElementById('mclose');
     mclose.textContent = '✕ QUIT'; Tooltip.attach(mclose, { description: 'Quit now: nothing is kept, and the time is still spent. In a crisis, the worst outcome lands.', tone: 'danger' });
     cleanupFn = inits[id](document.getElementById('ga'), (tier, payload) => { if (token === minigameToken) showResult(tier, payload); }, opts || {});
@@ -496,7 +496,7 @@ function requestCloseMinigame(){
   onMinigameDone = null;
   closeMinigameOverlay();
   if(started && cb) cb('abandoned', jobHarm ? { harm: jobHarm } : null);
-  else if(!started && typeof window.refundVerbTax === 'function') window.refundVerbTax(); // free cancel: nothing happened, nothing paid
+  else if(!started) window.refundVerbTax(); // free cancel: nothing happened, nothing paid
 }
 document.getElementById('mclose').addEventListener('click', requestCloseMinigame);
 // Backdrop click = close — but only when the press STARTED on the
@@ -525,7 +525,7 @@ document.getElementById('rbquit').addEventListener('click', ()=>{
   if (cb) cb(tier, payload);
   if (openCargoAfterClose) {
     openCargoAfterClose = false;
-    if (typeof openInventory === 'function' && !(typeof STATE !== 'undefined' && STATE.ended)) openInventory();
+    if (!(typeof STATE !== 'undefined' && STATE.ended)) openInventory();
   }
 });
 
@@ -2718,10 +2718,9 @@ function initBreach(container, onResult){
   scene.appendChild(tray);
   const stack = tray.querySelector('#bcr-stack');
   const counter = tray.querySelector('#bcr-counter');
-  // OXYGEN bar — bottom-center. Drains while breaches are open, stops when
-  // patched. TODO: drive it from the ship's real O2 — it runs a local
-  // 100→x scratch value, and the real O2 loss comes from the event's
-  // tier_outcomes.
+  // OXYGEN bar — bottom-center. Starts at the ship's O2 and drains while
+  // breaches are open, stops when patched; the ship's real O2 loss lands
+  // through the event's tier_outcomes.
   const o2Bar = document.createElement('div');
   o2Bar.className = 'breach-o2';
   o2Bar.innerHTML =

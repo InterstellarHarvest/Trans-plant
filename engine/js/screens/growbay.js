@@ -181,8 +181,8 @@
     // A wounded tender works at half (crew_roster "halved if injured") —
     // the captain too, whose HP is real (owner ruling 29).
     const role = ROLE_OF_CREWID[id];
-    const hurt = role ? (typeof crewHPOf === 'function' && crewHPOf(role) < CREW_WOUNDED_HP)
-      : (id === 'captain-botanist' && typeof captainHPOf === 'function' && captainHPOf() < CREW_WOUNDED_HP);
+    const hurt = role ? (crewHPOf(role) < CREW_WOUNDED_HP)
+      : (id === 'captain-botanist' && captainHPOf() < CREW_WOUNDED_HP);
     if (hurt) c = Object.assign({}, c, { growth: c.growth / 2, yield: c.yield / 2, wounded: true });
     if (!role) return c;
     return Object.assign({}, c, { name: crewNameOf(role) }, crewIdentityOf(role) ? { crewId: null, emoji: '🧑' } : null);
@@ -389,9 +389,7 @@
     const cr = had && cg.health > 0 ? contaminationRecovery(STATE.crop) : null;
     if (cr) {
       cg.recoveryBoostUntil = Math.max(cg.recoveryBoostUntil || 0, STATE.daysElapsed + cr.days);
-      if (typeof window.pushCruiseLog === 'function') {
-        window.pushCruiseLog('\u25c6 GROWBAY \u2014 the soybeans fix nitrogen into the cleared beds: health recovery ' + fmtMult(cr.mult) + ' for ' + cr.days + ' days.');
-      }
+      window.pushCruiseLog('\u25c6 GROWBAY \u2014 the soybeans fix nitrogen into the cleared beds: health recovery ' + fmtMult(cr.mult) + ' for ' + cr.days + ' days.');
     }
     return had;
   }
@@ -428,7 +426,7 @@
   const DIM_NODES  = { nebula: true, void: true };
   // The crop's water need as the ship sees it (index.html cropWaterNeed:
   // botanist −15%, water purifier −10%), rounded for display.
-  function waterNeed() { return typeof cropWaterNeed === 'function' ? Math.round(cropWaterNeed()) : CROP_META[GSTATE.cropId].water_need; }
+  function waterNeed() { return Math.round(cropWaterNeed()); }
 
   /* THE water badges (re-audit A4) — read off the real model, shared by
      the growbay's mini track and the Orders headline so the two surfaces
@@ -450,7 +448,7 @@
     else if (plantPct - need < -5) plant = { label: 'DRY', cls: 'dry', band: 'dry' };
     else if (plantPct - need > 20) plant = { label: 'SOAKED', cls: 'soaked', band: 'soaked' };
     else plant = { label: 'MATCHED', cls: 'matched', band: 'fine' };
-    const ratio = Math.min(1, (100 - plantPct) / (100 - (typeof cropWaterNeed === 'function' ? cropWaterNeed() : need)));
+    const ratio = Math.min(1, (100 - plantPct) / (100 - cropWaterNeed()));
     const rate = ratio >= 1 ? 0 : ratio >= 0.7 ? 1 : ratio >= 0.4 ? 3 : 6;
     let crew;
     if (!STATE.crew.length) crew = { label: 'NO CREW', cls: 'nominal', band: 'none', rate };
@@ -1169,7 +1167,7 @@
         // Revert to the committed value we saved on pointerdown.
         GSTATE.waterPlant = revertTo;
         renderAll();
-      } else if (typeof window.setWaterSplit === 'function') {
+      } else {
         // Commit through the one shared write point so the Orders
         // modal's slider (STATE.orders.waterSplit) stays in lockstep.
         setWaterSplit(GSTATE.waterPlant);
@@ -1363,7 +1361,7 @@
       const room = Math.max(0, resMax('food') - STATE.resources.food);
       STATE.resources.food = clamp(STATE.resources.food + total, 0, resMax('food'));
       let spare = Math.max(0, total - room);
-      while (spare >= 10 && typeof grantItem === 'function' && grantItem('ration_brick')) { spare -= 10; banked++; }
+      while (spare >= 10 && grantItem('ration_brick')) { spare -= 10; banked++; }
     }
     // What actually landed (re-audit A15): the food the stores took, the
     // bricks pressed from the rest, the morale the crew really gained.
@@ -1380,7 +1378,7 @@
       burstText = gotFood > 0 ? '+' + gotFood + ' FOOD' + (banked ? ' +' + banked + ' BRICK' + (banked > 1 ? 'S' : '') : '') : banked ? '+' + banked + ' BRICK' + (banked > 1 ? 'S' : '') : 'STORES FULL';
     }
     // One log line for every harvest path (growbay button and crop card).
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('▶ Harvested ' + cropWord + '. ' + logGain + '. Cycle reset.');
+    window.pushCruiseLog('▶ Harvested ' + cropWord + '. ' + logGain + '. Cycle reset.');
     renderHUD();
 
     // Burst animation — amber number rises and fades
@@ -1410,7 +1408,7 @@
     // (ai_universal.crop_lifecycle.harvested).
     const harvestPool = MOD.flavor && MOD.flavor.ai_universal && MOD.flavor.ai_universal.crop_lifecycle
       && MOD.flavor.ai_universal.crop_lifecycle.harvested && MOD.flavor.ai_universal.crop_lifecycle.harvested[STATE.activeAI];
-    if (Array.isArray(harvestPool) && harvestPool.length && typeof window.pushCruiseLog === 'function') {
+    if (Array.isArray(harvestPool) && harvestPool.length) {
       window.pushCruiseLog('\u25c6 ' + harvestPool[Math.floor(Math.random() * harvestPool.length)]);
     }
 
@@ -1471,8 +1469,8 @@
     // After renderAll — it repaints the footer with a fresh state quip,
     // which used to overwrite this line before anyone could read it.
     $('aria-text').textContent = hasBotanist ? say.botanist : say.alone;
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('\u25c6 GROWBAY \u2014 pest outbreak treated.');
-    if (typeof saveRun === 'function') saveRun(); // a reload used to undo the treat (and its day)
+    window.pushCruiseLog('\u25c6 GROWBAY \u2014 pest outbreak treated.');
+    saveRun(); // a reload used to undo the treat (and its day)
   }
   // window.openOrders now lives in engine/js/screens/orders.js
   // (Restoration item 5) \u2014 the "isn't wired yet" stub is gone.
@@ -1830,7 +1828,7 @@
     hideOverlay('overlay-growbay');
     // Harvest/treat changed the run — repaint the hub (crop card) and
     // autosave through it.
-    if (typeof window.renderCruise === 'function' && !STATE.ended &&
+    if (!STATE.ended &&
         document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();
   }
   // Click on the area outside the growbay box. Inspect is a child

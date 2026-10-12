@@ -151,10 +151,10 @@
     };
   }
   function cropMeta() {
-    return (typeof window.cropMetaOf === 'function' && STATE.crop) ? cropMetaOf(STATE.crop) : null;
+    return (STATE.crop) ? cropMetaOf(STATE.crop) : null;
   }
   function waterNeed() {
-    if (typeof window.cropWaterNeed === 'function' && STATE.crop) return cropWaterNeed(); // botanist / purifier aware
+    if (STATE.crop) return cropWaterNeed(); // botanist / purifier aware
     const m = cropMeta();
     return (m && m.water_need) || 50;
   }
@@ -202,15 +202,15 @@
     return STATE.daysElapsed + Math.max(1, Math.round(remainingLegs() * perLegDays(paceIdx)));
   }
   function fuelEmptyDay(paceIdx) {
-    const perLegFuel = (typeof window.fuelPerLegBase === 'function' ? fuelPerLegBase() : 3) * ORDERS_PACE[paceIdx].fuelMult
-      * (typeof window.fuelBurnMult === 'function' ? fuelBurnMult() : 1); // pilot / drive coil
+    const perLegFuel = fuelPerLegBase() * ORDERS_PACE[paceIdx].fuelMult
+      * fuelBurnMult(); // pilot / drive coil
     const legsOfFuel = STATE.resources.fuel / perLegFuel;
     return STATE.daysElapsed + Math.floor(legsOfFuel * perLegDays(paceIdx));
   }
   function foodEmptyDay(rationsIdx) {
     const perDay = ORDERS_BASE.foodPerDay * ORDERS_RATIONS[rationsIdx].foodMult
-      * (typeof window.foodBurnMult === 'function' ? foodBurnMult() : 1)  // chef / cargo bay
-      * (typeof window.mouthsMult === 'function' ? mouthsMult() : 1);   // crew size
+      * foodBurnMult()  // chef / cargo bay
+      * mouthsMult();   // crew size
     return STATE.daysElapsed + Math.floor(STATE.resources.food / perDay);
   }
   function cropMatureDay(plantPct) {
@@ -218,7 +218,7 @@
     const cg = STATE.cropGrowth;
     if (!m || !cg || cg.health <= 0) return Infinity;
     // The growbay's own model (every modifier, at this water split).
-    const factor = typeof window.cropGrowthFactorAt === 'function' ? cropGrowthFactorAt(plantPct) : Math.min(1, plantPct / waterNeed()) * cg.health / 100;
+    const factor = cropGrowthFactorAt(plantPct);
     const dailyRate = (100 / m.maturity_days) * factor;
     if (dailyRate <= 0.01) return Infinity;
     return STATE.daysElapsed + Math.ceil(Math.max(0, 100 - cg.growth) / dailyRate);
@@ -243,7 +243,7 @@
   // "both fine" above a morale-drain row, and PARCHED only where the
   // plant takes damage.
   function waterDesc(plantPct) {
-    const st = typeof window.cropWaterStatusAt === 'function' ? window.cropWaterStatusAt(plantPct) : null;
+    const st = window.cropWaterStatusAt(plantPct);
     if (!st) return '';
     const P = { parched: 'Plant parches — health falls.', dead: 'The crop is dead.', dry: 'Plant thirsty — crop slows.', soaked: 'Roots drowning — health falls.', fine: '', none: '' }[st.plant.band];
     const C = { critical: 'Crew goes dry — morale and HP fall.', thirsty: 'Crew watches the taps — morale slips.', fine: '', none: '' }[st.crew.band];
@@ -317,7 +317,7 @@
 
     const foodDelta = dayDelta(foodEmpty, savedEmpty, true);
 
-    const crewFoodMult = (typeof window.foodBurnMult === 'function' ? foodBurnMult() : 1) * (typeof window.mouthsMult === 'function' ? mouthsMult() : 1);
+    const crewFoodMult = foodBurnMult() * mouthsMult();
     const fpd = ORDERS_BASE.foodPerDay * r.foodMult * crewFoodMult;
     let fpdText = null;
     if (r.foodMult !== s.foodMult) {
@@ -515,16 +515,14 @@
       // One ▶ line per setting that actually changed, in the demo's words
       // (demo-cruise renderReadouts); an APPLY that changed nothing logs
       // nothing.
-      if (typeof window.pushCruiseLog === 'function') {
-        if (preview.pace !== was.pace) window.pushCruiseLog('▶ ENGINES set to ' + ORDERS_PACE[preview.pace].name + '.', { instant: true });
-        if (preview.rations !== was.rations) window.pushCruiseLog('▶ RATIONS set to ' + ORDERS_RATIONS[preview.rations].name + '.', { instant: true });
-        if (water !== was.water) window.pushCruiseLog('▶ WATER split → ' + water + '% plant / ' + (100 - water) + '% crew.', { instant: true });
-      }
+      if (preview.pace !== was.pace) window.pushCruiseLog('▶ ENGINES set to ' + ORDERS_PACE[preview.pace].name + '.', { instant: true });
+      if (preview.rations !== was.rations) window.pushCruiseLog('▶ RATIONS set to ' + ORDERS_RATIONS[preview.rations].name + '.', { instant: true });
+      if (water !== was.water) window.pushCruiseLog('▶ WATER split → ' + water + '% plant / ' + (100 - water) + '% crew.', { instant: true });
     }
     hideOverlay('overlay-orders');
     if (!hadModalOpen) document.body.classList.remove('modal-open');
-    if (typeof window.renderHUD === 'function') renderHUD();
-    if (typeof window.renderCruise === 'function') renderCruise(); // repaints the readout + autosaves
+    renderHUD();
+    renderCruise(); // repaints the readout + autosaves
   }
 
   $('od-cancel').addEventListener('click', () => closeOrders('cancel'));

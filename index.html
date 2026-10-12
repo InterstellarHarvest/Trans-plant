@@ -967,7 +967,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
         </div>
         <div id="end-report-actions">
           <button class="btn end-btn" onclick="endBackToCinematic()">Back</button>
-          <button class="btn end-btn" onclick="if (typeof clearSave === 'function') clearSave(); location.reload()">New Run</button>
+          <button class="btn end-btn" onclick="clearSave(); location.reload()">New Run</button>
         </div>
       </div>
     </div>
@@ -1908,18 +1908,7 @@ function loadRun(key) {
   if (window.SceneArt) SceneArt.clearRunCaches();
   // The hub log belongs to the run being replaced — show this run's
   // recent log instead (pause → LOAD used to keep the old timeline's).
-  const aiLog = document.getElementById('ai-log');
-  if (typeof window.rebuildCruiseLog === 'function') window.rebuildCruiseLog(8); // cruise.js: day markers + voice/▶ prefixes
-  else if (aiLog) {
-    aiLog.innerHTML = '';
-    for (const en of (STATE.shipLog || []).slice(-8)) {
-      const d = document.createElement('div');
-      d.className = 'ai-entry';
-      d.textContent = (en && en.text) || '';
-      aiLog.appendChild(d);
-    }
-    aiLog.scrollTop = aiLog.scrollHeight;
-  }
+  window.rebuildCruiseLog(8); // cruise.js: day markers + voice/▶ prefixes
   renderHUD();
   // Saved on a resumable failure screen: put the player back there.
   const pf = snap.pendingFailure && (MOD.failures || []).find(x => x.id === snap.pendingFailure);
@@ -1931,8 +1920,8 @@ function loadRun(key) {
   if (snap.pendingAbandon) {
     passDays(snap.pendingAbandon.days || 1);
     // Harm already taken in play stays taken (a forage poisoning).
-    const hurt = typeof window.applyAbandonHarm === 'function' ? window.applyAbandonHarm(snap.pendingAbandon.harm) : '';
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + snap.pendingAbandon.verb + ' — abandoned partway. Nothing kept; the day is gone anyway.' + hurt);
+    const hurt = window.applyAbandonHarm(snap.pendingAbandon.harm);
+    window.pushCruiseLog('◆ ' + snap.pendingAbandon.verb + ' — abandoned partway. Nothing kept; the day is gone anyway.' + hurt);
     renderHUD(); renderCruise();
     if (checkFailure()) return true;
     saveRun();
@@ -1945,7 +1934,7 @@ function loadRun(key) {
     const qch = all.find(c => c.text === snap.pendingEventQuit.text);
     if (qch) {
       const quit = eventMinigameQuit(qch, snap.pendingEventQuit.harm);
-      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + (qev.title || 'The job') + ' — abandoned partway. Whatever was in hand stays behind, and the time is spent all the same.' + (quit.hurt ? ' ' + quit.hurt : ''));
+      window.pushCruiseLog('◆ ' + (qev.title || 'The job') + ' — abandoned partway. Whatever was in hand stays behind, and the time is spent all the same.' + (quit.hurt ? ' ' + quit.hurt : ''));
       renderHUD(); renderCruise();
       if (checkFailure()) return true;
       // A station's arrival event leads on to the approach, as ✕ QUIT's
@@ -1959,15 +1948,15 @@ function loadRun(key) {
   // out — the charge turns under fire, 15 fuel, the days (owner ruling 53).
   if (snap.pendingCombat) {
     const pc = snap.pendingCombat;
-    if (pc.defeat && typeof window.settleCombatDefeat === 'function') {
+    if (pc.defeat) {
       // Saved in the defeat beat: the defeat that was coming lands (LIMP
       // AWAY), never a break-off at hull 0.
       const line = window.settleCombatDefeat(pc.defeat);
-      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ LIMP AWAY — the fight was lost before the logs cut out. ' + line);
-    } else if (typeof window.settleCombatBreakOff === 'function') {
+      window.pushCruiseLog('◆ LIMP AWAY — the fight was lost before the logs cut out. ' + line);
+    } else {
       // Mid-fight: ATTEMPT ESCAPE played out (owner ruling 53).
       const line = window.settleCombatBreakOff(pc);
-      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + line);
+      window.pushCruiseLog('◆ ' + line);
     }
     renderHUD(); renderCruise();
     if (checkFailure()) return true;
@@ -2129,7 +2118,7 @@ function applySetupToState(sel) {
   STATE.flagFirstSeen = {}; STATE.calledBack = []; STATE.lastCallbackLeg = null;
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
-  if (typeof window.abortFabricator === 'function') window.abortFabricator();
+  window.abortFabricator();
   STATE.artSeed = rollArtSeed(); // this run's scene + NPC-face variants (saved: stable across reloads)
   if (window.SceneArt) SceneArt.clearRunCaches(); // re-roll scenes + NPC variants per run
 
@@ -2269,7 +2258,7 @@ function grantMaterials(want, opts) {
     if (q > g) left[id] = q - g;
   }
   const leftList = Object.entries(left).map(([id, n]) => n + ' ' + id);
-  if (leftList.length && !(opts && opts.quiet) && typeof window.pushCruiseLog === 'function') {
+  if (leftList.length && !(opts && opts.quiet)) {
     window.pushCruiseLog('◆ CARGO FULL — ' + leftList.join(', ') + ' left behind. Jettison something (INV) to make room.');
   }
   return { got, left };
@@ -2298,9 +2287,7 @@ function grantItem(shortId) {
   if (!(capDef && capDef.slot_bonus) && cargoSlotsUsed() > cargoCapacity()) {
     STATE.items.pop();
     const def = itemDef(shortId);
-    if (typeof window.pushCruiseLog === 'function') {
-      window.pushCruiseLog('◆ CARGO FULL — ' + ((def && def.name) || shortId) + ' left behind. Jettison something (INV) to make room.');
-    }
+    window.pushCruiseLog('◆ CARGO FULL — ' + ((def && def.name) || shortId) + ' left behind. Jettison something (INV) to make room.');
     return false;
   }
   syncItemValues(); // a trade good's value is rolled here, at pickup
@@ -2554,7 +2541,7 @@ function captainMedicSave() {
 function killCaptain() {
   STATE.captainHP = 0;
   delete crewPendingOf().captain;
-  if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ The captain is dead. The log keeps the time of it, and nothing else.');
+  window.pushCruiseLog('◆ The captain is dead. The log keeps the time of it, and nothing else.');
 }
 function killPerson(who) { if (who === 'captain') killCaptain(); else killCrew(who); }
 
@@ -2567,7 +2554,7 @@ function aiSampleLine(moment) {
 }
 function pushAiSample(moment) {
   const line = aiSampleLine(moment);
-  if (line && typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + line);
+  if (line) window.pushCruiseLog('◆ ' + line);
 }
 
 /* A crew member leaving the ship by ANY road — death, the airlock, a
@@ -2614,9 +2601,7 @@ function killCrew(role) {
   // Death entries carry crew identity so the journal can render the
   // memorial page (portrait if we have one, candle if not); the voiced
   // line states the real loss, the 📖 page holds the epitaph and more.
-  if (typeof window.pushCruiseLog === 'function') {
-    window.pushCruiseLog(memorial || { text: '◆ ' + (epitaph || name + ' is gone.'), type: 'death', crewId, crewName: name, expand: epitaph }, memorial ? { ai: true } : undefined);
-  }
+  window.pushCruiseLog(memorial || { text: '◆ ' + (epitaph || name + ' is gone.'), type: 'death', crewId, crewName: name, expand: epitaph }, memorial ? { ai: true } : undefined);
   pushAiSample('crew_death');
 }
 
@@ -2674,9 +2659,7 @@ function disembarkPassengers(node) {
     // The family's thanks lifts the crew (every member); no crew, no lift — and no claim.
     const mo = Number.isFinite(r.morale) && r.morale ? Math.round(addCrewMorale(r.morale)) : 0;
     const paid = [Number.isFinite(r.gold) && r.gold ? '+' + r.gold + ' gold' : null, mo ? (mo > 0 ? '+' : '−') + Math.abs(mo) + ' morale' : null].filter(Boolean).join(', ');
-    if (typeof window.pushCruiseLog === 'function') {
-      window.pushCruiseLog('◆ ' + String(p.farewell || '{name} steps off at {station}.').replace(/\{name\}/g, p.name).replace(/\{station\}/g, node.name || 'the station') + (paid ? ' ' + paid + '.' : ''));
-    }
+    window.pushCruiseLog('◆ ' + String(p.farewell || '{name} steps off at {station}.').replace(/\{name\}/g, p.name).replace(/\{station\}/g, node.name || 'the station') + (paid ? ' ' + paid + '.' : ''));
   }
 }
 
@@ -2789,11 +2772,11 @@ function crewMoraleWatch() {
     if (zero && !w[r]) {
       w[r] = true;
       if (window.ShipLog) ShipLog.moraleZero(r);
-      else if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + crewNameOf(r) + '’s morale is at zero. At the next station they walk.');
+      else window.pushCruiseLog('◆ ' + crewNameOf(r) + '’s morale is at zero. At the next station they walk.');
     } else if (!zero && w[r]) {
       delete w[r];
       if (window.ShipLog) ShipLog.moraleBack(r);
-      else if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + crewNameOf(r) + ' is back above zero. Nobody is leaving.');
+      else window.pushCruiseLog('◆ ' + crewNameOf(r) + ' is back above zero. Nobody is leaving.');
     }
   }
 }
@@ -2809,9 +2792,7 @@ function crewDesertions(node) {
     const entry = window.ShipLog ? ShipLog.desertionEntry(role, node) : null;
     const name = crewNameOf(role);
     releaseCrewRole(role); // HP, charges, pending, identity, morale, armed skills (A9)
-    if (typeof window.pushCruiseLog === 'function') {
-      window.pushCruiseLog(entry || ('◆ ' + name + ' walked off at ' + ((node && node.name) || 'the station') + '.'), entry ? { ai: true, instant: true } : undefined);
-    }
+    window.pushCruiseLog(entry || ('◆ ' + name + ' walked off at ' + ((node && node.name) || 'the station') + '.'), entry ? { ai: true, instant: true } : undefined);
   }
   return gone;
 }
@@ -2829,7 +2810,7 @@ function stationRecharge() {
     const max = sk.uses_per_leg || 1;
     if ((STATE.crewSkillCharges[role] || 0) < max) { STATE.crewSkillCharges[role] = max; restored = true; }
   }
-  if (restored && typeof window.pushCruiseLog === 'function') {
+  if (restored) {
     window.pushCruiseLog('◆ Station services — crew skills recharged.');
   }
 }
@@ -2898,7 +2879,7 @@ function applySeverity(role, severity) {
   const name = PersonName(role);
   // The outcome card speaks to the player: "you", not "the captain".
   const card = cap ? 'you are' : name + ' is';
-  const log = msg => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + msg); };
+  const log = msg => { window.pushCruiseLog('◆ ' + msg); };
   if (severity === 'lethal') {
     // The captain's softer landing is a crew medic's (a medic captain
     // can't save themselves), and the crew medic's is a medic captain's
@@ -2955,7 +2936,7 @@ function dueDelayedCrisis() {
     if (!aboard.includes(role)) { delete pend[role]; continue; }
     if (hpOf(role) >= CREW_WOUNDED_HP) {
       delete pend[role];
-      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + PersonName(role) + '’s wound closed clean. Nobody says "lucky" out loud.');
+      window.pushCruiseLog('◆ ' + PersonName(role) + '’s wound closed clean. Nobody says "lucky" out loud.');
       continue;
     }
     if (!patient) patient = role;
@@ -3285,7 +3266,7 @@ function renderHUD() {
   }
   const gold = document.getElementById('cruise-gold');
   if (gold) gold.textContent = STATE.goldAmount + 'g';
-  if (typeof window.paintCruiseBars === 'function') window.paintCruiseBars(); // cruise bottom bars (ruling 18)
+  window.paintCruiseBars(); // cruise bottom bars (ruling 18)
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -3582,7 +3563,7 @@ function returnToHub() {
     // Owner ruling 2026-10-10 (hunt 5): after an event the ship is stopped —
     // the Stop menu is already open and Resume travels in one click (it
     // took Stop → Resume, two clicks a leg).
-    if (!STATE.ended && typeof window.openStopMenu === 'function') window.openStopMenu();
+    if (!STATE.ended) window.openStopMenu();
   }
 }
 
@@ -3655,7 +3636,7 @@ function setWaterSplit(pct) {
 /* Crop water need — growbay's CROP_META is the authority (window.cropMetaOf
    export); 50 when no crop/meta (demo's CROP_WATER_NEED). */
 function cropWaterNeed() {
-  const m = (typeof window.cropMetaOf === 'function' && STATE.crop) ? cropMetaOf(STATE.crop) : null;
+  const m = (STATE.crop) ? cropMetaOf(STATE.crop) : null;
   // Botanist passive "crop water consumption reduced 15%" (captain 7%);
   // the water purifier's passive −10% (items.json).
   return ((m && m.water_need) || 50)
@@ -3672,7 +3653,7 @@ function cropWaterNeed() {
    sub-label ({crop.advice}), its lock and the change all read this plan. */
 const CROP_TALK_GROWTH = 4;
 function cropName() {
-  const m = (typeof window.cropMetaOf === 'function' && STATE.crop) ? cropMetaOf(STATE.crop) : null;
+  const m = (STATE.crop) ? cropMetaOf(STATE.crop) : null;
   return ((m && m.name) || String(STATE.crop || 'crop').replace(/_/g, ' ')).toLowerCase();
 }
 function cropAlive() { return !!(STATE.crop && STATE.cropGrowth && STATE.cropGrowth.health > 0); }
@@ -3690,7 +3671,7 @@ function applyCropAdvice() {
   const bits = [];
   if (p.water) { setWaterSplit(p.water.to); bits.push('water split ' + p.water.from + '% → ' + p.water.to + '%'); }
   if (p.talk) { STATE.cropGrowth.talked = true; bits.push('the crew talks to the ' + cropName() + ' now (+' + CROP_TALK_GROWTH + '% growth)'); }
-  if (bits.length && typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ The station botanist\'s advice, taken: ' + bits.join('; ') + '.');
+  if (bits.length) window.pushCruiseLog('◆ The station botanist\'s advice, taken: ' + bits.join('; ') + '.');
 }
 // gate.crop: 'alive' (a living crop), 'cuttable' (alive, health above 10
 // — a cutting costs it 5), 'ailing' (alive and hurt or infested).
@@ -3809,7 +3790,7 @@ function cropDrama() {
   if (!def.triggers_extra_events) {
     if (!hooks.length || Math.random() >= CROP_NOTE_CHANCE) return;
     lastCropHook = hooks[Math.floor(Math.random() * hooks.length)];
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + lastCropHook);
+    window.pushCruiseLog('◆ ' + lastCropHook);
     return;
   }
   if (Math.random() >= (def.extra_event_chance || 0)) return;
@@ -3819,11 +3800,11 @@ function cropDrama() {
   const [k, v] = swings[Math.floor(Math.random() * swings.length)];
   if (k === 'crop') cg.health = clamp(cg.health + v, 1, 100);
   else addCrewMorale(v); // the whole crew
-  if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + line + ' (' + (v > 0 ? '+' : '−') + Math.abs(v) + (k === 'crop' ? ' crop health)' : ' morale)'));
+  window.pushCruiseLog('◆ ' + line + ' (' + (v > 0 ? '+' : '−') + Math.abs(v) + (k === 'crop' ? ' crop health)' : ' morale)'));
 }
 
 function arrivalPassives(node) {
-  const log = m => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + m); };
+  const log = m => { window.pushCruiseLog('◆ ' + m); };
   const t = node.node_type;
   // Solar array: "+2 fuel per leg when near a star. Zero in void or deep space."
   if (STATE.items.includes('solar_array') && !{ void: 1, nebula: 1, anomaly: 1, fork: 1 }[t]) { // fork = "deep space" on the cruise screen
@@ -4063,7 +4044,7 @@ function passDays(days, opts) {
     let dry = Math.max(0, days - lasted);
     if (!dry) continue;
     const onset = !STATE.deprived[res];
-    if (onset && typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + ((!STATE.crew.length && d.onsetSolo) || d.onset));
+    if (onset) window.pushCruiseLog('◆ ' + ((!STATE.crew.length && d.onsetSolo) || d.onset));
     // Grace: the span a resource first runs out in can't by itself reach
     // the failure — the crew always gets one stop to react (USE a
     // canister, a station, MINE ice) before the counter can end the run.
@@ -4118,7 +4099,7 @@ function travelTo(nodeId, opts) {
     // Drive coil (items.json): 5% per leg it misfires — minor hull damage.
     if (STATE.items.includes('drive_coil') && Math.random() < 0.05) {
       STATE.resources.hull = clamp(STATE.resources.hull - 3, 0, resMax('hull'));
-      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ The drive coil misfires mid-burn. A bang, a smell, three points of hull. It keeps working, unrepentant.');
+      window.pushCruiseLog('◆ The drive coil misfires mid-burn. A bang, a smell, three points of hull. It keeps working, unrepentant.');
     }
     passDays(leg.days, { travel: true });
     // ARIA's passive (ai_companions morale_bonus): +1 morale per leg.
@@ -4254,12 +4235,10 @@ function enterEvent(node, ev, opts) {
   // player returns from the encounter. 🔗 convention, new tab.
   if (ev.science_link && ev.science_link.url && !STATE.flags.has('sci_' + ev.id)) {
     STATE.flags.add('sci_' + ev.id);
-    if (typeof window.pushCruiseLog === 'function') {
-      window.pushCruiseLog({
-        text: '◆ ' + (ev.science_link.text || 'The ship computer files a reference for later reading.'),
-        link: { url: ev.science_link.url, label: ev.science_link.label || 'Learn more' },
-      });
-    }
+    window.pushCruiseLog({
+      text: '◆ ' + (ev.science_link.text || 'The ship computer files a reference for later reading.'),
+      link: { url: ev.science_link.url, label: ev.science_link.label || 'Learn more' },
+    });
   }
 
   // Standard variants (event_shipboard_001's "noise in Cargo Bay 3"):
@@ -5801,7 +5780,7 @@ function handleChoiceClick(choice) {
   STATE.effortCon = (eff && eff.check && Math.random() >= eff.chance) ? Object.assign({}, eff.check, { days: eff.authored ? 1 : 2 }) : null;
   if (eff && eff.kit) {
     const i = STATE.items.indexOf(eff.kit);
-    if (i >= 0) { STATE.items.splice(i, 1); if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ A ' + prettyItem(eff.kit) + ' went into the job.'); }
+    if (i >= 0) { STATE.items.splice(i, 1); window.pushCruiseLog('◆ A ' + prettyItem(eff.kit) + ' went into the job.'); }
   }
   STATE.lastPick = { picked: choice, shown: STATE._shownChoices || [] };
 
@@ -5832,17 +5811,17 @@ function handleChoiceClick(choice) {
   // after the flat return, silently disabling flat-event combat —
   // which orphaned event_general_003's authored combat_trigger field,
   // honored here as an alias).
-  if ((choice.triggerCombat || choice.combat_trigger) && typeof window.triggerCombat === 'function') {
+  if ((choice.triggerCombat || choice.combat_trigger)) {
     if (choice.setFlag) STATE.flags.add(choice.setFlag);
     if (window.ShipLog) ShipLog.fightStart(choice); // the fight's log entry names the choice that started it
     window.triggerCombat(choice);
     return;
   }
-  if (choice.triggerRamResolve && typeof window.triggerRamResolve === 'function') {
+  if (choice.triggerRamResolve) {
     window.triggerRamResolve(choice);
     return;
   }
-  if (choice.triggerFleeResolve && typeof window.triggerFleeResolve === 'function') {
+  if (choice.triggerFleeResolve) {
     window.triggerFleeResolve(choice);
     return;
   }
@@ -5854,7 +5833,7 @@ function handleChoiceClick(choice) {
   // return so both schemas can host a market choice. On close, the
   // current layer re-renders; a sinister close has already reset the
   // layer stack + npc slot inside openMarket by then.
-  if (choice.open_market && typeof window.openMarket === 'function') {
+  if (choice.open_market) {
     if (choice.setFlag) STATE.flags.add(choice.setFlag);
     STATE._shoppedThisEvent = true; // walking away after shopping costs the day (below)
     // Back on the same layer → paint it whole; the sinister close walks
@@ -5927,7 +5906,7 @@ function applyOutcomeEffects(o) {
     if (o.set_orders.pace) ord.pace = o.set_orders.pace;
     if (o.set_orders.rations) ord.rations = o.set_orders.rations;
     if (Number.isFinite(o.set_orders.waterSplit)) setWaterSplit(o.set_orders.waterSplit);
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ Standing orders changed — check ORDERS.');
+    window.pushCruiseLog('◆ Standing orders changed — check ORDERS.');
   }
   // Short of effort on a hands-on job: thinner gains (halved below, in
   // the resources loop and here for materials), then the job's own
@@ -5955,9 +5934,7 @@ function applyOutcomeEffects(o) {
         // damage event, then it's spent. crew_roster.json's authored
         // effect: { hull_damage_prevented: 1 }.
         STATE.flags.delete('emergency_patch_armed');
-        if (typeof window.pushCruiseLog === 'function') {
-          window.pushCruiseLog('◆ The emergency patch holds — ' + (-v) + ' hull damage never lands. The patch does not survive the experience.');
-        }
+        window.pushCruiseLog('◆ The emergency patch holds — ' + (-v) + ' hull damage never lands. The patch does not survive the experience.');
       } else if (k === 'morale') {
         // Per-crew morale (owner ruling 15): a group change hits every
         // crew member; morale_to names the one it lands on. Combat's net
@@ -6022,9 +5999,7 @@ function applyOutcomeEffects(o) {
       const pid = 'crew_' + gone;
       STATE.passengers = (STATE.passengers || []).filter(p => p.id !== pid);
       STATE.passengers.push({ id: pid, name: goneName, reward: null, farewell: null, boardedDay: STATE.daysElapsed || 0 });
-      if (typeof window.pushCruiseLog === 'function') {
-        window.pushCruiseLog('◆ ' + goneName + ' steps down from the crew today and rides as a passenger to the next stop. Nobody discusses it at dinner.');
-      }
+      window.pushCruiseLog('◆ ' + goneName + ' steps down from the crew today and rides as a passenger to the next stop. Nobody discusses it at dinner.');
     }
     if (resolve === 'welcome' || resolve === 'welcome_replace') {
       const joined = joinAsCrew(idn, 100);
@@ -6057,7 +6032,7 @@ function applyOutcomeEffects(o) {
       STATE.passengers.push({ id: cj.id, name: cj.name, reward: pas.reward || null, farewell: pas.farewell || null, boardedDay: STATE.daysElapsed || 0 });
       STATE.joinNote = cj.name + ' rides along as a passenger to the next station.';
     }
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + STATE.joinNote);
+    window.pushCruiseLog('◆ ' + STATE.joinNote);
   }
 
   // Crop/system effect fields (additive): clears_pest ends an active
@@ -6271,7 +6246,7 @@ function eventMinigameBegun(harm) {
 // reload keeps it too.
 function eventMinigameHarm(harm) { eventMinigameBegun(harm); }
 function resolveChoice(choice) {
-  if (choice.launch_minigame && typeof window.openMinigame === 'function') {
+  if (choice.launch_minigame) {
     eventMinigameChoice = choice;
     // MEDICAL (parity pass 2026-10-11): the game plays at the event's own
     // difficulty, on a real patient — the worst-hurt crew member (else
@@ -6410,7 +6385,7 @@ function checkFailure(opts) {
   const arriving = !!(opts && opts.arriving);
   // Crop health only advances when ticked — catch it up so crop_dead
   // (and the arrival bracket) never read a leg-old value.
-  if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth();
+  window.tickCropGrowth();
   const r = STATE.resources;
   let type = null;
   if (r.fuel   <= 0 && !arriving) type = 'no_fuel';
@@ -6445,7 +6420,7 @@ function checkFailure(opts) {
    ENDING / ARRIVAL
    ──────────────────────────────────────────────────────────────── */
 function triggerArrival(node) {
-  if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth(); // score the crop as of today
+  window.tickCropGrowth(); // score the crop as of today
   // Fixed test-path arrival node hardcodes event_id for reproducible
   // debugging (?debug=fixed_path) — honor it deterministically.
   // Procedurally generated maps never set event_id on any node

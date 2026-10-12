@@ -43,7 +43,7 @@
     const v = STATE.stationVisit;
     return v && v.node === STATE.currentId ? v : null;
   }
-  const log = t => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog(t); };
+  const log = t => { window.pushCruiseLog(t); };
 
   /* Which dock room an event is (null: not a room). An in-person layered
      station event with a station NPC; `station_room` may name it. */
@@ -93,7 +93,7 @@
     const v = visit();
     const f = v && v.fee;
     if (!str || !f) return str;
-    const cost = typeof eventGold === 'function' ? eventGold(f.cost) : f.cost;
+    const cost = eventGold(f.cost);
     return String(str).replace(/\{fee\.reason\}/g, f.reason).replace(/\{fee\.reason_lc\}/g, f.reason.toLowerCase())
       .replace(/\{fee\.cost\}/g, cost).replace(/\{fee\.detail\}/g, f.detail);
   }
@@ -213,7 +213,7 @@
         return false; // its next: 'hail' carries on
       case 'dock': {
         v.docked = true; v.captainHere = true;
-        if (typeof stationRecharge === 'function') stationRecharge();
+        stationRecharge();
         if (v.kind === 'docking' && v.roomEv && EVENTS[v.roomEv] && !v.roomsDone.includes(v.roomEv)) {
           v.phase = 'docking';
           enterEvent(here(), EVENTS[v.roomEv]);

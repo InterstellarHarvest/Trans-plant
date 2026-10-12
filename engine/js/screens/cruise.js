@@ -249,7 +249,7 @@
   function normalTickerLine() {
     const here = STATE.byId && STATE.byId[STATE.currentId];
     if (!here) return '';
-    const nextIds = typeof nextAvailableNodes === 'function' ? [...nextAvailableNodes()] : [];
+    const nextIds = [...nextAvailableNodes()];
     // Long-range scan hits are news: they replace the default line.
     const hit = nextIds.map(id => STATE.scouted && STATE.scouted[id]).find(sc => sc && sc.ev && EVENTS[sc.ev]);
     if (hit) return 'SCAN · NEXT: ' + String(EVENTS[hit.ev].title || 'CONTACT').toUpperCase();
@@ -328,14 +328,14 @@
     let msg = null;
     if (traderHere() && !atStation()) msg = 'TRADER SHIP ON APPROACH';
     else {
-      const nextIds = typeof nextAvailableNodes === 'function' ? [...nextAvailableNodes()] : [];
+      const nextIds = [...nextAvailableNodes()];
       const n = nextIds.length === 1 && STATE.byId[nextIds[0]];
       if (n) msg = NEXT_STOP_ALERT[n.node_type] || null;
     }
     if (!msg) return;
     showSceneAlert(msg);
     pushLogEntry('▶ ' + msg);
-    if (typeof saveRun === 'function') saveRun(); // the line + alertedNode (the hub's own save ran before this timer)
+    saveRun(); // the line + alertedNode (the hub's own save ran before this timer)
   }
 
   // ── Trader presence (owner ruling 2026-10-11, Bible §18 Trader-wait) ──
@@ -469,7 +469,7 @@
     // An entry that lands while the journal is open shows at once (a scene
     // alert fires a beat after returning to the hub, e.g.).
     const slog = document.getElementById('overlay-shipslog');
-    if (slog && slog.classList.contains('active') && typeof window.renderShipsLog === 'function') window.renderShipsLog();
+    if (slog && slog.classList.contains('active')) window.renderShipsLog();
     const line = displayLine(text, voice);
     // While stopped the log column is under the Stop menu: the AI's
     // lines go up on the ticker instead (the entry still lands, so the
@@ -558,7 +558,7 @@
   function renderCruise() {
     // Catch crop growth/health up to today before painting the card —
     // decay must tick even if the player never opens the growbay.
-    if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth();
+    window.tickCropGrowth();
     // A during-wait event belongs to the stop it happened at (anything
     // that moved the ship — a test harness, Push Engines — drops it).
     if (STATE.forcedEvent && STATE.forcedEvent.node !== STATE.currentId) STATE.forcedEvent = null;
@@ -585,13 +585,11 @@
     // Standing-orders readout — live from STATE.orders (Restoration
     // item 5). Clicking any cell opens the Orders modal (wired once
     // below); the cells just mirror the committed settings here.
-    if (typeof window.ordersPace === 'function') {
-      const o = ensureOrders();
-      $('readout-engines').textContent = ordersPace().name;
-      $('readout-rations').textContent = ordersRations().name;
-      $('readout-water-plant').textContent = o.waterSplit + '%';
-      $('readout-water-crew').textContent  = (100 - o.waterSplit) + '%';
-    }
+    const o = ensureOrders();
+    $('readout-engines').textContent = ordersPace().name;
+    $('readout-rations').textContent = ordersRations().name;
+    $('readout-water-plant').textContent = o.waterSplit + '%';
+    $('readout-water-crew').textContent  = (100 - o.waterSplit) + '%';
 
     // Crew strip: the captain (their own sprite — the player is not a
     // crew specialist) + STATE.crew. Name on top, role capitalised under
@@ -621,7 +619,7 @@
         ? '<div class="crew-icon has-sprite" data-crew-id="' + m.crewId + '" style="' + crewIconCss(m.crewId, 'var(--card-icon-size)') + '"></div>'
         : '<div class="crew-icon">\u{1F464}</div>';
       // Real HP — the captain's own too (owner ruling 29, index.html hpOf).
-      const hp = typeof window.hpOf === 'function' ? hpOf(m.key) : 100;
+      const hp = hpOf(m.key);
       const hpColor = hp <= CREW_CRITICAL_HP ? '#cc5555' : (hp < CREW_WOUNDED_HP ? '#d4a830' : '');
       // Their OWN morale (owner ruling 15). The captain has none: no MO bar.
       const mo = m.key === 'captain' ? null : crewMoraleOf(m.key);
@@ -640,7 +638,7 @@
       // Crew dossier (Restoration item 4) — click opens the detail
       // modal; the captain slot opens their reduced dossier.
       slot.addEventListener('click', () => {
-        if (typeof window.openCrewDetail === 'function') openCrewDetail(m.key);
+        openCrewDetail(m.key);
       });
       strip.appendChild(slot);
     }
@@ -653,14 +651,14 @@
     // (function declarations hoist).
     maybePushAmbient();
     checkResourceWarnings();
-    if (typeof window.crewMoraleWatch === 'function') crewMoraleWatch(); // per-crew morale: the 0-morale warning / all-clear (owner ruling 15)
+    crewMoraleWatch(); // per-crew morale: the 0-morale warning / all-clear (owner ruling 15)
     checkCropMilestones();
     setTimeout(arrivalAlert, 350); // once the hub is actually on screen
     wakeStars();
     // Every hub repaint is a safe between-actions point — autosave, last,
     // so the lines/flags just pushed above are in it (they used to replay
     // with fresh text after a reload).
-    if (typeof saveRun === 'function') saveRun();
+    saveRun();
   }
   function clampPct(v) { return Math.max(0, Math.min(100, v | 0)); }
 
@@ -682,7 +680,7 @@
     // The growbay's own thirst rule (pickAriaQuip): plant share >10
     // points under the crop's need.
     const split = STATE.orders && Number.isFinite(STATE.orders.waterSplit) ? STATE.orders.waterSplit : cg.waterPlant;
-    if (typeof cropWaterNeed === 'function' && split < Math.round(cropWaterNeed()) - 10) why.push('Thirsty');
+    if (split < Math.round(cropWaterNeed()) - 10) why.push('Thirsty');
     return why;
   }
   function renderCropCard() {
@@ -694,7 +692,7 @@
     const mature = !!cg && alive && growth >= 100;
     const STAGE_NAMES = ['SPROUTING', 'VEGETATIVE', 'FLOWERING', 'MATURING'];
     const stageIdx = growth <= 25 ? 0 : growth <= 50 ? 1 : growth <= 75 ? 2 : 3;
-    const meta = typeof window.cropMetaOf === 'function' ? cropMetaOf(STATE.crop) : null;
+    const meta = cropMetaOf(STATE.crop);
     const maturity = (meta && meta.maturity_days) || 90;
     const day = cg ? cg.day : 0;
     $('crop-name').textContent = STATE.crop.replace(/_/g, ' ').toUpperCase();
@@ -715,7 +713,6 @@
   }
   function harvestFromCard(e) {
     if (e) e.stopPropagation(); // the card itself opens the growbay
-    if (typeof window.doHarvest !== 'function' || typeof window.tickCropGrowth !== 'function') return;
     window.tickCropGrowth();    // binds the growbay's live crop state, caught up to today
     const cg = STATE.cropGrowth;
     if (!cg || cg.growth < 100 || cg.health <= 0) return;
@@ -738,11 +735,11 @@
   $('crop-card-mini').addEventListener('click', () => { if (STATE.crop) openGrowbay(); });
   $('crop-harvest-btn').addEventListener('click', harvestFromCard);
   // Stop Menu header LOG button → the Ship's Log (Bible §18 "📜 LOG").
-  $('stop-log-btn').addEventListener('click', () => { if (typeof window.openShipsLog === 'function') window.openShipsLog(); });
+  $('stop-log-btn').addEventListener('click', () => { window.openShipsLog(); });
   // Any readout cell opens the Orders modal (demo-orders.html's
   // cg-readout behavior — the whole strip is one click target).
   $('cruise-readout').addEventListener('click', () => {
-    if (typeof window.openOrders === 'function') openOrders();
+    openOrders();
   });
 
   // ── Stop Menu shell ──────────────────────────────────────────
@@ -826,16 +823,16 @@
   }
   function onJobBegun(days) {
     pendingVerbTax = 0;
-    if (STATE.currentEvent) { if (typeof window.eventMinigameBegun === 'function') window.eventMinigameBegun(); return; }
+    if (STATE.currentEvent) { window.eventMinigameBegun(); return; }
     jobMarker = activeVerb ? { verb: activeVerb, days: days || 1 } : null;
-    if (jobMarker && typeof writeSnapshot === 'function') writeSnapshot(undefined, { pendingAbandon: jobMarker });
+    if (jobMarker) writeSnapshot(undefined, { pendingAbandon: jobMarker });
   }
   // Harm taken in play (minigames.js reportJobHarm: a forage poisoning,
   // the patient's HP) rides in the quit marker, so a reload keeps it as
   // ✕ QUIT does.
   function onJobHarm(harm) {
-    if (STATE.currentEvent) { if (typeof window.eventMinigameHarm === 'function') window.eventMinigameHarm(harm); return; }
-    if (jobMarker && typeof writeSnapshot === 'function') writeSnapshot(undefined, { pendingAbandon: Object.assign({}, jobMarker, { harm }) });
+    if (STATE.currentEvent) { window.eventMinigameHarm(harm); return; }
+    if (jobMarker) writeSnapshot(undefined, { pendingAbandon: Object.assign({}, jobMarker, { harm }) });
   }
   // A quit's harm so far lands (✕ QUIT and loadRun's pendingAbandon): each
   // forage poisoning hurts someone aboard, as it would have at the end.
@@ -861,7 +858,7 @@
     renderCruise();
     // The Stop menu stays open across verbs — re-gate it (a REPAIR that
     // spent the last metal must lock, MEDBAY with no one hurt…).
-    if (document.body.classList.contains('stop-active') && typeof renderStopMenu === 'function') renderStopMenu();
+    if (document.body.classList.contains('stop-active')) renderStopMenu();
   }
 
   // Quitting a minigame mid-game (tier 'abandoned', owner ruling
@@ -1294,7 +1291,7 @@
   };
   function waitEventPick() {
     const node = STATE.byId && STATE.byId[STATE.currentId];
-    if (!node || typeof eventEligible !== 'function') return null;
+    if (!node) return null;
     const trig = activeTriggers();
     const kinds = [];
     for (const [kind, d] of Object.entries(WAIT_EVENTS)) {
@@ -1429,7 +1426,7 @@
     STATE.traderAt = STATE.traderAt || {};
     STATE.traderAt[a.node] = true;
     pushLogEntry('▶ A trader has appeared after ' + a.day + ' day' + (a.day === 1 ? '' : 's') + ' of waiting.');
-    if (typeof saveRun === 'function') saveRun(); // a reload in the flash keeps the trader here (TRADE)
+    saveRun(); // a reload in the flash keeps the trader here (TRADE)
     // leaving = the player Resumed during the flash: the trader stays
     // behind at this stop (TRADE), the ship goes.
     a.finish = leaving => {
@@ -1460,7 +1457,7 @@
     // there shakes (CANNOT RESUME). After the flash the event opens
     // straight away (owner ruling 46a — no one-verb menu in between).
     STATE.forcedEvent = { kind: pick.kind, ev: pick.ev, node: a.node };
-    if (typeof saveRun === 'function') saveRun(); // the event and the rest so far: a reload opens it, keeps the morale
+    saveRun(); // the event and the rest so far: a reload opens it, keeps the morale
     document.body.classList.add('event-active');
     syncTicker();
     a.finish = () => {
@@ -1482,7 +1479,7 @@
       pushLogEntry('▶ No one came. ' + a.days + ' day' + (a.days === 1 ? '' : 's') + ' parked; the dice do not apologize.');
     }
     renderHUD();
-    if (typeof saveRun === 'function') saveRun(); // the rest's morale, before the flash
+    saveRun(); // the rest's morale, before the flash
     a.finish = () => {
       clearTimeout(a.timer);
       hideWaitFlash(); hideActionBanner();
@@ -1698,7 +1695,7 @@
     if (activeWait && activeWait.resolving && activeWait.finish) activeWait.finish(true);
     if (activeWait) cancelWait();
     const nextIds = [...nextAvailableNodes()];
-    if (nextIds.length === 0 && typeof resolveStuckFork === 'function' && resolveStuckFork()) { closeStopMenu(); return; }
+    if (nextIds.length === 0 && resolveStuckFork()) { closeStopMenu(); return; }
     if (nextIds.length !== 1) {
       pushLogEntry(nextIds.length === 0
         ? '◆ No route forward from here yet.'

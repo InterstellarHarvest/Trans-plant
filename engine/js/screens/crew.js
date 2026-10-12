@@ -354,12 +354,12 @@
     // total, per the authored fuel_cost_multiplier). Only fires with
     // exactly one route forward that isn't the arrival node.
     pilot() {
-      const nextIds = (typeof nextAvailableNodes === 'function') ? [...nextAvailableNodes()] : [];
+      const nextIds = [...nextAvailableNodes()];
       if (nextIds.length !== 1) return { ok: false, refusal: nextIds.length === 0 ? 'No route forward to push toward.' : 'The route forks ahead — pick a heading first.' };
       const next = STATE.byId[nextIds[0]];
       const isArrival = next && next.connects_to && (Array.isArray(next.connects_to) ? next.connects_to.length === 0 : Object.keys(next.connects_to).length === 0);
       if (isArrival) return { ok: false, refusal: 'That is the destination. Reeves refuses to skip the ending.' };
-      const legFuel = (typeof window.legTravelCost === 'function') ? legTravelCost().fuel : 5;
+      const legFuel = legTravelCost().fuel;
       if (STATE.resources.fuel < legFuel * 2) return { ok: false, refusal: 'Not enough fuel to burn double. Reeves keeps the tally to himself.' };
       STATE.resources.fuel = Math.max(0, STATE.resources.fuel - legFuel);
       return { ok: true, log: 'PUSH ENGINES — Reeves burns double fuel for the leg (−' + (legFuel * 2) + ' total) and blows straight past ' + ((next && next.name) || 'the next stop') + '. Statistically correct, this time.', skipTo: nextIds[0] };
@@ -409,7 +409,7 @@
   // Skill lines and quips name the roster crew ("Dr. Osei"); a joined
   // stowaway holding the role keeps their own name (index.html crewNameOf).
   function liveNames(str) {
-    if (!str || typeof crewIdentityOf !== 'function') return str;
+    if (!str) return str;
     for (const c of (MOD.crew_roster || [])) {
       const idn = crewIdentityOf(c.role);
       if (!idn || !c.name) continue;
@@ -428,7 +428,7 @@
         key, isCaptain: true, crewId: 'captain', emoji: CD_ROLE_EMOJI.captain,
         name: 'Captain', role: 'Captain', bgTag: bg.name,
         bio: bg.flavor || bg.desc, hint: hintLine('captain'),
-        passiveName: bg.name + ' Background', passiveDesc: (bg.stat ? (typeof window.setupLiveStat === 'function' ? window.setupLiveStat('captain', { id: STATE.captain, stat: bg.stat }) : bg.stat) + ' — ' : '') + bg.desc,
+        passiveName: bg.name + ' Background', passiveDesc: (bg.stat ? window.setupLiveStat('captain', { id: STATE.captain, stat: bg.stat }) + ' — ' : '') + bg.desc,
         active: null,
       };
     }
@@ -567,7 +567,7 @@
 
     // Active card + charge state
     if (m.active) {
-      if (typeof window.ensureCrewSkillCharges === 'function') ensureCrewSkillCharges();
+      ensureCrewSkillCharges();
       const max = m.active.uses_per_leg || 1;
       const uses = (STATE.crewSkillCharges && (m.key in STATE.crewSkillCharges)) ? STATE.crewSkillCharges[m.key] : max;
       const rechargeNote = (m.active.recharges_at === 'station') ? 'RECHARGES AT STATION' : 'RECHARGES EACH LEG';
@@ -630,7 +630,7 @@
   // ── Open / close / cycle ───────────────────────────────────────
   function openCrewDetail(role) {
     mount();
-    if (typeof window.ensureCrewSkillCharges === 'function') ensureCrewSkillCharges();
+    ensureCrewSkillCharges();
     const list = memberList();
     if (!list.length) return;
     cur = list.includes(role) ? role : list[0];
@@ -662,9 +662,9 @@
     if (departing || cur === 'captain') return;
     const m = memberData(cur);
     if (!m.active) return;
-    const hp = (typeof crewHPOf === 'function') ? crewHPOf(cur) : 100;
+    const hp = crewHPOf(cur);
     if (hp < CREW_WOUNDED_HP) return; // wounded — button is locked anyway
-    if (typeof window.ensureCrewSkillCharges === 'function') ensureCrewSkillCharges();
+    ensureCrewSkillCharges();
     const uses = STATE.crewSkillCharges[cur] || 0;
     if (uses <= 0) return;
     const fx = SKILL_EFFECTS[cur];
@@ -673,16 +673,16 @@
     if (res.log) res.log = liveNames(res.log);
     if (!res.ok) { setAiText(liveNames(res.refusal), true); return; }
     STATE.crewSkillCharges[cur] = uses - 1;
-    if (typeof window.pushCruiseLog === 'function') pushCruiseLog('◆ ' + res.log);
-    if (typeof renderHUD === 'function') renderHUD();
-    if (typeof checkFailure === 'function' && checkFailure()) return; // pilot fuel burn can empty the tank
+    pushCruiseLog('◆ ' + res.log);
+    renderHUD();
+    if (checkFailure()) return; // pilot fuel burn can empty the tank
     if (res.skipTo) {
       // Push Engines — leave the dossier and jump the node, no event.
       hideOverlay('overlay-crew');
       travelTo(res.skipTo, { skipEvent: true });
       return;
     }
-    if (typeof window.renderCruise === 'function') renderCruise();
+    renderCruise();
     render();
     setAiText(res.log, false);
   }
@@ -759,14 +759,12 @@
     } else {
       line = DISMISS_LINES[Math.floor(Math.random() * DISMISS_LINES.length)].replaceAll('[Name]', name);
     }
-    if (typeof window.pushCruiseLog === 'function') {
-      if (memo) {
-        memo.text = '◆ ' + (logLine || line);
-        memo.expand.text = line + '\n\n' + memo.expand.text;
-        pushCruiseLog(memo);
-      } else pushCruiseLog('◆ ' + (logLine || line));
-    }
-    if (typeof renderHUD === 'function') renderHUD();
+    if (memo) {
+      memo.text = '◆ ' + (logLine || line);
+      memo.expand.text = line + '\n\n' + memo.expand.text;
+      pushCruiseLog(memo);
+    } else pushCruiseLog('◆ ' + (logLine || line));
+    renderHUD();
     return line;
   }
 
@@ -790,7 +788,7 @@
         const line = removeCrew(role, true);
         // A jettison never ends the run (ruling 26); another failure that
         // was already due still does — endRun() strips overlays itself.
-        if (typeof checkFailure === 'function' && checkFailure()) { departing = false; return; }
+        if (checkFailure()) { departing = false; return; }
         pendingEpitaph = { role, name: departedName };
         $('cd-epitaph-name').textContent = pendingEpitaph.name.toUpperCase();
         const lineEl = $('cd-epitaph-line');
@@ -803,7 +801,7 @@
       setTimeout(() => {
         removeCrew(role, false);
         departing = false;
-        if (typeof checkFailure === 'function' && checkFailure()) return;
+        if (checkFailure()) return;
         portraitEl.classList.remove('anim-dismiss');
         afterDeparture();
       }, 1060);
@@ -822,7 +820,7 @@
   let afterIdx = -1;
   function afterDeparture() {
     const list = memberList();
-    if (typeof window.renderCruise === 'function') renderCruise();
+    renderCruise();
     if (!list.length) { closeCrewDetail(); return; }
     // The departed member's slot now holds the one after them.
     cur = list.includes(cur) ? cur : list[(afterIdx < 0 ? 0 : afterIdx) % list.length];

@@ -91,14 +91,14 @@
     recipe_fuel_cell:      { icon: '🔋', sprite: 'sprites/cargo/items/fuel_cell.png' },
   };
   function prettyItemName(itemId) {
-    const real = (typeof itemDef === 'function' && itemDef(itemId)) || (MOD.items || []).find(it => it.id === itemId || it.id === 'item_' + itemId);
+    const real = (itemDef(itemId)) || (MOD.items || []).find(it => it.id === itemId || it.id === 'item_' + itemId);
     if (real) return real.name;
     return itemId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
   // items.json gameplay_effect is player-facing text only (authoring
   // notes live in design_note, parity batch 2) — shown as written.
   function outputEffectText(itemId) {
-    const def = (typeof itemDef === 'function' && itemDef(itemId)) || null;
+    const def = (itemDef(itemId)) || null;
     return (def && def.gameplay_effect) || '';
   }
   let MATERIALS = {};
@@ -195,7 +195,7 @@
       const id = CREWID_OF_ROLE[role];
       // Value = contribution share: a wounded specialist works at half
       // (crew_roster "halved if injured"), as everywhere else.
-      if (id && CREW[id]) FSTATE.aboard[id] = (typeof specialistMult === 'function') ? (specialistMult(role) || 1) : 1;
+      if (id && CREW[id]) FSTATE.aboard[id] = (specialistMult(role) || 1);
     }
     // An engineer captain adds their half-strength hands only when no crew
     // engineer is aboard — the two don't stack (specialistMult already
@@ -206,10 +206,8 @@
       const v = def && def.passive_skill && def.passive_skill.fabricator_contribution;
       CREW[id].fab = Number.isFinite(v) ? v : 0;
     }
-    if (typeof captainPassive === 'function') {
-      CREW.captain_eng.fab = captainPassive('fabricator_contribution', 'engineer') ?? CREW.captain_eng.fab;
-      CREW.captain_aca.fab = captainPassive('fabricator_contribution', 'academic') ?? CREW.captain_aca.fab;
-    }
+    CREW.captain_eng.fab = captainPassive('fabricator_contribution', 'engineer') ?? CREW.captain_eng.fab;
+    CREW.captain_aca.fab = captainPassive('fabricator_contribution', 'academic') ?? CREW.captain_aca.fab;
     // The header is the real trip day: a craft's days pass for real, one
     // at a time (ruling 27), so there is nothing to replay on reopen.
     FSTATE.tripDay = STATE.daysElapsed;
@@ -260,7 +258,7 @@
   // Never below 0.5.
   // noKit: the same craft without the part's discount.
   function recipeWear(r, noKit) {
-    const cut = typeof roleAmount === 'function' ? roleAmount('engineer', 'fabricator_wear_modifier', 'fabricator_wear_modifier', 0.8, true) : 0;
+    const cut = roleAmount('engineer', 'fabricator_wear_modifier', 'fabricator_wear_modifier', 0.8, true);
     const kit = !noKit && STATE.items.includes('repair_fabricator') ? 0.9 : 1;
     // Kept to a tenth: whole-number rounding ate the engineer's cut on
     // every 1–3% recipe (2 × 0.8 = 1.6 → 2).
@@ -532,7 +530,7 @@
     // the same row (re-audit B7): a craft is a 1-pip FABRICATOR action,
     // every crew member pays it at CRAFT (none aboard: no tax, no cell).
     const assist = crewAssistTooltip().split('\n');
-    const tax = typeof window.effortTax === 'function' ? window.effortTax(1) : 0;
+    const tax = window.effortTax(1);
     const taxCell = tax
       ? '<span class="label label-2" data-tip-title="EFFORT TAX" data-tip-description="Effort 1/5. Every crew member loses ' + tax + ' morale when the craft starts. Cancel before its first day and it comes back.">MORALE</span>' +
         '<span class="wear-add tax">−' + tax + ' each</span>'
@@ -561,7 +559,7 @@
     btn.classList.toggle('busy', !!FSTATE.craft); // Wait cursor while a craft passes days
     if (lock === 'locked-purchase') {
       const need = r.unlock.slice(5);
-      const d = typeof itemDef === 'function' ? itemDef(need) : null;
+      const d = itemDef(need);
       label = 'LOCKED · ' + (d && (d.item_behavior || []).includes('upgrade') ? 'NEEDS UPGRADE' : 'NEEDS PART');
       why = 'Needs a ' + prettyItemName(need) + ' aboard.';
     } else if (!fabFunctional() && !jobRuns()) {
@@ -686,7 +684,7 @@
   // ═════ Craft flow ═══════════════════════════════════════════
   // CRAFT → spend the materials, the effort tax and the wear, put the job
   // on the bed (saved) and start the day clock. One craft at a time.
-  const fabLog = m => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + m); };
+  const fabLog = m => { window.pushCruiseLog('◆ ' + m); };
   const dWord = n => n + (n === 1 ? ' day' : ' days');
   function craftSelected() {
     const r = RECIPES.find(x => x.id === FSTATE.selectedId);
@@ -708,7 +706,7 @@
     // morale. The receipt says what each member paid (a job cancelled
     // before its first day gets exactly that back).
     const tax = {};
-    if (typeof window.payEffortTax === 'function') window.payEffortTax(1, tax);
+    window.payEffortTax(1, tax);
     // Wear lands at CRAFT (the fab spins up); the misfire odds are read
     // from the wear before it and rolled when the print comes out.
     const wearBefore = FSTATE.wear;
@@ -729,7 +727,7 @@
     };
     // Saved now: the materials and tax are spent, the job is on the bed —
     // a reload resumes it (it can't re-roll or dodge anything).
-    if (typeof saveRun === 'function') saveRun();
+    saveRun();
     renderHUD();
     startCraftClock(true);
     renderAll();
@@ -737,12 +735,10 @@
 
     // AI commentary on craft start (fabricator_events pool, previously
     // unconsumed) — lands in the cruise AI log behind the overlay.
-    if (typeof window.pushCruiseLog === 'function') {
-      const pool = MOD.flavor && MOD.flavor.ai_universal && MOD.flavor.ai_universal.fabricator_events
-        && MOD.flavor.ai_universal.fabricator_events.craft_started;
-      const lines = pool && pool[STATE.activeAI];
-      if (Array.isArray(lines) && lines.length) window.pushCruiseLog('◆ ' + lines[Math.floor(Math.random() * lines.length)]);
-    }
+    const pool = MOD.flavor && MOD.flavor.ai_universal && MOD.flavor.ai_universal.fabricator_events
+      && MOD.flavor.ai_universal.fabricator_events.craft_started;
+    const lines = pool && pool[STATE.activeAI];
+    if (Array.isArray(lines) && lines.length) window.pushCruiseLog('◆ ' + pickRandom(lines));
   }
 
   /* The day clock (demo scheduleNextTick/advanceCraftDay, but the days
@@ -816,7 +812,7 @@
     if (!FSTATE.craft) return;
     renderDetail(); // TIME / deadline lock / wear preview off the live crew
     updateProgressUI();
-    if (typeof saveRun === 'function') saveRun();
+    saveRun();
   }
 
   function startProgressLoop() {
@@ -879,23 +875,18 @@
     const r = RECIPES.find(x => x.id === c.recipeId);
     const back = cancelRefund(c);
     // The refund takes hold space again: refuse rather than lose any.
-    if (typeof window.materialLandings === 'function') {
-      const land = window.materialLandings(back);
-      if (Object.entries(back).some(([m, q]) => (land[m] || 0) < q)) {
-        fabNotice('HOLD FULL', 'No room for the materials to come back. Make room in the hold, then cancel.', 'warn');
-        return;
-      }
+    const land = window.materialLandings(back);
+    if (Object.entries(back).some(([m, q]) => (land[m] || 0) < q)) {
+      fabNotice('HOLD FULL', 'No room for the materials to come back. Make room in the hold, then cancel.', 'warn');
+      return;
     }
     // Back aboard like any material grant: NEW badge, newest in the Recent order.
-    if (typeof window.grantMaterials === 'function') window.grantMaterials(back, { quiet: true });
-    else for (const [mat, qty] of Object.entries(back)) FSTATE.stock[mat] = (FSTATE.stock[mat] || 0) + qty;
+    window.grantMaterials(back, { quiet: true });
     const free = !c.daysDone;
     if (free) {
-      if (typeof window.refundEffortTax === 'function') {
-        const rc = {};
-        for (const [role, paid] of Object.entries(c.tax || {})) if (STATE.crew.includes(role)) rc[role] = paid;
-        window.refundEffortTax(rc);
-      }
+      const rc = {};
+      for (const [role, paid] of Object.entries(c.tax || {})) if (STATE.crew.includes(role)) rc[role] = paid;
+      window.refundEffortTax(rc);
       FSTATE.wear = Math.max(0, Math.round((FSTATE.wear - (c.wearAdded || 0)) * 10) / 10);
     }
     stopCraftClock();
@@ -912,7 +903,7 @@
     setProgressIdle();
     renderHUD();
     renderAll();
-    if (typeof saveRun === 'function') saveRun();
+    saveRun();
   }
 
   // Drop the progress strip back to its muted idle look.
@@ -950,7 +941,7 @@
       breakFab();
       fabNotice('FAB BROKEN', 'The print wore the fabricator out. FAB SERVICE at a station fixes it.', 'danger');
     };
-    if (!r) { wornOut(); renderAll(); if (typeof saveRun === 'function') saveRun(); return; }
+    if (!r) { wornOut(); renderAll(); saveRun(); return; }
     const out = r.output;
 
     if (Math.random() < (c.misfireP || 0)) {
@@ -960,19 +951,19 @@
       const lines = MOD.flavor && MOD.flavor.fabricator_misfire_descriptions;
       const line = Array.isArray(lines) && lines.length ? lines[Math.floor(Math.random() * lines.length)] + ' ' : '';
       const dw = dWord(c.daysTotal);
-      if (Math.random() < 0.15 && typeof grantItem === 'function' && grantItem('fab_surplus')) {
+      if (Math.random() < 0.15 && grantItem('fab_surplus')) {
         fabLog('MISFIRE — ' + line + 'No ' + out.name + '; a piece of Fabricator Surplus instead. (' + dw + ', materials spent.)');
         fabNotice('MISFIRE', 'No ' + out.name + ' — a piece of Fabricator Surplus instead. ' + dw + ', materials spent.', 'warn');
       } else {
         fabLog('MISFIRE — ' + line + 'The ' + out.name + ' comes out as slag. ' + dw + ' and the materials, gone.');
         fabNotice('MISFIRE', 'The ' + out.name + ' came out as slag. ' + dw + ' and the materials, gone.', 'danger');
       }
-      if (typeof window.pushAiSample === 'function') window.pushAiSample('fabricator_misfire');
+      window.pushAiSample('fabricator_misfire');
       if (100 - (c.wearBefore || 0) < 20 && Math.random() < 0.5) { breakFab(); fabNotice('MISFIRE — FAB BROKEN', 'The misfire took the fabricator with it. FAB SERVICE at a station fixes it.', 'danger'); }
       wornOut();
       renderHUD();
       renderAll();
-      if (typeof saveRun === 'function') saveRun();
+      saveRun();
       return;
     }
 
@@ -992,7 +983,7 @@
     // floating until the player clicks to claim (moves to cargo).
     showOutputItem(r);
     wornOut();
-    if (typeof saveRun === 'function') saveRun();
+    saveRun();
     // Return to idle after the done-flash window.
     setTimeout(() => {
       slot.classList.remove('state-done');
@@ -1027,32 +1018,27 @@
     // fit first, then the print comes aboard through grantItem like any
     // other pickup (NEW badge, Recent order, values — b4 audit).
     const fits = (() => {
-      if (typeof window.cargoSlotsUsed !== 'function') return true;
       for (let i = 0; i < r.output.count; i++) STATE.items.push(r.output.item);
       const ok = cargoSlotsUsed() <= cargoCapacity();
       STATE.items.length -= r.output.count;
       return ok;
     })();
     if (!fits) {
-      if (typeof window.pushCruiseLog === 'function') {
-        window.pushCruiseLog('◆ FABRICATOR — output ready but the hold is full. Make room, then claim it.');
-      }
+      window.pushCruiseLog('◆ FABRICATOR — output ready but the hold is full. Make room, then claim it.');
       // In-modal too (parity pass): the log line sat behind the modal.
       fabNotice('HOLD FULL', 'The ' + r.output.name + ' stays in the output bay. Make room in the hold, then claim it.', 'warn');
       return;
     }
     for (let i = 0; i < r.output.count; i++) {
-      if (typeof grantItem === 'function') grantItem(r.output.item); else STATE.items.push(r.output.item);
+      grantItem(r.output.item);
     }
     FSTATE.pendingOutput = null;
     STATE.fabricator.owedOutput = null;
     // AI commentary on completed craft (fabricator_events pool).
-    if (typeof window.pushCruiseLog === 'function') {
-      const pool = MOD.flavor && MOD.flavor.ai_universal && MOD.flavor.ai_universal.fabricator_events
-        && MOD.flavor.ai_universal.fabricator_events.craft_complete;
-      const lines = pool && pool[STATE.activeAI];
-      if (Array.isArray(lines) && lines.length) window.pushCruiseLog('◆ ' + lines[Math.floor(Math.random() * lines.length)]);
-    }
+    const pool = MOD.flavor && MOD.flavor.ai_universal && MOD.flavor.ai_universal.fabricator_events
+      && MOD.flavor.ai_universal.fabricator_events.craft_complete;
+    const lines = pool && pool[STATE.activeAI];
+    if (Array.isArray(lines) && lines.length) window.pushCruiseLog('◆ ' + pickRandom(lines));
     const slot = $('fb-output-slot');
 
     const finish = () => {
@@ -1083,12 +1069,10 @@
   function breakFab() {
     FSTATE.broken = true;
     // AI commentary on the breakage (fabricator_events.craft_failed).
-    if (typeof window.pushCruiseLog === 'function') {
-      const pool = MOD.flavor && MOD.flavor.ai_universal && MOD.flavor.ai_universal.fabricator_events
-        && MOD.flavor.ai_universal.fabricator_events.craft_failed;
-      const lines = pool && pool[STATE.activeAI];
-      if (Array.isArray(lines) && lines.length) window.pushCruiseLog('◆ ' + lines[Math.floor(Math.random() * lines.length)]);
-    }
+    const pool = MOD.flavor && MOD.flavor.ai_universal && MOD.flavor.ai_universal.fabricator_events
+      && MOD.flavor.ai_universal.fabricator_events.craft_failed;
+    const lines = pool && pool[STATE.activeAI];
+    if (Array.isArray(lines) && lines.length) window.pushCruiseLog('◆ ' + pickRandom(lines));
     // Spark burst.
     const field = $('fb-spark-field');
     for (let i = 0; i < 14; i++) {
@@ -1190,14 +1174,14 @@
       stopCraftClock();
       const c = FSTATE.craft, r = RECIPES.find(x => x.id === c.recipeId);
       fabLog('FABRICATOR — ' + (r ? r.name : 'the print') + ' held at day ' + c.daysDone + ' of ' + c.daysTotal + '. Open the fabricator to finish it.');
-      if (typeof saveRun === 'function') saveRun();
+      saveRun();
     }
     // A craft spent days and materials — repaint the hub (day counter,
     // HUD) and autosave through it, and re-gate an open Stop menu.
-    if (typeof window.renderCruise === 'function' && !STATE.ended &&
+    if (!STATE.ended &&
         document.getElementById('screen-cruise').classList.contains('active')) {
       window.renderCruise();
-      if (typeof window.refreshStopMenu === 'function') window.refreshStopMenu();
+      window.refreshStopMenu();
     }
   }
   // Arrow keys cycle through selectable recipes (skipping locked rows);

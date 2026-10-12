@@ -141,7 +141,7 @@
       food:  STATE.resources.food,
       water: STATE.resources.water,
       hull:  STATE.resources.hull,
-      morale: typeof crewMoraleAvg === 'function' ? crewMoraleAvg() : null, // crew average; null = no crew aboard (owner ruling 15)
+      morale: crewMoraleAvg(), // crew average; null = no crew aboard (owner ruling 15)
       soil:  STATE.soilSurveys || 0,
       cropBonus: (() => { // crops.json arrival_bonus, as scoreValue applies it
         const meta = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
@@ -154,7 +154,7 @@
     };
 
     // Ship's Record — the voyage's notable choices (index.html shipsRecordLines).
-    const record = typeof shipsRecordLines === 'function' ? shipsRecordLines(5) : [];
+    const record = shipsRecordLines(5);
 
     if (end.kind === 'failure') {
       const f = end.module;
@@ -324,7 +324,7 @@
       paintRecord('end-cine-quote', null); // arrivals show it on the report card
     } else {
       btn.textContent = 'New Run';
-      btn.onclick = () => { if (typeof clearSave === 'function') clearSave(); location.reload(); };
+      btn.onclick = () => { clearSave(); location.reload(); };
       bodyEl.textContent = view.body || '';
       bodyEl.style.display = view.body ? 'block' : 'none';
       if (view.quote) { quoteEl.textContent = view.quote; quoteEl.style.display = 'block'; }
@@ -467,7 +467,7 @@
     // resumable failure's pending save goes now, and so does the way on:
     // Back no longer offers Keep flying / the beacon (it used to, and a
     // reload then lost a run the screen still said could continue).
-    if (typeof clearSave === 'function') clearSave();
+    clearSave();
     STATE._resumableEnd = false;
     const b2 = $('end-cine-btn2');
     if (b2) { b2.style.display = 'none'; b2.onclick = null; }
@@ -510,7 +510,7 @@
     }
 
     $('end-cinematic').classList.remove('show');
-    if (typeof window.pushCruiseLog === 'function') logLines.forEach(l => window.pushCruiseLog(l));
+    logLines.forEach(l => window.pushCruiseLog(l));
     resumeAfterFailure();
   }
 
@@ -537,7 +537,7 @@
     STATE.flags.add('crop_death_accepted');
     const narrative = currentView.continueOption.narrative;
     $('end-cinematic').classList.remove('show');
-    if (narrative && typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + narrative);
+    if (narrative) window.pushCruiseLog('◆ ' + narrative);
     resumeAfterFailure();
   }
 

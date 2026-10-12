@@ -154,6 +154,8 @@
   // persistence exists (engine-level saveRun/loadRun in index.html).
   // Enabled state is refreshed each time the buttons become visible.
   function refreshContinue() {
+    // Its first call runs at load, before index.html's main script
+    // defines hasSave.
     const has = typeof hasSave === 'function' && hasSave();
     const btn = $('btn-continue');
     btn.classList.toggle('disabled', !has);
@@ -161,7 +163,7 @@
     if (led) led.style.background = has ? '#5fa85f' : '#333';
   }
   $('btn-continue').addEventListener('click', () => {
-    if (typeof hasSave !== 'function' || !hasSave()) return;
+    if (!hasSave()) return;
     loadRun();
   });
   const _buttonsEl = $('title-buttons');

@@ -152,7 +152,7 @@ const INV_CLASSIFIED = new Set(['classified_cargo']);
 // — the same test as the Stop menu's TRADE there. SELL lives here.
 function invDocked() {
   const n = STATE.byId && STATE.byId[STATE.currentId];
-  return !!(n && n.node_type === 'station' && !STATE.ended && !(typeof window.stationServicesClosed === 'function' && window.stationServicesClosed()));
+  return !!(n && n.node_type === 'station' && !STATE.ended && !(window.stationServicesClosed()));
 }
 function invNameOf(id, material) {
   const d = material ? materialDefOf(id) : itemDef(id);
@@ -167,7 +167,7 @@ function invPrice(en) {
     if (itemValueKnown(en.id)) return { num: en.value, label: en.value + 'g' };
     return { num: r ? (r[0] + r[1]) / 2 : 0, label: '??', unknown: true };
   }
-  const p = typeof window.stationBuyPrice === 'function' ? window.stationBuyPrice(en.id) : null;
+  const p = window.stationBuyPrice(en.id);
   if (p == null) return { num: 0, label: '—', none: true };
   return { num: p, label: p + 'g' };
 }
@@ -333,7 +333,7 @@ function renderInvDetail(en) {
   // trader pays (market.js stationBuyPrice; a rolled copy its own value)
   // and, for anything a fence takes, what the fence pays (fenceBuyPrice).
   let sell, note = '';
-  const fence = !en.material && typeof window.fenceBuyPrice === 'function';
+  const fence = !en.material;
   if (en.copy != null) {
     // Rolled at pickup: the exact figure needs a spectrometer aboard.
     if (itemValueKnown(en.id)) sell = en.value + 'g' + (fence ? ' · fence ' + window.fenceBuyPrice(en.id, en.value) + 'g' : '');
@@ -365,7 +365,7 @@ function renderInvDetail(en) {
   const canSell = invDocked() && !price.none && !INV_CLASSIFIED.has(en.id);
   sellBtn.style.display = canSell ? '' : 'none';
   if (canSell) {
-    const locked = !en.material && typeof canRemoveItem === 'function' && !canRemoveItem(en.id);
+    const locked = !en.material && !canRemoveItem(en.id);
     sellBtn.textContent = 'SELL · ' + (price.unknown ? '??' : price.label);
     sellBtn.disabled = locked;
     sellBtn.dataset.tipTitle = 'SELL ONE';
@@ -395,7 +395,6 @@ function renderInvDetail(en) {
 function invSellSelected(confirmed) {
   if (!_invSelected || _invSelectedRes || !invDocked() || INV_CLASSIFIED.has(_invSelected)) return;
   const id = _invSelected, isMat = materialPer10(id) != null;
-  if (typeof window.stationSellOne !== 'function') return;
   if (confirmed !== true && !isMat && invRequiredFor(id).length) return invOpenSellConfirm(id);
   const copy = !isMat && sellRangeOf(id) ? (_invSelectedCopy || 0) : null;
   const tileEl = document.querySelector('#inv-grid .inv-tile[data-key="' + id + (copy != null ? '#' + copy : '') + '"]');
@@ -403,11 +402,11 @@ function invSellSelected(confirmed) {
   if (!r || r.why || !Number.isFinite(r.paid)) return;
   if (!isMat) { syncItemValues(); syncItemPickups(); }
   renderHUD();
-  if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ Sold from the hold: ' + invNameOf(id, isMat) + ' to the Market Row trader. +' + r.paid + 'g.');
+  window.pushCruiseLog('◆ Sold from the hold: ' + invNameOf(id, isMat) + ' to the Market Row trader. +' + r.paid + 'g.');
   const whole = isMat ? !STATE.materials[id] : (!STATE.items.includes(id) || copy != null);
   if (whole && _invSelected === id) { _invSelected = null; _invSelectedCopy = null; }
   invJettisonFx(tileEl, whole);
-  if (typeof saveRun === 'function') saveRun();
+  saveRun();
 }
 
 /* ── AI line: flavor_pools ai_universal.cargo_hold, the active AI's voice ── */
@@ -469,7 +468,7 @@ function invRequiredFor(id) {
 function invResourceStats(key) {
   const level = Math.max(0, STATE.resources[key] || 0), max = resMax(key);
   let perDay = 0, tip = '';
-  if (key === 'fuel' && typeof legTravelCost === 'function') {
+  if (key === 'fuel') {
     const leg = legTravelCost();
     perDay = leg.exactDays > 0 ? leg.fuel / leg.exactDays : 0;
     tip = 'Fuel burns only in flight: ' + leg.fuel + ' per leg at ' + ordersPace().name + ' (~' + leg.exactDays.toFixed(1) + ' days). About ' + (leg.fuel > 0 ? Math.floor(level / leg.fuel) : '∞') + ' legs left.';
@@ -688,9 +687,7 @@ function invJettison(count) {
   if (!gone) return invCloseJettison();
   syncItemValues(); syncItemPickups();
   renderHUD();
-  if (typeof window.pushCruiseLog === 'function') {
-    window.pushCruiseLog('◆ Jettisoned: ' + (gone > 1 ? gone + '× ' : '') + invNameOf(id) + '. ' + (gone > 1 ? 'They tumble' : 'It tumbles') + ' off into the dark, unemployed.');
-  }
+  window.pushCruiseLog('◆ Jettisoned: ' + (gone > 1 ? gone + '× ' : '') + invNameOf(id) + '. ' + (gone > 1 ? 'They tumble' : 'It tumbles') + ' off into the dark, unemployed.');
   const whole = !STATE.items.includes(id) || copy != null;
   if (whole && _invSelected === id) { _invSelected = null; _invSelectedCopy = null; }
   invCloseJettison();
@@ -704,7 +701,7 @@ function invJettisonMaterial(id, count) {
   const tileEl = document.querySelector('#inv-grid .inv-tile[data-key="' + id + '"]');
   STATE.materials[id] = have - n;
   renderHUD();
-  if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ Jettisoned: ' + n + ' ' + invNameOf(id, true).toLowerCase() + '. The hold breathes a little easier.');
+  window.pushCruiseLog('◆ Jettisoned: ' + n + ' ' + invNameOf(id, true).toLowerCase() + '. The hold breathes a little easier.');
   const whole = !STATE.materials[id];
   if (whole && _invSelected === id) _invSelected = null;
   invCloseJettison();
@@ -759,11 +756,11 @@ function invSetSort(key) {
     STATE.items.splice(STATE.items.indexOf(id), 1);
     const msg = iu.use();
     renderHUD();
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + msg);
+    window.pushCruiseLog('◆ ' + msg);
     if (!STATE.items.includes(id)) _invSelected = null;
     renderInventory();
-    if (typeof window.renderCruise === 'function' && document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();
-    if (typeof window.refreshStopMenu === 'function') window.refreshStopMenu();
+    if (document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();
+    window.refreshStopMenu();
   });
   // Keys while the hold is open: 1/2/3 switch tabs (demo); Esc closes an
   // open SORT flyout first (the jettison confirm's Esc lives in index.html).
@@ -793,5 +790,5 @@ function openInventory() {
 function closeInventory() {
   document.getElementById('inv-sort').classList.remove('open');
   hideOverlay('overlay-inventory');
-  if (typeof saveRun === 'function') saveRun();
+  saveRun();
 }

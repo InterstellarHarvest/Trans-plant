@@ -69,8 +69,7 @@
   const clean = s => String(s == null ? '' : s).replace(/^\s*[◆▶]\s*/, '');
   function interp(s) {
     s = String(s || '');
-    if (typeof interpolateNpcTokens === 'function') s = interpolateNpcTokens(s, STATE.npcCtx);
-    if (typeof interpolateStowawayTokens === 'function') s = interpolateStowawayTokens(s);
+    s = interpolateStowawayTokens(interpolateNpcTokens(s, STATE.npcCtx));
     return s.replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ').trim();
   }
   // First sentence of a narrative, cut at a word to fit `max`.
@@ -91,11 +90,11 @@
 
   // ── Real effects: a snapshot of everything an outcome can change ──
   function itemName(id) {
-    const d = typeof itemDef === 'function' ? itemDef(id) : null;
-    return String((d && d.name) || (typeof prettyItem === 'function' ? prettyItem(id) : id)).toUpperCase();
+    const d = itemDef(id);
+    return String((d && d.name) || prettyItem(id)).toUpperCase();
   }
   function matName(id) {
-    const d = typeof materialDefOf === 'function' ? materialDefOf(id) : null;
+    const d = materialDefOf(id);
     return String((d && d.name) || id).replace(/_/g, ' ').toUpperCase();
   }
   function snapshot() {
@@ -106,11 +105,11 @@
     for (const id of STATE.items || []) n['item.' + id] = (n['item.' + id] || 0) + 1;
     const names = {};
     for (const r of STATE.crew || []) {
-      n['hp.' + r] = typeof crewHPOf === 'function' ? crewHPOf(r) : 100; names[r] = typeof crewNameOf === 'function' ? crewNameOf(r) : r;
-      if (typeof crewMoraleOf === 'function') n['mo.' + r] = crewMoraleOf(r); // per-crew morale (owner ruling 15)
+      n['hp.' + r] = crewHPOf(r); names[r] = crewNameOf(r);
+      n['mo.' + r] = crewMoraleOf(r); // per-crew morale (owner ruling 15)
     }
     // The captain's own HP (owner ruling 29) — "CAPTAIN −15 HP" in the record.
-    if (typeof captainHPOf === 'function') { n['hp.captain'] = captainHPOf(); names.captain = 'Captain'; }
+    n['hp.captain'] = captainHPOf(); names.captain = 'Captain';
     if (STATE.cropGrowth && STATE.cropGrowth.health > 0) n.crop = STATE.cropGrowth.health;
     if (STATE.fabricator) n.fab = STATE.fabricator.wear || 0;
     return { n, crew: (STATE.crew || []).slice(), names, broken: !!(STATE.fabricator && STATE.fabricator.broken), day: STATE.daysElapsed };
@@ -186,8 +185,7 @@
   function timeEnd()   { if (rec && rec.t0 && !rec.t1) rec.t1 = snapshot(); }
 
   function push(entry, opts) {
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog(entry, opts);
-    else { STATE.shipLog = STATE.shipLog || []; STATE.shipLog.push(store(Object.assign({ day: STATE.daysElapsed }, entry))); }
+    window.pushCruiseLog(entry, opts);
   }
   // minDay: lines held during a leg read as the arrival day (they
   // follow the arrival entry; days never run backwards in the record).
@@ -280,8 +278,8 @@
     // removed so the memorial can read who they were.
     deathEntry(role, epitaph, opts) {
       opts = opts || {};
-      const name = typeof crewNameOf === 'function' ? crewNameOf(role) : role;
-      const crewId = typeof crewSpriteIdOf === 'function' ? crewSpriteIdOf(role) : null;
+      const name = crewNameOf(role);
+      const crewId = crewSpriteIdOf(role);
       const left = Math.max(0, (STATE.crew || []).filter(r => r !== role).length);
       const day = STATE.daysElapsed;
       const text = opts.text || voiced('death', { name, crew_left: crewLeft(left) });
@@ -299,15 +297,15 @@
     // the all-clear when they're raised back, and the desertion entry
     // (composed BEFORE they leave — it reads who they were).
     moraleZero(role) {
-      const name = typeof crewNameOf === 'function' ? crewNameOf(role) : role;
+      const name = crewNameOf(role);
       push({ text: voiced('morale_zero', { name }), type: 'event' }, { ai: true, instant: true });
     },
     moraleBack(role) {
-      const name = typeof crewNameOf === 'function' ? crewNameOf(role) : role;
+      const name = crewNameOf(role);
       push({ text: voiced('morale_back', { name }), type: 'event' }, { ai: true, instant: true });
     },
     desertionEntry(role, node) {
-      const name = typeof crewNameOf === 'function' ? crewNameOf(role) : role;
+      const name = crewNameOf(role);
       const left = Math.max(0, (STATE.crew || []).filter(r => r !== role).length);
       const place = clip((node && node.name) || 'the station', 40);
       return { text: clip(voiced('desertion', { name, role: roleTitle(role), place, crew_left: crewLeft(left) }), MAX_ENTRY), type: 'event', day: STATE.daysElapsed };
@@ -342,7 +340,7 @@
       if (idx < cg.logStage) { cg.logStage = idx; return; }               // harvested & replanted
       if (idx === cg.logStage) return;
       cg.logStage = idx;
-      const crop = cap1(typeof cropName === 'function' ? cropName() : STATE.crop);
+      const crop = cap1(cropName());
       const tok = { crop, growth: Math.min(100, Math.round(g)), health: Math.round(cg.health) };
       if (idx >= STAGES.length) {
         // Harvest-ready is the crop's science moment: its crops.json
@@ -515,7 +513,7 @@
   function openShipsLog() {
     // A memorial/expand left open last time must not reappear.
     closeShipsLogExpand();
-    if (typeof showOverlay === 'function') showOverlay('overlay-shipslog');
+    showOverlay('overlay-shipslog');
     renderShipsLog();
   }
   // From the cruise column's 📖: the journal, opened on that entry's page.
