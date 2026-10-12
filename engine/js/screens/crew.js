@@ -202,7 +202,6 @@
     if (text.slice(start).trim()) out.push(text.slice(start).trim());
     return out.filter(Boolean);
   }
-  window.crewEpitaphSentences = splitSentences;
 
   // Demo CREW_ORDER: the crew in roster order, the captain last.
   function memberList() {
@@ -629,7 +628,7 @@
   }
 
   // ── Open / close / cycle ───────────────────────────────────────
-  window.openCrewDetail = function(role) {
+  function openCrewDetail(role) {
     mount();
     if (typeof window.ensureCrewSkillCharges === 'function') ensureCrewSkillCharges();
     const list = memberList();
@@ -641,7 +640,7 @@
     $('overlay-crew').classList.remove('confirm-open');
     showOverlay('overlay-crew');
     render();
-  };
+  }
 
   function closeCrewDetail() {
     if (departing || pendingEpitaph) return; // finish the departure beat first
@@ -853,4 +852,11 @@
       if (e.key === 'ArrowRight') { cycleCrew(1);  e.preventDefault(); }
     }
   }, true);
+
+  Object.assign(window, {
+    // engine API
+    openCrewDetail,
+    // test hooks: tools/tests drive and read these through page.evaluate
+    crewEpitaphSentences: splitSentences,
+  });
 })();

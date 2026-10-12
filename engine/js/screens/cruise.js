@@ -122,7 +122,7 @@
   // hub (which comes back stopped after the stop's event) shows the ship
   // decelerating out of warp.
   function markUnderway() { starMul = starSpeed().mul; }
-  window.cruiseStarState = () => ({ mul: starMul, running: starRunning, target: starSpeed().mul, streakAt: starSpeed().streakAt, stopped: starsStopped() });
+  const cruiseStarState = () => ({ mul: starMul, running: starRunning, target: starSpeed().mul, streakAt: starSpeed().streakAt, stopped: starsStopped() });
 
   wireCustomScroll($('ai-log-host'));
   wireCustomScroll($('stop-choices-host'));
@@ -317,7 +317,6 @@
     clearTimeout(alertTimer);
     alertTimer = setTimeout(() => { el.classList.remove('show'); $('stop-btn').classList.remove('alert'); }, ms || 4200);
   }
-  window.cruiseSceneAlert = showSceneAlert; // test hook
   const NEXT_STOP_ALERT = {
     asteroid_field: 'ASTEROID FIELD AHEAD — GOOD MINING',
     derelict:       'DERELICT DETECTED — PROCEED WITH CAUTION',
@@ -362,7 +361,6 @@
     if (id in STATE.traderAt) return;
     STATE.traderAt[id] = Math.random() < (TRADER_PRESENT_CHANCE[currentRegionKey()] || 0);
   }
-  window.cruiseTraderHere = traderHere;
 
   // ── AI log (demo pushLogEntry / pushDayMarker / typewriteInto) ──
   // ▶ marks ship events; the AI's own lines carry its voice ("MARV: …").
@@ -380,7 +378,6 @@
     if (!voice) return '▶ ' + body;
     return namesTheAI(body) ? body : voice.toUpperCase() + ': ' + body;
   }
-  window.cruiseDisplayLine = displayLine; // test hook (ruling 32)
   function finishTyping() {
     if (!typing) return;
     const t = typing; typing = null;
@@ -414,7 +411,6 @@
     if (typeof PauseMenu !== 'undefined' && PauseMenu.open && !(PauseMenu.isOpen && PauseMenu.isOpen())) PauseMenu.open();
     else if (window.PauseBus) PauseBus.pause();
   }
-  window.openLogLink = openLogLink;
   function armPayload(entry, en) {
     const p = payloadOf(en);
     if (!p) return null;
@@ -518,7 +514,7 @@
 
   // The last n Ship's Log entries, re-rendered as the hub log (a load
   // replaces the run, and with it the log) — same markers and prefixes.
-  window.rebuildCruiseLog = function (n) {
+  function rebuildCruiseLog(n) {
     const log = $('ai-log');
     if (!log) return;
     finishTyping();
@@ -536,7 +532,7 @@
       log.appendChild(d);
     });
     log.scrollTop = log.scrollHeight;
-  };
+  }
 
   // Bottom-right bars (owner ruling 18): FOOD/H2O/O2 | FUEL/HULL, each
   // with the HUD's low thresholds as a crit pulse (the dot HUD left the
@@ -558,7 +554,6 @@
       row.title = name + ': ' + Math.round(r[k]) + ' / ' + max;
     }
   }
-  window.paintCruiseBars = paintCruiseBars;
 
   function renderCruise() {
     // Catch crop growth/health up to today before painting the card —
@@ -825,23 +820,23 @@
   // untouched — or a double-click's second press on the backdrop) gets it
   // back. Once the job begins, a reload settles it as a quit (loadRun).
   let pendingVerbTax = 0, activeVerb = null, jobMarker = null;
-  window.refundVerbTax = function () {
+  function refundVerbTax() {
     // Exactly what each crew member paid comes back (refundEffortTax).
     if (pendingVerbTax) { refundEffortTax(pendingVerbTax); pendingVerbTax = 0; renderHUD(); }
-  };
-  window.onJobBegun = function (days) {
+  }
+  function onJobBegun(days) {
     pendingVerbTax = 0;
     if (STATE.currentEvent) { if (typeof window.eventMinigameBegun === 'function') window.eventMinigameBegun(); return; }
     jobMarker = activeVerb ? { verb: activeVerb, days: days || 1 } : null;
     if (jobMarker && typeof writeSnapshot === 'function') writeSnapshot(undefined, { pendingAbandon: jobMarker });
-  };
+  }
   // Harm taken in play (minigames.js reportJobHarm: a forage poisoning,
   // the patient's HP) rides in the quit marker, so a reload keeps it as
   // ✕ QUIT does.
-  window.onJobHarm = function (harm) {
+  function onJobHarm(harm) {
     if (STATE.currentEvent) { if (typeof window.eventMinigameHarm === 'function') window.eventMinigameHarm(harm); return; }
     if (jobMarker && typeof writeSnapshot === 'function') writeSnapshot(undefined, { pendingAbandon: Object.assign({}, jobMarker, { harm }) });
-  };
+  }
   // A quit's harm so far lands (✕ QUIT and loadRun's pendingAbandon): each
   // forage poisoning hurts someone aboard, as it would have at the end.
   // Returns the log's addendum.
@@ -857,7 +852,6 @@
     renderHUD();
     return ' The poisoning stays: ' + who.join(', ') + ' (before the medic\'s care).';
   }
-  window.applyAbandonHarm = applyAbandonHarm;
   function settleMinigame(logLine, days) {
     pendingVerbTax = 0; activeVerb = null; jobMarker = null;
     passDays(days || 1); // trivial time cost (MINE: one day per run), same tier index.html's applyOutcomeEffects uses — routed through the orders daily-drain helper
@@ -1232,8 +1226,6 @@
     h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b) >>> 0; h ^= h >>> 13;
     return ((h >>> 0) % 1000) / 1000 < DERELICT_HULK_SHARE ? 'hulk' : 'debris';
   }
-  window.derelictFormOf = derelictFormOf;
-  window.cruiseRegionKey = currentRegionKey;
 
   /* ── Multi-day waits: WAIT FOR TRADER and REST (demo ~2757-3113,
      Bible §18 "Trader-wait twist" + "Multi-day action interrupt rule").
@@ -1317,8 +1309,7 @@
     const pool = fresh.length ? fresh : pick.ids;
     return { kind: pick.kind, ev: pool[Math.floor(Math.random() * pool.length)] };
   }
-  window.cruiseWaitEventPick = waitEventPick;
-  window.CRUISE_WAIT_TUNING = { WAIT_TICK_MS, WAIT_DAY_MAX, TRADER_PRESENT_CHANCE, TRADER_DAILY_CHANCE, INTERRUPT_DAILY_CHANCE, REST_MORALE_PER_DAY };
+  const CRUISE_WAIT_TUNING = { WAIT_TICK_MS, WAIT_DAY_MAX, TRADER_PRESENT_CHANCE, TRADER_DAILY_CHANCE, INTERRUPT_DAILY_CHANCE, REST_MORALE_PER_DAY };
 
   let activeWait = null; // { verbId, days, day, node, region, timer, resolving, finish }
   let bannerTimer = null;
@@ -1536,13 +1527,13 @@
   }
   // index.html teardownLiveUI (pause → LOAD, new game): no wait may
   // resolve into the run that replaces this one.
-  window.abortCruiseWait = function () {
+  function abortCruiseWait() {
     stopWaitSilently();
     document.body.classList.remove('event-active');
     tickerKey = null;
-  };
-  window.cruiseWaitActive = () => !!activeWait;
-  window.cruiseWaitState = () => activeWait && { verbId: activeWait.verbId, day: activeWait.day, days: activeWait.days, resolving: activeWait.resolving };
+  }
+  const cruiseWaitActive = () => !!activeWait;
+  const cruiseWaitState = () => activeWait && { verbId: activeWait.verbId, day: activeWait.day, days: activeWait.days, resolving: activeWait.resolving };
 
   // ── Forced-event state (demo ~1990-2062, 2131-2160; Bible Stop
   // Button State Machine "event" row). Entered only by a during-wait
@@ -1611,7 +1602,6 @@
     else if ((m = /^Costs (\d+)g$/.exec(reason))) rows = [{ label: 'Need', value: m[1] + ' gold' }];
     return { title: 'LOCKED — ' + label, description: rows.length ? 'You lack the resources to perform this action.' : reason + '.', rows, tone: 'danger' };
   }
-  window.cruiseLockTip = lockTip; // test hook
 
   function renderStopMenu() {
     const regionKey = currentRegionKey();
@@ -1686,7 +1676,6 @@
     syncPaused();
     wakeStars(); // decelerate to a stop
   }
-  window.openStopMenu = openStopMenu;
   function closeStopMenu() {
     document.querySelectorAll('#stop-choices .stop-choice.day-picker').forEach(collapseDayPicker);
     if (activeWait && !activeWait.resolving) cancelWait();
@@ -1898,12 +1887,10 @@
     }
   }
 
-  window.renderCruise = renderCruise;
   // The open Stop menu re-gates after anything that changes the ship
   // from an overlay (fabricator, inventory USE) — lock reasons and fees.
-  window.refreshStopMenu = () => { if (document.body.classList.contains('stop-active')) renderStopMenu(); };
+  const refreshStopMenu = () => { if (document.body.classList.contains('stop-active')) renderStopMenu(); };
   // Other screens log through here; { ai: true } marks the AI's own voice.
-  window.pushCruiseLog = pushLogEntry;
 
   // Wake-ups: the starfield, TIME PAUSED and the wait's hold all follow
   // the screen, the Stop state, overlays and the pause menu.
@@ -1917,4 +1904,17 @@
   mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   document.querySelectorAll('.overlay').forEach(ov => mo.observe(ov, { attributes: true, attributeFilter: ['class'] }));
   if (window.PauseBus) PauseBus.onChange(() => { wakeStars(); syncPaused(); });
+
+  Object.assign(window, {
+    // engine API
+    rebuildCruiseLog, paintCruiseBars, refundVerbTax, onJobBegun, onJobHarm,
+    applyAbandonHarm, abortCruiseWait, openStopMenu, renderCruise,
+    refreshStopMenu, pushCruiseLog: pushLogEntry,
+    // test hooks: tools/tests drive and read these through page.evaluate
+    cruiseStarState, cruiseSceneAlert: showSceneAlert,
+    cruiseDisplayLine: displayLine, derelictFormOf,
+    cruiseRegionKey: currentRegionKey, cruiseWaitEventPick: waitEventPick,
+    CRUISE_WAIT_TUNING, cruiseWaitActive, cruiseWaitState,
+    cruiseLockTip: lockTip,
+  });
 })();

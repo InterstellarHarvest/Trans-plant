@@ -297,7 +297,11 @@
     const v = visit();
     return !!(v && v.wavedOff);
   }
-  window.stationServicesClosed = servicesClosed; // cruise.js Stop menu
 
-  window.StationVisit = { available, arrive, approachLayer, wrap, act, afterEvent, afterQuit, waveOff, servicesClosed, roomOf, kindOf, rooms };
+  const StationVisit = { available, arrive, approachLayer, wrap, act, afterEvent, afterQuit, waveOff, servicesClosed, roomOf, kindOf, rooms };
+
+  Object.assign(window, {
+    // engine API
+    stationServicesClosed: servicesClosed, StationVisit,
+  });
 })();

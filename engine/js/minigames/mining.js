@@ -1443,19 +1443,23 @@
   let onMiningDone = null;
   // Load-time teardown (index.html teardownLiveUI): drop the visit
   // without banking or calling back into the run being replaced.
-  window.abortMining = function () {
+  function abortMining() {
     onMiningDone = null;
     const ho = document.getElementById('haul-overlay');
     if (ho) { ho.classList.remove('visible'); ho.innerHTML = ''; }
     hideOverlay('overlay-mining');
-  };
+  }
 
-  window.openMining = function (onDone) {
+  function openMining(onDone) {
     onMiningDone = onDone;
     sessionInventory = {};
     Object.assign(SESSION, { runs: 0, totalCracks: 0, totalMaterials: 0, totalHollows: 0, totalFragmentsLost: 0, bestChainEver: 0, bestTier: null, lastTier: null, crewUsed: null });
     showOverlay('overlay-mining');
     renderArmed();
-  };
+  }
 
+  Object.assign(window, {
+    // engine API
+    abortMining, openMining,
+  });
 })();

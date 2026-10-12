@@ -66,12 +66,12 @@
   // What a station trader pays for one unit of sid (item or material), or
   // null when no trader buys it — the cargo hold's SELL PRICE / price
   // corner read this (one source with stationVendor's buyPrices).
-  window.stationBuyPrice = function (sid) {
+  function stationBuyPrice(sid) {
     const m = allMaterialDefs().find(x => x.id === sid);
     if (m) return materialPrice(m);
     const d = defBy(sid);
     return d && Number.isFinite(d.base_price) && d.base_price > 0 ? sellPrice(d.base_price) : null;
-  };
+  }
   // What a fence pays for one sid (b4 re-audit A11: one rule for every
   // trade good, the one items.json states — "a fence pays half again as
   // much" as a station trader): a rolled copy FENCE_MULT × its value, a
@@ -80,19 +80,19 @@
   // (only trade_good-tagged cargo). The black market's offers and the
   // cargo hold's SELL PRICE both read this.
   const FENCE_TAGS = ['trade_good'];
-  window.fenceBuyPrice = function (sid, copyValue) {
+  function fenceBuyPrice(sid, copyValue) {
     const d = defBy(sid);
     if (!d || !(d.tags || []).some(t => FENCE_TAGS.includes(t))) return null;
     if (Number.isFinite(copyValue)) return fenceValueOf(copyValue);
     if (Number.isFinite(d.base_price) && d.base_price > 0) return Math.max(1, Math.round(d.base_price * 2 / 3 * FENCE_MULT));
     return null;
-  };
+  }
   // A station trader's sale of one unit, from outside the Market Row
   // (the cargo hold's SELL when docked, ruling 28): the same price as the
   // trader's row (stationBuyPrice; a rolled copy pays its own value) and
   // the same removal (materials by the unit, a rolled copy with its
   // value). Returns { paid } or { why }.
-  window.stationSellOne = function (sid, copy) {
+  function stationSellOne(sid, copy) {
     const isMat = allMaterialDefs().some(m => m.id === sid);
     if (isMat) {
       if (!(STATE.materials[sid] > 0)) return { why: 'None left' };
@@ -115,7 +115,7 @@
     }
     STATE.goldAmount += paid;
     return { paid };
-  };
+  }
   function allItemDefs() {
     return (typeof MOD !== 'undefined' && MOD.items) ? MOD.items : [];
   }
@@ -376,7 +376,7 @@
     no.addEventListener('click', closeSellConfirm);
   })();
 
-  window.openMarket = function(opts, onClose) {
+  function openMarket(opts, onClose) {
     opts = opts || {};
     if (typeof MarketModal === 'undefined') {
       console.warn('[market] MarketModal missing — shared.js not loaded?');
@@ -446,7 +446,7 @@
         if (typeof onClose === 'function') onClose();
       }
     });
-  };
+  }
 
   // Escape closes the market when open. Capture phase so we run
   // before the pause menu's Escape handler claims it (demo parity).
@@ -459,4 +459,9 @@
       MarketModal.close();
     }
   }, true);
+
+  Object.assign(window, {
+    // engine API
+    stationBuyPrice, fenceBuyPrice, stationSellOne, openMarket,
+  });
 })();

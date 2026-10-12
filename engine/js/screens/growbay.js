@@ -133,7 +133,7 @@
   function currentCropId() { return STATE.crop || 'wheat'; }
   // Crop metadata accessor for the Orders modal / index.html's water
   // math (Restoration item 5) — CROP_META stays private otherwise.
-  window.cropMetaOf = function (id) { return CROP_META[id] || null; };
+  function cropMetaOf(id) { return CROP_META[id] || null; }
 
   // Growbay spritesheet frame coords — all frames are 109×192 and
   // live in sprites/growbay/spritesheet_growbay.png. Imported verbatim
@@ -209,7 +209,7 @@
     if (t === CREW.none || !t.crewId) return null;
     return CREW_SHEET_KEY[id] || null;
   }
-  window.growbayTenderOf = function () { return STATE.cropGrowth ? tenderOf(STATE.cropGrowth.tenderId) : CREW.none; };
+  function growbayTenderOf() { return STATE.cropGrowth ? tenderOf(STATE.cropGrowth.tenderId) : CREW.none; }
 
   // Animated crew spritesheets — 9 animation frames + 1 idle frame
   // per crew member, each sheet slightly different dimensions. Data
@@ -355,7 +355,6 @@
     const days = nf ? Number(nf.contamination_recovery_days) : 0;
     return mult > 1 && days > 0 ? { mult, days } : null;
   }
-  window.cropContaminationRecovery = contaminationRecovery;
   // The boost for the day being ticked (or, outside a tick, the next
   // day to be ticked): { mult, daysLeft } — daysLeft counts that day.
   function recoveryBoost() {
@@ -367,11 +366,11 @@
     return cr ? { mult: cr.mult, days: cr.days, daysLeft: cg.recoveryBoostUntil - day + 1 } : null;
   }
   // Boosted days left right now (0 = no window) — for tests / the hub.
-  window.cropRecoveryBoostDaysLeft = function () {
+  function cropRecoveryBoostDaysLeft() {
     if (!STATE.cropGrowth) return 0;
     const b = recoveryBoost();
     return b ? b.daysLeft : 0;
-  };
+  }
   const fmtMult = m => '\u00d7' + (Math.round(m * 10) / 10);
 
   /* THE pest-clearing path — growbay TREAT, the crop treatment item and
@@ -380,7 +379,7 @@
      lazily — an event could otherwise erase the damage of the days
      since the last tick); then the pest is gone, the AI may warn about
      the next one, and a soybean crop opens its recovery window. */
-  window.clearCropPest = function () {
+  function clearCropPest() {
     const cg = STATE.cropGrowth;
     if (!cg) return false;
     const had = !!cg.pest;
@@ -395,7 +394,7 @@
       }
     }
     return had;
-  };
+  }
 
   // Previously-observed stage — used to fire stage-transition flash
   // only when the plant actually crosses a boundary, not on every
@@ -460,10 +459,10 @@
     else crew = { label: 'CRITICAL', cls: 'critical', band: 'critical', rate };
     return { plant, crew, need };
   }
-  window.cropWaterStatusAt = function (plantPct) {
+  function cropWaterStatusAt(plantPct) {
     if (STATE.crop && STATE.cropGrowth) bindGrowbayState();
     return waterStatusAt(plantPct);
-  };
+  }
 
   /* What a harvest pays, tender bonus included — the same sum doHarvest
      grants (re-audit A5: the preview said +40, the harvest paid +46). */
@@ -479,7 +478,7 @@
     return '+' + y.total + ' ' + y.label + (y.bonus ? ' (incl. +' + y.bonus + ' tending)' : '') +
       (y.label === 'Morale' && !STATE.crew.length ? ' — no crew aboard to enjoy it' : '');
   }
-  window.cropHarvestYield = function () { if (!STATE.crop) return null; bindGrowbayState(); return harvestYield(); };
+  function cropHarvestYield() { if (!STATE.crop) return null; bindGrowbayState(); return harvestYield(); }
   function shipNodeType() { const n = STATE.byId && STATE.byId[STATE.currentId]; return n ? n.node_type : null; }
 
   // ═════ Modifier math ═════════════════════════════════════
@@ -636,7 +635,7 @@
   }
   // Growth factor at a hypothetical water split — the Orders modal's
   // "PLANT MATURES" projection uses the real crop model.
-  window.cropGrowthFactorAt = function (pct) {
+  function cropGrowthFactorAt(pct) {
     if (!STATE.cropGrowth || !STATE.crop) return 0;
     bindGrowbayState();
     const keep = GSTATE.waterPlant;
@@ -644,7 +643,7 @@
     const f = growthFactor();
     GSTATE.waterPlant = keep;
     return f;
-  };
+  }
   function dailyHealthDelta(mods) {
     const { active } = mods || computeModifiers();
     return active.reduce((s, m) => s + (m.health || 0), 0);
@@ -1020,7 +1019,7 @@
   function forCrop(line) { return line.replace(/\bwheat\b/g, CROP_NOUN[GSTATE && GSTATE.cropId] || 'plant'); }
 
   // ═════ Tender picker ═══════════════════════════════════════
-  window.toggleTenderPicker = function(e) {
+  function toggleTenderPicker(e) {
     if (e) e.stopPropagation();
     const slot = $('tender-slot');
     if (slot.classList.contains('open')) { slot.classList.remove('open'); return; }
@@ -1061,7 +1060,7 @@
       picker.appendChild(row);
     }
     slot.classList.add('open');
-  };
+  }
   // Outside-click closes the picker
   document.addEventListener('click', () => $('tender-slot').classList.remove('open'));
 
@@ -1337,16 +1336,16 @@
   }
 
   // ═════ Animations ═══════════════════════════════════════════
-  window.pushStageFlash = function() {
+  function pushStageFlash() {
     const sprite = $('plant-sprite');
     sprite.classList.remove('stage-flash');
     void sprite.offsetWidth;
     sprite.classList.add('stage-flash');
     setTimeout(() => sprite.classList.remove('stage-flash'), 1500);
-  };
+  }
 
   // ═════ Harvest ceremony ═════════════════════════════════════
-  window.doHarvest = function() {
+  function doHarvest() {
     if (GSTATE.growth < 100 || GSTATE.health <= 0) return null;
     const crop = CROP_META[GSTATE.cropId];
     const total = harvestYield().total; // the same sum the preview shows (A5)
@@ -1417,7 +1416,7 @@
 
     setTimeout(() => renderAll(), 50);
     return { food: gotFood, morale: gotMo, bricks: banked, burst: burstText };
-  };
+  }
 
   // ═════ Actions ═══════════════════════════════════════════════
   /* TREAT \u2014 clears an active pest outbreak. Costs a day of focused
@@ -1453,7 +1452,7 @@
       "alone": "Pests treated. It took all day. A botanist would have finished before lunch, but here we are."
     }
   };
-  window.openTreat = function() {
+  function openTreat() {
     const say = GROWBAY_TREAT_LINES[growbayAI()];
     if (!GSTATE || !GSTATE.pest) {
       $('aria-text').textContent = say.nothing;
@@ -1474,7 +1473,7 @@
     $('aria-text').textContent = hasBotanist ? say.botanist : say.alone;
     if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('\u25c6 GROWBAY \u2014 pest outbreak treated.');
     if (typeof saveRun === 'function') saveRun(); // a reload used to undo the treat (and its day)
-  };
+  }
   // window.openOrders now lives in engine/js/screens/orders.js
   // (Restoration item 5) \u2014 the "isn't wired yet" stub is gone.
 
@@ -1671,7 +1670,7 @@
     const pool = GROWBAY_INSPECT_QUIPS[growbayAI()][cls] || GROWBAY_INSPECT_EXTRA[growbayAI()][cls];
     return pool[Math.floor(Math.random() * pool.length)];
   }
-  window.growbayInspectClass = function () { bindGrowbayState(); return ariaInspectClass(displayModifiers().active); };
+  function growbayInspectClass() { bindGrowbayState(); return ariaInspectClass(displayModifiers().active); }
   // The reads the demo never needed: dry tanks, a dim region, a dead crop.
   const GROWBAY_INSPECT_EXTRA = {
     aria: {
@@ -1813,27 +1812,19 @@
 
   // Mode = which shell to use. Dev-panel select drives this.
   let inspectMode = 'swap';   // 'swap' | 'popup'
-  window.openInspect = function() {
+  function openInspect() {
     const isSwap = inspectMode === 'swap';
     document.body.classList.toggle('ins-mode-swap', isSwap);
     document.body.classList.toggle('ins-mode-popup', !isSwap);
     document.body.classList.add('ins-open');
     renderInspectInto($(isSwap ? 'ins-content-swap' : 'ins-content-popup'));
-  };
-  window.closeInspect = function() {
+  }
+  function closeInspect() {
     document.body.classList.remove('ins-open');
-  };
-  window.setInspectMode = function(m) {
-    inspectMode = m;
-    if (document.body.classList.contains('ins-open')) {
-      // Re-open in the new shell.
-      closeInspect();
-      requestAnimationFrame(openInspect);
-    }
-  };
+  }
 
   // ═════ Modal open/close ═════════════════════════════════════
-  window.closeGrowbay = function() {
+  function closeGrowbay() {
     document.body.classList.remove('modal-open');
     document.body.classList.remove('ins-open');
     hideOverlay('overlay-growbay');
@@ -1841,14 +1832,14 @@
     // autosave through it.
     if (typeof window.renderCruise === 'function' && !STATE.ended &&
         document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();
-  };
+  }
   // Click on the area outside the growbay box. Inspect is a child
   // surface of growbay, so when it's open, an outside-click peels
   // it off first instead of closing both at once.
-  window.onBackdropClick = function() {
+  function onBackdropClick() {
     if (document.body.classList.contains('ins-open')) { closeInspect(); return; }
     closeGrowbay();
-  };
+  }
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     // Inspect catches Escape first if open — close inspect, leave
@@ -1862,18 +1853,29 @@
   // ═════ Entry point ══════════════════════════════════════════
   // Called by cruise.js (crop card / Stop Menu). Ticks growth up to
   // the current day, then shows the modal — see bindGrowbayState().
-  window.openGrowbay = function() {
+  function openGrowbay() {
     bindGrowbayState();
     renderAll();
     showOverlay('overlay-growbay');
     document.body.classList.add('modal-open');
-  };
+  }
 
   // DOM-free tick for callers that need growth/health caught up without
   // opening the overlay — cruise.js calls this every renderCruise() so
   // the crop card (and checkFailure's crop_dead / the crop_sick trigger)
   // see current health even if the player never opens the growbay.
-  window.tickCropGrowth = function() {
+  function tickCropGrowth() {
     if (STATE.crop) bindGrowbayState();
-  };
+  }
+
+  Object.assign(window, {
+    // engine API
+    cropMetaOf, cropContaminationRecovery: contaminationRecovery,
+    clearCropPest, cropWaterStatusAt, cropGrowthFactorAt, toggleTenderPicker,
+    doHarvest, openTreat, openInspect, closeInspect, closeGrowbay,
+    onBackdropClick, openGrowbay, tickCropGrowth,
+    // test hooks: tools/tests drive and read these through page.evaluate
+    growbayTenderOf, cropRecoveryBoostDaysLeft, cropHarvestYield,
+    growbayInspectClass,
+  });
 })();

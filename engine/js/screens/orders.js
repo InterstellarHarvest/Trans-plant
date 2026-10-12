@@ -485,7 +485,7 @@
   })();
 
   // ── Open / close ──────────────────────────────────────────────
-  window.openOrders = function () {
+  function openOrders() {
     const sv = savedIdx();
     preview.pace = sv.pace;
     preview.rations = sv.rations;
@@ -502,7 +502,7 @@
     document.body.classList.add('modal-open');
     showOverlay('overlay-orders');
     renderAll();
-  };
+  }
 
   function closeOrders(result) {
     if (!isOpen()) return;
@@ -526,7 +526,6 @@
     if (typeof window.renderHUD === 'function') renderHUD();
     if (typeof window.renderCruise === 'function') renderCruise(); // repaints the readout + autosaves
   }
-  window.closeOrders = closeOrders;
 
   $('od-cancel').addEventListener('click', () => closeOrders('cancel'));
   $('od-apply').addEventListener('click', () => closeOrders('apply'));
@@ -541,4 +540,11 @@
     e.stopImmediatePropagation();
     closeOrders('cancel');
   }, true);
+
+  Object.assign(window, {
+    // engine API
+    openOrders,
+    // test hooks: tools/tests drive and read these through page.evaluate
+    closeOrders,
+  });
 })();

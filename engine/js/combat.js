@@ -1411,7 +1411,7 @@
      time, the fight's morale so far plus the hits'. Volleys that would
      take the hull to 0 are the defeat (LIMP AWAY), not hull_zero. A save
      from before the volley was kept just breaks off. Returns the log line. */
-  window.settleCombatBreakOff = function (pc) {
+  function settleCombatBreakOff(pc) {
     const v = pc.volley;
     const start = Number.isFinite(pc.moraleNow) && Number.isFinite(pc.morale) ? pc.moraleNow - pc.morale : null;
     let hull = Math.min(STATE.resources.hull, pc.hull), mo = start == null ? null : pc.moraleNow;
@@ -1445,12 +1445,12 @@
     applyOutcomeEffects(outcome);
     STATE.postCombatLegs = 2;
     return 'The fight broke off when the logs did. The ship ran for it: ' + under + '−15 fuel, hull ' + Math.round(hull) + '.';
-  };
+  }
   /* A reload during the defeat beat (index.html loadRun): the LIMP AWAY
      that was coming lands as the fight would have landed it — hull 1,
      the named cargo, the casualty roll, the fight's morale, high time.
      The fight's own end card is gone, so it returns the line for the log. */
-  window.settleCombatDefeat = function (d) {
+  function settleCombatDefeat(d) {
     const result = { outcome: 'defeated', cargoLoss: d.cargoLoss || { pct: 0, items: [], materials: {} }, crewDied: !!d.crewDied, crewInjured: d.crewInjured || 0 };
     const outcome = { resources: { hull: 1 - STATE.resources.hull }, combat_net: true, time_cost: 'high' };
     if (Number.isFinite(d.morale) && d.morale) outcome.resources.morale = d.morale;
@@ -1465,7 +1465,7 @@
     applyCargoLoss(result.cargoLoss);
     STATE.postCombatLegs = 2;
     return `Hull at 1. ${cargoLossText(result.cargoLoss)}. ${crewLine}`;
-  };
+  }
 
   /* ── Loot ───────────────────────────────────────────────────── */
   // Ids restricted to what actually exists in materials.json/items.json
@@ -1527,7 +1527,6 @@
     const ov = document.getElementById('combat-end-overlay');
     if (ov) ov.classList.remove('show');
   }
-  window.hideCombatEndCard = hideEndCard;
   function showEndCard(card) {
     const ov = document.getElementById('combat-end-overlay');
     if (!ov) return;
@@ -1802,26 +1801,25 @@
     }
   }
 
-  window.triggerFleeResolve = function (choice) {
+  function triggerFleeResolve(choice) {
     resolveToOutcome(choice, { hostileGone: true });
-  };
+  }
 
   // Read by the encounter's choice tooltip (index.html choiceCostLines).
   const RAM_FAIL_CHANCE = 0.30;
-  window.RAM_FAIL_CHANCE = RAM_FAIL_CHANCE;
-  window.triggerRamResolve = function (choice) {
+  function triggerRamResolve(choice) {
     if (Math.random() < RAM_FAIL_CHANCE) {
       if (window.ShipLog) ShipLog.fightStart(choice); // the fight's log entry names the ram
       window.triggerCombat(choice, { ramFailed: true, ramHull: choice.hull || 18 });
     } else {
       resolveToOutcome(choice, { hostileGone: true });
     }
-  };
+  }
 
   // Load-time teardown (index.html teardownLiveUI): stop a live fight
   // and strip its chrome without resolving an outcome into the run being
   // replaced (it used to bleed into the next ordinary event).
-  window.abortCombat = function () {
+  function abortCombat() {
     if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
     COMBAT.active = false; COMBAT.state = 'END'; COMBAT._firing = false; COMBAT._dissolving = false;
     COMBAT._resolved = true; COMBAT.fight = (COMBAT.fight || 0) + 1; // pending timers stand down
@@ -1833,7 +1831,7 @@
     const sp = document.getElementById('enc-backdrop-sprite');
     if (sp) sp.classList.remove('combat-enemy-charge', 'combat-low-hp');
     hideEndCard();
-  };
+  }
 
   /* Any fight is fought from the bridge (demo canon: combat is always the
      bridge view, their ship in the window, their captain on the feed) —
@@ -1857,7 +1855,7 @@
     SceneArt.render(ev, node, Object.assign({ comm_mode: 'screen', pose: 'hostile' }, spec), STATE.npcCtx, line || null);
   }
 
-  window.triggerCombat = function (choice, opts) {
+  function triggerCombat(choice, opts) {
     if (COMBAT.active) return;
     opts = opts || {};
     choice = choice || {};
@@ -1998,6 +1996,12 @@
     } else {
       showYourTurn();
     }
-  };
+  }
 
+  Object.assign(window, {
+    // engine API
+    settleCombatBreakOff, settleCombatDefeat, hideCombatEndCard: hideEndCard,
+    triggerFleeResolve, RAM_FAIL_CHANCE, triggerRamResolve, abortCombat,
+    triggerCombat,
+  });
 })();

@@ -283,7 +283,7 @@
     }
     return 0.80;
   }
-  window.fabMisfireChance = () => misfireChance(FSTATE.wear);
+  const fabMisfireChance = () => misfireChance(FSTATE.wear);
 
   // Fab-is-functional check. Broken = wear 100% OR hard toggle.
   function fabFunctional() {
@@ -688,7 +688,7 @@
   // on the bed (saved) and start the day clock. One craft at a time.
   const fabLog = m => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + m); };
   const dWord = n => n + (n === 1 ? ' day' : ' days');
-  window.craftSelected = function() {
+  function craftSelected() {
     const r = RECIPES.find(x => x.id === FSTATE.selectedId);
     if (!r || !canCraft(r)) return;
 
@@ -743,7 +743,7 @@
       const lines = pool && pool[STATE.activeAI];
       if (Array.isArray(lines) && lines.length) window.pushCruiseLog('◆ ' + lines[Math.floor(Math.random() * lines.length)]);
     }
-  };
+  }
 
   /* The day clock (demo scheduleNextTick/advanceCraftDay, but the days
      are real): runs only while the fabricator is open, the game isn't
@@ -787,8 +787,8 @@
     clearTimeout(clockTimer); clockTimer = 0;
     stopProgressLoop();
   }
-  window.fabSetDayMs = ms => { FSTATE.msPerDay = Math.max(20, ms | 0); }; // tests: a faster day
-  window.fabCraftState = () => FSTATE.craft && Object.assign({ held: heldReason(), running: clockRunning() }, FSTATE.craft);
+  const fabSetDayMs = ms => { FSTATE.msPerDay = Math.max(20, ms | 0); }; // tests: a faster day
+  const fabCraftState = () => FSTATE.craft && Object.assign({ held: heldReason(), running: clockRunning() }, FSTATE.craft);
 
   // One day of the job, for real.
   function craftDay() {
@@ -873,7 +873,7 @@
   // yours. Before its first day it costs nothing at all (materials, tax
   // and wear back); after, half the materials come back (ruling 55) and
   // the days, wear and tax already paid stay paid. No output.
-  window.cancelCraft = function() {
+  function cancelCraft() {
     const c = FSTATE.craft;
     if (!c) return;
     const r = RECIPES.find(x => x.id === c.recipeId);
@@ -913,7 +913,7 @@
     renderHUD();
     renderAll();
     if (typeof saveRun === 'function') saveRun();
-  };
+  }
 
   // Drop the progress strip back to its muted idle look.
   function setProgressIdle() {
@@ -1018,7 +1018,7 @@
     slot.dataset.tipDescription = recipe.output.count + '× ' + recipe.output.name + ' → cargo';
     slot.classList.add('ready');
   }
-  window.claimOutput = function(animated = true) {
+  function claimOutput(animated = true) {
     if (!FSTATE.pendingOutput) return;
     const r = FSTATE.pendingOutput;
     // Capacity check (audit fix): a full hold leaves the print in the
@@ -1073,7 +1073,7 @@
     } else {
       finish();
     }
-  };
+  }
   // Any new craft auto-claims a pending output so the bay is clear.
   // Skip the pickup animation here — the new item is about to appear.
   function autoClaimIfPending() {
@@ -1125,7 +1125,7 @@
     clearTimeout(noticeTimer);
     const n = $('fb-notice'); if (n) n.classList.remove('show');
   }
-  window.fabNoticeText = () => { const n = $('fb-notice'); return n && n.classList.contains('show') ? n.textContent : ''; };
+  const fabNoticeText = () => { const n = $('fb-notice'); return n && n.classList.contains('show') ? n.textContent : ''; };
 
   // ═════ Render pipeline ═══════════════════════════════════
   function renderAll() {
@@ -1140,14 +1140,14 @@
   // Click the trigger → opens a flyout. Click an option → sets the
   // value + closes. Outside-click closes. Only one dropdown open
   // at a time.
-  window.toggleDropdown = function(id, e) {
+  function toggleDropdown(id, e) {
     if (e) e.stopPropagation();
     const dd = $(id);
     const wasOpen = dd.classList.contains('open');
     // Close all first (single-open invariant).
     document.querySelectorAll('.fb-dd').forEach(d => d.classList.remove('open'));
     if (!wasOpen) dd.classList.add('open');
-  };
+  }
   document.addEventListener('click', () => {
     document.querySelectorAll('.fb-dd').forEach(d => d.classList.remove('open'));
   });
@@ -1180,7 +1180,7 @@
   });
 
   // ═════ Modal open/close ═════════════════════════════════
-  window.closeFabricator = function() {
+  function closeFabricator() {
     clearFabNotice();
     document.body.classList.remove('modal-open');
     hideOverlay('overlay-fabricator');
@@ -1199,7 +1199,7 @@
       window.renderCruise();
       if (typeof window.refreshStopMenu === 'function') window.refreshStopMenu();
     }
-  };
+  }
   // Arrow keys cycle through selectable recipes (skipping locked rows);
   // Enter crafts the current selection if craftable; Escape closes the
   // modal. Only active while the modal is open AND no dropdown is.
@@ -1241,14 +1241,14 @@
   // Load-time teardown (index.html teardownLiveUI): stop the replaced
   // run's clock; the loaded run's job (STATE.fabricator.craft) or
   // finished print (owedOutput) comes back on open.
-  window.abortFabricator = function () {
+  function abortFabricator() {
     stopCraftClock(); clockAcc = 0;
     FSTATE.pendingOutput = null;
     const prog = document.getElementById('fb-progress'); if (prog) prog.classList.remove('active', 'held');
     const slot = document.getElementById('fb-output-slot'); if (slot) slot.classList.remove('ready');
-  };
+  }
 
-  window.openFabricator = function() {
+  function openFabricator() {
     loadFabricatorData();
     bindFabricatorState();
     if (FSTATE.craft && !RECIPES.find(r => r.id === FSTATE.craft.recipeId)) FSTATE.craft = null; // a recipe gone from the data
@@ -1267,5 +1267,13 @@
     // further day; a held job picks up where it stopped (its part-day included).
     if (FSTATE.craft && FSTATE.craft.daysDone >= FSTATE.craft.daysTotal) completeCraft();
     else if (FSTATE.craft) { updateProgressUI(); startCraftClock(false); }
-  };
+  }
+
+  Object.assign(window, {
+    // engine API
+    craftSelected, cancelCraft, claimOutput, toggleDropdown, closeFabricator,
+    abortFabricator, openFabricator,
+    // test hooks: tools/tests drive and read these through page.evaluate
+    fabMisfireChance, fabSetDayMs, fabCraftState, fabNoticeText,
+  });
 })();

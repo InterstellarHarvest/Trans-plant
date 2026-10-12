@@ -946,6 +946,11 @@
     _activeSheet = null;
   }
 
-  window.SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, talk, sceneSpecFor, layerSpecFor, outcomeSpecFor, expandPath, biomeFor,
+  const SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, talk, sceneSpecFor, layerSpecFor, outcomeSpecFor, expandPath, biomeFor,
     stationApproachFor, paintStationView, STATION_APPROACH_POOL };
+
+  Object.assign(window, {
+    // engine API
+    SceneArt,
+  });
 })();

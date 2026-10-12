@@ -522,9 +522,11 @@
   function openEntry(e) { openShipsLog(); openExpand(e); }
   function closeShipsLogExpand() { const m = $('slog-expand-modal'); if (m) m.style.display = 'none'; }
 
-  window.ShipLog = ShipLog;
-  window.openShipsLog = openShipsLog;
-  window.renderShipsLog = renderShipsLog;
-  window.closeShipsLogExpand = closeShipsLogExpand;
-  window.shipsLogExpandOpen = () => { const m = $('slog-expand-modal'); return !!m && m.style.display === 'flex'; };
+  const shipsLogExpandOpen = () => { const m = $('slog-expand-modal'); return !!m && m.style.display === 'flex'; };
+
+  Object.assign(window, {
+    // engine API
+    ShipLog, openShipsLog, renderShipsLog, closeShipsLogExpand,
+    shipsLogExpandOpen,
+  });
 })();

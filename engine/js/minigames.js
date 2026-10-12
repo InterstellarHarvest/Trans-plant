@@ -3166,7 +3166,6 @@ const SALVAGE_DERELICT = (() => {
     pay: { fuel:{s:5, m:10, l:15}, food:5, component:{metal:1, exotic:1}, medkit:'medkit' },
   };
 })();
-window.SALVAGE_DERELICT = SALVAGE_DERELICT;
 function initSalvage(container, onResult, opts){
   // opts.setting 'derelict' (owner ruling 2026-10-11 #12): the same game
   // inside a derelict's hold — interior backdrop, no ship bay painted in,
@@ -4069,11 +4068,17 @@ function initSalvage(container, onResult, opts){
   };
 }
 
-  window.openMinigame = openMinigame;
   // Load-time teardown (index.html teardownLiveUI): close without firing
   // the caller's callback — the run it belonged to is being replaced.
-  window.abortMinigame = function () {
+  function abortMinigame() {
     onMinigameDone = null;
     if (document.getElementById('overlay-minigames').classList.contains('active')) closeMinigameOverlay();
-  };
+  }
+
+  Object.assign(window, {
+    // engine API
+    openMinigame, abortMinigame,
+    // test hooks: tools/tests drive and read these through page.evaluate
+    SALVAGE_DERELICT,
+  });
 })();

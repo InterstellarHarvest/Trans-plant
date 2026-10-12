@@ -617,11 +617,11 @@
 
   // Load-time teardown (index.html teardownLiveUI): close the scene
   // without calling back into the run being replaced.
-  window.abortEngineRepair = function () {
+  function abortEngineRepair() {
     if (!running) return;
     onRepairDone = null;
     finish({ fixedCount: 0, allFixed: false });
-  };
+  }
 
   function finish(result) {
     running = false;
@@ -637,7 +637,7 @@
   // ── entry point ──────────────────────────────────────────────
   // Called by cruise.js's REPAIR verb handler. onDone(result) fires when
   // the player leaves the engine room — see finish() above.
-  window.openEngineRepair = function (onDone) {
+  function openEngineRepair(onDone) {
     mount();
     onRepairDone = onDone || null;
     sctx = $('er-spark-canvas').getContext('2d');
@@ -650,6 +650,10 @@
     running = true;
     lastBurstTime = -1000;
     if (!sparkRAF) sparkRAF = requestAnimationFrame(sparkLoop);
-  };
+  }
 
+  Object.assign(window, {
+    // engine API
+    abortEngineRepair, openEngineRepair,
+  });
 })();

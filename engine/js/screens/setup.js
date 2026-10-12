@@ -53,7 +53,6 @@
       return String(v);
     });
   }
-  window.setupLiveStat = liveStat;
 
   function rollShipName(current) {
     const pool = (typeof window.shipNamePool === 'function') ? window.shipNamePool() : [];
@@ -314,4 +313,9 @@
   $('btn-next').addEventListener('click', nextStep);
 
   render();
+
+  Object.assign(window, {
+    // engine API
+    setupLiveStat: liveStat,
+  });
 })();

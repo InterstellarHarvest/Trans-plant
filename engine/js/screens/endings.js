@@ -318,7 +318,7 @@
     const quoteEl = $('end-cine-quote');
     if (view.showReport) {
       btn.textContent = 'View Report';
-      btn.onclick = window.showEndReport;
+      btn.onclick = showEndReport;
       bodyEl.style.display = 'none';
       quoteEl.style.display = 'none';
       paintRecord('end-cine-quote', null); // arrivals show it on the report card
@@ -338,11 +338,11 @@
     if (view.continueOption) {
       btn2.textContent = view.continueOption.text || 'Keep Flying';
       btn2.style.display = '';
-      btn2.onclick = window.endContinueRun;
+      btn2.onclick = endContinueRun;
     } else if (view.beaconOption) {
       btn2.textContent = 'Trigger the Emergency Beacon';
       btn2.style.display = '';
-      btn2.onclick = window.endTriggerBeacon;
+      btn2.onclick = endTriggerBeacon;
     } else {
       btn2.style.display = 'none';
       btn2.onclick = null;
@@ -455,14 +455,14 @@
   }
   function startStars() { if (starRunning) return; starRunning = true; starLast = 0; requestAnimationFrame(drawStars); }
 
-  window.renderEndScreen = function (end) {
+  function renderEndScreen(end) {
     currentView = buildEndView(end);
     renderCinematic(currentView);
     showScreen('screen-end');
     revealScene(currentView);
     startStars();
-  };
-  window.showEndReport = function () {
+  }
+  function showEndReport() {
     // Reading the report accepts the ending (owner ruling 2026-10-10) — a
     // resumable failure's pending save goes now, and so does the way on:
     // Back no longer offers Keep flying / the beacon (it used to, and a
@@ -472,17 +472,17 @@
     const b2 = $('end-cine-btn2');
     if (b2) { b2.style.display = 'none'; b2.onclick = null; }
     if (currentView) renderReport(currentView);
-  };
-  window.endBackToCinematic = function () {
+  }
+  function endBackToCinematic() {
     $('end-report').classList.remove('show');
-  };
+  }
 
   /* Trigger the emergency beacon from the no_fuel failure screen —
      items.json's own authored contract: "Triggers rescue event —
      rescue may be friendly, hostile, or corporate." One use; who
      answers is a roll. Every rescue refuels enough to keep flying;
      the difference is what it costs. */
-  window.endTriggerBeacon = function () {
+  function endTriggerBeacon() {
     if (!currentView || !currentView.beaconOption) return;
     const idx = STATE.items.indexOf('emergency_beacon');
     if (idx < 0) return;
@@ -512,7 +512,7 @@
     $('end-cinematic').classList.remove('show');
     if (typeof window.pushCruiseLog === 'function') logLines.forEach(l => window.pushCruiseLog(l));
     resumeAfterFailure();
-  };
+  }
 
   /* Pressing on from a non-terminal failure: any OTHER failure that
      landed at the same moment (hull 0, mutiny, deprivation…) still
@@ -531,7 +531,7 @@
      Sets crop_death_accepted so checkFailure() won't re-fire crop_dead
      on the next resource mutation, un-ends the run, shows the authored
      continue narrative in the hub log, and returns to the hub. */
-  window.endContinueRun = function () {
+  function endContinueRun() {
     if (!currentView || !currentView.continueOption) return;
     STATE.ended = false;
     STATE.flags.add('crop_death_accepted');
@@ -539,6 +539,12 @@
     $('end-cinematic').classList.remove('show');
     if (narrative && typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + narrative);
     resumeAfterFailure();
-  };
+  }
 
+  Object.assign(window, {
+    // engine API
+    renderEndScreen, endBackToCinematic,
+    // test hooks: tools/tests drive and read these through page.evaluate
+    showEndReport, endContinueRun,
+  });
 })();
