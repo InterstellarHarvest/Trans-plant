@@ -446,6 +446,29 @@ function assignKeys(src) {
   }
 }
 
+// ── The event draw's difficulty table: one reader ────────────────────
+// The trail's difficulty weights reach the draw through selectEvent
+// (pity relief) and lateDifficultyWeights (the second-half shift) only:
+// a third reader would draw without the late shift.
+{
+  // Comments and quoted strings blanked, offsets (and so line numbers) kept.
+  const blank = s => s.replace(/[^\n]/g, ' ');
+  const stripComments = src => src.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/(^|\s)\/\/.*$/gm, blank);
+  const HOMES = ['selectEvent', 'lateDifficultyWeights'];
+  for (const rel of ['index.html', ...ENGINE]) {
+    const src = stripComments(read(rel)).replace(/'[^'\n]*'|"[^"\n]*"/g, blank);
+    const bodies = rel !== 'index.html' ? [] : HOMES.map(name => {
+      const m = src.match(new RegExp('\\nfunction ' + name + '\\([^)]*\\) \\{[\\s\\S]*?\\n\\}\\n'));
+      if (!m) err(`index.html: function ${name} not found (the difficulty table's readers)`);
+      return m ? [m.index, m.index + m[0].length] : null;
+    });
+    for (const m of src.matchAll(/\bevent_difficulty_weights\b|\blate_difficulty\b/g)) {
+      if (bodies.some(b => b && m.index >= b[0] && m.index < b[1])) continue;
+      err(`${rel}:${lineOf(src, m.index)}: reads ${m[0]} outside selectEvent / lateDifficultyWeights — draw through them so the late shift applies`);
+    }
+  }
+}
+
 // ── Engine window exports something outside the file reads ──────────
 {
   const stripComments = src => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1');
