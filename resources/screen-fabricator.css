@@ -10,7 +10,6 @@
 #overlay-fabricator {
   /* Shared theme */
   --teal: #56cfd7;
-  --orange: #e88830;
   --cream: #e6d4a8;
   --body:  #c5b28a;
 
@@ -30,25 +29,19 @@
 
   /* Fabricator-specific knobs */
   --recipe-list-width: 400px;        /* left column width inside body */
-  --fab-slot-size:     192px;        /* sprite slot on the right (height; width = 2×). 192 = 1.5× the frame (demo 220): the detail panel under it now carries MISFIRE, the print's effect and up to two warnings, and CRAFT must never clip (parity pass) */
+  --fab-slot-size:     220px;        /* sprite slot on the right (height; width = 2×) — the demo's 220 (re-audit B1); .fb-right.fit-small drops it to 192 only when a recipe's panel needs the room */
   --section-gap:       10px;
   --body-padding:      12px 16px 10px;
 
   /* Wear colors */
-  --wear-ok:   #85d260;
   --wear-warn: #d8c044;
-  --wear-bad:  #cc3333;
 
   /* Typography */
   --body-size:        16px;   /* recipe list items (left column) */
   --title-size:       10px;   /* section labels: INPUTS, TIME, WEAR */
   --mono-size:        18px;   /* body text under each label (inputs/output/meta) */
   --detail-name-size: 11px;   /* recipe name in the detail-panel header */
-  --meta-row-gap:     3px;    /* vertical gap between TIME and WEAR rows (5 in the demo; 3 buys CRAFT headroom under two warnings) */
-
-  /* Unlock-accent colors (left-edge bar) */
-  --lock-crew:     var(--teal);
-  --lock-purchase: var(--gold);
+  --meta-row-gap:     5px;    /* vertical gap between TIME and WEAR rows (demo; 2 under .fit-tight) */
 
   /* Panel buttons (color vars live in shared.css; cyan accent local) */
   --pb-cyan-hi:#7fd4dc;
@@ -102,7 +95,7 @@ body:not(.modal-open) #fb-modal {
   gap: 14px;
 }
 .fb-title {
-  font-family: 'Press Start 2P', cursive; line-height: 1;
+  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo (re-audit B2) */
   font-size: var(--header-title-size);
   letter-spacing: 2px;
   color: var(--header-title-color);
@@ -121,7 +114,7 @@ body:not(.modal-open) #fb-modal {
   flex-shrink: 0;
 }
 .fb-day-label {
-  font-family: 'Press Start 2P', cursive; line-height: 1;
+  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo (re-audit B2) */
   font-size: 8px;
   letter-spacing: 2px;
   color: var(--gold);
@@ -135,7 +128,7 @@ body:not(.modal-open) #fb-modal {
 .fb-day-sep { color: #5a7a8a; }
 .fb-arrival { color: #aab5c4; letter-spacing: 1px; }
 .fb-close {
-  font-family: 'Press Start 2P', cursive; line-height: 1;
+  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo (re-audit B2) */
   font-size: 10px;
   width: 26px; height: 26px;
   border: 2px solid rgba(95,168,208,0.4);
@@ -317,25 +310,22 @@ body:not(.modal-open) #fb-modal {
   min-width: 40px;
   text-align: right;
 }
-/* Locked rows (crew or purchase) render DIMMED so they sit visually
+/* Locked rows (a part the fab needs aboard) render DIMMED so they sit visually
    below the available recipes rather than competing with them. No
    accent bar, no color treatment — just greyed. A muted lock icon
    + unlock-note text in place of the days column tells the player
    WHY it's locked. */
-.fb-recipe-row.locked-crew,
 .fb-recipe-row.locked-purchase {
   opacity: 0.4;
   filter: grayscale(0.7);
   cursor: var(--cursor-denied, not-allowed);
   border-left-color: transparent;
 }
-.fb-recipe-row.locked-crew:hover,
 .fb-recipe-row.locked-purchase:hover {
   border-color: rgba(95,168,208,0.12);
   background: rgba(14,20,32,0.5);
   opacity: 0.55;              /* slight lift on hover — still clearly subordinate */
 }
-.fb-recipe-row.locked-crew .fb-recipe-days,
 .fb-recipe-row.locked-purchase .fb-recipe-days {
   color: #7a8898;
   font-style: italic;
@@ -358,7 +348,6 @@ body:not(.modal-open) #fb-modal {
   font-size: 12px;
   margin-right: -4px;
 }
-.fb-recipe-row.locked-purchase .dollar { color: #8a9ba8; }
 
 /* Missing-materials is NOT dimmed (explicit rule). Only the detail-panel
    input list turns its counts red when stock < required. */
@@ -507,11 +496,11 @@ body:not(.modal-open) #fb-modal {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 8px 12px 10px;
+  padding: 10px 12px 12px;
   background: rgba(10,14,20,0.4);
   border: 2px solid rgba(95,168,208,0.25);
   border-radius: 3px;
-  gap: 4px; /* parity pass: tighter so CRAFT fits under a warning */
+  gap: 6px;
   overflow: hidden;
 }
 /* Detail panel header: item sprite + recipe name on one row. */
@@ -519,20 +508,20 @@ body:not(.modal-open) #fb-modal {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 32px;
+  min-height: 40px;
 }
 .fb-detail-sprite {
   flex-shrink: 0;
-  width: 32px; height: 32px; /* 64px art at a clean ½ */
+  width: 40px; height: 40px;
   background-image: var(--detail-sprite, none);
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  font-size: 22px;
+  font-size: 26px;
   text-align: center;
-  line-height: 32px;
+  line-height: 40px;
   color: var(--cream);
 }
 .fb-detail-sprite.has-sprite { color: transparent; }
@@ -549,8 +538,9 @@ body:not(.modal-open) #fb-modal {
   font-size: 14px;
   color: var(--body);
   font-style: italic;
-  line-height: 1.2;
+  line-height: 1.25;
   letter-spacing: 0.5px;
+  min-height: 17px;
   flex-shrink: 0; /* a two-line description must not be squeezed under the effect line */
 }
 /* The print's effect (items.json gameplay_effect, player-facing part). */
@@ -566,18 +556,12 @@ body:not(.modal-open) #fb-modal {
 .fb-detail-divider {
   height: 0;
   border-top: 1px dashed rgba(95,168,208,0.25);
-  margin: 0;
+  margin: 2px 0;
   flex-shrink: 0;
 }
 .fb-detail-section {
   display: flex;
   flex-direction: column;
-}
-.fb-detail-title {
-  font-family: 'Press Start 2P', cursive; line-height: 1;
-  font-size: var(--title-size);
-  letter-spacing: 1px;
-  color: #7a8898;
 }
 .fb-inputs {
   /* 2-column grid — row-first fill order (default for CSS grid) so 2
@@ -590,7 +574,7 @@ body:not(.modal-open) #fb-modal {
   font-size: var(--mono-size);
   letter-spacing: 0.5px;
   color: var(--cream);
-  padding-bottom: 0;
+  padding-bottom: 5px;
 }
 .fb-input-row {
   display: flex;
@@ -683,18 +667,18 @@ body:not(.modal-open) #fb-modal {
 .fb-notice.tone-danger { border-color: var(--red); }
 .fb-notice-title {
   display: block;
-  font-family: 'Press Start 2P', cursive; font-size: 8px; line-height: 1; letter-spacing: 1px;
+  font-family: 'Press Start 2P', cursive; font-size: 8px; line-height: normal; letter-spacing: 1px;
   color: var(--wear-warn); margin-bottom: 4px;
 }
 .fb-notice.tone-danger .fb-notice-title { color: var(--red); }
 .fb-craft-btn {
   width: 100%;
-  font-family: 'Press Start 2P', cursive; line-height: 1;
+  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo (re-audit B2) */
   font-size: 11px;
   letter-spacing: 2px;
   text-transform: uppercase;
   cursor: var(--cursor-hand, pointer);
-  padding: 9px 10px;
+  padding: 12px 10px;
   background: linear-gradient(180deg, #2a6066 0%, #143038 50%, #2a6066 100%);
   border: 3px outset;
   border-color: var(--pb-cyan-hi) var(--pb-cyan-lo) var(--pb-cyan-lo) var(--pb-cyan-hi);
@@ -708,6 +692,26 @@ body:not(.modal-open) #fb-modal {
   50%      { box-shadow: 0 0 18px rgba(95,168,208,0.65), inset 0 0 0 1px rgba(127,212,220,0.4); }
 }
 .fb-craft-btn:hover { filter: brightness(1.15); }
+/* Fit (re-audit B1, fabricator.js fitDetail): the demo's visible sizes
+   — art 220 (output bay 88), item sprite 40, CRAFT 41 — always, unless
+   two warnings would push CRAFT out. The engine's panel carries more
+   than the demo's (two-line descriptions, the print's effect line, the
+   MISFIRE / MORALE cells), so stage 1 takes the room from spacing only;
+   stage 2 (both warnings up) drops the art to 192 and the sprite and
+   CRAFT to their compact sizes. */
+.fb-right.fit-tight .fb-detail { padding: 8px 12px 10px; gap: 3px; }
+.fb-right.fit-tight .fb-detail-desc { line-height: 1.2; min-height: 0; }
+.fb-right.fit-tight .fb-detail-divider { margin: 0; }
+.fb-right.fit-tight .fb-inputs { padding-bottom: 0; }
+.fb-right.fit-tight .fb-meta { --meta-row-gap: 2px; }
+.fb-right.fit-small { --fab-slot-size: 192px; }
+.fb-right.fit-small .fb-detail-header { min-height: 32px; }
+.fb-right.fit-small .fb-detail-sprite { width: 32px; height: 32px; font-size: 22px; line-height: 32px; } /* 64px art at a clean ½ */
+.fb-right.fit-small .fb-craft-btn { padding: 9px 10px; }
+/* A held job (fab broken / the deadline) — the strip says why. */
+.fb-progress.active.held .fb-progress-fill { background: linear-gradient(90deg, #8a7a40 0%, #b8a050 100%); box-shadow: none; }
+.fb-progress.active.held .fb-progress-days { color: var(--wear-warn); }
+.fb-meta .wear-add.tax { color: #e0a070; }
 .fb-craft-btn.locked.busy, .fb-progress.active { cursor: var(--cursor-wait, wait); }
 .fb-progress.active .fb-progress-cancel { cursor: var(--cursor-hand, pointer); }
 .fb-craft-btn:active {
@@ -749,7 +753,7 @@ body:not(.modal-open) #fb-modal {
 .fb-progress:not(.active) .fb-progress-label .item { color: #7a8898; }
 .fb-progress:not(.active) .fb-progress-days { color: #7a8898; }
 .fb-progress-label {
-  font-family: 'Press Start 2P', cursive; line-height: 1;
+  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo (re-audit B2) */
   font-size: 7px;
   letter-spacing: 1px;
   color: var(--teal);
@@ -813,7 +817,7 @@ body:not(.modal-open) #fb-modal {
   background: linear-gradient(180deg, rgba(133,210,96,0.95) 0%, rgba(90,160,70,0.95) 100%);
   border: 2px solid #c5f2a4;
   border-radius: 3px;
-  font-family: 'Press Start 2P', cursive; line-height: 1;
+  font-family: 'Press Start 2P', cursive; line-height: normal; /* demo (re-audit B2) */
   font-size: 9px;
   letter-spacing: 2px;
   color: #0a2010;
@@ -856,7 +860,7 @@ body:not(.modal-open) #fb-modal {
 /* Sprite helper */
 .has-sprite { background-color: transparent; }
 
-/* Dev controls sidebar */
+/* Thin scrollbars inside the fabricator */
 #overlay-fabricator ::-webkit-scrollbar-corner    { background: #0a0e14; }
 #overlay-fabricator * {
   scrollbar-width: thin;

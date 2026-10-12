@@ -122,14 +122,31 @@ body {
   transition: opacity 0.25s ease, visibility 0s linear 0s;
 }
 /* Each modal's panel scales 0.96 → 1 with the fade. `scale` (not
-   transform) so it composes with panels centred by translate(). */
+   transform) so it composes with panels centred by translate().
+   b4 re-audit A14: one transition, both ways, like the demos (close
+   eases 1 → 0.977 → 0.960 while the overlay fades). The old open-only
+   modal-pop animation (fill: both) was dropped on close, so the panel
+   snapped to 0.96 on the first close frame; @starting-style covers a
+   panel opened before it was ever styled. */
 #gb-modal, #fb-modal, #od-modal, #inv-card, #slog-card,
 #overlay-crew #cd-modal, #ovmap-viewport {
   scale: 0.96;
-  transition: opacity 0.25s ease, transform 0.25s ease, scale 0.25s ease;
+  transition: scale 0.25s ease;
 }
 .overlay.active :is(#gb-modal, #fb-modal, #od-modal, #inv-card, #slog-card, #ovmap-viewport),
-#overlay-crew.active #cd-modal { scale: 1; animation: modal-pop 0.25s ease both; } /* injected on first open: a transition has no start state */
+#overlay-crew.active #cd-modal { scale: 1; }
+@starting-style {
+  .overlay.active :is(#gb-modal, #fb-modal, #od-modal, #inv-card, #slog-card, #ovmap-viewport),
+  #overlay-crew.active #cd-modal { scale: 0.96; }
+}
+/* …and the overlay's fade + this scale are the only close motion: the
+   screen sheets' own demo gating (body:not(.modal-open) / crew :not(.active)
+   → panel opacity 0 + transform scale(0.96)) doubled both — the panel
+   ended at 0.92 and faded at opacity². Neutralised here; screen-crew.css
+   :47/:50 can drop its scale(0.96) + opacity:0 (b4-crew's file). */
+body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
+#game #overlay-crew:not(.active) #cd-modal { transform: translate(-50%, -50%); opacity: 1; }
+@starting-style { #game #overlay-crew.active #cd-modal { transform: translate(-50%, -50%); opacity: 1; } }
 /* The market panel is display-toggled by MarketModal (.hidden), which a
    transition can't start from — it pops in with a one-shot animation. */
 #overlay-market .enc-market { scale: 1; }
@@ -989,7 +1006,7 @@ body {
         <div class="inv-header-meta">
           <span id="inv-slots"><strong id="inv-slots-used">0</strong> / <strong id="inv-slots-total">0</strong> SLOTS</span>
           <span id="inv-gold-readout"><strong id="inv-gold">0</strong> g</span>
-          <button class="modal-x inv-x" id="inv-x" aria-label="Close">✕</button>
+          <button class="modal-x inv-x" id="inv-x" aria-label="Close" data-esc-close>✕</button>
         </div>
       </div>
       <div id="inv-resource-row">
@@ -1036,15 +1053,13 @@ body {
         </div>
         <!-- Actions pinned under the scrolling detail: always reachable. -->
         <div class="inv-detail-actions inv-hide" id="inv-detail-actions">
-          <button class="panel-btn accent-gold" id="inv-use-btn">USE</button>
+          <button class="panel-btn accent-gold" id="inv-sell-btn">SELL</button><!-- docked only (ruling 28) -->
+          <button class="panel-btn" id="inv-use-btn">USE</button>
           <button class="panel-btn accent-red" id="inv-jett-btn">JETTISON</button>
         </div>
         </div>
       </div>
-      <!-- DESIGN_SYSTEM close path 2 (the demo has no footer). -->
-      <div id="inv-footer">
-        <button class="btn accent-gold" id="inv-close" data-esc-close>Close</button>
-      </div>
+      <!-- No footer CLOSE (ruling 42, per the demos): ✕, backdrop and Esc close the hold. -->
       <div id="inv-confirm" class="hidden">
         <div class="jettison-panel" id="inv-jett-panel">
           <div class="jettison-title">⚠ JETTISON?</div>
@@ -1742,6 +1757,7 @@ const SAVED_FIELDS = [
   'crisisPatient', 'scanIntelEvent', // an event saved at its entry comes back with its patient / SCAN intel
   'itemValues', // trade goods: each copy's value, rolled at pickup
   'itemPickups', 'itemSeq', // inventory: each copy's NEW flag + pickup order (Recent sort), and the counter
+  'materialPickups', // inventory (b4 B5): each material stack's NEW flag + last pickup (Recent sort) — same counter
   'artSeed', // scene_art.js picks backdrop + NPC-face variants from it: a reload shows the same images
   'passengers', // scenes B: rescued survivors riding to the next station
   'stationVisit', // station approach: this stop's rolls (hail-first, fee), drawn event, docked / waved off
@@ -1817,7 +1833,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, passengers: () => [], stationVisit: () => null, captainHP: () => 100 }; // traderAt/forcedEvent: cruise.js; passengers: scenes B; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, passengers: () => [], stationVisit: () => null, captainHP: () => 100 }; // traderAt/forcedEvent: cruise.js; passengers: scenes B; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -1940,7 +1956,7 @@ function initState() {
   // choices unlock and the player sees that gating works.
   STATE.items = ['soil_sampler', 'gas_analyzer', 'repair_kit'];
   STATE.itemValues = {};
-  STATE.itemPickups = {}; STATE.itemSeq = 0;
+  STATE.itemPickups = {}; STATE.itemSeq = 0; STATE.materialPickups = {};
   syncItemPickups(ITEM_PICKUP_OLD);
   STATE.materials = {};
 
@@ -2032,7 +2048,7 @@ function applySetupToState(sel) {
     if (sb.item && !STATE.items.includes(sb.item)) STATE.items.push(sb.item);
   }
   // Inventory marks: the launch loadout is not NEW (and oldest in Recent).
-  STATE.itemPickups = {}; STATE.itemSeq = 0;
+  STATE.itemPickups = {}; STATE.itemSeq = 0; STATE.materialPickups = {};
   syncItemPickups(ITEM_PICKUP_OLD);
 
   STATE.daysElapsed  = 0;
@@ -2195,7 +2211,7 @@ function grantMaterials(want, opts) {
     const q = Math.round(q0 || 0);
     if (q < 0) { STATE.materials[id] = Math.max(0, (STATE.materials[id] || 0) + q); continue; }
     const g = land[id] || 0;
-    if (g > 0) { STATE.materials[id] = (STATE.materials[id] || 0) + g; got[id] = g; }
+    if (g > 0) { STATE.materials[id] = (STATE.materials[id] || 0) + g; got[id] = g; markMaterialPickup(id); }
     if (q > g) left[id] = q - g;
   }
   const leftList = Object.entries(left).map(([id, n]) => n + ' ' + id);
@@ -2203,6 +2219,13 @@ function grantMaterials(want, opts) {
     window.pushCruiseLog('◆ CARGO FULL — ' + leftList.join(', ') + ' left behind. Jettison something (INV) to make room.');
   }
   return { got, left };
+}
+// Inventory NEW badge + Recent order for materials (b4 re-audit B5): a
+// stack that gains units is NEW again and newest, on the items' counter.
+function markMaterialPickup(id) {
+  if (!STATE.materialPickups || typeof STATE.materialPickups !== 'object') STATE.materialPickups = {};
+  STATE.itemSeq = (STATE.itemSeq || 0) + 1;
+  STATE.materialPickups[id] = { s: STATE.itemSeq, n: true };
 }
 function grantMaterial(id, qty, opts) { return grantMaterials({ [id]: qty }, opts).got[id] || 0; }
 Object.assign(window, { itemSlotsFor, cargoCapacityParts, materialPer10, materialSlotsUsed, materialLandings, grantMaterials, grantMaterial });
@@ -6396,7 +6419,6 @@ function endRun(end) {
   try { await loadAllModules(); }
   catch (e) { console.error(e); return; }
 
-  document.getElementById('inv-close').addEventListener('click', closeInventory);
   document.getElementById('inv-x').addEventListener('click', closeInventory);
   // Backdrop click closes (DESIGN_SYSTEM close path 3) — the dimmed area
   // outside the card, not a click inside it.

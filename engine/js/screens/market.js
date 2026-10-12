@@ -72,6 +72,50 @@
     const d = defBy(sid);
     return d && Number.isFinite(d.base_price) && d.base_price > 0 ? sellPrice(d.base_price) : null;
   };
+  // What a fence pays for one sid (b4 re-audit A11: one rule for every
+  // trade good, the one items.json states — "a fence pays half again as
+  // much" as a station trader): a rolled copy FENCE_MULT × its value, a
+  // fixed-value good FENCE_MULT × the trader's ⅔ of base_price (= its
+  // base price: vinyl 17 → 25). null when the fence doesn't take it
+  // (only trade_good-tagged cargo). The black market's offers and the
+  // cargo hold's SELL PRICE both read this.
+  const FENCE_TAGS = ['trade_good'];
+  window.fenceBuyPrice = function (sid, copyValue) {
+    const d = defBy(sid);
+    if (!d || !(d.tags || []).some(t => FENCE_TAGS.includes(t))) return null;
+    if (Number.isFinite(copyValue)) return fenceValueOf(copyValue);
+    if (Number.isFinite(d.base_price) && d.base_price > 0) return Math.max(1, Math.round(d.base_price * 2 / 3 * FENCE_MULT));
+    return null;
+  };
+  // A station trader's sale of one unit, from outside the Market Row
+  // (the cargo hold's SELL when docked, ruling 28): the same price as the
+  // trader's row (stationBuyPrice; a rolled copy pays its own value) and
+  // the same removal (materials by the unit, a rolled copy with its
+  // value). Returns { paid } or { why }.
+  window.stationSellOne = function (sid, copy) {
+    const isMat = allMaterialDefs().some(m => m.id === sid);
+    if (isMat) {
+      if (!(STATE.materials[sid] > 0)) return { why: 'None left' };
+      const p = window.stationBuyPrice(sid);
+      STATE.materials[sid] -= 1;
+      STATE.goldAmount += p;
+      return { paid: p };
+    }
+    if (!STATE.items.includes(sid)) return { why: 'None left' };
+    if (typeof canRemoveItem === 'function' && !canRemoveItem(sid)) return { why: 'The cargo bay is holding things. Clear some space first.' };
+    const vals = typeof itemValuesOf === 'function' ? itemValuesOf(sid) : [];
+    let paid;
+    if (vals.length) {
+      const k = Number.isInteger(copy) && copy >= 0 && copy < vals.length ? copy : 0;
+      paid = takeItemCopy(sid, k);
+    } else {
+      paid = window.stationBuyPrice(sid);
+      if (paid == null) return { why: 'No trader buys it' };
+      STATE.items.splice(STATE.items.lastIndexOf(sid), 1);
+    }
+    STATE.goldAmount += paid;
+    return { paid };
+  };
   function allItemDefs() {
     return (typeof MOD !== 'undefined' && MOD.items) ? MOD.items : [];
   }
@@ -160,6 +204,13 @@
     // cargo left the rack: bought here it had no courier job to pay it off.)
     const stock = [['drive_coil', 60], ['o2_recycler', 45], ['repair_fabricator', 50]];
     const wares = [];
+    // Fixed-value fence offers from the one rule (window.fenceBuyPrice);
+    // a rolled copy carries its own (cargoEntry's fencePrice).
+    const fencePrices = {};
+    for (const d of allItemDefs()) {
+      const sid = d.id && shortIdOf(d.id), f = sid && window.fenceBuyPrice(sid);
+      if (f != null) fencePrices[sid] = f;
+    }
     for (const [sid, gold] of stock) {
       const d = defBy(sid);
       if (!d) continue; // defensive: never invent an id items.json lacks
@@ -183,9 +234,9 @@
       // black_market tag, which no real item carries). Rolled-value
       // goods carry their own fencePrice (cargoEntry); these are the
       // fixed-value ones.
-      wantedTags: ['trade_good'],
-      fencePrices: { sealed_vinyl: 25 },
-      defaultFenceValue: 20,
+      wantedTags: FENCE_TAGS,
+      fencePrices,
+      defaultFenceValue: 20, // unreachable fallback: every trade good carries a price
       flavor: {
         buy:  ["No receipt.", "Yours. We never spoke.", "Keep it away from port authority scanners."],
         deny: ["Gold. Real gold. Not scrip.", "Come back when you're not short."],

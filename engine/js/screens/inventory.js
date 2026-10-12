@@ -19,9 +19,11 @@
      Slot cost / Sell price), GEAR sections, NEW badges + Recent order
      from STATE.itemPickups (index.html; provenance was dropped by the
      owner 2026-10-11 — no day/place is recorded or shown).
-   • detail column — category, COUNT / SLOT COST / SELL PRICE,
-     USED FOR (events' requires_item / gate.item), ⇄ NOTES for story
-     items no trader buys, an AI line (cargo_hold.category).
+   • detail column — category, COUNT / SLOT COST (per item) / SELL
+     PRICE (trader · fence — market.js stationBuyPrice / fenceBuyPrice),
+     USED FOR (events' requires_item / gate.item), NOTES (⇄ story items
+     no trader buys, ⚠ classified), an AI line (cargo_hold.category);
+     SELL one to the Market Row trader while docked (ruling 28).
    • jettison — −N+ picker, JETTISON ALL, the red ⚠ confirm (with a
      "Required for:" line only when an event needs the item to fire),
      the tile zoom-fade + poof. A rolled-value copy leaves with its value.
@@ -42,10 +44,24 @@ function itemSpritePath(id) {
   if (NO_ITEM_ART[id]) return null;
   return 'sprites/cargo/items/' + id + '.png';
 }
+// Per-item emoji when the art is missing (demo ITEM_META icons; re-audit
+// B4) — drawn at the sprite's 64px, never a generic 📦 for everything.
+const INV_EMOJI = {
+  gas_analyzer: '🔬', repair_kit: '🔧', medkit: '💊', fuel_cell: '🔋', ration_brick: '🥫', water_canister: '💧',
+  pre_collapse_artifact: '🏺', corporate_memorabilia: '🎖️', logbook_fragment: '📜', classified_cargo: '📦',
+  metal: '⛰️', scrap: '🧱', exotic: '✨', biocomponent: '🌿', minerals: '🪨',
+  expanded_fuel_tank: '⛽', drive_coil: '🌀', insulated_cargo_bay: '🧳', hull_plating: '🛡️', o2_recycler: '🫁', repair_fabricator: '⚙️',
+  water_purifier: '🚰', geiger_counter: '☢️', soil_sampler: '🧪', portable_drill: '🪛', spectrometer: '🌈', medical_scanner: '🩺',
+  pressure_suit: '🧑‍🚀', solar_array: '🔆', emergency_beacon: '🚨', atmospheric_condenser: '🌫️', shield_module_upgrade: '🔰',
+  alien_seed_pod: '🌰', suspicious_fungus: '🍄', fab_surplus: '🎁', sealed_vinyl: '💿', mystery_provisions: '🥡',
+  unidentified_bone: '🦴', star_chart_fragment: '🗺️', distress_beacon_tag: '🏷️', crop_treatment: '🧴', o2_canister: '🫧', hull_patch: '🩹',
+};
+const invEmojiOf = id => NO_ITEM_ART[id] || INV_EMOJI[id] || '📦';
 function invIconHtml(id, isMaterial) {
   const path = isMaterial ? 'sprites/cargo/materials/' + id + '.png' : itemSpritePath(id);
-  if (!path) return '<span class="inv-tile-emoji">' + (NO_ITEM_ART[id] || '📦') + '</span>';
-  return '<img src="' + path + '" alt="" onerror="this.outerHTML=\'<span class=&quot;inv-tile-emoji&quot;>📦</span>\'">';
+  const emo = invEmojiOf(id);
+  if (!path) return '<span class="inv-tile-emoji">' + emo + '</span>';
+  return '<img src="' + path + '" alt="" onerror="this.outerHTML=\'<span class=&quot;inv-tile-emoji&quot;>' + emo + '</span>\'">';
 }
 // materials.json entry for a material id.
 function materialDefOf(id) {
@@ -128,6 +144,15 @@ function invItemCategory(id) {
   if (oneUse) return 'CONSUMABLE';
   return 'INSTRUMENT';
 }
+// Classified cargo (demo ITEM_META classified; Bible §Cargo Hold): a red
+// ⚠ on its tile while docked at a station, and a NOTES line.
+const INV_CLASSIFIED = new Set(['classified_cargo']);
+// Docked = at a station whose services are open (a wave-off closes them)
+// — the same test as the Stop menu's TRADE there. SELL lives here.
+function invDocked() {
+  const n = STATE.byId && STATE.byId[STATE.currentId];
+  return !!(n && n.node_type === 'station' && !STATE.ended && !(typeof window.stationServicesClosed === 'function' && window.stationServicesClosed()));
+}
 function invNameOf(id, material) {
   const d = material ? materialDefOf(id) : itemDef(id);
   return (d && d.name) || prettyItem(id);
@@ -151,9 +176,14 @@ function invTileSlots(en) { return itemSlotsFor(en.id, en.n); } // materials are
 function invEntries(tab) {
   if (tab === 'materials') {
     const order = ((MOD.materials && MOD.materials.materials) || []).map(m => m.id);
+    // NEW + Recent from STATE.materialPickups (grantMaterials marks a
+    // stack that gains units; re-audit B5); unmarked stacks (the launch
+    // stores) are oldest, in materials.json order.
+    const marks = STATE.materialPickups || {};
     return Object.keys(STATE.materials || {}).filter(m => STATE.materials[m] > 0)
       .sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99))
-      .map((id, i) => ({ id, n: STATE.materials[id], material: true, seq: -i, isNew: false }));
+      .map((id, i) => ({ id, n: STATE.materials[id], material: true,
+        seq: marks[id] ? marks[id].s : -(i + 1), isNew: !!(marks[id] && marks[id].n) }));
   }
   syncItemPickups();
   const counts = {};
@@ -240,7 +270,8 @@ function invTile(en, selected) {
     // Rolled-value copies wear their value (Bible §14 tile: hidden value = ??).
     '<span class="inv-tile-price' + (en.copy != null ? ' inv-tile-value' : '') + (price.unknown || price.none ? ' unknown' : '') + '">' + price.label + '</span>' +
     (story ? '<span class="inv-tile-trade">⇄</span>' : '') +
-    (en.isNew ? '<span class="inv-tile-new">NEW</span>' : '');
+    (en.isNew ? '<span class="inv-tile-new">NEW</span>' : '') +
+    (INV_CLASSIFIED.has(en.id) && invDocked() ? '<span class="inv-tile-classified' + (en.isNew ? ' below-new' : '') + '">⚠</span>' : '');
   // Hover (.ui-tip): the name, plus a rolled-value copy's worth.
   tile.dataset.tipTitle = invNameOf(en.id, en.material).toUpperCase();
   if (en.copy != null) tile.dataset.tipDescription = itemValueKnown(en.id) ? 'Worth ' + en.value + 'g.' : 'Worth ' + itemValueRangeLabel(en.id) + ' (unappraised).';
@@ -254,6 +285,7 @@ function invTile(en, selected) {
 }
 // NEW clears once the tile is clicked (demo canon); a stack clears every copy.
 function invMarkSeen(en) {
+  if (en.material) { const m = STATE.materialPickups && STATE.materialPickups[en.id]; if (m) m.n = false; return; }
   const list = STATE.itemPickups && STATE.itemPickups[en.id];
   if (!Array.isArray(list)) return;
   if (en.copy != null) { if (list[en.copy]) list[en.copy].n = false; }
@@ -287,36 +319,60 @@ function renderInvDetail(en) {
   // The spectrometer (items.json: "identifies unknown items") reads the same finding.
   else if (def && def.analysis && STATE.items.includes('spectrometer')) desc += '  ◆ SPECTROMETER: ' + def.analysis;
   document.getElementById('inv-detail-desc').textContent = desc;
-  // items.json passive_flavor — the item's own aside, aboard.
-  document.getElementById('inv-detail-flavor').textContent = (def && def.passive_flavor) || '';
+  // The item's own aside: items.json passive_flavor, or a material's
+  // materials.json flavor line (re-audit B6; demo detail-flavor).
+  document.getElementById('inv-detail-flavor').textContent = (def && def.passive_flavor) || (mdef && mdef.flavor) || '';
 
-  // COUNT / SLOT COST / SELL PRICE (demo rows).
-  let slot;
+  // COUNT / SLOT COST / SELL PRICE (demo rows). SLOT COST is the per-item
+  // figure (re-audit A12, demo + Bible §14.3): a stackable's per-unit
+  // decimal, anything else its whole-slot cost; a stack adds its total.
   const per10 = en.material ? materialPer10(en.id) : def && def.cargo_slots_per_10;
-  if (per10) {
-    // Per-unit decimal (Bible §14.3: "0.3", not the formula); the stack's total alongside.
-    slot = (per10 / 10).toFixed(1) + ' per unit' + (en.n > 1 ? ' <span class="detail-dim">' + itemSlotsFor(en.id, en.n) + ' total</span>' : '');
-  } else slot = String(def ? (def.cargo_slots || 0) * en.n : en.n) + (def && def.slot_bonus ? ' (+' + def.slot_bonus + ' cap)' : '');
+  const total = en.n > 1 ? ' <span class="detail-dim">' + itemSlotsFor(en.id, en.n) + ' total</span>' : '';
+  const slot = (per10 ? (per10 / 10).toFixed(1) + ' per unit' : String(def ? (def.cargo_slots || 0) : 1) + (def && def.slot_bonus ? ' (+' + def.slot_bonus + ' cap)' : '')) + total;
+  // SELL PRICE (re-audit A11): one rule for every good — what a station
+  // trader pays (market.js stationBuyPrice; a rolled copy its own value)
+  // and, for anything a fence takes, what the fence pays (fenceBuyPrice).
   let sell, note = '';
+  const fence = !en.material && typeof window.fenceBuyPrice === 'function';
   if (en.copy != null) {
     // Rolled at pickup: the exact figure needs a spectrometer aboard.
-    if (itemValueKnown(en.id)) sell = en.value + 'g · fence ' + fenceValueOf(en.value) + 'g';
-    else { sell = itemValueRangeLabel(en.id) + ' · fence ' + itemValueRangeLabel(en.id, true); note = 'exact value needs a spectrometer'; }
+    if (itemValueKnown(en.id)) sell = en.value + 'g' + (fence ? ' · fence ' + window.fenceBuyPrice(en.id, en.value) + 'g' : '');
+    else { sell = itemValueRangeLabel(en.id) + (fence ? ' · fence ' + itemValueRangeLabel(en.id, true) : ''); note = 'exact value needs a spectrometer'; }
   } else {
     const p = invPrice(en);
-    sell = p.none ? '—' : p.label + (en.n > 1 ? ' each' : '');
+    const f = fence ? window.fenceBuyPrice(en.id) : null;
+    sell = p.none ? '—' : p.label + (en.n > 1 ? ' each' : '') + (f != null ? ' · fence ' + f + 'g' : '');
   }
   invSetBlock('inv-detail-meta', invStat('COUNT', '×' + en.n) + invStat('SLOT COST', slot) + invStat('SELL PRICE', sell) + (note ? invStat('', note, 'note') : ''));
 
   // USED FOR — the events this item opens options in (real data only).
   const used = en.material ? [] : invUsedFor(en.id);
   invSetBlock('inv-detail-used', used.length ? '<span class="detail-label">USED FOR:</span> ' + used.map(invEsc).join(' · ') : '');
-  // NOTES — explains the ⇄ corner marker.
+  // NOTES — explains the corner markers (demo :1985-1991): ⇄ no trader
+  // buys it; ⚠ classified. No inspection mechanic exists, so the ⚠ line
+  // says what is true (nobody on the rack buys it) — no invented threat.
   const story = !en.material && invPrice(en).none && cat === 'STORY';
-  invSetBlock('inv-detail-notes', story ? '<div class="detail-label">NOTES</div><div class="detail-marker-row"><span class="detail-marker-icon">⇄</span>Not for sale: no trader buys it. Its worth is in what it unlocks.</div>' : '');
+  const notes = [];
+  if (INV_CLASSIFIED.has(en.id)) notes.push(['⚠', 'Classified: off the manifest. No trader will buy it; the contact waiting for it will.', 'classified']);
+  else if (story) notes.push(['⇄', 'Not for sale: no trader buys it. Its worth is in what it unlocks.', '']);
+  invSetBlock('inv-detail-notes', notes.length ? '<div class="detail-label">NOTES</div>' + notes.map(([i, t, c]) =>
+    '<div class="detail-marker-row"><span class="detail-marker-icon' + (c ? ' ' + c : '') + '">' + i + '</span>' + t + '</div>').join('') : '');
   invRenderAiLine('item:' + invKey(en), ['category', cat.toLowerCase()]);
 
-  // Actions (USE / JETTISON; a material has neither).
+  // Actions: SELL (docked at a station, ruling 28) · USE · JETTISON.
+  const sellBtn = document.getElementById('inv-sell-btn');
+  const price = invPrice(en);
+  const canSell = invDocked() && !price.none && !INV_CLASSIFIED.has(en.id);
+  sellBtn.style.display = canSell ? '' : 'none';
+  if (canSell) {
+    const locked = !en.material && typeof canRemoveItem === 'function' && !canRemoveItem(en.id);
+    sellBtn.textContent = 'SELL · ' + (price.unknown ? '??' : price.label);
+    sellBtn.disabled = locked;
+    sellBtn.dataset.tipTitle = 'SELL ONE';
+    sellBtn.dataset.tipDescription = locked ? 'The cargo bay is holding things. Clear some space first.'
+      : 'The Market Row trader buys one for ' + (price.unknown ? 'its real value (' + itemValueRangeLabel(en.id) + ')' : price.label) + '. Same price as the stall.';
+    if (locked) sellBtn.dataset.tipTone = 'danger'; else delete sellBtn.dataset.tipTone;
+  }
   const jett = document.getElementById('inv-jett-btn');
   jett.style.display = ''; // materials too: they take hold space now, so the airlock is their way back
   const useBtn = document.getElementById('inv-use-btn');
@@ -330,6 +386,25 @@ function renderInvDetail(en) {
     else { delete useBtn.dataset.tipDescription; delete useBtn.dataset.tipTone; }
   }
   document.getElementById('inv-detail-actions').classList.remove('inv-hide');
+}
+
+// SELL one of the selected tile (ruling 28) — market.js stationSellOne:
+// the Market Row trader's price and removal, logged like a stall sale.
+function invSellSelected() {
+  if (!_invSelected || _invSelectedRes || !invDocked() || INV_CLASSIFIED.has(_invSelected)) return;
+  const id = _invSelected, isMat = materialPer10(id) != null;
+  if (typeof window.stationSellOne !== 'function') return;
+  const copy = !isMat && sellRangeOf(id) ? (_invSelectedCopy || 0) : null;
+  const tileEl = document.querySelector('#inv-grid .inv-tile[data-key="' + id + (copy != null ? '#' + copy : '') + '"]');
+  const r = window.stationSellOne(id, copy);
+  if (!r || r.why || !Number.isFinite(r.paid)) return;
+  if (!isMat) { syncItemValues(); syncItemPickups(); }
+  renderHUD();
+  if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ Sold from the hold: ' + invNameOf(id, isMat) + ' to the Market Row trader. +' + r.paid + 'g.');
+  const whole = isMat ? !STATE.materials[id] : (!STATE.items.includes(id) || copy != null);
+  if (whole && _invSelected === id) { _invSelected = null; _invSelectedCopy = null; }
+  invJettisonFx(tileEl, whole);
+  if (typeof saveRun === 'function') saveRun();
 }
 
 /* ── AI line: flavor_pools ai_universal.cargo_hold, the active AI's voice ── */
@@ -413,6 +488,10 @@ function invSegColor(pos) {
   if (pos <= 9) return 'var(--gauge-seg-high)';
   return 'var(--gauge-seg-full)';
 }
+function invRate(v) {
+  const r1 = Math.round(v * 10) / 10;
+  return Math.abs(r1 - v) < 1e-9 ? r1.toFixed(1) : (Math.round(v * 100) / 100).toFixed(2);
+}
 function renderInvResources() {
   const row = document.getElementById('inv-res-tiles');
   row.innerHTML = '';
@@ -424,7 +503,10 @@ function renderInvResources() {
     const lit = Math.round(Math.min(1, s.level / (s.max || 100)) * 10);
     let segs = '';
     for (let i = 1; i <= 10; i++) segs += '<div class="gauge-seg' + (i <= lit ? ' lit' : '') + '" style="--seg-color:' + invSegColor(i) + '"></div>';
-    const use = s.perDay > 0 ? '~' + (s.perDay < 0.1 ? s.perDay.toFixed(2) : s.perDay.toFixed(1)) + ' / DAY' : '—';
+    // The figure EMPTY is computed from (re-audit A13: H2O's 0.35 read
+    // "~0.3" beside an EMPTY day worked out at 0.35): one decimal when
+    // that is exact, else two.
+    const use = s.perDay > 0 ? '~' + invRate(s.perDay) + ' / DAY' : '—';
     const empty = s.level <= 0 ? 'NOW' : s.emptyDay == null ? '—' : 'DAY ' + s.emptyDay;
     tile.innerHTML =
       '<div class="res-tile-frame" style="background-image:url(\'' + r.sprite + '\')">' +
@@ -638,6 +720,7 @@ function invSetSort(key) {
   // Outside click closes the flyout.
   document.addEventListener('click', e => { if (sort.classList.contains('open') && !sort.contains(e.target)) sort.classList.remove('open'); });
   document.getElementById('inv-jett-btn').addEventListener('click', invOpenJettison);
+  document.getElementById('inv-sell-btn').addEventListener('click', invSellSelected);
   document.getElementById('inv-jett-minus').addEventListener('click', () => { _invJettisonCount = Math.max(1, _invJettisonCount - 1); invUpdateJettisonCount(); });
   document.getElementById('inv-jett-plus').addEventListener('click', () => { _invJettisonCount = Math.min(_invJettisonMax, _invJettisonCount + 1); invUpdateJettisonCount(); });
   document.getElementById('inv-jett-all').addEventListener('click', () => invJettison(_invJettisonMax));
@@ -678,7 +761,8 @@ function openInventory() {
   showOverlay('overlay-inventory');
   renderInventory();
 }
-// Every close path (✕, CLOSE, backdrop, Esc) — jettisons persist.
+// Every close path (✕, backdrop, Esc — the footer CLOSE is gone, ruling
+// 42) — jettisons persist.
 function closeInventory() {
   document.getElementById('inv-sort').classList.remove('open');
   hideOverlay('overlay-inventory');

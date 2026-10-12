@@ -362,6 +362,18 @@ for (const file of eventFiles) {
 for (const m of (readJSON('modules/materials/materials.json').materials || [])) {
   if ('cargo_slots' in m) err(`materials.json ${m.id}: "cargo_slots" is the item field — materials stack: use cargo_slots_per_10`);
   if ('cargo_slots_per_10' in m && !(Number.isFinite(m.cargo_slots_per_10) && m.cargo_slots_per_10 >= 0)) err(`materials.json ${m.id}: cargo_slots_per_10 must be a number ≥ 0`);
+  // flavor (b4 re-audit B6): the cargo hold's player-facing line. It may
+  // not state a price — the trader's price lives in market.js, and the
+  // old "5 metal = 1g" notes contradicted the 1g a unit it pays.
+  if ('flavor' in m && (typeof m.flavor !== 'string' || !m.flavor.trim())) err(`materials.json ${m.id}: flavor must be a non-empty string`);
+  if (typeof m.flavor === 'string' && /\d\s*(g|cr|gold|credits?)\b|=\s*\d/i.test(m.flavor)) err(`materials.json ${m.id}: flavor states a price ("${m.flavor}") — prices live in market.js`);
+  if ('notes' in m) err(`materials.json ${m.id}: "notes" is retired — player-facing text goes in flavor (no prices)`);
+}
+// passive_skill.fabricator_contribution (b4): the fabricator's crew speed
+// — the one source fabricator.js reads (absent = 0).
+for (const c of readJSON('modules/crew/crew_roster.json')) {
+  const v = c && c.passive_skill && c.passive_skill.fabricator_contribution;
+  if (v !== undefined && !(Number.isFinite(v) && v >= 0)) err(`crew_roster.json ${c.role}: passive_skill.fabricator_contribution must be a number ≥ 0`);
 }
 
 let engineGrantedItems = {}; // filled by the item-sources block; read by the item-sinks block

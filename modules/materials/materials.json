@@ -1,6 +1,7 @@
 {
   "_meta": {
     "description": "Raw materials and currency. Gold is the unit of account. Materials have gold-denominated trade values. Mixed payment: any transaction can be paid in any combination of gold + materials totaling the price. Three paths to any craftable item: buy at a station, mine-and-fabricate, or barter.",
+    "flavor_note": "Each material's flavor line is player-facing (the cargo hold detail, re-audit B6). Prices are not stated here: a station trader pays market.js materialPrice (value × 2.5, at least 1g a unit).",
     "origin": "VA economy primitives + ST credit system merged. Currency is gold — same function as prior 'Credits' system, unified naming. Display unit: 'g' (e.g. 50g). Variable name in engine: goldAmount."
   },
 
@@ -20,7 +21,7 @@
       "description": "Common structural material. Found in asteroids and derelicts.",
       "sources": ["mining", "salvage"],
       "cargo_slots_per_10": 1,
-      "notes": "5 metal = 1g. The bread and butter of fabrication."
+      "flavor": "The bread and butter of fabrication: hull patches, repair kits, O2 canisters."
     },
     {
       "id": "scrap",
@@ -29,7 +30,7 @@
       "description": "Salvaged junk. Barely useful. Better than nothing.",
       "sources": ["salvage", "derelict", "event_reward"],
       "cargo_slots_per_10": 1,
-      "notes": "10 scrap = 1g. The ship computer does not consider scrap a resource. The fabricator disagrees."
+      "flavor": "The ship computer does not consider scrap a resource. The fabricator disagrees."
     },
     {
       "id": "minerals",
@@ -38,7 +39,7 @@
       "description": "Unprocessed mineral ore. Useful in fabrication or tradeable at stations.",
       "sources": ["mining", "event_reward"],
       "cargo_slots_per_10": 1,
-      "notes": "~3 minerals = 1g. Primary asteroid mining yield."
+      "flavor": "The asteroid field's main export, one rock at a time."
     },
     {
       "id": "exotic",
@@ -47,7 +48,7 @@
       "description": "Rare material of unclear origin. High trade value. The ship computer has opinions about touching it.",
       "sources": ["anomaly", "derelict", "event_reward"],
       "cargo_slots_per_10": 1,
-      "notes": "1 exotic = 2g. Rare. The fabricator can use it but won't tell you what for until you try."
+      "flavor": "Rare. The fabricator can use it, but won't say what for until you try."
     },
     {
       "id": "biocomponent",
@@ -56,7 +57,7 @@
       "description": "Organic material with fabrication applications. Also technically food, though the chef has asked everyone not to test this.",
       "sources": ["planet", "derelict", "event_reward"],
       "cargo_slots_per_10": 1,
-      "notes": "1 biocomponent = 1g. Required for crop treatment recipes."
+      "flavor": "Crop treatments and ration bricks start here. The chef keeps a wary eye on the stack."
     }
   ]
 }
