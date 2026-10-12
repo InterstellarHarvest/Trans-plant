@@ -279,11 +279,17 @@
   }
 
   // Can this recipe actually be crafted right now?
+  // Days past the voyage deadline (STATE.baseDays) a craft would finish —
+  // any overrun is the time_expired failure, so such a craft is locked.
+  function overrunDays(recipe) {
+    return (FSTATE.tripDay + actualDays(recipe.days)) - FSTATE.arrivalDay;
+  }
   function canCraft(recipe) {
     if (recipeLockState(recipe) !== 'available') return false;
     if (!hasMaterials(recipe)) return false;
     if (!fabFunctional()) return false;
     if (FSTATE.craft) return false;       // one craft at a time
+    if (overrunDays(recipe) > 0) return false; // would end the voyage (time_expired)
     return true;
   }
 
@@ -489,7 +495,7 @@
     const overrunBy = finishDay - FSTATE.arrivalDay;
     const overrunWarn = overrunBy > 0
       ? '<div class="fb-warn overrun">⚠ Finishes day ' + finishDay +
-        ' · <strong>' + overrunBy + 'd past arrival</strong></div>'
+        ' · <strong>' + overrunBy + 'd past the deadline</strong></div>'
       : '';
 
     // Wear threshold warning — will push wear past service or break.
@@ -539,6 +545,9 @@
     } else if (FSTATE.craft) {
       btn.classList.add('locked');
       btn.textContent = 'IN PROGRESS…';
+    } else if (overrunDays(r) > 0) {
+      btn.classList.add('locked');
+      btn.textContent = 'PAST DEADLINE';
     } else {
       btn.classList.remove('locked');
       btn.textContent = 'CRAFT';

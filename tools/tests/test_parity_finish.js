@@ -12,7 +12,7 @@
 //  4. items.json gameplay_effect is player text only (design_note holds the
 //     authoring notes); no note shows anywhere.
 const { chromium } = require('playwright');
-const URL = process.env.URL || 'http://localhost:8225/index.html';
+const URL = process.env.URL || 'http://localhost:8177/index.html';
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } };
 let browser;
