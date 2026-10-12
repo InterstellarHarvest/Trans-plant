@@ -12,6 +12,11 @@
 //   B8 CANCEL's refund comes back through the material grant (NEW mark).
 //   B9 a job whose required part leaves the ship loses the part's wear
 //      discount when it comes out.
+//   B4 (ruling 54) Hold SELL stays free; its tooltip says no day is spent.
+//   B6 (ruling 55) craft days roll no interrupts; a CANCEL after the
+//      job's first day refunds half the materials (rounded down per
+//      material) — tooltip = outcome, hold-full refusal on the half,
+//      pickup marks kept.
 const { chromium } = require('playwright');
 const URL = process.env.URL || 'http://localhost:8177/index.html';
 let pass = 0, fail = 0;
@@ -261,6 +266,92 @@ const MATS = { metal: 20, scrap: 20, minerals: 10, biocomponent: 10, exotic: 2 }
     await page.waitForFunction(() => !window.fabCraftState(), null, { timeout: 5000 });
     const w = await page.evaluate(() => STATE.fabricator.wear);
     ok(Math.abs(w - 11.8) < 1e-9, `part aboard to the end: the discounted wear only (10 → ${w})`);
+    await page.close();
+  }
+
+  console.log('— B4 (ruling 54): Hold SELL is free, and its tooltip says so');
+  {
+    const page = await boot();
+    const r = await page.evaluate(() => {
+      const st = STATE.nodes.find(n => n.node_type === 'station');
+      STATE.currentId = st.id; STATE.stationVisit = null;
+      STATE.items = ['hull_plating'];
+      syncItemValues(); syncItemPickups();
+      openInventory(); invSetTab('upgrades');
+      document.querySelector('#inv-grid .inv-tile[data-id="hull_plating"]').click();
+      const btn = document.getElementById('inv-sell-btn');
+      const tip = btn.dataset.tipDescription, label = btn.textContent;
+      const d = STATE.daysElapsed, mo = crewMoraleOf('pilot');
+      btn.click();
+      const out = { tip, label, sold: !STATE.items.includes('hull_plating'), dd: STATE.daysElapsed - d, dmo: crewMoraleOf('pilot') - mo };
+      closeInventory();
+      return out;
+    });
+    ok(/Same price as the stall · no day spent\./.test(r.tip), `the SELL tooltip: "${r.tip}"`);
+    ok(r.sold && r.dd === 0 && r.dmo === 0, `and it is free: sold, ${r.dd} days, ${r.dmo} morale`);
+    await page.close();
+  }
+
+  console.log('— B6 (ruling 55): CANCEL after the first day refunds half the materials');
+  {
+    const page = await boot();
+    await page.evaluate(() => { STATE.materials = { metal: 20, scrap: 20 }; STATE.materialPickups = {}; STATE.fabricator.wear = 0; window.fabSetDayMs(150); openFabricator(); });
+    await pickRecipe(page, 'Field Repair Kit'); // 5 metal + 3 scrap, 3 days solo
+    const r = await page.evaluate(async () => {
+      const w = ms => new Promise(res => setTimeout(res, ms));
+      craftSelected();
+      const tip0 = document.getElementById('fb-progress-cancel').dataset.tipDescription;
+      for (let i = 0; i < 80 && window.fabCraftState().daysDone < 1; i++) await w(20);
+      window.fabSetDayMs(60000); // hold the clock on day 1
+      await w(80);
+      const tip1 = document.getElementById('fb-progress-cancel').dataset.tipDescription;
+      const before = { metal: STATE.materials.metal, scrap: STATE.materials.scrap, d: STATE.daysElapsed, seq: STATE.itemSeq || 0 };
+      STATE.materialPickups = {};
+      cancelCraft();
+      return { tip0, tip1, before, metal: STATE.materials.metal, scrap: STATE.materials.scrap, d: STATE.daysElapsed, mp: STATE.materialPickups,
+        log: STATE.shipLog.slice(-1)[0].text, craft: window.fabCraftState() };
+    });
+    ok(/Nothing has been spent/.test(r.tip0), `day 0: "${r.tip0.slice(0, 50)}"`);
+    ok(/^Refunds half the materials \(2 METAL, 1 SCRAP\)/.test(r.tip1), `after a day the tooltip names the half: "${r.tip1.slice(0, 60)}"`);
+    ok(!r.craft && r.metal === r.before.metal + 2 && r.scrap === r.before.scrap + 1, `…and that is what comes back (+${r.metal - r.before.metal} metal, +${r.scrap - r.before.scrap} scrap)`);
+    ok(r.d === r.before.d, 'the day already spent stays spent; no further day');
+    ok(r.mp.metal && r.mp.metal.n && r.mp.metal.s > r.before.seq && r.mp.scrap && r.mp.scrap.n, `the half comes back as a pickup (NEW, newest): ${JSON.stringify(r.mp)}`);
+    ok(/Half the materials are back in the hold \(2 metal, 1 scrap\)/.test(r.log), `the log says the same ("${r.log.slice(0, 90)}")`);
+    await page.close();
+  }
+  {
+    // The hold-full refusal is measured on the half: room for 2 metal + 1
+    // scrap (not for the full 5 + 3) lets the cancel through.
+    const page = await boot();
+    await page.evaluate(() => { STATE.materials = { metal: 13, scrap: 4 }; STATE.fabricator.wear = 0; window.fabSetDayMs(150); openFabricator(); });
+    await pickRecipe(page, 'Field Repair Kit');
+    const r = await page.evaluate(async () => {
+      const w = ms => new Promise(res => setTimeout(res, ms));
+      craftSelected(); // metal 8, scrap 1: one slot each
+      for (let i = 0; i < 80 && window.fabCraftState().daysDone < 1; i++) await w(20);
+      window.fabSetDayMs(60000);
+      while (cargoSlotsUsed() < cargoCapacity()) STATE.items.push('gas_analyzer');
+      const fullLand = materialLandings({ metal: 5, scrap: 3 });
+      cancelCraft();
+      const half = { craft: !!window.fabCraftState(), metal: STATE.materials.metal, scrap: STATE.materials.scrap, notice: fabNoticeText() };
+      return { fullLand, half };
+    });
+    ok(r.fullLand.metal < 5, `the full refund would not fit (metal lands ${r.fullLand.metal}/5)`);
+    ok(!r.half.craft && r.half.metal === 10 && r.half.scrap === 2 && !/HOLD FULL/.test(r.half.notice), `the half fits, so the cancel goes through (metal ${r.half.metal}, scrap ${r.half.scrap})`);
+    // …and a half that doesn't fit is refused, nothing lost.
+    await page.evaluate(m => { STATE.items = STATE.items.filter(x => x !== 'gas_analyzer'); STATE.materials = { metal: 10, scrap: 10 }; window.fabSetDayMs(150); }, null);
+    await pickRecipe(page, 'Field Repair Kit');
+    const f = await page.evaluate(async () => {
+      const w = ms => new Promise(res => setTimeout(res, ms));
+      craftSelected(); // metal 5, scrap 7
+      for (let i = 0; i < 80 && window.fabCraftState().daysDone < 1; i++) await w(20);
+      window.fabSetDayMs(60000);
+      STATE.materials.metal = 10; // a full slot: the 2 back would need another
+      while (cargoSlotsUsed() < cargoCapacity()) STATE.items.push('gas_analyzer');
+      cancelCraft();
+      return { craft: !!window.fabCraftState(), metal: STATE.materials.metal, notice: fabNoticeText() };
+    });
+    ok(f.craft && f.metal === 10 && /HOLD FULL/.test(f.notice), `a half the hold can't take is refused, nothing lost ("${f.notice.slice(0, 40)}")`);
     await page.close();
   }
 
