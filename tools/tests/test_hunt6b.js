@@ -86,7 +86,10 @@ const btn = (page, re) => page.evaluate(src => { const b = [...document.querySel
     const d0 = await page.evaluate(() => STATE.daysElapsed);
     await reloadAndContinue(page);
     const r = await page.evaluate(() => ({ ev: STATE.currentEvent && STATE.currentEvent.id, fuel: STATE.resources.fuel, hull: STATE.resources.hull, day: STATE.daysElapsed }));
-    ok(!r.ev && r.fuel === 45 && Math.round(r.hull) === hullInFight && r.day > d0, `settled as an escape (fuel ${r.fuel}, hull ${Math.round(r.hull)} = fight ${hullInFight}, days +${r.day - d0})`);
+    // Ruling 53: the escape is played out, its charge-turn volleys on the
+    // hull — never better than the hull the fight left (test_save_quit pins
+    // the exact volleys).
+    ok(!r.ev && r.fuel === 45 && Math.round(r.hull) <= hullInFight && r.day > d0, `settled as an escape (fuel ${r.fuel}, hull ${Math.round(r.hull)} ≤ fight ${hullInFight}, days +${r.day - d0})`);
     await page.close();
   }
 
