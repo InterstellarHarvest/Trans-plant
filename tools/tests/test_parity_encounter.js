@@ -182,10 +182,10 @@ const box = async (page, sel) => page.evaluate(sel => { const r = document.query
         shadow: getComputedStyle(txt).textShadow, color: getComputedStyle(txt).color,
         dlg: d.classList.contains('hidden') ? null : { cls: d.classList.contains('corrupted'), shadow: getComputedStyle(d).textShadow, anim: getComputedStyle(d).animationName, bg: getComputedStyle(d).backgroundColor },
         art: bd.classList.contains('has-bg-sprite'), bdFilter: getComputedStyle(bd).filter, bdAnim: getComputedStyle(bd).animationName,
-        metaGap: document.getElementById('enc-meta').getBoundingClientRect().top - bar.getBoundingClientRect().bottom,
+        metaGap: Math.min(...['enc-subject', 'enc-choices'].map(id => document.getElementById(id)).filter(el => getComputedStyle(el).display !== 'none' && el.offsetHeight).map(el => el.getBoundingClientRect().top - bar.getBoundingClientRect().bottom)),
       };
     });
-    ok(r.metaGap >= 0, id + ': location label clears the (wider) corrupted AI bar (gap ' + Math.round(r.metaGap) + 'px)');
+    ok(r.metaGap >= 0, id + ': the portrait + choices clear the (wider) corrupted AI bar (gap ' + Math.round(r.metaGap) + 'px; b4: the location label moved to the title row)');
     ok(r.barCls && /160, 90, 200/.test(r.barBorder) && r.barAnim === 'enc-corrupt-flicker', id + ': AI bar purple + flicker (' + r.barBorder + ', ' + r.barAnim + ')');
     ok(/204, 51, 51/.test(r.shadow) && /95, 168, 208/.test(r.shadow) && /224, 200, 240/.test(r.color), id + ': AI text red/blue split shadow');
     ok(r.art && /hue-rotate/.test(r.bdFilter) && r.bdAnim === 'enc-corrupt-backdrop', id + ': backdrop keeps a corrupted treatment over the art (' + r.bdFilter + ')');
@@ -285,7 +285,8 @@ const box = async (page, sel) => page.evaluate(sel => { const r = document.query
     ok(!(await page.evaluate(() => !!document.querySelector('#enc-choices .enc-choice.leave'))), 'leaveHidden layer (handoff pry) has no leave row');
     await enter(page, 'event_encounter_pirate_001', { nodeType: 'void', species: 'rock' });
     await snap(page);
-    ok(!(await page.evaluate(() => !!document.querySelector('#enc-choices .enc-choice.leave'))), 'pirate (no_leave): the authored Flee is the exit, no row');
+    // b4 ruling 39: the pirate's leave row is BREAK OFF (it does what Flee does).
+    ok(await page.evaluate(() => { const l = document.querySelector('#enc-choices .enc-choice.leave'); return !!l && l.textContent.trim() === 'BREAK OFF'; }), 'pirate: BREAK OFF leave row (b4 ruling 39)');
     // Forced: locked row + ⏱ title.
     for (const [id, nodeType, label] of [['event_crisis_017', 'void', "CAN'T LEAVE (HULL BREACH)"], ['event_nebula_004', 'nebula', "CAN'T LEAVE (MID-TRANSIT)"]]) {
       await enter(page, id, { nodeType });
@@ -336,7 +337,7 @@ const box = async (page, sel) => page.evaluate(sel => { const r = document.query
     await enter(page, 'event_encounter_trader_001', { nodeType: 'void', species: 'robot', layer: 'pitch' });
     await snap(page);
     const sub = await page.evaluate(() => { const b = [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => /beacon/i.test(b.textContent)); return b.querySelector('.ch-sub').textContent; });
-    ok(sub === '🔒 Need: 60g', 'rendered: ' + sub);
+    ok(sub === 'Need: 60g', 'rendered: ' + sub + ' (b4 B6: plain grey under the padlock badge)');
     await page.close();
   }
 
@@ -407,7 +408,7 @@ const box = async (page, sel) => page.evaluate(sel => { const r = document.query
     await enter(page, 'event_encounter_trader_001', { nodeType: 'void', species: 'water', layer: 'misc' });
     await snap(page);
     const lockedSub = await page.evaluate(() => { const b = [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => /surplus bin/i.test(b.textContent)); return b.classList.contains('locked') && b.querySelector('.ch-sub').textContent; });
-    ok(lockedSub === '🔒 Need: 8g', 'surplus bin locked when short (' + lockedSub + ')');
+    ok(lockedSub === 'Need: 8g', 'surplus bin locked when short (' + lockedSub + ')');
     await page.waitForTimeout(350); // the choice column's 300ms double-click lock
     await page.evaluate(() => { STATE.goldAmount = 20; STATE.items = []; renderEncounterState(); finishAllTyping(); [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => /surplus bin/i.test(b.textContent)).click(); });
     await page.waitForTimeout(150);

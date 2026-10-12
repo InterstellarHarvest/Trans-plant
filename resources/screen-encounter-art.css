@@ -6,11 +6,13 @@
    Painted by engine/js/scene_art.js.
    ═══════════════════════════════════════════════════════════════════ */
 #screen-encounter {
-  /* DESIGN_SYSTEM.md "Subject frame": 160px default (the demos disagreed:
-     demo-encounter's slider 160, its :root 260; the engine had 240).
-     --subj-top stays 100: it clears .enc-meta (top:60) above it. */
+  /* DESIGN_SYSTEM.md "Subject frame": 160px at top 60 (the demos disagreed:
+     demo-encounter's slider 160/60, its :root 260/90). b4 ruling 35: the
+     location label moved into the narrative title row, so the portrait
+     is back at 60. index.html placeBelowAiBar() lowers it inline only
+     when a long AI line wraps the bar past that. */
   --subj-size: 160px;
-  --subj-top: 100px; /* clears .enc-meta (left:14 top:60) above it */
+  --subj-top: 60px;
   --subj-border: #545F5C;
   --subj-border-w: 2px;
   --subj-corner: #c8a85a;
@@ -153,6 +155,18 @@
 #screen-encounter .enc-subject.pose-listening .enc-subject-head { filter: brightness(1.1); }
 #screen-encounter .enc-subject.pose-hostile   .enc-subject-head { filter: brightness(0.85) contrast(1.2) hue-rotate(-10deg); }
 #screen-encounter .enc-subject.pose-pleased   .enc-subject-head { filter: brightness(1.2) saturate(1.2); }
+
+/* Talking bob (demo :946-956, b4 B10): a head with no spritesheet (emoji
+   or a single portrait) bobs 2px while its line types; a spritesheet's
+   frame cycle IS the talk, so it never bobs. scene_art.js toggles
+   .talking with the talk loop. */
+#screen-encounter .enc-subject-head.talking:not(.has-spritesheet) {
+  animation: enc-head-talk 0.3s infinite alternate ease-in-out;
+}
+@keyframes enc-head-talk {
+  from { transform: translateY(0);    filter: brightness(1);    }
+  to   { transform: translateY(-2px); filter: brightness(1.12); }
+}
 
 @keyframes enc-layer-flash {
   0%   { filter: brightness(1.25); }
@@ -319,8 +333,8 @@
   color: var(--cream, #e8d8a0);
 }
 #screen-encounter .enc-choice .ch-sub {
-  font-size: 13px;
-  color: #8a93a5;
+  font-size: 12px;   /* demo --sub-size (b4 B6) */
+  color: var(--body, #8898a8);
   letter-spacing: 0.5px;
   display: flex; gap: 8px; align-items: center;
   line-height: 1.1;
@@ -330,7 +344,7 @@
   color: var(--gold, #c8a85a);
   font-size: 11px; letter-spacing: 1px; line-height: 1;
 }
-#screen-encounter .enc-choice .ch-sub .risky { color: #d06a5a; }
+#screen-encounter .enc-choice .ch-sub .risky { color: #cc3333; } /* demo --choice-risky */
 
 /* ── Accent strip: right side, 5px (Bible §18 + DESIGN_SYSTEM default) ──
    --strip-c carries the variant colour; hover re-borders all four sides
@@ -343,7 +357,6 @@
 }
 #screen-encounter .enc-choices:not(.combat-actions) .enc-choice.risky   { --strip-c: #cc3333; }
 #screen-encounter .enc-choices:not(.combat-actions) .enc-choice.hint    { --strip-c: var(--teal, #5fa8d0); }
-#screen-encounter .enc-choices:not(.combat-actions) .enc-choice.advance { --strip-c: var(--teal, #5fa8d0); }
 #screen-encounter .enc-choices:not(.combat-actions) .enc-choice:hover   { border-color: var(--strip-c); }
 #screen-encounter .enc-choices:not(.combat-actions) .enc-choice.locked {
   --strip-c: rgba(95,100,115,0.4);

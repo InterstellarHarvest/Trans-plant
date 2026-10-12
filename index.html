@@ -504,7 +504,12 @@ body {
   font-family: 'Press Start 2P', cursive; line-height: 1;
   font-size: 14px; letter-spacing: 2px; color: var(--gold);
   text-shadow: 0 0 6px rgba(200,168,90,0.3);
+  text-transform: uppercase; /* b4 B1: the demo's titles are all caps; ~110 authored mixed-case titles */
 }
+/* b4 ruling 35: the title row carries the location label (was .enc-meta
+   at top:60, which pushed the portrait down to 100). */
+.enc-narr-head { display: flex; align-items: baseline; gap: 14px; }
+.enc-narr-head .enc-narr-title { flex: 1 1 auto; min-width: 0; }
 .enc-narr-body {
   font-family: 'VT323', monospace;
   font-size: 18px; line-height: 1.3; letter-spacing: 0.5px;
@@ -514,16 +519,16 @@ body {
   min-height: 0; /* lets the flex item actually shrink so overflow-y engages at the panel cap */
 }
 .enc-narrative.tone-success { border-color: #7fb8a8; box-shadow: 0 0 14px rgba(127,184,168,0.18); }
-.enc-narrative.tone-success .enc-narr-title { color: #a8d8c8; }
+.enc-narrative.tone-success .enc-narr-title { color: #a8d8c8; text-shadow: 0 0 6px rgba(127,184,168,0.45); } /* b4 B2: demo :792-803 glow per tone */
 .enc-narrative.tone-danger  { border-color: #c25555; box-shadow: 0 0 14px rgba(194,85,85,0.18); }
-.enc-narrative.tone-danger  .enc-narr-title { color: #ff8878; }
+.enc-narrative.tone-danger  .enc-narr-title { color: #ff8878; text-shadow: 0 0 6px rgba(204,51,51,0.5); }
 
 .enc-choices {
   position: absolute;
   right: 14px; top: 60px;
   bottom: 170px;
   width: 320px;
-  display: flex; flex-direction: column; gap: 6px; /* 6 choices with sub-labels fit without scrolling */
+  display: flex; flex-direction: column; gap: 8px; /* demo-encounter .enc-choices (b4 B6) */
   overflow-y: auto;
   z-index: 30;
 }
@@ -540,7 +545,7 @@ body {
   cursor: var(--cursor-hand, pointer);
   transition: border-color 0.12s, filter 0.12s, transform 0.08s;
 }
-.enc-choice:hover { border-color: var(--gold); filter: brightness(1.15); }
+.enc-choice:hover { border-color: var(--gold); filter: brightness(1.12); }
 .enc-choice:active { transform: translateY(1px); }
 .enc-choice .ch-text {
   font-size: 15px; letter-spacing: 1px;
@@ -550,41 +555,35 @@ body {
 .enc-choice .ch-sub {
   font-size: 12px;
   color: var(--body);
-  margin-top: 4px;
   letter-spacing: 0.5px;
 }
-.enc-choice .ch-sub .lock { color: #cc5555; }
 .enc-choice.locked {
   cursor: var(--cursor-denied, not-allowed);
-  filter: grayscale(0.6) brightness(0.55);
+  filter: grayscale(0.6) brightness(0.65);
   border-left-color: rgba(95,100,115,0.4);
   border-color: rgba(95,100,115,0.3);
 }
-.enc-choice.locked:hover { filter: grayscale(0.6) brightness(0.6); border-color: rgba(95,100,115,0.3); }
-.enc-choice.advance {
-  border-left-color: var(--teal);
-  color: var(--teal);
-}
-.enc-choice.advance:hover { border-color: var(--teal); }
+.enc-choice.locked:hover { filter: grayscale(0.6) brightness(0.7); border-color: rgba(95,100,115,0.3); }
+/* .advance (CONTINUE) is a plain gold choice, as the demo's
+   renderOutcomeContinue (b4 B4) — the class stays as the hook. */
 
+/* Location label, right end of the narrative title row (b4 ruling 35):
+   "Kepler's Rest · ASTEROID FIELD" — place name in VT323, the node's
+   display type in small Press Start. */
 .enc-meta {
-  position: absolute;
-  left: 14px; top: 60px;
-  font-family: 'Press Start 2P', cursive; line-height: 1;
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--gold-bright);
-  text-shadow: 0 0 8px rgba(200,168,90,0.4);
-  z-index: 25;
-}
-.enc-meta .where {
-  display: block;
+  flex: 0 0 auto;
+  margin-left: auto;
+  white-space: nowrap;
   font-family: 'VT323', monospace;
-  font-size: 14px;
+  font-size: 15px; line-height: 1;
   color: var(--body);
   letter-spacing: 1px;
-  margin-top: 4px;
-  text-transform: none;
+}
+.enc-meta .kind {
+  font-family: 'Press Start 2P', cursive; line-height: 1;
+  font-size: 8px; letter-spacing: 2px;
+  color: var(--gold);
+  margin-left: 8px;
 }
 
 /* End screen (Phase 6 two-screen cinematic+report flow) now lives in
@@ -828,13 +827,13 @@ body {
       <span class="enc-ai-name" id="enc-ai-name">MARV</span>
       <span class="enc-ai-text" id="enc-ai-text"></span>
     </div>
-    <div class="enc-meta" id="enc-meta"></div>
     <div class="enc-choices" id="enc-choices"></div>
     <!-- No whitespace between the spans: the strip's text sets
          white-space: pre-line, and markup newlines became blank lines. -->
     <div class="enc-dialog hidden" id="enc-dialog"><span class="enc-dialog-name" id="enc-dialog-name"></span><span class="enc-dialog-line" id="enc-dialog-line"></span></div>
     <div class="enc-narrative" id="enc-narrative">
-      <div class="enc-narr-title" id="enc-narr-title"></div>
+      <!-- b4 ruling 35: the location label lives in the title row -->
+      <div class="enc-narr-head"><div class="enc-narr-title" id="enc-narr-title"></div><div class="enc-meta" id="enc-meta"></div></div>
       <div class="enc-narr-body" id="enc-narr-body"></div>
     </div>
 
@@ -4339,6 +4338,9 @@ function currentLayer() {
    input can't reach a held choice (pointer-events: none), so this never
    changes what a player can do. */
 const _typeActive = new Map(); // el → finish(silent, foreign)
+// Per-character beat speeds = demo-encounter runBeats cps (b4 B5): AI 70 cps,
+// narrator 55 cps, spoken line 45 cps.
+const TYPE_MS = { ai: 14, narrator: 18, spoken: 22 };
 // Pause menu SETTINGS → TEXT SPEED (shared.js tpLoadSettings).
 const TEXT_SPEED_MULT = { slow: 1.8, normal: 1, fast: 0.35 };
 function textSpeedMult() {
@@ -4388,7 +4390,7 @@ function fitEncDialog(tries) {
    silently; someone else writing the element (combat's setNarrCombat)
    makes it stand down and leave their text alone. Returns finish(). */
 function typeInto(el, text, ms, onDone) {
-  ms = Math.max(4, Math.round((ms || 12) * textSpeedMult()));
+  ms = Math.max(4, Math.round((ms || TYPE_MS.narrator) * textSpeedMult()));
   text = String(text == null ? '' : text);
   const prev = _typeActive.get(el);
   if (prev) prev(true);
@@ -4410,8 +4412,9 @@ function typeInto(el, text, ms, onDone) {
     if (!silent && onDone) onDone();
   };
   _typeActive.set(el, finish);
-  // Long bodies speed up so a wall of text never gates the player.
-  const perTick = text.length > 320 ? 3 : (text.length > 160 ? 2 : 1);
+  // One character per tick, as the demo's typewriter (b4 B5: the long-body
+  // 2–3 chars/tick speed-up is gone; a click snaps it all in).
+  const perTick = 1;
   if (!text.length) { finish(false); return finish; }
   timer = setInterval(() => {
     if (window.PauseBus && PauseBus.paused) return;
@@ -4642,13 +4645,13 @@ function renderEncounterState(opts) {
   aiBar.classList.toggle('corrupted', corrupted);
   if (aiFlavor && aiFlavor[STATE.activeAI]) {
     document.getElementById('enc-ai-name').textContent = STATE.activeAI.toUpperCase();
-    beats.push({ el: document.getElementById('enc-ai-text'), ms: 14,
+    beats.push({ el: document.getElementById('enc-ai-text'), ms: TYPE_MS.ai,
                  text: quoteLine(interpolateStowawayTokens(interpolateNpcTokens(aiFlavor[STATE.activeAI], STATE.npcCtx))) });
     aiBar.classList.remove('hidden');
   } else {
     aiBar.classList.add('hidden');
   }
-  beats.push({ el: document.getElementById('enc-narr-body'), text: layerBodyText, ms: 12 });
+  beats.push({ el: document.getElementById('enc-narr-body'), text: layerBodyText, ms: TYPE_MS.narrator });
 
   const dialogEl = document.getElementById('enc-dialog');
   const speaker = layerNpcCtx || STATE.npcCtx;
@@ -4661,7 +4664,7 @@ function renderEncounterState(opts) {
     document.getElementById('enc-dialog-name').textContent = speaker ? speaker.displayName : '';
     // Dialog types slower than narration (spoken cadence); the talk loop
     // runs while this beat types and settles on idle when it lands.
-    beats.push({ el: document.getElementById('enc-dialog-line'), text: quoteLine(lineText), ms: 26,
+    beats.push({ el: document.getElementById('enc-dialog-line'), text: quoteLine(lineText), ms: TYPE_MS.spoken,
                  onStart: () => { if (window.SceneArt && SceneArt.talk) SceneArt.talk(lineText); },
                  onStop: () => { if (window.SceneArt) SceneArt.stopTalking(); } });
     dialogEl.classList.remove('hidden');
@@ -4680,18 +4683,8 @@ function renderEncounterState(opts) {
   // Layer-change flash on the narrative + subject (demo canon).
   flashEncPanels();
 
-  const meta = document.getElementById('enc-meta');
-  meta.innerHTML = `${(node.node_type || '').toUpperCase()}<span class="where">${node.name}</span>`;
-  // A wrapped (taller) AI bar pushes the location label down to clear it.
-  // Painted before the screen shows (first entry) the bar measures 0 —
-  // measure again once it lays out (the corrupted bar's wide tracking
-  // wraps it a line further, and it ran over the label).
-  const placeMeta = () => {
-    const below = aiBar.classList.contains('hidden') ? 0 : aiBar.offsetTop + aiBar.offsetHeight + 8;
-    meta.style.top = Math.max(60, below) + 'px';
-  };
-  placeMeta();
-  requestAnimationFrame(placeMeta);
+  paintEncMeta(node);
+  placeBelowAiBar();
 
   renderChoices(choices);
   delivery.run();
@@ -4699,6 +4692,51 @@ function renderEncounterState(opts) {
   // it whole rather than type it all out again.
   if (opts && opts.instant) snapDelivery();
 }
+
+/* Location label (b4 A2 + ruling 35): the narrative title row's right end
+   — the place's name and its node type's display name (map.js
+   TYPE_LABELS: "ASTEROID FIELD", never the raw "ASTEROID_FIELD"). */
+function nodeTypeLabel(t) {
+  if (!t) return '';
+  const lbl = (typeof TYPE_LABELS !== 'undefined' && TYPE_LABELS[t]) || String(t).replace(/_/g, ' ');
+  return lbl.toUpperCase();
+}
+function paintEncMeta(node) {
+  const meta = document.getElementById('enc-meta');
+  if (!meta) return;
+  meta.textContent = '';
+  if (!node) return;
+  const kind = nodeTypeLabel(node.node_type);
+  if (node.name) meta.appendChild(document.createTextNode(node.name));
+  // A generated name already says the type ("Asteroid Field (alpha)"): once is enough.
+  if (kind && !String(node.name || '').toUpperCase().includes(kind)) {
+    const k = document.createElement('span');
+    k.className = 'kind';
+    k.textContent = kind;
+    meta.appendChild(k);
+  }
+}
+/* The portrait sits at top 60 (DESIGN_SYSTEM:534, ruling 35) and the
+   choice column at 60 — unless a long AI line wraps the bar past that:
+   then both start just under it, so nothing hides under the bar.
+   Painted before the screen shows, the bar measures 0: again next frame. */
+function placeBelowAiBar(again) {
+  const scr = document.getElementById('screen-encounter');
+  const bar = document.getElementById('enc-ai-bar');
+  const col = document.getElementById('enc-choices');
+  if (!scr || !bar) return;
+  // A two-line bar ends just above 60: only a bar that really reaches past
+  // it (3–4 lines, the corrupted tracking) moves anything.
+  const barBottom = (bar.classList.contains('hidden') || !bar.offsetHeight) ? 0 : bar.offsetTop + bar.offsetHeight;
+  const top = barBottom > 60 ? barBottom + 4 : 60;
+  const v = top > 60 ? top + 'px' : '';
+  if (v) scr.style.setProperty('--subj-top', v); else scr.style.removeProperty('--subj-top');
+  const mk = document.getElementById('overlay-market');
+  if (mk) { if (v) mk.style.setProperty('--subj-top', v); else mk.style.removeProperty('--subj-top'); }
+  if (col) col.style.top = v;
+  if (!again) requestAnimationFrame(() => placeBelowAiBar(true));
+}
+window.placeBelowAiBar = placeBelowAiBar;
 
 /* Demo layer-flash: a quick brightness kick on the narrative panel and
    the subject frame whenever a layer or outcome paints. */
@@ -4720,7 +4758,8 @@ function renderOutcomeView(outcome) {
   // applied (the entry save above would otherwise offer the choice again).
   if (!STATE.ended && STATE.trail && STATE.nodes.length) writeSnapshot(SAVE_KEY);
   _renderGen++;
-  document.getElementById('enc-narr-title').textContent = outcome.title || 'OUTCOME';
+  // An untitled outcome takes the event's own title (b4 ruling 37).
+  document.getElementById('enc-narr-title').textContent = outcome.title || eventOutcomeTitle();
   let bodyText = interpolateStowawayTokens(interpolateNpcTokens(outcome.body || outcome.narrative || '...', STATE.npcCtx));
   // A lethal outcome the medic/medkit turned into an injury still reads
   // as a death in authored text — say what actually happened.
@@ -4737,8 +4776,8 @@ function renderOutcomeView(outcome) {
   // Beats: AJOY's hindsight (when she has one) → narrator → spoken line.
   const beats = [];
   const hindsight = showHindsight();
-  if (hindsight) beats.push({ el: document.getElementById('enc-ai-text'), text: quoteLine(hindsight), ms: 14 });
-  beats.push({ el: document.getElementById('enc-narr-body'), text: bodyText, ms: 12 });
+  if (hindsight) beats.push({ el: document.getElementById('enc-ai-text'), text: quoteLine(hindsight), ms: TYPE_MS.ai });
+  beats.push({ el: document.getElementById('enc-narr-body'), text: bodyText, ms: TYPE_MS.narrator });
   const dialogEl = document.getElementById('enc-dialog');
   dialogEl.classList.toggle('corrupted', corrupted);
   let lineText = null;
@@ -4746,7 +4785,7 @@ function renderOutcomeView(outcome) {
     const who = STATE.lastSpeaker || STATE.npcCtx;
     document.getElementById('enc-dialog-name').textContent = who ? who.displayName : '';
     lineText = interpolateStowawayTokens(interpolateNpcTokens(outcome.line, who));
-    beats.push({ el: document.getElementById('enc-dialog-line'), text: quoteLine(lineText), ms: 26,
+    beats.push({ el: document.getElementById('enc-dialog-line'), text: quoteLine(lineText), ms: TYPE_MS.spoken,
                  onStart: () => { if (window.SceneArt && SceneArt.talk) SceneArt.talk(lineText); },
                  onStop: () => { if (window.SceneArt) SceneArt.stopTalking(); } });
     dialogEl.classList.remove('hidden');
@@ -4762,8 +4801,15 @@ function renderOutcomeView(outcome) {
   const col = document.getElementById('enc-choices');
   col.innerHTML = '';
   col.appendChild(makeAdvanceButton('Continue'));
+  placeBelowAiBar(); // AJOY's hindsight can rewrap the bar
   fitEncounterColumns();
   delivery.run();
+}
+/* Flat events' outcomes carry no title of their own: they read under the
+   event's title (b4 ruling 37 — every one used to say "OUTCOME"). */
+function eventOutcomeTitle() {
+  const ev = STATE.currentEvent;
+  return (ev && ev.title) || 'OUTCOME';
 }
 
 /* AJOY's passive (ai_companions hindsight_reveal): after an outcome,
@@ -4801,6 +4847,12 @@ function showHindsight() {
 /* Gate badge icon per demo convention — crew gates use the career
    portraits, item gates the cargo icons, gold the coin. Locked
    choices show the padlock instead. */
+// Gate icon draw size at an integer scale of its native art (ruling 43).
+function gateIconPx(path) {
+  if (/\/careers\//.test(path)) return 24;          // 48px portraits, 1:2
+  if (/sprites\/cargo\//.test(path)) return 32;     // 64/128px cargo sprites, 1:2 / 1:4
+  return 32;                                          // 32px interface icons, 1:1
+}
 function gateIconPath(g) {
   if (!g) return null;
   if (g.crew) return 'sprites/interface/careers/' + g.crew + '.png';
@@ -4822,7 +4874,12 @@ function fitEncounterColumns() {
   if (!narr.offsetParent) { requestAnimationFrame(() => { if (narr.offsetParent) fitEncounterColumns(); }); return; }
   narr.style.maxHeight = ''; ch.style.maxHeight = '';
   const narrBottom = narr.offsetTop + narr.offsetHeight;
-  const MIN_NARR = 200, GAP = 8;
+  // The panel keeps what its own (reserved, full-length) text needs, up to
+  // 190px (it scrolls past that) — a two-line body no longer holds 200px
+  // and pushes the last choice (the pirate's BREAK OFF row, b4 ruling 39)
+  // below a scroll; 190 (was 200) leaves six gated choices room at the
+  // demo's 8px gap (b4 B6).
+  const MIN_NARR = Math.max(130, Math.min(190, narr.offsetHeight)), GAP = 8;
   ch.style.maxHeight = Math.max(80, narrBottom - MIN_NARR - GAP - ch.offsetTop) + 'px';
   const chBottom = ch.offsetTop + ch.offsetHeight;
   narr.style.maxHeight = Math.min(340, Math.max(MIN_NARR, narrBottom - chBottom - GAP)) + 'px';
@@ -4837,9 +4894,14 @@ function renderChoicesInner(choices) {
   col.innerHTML = '';
   // Flag-based visibility (demo machinery): showFlag hides until the
   // flag is set; hideFlag hides once it is (collapse-after-unlock).
+  // A choice's requires_flag is a showFlag too (b4 ruling 36, demo
+  // showFlag :4987-4991): story-gated choices don't show, locked, before
+  // the story opens them — "Need: Diplomat" on a choice the diplomat
+  // alone could never unlock was a false promise.
   // The A8 softlock guard MUST judge the visible list, not the raw one.
   const visible = choices.filter(ch =>
     !(ch.showFlag && !STATE.flags.has(ch.showFlag)) &&
+    !(ch.requires_flag && !STATE.flags.has(ch.requires_flag)) &&
     !(ch.hideFlag && STATE.flags.has(ch.hideFlag)));
   const anyUnlocked = visible.some(ch => !lockReason(ch));
   // The station approach always has a way out (its leave row → the
@@ -4859,16 +4921,24 @@ function renderChoicesInner(choices) {
       + (ch.risky ? ' risky' : '')
       + (ch.hint ? ' hint' : '');
 
-    // Gate badge (demo-canon 32×32): requirement icon when met,
-    // padlock when locked. Flat-schema requires_* synthesize a spec.
+    // Gate badge (demo-canon 32×32 cell): requirement icon when met,
+    // padlock when locked — every locked choice gets the padlock (b4 B6:
+    // it replaces the old red "🔒 " text prefix on the sub-label).
+    // Flat-schema requires_* synthesize a spec. Icons draw at an integer
+    // scale (ruling 43): 32px interface icons 1:1, 64px cargo sprites
+    // 1:2, the 48px career portraits 1:2 at 24px — never 48→32.
     const gateSpec = ch.gate
       || (ch.requires_crew ? { crew: ch.requires_crew }
         : ch.requires_item ? { item: ch.requires_item } : null);
-    if (gateSpec) {
+    if (gateSpec || locked) {
       const gate = document.createElement('div');
       gate.className = 'enc-choice-gate' + (locked ? ' locked' : '');
       const icon = locked ? 'sprites/interface/lock.png' : gateIconPath(gateSpec);
-      if (icon) gate.style.backgroundImage = "url('" + icon + "')";
+      if (icon) {
+        gate.style.backgroundImage = "url('" + icon + "')";
+        const px = gateIconPx(icon);
+        if (px !== 32) gate.style.backgroundSize = px + 'px ' + px + 'px';
+      }
       btn.appendChild(gate);
       btn.classList.add('has-gate');
     }
@@ -4908,7 +4978,7 @@ function renderChoicesInner(choices) {
     const effort = !locked && choiceEffort(ch);
     if (effort && !subText) {
       const o = choiceOutcome(ch);
-      const days = Math.max(1, Math.round((({trivial:1, low:2, medium:4, high:8, extreme:14})[(o && o.time_cost) || 'trivial'] || 1) * effort.ratio));
+      const days = Math.max(1, Math.round((TIME_COST_DAYS[(o && o.time_cost) || 'trivial'] || 1) * effort.ratio));
       const authoredTime = Number.isFinite(ch.effort_required);
       subText = 'Effort ' + effort.available + ' / ' + effort.required
         + (authoredTime || !effort.check ? ' · ' + days + (days === 1 ? ' day' : ' days') : '')
@@ -4937,10 +5007,10 @@ function renderChoicesInner(choices) {
         sub.appendChild(eff);
       }
       if (subText) {
+        // Locked: the plain grey "Need: …" under the padlock (demo); risky: red.
         const txt = document.createElement('span');
-        if (locked) txt.className = 'lock';
-        else if (ch.risky) txt.className = 'risky';
-        txt.textContent = locked ? '🔒 ' + subText : subText;
+        if (!locked && ch.risky) txt.className = 'risky';
+        txt.textContent = subText;
         sub.appendChild(txt);
       }
       btn.appendChild(sub);
@@ -4952,10 +5022,14 @@ function renderChoicesInner(choices) {
       const tip = [];
       if (ch.effort) tip.push('Effort ' + ch.effort + '/5' + (effortTax(ch.effort) ? ' · −' + effortTax(ch.effort) + ' morale' : '')); // no crew aboard: no morale to tax
       if (ch.gold_cost) tip.push('-' + eventGold(ch.gold_cost) + ' gold');
-      if (ch.gate && ch.gate.gold && !ch.gold_cost) tip.push('costs ' + eventGold(ch.gate.gold) + ' gold');
+      // Time + resource costs, for everyone (b4 ruling 34, demo composeTooltip
+      // :4122-4153) — the same numbers the outcome applies.
+      const costs = choiceCostLines(ch);
+      if (ch.gate && ch.gate.gold && !ch.gold_cost && !costs.some(l => / GOLD\b/.test(l))) tip.push('costs ' + eventGold(ch.gate.gold) + ' gold');
+      tip.push(...costs);
       if (ch.detail) tip.push(ch.detail); // detail that doesn't fit the one-line sub-label
       if (ch.risky) tip.push('Risky — outcomes can go badly');
-      if (preview) tip.push(preview);
+      if (preview && !((/^MARV · /.test(preview) || ch.preview) && costs.length)) tip.push(preview); // MARV's read / posted terms: the Costs line says it already
       if (displaced) tip.push(displaced);
       if (effort && effort.kit) tip.push('Uses up one ' + prettyItem(effort.kit) + ' — it counts toward the effort.');
       if (welcomes && idn.join_note) tip.push(idn.join_note);
@@ -5000,6 +5074,19 @@ function renderLeaveRow(col) {
     sub.textContent = leaveSub;
     leave.appendChild(sub);
   }
+  // leave_as (b4 ruling 39): the row IS one of the event's own exits — the
+  // pirate's BREAK OFF does exactly what Flee does (never a free exit).
+  // A choice-shaped object, run through handleChoiceClick like the choice,
+  // with the same cost tooltip.
+  if (!forced && ev.leave_as && typeof ev.leave_as === 'object') {
+    const as = Object.assign({ text: label.textContent }, ev.leave_as);
+    const tip = choiceCostLines(as);
+    if (as.risky) tip.push('Risky — outcomes can go badly');
+    if (tip.length) leave.title = tip.join('\n');
+    bindEncButton(leave, () => handleChoiceClick(as));
+    col.appendChild(leave);
+    return;
+  }
   // leave_next (demo leave.next): leaving opens a layer first — the
   // approach's wave-off warning — instead of ending the event.
   if (!forced && layer && layer.leave_next && ev.layers[layer.leave_next]) {
@@ -5034,9 +5121,11 @@ function renderLeaveRow(col) {
 }
 
 function makeAdvanceButton(label) {
+  // Demo renderOutcomeContinue (b4 B4): a plain gold choice reading
+  // CONTINUE (.ch-text uppercases it), no arrow, no teal.
   const btn = document.createElement('button');
   btn.className = 'enc-choice advance';
-  btn.innerHTML = `<div class="ch-text">${label} →</div>`;
+  btn.innerHTML = `<div class="ch-text">${label}</div>`;
   bindEncButton(btn, advanceAfterEvent);
   return btn;
 }
@@ -5145,7 +5234,9 @@ function outcomeFacts(o) {
   else if (ce && ce.type === 'heal') facts.push({ text: 'HEALING', weight: 10, good: true });
   if (o.item_grant) facts.push({ text: '+' + prettyItem(o.item_grant).toUpperCase(), weight: 8, good: true });
   if (o.crew_join && o.crew_join.name) facts.push({ text: crewJoinRole(o.crew_join) ? '+' + o.crew_join.join_role.toUpperCase() : '+PASSENGER', weight: 10, good: true }); // scenes B rescue
-  if (o.item_consume) facts.push({ text: 'USES ' + prettyItem(o.item_consume).toUpperCase(), weight: 6, good: false });
+  // Only what's aboard is spent (applyOutcomeEffects skips a missing item):
+  // the preview never promises a loss that can't happen (b4, haggle kit).
+  if (o.item_consume && STATE.items.includes(o.item_consume)) facts.push({ text: 'USES ' + prettyItem(o.item_consume).toUpperCase(), weight: 6, good: false });
   if (Number.isFinite(o.crop_health) && o.crop_health) { const c = Math.round(cropDeltaLanding(o.crop_health)); if (c) facts.push({ text: (c > 0 ? '+' : '−') + Math.abs(c) + ' CROP', weight: Math.abs(c) / 2, good: c > 0 }); }
   if (Number.isFinite(o.fab_wear) && o.fab_wear > 0) facts.push({ text: '+' + o.fab_wear + '% FAB WEAR', weight: Math.max(6, o.fab_wear * 1.5), good: false });
   return facts.sort((a, b) => b.weight - a.weight);
@@ -5222,6 +5313,61 @@ function hasRoleFor(role) { return STATE.crew.includes(role) || captainStandsIn(
 function choiceStandIn(choice) {
   const role = choice && (choice.requires_crew || (choice.gate && choice.gate.crew));
   return !!role && captainStandsIn(role);
+}
+
+/* Days an outcome's time_cost spends (applyOutcomeEffects; the effort
+   ratio scales authored repair jobs). One table for the outcome and every
+   preview of it. */
+const TIME_COST_DAYS = { trivial: 1, low: 2, medium: 4, high: 8, extreme: 14 };
+function outcomeDays(o, ratio) {
+  const tier = (o && o.time_cost) || 'trivial';
+  if (tier === 'none') return 0;
+  return Math.max(1, Math.round((TIME_COST_DAYS[tier] || 1) * (ratio || 1)));
+}
+/* The fixed outcome whose costs a choice's tooltip lists: the plain
+   outcome, or Flee / Ram's own (they resolve to an authored outcome; Ram
+   only when it gets through — the tooltip says so). */
+function choiceCostOutcome(ch) {
+  const o = choiceOutcome(ch);
+  if (o) return o;
+  const ev = STATE.currentEvent;
+  if ((ch.triggerFleeResolve || ch.triggerRamResolve) && typeof ch.outcome === 'string' && ev && ev.outcomes) return ev.outcomes[ch.outcome] || null;
+  return null;
+}
+/* Tooltip lines (b4 ruling 34): "Takes N days" + every cost the outcome
+   carries (outcomeFacts — what applyOutcomeEffects will really do), and
+   for the fight choices what the fight risks. MARV's sub-label preview
+   stays his perk; this is the hover, for everyone. */
+function choiceCostLines(ch) {
+  const lines = [];
+  if (ch.triggerCombat || ch.combat_trigger) {
+    lines.push('Ship-to-ship combat: the fight decides what it costs');
+    return lines;
+  }
+  const o = choiceCostOutcome(ch);
+  if (o) {
+    const eff = choiceEffort(ch);
+    const days = outcomeDays(o, eff ? eff.ratio : 1);
+    lines.push(days ? 'Takes ' + days + (days === 1 ? ' day' : ' days') : 'Takes no time');
+    const costs = outcomeFacts(withPctPreview(o)).filter(f => !f.good).map(f => f.text);
+    if (costs.length) lines.push('Costs: ' + costs.join(' · '));
+    if (ch.triggerRamResolve) {
+      const fail = Math.round(((window.RAM_FAIL_CHANCE != null) ? window.RAM_FAIL_CHANCE : 0.3) * 100);
+      lines.push(fail + '% they hold: −' + (ch.hull || 18) + ' hull and a fight');
+    }
+  } else if (ch.launch_minigame) {
+    const base = ch.outcome && typeof ch.outcome === 'object' ? ch.outcome : null;
+    const tierTime = Object.values(ch.tier_outcomes || {}).some(t => t && t.time_cost);
+    if (base && !tierTime) { const d = outcomeDays(base, 1); lines.push(d ? 'Takes ' + d + (d === 1 ? ' day' : ' days') : 'Takes no time'); }
+    lines.push('A minigame: how well you play decides the result');
+  }
+  return lines;
+}
+// outcomeFacts shows a resources_pct share as "−30% FUEL"; the tooltip
+// says what that is aboard right now (the amount applyOutcomeEffects takes).
+function withPctPreview(o) {
+  if (!o || !o.resources_pct) return o;
+  return withPctResources(o);
 }
 
 /* Returns null if choice is available; otherwise a short string
@@ -5845,7 +5991,7 @@ function applyOutcomeEffects(o) {
   // Time cost — bump days by a small constant per tier, routed through
   // passDays() so standing orders' daily drains (rations/water) apply.
   const tier = o.time_cost || 'trivial';
-  const base = ({trivial:1, low:2, medium:4, high:8, extreme:14})[tier] || 1;
+  const base = TIME_COST_DAYS[tier] || 1;
   // Effort system (Bible §Effort, owner ruling 2026-10-10 "effort only"):
   // a repair choice's days scale by effort_required / effort available.
   const scale = STATE.effortScale || 1;
@@ -6013,7 +6159,7 @@ function resolveChoice(choice) {
       if (slog) ShipLog.resolved(slog, STATE.currentEvent, choice, merged);
       renderHUD();
       if (checkFailure()) return;
-      renderOutcomeView(Object.assign({ title: 'OUTCOME', body: merged.narrative || '...', tone: deltaIsBad(merged) ? 'danger' : (deltaIsGood(merged) ? 'success' : null) }, outcomeScene(merged)));
+      renderOutcomeView(Object.assign({ title: eventOutcomeTitle(), body: merged.narrative || '...', tone: deltaIsBad(merged) ? 'danger' : (deltaIsGood(merged) ? 'success' : null) }, outcomeScene(merged)));
     });
     return;
   }
@@ -6024,7 +6170,7 @@ function resolveChoice(choice) {
   renderHUD();
   if (checkFailure()) return;
 
-  renderOutcomeView(Object.assign({ title: 'OUTCOME', body: o.narrative || '...', tone: deltaIsBad(o) ? 'danger' : (deltaIsGood(o) ? 'success' : null) }, outcomeScene(o)));
+  renderOutcomeView(Object.assign({ title: eventOutcomeTitle(), body: o.narrative || '...', tone: deltaIsBad(o) ? 'danger' : (deltaIsGood(o) ? 'success' : null) }, outcomeScene(o)));
 }
 
 /* A flat outcome's scene override (scene_bg / scene_bg_base /

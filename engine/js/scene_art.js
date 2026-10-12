@@ -565,7 +565,11 @@
     [1, 197], [99, 197], [197, 197],
     [295, 1],
   ];
-  const TALK_LOOP_MS = 1500;
+  // b4 ruling 47b (demo-npc :363-370): every loop holds the idle frame
+  // 500ms, then cycles the talk frames over 1500ms — a 2000ms loop.
+  const TALK_PAUSE_MS = 500;
+  const TALK_CYCLE_MS = 1500;
+  const TALK_LOOP_MS = TALK_PAUSE_MS + TALK_CYCLE_MS;
 
   const EMOJI_BY_KEY = {
     pirate: '🏴‍☠️', trader: '💰', drifter: '👤',
@@ -676,9 +680,14 @@
     return desc;
   }
 
+  function setHeadTalking(on) {
+    const head = document.getElementById('enc-subject-head');
+    if (head) head.classList.toggle('talking', !!on);
+  }
   function stopTalking() {
     if (_talkRAF) cancelAnimationFrame(_talkRAF);
     _talkRAF = null;
+    setHeadTalking(false); // b4 B10: the emoji/portrait bob stops with the line
     // A line can finish while its spritesheet is still being probed.
     // Clear the deferred start as well as the live loop, otherwise the
     // eventual image load starts talking after the text is complete.
@@ -693,7 +702,7 @@
     stopTalking();
     if (!_activeSheet) return;
     const sheet = _activeSheet;
-    const frameMs = TALK_LOOP_MS / sheet.talkIdxs.length;
+    const frameMs = TALK_CYCLE_MS / sheet.talkIdxs.length;
     // Typed lines: a 60s safety cap only (slow text speed + a long line
     // outlasted the old length estimate, and the mouth stopped mid-line).
     _talkUntil = performance.now() + (untilLanded ? 60000 : Math.min(1200 + String(line || '').length * 35, 6500));
@@ -701,12 +710,13 @@
     function tick(now) {
       if (_activeSheet !== sheet) return;
       if (window.PauseBus && window.PauseBus.paused) { _talkRAF = requestAnimationFrame(tick); return; }
-      if (now >= _talkUntil) { setNpcFrame(sheet, sheet.idleIdx); _talkRAF = null; return; }
+      if (now >= _talkUntil) { setNpcFrame(sheet, sheet.idleIdx); _talkRAF = null; setHeadTalking(false); return; }
       // rAF's timestamp is the frame's START time and can precede the
       // performance.now() captured above — a negative elapsed indexed
       // talkIdxs[-1] → undefined → crash (caught by fuzz, 2026-08-03).
       const elapsed = Math.max(0, now - start) % TALK_LOOP_MS;
-      const idx = sheet.talkIdxs[Math.min(sheet.talkIdxs.length - 1, Math.floor(elapsed / frameMs))];
+      const idx = elapsed < TALK_PAUSE_MS ? sheet.idleIdx
+        : sheet.talkIdxs[Math.min(sheet.talkIdxs.length - 1, Math.floor((elapsed - TALK_PAUSE_MS) / frameMs))];
       setNpcFrame(sheet, idx);
       _talkRAF = requestAnimationFrame(tick);
     }
@@ -881,6 +891,9 @@
     typed = typed !== false;
     if (_activeSheet) startTalking(line, typed);
     else { _pendingLine = line; _pendingTyped = typed; }  // sheet still probing — talk when it lands
+    // b4 B10 (demo :946-956): a head with no spritesheet bobs while its
+    // line types (CSS: .talking:not(.has-spritesheet)); stopTalking clears it.
+    setHeadTalking(true);
   }
 
   /* Called from renderOutcomeView(). Outcomes may override the scene
@@ -894,6 +907,13 @@
       // layer already showed keeps that very image.
       const instKey = instanceKey(c.ev, c.node);
       if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey, c.node, c.npcCtx && c.npcCtx.artKey);
+    }
+    // b4 B3 (demo :5174 applySubject(s, 'listening', o)): the speaker
+    // listens on the outcome view unless the outcome authors its own pose.
+    const subjEl = document.getElementById('enc-subject');
+    if (subjEl) {
+      subjEl.classList.remove('pose-hostile', 'pose-listening', 'pose-pleased');
+      subjEl.classList.add('pose-' + ((outcome && outcome.pose) || 'listening'));
     }
     if (outcome && outcome.line && npcCtx && !opts.deferTalk) startTalking(outcome.line, false);
     else stopTalking();

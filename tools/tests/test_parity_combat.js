@@ -99,7 +99,7 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
         labels: btns.map(b => b.querySelector('.ch-text').textContent),
         btns: btns.map(loc), col: loc(col), scroll: col.scrollHeight - col.clientHeight,
         bar: loc(document.getElementById('combat-hpbars')), narr: loc(document.getElementById('enc-narrative')),
-        subj: loc(document.getElementById('enc-subject')), plate: loc(document.getElementById('enc-subject-name')),
+        subj: loc(document.getElementById('enc-subject')), plate: loc(document.getElementById('enc-subject-name')), ai: loc(document.getElementById('enc-ai-bar')),
         cells: [...document.querySelectorAll('#combat-hpbars .row .lbl')].map(x => x.textContent),
         winH: innerHeight, gb: g.bottom,
       };
@@ -111,7 +111,8 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
     ok(r.bar.l <= 15 && r.bar.r >= 945 && r.cells.join() === 'HULL,ENEMY,MOR', `full-width three-cell banner (${Math.round(r.bar.l)}→${Math.round(r.bar.r)}: ${r.cells.join(' · ')})`);
     ok(r.bar.b <= r.narr.t && r.narr.t - r.bar.b <= 12, `banner sits just above the COMBAT LOG (gap ${Math.round(r.narr.t - r.bar.b)}px)`);
     ok(r.btns[r.btns.length - 1].b <= r.bar.t, 'ATTEMPT ESCAPE clears the banner');
-    ok(Math.round(r.subj.t) === 100 && r.plate.b <= r.bar.t, `captain not pushed down (frame top ${Math.round(r.subj.t)}, plate bottom ${Math.round(r.plate.b)} above banner ${Math.round(r.bar.t)})`);
+    // b4 ruling 35: the frame is back at top 60 (lower only under an AI bar that wraps past 60).
+    ok(Math.round(r.subj.t) === Math.max(60, Math.round(r.ai.b) > 60 ? Math.round(r.ai.b) + 4 : 60) && r.plate.b <= r.bar.t, `captain not pushed down (frame top ${Math.round(r.subj.t)}, AI bar bottom ${Math.round(r.ai.b)}, plate bottom ${Math.round(r.plate.b)} above banner ${Math.round(r.bar.t)})`);
     // gate icons (demo D:5198-5211)
     const gates = await page.evaluate(() => [...document.querySelectorAll('#enc-choices .enc-choice')].map(b => {
       const g = b.querySelector('.enc-choice-gate'); return [b.querySelector('.ch-text').textContent, g ? g.style.backgroundImage : ''];
@@ -217,7 +218,7 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
     ok(JSON.stringify(Object.entries(tileMap).sort()) === JSON.stringify(Object.entries(card.got).sort()), `loot tiles = granted (${JSON.stringify(tileMap)} vs ${JSON.stringify(card.got)})`);
     ok(card.tiles.some(t => t.bonus), 'bonus crate tile carries BONUS');
     ok(card.tiles.every(t => /sprites\/cargo\//.test(t.img)), 'every tile has its cargo sprite');
-    ok(/Hull −\d+/.test(card.notes), `notes line names the fight's cost ("${card.notes}")`);
+    ok(/Hull -\d+/.test(card.notes), `notes line names the fight's cost ("${card.notes}")`); // ASCII "-" (b4 B9)
     // Continue → next leg, card gone
     await page.evaluate(() => document.getElementById('combat-end-continue').click());
     await page.waitForTimeout(400);
@@ -272,7 +273,7 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
     ok(endIdx > 0 && hold.length > 50 && hold.every(x => x.liveBtns.length === 0), `FTL hold: no actions come back (${hold.length} samples; ${[...new Set(hold.flatMap(x => x.liveBtns))].join(',') || 'none'})`);
     const c = await page.evaluate(() => ({ title: document.getElementById('combat-end-title').textContent, cls: document.getElementById('combat-end-card').className, notes: (document.querySelector('#combat-end-loot .end-loot-notes') || {}).textContent || '', loot: !!document.querySelector('#combat-end-loot .end-loot-title'), fuel: STATE.resources.fuel }));
     ok(c.title === 'FTL ESCAPED' && /escape/.test(c.cls) && !c.loot, `escape card (${c.title}, ${c.cls})`);
-    ok(/−15 fuel/.test(c.notes) && c.fuel === 45, `notes say −15 fuel and fuel is ${c.fuel} ("${c.notes}")`);
+    ok(/-15 fuel/.test(c.notes) && c.fuel === 45, `notes say −15 fuel and fuel is ${c.fuel} ("${c.notes}")`);
     await page.evaluate(() => document.getElementById('combat-end-continue').click());
     await page.waitForTimeout(300);
     const clear = await page.evaluate(() => ({
@@ -464,7 +465,7 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
         const body = document.getElementById('combat-end-body').textContent;
         // Names can carry periods ("Dr. Vasquez"): cut the clause after the
         // last fixed sentence, then split the names.
-        const tail = body.split(/%\. |didn't make it\. |disagreed\. /).pop();
+        const tail = body.split(/(?:Cargo lost: [^.]*|Nothing in the hold worth taking)\. |didn't make it\. |disagreed\. /).pop(); // b4 A3: the cargo line names the loss
         const hurtM = tail.match(/^(.*) (?:is|are) hurt\.$/);
         const hurt = hurtM ? hurtM[1].split(' and ').map(x => x.trim()) : [];
         const lost = /didn't make it/.test(body);

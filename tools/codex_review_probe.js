@@ -115,10 +115,12 @@ const BASE_URL = process.env.REVIEW_URL || 'http://localhost:8177/index.html?deb
     screen: document.querySelector('.screen.active').id,
     event: STATE.currentEvent && STATE.currentEvent.id,
     outcomeMode: STATE.outcomeMode,
-    title: document.getElementById('enc-narr-title').textContent
+    title: document.getElementById('enc-narr-title').textContent,
+    evTitle: EVENTS.event_general_030.title
   }));
+  const EVENTS_TITLE_030 = doubleClick.evTitle;
   check(doubleClick.screen === 'screen-encounter' && doubleClick.event === 'event_general_030' &&
-      doubleClick.outcomeMode && doubleClick.title === 'OUTCOME',
+      doubleClick.outcomeMode && doubleClick.title === EVENTS_TITLE_030, // b4 ruling 37: a flat outcome reads under the event's title
     'double-click resolves one choice without skipping its outcome', JSON.stringify(doubleClick));
 
   console.log('5. Targeting fallback respects pause');

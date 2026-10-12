@@ -259,7 +259,7 @@ const snap = page => page.evaluate(() => ({
     const s1 = await snap(page);
     ok(o.outcome === 'boarding_who' && /Her name is Isa\./.test(o.line), `AN ANSWER: "${o.line}"`);
     ok(s1.flags.includes('treated_isa') && s1.res.morale === Math.min(100, s0.res.morale + 5), 'treated_isa set, +5 morale');
-    const body = await page.evaluate(() => document.getElementById('enc-narr-body').textContent);
+    const body = await page.evaluate(() => { finishAllTyping(); return document.getElementById('enc-narr-body').textContent; }); // typed in full (b4 B5: at the demo's 18ms the ▍ cursor can sit mid-name)
     ok(!/\{crew\./.test(body) && body.includes(await page.evaluate(() => crewNameOf('medic'))), 'the medic is named ({crew.medic})');
     const pay = await page.evaluate(() => MOD.flavor.flag_payoffs.treated_isa);
     ok(pay && pay.epilogue && ['aria', 'marv', 'rex', 'chip', 'ajoy'].every(k => pay.callback[k]), 'treated_isa has its payoff (epilogue + five callbacks)');
@@ -302,7 +302,7 @@ const snap = page => page.evaluate(() => ({
     const first = await enter(page, 'event_encounter_pirate_001', 'nebula');
     const p = await scene(page, 'our_ship/bridge');
     await click(page, 'Negotiate');
-    await click(page, 'We have injured crew aboard');
+    await click(page, '"We have injured crew aboard."'); // b4 B7: a spoken dialog choice now (demo-combat)
     await page.waitForTimeout(100);
     const mem = await page.evaluate(() => ({ flag: STATE.flags.has('pirate_sympathy'), m: STATE.npcCache['flag:pirate_sympathy'] }));
     ok(mem.flag && mem.m && mem.m.species === p.npc.species && /^event_encounter_pirate_001@/.test(mem.m.artKey), `the mercy remembers who it was (${mem.m && mem.m.species}, ${mem.m && mem.m.artKey})`);

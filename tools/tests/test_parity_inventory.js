@@ -223,7 +223,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
     await page.waitForFunction(() => document.getElementById('combat-end-overlay').classList.contains('show'), null, { timeout: 4000 }).catch(() => {});
     const r = await page.evaluate(() => ({ mats: Object.assign({}, STATE.materials), notes: (document.querySelector('#combat-end-loot .end-loot-notes') || {}).textContent || '',
       tiles: [...document.querySelectorAll('#combat-end-loot .end-loot-tile')].map(t => t.dataset.id + ':' + t.dataset.count) }));
-    ok(end && !Object.values(r.mats).some(v => v > 0) && /Hold full: .*× metal.*left behind/.test(r.notes) && !r.tiles.some(t => /^(metal|scrap):[1-9]/.test(t)),
+    ok(end && !Object.values(r.mats).some(v => v > 0) && /Hold full: .*× Metal.*left behind/.test(r.notes) && !r.tiles.some(t => /^(metal|scrap):[1-9]/.test(t)),
       `combat loot (${end}): metal meets a full hold → nothing lands, the card names what was left ("${r.notes.slice(0, 110)}")`);
     await page.close();
   }
