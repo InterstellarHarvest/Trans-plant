@@ -205,10 +205,13 @@ const openDossier = async (page, role) => {
     // The banner tooltip reads the same yieldText (hover it).
     await page.waitForTimeout(100);
     await page.evaluate(() => { Object.assign(STATE.cropGrowth, { growth: 50 }); closeGrowbay(); openGrowbay(); });
+    // Off the element first, so the hover is a fresh mouseenter (the
+    // pointer can already sit there after the reopen), then a patient wait.
+    await page.mouse.move(2, 2);
     await page.hover('#crop-display-name');
-    await page.waitForFunction(() => [...document.querySelectorAll('.ui-tip')].some(t => /Yield/.test(t.innerText) && getComputedStyle(t).visibility !== 'hidden'), null, { timeout: 4000 }).catch(() => {});
+    await page.waitForFunction(() => [...document.querySelectorAll('.ui-tip')].some(t => /Yield/.test(t.innerText) && getComputedStyle(t).visibility !== 'hidden'), null, { timeout: 8000 }).catch(() => {});
     const tipText = await page.evaluate(() => [...document.querySelectorAll('.ui-tip')].map(t => t.innerText).join(' '));
-    ok(/\+46 Food \(incl\. \+6 tending\)/.test(tipText), 'species tooltip Yield row: +46 Food (incl. +6 tending)');
+    ok(/\+46 Food \(incl\. \+6 tending\)/.test(tipText), 'species tooltip Yield row: +46 Food (incl. +6 tending)' + (/\+46 Food/.test(tipText) ? '' : ' — tooltips: ' + tipText.replace(/\s+/g, ' ').slice(0, 200)));
     await page.close();
   }
 
