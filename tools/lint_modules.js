@@ -498,18 +498,30 @@ function trailCoverage() {
 // All engine files share ONE global scope (no modules). Two files
 // assigning the same window.X silently let the later-loaded one win —
 // the growbay's X button called the FABRICATOR's closeModal for weeks.
+// A global is a window.X assignment, an Object.assign(window, {X}) key,
+// or a top-level declaration of a script that isn't wrapped in an IIFE
+// (index.html's inline scripts, shared.js, map.js, inventory.js).
 {
   const fs2 = require('fs'), path2 = require('path');
   const files = [];
-  const walk = d => { for (const e of fs2.readdirSync(d)) { const f = path2.join(d, e); if (fs2.statSync(f).isDirectory()) walk(f); else if (f.endsWith('.js')) files.push(f); } };
+  const walk = d => { for (const e of fs2.readdirSync(d)) { const f = path2.join(d, e); if (fs2.statSync(f).isDirectory()) walk(f); else if (f.endsWith('.js') && !f.endsWith('portable_data.js')) files.push(f); } };
   walk('engine/js'); files.push('resources/shared.js');
   const owners = {};
+  const own = (name, f) => (owners[name] = owners[name] || new Set()).add(f);
+  const topLevel = (src, f) => { for (const m of src.matchAll(/^(?:async\s+)?(?:function\*?|const|let|var|class)\s+([A-Za-z_$][\w$]*)/gm)) own(m[1], f); };
   for (const f of files) {
     const src = fs2.readFileSync(f, 'utf8');
-    for (const m of src.matchAll(/window\.([A-Za-z_$][\w$]*)\s*=(?!=)/g)) (owners[m[1]] = owners[m[1]] || new Set()).add(f);
+    for (const m of src.matchAll(/window\.([A-Za-z_$][\w$]*)\s*=(?!=)/g)) own(m[1], f);
+    for (const m of src.matchAll(/Object\.assign\(\s*window\s*,\s*\{([\s\S]*?)\}\s*\)/g)) {
+      for (const part of m[1].replace(/\/\/.*$/gm, '').split(',')) { const k = part.trim().split(':')[0].trim(); if (/^[A-Za-z_$][\w$]*$/.test(k)) own(k, f); }
+    }
+    const body = src.replace(/^(?:\s+|\/\*[\s\S]*?\*\/|\/\/.*|'use strict';)*/, '');
+    if (!/^\((?:function|\(\) =>)/.test(body)) topLevel(src, f); // not an IIFE: its top level is global
   }
+  const index = fs2.readFileSync('index.html', 'utf8');
+  for (const m of index.matchAll(/<script>([\s\S]*?)<\/script>/g)) topLevel(m[1], 'index.html');
   const dupes = Object.entries(owners).filter(([, fs]) => fs.size > 1);
-  for (const [name, fs] of dupes) errors.push(`global collision: window.${name} assigned in ${[...fs].join(' AND ')} — later-loaded file silently wins`);
+  for (const [name, fs] of dupes) errors.push(`global collision: ${name} defined in ${[...fs].join(' AND ')} — later-loaded file silently wins`);
 }
 
 // ── file:// bundle freshness (added 2026-10-09) ────────────────────
