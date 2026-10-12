@@ -16,10 +16,12 @@ if (!SHA || !URL || !TREE) { console.log('usage: gen_old_saves.js <sha> <url> <w
 const OUT = path.join(__dirname, 'saves');
 fs.mkdirSync(OUT, { recursive: true });
 
-// That build's own sim policies (sim.js ran its main on require then).
-const src = fs.readFileSync(path.join(TREE, 'tools/tests/sim.js'), 'utf8');
-const body = src.slice(0, src.lastIndexOf('(async () => {'));
-const sim = new Function('require', '__dirname', 'process', body + '\nreturn { installHarness, step };')(require, path.join(TREE, 'tools/tests'), { argv: [], env: {} });
+// That build's own sim policies. Newer sim.js exports them; older ones
+// ran their main on require, so their source is cut before it.
+const simFile = path.join(TREE, 'tools/tests/sim.js');
+const src = fs.readFileSync(simFile, 'utf8');
+const sim = /module\.exports = \{ installHarness, step \}/.test(src) ? require(path.resolve(simFile))
+  : new Function('require', '__dirname', 'process', src.slice(0, src.lastIndexOf('(async () => {')) + '\nreturn { installHarness, step };')(require, path.join(TREE, 'tools/tests'), { argv: [], env: {} });
 
 const CFG = {
   lunar: { trail: 'lunar', ai: 'aria', captain: 'medic', crew: ['engineer', 'botanist'], crop: 'wheat', ship: 'Fixture' },
