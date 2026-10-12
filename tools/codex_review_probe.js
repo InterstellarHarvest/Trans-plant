@@ -191,12 +191,14 @@ const BASE_URL = process.env.REVIEW_URL || 'http://localhost:8177/index.html?deb
     };
     return { safeLabel, safeResult, unsafeLabel, unsafeResult };
   });
+  // Owner ruling 26 (2026-10-12): a last-member jettison is a solo run too
+  // (epitaph, no crew_gone) — crew_gone now needs the captain dead as well.
   check(crewGone.safeLabel === 'DISMISS CREW' && !crewGone.safeResult.ended &&
       crewGone.safeResult.crew === 0 && !crewGone.safeResult.allDead &&
-      crewGone.unsafeLabel === 'JETTISON CREW' && crewGone.unsafeResult.ended &&
-      crewGone.unsafeResult.crew === 0 && crewGone.unsafeResult.allDead &&
-      crewGone.unsafeResult.screen === 'screen-end',
-    'safe dismissal permits solo play; last-person airlock death triggers crew_gone', JSON.stringify(crewGone));
+      crewGone.unsafeLabel === 'JETTISON CREW' && !crewGone.unsafeResult.ended &&
+      crewGone.unsafeResult.crew === 0 && !crewGone.unsafeResult.allDead &&
+      crewGone.unsafeResult.screen !== 'screen-end',
+    'safe dismissal and last-person jettison both permit solo play (ruling 26)', JSON.stringify(crewGone));
 
   console.log('8. Debug-save guard and full persistence round trip');
   const debugSave = await page.evaluate(() => {

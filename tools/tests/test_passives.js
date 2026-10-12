@@ -185,7 +185,7 @@ const COSTED = `Object.values(EVENTS).find(e => !e.layers && e.active !== false 
     });
     await page.waitForTimeout(2500);
     const body = await page.evaluate(() => document.getElementById('enc-narr-body').textContent);
-    ok(r.crew.length === 2 && /refused to let it end there — .+ is badly hurt, but alive/.test(body), `outcome text says who was saved (${r.ev})`);
+    ok(r.crew.length === 2 && /refused to let it end there — (.+ is|you are) badly hurt, but alive/.test(body), `outcome text says who was saved (${r.ev})`);
     await page.close();
   }
 

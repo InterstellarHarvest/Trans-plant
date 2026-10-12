@@ -468,10 +468,15 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
         const hurtM = tail.match(/^(.*) (?:is|are) hurt\.$/);
         const hurt = hurtM ? hurtM[1].split(' and ').map(x => x.trim()) : [];
         const lost = /didn't make it/.test(body);
-        const names = Object.fromEntries(STATE.crew.map(r => [crewNameOf(r), r]));
-        const bad = hurt.filter(n => !names[n] || crewHPOf(names[n]) >= CREW_WOUNDED_HP);
-        return { body, hurt: hurt.length, lost, bad, title: document.getElementById('combat-end-title').textContent };
+        // The captain is a casualty too since real captain HP (owner ruling 29).
+        const names = Object.fromEntries(peopleAboard().map(r => [r === 'captain' ? 'the captain' : crewNameOf(r), r]));
+        names['The captain'] = 'captain';
+        const bad = hurt.filter(n => !names[n] || hpOf(names[n]) >= CREW_WOUNDED_HP);
+        return { body, hurt: hurt.length, lost, bad, title: document.getElementById('combat-end-title').textContent, ended: !!STATE.ended && STATE.captainHP <= 0 };
       });
+      // The captain is a possible casualty (owner ruling 29): their death
+      // ends the run on the spot — the failure ending, no combat card.
+      if (r.ended) { died++; continue; }
       if (r.title !== 'LIMP AWAY') { mismatches.push('no defeat: ' + r.title); continue; }
       if (r.hurt >= 1) one++;
       if (r.hurt === 2) two++;

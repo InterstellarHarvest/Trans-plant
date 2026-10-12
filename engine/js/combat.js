@@ -1238,7 +1238,9 @@
     if (COMBAT.player.morale != null && COMBAT.player.morale >= 70) deathChance -= 0.04;
     if (COMBAT.player.morale != null && COMBAT.player.morale >= 90) deathChance -= 0.02;
     deathChance = Math.max(0.03, deathChance);
-    const aboard = STATE.crew.length;
+    // Everyone aboard can be a casualty — the captain too (owner ruling 29,
+    // index.html peopleAboard).
+    const aboard = typeof peopleAboard === 'function' ? peopleAboard().length : STATE.crew.length;
     const died = aboard > 0 && Math.random() < deathChance;
     const medic = typeof passiveMult === 'function' ? passiveMult('medic')
       : Math.max(COMBAT.crew.medic || 0, COMBAT.captainBg === 'medic' ? 0.5 : 0);
@@ -1467,8 +1469,9 @@
         // Crew line is written after the effects land (below): the kill
         // can be saved by a medic, injuries go to whoever is left.
         body = `Hull at 1. Cargo loss ${result.cargoLoss}%.`;
-        if (result.crewDied && STATE.crew.length) {
-          result._deathRole = STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
+        const aboardNow = typeof peopleAboard === 'function' ? peopleAboard() : STATE.crew; // the captain too (owner ruling 29)
+        if (result.crewDied && aboardNow.length) {
+          result._deathRole = aboardNow[Math.floor(Math.random() * aboardNow.length)];
           outcome.crew_effect = { type: 'kill', target: 'specific_role', role: result._deathRole };
         }
         outcome.time_cost = 'high';
@@ -1502,7 +1505,7 @@
       // Injuries (demo rule, rolled in onPlayerDefeat) land on crew other
       // than the one the death roll picked, through the engine's own
       // severity model.
-      const pool = STATE.crew.filter(r => r !== result._deathRole);
+      const pool = (typeof peopleAboard === 'function' ? peopleAboard() : STATE.crew).filter(r => r !== result._deathRole); // the captain too (owner ruling 29)
       const hurt = [];
       for (let i = 0; i < (result.crewInjured || 0) && pool.length; i++) {
         const role = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
@@ -1510,7 +1513,7 @@
         hurt.push(role);
       }
       const lost = crewBefore.filter(r => !STATE.crew.includes(r));
-      const nameOf = r => namesBefore[r] || crewNameOf(r);
+      const nameOf = (r, i) => r === 'captain' ? (i ? 'the captain' : 'The captain') : (namesBefore[r] || crewNameOf(r));
       const parts = [];
       if (lost.length) parts.push(lost.map(nameOf).join(' and ') + " didn't make it.");
       else if (result.crewDied && lethalSaved) parts.push('It should have cost a life. The medic disagreed.');

@@ -56,9 +56,11 @@ function materialDefOf(id) {
    effects). can() → null when usable, else the reason it isn't. ── */
 // Adds to a resource up to its cap; returns what actually went in (USE lines report that).
 function invAddRes(k, n) { const b = STATE.resources[k]; STATE.resources[k] = clamp(b + n, 0, resMax(k)); return Math.round(STATE.resources[k] - b); }
+// The worst-hurt person aboard — the captain included (owner ruling 29:
+// the captain has real HP, and a medkit can save them like anyone).
 function worstHurtCrew() {
   let worst = null;
-  for (const r of STATE.crew) if (crewHPOf(r) < 100 && (!worst || crewHPOf(r) < crewHPOf(worst))) worst = r;
+  for (const r of peopleAboard()) if (hpOf(r) < 100 && (!worst || hpOf(r) < hpOf(worst))) worst = r;
   return worst;
 }
 const ITEM_USE = {
@@ -69,7 +71,7 @@ const ITEM_USE = {
   hull_patch:     { label: '+15 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { return 'Hull patch applied. +' + invAddRes('hull', 15) + ' hull. It holds. Probably.'; } },
   o2_canister:    { label: '+14 O2',    can: () => STATE.resources.o2    >= 100 ? 'O2 is full' : null,               use: () => { return 'O2 canister vented into the air supply. +' + invAddRes('o2', 14) + ' O2.'; } },
   medkit:         { label: 'HEAL',      can: () => worstHurtCrew() ? null : 'Nobody is hurt',
-                    use: () => { const r = worstHurtCrew(); STATE.crewHP[r] = 100; delete crewPendingOf()[r]; return 'Medkit opened. ' + crewNameOf(r) + ' is patched up and back on their feet.'; } },
+                    use: () => { const r = worstHurtCrew(); setHP(r, 100); delete crewPendingOf()[r]; return 'Medkit opened. ' + PersonName(r) + ' is patched up and back on their feet.'; } },
   crop_treatment: { label: '+30 CROP',  can: () => !STATE.cropGrowth || STATE.cropGrowth.health <= 0 ? 'Nothing left to treat' : (STATE.cropGrowth.health >= 100 && !STATE.cropGrowth.pest ? 'The crop is healthy' : null),
                     use: () => { const cg = STATE.cropGrowth; const had = cg.pest; if (had) clearCropPest(); cg.health = Math.min(100, cg.health + 30); return 'Crop treatment applied. +30 crop health' + (had ? '; pests cleared.' : '.'); } },
   // items.json: "reveals the type of one future node… consumed on use" —

@@ -1721,6 +1721,7 @@ const SAVED_FIELDS = [
   'resources', 'daysElapsed', 'baseDays', 'activeAI',
   'hardStreak', 'pityRelief', 'npcCache', 'crewHP', 'shipLog',
   'crewMorale', 'moraleWarned', // per-crew morale + who is warned at 0 (owner ruling 15)
+  'captainHP', // the captain's own HP (owner rulings 29/30)
   'stowaway', 'cropGrowth', 'postCombatLegs', 'aiWarnLevels', 'fabricator',
   'consumedActions', 'crewSkillCharges', 'orders', 'crewPending',
   'miningSectors', 'lastAmbientNode', 'miningLifetime', // miningLifetime: the haul card's voyage stats (parity-shell) // sector re-roll on reload defeated mining's anti-reroll; ambient repeated
@@ -1810,7 +1811,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, passengers: () => [], stationVisit: () => null }; // traderAt/forcedEvent: cruise.js; passengers: scenes B
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, passengers: () => [], stationVisit: () => null, captainHP: () => 100 }; // traderAt/forcedEvent: cruise.js; passengers: scenes B; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2347,6 +2348,7 @@ function initCrewHP() {
   STATE.crewHP = {};
   STATE.crewPending = {};
   for (const role of STATE.crew) STATE.crewHP[role] = 100;
+  STATE.captainHP = 100; // owner rulings 29/30 — see CAPTAIN HP below
 }
 
 // The wound line (owner ruling 2026-10-09 — one number everywhere):
@@ -2395,6 +2397,7 @@ function ensureCrewSkillCharges() {
 window.ensureCrewSkillCharges = ensureCrewSkillCharges;
 
 function crewHPOf(role) {
+  if (role === 'captain') return captainHPOf(); // the captain's own HP (owner ruling 29)
   if (!STATE.crewHP) initCrewHP();
   if (!(role in STATE.crewHP)) {
     if (!STATE.crew.includes(role)) return 100; // asking about a role nobody holds creates no entry
@@ -2402,6 +2405,70 @@ function crewHPOf(role) {
   }
   return STATE.crewHP[role];
 }
+
+/* ────────────────────────────────────────────────────────────────
+   CAPTAIN HP (owner rulings 29/30, 2026-10-12). The captain is a person
+   aboard: STATE.captainHP (0–100; old saves start at 100) takes wounds,
+   delayed crises, deprivation and poison like anyone, heals by the
+   per-leg regen, the medic's Treatment, MEDBAY, medkits and heal
+   outcomes, and shows its real value on the crew strip and dossier.
+   Who can be hit (design call, recorded in the handoff):
+   - anything that hits "someone aboard" at random draws from everyone
+     aboard, the captain included (bare severity outcomes, poison, combat
+     casualties) — peopleAboard();
+   - ship-wide harm (a day at 0 food / water / O2) hits everyone;
+   - the crew-water thirst tier stays crew-only (the Orders row that
+     states it reads CREW, and the crew share is theirs).
+   A wounded captain keeps the background's half strength (Bible §4.30
+   unchanged); what the wound costs is the captain's own hands — +5, not
+   +10, on effort jobs (choiceEffort) — and a botanist captain tends the
+   growbay at half. A lethal outcome on the captain gets the crew's
+   softer landings except the captain's own medic training (a crew medic
+   50%, 25% wounded; a carried medkit 15%). At 0 HP the run ends:
+   captain_lost while anyone else is aboard, crew_gone ("Autopilot —
+   nobody left to fly the ship") when nobody is.
+   People are addressed by key: a crew role, or 'captain'.
+   ──────────────────────────────────────────────────────────────── */
+function captainHPOf() {
+  if (!Number.isFinite(STATE.captainHP)) STATE.captainHP = 100;
+  return STATE.captainHP;
+}
+// Everyone alive aboard: the captain (while alive) + the crew.
+function peopleAboard() {
+  return (captainHPOf() > 0 ? ['captain'] : []).concat(STATE.crew);
+}
+function hpOf(who) { return who === 'captain' ? captainHPOf() : crewHPOf(who); }
+function setHP(who, v) {
+  v = clamp(Math.round(v), 0, 100);
+  if (who === 'captain') { STATE.captainHP = v; return; }
+  if (!STATE.crew.includes(who)) return;
+  if (!STATE.crewHP) initCrewHP();
+  STATE.crewHP[who] = v;
+}
+// Names for log lines: "the captain" mid-sentence, "The captain" first.
+function personName(who) { return who === 'captain' ? 'the captain' : crewNameOf(who); }
+function PersonName(who) { return who === 'captain' ? 'The captain' : crewNameOf(who); }
+// The captain's own hands on an effort job (Bible benchmark +10); half
+// while wounded.
+function captainHandsEffort() { return captainHPOf() < CREW_WOUNDED_HP ? 5 : 10; }
+// A crew medic's lethal→injury save (crew_roster 50%, halved while
+// wounded) — the captain's softer landing: a medic captain can't save
+// themselves.
+function crewMedicSave() {
+  if (!STATE.crew.includes('medic')) return 0;
+  const c = (MOD.crew_roster || []).find(x => x.role === 'medic');
+  const v = c && pathOf(c.passive_skill, 'severity_modifier.lethal_to_injury_chance');
+  return (Number.isFinite(v) ? v : 0.5) * (crewHPOf('medic') < CREW_WOUNDED_HP ? 0.5 : 1);
+}
+// The captain dies: the run is over (checkFailure → captain_lost /
+// crew_gone). Callers run checkFailure as they do for any resource.
+function killCaptain() {
+  STATE.captainHP = 0;
+  delete crewPendingOf().captain;
+  if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ The captain is dead. The log keeps the time of it, and nothing else.');
+}
+function killPerson(who) { if (who === 'captain') killCaptain(); else killCrew(who); }
+Object.assign(window, { captainHPOf, peopleAboard, hpOf, setHP, personName, PersonName, captainHandsEffort, crewMedicSave, killCaptain, killPerson });
 
 /* modules/ai/ai_companions.json sample_lines — each AI's signature line
    for a handful of moments (hull_breach, crew_death, crop_sick, low_fuel,
@@ -2417,7 +2484,27 @@ function pushAiSample(moment) {
 }
 window.pushAiSample = pushAiSample;
 
+/* A crew member leaving the ship by ANY road — death, the airlock, a
+   dismissal, stepping down for a stowaway (welcome_replace), desertion —
+   takes everything that was theirs: the roster place, HP, skill charges,
+   a pending crisis, a stowaway identity, their morale, and any active
+   skill they had ARMED and not yet spent (re-audit A9: Kazuki's patch and
+   Hargrove's prepared terms outlived them). One place, every path. */
+const ARMED_SKILL_FLAGS = { engineer: ['emergency_patch_armed'], diplomat: ['negotiation_prepared'] };
+function releaseCrewRole(role) {
+  const idx = STATE.crew.indexOf(role);
+  if (idx >= 0) STATE.crew.splice(idx, 1);
+  if (STATE.crewHP) delete STATE.crewHP[role];
+  if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
+  delete crewPendingOf()[role];
+  if (STATE.crewIdentity) delete STATE.crewIdentity[role];
+  forgetCrewMorale(role);
+  for (const f of ARMED_SKILL_FLAGS[role] || []) STATE.flags.delete(f);
+}
+window.releaseCrewRole = releaseCrewRole;
+
 function killCrew(role) {
+  if (role === 'captain') { killCaptain(); return; }
   const idx = STATE.crew.indexOf(role);
   if (idx < 0) return;
   const name = crewNameOf(role), crewId = crewSpriteIdOf(role);
@@ -2426,16 +2513,14 @@ function killCrew(role) {
   const pool = MOD.flavor && MOD.flavor.crew_epitaphs;
   const epitaph = pool && pool.length ? pool[Math.floor(Math.random() * pool.length)].replaceAll('[Name]', name) : '';
   const memorial = window.ShipLog ? ShipLog.deathEntry(role, epitaph) : null;
-  STATE.crew.splice(idx, 1);
-  if (STATE.crewIdentity) delete STATE.crewIdentity[role];
-  delete STATE.crewHP[role];
-  if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
-  delete crewPendingOf()[role];
-  forgetCrewMorale(role);
+  releaseCrewRole(role);
   STATE.flags.add('crew_lost');
-  // The 'Autopilot' failure (crew_gone) means your crew all DIED — not
-  // that you have none. Solo launches (wizard-permitted, with authored
-  // solo_run content) and deliberate dismissals never trip it.
+  // all_crew_dead records that the crew all DIED (the Ship's Log / story
+  // flag). It no longer ends the run by itself: with real captain HP
+  // (owner rulings 26/29/30) a living captain flies on solo, exactly as
+  // after a dismissal or a last-member jettison; crew_gone ("Autopilot —
+  // nobody left to fly the ship") fires when the captain dies with
+  // nobody else aboard (checkFailure).
   if (STATE.crew.length === 0) STATE.flags.add('all_crew_dead');
   // Death entries carry crew identity so the journal can render the
   // memorial page (portrait if we have one, candle if not); the voiced
@@ -2635,12 +2720,7 @@ function crewDesertions(node) {
     // The log entry reads who they were — composed before they go.
     const entry = window.ShipLog ? ShipLog.desertionEntry(role, node) : null;
     const name = crewNameOf(role);
-    STATE.crew.splice(STATE.crew.indexOf(role), 1);
-    if (STATE.crewHP) delete STATE.crewHP[role];
-    if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
-    delete crewPendingOf()[role];
-    if (STATE.crewIdentity) delete STATE.crewIdentity[role];
-    forgetCrewMorale(role);
+    releaseCrewRole(role); // HP, charges, pending, identity, morale, armed skills (A9)
     if (typeof window.pushCruiseLog === 'function') {
       window.pushCruiseLog(entry || ('◆ ' + name + ' walked off at ' + ((node && node.name) || 'the station') + '.'), entry ? { ai: true, instant: true } : undefined);
     }
@@ -2693,17 +2773,21 @@ function passiveMult(role) {
   return specialistMult(role);
 }
 
-/* Deals HP damage to a crew member (role, or null for random). A
-   medic aboard softens every hit by 40% (20% while the medic is
-   wounded). Death at 0 HP. Exposed on window for combat.js. Returns
-   the role actually hit (or null). */
+/* Deals HP damage to someone aboard (a crew role, 'captain', or null
+   for anyone aboard at random — the captain included, owner ruling 29).
+   A medic aboard softens every hit by 40% (20% while the medic is
+   wounded). Death at 0 HP (the captain's ends the run). A named person
+   who isn't aboard (died earlier in the same tick) takes nothing.
+   Exposed on window for combat.js. Returns who was hit (or null). */
 function damageCrew(role, amount) {
-  if (!STATE.crew.length) return null;
-  if (!role || !STATE.crew.includes(role)) role = STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
+  const pool = peopleAboard();
+  if (!pool.length) return null;
+  if (role) { if (!pool.includes(role)) return null; }
+  else role = pool[Math.floor(Math.random() * pool.length)];
   const softened = Math.round(amount * (1 - 0.4 * passiveMult('medic')));
-  const hp = crewHPOf(role) - softened;
-  if (hp <= 0) killCrew(role);
-  else STATE.crewHP[role] = hp;
+  const hp = hpOf(role) - softened;
+  if (hp <= 0) killPerson(role);
+  else setHP(role, hp);
   return role;
 }
 window.damageCrew = damageCrew;
@@ -2720,32 +2804,39 @@ window.damageCrew = damageCrew;
              carried medkit's authored 15% (spending the medkit). The 50%
              is a tuning number — the roster says only "more often". */
 function woundCrew(role) {
-  STATE.crewHP[role] = Math.max(5, Math.min(crewHPOf(role) - 15, CREW_WOUNDED_HP - 5));
+  setHP(role, Math.max(5, Math.min(hpOf(role) - 15, CREW_WOUNDED_HP - 5)));
 }
 function applySeverity(role, severity) {
-  if (!role || !STATE.crew.includes(role)) return;
-  const name = crewNameOf(role);
+  if (!role || !peopleAboard().includes(role)) return;
+  const cap = role === 'captain';
+  const name = PersonName(role);
+  // The outcome card speaks to the player: "you", not "the captain".
+  const card = cap ? 'you are' : name + ' is';
   const log = msg => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + msg); };
   if (severity === 'lethal') {
-    if (Math.random() < roleAmount('medic', 'severity_modifier.lethal_to_injury_chance', 'severity_modifier.lethal_to_injury_chance', 0.5)) {
+    // The captain's softer landing is a crew medic's (a medic captain
+    // can't save themselves); a crew member's is the better of the crew
+    // medic and a medic captain's half-strength training.
+    const save = cap ? crewMedicSave() : roleAmount('medic', 'severity_modifier.lethal_to_injury_chance', 'severity_modifier.lethal_to_injury_chance', 0.5);
+    if (Math.random() < save) {
       // Credit whoever's skill counted: the crew medic unless only the
       // captain's half-strength training was in play.
-      const crewMedic = STATE.crew.includes('medic') && (STATE.captain !== 'medic' || crewHPOf('medic') >= CREW_WOUNDED_HP);
+      const crewMedic = cap || (STATE.crew.includes('medic') && (STATE.captain !== 'medic' || crewHPOf('medic') >= CREW_WOUNDED_HP));
       woundCrew(role);
       log('It should have been fatal. The medic disagreed. ' + name + ' is badly hurt, but alive.');
       STATE.lethalSaved = (crewMedic ? crewNameOf('medic') + ' refused to let it end there' : 'You refused to let it end there')
-        + ' — ' + name + ' is badly hurt, but alive.';
+        + ' — ' + card + ' badly hurt, but alive.';
       return;
     }
     const mkIdx = STATE.items.indexOf('medkit');
     if (mkIdx >= 0 && Math.random() < 0.15) {
       STATE.items.splice(mkIdx, 1);
-      STATE.crewHP[role] = 20;
+      setHP(role, 20);
       log('The medkit made the difference. ' + name + ' is badly hurt, but alive. The medkit is spent.');
-      STATE.lethalSaved = 'The medkit made the difference — ' + name + ' is badly hurt, but alive.';
+      STATE.lethalSaved = 'The medkit made the difference — ' + card + ' badly hurt, but alive.';
       return;
     }
-    killCrew(role);
+    killPerson(role);
     return;
   }
   if (severity !== 'injury' && severity !== 'delayed') return;
@@ -2753,6 +2844,8 @@ function applySeverity(role, severity) {
   if (severity === 'delayed') {
     crewPendingOf()[role] = true;
     log(name + ' is wounded, and it is not healing right. It needs treatment before the next station.');
+  } else if (cap) {
+    log('The captain is wounded. Your own hands count half on hands-on work until it heals.');
   } else {
     log(name + ' is wounded. Their skill is offline until they recover.');
   }
@@ -2768,11 +2861,12 @@ function applySeverity(role, severity) {
 function dueDelayedCrisis() {
   const pend = crewPendingOf();
   let patient = null;
+  const aboard = peopleAboard(); // the captain's delayed wound counts too (owner ruling 29)
   for (const role of Object.keys(pend)) {
-    if (!STATE.crew.includes(role)) { delete pend[role]; continue; }
-    if (crewHPOf(role) >= CREW_WOUNDED_HP) {
+    if (!aboard.includes(role)) { delete pend[role]; continue; }
+    if (hpOf(role) >= CREW_WOUNDED_HP) {
       delete pend[role];
-      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + crewNameOf(role) + '’s wound closed clean. Nobody says "lucky" out loud.');
+      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + PersonName(role) + '’s wound closed clean. Nobody says "lucky" out loud.');
       continue;
     }
     if (!patient) patient = role;
@@ -3871,8 +3965,8 @@ function passDays(days, opts) {
   }
 
   // DEPRIVATION (owner ruling 2026-10-10 — all three consequences): a
-  // day at 0 food / water / O2 hurts every crew member (medic-softened,
-  // so deaths can end the run as crew_gone first) and drains morale
+  // day at 0 food / water / O2 hurts everyone aboard, the captain too
+  // (medic-softened; the captain's death ends the run first) and drains morale
   // (mutiny), and enough consecutive days at 0 is its own failure
   // (checkFailure: starvation / dehydration / suffocation). The counter
   // resets the moment the resource is above 0 again.
@@ -3891,7 +3985,8 @@ function passDays(days, opts) {
     if (onset) dry = Math.min(dry, d.failAfter - 1);
     STATE.deprived[res] = (STATE.deprived[res] || 0) + dry;
     morale -= d.morale * dry;
-    for (const role of STATE.crew.slice()) damageCrew(role, d.hp * dry);
+    // Everyone aboard goes without — the captain included (owner ruling 29).
+    for (const who of peopleAboard()) damageCrew(who, d.hp * dry);
   }
 
   addCrewMorale(morale); // every crew member (kept to 0.01 there)
@@ -3928,7 +4023,8 @@ function travelTo(nodeId, opts) {
     // Medical scanner (items.json "treatment options that resolve
     // faster"): wounded crew heal +2 more per leg.
     const scan = STATE.items.includes('medical_scanner') ? 2 : 0;
-    for (const r of STATE.crew) STATE.crewHP[r] = clamp(crewHPOf(r) + regen + (crewHPOf(r) < CREW_WOUNDED_HP ? scan : 0), 0, 100);
+    // Everyone aboard heals — the captain too (owner ruling 29).
+    for (const r of peopleAboard()) setHP(r, hpOf(r) + regen + (hpOf(r) < CREW_WOUNDED_HP ? scan : 0));
   }
 
   // The leg itself costs real days + fuel, scaled by the ENGINES pace
@@ -4203,8 +4299,11 @@ function interpolateStowawayTokens(text) {
   });
   if (text && text.indexOf('{patient.') !== -1) {
     const p = STATE.crisisPatient;
+    // The captain as the patient (owner ruling 29): "The captain" opening
+    // a sentence, "the captain" inside one.
+    if (p === 'captain') text = text.replace(/(^|[.!?]["\u201d']?\s+|\n\s*)\{patient\.name\}/g, (m, pre) => pre + 'The captain');
     text = text
-      .replace(/\{patient\.name\}/g, p ? crewNameOf(p) : 'the patient')
+      .replace(/\{patient\.name\}/g, p ? personName(p) : 'the patient')
       .replace(/\{patient\.role\}/g, p || 'crew member');
   }
   if (!text || text.indexOf('{stowaway.') === -1) return text;
@@ -5150,8 +5249,12 @@ function lockReason(choice) {
   if (need.length) return 'Need: ' + need.join(' + ');
   // Requirements met on paper but not usable right now.
   for (const r of new Set(crewReqs)) {
-    if (crewHPOf(r) <= CREW_CRITICAL_HP) return `${r} is hurt too badly to help`;
-    if (STATE.crisisPatient === r) return `${r} is the patient`;
+    // Whoever holds the role: the crew member, or a captain standing in
+    // (the captain has real HP now — owner ruling 29).
+    const who = STATE.crew.includes(r) ? r : captainStandsIn(r) ? 'captain' : null;
+    if (!who) continue;
+    if (hpOf(who) <= CREW_CRITICAL_HP) return who === 'captain' ? 'You are hurt too badly to help' : `${r} is hurt too badly to help`;
+    if (STATE.crisisPatient === who) return who === 'captain' ? 'You are the patient' : `${r} is the patient`;
   }
   // The botanist's advice locks when it would change nothing (no crop, or
   // the water's in a band the growbay doesn't punish and the crew already
@@ -5631,12 +5734,7 @@ function applyOutcomeEffects(o) {
         ? idn.join_role
         : STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
       const goneName = crewNameOf(gone);
-      STATE.crew.splice(STATE.crew.indexOf(gone), 1);
-      delete STATE.crewHP[gone];
-      if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[gone];
-      if (STATE.crewIdentity) delete STATE.crewIdentity[gone];
-      delete crewPendingOf()[gone];
-      forgetCrewMorale(gone);
+      releaseCrewRole(gone); // HP, charges, pending, identity, morale, armed skills (A9)
       if (typeof window.pushCruiseLog === 'function') {
         window.pushCruiseLog('◆ ' + goneName + ' steps down from the crew today and rides as a passenger to the next stop. Nobody discusses it at dinner.');
       }
@@ -5721,17 +5819,21 @@ function applyOutcomeEffects(o) {
   //     kill:   = severity lethal (medic / medkit softer landings)
   //     heal:   +40 HP to all injured, or full heal for a specific role
   //             (or the delayed_crisis "patient").
-  if (STATE.crew.length && (o.crew_effect || o.severity)) {
+  // Everyone aboard is in the pool — the captain too (owner ruling 29):
+  // a bare severity can land on the captain, a delayed crisis can be
+  // theirs ("patient"), and a heal for all the injured reaches them.
+  const people = peopleAboard();
+  if (people.length && (o.crew_effect || o.severity)) {
     const ce = o.crew_effect || {};
-    const named = (ce.target === 'specific_role' && ce.role && STATE.crew.includes(ce.role)) ? ce.role
-      : (ce.target === 'patient' && STATE.crisisPatient && STATE.crew.includes(STATE.crisisPatient)) ? STATE.crisisPatient
+    const named = (ce.target === 'specific_role' && ce.role && people.includes(ce.role)) ? ce.role
+      : (ce.target === 'patient' && STATE.crisisPatient && people.includes(STATE.crisisPatient)) ? STATE.crisisPatient
       : null;
-    const targetRole = named || STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
+    const targetRole = named || people[Math.floor(Math.random() * people.length)];
     const severity = o.severity || (ce.type === 'kill' ? 'lethal' : null);
     if (ce.type === 'heal' && !o.severity) {
-      if (named) STATE.crewHP[named] = 100;
+      if (named) setHP(named, 100);
       else if (ce.target === 'all_injured') {
-        for (const r of STATE.crew) STATE.crewHP[r] = clamp(crewHPOf(r) + 40, 0, 100);
+        for (const r of people) setHP(r, hpOf(r) + 40);
       }
     } else if (severity) {
       applySeverity(targetRole, severity);
@@ -5755,7 +5857,7 @@ function applyOutcomeEffects(o) {
 }
 
 /* Effort a repair choice can draw on (GAME_BIBLE §The Effort System):
-   the captain's own hands (+10), each listed specialist aboard at their
+   the captain's own hands (+10; +5 while wounded), each listed specialist aboard at their
    crew_roster effort_contribution (wounded: half; a captain of that
    background: half), each other crew member as general help (+10), and
    each listed item in cargo at its items.json contribution (a repair kit
@@ -5790,7 +5892,9 @@ function choiceEffort(choice) {
   if (!authored && !check) return null;
   const required = authored ? choice.effort_required : check.required;
   const from = authored ? choice.requires_effort_from : check.from;
-  let available = 10, kit = null, kitValue = 0;
+  // The captain's own hands: +10, half while the captain is wounded
+  // (owner ruling 29 — what a captain's wound really costs).
+  let available = captainHandsEffort(), kit = null, kitValue = 0;
   const listed = new Set();
   for (const src of from) {
     if (src.startsWith('item:')) {
@@ -5862,11 +5966,12 @@ function resolveChoice(choice) {
     // anyone aboard) — starting at their real HP; the result lands on
     // them (demo contract: perfect +25 HP, good +10, poor keeps the loss).
     const isMed = choice.launch_minigame === 'medical';
-    const patient = isMed && STATE.crew.length ? (worstHurtCrew() || STATE.crew[Math.floor(Math.random() * STATE.crew.length)]) : null;
+    const people = peopleAboard(); // the captain can be the patient too (owner ruling 29)
+    const patient = isMed && people.length ? (worstHurtCrew() || people[Math.floor(Math.random() * people.length)]) : null;
     const mgOpts = Object.assign({}, choice.minigame_opts || {});
     if (isMed) {
       if (!mgOpts.difficulty) mgOpts.difficulty = (STATE.currentEvent && STATE.currentEvent.difficulty) || 'medium';
-      if (patient && mgOpts.startingHp == null) mgOpts.startingHp = crewHPOf(patient);
+      if (patient && mgOpts.startingHp == null) mgOpts.startingHp = hpOf(patient);
     }
     openMinigame(choice.launch_minigame, mgOpts, (tier, mgPayload) => {
       eventMinigameChoice = null;
@@ -5891,17 +5996,17 @@ function resolveChoice(choice) {
       });
       const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: closed below, once the patient's HP has landed too
       applyOutcomeEffects(merged);
-      if (patient && STATE.crew.includes(patient)) {
-        const before = crewHPOf(patient);
+      if (patient && peopleAboard().includes(patient)) {
+        const before = hpOf(patient);
         let after = before;
         if (tier === 'perfect') after = Math.min(100, before + 25);
         else if (tier === 'good') after = Math.min(100, before + 10);
         else if (mgPayload && typeof mgPayload.hp === 'number' && typeof mgPayload.startingHp === 'number') after = Math.max(5, before + (mgPayload.hp - mgPayload.startingHp));
         after = Math.round(after);
         if (after !== before) {
-          STATE.crewHP[patient] = after;
+          setHP(patient, after);
           const d = after - before;
-          merged.narrative = (merged.narrative || '') + '\n\n' + crewNameOf(patient) + ', the worst case: ' + (d > 0 ? '+' : '') + d + ' HP.';
+          merged.narrative = (merged.narrative || '') + '\n\n' + PersonName(patient) + ', the worst case: ' + (d > 0 ? '+' : '') + d + ' HP.';
         }
       }
       if (choice.launch_minigame === 'breach') pushAiSample('hull_breach');
@@ -5996,8 +6101,12 @@ function checkFailure(opts) {
   let type = null;
   if (r.fuel   <= 0 && !arriving) type = 'no_fuel';
   else if (r.hull   <= 0) type = 'hull_zero';
+  // The captain is dead (owner rulings 29/30): captain_lost with anyone
+  // else still aboard; crew_gone ("Autopilot — nobody left to fly the
+  // ship") when nobody is. A living captain with no crew (dismissed,
+  // jettisoned, or all dead) flies on solo — ruling 26.
+  else if (captainHPOf() <= 0) type = STATE.crew.length ? 'captain_lost' : 'crew_gone';
   else if (crewMoraleAvg() === 0) type = 'mutiny'; // the crew AVERAGE at 0 (owner ruling 15); no crew, no mutiny
-  else if (STATE.crew.length === 0 && STATE.flags.has('all_crew_dead')) type = 'crew_gone'; // death only — solo-by-choice is a valid run (ui_sweep catch 2026-08-04)
   else if (deprivationFailure()) type = deprivationFailure();
   else if (STATE.daysElapsed > STATE.baseDays && !arriving) type = 'time_expired';
   // Phase 4's Growbay now tracks real STATE.cropGrowth.health, so this

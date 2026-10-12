@@ -85,7 +85,7 @@ const end = page => page.evaluate(() => ({ screen: document.querySelector('.scre
     const page = await boot({ crew: ['botanist', 'engineer'] });
     const grow = async (setupFn) => page.evaluate(fn => {
       Math.random = () => 0.99; // no pest onset
-      Object.assign(STATE.cropGrowth, { growth: 20, health: 80, pest: false, tenderId: 'none', lastTickDay: STATE.daysElapsed });
+      Object.assign(STATE.cropGrowth, { growth: 20, health: 80, pest: false, tenderId: 'none', tenderChosen: true, lastTickDay: STATE.daysElapsed }); // the player chose Nobody (else ruling 41's default botanist tends)
       STATE.orders.waterSplit = 50; STATE.resources.water = 80;
       (new Function(fn))();
       const g0 = STATE.cropGrowth.growth, h0 = STATE.cropGrowth.health;

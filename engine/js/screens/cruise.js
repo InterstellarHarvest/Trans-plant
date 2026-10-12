@@ -637,14 +637,13 @@
       const iconHtml = m.crewId
         ? '<div class="crew-icon has-sprite" data-crew-id="' + m.crewId + '" style="' + crewIconCss(m.crewId, 'var(--card-icon-size)') + '"></div>'
         : '<div class="crew-icon">\u{1F464}</div>';
-      // Real per-crew HP (index.html's crewHP system); the captain is
-      // the player and doesn't take HP damage — always full.
-      const hp = m.key === 'captain' ? 100
-        : (typeof window.crewHPOf === 'function' ? crewHPOf(m.key) : 100);
+      // Real HP — the captain's own too (owner ruling 29, index.html hpOf).
+      const hp = typeof window.hpOf === 'function' ? hpOf(m.key) : 100;
       const hpColor = hp <= CREW_CRITICAL_HP ? '#cc5555' : (hp < CREW_WOUNDED_HP ? '#d4a830' : '');
       // Their OWN morale (owner ruling 15). The captain has none: no MO bar.
       const mo = m.key === 'captain' ? null : crewMoraleOf(m.key);
-      const moTip = mo == null ? '' : 'Morale ' + Math.round(mo) + '/100' + (mo <= 0 ? ' — walks off at the next station unless it rises' : '');
+      // HUD rounding (crewMoraleAvg): above 0 reads at least 1 — "0" only when they walk (A10).
+      const moTip = mo == null ? '' : 'Morale ' + (mo > 0 ? Math.max(1, Math.round(mo)) : 0) + '/100' + (mo <= 0 ? ' — walks off at the next station unless it rises' : '');
       const moBar = mo == null ? ''
         : '<div class="crew-bar mo' + (mo <= 0 ? ' zero' : '') + '" title="' + moTip + '"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(mo) + '%"></div></div></div>';
       slot.innerHTML =
@@ -737,12 +736,9 @@
     window.tickCropGrowth();    // binds the growbay's live crop state, caught up to today
     const cg = STATE.cropGrowth;
     if (!cg || cg.growth < 100 || cg.health <= 0) return;
-    const f0 = STATE.resources.food, m0 = crewMoraleRaw();
+    // doHarvest logs "▶ Harvested … +N food" itself — one line for both
+    // harvest paths, stating what really landed (re-audit A15, b4-crew).
     window.doHarvest();
-    const df = Math.round(STATE.resources.food - f0), dm = m0 == null ? 0 : Math.round(crewMoraleRaw() - m0);
-    // A morale crop (zinnia) with nobody aboard to enjoy it lifts nothing.
-    pushLogEntry('▶ Harvested ' + STATE.crop.replace(/_/g, ' ').toUpperCase() + '. ' +
-      (df > 0 ? '+' + df + ' food' : dm > 0 ? '+' + dm + ' morale' : m0 == null && STATE.crop === 'zinnia' ? 'No crew aboard to enjoy them' : 'The stores were already full') + '. Cycle reset.');
     renderHUD();
     renderCruise();
     if (isStopped()) renderStopMenu();
@@ -796,7 +792,7 @@
     mine:         { label: 'MINE',      sub: 'Pull raw materials from the rocks.',              effort: 3, icon: 'mining', time: '1d/run' },
     salvage:      { label: 'SALVAGE',   sub: (region) => region === 'derelict' ? 'Board the hulk. Fuel cells, ration cans, the odd medkit.' : 'Pick through the wreckage. Mind the sharp bits.',  effort: 3, icon: 'salvage', time: '1d' },
     forage_food:  { label: (region) => FORAGE_LABEL_BY_REGION[region] || 'FORAGE',
-                    sub: (region) => region === 'planet_orbit_alien' ? 'Alien flora. Some of it bites back: a crew member may be poisoned.' : 'Find something edible. Or interesting. Sometimes both.',
+                    sub: (region) => region === 'planet_orbit_alien' ? 'Alien flora. Some of it bites back: someone aboard may be poisoned.' : 'Find something edible. Or interesting. Sometimes both.',
                     effort: 2, icon: 'forage', time: '1d', variantBy: (region) => region === 'planet_orbit_alien' ? 'risky' : null },
     trade:        { label: 'TRADE',     sub: () => atStation() ? 'Market Row is open. Haggle in person.' : 'A trader is in range. Haggle. Or pretend to.', effort: 1, icon: 'trade', time: '≤1d', requires: () => traderHere() },
     wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park. Roll the dice. Days will pass. Things will hear you.', effort: 1, hint: true, icon: 'wait', time: '1-7d', hideWhen: () => traderHere() },
@@ -804,7 +800,7 @@
     repair:       { label: 'REPAIR',    sub: 'Patch the hull: 2 metal + 1 scrap and a day.', effort: 3, locked: repairLockReason, icon: 'repair', time: '1d', hideWhen: () => hullIntact() },
     rest:         { label: 'REST',      sub: () => 'Crew morale up (+' + restPerDay() + ' a day). Days down.', effort: 1, hint: true, icon: 'rest', time: '1-7d', locked: restLockReason },
     fab:          { label: 'FABRICATOR', sub: 'Open the print queue. Long jobs need a still ship.', effort: 1, hint: true, icon: 'fab' },
-    medbay:       { label: 'MEDBAY',    sub: () => 'Treat every hurt crew member. ' + medbayFee() + 'g, no days.', effort: 1, hint: true, locked: medbayLockReason, icon: 'medic', hideWhen: () => !medbayPatient() },
+    medbay:       { label: 'MEDBAY',    sub: () => 'Treat everyone aboard who is hurt. ' + medbayFee() + 'g, no days.', effort: 1, hint: true, locked: medbayLockReason, icon: 'medic', hideWhen: () => !medbayPatient() },
     condense:     { label: 'CONDENSE',  sub: 'Wring water out of the nebula. A day for +12 water.', effort: 2, locked: condenseLockReason, icon: 'water', time: '1d' },
     drydock:      { label: 'DRYDOCK',   sub: () => 'Station crews patch the hull. +' + Math.min(30, Math.ceil(resMax('hull') - STATE.resources.hull)) + ' hull for ' + drydockFee() + 'g.', effort: 1, hint: true, locked: drydockLockReason, icon: 'repair', hideWhen: () => hullIntact() },
     fab_service:  { label: 'FAB SERVICE', sub: () => 'Station techs overhaul the fabricator. Wear to zero, ' + fabServiceFee() + 'g.', effort: 1, hint: true, locked: fabServiceLockReason, icon: 'fab', hideWhen: () => fabGoodAsNew() },
@@ -957,19 +953,20 @@
         // payload contract) — poisoning ~10/20/35 HP, morale 5/12/20.
         const hpHit = { light: 10, medium: 20, heavy: 35 }[s.severity] || 10;
         const moHit = { light: 5, medium: 12, heavy: 20 }[s.severity] || 5;
-        // Poisoning hurts one crew member (the demo's "SICKNESS · -HP one
-        // crew" and the briefing's "poisons a crew member"); solo, the
-        // spoiled haul costs food instead (at the morale scale).
-        if (s.type === 'poisoning') { if (STATE.crew.length) damageCrew(null, hpHit); else STATE.resources.food = clamp(STATE.resources.food - moHit, 0, resMax('food')); }
+        // Poisoning hurts one person aboard (the demo's "SICKNESS · -HP one
+        // crew") — the captain can be the one (owner ruling 29), and a
+        // solo captain always is.
+        if (s.type === 'poisoning') damageCrew(null, hpHit);
         else addCrewMorale(-moHit); // morale_drop 'all_crew': every crew member (none aboard: nobody to sour)
       });
       let gained = foodGot > 0 ? ('+' + foodGot + ' food.') : payload.food > 0 ? 'found food, but the stores are full.' : 'came back empty-handed.';
       // Alien world (the red risky strip, Bible "FORAGE — clicker w/
       // poison-roll"): one roll in four, something in the haul poisons a
-      // crew member — the minigame's medium sickness. Solo, it spoils food.
+      // crew member — the minigame's medium sickness (anyone aboard, the captain too).
       if (alien && Math.random() < ALIEN_POISON_CHANCE) {
-        if (STATE.crew.length) { const hit = damageCrew(null, ALIEN_POISON_HP); gained += ' Something in the haul disagreed with ' + (hit && STATE.crew.includes(hit) ? crewNameOf(hit) : 'the crew') + ' (−' + ALIEN_POISON_HP + ' HP before the medic\'s care).'; }
-        else { STATE.resources.food = clamp(STATE.resources.food - ALIEN_POISON_HP, 0, resMax('food')); gained += ' Half of it was poisonous; it went out the airlock (−' + ALIEN_POISON_HP + ' food).'; }
+        // Anyone aboard — the captain included (owner ruling 29).
+        const hit = damageCrew(null, ALIEN_POISON_HP);
+        gained += ' Something in the haul disagreed with ' + (hit === 'captain' ? 'you' : hit && STATE.crew.includes(hit) ? crewNameOf(hit) : hit ? 'the one who ate it' : 'the crew') + ' (−' + ALIEN_POISON_HP + ' HP before the medic\'s care).';
       }
       // A good forage on alien ground can turn up the suspicious fungus
       // (the chef's Secret Project — event_shipboard_016).
@@ -1084,9 +1081,10 @@
   // before it comes due. No time cost — the Bible prices it in credits.
   const MEDBAY_BASE = 30;
   const medbayFee = () => stationPrice(MEDBAY_BASE); // CHIP / merchant discounts
+  // Everyone aboard — the captain is a patient too (owner ruling 29/30).
   function medbayPatient() {
     let worst = null;
-    for (const r of STATE.crew) if (crewHPOf(r) < 100 && (!worst || crewHPOf(r) < crewHPOf(worst))) worst = r;
+    for (const r of peopleAboard()) if (hpOf(r) < 100 && (!worst || hpOf(r) < hpOf(worst))) worst = r;
     return worst;
   }
   function medbayLockReason() {
@@ -1101,9 +1099,10 @@
     // The whole crew, for one fee: one patient for 30g was strictly worse
     // than a 12g medkit from the same station's shelf (hunt 5 economy).
     STATE.goldAmount -= medbayFee();
-    const treated = STATE.crew.filter(x => crewHPOf(x) < 100);
-    for (const x of treated) { STATE.crewHP[x] = 100; if (STATE.crewPending) delete STATE.crewPending[x]; }
-    pushLogEntry('◆ MEDBAY — ' + treated.map(crewNameOf).join(', ') + (treated.length > 1 ? ' are' : ' is') + ' treated, stitched and discharged with a lollipop each. −' + medbayFee() + 'g.');
+    const treated = peopleAboard().filter(x => hpOf(x) < 100);
+    for (const x of treated) { setHP(x, 100); if (STATE.crewPending) delete STATE.crewPending[x]; }
+    const who = treated.map((x, i) => i ? personName(x) : PersonName(x));
+    pushLogEntry('◆ MEDBAY — ' + who.join(', ') + (treated.length > 1 ? ' are' : ' is') + ' treated, stitched and discharged with a lollipop each. −' + medbayFee() + 'g.');
     renderHUD();
     renderCruise();
     renderStopMenu(); // the verb re-gates (nobody hurt / can't afford)
