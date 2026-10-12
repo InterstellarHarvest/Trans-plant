@@ -232,10 +232,13 @@
     return 'available';
   }
 
+  // The captain's own hands: the baseline, half while wounded — the same
+  // rule as every other hands-on job (index.html captainHandsEffort).
+  const captainHands = () => (typeof captainHandsEffort === 'function' ? captainHandsEffort() : BASE_EFFORT);
   // Aggregate total fab contribution — sum of crew + captain bg +
-  // captain baseline. Drives the total pill and the days reduction.
+  // captain's hands. Drives the total pill and the days reduction.
   function totalFabContribution() {
-    let total = BASE_EFFORT;    // captain always adds baseline
+    let total = captainHands();
     for (const [id, on] of Object.entries(FSTATE.aboard)) {
       if (on) total += CREW[id].fab * on;
     }
@@ -337,11 +340,12 @@
       lines.push('  ' + c.name + ' (' + c.role + ')  ' + pct(c.fab));
       anyContributor = true;
     }
-    if (!anyContributor) lines.push('  (no crew assisting — solo)');
+    if (captainHands() < BASE_EFFORT) lines.push('  Captain · wounded  ' + Math.round((captainHands() - BASE_EFFORT) / BASE_EFFORT * 100) + '%');
+    else if (!anyContributor) lines.push('  (no crew assisting — solo)');
     lines.push('');
     const total = totalFabContribution();
     const mult  = (total / BASE_EFFORT).toFixed(1);
-    if (total > BASE_EFFORT) {
+    if (total !== BASE_EFFORT) {
       lines.push('TOTAL: ×' + mult + ' SPEED (craft in ' +
                  Math.round(BASE_EFFORT / total * 100) + '% of base time)');
     } else {

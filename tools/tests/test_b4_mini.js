@@ -15,7 +15,7 @@
 //  45 hull-breach OXYGEN bar pale ice, orange/red low-O2 warnings kept.
 //  46b nothing presents the unbuilt asteroid_mining wrapper as real.
 const { chromium } = require('playwright'); // Firefox: pw_firefox_shim.js (PW_BROWSER=firefox)
-const URL = process.env.URL || 'http://localhost:8185/index.html';
+const URL = process.env.URL || 'http://localhost:8177/index.html';
 const SHOTS = process.env.SHOTS || null;
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } };

@@ -320,7 +320,16 @@
       try {
         const list = facts(r.snap, snapshot());
         const place = clip((node && node.name) || 'the next stop', 40);
-        push({ text: clip(voiced('arrival', { place, costs: factText(list) }), MAX_ENTRY), type: 'event', day: STATE.daysElapsed }, { ai: true, instant: true });
+        // Fit as the outcome lines do: no fact cut mid-word. The smallest
+        // facts give way to a follow-up line; the leg's days never do (the
+        // clip used to drop them first — they are listed last).
+        const shown = list.slice(), rest = [];
+        const build = () => voiced('arrival', { place, costs: factText(shown) });
+        const dayFact = shown.length && / DAYS?$/.test(shown[shown.length - 1].text);
+        while (shown.length > (dayFact ? 2 : 1) && build().length > MAX_ENTRY) rest.unshift(shown.splice(shown.length - (dayFact ? 2 : 1), 1)[0]);
+        const opts = { ai: true, instant: true };
+        push({ text: clip(build(), MAX_ENTRY), type: 'event', day: STATE.daysElapsed }, opts);
+        if (rest.length) push({ text: clip('Also: ' + factText(rest) + '.', MAX_ENTRY), type: 'event', day: STATE.daysElapsed }, opts);
       } finally { release(r.buf, STATE.daysElapsed); }
     },
     // Crop growth crossed into a new stage (cruise.js checkCropMilestones).

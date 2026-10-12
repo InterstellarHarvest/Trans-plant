@@ -1,8 +1,9 @@
 const { chromium } = require('playwright');
+const URL = process.env.URL || 'http://localhost:8177/index.html';
 (async () => {
   const b = await chromium.launch(); const page = await b.newPage(); const errs = [];
   page.on('pageerror', e => errs.push(e.message));
-  await page.goto(process.env.URL || 'http://localhost:8177/index.html');
+  await page.goto(URL);
   await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.items);
   for (const ai of ['marv', 'ajoy']) {
     const r = await page.evaluate(ai => {

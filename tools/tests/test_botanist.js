@@ -7,7 +7,7 @@
 // Merchant discount, crop health, pests, the crop treatment bottle), the
 // one-shot locks, revisit copy, the walk-away row and save/reload.
 const { chromium } = require('playwright');
-const URL = process.env.URL || 'http://localhost:8181/index.html';
+const URL = process.env.URL || 'http://localhost:8177/index.html';
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } };
 let browser;

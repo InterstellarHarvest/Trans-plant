@@ -1,10 +1,11 @@
 const { chromium } = require('playwright');
+const URL = process.env.URL || 'http://localhost:8177/index.html';
 let pass = 0, fail = 0; const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } };
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 860 } });
   const errs = []; page.on('pageerror', e => errs.push(e.stack || e.message));
-  await page.goto('http://localhost:8177/index.html');
+  await page.goto(URL);
   await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.items && MOD.crew_roster);
   await page.evaluate(() => { applySetupToState({ trail: 'mars', ai: 'aria', captain: 'veteran', crew: ['pilot', 'engineer'], crop: 'tomato', ship: 'M' }); STATE.stowaway = null; });
   await page.waitForTimeout(300);

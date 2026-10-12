@@ -60,10 +60,22 @@ const mark = page => page.evaluate(() => { window.__mark = STATE.shipLog.length;
     const e1 = await sinceMark(page); run.push(...e1);
     const arr = e1.find(e => /^Position:/.test(e.text));
     ok(arr && arr.type === 'event' && arr.voice === 'rex', 'arrival logged as a voiced event entry: ' + (arr && arr.text));
-    ok(arr && arr.text.includes(leg.name) && arr.text.includes('−' + Math.abs(leg.fuel) + ' FUEL') && arr.text.includes(leg.days + ' DAYS'), `arrival states the real leg cost (${leg.fuel} fuel, ${leg.days} days)` + (arr ? '' : ' — no arrival entry') + (arr && !arr.text.includes('−' + Math.abs(leg.fuel) + ' FUEL') ? ' — logged: ' + arr.text : ''));
+    ok(arr && arr.text.includes(leg.name) && arr.text.includes('−' + Math.abs(leg.fuel) + ' FUEL') && arr.text.includes(leg.days + (leg.days === 1 ? ' DAY' : ' DAYS')), `arrival states the real leg cost (${leg.fuel} fuel, ${leg.days} days)` + (arr ? '' : ' — no arrival entry') + (arr && !arr.text.includes('−' + Math.abs(leg.fuel) + ' FUEL') ? ' — logged: ' + arr.text : ''));
     ok(arr && arr.day === leg.day, 'arrival stamped with the arrival day ' + leg.day);
     ok(arr && (await voiceRe(page, 'arrival', 'rex')).test(arr.text), 'arrival in REX\'s template voice');
     ok(e1.indexOf(arr) === 0, 'the arrival entry leads the leg\'s lines');
+    // A leg that changed a lot: the entry stays within its 120 characters
+    // without cutting a fact, the days stay in it, the rest follows.
+    const busy = await page.evaluate(() => {
+      const r = ShipLog.begin({ fresh: true }), n0 = STATE.shipLog.length;
+      Object.assign(STATE.resources, { fuel: STATE.resources.fuel - 13, food: STATE.resources.food - 9, water: STATE.resources.water - 11, o2: STATE.resources.o2 - 7, hull: STATE.resources.hull - 21 });
+      STATE.goldAmount += 17; STATE.materials.scrap = (STATE.materials.scrap || 0) + 3; STATE.materials.metal = (STATE.materials.metal || 0) + 2;
+      STATE.daysElapsed += 9;
+      ShipLog.arrival(r, STATE.byId[STATE.currentId]);
+      return STATE.shipLog.slice(n0).map(e => e.text);
+    });
+    ok(busy[0] && busy[0].length <= 120 && busy[0].includes('9 DAYS') && !busy[0].includes('…'), 'a busy leg\'s arrival keeps its days, no fact cut: ' + busy[0]);
+    ok(busy[1] && /^Also: /.test(busy[1]) && /SCRAP|METAL|GOLD|O2/.test(busy[1]), 'the facts that did not fit follow on an "Also:" line: ' + busy[1]);
 
     // 2. An event choice → choice entry, then the outcome with real effects.
     await mark(page);

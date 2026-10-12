@@ -292,10 +292,25 @@ function step() {
       // station shopping (emulates the market modal at real prices)
       if (window.__shop && node.node_type === 'station' && !acts.shopped) {
         acts.shopped = true;
-        // the station's real buy-back (market.js materialPrice: value × 2.5, min 1)
-        const MATP = window.__matp || Object.fromEntries(((MOD.materials && MOD.materials.materials) || []).map(m => [m.id, Math.max(1, Math.round((m.value || 0.2) * 2.5))]));
+        // Sold through the game's own station sale (market.js stationSellOne:
+        // the Market Row's and the Cargo Hold's price, one rule).
         const keep = { metal: 4, scrap: 2 };
-        for (const [m, q] of Object.entries(STATE.materials)) { const sell = Math.max(0, q - (keep[m] || 0)); if (sell > 0) { STATE.materials[m] -= sell; window.__ctxTag = 'shopSell'; STATE.goldAmount += sell * MATP[m]; window.__ctxTag = ''; S.matsSold = (S.matsSold || 0) + sell; } }
+        for (const [m, q] of Object.entries(STATE.materials)) for (let n = Math.max(0, q - (keep[m] || 0)); n > 0; n--) {
+          window.__ctxTag = 'shopSell'; const r = stationSellOne(m); window.__ctxTag = '';
+          if (!r.paid) break; S.matsSold = (S.matsSold || 0) + 1;
+        }
+        // Trade goods: the trader's price, and what a fence would have paid
+        // for the same copy (the black market is out of the sim's reach).
+        for (const sid of [...new Set(STATE.items)]) {
+          if (!((itemDef(sid) || {}).tags || []).includes('trade_good')) continue;
+          while (STATE.items.includes(sid)) {
+            const v = (typeof itemValuesOf === 'function' ? itemValuesOf(sid) : [])[0];
+            const f = fenceBuyPrice(sid, Number.isFinite(v) ? v : undefined);
+            window.__ctxTag = 'shopSellGoods'; const r = stationSellOne(sid, 0); window.__ctxTag = '';
+            if (!r.paid) break;
+            S.goodsSold = (S.goodsSold || 0) + 1; S.goodsGold = (S.goodsGold || 0) + r.paid; S.fenceWouldPay = (S.fenceWouldPay || 0) + (f || r.paid);
+          }
+        }
         const buy = (id, base, want) => { let n = 0; while (want() && STATE.goldAmount >= stationPrice(base) && n < 8) { if (!grantItem(id)) break; window.__ctxTag = 'shopBuy:' + id; STATE.goldAmount -= stationPrice(base); window.__ctxTag = ''; n++; S.shopBuys = S.shopBuys || {}; S.shopBuys[id] = (S.shopBuys[id] || 0) + 1; } };
         const cnt = id => STATE.items.filter(x => x === id).length;
         const fuelNeed = (P === 'fast' || P === 'plaid') ? 90 : P === 'ludi' ? 70 : 50;

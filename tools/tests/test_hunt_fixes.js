@@ -1,6 +1,6 @@
 // Verifies the bug-hunt fixes in the real page.
 const { chromium } = require('playwright');
-const URL = 'http://localhost:8177/index.html';
+const URL = process.env.URL || 'http://localhost:8177/index.html';
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } };
 (async () => {

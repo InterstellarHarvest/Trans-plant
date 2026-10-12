@@ -192,7 +192,11 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
       led: document.getElementById('crop-alert-led').classList.contains('on'), ledTitle: ((e => e.getAttribute('title') || [e.dataset.tipTitle, e.dataset.tipDescription].filter(Boolean).join('\n\n'))(document.getElementById('crop-alert-led'))),
       ledBg: getComputedStyle(document.getElementById('crop-alert-led')).backgroundColor,
     }));
-    const setCrop = async o => { await page.evaluate(o => { tickCropGrowth(); Object.assign(STATE.cropGrowth, { pest: false, health: 80 }, o); setWaterSplit(cropWaterNeed()); renderCruise(); }, o); await page.waitForTimeout(450); }; // colour transitions settle
+    const setCrop = async o => { await page.evaluate(o => { tickCropGrowth(); Object.assign(STATE.cropGrowth, { pest: false, health: 80 }, o); setWaterSplit(cropWaterNeed()); renderCruise(); }, o);
+      // Colour transitions settle: wait for the running ones to finish (a
+      // fixed 450ms read a mid-transition colour under load).
+      await page.waitForTimeout(50);
+      await page.evaluate(() => Promise.all(document.getAnimations().filter(a => typeof CSSTransition !== 'undefined' && a instanceof CSSTransition).map(a => a.finished.catch(() => {})))); };
     await setCrop({ growth: 40, day: 30 });
     let c = await card();
     ok(c.stage === 'VEGETATIVE' && c.day === 'DAY 30 / 90' && !c.overdue, 'growing: VEGETATIVE, "' + c.day + '"');
