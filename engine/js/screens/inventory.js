@@ -371,7 +371,7 @@ function renderInvDetail(en) {
     sellBtn.disabled = locked;
     sellBtn.dataset.tipTitle = 'SELL ONE';
     sellBtn.dataset.tipDescription = locked ? 'The cargo bay is holding things. Clear some space first.'
-      : 'The Market Row trader buys one for ' + (price.unknown ? 'its real value (' + itemValueRangeLabel(en.id) + ')' : price.label) + '. Same price as the stall.';
+      : 'The Market Row trader buys one for ' + (price.unknown ? 'its real value (' + itemValueRangeLabel(en.id) + ')' : price.label) + '. Same price as the stall · no day spent.';
     if (locked) sellBtn.dataset.tipTone = 'danger'; else delete sellBtn.dataset.tipTone;
   }
   const jett = document.getElementById('inv-jett-btn');
