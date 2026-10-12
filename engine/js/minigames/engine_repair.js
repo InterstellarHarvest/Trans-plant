@@ -103,7 +103,11 @@
   function erVoice() { return ER_LINES[STATE.activeAI] || ER_LINES.aria; }
   function erName() { return (ER_LINES[STATE.activeAI] ? STATE.activeAI : 'aria').toUpperCase(); }
   function erShip() { return STATE.shipName || 'The ship'; }
-  function setAI(n, t) { $('er-ai-name').textContent = n; $('er-ai-text').textContent = t; }
+  function setAI(n, t) {
+    if (typeof window.aiChip === 'function') window.aiChip($('er-ai-name'), n, t); // ruling 49
+    else $('er-ai-name').textContent = n;
+    $('er-ai-text').textContent = t;
+  }
   function paused() { return typeof PauseBus !== 'undefined' && PauseBus.paused; }
 
   // ── markup (injected once into the static #engrepair-root shell) ──

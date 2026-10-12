@@ -46,7 +46,7 @@ const end = page => page.evaluate(() => ({ screen: document.querySelector('.scre
     await page.evaluate(() => window.showEndReport && window.showEndReport());
     await page.waitForTimeout(300);
     const day = await page.evaluate(() => document.getElementById('end-day-line').textContent);
-    ok(e.screen === 'screen-end' && !/Form Letter|Dead Stop/i.test(e.title), `late + empty tank on the final leg still arrives (${e.title.replace(/\n/g, ' ')})`);
+    ok(e.screen === 'screen-end' && !/Form Letter|Dead Stop|We Regret|Adrift/i.test(e.title), `late + empty tank on the final leg still arrives (${e.title.replace(/\n/g, ' ')})`);
     ok(/\d+ DAYS LATE/.test(day), `end screen: "${day}"`);
     ok(await page.evaluate(() => !hasSave()), 'arrival clears the save');
     await page.close();

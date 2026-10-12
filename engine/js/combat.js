@@ -233,7 +233,9 @@
     document.getElementById('enc-narr-body').innerHTML = body + (secondary ? `<br><span style="opacity:0.75;font-size:0.92em;">${secondary}</span>` : '');
   }
   function setAiCombat(text) {
-    document.getElementById('enc-ai-name').textContent = COMBAT.ai.toUpperCase();
+    const chip = document.getElementById('enc-ai-name');
+    if (typeof window.aiChip === 'function') window.aiChip(chip, COMBAT.ai.toUpperCase(), text); // ruling 49
+    else chip.textContent = COMBAT.ai.toUpperCase();
     document.getElementById('enc-ai-text').textContent = text;
     document.getElementById('enc-ai-bar').classList.remove('hidden');
     placeTurnIndicator();

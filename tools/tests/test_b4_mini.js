@@ -315,11 +315,13 @@ const toPlainStop = page => page.evaluate(() => {
         document.body.classList.remove('stop-active'); renderCruise(); document.getElementById('stop-btn').click();
         const rnd = Math.random; Math.random = () => 0.1;
         const real = window.openMinigame; window.openMinigame = (id, o, cb) => cb('good', { food: 10 });
-        STATE.crew.forEach(c => { STATE.crewHP[c] = 90; });
-        const hp0 = STATE.crew.map(crewHPOf).reduce((a, b) => a + b, 0), f0 = STATE.resources.food;
+        STATE.crew.forEach(c => { STATE.crewHP[c] = 90; }); STATE.captainHP = 90;
+        // Everyone aboard can take the poison, the captain too (ruling 29).
+        const all = () => STATE.crew.map(crewHPOf).reduce((a, b) => a + b, 0) + (Number.isFinite(STATE.captainHP) ? STATE.captainHP : 0);
+        const hp0 = all(), f0 = STATE.resources.food;
         [...document.querySelectorAll('#stop-choices .stop-choice')].find(b => /FORAGE/.test(b.textContent)).click();
         Math.random = rnd; window.openMinigame = real;
-        return { hurt: hp0 - STATE.crew.map(crewHPOf).reduce((a, b) => a + b, 0), food: STATE.resources.food - f0, log: STATE.shipLog.slice(-1)[0].text };
+        return { hurt: hp0 - all(), food: STATE.resources.food - f0, log: STATE.shipLog.slice(-1)[0].text };
       };
       STATE.resources.food = 50;
       return { crew: go() };

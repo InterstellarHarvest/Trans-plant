@@ -98,6 +98,8 @@ body {
 }
 #game[data-screen="screen-title"] #crt-overlay { --crt-a: 0.10; }
 #game[data-screen="screen-encounter"] #crt-overlay { --crt-a: 0.06; }
+/* The mining overlay sits over the cruise screen (5%); demo-mining tunes 6%. */
+#game:has(#overlay-mining.active) #crt-overlay { --crt-a: 0.06; }
 
 .screen { position: absolute; inset: 0; display: none; z-index: 10; }
 .screen.active { display: block; }
@@ -4674,9 +4676,9 @@ function renderEncounterState(opts) {
   const aiFlavor = (layer && layer.ai) || ev.ai_flavor;
   aiBar.classList.toggle('corrupted', corrupted);
   if (aiFlavor && aiFlavor[STATE.activeAI]) {
-    document.getElementById('enc-ai-name').textContent = STATE.activeAI.toUpperCase();
-    beats.push({ el: document.getElementById('enc-ai-text'), ms: TYPE_MS.ai,
-                 text: quoteLine(interpolateStowawayTokens(interpolateNpcTokens(aiFlavor[STATE.activeAI], STATE.npcCtx))) });
+    const aiLine = quoteLine(interpolateStowawayTokens(interpolateNpcTokens(aiFlavor[STATE.activeAI], STATE.npcCtx)));
+    aiChip(document.getElementById('enc-ai-name'), STATE.activeAI.toUpperCase(), aiLine);
+    beats.push({ el: document.getElementById('enc-ai-text'), ms: TYPE_MS.ai, text: aiLine });
     aiBar.classList.remove('hidden');
   } else {
     aiBar.classList.add('hidden');
@@ -4863,7 +4865,7 @@ function showHindsight() {
     .replaceAll('{result}', result);
   const bar = document.getElementById('enc-ai-bar');
   if (bar) bar.classList.remove('hidden');
-  document.getElementById('enc-ai-name').textContent = 'AJOY';
+  aiChip(document.getElementById('enc-ai-name'), 'AJOY', line);
   STATE.lastPick = null; // once per outcome
   return line; // typed in as the outcome's first beat (renderOutcomeView)
 }
@@ -5695,6 +5697,16 @@ function interpolateNpcTokens(text, npc) {
    exclusive per the schema (see CLAUDE.md's layered Event Module
    section). Flat-schema choices (no ev.layers) fall through to the
    original resolveChoice() path. */
+/* Owner ruling 49 (2026-10-12): an AI bar's name chip hides when the
+   line already names the AI or says "the ship computer" — no
+   "MARV  MARV reports…" (ruling 32's rule, cruise.js namesTheAI). */
+function aiChip(el, name, line) {
+  if (!el) return;
+  el.textContent = name;
+  el.style.display = (typeof window.namesTheAI === 'function' && window.namesTheAI(String(line || ''))) ? 'none' : '';
+}
+window.aiChip = aiChip;
+
 function handleChoiceClick(choice) {
   // Whatever was still typing lands first (a direct call while the text
   // runs, e.g. a combat hijack, must not leave beats running under it).

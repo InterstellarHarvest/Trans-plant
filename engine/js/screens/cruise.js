@@ -393,6 +393,7 @@
     return namesTheAI(body) ? body : voice.toUpperCase() + ': ' + body;
   }
   window.cruiseDisplayLine = displayLine; // test hook (ruling 32)
+  window.namesTheAI = namesTheAI; // the encounter/combat/engine-room AI chips use it too (ruling 49)
   function finishTyping() {
     if (!typing) return;
     const t = typing; typing = null;
