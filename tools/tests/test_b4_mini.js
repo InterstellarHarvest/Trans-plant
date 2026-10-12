@@ -347,12 +347,20 @@ const toPlainStop = page => page.evaluate(() => {
     ok(c0 === 'rgb(184, 230, 238)', `OXYGEN bar starts pale ice #b8e6ee (${c0})`);
     await shot(page, 'eng_breach_play');
     // Leave the holes open: the drain walks the bar through its warnings.
-    let orange = false, red = false;
-    try { await page.waitForFunction(() => getComputedStyle(document.getElementById('bcr-o2fill')).backgroundColor === 'rgb(232, 136, 48)', null, { timeout: 30000, polling: 100 }); orange = true; } catch (e) {}
-    try { await page.waitForFunction(() => getComputedStyle(document.getElementById('bcr-o2fill')).backgroundColor === 'rgb(204, 51, 51)', null, { timeout: 30000, polling: 100 }); red = true; } catch (e) {}
+    // Record each colour stage the game sets (the orange stage is a short
+    // window behind a 0.3s transition; polling the computed colour missed it
+    // under load), then check the palette those stages resolve to.
+    await page.evaluate(() => {
+      const f = document.getElementById('bcr-o2fill'); window.__o2seq = [];
+      new MutationObserver(() => { const b = f.style.background; if (b && window.__o2seq[window.__o2seq.length - 1] !== b) window.__o2seq.push(b); }).observe(f, { attributes: true, attributeFilter: ['style'] });
+    });
+    try { await page.waitForFunction(() => window.__o2seq.some(b => /--red/.test(b)) && document.querySelector('.breach-o2.danger'), null, { timeout: 30000, polling: 100 }); } catch (e) {}
+    const seq = await page.evaluate(() => window.__o2seq);
+    const iO = seq.findIndex(b => /--orange/.test(b)), iR = seq.findIndex(b => /--red/.test(b));
     const pal = await page.evaluate(() => ({ orange: getComputedStyle(document.getElementById('overlay-minigames')).getPropertyValue('--orange').trim(), red: getComputedStyle(document.getElementById('overlay-minigames')).getPropertyValue('--red').trim() }));
-    ok(orange, `low O2 turns the bar orange (--orange ${pal.orange})`);
-    ok(red, `lower still: red (--red ${pal.red}), pulsing`);
+    const settled = await page.evaluate(async () => { const f = document.getElementById('bcr-o2fill'); await Promise.all(f.getAnimations().filter(a => typeof CSSTransition !== 'undefined' && a instanceof CSSTransition).map(a => a.finished.catch(() => {}))); return getComputedStyle(f).backgroundColor; });
+    ok(iO >= 0 && /^#e88830$/i.test(pal.orange), `low O2 turns the bar orange (--orange ${pal.orange}) ${JSON.stringify(seq)}`);
+    ok(iR > iO && /^#cc3333$/i.test(pal.red) && settled === 'rgb(204, 51, 51)', `lower still: red (--red ${pal.red}, ${settled}), pulsing`);
     await page.evaluate(() => { if (typeof window.abortMinigame === 'function') window.abortMinigame(); });
     await page.close();
   }

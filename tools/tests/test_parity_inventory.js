@@ -397,7 +397,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
       const fresh = !!document.querySelector('#inv-grid .inv-tile[data-id="fuel_cell"] .inv-tile-new');
       return { ok: !document.querySelector('#screen-title.active'), isNew, fresh, marks: STATE.itemPickups.medkit, saved: saveRun() };
     });
-    ok(old.ok && !old.isNew && old.fresh && old.marks.length === 1 && old.saved, 'a pre-ruling save loads: nothing aboard is NEW; the next pickup is');
+    ok(old.ok && !old.isNew && old.fresh && old.marks.length === 1 && old.saved, 'a pre-ruling save loads: nothing aboard is NEW; the next pickup is ' + JSON.stringify(old));
     // A fabricator claim (pushed outside grantItem) still arrives NEW.
     const fab = await page.evaluate(() => { STATE.items.push('hull_patch'); openInventory(); return !!document.querySelector('#inv-grid .inv-tile[data-id="hull_patch"] .inv-tile-new'); });
     ok(fab, 'a print claimed from the fabricator arrives NEW');
@@ -541,12 +541,17 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
       const el = document.getElementById('inv-slots');
       const strong = document.getElementById('inv-slots-used');
       const color = () => getComputedStyle(strong).color;
+      // The number's colour transition and its flash run out before a colour
+      // read (a fixed 250ms read mid-flash under load).
+      const settle = () => Promise.all(strong.getAnimations().map(a => a.finished.catch(() => {})));
       const normal = color();
       while (cargoSlotsUsed() < Math.ceil(cap * 0.9)) STATE.items.push('gas_analyzer');
-      renderInventory(); await w(250);
-      const near = { cls: el.classList.contains('near-cap'), color: color(), flash: strong.classList.contains('readout-flash') };
+      renderInventory(); await w(60);
+      const nearFlash = strong.classList.contains('readout-flash');
+      await settle();
+      const near = { cls: el.classList.contains('near-cap'), color: color(), flash: nearFlash };
       while (cargoSlotsUsed() < cap) STATE.items.push('gas_analyzer');
-      renderInventory(); await w(250);
+      renderInventory(); await w(60); await settle();
       const at = { cls: el.classList.contains('at-cap'), color: color(), anim: getComputedStyle(el).animationName };
       const rows = JSON.parse(el.dataset.tipRows);
       const card = document.getElementById('inv-card').getBoundingClientRect();

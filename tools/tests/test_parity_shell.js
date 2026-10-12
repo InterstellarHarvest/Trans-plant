@@ -220,12 +220,17 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
     const r = await page.evaluate(async () => {
       const w = ms => new Promise(r => setTimeout(r, ms));
       endRun({ kind: 'arrival', module: MOD.endings[0] });
-      await w(150);
-      const mid = +getComputedStyle(document.getElementById('end-scene')).opacity;
-      await w(400);
-      return { mid, end: +getComputedStyle(document.getElementById('end-scene')).opacity };
+      // A fade is under way (an opacity animation, not a cut), then it lands
+      // at 1. Read off the animation itself: fixed 150/550ms reads missed
+      // both ends under load.
+      const el = document.getElementById('end-scene');
+      let fade = null;
+      for (let i = 0; i < 40 && !fade; i++) { await w(25); fade = el.getAnimations().find(a => (a.transitionProperty || '') === 'opacity' || /fade|opacity/i.test(a.animationName || '')) || null; }
+      const mid = +getComputedStyle(el).opacity;
+      if (fade) await fade.finished.catch(() => {});
+      return { fading: !!fade, mid, end: +getComputedStyle(el).opacity };
     });
-    ok(r.mid > 0 && r.mid < 1 && r.end === 1, `arrival scene fades in (mid ${r.mid.toFixed(2)} → ${r.end})`);
+    ok(r.fading && r.mid < 1 && r.end === 1, `arrival scene fades in (mid ${r.mid.toFixed(2)} → ${r.end})`);
     await page.close();
   }
 

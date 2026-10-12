@@ -528,7 +528,10 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
     await page.evaluate(() => { Math.random = () => 0.5; });
     await startCombat(page);
     await click(page, 'EVASIVE');
-    await page.waitForTimeout(450); // 0.2s fade into the lock; their shot lands at 600+320
+    // The 0.2s fade into the lock, then read (their shot lands at 600+320):
+    // wait for the fade itself to finish — a fixed 450ms read mid-fade under load.
+    await page.waitForTimeout(250);
+    await page.evaluate(() => Promise.all(document.getElementById('enc-choices').getAnimations().map(a => a.finished.catch(() => {}))));
     const c = await page.evaluate(() => { const s = getComputedStyle(document.getElementById('enc-choices')); return { o: s.opacity, f: s.filter, pe: s.pointerEvents }; });
     ok(c.o === '0.4' && /grayscale\(0\.4\)/.test(c.f) && c.pe === 'none', `enemy turn: panel at 0.4 + grayscale (${c.o} ${c.f})`);
     await page.close();
