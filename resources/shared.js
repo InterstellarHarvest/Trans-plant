@@ -682,12 +682,6 @@ function generateCursor(contextTag, playerSettings) {
   return css;
 }
 
-function getReticle(id)   { return RETICLE_REGISTRY.find(r => r.id === id) || null; }
-function getSprite(id)    { return CURSOR_SPRITES.find(s => s.id === id) || null; }
-function listReticleIds() { return RETICLE_REGISTRY.map(r => r.id); }
-function listSpriteIds()  { return CURSOR_SPRITES.map(s => s.id); }
-function listContexts()   { return Object.keys(CURSOR_CONTEXTS); }
-
 // Bake the always-on cursors into CSS vars on :root so html/body
 // + shared.css rules pick them up. Called immediately if the DOM
 // is ready, otherwise on DOMContentLoaded. Safe to call again
@@ -1811,30 +1805,6 @@ const MarketModal = (function() {
     if (ware.cost.gold) flashGold(-ware.cost.gold);
     renderLists();
   }
-  function sellCargo(idx) {
-    // Legacy index-based sell — kept for fence mode only.
-    if (!_state) return;
-    const cargo = _state.opts.getCargo();
-    const entry = cargo && cargo[idx];
-    if (!entry || _state.soldCargoIdxs.has(idx)) return;
-    const buyPrices = _state.opts.vendor.buyPrices || {};
-    const price = buyPrices[entry.id];
-    if (!price) {
-      const deny = pickFlavor('no_buyback');
-      if (deny) appendLog(deny, 'deny');
-      return;
-    }
-    if (refuseRemoval(entry.id) || sellGuarded()) return;
-    _state.opts.setGold(_state.opts.getGold() + price);
-    if (_state.opts.removeCargo) _state.opts.removeCargo(entry.id);
-    else _state.soldCargoIdxs.add(idx);
-    appendLog('Sold ' + entry.name + ' · +' + price + 'g', 'system pos');
-    const flavor = pickFlavor('sell');
-    if (flavor) appendLog(flavor, 'flavor');
-    flashGold(+price);
-    renderLists();
-  }
-
   // A sale re-renders the list and a ×1 row vanishes — the next row
   // slides under the cursor. Swallow the second click of a double-click.
   function sellGuarded() {

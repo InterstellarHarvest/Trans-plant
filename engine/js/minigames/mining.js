@@ -1,14 +1,10 @@
 'use strict';
 /* ────────────────────────────────────────────────────────────────
    MINING MINIGAME — lifted from resources/demo-mining.html (Phase 4).
-   All 8 [STUB] ENGINE INTEGRATION markers from the original audit are
-   resolved here except two intentionally left as honest gaps (SESSION
-   persistence across save/load — no save system exists yet; Ship's Log
-   emission — window.ShipsLog doesn't exist yet). Local demo-state object
-   was named STATE in the source; renamed MSTATE throughout so the bare
-   identifier STATE correctly resolves to the real engine's global game
-   state (same shared top-level scope cruise.js/minigames.js already rely
-   on — no special wrapping needed for that to work).
+   The demo's own state object is MSTATE here, so the bare identifier
+   STATE resolves to the engine's global game state. The voyage's mining
+   record persists on STATE.miningLifetime (saved); each visit's result
+   reaches the cruise log and the Ship's Log through the haul's summary.
    Entry point: window.openMining(onDone). onDone(haul) fires on RETURN
    TO SHIP or LEAVE, with haul = { inventory, hollowsHit, sector,
    crewAssist, stats } accumulated across any MINE AGAIN loops made in
@@ -176,32 +172,25 @@
     }
   };
 
-  const AI_NAMES = { aria: 'ARIA', marv: 'MARV', rex: 'REX', chip: 'CHIP', ajoy: 'AJOY' };
-  const AI_IDS = ['aria', 'marv', 'rex', 'chip', 'ajoy'];
-
   // Pre-mine crew assist — optional pick in armed state. Selected crew
   // applies a loot bias (pool weight scaling) or yield bonus during the
   // run. Skeleton 4 crew × 1 bias each; engine-side this will expand
   // with crew-specific dialogue + multi-tier bonuses.
   const CREW_ASSIST = {
-    kazuki:   { name: 'KAZUKI',   role: 'Engineer',      bias: '+YIELD',   yieldBonus: 1 },
-    osei:     { name: 'DR. OSEI', role: 'Botanist',      bias: '+BIOCOMP', poolFactors: { biocomponent: 3 } },
-    tanaka:   { name: 'TANAKA',   role: 'Xenobiologist',     bias: '+EXOTIC',  poolFactors: { exotic: 2 } },
-    hargrove: { name: 'HARGROVE', role: 'Diplomat', bias: '+SCRAP',   poolFactors: { scrap: 2 } },
+    kazuki:   { role: 'Engineer',      bias: '+YIELD',   yieldBonus: 1 },
+    osei:     { role: 'Botanist',      bias: '+BIOCOMP', poolFactors: { biocomponent: 3 } },
+    tanaka:   { role: 'Xenobiologist', bias: '+EXOTIC',  poolFactors: { exotic: 2 } },
+    hargrove: { role: 'Diplomat',      bias: '+SCRAP',   poolFactors: { scrap: 2 } },
   };
   // CREW_ORDER used to be hardcoded to the 4 demo crew. Recomputed fresh
   // each time renderArmed() runs from the real engine's live STATE.crew
   // (role strings) — captain excluded (player avatar, not assignable),
   // and only roles CREW_ASSIST actually has a bias for show up as chips.
   // Empty array is valid: the picker is skipped and BEGIN starts enabled.
-  const ROLE_TO_CREWID = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
   // Live crew name (a stowaway who joined in that role keeps their own).
-  function assistName(id) {
-    const role = Object.keys(ROLE_TO_CREWID).find(r => ROLE_TO_CREWID[r] === id);
-    return ((role && typeof crewNameOf === 'function') ? crewNameOf(role) : CREW_ASSIST[id].name).toUpperCase();
-  }
+  const assistName = id => crewNameOf(ROLE_OF_CREWID[id]).toUpperCase();
   function computeCrewOrder() {
-    return STATE.crew.map(role => ROLE_TO_CREWID[role]).filter(id => CREW_ASSIST[id]);
+    return STATE.crew.map(role => CREWID_OF_ROLE[role]).filter(id => CREW_ASSIST[id]);
   }
 
   // Sector orientation — first line after BEGIN, keyed to the rolled
@@ -422,12 +411,8 @@
     },
   };
 
-  // Session-persistent run history — accumulates across multiple
-  // BEGIN→haul→CONTINUE cycles within the same playthrough. Resets on
-  // page reload (which simulates "new game" in the demo).
-  // [STUB] ENGINE INTEGRATION: persist this in the player's save state
-  // so the lifetime stats survive across save/load. New playthroughs
-  // start with all-zero SESSION.
+  // This visit's run history — accumulates across the BEGIN→haul→MINE
+  // AGAIN cycles of one openMining() visit, which resets it.
   const SESSION = {
     runs: 0,
     totalCracks: 0,
@@ -438,8 +423,7 @@
     bestTier: null,  // 'perfect' / 'adequate' / 'insufficient', highest reached
   };
   const TIER_RANK = { insufficient: 0, adequate: 1, perfect: 2 };
-  // Lifetime stats (parity pass 2026-10-11 — the [STUB] above, now that
-  // saves exist): SESSION stays per-visit (its run count prices the days
+  // Lifetime stats: SESSION stays per-visit (its run count prices the days
   // and labels LEAVE); LIFE accumulates every run of the voyage on
   // STATE.miningLifetime, which index.html's SAVED_FIELDS persists. The
   // haul card's SESSION row reads SESSION (demo wording, b4 re-audit);
@@ -625,10 +609,6 @@
     return 'standard';
   }
 
-  // Convert px → fractional (relative to stage box).
-  function pxX(fx) { return fx * stage.clientWidth; }
-  function pxY(fy) { return fy * stage.clientHeight; }
-
   // Base fresh-spawn speed (fractional/sec). Tuned so a standard rock
   // takes ~6s to traverse the stage at speedMul 1.0.
   const BASE_SPEED = 0.16;
@@ -636,7 +616,7 @@
   function startMining() {
     if (MSTATE.mining) return;
     MSTATE.mining = true;
-    if (typeof window.onJobBegun === 'function') window.onJobBegun(SESSION.runs + 1); // a reload mid-run costs the runs' days
+    window.onJobBegun(SESSION.runs + 1); // a reload mid-run costs the runs' days
     MSTATE.runStart = performance.now();
     MSTATE.lastClickAt = performance.now();
 
@@ -1218,23 +1198,6 @@
     stage.removeEventListener('mousedown', onStageMouseDown);
     stage.style.cursor = '';
 
-    // [STUB] ENGINE INTEGRATION: emit a Ship's Log entry for this run.
-    // Expected payload (see project_transplant_shipslog.md memory):
-    //   ShipsLog.emit({
-    //     type: 'mining_run',
-    //     tier: tierOf(),                  // 'perfect' / 'adequate' / 'insufficient'
-    //     reason,                          // 'depleted' / 'time' / 'exit'
-    //     sector: MSTATE.sector && MSTATE.sector.id,
-    //     materials: MSTATE.materials,
-    //     inventory: MSTATE.inventory,      // for "you mined X scrap" specifics
-    //     hollowsHit: MSTATE.hollowsHit,
-    //     crewAssist: MSTATE.crewAssist,
-    //     stats: MSTATE.stats,              // accuracy/chain/lost
-    //     ai: MSTATE.activeAi,              // for AI voicing on the log entry
-    //   });
-    // Voicing is per ship's-log memory: dark-memorial chrome only for
-    // deaths; mining runs use the parchment register.
-
     // Tear down active asteroids/particles immediately so the haul
     // card has a clean dim layer beneath it.
     MSTATE.asteroids.forEach(a => a.el.remove());
@@ -1480,19 +1443,23 @@
   let onMiningDone = null;
   // Load-time teardown (index.html teardownLiveUI): drop the visit
   // without banking or calling back into the run being replaced.
-  window.abortMining = function () {
+  function abortMining() {
     onMiningDone = null;
     const ho = document.getElementById('haul-overlay');
     if (ho) { ho.classList.remove('visible'); ho.innerHTML = ''; }
     hideOverlay('overlay-mining');
-  };
+  }
 
-  window.openMining = function (onDone) {
+  function openMining(onDone) {
     onMiningDone = onDone;
     sessionInventory = {};
     Object.assign(SESSION, { runs: 0, totalCracks: 0, totalMaterials: 0, totalHollows: 0, totalFragmentsLost: 0, bestChainEver: 0, bestTier: null, lastTier: null, crewUsed: null });
     showOverlay('overlay-mining');
     renderArmed();
-  };
+  }
 
+  Object.assign(window, {
+    // engine API
+    abortMining, openMining,
+  });
 })();

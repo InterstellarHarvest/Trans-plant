@@ -52,7 +52,7 @@
   };
   // Upgrades have their own art in sprites/cargo/upgrades (it existed
   // all along — the market showed emoji); emoji only where no art exists.
-  const iconOf = sid => (typeof itemSpritePath === 'function' && itemSpritePath(sid)) || (typeof NO_ITEM_ART !== 'undefined' && NO_ITEM_ART[sid]) || ICON_FALLBACK[sid] || ('sprites/cargo/items/' + sid + '.png');
+  const iconOf = sid => itemSpritePath(sid) || (typeof NO_ITEM_ART !== 'undefined' && NO_ITEM_ART[sid]) || ICON_FALLBACK[sid] || ('sprites/cargo/items/' + sid + '.png');
 
   // Demo sell-price convention: vendors pay ~2/3 of asking price.
   const sellPrice = bp => Math.max(1, Math.round(bp * 2 / 3));
@@ -66,12 +66,12 @@
   // What a station trader pays for one unit of sid (item or material), or
   // null when no trader buys it — the cargo hold's SELL PRICE / price
   // corner read this (one source with stationVendor's buyPrices).
-  window.stationBuyPrice = function (sid) {
+  function stationBuyPrice(sid) {
     const m = allMaterialDefs().find(x => x.id === sid);
     if (m) return materialPrice(m);
     const d = defBy(sid);
     return d && Number.isFinite(d.base_price) && d.base_price > 0 ? sellPrice(d.base_price) : null;
-  };
+  }
   // What a fence pays for one sid (b4 re-audit A11: one rule for every
   // trade good, the one items.json states — "a fence pays half again as
   // much" as a station trader): a rolled copy FENCE_MULT × its value, a
@@ -80,19 +80,19 @@
   // (only trade_good-tagged cargo). The black market's offers and the
   // cargo hold's SELL PRICE both read this.
   const FENCE_TAGS = ['trade_good'];
-  window.fenceBuyPrice = function (sid, copyValue) {
+  function fenceBuyPrice(sid, copyValue) {
     const d = defBy(sid);
     if (!d || !(d.tags || []).some(t => FENCE_TAGS.includes(t))) return null;
     if (Number.isFinite(copyValue)) return fenceValueOf(copyValue);
     if (Number.isFinite(d.base_price) && d.base_price > 0) return Math.max(1, Math.round(d.base_price * 2 / 3 * FENCE_MULT));
     return null;
-  };
+  }
   // A station trader's sale of one unit, from outside the Market Row
   // (the cargo hold's SELL when docked, ruling 28): the same price as the
   // trader's row (stationBuyPrice; a rolled copy pays its own value) and
   // the same removal (materials by the unit, a rolled copy with its
   // value). Returns { paid } or { why }.
-  window.stationSellOne = function (sid, copy) {
+  function stationSellOne(sid, copy) {
     const isMat = allMaterialDefs().some(m => m.id === sid);
     if (isMat) {
       if (!(STATE.materials[sid] > 0)) return { why: 'None left' };
@@ -102,8 +102,8 @@
       return { paid: p };
     }
     if (!STATE.items.includes(sid)) return { why: 'None left' };
-    if (typeof canRemoveItem === 'function' && !canRemoveItem(sid)) return { why: 'The cargo bay is holding things. Clear some space first.' };
-    const vals = typeof itemValuesOf === 'function' ? itemValuesOf(sid) : [];
+    if (!canRemoveItem(sid)) return { why: 'The cargo bay is holding things. Clear some space first.' };
+    const vals = itemValuesOf(sid);
     let paid;
     if (vals.length) {
       const k = Number.isInteger(copy) && copy >= 0 && copy < vals.length ? copy : 0;
@@ -115,12 +115,12 @@
     }
     STATE.goldAmount += paid;
     return { paid };
-  };
+  }
   function allItemDefs() {
     return (typeof MOD !== 'undefined' && MOD.items) ? MOD.items : [];
   }
   function defBy(sid) {
-    return (typeof itemDef === 'function') ? itemDef(sid) : null;
+    return itemDef(sid);
   }
 
   // ── Vendor builders — demo VENDORS structure fed by items.json ──
@@ -315,7 +315,7 @@
       desc: (d && d.description) || '',
       tags: (d && d.tags) || []
     };
-    const vals = typeof itemValuesOf === 'function' ? itemValuesOf(sid) : [];
+    const vals = itemValuesOf(sid);
     if (vals.length && copy != null && copy < vals.length) {
       const v = vals[copy];
       e.key = sid + '#' + copy;
@@ -357,14 +357,13 @@
     const c = $('market-confirm'); if (c) c.classList.add('hidden');
   }
   function askSellRequired(entry, proceed) {
-    if (entry.material || typeof window.invRequiredFor !== 'function') return false;
+    if (entry.material) return false;
     const req = window.invRequiredFor(entry.id);
     const c = $('market-confirm');
     if (!req.length || !c) return false;
     const d = defBy(entry.id);
-    const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
     $('market-confirm-text').textContent = 'Sell your ' + ((d && d.name) || entry.id) + ' here?';
-    $('market-route-warn').innerHTML = 'Required for: <strong>' + req.map(esc).join(' · ') + '</strong>';
+    $('market-route-warn').innerHTML = 'Required for: <strong>' + req.map(escapeHTML).join(' · ') + '</strong>';
     confirmYes = proceed;
     c.classList.remove('hidden');
     return true;
@@ -377,7 +376,7 @@
     no.addEventListener('click', closeSellConfirm);
   })();
 
-  window.openMarket = function(opts, onClose) {
+  function openMarket(opts, onClose) {
     opts = opts || {};
     if (typeof MarketModal === 'undefined') {
       console.warn('[market] MarketModal missing — shared.js not loaded?');
@@ -415,7 +414,7 @@
       cargoFullMsg: 'No room in the hold. Jettison something (INV) first.',
       addCargo: entry => { grantItem(entry.id); renderHUD(); },
       // The cargo bay can't leave while the hold needs its extra slots.
-      canRemoveCargo: sid => allMaterialDefs().some(m => m.id === sid) || typeof canRemoveItem !== 'function' || canRemoveItem(sid),
+      canRemoveCargo: sid => allMaterialDefs().some(m => m.id === sid) || canRemoveItem(sid),
       cargoLockedMsg: 'The cargo bay is holding things. Clear some space first.',
       // Cargo an event ahead needs (inventory.js invRequiredFor) asks
       // first, like the cargo hold's SELL and JETTISON.
@@ -426,7 +425,7 @@
           renderHUD(); return;
         }
         // A rolled-value copy leaves with its own value (the one just paid for).
-        if (entry && entry.copy != null && typeof takeItemCopy === 'function') { takeItemCopy(sid, entry.copy); renderHUD(); return; }
+        if (entry && entry.copy != null) { takeItemCopy(sid, entry.copy); renderHUD(); return; }
         const i = STATE.items.indexOf(sid);
         if (i >= 0) STATE.items.splice(i, 1);
         renderHUD();
@@ -442,12 +441,12 @@
           // intro's and later outcomes' speaker names). npcCache keeps
           // the same face.
           STATE.layerStack = [STATE.currentEvent.entryLayer || Object.keys(STATE.currentEvent.layers)[0]];
-          STATE.npcCtx = (STATE.currentEvent.npc && typeof resolveNpc === 'function') ? resolveNpc(STATE.currentEvent) : null;
+          STATE.npcCtx = (STATE.currentEvent.npc) ? resolveNpc(STATE.currentEvent) : null;
         }
         if (typeof onClose === 'function') onClose();
       }
     });
-  };
+  }
 
   // Escape closes the market when open. Capture phase so we run
   // before the pause menu's Escape handler claims it (demo parity).
@@ -460,4 +459,9 @@
       MarketModal.close();
     }
   }, true);
+
+  Object.assign(window, {
+    // engine API
+    stationBuyPrice, fenceBuyPrice, stationSellOne, openMarket,
+  });
 })();

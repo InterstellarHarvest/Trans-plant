@@ -43,8 +43,8 @@
     const capDef = () => ((MOD.captains && MOD.captains.captains) || []).find(c => c.background === opt.id) || {};
     return String(opt.stat).replace(/\{(\w+):([\w.]+)\}/g, (m, kind, key) => {
       let v = null;
-      if (kind === 'ai' || kind === 'aicut') v = typeof aiPassive === 'function' ? aiPassive(key, opt.id) : null;
-      else if (kind === 'cut' || kind === 'pct') v = typeof captainPassive === 'function' ? captainPassive(key, opt.id) : null;
+      if (kind === 'ai' || kind === 'aicut') v = aiPassive(key, opt.id);
+      else if (kind === 'cut' || kind === 'pct') v = captainPassive(key, opt.id);
       else if (kind === 'sb' || kind === 'sb100') { const b = capDef().starting_bonus; v = b && Number.isFinite(b[key]) ? b[key] : null; }
       if (v == null) return m;
       if (kind === 'aicut' || kind === 'cut') return String(r(1 - v));
@@ -53,10 +53,9 @@
       return String(v);
     });
   }
-  window.setupLiveStat = liveStat;
 
   function rollShipName(current) {
-    const pool = (typeof window.shipNamePool === 'function') ? window.shipNamePool() : [];
+    const pool = window.shipNamePool();
     const pick = pool.filter(n => n !== current);
     return pick.length ? pick[Math.floor(Math.random() * pick.length)] : (current || '');
   }
@@ -134,7 +133,7 @@
 
   // Soybean's card stat: pest resistance + its post-pest recovery window.
   function soyStat() {
-    const cr = typeof window.cropContaminationRecovery === 'function' ? window.cropContaminationRecovery('soybean') : null;
+    const cr = window.cropContaminationRecovery('soybean');
     return 'Pest-resistant' + (cr ? ' \u00b7 Recovery \u00d7' + cr.mult + ' for ' + cr.days + 'd after pests' : '');
   }
 
@@ -307,11 +306,16 @@
     if (step > 0) { saveScroll(); step--; render(); }
     // Step 0: BACK returns to the main menu (title). Selections keep —
     // coming back resumes the wizard where it was.
-    else if (typeof showScreen === 'function') showScreen('screen-title');
+    else showScreen('screen-title');
   }
 
   $('btn-back').addEventListener('click', prevStep);
   $('btn-next').addEventListener('click', nextStep);
 
   render();
+
+  Object.assign(window, {
+    // engine API
+    setupLiveStat: liveStat,
+  });
 })();

@@ -122,7 +122,7 @@
   // hub (which comes back stopped after the stop's event) shows the ship
   // decelerating out of warp.
   function markUnderway() { starMul = starSpeed().mul; }
-  window.cruiseStarState = () => ({ mul: starMul, running: starRunning, target: starSpeed().mul, streakAt: starSpeed().streakAt, stopped: starsStopped() });
+  const cruiseStarState = () => ({ mul: starMul, running: starRunning, target: starSpeed().mul, streakAt: starSpeed().streakAt, stopped: starsStopped() });
 
   wireCustomScroll($('ai-log-host'));
   wireCustomScroll($('stop-choices-host'));
@@ -130,10 +130,6 @@
   const AI_SPRITE = { aria: 'sprites/interface/AI/aria.png', marv: 'sprites/interface/AI/marv.png', rex: 'sprites/interface/AI/rex.png', chip: 'sprites/interface/AI/chip.png', ajoy: 'sprites/interface/AI/ajoy.png' };
   const NODE_TYPE_TO_REGION = { station: 'station_approach', planet: 'planet_orbit_habitable', asteroid_field: 'asteroid_field', derelict: 'debris_field', nebula: 'nebula', void: 'deep_space', anomaly: 'anomaly', fork: 'deep_space' };
   const capWord = s => { s = String(s || '').replace(/_/g, ' '); return s.charAt(0).toUpperCase() + s.slice(1); };
-
-  function crewDisplayName(role) {
-    return crewNameOf(role); // index.html — a joined stowaway keeps their own name
-  }
 
   // Bible §"Ship Sprite System": the scene ship is two layered sprites —
   // shared base (ships/default.png, already the silhouette's CSS bg) +
@@ -253,7 +249,7 @@
   function normalTickerLine() {
     const here = STATE.byId && STATE.byId[STATE.currentId];
     if (!here) return '';
-    const nextIds = typeof nextAvailableNodes === 'function' ? [...nextAvailableNodes()] : [];
+    const nextIds = [...nextAvailableNodes()];
     // Long-range scan hits are news: they replace the default line.
     const hit = nextIds.map(id => STATE.scouted && STATE.scouted[id]).find(sc => sc && sc.ev && EVENTS[sc.ev]);
     if (hit) return 'SCAN · NEXT: ' + String(EVENTS[hit.ev].title || 'CONTACT').toUpperCase();
@@ -321,7 +317,6 @@
     clearTimeout(alertTimer);
     alertTimer = setTimeout(() => { el.classList.remove('show'); $('stop-btn').classList.remove('alert'); }, ms || 4200);
   }
-  window.cruiseSceneAlert = showSceneAlert; // test hook
   const NEXT_STOP_ALERT = {
     asteroid_field: 'ASTEROID FIELD AHEAD — GOOD MINING',
     derelict:       'DERELICT DETECTED — PROCEED WITH CAUTION',
@@ -333,14 +328,14 @@
     let msg = null;
     if (traderHere() && !atStation()) msg = 'TRADER SHIP ON APPROACH';
     else {
-      const nextIds = typeof nextAvailableNodes === 'function' ? [...nextAvailableNodes()] : [];
+      const nextIds = [...nextAvailableNodes()];
       const n = nextIds.length === 1 && STATE.byId[nextIds[0]];
       if (n) msg = NEXT_STOP_ALERT[n.node_type] || null;
     }
     if (!msg) return;
     showSceneAlert(msg);
     pushLogEntry('▶ ' + msg);
-    if (typeof saveRun === 'function') saveRun(); // the line + alertedNode (the hub's own save ran before this timer)
+    saveRun(); // the line + alertedNode (the hub's own save ran before this timer)
   }
 
   // ── Trader presence (owner ruling 2026-10-11, Bible §18 Trader-wait) ──
@@ -366,7 +361,6 @@
     if (id in STATE.traderAt) return;
     STATE.traderAt[id] = Math.random() < (TRADER_PRESENT_CHANCE[currentRegionKey()] || 0);
   }
-  window.cruiseTraderHere = traderHere;
 
   // ── AI log (demo pushLogEntry / pushDayMarker / typewriteInto) ──
   // ▶ marks ship events; the AI's own lines carry its voice ("MARV: …").
@@ -376,25 +370,14 @@
   // already within 50px of the bottom — scrolled up, it stays put.
   const TYPE_MS = 35;
   let typing = null, markerDay = null;
-  const voiceName = () => String(STATE.activeAI || 'marv').toUpperCase();
   const isAtBottom = el => el.scrollHeight - el.scrollTop - el.clientHeight < 50;
-  // Owner ruling 32 (2026-10-12): no "NAME: " prefix when the line
-  // already names the AI — any of the five (most ai_universal lines are
-  // third person: "ARIA notes…") — or says "the ship computer".
-  const AI_NAMES = ['ARIA', 'MARV', 'REX', 'CHIP', 'AJOY'];
-  function namesTheAI(body) {
-    const names = ((typeof MOD !== 'undefined' && MOD.ai_companions) || []).map(a => a && a.name).filter(Boolean);
-    const all = [...new Set([...AI_NAMES, ...names.map(n => String(n).toUpperCase())])];
-    const cap = n => n.charAt(0) + n.slice(1).toLowerCase();
-    return new RegExp('\\b(' + all.map(n => n + '|' + cap(n)).join('|') + ')\\b').test(body) || /\bthe ship computer\b/i.test(body);
-  }
+  // No "NAME: " prefix when the line already names the AI (index.html
+  // namesTheAI).
   function displayLine(text, voice) {
     const body = String(text == null ? '' : text).replace(/^\s*[◆▶]\s*/, '');
     if (!voice) return '▶ ' + body;
     return namesTheAI(body) ? body : voice.toUpperCase() + ': ' + body;
   }
-  window.cruiseDisplayLine = displayLine; // test hook (ruling 32)
-  window.namesTheAI = namesTheAI; // the encounter/combat/engine-room AI chips use it too (ruling 49)
   function finishTyping() {
     if (!typing) return;
     const t = typing; typing = null;
@@ -428,7 +411,6 @@
     if (typeof PauseMenu !== 'undefined' && PauseMenu.open && !(PauseMenu.isOpen && PauseMenu.isOpen())) PauseMenu.open();
     else if (window.PauseBus) PauseBus.pause();
   }
-  window.openLogLink = openLogLink;
   function armPayload(entry, en) {
     const p = payloadOf(en);
     if (!p) return null;
@@ -487,7 +469,7 @@
     // An entry that lands while the journal is open shows at once (a scene
     // alert fires a beat after returning to the hub, e.g.).
     const slog = document.getElementById('overlay-shipslog');
-    if (slog && slog.classList.contains('active') && typeof window.renderShipsLog === 'function') window.renderShipsLog();
+    if (slog && slog.classList.contains('active')) window.renderShipsLog();
     const line = displayLine(text, voice);
     // While stopped the log column is under the Stop menu: the AI's
     // lines go up on the ticker instead (the entry still lands, so the
@@ -532,7 +514,7 @@
 
   // The last n Ship's Log entries, re-rendered as the hub log (a load
   // replaces the run, and with it the log) — same markers and prefixes.
-  window.rebuildCruiseLog = function (n) {
+  function rebuildCruiseLog(n) {
     const log = $('ai-log');
     if (!log) return;
     finishTyping();
@@ -550,7 +532,7 @@
       log.appendChild(d);
     });
     log.scrollTop = log.scrollHeight;
-  };
+  }
 
   // Bottom-right bars (owner ruling 18): FOOD/H2O/O2 | FUEL/HULL, each
   // with the HUD's low thresholds as a crit pulse (the dot HUD left the
@@ -572,12 +554,11 @@
       row.title = name + ': ' + Math.round(r[k]) + ' / ' + max;
     }
   }
-  window.paintCruiseBars = paintCruiseBars;
 
   function renderCruise() {
     // Catch crop growth/health up to today before painting the card —
     // decay must tick even if the player never opens the growbay.
-    if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth();
+    window.tickCropGrowth();
     // A during-wait event belongs to the stop it happened at (anything
     // that moved the ship — a test harness, Push Engines — drops it).
     if (STATE.forcedEvent && STATE.forcedEvent.node !== STATE.currentId) STATE.forcedEvent = null;
@@ -604,13 +585,11 @@
     // Standing-orders readout — live from STATE.orders (Restoration
     // item 5). Clicking any cell opens the Orders modal (wired once
     // below); the cells just mirror the committed settings here.
-    if (typeof window.ordersPace === 'function') {
-      const o = ensureOrders();
-      $('readout-engines').textContent = ordersPace().name;
-      $('readout-rations').textContent = ordersRations().name;
-      $('readout-water-plant').textContent = o.waterSplit + '%';
-      $('readout-water-crew').textContent  = (100 - o.waterSplit) + '%';
-    }
+    const o = ensureOrders();
+    $('readout-engines').textContent = ordersPace().name;
+    $('readout-rations').textContent = ordersRations().name;
+    $('readout-water-plant').textContent = o.waterSplit + '%';
+    $('readout-water-crew').textContent  = (100 - o.waterSplit) + '%';
 
     // Crew strip: the captain (their own sprite — the player is not a
     // crew specialist) + STATE.crew. Name on top, role capitalised under
@@ -619,7 +598,7 @@
     strip.innerHTML = '';
     const members = [];
     if (STATE.captain) members.push({ key: 'captain', label: 'CAPTAIN', role: capWord(STATE.captain), crewId: 'captain' });
-    for (const role of STATE.crew) members.push({ key: role, label: crewDisplayName(role).toUpperCase(), role: capWord(role), crewId: crewSpriteIdOf(role) });
+    for (const role of STATE.crew) members.push({ key: role, label: crewNameOf(role).toUpperCase(), role: capWord(role), crewId: crewSpriteIdOf(role) });
     // Always three slots — captain + the two crew places (the cap,
     // crewJoinRole). An empty place keeps its card-sized spot, so the crop
     // card and everything right of it never shift (owner, batch 3).
@@ -640,7 +619,7 @@
         ? '<div class="crew-icon has-sprite" data-crew-id="' + m.crewId + '" style="' + crewIconCss(m.crewId, 'var(--card-icon-size)') + '"></div>'
         : '<div class="crew-icon">\u{1F464}</div>';
       // Real HP — the captain's own too (owner ruling 29, index.html hpOf).
-      const hp = typeof window.hpOf === 'function' ? hpOf(m.key) : 100;
+      const hp = hpOf(m.key);
       const hpColor = hp <= CREW_CRITICAL_HP ? '#cc5555' : (hp < CREW_WOUNDED_HP ? '#d4a830' : '');
       // Their OWN morale (owner ruling 15). The captain has none: no MO bar.
       const mo = m.key === 'captain' ? null : crewMoraleOf(m.key);
@@ -659,7 +638,7 @@
       // Crew dossier (Restoration item 4) — click opens the detail
       // modal; the captain slot opens their reduced dossier.
       slot.addEventListener('click', () => {
-        if (typeof window.openCrewDetail === 'function') openCrewDetail(m.key);
+        openCrewDetail(m.key);
       });
       strip.appendChild(slot);
     }
@@ -672,14 +651,14 @@
     // (function declarations hoist).
     maybePushAmbient();
     checkResourceWarnings();
-    if (typeof window.crewMoraleWatch === 'function') crewMoraleWatch(); // per-crew morale: the 0-morale warning / all-clear (owner ruling 15)
+    crewMoraleWatch(); // per-crew morale: the 0-morale warning / all-clear (owner ruling 15)
     checkCropMilestones();
     setTimeout(arrivalAlert, 350); // once the hub is actually on screen
     wakeStars();
     // Every hub repaint is a safe between-actions point — autosave, last,
     // so the lines/flags just pushed above are in it (they used to replay
     // with fresh text after a reload).
-    if (typeof saveRun === 'function') saveRun();
+    saveRun();
   }
   function clampPct(v) { return Math.max(0, Math.min(100, v | 0)); }
 
@@ -701,7 +680,7 @@
     // The growbay's own thirst rule (pickAriaQuip): plant share >10
     // points under the crop's need.
     const split = STATE.orders && Number.isFinite(STATE.orders.waterSplit) ? STATE.orders.waterSplit : cg.waterPlant;
-    if (typeof cropWaterNeed === 'function' && split < Math.round(cropWaterNeed()) - 10) why.push('Thirsty');
+    if (split < Math.round(cropWaterNeed()) - 10) why.push('Thirsty');
     return why;
   }
   function renderCropCard() {
@@ -713,7 +692,7 @@
     const mature = !!cg && alive && growth >= 100;
     const STAGE_NAMES = ['SPROUTING', 'VEGETATIVE', 'FLOWERING', 'MATURING'];
     const stageIdx = growth <= 25 ? 0 : growth <= 50 ? 1 : growth <= 75 ? 2 : 3;
-    const meta = typeof window.cropMetaOf === 'function' ? cropMetaOf(STATE.crop) : null;
+    const meta = cropMetaOf(STATE.crop);
     const maturity = (meta && meta.maturity_days) || CROP_MATURITY_DEFAULT;
     const day = cg ? cg.day : 0;
     $('crop-name').textContent = STATE.crop.replace(/_/g, ' ').toUpperCase();
@@ -734,7 +713,6 @@
   }
   function harvestFromCard(e) {
     if (e) e.stopPropagation(); // the card itself opens the growbay
-    if (typeof window.doHarvest !== 'function' || typeof window.tickCropGrowth !== 'function') return;
     window.tickCropGrowth();    // binds the growbay's live crop state, caught up to today
     const cg = STATE.cropGrowth;
     if (!cg || cg.growth < 100 || cg.health <= 0) return;
@@ -757,11 +735,11 @@
   $('crop-card-mini').addEventListener('click', () => { if (STATE.crop) openGrowbay(); });
   $('crop-harvest-btn').addEventListener('click', harvestFromCard);
   // Stop Menu header LOG button → the Ship's Log (Bible §18 "📜 LOG").
-  $('stop-log-btn').addEventListener('click', () => { if (typeof window.openShipsLog === 'function') window.openShipsLog(); });
+  $('stop-log-btn').addEventListener('click', () => { window.openShipsLog(); });
   // Any readout cell opens the Orders modal (demo-orders.html's
   // cg-readout behavior — the whole strip is one click target).
   $('cruise-readout').addEventListener('click', () => {
-    if (typeof window.openOrders === 'function') openOrders();
+    openOrders();
   });
 
   // ── Stop Menu shell ──────────────────────────────────────────
@@ -841,23 +819,23 @@
   // untouched — or a double-click's second press on the backdrop) gets it
   // back. Once the job begins, a reload settles it as a quit (loadRun).
   let pendingVerbTax = 0, activeVerb = null, jobMarker = null;
-  window.refundVerbTax = function () {
+  function refundVerbTax() {
     // Exactly what each crew member paid comes back (refundEffortTax).
     if (pendingVerbTax) { refundEffortTax(pendingVerbTax); pendingVerbTax = 0; renderHUD(); }
-  };
-  window.onJobBegun = function (days) {
+  }
+  function onJobBegun(days) {
     pendingVerbTax = 0;
-    if (STATE.currentEvent) { if (typeof window.eventMinigameBegun === 'function') window.eventMinigameBegun(); return; }
+    if (STATE.currentEvent) { window.eventMinigameBegun(); return; }
     jobMarker = activeVerb ? { verb: activeVerb, days: days || 1 } : null;
-    if (jobMarker && typeof writeSnapshot === 'function') writeSnapshot(undefined, { pendingAbandon: jobMarker });
-  };
+    if (jobMarker) writeSnapshot(undefined, { pendingAbandon: jobMarker });
+  }
   // Harm taken in play (minigames.js reportJobHarm: a forage poisoning,
   // the patient's HP) rides in the quit marker, so a reload keeps it as
   // ✕ QUIT does.
-  window.onJobHarm = function (harm) {
-    if (STATE.currentEvent) { if (typeof window.eventMinigameHarm === 'function') window.eventMinigameHarm(harm); return; }
-    if (jobMarker && typeof writeSnapshot === 'function') writeSnapshot(undefined, { pendingAbandon: Object.assign({}, jobMarker, { harm }) });
-  };
+  function onJobHarm(harm) {
+    if (STATE.currentEvent) { window.eventMinigameHarm(harm); return; }
+    if (jobMarker) writeSnapshot(undefined, { pendingAbandon: Object.assign({}, jobMarker, { harm }) });
+  }
   // A quit's harm so far lands (✕ QUIT and loadRun's pendingAbandon): each
   // forage poisoning hurts someone aboard, as it would have at the end.
   // Returns the log's addendum.
@@ -873,7 +851,6 @@
     renderHUD();
     return ' The poisoning stays: ' + who.join(', ') + ' (before the medic\'s care).';
   }
-  window.applyAbandonHarm = applyAbandonHarm;
   function settleMinigame(logLine, days) {
     pendingVerbTax = 0; activeVerb = null; jobMarker = null;
     passDays(days || 1); // trivial time cost (MINE: one day per run), same tier index.html's applyOutcomeEffects uses — routed through the orders daily-drain helper
@@ -883,7 +860,7 @@
     renderCruise();
     // The Stop menu stays open across verbs — re-gate it (a REPAIR that
     // spent the last metal must lock, MEDBAY with no one hurt…).
-    if (document.body.classList.contains('stop-active') && typeof renderStopMenu === 'function') renderStopMenu();
+    if (document.body.classList.contains('stop-active')) renderStopMenu();
   }
 
   // Quitting a minigame mid-game (tier 'abandoned', owner ruling
@@ -1247,8 +1224,6 @@
     h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b) >>> 0; h ^= h >>> 13;
     return ((h >>> 0) % 1000) / 1000 < DERELICT_HULK_SHARE ? 'hulk' : 'debris';
   }
-  window.derelictFormOf = derelictFormOf;
-  window.cruiseRegionKey = currentRegionKey;
 
   /* ── Multi-day waits: WAIT FOR TRADER and REST (demo ~2757-3113,
      Bible §18 "Trader-wait twist" + "Multi-day action interrupt rule").
@@ -1317,7 +1292,7 @@
   };
   function waitEventPick() {
     const node = STATE.byId && STATE.byId[STATE.currentId];
-    if (!node || typeof eventEligible !== 'function') return null;
+    if (!node) return null;
     const trig = activeTriggers();
     const kinds = [];
     for (const [kind, d] of Object.entries(WAIT_EVENTS)) {
@@ -1332,8 +1307,7 @@
     const pool = fresh.length ? fresh : pick.ids;
     return { kind: pick.kind, ev: pool[Math.floor(Math.random() * pool.length)] };
   }
-  window.cruiseWaitEventPick = waitEventPick;
-  window.CRUISE_WAIT_TUNING = { WAIT_TICK_MS, WAIT_DAY_MAX, TRADER_PRESENT_CHANCE, TRADER_DAILY_CHANCE, INTERRUPT_DAILY_CHANCE, REST_MORALE_PER_DAY };
+  const CRUISE_WAIT_TUNING = { WAIT_TICK_MS, WAIT_DAY_MAX, TRADER_PRESENT_CHANCE, TRADER_DAILY_CHANCE, INTERRUPT_DAILY_CHANCE, REST_MORALE_PER_DAY };
 
   let activeWait = null; // { verbId, days, day, node, region, timer, resolving, finish }
   let bannerTimer = null;
@@ -1453,7 +1427,7 @@
     STATE.traderAt = STATE.traderAt || {};
     STATE.traderAt[a.node] = true;
     pushLogEntry('▶ A trader has appeared after ' + a.day + ' day' + (a.day === 1 ? '' : 's') + ' of waiting.');
-    if (typeof saveRun === 'function') saveRun(); // a reload in the flash keeps the trader here (TRADE)
+    saveRun(); // a reload in the flash keeps the trader here (TRADE)
     // leaving = the player Resumed during the flash: the trader stays
     // behind at this stop (TRADE), the ship goes.
     a.finish = leaving => {
@@ -1484,7 +1458,7 @@
     // there shakes (CANNOT RESUME). After the flash the event opens
     // straight away (owner ruling 46a — no one-verb menu in between).
     STATE.forcedEvent = { kind: pick.kind, ev: pick.ev, node: a.node };
-    if (typeof saveRun === 'function') saveRun(); // the event and the rest so far: a reload opens it, keeps the morale
+    saveRun(); // the event and the rest so far: a reload opens it, keeps the morale
     document.body.classList.add('event-active');
     syncTicker();
     a.finish = () => {
@@ -1506,7 +1480,7 @@
       pushLogEntry('▶ No one came. ' + a.days + ' day' + (a.days === 1 ? '' : 's') + ' parked; the dice do not apologize.');
     }
     renderHUD();
-    if (typeof saveRun === 'function') saveRun(); // the rest's morale, before the flash
+    saveRun(); // the rest's morale, before the flash
     a.finish = () => {
       clearTimeout(a.timer);
       hideWaitFlash(); hideActionBanner();
@@ -1551,13 +1525,13 @@
   }
   // index.html teardownLiveUI (pause → LOAD, new game): no wait may
   // resolve into the run that replaces this one.
-  window.abortCruiseWait = function () {
+  function abortCruiseWait() {
     stopWaitSilently();
     document.body.classList.remove('event-active');
     tickerKey = null;
-  };
-  window.cruiseWaitActive = () => !!activeWait;
-  window.cruiseWaitState = () => activeWait && { verbId: activeWait.verbId, day: activeWait.day, days: activeWait.days, resolving: activeWait.resolving };
+  }
+  const cruiseWaitActive = () => !!activeWait;
+  const cruiseWaitState = () => activeWait && { verbId: activeWait.verbId, day: activeWait.day, days: activeWait.days, resolving: activeWait.resolving };
 
   // ── Forced-event state (demo ~1990-2062, 2131-2160; Bible Stop
   // Button State Machine "event" row). Entered only by a during-wait
@@ -1626,7 +1600,6 @@
     else if ((m = /^Costs (\d+)g$/.exec(reason))) rows = [{ label: 'Need', value: m[1] + ' gold' }];
     return { title: 'LOCKED — ' + label, description: rows.length ? 'You lack the resources to perform this action.' : reason + '.', rows, tone: 'danger' };
   }
-  window.cruiseLockTip = lockTip; // test hook
 
   function renderStopMenu() {
     const regionKey = currentRegionKey();
@@ -1701,7 +1674,6 @@
     syncPaused();
     wakeStars(); // decelerate to a stop
   }
-  window.openStopMenu = openStopMenu;
   function closeStopMenu() {
     document.querySelectorAll('#stop-choices .stop-choice.day-picker').forEach(collapseDayPicker);
     if (activeWait && !activeWait.resolving) cancelWait();
@@ -1724,7 +1696,7 @@
     if (activeWait && activeWait.resolving && activeWait.finish) activeWait.finish(true);
     if (activeWait) cancelWait();
     const nextIds = [...nextAvailableNodes()];
-    if (nextIds.length === 0 && typeof resolveStuckFork === 'function' && resolveStuckFork()) { closeStopMenu(); return; }
+    if (nextIds.length === 0 && resolveStuckFork()) { closeStopMenu(); return; }
     if (nextIds.length !== 1) {
       pushLogEntry(nextIds.length === 0
         ? '◆ No route forward from here yet.'
@@ -1913,12 +1885,10 @@
     }
   }
 
-  window.renderCruise = renderCruise;
   // The open Stop menu re-gates after anything that changes the ship
   // from an overlay (fabricator, inventory USE) — lock reasons and fees.
-  window.refreshStopMenu = () => { if (document.body.classList.contains('stop-active')) renderStopMenu(); };
+  const refreshStopMenu = () => { if (document.body.classList.contains('stop-active')) renderStopMenu(); };
   // Other screens log through here; { ai: true } marks the AI's own voice.
-  window.pushCruiseLog = pushLogEntry;
 
   // Wake-ups: the starfield, TIME PAUSED and the wait's hold all follow
   // the screen, the Stop state, overlays and the pause menu.
@@ -1932,4 +1902,17 @@
   mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   document.querySelectorAll('.overlay').forEach(ov => mo.observe(ov, { attributes: true, attributeFilter: ['class'] }));
   if (window.PauseBus) PauseBus.onChange(() => { wakeStars(); syncPaused(); });
+
+  Object.assign(window, {
+    // engine API
+    rebuildCruiseLog, paintCruiseBars, refundVerbTax, onJobBegun, onJobHarm,
+    applyAbandonHarm, abortCruiseWait, openStopMenu, renderCruise,
+    refreshStopMenu, pushCruiseLog: pushLogEntry,
+    // test hooks: tools/tests drive and read these through page.evaluate
+    cruiseStarState, cruiseSceneAlert: showSceneAlert,
+    cruiseDisplayLine: displayLine, derelictFormOf,
+    cruiseRegionKey: currentRegionKey, cruiseWaitEventPick: waitEventPick,
+    CRUISE_WAIT_TUNING, cruiseWaitActive, cruiseWaitState,
+    cruiseLockTip: lockTip,
+  });
 })();

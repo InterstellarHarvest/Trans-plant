@@ -152,7 +152,7 @@ const INV_CLASSIFIED = new Set(['classified_cargo']);
 // — the same test as the Stop menu's TRADE there. SELL lives here.
 function invDocked() {
   const n = STATE.byId && STATE.byId[STATE.currentId];
-  return !!(n && n.node_type === 'station' && !STATE.ended && !(typeof window.stationServicesClosed === 'function' && window.stationServicesClosed()));
+  return !!(n && n.node_type === 'station' && !STATE.ended && !(window.stationServicesClosed()));
 }
 function invNameOf(id, material) {
   const d = material ? materialDefOf(id) : itemDef(id);
@@ -167,7 +167,7 @@ function invPrice(en) {
     if (itemValueKnown(en.id)) return { num: en.value, label: en.value + 'g' };
     return { num: r ? (r[0] + r[1]) / 2 : 0, label: '??', unknown: true };
   }
-  const p = typeof window.stationBuyPrice === 'function' ? window.stationBuyPrice(en.id) : null;
+  const p = window.stationBuyPrice(en.id);
   if (p == null) return { num: 0, label: '—', none: true };
   return { num: p, label: p + 'g' };
 }
@@ -303,7 +303,6 @@ function invSetBlock(id, html) {
   el.innerHTML = html || '';
   el.classList.toggle('inv-hide', !html);
 }
-const invEsc = s => (typeof escapeHTML === 'function' ? escapeHTML(s) : String(s));
 const invStat = (label, value, cls) => '<div class="detail-stat' + (cls ? ' ' + cls : '') + '"><span>' + label + '</span><strong>' + value + '</strong></div>';
 
 function renderInvDetail(en) {
@@ -334,7 +333,7 @@ function renderInvDetail(en) {
   // trader pays (market.js stationBuyPrice; a rolled copy its own value)
   // and, for anything a fence takes, what the fence pays (fenceBuyPrice).
   let sell, note = '';
-  const fence = !en.material && typeof window.fenceBuyPrice === 'function';
+  const fence = !en.material;
   if (en.copy != null) {
     // Rolled at pickup: the exact figure needs a spectrometer aboard.
     if (itemValueKnown(en.id)) sell = en.value + 'g' + (fence ? ' · fence ' + window.fenceBuyPrice(en.id, en.value) + 'g' : '');
@@ -348,7 +347,7 @@ function renderInvDetail(en) {
 
   // USED FOR — the events this item opens options in (real data only).
   const used = en.material ? [] : invUsedFor(en.id);
-  invSetBlock('inv-detail-used', used.length ? '<span class="detail-label">USED FOR:</span> ' + used.map(invEsc).join(' · ') : '');
+  invSetBlock('inv-detail-used', used.length ? '<span class="detail-label">USED FOR:</span> ' + used.map(escapeHTML).join(' · ') : '');
   // NOTES — explains the corner markers (demo :1985-1991): ⇄ no trader
   // buys it; ⚠ classified. No inspection mechanic exists, so the ⚠ line
   // says what is true (nobody on the rack buys it) — no invented threat.
@@ -366,7 +365,7 @@ function renderInvDetail(en) {
   const canSell = invDocked() && !price.none && !INV_CLASSIFIED.has(en.id);
   sellBtn.style.display = canSell ? '' : 'none';
   if (canSell) {
-    const locked = !en.material && typeof canRemoveItem === 'function' && !canRemoveItem(en.id);
+    const locked = !en.material && !canRemoveItem(en.id);
     sellBtn.textContent = 'SELL · ' + (price.unknown ? '??' : price.label);
     sellBtn.disabled = locked;
     sellBtn.dataset.tipTitle = 'SELL ONE';
@@ -396,7 +395,6 @@ function renderInvDetail(en) {
 function invSellSelected(confirmed) {
   if (!_invSelected || _invSelectedRes || !invDocked() || INV_CLASSIFIED.has(_invSelected)) return;
   const id = _invSelected, isMat = materialPer10(id) != null;
-  if (typeof window.stationSellOne !== 'function') return;
   if (confirmed !== true && !isMat && invRequiredFor(id).length) return invOpenSellConfirm(id);
   const copy = !isMat && sellRangeOf(id) ? (_invSelectedCopy || 0) : null;
   const tileEl = document.querySelector('#inv-grid .inv-tile[data-key="' + id + (copy != null ? '#' + copy : '') + '"]');
@@ -404,11 +402,11 @@ function invSellSelected(confirmed) {
   if (!r || r.why || !Number.isFinite(r.paid)) return;
   if (!isMat) { syncItemValues(); syncItemPickups(); }
   renderHUD();
-  if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ Sold from the hold: ' + invNameOf(id, isMat) + ' to the Market Row trader. +' + r.paid + 'g.');
+  window.pushCruiseLog('◆ Sold from the hold: ' + invNameOf(id, isMat) + ' to the Market Row trader. +' + r.paid + 'g.');
   const whole = isMat ? !STATE.materials[id] : (!STATE.items.includes(id) || copy != null);
   if (whole && _invSelected === id) { _invSelected = null; _invSelectedCopy = null; }
   invJettisonFx(tileEl, whole);
-  if (typeof saveRun === 'function') saveRun();
+  saveRun();
 }
 
 /* ── AI line: flavor_pools ai_universal.cargo_hold, the active AI's voice ── */
@@ -425,7 +423,7 @@ function invRenderAiLine(key, path) {
   }
   const ai = (MOD.ai_companions || []).find(a => a.id === 'ai_' + STATE.activeAI);
   const name = (ai && ai.name) || String(STATE.activeAI || '').toUpperCase();
-  invSetBlock('inv-detail-ai', _invAi.line ? '<span class="detail-ai-name">' + invEsc(name) + ':</span>' + invEsc(_invAi.line) : '');
+  invSetBlock('inv-detail-ai', _invAi.line ? '<span class="detail-ai-name">' + escapeHTML(name) + ':</span>' + escapeHTML(_invAi.line) : '');
 }
 
 /* ── USED FOR / Required for — derived from the event data ──────── */
@@ -470,7 +468,7 @@ function invRequiredFor(id) {
 function invResourceStats(key) {
   const level = Math.max(0, STATE.resources[key] || 0), max = resMax(key);
   let perDay = 0, tip = '';
-  if (key === 'fuel' && typeof legTravelCost === 'function') {
+  if (key === 'fuel') {
     const leg = legTravelCost();
     perDay = leg.exactDays > 0 ? leg.fuel / leg.exactDays : 0;
     tip = 'Fuel burns only in flight: ' + leg.fuel + ' per leg at ' + ordersPace().name + ' (~' + leg.exactDays.toFixed(1) + ' days). About ' + (leg.fuel > 0 ? Math.floor(level / leg.fuel) : '∞') + ' legs left.';
@@ -539,7 +537,7 @@ function renderInvResourceDetail(key) {
   document.getElementById('inv-detail-desc').textContent = r.desc;
   document.getElementById('inv-detail-flavor').textContent = '';
   const n = STATE.items.filter(x => x === r.item).length;
-  invSetBlock('inv-detail-meta', invStat('IN CARGO', n ? '×' + n + ' ' + invEsc(invNameOf(r.item)) : 'none'));
+  invSetBlock('inv-detail-meta', invStat('IN CARGO', n ? '×' + n + ' ' + escapeHTML(invNameOf(r.item)) : 'none'));
   invSetBlock('inv-detail-used', ''); invSetBlock('inv-detail-notes', '');
   invRenderAiLine('res:' + key, ['resource', key]);
   document.getElementById('inv-detail-actions').classList.add('inv-hide');
@@ -612,7 +610,7 @@ function invOpenJettison() {
   // "Required for:" — only when an event ahead needs it aboard to happen.
   const req = blocked || isMat ? [] : invRequiredFor(id);
   const warn = document.getElementById('inv-route-warn');
-  warn.innerHTML = req.length ? 'Required for: <strong>' + req.map(invEsc).join(' · ') + '</strong>' : '';
+  warn.innerHTML = req.length ? 'Required for: <strong>' + req.map(escapeHTML).join(' · ') + '</strong>' : '';
   warn.classList.toggle('hidden', !req.length);
   document.getElementById('inv-jett-panel').classList.toggle('route-warn', !!req.length);
   document.getElementById('inv-jett-count-row').classList.toggle('hidden', blocked || _invJettisonMax < 2);
@@ -629,7 +627,7 @@ function invOpenSellConfirm(id) {
   document.querySelector('#inv-jett-panel .jettison-title').textContent = '⚠ SELL?';
   document.getElementById('inv-confirm-text').textContent = 'Sell your ' + invNameOf(id) + ' to the Market Row trader?';
   const warn = document.getElementById('inv-route-warn');
-  warn.innerHTML = 'Required for: <strong>' + req.map(invEsc).join(' · ') + '</strong>';
+  warn.innerHTML = 'Required for: <strong>' + req.map(escapeHTML).join(' · ') + '</strong>';
   warn.classList.remove('hidden');
   document.getElementById('inv-jett-panel').classList.add('route-warn');
   document.getElementById('inv-jett-count-row').classList.add('hidden');
@@ -689,9 +687,7 @@ function invJettison(count) {
   if (!gone) return invCloseJettison();
   syncItemValues(); syncItemPickups();
   renderHUD();
-  if (typeof window.pushCruiseLog === 'function') {
-    window.pushCruiseLog('◆ Jettisoned: ' + (gone > 1 ? gone + '× ' : '') + invNameOf(id) + '. ' + (gone > 1 ? 'They tumble' : 'It tumbles') + ' off into the dark, unemployed.');
-  }
+  window.pushCruiseLog('◆ Jettisoned: ' + (gone > 1 ? gone + '× ' : '') + invNameOf(id) + '. ' + (gone > 1 ? 'They tumble' : 'It tumbles') + ' off into the dark, unemployed.');
   const whole = !STATE.items.includes(id) || copy != null;
   if (whole && _invSelected === id) { _invSelected = null; _invSelectedCopy = null; }
   invCloseJettison();
@@ -705,7 +701,7 @@ function invJettisonMaterial(id, count) {
   const tileEl = document.querySelector('#inv-grid .inv-tile[data-key="' + id + '"]');
   STATE.materials[id] = have - n;
   renderHUD();
-  if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ Jettisoned: ' + n + ' ' + invNameOf(id, true).toLowerCase() + '. The hold breathes a little easier.');
+  window.pushCruiseLog('◆ Jettisoned: ' + n + ' ' + invNameOf(id, true).toLowerCase() + '. The hold breathes a little easier.');
   const whole = !STATE.materials[id];
   if (whole && _invSelected === id) _invSelected = null;
   invCloseJettison();
@@ -760,11 +756,11 @@ function invSetSort(key) {
     STATE.items.splice(STATE.items.indexOf(id), 1);
     const msg = iu.use();
     renderHUD();
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + msg);
+    window.pushCruiseLog('◆ ' + msg);
     if (!STATE.items.includes(id)) _invSelected = null;
     renderInventory();
-    if (typeof window.renderCruise === 'function' && document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();
-    if (typeof window.refreshStopMenu === 'function') window.refreshStopMenu();
+    if (document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();
+    window.refreshStopMenu();
   });
   // Keys while the hold is open: 1/2/3 switch tabs (demo); Esc closes an
   // open SORT flyout first (the jettison confirm's Esc lives in index.html).
@@ -794,5 +790,5 @@ function openInventory() {
 function closeInventory() {
   document.getElementById('inv-sort').classList.remove('open');
   hideOverlay('overlay-inventory');
-  if (typeof saveRun === 'function') saveRun();
+  saveRun();
 }

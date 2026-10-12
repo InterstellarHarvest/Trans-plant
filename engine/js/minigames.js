@@ -302,8 +302,6 @@ const BRIEF = {
   }
 };
 
-const AI_NAMES = {aria:'ARIA',marv:'MARV',rex:'REX',chip:'CHIP',ajoy:'AJOY'};
-
 // ─────────────────────────────────────────────
 // State
 // ─────────────────────────────────────────────
@@ -328,7 +326,7 @@ let minigameToken = 0;       // bumps per open/close: a quit game's delayed resu
 let jobHarm = null;
 function reportJobHarm(h){
   jobHarm = h;
-  if(typeof window.onJobHarm === 'function') window.onJobHarm(h);
+  window.onJobHarm(h);
 }
 let lastTier = null, lastPayload = null;
 
@@ -392,7 +390,7 @@ function openMinigame(id, opts, onDone){
   const token = ++minigameToken;
   showReady(variant, ()=>{
     minigameStarted = true;
-    if(typeof window.onJobBegun === 'function') window.onJobBegun(); // a reload from here settles as a quit
+    window.onJobBegun(); // a reload from here settles as a quit
     const mclose = document.getElementById('mclose');
     mclose.textContent = '✕ QUIT'; Tooltip.attach(mclose, { description: 'Quit now: nothing is kept, and the time is still spent. In a crisis, the worst outcome lands.', tone: 'danger' });
     cleanupFn = inits[id](document.getElementById('ga'), (tier, payload) => { if (token === minigameToken) showResult(tier, payload); }, opts || {});
@@ -422,8 +420,7 @@ function showResult(tier, payload){
   const labels = {perfect:'EXCELLENT',good:'ADEQUATE',poor:'INSUFFICIENT',fedup:'WALKED OUT'};
   rt.textContent = labels[tier];
   const ai = activeAi;
-  const names = {aria:'ARIA',marv:'MARV',rex:'REX',chip:'CHIP',ajoy:'AJOY'};
-  document.querySelector('#rquip .rname').textContent = names[ai];
+  document.querySelector('#rquip .rname').textContent = AI_NAMES[ai];
   document.querySelector('#rquip .rtext').textContent = Q[currentGame][tier][ai];
 
   // Optional itemized payload — currently emitted by forage; engine consumes
@@ -499,7 +496,7 @@ function requestCloseMinigame(){
   onMinigameDone = null;
   closeMinigameOverlay();
   if(started && cb) cb('abandoned', jobHarm ? { harm: jobHarm } : null);
-  else if(!started && typeof window.refundVerbTax === 'function') window.refundVerbTax(); // free cancel: nothing happened, nothing paid
+  else if(!started) window.refundVerbTax(); // free cancel: nothing happened, nothing paid
 }
 document.getElementById('mclose').addEventListener('click', requestCloseMinigame);
 // Backdrop click = close — but only when the press STARTED on the
@@ -528,7 +525,7 @@ document.getElementById('rbquit').addEventListener('click', ()=>{
   if (cb) cb(tier, payload);
   if (openCargoAfterClose) {
     openCargoAfterClose = false;
-    if (typeof openInventory === 'function' && !(typeof STATE !== 'undefined' && STATE.ended)) openInventory();
+    if (!(typeof STATE !== 'undefined' && STATE.ended)) openInventory();
   }
 });
 
@@ -907,8 +904,8 @@ const BODY_LOCATIONS = [
 ];
 
 function initMedical(container, onResult, medConfig){
-  // [STUB] Difficulty config — engine layer should pass `medConfig` from the
-  // calling action. Tags vary the round shape so different in-game contexts
+  // Difficulty config — the caller (index.html resolveChoice) passes
+  // `medConfig`. Tags vary the round shape so different in-game contexts
   // (routine checkup vs. critical encounter casualty) feel different.
   // medConfig = {
   //   minN, maxN,         // wound count range (default 2..4)
@@ -1429,20 +1426,12 @@ function initMedical(container, onResult, medConfig){
     else if(allCleared && wrongCount === 0) tier = 'perfect';
     else if(allCleared)                     tier = 'good';
     else                                    tier = 'poor';
-    // [STUB] medical result wiring:
-    //   perfect: patient HP +25% (toward max)
-    //   good:    patient HP +10%
-    //   poor:
-    //     final hp is bounded above damageFloor (=startingHp - 30%).
-    //     if patient is crew  → apply (final hp - startingHp) delta + morale dip
-    //     if patient is NPC   → if final hp <= 0: NPC dies (only possible if
-    //                           startingHp was already < EVENT_DAMAGE_CAP).
-    //                           else: NPC survives wounded, trigger encounter
-    //                           survival-branch outcome.
-    // Fedup: patient slides off-screen before result modal hits. Other tiers
-    // get a brief end-state pause for the moment to land before the result.
-    // The caller applies the HP result (index.html resolveChoice): it
-    // needs where the patient ended up.
+    // The caller applies the HP result (index.html resolveChoice): perfect
+    // +25 HP, good +10, poor keeps the loss (final hp is bounded above
+    // damageFloor = startingHp - 30%), so it needs where the patient ended
+    // up. Fedup: patient slides off-screen before result modal hits. Other
+    // tiers get a brief end-state pause for the moment to land before the
+    // result.
     const medPayload = { hp: Math.round(hp), startingHp };
     if(tier === 'fedup'){
       bodySprite.classList.add('fedup-slide');
@@ -1485,7 +1474,7 @@ function initMedical(container, onResult, medConfig){
 //
 // onResult contract: onResult(tier, payload) where payload is
 //   { food:int, rare_drops:[{id,name}], sickness:[{type,target,severity,reason}], mode }
-// Engine consumes sickness/rare_drops on the food-as-resource side. [STUB]
+// The caller (cruise.js handleForageVerb) applies food, rare_drops and sickness.
 // Modes cycle per launch in the demo so all three can be reviewed without ctx.
 let _forageCycle = 0;
 
@@ -1550,10 +1539,9 @@ const FORAGE_FALLBACK_ANCHORS = {
   ]
 };
 
-// [STUB] ENGINE INTEGRATION — INBOUND CONTRACT
-// When wiring forage into the real engine (cruise / encounter / map node),
-// pass a populated ctx object so this run knows where it came from + what
-// to render. Demo cycles MODE per launch when ctx is missing.
+// INBOUND CONTRACT — the caller (cruise.js handleForageVerb) passes a ctx
+// object so this run knows where it came from + what to render. Demo
+// cycles MODE per launch when ctx is missing.
 //   ctx.mode         'HUNT' | 'GATHER' | 'SCAVENGE'   (which mechanic flavor)
 //   ctx.bg_id        string                            (specific bg, else random from mode pool)
 //   ctx.regionLabel  string                            (override the HUD region text)
@@ -1706,29 +1694,6 @@ function initForage(container, onResult, ctx){
   function decoyChance(elapsedMs){
     const t = Math.min(1, elapsedMs / TIMER_MS);
     return DECOY_BASE + (DECOY_LATE - DECOY_BASE) * t;
-  }
-
-  // For line anchors, compute the perpendicular emerge direction.
-  // The line vector is (x2-x1, y2-y1); its two perpendiculars are 90° rotations.
-  // We pick whichever perpendicular best matches the face hint (up/down/left/right)
-  // — this is what tells the runtime which side of the line the cover is on.
-  // Returns a unit vector {x, y} in CSS coords (y+ is downward).
-  function resolveLinePerp(a, faceVal){
-    const dx = a.x2 - a.x1, dy = a.y2 - a.y1;
-    const len = Math.hypot(dx, dy);
-    if(len === 0) return { x: 0, y: -1 }; // degenerate; default upward
-    const ux = dx/len, uy = dy/len;
-    const pA = { x: -uy, y:  ux };
-    const pB = { x:  uy, y: -ux };
-    const fv = ({
-      up:    { x:  0, y: -1 },
-      down:  { x:  0, y:  1 },
-      left:  { x: -1, y:  0 },
-      right: { x:  1, y:  0 }
-    })[faceVal] || { x: 0, y: -1 };
-    const dotA = pA.x*fv.x + pA.y*fv.y;
-    const dotB = pB.x*fv.x + pB.y*fv.y;
-    return dotA >= dotB ? pA : pB;
   }
 
   // Whack-a-mole — line anchors. Turns for-anchor into an overflow:hidden
@@ -2396,21 +2361,11 @@ function initForage(container, onResult, ctx){
     }
 
     const tier = food >= 50 ? 'perfect' : food >= 25 ? 'good' : 'poor';
-    // [STUB] ENGINE INTEGRATION — OUTBOUND PAYLOAD
-    // Engine's onResult handler should:
-    //   1. STATE.resources.food += payload.food
-    //   2. payload.rare_drops.forEach(d => STATE.inventory.add(d.id, 1))
-    //      — and check for tag-payoff items (e.g., med_herb → has_remedy)
-    //   3. payload.sickness.forEach(s):
-    //        type='poisoning'   → -HP on s.target ('random_crew' picks one from
-    //                              ctx.crew_in_party; severity light/medium/heavy
-    //                              maps to ~10/20/35 HP).
-    //        type='morale_drop' → -morale on s.target ('all_crew' = global drop;
-    //                              severity light/medium/heavy maps to ~5/12/20).
-    //   4. Round-trip ctx.return_to + ctx.origin_node from initial ctx
-    //      so the engine knows where to mount next (cruise/encounter/map node).
-    //   5. Tier ('perfect'|'good'|'poor') drives AI quip flavor — already
-    //      consumed by demo's showResult; engine can reuse same Q[] structure.
+    // OUTBOUND PAYLOAD — the caller's onResult (cruise.js handleForageVerb)
+    // adds payload.food to the tank, maps each rare drop to a real reward,
+    // and lands each sickness: 'poisoning' -HP on one person aboard
+    // (light/medium/heavy ~10/20/35), 'morale_drop' on every crew member
+    // (~5/12/20). Tier ('perfect'|'good'|'poor') drives the AI quip.
     onResult(tier, {
       food, rare_drops: rareDrops, sickness,
       mode: MODE, bg_id: bgId,
@@ -2699,25 +2654,6 @@ const BREACH_PATCH_IMG = new Image();
 BREACH_PATCH_IMG.src = (window.TP_PORTABLE && window.TP_PORTABLE.images['sprites/minigames/hullbreach/breach_patch.png'])
   || 'sprites/minigames/hullbreach/breach_patch.png';
 const WELD_THICKNESS = 4;
-const WELD_PAD = WELD_THICKNESS + 1;  // 5 — must match CSS .bpatch.welded sizing
-
-// Lerp between two RGBA palettes (for the cooling animation).
-function _lerpRGBA(a, b, t){
-  return [
-    Math.round(a[0] + (b[0]-a[0])*t),
-    Math.round(a[1] + (b[1]-a[1])*t),
-    Math.round(a[2] + (b[2]-a[2])*t),
-    Math.round(a[3] + (b[3]-a[3])*t),
-  ];
-}
-function _lerpPalette(p1, p2, t){
-  return {
-    shadow:    _lerpRGBA(p1.shadow,    p2.shadow,    t),
-    mid:       _lerpRGBA(p1.mid,       p2.mid,       t),
-    highlight: _lerpRGBA(p1.highlight, p2.highlight, t),
-    hot:       _lerpRGBA(p1.hot,       p2.hot,       t),
-  };
-}
 // Inline mirror of sprites/minigames/hullbreach/breaches.json
 // Coords are fractions of bg natural size.
 const BREACH_REGIONS = {
@@ -2783,9 +2719,9 @@ function initBreach(container, onResult){
   scene.appendChild(tray);
   const stack = tray.querySelector('#bcr-stack');
   const counter = tray.querySelector('#bcr-counter');
-  // OXYGEN bar — bottom-center. Drains while breaches are open, stops when
-  // patched. [STUB] In production, hook to the global O2 resource so the
-  // game-world value drops; the demo runs a local 100→x scratch value.
+  // OXYGEN bar — bottom-center. Starts at the ship's O2 and drains while
+  // breaches are open, stops when patched; the ship's real O2 loss lands
+  // through the event's tier_outcomes.
   const o2Bar = document.createElement('div');
   o2Bar.className = 'breach-o2';
   o2Bar.innerHTML =
@@ -2855,9 +2791,9 @@ function initBreach(container, onResult){
   counter.textContent = `0 / ${N} SEALED`;
 
   // ── Time budget: 3s per hole, 4s per hole with engineer ──
-  // [STUB] In the real game, the countdown should be driven by game-world time
-  // elapsed during the action (the action button shows allotted time before
-  // committing). For the demo we use real seconds via makeTimer().
+  // TODO: drive the countdown by game-world time elapsed during the action
+  // (the action button showing the allotted time before committing); it
+  // runs on real seconds via makeTimer().
   const perHole = 3000 + 1000 * engineerMult; // wounded engineer: +0.5s
   const totalTime = Math.round(N * perHole * (rexAboard() ? 1.15 : 1)); // REX: 15% more time
 
@@ -3063,7 +2999,6 @@ function initBreach(container, onResult){
     counter.textContent=`${w} / ${N} SEALED`;
     if(w>=N){
       done=true;
-      // [STUB] hull breach result → engine: O2/morale unaffected (perfect)
       endBeat(()=>onResult('perfect'), 700);
       return;
     }
@@ -3187,10 +3122,7 @@ function initBreach(container, onResult){
     const w=holes.filter(x=>x.welded).length;
     const missing=N-w;
     const missingFrac=missing/N;
-    // [STUB] hull breach result → engine:
-    //   perfect = no atmospheric loss
-    //   good    = O2 -small per missing, morale -small
-    //   poor    = O2 -large per missing, morale -large, possible casualty roll
+    // The event's tier_outcomes decide what each tier costs.
     let tier;
     if(missing===0) tier='perfect';
     else if(missingFrac<=0.34) tier='good';
@@ -3234,7 +3166,6 @@ const SALVAGE_DERELICT = (() => {
     pay: { fuel:{s:5, m:10, l:15}, food:5, component:{metal:1, exotic:1}, medkit:'medkit' },
   };
 })();
-window.SALVAGE_DERELICT = SALVAGE_DERELICT;
 function initSalvage(container, onResult, opts){
   // opts.setting 'derelict' (owner ruling 2026-10-11 #12): the same game
   // inside a derelict's hold — interior backdrop, no ship bay painted in,
@@ -4115,7 +4046,7 @@ function initSalvage(container, onResult, opts){
     if (closeAfterResult) setTimeout(() => closeBtn.click(), 0); // showResult then closes through rbquit
     viewBtn.addEventListener('click', () => {
       if (viewBtn.classList.contains('disabled')) return;
-      // Routes to the real Cargo Hold (the demo's [STUB] contract): the run
+      // Routes to the real Cargo Hold: the run
       // closes exactly like CLOSE — haul banked, result card, the caller
       // grants it — then the hold opens with the haul in it.
       openCargoAfterClose = true;
@@ -4137,11 +4068,17 @@ function initSalvage(container, onResult, opts){
   };
 }
 
-  window.openMinigame = openMinigame;
   // Load-time teardown (index.html teardownLiveUI): close without firing
   // the caller's callback — the run it belonged to is being replaced.
-  window.abortMinigame = function () {
+  function abortMinigame() {
     onMinigameDone = null;
     if (document.getElementById('overlay-minigames').classList.contains('active')) closeMinigameOverlay();
-  };
+  }
+
+  Object.assign(window, {
+    // engine API
+    openMinigame, abortMinigame,
+    // test hooks: tools/tests drive and read these through page.evaluate
+    SALVAGE_DERELICT,
+  });
 })();

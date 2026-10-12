@@ -66,7 +66,7 @@
   // a hit). ev: the event fought in (a station's arrival event still
   // leads on to the approach). extra.defeat: the defeat beat's own save.
   function saveFightPoint(extra) {
-    if (typeof writeSnapshot !== 'function' || STATE.ended) return;
+    if (STATE.ended) return;
     const charging = COMBAT.ftlCharge > 0;
     const pc = {
       hull: COMBAT.player.hull, hullMax: COMBAT.player.hullMax,
@@ -91,7 +91,7 @@
   // when you open fire instead of paying, and their line when they give up.
   function pirateSays(slot) {
     const npc = STATE.npcCtx;
-    if (!npc || npc.disposition !== 'pirate' || typeof interpolateNpcTokens !== 'function') return '';
+    if (!npc || npc.disposition !== 'pirate') return '';
     const line = interpolateNpcTokens('{npc.line.' + slot + '}', npc);
     return line && !/\{npc\./.test(line) ? '“' + line + '” ' : '';
   }
@@ -226,7 +226,7 @@
      flip, rolled when the charge starts (owner ruling 2026-10-11): a
      whole turn can't be halved, so it lands half the time instead. */
   function pilotFtlChance() {
-    const cap = COMBAT.captainBg === 'pilot' ? (typeof captainSkill === 'function' ? captainSkill() : 0.5) : 0;
+    const cap = COMBAT.captainBg === 'pilot' ? captainSkill() : 0;
     return Math.max(COMBAT.crew.pilot || 0, cap);
   }
   // The diplomat's cut to the enemy's opening shot (0: none aboard).
@@ -277,12 +277,11 @@
   }
   function setAiCombat(text) {
     const chip = document.getElementById('enc-ai-name');
-    if (typeof window.aiChip === 'function') window.aiChip(chip, COMBAT.ai.toUpperCase(), text); // ruling 49
-    else chip.textContent = COMBAT.ai.toUpperCase();
+    aiChip(chip, COMBAT.ai.toUpperCase(), text);
     document.getElementById('enc-ai-text').textContent = text;
     document.getElementById('enc-ai-bar').classList.remove('hidden');
     placeTurnIndicator();
-    if (typeof window.placeBelowAiBar === 'function') window.placeBelowAiBar();
+    window.placeBelowAiBar();
   }
   /* The YOUR TURN banner sits at top 50 (demo) — below the AI bar when a
      long line wraps the bar past that (b4 B11: AJOY's 123-char intro ran
@@ -345,7 +344,7 @@
     if (opts.gate) {
       const g = document.createElement('div');
       g.className = 'enc-choice-gate' + (opts.locked ? ' locked' : '');
-      const icon = opts.locked ? 'sprites/interface/lock.png' : (typeof gateIconPath === 'function' ? gateIconPath(opts.gate) : null);
+      const icon = opts.locked ? 'sprites/interface/lock.png' : gateIconPath(opts.gate);
       if (icon) g.style.backgroundImage = "url('" + icon + "')";
       btn.appendChild(g);
       btn.classList.add('has-gate');
@@ -1295,10 +1294,9 @@
     deathChance = Math.max(0.03, deathChance);
     // Everyone aboard can be a casualty — the captain too (owner ruling 29,
     // index.html peopleAboard).
-    const aboard = typeof peopleAboard === 'function' ? peopleAboard().length : STATE.crew.length;
+    const aboard = peopleAboard().length;
     const died = aboard > 0 && Math.random() < deathChance;
-    const medic = typeof passiveMult === 'function' ? passiveMult('medic')
-      : Math.max(COMBAT.crew.medic || 0, COMBAT.captainBg === 'medic' ? 0.5 : 0);
+    const medic = passiveMult('medic');
     const injuryChance = 0.75 * (1 - 0.5 * medic);
     let injured = Math.random() < injuryChance ? 1 : 0;
     if (injured > 0 && Math.random() < 0.30) injured = 2;
@@ -1337,10 +1335,10 @@
   function planCargoLoss(pct) {
     const items = [];
     const saved = STATE.items.slice();
-    const removable = STATE.items.filter(id => typeof canRemoveItem !== 'function' || canRemoveItem(id)).length;
+    const removable = STATE.items.filter(id => canRemoveItem(id)).length;
     const n = Math.round(removable * pct / 100);
     for (let i = 0; i < n; i++) {
-      const id = typeof window.removeRandomItem === 'function' ? window.removeRandomItem() : STATE.items.pop();
+      const id = window.removeRandomItem();
       if (!id) break;
       items.push(id);
     }
@@ -1380,7 +1378,7 @@
      picks someone aboard (the captain too, owner ruling 29) — returned as
      the outcome's crew_effect, so a medic's save still applies. */
   function defeatDeath(result) {
-    const aboardNow = typeof peopleAboard === 'function' ? peopleAboard() : STATE.crew;
+    const aboardNow = peopleAboard();
     if (!result.crewDied || !aboardNow.length) return null;
     result._deathRole = aboardNow[Math.floor(Math.random() * aboardNow.length)];
     return { type: 'kill', target: 'specific_role', role: result._deathRole };
@@ -1388,7 +1386,7 @@
   // Injuries (demo rule) land on people other than the one the death roll
   // picked, through the engine's own severity model. Returns the crew line.
   function defeatInjuries(result, crewBefore, namesBefore, lethalSaved) {
-    const pool = (typeof peopleAboard === 'function' ? peopleAboard() : STATE.crew).filter(r => r !== result._deathRole);
+    const pool = peopleAboard().filter(r => r !== result._deathRole);
     const hurt = [];
     for (let i = 0; i < (result.crewInjured || 0) && pool.length; i++) {
       const role = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
@@ -1407,7 +1405,7 @@
   // (Bible §4.25 "passive halved"), 0 absent — truthy checks still mean
   // "aboard"; numeric bonuses scale by it.
   function bindCombatCrew() {
-    const roles = ['pilot', 'engineer', 'medic', 'botanist', 'chef', 'diplomat', 'xenobiologist', 'veteran', 'merchant'];
+    const roles = ['pilot', 'engineer', 'medic', 'botanist', 'chef', 'diplomat', 'xenobiologist'];
     COMBAT.crew = {};
     roles.forEach(r => { COMBAT.crew[r] = STATE.crew.includes(r) ? woundedMult(r) : 0; });
     COMBAT.captainBg = STATE.captain || '';
@@ -1421,7 +1419,7 @@
      time, the fight's morale so far plus the hits'. Volleys that would
      take the hull to 0 are the defeat (LIMP AWAY), not hull_zero. A save
      from before the volley was kept just breaks off. Returns the log line. */
-  window.settleCombatBreakOff = function (pc) {
+  function settleCombatBreakOff(pc) {
     const v = pc.volley;
     const start = Number.isFinite(pc.moraleNow) && Number.isFinite(pc.morale) ? pc.moraleNow - pc.morale : null;
     let hull = Math.min(STATE.resources.hull, pc.hull), mo = start == null ? null : pc.moraleNow;
@@ -1455,12 +1453,12 @@
     applyOutcomeEffects(outcome);
     STATE.postCombatLegs = 2;
     return 'The fight broke off when the logs did. The ship ran for it: ' + under + '−15 fuel, hull ' + Math.round(hull) + '.';
-  };
+  }
   /* A reload during the defeat beat (index.html loadRun): the LIMP AWAY
      that was coming lands as the fight would have landed it — hull 1,
      the named cargo, the casualty roll, the fight's morale, high time.
      The fight's own end card is gone, so it returns the line for the log. */
-  window.settleCombatDefeat = function (d) {
+  function settleCombatDefeat(d) {
     const result = { outcome: 'defeated', cargoLoss: d.cargoLoss || { pct: 0, items: [], materials: {} }, crewDied: !!d.crewDied, crewInjured: d.crewInjured || 0 };
     const outcome = { resources: { hull: 1 - STATE.resources.hull }, combat_net: true, time_cost: 'high' };
     if (Number.isFinite(d.morale) && d.morale) outcome.resources.morale = d.morale;
@@ -1475,7 +1473,7 @@
     applyCargoLoss(result.cargoLoss);
     STATE.postCombatLegs = 2;
     return `Hull at 1. ${cargoLossText(result.cargoLoss)}. ${crewLine}`;
-  };
+  }
 
   /* ── Loot ───────────────────────────────────────────────────── */
   // Ids restricted to what actually exists in materials.json/items.json
@@ -1522,23 +1520,21 @@
   };
   function lootSprite(it) {
     if (it.material || it.id === 'gold') return 'sprites/cargo/materials/' + it.id + '.png';
-    return typeof itemSpritePath === 'function' ? itemSpritePath(it.id) : 'sprites/cargo/items/' + it.id + '.png';
+    return itemSpritePath(it.id);
   }
-  function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
   function renderLootTiles(items) {
     if (!items.length) return '<div class="end-loot-empty">No loot recovered.</div>';
     return '<div class="end-loot-grid">' + items.map(it => {
       const src = lootSprite(it);
-      return `<div class="end-loot-tile${it.bonus ? ' bonus' : ''}" data-id="${esc(it.id)}" data-count="${it.count}">` +
-        (src ? `<img src="${esc(src)}" alt="" onerror="this.style.visibility='hidden'">` : '') +
-        `<span class="lt-count">×${it.count}</span><span class="lt-label">${esc(it.label)}</span></div>`;
+      return `<div class="end-loot-tile${it.bonus ? ' bonus' : ''}" data-id="${escapeHTML(it.id)}" data-count="${it.count}">` +
+        (src ? `<img src="${escapeHTML(src)}" alt="" onerror="this.style.visibility='hidden'">` : '') +
+        `<span class="lt-count">×${it.count}</span><span class="lt-label">${escapeHTML(it.label)}</span></div>`;
     }).join('') + '</div>';
   }
   function hideEndCard() {
     const ov = document.getElementById('combat-end-overlay');
     if (ov) ov.classList.remove('show');
   }
-  window.hideCombatEndCard = hideEndCard;
   function showEndCard(card) {
     const ov = document.getElementById('combat-end-overlay');
     if (!ov) return;
@@ -1550,7 +1546,7 @@
     document.getElementById('combat-end-body').textContent = card.body;
     let html = '';
     if (card.loot) html += '<div class="end-loot-title">RECOVERED</div>' + renderLootTiles(card.loot);
-    if (card.notes) html += `<div class="end-loot-notes">${esc(card.notes)}</div>`;
+    if (card.notes) html += `<div class="end-loot-notes">${escapeHTML(card.notes)}</div>`;
     const lootEl = document.getElementById('combat-end-loot');
     lootEl.innerHTML = html;
     lootEl.style.display = html ? 'flex' : 'none';
@@ -1560,8 +1556,7 @@
     fresh.addEventListener('click', () => {
       hideEndCard();
       if (card.outcome === 'escape' || card.outcome === 'enemy_retreat') renderPostEscapeState();
-      else if (typeof runChoiceAction === 'function') runChoiceAction(advanceAfterEvent);
-      else advanceAfterEvent();
+      else runChoiceAction(advanceAfterEvent);
     });
     ov.classList.add('show');
   }
@@ -1570,7 +1565,7 @@
   function renderPostEscapeState() {
     fxScreen().classList.add('hostile-gone');
     document.getElementById('enc-narr-title').textContent = 'CLEAR';
-    if (typeof finishAllTyping === 'function') finishAllTyping();
+    finishAllTyping();
     document.getElementById('enc-narr-body').textContent = 'The pirate falls behind. The bridge is quiet again — your stars, undisturbed.';
     document.getElementById('enc-narrative').classList.remove('tone-success', 'tone-danger');
     document.getElementById('enc-dialog').classList.add('hidden');
@@ -1731,8 +1726,7 @@
           // Capacity-enforced: grantItem logs anything left with the wreck.
           let landed = 0;
           for (let i = 0; i < it.count; i++) {
-            if (typeof window.grantItem !== 'function') { STATE.items.push(it.id); landed++; }
-            else if (window.grantItem(it.id) !== false) landed++;
+            if (window.grantItem(it.id) !== false) landed++;
           }
           if (landed < it.count) { leftBehind.push({ label: it.label, count: it.count - landed }); it.count = landed; }
         }
@@ -1740,7 +1734,7 @@
           // Materials are cargo (owner ruling 2026-10-11): what fits lands; the
           // card's notes name the rest (leftBehind), the tile shows what landed.
           it.material = true;
-          const landed = typeof window.grantMaterial === 'function' ? window.grantMaterial(it.id, it.count, { quiet: true }) : ((STATE.materials[it.id] = (STATE.materials[it.id] || 0) + it.count), it.count);
+          const landed = window.grantMaterial(it.id, it.count, { quiet: true });
           if (landed < it.count) { leftBehind.push({ label: it.label, count: it.count - landed }); it.count = landed; }
         }
       }
@@ -1813,26 +1807,25 @@
     }
   }
 
-  window.triggerFleeResolve = function (choice) {
+  function triggerFleeResolve(choice) {
     resolveToOutcome(choice, { hostileGone: true });
-  };
+  }
 
   // Read by the encounter's choice tooltip (index.html choiceCostLines).
   const RAM_FAIL_CHANCE = 0.30;
-  window.RAM_FAIL_CHANCE = RAM_FAIL_CHANCE;
-  window.triggerRamResolve = function (choice) {
+  function triggerRamResolve(choice) {
     if (Math.random() < RAM_FAIL_CHANCE) {
       if (window.ShipLog) ShipLog.fightStart(choice); // the fight's log entry names the ram
       window.triggerCombat(choice, { ramFailed: true, ramHull: choice.hull || 18 });
     } else {
       resolveToOutcome(choice, { hostileGone: true });
     }
-  };
+  }
 
   // Load-time teardown (index.html teardownLiveUI): stop a live fight
   // and strip its chrome without resolving an outcome into the run being
   // replaced (it used to bleed into the next ordinary event).
-  window.abortCombat = function () {
+  function abortCombat() {
     if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
     COMBAT.active = false; COMBAT.state = 'END'; COMBAT._firing = false; COMBAT._dissolving = false;
     COMBAT._resolved = true; COMBAT.fight = (COMBAT.fight || 0) + 1; // pending timers stand down
@@ -1844,7 +1837,7 @@
     const sp = document.getElementById('enc-backdrop-sprite');
     if (sp) sp.classList.remove('combat-enemy-charge', 'combat-low-hp');
     hideEndCard();
-  };
+  }
 
   /* Any fight is fought from the bridge (demo canon: combat is always the
      bridge view, their ship in the window, their captain on the feed) —
@@ -1857,7 +1850,7 @@
   function ensureCombatStage(line) {
     const ev = STATE.currentEvent, node = STATE.currentNode;
     if (!ev) return;
-    if (!STATE.npcCtx && typeof resolveNpc === 'function') {
+    if (!STATE.npcCtx) {
       STATE.npcCtx = resolveNpc({ id: ev.id, npc: { disposition: 'pirate', species: null } });
     }
     if (!window.SceneArt) return;
@@ -1868,7 +1861,7 @@
     SceneArt.render(ev, node, Object.assign({ comm_mode: 'screen', pose: 'hostile' }, spec), STATE.npcCtx, line || null);
   }
 
-  window.triggerCombat = function (choice, opts) {
+  function triggerCombat(choice, opts) {
     if (COMBAT.active) return;
     opts = opts || {};
     choice = choice || {};
@@ -1877,7 +1870,7 @@
     // NPC (species decides hull, surrender and the cookie memory below).
     const ev = STATE.currentEvent;
     const intro = choice.combat_intro && ev && ev.outcomes ? ev.outcomes[choice.combat_intro] : null;
-    const introLine = intro && intro.line && typeof interpolateNpcTokens === 'function' ? interpolateNpcTokens(intro.line, STATE.npcCtx) : (intro && intro.line) || null;
+    const introLine = intro && intro.line ? interpolateNpcTokens(intro.line, STATE.npcCtx) : null;
     ensureCombatStage(introLine);
     // The chef's cookies (OFFER COOKIES success sets a friendly tag for
     // one journey leg — COMBAT_SYSTEM_HANDOFF §5): the same crew, met
@@ -1906,7 +1899,7 @@
     COMBAT.player.hull = clamp(STATE.resources.hull, 1, COMBAT.player.hullMax);
     if (ramFailed) COMBAT.player.hull = clamp(COMBAT.player.hull - ramHull, 1, COMBAT.player.hullMax);
     // The crew average (unrounded) — null with no crew aboard (owner ruling 15).
-    COMBAT.player.morale = typeof crewMoraleRaw === 'function' ? crewMoraleRaw() : null;
+    COMBAT.player.morale = crewMoraleRaw();
     COMBAT.player.moraleStart = COMBAT.player.morale;
 
     const speciesMul = speciesHpMod(COMBAT.species);
@@ -1974,7 +1967,7 @@
     } else if (intro) {
       // A combat_intro outcome opens the fight (the bluff's CALLED beat).
       const quote = introLine ? '“' + introLine + '”' : undefined;
-      const introBody = typeof interpolateNpcTokens === 'function' ? interpolateNpcTokens(intro.body || '', STATE.npcCtx) : (intro.body || '');
+      const introBody = interpolateNpcTokens(intro.body || '', STATE.npcCtx);
       setNarrCombat(intro.title || 'COMBAT LOG', introBody, quote);
     } else {
       setNarrCombat('COMBAT LOG', combatLine('intro'), pirateSays('refuse').trim() || undefined);
@@ -2009,6 +2002,12 @@
     } else {
       showYourTurn();
     }
-  };
+  }
 
+  Object.assign(window, {
+    // engine API
+    settleCombatBreakOff, settleCombatDefeat, hideCombatEndCard: hideEndCard,
+    triggerFleeResolve, RAM_FAIL_CHANCE, triggerRamResolve, abortCombat,
+    triggerCombat,
+  });
 })();

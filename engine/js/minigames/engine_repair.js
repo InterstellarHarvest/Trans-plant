@@ -104,8 +104,7 @@
   function erName() { return (ER_LINES[STATE.activeAI] ? STATE.activeAI : 'aria').toUpperCase(); }
   function erShip() { return STATE.shipName || 'The ship'; }
   function setAI(n, t) {
-    if (typeof window.aiChip === 'function') window.aiChip($('er-ai-name'), n, t); // ruling 49
-    else $('er-ai-name').textContent = n;
+    aiChip($('er-ai-name'), n, t);
     $('er-ai-text').textContent = t;
   }
   function paused() { return typeof PauseBus !== 'undefined' && PauseBus.paused; }
@@ -308,7 +307,7 @@
     const em = EMITTERS.find(e => e.id === comp); if (em) em.active = false;
     const cost = TIME_COSTS[comp] || 1;
     totalRepairTime += cost;
-    if (!jobBegun) { jobBegun = true; if (typeof window.onJobBegun === 'function') window.onJobBegun(); }
+    if (!jobBegun) { jobBegun = true; window.onJobBegun(); }
     const q = erVoice().fixed[comp];
     setAI(erName(), q + ` [${cost}h spent · ${totalRepairTime}h total]`);
     if (COMPS.filter(c => fixed[c]).length === 4) setTimeout(showResult, 700);
@@ -617,11 +616,11 @@
 
   // Load-time teardown (index.html teardownLiveUI): close the scene
   // without calling back into the run being replaced.
-  window.abortEngineRepair = function () {
+  function abortEngineRepair() {
     if (!running) return;
     onRepairDone = null;
     finish({ fixedCount: 0, allFixed: false });
-  };
+  }
 
   function finish(result) {
     running = false;
@@ -637,7 +636,7 @@
   // ── entry point ──────────────────────────────────────────────
   // Called by cruise.js's REPAIR verb handler. onDone(result) fires when
   // the player leaves the engine room — see finish() above.
-  window.openEngineRepair = function (onDone) {
+  function openEngineRepair(onDone) {
     mount();
     onRepairDone = onDone || null;
     sctx = $('er-spark-canvas').getContext('2d');
@@ -645,11 +644,15 @@
     // Resource HUD mirrors live STATE (demo hardcoded these values):
     // the engine's shared five-dot rows (batch 3, ruling 16 — crew-average
     // morale, crit pulse, tooltips).
-    if (typeof STATE !== 'undefined' && STATE.resources && typeof hudRowsHTML === 'function') $('er-resources').innerHTML = hudRowsHTML();
+    if (typeof STATE !== 'undefined' && STATE.resources) $('er-resources').innerHTML = hudRowsHTML();
     showOverlay('overlay-engrepair');
     running = true;
     lastBurstTime = -1000;
     if (!sparkRAF) sparkRAF = requestAnimationFrame(sparkLoop);
-  };
+  }
 
+  Object.assign(window, {
+    // engine API
+    abortEngineRepair, openEngineRepair,
+  });
 })();

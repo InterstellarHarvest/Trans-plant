@@ -133,7 +133,7 @@
   function currentCropId() { return STATE.crop || 'wheat'; }
   // Crop metadata accessor for the Orders modal / index.html's water
   // math (Restoration item 5) — CROP_META stays private otherwise.
-  window.cropMetaOf = function (id) { return CROP_META[id] || null; };
+  function cropMetaOf(id) { return CROP_META[id] || null; }
 
   // Growbay spritesheet frame coords — all frames are 109×192 and
   // live in sprites/growbay/spritesheet_growbay.png. Imported verbatim
@@ -159,33 +159,33 @@
   //   Generic crew: +3%/0% (tending > nothing)
   //   None: 0%/0% (base rate; no penalty)
   const CREW = {
-    'osei':              { name: 'Dr. Osei',    role: 'Botanist',       crewId: 'osei',     growth: 15, yield: 15 },
+    'osei':              { role: 'Botanist',       crewId: 'osei',     growth: 15, yield: 15 },
     'captain-botanist':  { name: 'Captain',     role: 'Botanist bg.',   crewId: 'captain',  growth: 7,  yield: 7 },
-    'reyes':             { name: 'Reyes',       role: 'Chef',           crewId: 'reyes',    growth: 5,  yield: 5 },
-    'kazuki':            { name: 'Kazuki',      role: 'Engineer',       crewId: 'kazuki',   growth: 3,  yield: 0 },
-    'hargrove':          { name: 'Hargrove',    role: 'Diplomat',       crewId: 'hargrove', growth: 3,  yield: 0 },
-    'reeves':            { name: 'Reeves',      role: 'Pilot',          crewId: 'reeves',   growth: 3,  yield: 0 },
-    'vasquez':           { name: 'Dr. Vasquez', role: 'Medic',          crewId: 'vasquez',  growth: 3,  yield: 0 },
-    'tanaka':            { name: 'Dr. Tanaka',  role: 'Xenobiologist',  crewId: 'tanaka',   growth: 3,  yield: 0 },
+    'reyes':             { role: 'Chef',           crewId: 'reyes',    growth: 5,  yield: 5 },
+    'kazuki':            { role: 'Engineer',       crewId: 'kazuki',   growth: 3,  yield: 0 },
+    'hargrove':          { role: 'Diplomat',       crewId: 'hargrove', growth: 3,  yield: 0 },
+    'reeves':            { role: 'Pilot',          crewId: 'reeves',   growth: 3,  yield: 0 },
+    'vasquez':           { role: 'Medic',          crewId: 'vasquez',  growth: 3,  yield: 0 },
+    'tanaka':            { role: 'Xenobiologist',  crewId: 'tanaka',   growth: 3,  yield: 0 },
     'none':              { name: 'Nobody',      role: 'Untended',       crewId: null,       growth: 0,  yield: 0, emoji: '—' }
   };
-  // A tender entry as shown: a joined stowaway holding the role keeps
-  // their own name and has no sprite (index.html crewIdentityOf).
-  const TENDER_ROLE = { osei: 'botanist', reyes: 'chef', kazuki: 'engineer', hargrove: 'diplomat', reeves: 'pilot', vasquez: 'medic', tanaka: 'xenobiologist' };
+  // A tender entry as shown: the crew member's live name (crewNameOf); a
+  // joined stowaway holding the role keeps their own and has no sprite
+  // (index.html crewIdentityOf).
   function tenderOf(id) {
     // A tender who died or left (or a captain-botanist slot without a
     // botanist captain) tends nothing.
-    if (TENDER_ROLE[id] && !STATE.crew.includes(TENDER_ROLE[id])) return CREW.none;
+    if (ROLE_OF_CREWID[id] && !STATE.crew.includes(ROLE_OF_CREWID[id])) return CREW.none;
     if (id === 'captain-botanist' && STATE.captain !== 'botanist') return CREW.none;
     let c = CREW[id] || CREW.none;
     // A wounded tender works at half (crew_roster "halved if injured") —
     // the captain too, whose HP is real (owner ruling 29).
-    const role = TENDER_ROLE[id];
+    const role = ROLE_OF_CREWID[id];
     const who = role || (id === 'captain-botanist' ? 'captain' : null);
     const m = who ? woundedMult(who) : 1;
     if (m < 1) c = Object.assign({}, c, { growth: c.growth * m, yield: c.yield * m, wounded: true });
-    const idn = role && typeof crewIdentityOf === 'function' ? crewIdentityOf(role) : null;
-    return idn ? Object.assign({}, c, { name: idn.name, crewId: null, emoji: '🧑' }) : c;
+    if (!role) return c;
+    return Object.assign({}, c, { name: crewNameOf(role) }, crewIdentityOf(role) ? { crewId: null, emoji: '🧑' } : null);
   }
   // Owner ruling 41: a botanist tends by default — a crew botanist (Osei
   // or whoever holds the role), else a botanist captain. The player can
@@ -209,7 +209,7 @@
     if (t === CREW.none || !t.crewId) return null;
     return CREW_SHEET_KEY[id] || null;
   }
-  window.growbayTenderOf = function () { return STATE.cropGrowth ? tenderOf(STATE.cropGrowth.tenderId) : CREW.none; };
+  function growbayTenderOf() { return STATE.cropGrowth ? tenderOf(STATE.cropGrowth.tenderId) : CREW.none; }
 
   // Animated crew spritesheets — 9 animation frames + 1 idle frame
   // per crew member, each sheet slightly different dimensions. Data
@@ -355,7 +355,6 @@
     const days = nf ? Number(nf.contamination_recovery_days) : 0;
     return mult > 1 && days > 0 ? { mult, days } : null;
   }
-  window.cropContaminationRecovery = contaminationRecovery;
   // The boost for the day being ticked (or, outside a tick, the next
   // day to be ticked): { mult, daysLeft } — daysLeft counts that day.
   function recoveryBoost() {
@@ -367,11 +366,11 @@
     return cr ? { mult: cr.mult, days: cr.days, daysLeft: cg.recoveryBoostUntil - day + 1 } : null;
   }
   // Boosted days left right now (0 = no window) — for tests / the hub.
-  window.cropRecoveryBoostDaysLeft = function () {
+  function cropRecoveryBoostDaysLeft() {
     if (!STATE.cropGrowth) return 0;
     const b = recoveryBoost();
     return b ? b.daysLeft : 0;
-  };
+  }
   const fmtMult = m => '\u00d7' + (Math.round(m * 10) / 10);
 
   /* THE pest-clearing path — growbay TREAT, the crop treatment item and
@@ -380,7 +379,7 @@
      lazily — an event could otherwise erase the damage of the days
      since the last tick); then the pest is gone, the AI may warn about
      the next one, and a soybean crop opens its recovery window. */
-  window.clearCropPest = function () {
+  function clearCropPest() {
     const cg = STATE.cropGrowth;
     if (!cg) return false;
     const had = !!cg.pest;
@@ -390,12 +389,10 @@
     const cr = had && cg.health > 0 ? contaminationRecovery(STATE.crop) : null;
     if (cr) {
       cg.recoveryBoostUntil = Math.max(cg.recoveryBoostUntil || 0, STATE.daysElapsed + cr.days);
-      if (typeof window.pushCruiseLog === 'function') {
-        window.pushCruiseLog('\u25c6 GROWBAY \u2014 the soybeans fix nitrogen into the cleared beds: health recovery ' + fmtMult(cr.mult) + ' for ' + cr.days + ' days.');
-      }
+      window.pushCruiseLog('\u25c6 GROWBAY \u2014 the soybeans fix nitrogen into the cleared beds: health recovery ' + fmtMult(cr.mult) + ' for ' + cr.days + ' days.');
     }
     return had;
-  };
+  }
 
   // Previously-observed stage — used to fire stage-transition flash
   // only when the plant actually crosses a boundary, not on every
@@ -429,7 +426,7 @@
   const DIM_NODES  = { nebula: true, void: true };
   // The crop's water need as the ship sees it (index.html cropWaterNeed:
   // botanist −15%, water purifier −10%), rounded for display.
-  function waterNeed() { return typeof cropWaterNeed === 'function' ? Math.round(cropWaterNeed()) : CROP_META[GSTATE.cropId].water_need; }
+  function waterNeed() { return Math.round(cropWaterNeed()); }
 
   /* THE water badges (re-audit A4) — read off the real model, shared by
      the growbay's mini track and the Orders headline so the two surfaces
@@ -459,10 +456,10 @@
     else crew = { label: 'CRITICAL', cls: 'critical', band: 'critical', rate };
     return { plant, crew, need };
   }
-  window.cropWaterStatusAt = function (plantPct) {
+  function cropWaterStatusAt(plantPct) {
     if (STATE.crop && STATE.cropGrowth) bindGrowbayState();
     return waterStatusAt(plantPct);
-  };
+  }
 
   /* What a harvest pays, tender bonus included — the same sum doHarvest
      grants (re-audit A5: the preview said +40, the harvest paid +46). */
@@ -478,7 +475,7 @@
     return '+' + y.total + ' ' + y.label + (y.bonus ? ' (incl. +' + y.bonus + ' tending)' : '') +
       (y.label === 'Morale' && !STATE.crew.length ? ' — no crew aboard to enjoy it' : '');
   }
-  window.cropHarvestYield = function () { if (!STATE.crop) return null; bindGrowbayState(); return harvestYield(); };
+  function cropHarvestYield() { if (!STATE.crop) return null; bindGrowbayState(); return harvestYield(); }
   function shipNodeType() { const n = STATE.byId && STATE.byId[STATE.currentId]; return n ? n.node_type : null; }
 
   // ═════ Modifier math ═════════════════════════════════════
@@ -537,7 +534,7 @@
     if (tender.growth > 0) add('positive', tender.name + (tender.wounded ? ' (wounded)' : '') + ' tending', tender.growth, 0);
     // A station botanist's advice, taken (index.html applyCropAdvice): the
     // crew talks to the crop now — the "4% faster" is this modifier.
-    if (GSTATE.talked) add('positive', 'Talked to daily', typeof CROP_TALK_GROWTH === 'number' ? CROP_TALK_GROWTH : 4, 0);
+    if (GSTATE.talked) add('positive', 'Talked to daily', CROP_TALK_GROWTH, 0);
 
     // WATER — the ship's tanks first, then the Orders split vs the
     // crop's need.
@@ -635,7 +632,7 @@
   }
   // Growth factor at a hypothetical water split — the Orders modal's
   // "PLANT MATURES" projection uses the real crop model.
-  window.cropGrowthFactorAt = function (pct) {
+  function cropGrowthFactorAt(pct) {
     if (!STATE.cropGrowth || !STATE.crop) return 0;
     bindGrowbayState();
     const keep = GSTATE.waterPlant;
@@ -643,7 +640,7 @@
     const f = growthFactor();
     GSTATE.waterPlant = keep;
     return f;
-  };
+  }
   function dailyHealthDelta(mods) {
     const { active } = mods || computeModifiers();
     return active.reduce((s, m) => s + (m.health || 0), 0);
@@ -1019,7 +1016,7 @@
   function forCrop(line) { return line.replace(/\bwheat\b/g, CROP_NOUN[GSTATE && GSTATE.cropId] || 'plant'); }
 
   // ═════ Tender picker ═══════════════════════════════════════
-  window.toggleTenderPicker = function(e) {
+  function toggleTenderPicker(e) {
     if (e) e.stopPropagation();
     const slot = $('tender-slot');
     if (slot.classList.contains('open')) { slot.classList.remove('open'); return; }
@@ -1027,8 +1024,7 @@
     // role->crewId) instead of the demo's static 8-entry roster —
     // 'none' is always offered; 'captain-botanist' only if the
     // captain's own background is botanist.
-    const ROLE_TO_CREWID = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
-    const aboardIds = STATE.crew.map(role => ROLE_TO_CREWID[role]).filter(id => CREW[id]);
+    const aboardIds = STATE.crew.map(role => CREWID_OF_ROLE[role]).filter(id => CREW[id]);
     if (STATE.captain === 'botanist') aboardIds.push('captain-botanist');
     aboardIds.push('none');
     const picker = $('tender-picker');
@@ -1061,7 +1057,7 @@
       picker.appendChild(row);
     }
     slot.classList.add('open');
-  };
+  }
   // Outside-click closes the picker
   document.addEventListener('click', () => $('tender-slot').classList.remove('open'));
 
@@ -1170,7 +1166,7 @@
         // Revert to the committed value we saved on pointerdown.
         GSTATE.waterPlant = revertTo;
         renderAll();
-      } else if (typeof window.setWaterSplit === 'function') {
+      } else {
         // Commit through the one shared write point so the Orders
         // modal's slider (STATE.orders.waterSplit) stays in lockstep.
         setWaterSplit(GSTATE.waterPlant);
@@ -1337,16 +1333,16 @@
   }
 
   // ═════ Animations ═══════════════════════════════════════════
-  window.pushStageFlash = function() {
+  function pushStageFlash() {
     const sprite = $('plant-sprite');
     sprite.classList.remove('stage-flash');
     void sprite.offsetWidth;
     sprite.classList.add('stage-flash');
     setTimeout(() => sprite.classList.remove('stage-flash'), 1500);
-  };
+  }
 
   // ═════ Harvest ceremony ═════════════════════════════════════
-  window.doHarvest = function() {
+  function doHarvest() {
     if (GSTATE.growth < 100 || GSTATE.health <= 0) return null;
     const crop = CROP_META[GSTATE.cropId];
     const total = harvestYield().total; // the same sum the preview shows (A5)
@@ -1364,7 +1360,7 @@
       const room = Math.max(0, resMax('food') - STATE.resources.food);
       STATE.resources.food = clamp(STATE.resources.food + total, 0, resMax('food'));
       let spare = Math.max(0, total - room);
-      while (spare >= 10 && typeof grantItem === 'function' && grantItem('ration_brick')) { spare -= 10; banked++; }
+      while (spare >= 10 && grantItem('ration_brick')) { spare -= 10; banked++; }
     }
     // What actually landed (re-audit A15): the food the stores took, the
     // bricks pressed from the rest, the morale the crew really gained.
@@ -1381,7 +1377,7 @@
       burstText = gotFood > 0 ? '+' + gotFood + ' FOOD' + (banked ? ' +' + banked + ' BRICK' + (banked > 1 ? 'S' : '') : '') : banked ? '+' + banked + ' BRICK' + (banked > 1 ? 'S' : '') : 'STORES FULL';
     }
     // One log line for every harvest path (growbay button and crop card).
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('▶ Harvested ' + cropWord + '. ' + logGain + '. Cycle reset.');
+    window.pushCruiseLog('▶ Harvested ' + cropWord + '. ' + logGain + '. Cycle reset.');
     renderHUD();
 
     // Burst animation — amber number rises and fades
@@ -1411,13 +1407,13 @@
     // (ai_universal.crop_lifecycle.harvested).
     const harvestPool = MOD.flavor && MOD.flavor.ai_universal && MOD.flavor.ai_universal.crop_lifecycle
       && MOD.flavor.ai_universal.crop_lifecycle.harvested && MOD.flavor.ai_universal.crop_lifecycle.harvested[STATE.activeAI];
-    if (Array.isArray(harvestPool) && harvestPool.length && typeof window.pushCruiseLog === 'function') {
+    if (Array.isArray(harvestPool) && harvestPool.length) {
       window.pushCruiseLog('\u25c6 ' + harvestPool[Math.floor(Math.random() * harvestPool.length)]);
     }
 
     setTimeout(() => renderAll(), 50);
     return { food: gotFood, morale: gotMo, bricks: banked, burst: burstText };
-  };
+  }
 
   // ═════ Actions ═══════════════════════════════════════════════
   /* TREAT \u2014 clears an active pest outbreak. Costs a day of focused
@@ -1453,7 +1449,7 @@
       "alone": "Pests treated. It took all day. A botanist would have finished before lunch, but here we are."
     }
   };
-  window.openTreat = function() {
+  function openTreat() {
     const say = GROWBAY_TREAT_LINES[growbayAI()];
     if (!GSTATE || !GSTATE.pest) {
       $('aria-text').textContent = say.nothing;
@@ -1472,9 +1468,9 @@
     // After renderAll — it repaints the footer with a fresh state quip,
     // which used to overwrite this line before anyone could read it.
     $('aria-text').textContent = hasBotanist ? say.botanist : say.alone;
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('\u25c6 GROWBAY \u2014 pest outbreak treated.');
-    if (typeof saveRun === 'function') saveRun(); // a reload used to undo the treat (and its day)
-  };
+    window.pushCruiseLog('\u25c6 GROWBAY \u2014 pest outbreak treated.');
+    saveRun(); // a reload used to undo the treat (and its day)
+  }
   // window.openOrders now lives in engine/js/screens/orders.js
   // (Restoration item 5) \u2014 the "isn't wired yet" stub is gone.
 
@@ -1671,7 +1667,7 @@
     const pool = GROWBAY_INSPECT_QUIPS[growbayAI()][cls] || GROWBAY_INSPECT_EXTRA[growbayAI()][cls];
     return pool[Math.floor(Math.random() * pool.length)];
   }
-  window.growbayInspectClass = function () { bindGrowbayState(); return ariaInspectClass(displayModifiers().active); };
+  function growbayInspectClass() { bindGrowbayState(); return ariaInspectClass(displayModifiers().active); }
   // The reads the demo never needed: dry tanks, a dim region, a dead crop.
   const GROWBAY_INSPECT_EXTRA = {
     aria: {
@@ -1701,12 +1697,6 @@
     }
   };
 
-  // innerHTML is unavoidable for nested-grid markup; escape any
-  // user-facing string before interpolating it.
-  function ihEsc(s) {
-    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
   // Builds Inspect content into `container`. Same content for both
   // shells (swap-in body and popup) — caller picks the container.
   function renderInspectInto(container) {
@@ -1732,7 +1722,7 @@
 
     const vital = (key, val, cls) =>
       '<div class="ins-vital">' +
-        '<span class="ins-v-key">' + ihEsc(key) + '</span>' +
+        '<span class="ins-v-key">' + escapeHTML(key) + '</span>' +
         '<span class="ins-v-val' + (cls ? ' ' + cls : '') + '">' + val + '</span>' +
       '</div>';
 
@@ -1740,7 +1730,7 @@
       '<div class="ins-section">' +
         '<div class="ins-section-title">VITAL SIGNS</div>' +
         '<div class="ins-vitals">' +
-          vital('Stage', dead ? 'DEAD' : '<span class="ins-v-marker">▸</span>' + ihEsc(stages[curIdx].name) + ' <span class="ins-v-sub">(' + stagePct + '% through)</span>', dead ? 'stalled' : '') +
+          vital('Stage', dead ? 'DEAD' : '<span class="ins-v-marker">▸</span>' + escapeHTML(stages[curIdx].name) + ' <span class="ins-v-sub">(' + stagePct + '% through)</span>', dead ? 'stalled' : '') +
           vital('Growth', Math.round(GSTATE.growth) + '%') +
           vital('Health', Math.round(GSTATE.health) + '%') +
           (boost ? vital('Recovery', fmtMult(boost.mult) + ' <span class="ins-v-sub">(nitrogen fix, ' + boost.daysLeft + 'd left)</span>') : '') +
@@ -1759,13 +1749,13 @@
     // ── Species (right column) — blurb, notes, spec table ─────
     const speciesHTML =
       '<div class="ins-section">' +
-        '<div class="ins-section-title">SPECIES — ' + ihEsc(crop.name.toUpperCase()) + '</div>' +
-        '<div class="ins-blurb">' + ihEsc(crop.blurb) + '</div>' +
-        (cropNote(GSTATE.cropId) ? '<div class="ins-notes">' + ihEsc(cropNote(GSTATE.cropId)) + '</div>' : '') +
+        '<div class="ins-section-title">SPECIES — ' + escapeHTML(crop.name.toUpperCase()) + '</div>' +
+        '<div class="ins-blurb">' + escapeHTML(crop.blurb) + '</div>' +
+        (cropNote(GSTATE.cropId) ? '<div class="ins-notes">' + escapeHTML(cropNote(GSTATE.cropId)) + '</div>' : '') +
         '<div class="ins-row"><span class="ins-key">Maturity</span><span class="ins-val">' + crop.maturity_days + ' days</span></div>' +
         '<div class="ins-row"><span class="ins-key">Water need</span><span class="ins-val">' + waterNeed() + '%</span></div>' +
         '<div class="ins-row"><span class="ins-key">Ideal temp</span><span class="ins-val">' + tMin + '–' + tMax + '°C</span></div>' +
-        '<div class="ins-row"><span class="ins-key">Yield</span><span class="ins-val">' + ihEsc(yieldText()) + '</span></div>' +
+        '<div class="ins-row"><span class="ins-key">Yield</span><span class="ins-val">' + escapeHTML(yieldText()) + '</span></div>' +
       '</div>';
 
     // ── Lifecycle ribbon (full-width) — all 4 stages side-by-side. ─
@@ -1776,9 +1766,9 @@
           stages.map((s, i) => {
             const lo = i === 0 ? 0 : stages[i - 1].max;
             return '<div class="ins-life-stage' + (i === curIdx ? ' current' : '') + '">' +
-                     '<div class="ins-life-name">' + ihEsc(s.name) + '</div>' +
+                     '<div class="ins-life-name">' + escapeHTML(s.name) + '</div>' +
                      '<div class="ins-life-range">' + lo + '–' + s.max + '%</div>' +
-                     '<div class="ins-life-tip">' + ihEsc(s.tip) + '</div>' +
+                     '<div class="ins-life-tip">' + escapeHTML(s.tip) + '</div>' +
                    '</div>';
           }).join('') +
         '</div>' +
@@ -1789,9 +1779,9 @@
     const threatRows = threats.map(t => {
       const info = THREAT_INFO[t.name] || { cause: t.delta, fix: 'Apply matching treatment.' };
       return '<div class="ins-threat' + (t.kind === 'critical' ? ' critical' : '') + '">' +
-               '<div class="ins-threat-head"><span>' + ihEsc(t.name) + '</span><span>' + ihEsc(t.delta) + '</span></div>' +
-               '<div class="ins-threat-cause">' + ihEsc(info.cause) + '</div>' +
-               '<div class="ins-threat-fix">' + ihEsc(info.fix) + '</div>' +
+               '<div class="ins-threat-head"><span>' + escapeHTML(t.name) + '</span><span>' + escapeHTML(t.delta) + '</span></div>' +
+               '<div class="ins-threat-cause">' + escapeHTML(info.cause) + '</div>' +
+               '<div class="ins-threat-fix">' + escapeHTML(info.fix) + '</div>' +
              '</div>';
     }).join('');
     const threatsHTML =
@@ -1810,7 +1800,7 @@
         '<div class="ins-section-title">' + growbayAIName() + '\'S READ</div>' +
         '<div class="ins-aria-read">' +
           '<span class="ins-aria-avatar" style="background-image:url(\'sprites/interface/AI/' + growbayAI() + '.png\')"></span>' +
-          '<span><span class="ins-aria-name">' + growbayAIName() + ':</span> ' + ihEsc(forCrop(pickAriaInspect(active))) + '</span>' +
+          '<span><span class="ins-aria-name">' + growbayAIName() + ':</span> ' + escapeHTML(forCrop(pickAriaInspect(active))) + '</span>' +
         '</div>' +
       '</div>';
 
@@ -1819,42 +1809,34 @@
 
   // Mode = which shell to use. Dev-panel select drives this.
   let inspectMode = 'swap';   // 'swap' | 'popup'
-  window.openInspect = function() {
+  function openInspect() {
     const isSwap = inspectMode === 'swap';
     document.body.classList.toggle('ins-mode-swap', isSwap);
     document.body.classList.toggle('ins-mode-popup', !isSwap);
     document.body.classList.add('ins-open');
     renderInspectInto($(isSwap ? 'ins-content-swap' : 'ins-content-popup'));
-  };
-  window.closeInspect = function() {
+  }
+  function closeInspect() {
     document.body.classList.remove('ins-open');
-  };
-  window.setInspectMode = function(m) {
-    inspectMode = m;
-    if (document.body.classList.contains('ins-open')) {
-      // Re-open in the new shell.
-      closeInspect();
-      requestAnimationFrame(openInspect);
-    }
-  };
+  }
 
   // ═════ Modal open/close ═════════════════════════════════════
-  window.closeGrowbay = function() {
+  function closeGrowbay() {
     document.body.classList.remove('modal-open');
     document.body.classList.remove('ins-open');
     hideOverlay('overlay-growbay');
     // Harvest/treat changed the run — repaint the hub (crop card) and
     // autosave through it.
-    if (typeof window.renderCruise === 'function' && !STATE.ended &&
+    if (!STATE.ended &&
         document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();
-  };
+  }
   // Click on the area outside the growbay box. Inspect is a child
   // surface of growbay, so when it's open, an outside-click peels
   // it off first instead of closing both at once.
-  window.onBackdropClick = function() {
+  function onBackdropClick() {
     if (document.body.classList.contains('ins-open')) { closeInspect(); return; }
     closeGrowbay();
-  };
+  }
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     // Inspect catches Escape first if open — close inspect, leave
@@ -1868,18 +1850,29 @@
   // ═════ Entry point ══════════════════════════════════════════
   // Called by cruise.js (crop card / Stop Menu). Ticks growth up to
   // the current day, then shows the modal — see bindGrowbayState().
-  window.openGrowbay = function() {
+  function openGrowbay() {
     bindGrowbayState();
     renderAll();
     showOverlay('overlay-growbay');
     document.body.classList.add('modal-open');
-  };
+  }
 
   // DOM-free tick for callers that need growth/health caught up without
   // opening the overlay — cruise.js calls this every renderCruise() so
   // the crop card (and checkFailure's crop_dead / the crop_sick trigger)
   // see current health even if the player never opens the growbay.
-  window.tickCropGrowth = function() {
+  function tickCropGrowth() {
     if (STATE.crop) bindGrowbayState();
-  };
+  }
+
+  Object.assign(window, {
+    // engine API
+    cropMetaOf, cropContaminationRecovery: contaminationRecovery,
+    clearCropPest, cropWaterStatusAt, cropGrowthFactorAt, toggleTenderPicker,
+    doHarvest, openTreat, openInspect, closeInspect, closeGrowbay,
+    onBackdropClick, openGrowbay, tickCropGrowth,
+    // test hooks: tools/tests drive and read these through page.evaluate
+    growbayTenderOf, cropRecoveryBoostDaysLeft, cropHarvestYield,
+    growbayInspectClass,
+  });
 })();
