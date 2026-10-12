@@ -28,8 +28,10 @@
    saved state (STATE.fabricator.craft, with daysDone), so a reload
    neither dodges nor repeats a day or an output. Closing the modal
    holds the job ("Long jobs need a still ship"); reopening resumes it.
-   CANCEL refunds the materials and keeps the unspent days; a job
-   cancelled before its first day costs nothing (tax + wear back too).
+   CANCEL keeps the unspent days; a job cancelled before its first day
+   costs nothing (materials, tax and wear all back). After that it
+   refunds half the materials, rounded down per material (ruling 55:
+   craft days roll no interrupts, so calling a job off is what costs).
    The misfire roll is made when the job finishes (odds fixed at CRAFT
    from the wear before it). A job is never stopped by its own wear: one
    that takes the fab to 100% runs on and breaks it when it comes out.
@@ -846,21 +848,35 @@
     $('fb-progress-days').textContent = c.daysDone + 'd / ' + c.daysTotal + 'd' + (held ? ' · ' + held : '');
     const cancel = $('fb-progress-cancel');
     cancel.dataset.tipDescription = c.daysDone
-      ? 'Refunds the materials. The ' + dWord(c.daysDone) + ' already spent stay spent, and so do the wear and the morale.'
+      ? refundText(cancelRefund(c)) + '. The ' + dWord(c.daysDone) + ' already spent stay spent, and so do the wear and the morale.'
       : 'Nothing has been spent yet: the materials, the morale and the wear all come back.';
   }
 
-  // Cancel the job on the bed (ruling 27): the materials come back and
-  // the days not yet spent stay yours. Before its first day it costs
-  // nothing at all (tax and wear back too); after, the days, wear and
-  // tax already paid stay paid. No output.
+  // What CANCEL gives back (ruling 55): every material before the job's
+  // first day; after it, half of each, rounded down. The tooltip and the
+  // cancel itself both read this.
+  function cancelRefund(c) {
+    const r = RECIPES.find(x => x.id === c.recipeId);
+    const back = {};
+    if (r) for (const [mat, qty] of r.inputs) back[mat] = (back[mat] || 0) + qty;
+    if (c.daysDone) for (const mat of Object.keys(back)) { back[mat] = Math.floor(back[mat] / 2); if (!back[mat]) delete back[mat]; }
+    return back;
+  }
+  function refundText(back) {
+    const parts = Object.entries(back).map(([m, q]) => q + ' ' + ((MATERIALS[m] && MATERIALS[m].name) || m).toUpperCase());
+    return parts.length ? 'Refunds half the materials (' + parts.join(', ') + ')' : 'Half the materials rounds down to none: nothing comes back';
+  }
+
+  // Cancel the job on the bed (ruling 27): the days not yet spent stay
+  // yours. Before its first day it costs nothing at all (materials, tax
+  // and wear back); after, half the materials come back (ruling 55) and
+  // the days, wear and tax already paid stay paid. No output.
   window.cancelCraft = function() {
     const c = FSTATE.craft;
     if (!c) return;
     const r = RECIPES.find(x => x.id === c.recipeId);
-    const back = {};
-    if (r) for (const [mat, qty] of r.inputs) back[mat] = (back[mat] || 0) + qty;
-    // The materials take hold space again: refuse rather than lose any.
+    const back = cancelRefund(c);
+    // The refund takes hold space again: refuse rather than lose any.
     if (typeof window.materialLandings === 'function') {
       const land = window.materialLandings(back);
       if (Object.entries(back).some(([m, q]) => (land[m] || 0) < q)) {
@@ -882,7 +898,9 @@
     }
     stopCraftClock();
     FSTATE.craft = null; STATE.fabricator.owedOutput = null;
-    fabLog('FABRICATOR — ' + (r ? r.name : 'print') + ' cancelled' + (free ? ' before it started. Nothing spent.' : ' after ' + dWord(c.daysDone) + '. The materials are back in the hold; the days are gone.'));
+    const got = Object.entries(back).map(([m, q]) => q + ' ' + ((MATERIALS[m] && MATERIALS[m].name) || m).toLowerCase()).join(', ');
+    fabLog('FABRICATOR — ' + (r ? r.name : 'print') + ' cancelled' + (free ? ' before it started. Nothing spent.'
+      : ' after ' + dWord(c.daysDone) + '. ' + (got ? 'Half the materials are back in the hold (' + got + ')' : 'None of the materials came back') + '; the days are gone.'));
     // Portrait back to idle; kill anim.
     const slot = $('fb-slot');
     slot.classList.remove('state-busy', 'state-done');
