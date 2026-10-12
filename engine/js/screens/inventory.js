@@ -106,6 +106,7 @@ let _invJettisonPending = null;
 let _invJettisonCopy = null;     // which copy of a rolled-value trade good goes out the airlock
 let _invJettisonCount = 1;
 let _invJettisonMax = 1;
+let _invSellPending = false;     // the confirm panel is asking about a SELL, not the airlock
 let _invAi = { key: null, line: '' };       // the AI line stays put across repaints; re-picked per click
 let _invReadout = { used: null, cap: null }; // last slot numbers shown (flash on change)
 let _invGold = { shown: 0, timer: null };   // rolling gold counter (demo: rolls from 0 on the first open)
@@ -215,7 +216,7 @@ const invKey = en => en.id + (en.copy != null ? '#' + en.copy : '');
 
 /* ── Rendering ──────────────────────────────────────────────── */
 function renderInventory() {
-  _invJettisonPending = null;
+  _invJettisonPending = null; _invSellPending = false;
   document.getElementById('inv-confirm').classList.add('hidden');
   invUpdateReadouts();
   renderInvResources();
@@ -370,7 +371,7 @@ function renderInvDetail(en) {
     sellBtn.disabled = locked;
     sellBtn.dataset.tipTitle = 'SELL ONE';
     sellBtn.dataset.tipDescription = locked ? 'The cargo bay is holding things. Clear some space first.'
-      : 'The Market Row trader buys one for ' + (price.unknown ? 'its real value (' + itemValueRangeLabel(en.id) + ')' : price.label) + '. Same price as the stall.';
+      : 'The Market Row trader buys one for ' + (price.unknown ? 'its real value (' + itemValueRangeLabel(en.id) + ')' : price.label) + '. Same price as the stall · no day spent.';
     if (locked) sellBtn.dataset.tipTone = 'danger'; else delete sellBtn.dataset.tipTone;
   }
   const jett = document.getElementById('inv-jett-btn');
@@ -390,10 +391,13 @@ function renderInvDetail(en) {
 
 // SELL one of the selected tile (ruling 28) — market.js stationSellOne:
 // the Market Row trader's price and removal, logged like a stall sale.
-function invSellSelected() {
+// Cargo an event ahead needs (invRequiredFor) asks first, in the same
+// confirm the airlock uses; `confirmed` is its yes.
+function invSellSelected(confirmed) {
   if (!_invSelected || _invSelectedRes || !invDocked() || INV_CLASSIFIED.has(_invSelected)) return;
   const id = _invSelected, isMat = materialPer10(id) != null;
   if (typeof window.stationSellOne !== 'function') return;
+  if (confirmed !== true && !isMat && invRequiredFor(id).length) return invOpenSellConfirm(id);
   const copy = !isMat && sellRangeOf(id) ? (_invSelectedCopy || 0) : null;
   const tileEl = document.querySelector('#inv-grid .inv-tile[data-key="' + id + (copy != null ? '#' + copy : '') + '"]');
   const r = window.stationSellOne(id, copy);
@@ -600,6 +604,8 @@ function invOpenJettison() {
   _invJettisonCopy = isMat ? null : _invSelectedCopy;
   _invJettisonMax = isMat ? (STATE.materials[id] || 0) : copyTile ? 1 : STATE.items.filter(x => x === id).length;
   _invJettisonCount = 1;
+  _invSellPending = false;
+  document.querySelector('#inv-jett-panel .jettison-title').textContent = '⚠ JETTISON?';
   document.getElementById('inv-confirm-text').textContent = blocked
     ? 'The ' + name + ' is holding cargo. Clear some space first.'
     : (_invJettisonMax > 1 ? 'Drop some of your ' + name + ' (×' + _invJettisonMax + ') into space?' : 'Drop your ' + name + ' into space?') + ' The airlock does not do refunds.';
@@ -615,6 +621,24 @@ function invOpenJettison() {
   invUpdateJettisonCount();
   document.getElementById('inv-confirm').classList.remove('hidden');
 }
+// SELL of cargo an event ahead needs: the jettison confirm, one unit, SELL.
+function invOpenSellConfirm(id) {
+  const req = invRequiredFor(id);
+  _invJettisonPending = null;
+  _invSellPending = true;
+  document.querySelector('#inv-jett-panel .jettison-title').textContent = '⚠ SELL?';
+  document.getElementById('inv-confirm-text').textContent = 'Sell your ' + invNameOf(id) + ' to the Market Row trader?';
+  const warn = document.getElementById('inv-route-warn');
+  warn.innerHTML = 'Required for: <strong>' + req.map(invEsc).join(' · ') + '</strong>';
+  warn.classList.remove('hidden');
+  document.getElementById('inv-jett-panel').classList.add('route-warn');
+  document.getElementById('inv-jett-count-row').classList.add('hidden');
+  document.getElementById('inv-jett-all').classList.add('hidden');
+  const yes = document.getElementById('inv-confirm-yes');
+  yes.classList.remove('hidden');
+  yes.textContent = 'SELL 1';
+  document.getElementById('inv-confirm').classList.remove('hidden');
+}
 function invUpdateJettisonCount() {
   document.getElementById('inv-jett-count').textContent = _invJettisonCount;
   document.getElementById('inv-confirm-yes').textContent = 'JETTISON ' + _invJettisonCount;
@@ -622,7 +646,7 @@ function invUpdateJettisonCount() {
   document.getElementById('inv-jett-plus').disabled = _invJettisonCount >= _invJettisonMax;
 }
 function invCloseJettison() {
-  _invJettisonPending = null;
+  _invJettisonPending = null; _invSellPending = false;
   document.getElementById('inv-confirm').classList.add('hidden');
   document.getElementById('inv-jett-panel').classList.remove('route-warn');
 }
@@ -724,7 +748,11 @@ function invSetSort(key) {
   document.getElementById('inv-jett-minus').addEventListener('click', () => { _invJettisonCount = Math.max(1, _invJettisonCount - 1); invUpdateJettisonCount(); });
   document.getElementById('inv-jett-plus').addEventListener('click', () => { _invJettisonCount = Math.min(_invJettisonMax, _invJettisonCount + 1); invUpdateJettisonCount(); });
   document.getElementById('inv-jett-all').addEventListener('click', () => invJettison(_invJettisonMax));
-  document.getElementById('inv-confirm-yes').addEventListener('click', () => invJettison(_invJettisonCount));
+  document.getElementById('inv-confirm-yes').addEventListener('click', () => {
+    if (!_invSellPending) return invJettison(_invJettisonCount);
+    invCloseJettison(); // consumed before the sale: a double-click sells one
+    invSellSelected(true);
+  });
   document.getElementById('inv-confirm-no').addEventListener('click', () => { invCloseJettison(); renderInventory(); });
   document.getElementById('inv-use-btn').addEventListener('click', () => {
     const id = _invSelected, iu = id && ITEM_USE[id];

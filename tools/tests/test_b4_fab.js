@@ -106,7 +106,7 @@ const pickRecipe = (page, name) => page.evaluate(n => { const r = [...document.q
     await page.close();
   }
 
-  console.log('— ruling 27: CANCEL refunds the materials, keeps the unspent days');
+  console.log('— ruling 27: CANCEL keeps the unspent days (ruling 55: after day 1, half the materials)');
   {
     const page = await boot();
     const r = await page.evaluate(async () => {
@@ -135,7 +135,8 @@ const pickRecipe = (page, name) => page.evaluate(n => { const r = [...document.q
     ok(!r.zero.craft && r.zero.d === r.before.d && r.zero.metal === r.before.metal && r.zero.scrap === r.before.scrap && r.zero.mo === r.before.mo && r.zero.wear === r.before.wear,
       `cancelled before its first day it costs nothing (materials, morale ${r.zero.mo}, wear ${r.zero.wear} all back)`);
     ok(/Nothing has been spent/.test(r.tip0) && /1 day already spent/.test(r.tip1), 'the CANCEL tooltip says which (day 0 vs after a day)');
-    ok(!r.one.craft && !r.one.owed && !r.one.strip && r.one.metal === r.before.metal && r.one.scrap === r.before.scrap, `after a day: materials back (metal ${r.one.metal}), no output, strip idle`);
+    // Ruling 55: after its first day a cancel refunds half (Repair Kit 5 metal + 3 scrap → 2 + 1).
+    ok(!r.one.craft && !r.one.owed && !r.one.strip && r.one.metal === r.before.metal - 3 && r.one.scrap === r.before.scrap - 2, `after a day: half the materials back (metal ${r.one.metal}, scrap ${r.one.scrap}), no output, strip idle`);
     ok(r.one.d === r.before.d + 1 && r.dAfter === r.one.d, `…the day spent stays spent, the 2 unspent days stay yours (day ${r.before.d} → ${r.one.d}, still ${r.dAfter} later)`);
     ok(r.one.mo === r.mid.mo - 0 || r.one.mo <= r.mid.mo, `…the effort tax stays paid (morale ${r.mid.mo} → ${r.one.mo}) and so does the wear (${r.one.wear}% = ${r.mid.wear}%)`);
     ok(r.one.wear === r.mid.wear && /cancelled after 1 day/.test(r.one.log), `logged: "${r.one.log.slice(0, 90)}"`);
@@ -250,7 +251,7 @@ const pickRecipe = (page, name) => page.evaluate(n => { const r = [...document.q
     ok(r.paused.d === 0 && r.paused.done === 0, 'the pause menu holds the job (no day passes while PauseBus is paused)');
     ok(r.head.h === r.head.d && r.head.left === r.head.want, `days spent elsewhere: the reopened header reads the real day (${r.head.h} = ${r.head.d}, ${r.head.left})`);
     ok(r.full.craft && r.full.metal && /HOLD FULL/.test(r.full.notice), `a cancel the hold can't take back is refused, nothing lost ("${r.full.notice.slice(0, 50)}")`);
-    ok(!r.after.craft && r.after.metal === 5, `with room made, the cancel refunds all of it (+${r.after.metal} metal)`);
+    ok(!r.after.craft && r.after.metal === 2, `with room made, the cancel refunds its half (+${r.after.metal} metal, ruling 55)`);
     const c = await page.evaluate(async () => {
       const w = ms => new Promise(r => setTimeout(r, ms));
       window.fabSetDayMs(40);

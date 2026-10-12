@@ -350,6 +350,33 @@
     return fits;
   }
 
+  // The sell confirm (index.html #market-confirm): one pending yes.
+  let confirmYes = null;
+  function closeSellConfirm() {
+    confirmYes = null;
+    const c = $('market-confirm'); if (c) c.classList.add('hidden');
+  }
+  function askSellRequired(entry, proceed) {
+    if (entry.material || typeof window.invRequiredFor !== 'function') return false;
+    const req = window.invRequiredFor(entry.id);
+    const c = $('market-confirm');
+    if (!req.length || !c) return false;
+    const d = defBy(entry.id);
+    const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    $('market-confirm-text').textContent = 'Sell your ' + ((d && d.name) || entry.id) + ' here?';
+    $('market-route-warn').innerHTML = 'Required for: <strong>' + req.map(esc).join(' · ') + '</strong>';
+    confirmYes = proceed;
+    c.classList.remove('hidden');
+    return true;
+  }
+  (function wireSellConfirm() {
+    const yes = $('market-confirm-yes'), no = $('market-confirm-no');
+    if (!yes || !no) return;
+    // The yes is consumed before the sale: a double-click sells one.
+    yes.addEventListener('click', () => { const go = confirmYes; closeSellConfirm(); if (go) go(); });
+    no.addEventListener('click', closeSellConfirm);
+  })();
+
   window.openMarket = function(opts, onClose) {
     opts = opts || {};
     if (typeof MarketModal === 'undefined') {
@@ -390,6 +417,9 @@
       // The cargo bay can't leave while the hold needs its extra slots.
       canRemoveCargo: sid => allMaterialDefs().some(m => m.id === sid) || typeof canRemoveItem !== 'function' || canRemoveItem(sid),
       cargoLockedMsg: 'The cargo bay is holding things. Clear some space first.',
+      // Cargo an event ahead needs (inventory.js invRequiredFor) asks
+      // first, like the cargo hold's SELL and JETTISON.
+      confirmRemoval: (entry, offer, proceed) => askSellRequired(entry, proceed),
       removeCargo: (sid, entry) => {
         if (allMaterialDefs().some(m => m.id === sid)) {
           STATE.materials[sid] = Math.max(0, (STATE.materials[sid] || 0) - 1);
@@ -402,6 +432,7 @@
         renderHUD();
       },
       onClose: () => {
+        closeSellConfirm();
         const log = $('market-log');
         if (log) { log.innerHTML = ''; log.classList.add('hidden'); }
         hideOverlay('overlay-market');
@@ -423,6 +454,9 @@
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && typeof MarketModal !== 'undefined' && MarketModal.isOpen()) {
       e.stopPropagation();
+      // An open sell confirm takes the Escape (its CANCEL), not the market.
+      const c = $('market-confirm');
+      if (c && !c.classList.contains('hidden')) { closeSellConfirm(); return; }
       MarketModal.close();
     }
   }, true);
