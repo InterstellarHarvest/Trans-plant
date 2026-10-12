@@ -156,7 +156,7 @@
   function waterNeed() {
     if (typeof window.cropWaterNeed === 'function' && STATE.crop) return cropWaterNeed(); // botanist / purifier aware
     const m = cropMeta();
-    return (m && m.water_need) || 50;
+    return (m && m.water_need) || CROP_WATER_NEED_DEFAULT;
   }
 
   // ── Projection model — engine-real inputs, demo-shaped outputs ─
@@ -223,17 +223,10 @@
     if (dailyRate <= 0.01) return Infinity;
     return STATE.daysElapsed + Math.ceil(Math.max(0, 100 - cg.growth) / dailyRate);
   }
-  // Demo crewDrainRate() — hydration points/day for a given plant share.
-  function crewDrainRate(plantPct) {
-    const crewPct = 100 - plantPct;
-    const ratio = Math.min(1, crewPct / (100 - waterNeed()));
-    if (ratio >= 1)   return 0;
-    if (ratio >= 0.7) return 1;
-    if (ratio >= 0.4) return 3;
-    return 6;
-  }
+  // Hydration points/day for a given plant share — the engine's own tiers
+  // (index.html crewWaterDrainRate), so the preview is what passDays does.
   function crewCriticalDay(plantPct) {
-    const rate = crewDrainRate(plantPct);
+    const rate = crewWaterDrainRate(plantPct);
     if (rate === 0) return Infinity;
     return STATE.daysElapsed + Math.ceil(100 / rate);
   }
@@ -376,12 +369,12 @@
     );
     const plantWarn = !noCrop && mature > arrival;
 
-    const drain      = crewDrainRate(plant);
-    const savedDrain = crewDrainRate(sv.water);
+    const drain      = crewWaterDrainRate(plant);
+    const savedDrain = crewWaterDrainRate(sv.water);
     // What the dry tiers actually do (index.html ORDERS_BASE): morale
     // per day, and at the driest tier 1 HP per crew member per day.
     const crewLabel  = !STATE.crew.length ? 'NO CREW' : drain === 0 ? 'NOMINAL'
-      : 'MORALE −' + ((ORDERS_BASE.crewWaterMorale || {})[drain] || 0) + '/DAY' + (drain >= (ORDERS_BASE.crewWaterHPTier || 6) ? ' · HP −1/DAY' : '');
+      : 'MORALE −' + (ORDERS_BASE.crewWaterMorale[drain] || 0) + '/DAY' + (drain >= ORDERS_BASE.crewWaterHPTier ? ' · HP −1/DAY' : '');
 
     let crewDeltaText = null, crewDeltaCls = null;
     if (drain !== savedDrain) {
@@ -392,7 +385,7 @@
       crewDeltaText = d.text; crewDeltaCls = d.cls;
     }
 
-    const crewWarn = !!STATE.crew.length && drain >= (ORDERS_BASE.crewWaterHPTier || 6);
+    const crewWarn = !!STATE.crew.length && drain >= ORDERS_BASE.crewWaterHPTier;
     if (!STATE.crew.length) { crewDeltaText = null; crewDeltaCls = null; } // no crew aboard: the crew side changes nothing
 
     $('od-water-preview').innerHTML =

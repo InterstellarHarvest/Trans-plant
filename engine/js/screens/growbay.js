@@ -181,9 +181,9 @@
     // A wounded tender works at half (crew_roster "halved if injured") —
     // the captain too, whose HP is real (owner ruling 29).
     const role = TENDER_ROLE[id];
-    const hurt = role ? (typeof crewHPOf === 'function' && crewHPOf(role) < CREW_WOUNDED_HP)
-      : (id === 'captain-botanist' && typeof captainHPOf === 'function' && captainHPOf() < CREW_WOUNDED_HP);
-    if (hurt) c = Object.assign({}, c, { growth: c.growth / 2, yield: c.yield / 2, wounded: true });
+    const who = role || (id === 'captain-botanist' ? 'captain' : null);
+    const m = who ? woundedMult(who) : 1;
+    if (m < 1) c = Object.assign({}, c, { growth: c.growth * m, yield: c.yield * m, wounded: true });
     const idn = role && typeof crewIdentityOf === 'function' ? crewIdentityOf(role) : null;
     return idn ? Object.assign({}, c, { name: idn.name, crewId: null, emoji: '🧑' }) : c;
   }
@@ -451,12 +451,11 @@
     else if (plantPct - need < -5) plant = { label: 'DRY', cls: 'dry', band: 'dry' };
     else if (plantPct - need > 20) plant = { label: 'SOAKED', cls: 'soaked', band: 'soaked' };
     else plant = { label: 'MATCHED', cls: 'matched', band: 'fine' };
-    const ratio = Math.min(1, (100 - plantPct) / (100 - (typeof cropWaterNeed === 'function' ? cropWaterNeed() : need)));
-    const rate = ratio >= 1 ? 0 : ratio >= 0.7 ? 1 : ratio >= 0.4 ? 3 : 6;
+    const rate = crewWaterDrainRate(plantPct);
     let crew;
     if (!STATE.crew.length) crew = { label: 'NO CREW', cls: 'nominal', band: 'none', rate };
     else if (rate === 0) crew = { label: 'NOMINAL', cls: 'nominal', band: 'fine', rate };
-    else if (rate < 6) crew = { label: 'THIRSTY', cls: 'thirsty', band: 'thirsty', rate };
+    else if (rate < ORDERS_BASE.crewWaterHPTier) crew = { label: 'THIRSTY', cls: 'thirsty', band: 'thirsty', rate };
     else crew = { label: 'CRITICAL', cls: 'critical', band: 'critical', rate };
     return { plant, crew, need };
   }
@@ -503,7 +502,7 @@
       // wheat: recovery from good watering ×healthy_recovery_multiplier
       // while at/above healthy_threshold
       fastRecovery: Number(strong.healthy_recovery_multiplier) > 0 ? Number(strong.healthy_recovery_multiplier) : 1,
-      healthy: realCrop.healthy_threshold || 65,
+      healthy: realCrop.healthy_threshold || CROP_HEALTHY_DEFAULT,
     };
   }
   // The ideal temperature band the crop model actually uses: crops.json
