@@ -283,10 +283,12 @@
     writeTicker(text, isStopped() || STATE.forcedEvent ? 'event-info' : 'normal');
   }
 
-  // ── TIME PAUSED (Bible §18 Pause vs Stop) ───────────────────────
-  // Replaces the day counter while the ship is stopped or the game is
-  // paused (pause menu, any modal over the hub). A multi-day wait is
-  // the exception: its days really are passing, so the counter shows.
+  // ── Time held (Bible §18 Pause vs Stop) ────────────────────────
+  // .time-paused marks the hub while the ship is stopped or the game is
+  // paused (pause menu, any modal over the hub); a multi-day wait's days
+  // really pass, so it doesn't count. Owner ruling 17 (2026-10-11): the
+  // day counter stays up regardless — no TIME PAUSED swap; STOPPED in
+  // the ticker is the signal. The class is a state hook only.
   function overlayOpen() {
     return !!document.querySelector('#game .overlay.active, .overlay.active');
   }
@@ -516,6 +518,28 @@
     log.scrollTop = log.scrollHeight;
   };
 
+  // Bottom-right bars (owner ruling 18): FOOD/H2O/O2 | FUEL/HULL, each
+  // with the HUD's low thresholds as a crit pulse (the dot HUD left the
+  // hub, so its warning moved onto the bars). renderHUD() repaints them
+  // too, so a change that only re-renders the HUD lands here as well.
+  const BAR_SPEC = [
+    ['fuel',  'Fuel',   25], ['food', 'Food', 25], ['water', 'Water', 25],
+    ['o2',    'Oxygen', 25], ['hull', 'Hull', 30],
+  ];
+  function paintCruiseBars() {
+    const r = STATE.resources;
+    for (const [k, name, lowAt] of BAR_SPEC) {
+      const fill = $('res-fill-' + k);
+      if (!fill) continue;
+      const max = resMax(k);
+      fill.style.width = clampPct(r[k] * 100 / max) + '%';
+      const row = fill.parentNode.parentNode;
+      row.classList.toggle('crit', r[k] < lowAt);
+      row.title = name + ': ' + Math.round(r[k]) + ' / ' + max;
+    }
+  }
+  window.paintCruiseBars = paintCruiseBars;
+
   function renderCruise() {
     // Catch crop growth/health up to today before painting the card —
     // decay must tick even if the player never opens the growbay.
@@ -531,7 +555,7 @@
     $('cruise-ship-name').textContent = (STATE.shipName || 'THE SHIP').toUpperCase();
     syncTicker();
     $('day-counter').textContent = dayText();
-    $('paused-label').title = dayText();
+    if ($('cruise-gold')) $('cruise-gold').textContent = STATE.goldAmount + 'g';
     syncPaused();
 
     const ai = STATE.activeAI || 'marv';
@@ -539,15 +563,7 @@
     avatar.style.backgroundImage = "url('" + (AI_SPRITE[ai] || AI_SPRITE.marv) + "')";
     $('ai-name').textContent = ai.toUpperCase();
 
-    // Resource bars (fuel/food/water at-a-glance; the full 6-resource
-    // HUD pill lives top-left of the scene — owner-approved addition).
-    const r = STATE.resources;
-    $('res-fill-fuel').style.width  = clampPct(r.fuel * 100 / resMax('fuel'))  + '%';
-    $('res-fill-food').style.width  = clampPct(r.food * 100 / resMax('food'))  + '%';
-    $('res-fill-water').style.width = clampPct(r.water) + '%';
-    $('res-fill-fuel').parentNode.parentNode.title  = 'Fuel: '  + Math.round(r.fuel)  + ' / ' + resMax('fuel');
-    $('res-fill-food').parentNode.parentNode.title  = 'Food: '  + Math.round(r.food)  + ' / ' + resMax('food');
-    $('res-fill-water').parentNode.parentNode.title = 'Water: ' + Math.round(r.water) + ' / 100';
+    paintCruiseBars();
 
     // Standing-orders readout — live from STATE.orders (Restoration
     // item 5). Clicking any cell opens the Orders modal (wired once
