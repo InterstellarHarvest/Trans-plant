@@ -1779,11 +1779,15 @@ const SAVED_FIELDS = [
   'alertedNode', // cruise.js: the stop whose arrival alert has shown (a reload logged it again)
   'traderAt', 'forcedEvent', // cruise.js: the trader-presence roll per stop; a during-wait event waiting on the player (a reload can't dodge either)
 ];
+// The Stop-menu and event jobs a save may not land in the middle of. The
+// fabricator is not one: its craft is saved state, resumed on a reload.
+const JOB_OVERLAYS = '#overlay-minigames.active, #overlay-mining.active, #overlay-engrepair.active';
 function saveRun(key) {
   if (STATE.ended || STATE.currentEvent || !STATE.trail || !STATE.nodes.length) return false;
   // Mid-minigame the verb hasn't resolved (its time not yet charged) —
-  // a save here would let a load dodge the cost.
-  if (document.querySelector('#overlay-minigames.active, #overlay-mining.active')) return false;
+  // a save here would let a load dodge the cost (or, once the job began,
+  // overwrite its pendingAbandon marker).
+  if (document.querySelector(JOB_OVERLAYS)) return false;
   return writeSnapshot(key);
 }
 // Why a pause-menu SAVE was refused, in the player's terms.
@@ -1791,7 +1795,7 @@ window.saveBlockedReason = function () {
   if (!STATE.trail || !STATE.nodes.length) return 'NO VOYAGE TO SAVE YET';
   if (STATE.ended) return STATE._resumableEnd ? 'ALREADY SAVED — KEEP FLYING OR START OVER' : 'THE VOYAGE IS OVER';
   if (STATE.currentEvent) return 'FINISH THIS ENCOUNTER FIRST';
-  if (document.querySelector('#overlay-minigames.active, #overlay-mining.active')) return 'FINISH THE JOB FIRST';
+  if (document.querySelector(JOB_OVERLAYS)) return 'FINISH THE JOB FIRST';
   return null;
 };
 function rollArtSeed() { return 1 + Math.floor(Math.random() * 0x7ffffffe); }
@@ -1906,7 +1910,9 @@ function loadRun(key) {
   // nothing kept, the day(s) spent (the effort tax was already paid).
   if (snap.pendingAbandon) {
     passDays(snap.pendingAbandon.days || 1);
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + snap.pendingAbandon.verb + ' — abandoned partway. Nothing kept; the day is gone anyway.');
+    // Harm already taken in play stays taken (a forage poisoning).
+    const hurt = typeof window.applyAbandonHarm === 'function' ? window.applyAbandonHarm(snap.pendingAbandon.harm) : '';
+    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + snap.pendingAbandon.verb + ' — abandoned partway. Nothing kept; the day is gone anyway.' + hurt);
     renderHUD(); renderCruise();
     if (checkFailure()) return true;
     saveRun();
@@ -1918,22 +1924,34 @@ function loadRun(key) {
     const all = qev ? [...(qev.choices || []), ...((qev.standard_variants || []).flatMap(v => v.choices || []))] : [];
     const qch = all.find(c => c.text === snap.pendingEventQuit.text);
     if (qch) {
-      eventMinigameQuit(qch);
-      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + (qev.title || 'The job') + ' — abandoned partway. Whatever was in hand stays behind, and the time is spent all the same.');
+      const quit = eventMinigameQuit(qch, snap.pendingEventQuit.harm);
+      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + (qev.title || 'The job') + ' — abandoned partway. Whatever was in hand stays behind, and the time is spent all the same.' + (quit.hurt ? ' ' + quit.hurt : ''));
       renderHUD(); renderCruise();
       if (checkFailure()) return true;
+      // A station's arrival event leads on to the approach, as ✕ QUIT's
+      // Continue does (StationVisit.afterEvent).
+      if (window.StationVisit && StationVisit.afterQuit(qev.id)) return true;
       saveRun();
       return true;
     }
   }
-  // Saved mid-fight (hunt 6): a reload breaks the fight off the way an
-  // FTL escape does — the hull as it stood, 15 fuel, the days.
+  // Saved mid-fight (hunt 6): a reload settles as ATTEMPT ESCAPE played
+  // out — the charge turns under fire, 15 fuel, the days (owner ruling 53).
   if (snap.pendingCombat) {
-    STATE.resources.hull = clamp(Math.min(STATE.resources.hull, snap.pendingCombat.hull), 0, resMax('hull'));
-    applyOutcomeEffects({ resources: { fuel: -15 }, time_cost: 'medium', combat_net: true });
-    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ The fight broke off when the logs did. The ship ran for it: −15 fuel, the hull as it stood.');
+    const pc = snap.pendingCombat;
+    if (pc.defeat && typeof window.settleCombatDefeat === 'function') {
+      // Saved in the defeat beat: the defeat that was coming lands (LIMP
+      // AWAY), never a break-off at hull 0.
+      const line = window.settleCombatDefeat(pc.defeat);
+      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ LIMP AWAY — the fight was lost before the logs cut out. ' + line);
+    } else if (typeof window.settleCombatBreakOff === 'function') {
+      // Mid-fight: ATTEMPT ESCAPE played out (owner ruling 53).
+      const line = window.settleCombatBreakOff(pc);
+      if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + line);
+    }
     renderHUD(); renderCruise();
     if (checkFailure()) return true;
+    if (window.StationVisit && StationVisit.afterQuit(pc.ev)) return true;
     saveRun();
     return true;
   }
@@ -4291,7 +4309,7 @@ function resaveEventProgress() {
   const s = STATE._evSave, ev = STATE.currentEvent;
   if (!s || !ev || s.pendingEvent !== ev.id || STATE.outcomeMode || STATE.ended) return;
   if (document.getElementById('screen-encounter').classList.contains('combat-mode')) return;
-  if (document.querySelector('#overlay-minigames.active, #overlay-mining.active')) return;
+  if (document.querySelector(JOB_OVERLAYS)) return;
   writeSnapshot(SAVE_KEY, Object.assign({ pendingShopped: !!STATE._shoppedThisEvent }, s));
 }
 
@@ -5042,7 +5060,7 @@ function renderChoicesInner(choices) {
     const effort = !locked && choiceEffort(ch);
     if (effort && !subText) {
       const o = choiceOutcome(ch);
-      const days = Math.max(1, Math.round((TIME_COST_DAYS[(o && o.time_cost) || 'trivial'] || 1) * effort.ratio));
+      const days = outcomeDays(o, effort.ratio);
       const authoredTime = Number.isFinite(ch.effort_required);
       subText = 'Effort ' + effort.available + ' / ' + effort.required
         + (authoredTime || !effort.check ? ' · ' + days + (days === 1 ? ' day' : ' days') : '')
@@ -5383,10 +5401,15 @@ function choiceStandIn(choice) {
    ratio scales authored repair jobs). One table for the outcome and every
    preview of it. */
 const TIME_COST_DAYS = { trivial: 1, low: 2, medium: 4, high: 8, extreme: 14 };
+// time_days: an exact day count where no tier fits (Engine Fault's demo
+// FIELD REPAIR takes 6) — it stands in for time_cost.
+function outcomeBaseDays(o) {
+  if (o && Number.isFinite(o.time_days)) return o.time_days;
+  return TIME_COST_DAYS[(o && o.time_cost) || 'trivial'] || 1;
+}
 function outcomeDays(o, ratio) {
-  const tier = (o && o.time_cost) || 'trivial';
-  if (tier === 'none') return 0;
-  return Math.max(1, Math.round((TIME_COST_DAYS[tier] || 1) * (ratio || 1)));
+  if (o && !Number.isFinite(o.time_days) && o.time_cost === 'none') return 0;
+  return Math.max(1, Math.round(outcomeBaseDays(o) * (ratio || 1)));
 }
 /* The fixed outcome whose costs a choice's tooltip lists: the plain
    outcome, or Flee / Ram's own (they resolve to an authored outcome; Ram
@@ -5421,7 +5444,7 @@ function choiceCostLines(ch) {
     }
   } else if (ch.launch_minigame) {
     const base = ch.outcome && typeof ch.outcome === 'object' ? ch.outcome : null;
-    const tierTime = Object.values(ch.tier_outcomes || {}).some(t => t && t.time_cost);
+    const tierTime = Object.values(ch.tier_outcomes || {}).some(t => t && (t.time_cost || Number.isFinite(t.time_days)));
     if (base && !tierTime) { const d = outcomeDays(base, 1); lines.push(d ? 'Takes ' + d + (d === 1 ? ' day' : ' days') : 'Takes no time'); }
     lines.push('A minigame: how well you play decides the result');
   }
@@ -6064,8 +6087,8 @@ function applyOutcomeEffects(o) {
 
   // Time cost — bump days by a small constant per tier, routed through
   // passDays() so standing orders' daily drains (rations/water) apply.
-  const tier = o.time_cost || 'trivial';
-  const base = TIME_COST_DAYS[tier] || 1;
+  const tier = Number.isFinite(o.time_days) ? 'days' : (o.time_cost || 'trivial');
+  const base = outcomeBaseDays(o);
   // Effort system (Bible §Effort, owner ruling 2026-10-10 "effort only"):
   // a repair choice's days scale by effort_required / effort available.
   const scale = STATE.effortScale || 1;
@@ -6162,7 +6185,7 @@ function choiceEffort(choice) {
 // Quit mid-game (owner ruling 2026-10-09): nothing gained, time still
 // spent. Losses are the poor tier's (base merged), so a quit is never
 // better than playing badly. Shared by ✕ QUIT and a reload mid-game.
-function eventMinigameQuit(choice) {
+function eventMinigameQuit(choice, harm) {
   const base = choice.outcome || {};
   const worst = Object.assign({}, base.resources || {}, ((choice.tier_outcomes || {}).poor || {}).resources || {});
   const losses = Object.fromEntries(Object.entries(worst).filter(([, v]) => Number.isFinite(v) && v < 0));
@@ -6174,15 +6197,32 @@ function eventMinigameQuit(choice) {
   const quit = { resources: losses, time_cost,
     narrative: 'You abandon it partway. Whatever was in hand stays behind, and the time is spent all the same.' };
   applyOutcomeEffects(quit);
+  // Harm already done in play stays done: the HP the patient lost on the
+  // table (MEDICAL) — a quit used to hand it back, beating a poor result.
+  const p = harm && harm.patient;
+  if (p && peopleAboard().includes(p) && Number.isFinite(harm.hp) && Number.isFinite(harm.startingHp) && harm.hp < harm.startingHp) {
+    const before = hpOf(p), after = Math.round(Math.max(5, before + (harm.hp - harm.startingHp)));
+    if (after < before) {
+      setHP(p, after);
+      quit.hurt = PersonName(p) + ', the worst case: ' + (after - before) + ' HP.';
+      quit.narrative += '\n\n' + quit.hurt;
+    }
+  }
   return quit;
 }
 // A reload after BEGIN settles the game as a quit (hunt 6 follow-up: it
 // returned to the event's entry and the minigame could be replayed).
-let eventMinigameChoice = null;
-window.eventMinigameBegun = function () {
+let eventMinigameChoice = null, eventMinigamePatient = null;
+window.eventMinigameBegun = function (harm) {
   const ev = STATE.currentEvent, ch = eventMinigameChoice;
-  if (ev && ch && !STATE.ended) writeSnapshot(SAVE_KEY, { pendingEventQuit: { ev: ev.id, text: ch.text } });
+  if (!ev || !ch || STATE.ended) return;
+  const q = { ev: ev.id, text: ch.text };
+  if (harm) q.harm = Object.assign({ patient: eventMinigamePatient }, harm);
+  writeSnapshot(SAVE_KEY, { pendingEventQuit: q });
 };
+// …and again each time harm lands in play (cruise.js onJobHarm), so a
+// reload keeps it too.
+window.eventMinigameHarm = function (harm) { window.eventMinigameBegun(harm); };
 function resolveChoice(choice) {
   if (choice.launch_minigame && typeof window.openMinigame === 'function') {
     eventMinigameChoice = choice;
@@ -6193,17 +6233,19 @@ function resolveChoice(choice) {
     const isMed = choice.launch_minigame === 'medical';
     const people = peopleAboard(); // the captain can be the patient too (owner ruling 29)
     const patient = isMed && people.length ? (worstHurtCrew() || people[Math.floor(Math.random() * people.length)]) : null;
+    eventMinigamePatient = patient;
     const mgOpts = Object.assign({}, choice.minigame_opts || {});
     if (isMed) {
       if (!mgOpts.difficulty) mgOpts.difficulty = (STATE.currentEvent && STATE.currentEvent.difficulty) || 'medium';
       if (patient && mgOpts.startingHp == null) mgOpts.startingHp = hpOf(patient);
     }
     openMinigame(choice.launch_minigame, mgOpts, (tier, mgPayload) => {
-      eventMinigameChoice = null;
+      eventMinigameChoice = null; eventMinigamePatient = null;
       const base = choice.outcome || {};
       if (tier === 'abandoned') {
         const slogQ = window.ShipLog && ShipLog.begin();
-        const quit = eventMinigameQuit(choice);
+        const harm = mgPayload && mgPayload.harm;
+        const quit = eventMinigameQuit(choice, harm && Object.assign({ patient }, harm));
         if (slogQ) ShipLog.resolved(slogQ, STATE.currentEvent, choice, Object.assign({ tone: 'danger' }, quit));
         renderHUD();
         if (checkFailure()) return;

@@ -456,12 +456,14 @@ const toPlainStop = page => page.evaluate(() => {
     const z = await page.evaluate(() => ({ day: STATE.daysElapsed, morale: crewMoraleRaw(), fuel: STATE.resources.fuel, hull: STATE.resources.hull, title: (document.querySelector('#enc-title') || {}).textContent }));
     ok(z.fuel === 54 && z.hull === 66 && z.morale === 47 && z.day - e2.day === 4, `✕ QUIT = the poor outcome, never better: fuel ${z.fuel}, hull ${z.hull}, morale ${z.morale}, +${z.day - e2.day} days`);
 
-    // Limp mode outright: cheaper than failing the sequence, dearer than winning it.
+    // Limp mode outright (owner ruling 56, the demo verb): effort 1, 2 days,
+    // −2 fuel — cheaper than failing the sequence.
     const e3 = await enter();
+    const tax1 = await page.evaluate(() => effortTax(1));
     await pick('Limp mode');
     await page.waitForTimeout(200);
     const l = await page.evaluate(() => ({ day: STATE.daysElapsed, morale: crewMoraleRaw(), fuel: STATE.resources.fuel, hull: STATE.resources.hull }));
-    ok(l.fuel === 58 && l.morale === 48 && l.hull === 70 && l.day - e3.day === 4, `LIMP MODE: fuel −2, morale −2, the medium time (${l.fuel}/${l.morale}, +${l.day - e3.day} days)`);
+    ok(l.fuel === 58 && l.morale === 50 - tax1 && l.hull === 70 && l.day - e3.day === 2, `LIMP MODE: fuel −2, the effort-1 tax (−${tax1} morale), 2 days (${l.fuel}/${l.morale}, +${l.day - e3.day} days)`);
     await page.close();
   }
   {
@@ -475,7 +477,7 @@ const toPlainStop = page => page.evaluate(() => {
       b.click(); await new Promise(r => setTimeout(r, 300));
       return { shown: !!b, fuel: STATE.resources.fuel, days: STATE.daysElapsed - d0, bg: getComputedStyle(document.querySelector('#screen-encounter .enc-backdrop') || document.body).backgroundImage };
     });
-    ok(r.shown && r.fuel === 60 && r.days === 2, `engineer aboard: FIELD REPAIR rebuilds the coil — no losses, the low time (+${r.days} days)`);
+    ok(r.shown && r.fuel === 60 && r.days === 6, `engineer aboard: FIELD REPAIR rebuilds the coil — no losses, 6 days (owner ruling 56; +${r.days} days)`);
     ok(/engine_fixed/.test(r.bg), 'the outcome shows the fixed engine room');
     await page.close();
   }

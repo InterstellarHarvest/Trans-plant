@@ -838,7 +838,7 @@
   // it starts (closed at the briefing, LEAVE before mining, REPAIR closed
   // untouched — or a double-click's second press on the backdrop) gets it
   // back. Once the job begins, a reload settles it as a quit (loadRun).
-  let pendingVerbTax = 0, activeVerb = null;
+  let pendingVerbTax = 0, activeVerb = null, jobMarker = null;
   window.refundVerbTax = function () {
     // Exactly what each crew member paid comes back (refundEffortTax).
     if (pendingVerbTax) { refundEffortTax(pendingVerbTax); pendingVerbTax = 0; renderHUD(); }
@@ -846,10 +846,34 @@
   window.onJobBegun = function (days) {
     pendingVerbTax = 0;
     if (STATE.currentEvent) { if (typeof window.eventMinigameBegun === 'function') window.eventMinigameBegun(); return; }
-    if (activeVerb && typeof writeSnapshot === 'function') writeSnapshot(undefined, { pendingAbandon: { verb: activeVerb, days: days || 1 } });
+    jobMarker = activeVerb ? { verb: activeVerb, days: days || 1 } : null;
+    if (jobMarker && typeof writeSnapshot === 'function') writeSnapshot(undefined, { pendingAbandon: jobMarker });
   };
+  // Harm taken in play (minigames.js reportJobHarm: a forage poisoning,
+  // the patient's HP) rides in the quit marker, so a reload keeps it as
+  // ✕ QUIT does.
+  window.onJobHarm = function (harm) {
+    if (STATE.currentEvent) { if (typeof window.eventMinigameHarm === 'function') window.eventMinigameHarm(harm); return; }
+    if (jobMarker && typeof writeSnapshot === 'function') writeSnapshot(undefined, { pendingAbandon: Object.assign({}, jobMarker, { harm }) });
+  };
+  // A quit's harm so far lands (✕ QUIT and loadRun's pendingAbandon): each
+  // forage poisoning hurts someone aboard, as it would have at the end.
+  // Returns the log's addendum.
+  function applyAbandonHarm(harm) {
+    const hits = (harm && Array.isArray(harm.poison)) ? harm.poison : [];
+    const who = [];
+    for (const sev of hits) {
+      const hp = POISON_HP[sev] || POISON_HP.light;
+      const hit = damageCrew(null, hp);
+      if (hit) who.push((hit === 'captain' ? 'you' : crewNameOf(hit)) + ' −' + hp + ' HP');
+    }
+    if (!who.length) return '';
+    renderHUD();
+    return ' The poisoning stays: ' + who.join(', ') + ' (before the medic\'s care).';
+  }
+  window.applyAbandonHarm = applyAbandonHarm;
   function settleMinigame(logLine, days) {
-    pendingVerbTax = 0; activeVerb = null;
+    pendingVerbTax = 0; activeVerb = null; jobMarker = null;
     passDays(days || 1); // trivial time cost (MINE: one day per run), same tier index.html's applyOutcomeEffects uses — routed through the orders daily-drain helper
     renderHUD();
     if (checkFailure()) return;
@@ -863,8 +887,9 @@
   // Quitting a minigame mid-game (tier 'abandoned', owner ruling
   // 2026-10-09): nothing gained, even what was already in hand — the
   // day is still spent.
-  function settleAbandoned(verb) {
-    settleMinigame('◆ ' + verb + ' — abandoned partway. Nothing kept; the day is gone anyway.');
+  function settleAbandoned(verb, harm) {
+    const hurt = applyAbandonHarm(harm);
+    settleMinigame('◆ ' + verb + ' — abandoned partway. Nothing kept; the day is gone anyway.' + hurt);
   }
 
   const TRAIL_TO_SCAN_DIFFICULTY = { lunar: 'easy', mars: 'medium', interstellar: 'hard' };
@@ -873,6 +898,9 @@
   // (demo numbers, the sickness table below): light 10 / medium 20 /
   // heavy 35 HP. It was 7 HP, under "medium" (b4 re-audit B6).
   const ALIEN_POISON_CHANCE = 0.25, ALIEN_POISON_HP = 20;
+  // A forage poisoning by severity (owner ruling 2026-10-11, the demo's
+  // payload numbers): HP, before the medic's softening.
+  const POISON_HP = { light: 10, medium: 20, heavy: 35 };
 
   function handleScanVerb() {
     const difficulty = TRAIL_TO_SCAN_DIFFICULTY[STATE.trail] || 'medium';
@@ -935,7 +963,7 @@
     // regionLabel: the forage HUD names the real stop (parity-shell); minigames.js appends ' · MODE'.
     const hudPlace = alien ? 'ALIEN WORLD' : (REGIONS[regionKey] || REGIONS.deep_space).label.split(' · ')[0];
     openMinigame('forage', { mode, return_to: 'cruise', origin_node: STATE.currentId, regionLabel: hudPlace }, (tier, payload) => {
-      if (tier === 'abandoned') return settleAbandoned(label);
+      if (tier === 'abandoned') return settleAbandoned(label, payload && payload.harm);
       payload = payload || {};
       let foodGot = 0; // what actually lands (the tank caps)
       if (typeof payload.food === 'number' && payload.food > 0) {
@@ -956,7 +984,7 @@
       if (payload.sickness) payload.sickness.forEach(s => {
         // Owner ruling 2026-10-11: the demo's numbers (demo-minigames forage
         // payload contract) — poisoning ~10/20/35 HP, morale 5/12/20.
-        const hpHit = { light: 10, medium: 20, heavy: 35 }[s.severity] || 10;
+        const hpHit = POISON_HP[s.severity] || POISON_HP.light;
         const moHit = { light: 5, medium: 12, heavy: 20 }[s.severity] || 5;
         // Poisoning hurts one person aboard (the demo's "SICKNESS · -HP one
         // crew") — the captain can be the one (owner ruling 29), and a
@@ -1410,6 +1438,7 @@
     STATE.traderAt = STATE.traderAt || {};
     STATE.traderAt[a.node] = true;
     pushLogEntry('▶ A trader has appeared after ' + a.day + ' day' + (a.day === 1 ? '' : 's') + ' of waiting.');
+    if (typeof saveRun === 'function') saveRun(); // a reload in the flash keeps the trader here (TRADE)
     // leaving = the player Resumed during the flash: the trader stays
     // behind at this stop (TRADE), the ship goes.
     a.finish = leaving => {
@@ -1440,6 +1469,7 @@
     // there shakes (CANNOT RESUME). After the flash the event opens
     // straight away (owner ruling 46a — no one-verb menu in between).
     STATE.forcedEvent = { kind: pick.kind, ev: pick.ev, node: a.node };
+    if (typeof saveRun === 'function') saveRun(); // the event and the rest so far: a reload opens it, keeps the morale
     document.body.classList.add('event-active');
     syncTicker();
     a.finish = () => {
@@ -1461,6 +1491,7 @@
       pushLogEntry('▶ No one came. ' + a.days + ' day' + (a.days === 1 ? '' : 's') + ' parked; the dice do not apologize.');
     }
     renderHUD();
+    if (typeof saveRun === 'function') saveRun(); // the rest's morale, before the flash
     a.finish = () => {
       clearTimeout(a.timer);
       hideWaitFlash(); hideActionBanner();
