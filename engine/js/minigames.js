@@ -403,7 +403,13 @@ function showResult(tier, payload){
   lastTier = tier; lastPayload = payload || null;
   const rt = document.getElementById('rtier');
   rt.className = tier;
-  const labels = {perfect:'EXCELLENT',good:'ADEQUATE',poor:'INSUFFICIENT',fedup:'WALKED OUT'}; // 'ABANDONED' now means a player QUIT
+  // MEDICAL's 'fedup' (the patient gave up and left) reads WALKED OUT, not
+  // the demo's ABANDONED (demo-minigames ~1905): ABANDONED is now the
+  // player's own QUIT — the 'abandoned' tier, the event outcome titled
+  // ABANDONED (index.html resolveChoice) and the cruise log's "abandoned
+  // partway" — so the demo word would tell a patient walk-out apart from
+  // a quit by nothing (b4 re-audit B5, kept deliberately).
+  const labels = {perfect:'EXCELLENT',good:'ADEQUATE',poor:'INSUFFICIENT',fedup:'WALKED OUT'};
   rt.textContent = labels[tier];
   const ai = activeAi;
   const names = {aria:'ARIA',marv:'MARV',rex:'REX',chip:'CHIP',ajoy:'AJOY'};
@@ -3103,7 +3109,7 @@ function initBreach(container, onResult){
       o2Fill.style.background = 'var(--orange)';
       o2Bar.classList.remove('danger');
     } else {
-      o2Fill.style.background = 'var(--info)';
+      o2Fill.style.background = 'var(--res-o2)'; // pale ice (owner ruling 45); the warnings above stay orange/red
       o2Bar.classList.remove('danger');
     }
   }

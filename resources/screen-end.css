@@ -170,6 +170,34 @@
   padding: 0 8px;
   white-space: pre-wrap;
 }
+/* READ THE COLONY REPORT (owner ruling 31): the module's paragraphs and
+   the Ship's Record, folded away under the Run Report. */
+#end-report-more {
+  flex-shrink: 0;
+  font-family: 'Press Start 2P', cursive; line-height: 1;
+  font-size: 7px; letter-spacing: 1.4px;
+  color: var(--gold);
+  background: transparent;
+  border: 1px dashed rgba(200,168,90,0.4);
+  border-radius: 3px;
+  padding: 7px 12px;
+  cursor: var(--cursor-hand, pointer);
+  text-transform: uppercase;
+}
+#end-report-more:hover { border-color: var(--gold); background: rgba(200,168,90,0.08); }
+#end-report-full {
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(200,168,90,0.25);
+}
+#end-report-full[hidden] { display: none; }
+#end-report-full-title {
+  font-family: 'Press Start 2P', cursive; line-height: 1.3;
+  font-size: 9px; letter-spacing: 1.5px;
+  color: #d8c890;
+  text-align: center; text-transform: uppercase;
+}
 #end-report-quote {
   width: 100%; text-align: center;
   font-family: 'VT323', monospace;
@@ -260,6 +288,10 @@
   --fail-no_fuel-border:      rgba(100,120,160,0.6);
   --fail-crew_gone-color:     #8888aa;
   --fail-crew_gone-border:    rgba(100,100,140,0.5);
+  /* captain_lost "Command Vacant" (b4 rulings 29/30/48): muted rose — the
+     one failure where the crew lives on; no other tier/failure shares it. */
+  --fail-captain_lost-color:  #b4788c;
+  --fail-captain_lost-border: rgba(180,120,140,0.6);
   --fail-hull_zero-color:     #cc3333;
   --fail-hull_zero-border:    rgba(204,51,51,0.8);
   --fail-mutiny-color:        #b45a28;

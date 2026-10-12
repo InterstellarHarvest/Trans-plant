@@ -46,6 +46,12 @@
   let running = false;        // true while the overlay is open (gates rAF loops)
   let mounted = false;        // markup injected once, reset per visit
   let onRepairDone = null;
+  // The job has begun once the first fault is cleared (b4 re-audit A1):
+  // from then a reload settles the visit as a quit — cruise.js
+  // window.onJobBegun saves pendingAbandon (the day spent, the effort tax
+  // kept), as forage/mine already did. Walking out before anything is
+  // fixed stays a free cancel (handleRepairVerb refunds the tax).
+  let jobBegun = false;
 
   // Lines per ship AI (owner ruling 2026-10-09: the game speaks as the
   // AI the player picked). The demo rotated MARV/ARIA/AJOY/CHIP through
@@ -298,6 +304,7 @@
     const em = EMITTERS.find(e => e.id === comp); if (em) em.active = false;
     const cost = TIME_COSTS[comp] || 1;
     totalRepairTime += cost;
+    if (!jobBegun) { jobBegun = true; if (typeof window.onJobBegun === 'function') window.onJobBegun(); }
     const q = erVoice().fixed[comp];
     setAI(erName(), q + ` [${cost}h spent · ${totalRepairTime}h total]`);
     if (COMPS.filter(c => fixed[c]).length === 4) setTimeout(showResult, 700);
@@ -333,6 +340,7 @@
     });
     EMITTERS.forEach(em => { em.active = true; em.sparks = []; em.nextBurst = 0; });
     totalRepairTime = 0;
+    jobBegun = false;
     endStateActive = false;
     lightsOn = true;
     $('engrepair-root').classList.remove('scene-fixed');

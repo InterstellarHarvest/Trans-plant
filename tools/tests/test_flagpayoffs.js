@@ -46,7 +46,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     STATE.cropGrowth.lastTickDay = STATE.daysElapsed;
     triggerArrival(STATE.nodes.find(n => connectionsOf(n).length === 0));
     window.showEndReport();
-    const box = document.getElementById('end-report-quote-record');
+    document.getElementById('end-report-more').click(); // the record sits behind READ THE COLONY REPORT (owner ruling 31)
+    const box = document.getElementById('end-report-body-record');
     return { lines: box ? [...box.querySelectorAll('.end-record-line')].map(x => x.textContent) : [], shown: box && box.style.display !== 'none' };
   });
   ok(rec.shown && rec.lines.length === 5, `arrival report: Ship's Record with 5 lines (${rec.lines.length})`);

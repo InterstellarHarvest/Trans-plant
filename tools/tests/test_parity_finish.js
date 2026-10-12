@@ -88,7 +88,11 @@ const NOTE = /\b(Stackable|Craftable|Fabricated|Pure trade good|Info-only|Gate i
       // failures carry no arrival line
       window.renderEndScreen({ kind: 'failure', module: MOD.failures.find(f => f.failure_type === 'no_fuel') });
       window.showEndReport(); await w(20);
-      out.failArrival = getComputedStyle(document.getElementById('end-report-arrival')).display;
+      // Owner ruling 31 (b4): a failure's report card leads with its first
+      // paragraph in this slot — never an arrival line.
+      out.failArrival = document.getElementById('end-report-arrival').textContent;
+      out.failLead = MOD.failures.find(f => f.failure_type === 'no_fuel').body.split(/\n\s*\n/)[0].trim();
+      out.failArrivalLines = Object.values(L.arrival_lines).flatMap(t => Object.values(t));
       return out;
     });
     ok(r.data && r.stillEnding, 'arrival_lines + tier_quotes load from endings.json into MOD.endingLines; MOD.endings holds only endings');
@@ -105,7 +109,7 @@ const NOTE = /\b(Stackable|Craftable|Fabricated|Pure trade good|Info-only|Gate i
     ok(/VT323/.test(r.style.font) && r.style.color === 'rgb(232, 216, 160)' && r.style.size === '19px' && r.style.qItalic === 'italic' && r.style.order === 'arrival-first',
       `line in the demo body voice (VT323 19px cream), quote italic, line leads the report (${r.style.font} ${r.style.color} ${r.style.size}, ${r.style.order})`);
     ok(r.style.report.includes('end-fade-in') && r.style.card.includes('end-card-rise'), `batch-1 motion kept (report ${r.style.report}, card ${r.style.card})`);
-    ok(r.failArrival === 'none', 'a failure report shows no arrival line');
+    ok(r.failArrival === r.failLead && !r.failArrivalLines.includes(r.failArrival), 'a failure report shows no arrival line (its lead is the failure\'s first paragraph, ruling 31)');
     const src = await page.evaluate(async () => (await fetch('engine/js/screens/endings.js')).text());
     ok(!/regolith|Far Garden potatoes|Jenkins/.test(src), 'the lines are data (endings.json), not hard-coded in endings.js');
     if (SHOTS) {

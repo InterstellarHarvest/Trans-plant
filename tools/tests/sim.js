@@ -174,7 +174,24 @@ function step() {
       window.__evSteps = 0; S.events++; S.eventIds.push(STATE.currentEvent && STATE.currentEvent.id);
       advanceAfterEvent(); return { wait: 50 };
     }
-    let chs = (window.__choices || []).slice();
+    // Leave rows are real exits (b4 2026-10-12: every sim run used to burn
+    // its 1500-step budget at the first station). The station visit's
+    // Market Row offers only BROWSE (the market stub closes at once) and
+    // BACK TO DOCK; the dock offers its rooms again and LEAVE STATION —
+    // and advanceAfterEvent() routes a room back to the dock, so the
+    // old >25-step escape looped room → dock → room forever. A market
+    // already browsed at this stop is done; with nothing new to pick, or
+    // after too long at one stop, the sim takes the leave row.
+    const leaveRow = [...document.querySelectorAll('#enc-choices .enc-choice.leave:not(.locked)')].find(b => b.offsetParent !== null);
+    const V = window.__nodeVisit = (window.__nodeVisit && window.__nodeVisit.k === STATE.currentId) ? window.__nodeVisit : { k: STATE.currentId, n: 0, taken: {} };
+    V.n++;
+    const layerKey = (STATE.currentEvent && STATE.currentEvent.id) + '|' + ((STATE.layerStack || []).slice(-1)[0] || '');
+    // A navigation choice (no outcome of its own: a dock room, MARKET,
+    // BROWSE THE WARES) already taken at this stop leads where it led
+    // last time — skip it.
+    let chs = (window.__choices || []).filter(c => !(V.taken[layerKey + '|' + c.text] && !choiceOutcome(c)));
+    if (leaveRow && (!chs.length || V.n > 40)) { S.leaveRows = (S.leaveRows || 0) + 1; leaveRow.click(); return { wait: 80 }; }
+    if (V.n > 80) { window.__evSteps = 0; S.stallEscapes = (S.stallEscapes || 0) + 1; STATE.stationVisit = null; STATE.visited.add(STATE.currentId); returnToHub(); return { wait: 50 }; }
     if (!chs.length) { advanceAfterEvent(); return { wait: 50 }; }
     S.lockedGold += window.__lockedGold || 0;
     let ch;
@@ -225,6 +242,7 @@ function step() {
         }
       }
     }
+    if (ch) V.taken[layerKey + '|' + ch.text] = true;
     // runChoiceAction lock bypass: call directly
     handleChoiceClick(ch);
     return { wait: 80 };

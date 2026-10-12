@@ -867,7 +867,10 @@
 
   const TRAIL_TO_SCAN_DIFFICULTY = { lunar: 'easy', mars: 'medium', interstellar: 'hard' };
   const REGION_TO_FORAGE_MODE = { asteroid_field: 'HUNT', debris_field: 'SCAVENGE', derelict: 'SCAVENGE', planet_orbit_habitable: 'GATHER', planet_orbit_alien: 'GATHER', anomaly: 'GATHER' };
-  const ALIEN_POISON_CHANCE = 0.25, ALIEN_POISON_HP = 7; // 7 = the forage minigame's 'medium' sickness (table below)
+  // Alien-world poison roll: a 'medium' forage poisoning — owner ruling 3
+  // (demo numbers, the sickness table below): light 10 / medium 20 /
+  // heavy 35 HP. It was 7 HP, under "medium" (b4 re-audit B6).
+  const ALIEN_POISON_CHANCE = 0.25, ALIEN_POISON_HP = 20;
 
   function handleScanVerb() {
     const difficulty = TRAIL_TO_SCAN_DIFFICULTY[STATE.trail] || 'medium';
