@@ -153,7 +153,7 @@
   // Baseline — the captain (player) always contributes this much,
   // independent of their chosen background. Engineer / Academic bg
   // adds its own bonus on top.
-  const BASE_EFFORT = 10;
+  const BASE_EFFORT = EFFORT_HANDS; // the captain's own hands, the yardstick for speed
 
   // ═════ State ═══════════════════════════════════════════════
   // FSTATE.stock is a LIVE REFERENCE to the real STATE.materials pool —
@@ -232,7 +232,7 @@
 
   // The captain's own hands: the baseline, half while wounded — the same
   // rule as every other hands-on job (index.html captainHandsEffort).
-  const captainHands = () => (typeof captainHandsEffort === 'function' ? captainHandsEffort() : BASE_EFFORT);
+  const captainHands = () => captainHandsEffort();
   // Aggregate total fab contribution — sum of crew + captain bg +
   // captain's hands. Drives the total pill and the days reduction.
   function totalFabContribution() {
