@@ -59,10 +59,32 @@
     };
     return setTimeout(run, ms);
   }
-  // A reload mid-fight breaks it off like an FTL escape (index.html
-  // loadRun pendingCombat) — it used to put you back before the fight.
-  function saveFightPoint() {
-    if (typeof writeSnapshot === 'function' && !STATE.ended) writeSnapshot(undefined, { pendingCombat: { hull: COMBAT.player.hull } });
+  // A reload mid-fight settles as ATTEMPT ESCAPE played out (owner ruling
+  // 53; index.html loadRun → settleCombatBreakOff): the save carries what
+  // that needs — the hull and morale as they stand, and the enemy's real
+  // volley (damage, the drive's miss odds, the charge turns, what absorbs
+  // a hit). ev: the event fought in (a station's arrival event still
+  // leads on to the approach). extra.defeat: the defeat beat's own save.
+  function saveFightPoint(extra) {
+    if (typeof writeSnapshot !== 'function' || STATE.ended) return;
+    const charging = COMBAT.ftlCharge > 0;
+    const pc = {
+      hull: COMBAT.player.hull, hullMax: COMBAT.player.hullMax,
+      morale: COMBAT.player.morale == null ? null : COMBAT.player.morale - COMBAT.player.moraleStart,
+      moraleNow: COMBAT.player.morale,
+      ev: STATE.currentEvent ? STATE.currentEvent.id : null,
+      volley: {
+        min: COMBAT_CONFIG.enemy_damage.min, max: COMBAT_CONFIG.enemy_damage.max, mod: COMBAT.enemy.dmgMod,
+        // The diplomat's opening-turn cut, when the first volley is still the fight's first shot.
+        opening: COMBAT.turn === 1 ? openingCut() : 0,
+        miss: ftlMissRate(),
+        // Volleys still to come: a charge under way keeps its rolled turns.
+        left: charging ? Math.max(1, COMBAT.ftlTurnsRolled - COMBAT.ftlCharge + 1) : null,
+        pilot: pilotFtlChance(),
+        shields: (COMBAT.rexShield ? 1 : 0) + (COMBAT.shieldArmed ? 1 : 0),
+      },
+    };
+    writeSnapshot(undefined, { pendingCombat: Object.assign(pc, extra || {}) });
   }
   // The pirate's own voice (flavor_pools npc_disposition_lines.pirate,
   // species-coloured by index.html interpolateNpcTokens): their answer
@@ -197,6 +219,17 @@
     const cap = COMBAT.captainBg === 'pilot' ? (typeof captainSkill === 'function' ? captainSkill() : 0.5) : 0;
     return Math.max(COMBAT.crew.pilot || 0, cap);
   }
+  // The diplomat's cut to the enemy's opening shot (0: none aboard).
+  function openingCut() {
+    if (COMBAT.crew.diplomat) return COMBAT_CONFIG.crew_bonuses.diplomat.opening_dmg_reduction * COMBAT.crew.diplomat;
+    return COMBAT.captainBg === 'diplomat' ? COMBAT_CONFIG.captain_bonuses.diplomat.opening_dmg_reduction : 0;
+  }
+  // Odds an enemy shot goes wide while the drive spools.
+  function ftlMissRate() {
+    if (COMBAT.crew.pilot) return 0.35 + (0.75 - 0.35) * COMBAT.crew.pilot; // wounded pilot: halved edge
+    if (COMBAT.captainBg === 'pilot') return 0.35 + (0.75 - 0.35) * 0.5; // captain: half the edge
+    return 0.35;
+  }
   function ftlTurns() {
     if (COMBAT.ftlCharge > 0 && COMBAT.ftlTurnsRolled) return COMBAT.ftlTurnsRolled;
     return pilotFtlChance() >= 1 ? COMBAT_CONFIG.crew_bonuses.pilot.ftl_turns_override : COMBAT_CONFIG.ftl_charge_turns;
@@ -273,6 +306,7 @@
   function showMutinyTurn() { setTurnIndicator('CREW MUTINY', 'enemy-turn'); setActionsLocked(false); }
 
   function renderCombatHud() {
+    if (COMBAT.active && COMBAT.state !== 'END') saveFightPoint(); // the morale, charge and shields as they stand
     const hPct = clamp(Math.round((COMBAT.player.hull / COMBAT.player.hullMax) * 100), 0, 100);
     const fPct = clamp(Math.round((COMBAT.enemy.hull  / COMBAT.enemy.hullMax)  * 100), 0, 100);
     const noMo = COMBAT.player.morale == null; // no crew aboard: no morale ("—")
@@ -326,6 +360,7 @@
   function renderCombatActions() {
     const wrap = document.getElementById('enc-choices');
     if (!COMBAT.active) { wrap.innerHTML = ''; return; }
+    if (COMBAT.state !== 'END') saveFightPoint(); // a charge begun or aborted, a shield armed
     // Entry cross-dissolve still running: it paints the panel when the
     // old choices have faded (triggerCombat).
     if (COMBAT._dissolving) return;
@@ -975,10 +1010,7 @@
     setAiCombat(combatLine('enemy_fires'));
     let dmg = irand(COMBAT_CONFIG.enemy_damage.min, COMBAT_CONFIG.enemy_damage.max) * COMBAT.enemy.dmgMod;
 
-    if (COMBAT.turn === 1 && (COMBAT.crew.diplomat || COMBAT.captainBg === 'diplomat')) {
-      const r = COMBAT.crew.diplomat ? COMBAT_CONFIG.crew_bonuses.diplomat.opening_dmg_reduction * COMBAT.crew.diplomat : COMBAT_CONFIG.captain_bonuses.diplomat.opening_dmg_reduction;
-      dmg *= (1 - r);
-    }
+    if (COMBAT.turn === 1) dmg *= (1 - openingCut());
 
     let dodgedFull = false;
     if (COMBAT.evadingNextHit) {
@@ -995,10 +1027,7 @@
 
     let ftlMiss = false;
     if (COMBAT.state === 'FTL_CHARGING') {
-      let missRate = 0.35;
-      if (COMBAT.crew.pilot) missRate = 0.35 + (0.75 - 0.35) * COMBAT.crew.pilot; // wounded pilot: halved edge
-      else if (COMBAT.captainBg === 'pilot') missRate = 0.35 + (0.75 - 0.35) * 0.5; // captain: half the edge
-      if (Math.random() < missRate) { dmg = 0; ftlMiss = true; }
+      if (Math.random() < ftlMissRate()) { dmg = 0; ftlMiss = true; }
     }
 
     // Their beam: enemy ship center → random point on the bridge
@@ -1280,6 +1309,11 @@
     // applied as-is in endCombatToOutcome ("Cargo lost: 2 items, 5 Metal").
     const cargoLoss = planCargoLoss(irand(30, 50));
     const cas = rollDefeatCasualties();
+    // From here a reload is this defeat, not a break-off at hull 0 (that
+    // ended the run): the same cargo, the same casualty roll, the fight's
+    // morale (index.html loadRun → settleCombatDefeat).
+    saveFightPoint({ defeat: { cargoLoss, crewDied: cas.died, crewInjured: cas.injured,
+      morale: COMBAT.player.morale == null ? null : COMBAT.player.morale - COMBAT.player.moraleStart } });
     setAiCombat(combatLine('player_defeated'));
     setNarrCombat('LIMP-AWAY STATE', combatLine('player_defeated'),
       `Hull set to 1. ${cargoLossText(cargoLoss)}.${cas.died || cas.injured ? ' Casualty reports coming in.' : ' All crew accounted for.'}`);
@@ -1330,6 +1364,108 @@
     }
     return items;
   }
+
+  /* A defeat's casualties, as rolled in onPlayerDefeat: shared by the
+     fight's own end and a reload during the defeat beat. The death roll
+     picks someone aboard (the captain too, owner ruling 29) — returned as
+     the outcome's crew_effect, so a medic's save still applies. */
+  function defeatDeath(result) {
+    const aboardNow = typeof peopleAboard === 'function' ? peopleAboard() : STATE.crew;
+    if (!result.crewDied || !aboardNow.length) return null;
+    result._deathRole = aboardNow[Math.floor(Math.random() * aboardNow.length)];
+    return { type: 'kill', target: 'specific_role', role: result._deathRole };
+  }
+  // Injuries (demo rule) land on people other than the one the death roll
+  // picked, through the engine's own severity model. Returns the crew line.
+  function defeatInjuries(result, crewBefore, namesBefore, lethalSaved) {
+    const pool = (typeof peopleAboard === 'function' ? peopleAboard() : STATE.crew).filter(r => r !== result._deathRole);
+    const hurt = [];
+    for (let i = 0; i < (result.crewInjured || 0) && pool.length; i++) {
+      const role = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+      applySeverity(role, 'injury');
+      hurt.push(role);
+    }
+    const lost = crewBefore.filter(r => !STATE.crew.includes(r));
+    const nameOf = (r, i) => r === 'captain' ? (i ? 'the captain' : 'The captain') : (namesBefore[r] || crewNameOf(r));
+    const parts = [];
+    if (lost.length) parts.push(lost.map(nameOf).join(' and ') + " didn't make it.");
+    else if (result.crewDied && lethalSaved) parts.push('It should have cost a life. The medic disagreed.');
+    if (hurt.length) parts.push(hurt.map(nameOf).join(' and ') + (hurt.length > 1 ? ' are hurt.' : ' is hurt.'));
+    return parts.length ? parts.join(' ') : 'All crew accounted for.';
+  }
+  // Each crew entry carries its passive in effect: 1 healthy, 0.5 wounded
+  // (Bible §4.25 "passive halved"), 0 absent — truthy checks still mean
+  // "aboard"; numeric bonuses scale by it.
+  function bindCombatCrew() {
+    const roles = ['pilot', 'engineer', 'medic', 'botanist', 'chef', 'diplomat', 'xenobiologist', 'veteran', 'merchant'];
+    COMBAT.crew = {};
+    roles.forEach(r => { COMBAT.crew[r] = STATE.crew.includes(r) ? (crewHPOf(r) < CREW_WOUNDED_HP ? 0.5 : 1) : 0; });
+    COMBAT.captainBg = STATE.captain || '';
+  }
+  /* A reload mid-fight (owner ruling 53, index.html loadRun): ATTEMPT
+     ESCAPE played out — never better than playing on. The drive spools
+     its 2–3 turns (a pilot's short spool as the real charge rolls it, a
+     charge under way keeps what is left) and the enemy fires each turn
+     with the fight's real volley: the drive's miss odds, the shields
+     still up, an armed emergency patch. Then −15 fuel and the escape's
+     time, the fight's morale so far plus the hits'. Volleys that would
+     take the hull to 0 are the defeat (LIMP AWAY), not hull_zero. A save
+     from before the volley was kept just breaks off. Returns the log line. */
+  window.settleCombatBreakOff = function (pc) {
+    const v = pc.volley;
+    const start = Number.isFinite(pc.moraleNow) && Number.isFinite(pc.morale) ? pc.moraleNow - pc.morale : null;
+    let hull = Math.min(STATE.resources.hull, pc.hull), mo = start == null ? null : pc.moraleNow;
+    const hits = [];
+    if (v) {
+      const turns = v.left || ((v.pilot >= 1 || (v.pilot > 0 && Math.random() < v.pilot)) ? COMBAT_CONFIG.crew_bonuses.pilot.ftl_turns_override : COMBAT_CONFIG.ftl_charge_turns);
+      let shields = v.shields || 0;
+      for (let i = 0; i < turns && hull > 0; i++) {
+        if (Math.random() < v.miss) { hits.push('miss'); continue; }
+        const dmg = irand(v.min, v.max) * v.mod * (i === 0 ? 1 - (v.opening || 0) : 1);
+        if (shields > 0) { shields--; hits.push('blocked'); continue; }
+        if (STATE.flags.has('emergency_patch_armed')) { STATE.flags.delete('emergency_patch_armed'); hits.push('patched'); continue; }
+        const dealt = Math.max(1, Math.round(dmg));
+        hull = Math.max(0, hull - dealt);
+        hits.push('−' + dealt);
+        if (mo != null) mo = clamp(mo - (dealt > (pc.hullMax || 100) * 0.15 ? 2 : 1), 0, 100);
+      }
+    }
+    const morale = mo == null ? null : mo - start;
+    const under = hits.length ? 'The drive spooled under fire (' + hits.join(', ') + '). ' : '';
+    if (hull <= 0) {
+      // The defeat as onPlayerDefeat rolls it.
+      bindCombatCrew();
+      COMBAT.player.morale = mo;
+      const cas = rollDefeatCasualties();
+      const line = window.settleCombatDefeat({ cargoLoss: planCargoLoss(irand(30, 50)), crewDied: cas.died, crewInjured: cas.injured, morale });
+      return 'LIMP AWAY — the fight broke off when the logs did, and the escape didn\'t make it. ' + under + line;
+    }
+    const outcome = { resources: { fuel: -15, hull: hull - STATE.resources.hull }, time_cost: 'medium', combat_net: true };
+    if (morale) outcome.resources.morale = morale;
+    applyOutcomeEffects(outcome);
+    STATE.postCombatLegs = 2;
+    return 'The fight broke off when the logs did. The ship ran for it: ' + under + '−15 fuel, hull ' + Math.round(hull) + '.';
+  };
+  /* A reload during the defeat beat (index.html loadRun): the LIMP AWAY
+     that was coming lands as the fight would have landed it — hull 1,
+     the named cargo, the casualty roll, the fight's morale, high time.
+     The fight's own end card is gone, so it returns the line for the log. */
+  window.settleCombatDefeat = function (d) {
+    const result = { outcome: 'defeated', cargoLoss: d.cargoLoss || { pct: 0, items: [], materials: {} }, crewDied: !!d.crewDied, crewInjured: d.crewInjured || 0 };
+    const outcome = { resources: { hull: 1 - STATE.resources.hull }, combat_net: true, time_cost: 'high' };
+    if (Number.isFinite(d.morale) && d.morale) outcome.resources.morale = d.morale;
+    const kill = defeatDeath(result);
+    if (kill) outcome.crew_effect = kill;
+    const crewBefore = STATE.crew.slice();
+    const namesBefore = Object.fromEntries(crewBefore.map(r => [r, crewNameOf(r)]));
+    applyOutcomeEffects(outcome);
+    const lethalSaved = !!STATE.lethalSaved;
+    STATE.lethalSaved = null;
+    const crewLine = defeatInjuries(result, crewBefore, namesBefore, lethalSaved);
+    applyCargoLoss(result.cargoLoss);
+    STATE.postCombatLegs = 2;
+    return `Hull at 1. ${cargoLossText(result.cargoLoss)}. ${crewLine}`;
+  };
 
   /* ── Loot ───────────────────────────────────────────────────── */
   // Ids restricted to what actually exists in materials.json/items.json
@@ -1535,11 +1671,8 @@
         // Crew line is written after the effects land (below): the kill
         // can be saved by a medic, injuries go to whoever is left.
         body = `Hull at 1. ${cargoLossText(result.cargoLoss)}.`;
-        const aboardNow = typeof peopleAboard === 'function' ? peopleAboard() : STATE.crew; // the captain too (owner ruling 29)
-        if (result.crewDied && aboardNow.length) {
-          result._deathRole = aboardNow[Math.floor(Math.random() * aboardNow.length)];
-          outcome.crew_effect = { type: 'kill', target: 'specific_role', role: result._deathRole };
-        }
+        const kill = defeatDeath(result);
+        if (kill) outcome.crew_effect = kill;
         outcome.time_cost = 'high';
         break;
       }
@@ -1567,25 +1700,7 @@
     applyOutcomeEffects(outcome);
     const lethalSaved = !!STATE.lethalSaved;
     STATE.lethalSaved = null; // combat writes its own crew line below
-    if (result.outcome === 'defeated') {
-      // Injuries (demo rule, rolled in onPlayerDefeat) land on crew other
-      // than the one the death roll picked, through the engine's own
-      // severity model.
-      const pool = (typeof peopleAboard === 'function' ? peopleAboard() : STATE.crew).filter(r => r !== result._deathRole); // the captain too (owner ruling 29)
-      const hurt = [];
-      for (let i = 0; i < (result.crewInjured || 0) && pool.length; i++) {
-        const role = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
-        applySeverity(role, 'injury');
-        hurt.push(role);
-      }
-      const lost = crewBefore.filter(r => !STATE.crew.includes(r));
-      const nameOf = (r, i) => r === 'captain' ? (i ? 'the captain' : 'The captain') : (namesBefore[r] || crewNameOf(r));
-      const parts = [];
-      if (lost.length) parts.push(lost.map(nameOf).join(' and ') + " didn't make it.");
-      else if (result.crewDied && lethalSaved) parts.push('It should have cost a life. The medic disagreed.');
-      if (hurt.length) parts.push(hurt.map(nameOf).join(' and ') + (hurt.length > 1 ? ' are hurt.' : ' is hurt.'));
-      body += ' ' + (parts.length ? parts.join(' ') : 'All crew accounted for.');
-    }
+    if (result.outcome === 'defeated') body += ' ' + defeatInjuries(result, crewBefore, namesBefore, lethalSaved);
 
     // Materials/items loot isn't part of the standard outcome schema
     // (applyOutcomeEffects only knows resources/item_grant/crew_effect/
@@ -1767,13 +1882,7 @@
     COMBAT.ai = STATE.activeAI;
     COMBAT.species = (STATE.npcCtx && STATE.npcCtx.species) || 'human';
     COMBAT.trail = STATE.trail;
-    const roles = ['pilot', 'engineer', 'medic', 'botanist', 'chef', 'diplomat', 'xenobiologist', 'veteran', 'merchant'];
-    COMBAT.crew = {};
-    // Each crew entry carries its passive in effect: 1 healthy, 0.5
-    // wounded (Bible §4.25 "passive halved"), 0 absent — truthy checks
-    // still mean "aboard"; numeric bonuses scale by it.
-    roles.forEach(r => { COMBAT.crew[r] = STATE.crew.includes(r) ? (crewHPOf(r) < CREW_WOUNDED_HP ? 0.5 : 1) : 0; });
-    COMBAT.captainBg = STATE.captain || '';
+    bindCombatCrew();
 
     COMBAT.player.hullMax = Math.round(COMBAT_CONFIG.player_hp_max * resMax('hull') / 100); // hull plating
     COMBAT.player.hull = clamp(STATE.resources.hull, 1, COMBAT.player.hullMax);

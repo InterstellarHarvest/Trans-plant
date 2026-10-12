@@ -2748,7 +2748,7 @@
     "test_path": false,
     "sets_flag": null,
     "requires_flag": null,
-    "design_note": "Owner ruling 38 (2026-10-12): the demo-cruise engine_fault (ENGINE FAULT — REPAIR UNDER WAY; FIELD REPAIR / LIMP MODE) built as a crisis event. The hands-on choice launches the Simon ENGINE REPAIR minigame (minigames.js initEngine): perfect/good get the drive back on the low time cost, poor is limp mode plus the sparks (worse than choosing LIMP MODE outright). A quit lands the poor tier's losses and its time (index.html eventMinigameQuit). Drawn like the other any-node crises (once per run).",
+    "design_note": "Owner ruling 38 (2026-10-12): the demo-cruise engine_fault (ENGINE FAULT — REPAIR UNDER WAY; FIELD REPAIR / LIMP MODE) built as a crisis event. The hands-on choice launches the Simon ENGINE REPAIR minigame (minigames.js initEngine): perfect/good get the drive back on the low time cost, poor is limp mode plus the sparks (worse than choosing LIMP MODE outright). A quit lands the poor tier's losses and its time (index.html eventMinigameQuit). Owner ruling 56: the other two choices are the demo's verbs as authored there — FIELD REPAIR (the engineer's rebuild) effort 3, 6 days; LIMP MODE effort 1, 2 days, −2 fuel. Drawn like the other any-node crises (once per run).",
     "ai_flavor": {
       "aria": "The drive just made a noise ARIA has never heard before, and she has heard ALL the noises! She is very excited and a little worried! Mostly worried!",
       "marv": "MARV reports the drive coil stopped cooperating at sixty-one percent of the burn. He has the restart sequence. He notes it works best when performed by someone who is paying attention.",
@@ -2780,7 +2780,7 @@
             "resources": {
               "morale": 3
             },
-            "narrative": "Coil, injector, valve, relay, every contact in order on the first pass. The drive catches at once and settles back into its hum. The crew heard it come back, and they know whose hands brought it back.",
+            "narrative": "Every contact in the order the board called it, first pass. The drive catches at once and settles back into its hum, and the ship sounds like itself again. Your hands did that.",
             "scene_bg": "our_ship/engine_fixed"
           },
           "good": {
@@ -2807,6 +2807,7 @@
         "requires_item": null,
         "requires_flag": null,
         "microgame_type": null,
+        "effort": 3,
         "outcome": {
           "resources": {},
           "crew_effect": null,
@@ -2814,7 +2815,7 @@
           "item_grant": null,
           "item_consume": null,
           "sets_flag": null,
-          "time_cost": "low",
+          "time_days": 6,
           "narrative": "The engineer shuts the coil down cold, strips it on the deck plate and rebuilds it from the windings out, reciting part numbers like a prayer. It comes back up smoother than it left the yard. Nobody asks how long it had been wrong.",
           "scene_bg": "our_ship/engine_fixed"
         }
@@ -2825,17 +2826,17 @@
         "requires_item": null,
         "requires_flag": null,
         "microgame_type": null,
+        "effort": 1,
         "outcome": {
           "resources": {
-            "fuel": -2,
-            "morale": -2
+            "fuel": -2
           },
           "crew_effect": null,
           "severity": null,
           "item_grant": null,
           "item_consume": null,
           "sets_flag": null,
-          "time_cost": "medium",
+          "time_cost": "low",
           "narrative": "You drop the drive to half power and leave the fault where it is. It holds. Everything takes twice as long, and the hum has a stutter in it now that everyone pretends not to hear."
         },
         "detail": "Adds days, but the drive holds."

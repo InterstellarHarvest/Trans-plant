@@ -232,7 +232,7 @@ const BRIEF = {
       chip:'Engine trouble! EngineRight™ field kits — because breakdowns happen to everyone.',
       ajoy:'The engine has forgotten what it was doing. Remind it gently, in order.'
     },
-    mechanic:'Watch the components <strong>light up in sequence</strong>. Then click them in the same order from memory. Three wrong clicks and the drive goes to limp mode.'
+    mechanic:'Watch the components <strong>light up in sequence</strong>. Then click them in the same order from memory. {engineErrs} wrong clicks and the drive goes to limp mode.'
   },
   medical:{
     icon:'💊',
@@ -321,6 +321,15 @@ let minigameEnding = false, closeAfterResult = false;
 function markMinigameEnding(){ minigameEnding = true; }
 function endBeat(fn, ms){ markMinigameEnding(); return setTimeout(fn, ms); }
 let minigameToken = 0;       // bumps per open/close: a quit game's delayed result can't land in the next one
+// Harm already done in play (a forage poisoning, the patient's HP lost on
+// the table): a QUIT hands it to the caller and a reload keeps it too
+// (cruise.js onJobHarm re-saves the quit marker), so quitting never
+// undoes it — it used to beat a poor result.
+let jobHarm = null;
+function reportJobHarm(h){
+  jobHarm = h;
+  if(typeof window.onJobHarm === 'function') window.onJobHarm(h);
+}
 let lastTier = null, lastPayload = null;
 
 const NAMES = {scan:'SCAN',engine:'ENGINE REPAIR',medical:'MEDICAL TRIAGE',forage:'FORAGE',brace:'SOLAR BRACE',breach:'HULL BREACH',salvage:'SALVAGE'};
@@ -330,7 +339,8 @@ const BIGMODAL_GAMES = new Set(['breach', 'medical', 'salvage', 'forage']);
 function showReady(id, onStart){
   const b = BRIEF[id];
   const ga = document.getElementById('ga');
-  let mechanicHtml = b.mechanic;
+  // The real limit (REX forgives a 4th wrong click).
+  let mechanicHtml = b.mechanic.replace('{engineErrs}', ['Three', 'Four'][ENGINE_MAX_ERRS() - 3] || String(ENGINE_MAX_ERRS()));
   if(id==='breach' && engineerAboard){
     mechanicHtml += `<br><br><span style="color:var(--teal)"><strong>ENGINEER ABOARD:</strong> +${engineerMult < 1 ? 'half a second' : '1 second'} per breach${engineerMult < 1 ? (STATE.crew.includes('engineer') ? ' (wounded)' : ' (your engineering training)') : ''}.</span>`;
   }
@@ -364,7 +374,7 @@ function openMinigame(id, opts, onDone){
   engineerMult = passiveMult('engineer'); // a captain engineer counts at half
   engineerAboard = engineerMult > 0;
   onMinigameDone = onDone;
-  minigameStarted = false; minigameEnding = false; closeAfterResult = false;
+  minigameStarted = false; minigameEnding = false; closeAfterResult = false; jobHarm = null;
   const mclose = document.getElementById('mclose');
   mclose.textContent = '✕ CLOSE'; Tooltip.attach(mclose, { description: 'Back out — nothing has started yet.' });
   // SALVAGE inside a derelict plays the salvage game with the hulk's own
@@ -486,7 +496,7 @@ function requestCloseMinigame(){
   const cb = onMinigameDone, started = minigameStarted;
   onMinigameDone = null;
   closeMinigameOverlay();
-  if(started && cb) cb('abandoned', null);
+  if(started && cb) cb('abandoned', jobHarm ? { harm: jobHarm } : null);
   else if(!started && typeof window.refundVerbTax === 'function') window.refundVerbTax(); // free cancel: nothing happened, nothing paid
 }
 document.getElementById('mclose').addEventListener('click', requestCloseMinigame);
@@ -1018,7 +1028,7 @@ function initMedical(container, onResult, medConfig){
   const startingHp = cfg.startingHp ?? 100;
   const EVENT_DAMAGE_CAP = cfg.damageCap ?? 30;
   const damageFloor = Math.max(0, startingHp - EVENT_DAMAGE_CAP);
-  let hp = startingHp;
+  let hp = startingHp, reportedHp = Math.round(startingHp);
   // Cleared count display — set initial N now.
   if(clearedEl) clearedEl.textContent = '0 / ' + N;
   // Spam protection: wrong clicks are throttled so rapid-fire failures
@@ -1235,6 +1245,8 @@ function initMedical(container, onResult, medConfig){
     const drainRate = VIT_BASE_DRAIN + totalSev * VIT_SEV_FACTOR;
     hp = Math.max(damageFloor, hp - drainRate * dt);
     hpFill.style.height = hp + '%'; hpVal.textContent = Math.round(hp);
+    // Each whole HP the patient loses is harm a quit or a reload keeps.
+    if(Math.round(hp) !== reportedHp){ reportedHp = Math.round(hp); reportJobHarm({ hp: reportedHp, startingHp }); }
     // Base colour is set by .med-vital[data-v=hp] CSS — only toggle danger pulse.
     if(hp < 35) hpWrap.classList.add('danger');
     else        hpWrap.classList.remove('danger');
@@ -2198,6 +2210,7 @@ function initForage(container, onResult, ctx){
             severity:'medium',
             reason
           });
+          reportJobHarm({ poison: sickness.filter(x => x.type === 'poisoning').map(x => x.severity) });
           slotState[i] = 'cooldown';
           tEl.className = 'for-target decoy-burst';
           clearSprite();

@@ -269,6 +269,22 @@
     return false;
   }
 
+  /* A reload that settled this stop's event as a quit (index.html loadRun:
+     an event minigame, a fight broken off or lost) carries the visit on as
+     ✕ QUIT's Continue does: the arrival event leads to the approach, a
+     room or the docking back to the dock. evId: the event quit (an old
+     save's fight has none — the visit's own event). true = an event opened. */
+  function afterQuit(evId) {
+    const v = visit();
+    if (!v || v.phase === 'left') return false;
+    const ev = EVENTS[evId || (v.phase === 'docked' ? v.inRoom : v.roomEv)];
+    if (!ev) return false;
+    STATE.currentEvent = ev; STATE.outcomeMode = true;
+    if (afterEvent()) return true;
+    STATE.currentEvent = null; STATE.outcomeMode = false;
+    return false;
+  }
+
   /* waves_off outcome field: this stop's services close. */
   function waveOff() {
     let v = visit();
@@ -283,5 +299,5 @@
   }
   window.stationServicesClosed = servicesClosed; // cruise.js Stop menu
 
-  window.StationVisit = { available, arrive, approachLayer, wrap, act, afterEvent, waveOff, servicesClosed, roomOf, kindOf, rooms };
+  window.StationVisit = { available, arrive, approachLayer, wrap, act, afterEvent, afterQuit, waveOff, servicesClosed, roomOf, kindOf, rooms };
 })();
