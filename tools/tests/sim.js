@@ -70,7 +70,7 @@ function installHarness(policy) {
   }
   const realChoices = renderChoicesInner;
   renderChoicesInner = function (choices) {
-    const visible = choices.filter(ch => !(ch.showFlag && !STATE.flags.has(ch.showFlag)) && !(ch.hideFlag && STATE.flags.has(ch.hideFlag)));
+    const visible = choices.filter(ch => !(ch.showFlag && !STATE.flags.has(ch.showFlag)) && !(ch.requires_flag && !STATE.flags.has(ch.requires_flag)) && !(ch.hideFlag && STATE.flags.has(ch.hideFlag))); // requires_flag hides too (b4 ruling 36)
     window.__choices = visible.filter(ch => !lockReason(ch));
     window.__lockedGold = visible.filter(ch => lockReason(ch) && ch.gate && ch.gate.gold).length;
     return realChoices(choices);

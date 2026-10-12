@@ -236,6 +236,18 @@
     document.getElementById('enc-ai-name').textContent = COMBAT.ai.toUpperCase();
     document.getElementById('enc-ai-text').textContent = text;
     document.getElementById('enc-ai-bar').classList.remove('hidden');
+    placeTurnIndicator();
+    if (typeof window.placeBelowAiBar === 'function') window.placeBelowAiBar();
+  }
+  /* The YOUR TURN banner sits at top 50 (demo) — below the AI bar when a
+     long line wraps the bar past that (b4 B11: AJOY's 123-char intro ran
+     under the banner). Measured in stage px (offsetTop/Height). */
+  function placeTurnIndicator() {
+    const el = document.getElementById('combat-turn-indicator');
+    const bar = document.getElementById('enc-ai-bar');
+    if (!el || !bar) return;
+    const below = (bar.classList.contains('hidden') || !bar.offsetHeight) ? 0 : bar.offsetTop + bar.offsetHeight + 4;
+    el.style.top = below > 50 ? below + 'px' : '';
   }
   function setTurnIndicator(label, cls) {
     const el = document.getElementById('combat-turn-indicator');
@@ -244,6 +256,7 @@
     el.style.display = '';
     el.classList.remove('your-turn', 'enemy-turn');
     el.classList.add(cls);
+    placeTurnIndicator();
   }
   function hideTurnIndicator() {
     const el = document.getElementById('combat-turn-indicator');
@@ -460,7 +473,8 @@
   function spawnDamageFloater(amount, x, y, variant) {
     const el = document.createElement('div');
     el.className = 'combat-dmg-float ' + (variant || 'normal');
-    el.textContent = variant === 'crit' ? `−${amount}!` : `−${amount}`;
+    // ASCII "-": Press Start 2P draws U+2212 as an underscore (b4 B9).
+    el.textContent = variant === 'crit' ? `-${amount}!` : `-${amount}`;
     el.style.left = Math.round(x) + 'px';
     el.style.top = Math.round(y) + 'px';
     fxScreen().appendChild(el);
@@ -1257,13 +1271,60 @@
     fxScreen().classList.add('combat-ended'); // red alert stops the moment it's decided
     renderCombatActions();
     COMBAT.player.hull = 1;
-    const cargoLoss = irand(30, 50);
+    // b4 A3: the shown loss IS the loss — the roll (30–50%) takes that
+    // share of the items and of every material stack, decided here and
+    // applied as-is in endCombatToOutcome ("Cargo lost: 2 items, 5 Metal").
+    const cargoLoss = planCargoLoss(irand(30, 50));
     const cas = rollDefeatCasualties();
     setAiCombat(combatLine('player_defeated'));
     setNarrCombat('LIMP-AWAY STATE', combatLine('player_defeated'),
-      `Hull set to 1. Cargo loss: ${cargoLoss}%.${cas.died || cas.injured ? ' Casualty reports coming in.' : ' All crew accounted for.'}`);
+      `Hull set to 1. ${cargoLossText(cargoLoss)}.${cas.died || cas.injured ? ' Casualty reports coming in.' : ' All crew accounted for.'}`);
     renderCombatHud();
     later(() => endCombatToOutcome({ outcome: 'defeated', cargoLoss, crewDied: cas.died, crewInjured: cas.injured }), 800);
+  }
+  /* Which cargo a defeat costs: pct% of the removable items (rounded —
+     an upgrade the hold needs to fit its load never goes; removeRandomItem
+     knows) and pct% of each material stack. Picked on a trial run that is
+     undone, so the text can name exactly what applyCargoLoss takes. */
+  function planCargoLoss(pct) {
+    const items = [];
+    const saved = STATE.items.slice();
+    const removable = STATE.items.filter(id => typeof canRemoveItem !== 'function' || canRemoveItem(id)).length;
+    const n = Math.round(removable * pct / 100);
+    for (let i = 0; i < n; i++) {
+      const id = typeof window.removeRandomItem === 'function' ? window.removeRandomItem() : STATE.items.pop();
+      if (!id) break;
+      items.push(id);
+    }
+    STATE.items.length = 0;
+    STATE.items.push(...saved);
+    const materials = {};
+    for (const [m, q] of Object.entries(STATE.materials || {})) {
+      const lose = Math.round((q || 0) * pct / 100);
+      if (lose > 0) materials[m] = lose;
+    }
+    return { pct, items, materials };
+  }
+  function materialLabel(id) {
+    const m = ((MOD.materials && MOD.materials.materials) || []).find(x => x.id === id);
+    return (m && m.name) || (id.charAt(0).toUpperCase() + id.slice(1));
+  }
+  function cargoLossText(loss) {
+    const parts = [];
+    if (loss.items.length) parts.push(loss.items.length + (loss.items.length === 1 ? ' item' : ' items'));
+    for (const [m, q] of Object.entries(loss.materials)) parts.push(q + ' ' + materialLabel(m));
+    return parts.length ? 'Cargo lost: ' + parts.join(', ') : 'Nothing in the hold worth taking';
+  }
+  function applyCargoLoss(loss) {
+    let items = 0;
+    for (const id of loss.items) {
+      const i = STATE.items.indexOf(id);
+      if (i >= 0) { STATE.items.splice(i, 1); items++; }
+    }
+    for (const [m, q] of Object.entries(loss.materials)) {
+      STATE.materials[m] = Math.max(0, (STATE.materials[m] || 0) - q);
+    }
+    return items;
   }
 
   /* ── Loot ───────────────────────────────────────────────────── */
@@ -1276,25 +1337,26 @@
     const items = [];
     const maybe = (chance, fn) => { if (Math.random() < chance) fn(); };
     if (outcome === 'destroyed_salvage' || outcome === 'executed') {
-      items.push({ id: 'gold', label: 'gold', count: irand(8, 16) });
+      // Capitalised labels, as the demo's card (b4 B8: "×4 Metal").
+      items.push({ id: 'gold', label: 'Gold', count: irand(8, 16) });
       maybe(0.75, () => items.push({ id: 'fuel_cell', label: 'Fuel Cell', count: irand(1, 2), isItem: true }));
-      maybe(0.65, () => items.push({ id: 'metal', label: 'metal', count: irand(2, 5) }));
-      maybe(0.45, () => items.push({ id: 'scrap', label: 'scrap', count: irand(1, 3) }));
+      maybe(0.65, () => items.push({ id: 'metal', label: 'Metal', count: irand(2, 5) }));
+      maybe(0.45, () => items.push({ id: 'scrap', label: 'Scrap', count: irand(1, 3) }));
       if (Math.random() < (opts.bonusChance || 0.45)) {
         const crate = pick([
           { id: 'drive_coil',  label: 'Drive Coil',  isItem: true },
-          { id: 'exotic',      label: 'exotic' },
+          { id: 'exotic',      label: 'Exotic' },
           { id: 'repair_kit',  label: 'Repair Kit',  isItem: true },
-          { id: 'biocomponent',label: 'biocomponent' }
+          { id: 'biocomponent',label: 'Biocomponent' }
         ]);
         items.push(Object.assign({ count: 1, bonus: true }, crate)); // the card's BONUS tile
       }
     } else if (outcome === 'destroyed_leave') {
-      items.push({ id: 'gold', label: 'gold', count: irand(4, 9) });
+      items.push({ id: 'gold', label: 'Gold', count: irand(4, 9) });
       maybe(0.5, () => items.push({ id: 'fuel_cell', label: 'Fuel Cell', count: 1, isItem: true }));
-      maybe(0.4, () => items.push({ id: 'metal', label: 'metal', count: irand(1, 2) }));
+      maybe(0.4, () => items.push({ id: 'metal', label: 'Metal', count: irand(1, 2) }));
     } else if (outcome === 'surrender') {
-      items.push({ id: 'gold', label: 'gold', count: irand(3, 7) });
+      items.push({ id: 'gold', label: 'Gold', count: irand(3, 7) });
       maybe(0.45, () => items.push({ id: 'fuel_cell', label: 'Fuel Cell', count: 1, isItem: true }));
     }
     return items;
@@ -1369,10 +1431,12 @@
   }
   // What the fight cost, in the demo's notes register ("-15 fuel ·
   // Morale +5"): the real net changes, rounded as the HUD shows them.
+  // The notes are Press Start 2P, which draws U+2212 as an underscore:
+  // ASCII "-", as the demo writes them (b4 B9).
   function costNotes(d) {
-    const sgn = (n, label, pre) => n ? (pre ? `${label} ${n > 0 ? '+' : '−'}${Math.abs(n)}` : `${n > 0 ? '+' : '−'}${Math.abs(n)} ${label}`) : null;
+    const sgn = (n, label, pre) => n ? (pre ? `${label} ${n > 0 ? '+' : '-'}${Math.abs(n)}` : `${n > 0 ? '+' : '-'}${Math.abs(n)} ${label}`) : null;
     return [sgn(d.hull, 'Hull', true), sgn(d.morale, 'Morale', true), sgn(d.fuel, 'fuel'), sgn(d.food, 'food'),
-      sgn(d.gold, 'gold'), d.itemsLost ? `${d.itemsLost} cargo item${d.itemsLost > 1 ? 's' : ''} lost` : null,
+      sgn(d.gold, 'gold'), d.cargoLost || null,
       d.leftBehind || null].filter(Boolean).join(' · ');
   }
 
@@ -1466,7 +1530,7 @@
         title = 'LIMP AWAY'; tone = 'danger';
         // Crew line is written after the effects land (below): the kill
         // can be saved by a medic, injuries go to whoever is left.
-        body = `Hull at 1. Cargo loss ${result.cargoLoss}%.`;
+        body = `Hull at 1. ${cargoLossText(result.cargoLoss)}.`;
         if (result.crewDied && STATE.crew.length) {
           result._deathRole = STATE.crew[Math.floor(Math.random() * STATE.crew.length)];
           outcome.crew_effect = { type: 'kill', target: 'specific_role', role: result._deathRole };
@@ -1544,14 +1608,12 @@
         }
       }
     }
-    // Cargo loss on defeat — drop a random slice of carried items.
-    let itemsLost = 0;
-    if (result.outcome === 'defeated' && result.cargoLoss && STATE.items.length) {
-      const dropCount = Math.min(STATE.items.length, Math.round(STATE.items.length * (result.cargoLoss / 100)));
-      for (let i = 0; i < dropCount; i++) {
-        if (!window.removeRandomItem()) break;
-        itemsLost++;
-      }
+    // Cargo loss on defeat — exactly what onPlayerDefeat named.
+    let cargoLost = '';
+    if (result.outcome === 'defeated' && result.cargoLoss && typeof result.cargoLoss === 'object') {
+      applyCargoLoss(result.cargoLoss);
+      const t = cargoLossText(result.cargoLoss);
+      if (/^Cargo lost/.test(t)) cargoLost = t;
     }
 
     if (slog) ShipLog.fightEnd(slog, result.outcome, title);
@@ -1575,7 +1637,7 @@
       fuel: Math.round(STATE.resources.fuel - before.fuel),
       food: -Math.round((result.outcome === 'tribute' ? Math.min(result.foodCost || 0, before.food) : 0) + (COMBAT.foodSpent || 0)),
       gold: lootItems ? 0 : goldDelta,
-      itemsLost, leftBehind: leftLine,
+      cargoLost, leftBehind: leftLine,
     };
 
     // The outcome view underneath: its text names what came aboard (the
@@ -1618,8 +1680,10 @@
     resolveToOutcome(choice, { hostileGone: true });
   };
 
+  // Read by the encounter's choice tooltip (index.html choiceCostLines).
+  const RAM_FAIL_CHANCE = 0.30;
+  window.RAM_FAIL_CHANCE = RAM_FAIL_CHANCE;
   window.triggerRamResolve = function (choice) {
-    const RAM_FAIL_CHANCE = 0.30;
     if (Math.random() < RAM_FAIL_CHANCE) {
       if (window.ShipLog) ShipLog.fightStart(choice); // the fight's log entry names the ram
       window.triggerCombat(choice, { ramFailed: true, ramHull: choice.hull || 18 });

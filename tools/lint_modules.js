@@ -798,6 +798,22 @@ const eventOnTrail = (ev, trail) => {
     } else if (ev.leave_label != null) {
       err(`${at}: flat event with leave_label but no leave_disabled — flat events have no leave row, the label never shows`);
     }
+    // leave_as (b4 ruling 39): the leave row runs a choice-shaped exit —
+    // a flee/ram/combat hijack or an outcome id of this event, never free.
+    if (ev.leave_as != null) {
+      const la = ev.leave_as;
+      if (typeof la !== 'object' || Array.isArray(la)) err(`${at}: leave_as must be a choice-shaped object`);
+      else {
+        if (ev.no_leave || ev.leave_disabled) err(`${at}: leave_as on an event whose leave row is ${ev.no_leave ? 'hidden' : 'locked'} — it never runs`);
+        if (!ev.layers) err(`${at}: leave_as on a flat event — flat events have no leave row`);
+        if (!(la.triggerFleeResolve || la.triggerRamResolve || la.triggerCombat || la.outcome)) err(`${at}: leave_as does nothing (no outcome / flee / ram / combat)`);
+        if (la.outcome != null && !(ev.outcomes || {})[la.outcome]) err(`${at}: leave_as.outcome "${la.outcome}" is not an outcome of this event`);
+        if ((la.triggerFleeResolve || la.triggerRamResolve) && !la.outcome) err(`${at}: leave_as flee/ram needs the outcome it resolves to`);
+      }
+    }
+    for (const [ok, o] of Object.entries(ev.outcomes || {})) {
+      if (o && o.pose != null && !POSES.has(o.pose)) err(`${at}/outcomes.${ok}: pose "${o.pose}" is not styled (${[...POSES].join('/')})`);
+    }
     for (const [lk, l] of Object.entries(ev.layers || {})) {
       const lat = at + '/' + lk;
       if (l.leave_label != null && !isLabel(l.leave_label)) err(`${lat}: leave_label must be a non-empty UPPERCASE string`);

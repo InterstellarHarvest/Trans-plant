@@ -44,20 +44,8 @@
         },
         "choices": [
           {
-            "text": "Open Fire",
-            "triggerCombat": true
-          },
-          {
-            "text": "Ram — engineer braces the hull",
-            "gate": {
-              "crew": "engineer"
-            },
-            "hull": 18,
-            "triggerRamResolve": true,
-            "outcome": "pirate_ram"
-          },
-          {
             "text": "Negotiate",
+            "sub": "Diplomat contributes",
             "gate": {
               "crew": "diplomat"
             },
@@ -80,11 +68,32 @@
             "outcome": "pirate_paid"
           },
           {
-            "text": "Flee — burn fuel, leave them behind",
-            "triggerFleeResolve": true,
-            "outcome": "pirate_flee"
+            "text": "Open Fire",
+            "sub": "Begin ship-to-ship combat",
+            "risky": true,
+            "triggerCombat": true
+          },
+          {
+            "text": "Flee",
+            "sub": "Burn fuel, leave them behind",
+            "risky": true,
+            "outcome": "pirate_flee",
+            "triggerFleeResolve": true
+          },
+          {
+            "text": "Ram",
+            "sub": "Mostly escape · risk combat",
+            "detail": "The engineer braces the hull for the hit.",
+            "gate": {
+              "crew": "engineer"
+            },
+            "risky": true,
+            "hull": 18,
+            "outcome": "pirate_ram",
+            "triggerRamResolve": true
           }
-        ]
+        ],
+        "pose": "hostile"
       },
       "negotiate": {
         "title": "NEGOTIATION",
@@ -98,14 +107,18 @@
         },
         "choices": [
           {
-            "text": "We have injured crew aboard",
+            "text": "\"We have injured crew aboard.\"",
+            "dialog": true,
+            "sub": "Medic vouches — sympathy play",
             "gate": {
               "crew": "medic"
             },
             "outcome": "pirate_sympathy"
           },
           {
-            "text": "Half the fuel. You let us pass",
+            "text": "\"Half the fuel. You let us pass.\"",
+            "dialog": true,
+            "sub": "Bargain",
             "next": "haggle"
           },
           {
@@ -118,14 +131,16 @@
           },
           {
             "text": "Go back",
+            "sub": "Return to the options",
             "back": true
           }
-        ]
+        ],
+        "pose": "listening"
       },
       "haggle": {
         "title": "THE DEAL",
         "body": "The captain considers, then counters.",
-        "line": "Thirty percent fuel. We call it even.",
+        "line": "Thirty percent of your fuel. And a repair kit, if you're carrying one. We call it even.",
         "ai": {
           "aria": "A wonderful deal for everyone involved!",
           "marv": "30% fuel pushes our reserve below the next leg's need.",
@@ -136,18 +151,22 @@
         "choices": [
           {
             "text": "Accept",
+            "preview": true,
             "outcome": "pirate_deal_30"
           },
           {
             "text": "Counter — 20% only",
+            "sub": "Push back",
             "outcome": "pirate_deal_20",
             "microgame_type": "negotiation_wobble"
           },
           {
             "text": "Walk away",
+            "sub": "Return to negotiation",
             "back": true
           }
-        ]
+        ],
+        "pose": "listening"
       }
     },
     "outcomes": {
@@ -210,24 +229,25 @@
       "pirate_deal_30": {
         "title": "THE DEAL IS DONE",
         "tone": null,
-        "body": "You transfer the fuel. They peel off, already haggling amongst themselves over your supplies.",
+        "body": "You transfer the fuel, and a repair kit if the hold has one. They peel off, already haggling amongst themselves over your supplies.",
         "resources": {},
         "sets_flag": null,
         "time_cost": "low",
-        "narrative": "You transfer the fuel. They peel off, already haggling amongst themselves over your supplies.",
+        "narrative": "You transfer the fuel, and a repair kit if the hold has one. They peel off, already haggling amongst themselves over your supplies.",
         "resources_pct": {
           "fuel": -30
-        }
+        },
+        "item_consume": "repair_kit"
       },
       "pirate_deal_20": {
         "title": "A BETTER DEAL",
         "tone": "success",
-        "body": "The captain snorts.",
+        "body": "The captain snorts. They take the smaller cut of fuel and leave the repair kits alone.",
         "line": "Fine. Twenty percent.",
         "resources": {},
         "sets_flag": null,
         "time_cost": "low",
-        "narrative": "The captain snorts and takes the smaller cut. Fine. Twenty percent.",
+        "narrative": "The captain snorts and takes the smaller cut of fuel, and leaves the repair kits alone. Fine. Twenty percent.",
         "resources_pct": {
           "fuel": -20
         }
@@ -239,7 +259,12 @@
         "line": "The Authority hasn't been in this sector for a year."
       }
     },
-    "no_leave": true
+    "leave_label": "BREAK OFF",
+    "leave_as": {
+      "triggerFleeResolve": true,
+      "outcome": "pirate_flee",
+      "risky": true
+    }
   },
   {
     "id": "event_encounter_trader_001",
