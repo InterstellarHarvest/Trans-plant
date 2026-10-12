@@ -312,7 +312,7 @@
   // button pulsing with it. Only real state raises one (arrival at a
   // stop with a trader in range, what the route ahead shows) and each
   // is logged, as the demo logs its alerts.
-  let alertTimer = null, alertedNode = null;
+  let alertTimer = null;
   function showSceneAlert(msg, ms) {
     const el = $('scene-alert');
     el.textContent = msg;
@@ -328,8 +328,8 @@
     anomaly:        'UNIDENTIFIED SIGNAL · PORT BOW',
   };
   function arrivalAlert() {
-    if (!cruiseVisible() || STATE.ended || alertedNode === STATE.currentId || activeWait || STATE.forcedEvent) return;
-    alertedNode = STATE.currentId;
+    if (!cruiseVisible() || STATE.ended || STATE.alertedNode === STATE.currentId || activeWait || STATE.forcedEvent) return;
+    STATE.alertedNode = STATE.currentId; // saved: a reload doesn't raise (and log) it again
     let msg = null;
     if (traderHere() && !atStation()) msg = 'TRADER SHIP ON APPROACH';
     else {
@@ -340,6 +340,7 @@
     if (!msg) return;
     showSceneAlert(msg);
     pushLogEntry('▶ ' + msg);
+    if (typeof saveRun === 'function') saveRun(); // the line + alertedNode (the hub's own save ran before this timer)
   }
 
   // ── Trader presence (owner ruling 2026-10-11, Bible §18 Trader-wait) ──

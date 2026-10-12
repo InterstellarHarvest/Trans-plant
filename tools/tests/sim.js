@@ -349,7 +349,7 @@ function step() {
     } else if (!acts.rolled) {
       acts.rolled = true;
       if (Math.random() < 0.25) {
-        stopBtn.click();
+        if (!document.body.classList.contains('stop-active')) stopBtn.click(); // pressed while stopped it is RESUME (travels)
         const vs = verbBtns().filter(b => !/FABRICATOR/.test(b.textContent));
         if (vs.length) { const b = vs[Math.floor(Math.random() * vs.length)]; const nm = b.querySelector('.stop-choice-body').textContent; S.verbs[nm] = (S.verbs[nm] || 0) + 1; window.__ctx = 'verb'; try { b.click(); const st = [...document.querySelectorAll('#stop-choices .day-step')]; if (st.length) st[Math.floor(Math.random() * 3)].click(); } finally { window.__ctx = 'other'; } }
         return { wait: 50 };
@@ -369,7 +369,9 @@ function step() {
   return { wait: 200 };
 }
 
-(async () => {
+// The save fuzzer (test_save_fuzz.js) drives play with the same policies.
+module.exports = { installHarness, step };
+if (require.main === module) (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1100, height: 780 } });
   const errors = [];

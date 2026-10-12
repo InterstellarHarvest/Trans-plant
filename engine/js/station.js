@@ -199,8 +199,9 @@
   function returnToDock() {
     const v = visit();
     v.phase = 'docked'; v.inRoom = null;
-    enterApproach(['docked'], v._dockSeen ? ['docked'] : []);
-    v._dockSeen = true;
+    const seen = v._dockSeen;
+    v._dockSeen = true; // before the entry save, so a reload remembers it
+    enterApproach(['docked'], seen ? ['docked'] : []);
   }
 
   function act(choice) {

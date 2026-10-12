@@ -1750,7 +1750,7 @@ const SAVED_FIELDS = [
   'miningSectors', 'lastAmbientNode', 'miningLifetime', // miningLifetime: the haul card's voyage stats (parity-shell) // sector re-roll on reload defeated mining's anti-reroll; ambient repeated
   'deprived', // consecutive days at 0 food/water/O2
   'crewIdentity', // joined stowaways keep their own name in a crew role
-  'researchReady', // Academic captain: one Research preview per station leg
+  'researchReady', 'researchKey', // Academic captain: one Research preview per station leg, and the layer it is on (a reload mid-event kept it spent but hid it)
   'scouted', // SCAN: events locked in at the stops ahead
   'soilSurveys', // soil sampler planet surveys (ending score)
   'startCrew',   // crew size at launch (ending crew paragraph / score)
@@ -1763,6 +1763,7 @@ const SAVED_FIELDS = [
   'artSeed', // scene_art.js picks backdrop + NPC-face variants from it: a reload shows the same images
   'passengers', // scenes B: rescued survivors riding to the next station
   'stationVisit', // station approach: this stop's rolls (hail-first, fee), drawn event, docked / waved off
+  'alertedNode', // cruise.js: the stop whose arrival alert has shown (a reload logged it again)
   'traderAt', 'forcedEvent', // cruise.js: the trader-presence roll per stop; a during-wait event waiting on the player (a reload can't dodge either)
 ];
 function saveRun(key) {
@@ -1835,7 +1836,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, passengers: () => [], stationVisit: () => null, captainHP: () => 100 }; // traderAt/forcedEvent: cruise.js; passengers: scenes B; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, captainHP: () => 100 }; // traderAt/forcedEvent: cruise.js; passengers: scenes B; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -1846,7 +1847,7 @@ function loadRun(key) {
   STATE.currentEvent = null; STATE.currentNode = null;
   STATE.layerStack = null; STATE.currentOutcomeId = null;
   STATE.npcCtx = null; STATE.outcomeMode = false; STATE.ended = false;
-  STATE._itemDefs = null;
+  STATE._itemDefs = null; STATE._evSave = null; STATE._shoppedThisEvent = false;
   ensureOrders(); // pre-orders saves get the defaults (seeded from cropGrowth.waterPlant)
   syncItemValues(); // pre-trade-value saves: the goods aboard are valued now, once, and saved with it
   syncItemPickups(ITEM_PICKUP_OLD); // pre-mark saves: what's aboard is not NEW
@@ -1926,6 +1927,7 @@ function loadRun(key) {
   // Saved in an event: back into that same event (same NPC, same variant,
   // same layer — they're in the snapshot).
   const pe = snap.pendingEvent && EVENTS[snap.pendingEvent];
+  STATE._shoppedThisEvent = !!(pe && snap.pendingShopped); // walking off still costs the haggling day
   if (pe && STATE.byId[STATE.currentId]) enterEvent(STATE.byId[STATE.currentId], pe, { variantIndex: snap.pendingVariant, layerStack: snap.pendingLayers, layerVisits: snap.pendingVisits, speaker: snap.pendingSpeaker });
   return true;
 }
@@ -2068,7 +2070,7 @@ function applySetupToState(sel) {
   // after another used to inherit its log, fabricator, sectors…).
   STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
   STATE.postCombatLegs = 0; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
-  STATE.crisisPatient = null; STATE.lastAmbientNode = null;
+  STATE.crisisPatient = null; STATE.lastAmbientNode = null; STATE.alertedNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0;
   STATE.traderAt = {}; STATE.forcedEvent = null; // cruise.js: trader-presence rolls, during-wait event
@@ -4161,7 +4163,9 @@ function travelTo(nodeId, opts) {
   // state the draw saw is the same state the fired event observes
   // (the fuzz harness's draw audit caught the mid-draw decrement
   // producing a decision/state mismatch on the window's last leg).
-  if ((STATE.postCombatLegs || 0) > 0) STATE.postCombatLegs--;
+  // The event's entry save was written before it: write it again, or a
+  // reload mid-event stretched the window by a leg.
+  if ((STATE.postCombatLegs || 0) > 0) { STATE.postCombatLegs--; if (STATE.currentEvent) resaveEventProgress(); else saveRun(); }
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -4256,12 +4260,26 @@ function enterEvent(node, ev, opts) {
 function saveEventProgress() {
   const ev = STATE.currentEvent;
   if (!ev || STATE.ended || !STATE.trail || !STATE.nodes.length) return;
-  writeSnapshot(SAVE_KEY, {
+  STATE._evSave = {
     pendingEvent: ev.id, pendingVariant: STATE.variantIndex,
     pendingLayers: STATE.layerStack ? STATE.layerStack.slice() : null,
     pendingVisits: Object.keys(STATE._layerVisits || {}),
     pendingSpeaker: STATE.eventSpeaker || null,
-  });
+  };
+  writeSnapshot(SAVE_KEY, Object.assign({ pendingShopped: !!STATE._shoppedThisEvent }, STATE._evSave));
+}
+/* …and again once the layer has painted: what the paint rolled or spent
+   (a layer speaker's face, the Academic's Research preview) and what was
+   bought on this layer (the market saves nothing itself, and walking off
+   after shopping costs the haggling day) are in the save too. A reload
+   used to bring back the gold, a fresh face, and a free walk-away. Never
+   mid-fight or mid-minigame: those saves settle the job as a quit. */
+function resaveEventProgress() {
+  const s = STATE._evSave, ev = STATE.currentEvent;
+  if (!s || !ev || s.pendingEvent !== ev.id || STATE.outcomeMode || STATE.ended) return;
+  if (document.getElementById('screen-encounter').classList.contains('combat-mode')) return;
+  if (document.querySelector('#overlay-minigames.active, #overlay-mining.active')) return;
+  writeSnapshot(SAVE_KEY, Object.assign({ pendingShopped: !!STATE._shoppedThisEvent }, s));
 }
 
 /* One-shot action key — demo's `consume` machinery, scoped per event
@@ -4920,6 +4938,7 @@ function fitEncounterColumns() {
 function renderChoices(choices) {
   renderChoicesInner(choices);
   fitEncounterColumns();
+  resaveEventProgress();
 }
 function renderChoicesInner(choices) {
   const col = document.getElementById('enc-choices');
