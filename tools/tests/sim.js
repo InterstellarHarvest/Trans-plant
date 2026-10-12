@@ -3,6 +3,8 @@
 // Hunt 5 (2026-10-10): realistic mining yields (13±, measured from the real
 // minigame), station shopping (policy suffix :shop), mining runs per visit
 // (policy suffix :N), a per-cause resource ledger, and a verb sampler policy.
+// :salvage salvages once at every stop that offers it; :farm mines once at
+// every asteroid field, nebula and derelict.
 // usage: node sim.js <runsPerCell> <policies,comma> <trails,comma> [outfile]
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -20,7 +22,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 function installHarness(policy) {
   /* eslint-disable no-undef */
   const P = policy.split(':')[0];
-  window.__pol = P; window.__mineRuns = +(policy.split(':')[1] || 1); window.__shop = policy.includes(':shop'); window.__farm = policy.includes(':farm');
+  window.__pol = P; window.__mineRuns = +(policy.split(':')[1] || 1); window.__shop = policy.includes(':shop'); window.__farm = policy.includes(':farm'); window.__salvage = policy.includes(':salvage');
   const T = () => { const r = Math.random(); return r < 0.3 ? 'perfect' : r < 0.7 ? 'good' : r < 0.95 ? 'poor' : 'abandoned'; };
   const S = window.__stats = {
     forageFood: 0, harvests: 0, harvestFood: 0, harvestMorale: 0, verbs: {}, events: 0, eventDays: 0, verbDays: 0, travelDays: 0,
@@ -345,6 +347,9 @@ function step() {
           if (doVerb({ test: x => x === t }, nm)) return { wait: 50 }; }
       }
       if (window.__farm && ['asteroid_field', 'nebula', 'derelict'].includes(node.node_type) && !acts.did.mine && doVerb(/^MINE/, 'mine')) return { wait: 50 };
+      // :salvage — a careful player picks over every wreck once (SALVAGE is
+      // where the curiosities turn up: items.json find_odds.salvage).
+      if (window.__salvage && !acts.did.salvage && doVerb(/^SALVAGE/, 'salvage')) return { wait: 50 };
       const cap = P === 'stopper' ? 4 : 2;
       if (acts.n < cap) {
         if (node.node_type === 'station' && peopleAboard().some(r => hpOf(r) < 60) && STATE.goldAmount >= 30 && !acts.did.medbay) { S.medbay++; if (doVerb(/MEDBAY/, 'medbay')) return { wait: 50 }; }

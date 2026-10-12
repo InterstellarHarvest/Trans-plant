@@ -18,6 +18,11 @@
  *     the crew water tiers is an error (four copies of the low-resource
  *     lines once disagreed). A line that means a different number says so
  *     with `// lint-ok: threshold`.
+ *   - the gold economy's numbers live in data: a raw material's price is
+ *     its value × materials.json station_sell_multiplier (a literal
+ *     multiplier in the engine is an error), and a trade good found on
+ *     SALVAGE / FORAGE rolls its items.json find_odds (a bare chance next
+ *     to a trade-good id is an error).
  *   - the registry's low_* / fab_low thresholds equal RES_LOW, MORALE_LOW
  *     and FAB_LOW_WEAR; fabricator.js's misfire numbers equal recipes.json
  *     _meta (prose on both sides, so nothing else ties them).
@@ -364,6 +369,24 @@ for (const e of ENGINE) e.code.forEach((line, i) => {
   if (/ratio\s*>=\s*0\.7\b/.test(line) && !(e.rel === 'index.html' && /^\s*if \(ratio >= 0\.7\) return 1;/.test(line)))
     err(`${e.rel}:${i + 1}: a copy of the crew water tiers — call crewWaterDrainRate(plantPct)`);
 });
+
+// ── Gold: material prices and trade-good finds come from data ───────
+// A material's sale price is value × station_sell_multiplier (market.js
+// materialPrice); a literal multiplier is a second price nobody tunes.
+// A trade good's find chance is its items.json find_odds: a bare
+// `Math.random() < 0.2` within two lines of a trade-good id is the old
+// hard-coded roll the sims couldn't see.
+{
+  const items = JSON.parse(fs.readFileSync(path.join(ROOT, 'modules', 'items', 'items.json'), 'utf8')).filter(i => i.id);
+  const goods = items.filter(i => (i.tags || []).includes('trade_good')).map(i => i.id.replace(/^item_/, '').replace(/_\d+$/, ''));
+  const goodRe = new RegExp(`['"\`](${goods.join('|')})['"\`]`);
+  for (const e of ENGINE) {
+    e.code.forEach((line, i) => {
+      if (/\b(?:m|mat|mdef|def)\.value\b[^;]*?\)?\s*\*\s*\d/.test(line)) err(`${e.rel}:${i + 1}: a material price with a literal multiplier — use materials.json station_sell_multiplier (market.js materialPrice)`);
+      if (/Math\.random\(\)\s*<\s*\d/.test(line) && [0, 1, 2].some(k => goodRe.test(e.lines[i + k] || ''))) err(`${e.rel}:${i + 1}: a hard-coded chance for a trade good — put it in the item's items.json find_odds (itemFindOdds)`);
+    });
+  }
+}
 
 // ── The named thresholds agree with the registry and recipes.json ───
 const html = ENGINE[0].raw;
