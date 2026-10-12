@@ -1401,6 +1401,9 @@ const PauseMenu = (() => {
                     Refusal logs cargoFullMsg (optional string) as deny.)
      - removeCargo: (id, entry) => void   (removes one matching id —
                     the exact entry when the cargo entry carries a key)
+     - confirmRemoval: (entry, offer, proceed) => bool  (OPTIONAL: return
+                    true to hold a sale/fence for the host's own confirm,
+                    which calls proceed() on yes; false lets it through)
      - logEl:     element to receive .market-log-line children (the running log)
      - hostEl:    element that receives .market-mode class (drives reflow)
      - rootId:    DOM id of the .enc-market element (default 'enc-market')
@@ -1766,12 +1769,12 @@ const MarketModal = (function() {
     }
   }
 
-  function fenceItem(idx, offer) {
+  function fenceItem(idx, offer, confirmed) {
     if (!_state) return;
     const cargo = _state.opts.getCargo();
     const entry = cargo && cargo[idx];
     if (!entry || _state.soldCargoIdxs.has(idx)) return;
-    if (refuseRemoval(entry.id) || sellGuarded()) return;
+    if (refuseRemoval(entry.id) || askFirst(entry, offer, confirmed, () => fenceItem(idx, offer, true)) || sellGuarded()) return;
     _state.opts.setGold(_state.opts.getGold() + offer);
     if (_state.opts.removeCargo) _state.opts.removeCargo(entry.id, entry);
     else _state.soldCargoIdxs.add(idx);
@@ -1847,7 +1850,12 @@ const MarketModal = (function() {
     appendLog(_state.opts.cargoLockedMsg || "Can't part with that right now.", 'deny');
     return true;
   }
-  function sellCargoStacked(key, offer, name) {
+  // The host's confirm (cargo it wants a second yes for) holds the sale;
+  // its yes comes back through proceed with confirmed set.
+  function askFirst(entry, offer, confirmed, proceed) {
+    return !confirmed && !!_state.opts.confirmRemoval && !!_state.opts.confirmRemoval(entry, offer, proceed);
+  }
+  function sellCargoStacked(key, offer, name, confirmed) {
     if (!_state || !offer) return;
     const cargo  = _state.opts.getCargo();
     const sold   = _state.soldCargoById.get(key) || 0;
@@ -1856,7 +1864,7 @@ const MarketModal = (function() {
     if (available <= 0) return;
     const entry = mine[0];
     const id    = entry.id;
-    if (refuseRemoval(id) || sellGuarded()) return;
+    if (refuseRemoval(id) || askFirst(entry, offer, confirmed, () => sellCargoStacked(key, offer, name, true)) || sellGuarded()) return;
     if (_state.opts.removeCargo) _state.opts.removeCargo(id, entry);
     else _state.soldCargoById.set(key, sold + 1);
     _state.opts.setGold(_state.opts.getGold() + offer);

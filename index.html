@@ -1105,6 +1105,19 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
         <button class="market-close" id="market-close-btn">STEP BACK</button>
       </div>
     </div>
+    <!-- Selling cargo an event ahead needs asks first — the cargo hold's
+         jettison confirm, the same panel (engine/js/screens/market.js). -->
+    <div id="market-confirm" class="hidden">
+      <div class="jettison-panel route-warn">
+        <div class="jettison-title">⚠ SELL?</div>
+        <div id="market-confirm-text"></div>
+        <div id="market-route-warn"></div>
+        <div class="jettison-buttons">
+          <button class="panel-btn" id="market-confirm-no">CANCEL</button>
+          <button class="panel-btn accent-red" id="market-confirm-yes">SELL 1</button>
+        </div>
+      </div>
+    </div>
   </div>
   <div id="overlay-mining" class="overlay" data-esc-pause>
     <div id="mining-root">
