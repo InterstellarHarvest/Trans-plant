@@ -27,7 +27,7 @@ for t in $TESTS; do
   s=$SECONDS
   r=$($NVM/bin/node "$t" 2>&1)
   echo "$t: $(echo "$r" | grep -E 'passed|failed|errors:' | tail -1) ($((SECONDS - s))s)"
-  echo "$r" | grep -E '✗|Error' | head -4
+  echo "$r" | grep -E -A3 '✗|Error' | head -12 # a failure's detail lines follow it
 done
 cd "$ROOT"
 $NVM/bin/node tools/lint_modules.js 2>&1 | tail -1

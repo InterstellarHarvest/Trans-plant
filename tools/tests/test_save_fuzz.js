@@ -96,7 +96,7 @@ function diff(a, b, path = '', out = []) {
     const runSeed = Math.floor(R() * 1e9);
     const policy = R() < 0.5 ? 'random' : 'greedy';
     const cfg = { trail, ai: pick(AIS), captain: pick(CAPTAINS), crew: [...new Set([pick(CREWPOOL), pick(CREWPOOL)])].slice(0, Math.floor(R() * 3)), crop: pick(CROPS), ship: 'Fuzz' };
-    const tag = `${trail}#${run} ${policy} ${JSON.stringify(cfg)}`;
+    const tag = `${trail}#${run} ${policy} ${JSON.stringify(cfg)} (SAVE_FUZZ_SEED=${SEED})`;
     const ctx = await browser.newContext({ viewport: { width: 1100, height: 780 } });
     const page = await ctx.newPage();
     const errors = [];

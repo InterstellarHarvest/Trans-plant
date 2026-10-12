@@ -209,12 +209,15 @@ const box = async (page, sel) => page.evaluate(sel => { const r = document.query
     const f = () => page.evaluate(() => ({ cls: [...document.getElementById('enc-subject').classList].filter(c => c.startsWith('pose-')).join(), f: getComputedStyle(document.getElementById('enc-subject-head')).filter }));
     const a = await f();
     ok(a.cls === 'pose-pleased' && a.f === 'brightness(1.2) saturate(1.2)', 'pleased → ' + a.f);
+    // The head's filter eases over 0.25s: wait for the ease itself to end
+    // (a fixed 350ms read it mid-ease under load).
+    const settle = async () => { await page.waitForTimeout(60); await page.evaluate(() => Promise.all(document.getElementById('enc-subject-head').getAnimations().map(a => a.finished.catch(() => {})))); };
     await page.evaluate(() => { STATE.layerStack.push('watchers'); renderEncounterState(); finishAllTyping(); });
-    await page.waitForTimeout(350); // the head's filter eases over 0.25s
+    await settle();
     const b = await f();
     ok(b.cls === 'pose-listening' && b.f === 'brightness(1.1)', 'listening → ' + b.f);
     await page.evaluate(() => { const s = document.getElementById('enc-subject'); s.classList.remove('pose-listening'); s.classList.add('pose-hostile'); });
-    await page.waitForTimeout(350);
+    await settle();
     const hostile = await page.evaluate(() => getComputedStyle(document.getElementById('enc-subject-head')).filter);
     ok(/brightness\(0\.85\) contrast\(1\.2\) hue-rotate\(-10deg\)/.test(hostile), 'hostile → ' + hostile);
     await page.close();
