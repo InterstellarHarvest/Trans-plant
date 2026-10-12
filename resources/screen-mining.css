@@ -67,11 +67,11 @@
 
 
 }
-#crt-overlay {
-  pointer-events: none; position: absolute; inset: 0; z-index: 100;
-  background: repeating-linear-gradient(0deg,
-    rgba(0,0,0,0.06), rgba(0,0,0,0.06) 1px, transparent 1px, transparent 2px);
-}
+/* No #crt-overlay rule here (b4 re-audit): the old unscoped copy of the
+   demo's (z-index 100) restyled the game-wide #crt-overlay from this
+   file. The one in index.html already lays the demo-mining scanlines
+   (rgba 0,0,0 / 0.06, 1px on 2px) over the mining overlay with
+   everything else. */
 
 /* ── Encounter shell (subset; subject machinery removed) ──────── */
 #mining-root {
@@ -168,6 +168,7 @@
    bottom narrative panel. */
 #mining-root .enc-ai-text {
   color: var(--cream);
+  font-style: normal; /* demo-mining :206 — upright; the encounter's italic .enc-ai-text (index.html) leaked in */
   font-family: 'VT323', monospace;
   letter-spacing: 1px;
   overflow: hidden;
@@ -176,15 +177,13 @@
   transition: opacity 0.25s;
 }
 #mining-root .enc-ai-text.fading { opacity: 0; }
-/* The resource HUD (#hud-mining) overlays the right ~190px of the AI
-   bar — reserve that strip so the chips below sit beside it, not under
-   it (the SECTOR chip was completely hidden). */
-#mining-root .enc-ai-bar { padding-right: 200px; }
+/* The bar already stops at right: 200px, short of the five-dot HUD
+   (ruling 16, x ≥ 760) — the old extra 200px padding-right squeezed the
+   chips into a dead strip and hid MINING MODE. Demo layout (demo-mining
+   :837): status text, then MINING MODE + SECTOR chips on the right. */
 #mining-root .enc-ai-bar .enc-ai-text { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#mining-root .enc-ai-bar .sector-tag { flex: none; }
-/* Room is tight beside the HUD: the MINING MODE chip only repeats the
-   bar's own MINING label, so it yields to the AI line + SECTOR chip. */
-#mining-root .enc-ai-bar .mining-mode-tag { display: none; }
+#mining-root .enc-ai-bar .sector-tag,
+#mining-root .enc-ai-bar .mining-mode-tag { flex: none; }
 /* MINING MODE + SECTOR chips — right-aligned on the AI bar. */
 #mining-root .enc-ai-bar .mining-mode-tag,
 #mining-root .enc-ai-bar .sector-tag {

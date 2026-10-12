@@ -442,7 +442,8 @@
   // saves exist): SESSION stays per-visit (its run count prices the days
   // and labels LEAVE); LIFE accumulates every run of the voyage on
   // STATE.miningLifetime, which index.html's SAVED_FIELDS persists. The
-  // haul card's session row reads LIFE.
+  // haul card's SESSION row reads SESSION (demo wording, b4 re-audit);
+  // LIFE closes the cruise log line (miningSummary).
   function lifeStats() {
     if (!STATE.miningLifetime) STATE.miningLifetime = { runs: 0, totalCracks: 0, totalMaterials: 0, totalHollows: 0, totalFragmentsLost: 0, bestChainEver: 0, bestTier: null };
     return STATE.miningLifetime;
@@ -1368,24 +1369,27 @@
     `;
     card.appendChild(statsRow);
 
-    // Session stats — accumulates across BEGIN cycles in this
-    // playthrough. Only show on the 2nd run onward (skip on first run
-    // since the session totals would be identical to the current run).
-    if (LIFE.runs >= 2) {
+    // Session stats — the demo's row (demo-mining ~2226): what THIS
+    // mining session (this stop's BEGIN → MINE AGAIN loop) has added up.
+    // Only from the 2nd run on (the first would repeat the run above).
+    // It read the voyage totals (LIFE) under the SESSION label (b4
+    // re-audit B3); the voyage totals now ride the cruise log line
+    // (miningSummary) instead.
+    if (SESSION.runs >= 2) {
       const sessLabel = document.createElement('div');
       sessLabel.className = 'haul-session-label';
-      sessLabel.textContent = '— SESSION · ' + LIFE.runs + ' RUNS —';
+      sessLabel.textContent = '— SESSION · ' + SESSION.runs + ' RUNS —';
       card.appendChild(sessLabel);
 
-      const bestTierLabel = LIFE.bestTier
-        ? TIER_LABELS[LIFE.bestTier]
+      const bestTierLabel = SESSION.bestTier
+        ? TIER_LABELS[SESSION.bestTier]
         : '—';
       const sessRow = document.createElement('div');
       sessRow.className = 'haul-stats session';
       sessRow.innerHTML = `
-        <span class="stat"><span class="lbl">CRACKS</span><span class="val">${LIFE.totalCracks}</span></span>
-        <span class="stat"><span class="lbl">MATERIALS</span><span class="val">${LIFE.totalMaterials}</span></span>
-        <span class="stat"><span class="lbl">BEST CHAIN</span><span class="val">${LIFE.bestChainEver}</span></span>
+        <span class="stat"><span class="lbl">CRACKS</span><span class="val">${SESSION.totalCracks}</span></span>
+        <span class="stat"><span class="lbl">MATERIALS</span><span class="val">${SESSION.totalMaterials}</span></span>
+        <span class="stat"><span class="lbl">BEST CHAIN</span><span class="val">${SESSION.bestChainEver}</span></span>
         <span class="stat"><span class="lbl">BEST TIER</span><span class="val">${bestTierLabel}</span></span>
       `;
       card.appendChild(sessRow);
@@ -1459,12 +1463,20 @@
     else if (MSTATE.sector && MSTATE.sector.label) bits.push(MSTATE.sector.label.toLowerCase());
     const c = SESSION.crewUsed && CREW_ASSIST[SESSION.crewUsed];
     if (c) bits.push(assistName(SESSION.crewUsed) + ' assisting (' + c.bias + ')');
+    // The voyage's mining record (STATE.miningLifetime, saved) — once an
+    // earlier stop has been mined too.
+    const L = lifeStats();
+    if (L.runs > SESSION.runs) bits.push(L.runs + ' runs this voyage, ' + L.totalMaterials + ' materials');
     return '[' + bits.filter(Boolean).join(' · ') + ']';
   }
 
   // ── Entry point ──────────────────────────────────────────────
   // Called by cruise.js's MINE verb handler. onDone(haul) fires when the
-  // player clicks RETURN TO SHIP — see finishMining() above.
+  // player clicks RETURN TO SHIP — see finishMining() above. This overlay
+  // IS the mining route (owner ruling 46b, 2026-10-12): MINE opens it
+  // straight from the Stop menu and its ARMED state is the pre-commit
+  // view. MINING_DEMO_SPEC §2/§11's asteroid_mining encounter wrapper was
+  // never built and isn't planned.
   let onMiningDone = null;
   // Load-time teardown (index.html teardownLiveUI): drop the visit
   // without banking or calling back into the run being replaced.

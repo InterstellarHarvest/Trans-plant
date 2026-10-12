@@ -2723,5 +2723,128 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_crisis_025",
+    "active": true,
+    "title": "Engine Fault",
+    "leave_disabled": true,
+    "leave_label": "CAN'T LEAVE (DRIVE DOWN)",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "bg": "our_ship/engine_error",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "design_note": "Owner ruling 38 (2026-10-12): the demo-cruise engine_fault (ENGINE FAULT — REPAIR UNDER WAY; FIELD REPAIR / LIMP MODE) built as a crisis event. The hands-on choice launches the Simon ENGINE REPAIR minigame (minigames.js initEngine): perfect/good get the drive back on the low time cost, poor is limp mode plus the sparks (worse than choosing LIMP MODE outright). A quit lands the poor tier's losses and its time (index.html eventMinigameQuit). Drawn like the other any-node crises (once per run).",
+    "ai_flavor": {
+      "aria": "The drive just made a noise ARIA has never heard before, and she has heard ALL the noises! She is very excited and a little worried! Mostly worried!",
+      "marv": "MARV reports the drive coil stopped cooperating at sixty-one percent of the burn. He has the restart sequence. He notes it works best when performed by someone who is paying attention.",
+      "rex": "REX has classified the drive fault as a casualty and wants it treated like one. Sequence on screen. Hands on the panel. No commentary.",
+      "chip": "CHIP is delighted to remind you that EngineRight™ Roadside does not serve this sector! Or any sector! It is a VERY exclusive service!",
+      "ajoy": "AJOY has already damped the coil and logged the fault. The drive, she says, has simply forgotten its order. Someone needs to remind it."
+    },
+    "body": "Halfway through the burn, the drive coughs, then stops. The hum is simply gone, and the silence where it used to be is louder than any alarm.\n\nThe board lights amber: DRIVE COIL FAULT · RESTART SEQUENCE REQUIRED. The ship coasts on what it had, which will not get it anywhere soon.",
+    "choices": [
+      {
+        "text": "Run the restart sequence yourself",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You pull the drive panel and call up the restart sequence."
+        },
+        "launch_minigame": "engine",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "morale": 3
+            },
+            "narrative": "Coil, injector, valve, relay, every contact in order on the first pass. The drive catches at once and settles back into its hum. The crew heard it come back, and they know whose hands brought it back.",
+            "scene_bg": "our_ship/engine_fixed"
+          },
+          "good": {
+            "resources": {
+              "fuel": -4
+            },
+            "narrative": "The sequence takes on the second try. The first one dumped a slug of fuel through a cold injector and lit the exhaust up like a festival. The drive runs. The fuel gauge is quieter about it than everyone else.",
+            "scene_bg": "our_ship/engine_fixed"
+          },
+          "poor": {
+            "resources": {
+              "fuel": -6,
+              "hull": -4,
+              "morale": -3
+            },
+            "time_cost": "medium",
+            "narrative": "The sequence won't take. The drive drops into limp mode: half power, a warning light nobody can switch off, and a coil that bangs against its mount every few minutes until the mount gives a little. You make the rest of the leg at a crawl, days late, with a dent to show for it."
+          }
+        }
+      },
+      {
+        "text": "Engineer powers down the coil and rebuilds it",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The engineer shuts the coil down cold, strips it on the deck plate and rebuilds it from the windings out, reciting part numbers like a prayer. It comes back up smoother than it left the yard. Nobody asks how long it had been wrong.",
+          "scene_bg": "our_ship/engine_fixed"
+        }
+      },
+      {
+        "text": "Limp mode: half power the rest of the way",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -2,
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You drop the drive to half power and leave the fault where it is. It holds. Everything takes twice as long, and the hum has a stutter in it now that everyone pretends not to hear."
+        },
+        "detail": "Adds days, but the drive holds."
+      }
+    ],
+    "science_link": {
+      "text": "MARV appends the reading: keeping a drive alive far from any shipyard is half of what spaceflight is.",
+      "label": "How spacecraft engines work",
+      "url": "https://en.wikipedia.org/wiki/Spacecraft_propulsion"
+    }
   }
 ]

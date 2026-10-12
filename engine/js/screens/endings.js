@@ -163,6 +163,10 @@
         toneId: f.failure_type,
         title: f.title,
         body: f.body,
+        // The report card leads with the body's first paragraph (Bible §17
+        // "title + body sentence"); the rest waits behind the expander.
+        lead: firstPara(f.body),
+        rest: restParas(f.body),
         record,
         quote: f.epitaph ? `— ${f.epitaph}` : null,
         showReport: !CINEMATIC_ONLY_FAILURES.has(f.failure_type),
@@ -276,8 +280,9 @@
     else { cmp = 'ON TIME'; cmpClass = ''; }
     $('end-day-line').innerHTML =
       `DAY <span class="day-num">${stats.days}</span> OF ${stats.baseDays} · <span class="day-cmp ${cmpClass}">${cmp}</span>` +
-      // The rest of what the score counts (index.html scoreValue).
-      ((stats.soil || stats.cropBonus > 1) ? '<span class="score-extras">' + [
+      // The rest of what the score counts (index.html scoreValue). A
+      // failure has no score, so no score extras either (b4 re-audit A2).
+      (!stats.failed && (stats.soil || stats.cropBonus > 1) ? '<span class="score-extras">' + [
         stats.soil ? 'SOIL SURVEYS +' + stats.soil * 2 : '',
         stats.cropBonus > 1 ? 'CROP BONUS +' + Math.round((stats.cropBonus - 1) * 100) + '%' : '',
       ].filter(Boolean).join(' · ') + '</span>' : '');
@@ -361,17 +366,54 @@
     for (const l of lines) { const d = document.createElement('div'); d.className = 'end-record-line'; d.textContent = '— ' + l; box.appendChild(d); }
   }
 
+  /* Report card — owner ruling 31 (2026-10-12), demo-endings
+     renderReport: the tier stinger (MADE IT…) or the failure's title in
+     its colour, ONE lead line (the destination × crop arrival line; a
+     failure's first paragraph), the quote and the Run Report, all in view
+     at the demo's card size. The module's paragraphs (an arrival's colony
+     report, a failure's remaining paragraphs) and the Ship's Record wait
+     behind READ THE COLONY REPORT, collapsed on every visit. */
+  function firstPara(t) { return String(t || '').split(/\n\s*\n/)[0].trim(); }
+  function restParas(t) { return String(t || '').split(/\n\s*\n/).slice(1).join('\n\n').trim(); }
   function renderReport(view) {
-    $('end-report-title').textContent = view.reportTitle || view.title;
+    const arrival = view.category === 'arrival';
+    $('end-report-title').textContent = view.title;
+    const lead = arrival ? (view.arrival || firstPara(view.body)) : view.lead;
+    const fullBody = arrival ? (view.arrival ? view.body : restParas(view.body)) : view.rest;
     const arrEl = $('end-report-arrival');
-    if (arrEl) { arrEl.textContent = view.arrival || ''; arrEl.style.display = view.arrival ? 'block' : 'none'; }
-    $('end-report-body').textContent = view.body;
+    arrEl.textContent = lead || ''; arrEl.style.display = lead ? 'block' : 'none';
     const qEl = $('end-report-quote');
     if (view.quote) { qEl.style.display = 'block'; qEl.textContent = view.quote; }
     else qEl.style.display = 'none';
-    paintRecord('end-report-quote', view.record);
     renderScorePanel(view.stats, view.showReport);
+    // Behind the expander: the module's own title (an arrival's "Colony
+    // Report Filed"), its paragraphs, then the Ship's Record.
+    $('end-report-full-title').textContent = arrival ? (view.reportTitle || '') : '';
+    $('end-report-full-title').style.display = arrival && view.reportTitle ? '' : 'none';
+    $('end-report-body').textContent = fullBody || '';
+    $('end-report-body').style.display = fullBody ? '' : 'none';
+    paintRecord('end-report-body', view.record);
+    const hasMore = !!(fullBody || (view.record && view.record.length));
+    const more = $('end-report-more');
+    more.dataset.label = arrival ? 'READ THE COLONY REPORT' : 'READ THE FULL REPORT';
+    more.style.display = hasMore ? '' : 'none';
+    setReportExpanded(false);
+    $('end-report-scroll').scrollTop = 0;
     $('end-report').classList.add('show');
+  }
+  function setReportExpanded(open) {
+    const more = $('end-report-more'), full = $('end-report-full');
+    full.hidden = !open;
+    more.setAttribute('aria-expanded', open ? 'true' : 'false');
+    const label = more.dataset.label;
+    more.textContent = open ? label.replace(/^READ /, 'HIDE ') + ' ▴' : label + ' ▾';
+    // Opened: bring the report's first line up into view (the card caps
+    // at the frame; its text scrolls, Back / New Run stay at its foot).
+    if (open) { const sc = $('end-report-scroll'); sc.scrollTop = Math.max(0, full.offsetTop - sc.offsetTop - 8); }
+  }
+  {
+    const more = document.getElementById('end-report-more');
+    if (more) more.addEventListener('click', () => setReportExpanded(document.getElementById('end-report-full').hidden));
   }
 
   /* ── Entry points ─────────────────────────────────────────── */

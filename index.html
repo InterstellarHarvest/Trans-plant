@@ -895,9 +895,11 @@ body {
     <div id="end-report">
       <div id="end-report-card">
         <div id="end-report-scroll">
+        <!-- Owner ruling 31 (2026-10-12): the demo card — stinger title, one
+             arrival line (a failure's lead sentence), quote, Run Report, all
+             in view; the module's paragraphs sit behind the expander below. -->
         <div id="end-report-title"></div>
         <div id="end-report-arrival" style="display:none;"></div><!-- destination × crop line (endings.json arrival_lines) -->
-        <div id="end-report-body"></div>
         <div id="end-report-quote"></div>
         <div id="end-report-score">
           <div class="end-score-label">Run Report</div>
@@ -911,6 +913,11 @@ body {
             <div class="res-bars" id="end-res-bars"></div>
           </div>
           <div class="day-line" id="end-day-line"></div>
+        </div>
+        <button type="button" id="end-report-more" aria-expanded="false" style="display:none;"></button>
+        <div id="end-report-full" hidden>
+          <div id="end-report-full-title"></div>
+          <div id="end-report-body"></div>
         </div>
         </div>
         <div id="end-report-actions">
@@ -5825,7 +5832,12 @@ function eventMinigameQuit(choice) {
   const base = choice.outcome || {};
   const worst = Object.assign({}, base.resources || {}, ((choice.tier_outcomes || {}).poor || {}).resources || {});
   const losses = Object.fromEntries(Object.entries(worst).filter(([, v]) => Number.isFinite(v) && v < 0));
-  const quit = { resources: losses, time_cost: base.time_cost,
+  // The time too: a poor tier that costs extra days (engine_fault's limp
+  // mode) is what a quit costs — the base time would undercut it (b4).
+  const TC = ['none', 'trivial', 'low', 'medium', 'high', 'extreme'];
+  const poorTime = ((choice.tier_outcomes || {}).poor || {}).time_cost;
+  const time_cost = TC.indexOf(poorTime) > TC.indexOf(base.time_cost || 'trivial') ? poorTime : base.time_cost;
+  const quit = { resources: losses, time_cost,
     narrative: 'You abandon it partway. Whatever was in hand stays behind, and the time is spent all the same.' };
   applyOutcomeEffects(quit);
   return quit;
