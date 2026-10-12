@@ -362,9 +362,8 @@
     const c = $('market-confirm');
     if (!req.length || !c) return false;
     const d = defBy(entry.id);
-    const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
     $('market-confirm-text').textContent = 'Sell your ' + ((d && d.name) || entry.id) + ' here?';
-    $('market-route-warn').innerHTML = 'Required for: <strong>' + req.map(esc).join(' · ') + '</strong>';
+    $('market-route-warn').innerHTML = 'Required for: <strong>' + req.map(escapeHTML).join(' · ') + '</strong>';
     confirmYes = proceed;
     c.classList.remove('hidden');
     return true;

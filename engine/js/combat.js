@@ -1397,7 +1397,7 @@
   // (Bible §4.25 "passive halved"), 0 absent — truthy checks still mean
   // "aboard"; numeric bonuses scale by it.
   function bindCombatCrew() {
-    const roles = ['pilot', 'engineer', 'medic', 'botanist', 'chef', 'diplomat', 'xenobiologist', 'veteran', 'merchant'];
+    const roles = ['pilot', 'engineer', 'medic', 'botanist', 'chef', 'diplomat', 'xenobiologist'];
     COMBAT.crew = {};
     roles.forEach(r => { COMBAT.crew[r] = STATE.crew.includes(r) ? (crewHPOf(r) < CREW_WOUNDED_HP ? 0.5 : 1) : 0; });
     COMBAT.captainBg = STATE.captain || '';
@@ -1514,14 +1514,13 @@
     if (it.material || it.id === 'gold') return 'sprites/cargo/materials/' + it.id + '.png';
     return typeof itemSpritePath === 'function' ? itemSpritePath(it.id) : 'sprites/cargo/items/' + it.id + '.png';
   }
-  function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
   function renderLootTiles(items) {
     if (!items.length) return '<div class="end-loot-empty">No loot recovered.</div>';
     return '<div class="end-loot-grid">' + items.map(it => {
       const src = lootSprite(it);
-      return `<div class="end-loot-tile${it.bonus ? ' bonus' : ''}" data-id="${esc(it.id)}" data-count="${it.count}">` +
-        (src ? `<img src="${esc(src)}" alt="" onerror="this.style.visibility='hidden'">` : '') +
-        `<span class="lt-count">×${it.count}</span><span class="lt-label">${esc(it.label)}</span></div>`;
+      return `<div class="end-loot-tile${it.bonus ? ' bonus' : ''}" data-id="${escapeHTML(it.id)}" data-count="${it.count}">` +
+        (src ? `<img src="${escapeHTML(src)}" alt="" onerror="this.style.visibility='hidden'">` : '') +
+        `<span class="lt-count">×${it.count}</span><span class="lt-label">${escapeHTML(it.label)}</span></div>`;
     }).join('') + '</div>';
   }
   function hideEndCard() {
@@ -1540,7 +1539,7 @@
     document.getElementById('combat-end-body').textContent = card.body;
     let html = '';
     if (card.loot) html += '<div class="end-loot-title">RECOVERED</div>' + renderLootTiles(card.loot);
-    if (card.notes) html += `<div class="end-loot-notes">${esc(card.notes)}</div>`;
+    if (card.notes) html += `<div class="end-loot-notes">${escapeHTML(card.notes)}</div>`;
     const lootEl = document.getElementById('combat-end-loot');
     lootEl.innerHTML = html;
     lootEl.style.display = html ? 'flex' : 'none';

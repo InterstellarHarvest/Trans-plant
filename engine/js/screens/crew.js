@@ -31,7 +31,6 @@
 (function() {
   const $ = id => document.getElementById(id);
 
-  const CD_ROLE_TO_CREWID = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
   const CD_ROLE_EMOJI = { botanist: '🌱', engineer: '🔧', medic: '🩺', pilot: '🛸', chef: '🍳', diplomat: '🤝', xenobiologist: '🔬', captain: '🧑‍✈️' };
 
   // Demo's passive display names (roster passives carry effect ids,
@@ -439,7 +438,7 @@
     // roster member's identity — their own name/story, emoji portrait.
     const idn = crewIdentityOf(key);
     return {
-      key, isCaptain: false, crewId: idn ? null : CD_ROLE_TO_CREWID[key], emoji: CD_ROLE_EMOJI[key] || '👤',
+      key, isCaptain: false, crewId: idn ? null : CREWID_OF_ROLE[key], emoji: CD_ROLE_EMOJI[key] || '👤',
       name: idn ? idn.name : (r.name || key), role: key.charAt(0).toUpperCase() + key.slice(1), bgTag: idn ? (idn.origin === 'rescued' ? 'Rescued' : 'Stowaway') : 'Crew', // scenes B: a rescued survivor isn't a stowaway
       bio: idn ? idn.story : (r.bio || ''), hint: idn ? '' : hintLine(key),
       passiveName: PASSIVE_NAME[key] || 'Passive',

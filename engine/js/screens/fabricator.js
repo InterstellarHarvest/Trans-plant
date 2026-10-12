@@ -136,16 +136,17 @@
   // passive_skill.fabricator_contribution per role (engineer 25,
   // xenobiologist 5 — absent = 0) and captains.json
   // passive_effect.fabricator_contribution (engineer 12, academic 10),
-  // both read on open (bindFabricatorState). name/role label the
-  // speed tooltip's breakdown.
+  // both read on open (bindFabricatorState). role (and the captains'
+  // name) label the speed tooltip's breakdown; crew names are live
+  // (crewNameOf).
   const CREW = {
-    osei:        { name:'Dr. Osei',    role:'Botanist',      fab:0 },
-    kazuki:      { name:'Kazuki',      role:'Engineer',      fab:0 },
-    vasquez:     { name:'Dr. Vasquez', role:'Medic',         fab:0 },
-    reeves:      { name:'Reeves',      role:'Pilot',         fab:0 },
-    reyes:       { name:'Reyes',       role:'Chef',          fab:0 },
-    hargrove:    { name:'Hargrove',    role:'Diplomat',      fab:0 },
-    tanaka:      { name:'Dr. Tanaka',  role:'Xenobiologist', fab:0 },
+    osei:        { role:'Botanist',      fab:0 },
+    kazuki:      { role:'Engineer',      fab:0 },
+    vasquez:     { role:'Medic',         fab:0 },
+    reeves:      { role:'Pilot',         fab:0 },
+    reyes:       { role:'Chef',          fab:0 },
+    hargrove:    { role:'Diplomat',      fab:0 },
+    tanaka:      { role:'Xenobiologist', fab:0 },
     captain_eng: { name:'Captain',     role:'Engineer bg.',  fab:12 },
     captain_aca: { name:'Captain',     role:'Academic bg.',  fab:10 }
   };
@@ -187,12 +188,11 @@
      called every time the overlay opens (see window.openFabricator())
      and after every craft day: a day can kill or wound the engineer,
      and the next craft's time, wear and preview read the crew as it is. */
-  const ROLE_OF = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
   function bindFabricatorState() {
     STATE.fabricator = STATE.fabricator || { wear: 0, broken: false };
     FSTATE.aboard = {};
     for (const role of STATE.crew) {
-      const id = ROLE_OF[role];
+      const id = CREWID_OF_ROLE[role];
       // Value = contribution share: a wounded specialist works at half
       // (crew_roster "halved if injured"), as everywhere else.
       if (id && CREW[id]) FSTATE.aboard[id] = (typeof specialistMult === 'function') ? (specialistMult(role) || 1) : 1;
@@ -201,7 +201,7 @@
     // engineer is aboard — the two don't stack (specialistMult already
     // floors a wounded crew engineer at the captain's half).
     FSTATE.captainBg = (STATE.captain === 'academic' || (STATE.captain === 'engineer' && !STATE.crew.includes('engineer'))) ? STATE.captain : 'none';
-    for (const [role, id] of Object.entries(ROLE_OF)) {
+    for (const [role, id] of Object.entries(CREWID_OF_ROLE)) {
       const def = (MOD.crew_roster || []).find(c => c.role === role || c.id === 'crew_' + role);
       const v = def && def.passive_skill && def.passive_skill.fabricator_contribution;
       CREW[id].fab = Number.isFinite(v) ? v : 0;
@@ -318,7 +318,6 @@
   // the solo-captain ×1.0 baseline is implicit (it's the floor when
   // nobody is helping, not a "contribution"). TOTAL reads as the
   // overall speed multiplier.
-  const escAttr = t => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   function crewAssistTooltip() {
     const pct = n => '+' + Math.round(n / BASE_EFFORT * 100) + '%';
     const lines = ['FAB SPEED BREAKDOWN'];
@@ -327,8 +326,7 @@
       if (!on) continue;
       const c = CREW[id];
       // Live names (a stowaway who joined keeps their own) + the wounded half.
-      const role = Object.keys(ROLE_OF).find(r => ROLE_OF[r] === id);
-      const nm = (role && typeof crewNameOf === 'function') ? crewNameOf(role) : c.name;
+      const nm = crewNameOf(ROLE_OF_CREWID[id]);
       if (c.fab > 0) { lines.push('  ' + nm + ' (' + c.role + ')  ' + pct(c.fab * on) + (on < 1 ? ' · wounded' : '')); anyContributor = true; }
     }
     if (FSTATE.captainBg === 'engineer') {
@@ -540,7 +538,7 @@
         '<span class="wear-add tax">−' + tax + ' each</span>'
       : '';
     meta.innerHTML =
-      '<div class="row" data-tip-title="' + escAttr(assist[0]) + '" data-tip-description="' + escAttr(assist.slice(1).join('\n').trim()) + '">' +
+      '<div class="row" data-tip-title="' + escapeHTML(assist[0]) + '" data-tip-description="' + escapeHTML(assist.slice(1).join('\n').trim()) + '">' +
         '<span class="label">TIME</span>' +
         timeDisplay +
         bonusSpan +

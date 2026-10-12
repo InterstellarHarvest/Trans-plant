@@ -131,10 +131,6 @@
   const NODE_TYPE_TO_REGION = { station: 'station_approach', planet: 'planet_orbit_habitable', asteroid_field: 'asteroid_field', derelict: 'debris_field', nebula: 'nebula', void: 'deep_space', anomaly: 'anomaly', fork: 'deep_space' };
   const capWord = s => { s = String(s || '').replace(/_/g, ' '); return s.charAt(0).toUpperCase() + s.slice(1); };
 
-  function crewDisplayName(role) {
-    return crewNameOf(role); // index.html — a joined stowaway keeps their own name
-  }
-
   // Bible §"Ship Sprite System": the scene ship is two layered sprites —
   // shared base (ships/default.png, already the silhouette's CSS bg) +
   // a crop overlay at ships/<crop>/<stage 1-4>.png keyed to growth
@@ -376,25 +372,15 @@
   // already within 50px of the bottom — scrolled up, it stays put.
   const TYPE_MS = 35;
   let typing = null, markerDay = null;
-  const voiceName = () => String(STATE.activeAI || 'marv').toUpperCase();
   const isAtBottom = el => el.scrollHeight - el.scrollTop - el.clientHeight < 50;
-  // Owner ruling 32 (2026-10-12): no "NAME: " prefix when the line
-  // already names the AI — any of the five (most ai_universal lines are
-  // third person: "ARIA notes…") — or says "the ship computer".
-  const AI_NAMES = ['ARIA', 'MARV', 'REX', 'CHIP', 'AJOY'];
-  function namesTheAI(body) {
-    const names = ((typeof MOD !== 'undefined' && MOD.ai_companions) || []).map(a => a && a.name).filter(Boolean);
-    const all = [...new Set([...AI_NAMES, ...names.map(n => String(n).toUpperCase())])];
-    const cap = n => n.charAt(0) + n.slice(1).toLowerCase();
-    return new RegExp('\\b(' + all.map(n => n + '|' + cap(n)).join('|') + ')\\b').test(body) || /\bthe ship computer\b/i.test(body);
-  }
+  // No "NAME: " prefix when the line already names the AI (index.html
+  // namesTheAI).
   function displayLine(text, voice) {
     const body = String(text == null ? '' : text).replace(/^\s*[◆▶]\s*/, '');
     if (!voice) return '▶ ' + body;
     return namesTheAI(body) ? body : voice.toUpperCase() + ': ' + body;
   }
   window.cruiseDisplayLine = displayLine; // test hook (ruling 32)
-  window.namesTheAI = namesTheAI; // the encounter/combat/engine-room AI chips use it too (ruling 49)
   function finishTyping() {
     if (!typing) return;
     const t = typing; typing = null;
@@ -619,7 +605,7 @@
     strip.innerHTML = '';
     const members = [];
     if (STATE.captain) members.push({ key: 'captain', label: 'CAPTAIN', role: capWord(STATE.captain), crewId: 'captain' });
-    for (const role of STATE.crew) members.push({ key: role, label: crewDisplayName(role).toUpperCase(), role: capWord(role), crewId: crewSpriteIdOf(role) });
+    for (const role of STATE.crew) members.push({ key: role, label: crewNameOf(role).toUpperCase(), role: capWord(role), crewId: crewSpriteIdOf(role) });
     // Always three slots — captain + the two crew places (the cap,
     // crewJoinRole). An empty place keeps its card-sized spot, so the crop
     // card and everything right of it never shift (owner, batch 3).

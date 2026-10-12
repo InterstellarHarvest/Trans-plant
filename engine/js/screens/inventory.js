@@ -303,7 +303,6 @@ function invSetBlock(id, html) {
   el.innerHTML = html || '';
   el.classList.toggle('inv-hide', !html);
 }
-const invEsc = s => (typeof escapeHTML === 'function' ? escapeHTML(s) : String(s));
 const invStat = (label, value, cls) => '<div class="detail-stat' + (cls ? ' ' + cls : '') + '"><span>' + label + '</span><strong>' + value + '</strong></div>';
 
 function renderInvDetail(en) {
@@ -348,7 +347,7 @@ function renderInvDetail(en) {
 
   // USED FOR — the events this item opens options in (real data only).
   const used = en.material ? [] : invUsedFor(en.id);
-  invSetBlock('inv-detail-used', used.length ? '<span class="detail-label">USED FOR:</span> ' + used.map(invEsc).join(' · ') : '');
+  invSetBlock('inv-detail-used', used.length ? '<span class="detail-label">USED FOR:</span> ' + used.map(escapeHTML).join(' · ') : '');
   // NOTES — explains the corner markers (demo :1985-1991): ⇄ no trader
   // buys it; ⚠ classified. No inspection mechanic exists, so the ⚠ line
   // says what is true (nobody on the rack buys it) — no invented threat.
@@ -425,7 +424,7 @@ function invRenderAiLine(key, path) {
   }
   const ai = (MOD.ai_companions || []).find(a => a.id === 'ai_' + STATE.activeAI);
   const name = (ai && ai.name) || String(STATE.activeAI || '').toUpperCase();
-  invSetBlock('inv-detail-ai', _invAi.line ? '<span class="detail-ai-name">' + invEsc(name) + ':</span>' + invEsc(_invAi.line) : '');
+  invSetBlock('inv-detail-ai', _invAi.line ? '<span class="detail-ai-name">' + escapeHTML(name) + ':</span>' + escapeHTML(_invAi.line) : '');
 }
 
 /* ── USED FOR / Required for — derived from the event data ──────── */
@@ -539,7 +538,7 @@ function renderInvResourceDetail(key) {
   document.getElementById('inv-detail-desc').textContent = r.desc;
   document.getElementById('inv-detail-flavor').textContent = '';
   const n = STATE.items.filter(x => x === r.item).length;
-  invSetBlock('inv-detail-meta', invStat('IN CARGO', n ? '×' + n + ' ' + invEsc(invNameOf(r.item)) : 'none'));
+  invSetBlock('inv-detail-meta', invStat('IN CARGO', n ? '×' + n + ' ' + escapeHTML(invNameOf(r.item)) : 'none'));
   invSetBlock('inv-detail-used', ''); invSetBlock('inv-detail-notes', '');
   invRenderAiLine('res:' + key, ['resource', key]);
   document.getElementById('inv-detail-actions').classList.add('inv-hide');
@@ -612,7 +611,7 @@ function invOpenJettison() {
   // "Required for:" — only when an event ahead needs it aboard to happen.
   const req = blocked || isMat ? [] : invRequiredFor(id);
   const warn = document.getElementById('inv-route-warn');
-  warn.innerHTML = req.length ? 'Required for: <strong>' + req.map(invEsc).join(' · ') + '</strong>' : '';
+  warn.innerHTML = req.length ? 'Required for: <strong>' + req.map(escapeHTML).join(' · ') + '</strong>' : '';
   warn.classList.toggle('hidden', !req.length);
   document.getElementById('inv-jett-panel').classList.toggle('route-warn', !!req.length);
   document.getElementById('inv-jett-count-row').classList.toggle('hidden', blocked || _invJettisonMax < 2);
@@ -629,7 +628,7 @@ function invOpenSellConfirm(id) {
   document.querySelector('#inv-jett-panel .jettison-title').textContent = '⚠ SELL?';
   document.getElementById('inv-confirm-text').textContent = 'Sell your ' + invNameOf(id) + ' to the Market Row trader?';
   const warn = document.getElementById('inv-route-warn');
-  warn.innerHTML = 'Required for: <strong>' + req.map(invEsc).join(' · ') + '</strong>';
+  warn.innerHTML = 'Required for: <strong>' + req.map(escapeHTML).join(' · ') + '</strong>';
   warn.classList.remove('hidden');
   document.getElementById('inv-jett-panel').classList.add('route-warn');
   document.getElementById('inv-jett-count-row').classList.add('hidden');

@@ -159,33 +159,33 @@
   //   Generic crew: +3%/0% (tending > nothing)
   //   None: 0%/0% (base rate; no penalty)
   const CREW = {
-    'osei':              { name: 'Dr. Osei',    role: 'Botanist',       crewId: 'osei',     growth: 15, yield: 15 },
+    'osei':              { role: 'Botanist',       crewId: 'osei',     growth: 15, yield: 15 },
     'captain-botanist':  { name: 'Captain',     role: 'Botanist bg.',   crewId: 'captain',  growth: 7,  yield: 7 },
-    'reyes':             { name: 'Reyes',       role: 'Chef',           crewId: 'reyes',    growth: 5,  yield: 5 },
-    'kazuki':            { name: 'Kazuki',      role: 'Engineer',       crewId: 'kazuki',   growth: 3,  yield: 0 },
-    'hargrove':          { name: 'Hargrove',    role: 'Diplomat',       crewId: 'hargrove', growth: 3,  yield: 0 },
-    'reeves':            { name: 'Reeves',      role: 'Pilot',          crewId: 'reeves',   growth: 3,  yield: 0 },
-    'vasquez':           { name: 'Dr. Vasquez', role: 'Medic',          crewId: 'vasquez',  growth: 3,  yield: 0 },
-    'tanaka':            { name: 'Dr. Tanaka',  role: 'Xenobiologist',  crewId: 'tanaka',   growth: 3,  yield: 0 },
+    'reyes':             { role: 'Chef',           crewId: 'reyes',    growth: 5,  yield: 5 },
+    'kazuki':            { role: 'Engineer',       crewId: 'kazuki',   growth: 3,  yield: 0 },
+    'hargrove':          { role: 'Diplomat',       crewId: 'hargrove', growth: 3,  yield: 0 },
+    'reeves':            { role: 'Pilot',          crewId: 'reeves',   growth: 3,  yield: 0 },
+    'vasquez':           { role: 'Medic',          crewId: 'vasquez',  growth: 3,  yield: 0 },
+    'tanaka':            { role: 'Xenobiologist',  crewId: 'tanaka',   growth: 3,  yield: 0 },
     'none':              { name: 'Nobody',      role: 'Untended',       crewId: null,       growth: 0,  yield: 0, emoji: '—' }
   };
-  // A tender entry as shown: a joined stowaway holding the role keeps
-  // their own name and has no sprite (index.html crewIdentityOf).
-  const TENDER_ROLE = { osei: 'botanist', reyes: 'chef', kazuki: 'engineer', hargrove: 'diplomat', reeves: 'pilot', vasquez: 'medic', tanaka: 'xenobiologist' };
+  // A tender entry as shown: the crew member's live name (crewNameOf); a
+  // joined stowaway holding the role keeps their own and has no sprite
+  // (index.html crewIdentityOf).
   function tenderOf(id) {
     // A tender who died or left (or a captain-botanist slot without a
     // botanist captain) tends nothing.
-    if (TENDER_ROLE[id] && !STATE.crew.includes(TENDER_ROLE[id])) return CREW.none;
+    if (ROLE_OF_CREWID[id] && !STATE.crew.includes(ROLE_OF_CREWID[id])) return CREW.none;
     if (id === 'captain-botanist' && STATE.captain !== 'botanist') return CREW.none;
     let c = CREW[id] || CREW.none;
     // A wounded tender works at half (crew_roster "halved if injured") —
     // the captain too, whose HP is real (owner ruling 29).
-    const role = TENDER_ROLE[id];
+    const role = ROLE_OF_CREWID[id];
     const hurt = role ? (typeof crewHPOf === 'function' && crewHPOf(role) < CREW_WOUNDED_HP)
       : (id === 'captain-botanist' && typeof captainHPOf === 'function' && captainHPOf() < CREW_WOUNDED_HP);
     if (hurt) c = Object.assign({}, c, { growth: c.growth / 2, yield: c.yield / 2, wounded: true });
-    const idn = role && typeof crewIdentityOf === 'function' ? crewIdentityOf(role) : null;
-    return idn ? Object.assign({}, c, { name: idn.name, crewId: null, emoji: '🧑' }) : c;
+    if (!role) return c;
+    return Object.assign({}, c, { name: crewNameOf(role) }, crewIdentityOf(role) ? { crewId: null, emoji: '🧑' } : null);
   }
   // Owner ruling 41: a botanist tends by default — a crew botanist (Osei
   // or whoever holds the role), else a botanist captain. The player can
@@ -538,7 +538,7 @@
     if (tender.growth > 0) add('positive', tender.name + (tender.wounded ? ' (wounded)' : '') + ' tending', tender.growth, 0);
     // A station botanist's advice, taken (index.html applyCropAdvice): the
     // crew talks to the crop now — the "4% faster" is this modifier.
-    if (GSTATE.talked) add('positive', 'Talked to daily', typeof CROP_TALK_GROWTH === 'number' ? CROP_TALK_GROWTH : 4, 0);
+    if (GSTATE.talked) add('positive', 'Talked to daily', CROP_TALK_GROWTH, 0);
 
     // WATER — the ship's tanks first, then the Orders split vs the
     // crop's need.
@@ -1028,8 +1028,7 @@
     // role->crewId) instead of the demo's static 8-entry roster —
     // 'none' is always offered; 'captain-botanist' only if the
     // captain's own background is botanist.
-    const ROLE_TO_CREWID = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
-    const aboardIds = STATE.crew.map(role => ROLE_TO_CREWID[role]).filter(id => CREW[id]);
+    const aboardIds = STATE.crew.map(role => CREWID_OF_ROLE[role]).filter(id => CREW[id]);
     if (STATE.captain === 'botanist') aboardIds.push('captain-botanist');
     aboardIds.push('none');
     const picker = $('tender-picker');
@@ -1702,12 +1701,6 @@
     }
   };
 
-  // innerHTML is unavoidable for nested-grid markup; escape any
-  // user-facing string before interpolating it.
-  function ihEsc(s) {
-    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
   // Builds Inspect content into `container`. Same content for both
   // shells (swap-in body and popup) — caller picks the container.
   function renderInspectInto(container) {
@@ -1733,7 +1726,7 @@
 
     const vital = (key, val, cls) =>
       '<div class="ins-vital">' +
-        '<span class="ins-v-key">' + ihEsc(key) + '</span>' +
+        '<span class="ins-v-key">' + escapeHTML(key) + '</span>' +
         '<span class="ins-v-val' + (cls ? ' ' + cls : '') + '">' + val + '</span>' +
       '</div>';
 
@@ -1741,7 +1734,7 @@
       '<div class="ins-section">' +
         '<div class="ins-section-title">VITAL SIGNS</div>' +
         '<div class="ins-vitals">' +
-          vital('Stage', dead ? 'DEAD' : '<span class="ins-v-marker">▸</span>' + ihEsc(stages[curIdx].name) + ' <span class="ins-v-sub">(' + stagePct + '% through)</span>', dead ? 'stalled' : '') +
+          vital('Stage', dead ? 'DEAD' : '<span class="ins-v-marker">▸</span>' + escapeHTML(stages[curIdx].name) + ' <span class="ins-v-sub">(' + stagePct + '% through)</span>', dead ? 'stalled' : '') +
           vital('Growth', Math.round(GSTATE.growth) + '%') +
           vital('Health', Math.round(GSTATE.health) + '%') +
           (boost ? vital('Recovery', fmtMult(boost.mult) + ' <span class="ins-v-sub">(nitrogen fix, ' + boost.daysLeft + 'd left)</span>') : '') +
@@ -1760,13 +1753,13 @@
     // ── Species (right column) — blurb, notes, spec table ─────
     const speciesHTML =
       '<div class="ins-section">' +
-        '<div class="ins-section-title">SPECIES — ' + ihEsc(crop.name.toUpperCase()) + '</div>' +
-        '<div class="ins-blurb">' + ihEsc(crop.blurb) + '</div>' +
-        (cropNote(GSTATE.cropId) ? '<div class="ins-notes">' + ihEsc(cropNote(GSTATE.cropId)) + '</div>' : '') +
+        '<div class="ins-section-title">SPECIES — ' + escapeHTML(crop.name.toUpperCase()) + '</div>' +
+        '<div class="ins-blurb">' + escapeHTML(crop.blurb) + '</div>' +
+        (cropNote(GSTATE.cropId) ? '<div class="ins-notes">' + escapeHTML(cropNote(GSTATE.cropId)) + '</div>' : '') +
         '<div class="ins-row"><span class="ins-key">Maturity</span><span class="ins-val">' + crop.maturity_days + ' days</span></div>' +
         '<div class="ins-row"><span class="ins-key">Water need</span><span class="ins-val">' + waterNeed() + '%</span></div>' +
         '<div class="ins-row"><span class="ins-key">Ideal temp</span><span class="ins-val">' + tMin + '–' + tMax + '°C</span></div>' +
-        '<div class="ins-row"><span class="ins-key">Yield</span><span class="ins-val">' + ihEsc(yieldText()) + '</span></div>' +
+        '<div class="ins-row"><span class="ins-key">Yield</span><span class="ins-val">' + escapeHTML(yieldText()) + '</span></div>' +
       '</div>';
 
     // ── Lifecycle ribbon (full-width) — all 4 stages side-by-side. ─
@@ -1777,9 +1770,9 @@
           stages.map((s, i) => {
             const lo = i === 0 ? 0 : stages[i - 1].max;
             return '<div class="ins-life-stage' + (i === curIdx ? ' current' : '') + '">' +
-                     '<div class="ins-life-name">' + ihEsc(s.name) + '</div>' +
+                     '<div class="ins-life-name">' + escapeHTML(s.name) + '</div>' +
                      '<div class="ins-life-range">' + lo + '–' + s.max + '%</div>' +
-                     '<div class="ins-life-tip">' + ihEsc(s.tip) + '</div>' +
+                     '<div class="ins-life-tip">' + escapeHTML(s.tip) + '</div>' +
                    '</div>';
           }).join('') +
         '</div>' +
@@ -1790,9 +1783,9 @@
     const threatRows = threats.map(t => {
       const info = THREAT_INFO[t.name] || { cause: t.delta, fix: 'Apply matching treatment.' };
       return '<div class="ins-threat' + (t.kind === 'critical' ? ' critical' : '') + '">' +
-               '<div class="ins-threat-head"><span>' + ihEsc(t.name) + '</span><span>' + ihEsc(t.delta) + '</span></div>' +
-               '<div class="ins-threat-cause">' + ihEsc(info.cause) + '</div>' +
-               '<div class="ins-threat-fix">' + ihEsc(info.fix) + '</div>' +
+               '<div class="ins-threat-head"><span>' + escapeHTML(t.name) + '</span><span>' + escapeHTML(t.delta) + '</span></div>' +
+               '<div class="ins-threat-cause">' + escapeHTML(info.cause) + '</div>' +
+               '<div class="ins-threat-fix">' + escapeHTML(info.fix) + '</div>' +
              '</div>';
     }).join('');
     const threatsHTML =
@@ -1811,7 +1804,7 @@
         '<div class="ins-section-title">' + growbayAIName() + '\'S READ</div>' +
         '<div class="ins-aria-read">' +
           '<span class="ins-aria-avatar" style="background-image:url(\'sprites/interface/AI/' + growbayAI() + '.png\')"></span>' +
-          '<span><span class="ins-aria-name">' + growbayAIName() + ':</span> ' + ihEsc(forCrop(pickAriaInspect(active))) + '</span>' +
+          '<span><span class="ins-aria-name">' + growbayAIName() + ':</span> ' + escapeHTML(forCrop(pickAriaInspect(active))) + '</span>' +
         '</div>' +
       '</div>';
 

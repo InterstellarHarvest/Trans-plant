@@ -33,6 +33,26 @@ if (location.protocol === 'file:') document.write('<script src="engine/js/portab
 <script src="resources/shared.js"></script>
 <script src="sprites/minigames/forage/sprites.js"></script>
 <script src="sprites/minigames/forage/anchors.js"></script>
+<script>
+'use strict';
+/* ────────────────────────────────────────────────────────────────
+   SHARED HELPERS
+   The one copy of each small table and helper that both the engine
+   modules and the main script below need. Loaded before every engine
+   script, so a module may read these at load time too. shared.js keeps
+   its own escapers: the demos load it without the engine.
+   ──────────────────────────────────────────────────────────────── */
+// Crew role ↔ roster crew id (the sprite folders and talking-head
+// sheets are keyed by crew id).
+const CREWID_OF_ROLE = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
+const ROLE_OF_CREWID = Object.fromEntries(Object.entries(CREWID_OF_ROLE).map(([role, id]) => [id, role]));
+// The ship AIs' display names, by id.
+const AI_NAMES = { aria: 'ARIA', marv: 'MARV', rex: 'REX', chip: 'CHIP', ajoy: 'AJOY' };
+function escapeHTML(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+</script>
 <style>
 :root {
   /* --gold and --red live in shared.css. Remaining vars stay
@@ -1791,13 +1811,13 @@ function saveRun(key) {
   return writeSnapshot(key);
 }
 // Why a pause-menu SAVE was refused, in the player's terms.
-window.saveBlockedReason = function () {
+function saveBlockedReason() {
   if (!STATE.trail || !STATE.nodes.length) return 'NO VOYAGE TO SAVE YET';
   if (STATE.ended) return STATE._resumableEnd ? 'ALREADY SAVED — KEEP FLYING OR START OVER' : 'THE VOYAGE IS OVER';
   if (STATE.currentEvent) return 'FINISH THIS ENCOUNTER FIRST';
   if (document.querySelector(JOB_OVERLAYS)) return 'FINISH THE JOB FIRST';
   return null;
-};
+}
 function rollArtSeed() { return 1 + Math.floor(Math.random() * 0x7ffffffe); }
 function writeSnapshot(key, extra) {
   if (new URLSearchParams(location.search).has('debug')) return false;
@@ -2168,7 +2188,6 @@ function removeRandomItem() {
   STATE.items.splice(STATE.items.indexOf(id), 1);
   return id;
 }
-window.removeRandomItem = removeRandomItem;
 function canRemoveItem(id) {
   const i = STATE.items.indexOf(id);
   if (i < 0) return false;
@@ -2263,7 +2282,6 @@ function markMaterialPickup(id) {
   STATE.materialPickups[id] = { s: STATE.itemSeq, n: true };
 }
 function grantMaterial(id, qty, opts) { return grantMaterials({ [id]: qty }, opts).got[id] || 0; }
-Object.assign(window, { itemSlotsFor, cargoCapacityParts, materialPer10, materialSlotsUsed, materialLandings, grantMaterials, grantMaterial });
 
 /* Grants an item respecting capacity. Returns true if it fit; false
    (plus an honest log line) if the hold is full and it was left behind.
@@ -2319,7 +2337,6 @@ function syncItemPickups(pad) {
   return STATE.itemPickups;
 }
 function itemPickupsOf(shortId) { return (syncItemPickups()[shortId] || []).slice(); }
-Object.assign(window, { syncItemPickups, itemPickupsOf });
 
 /* ────────────────────────────────────────────────────────────────
    TRADE-GOOD VALUES (owner ruling 2026-10-11). items.json sell_range
@@ -2397,7 +2414,6 @@ function takeItemCopy(shortId, k) {
   syncItemValues();
   return v;
 }
-Object.assign(window, { syncItemValues, itemValuesOf, itemValueKnown, fenceValueOf, itemValueRangeLabel, takeItemCopy, sellRangeOf, FENCE_MULT });
 
 /* ────────────────────────────────────────────────────────────────
    CREW HP (user decision 2026-08-03: per-crew HP over binary injury).
@@ -2458,7 +2474,6 @@ function ensureCrewSkillCharges() {
     }
   }
 }
-window.ensureCrewSkillCharges = ensureCrewSkillCharges;
 
 function crewHPOf(role) {
   if (role === 'captain') return captainHPOf(); // the captain's own HP (owner ruling 29)
@@ -2542,7 +2557,6 @@ function killCaptain() {
   if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ The captain is dead. The log keeps the time of it, and nothing else.');
 }
 function killPerson(who) { if (who === 'captain') killCaptain(); else killCrew(who); }
-Object.assign(window, { captainHPOf, peopleAboard, hpOf, setHP, personName, PersonName, captainHandsEffort, crewMedicSave, captainMedicSave, killCaptain, killPerson });
 
 /* modules/ai/ai_companions.json sample_lines — each AI's signature line
    for a handful of moments (hull_breach, crew_death, crop_sick, low_fuel,
@@ -2551,12 +2565,10 @@ function aiSampleLine(moment) {
   const a = (MOD.ai_companions || []).find(x => x.id === 'ai_' + STATE.activeAI);
   return (a && a.sample_lines && a.sample_lines[moment]) || null;
 }
-window.aiSampleLine = aiSampleLine;
 function pushAiSample(moment) {
   const line = aiSampleLine(moment);
   if (line && typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + line);
 }
-window.pushAiSample = pushAiSample;
 
 /* A crew member leaving the ship by ANY road — death, the airlock, a
    dismissal, stepping down for a stowaway (welcome_replace), desertion —
@@ -2579,7 +2591,6 @@ function releaseCrewRole(role) {
   forgetCrewMorale(role);
   for (const f of ARMED_SKILL_FLAGS[role] || []) STATE.flags.delete(f);
 }
-window.releaseCrewRole = releaseCrewRole;
 
 function killCrew(role) {
   if (role === 'captain') { killCaptain(); return; }
@@ -2612,7 +2623,6 @@ function killCrew(role) {
 /* A stowaway who joins as crew fills a role but keeps their own
    identity — the roster member for that role (name, bio, portrait)
    never boarded. STATE.crewIdentity[role] = {id, name, story}. */
-const CREWID_OF_ROLE = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
 function crewIdentityOf(role) {
   return (STATE.crewIdentity && STATE.crewIdentity[role]) || null;
 }
@@ -2805,7 +2815,6 @@ function crewDesertions(node) {
   }
   return gone;
 }
-Object.assign(window, { crewMoraleOf, crewMoraleRaw, crewMoraleAvg, addCrewMorale, setCrewMorale, initCrewMorale, moraleTargetRole, forgetCrewMorale, crewMoraleWatch, crewDesertions, trailStartMorale });
 
 /* Station services recharge the crew's active skills — per each skill's
    authored recharges_at in crew_roster.json (all current skills author
@@ -2868,7 +2877,6 @@ function damageCrew(role, amount) {
   else setHP(role, hp);
   return role;
 }
-window.damageCrew = damageCrew;
 
 /* Bible §4.25 / §7 severity tiers, applied to one crew member.
    injury  — wounded: HP drops under the wound line, never lethal.
@@ -3758,11 +3766,9 @@ function pathLegs() {
   STATE._pathLegs = Math.max(1, legs); STATE._pathLegsFor = STATE.nodes;
   return STATE._pathLegs;
 }
-window.pathLegs = pathLegs;
 function fuelPerLegBase() {
   return ORDERS_BASE.travelFuelBudget / pathLegs();
 }
-window.fuelPerLegBase = fuelPerLegBase;
 /* Resource ceilings: 100, raised while the upgrade is in cargo
    (items.json gameplay_effect) — fuel tank 120, hull plating 115. */
 function resMax(k) {
@@ -3780,13 +3786,11 @@ function shipNamePool() {
   const ship = ((MOD.ships && MOD.ships.ships) || []).find(x => x.active !== false);
   return (ship && Array.isArray(ship.name_pool)) ? ship.name_pool.slice() : [];
 }
-window.shipNamePool = shipNamePool;
 function captainDef(bg) {
   const list = (MOD.captains && MOD.captains.captains) || [];
   return list.find(c => c.background === (bg || STATE.captain)) || null;
 }
 function captainBonus() { const c = captainDef(); return c && c.starting_bonus; }
-window.resMax = resMax;
 /* Per-leg passives that depend on where the ship arrives or what it
    carries — each is an authored promise (items.json / crops.json). */
 /* Tomato drama (owner ruling 2026-10-10, hunt 5): crops.json
@@ -3876,8 +3880,6 @@ function aiPassive(type, ai) {
   const p = a && a.passive_effect;
   return (p && p.type === type && Number.isFinite(p.value)) ? p.value : null;
 }
-window.captainPassive = captainPassive;
-window.aiPassive = aiPassive;
 /* A role's passive amount: the crew specialist's (crew_roster, halved
    while wounded), the captain's own (captains.json passive_effect; a
    captain with no number of their own gets the crew's × skill_modifier),
@@ -3920,11 +3922,6 @@ function pricedText(str, ch) {
   if (!c || !str || eventGoldMult() >= 1) return str;
   return String(str).replace(new RegExp('\\b' + c + '(\\s?gold|g)\\b', 'g'), eventGold(c) + '$1');
 }
-function rosterPassive(role, key, dflt) {
-  const c = (MOD.crew_roster || []).find(x => x.role === role);
-  const v = c && c.passive_skill && c.passive_skill[key];
-  return Number.isFinite(v) ? v : dflt;
-}
 // Food burn: chef (crew_roster food_consumption_modifier 0.85) and the
 // insulated cargo bay (−15%). Fuel burn: pilot (fuel_burn_modifier 0.9)
 // and the drive coil (−20%).
@@ -3940,7 +3937,6 @@ function mouthsMult() {
   mouths += (STATE.passengers || []).length; // a rescued passenger eats too (scenes B)
   return mouths / 3;
 }
-window.mouthsMult = mouthsMult;
 function foodBurnMult() {
   return (1 - roleAmount('chef', 'food_consumption_modifier', 'food_consumption_modifier', 0.85, true))
     * (STATE.items.includes('insulated_cargo_bay') ? 0.85 : 1);
@@ -3988,7 +3984,6 @@ function payEffortTax(pips, receipt) {
 function refundEffortTax(receipt) {
   for (const [r, paid] of Object.entries(receipt || {})) if (paid > 0) addCrewMorale(paid, r);
 }
-window.effortTax = effortTax; window.payEffortTax = payEffortTax; window.refundEffortTax = refundEffortTax;
 
 // onsetSolo: a captain flying alone has no crew to starve and no crew
 // morale to lose (owner ruling 15) — the line says what it really costs.
@@ -4023,7 +4018,6 @@ function dailyDraw() {
     water: ORDERS_BASE.waterPerDay,
   };
 }
-window.dailyDraw = dailyDraw;
 function passDays(days, opts) {
   days = Math.max(0, Math.round(days));
   if (!days) return;
@@ -4084,17 +4078,6 @@ function passDays(days, opts) {
   // No float drift (83.79999999999997): resources are kept to 0.01.
   for (const k of ['fuel', 'food', 'water', 'o2', 'hull']) r[k] = Math.round(r[k] * 100) / 100;
 }
-window.ensureOrders = ensureOrders;
-window.ordersPace = ordersPace;
-window.ordersRations = ordersRations;
-window.setWaterSplit = setWaterSplit;
-window.cropWaterNeed = cropWaterNeed;
-window.crewWaterDrainRate = crewWaterDrainRate;
-window.legTravelCost = legTravelCost;
-window.passDays = passDays;
-window.ORDERS_PACE = ORDERS_PACE;
-window.ORDERS_RATIONS = ORDERS_RATIONS;
-window.ORDERS_BASE = ORDERS_BASE;
 
 function travelTo(nodeId, opts) {
   opts = opts || {};
@@ -4690,7 +4673,7 @@ function renderEncounterState(opts) {
   // (demo's growbay_visit archetype — CREW_SHEETS talking head).
   let layerNpcCtx = (layer && layer.npc) ? resolveLayerNpc(layer.npc, ev.id, layerId) : null;
   const crewId = (layer && layer.crew_id) || ev.crew_id || null;
-  const crewRole = crewId && ({ osei:'botanist', kazuki:'engineer', vasquez:'medic', reeves:'pilot', reyes:'chef', tanaka:'xenobiologist', hargrove:'diplomat' })[crewId];
+  const crewRole = crewId && ROLE_OF_CREWID[crewId];
   // Only when that very crew member is aboard (no Dr. Osei on a ship with
   // no botanist, nor in place of a stowaway who took the role).
   if (crewId && !layerNpcCtx && crewRole && STATE.crew.includes(crewRole) && !crewIdentityOf(crewRole)) {
@@ -4850,7 +4833,6 @@ function placeBelowAiBar(again) {
   if (col) col.style.top = v;
   if (!again) requestAnimationFrame(() => placeBelowAiBar(true));
 }
-window.placeBelowAiBar = placeBelowAiBar;
 
 /* Demo layer-flash: a quick brightness kick on the narrative panel and
    the subject frame whenever a layer or outcome paints. */
@@ -5570,10 +5552,6 @@ function prettyItem(id) {
   return String(id == null ? '' : id).replace(/_/g, ' ');
 }
 
-function escapeHTML(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
 /* ────────────────────────────────────────────────────────────────
    NPC TEXT RESOLVER (text/dialogue half — portraits/talking heads
    exists yet; per plan, degrades gracefully until sprites land).
@@ -5791,15 +5769,21 @@ function interpolateNpcTokens(text, npc) {
    exclusive per the schema (see CLAUDE.md's layered Event Module
    section). Flat-schema choices (no ev.layers) fall through to the
    original resolveChoice() path. */
-/* Owner ruling 49 (2026-10-12): an AI bar's name chip hides when the
-   line already names the AI or says "the ship computer" — no
-   "MARV  MARV reports…" (ruling 32's rule, cruise.js namesTheAI). */
+/* Does the line already name an AI (any of the five, in either case —
+   most ai_universal lines are third person: "ARIA notes…") or say "the
+   ship computer"? Then the cruise log adds no "NAME: " prefix and an AI
+   bar hides its name chip: never "MARV  MARV reports…". */
+function namesTheAI(body) {
+  const names = (MOD.ai_companions || []).map(a => a && a.name).filter(Boolean);
+  const all = [...new Set([...Object.values(AI_NAMES), ...names.map(n => String(n).toUpperCase())])];
+  const cap = n => n.charAt(0) + n.slice(1).toLowerCase();
+  return new RegExp('\\b(' + all.map(n => n + '|' + cap(n)).join('|') + ')\\b').test(body) || /\bthe ship computer\b/i.test(body);
+}
 function aiChip(el, name, line) {
   if (!el) return;
   el.textContent = name;
-  el.style.display = (typeof window.namesTheAI === 'function' && window.namesTheAI(String(line || ''))) ? 'none' : '';
+  el.style.display = namesTheAI(String(line || '')) ? 'none' : '';
 }
-window.aiChip = aiChip;
 
 function handleChoiceClick(choice) {
   // Whatever was still typing lands first (a direct call while the text
@@ -6276,16 +6260,16 @@ function eventMinigameQuit(choice, harm) {
 // A reload after BEGIN settles the game as a quit (hunt 6 follow-up: it
 // returned to the event's entry and the minigame could be replayed).
 let eventMinigameChoice = null, eventMinigamePatient = null;
-window.eventMinigameBegun = function (harm) {
+function eventMinigameBegun(harm) {
   const ev = STATE.currentEvent, ch = eventMinigameChoice;
   if (!ev || !ch || STATE.ended) return;
   const q = { ev: ev.id, text: ch.text };
   if (harm) q.harm = Object.assign({ patient: eventMinigamePatient }, harm);
   writeSnapshot(SAVE_KEY, { pendingEventQuit: q });
-};
+}
 // …and again each time harm lands in play (cruise.js onJobHarm), so a
 // reload keeps it too.
-window.eventMinigameHarm = function (harm) { window.eventMinigameBegun(harm); };
+function eventMinigameHarm(harm) { eventMinigameBegun(harm); }
 function resolveChoice(choice) {
   if (choice.launch_minigame && typeof window.openMinigame === 'function') {
     eventMinigameChoice = choice;
