@@ -7,7 +7,7 @@
    literal's getters — materials mined/salvaged elsewhere are the
    same pool the fabricator spends). aboard/captainBg are recomputed
    fresh from STATE.crew/STATE.captain every time openFabricator()
-   runs — see bindFabricatorState().
+   runs and after every craft day — see bindFabricatorState().
    MATERIALS/RECIPES are now DERIVED from the real materials.json/
    recipes.json (MOD.materials/MOD.recipes) instead of a hardcoded
    mirror — the demo's local copy had drifted (different field names:
@@ -31,10 +31,12 @@
    CANCEL refunds the materials and keeps the unspent days; a job
    cancelled before its first day costs nothing (tax + wear back too).
    The misfire roll is made when the job finishes (odds fixed at CRAFT
-   from the wear before it). The deadline lock (hotfix e79a0b2) stands:
-   a craft that would finish past STATE.baseDays can't start, and a
-   held job that no longer fits waits instead of ticking into
-   time_expired.
+   from the wear before it). A job is never stopped by its own wear: one
+   that takes the fab to 100% runs on and breaks it when it comes out.
+   A job whose days are all spent comes out without another day. The
+   deadline lock (hotfix e79a0b2) stands: a craft that would finish
+   past STATE.baseDays can't start, and a held job that no longer fits
+   waits instead of ticking into time_expired.
    Entry point: window.openFabricator(). No onDone callback needed —
    craftSelected() and claimOutput() already apply their effects to
    real STATE directly.
@@ -180,7 +182,9 @@
     msPerDay: 2000            // one fabricator day, real time (demo)
   };
   /* Refreshes the fields that must always reflect current reality —
-     called every time the overlay opens (see window.openFabricator()). */
+     called every time the overlay opens (see window.openFabricator())
+     and after every craft day: a day can kill or wound the engineer,
+     and the next craft's time, wear and preview read the crew as it is. */
   const ROLE_OF = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez', pilot: 'reeves', chef: 'reyes', xenobiologist: 'tanaka', diplomat: 'hargrove' };
   function bindFabricatorState() {
     STATE.fabricator = STATE.fabricator || { wear: 0, broken: false };
@@ -249,9 +253,10 @@
   // fabricator_wear_modifier; a captain engineer's own −10% from
   // captains.json), the field repair fabricator −10% (items.json).
   // Never below 0.5.
-  function recipeWear(r) {
+  // noKit: the same craft without the part's discount.
+  function recipeWear(r, noKit) {
     const cut = typeof roleAmount === 'function' ? roleAmount('engineer', 'fabricator_wear_modifier', 'fabricator_wear_modifier', 0.8, true) : 0;
-    const kit = STATE.items.includes('repair_fabricator') ? 0.9 : 1;
+    const kit = !noKit && STATE.items.includes('repair_fabricator') ? 0.9 : 1;
     // Kept to a tenth: whole-number rounding ate the engineer's cut on
     // every 1–3% recipe (2 × 0.8 = 1.6 → 2).
     return Math.max(0.5, Math.round(r.wear * (1 - cut) * kit * 10) / 10);
@@ -278,6 +283,14 @@
   // Fab-is-functional check. Broken = wear 100% OR hard toggle.
   function fabFunctional() {
     return !FSTATE.broken && FSTATE.wear < 100;
+  }
+  // A started print is never stopped by its own wear (demo: the wear lands
+  // at CRAFT and the job runs on). A job that took the fab to 100% runs to
+  // the end and the fab breaks when it comes out (completeCraft); only a
+  // hard break holds it.
+  function jobRuns() {
+    const c = FSTATE.craft;
+    return !!c && !FSTATE.broken && (c.wearBefore || 0) < 100;
   }
 
   // Can this recipe actually be crafted right now?
@@ -547,7 +560,7 @@
       const d = typeof itemDef === 'function' ? itemDef(need) : null;
       label = 'LOCKED · ' + (d && (d.item_behavior || []).includes('upgrade') ? 'NEEDS UPGRADE' : 'NEEDS PART');
       why = 'Needs a ' + prettyItemName(need) + ' aboard.';
-    } else if (!fabFunctional()) {
+    } else if (!fabFunctional() && !jobRuns()) {
       label = 'FAB BROKEN'; why = 'FAB SERVICE at a station fixes it.';
     } else if (!hasMaterials(r)) {
       label = 'MISSING MATERIALS';
@@ -632,7 +645,7 @@
     // Depleting gauge: 0% wear → 10 segments lit; 100% wear → 0 lit.
     // ceil(health / 10) so 1% of health still shows one segment.
     const overlay = $('fb-wear-overlay');
-    const broken = !fabFunctional();
+    const broken = !fabFunctional() && !jobRuns();
     overlay.classList.toggle('hidden', broken);
     if (!broken) {
       const lit = Math.ceil(Math.max(0, 100 - FSTATE.wear) / 10);
@@ -644,7 +657,7 @@
     const slotEl = $('fb-slot');
     slotEl.classList.remove('state-idle', 'state-busy', 'state-done', 'state-broken');
 
-    if (!fabFunctional()) {
+    if (broken) {
       slotEl.classList.add('state-broken');
       stopRunAnim();
       setFabFrame('broken');
@@ -696,6 +709,9 @@
     // from the wear before it and rolled when the print comes out.
     const wearBefore = FSTATE.wear;
     FSTATE.wear = Math.min(100, Math.round((FSTATE.wear + recipeWear(r)) * 10) / 10);
+    // The field repair fabricator's −10% is the part's: a job whose part
+    // leaves the ship before the print comes out pays it back then.
+    const partWear = Math.round((recipeWear(r, true) - recipeWear(r)) * 10) / 10;
     FSTATE.craft = {
       recipeId:  r.id,
       daysTotal: actualDays(r.days),
@@ -704,6 +720,7 @@
       misfireP:  misfireChance(wearBefore),
       wearBefore,
       wearAdded: Math.round((FSTATE.wear - wearBefore) * 10) / 10,
+      partWear,
       tax,
     };
     // Saved now: the materials and tax are spent, the job is on the bed —
@@ -735,7 +752,8 @@
   function heldReason() {
     const c = FSTATE.craft;
     if (!c) return null;
-    if (!fabFunctional()) return 'FAB BROKEN';
+    if (c.daysDone >= c.daysTotal) return null; // all its days spent: it only has to come out
+    if (!jobRuns()) return 'FAB BROKEN';
     if (STATE.daysElapsed + 1 > STATE.baseDays) return 'PAST DEADLINE';
     return null;
   }
@@ -772,21 +790,27 @@
   function craftDay() {
     const c = FSTATE.craft;
     if (!c || heldReason()) return;
+    // Every day already spent: the print comes out, no further day.
+    if (c.daysDone >= c.daysTotal) { completeCraft(); return; }
     c.daysDone++;
     passDays(1); // the orders daily-drain helper — same as any other day
     renderHUD();
-    FSTATE.tripDay = STATE.daysElapsed;
+    bindFabricatorState(); // the crew as the day left it (a dead engineer stops speeding the next print)
     const dEl = $('fb-trip-day');
     dEl.textContent = FSTATE.tripDay;
     dEl.classList.remove('ticking');
     void dEl.offsetWidth;
     dEl.classList.add('ticking');
     renderHeader();
-    // The day can end the run (deprivation, mutiny, crop death…). The
-    // job stays on the bed (saved state): a resumable failure (Keep
-    // flying) comes back to it.
+    // The last day's print comes out before the failure check: a day that
+    // ends the run (deprivation, mutiny, crop death…) still finished the
+    // job, and a resumable failure (Keep flying) saves the print owed in
+    // the bay, not a spent job that would charge another day. An
+    // unfinished job stays on the bed (saved state) and resumes.
+    if (c.daysDone >= c.daysTotal) completeCraft();
     if (checkFailure()) { stopCraftClock(); return; }
-    if (c.daysDone >= c.daysTotal) { completeCraft(); return; }
+    if (!FSTATE.craft) return;
+    renderDetail(); // TIME / deadline lock / wear preview off the live crew
     updateProgressUI();
     if (typeof saveRun === 'function') saveRun();
   }
@@ -844,7 +868,9 @@
         return;
       }
     }
-    for (const [mat, qty] of Object.entries(back)) FSTATE.stock[mat] = (FSTATE.stock[mat] || 0) + qty;
+    // Back aboard like any material grant: NEW badge, newest in the Recent order.
+    if (typeof window.grantMaterials === 'function') window.grantMaterials(back, { quiet: true });
+    else for (const [mat, qty] of Object.entries(back)) FSTATE.stock[mat] = (FSTATE.stock[mat] || 0) + qty;
     const free = !c.daysDone;
     if (free) {
       if (typeof window.refundEffortTax === 'function') {
@@ -893,7 +919,18 @@
     const slot = $('fb-slot');
     stopRunAnim();
     setFabFrame('idle');
-    if (!r) { renderAll(); if (typeof saveRun === 'function') saveRun(); return; }
+    // The part's wear discount left with the part (see craftSelected).
+    if (c.partWear && !STATE.items.includes('repair_fabricator')) {
+      FSTATE.wear = Math.min(100, Math.round((FSTATE.wear + c.partWear) * 10) / 10);
+      fabLog('FABRICATOR — no Field Repair Fabricator aboard to ease the print: +' + c.partWear + '% wear.');
+    }
+    // A print that took the fab to 100% ran to the end; now the fab breaks.
+    const wornOut = () => {
+      if (FSTATE.broken || FSTATE.wear < 100) return;
+      breakFab();
+      fabNotice('FAB BROKEN', 'The print wore the fabricator out. FAB SERVICE at a station fixes it.', 'danger');
+    };
+    if (!r) { wornOut(); renderAll(); if (typeof saveRun === 'function') saveRun(); return; }
     const out = r.output;
 
     if (Math.random() < (c.misfireP || 0)) {
@@ -912,6 +949,7 @@
       }
       if (typeof window.pushAiSample === 'function') window.pushAiSample('fabricator_misfire');
       if (100 - (c.wearBefore || 0) < 20 && Math.random() < 0.5) { breakFab(); fabNotice('MISFIRE — FAB BROKEN', 'The misfire took the fabricator with it. FAB SERVICE at a station fixes it.', 'danger'); }
+      wornOut();
       renderHUD();
       renderAll();
       if (typeof saveRun === 'function') saveRun();
@@ -933,6 +971,7 @@
     // Park the finished item in the output slot — sits there pulsing +
     // floating until the player clicks to claim (moves to cargo).
     showOutputItem(r);
+    wornOut();
     if (typeof saveRun === 'function') saveRun();
     // Return to idle after the done-flash window.
     setTimeout(() => {
@@ -1204,7 +1243,9 @@
     renderAll();
     showOverlay('overlay-fabricator');
     document.body.classList.add('modal-open');
-    // A held job picks up where it stopped (its part-day included).
-    if (FSTATE.craft) { updateProgressUI(); startCraftClock(false); }
+    // A job whose days are all spent (an older save) comes out now, no
+    // further day; a held job picks up where it stopped (its part-day included).
+    if (FSTATE.craft && FSTATE.craft.daysDone >= FSTATE.craft.daysTotal) completeCraft();
+    else if (FSTATE.craft) { updateProgressUI(); startCraftClock(false); }
   };
 })();
