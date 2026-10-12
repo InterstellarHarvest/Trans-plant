@@ -60,3 +60,6 @@ Rulings 1–25 date from 2026-10-11 and 26–56 from 2026-10-12.
 54. Cargo Hold SELL is free (no day, no effort), unlike the Market Row's haggling day, and its tooltip says "no day spent".
 55. Fabricator craft days roll no during-wait interrupts; CANCEL after the first day refunds half the materials (rounded down per material), before day 1 everything.
 56. Engine Fault follows demo-cruise: FIELD REPAIR (engineer) effort 3, 6 days; LIMP MODE effort 1, 2 days, −2 fuel.
+57. Per-crew morale (owner 2026-10-12): each role also reacts to its own concern on top of the shared changes — botanist to crop health swings, engineer to hull damage, chef to short rations, medic to injuries, pilot to engine pace — and a person loses morale when they are wounded. The crew strip and morale tooltip say why, so one member's morale can fall alone and desertion is reachable.
+58. Difficulty (owner 2026-10-12): careful play is made harder by weighting the second half of each trail toward hard/ultra events (the pity counter still caps streaks); supplies and the deadline stay as they are.
+59. Gold (owner 2026-10-12): more to earn — material sell prices back toward ×4 (from ×2.5) and trade goods rolled more often, aiming at ~60–100 gold earned per careful run, so the Market Row, MEDBAY and gold-gated choices are real decisions.
