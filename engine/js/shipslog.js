@@ -147,6 +147,8 @@
       else if (k.startsWith('hp.')) {
         const r = k.slice(3);
         if (lost.includes(r) || joined.includes(r)) continue;
+        // The captain's death is the run's end, not an HP line.
+        if (r === 'captain' && a.n[k] > 0 && b.n[k] <= 0) { out.push({ text: 'CAPTAIN LOST', w: 1000 }); continue; }
         out.push({ text: String(b.names[r] || a.names[r] || r).toUpperCase() + ' ' + sgn + av + ' HP', w: av / 2 });
       } else if (k === 'crop') out.push({ text: sgn + av + ' CROP', w: av / 2 });
       else if (k === 'fab') out.push({ text: (v > 0 ? '+' + av + '% FAB WEAR' : 'FAB REPAIRED'), w: 6 });

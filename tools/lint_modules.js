@@ -76,9 +76,10 @@ const MINIGAME_IDS = new Set(['scan', 'engine', 'medical', 'forage', 'brace', 'b
 const STOWAWAY_RESOLVES = new Set(['welcome', 'welcome_replace', 'refuse']);
 // crew_effect contract (applyOutcomeEffects). "patient" = the wounded
 // crew member of an engine-forced delayed_crisis event, so it (and the
-// {patient.*} text tokens) only make sense inside those events.
+// {patient.*} text tokens) only make sense inside those events. "crew" =
+// one of the crew, never the captain (a choice that sends a crew member).
 const CREW_EFFECT_TYPES = new Set(['injure', 'kill', 'heal']);
-const CREW_EFFECT_TARGETS = new Set(['random', 'specific_role', 'all_injured', 'patient']);
+const CREW_EFFECT_TARGETS = new Set(['random', 'specific_role', 'all_injured', 'patient', 'crew']);
 const severityValues = new Set(Object.keys((registry.severity || {}).values || {}));
 const TIER_KEYS = new Set(['perfect', 'good', 'poor']);
 
@@ -135,11 +136,12 @@ for (const file of eventFiles) {
         if (setFlag === 'chose_alpha' || setFlag === 'chose_beta') forkFlags.add(setFlag);
         if (ch.requires_flag) requiresFlags.add(ch.requires_flag);
 
-        if (ch.requires_crew && !crewRoles.has(ch.requires_crew)) {
-          err(`${file} ${ev.id}${layer ? '/' + layer : ''}: requires_crew "${ch.requires_crew}" is not a role in crew_roster.json`);
+        // "any": anyone in the crew (hasRoleFor) — the captain doesn't count.
+        if (ch.requires_crew && ch.requires_crew !== 'any' && !crewRoles.has(ch.requires_crew)) {
+          err(`${file} ${ev.id}${layer ? '/' + layer : ''}: requires_crew "${ch.requires_crew}" is not a role in crew_roster.json (or "any")`);
         }
-        if (ch.gate && ch.gate.crew && !crewRoles.has(ch.gate.crew)) {
-          err(`${file} ${ev.id}${layer ? '/' + layer : ''}: gate.crew "${ch.gate.crew}" is not a role in crew_roster.json`);
+        if (ch.gate && ch.gate.crew && ch.gate.crew !== 'any' && !crewRoles.has(ch.gate.crew)) {
+          err(`${file} ${ev.id}${layer ? '/' + layer : ''}: gate.crew "${ch.gate.crew}" is not a role in crew_roster.json (or "any")`);
         }
         if (ch.requires_item && !itemIds.has(ch.requires_item)) {
           err(`${file} ${ev.id}${layer ? '/' + layer : ''}: requires_item "${ch.requires_item}" is not an id in items.json`);
@@ -702,6 +704,9 @@ const eventOnTrail = (ev, trail) => {
       else for (const b of ev.biome) if (!BIOMES.has(b)) err(`${at}: biome "${b}" is not a planet biome (${[...BIOMES].join('/')})`);
       if (!(ev.node_type || []).includes('planet')) err(`${at}: biome gate on an event that never fires at a planet — it can never pass`);
     }
+    // requires_crew_aboard (eventEligible): copy that needs the crew in the
+    // scene never fires for a captain flying alone.
+    if (ev.requires_crew_aboard != null && ev.requires_crew_aboard !== true) err(`${at}: requires_crew_aboard must be true (or absent)`);
     if (ev.draw_weight != null && !(Number.isFinite(ev.draw_weight) && ev.draw_weight > 0 && ev.draw_weight <= 5)) err(`${at}: draw_weight must be a number in (0, 5]`);
     if (ev.draw_weight != null && !ev.biome) warn(`${at}: draw_weight without a biome gate — only narrow gates should need it`);
     if (ev.crew_speaker != null) {

@@ -465,7 +465,8 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
         const body = document.getElementById('combat-end-body').textContent;
         // Names can carry periods ("Dr. Vasquez"): cut the clause after the
         // last fixed sentence, then split the names.
-        const tail = body.split(/(?:Cargo lost: [^.]*|Nothing in the hold worth taking)\. |didn't make it\. |disagreed\. /).pop(); // b4 A3: the cargo line names the loss
+        // A save's line ends "…badly hurt, but alive." (it names who lived).
+        const tail = body.split(/(?:Cargo lost: [^.]*|Nothing in the hold worth taking)\. |didn't make it\. |but alive\. /).pop(); // b4 A3: the cargo line names the loss
         const hurtM = tail.match(/^(.*) (?:is|are) hurt\.$/);
         const hurt = hurtM ? hurtM[1].split(' and ').map(x => x.trim()) : [];
         const lost = /didn't make it/.test(body);
