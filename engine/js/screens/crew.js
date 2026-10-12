@@ -12,7 +12,7 @@
    • passive card NAME — demo's invented names, kept as a per-role
      display table (roster passives have effect ids, not names).
    • hint line — the demo's per-crew flavour line (HINT_LINES below;
-     re-audit B9 — it was roster narrative_unlocks[0], a mechanic).
+     not roster narrative_unlocks[0], which is a mechanic).
    • cost tag — derived from active_skill.effect resource fields.
    • captain — no roster entry (backgrounds live in setup.js's
      wizard config); reduced card: passive = background bonus,
@@ -333,7 +333,7 @@
     // Treatment — effect {heal_crew: 1} → restore the worst-injured
     // person aboard (the captain too — owner ruling 30) to healthy (100
     // HP). Like MEDBAY, treatment closes a delayed wound's pending crisis
-    // (re-audit A8: it healed to 100 and left "Pending crisis").
+    // too, so a healed crewmate never still reads "Pending crisis".
     medic() {
       let worst = null, worstHp = 100;
       for (const r of peopleAboard()) {
@@ -438,7 +438,7 @@
     const idn = crewIdentityOf(key);
     return {
       key, isCaptain: false, crewId: idn ? null : CREWID_OF_ROLE[key], emoji: CD_ROLE_EMOJI[key] || '👤',
-      name: idn ? idn.name : (r.name || key), role: key.charAt(0).toUpperCase() + key.slice(1), bgTag: idn ? (idn.origin === 'rescued' ? 'Rescued' : 'Stowaway') : 'Crew', // scenes B: a rescued survivor isn't a stowaway
+      name: idn ? idn.name : (r.name || key), role: key.charAt(0).toUpperCase() + key.slice(1), bgTag: idn ? (idn.origin === 'rescued' ? 'Rescued' : 'Stowaway') : 'Crew', // a rescued survivor isn't a stowaway
       bio: idn ? idn.story : (r.bio || ''), hint: idn ? '' : hintLine(key),
       passiveName: PASSIVE_NAME[key] || 'Passive',
       passiveDesc: (r.passive_skill && r.passive_skill.description) || '',
@@ -497,7 +497,7 @@
     const hp = Math.round(hpOf(m.key));
     // Their own morale (owner ruling 15); the captain has none — no row.
     // HUD rounding (index.html crewMoraleAvg): anything above 0 reads at
-    // least 1, so "0" means exactly the value that walks off (re-audit A10).
+    // least 1, so "0" means exactly the value that walks off.
     const moRaw = m.isCaptain ? null : crewMoraleOf(m.key);
     const mo = moRaw == null ? null : (moRaw > 0 ? Math.max(1, Math.round(moRaw)) : 0);
 
@@ -736,7 +736,7 @@
     // the identity goes; shipslog.js).
     const memo = jettisoned && window.ShipLog ? ShipLog.deathEntry(role, '', { cause: 'out the airlock' }) : null;
     // HP, charges, pending, identity, morale and any armed active skill
-    // (re-audit A9) go with them — index.html releaseCrewRole, one place.
+    // go with them — index.html releaseCrewRole, one place.
     releaseCrewRole(role);
     let line, logLine;
     if (jettisoned) {

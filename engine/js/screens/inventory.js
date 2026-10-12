@@ -1,7 +1,6 @@
 'use strict';
 /* ────────────────────────────────────────────────────────────────
-   CARGO HOLD — resources/demo-inventory.html canon (parity batch 2,
-   2026-10-11; moved out of index.html). Styles in
+   CARGO HOLD — resources/demo-inventory.html canon. Styles in
    resources/screen-inventory.css; markup is #overlay-inventory in
    index.html. Cruise's INV button calls openInventory().
 
@@ -44,8 +43,7 @@ function itemSpritePath(id) {
   if (NO_ITEM_ART[id]) return null;
   return 'sprites/cargo/items/' + id + '.png';
 }
-// Per-item emoji when the art is missing (demo ITEM_META icons; re-audit
-// B4) — drawn at the sprite's 64px, never a generic 📦 for everything.
+// Per-item emoji when the art is missing (demo ITEM_META icons) — drawn at the sprite's 64px, never a generic 📦 for everything.
 const INV_EMOJI = {
   gas_analyzer: '🔬', repair_kit: '🔧', medkit: '💊', fuel_cell: '🔋', ration_brick: '🥫', water_canister: '💧',
   pre_collapse_artifact: '🏺', corporate_memorabilia: '🎖️', logbook_fragment: '📜', classified_cargo: '📦',
@@ -178,7 +176,7 @@ function invEntries(tab) {
   if (tab === 'materials') {
     const order = ((MOD.materials && MOD.materials.materials) || []).map(m => m.id);
     // NEW + Recent from STATE.materialPickups (grantMaterials marks a
-    // stack that gains units; re-audit B5); unmarked stacks (the launch
+    // stack that gains units); unmarked stacks (the launch
     // stores) are oldest, in materials.json order.
     const marks = STATE.materialPickups || {};
     return Object.keys(STATE.materials || {}).filter(m => STATE.materials[m] > 0)
@@ -320,16 +318,16 @@ function renderInvDetail(en) {
   else if (def && def.analysis && STATE.items.includes('spectrometer')) desc += '  ◆ SPECTROMETER: ' + def.analysis;
   document.getElementById('inv-detail-desc').textContent = desc;
   // The item's own aside: items.json passive_flavor, or a material's
-  // materials.json flavor line (re-audit B6; demo detail-flavor).
+  // materials.json flavor line (demo detail-flavor).
   document.getElementById('inv-detail-flavor').textContent = (def && def.passive_flavor) || (mdef && mdef.flavor) || '';
 
   // COUNT / SLOT COST / SELL PRICE (demo rows). SLOT COST is the per-item
-  // figure (re-audit A12, demo + Bible §14.3): a stackable's per-unit
+  // figure (demo + Bible §14.3): a stackable's per-unit
   // decimal, anything else its whole-slot cost; a stack adds its total.
   const per10 = en.material ? materialPer10(en.id) : def && def.cargo_slots_per_10;
   const total = en.n > 1 ? ' <span class="detail-dim">' + itemSlotsFor(en.id, en.n) + ' total</span>' : '';
   const slot = (per10 ? (per10 / 10).toFixed(1) + ' per unit' : String(def ? (def.cargo_slots || 0) : 1) + (def && def.slot_bonus ? ' (+' + def.slot_bonus + ' cap)' : '')) + total;
-  // SELL PRICE (re-audit A11): one rule for every good — what a station
+  // SELL PRICE: one rule for every good — what a station
   // trader pays (market.js stationBuyPrice; a rolled copy its own value)
   // and, for anything a fence takes, what the fence pays (fenceBuyPrice).
   let sell, note = '';
@@ -505,9 +503,9 @@ function renderInvResources() {
     const lit = Math.round(Math.min(1, s.level / (s.max || 100)) * 10);
     let segs = '';
     for (let i = 1; i <= 10; i++) segs += '<div class="gauge-seg' + (i <= lit ? ' lit' : '') + '" style="--seg-color:' + invSegColor(i) + '"></div>';
-    // The figure EMPTY is computed from (re-audit A13: H2O's 0.35 read
-    // "~0.3" beside an EMPTY day worked out at 0.35): one decimal when
-    // that is exact, else two.
+    // The figure EMPTY is computed from: one decimal when that is exact,
+    // else two (so H2O's 0.35 never reads "~0.3" beside an EMPTY day
+    // worked out at 0.35).
     const use = s.perDay > 0 ? '~' + invRate(s.perDay) + ' / DAY' : '—';
     const empty = s.level <= 0 ? 'NOW' : s.emptyDay == null ? '—' : 'DAY ' + s.emptyDay;
     tile.innerHTML =

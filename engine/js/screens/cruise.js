@@ -4,9 +4,9 @@
    §18). The hub between legs: real resources/crew/crop/day data, the
    Stop Menu (region verbs → minigames / encounters), the MAP overlay.
 
-   Demo-parity pass (2026-10-11, owner-approved): the demo's 3-layer
-   warp starfield (pace-driven, streaks at Ludicrous/Plaid, decelerates
-   on Stop), the ticker state machine (slide replace, amber STOPPED,
+   From the demo (owner-approved): its 3-layer warp starfield
+   (pace-driven, streaks at Ludicrous/Plaid, decelerates on Stop), the
+   ticker state machine (slide replace, amber STOPPED,
    red event, AI quips as amber "MARV: …" lines while stopped), TIME
    PAUSED, scene alerts wired to real state, the multi-day WAIT FOR
    TRADER / REST machinery (1–7 day picker, action banner, result
@@ -601,7 +601,7 @@
     for (const role of STATE.crew) members.push({ key: role, label: crewNameOf(role).toUpperCase(), role: capWord(role), crewId: crewSpriteIdOf(role) });
     // Always three slots — captain + the two crew places (the cap,
     // crewJoinRole). An empty place keeps its card-sized spot, so the crop
-    // card and everything right of it never shift (owner, batch 3).
+    // card and everything right of it never shift (owner).
     const CREW_PLACES = 3;
     while (members.length < CREW_PLACES) members.push({ key: null, empty: true });
     for (const m of members) {
@@ -623,7 +623,7 @@
       const hpColor = hp <= CREW_CRITICAL_HP ? '#cc5555' : (hp < CREW_WOUNDED_HP ? '#d4a830' : '');
       // Their OWN morale (owner ruling 15). The captain has none: no MO bar.
       const mo = m.key === 'captain' ? null : crewMoraleOf(m.key);
-      // HUD rounding (crewMoraleAvg): above 0 reads at least 1 — "0" only when they walk (A10).
+      // HUD rounding (crewMoraleAvg): above 0 reads at least 1 — "0" only when they walk.
       const moTip = mo == null ? '' : 'Morale ' + (mo > 0 ? Math.max(1, Math.round(mo)) : 0) + '/100' + (mo <= 0 ? ' — walks off at the next station unless it rises' : '');
       const moBar = mo == null ? ''
         : '<div class="crew-bar mo' + (mo <= 0 ? ' zero' : '') + '" title="' + moTip + '"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(mo) + '%"></div></div></div>';
@@ -717,7 +717,7 @@
     const cg = STATE.cropGrowth;
     if (!cg || cg.growth < 100 || cg.health <= 0) return;
     // doHarvest logs "▶ Harvested … +N food" itself — one line for both
-    // harvest paths, stating what really landed (re-audit A15, b4-crew).
+    // harvest paths, stating what really landed.
     window.doHarvest();
     renderHUD();
     renderCruise();
@@ -814,7 +814,7 @@
   // apply → renderHUD → checkFailure → log/render order resolveChoice()
   // uses for events, so minigame outcomes and event outcomes behave the
   // same way around the failure check.
-  // Hunt 6: the effort tax is paid on the click, so a job cancelled before
+  // The effort tax is paid on the click, so a job cancelled before
   // it starts (closed at the briefing, LEAVE before mining, REPAIR closed
   // untouched — or a double-click's second press on the backdrop) gets it
   // back. Once the job begins, a reload settles it as a quit (loadRun).
@@ -875,7 +875,7 @@
   const REGION_TO_FORAGE_MODE = { asteroid_field: 'HUNT', debris_field: 'SCAVENGE', derelict: 'SCAVENGE', planet_orbit_habitable: 'GATHER', planet_orbit_alien: 'GATHER', anomaly: 'GATHER' };
   // Alien-world poison roll: a 'medium' forage poisoning — owner ruling 3
   // (demo numbers, the sickness table below): light 10 / medium 20 /
-  // heavy 35 HP. It was 7 HP, under "medium" (b4 re-audit B6).
+  // heavy 35 HP.
   const ALIEN_POISON_CHANCE = 0.25, ALIEN_POISON_HP = 20;
   // A forage poisoning by severity (owner ruling 2026-10-11, the demo's
   // payload numbers): HP, before the medic's softening.
@@ -1069,8 +1069,8 @@
         const got = gain('fuel', resMax('fuel'));
         granted.push(got > 0 ? '+' + got + ' fuel scooped from the gas' : 'gas, but the fuel tank is full');
       }
-      // One day per mining run: MINE AGAIN used to chain unlimited runs
-      // for a single day (a gold and fuel faucet — hunt 5 economy sim).
+      // One day per mining run: unlimited MINE AGAIN runs for a single
+      // day are a gold and fuel faucet (economy sim).
       const runs = Math.max(1, haul.runs || 1);
       settleMinigame('◆ MINE — ' + (runs > 1 ? runs + ' runs, ' + runs + ' days: ' : '') + (granted.length ? 'recovered ' + granted.join(', ') : 'the rocks gave up nothing') + '.' + (haul.summary ? ' ' + haul.summary : ''), runs); // summary: tier · sector · crew credit (mining.js, parity-shell)
     });
@@ -1122,8 +1122,8 @@
     const r = medbayPatient();
     if (!r) { pushLogEntry('◆ MEDBAY — the duty nurse looks your crew over and finds nothing to bill. They seem disappointed.'); return; }
     if (STATE.goldAmount < medbayFee()) { pushLogEntry('◆ MEDBAY — treatment is ' + medbayFee() + 'g, payable in advance. You have ' + STATE.goldAmount + 'g. The nurse has heard every story.'); return; }
-    // The whole crew, for one fee: one patient for 30g was strictly worse
-    // than a 12g medkit from the same station's shelf (hunt 5 economy).
+    // The whole crew, for one fee: one patient for 30g would be strictly
+    // worse than a 12g medkit from the same station's shelf.
     STATE.goldAmount -= medbayFee();
     const treated = peopleAboard().filter(x => hpOf(x) < 100);
     for (const x of treated) { setHP(x, 100); if (STATE.crewPending) delete STATE.crewPending[x]; }
@@ -1739,9 +1739,9 @@
     const ready = [...STATE.flags].filter(f => pay[f] && !STATE.calledBack.includes(f) && leg - STATE.flagFirstSeen[f] >= 2
       && pay[f].callback && pay[f].callback[STATE.activeAI]);
     if (!ready.length) return false;
-    // Pacing (hunt 5, measured over 36 real runs): 35% per new stop, at
-    // least two legs apart, and guaranteed after four quiet legs while a
-    // memory is waiting — lunar runs often went without any.
+    // Pacing (measured over 36 real runs): 35% per new stop, at least two
+    // legs apart, and guaranteed after four quiet legs while a memory is
+    // waiting — without the guarantee lunar runs often get none.
     const since = leg - (STATE.lastCallbackLeg != null ? STATE.lastCallbackLeg : -99);
     if (since < 2) return false;
     if (since < 4 && Math.random() >= 0.35) return false;

@@ -45,12 +45,12 @@
    per design call 2026-05-06. Each var has a system-cursor
    fallback so the page stays usable if cursor generation fails. */
 html, body { cursor: var(--cursor-pointer, default); }
-/* Cursor routing (parity pass 2026-10-11) — every control gets the pixel
-   set, not the OS hand/arrow: anything you can press shows the hand,
-   anything locked or disabled shows the red Denied (cursor-armory.html).
-   :where() keeps these at zero specificity, so a surface's own rule
-   (a reticle, a Wait/Scan state) still wins. Per-surface rules that set
-   a raw `cursor: pointer/default/not-allowed/grab` were converted too —
+/* Cursor routing — every control gets the pixel set, not the OS
+   hand/arrow: anything you can press shows the hand, anything locked or
+   disabled shows the red Denied (cursor-armory.html). :where() keeps
+   these at zero specificity, so a surface's own rule (a reticle, a
+   Wait/Scan state) still wins. No surface sets a raw
+   `cursor: pointer/default/not-allowed/grab` —
    tools/tests/test_parity_shell.js measures the computed cursor. */
 :where(button, [role="button"], a[href], select, summary, input[type="range"], input[type="checkbox"], input[type="radio"], input[type="button"]) { cursor: var(--cursor-hand, pointer); }
 :where(button:disabled, input:disabled, [aria-disabled="true"]) { cursor: var(--cursor-denied, not-allowed); }

@@ -5,10 +5,10 @@
    self-centers (left/top 50% + transform), no overlay-active override
    needed like screen-minigames.css required. */
 
-/* Scoped to the overlay, not :root (parity pass 2026-10-11): as :root these
-   tokens were overridden by screen-fabricator.css + index.html's inline
-   :root (growbay drew in the fabricator's 880×600 bronze frame, dimmed
-   body text) and leaked --pb-* into every .panel-btn in the game. */
+/* Scoped to the overlay, not :root: as :root these tokens are overridden
+   by screen-fabricator.css + index.html's inline :root (growbay draws in
+   the fabricator's 880×600 bronze frame, dimmed body text) and leak
+   --pb-* into every .panel-btn in the game. */
 #overlay-growbay {
   /* Shared theme */
   --teal: #35c6bf;
@@ -299,7 +299,7 @@ body:not(.modal-open) #gb-modal {
 .plant-sprite.stage-flash {
   animation: plant-sway 4.4s ease-in-out infinite, stage-flash 1.4s ease-out;
 }
-/* A dead crop (re-audit A3): grey and still — no sway, no stage flash. */
+/* A dead crop: grey and still — no sway, no stage flash. */
 .plant-sprite.dead,
 .plant-sprite.dead.stage-flash {
   animation: none;

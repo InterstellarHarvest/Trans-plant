@@ -4,7 +4,7 @@
    #screen-title so it can't leak into other screens).
    ============================================================ */
 
-/* Scoped to the screen (parity pass 2026-10-11). --vignette is the demo's
+/* Scoped to the screen. --vignette is the demo's
    tuned default 0.30 (its 0.55 CSS literal is overridden by apply()). */
 #screen-title {
   --prompt-y: 380px;
@@ -64,9 +64,9 @@
   position: absolute; inset: 0;
   background: linear-gradient(180deg, #020408 0%, #0e1520 100%);
 }
-/* The canvases are #title-stars-far/-near — this used to target the demo's
-   #stars-far/#stars-near, so they sat in normal flow under #bg-void and the
-   starfield never showed (parity audit Tier A). */
+/* The canvases are #title-stars-far/-near, not the demo's
+   #stars-far/#stars-near: without this rule they sit in normal flow under
+   #bg-void and the starfield never shows. */
 #screen-title #title-stars-far, #screen-title #title-stars-near { position: absolute; inset: 0; pointer-events: none; }
 
 /* ── Title content ──────────────────────────────────────────────── */

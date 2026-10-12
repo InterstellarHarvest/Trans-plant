@@ -565,7 +565,7 @@
     [1, 197], [99, 197], [197, 197],
     [295, 1],
   ];
-  // b4 ruling 47b (demo-npc :363-370): every loop holds the idle frame
+  // Ruling 47b (demo-npc :363-370): every loop holds the idle frame
   // 500ms, then cycles the talk frames over 1500ms — a 2000ms loop.
   const TALK_PAUSE_MS = 500;
   const TALK_CYCLE_MS = 1500;
@@ -687,7 +687,7 @@
   function stopTalking() {
     if (_talkRAF) cancelAnimationFrame(_talkRAF);
     _talkRAF = null;
-    setHeadTalking(false); // b4 B10: the emoji/portrait bob stops with the line
+    setHeadTalking(false); // the emoji/portrait bob stops with the line
     // A line can finish while its spritesheet is still being probed.
     // Clear the deferred start as well as the live loop, otherwise the
     // eventual image load starts talking after the text is complete.
@@ -891,7 +891,7 @@
     typed = typed !== false;
     if (_activeSheet) startTalking(line, typed);
     else { _pendingLine = line; _pendingTyped = typed; }  // sheet still probing — talk when it lands
-    // b4 B10 (demo :946-956): a head with no spritesheet bobs while its
+    // Demo :946-956: a head with no spritesheet bobs while its
     // line types (CSS: .talking:not(.has-spritesheet)); stopTalking clears it.
     setHeadTalking(true);
   }
@@ -908,7 +908,7 @@
       const instKey = instanceKey(c.ev, c.node);
       if (specKeyOf(spec, instKey) !== _paintedKey) applyBackdropSpec(spec, instKey, c.node, c.npcCtx && c.npcCtx.artKey);
     }
-    // b4 B3 (demo :5174 applySubject(s, 'listening', o)): the speaker
+    // Demo :5174 applySubject(s, 'listening', o): the speaker
     // listens on the outcome view unless the outcome authors its own pose.
     const subjEl = document.getElementById('enc-subject');
     if (subjEl) {

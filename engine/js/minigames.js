@@ -412,11 +412,11 @@ function showResult(tier, payload){
   const rt = document.getElementById('rtier');
   rt.className = tier;
   // MEDICAL's 'fedup' (the patient gave up and left) reads WALKED OUT, not
-  // the demo's ABANDONED (demo-minigames ~1905): ABANDONED is now the
+  // the demo's ABANDONED (demo-minigames ~1905): ABANDONED is the
   // player's own QUIT — the 'abandoned' tier, the event outcome titled
   // ABANDONED (index.html resolveChoice) and the cruise log's "abandoned
   // partway" — so the demo word would tell a patient walk-out apart from
-  // a quit by nothing (b4 re-audit B5, kept deliberately).
+  // a quit by nothing (kept deliberately).
   const labels = {perfect:'EXCELLENT',good:'ADEQUATE',poor:'INSUFFICIENT',fedup:'WALKED OUT'};
   rt.textContent = labels[tier];
   const ai = activeAi;
@@ -506,7 +506,7 @@ document.getElementById('mclose').addEventListener('click', requestCloseMinigame
 let ovPressOnBackdrop = false;
 document.getElementById('ov').addEventListener('mousedown', e=>{ ovPressOnBackdrop = (e.target===document.getElementById('ov')); });
 // A press in the first moment after the pause menu closes is the second
-// half of a double-clicked RESUME, not a quit (hunt 6: it abandoned the job).
+// half of a double-clicked RESUME, not a quit that abandons the job.
 const justResumed = () => window.PauseBus && PauseBus.resumedAt && performance.now() - PauseBus.resumedAt < 400;
 document.getElementById('ov').addEventListener('click', e=>{ if(e.target===document.getElementById('ov') && ovPressOnBackdrop && !justResumed()) requestCloseMinigame(); ovPressOnBackdrop = false; });
 // No "Play Again" — replaying a Stop Menu verb minigame for free without
@@ -915,7 +915,7 @@ function initMedical(container, onResult, medConfig){
   //   startingHp,         // patient HP at entry (default 100)
   //   damageCap,          // max % MAX HP this event can take (default 30)
   // }
-  // Difficulty (parity pass 2026-10-11): the caller passes the event's
+  // Difficulty: the caller passes the event's
   // own difficulty; 'medium' is the tuned baseline (the demo's defaults).
   const MED_DIFFICULTY = {
     easy:   { minN: 2, maxN: 3, sevRamp: 0.04,  baseDrain: 0.45 },
@@ -1552,7 +1552,7 @@ const FORAGE_FALLBACK_ANCHORS = {
 function initForage(container, onResult, ctx){
   ctx = ctx || {};
   const MODE = ctx.mode || ['HUNT','GATHER','SCAVENGE'][_forageCycle++ % 3];
-  // HUD region text (parity pass 2026-10-11): the cruise passes where the
+  // HUD region text: the cruise passes where the
   // ship actually stopped (ctx.regionLabel, e.g. 'ASTEROID FIELD'); the
   // demo's fixed per-mode table is only the fallback for a launch with no
   // caller context. Set once the bg (and its biome) is picked, below.
@@ -1570,8 +1570,8 @@ function initForage(container, onResult, ctx){
   const BIOME = pickedBg
     ? pickedBg.biome
     : placeholderBiomes[Math.floor(Math.random() * placeholderBiomes.length)];
-  // A HUNT on a desert or ice rock is that rock, not "ASTEROID FIELD"
-  // (parity audit) — the biome names the ground the crew is standing on.
+  // A HUNT on a desert or ice rock is that rock, not "ASTEROID FIELD" —
+  // the biome names the ground the crew is standing on.
   const BIOME_PLACE = { desert: 'DESERT ROCK', ice: 'ICE ROCK' };
   REGION = (BIOME_PLACE[BIOME] || ctx.regionLabel || ({
     HUNT:'ASTEROID FIELD',
@@ -2823,8 +2823,8 @@ function initBreach(container, onResult){
   // Patch a hole and its share is removed from the running drain.
   // Math: N * R * T = cap  →  R = cap / (T * N)
   // Where T = N * perHole_seconds, so R = cap / (perHole_seconds * N²).
-  // The bar starts at the ship's real O2 (parity audit: it always read
-  // 100% — a breach on a half-empty tank showed a full one).
+  // The bar starts at the ship's real O2, not 100%: a breach on a
+  // half-empty tank never shows a full one.
   const O2_START = (typeof STATE !== 'undefined' && STATE && STATE.resources && typeof STATE.resources.o2 === 'number')
     ? Math.max(0, Math.min(100, Math.round(STATE.resources.o2))) : 100;
   let o2 = O2_START;
