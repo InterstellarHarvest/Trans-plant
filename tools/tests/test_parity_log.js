@@ -60,7 +60,7 @@ const mark = page => page.evaluate(() => { window.__mark = STATE.shipLog.length;
     const e1 = await sinceMark(page); run.push(...e1);
     const arr = e1.find(e => /^Position:/.test(e.text));
     ok(arr && arr.type === 'event' && arr.voice === 'rex', 'arrival logged as a voiced event entry: ' + (arr && arr.text));
-    ok(arr && arr.text.includes(leg.name) && arr.text.includes('−' + Math.abs(leg.fuel) + ' FUEL') && arr.text.includes(leg.days + ' DAYS'), `arrival states the real leg cost (${leg.fuel} fuel, ${leg.days} days)`);
+    ok(arr && arr.text.includes(leg.name) && arr.text.includes('−' + Math.abs(leg.fuel) + ' FUEL') && arr.text.includes(leg.days + ' DAYS'), `arrival states the real leg cost (${leg.fuel} fuel, ${leg.days} days)` + (arr ? '' : ' — no arrival entry') + (arr && !arr.text.includes('−' + Math.abs(leg.fuel) + ' FUEL') ? ' — logged: ' + arr.text : ''));
     ok(arr && arr.day === leg.day, 'arrival stamped with the arrival day ' + leg.day);
     ok(arr && (await voiceRe(page, 'arrival', 'rex')).test(arr.text), 'arrival in REX\'s template voice');
     ok(e1.indexOf(arr) === 0, 'the arrival entry leads the leg\'s lines');
@@ -95,13 +95,16 @@ const mark = page => page.evaluate(() => { window.__mark = STATE.shipLog.length;
       const ev = EVENTS.event_nebula_001;
       STATE.resources.fuel = 40;
       enterEvent(STATE.byId[STATE.currentId], ev);
-      handleChoiceClick(ev.choices.find(c => /harvest gas/.test(c.text)));
+      // Pin the effort roll: a short-of-effort setback would change the
+      // fuel this check reads (the roll is Math.random in handleChoiceClick).
+      const rnd = Math.random; Math.random = () => 0;
+      try { handleChoiceClick(ev.choices.find(c => /harvest gas/.test(c.text))); } finally { Math.random = rnd; }
       advanceAfterEvent();
     });
     const e3 = await sinceMark(page); run.push(...e3);
     const lore = e3.find(e => e.expand);
     ok(lore && lore.expand.kind === 'lore' && lore.expand.title === 'GAS ANALYZER PRINTOUT' && /nebulium/.test(lore.expand.text), 'log_lore outcome carries the authored long text');
-    ok(lore && /\+12 FUEL/.test(lore.text), 'lore outcome still states its real effect (+12 FUEL)');
+    ok(lore && /\+12 FUEL/.test(lore.text), 'lore outcome still states its real effect (+12 FUEL)' + (lore && !/\+12 FUEL/.test(lore.text) ? ' — logged: ' + lore.text : ''));
     ok(lore && lore.expand.text.split('\n\n').length >= 4, 'lore keeps its paragraphs');
     ok(e3.some(e => e.link && /Emission_nebula/.test(e.link.url)), 'the event\'s science link lands as a 🔗 entry');
 
