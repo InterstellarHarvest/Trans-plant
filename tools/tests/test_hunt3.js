@@ -87,7 +87,9 @@ const hud = page => page.evaluate(() => document.getElementById('combat-num-foe'
     }
     const shown = +(await page.evaluate(() => document.getElementById('combat-num-mor').textContent)).replace(/\D/g, '');
     await click(page, which);
-    await page.waitForTimeout(1500);
+    // The demo's finish beat is 1500ms (combat parity): wait for the
+    // morale change to land instead of sampling right at the boundary.
+    await page.waitForFunction(([s0, d]) => Math.abs(Math.round(STATE.resources.morale) - (s0 + d)) <= 1, [shown, delta], { timeout: 5000 }).catch(() => {});
     const after = await page.evaluate(() => Math.round(STATE.resources.morale));
     ok(Math.abs(after - (shown + delta)) <= 1, `${which}: morale ${shown} → ${after} (expected ≈${shown + delta})`);
     await page.close();
