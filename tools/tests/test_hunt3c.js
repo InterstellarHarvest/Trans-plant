@@ -113,7 +113,7 @@ const endInfo = page => page.evaluate(() => ({
     const j = await page.evaluate(() => {
       STATE.items.push('geiger_counter'); renderCruise();
       STATE.items.pop();
-      document.getElementById('inv-close').click();
+      document.getElementById('inv-x').click(); // ruling 42 (b4): the footer Close is gone
       return JSON.parse(localStorage.getItem('transplant_save_v1')).items.includes('geiger_counter');
     });
     ok(!j, 'inventory changes saved on close');

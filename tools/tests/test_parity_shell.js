@@ -297,8 +297,13 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
       STATE.fabricator.wear = 60;
       openFabricator(); await w(60);
       const rnd = Math.random; Math.random = () => 0.01; // forces a misfire (wear 60 → 8% odds)
+      // Ruling 27 (b4): the job runs day by day and the misfire roll comes
+      // when it finishes — a fast fabricator day, then wait for it.
+      window.fabSetDayMs(40);
       craftSelected();
+      for (let i = 0; i < 100 && window.fabCraftState(); i++) await w(30);
       Math.random = rnd;
+      window.fabSetDayMs(2000);
       const notice1 = fabNoticeText();
       // refused claim: a finished print with the hold full
       STATE.fabricator.wear = 0;

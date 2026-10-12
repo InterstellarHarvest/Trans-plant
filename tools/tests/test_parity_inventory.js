@@ -182,7 +182,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
       const rows = [...document.querySelectorAll('#inv-detail-meta .detail-stat')].map(d => d.textContent);
       const tip = document.getElementById('inv-slots').dataset.tipDescription;
       const tipRows = JSON.parse(document.getElementById('inv-slots').dataset.tipRows);
-      const footer = document.getElementById('inv-footer').textContent.trim();
+      const footer = document.getElementById('inv-footer') ? document.getElementById('inv-footer').textContent.trim() : ''; // ruling 42 (b4): no footer
       const jettShown = getComputedStyle(document.getElementById('inv-jett-btn')).display !== 'none';
       document.querySelector('#inv-grid .inv-tile[data-id="scrap"]').click();
       const used0 = cargoSlotsUsed();
@@ -194,7 +194,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
     });
     ok(inv.rows[1] === 'SLOT COST0.1 per unit 4 total', `MATERIALS detail carries the slot cost ("${inv.rows[1]}")`);
     ok(/^2 gear · 9 materials/.test(inv.tip) && inv.tipRows[0].value === '2' && inv.tipRows[1].label === 'Materials' && inv.tipRows[1].value === '9', `readout breakdown (Bible): "${inv.tip.slice(0, 22)}"`);
-    ok(inv.footer === 'Close' && !/don.t use cargo|own stores|off the cargo manifest|don.t take cargo/i.test(inv.copy + inv.pools), 'the "materials are free" copy is gone (footer, detail, AI lines)');
+    ok(inv.footer === '' && !/don.t use cargo|own stores|off the cargo manifest|don.t take cargo/i.test(inv.copy + inv.pools), 'the "materials are free" copy is gone (footer, detail, AI lines)');
     ok(inv.jettShown && inv.max && inv.scrap === 0 && inv.used1 === inv.used0 - 5 && /Jettisoned: 46 scrap/.test(inv.log), `materials can go out the airlock too (JETTISON ALL scrap: ${inv.used0} → ${inv.used1} slots)`);
     await page.close();
   }
@@ -252,7 +252,8 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
       const w = ORDERS_BASE.waterPerDay;
       return { f, food, w, ef: 20 + Math.floor(64 / f), efood: 20 + Math.floor(31 / food), ew: 20 + Math.floor(7 / w) };
     });
-    const fmt = v => '~' + (v < 0.1 ? v.toFixed(2) : v.toFixed(1)) + ' / DAY';
+    // b4 A13: one decimal when exact, else two — the figure EMPTY uses (0.35 read "0.3").
+    const fmt = v => '~' + (Math.abs(Math.round(v * 10) / 10 - v) < 1e-9 ? v.toFixed(1) : (Math.round(v * 100) / 100).toFixed(2)) + ' / DAY';
     ok(t[0].stats[0] === '64 / 100' && t[0].stats[1] === fmt(want.f) && t[0].stats[2] === 'DAY ' + want.ef, `FUEL: ${t[0].stats.join(' · ')} (legTravelCost: pace × fuelBurnMult)`);
     ok(t[1].stats[1] === fmt(want.food) && t[1].stats[2] === 'DAY ' + want.efood, `FOOD: ${t[1].stats.join(' · ')} (rations × foodBurnMult × mouths)`);
     ok(t[2].stats[1] === fmt(want.w) && t[2].stats[2] === 'DAY ' + want.ew, `H2O: ${t[2].stats.join(' · ')}`);

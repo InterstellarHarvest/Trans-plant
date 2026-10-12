@@ -4,8 +4,9 @@
    tokens live on the overlay root (no :root — see the batch-1 token
    collisions). engine/js/screens/inventory.js renders the content.
    Layout: 816×600 card → header (slots / gold / ✕) → SHIP RESOURCES
-   row → tab strip + SORT → grid | 295px detail column → footer
-   (DESIGN_SYSTEM close path 2: the CLOSE button the demo lacks).
+   row → tab strip + SORT → grid | 295px detail column. No footer
+   (ruling 42: ✕ / backdrop / Esc close, as in the demos). Press Start
+   labels keep the demo's line-height (normal, re-audit B2).
    ──────────────────────────────────────────────────────────────── */
 #overlay-inventory {
   --inv-border: #435384;
@@ -61,7 +62,7 @@
   display: flex; align-items: center; gap: 16px;
 }
 #overlay-inventory .inv-title {
-  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 14px;
+  font-family: 'Press Start 2P', cursive; line-height: normal; font-size: 14px;
   letter-spacing: 2px; color: var(--inv-title); text-shadow: 0 0 8px rgba(86,207,215,0.35);
   flex-shrink: 0;
 }
@@ -85,7 +86,7 @@
 }
 /* Header ✕ (DESIGN_SYSTEM close path 1). */
 #overlay-inventory .modal-x {
-  font-family: 'Press Start 2P', cursive; font-size: 10px; line-height: 1;
+  font-family: 'Press Start 2P', cursive; font-size: 10px; line-height: normal;
   width: 26px; height: 26px; flex-shrink: 0;
   border: 2px solid rgba(86,207,215,0.4); border-radius: 2px;
   background: rgba(14,20,32,0.6); color: var(--inv-title);
@@ -128,7 +129,7 @@
 #overlay-inventory .gauge-seg.lit { opacity: 1; }
 #overlay-inventory .res-tile-info { display: flex; flex-direction: column; gap: 2px; min-width: 96px; }
 #overlay-inventory .res-tile-label {
-  font-family: 'Press Start 2P', cursive; line-height: 1.2; font-size: 10px; letter-spacing: 2px; color: var(--inv-tile-label);
+  font-family: 'Press Start 2P', cursive; line-height: normal; font-size: 10px; letter-spacing: 2px; color: var(--inv-tile-label);
 }
 #overlay-inventory .res-tile.selected .res-tile-label { color: var(--gold); }
 #overlay-inventory .res-tile-stat {
@@ -146,7 +147,7 @@
   border-bottom: 1px solid rgba(200,168,90,0.12);
 }
 #overlay-inventory .inv-tab {
-  font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 9px; letter-spacing: 2px;
+  font-family: 'Press Start 2P', cursive; line-height: normal; font-size: 9px; letter-spacing: 2px;
   padding: 8px 16px; position: relative;
   background: linear-gradient(180deg, #39404F 0%, #252A38 50%, #4B597A 100%);
   border: 3px outset; border-color: var(--inv-tab-hi) var(--inv-tab-lo) var(--inv-tab-lo) var(--inv-tab-hi);
@@ -216,28 +217,32 @@
 #overlay-inventory .inv-tile:hover { border-color: rgba(200,168,90,0.45); background: rgba(200,168,90,0.05); }
 #overlay-inventory .inv-tile.selected { border-color: var(--gold); background: rgba(200,168,90,0.08); }
 #overlay-inventory .inv-tile img { width: var(--inv-grid-sprite); height: var(--inv-grid-sprite); image-rendering: pixelated; image-rendering: crisp-edges; }
-#overlay-inventory .inv-tile .inv-tile-emoji { font-size: 40px; line-height: 1; }
+#overlay-inventory .inv-tile .inv-tile-emoji { font-size: var(--inv-grid-sprite); line-height: 1; } /* demo: the emoji stands in at the sprite's 64px (B4) */
 /* Stack count — top-right, Minecraft-style. */
 #overlay-inventory .inv-tile-count {
   position: absolute; top: 3px; right: 3px;
   background: rgba(14,20,32,0.95); color: var(--inv-badge);
-  font-family: 'Press Start 2P', cursive; line-height: 1.2; font-size: 7px;
+  font-family: 'Press Start 2P', cursive; line-height: normal; font-size: 7px;
   padding: 1px 4px; border-radius: 2px; border: 1px solid rgba(255,172,0,0.3);
   text-shadow: 0 0 3px rgba(255,172,0,0.5);
 }
 /* Sell price — bottom-right corner. */
 #overlay-inventory .inv-tile-price {
-  position: absolute; bottom: 3px; right: 4px;
-  font-family: 'VT323', monospace; font-size: 12px; letter-spacing: 0; color: var(--inv-price);
+  position: absolute; bottom: 3px; right: 3px;
+  font-family: 'VT323', monospace; font-size: 10px; letter-spacing: 0; color: var(--inv-price); /* demo 10px (B4) */
 }
 #overlay-inventory .inv-tile-price.unknown { color: var(--inv-price-hidden); font-style: italic; }
 /* No buyer (story items) — bottom-left ⇄. */
-#overlay-inventory .inv-tile-trade { position: absolute; bottom: 3px; left: 4px; color: var(--inv-price-hidden); font-size: 12px; font-family: 'VT323', monospace; }
+#overlay-inventory .inv-tile-trade { position: absolute; bottom: 3px; left: 3px; color: var(--inv-price-hidden); font-size: 10px; font-family: 'VT323', monospace; }
+/* Classified — red ⚠ top-left, docked at a station only (demo; the JS
+   draws it only then), under the NEW pill when both show. */
+#overlay-inventory .inv-tile-classified { position: absolute; top: 3px; left: 3px; color: var(--red); font-size: 10px; text-shadow: 0 0 4px rgba(204,51,51,0.5); }
+#overlay-inventory .inv-tile-classified.below-new { top: 20px; }
 /* NEW — pulsing amber pill, top-left, until the tile is clicked. */
 #overlay-inventory .inv-tile-new {
   position: absolute; top: 3px; left: 3px; z-index: 2;
   background: var(--inv-badge); color: #1a1408;
-  font-family: 'Press Start 2P', cursive; line-height: 1.2; font-size: 6px; letter-spacing: 0.5px;
+  font-family: 'Press Start 2P', cursive; line-height: normal; font-size: 6px; letter-spacing: 0.5px;
   padding: 2px 3px; border-radius: 2px; box-shadow: 0 0 6px rgba(255,172,0,0.6);
   animation: inv-new-pulse 1.4s ease-in-out infinite;
 }
@@ -245,7 +250,7 @@
 /* GEAR section divider. */
 #overlay-inventory .grid-section-header {
   grid-column: 1 / -1;
-  font-family: 'Press Start 2P', cursive; line-height: 1.2; font-size: 7px; letter-spacing: 2px;
+  font-family: 'Press Start 2P', cursive; line-height: normal; font-size: 7px; letter-spacing: 2px;
   color: var(--inv-label); text-transform: uppercase;
   padding: 6px 2px 2px; border-bottom: 1px dashed rgba(200,168,90,0.18); margin-bottom: 2px;
 }
@@ -313,7 +318,7 @@
 #overlay-inventory .detail-stat .detail-dim { color: var(--inv-label); font-size: 12px; margin-left: 4px; }
 #overlay-inventory .detail-stat.note { justify-content: flex-end; font-size: 12px; font-style: italic; }
 #overlay-inventory .detail-label {
-  font-family: 'Press Start 2P', cursive; font-size: 7px; letter-spacing: 1px; line-height: 1.2;
+  font-family: 'Press Start 2P', cursive; font-size: 7px; letter-spacing: 1px; line-height: normal;
   color: var(--inv-label); margin-right: 6px; text-transform: uppercase;
 }
 #overlay-inventory #inv-detail-used {
@@ -323,6 +328,7 @@
 #overlay-inventory #inv-detail-notes { padding-top: 6px; border-top: 1px solid rgba(200,168,90,0.15); display: flex; flex-direction: column; gap: 3px; }
 #overlay-inventory .detail-marker-row { font-family: 'VT323', monospace; font-size: 13px; line-height: 1.3; color: var(--inv-body); }
 #overlay-inventory .detail-marker-icon { display: inline-block; width: 16px; color: var(--inv-orange); text-align: center; margin-right: 4px; font-size: 14px; }
+#overlay-inventory .detail-marker-icon.classified { color: var(--red); }
 #overlay-inventory #inv-detail-ai {
   font-family: 'VT323', monospace; font-size: 14px; line-height: 1.3; font-style: italic; color: var(--inv-teal);
   padding-top: 6px; border-top: 1px dashed rgba(53,198,191,0.2);
@@ -362,7 +368,7 @@
   50%      { box-shadow: 0 6px 24px rgba(0,0,0,0.7), 0 0 28px rgba(204,51,51,0.75); }
 }
 #overlay-inventory .jettison-title {
-  font-family: 'Press Start 2P', cursive; font-size: 11px; letter-spacing: 2px; line-height: 1.2;
+  font-family: 'Press Start 2P', cursive; font-size: 11px; letter-spacing: 2px; line-height: normal;
   color: var(--red); text-align: center; text-shadow: 0 0 6px rgba(204,51,51,0.4);
 }
 #overlay-inventory #inv-confirm-text { font-family: 'VT323', monospace; font-size: 16px; line-height: 1.3; color: var(--inv-body); text-align: center; }
@@ -373,7 +379,7 @@
 #overlay-inventory #inv-route-warn strong { color: var(--inv-badge); font-weight: normal; }
 #overlay-inventory .jettison-count-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
 #overlay-inventory .jettison-count-btn {
-  font-family: 'Press Start 2P', cursive; font-size: 14px; line-height: 1;
+  font-family: 'Press Start 2P', cursive; font-size: 14px; line-height: normal;
   width: 32px; height: 32px; padding: 0;
   background: linear-gradient(180deg, #3a4050 0%, #1a1f2a 100%);
   border: 2px outset; border-color: #5a6070 #1a1f2a #1a1f2a #5a6070;
@@ -381,12 +387,6 @@
 }
 #overlay-inventory .jettison-count-btn:active { border-style: inset; border-color: #1a1f2a #5a6070 #5a6070 #1a1f2a; transform: translate(1px,1px); }
 #overlay-inventory .jettison-count-btn:disabled { opacity: 0.35; cursor: var(--cursor-denied, not-allowed); }
-#overlay-inventory #inv-jett-count { font-family: 'Press Start 2P', cursive; font-size: 14px; line-height: 1.2; color: var(--inv-cream); min-width: 60px; text-align: center; }
+#overlay-inventory #inv-jett-count { font-family: 'Press Start 2P', cursive; font-size: 14px; line-height: normal; color: var(--inv-cream); min-width: 60px; text-align: center; }
 #overlay-inventory .jettison-buttons { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 #overlay-inventory .jettison-buttons .panel-btn { --pb-size: 13px; padding: 6px 10px; }
-
-/* ── Footer: DESIGN_SYSTEM close path 2 (the demo has none) ─── */
-#overlay-inventory #inv-footer {
-  flex-shrink: 0; display: flex; justify-content: flex-end; align-items: center;
-  padding: 6px 16px; border-top: 1px solid rgba(200,168,90,0.12);
-}

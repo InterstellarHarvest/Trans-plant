@@ -19,17 +19,22 @@
    honest content gap (like the pre-existing hull_patch/items.json
    gap noted in the original pool-readiness audit), not invented
    around here; they'll just stay locked until that item exists.
-   Craft timing: the demo's real-time rAF/setTimeout progress-bar
-   animation is kept as-is (nice to watch, self-contained, and
-   correctly keeps running via background timers if the overlay is
-   closed mid-craft — same as the demo). What changed is WHEN the
-   time cost hits real STATE.daysElapsed: paid as a lump sum the
-   moment a craft starts (matching every other Stop Menu verb via
-   cruise.js's settleMinigame()), not ticked incrementally by the
-   animation — ticking it incrementally would race against the rest
-   of the engine's discrete day-advancement (travelTo/minigames).
-   FSTATE.tripDay/arrivalDay stay pure local decorative flavor for
-   the animation's pacing display, not wired to real STATE.
+   Craft timing (owner ruling 27, 2026-10-12): the fabricator pays per
+   day, as in the demo (demo-fabricator ~1790-1891). CRAFT spends the
+   materials, the effort tax and the wear; then the job ticks one real
+   day at a time (passDays(1) — the same daily drain as any other day:
+   food / water / O2 / rations morale / deprivation / crop, with
+   checkFailure after each) while the fabricator is open. The job is
+   saved state (STATE.fabricator.craft, with daysDone), so a reload
+   neither dodges nor repeats a day or an output. Closing the modal
+   holds the job ("Long jobs need a still ship"); reopening resumes it.
+   CANCEL refunds the materials and keeps the unspent days; a job
+   cancelled before its first day costs nothing (tax + wear back too).
+   The misfire roll is made when the job finishes (odds fixed at CRAFT
+   from the wear before it). The deadline lock (hotfix e79a0b2) stands:
+   a craft that would finish past STATE.baseDays can't start, and a
+   held job that no longer fits waits instead of ticking into
+   time_expired.
    Entry point: window.openFabricator(). No onDone callback needed —
    craftSelected() and claimOutput() already apply their effects to
    real STATE directly.
@@ -37,7 +42,6 @@
 (function() {
   'use strict';
   const $ = id => document.getElementById(id);
-  const root = document.documentElement;
 
   // ══ Data ═══════════════════════════════════════════════════
   // Mirrors modules/materials/materials.json — 5 raw materials keyed
@@ -123,22 +127,23 @@
     });
   }
 
-  // Crew roster — only the essentials for the fab demo. Per-role fab
-  // contribution values. emoji is the fallback if no other display path
-  // is wired. crewId points at the canonical crew_sprites/ entry —
-  // unused by the fab demo today (no portrait/icon rendering here),
-  // but kept for when this view eventually shows worker faces.
+  // Who speeds the fabricator, and by how much (the effort the Bible §8
+  // formula divides by). One source of truth: crew_roster.json
+  // passive_skill.fabricator_contribution per role (engineer 25,
+  // xenobiologist 5 — absent = 0) and captains.json
+  // passive_effect.fabricator_contribution (engineer 12, academic 10),
+  // both read on open (bindFabricatorState). name/role label the
+  // speed tooltip's breakdown.
   const CREW = {
-    osei:        { name:'Dr. Osei',    role:'Botanist',      fab:0,  crewId:'osei',     emoji:'🌱' },
-    kazuki:      { name:'Kazuki',      role:'Engineer',      fab:25, crewId:'kazuki',   emoji:'🔧' },
-    vasquez:     { name:'Dr. Vasquez', role:'Medic',         fab:0,  crewId:'vasquez',  emoji:'🩺' },
-    reeves:      { name:'Reeves',      role:'Pilot',         fab:0,  crewId:'reeves',   emoji:'🛸' },
-    reyes:       { name:'Reyes',       role:'Chef',          fab:0,  crewId:'reyes',    emoji:'🍳' },
-    hargrove:    { name:'Hargrove',    role:'Diplomat',      fab:0,  crewId:'hargrove', emoji:'🤝' },
-    tanaka:      { name:'Dr. Tanaka',  role:'Xenobiologist', fab:5,  crewId:'tanaka',   emoji:'🔬' },
-    // fab: captains.json passive_effect.fabricator_contribution (read on open)
-    captain_eng: { name:'Captain',     role:'Engineer bg.',  fab:12, crewId:'captain',  emoji:'🧑‍✈️' },
-    captain_aca: { name:'Captain',     role:'Academic bg.',  fab:10, crewId:'captain',  emoji:'🧑‍🚀' }
+    osei:        { name:'Dr. Osei',    role:'Botanist',      fab:0 },
+    kazuki:      { name:'Kazuki',      role:'Engineer',      fab:0 },
+    vasquez:     { name:'Dr. Vasquez', role:'Medic',         fab:0 },
+    reeves:      { name:'Reeves',      role:'Pilot',         fab:0 },
+    reyes:       { name:'Reyes',       role:'Chef',          fab:0 },
+    hargrove:    { name:'Hargrove',    role:'Diplomat',      fab:0 },
+    tanaka:      { name:'Dr. Tanaka',  role:'Xenobiologist', fab:0 },
+    captain_eng: { name:'Captain',     role:'Engineer bg.',  fab:12 },
+    captain_aca: { name:'Captain',     role:'Academic bg.',  fab:10 }
   };
   // Baseline — the captain (player) always contributes this much,
   // independent of their chosen background. Engineer / Academic bg
@@ -146,21 +151,14 @@
   const BASE_EFFORT = 10;
 
   // ═════ State ═══════════════════════════════════════════════
-  // Driven entirely by dev controls. No persistence.
   // FSTATE.stock is a LIVE REFERENCE to the real STATE.materials pool —
-  // the same materials MINE/SALVAGE grant are what the fabricator spends,
-  // so this can't be an independent local copy. wear/broken persist on
-  // STATE.fabricator (survives closing/reopening the overlay, consistent
-  // with mining.js's STATE.miningSectors / growbay.js's STATE.cropGrowth
-  // pattern). aboard/captainBg are recomputed fresh on every open from
-  // STATE.crew/STATE.captain — see bindFabricatorState(). Everything else
-  // here (selection/sort/filter/craft/pendingOutput/tripDay/msPerDay) is
-  // local UI/session state exactly as the demo had it: tripDay/arrivalDay
-  // are a purely decorative pacing clock for the craft animation, NOT
-  // wired to real STATE.daysElapsed (that would race against the rest of
-  // the engine's discrete day-advancement — see craftSelected() instead,
-  // which pays the real time cost as a lump sum when a craft starts, the
-  // same way every other Stop Menu verb does).
+  // the same materials MINE/SALVAGE grant are what the fabricator spends.
+  // wear/broken AND the job in progress (craft) live on STATE.fabricator,
+  // which is saved: a reload mid-craft resumes the same job at the same
+  // day (ruling 27). aboard/captainBg are recomputed fresh on every open
+  // from STATE.crew/STATE.captain — see bindFabricatorState(). The rest
+  // (selection/sort/filter/pendingOutput) is local UI state as in the
+  // demo; tripDay/arrivalDay mirror STATE.daysElapsed/baseDays.
   const FSTATE = {
     aboard: {},
     captainBg: 'none',
@@ -169,14 +167,17 @@
     get broken() { return STATE.fabricator.broken; },
     set broken(v) { STATE.fabricator.broken = v; },
     get stock() { return STATE.materials; },
+    // The job on the bed: { recipeId, daysTotal, daysDone, startDay,
+    // misfireP, wearBefore, wearAdded, tax } — JSON only (it is saved).
+    get craft() { return (STATE.fabricator && STATE.fabricator.craft) || null; },
+    set craft(v) { STATE.fabricator.craft = v || null; },
     selectedId: 'hull_patch',
     sort: 'time',             // 'name' | 'time' | 'complexity'
     filter: 'all',            // 'all' | 'unlocked' | 'craftable'
-    craft: null,
     pendingOutput: null,
     tripDay:     0,
     arrivalDay:  0,
-    msPerDay: 2000
+    msPerDay: 2000            // one fabricator day, real time (demo)
   };
   /* Refreshes the fields that must always reflect current reality —
      called every time the overlay opens (see window.openFabricator()). */
@@ -194,29 +195,30 @@
     // engineer is aboard — the two don't stack (specialistMult already
     // floors a wounded crew engineer at the captain's half).
     FSTATE.captainBg = (STATE.captain === 'academic' || (STATE.captain === 'engineer' && !STATE.crew.includes('engineer'))) ? STATE.captain : 'none';
+    for (const [role, id] of Object.entries(ROLE_OF)) {
+      const def = (MOD.crew_roster || []).find(c => c.role === role || c.id === 'crew_' + role);
+      const v = def && def.passive_skill && def.passive_skill.fabricator_contribution;
+      CREW[id].fab = Number.isFinite(v) ? v : 0;
+    }
     if (typeof captainPassive === 'function') {
       CREW.captain_eng.fab = captainPassive('fabricator_contribution', 'engineer') ?? CREW.captain_eng.fab;
       CREW.captain_aca.fab = captainPassive('fabricator_contribution', 'academic') ?? CREW.captain_aca.fab;
     }
-    // Mid-craft the header replays the craft's days from the day it
-    // started: STATE.daysElapsed already holds the lump-sum days, so
-    // re-reading it on reopen made the animation count past it (parity
-    // audit: "header day overshoots on reopen").
-    FSTATE.tripDay = FSTATE.craft ? craftDayNow() : STATE.daysElapsed;
+    // The header is the real trip day: a craft's days pass for real, one
+    // at a time (ruling 27), so there is nothing to replay on reopen.
+    FSTATE.tripDay = STATE.daysElapsed;
     FSTATE.arrivalDay = STATE.baseDays;
   }
 
   // ═════ Unlock evaluation ═══════════════════════════════════
   // Returns one of:
   //   'available'    — fully unlocked (default OR satisfied)
-  //   'locked-crew'  — needs a role aboard
-  //   'locked-purchase' — needs a bought blueprint
+  //   'locked-purchase' — needs a part aboard (recipes.json requires_item;
+  //                       the engine's only lock — no crew-gated recipe exists)
   function recipeLockState(recipe) {
     if (recipe.unlock === 'default') return 'available';
-    // Real recipes.json only gates on requires_item (e.g. fuel_cell/
-    // o2_canister both need 'repair_fabricator', which nothing in the
-    // engine grants yet — an honest content gap, not a bug: those two
-    // recipes stay locked until that item exists somewhere droppable.
+    // fuel_cell / o2_canister need the Field Repair Fabricator (loot, or
+    // the black market's back inventory).
     if (recipe.unlock.startsWith('item:')) {
       const itemId = recipe.unlock.slice(5);
       return STATE.items.includes(itemId) ? 'available' : 'locked-purchase';
@@ -370,20 +372,20 @@
       const lock = recipeLockState(r);
       const row = document.createElement('div');
       row.className = 'fb-recipe-row';
-      if (lock === 'locked-crew')     row.classList.add('locked-crew');
       if (lock === 'locked-purchase') row.classList.add('locked-purchase');
       if (r.id === FSTATE.selectedId && lock === 'available') row.classList.add('selected');
 
       const name = document.createElement('span');
       name.className = 'fb-recipe-name';
       let nameHtml = r.name;
-      if (lock === 'locked-crew')     nameHtml = '<span class="lock-glyph">🔒</span> ' + r.name;
-      if (lock === 'locked-purchase') nameHtml = '<span class="lock-glyph">🔒</span><span class="dollar">$</span> ' + r.name;
+      // No $ (re-audit B8): every engine item lock is a loot-only part
+      // (requires_item) — there is no blueprint to buy, so no buy glyph.
+      if (lock === 'locked-purchase') nameHtml = '<span class="lock-glyph">🔒</span> ' + r.name;
       name.innerHTML = nameHtml;
 
       const days = document.createElement('span');
       days.className = 'fb-recipe-days';
-      if (lock === 'locked-crew' || lock === 'locked-purchase') {
+      if (lock === 'locked-purchase') {
         days.textContent = r.unlock_note;
       } else {
         days.textContent = r.days + 'd';
@@ -393,7 +395,7 @@
       row.appendChild(days);
 
       row.addEventListener('click', () => {
-        if (lock === 'locked-crew' || lock === 'locked-purchase') {
+        if (lock === 'locked-purchase') {
           // Pulse the accent bar so the player understands the row is
           // intentionally inert (vs. appearing unresponsive).
           row.classList.remove('pulse');
@@ -509,8 +511,15 @@
 
     // WEAR and MISFIRE share one row (parity pass): with the misfire row,
     // a two-line description and a warning, the CRAFT button used to be
-    // pushed out of the panel and clipped.
+    // pushed out of the panel and clipped. The craft's effort tax rides
+    // the same row (re-audit B7): a craft is a 1-pip FABRICATOR action,
+    // every crew member pays it at CRAFT (none aboard: no tax, no cell).
     const assist = crewAssistTooltip().split('\n');
+    const tax = typeof window.effortTax === 'function' ? window.effortTax(1) : 0;
+    const taxCell = tax
+      ? '<span class="label label-2" data-tip-title="EFFORT TAX" data-tip-description="Effort 1/5. Every crew member loses ' + tax + ' morale when the craft starts. Cancel before its first day and it comes back.">MORALE</span>' +
+        '<span class="wear-add tax">−' + tax + ' each</span>'
+      : '';
     meta.innerHTML =
       '<div class="row" data-tip-title="' + escAttr(assist[0]) + '" data-tip-description="' + escAttr(assist.slice(1).join('\n').trim()) + '">' +
         '<span class="label">TIME</span>' +
@@ -521,37 +530,53 @@
       '<div class="row">' +
         '<span class="label">WEAR</span>' +
         '<span class="wear-add">+' + recipeWear(r) + '%</span>' +
-        '<span class="label label-2" data-tip-title="MISFIRE" data-tip-description="A misfire spends the days and materials. Wear raises the odds; FAB SERVICE at a station resets them.">MISFIRE</span>' +
+        '<span class="label label-2" data-tip-title="MISFIRE" data-tip-description="Rolled when the print finishes. A misfire spends the days and materials. Wear raises the odds; FAB SERVICE at a station resets them.">MISFIRE</span>' +
         '<span class="wear-add">' + Math.round(misfireChance(FSTATE.wear) * 100) + '%</span>' +
+        taxCell +
       '</div>' +
       wearWarn;
 
-    // CRAFT button — enabled only if canCraft() true.
+    // CRAFT button — enabled only if canCraft() true. Every label fits
+    // one line (re-audit A7); the reason in full goes to the tooltip.
     const btn = $('fb-craft-btn');
     const lock = recipeLockState(r);
+    let label = 'CRAFT', why = '';
     btn.classList.toggle('busy', !!FSTATE.craft); // Wait cursor while a craft passes days
-    if (lock === 'locked-crew') {
-      btn.classList.add('locked');
-      btn.textContent = 'LOCKED · CREW';
-    } else if (lock === 'locked-purchase') {
-      btn.classList.add('locked');
-      btn.textContent = 'LOCKED · ' + String(r.unlock_note || 'Requires an upgrade').replace(/^Requires /, 'NEEDS ').toUpperCase();
+    if (lock === 'locked-purchase') {
+      const need = r.unlock.slice(5);
+      const d = typeof itemDef === 'function' ? itemDef(need) : null;
+      label = 'LOCKED · ' + (d && (d.item_behavior || []).includes('upgrade') ? 'NEEDS UPGRADE' : 'NEEDS PART');
+      why = 'Needs a ' + prettyItemName(need) + ' aboard.';
     } else if (!fabFunctional()) {
-      btn.classList.add('locked');
-      btn.textContent = 'FAB BROKEN';
+      label = 'FAB BROKEN'; why = 'FAB SERVICE at a station fixes it.';
     } else if (!hasMaterials(r)) {
-      btn.classList.add('locked');
-      btn.textContent = 'MISSING MATERIALS';
+      label = 'MISSING MATERIALS';
     } else if (FSTATE.craft) {
-      btn.classList.add('locked');
-      btn.textContent = 'IN PROGRESS…';
+      label = 'IN PROGRESS…'; why = 'One print at a time.';
     } else if (overrunDays(r) > 0) {
-      btn.classList.add('locked');
-      btn.textContent = 'PAST DEADLINE';
-    } else {
-      btn.classList.remove('locked');
-      btn.textContent = 'CRAFT';
+      label = 'PAST DEADLINE'; why = 'It would finish ' + overrunDays(r) + 'd after the voyage deadline.';
     }
+    btn.classList.toggle('locked', label !== 'CRAFT');
+    btn.textContent = label;
+    if (why) { btn.dataset.tipTitle = label; btn.dataset.tipDescription = why; }
+    else { delete btn.dataset.tipTitle; delete btn.dataset.tipDescription; }
+    fitDetail();
+  }
+
+  // Demo sizes by default (art 220, CRAFT 41…, re-audit B1). Only when
+  // this recipe's panel would push CRAFT out (a two-line description +
+  // the effect line + warnings) does it tighten: first the panel's own
+  // spacing (.fit-tight), then the art (.fit-small, 192).
+  function fitDetail() {
+    const right = document.querySelector('#overlay-fabricator .fb-right');
+    const det = $('fb-detail');
+    if (!right || !det) return;
+    const was = right.className;
+    right.classList.remove('fit-tight', 'fit-small');
+    const over = () => det.scrollHeight > det.clientHeight + 1;
+    if (over()) right.classList.add('fit-tight');
+    if (over()) right.classList.add('fit-small');
+    if (right.className !== was) setFabFrame(currentFrame);
   }
 
   // ═════ Fabricator spritesheet ═══════════════════════════════
@@ -572,8 +597,10 @@
 
   // Frame is 256×128. --fab-slot-size is the slot HEIGHT; width = 2×.
   // Scale factor = slot_height / 128.
+  let currentFrame = 'idle';
   function setFabFrame(name) {
     const f = FAB_FRAMES[name]; if (!f) return;
+    currentFrame = name;
     const h = parseFloat(getComputedStyle($('fb-slot')) // scoped token (overlay, not :root)
                          .getPropertyValue('--fab-slot-size')) || 128;
     const scale = h / 128;
@@ -621,7 +648,7 @@
       slotEl.classList.add('state-broken');
       stopRunAnim();
       setFabFrame('broken');
-    } else if (FSTATE.craft) {
+    } else if (FSTATE.craft && !heldReason()) {
       slotEl.classList.add('state-busy');
       startRunAnim();
     } else {
@@ -640,9 +667,10 @@
   }
 
   // ═════ Craft flow ═══════════════════════════════════════════
-  // CRAFT button → deduct mats, tick wear, compute failure roll, either
-  // spark+broken or start the progress timer. A single craft is in
-  // flight at a time; further CRAFT clicks are locked while in progress.
+  // CRAFT → spend the materials, the effort tax and the wear, put the job
+  // on the bed (saved) and start the day clock. One craft at a time.
+  const fabLog = m => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + m); };
+  const dWord = n => n + (n === 1 ? ' day' : ' days');
   window.craftSelected = function() {
     const r = RECIPES.find(x => x.id === FSTATE.selectedId);
     if (!r || !canCraft(r)) return;
@@ -659,79 +687,32 @@
     for (const [mat, qty] of r.inputs) {
       FSTATE.stock[mat] = Math.max(0, (FSTATE.stock[mat] || 0) - qty);
     }
-    // Effort tax (Bible): a craft is a FABRICATOR action — its pip costs morale.
-    if (typeof window.payEffortTax === 'function') window.payEffortTax(1);
-    // Apply wear.
+    // Effort tax (Bible): a craft is a FABRICATOR action — its pip costs
+    // morale. The receipt says what each member paid (a job cancelled
+    // before its first day gets exactly that back).
+    const tax = {};
+    if (typeof window.payEffortTax === 'function') window.payEffortTax(1, tax);
+    // Wear lands at CRAFT (the fab spins up); the misfire odds are read
+    // from the wear before it and rolled when the print comes out.
     const wearBefore = FSTATE.wear;
     FSTATE.wear = Math.min(100, Math.round((FSTATE.wear + recipeWear(r)) * 10) / 10);
-
-    // Misfire roll — recipes.json _meta misfire_curve (by fabricator
-    // health = 100 − wear, read before this craft's wear). A misfire
-    // spends the time and materials: ~85% waste, ~15% fab_surplus (the
-    // Surplus Collector buys it); below 20% health it can also break
-    // the fabricator outright.
-    if (Math.random() < misfireChance(wearBefore)) {
-      const days = actualDays(r.days);
-      passDays(days);
-      FSTATE.tripDay = STATE.daysElapsed;
-      const log = m => { if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ ' + m); };
-      const lines = MOD.flavor && MOD.flavor.fabricator_misfire_descriptions;
-      const line = Array.isArray(lines) && lines.length ? lines[Math.floor(Math.random() * lines.length)] + ' ' : '';
-      const dWord = days + (days === 1 ? ' day' : ' days');
-      if (Math.random() < 0.15 && typeof grantItem === 'function' && grantItem('fab_surplus')) {
-        log('MISFIRE — ' + line + 'No ' + r.output.name + '; a piece of Fabricator Surplus instead. (' + dWord + ', materials spent.)');
-        fabNotice('MISFIRE', 'No ' + r.output.name + ' — a piece of Fabricator Surplus instead. ' + dWord + ', materials spent.', 'warn');
-      } else {
-        log('MISFIRE — ' + line + 'The ' + r.output.name + ' comes out as slag. ' + dWord + ' and the materials, gone.');
-        fabNotice('MISFIRE', 'The ' + r.output.name + ' came out as slag. ' + dWord + ' and the materials, gone.', 'danger');
-      }
-      if (typeof window.pushAiSample === 'function') window.pushAiSample('fabricator_misfire');
-      if (100 - wearBefore < 20 && Math.random() < 0.5) { breakFab(); fabNotice('MISFIRE — FAB BROKEN', 'The misfire took the fabricator with it. FAB SERVICE at a station fixes it.', 'danger'); }
-      renderHUD();
-      renderAll();
-      if (checkFailure()) return;
-      // Save the misfire now (hunt 6): the autosave waited for the hub, so
-      // a reload undid it and the craft could be re-rolled.
-      if (typeof saveRun === 'function') saveRun();
-      return;
-    }
-
-    // Time cost paid up front, same as every other Stop Menu verb (see
-    // cruise.js's settleMinigame()) — the craft animation below is real-
-    // time flavor for watching the fabricator work, not a second, racing
-    // day-advancement system.
-    const totalDays = actualDays(r.days);
-    // Owed before the days pass: a failure those days trigger (crop death
-    // → Keep flying) must not swallow the materials with no output.
-    STATE.fabricator.owedOutput = r.id;
-    const startDay = STATE.daysElapsed;
-    passDays(totalDays); // routed through the orders daily-drain helper (Restoration item 5)
-    renderHUD();
-    if (checkFailure()) return;
-
-    // Success path — kick off the craft. Timestamp-driven so the
-    // progress bar can animate smoothly per-frame rather than
-    // stepping at day boundaries.
-    // (The craft is paid for — the output was recorded as owed above, in
-    // saved STATE, so a reload can't lose it; FSTATE is memory-only.)
     FSTATE.craft = {
       recipeId:  r.id,
-      daysTotal: totalDays,
-      startDay,                       // trip day the craft began (header replay)
-      startMs:   performance.now(),
-      timer:     null,
-      rafId:     null
+      daysTotal: actualDays(r.days),
+      daysDone:  0,
+      startDay:  STATE.daysElapsed,
+      misfireP:  misfireChance(wearBefore),
+      wearBefore,
+      wearAdded: Math.round((FSTATE.wear - wearBefore) * 10) / 10,
+      tax,
     };
-    // Progress strip visible + labelled.
-    $('fb-progress').classList.add('active');
-    $('fb-progress-item').textContent = r.output.name.toUpperCase();
-    updateProgressUI();
-
-    // Timeout for the NEXT day boundary (advances trip calendar) +
-    // rAF loop for smooth fill animation.
-    scheduleNextTick();
-    startProgressLoop();
+    // Saved now: the materials and tax are spent, the job is on the bed —
+    // a reload resumes it (it can't re-roll or dodge anything).
+    if (typeof saveRun === 'function') saveRun();
+    renderHUD();
+    startCraftClock(true);
     renderAll();
+    updateProgressUI(); // the strip (and CANCEL's tooltip) at day 0
 
     // AI commentary on craft start (fabricator_events pool, previously
     // unconsumed) — lands in the cruise AI log behind the overlay.
@@ -743,90 +724,139 @@
     }
   };
 
-  // Start the craft timers: a setTimeout per in-game day (fires
-  // advanceCraftDay → bumps trip calendar, maybe completes), plus a
-  // rAF loop that continuously redraws the progress fill so the bar
-  // animates smoothly rather than stepping at day boundaries.
-  function scheduleNextTick() {
-    if (!FSTATE.craft) return;
-    const daysDone = currentDaysDone();
-    const elapsed  = performance.now() - FSTATE.craft.startMs;
-    const nextDayAt = (daysDone + 1) * FSTATE.msPerDay;
-    const delay    = Math.max(0, nextDayAt - elapsed);
-    clearTimeout(FSTATE.craft.timer);
-    FSTATE.craft.timer = setTimeout(() => {
-      advanceCraftDay();
-      scheduleNextTick();
-    }, delay);
+  /* The day clock (demo scheduleNextTick/advanceCraftDay, but the days
+     are real): runs only while the fabricator is open, the game isn't
+     paused, the run isn't over and the fab works. Every msPerDay of
+     running time is one day — passDays(1), then checkFailure, then the
+     job's daysDone, saved. A held job keeps its partial day. */
+  let clockTimer = 0, clockLast = 0, clockAcc = 0, rafId = 0;
+  function overlayOpen() { const o = $('overlay-fabricator'); return !!(o && o.classList.contains('active')); }
+  // Why the job can't advance right now (null: it can). Shown on the strip.
+  function heldReason() {
+    const c = FSTATE.craft;
+    if (!c) return null;
+    if (!fabFunctional()) return 'FAB BROKEN';
+    if (STATE.daysElapsed + 1 > STATE.baseDays) return 'PAST DEADLINE';
+    return null;
   }
-
-  function startProgressLoop() {
+  function clockRunning() {
+    return !!FSTATE.craft && overlayOpen() && !STATE.ended && !(window.PauseBus && PauseBus.paused) && !heldReason();
+  }
+  function startCraftClock(fresh) {
+    stopCraftClock();
     if (!FSTATE.craft) return;
-    const tick = () => {
-      if (!FSTATE.craft) return;
-      if (PauseBus.paused) { FSTATE.craft.rafId = requestAnimationFrame(tick); return; }
-      updateProgressUI();
-      FSTATE.craft.rafId = requestAnimationFrame(tick);
+    if (fresh) clockAcc = 0;
+    clockLast = performance.now();
+    const step = () => {
+      clockTimer = 0;
+      const c = FSTATE.craft;
+      if (!c) return;
+      const now = performance.now();
+      if (clockRunning()) clockAcc += now - clockLast;
+      clockLast = now;
+      if (clockAcc >= FSTATE.msPerDay) { clockAcc = 0; craftDay(); if (!FSTATE.craft) return; }
+      if (!overlayOpen() || STATE.ended) return; // held until the fabricator reopens
+      clockTimer = setTimeout(step, 50);
     };
-    FSTATE.craft.rafId = requestAnimationFrame(tick);
+    clockTimer = setTimeout(step, 50);
+    startProgressLoop();
   }
-  function stopProgressLoop() {
-    if (FSTATE.craft && FSTATE.craft.rafId) {
-      cancelAnimationFrame(FSTATE.craft.rafId);
-      FSTATE.craft.rafId = null;
-    }
+  function stopCraftClock() {
+    clearTimeout(clockTimer); clockTimer = 0;
+    stopProgressLoop();
   }
+  window.fabSetDayMs = ms => { FSTATE.msPerDay = Math.max(20, ms | 0); }; // tests: a faster day
+  window.fabCraftState = () => FSTATE.craft && Object.assign({ held: heldReason(), running: clockRunning() }, FSTATE.craft);
 
-  // The header's day while a craft runs: start day + whole days done.
-  function craftDayNow() {
-    return FSTATE.craft ? FSTATE.craft.startDay + currentDaysDone() : STATE.daysElapsed;
-  }
-  function currentDaysDone() {
-    if (!FSTATE.craft) return 0;
-    const elapsed = performance.now() - FSTATE.craft.startMs;
-    return Math.min(FSTATE.craft.daysTotal,
-                    Math.floor(elapsed / FSTATE.msPerDay));
-  }
-
-  function advanceCraftDay() {
-    if (!FSTATE.craft) return;
-    // Advance the header calendar + pulse the day number.
-    FSTATE.tripDay = craftDayNow();
+  // One day of the job, for real.
+  function craftDay() {
+    const c = FSTATE.craft;
+    if (!c || heldReason()) return;
+    c.daysDone++;
+    passDays(1); // the orders daily-drain helper — same as any other day
+    renderHUD();
+    FSTATE.tripDay = STATE.daysElapsed;
     const dEl = $('fb-trip-day');
     dEl.textContent = FSTATE.tripDay;
     dEl.classList.remove('ticking');
     void dEl.offsetWidth;
     dEl.classList.add('ticking');
-
-    if (currentDaysDone() >= FSTATE.craft.daysTotal) {
-      completeCraft();
-    }
+    renderHeader();
+    // The day can end the run (deprivation, mutiny, crop death…). The
+    // job stays on the bed (saved state): a resumable failure (Keep
+    // flying) comes back to it.
+    if (checkFailure()) { stopCraftClock(); return; }
+    if (c.daysDone >= c.daysTotal) { completeCraft(); return; }
+    updateProgressUI();
+    if (typeof saveRun === 'function') saveRun();
   }
 
+  function startProgressLoop() {
+    stopProgressLoop();
+    const tick = () => {
+      rafId = 0;
+      if (!FSTATE.craft || !overlayOpen()) return;
+      updateProgressUI();
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+  }
+  function stopProgressLoop() {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = 0;
+  }
+
+  // The strip shows the real days passed (daysDone) and the part-day the
+  // clock has run; a held job says why.
   function updateProgressUI() {
-    if (!FSTATE.craft) return;
-    const elapsed = performance.now() - FSTATE.craft.startMs;
-    const totalMs = FSTATE.craft.daysTotal * FSTATE.msPerDay;
-    const pct = Math.min(100, (elapsed / totalMs) * 100);
-    $('fb-progress-fill').style.width = pct + '%';
-    const dDone = Math.min(FSTATE.craft.daysTotal, Math.floor(elapsed / FSTATE.msPerDay));
-    $('fb-progress-days').textContent = dDone + 'd / ' + FSTATE.craft.daysTotal + 'd';
+    const c = FSTATE.craft;
+    if (!c) return;
+    const r = RECIPES.find(x => x.id === c.recipeId);
+    const prog = $('fb-progress');
+    prog.classList.add('active');
+    $('fb-progress-item').textContent = r ? r.output.name.toUpperCase() : '';
+    const held = heldReason();
+    prog.classList.toggle('held', !!held);
+    const part = held ? 0 : Math.min(0.999, clockAcc / FSTATE.msPerDay);
+    $('fb-progress-fill').style.width = Math.min(100, (c.daysDone + part) / c.daysTotal * 100) + '%';
+    $('fb-progress-days').textContent = c.daysDone + 'd / ' + c.daysTotal + 'd' + (held ? ' · ' + held : '');
+    const cancel = $('fb-progress-cancel');
+    cancel.dataset.tipDescription = c.daysDone
+      ? 'Refunds the materials. The ' + dWord(c.daysDone) + ' already spent stay spent, and so do the wear and the morale.'
+      : 'Nothing has been spent yet: the materials, the morale and the wear all come back.';
   }
 
-  // Cancel an in-flight craft. Refunds materials in full; incurred
-  // wear stays (the fab already spun up); days that ticked stay spent
-  // (time is gone). No output produced.
+  // Cancel the job on the bed (ruling 27): the materials come back and
+  // the days not yet spent stay yours. Before its first day it costs
+  // nothing at all (tax and wear back too); after, the days, wear and
+  // tax already paid stay paid. No output.
   window.cancelCraft = function() {
-    if (!FSTATE.craft) return;
-    const r = RECIPES.find(x => x.id === FSTATE.craft.recipeId);
-    if (r) {
-      for (const [mat, qty] of r.inputs) {
-        FSTATE.stock[mat] = (FSTATE.stock[mat] || 0) + qty;
+    const c = FSTATE.craft;
+    if (!c) return;
+    const r = RECIPES.find(x => x.id === c.recipeId);
+    const back = {};
+    if (r) for (const [mat, qty] of r.inputs) back[mat] = (back[mat] || 0) + qty;
+    // The materials take hold space again: refuse rather than lose any.
+    if (typeof window.materialLandings === 'function') {
+      const land = window.materialLandings(back);
+      if (Object.entries(back).some(([m, q]) => (land[m] || 0) < q)) {
+        fabNotice('HOLD FULL', 'No room for the materials to come back. Make room in the hold, then cancel.', 'warn');
+        return;
       }
     }
-    clearTimeout(FSTATE.craft.timer);
-    stopProgressLoop();
-    FSTATE.craft = null; STATE.fabricator.owedOutput = null; // cancelled/broken — nothing owed
+    for (const [mat, qty] of Object.entries(back)) FSTATE.stock[mat] = (FSTATE.stock[mat] || 0) + qty;
+    const free = !c.daysDone;
+    if (free) {
+      if (typeof window.refundEffortTax === 'function') {
+        const rc = {};
+        for (const [role, paid] of Object.entries(c.tax || {})) if (STATE.crew.includes(role)) rc[role] = paid;
+        window.refundEffortTax(rc);
+      }
+      FSTATE.wear = Math.max(0, Math.round((FSTATE.wear - (c.wearAdded || 0)) * 10) / 10);
+    }
+    stopCraftClock();
+    FSTATE.craft = null; STATE.fabricator.owedOutput = null;
+    fabLog('FABRICATOR — ' + (r ? r.name : 'print') + ' cancelled' + (free ? ' before it started. Nothing spent.' : ' after ' + dWord(c.daysDone) + '. The materials are back in the hold; the days are gone.'));
     // Portrait back to idle; kill anim.
     const slot = $('fb-slot');
     slot.classList.remove('state-busy', 'state-done');
@@ -834,53 +864,76 @@
     stopRunAnim();
     setFabFrame('idle');
     setProgressIdle();
+    renderHUD();
     renderAll();
+    if (typeof saveRun === 'function') saveRun();
   };
 
   // Drop the progress strip back to its muted idle look.
   function setProgressIdle() {
-    $('fb-progress').classList.remove('active');
+    const prog = $('fb-progress');
+    prog.classList.remove('active', 'held');
     $('fb-progress-item').textContent = 'IDLE';
     $('fb-progress-days').textContent = '—';
     $('fb-progress-fill').style.width = '0%';
   }
 
+  // The last day is done: the print comes out — or, on the misfire roll
+  // (odds fixed at CRAFT), slag or a piece of surplus.
   function completeCraft() {
-    const r = RECIPES.find(x => x.id === FSTATE.craft.recipeId);
-    const out = r.output;
-    // Brief done-flash on the fab slot — stop the run anim, hold on
-    // the idle frame under the green done-flash brightness kick.
+    const c = FSTATE.craft;
+    const r = RECIPES.find(x => x.id === c.recipeId);
+    stopCraftClock();
+    FSTATE.craft = null;
+    $('fb-progress-days').textContent = c.daysTotal + 'd / ' + c.daysTotal + 'd';
+    $('fb-progress-fill').style.width = '100%';
+    FSTATE.tripDay = STATE.daysElapsed;
+    $('fb-trip-day').textContent = FSTATE.tripDay;
+    setProgressIdle();
     const slot = $('fb-slot');
-    slot.classList.remove('state-busy', 'state-idle');
-    slot.classList.add('state-done');
     stopRunAnim();
     setFabFrame('idle');
+    if (!r) { renderAll(); if (typeof saveRun === 'function') saveRun(); return; }
+    const out = r.output;
+
+    if (Math.random() < (c.misfireP || 0)) {
+      // A misfire spends the time and materials: ~85% waste, ~15%
+      // fab_surplus (the Surplus Collector buys it); below 20% health it
+      // can also break the fabricator outright.
+      const lines = MOD.flavor && MOD.flavor.fabricator_misfire_descriptions;
+      const line = Array.isArray(lines) && lines.length ? lines[Math.floor(Math.random() * lines.length)] + ' ' : '';
+      const dw = dWord(c.daysTotal);
+      if (Math.random() < 0.15 && typeof grantItem === 'function' && grantItem('fab_surplus')) {
+        fabLog('MISFIRE — ' + line + 'No ' + out.name + '; a piece of Fabricator Surplus instead. (' + dw + ', materials spent.)');
+        fabNotice('MISFIRE', 'No ' + out.name + ' — a piece of Fabricator Surplus instead. ' + dw + ', materials spent.', 'warn');
+      } else {
+        fabLog('MISFIRE — ' + line + 'The ' + out.name + ' comes out as slag. ' + dw + ' and the materials, gone.');
+        fabNotice('MISFIRE', 'The ' + out.name + ' came out as slag. ' + dw + ' and the materials, gone.', 'danger');
+      }
+      if (typeof window.pushAiSample === 'function') window.pushAiSample('fabricator_misfire');
+      if (100 - (c.wearBefore || 0) < 20 && Math.random() < 0.5) { breakFab(); fabNotice('MISFIRE — FAB BROKEN', 'The misfire took the fabricator with it. FAB SERVICE at a station fixes it.', 'danger'); }
+      renderHUD();
+      renderAll();
+      if (typeof saveRun === 'function') saveRun();
+      return;
+    }
+
+    // Owed from this moment (saved): the finished print waits in the bay
+    // until it's claimed — a reload brings it back there.
+    STATE.fabricator.owedOutput = r.id;
+    // Brief done-flash on the fab slot, held on the idle frame.
+    slot.classList.remove('state-busy', 'state-idle');
+    slot.classList.add('state-done');
     // Floating badge — still fires briefly as a celebration flourish.
     const badge = $('fb-badge');
     badge.textContent = '+' + out.count + ' ' + out.name.toUpperCase();
     badge.classList.remove('fire');
     void badge.offsetWidth;
     badge.classList.add('fire');
-
-    clearTimeout(FSTATE.craft.timer);
-    stopProgressLoop();
-    // Snap the counter + bar to the final completed state. The rAF
-    // loop's last tick can land one frame short of a boundary (e.g.
-    // `1d / 2d` at 100% fill) because floor() rounds elapsed-ms down.
-    // Force the full read before tearing the strip down.
-    $('fb-progress-days').textContent = FSTATE.craft.daysTotal + 'd / ' + FSTATE.craft.daysTotal + 'd';
-    $('fb-progress-fill').style.width = '100%';
-    // Same for the header day: a timer landing a hair before the boundary
-    // must not leave it a day short of the trip calendar.
-    FSTATE.tripDay = FSTATE.craft.startDay + FSTATE.craft.daysTotal;
-    $('fb-trip-day').textContent = FSTATE.tripDay;
-    FSTATE.craft = null;
-    setProgressIdle();
-
     // Park the finished item in the output slot — sits there pulsing +
     // floating until the player clicks to claim (moves to cargo).
     showOutputItem(r);
-
+    if (typeof saveRun === 'function') saveRun();
     // Return to idle after the done-flash window.
     setTimeout(() => {
       slot.classList.remove('state-done');
@@ -911,20 +964,26 @@
     const r = FSTATE.pendingOutput;
     // Capacity check (audit fix): a full hold leaves the print in the
     // output bay — pendingOutput stays set, so the player can jettison
-    // something (INV) and claim again. Nothing is silently lost.
-    if (typeof window.cargoSlotsUsed === 'function') {
+    // something (INV) and claim again. Nothing is silently lost. A trial
+    // fit first, then the print comes aboard through grantItem like any
+    // other pickup (NEW badge, Recent order, values — b4 audit).
+    const fits = (() => {
+      if (typeof window.cargoSlotsUsed !== 'function') return true;
       for (let i = 0; i < r.output.count; i++) STATE.items.push(r.output.item);
-      if (cargoSlotsUsed() > cargoCapacity()) {
-        STATE.items.length -= r.output.count;
-        if (typeof window.pushCruiseLog === 'function') {
-          window.pushCruiseLog('◆ FABRICATOR — output ready but the hold is full. Make room, then claim it.');
-        }
-        // In-modal too (parity pass): the log line sat behind the modal.
-        fabNotice('HOLD FULL', 'The ' + r.output.name + ' stays in the output bay. Make room in the hold, then claim it.', 'warn');
-        return;
+      const ok = cargoSlotsUsed() <= cargoCapacity();
+      STATE.items.length -= r.output.count;
+      return ok;
+    })();
+    if (!fits) {
+      if (typeof window.pushCruiseLog === 'function') {
+        window.pushCruiseLog('◆ FABRICATOR — output ready but the hold is full. Make room, then claim it.');
       }
-    } else {
-      for (let i = 0; i < r.output.count; i++) STATE.items.push(r.output.item);
+      // In-modal too (parity pass): the log line sat behind the modal.
+      fabNotice('HOLD FULL', 'The ' + r.output.name + ' stays in the output bay. Make room in the hold, then claim it.', 'warn');
+      return;
+    }
+    for (let i = 0; i < r.output.count; i++) {
+      if (typeof grantItem === 'function') grantItem(r.output.item); else STATE.items.push(r.output.item);
     }
     FSTATE.pendingOutput = null;
     STATE.fabricator.owedOutput = null;
@@ -983,9 +1042,8 @@
       setTimeout(() => s.remove(), 900);
     }
     if (FSTATE.craft) {
-      clearTimeout(FSTATE.craft.timer);
-      stopProgressLoop();
-      FSTATE.craft = null; STATE.fabricator.owedOutput = null; // cancelled/broken — nothing owed
+      stopCraftClock();
+      FSTATE.craft = null; STATE.fabricator.owedOutput = null; // broken — nothing owed
       setProgressIdle();
     }
   }
@@ -1067,6 +1125,14 @@
     clearFabNotice();
     document.body.classList.remove('modal-open');
     hideOverlay('overlay-fabricator');
+    // A job on the bed holds while the fabricator is closed (ruling 27:
+    // it needs a still ship and someone watching it). Say so once.
+    if (FSTATE.craft && !STATE.ended) {
+      stopCraftClock();
+      const c = FSTATE.craft, r = RECIPES.find(x => x.id === c.recipeId);
+      fabLog('FABRICATOR — ' + (r ? r.name : 'the print') + ' held at day ' + c.daysDone + ' of ' + c.daysTotal + '. Open the fabricator to finish it.');
+      if (typeof saveRun === 'function') saveRun();
+    }
     // A craft spent days and materials — repaint the hub (day counter,
     // HUD) and autosave through it, and re-gate an open Stop menu.
     if (typeof window.renderCruise === 'function' && !STATE.ended &&
@@ -1110,31 +1176,35 @@
   // Called by cruise.js (bottom-row FABRICATOR button — see Phase 4
   // handoff notes on why this stayed a Stop Menu verb instead of moving
   // to a separate bottom-row button per the original plan). No onDone
-  // callback: crafting applies its time cost immediately in
-  // craftSelected() and claimOutput() grants STATE.items directly, so
-  // there's nothing to hand back on close.
-  // Load-time teardown (index.html teardownLiveUI): forget the replaced
-  // run's in-memory craft; the loaded run's owedOutput restores on open.
+  // callback: each craft day is passed (and saved) as it happens and
+  // claimOutput() grants the print through grantItem, so there's nothing
+  // to hand back on close.
+  // Load-time teardown (index.html teardownLiveUI): stop the replaced
+  // run's clock; the loaded run's job (STATE.fabricator.craft) or
+  // finished print (owedOutput) comes back on open.
   window.abortFabricator = function () {
-    if (FSTATE.craft) { clearTimeout(FSTATE.craft.timer); stopProgressLoop(); FSTATE.craft = null; }
+    stopCraftClock(); clockAcc = 0;
     FSTATE.pendingOutput = null;
-    const prog = document.getElementById('fb-progress'); if (prog) prog.classList.remove('active');
+    const prog = document.getElementById('fb-progress'); if (prog) prog.classList.remove('active', 'held');
     const slot = document.getElementById('fb-output-slot'); if (slot) slot.classList.remove('ready');
   };
 
   window.openFabricator = function() {
     loadFabricatorData();
     bindFabricatorState();
-    // A paid-for craft from before a reload/load: its time is already
-    // spent, so it waits finished in the output bay.
+    if (FSTATE.craft && !RECIPES.find(r => r.id === FSTATE.craft.recipeId)) FSTATE.craft = null; // a recipe gone from the data
+    // A finished print from before a reload/load waits in the output bay.
     const owed = STATE.fabricator.owedOutput;
     if (owed && !FSTATE.craft && !FSTATE.pendingOutput) {
-      const r = RECIPES.find(x => x.id === owed);
+      const r = RECIPES.find(r => r.id === owed);
       if (r) showOutputItem(r); else STATE.fabricator.owedOutput = null;
     }
     if (!RECIPES.find(r => r.id === FSTATE.selectedId)) FSTATE.selectedId = RECIPES[0] && RECIPES[0].id;
+    if (!FSTATE.craft) setProgressIdle();
     renderAll();
     showOverlay('overlay-fabricator');
     document.body.classList.add('modal-open');
+    // A held job picks up where it stopped (its part-day included).
+    if (FSTATE.craft) { updateProgressUI(); startCraftClock(false); }
   };
 })();
