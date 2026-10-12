@@ -13,8 +13,10 @@ let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + m); } };
 
 (async () => {
-  const files = fs.readdirSync(DIR).filter(f => f.endsWith('.json')).sort();
-  ok(files.length >= 18, `fixtures present (${files.length})`);
+  const all = fs.readdirSync(DIR).filter(f => f.endsWith('.json')).sort();
+  ok(all.length >= 18, `fixtures present (${all.length})`);
+  // Smoke runs (run_all.sh SMOKE=1) load one trail's saves from every build.
+  const files = process.env.SMOKE ? all.filter(f => f.includes('_mars_')) : all;
   const builds = [...new Set(files.map(f => f.split('_')[0]))];
   console.log(`— ${files.length} saves from ${builds.join(', ')}`);
   const browser = await chromium.launch();
