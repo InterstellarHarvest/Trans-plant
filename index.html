@@ -1581,6 +1581,64 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
   </div>
 </div>
 
+<script>
+'use strict';
+/* ────────────────────────────────────────────────────────────────
+   THRESHOLDS — the game's named lines, in one place. Its own classic
+   script ahead of the engine files, so every file reads them bare,
+   even code that runs at load (setup.js's step table). The registry's
+   trigger thresholds must agree, and a bare copy of one of these
+   numbers anywhere else is a lint error (tools/lint_code.js).
+   ──────────────────────────────────────────────────────────────── */
+// Below RES_LOW a resource is low: its low_* trigger (registry "below
+// 25%" / "below 30%"), the HUD's red dot, the cruise bar's pulse, the
+// AI's first warning. Below RES_CRITICAL the AI warns a second time.
+const RES_LOW = Object.freeze({ fuel: 25, food: 25, water: 25, o2: 25, hull: 30 });
+const RES_CRITICAL = 12;
+// Crew morale (the crew average): below MORALE_LOW it's low — low_morale,
+// the HUD, the AI's warnings, a shaky crew in a fight (Bible: mutiny
+// possible). Below MORALE_CRISIS a crew member's own card shows a morale
+// crisis (demo-crew).
+const MORALE_LOW = 30;
+const MORALE_CRISIS = 25;
+// The captain plus at most this many chosen crew (owner ruling 23).
+const CREW_MAX = 2;
+
+// The wound line (owner ruling 2026-10-09 — one number everywhere):
+// below CREW_WOUNDED_HP a crew member is WOUNDED — active skill
+// disabled, passive halved (Bible §4.25; woundedMult), crew_injured
+// fires, the cruise bar goes amber. At or below CREW_CRITICAL_HP they're
+// too hurt to answer crew-gated choices (red bar).
+const CREW_WOUNDED_HP = 40;
+const CREW_CRITICAL_HP = 25;
+const WOUNDED_SKILL_MULT = 0.5;
+// A severity wound lands at WOUND_LANDING_HP, or WOUND_KNOCK_HP lower for
+// someone already under it; nothing short of lethal goes below
+// HURT_FLOOR_HP (a wound, a quit or a poor MEDICAL result).
+const WOUND_LANDING_HP = CREW_WOUNDED_HP - 5;
+const WOUND_KNOCK_HP = 15;
+const HURT_FLOOR_HP = 5;
+const INJURE_HP = 35;            // crew_effect injure: the lighter knock (medic-softened)
+const HEAL_ALL_INJURED_HP = 40;  // crew_effect heal, all_injured: each hurt person
+const MEDKIT_SAVE_HP = 20;       // a medkit's lethal save leaves them here
+const MEDICAL_HEAL_HP = Object.freeze({ perfect: 25, good: 10 }); // the MEDICAL minigame's result on the patient (demo contract)
+// One pair of hands on an effort job (Bible benchmark +10): the captain's
+// own (half while wounded), or a crew member helping outside their role.
+const EFFORT_HANDS = 10;
+
+// Fabricator wear (0–100): at FAB_WEAR_MAX it's broken; above
+// FAB_LOW_WEAR it's low (fab_low, registry "fab health below 30%"); a
+// craft that pushes it to FAB_SERVICE_WEAR warns "service soon" (demo).
+const FAB_WEAR_MAX = 100;
+const FAB_LOW_WEAR = 70;
+const FAB_SERVICE_WEAR = 80;
+
+// crops.json fields an entry may leave out (every shipped crop sets them).
+const CROP_HEALTHY_DEFAULT = 65;
+const CROP_SICK_DEFAULT = 30;
+const CROP_WATER_NEED_DEFAULT = 50; // the demo's CROP_WATER_NEED
+const CROP_MATURITY_DEFAULT = 90;
+</script>
 <script src="engine/js/map.js"></script>
 <script src="engine/js/screens/title.js"></script>
 <script src="engine/js/screens/setup.js"></script>
@@ -2040,7 +2098,7 @@ function applySetupToState(sel) {
 
   STATE.activeAI  = sel.ai;
   STATE.captain   = sel.captain;
-  STATE.crew      = sel.crew.slice(0, 2); // captain + 2 crew, never more (ruling 23)
+  STATE.crew      = sel.crew.slice(0, CREW_MAX); // captain + 2 crew, never more (ruling 23)
   STATE.startCrew = sel.crew.length; // the ending measures losses against this
   initCrewHP();
   initCrewMorale(rules.starting_resources.morale); // per crew member (owner ruling 15)
@@ -2404,7 +2462,7 @@ Object.assign(window, { syncItemValues, itemValuesOf, itemValueKnown, fenceValue
    Every crew role carries 0–100 HP in STATE.crewHP. Events/combat
    deal damage via crew_effect (injure = damage, kill = lethal with a
    medkit downgrade chance per the medkit's own authored 15%), gates
-   refuse crew below 25 HP ("hurt too badly to help"), regen ticks
+   refuse crew at or below 25 HP ("hurt too badly to help"), regen ticks
    per travel leg (+1, +2 with a medic aboard), and death at 0 pulls
    a crew epitaph from the flavor pool into the log.
    ──────────────────────────────────────────────────────────────── */
@@ -2415,13 +2473,8 @@ function initCrewHP() {
   STATE.captainHP = 100; // owner rulings 29/30 — see CAPTAIN HP below
 }
 
-// The wound line (owner ruling 2026-10-09 — one number everywhere):
-// below CREW_WOUNDED_HP a crew member is WOUNDED — active skill
-// disabled, passive halved (Bible §4.25), crew_injured fires, the
-// cruise bar goes amber. At or below CREW_CRITICAL_HP they're too hurt
-// to answer crew-gated choices (red bar).
-const CREW_WOUNDED_HP = 40;
-const CREW_CRITICAL_HP = 25;
+// The wound line (CREW_WOUNDED_HP / CREW_CRITICAL_HP) is in the
+// THRESHOLDS script above the engine files.
 
 // Delayed-severity wounds awaiting treatment: { role: true }. Lazily
 // created for saves that predate the field.
@@ -2502,6 +2555,9 @@ function peopleAboard() {
   return (captainHPOf() > 0 ? ['captain'] : []).concat(STATE.crew);
 }
 function hpOf(who) { return who === 'captain' ? captainHPOf() : crewHPOf(who); }
+// A wounded person works at half strength (Bible §4.25): their passive,
+// their effort, their tending, their combat edge.
+function woundedMult(who) { return hpOf(who) < CREW_WOUNDED_HP ? WOUNDED_SKILL_MULT : 1; }
 function setHP(who, v) {
   v = clamp(Math.round(v), 0, 100);
   if (who === 'captain') { STATE.captainHP = v; return; }
@@ -2514,7 +2570,7 @@ function personName(who) { return who === 'captain' ? 'the captain' : crewNameOf
 function PersonName(who) { return who === 'captain' ? 'The captain' : crewNameOf(who); }
 // The captain's own hands on an effort job (Bible benchmark +10); half
 // while wounded.
-function captainHandsEffort() { return captainHPOf() < CREW_WOUNDED_HP ? 5 : 10; }
+function captainHandsEffort() { return EFFORT_HANDS * woundedMult('captain'); }
 // A crew medic's lethal→injury save (crew_roster 50%, halved while
 // wounded) — the captain's softer landing: a medic captain can't save
 // themselves.
@@ -2522,7 +2578,7 @@ function crewMedicSave() {
   if (!STATE.crew.includes('medic')) return 0;
   const c = (MOD.crew_roster || []).find(x => x.role === 'medic');
   const v = c && pathOf(c.passive_skill, 'severity_modifier.lethal_to_injury_chance');
-  return (Number.isFinite(v) ? v : 0.5) * (crewHPOf('medic') < CREW_WOUNDED_HP ? 0.5 : 1);
+  return (Number.isFinite(v) ? v : 0.5) * woundedMult('medic');
 }
 // A medic captain's lethal→injury save (half strength, Bible §4.30) — the
 // crew medic's softer landing: a crew medic can't save themselves either.
@@ -2542,7 +2598,7 @@ function killCaptain() {
   if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('◆ The captain is dead. The log keeps the time of it, and nothing else.');
 }
 function killPerson(who) { if (who === 'captain') killCaptain(); else killCrew(who); }
-Object.assign(window, { captainHPOf, peopleAboard, hpOf, setHP, personName, PersonName, captainHandsEffort, crewMedicSave, captainMedicSave, killCaptain, killPerson });
+Object.assign(window, { captainHPOf, peopleAboard, hpOf, woundedMult, setHP, personName, PersonName, captainHandsEffort, crewMedicSave, captainMedicSave, killCaptain, killPerson });
 
 /* modules/ai/ai_companions.json sample_lines — each AI's signature line
    for a handful of moments (hull_breach, crew_death, crop_sick, low_fuel,
@@ -2634,7 +2690,7 @@ function crewSpriteIdOf(role) {
    charges, their own name and story (STATE.crewIdentity). Returns the
    role taken, or null (no room / no role → the caller's passenger path). */
 function crewJoinRole(idn) {
-  return (idn && idn.join_role && STATE.crew.length < 2 && !STATE.crew.includes(idn.join_role)) ? idn.join_role : null;
+  return (idn && idn.join_role && STATE.crew.length < CREW_MAX && !STATE.crew.includes(idn.join_role)) ? idn.join_role : null;
 }
 function joinAsCrew(idn, hp) {
   const role = crewJoinRole(idn);
@@ -2881,8 +2937,10 @@ window.damageCrew = damageCrew;
              passive, the better of the two when both are aboard), then a
              carried medkit's authored 15% (spending the medkit). The 50%
              is a tuning number — the roster says only "more often". */
+// items.json medkit: "Turns 15% of would-be-lethal outcomes into injuries".
+const MEDKIT_SAVE_CHANCE = 0.15;
 function woundCrew(role) {
-  setHP(role, Math.max(5, Math.min(hpOf(role) - 15, CREW_WOUNDED_HP - 5)));
+  setHP(role, Math.max(HURT_FLOOR_HP, Math.min(hpOf(role) - WOUND_KNOCK_HP, WOUND_LANDING_HP)));
 }
 function applySeverity(role, severity) {
   if (!role || !peopleAboard().includes(role)) return;
@@ -2910,9 +2968,9 @@ function applySeverity(role, severity) {
       return;
     }
     const mkIdx = STATE.items.indexOf('medkit');
-    if (mkIdx >= 0 && Math.random() < 0.15) {
+    if (mkIdx >= 0 && Math.random() < MEDKIT_SAVE_CHANCE) {
       STATE.items.splice(mkIdx, 1);
-      setHP(role, 20);
+      setHP(role, MEDKIT_SAVE_HP);
       log('The medkit made the difference. ' + name + ' is badly hurt, but alive. The medkit is spent.');
       STATE.lethalSaved = 'The medkit made the difference — ' + card + ' badly hurt, but alive.';
       return;
@@ -2962,20 +3020,17 @@ function dueDelayedCrisis() {
 
 /* ────────────────────────────────────────────────────────────────
    CRISIS TRIGGERS + EVENT POOL-DRAW (closes audit A1's engine half
-   and A9). Thresholds match tag_registry.json's trigger notes.
+   and A9). Thresholds match tag_registry.json's trigger notes
+   (RES_LOW, MORALE_LOW, FAB_LOW_WEAR — tools/lint_code.js checks).
    ──────────────────────────────────────────────────────────────── */
 function activeTriggers() {
   const r = STATE.resources;
   const active = new Set(['any']);
-  if (r.fuel   < 25) active.add('low_fuel');
-  if (r.food   < 25) active.add('low_food');
-  if (r.water  < 25) active.add('low_water');
-  if (r.o2     < 25) active.add('low_o2');
-  if (r.hull   < 30) active.add('low_hull');
+  for (const k of Object.keys(RES_LOW)) if (r[k] < RES_LOW[k]) active.add('low_' + k);
   // Per-crew morale (owner ruling 15): the crew AVERAGE drives it; no
   // crew aboard, no morale — never low.
   const mo = crewMoraleAvg();
-  if (mo != null && mo < 30) active.add('low_morale');
+  if (mo != null && mo < MORALE_LOW) active.add('low_morale');
   // Position-based (not threshold-based): first/last ~15% of the
   // journey by LEGS flown (registry: "first/final two legs"); journey_mid
   // covers the long middle third. (Days elapsed stopped working once the
@@ -2991,7 +3046,7 @@ function activeTriggers() {
   // owns the moment); it feeds aftermath events on the hollow run.
   if (STATE.crop && STATE.cropGrowth) {
     const cropDef = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
-    const sickAt = (cropDef && cropDef.sick_threshold) || 30;
+    const sickAt = (cropDef && cropDef.sick_threshold) || CROP_SICK_DEFAULT;
     const h = STATE.cropGrowth.health;
     if (h > 0 && h < sickAt) active.add('crop_sick');
     if (h > 0 && STATE.cropGrowth.pest) active.add('crop_pest'); // a real infestation (growbay pest roll)
@@ -3006,8 +3061,8 @@ function activeTriggers() {
   // selectEvent() decrements it once per event-bearing node.
   if ((STATE.postCombatLegs || 0) > 0) active.add('post_combat');
   // Ship systems.
-  if (STATE.fabricator && (STATE.fabricator.broken || (STATE.fabricator.wear || 0) >= 100)) active.add('fab_broken'); // worn out = broken
-  else if (STATE.fabricator && (STATE.fabricator.wear || 0) >= 70) active.add('fab_low');
+  if (STATE.fabricator && (STATE.fabricator.broken || (STATE.fabricator.wear || 0) >= FAB_WEAR_MAX)) active.add('fab_broken'); // worn out = broken
+  else if (STATE.fabricator && (STATE.fabricator.wear || 0) > FAB_LOW_WEAR) active.add('fab_low');
   // HP — anyone aboard under the wound line counts as injured, the
   // captain too (owner ruling 29); crewmate_injured is a crew member
   // (events about tending someone else: event_shipboard_006).
@@ -3250,11 +3305,11 @@ function hudRowsHTML() {
   const r = STATE.resources;
   const mo = hudMorale();
   const crit = {
-    fuel:  r.fuel  < 25,
-    food:  r.food  < 25,
-    o2:    r.o2    < 25,
-    hull:  r.hull  < 30,
-    mor:   mo != null && mo < 30,
+    fuel:  r.fuel  < RES_LOW.fuel,
+    food:  r.food  < RES_LOW.food,
+    o2:    r.o2    < RES_LOW.o2,
+    hull:  r.hull  < RES_LOW.hull,
+    mor:   mo != null && mo < MORALE_LOW,
   };
   // Shown values: rounded, but anything above zero reads at least 1 — a
   // tank at 0.4 used to read 0 while it still had something in it.
@@ -3645,14 +3700,15 @@ function setWaterSplit(pct) {
 }
 
 /* Crop water need — growbay's CROP_META is the authority (window.cropMetaOf
-   export); 50 when no crop/meta (demo's CROP_WATER_NEED). */
+   export); CROP_WATER_NEED_DEFAULT when no crop/meta. */
+const PURIFIER_CROP_WATER_MULT = 0.9; // items.json water_purifier (prose): "crop water consumption reduced 10%"
 function cropWaterNeed() {
   const m = (typeof window.cropMetaOf === 'function' && STATE.crop) ? cropMetaOf(STATE.crop) : null;
   // Botanist passive "crop water consumption reduced 15%" (captain 7%);
-  // the water purifier's passive −10% (items.json).
-  return ((m && m.water_need) || 50)
+  // the water purifier's passive −10%.
+  return ((m && m.water_need) || CROP_WATER_NEED_DEFAULT)
     * (1 - roleAmount('botanist', 'crop_water_modifier', 'crop_water_modifier', 0.85, true))
-    * (STATE.items.includes('water_purifier') ? 0.9 : 1);
+    * (STATE.items.includes('water_purifier') ? PURIFIER_CROP_WATER_MULT : 1);
 }
 
 /* Station botanist (event_station_012, owner ruling 2026-10-11). Their
@@ -3725,10 +3781,12 @@ function cropToken(k) {
   return '';
 }
 
-/* Demo crewDrainRate(): how hard the crew's water share is biting.
-   ratio = crew share vs what the crop's need leaves them. */
-function crewWaterDrainRate() {
-  const crewPct = 100 - ensureOrders().waterSplit;
+/* Demo crewDrainRate(): how hard the crew's water share is biting, in
+   hydration points a day (0/1/3/6). ratio = crew share vs what the crop's
+   need leaves them. plantPct: a split to try (the Orders preview, the
+   growbay's crew badge); default the standing one — passDays spends that. */
+function crewWaterDrainRate(plantPct) {
+  const crewPct = 100 - (plantPct == null ? ensureOrders().waterSplit : plantPct);
   const ratio = Math.min(1, crewPct / (100 - cropWaterNeed()));
   if (ratio >= 1)   return 0;
   if (ratio >= 0.7) return 1;
@@ -3763,12 +3821,15 @@ function fuelPerLegBase() {
   return ORDERS_BASE.travelFuelBudget / pathLegs();
 }
 window.fuelPerLegBase = fuelPerLegBase;
-/* Resource ceilings: 100, raised while the upgrade is in cargo
-   (items.json gameplay_effect) — fuel tank 120, hull plating 115. */
+/* Resource ceilings: 100, raised while the upgrade is in cargo. The
+   numbers are items.json gameplay_effect prose ("Fuel max increased from
+   100 to 120", "Hull max increased from 100 to 115"). */
+const FUEL_TANK_MAX = 120;    // expanded_fuel_tank
+const HULL_PLATING_MAX = 115; // hull_plating
 function resMax(k) {
   let max = 100;
-  if (k === 'fuel' && STATE.items.includes('expanded_fuel_tank')) max = 120;
-  if (k === 'hull' && STATE.items.includes('hull_plating')) max = 115;
+  if (k === 'fuel' && STATE.items.includes('expanded_fuel_tank')) max = FUEL_TANK_MAX;
+  if (k === 'hull' && STATE.items.includes('hull_plating')) max = HULL_PLATING_MAX;
   // A captain's starting bonus that starts a resource above 100 ("Hull
   // starts at 105 — you reinforced the weak points") raises its ceiling
   // by the same amount for the run, or the first change would erase it.
@@ -3826,8 +3887,8 @@ function arrivalPassives(node) {
     STATE.resources.fuel = clamp(STATE.resources.fuel + 2, 0, resMax('fuel'));
   }
   // Water purifier: "On planet nodes: converts local water to ship water supply."
-  if (t === 'planet' && STATE.items.includes('water_purifier') && STATE.resources.water < 100) {
-    STATE.resources.water = clamp(STATE.resources.water + 8, 0, 100);
+  if (t === 'planet' && STATE.items.includes('water_purifier') && STATE.resources.water < resMax('water')) {
+    STATE.resources.water = clamp(STATE.resources.water + 8, 0, resMax('water'));
     log('The water purifier draws from the planet below. +8 water.');
   }
   // Soil sampler: "Using on planet nodes reveals soil quality data — affects ending score."
@@ -3842,9 +3903,9 @@ function arrivalPassives(node) {
   const cg = STATE.cropGrowth;
   if (meta && cg && cg.health > 0) {
     const eng = (meta.strengths || {}).morale_engine;
-    if (meta.morale_bonus && cg.health >= (meta.healthy_threshold || 65)) {
+    if (meta.morale_bonus && cg.health >= (meta.healthy_threshold || CROP_HEALTHY_DEFAULT)) {
       addCrewMorale(meta.morale_bonus);
-    } else if (eng && eng.morale_penalty_when_sick && cg.health <= (meta.sick_threshold || 30)) {
+    } else if (eng && eng.morale_penalty_when_sick && cg.health <= (meta.sick_threshold || CROP_SICK_DEFAULT)) {
       addCrewMorale(eng.morale_penalty_when_sick);
     }
   }
@@ -3854,7 +3915,7 @@ function arrivalPassives(node) {
    (halved while wounded), a captain of that background at half
    (Bible §4.30 skill_modifier 0.5 — setup's "Fuel -5%" / "Food -7%"). */
 function specialistMult(role) {
-  const crew = STATE.crew.includes(role) ? (crewHPOf(role) < CREW_WOUNDED_HP ? 0.5 : 1) : 0;
+  const crew = STATE.crew.includes(role) ? woundedMult(role) : 0;
   return Math.max(crew, STATE.captain === role ? captainSkill() : 0);
 }
 /* One source of truth (owner ruling 2026-10-11): the captain's numbers
@@ -3888,7 +3949,7 @@ function roleAmount(role, rosterKey, captainKey, dflt, cut) {
   const c = (MOD.crew_roster || []).find(x => x.role === role);
   const rv = c && pathOf(c.passive_skill, rosterKey);
   const crewAmt = conv(Number.isFinite(rv) ? rv : dflt);
-  const crew = STATE.crew.includes(role) ? crewAmt * (crewHPOf(role) < CREW_WOUNDED_HP ? 0.5 : 1) : 0;
+  const crew = STATE.crew.includes(role) ? crewAmt * woundedMult(role) : 0;
   let cap = 0;
   if (STATE.captain === role) {
     const v = captainPassive(captainKey);
@@ -3941,13 +4002,17 @@ function mouthsMult() {
   return mouths / 3;
 }
 window.mouthsMult = mouthsMult;
+// items.json gameplay_effect prose: insulated_cargo_bay "Food consumption
+// reduced 15%", drive_coil "Fuel burn reduced 20%".
+const INSULATED_BAY_FOOD_MULT = 0.85;
+const DRIVE_COIL_FUEL_MULT = 0.8;
 function foodBurnMult() {
   return (1 - roleAmount('chef', 'food_consumption_modifier', 'food_consumption_modifier', 0.85, true))
-    * (STATE.items.includes('insulated_cargo_bay') ? 0.85 : 1);
+    * (STATE.items.includes('insulated_cargo_bay') ? INSULATED_BAY_FOOD_MULT : 1);
 }
 function fuelBurnMult() {
   return (1 - roleAmount('pilot', 'fuel_burn_modifier', 'fuel_burn_modifier', 0.9, true))
-    * (STATE.items.includes('drive_coil') ? 0.8 : 1);
+    * (STATE.items.includes('drive_coil') ? DRIVE_COIL_FUEL_MULT : 1);
 }
 function legTravelCost() {
   const pace = ordersPace();
@@ -4006,6 +4071,11 @@ function deprivationFailure() {
   return null;
 }
 
+// items.json o2_recycler (prose): "O2 consumption halved … and O2 losses
+// from events reduced 25%" — the daily draw here, event losses in
+// effectiveResDelta.
+const RECYCLER_O2_DRAW_MULT = 0.5;
+const RECYCLER_O2_LOSS_MULT = 0.75;
 /* The ship's own daily draw as things stand — passDays spends exactly
    this, and the resource tooltips' "Per day" rows show it (shared.js),
    so the hover is the real number. */
@@ -4016,10 +4086,10 @@ function dailyDraw() {
   // A healthy crop makes air (the growbay is the ship's lung — the AI's
   // own warning lines say so): it halves the draw too.
   const cropMeta = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
-  const cropBreathes = STATE.cropGrowth && cropMeta && STATE.cropGrowth.health >= (cropMeta.healthy_threshold || 65);
+  const cropBreathes = STATE.cropGrowth && cropMeta && STATE.cropGrowth.health >= (cropMeta.healthy_threshold || CROP_HEALTHY_DEFAULT);
   return {
     food: ORDERS_BASE.foodPerDay * ra.foodMult * foodBurnMult() * mouthsMult(),
-    o2: ORDERS_BASE.o2PerDay * (STATE.items.includes('o2_recycler') ? 0.5 : 1) * (cropBreathes ? 0.5 : 1),
+    o2: ORDERS_BASE.o2PerDay * (STATE.items.includes('o2_recycler') ? RECYCLER_O2_DRAW_MULT : 1) * (cropBreathes ? 0.5 : 1),
     water: ORDERS_BASE.waterPerDay,
   };
 }
@@ -4725,8 +4795,8 @@ function renderEncounterState(opts) {
     // nobody steps down for that, so a full crew gets the plain welcome.
     const canCrew = !!(STATE.stowaway.identity && STATE.stowaway.identity.join_role);
     choices = (sv.stowaway_choices || []).filter(c => {
-      if (c.condition === 'crew_count < max') return STATE.crew.length < 2 || !canCrew;
-      if (c.condition === 'crew_count = max') return STATE.crew.length >= 2 && canCrew;
+      if (c.condition === 'crew_count < max') return STATE.crew.length < CREW_MAX || !canCrew;
+      if (c.condition === 'crew_count = max') return STATE.crew.length >= CREW_MAX && canCrew;
       return true; // 'always'
     });
   }
@@ -5081,7 +5151,7 @@ function renderChoicesInner(choices) {
     if (!locked && welcomes && !subText) {
       subText = !idn.join_role ? 'Rides along as a passenger'
         : stowOut.stowaway_resolve === 'welcome_replace' ? 'Joins as ' + idn.join_role + ' · one crew steps down'
-        : (STATE.crew.length < 2 && !STATE.crew.includes(idn.join_role)) ? 'Joins the crew as ' + idn.join_role
+        : (STATE.crew.length < CREW_MAX && !STATE.crew.includes(idn.join_role)) ? 'Joins the crew as ' + idn.join_role
         : 'Rides along as a passenger';
     }
     // A rescue (crew_join): say where they'll land — crew or passenger.
@@ -5291,8 +5361,7 @@ function cropDeltaLanding(v) {
   return clamp(cg.health + effectiveCropDelta(v), 1, 100) - cg.health;
 }
 function effectiveResDelta(k, v) {
-  // O2 recycler (items.json): O2 losses reduced 25%.
-  let dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.trunc(v * 0.75) : v; // toward zero: a −1 loss becomes 0
+  let dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.trunc(v * RECYCLER_O2_LOSS_MULT) : v; // toward zero: a −1 loss becomes 0
   // Engineer passive: hull repairs land 25% further (captain half).
   if (k === 'hull' && dv > 0) dv = Math.round(dv * (1 + 0.25 * specialistMult('engineer')));
   return dv;
@@ -5438,13 +5507,15 @@ function choiceStandIn(choice) {
 
 /* Days an outcome's time_cost spends (applyOutcomeEffects; the effort
    ratio scales authored repair jobs). One table for the outcome and every
-   preview of it. */
-const TIME_COST_DAYS = { trivial: 1, low: 2, medium: 4, high: 8, extreme: 14 };
+   preview of it, cheapest first. "none" spends no day at all (a wave-off,
+   owner ruling) — outcomeDays and applyOutcomeEffects stop before the
+   one-day minimum. */
+const TIME_COST_DAYS = { none: 0, trivial: 1, low: 2, medium: 4, high: 8, extreme: 14 };
 // time_days: an exact day count where no tier fits (Engine Fault's demo
 // FIELD REPAIR takes 6) — it stands in for time_cost.
 function outcomeBaseDays(o) {
   if (o && Number.isFinite(o.time_days)) return o.time_days;
-  return TIME_COST_DAYS[(o && o.time_cost) || 'trivial'] || 1;
+  return TIME_COST_DAYS[(o && o.time_cost) || 'trivial'] ?? 1;
 }
 function outcomeDays(o, ratio) {
   if (o && !Number.isFinite(o.time_days) && o.time_cost === 'none') return 0;
@@ -5538,7 +5609,7 @@ function lockReason(choice) {
   }
   if (choice.requires_flag && !STATE.flags.has(choice.requires_flag)) return `Story-gated`;
   // A job that runs on the fabricator can't run while it's broken.
-  if (choice.requires_fab && STATE.fabricator && (STATE.fabricator.broken || (STATE.fabricator.wear || 0) >= 100)) return 'Fabricator is broken';
+  if (choice.requires_fab && STATE.fabricator && (STATE.fabricator.broken || (STATE.fabricator.wear || 0) >= FAB_WEAR_MAX)) return 'Fabricator is broken';
   if (choice.gate && choice.gate.crop) { const why = cropGateReason(choice.gate.crop); if (why) return why; }
   // Capacity-aware lock (audit fix): a choice whose outcome grants
   // items that can't fit locks up-front — otherwise the player pays
@@ -5919,15 +5990,15 @@ function handleChoiceClick(choice) {
 }
 
 /* Who a heal crew_effect reaches: the named person (specific_role, the
-   crisis patient) restored to full, or everyone aboard for all_injured
-   (+40 each). Any other target reaches nobody. Shared with the preview
+   crisis patient) restored to full, or everyone hurt for all_injured
+   (+HEAL_ALL_INJURED_HP each). Any other target reaches nobody. Shared with the preview
    (outcomeFacts: HEALING only when someone it reaches is hurt). */
 function healReach(ce) {
   const people = peopleAboard();
   if (!ce) return [];
   if (ce.target === 'specific_role') return ce.role && people.includes(ce.role) ? [ce.role] : [];
   if (ce.target === 'patient') return STATE.crisisPatient && people.includes(STATE.crisisPatient) ? [STATE.crisisPatient] : [];
-  if (ce.target === 'all_injured') return people;
+  if (ce.target === 'all_injured') return people.filter(r => hpOf(r) < 100);
   return [];
 }
 
@@ -6102,8 +6173,8 @@ function applyOutcomeEffects(o) {
   // wears it like a craft does; 100 breaks it.
   if (Number.isFinite(o.fab_wear) && o.fab_wear > 0) {
     STATE.fabricator = STATE.fabricator || { wear: 0, broken: false };
-    STATE.fabricator.wear = Math.min(100, (STATE.fabricator.wear || 0) + o.fab_wear);
-    if (STATE.fabricator.wear >= 100) STATE.fabricator.broken = true;
+    STATE.fabricator.wear = Math.min(FAB_WEAR_MAX, (STATE.fabricator.wear || 0) + o.fab_wear);
+    if (STATE.fabricator.wear >= FAB_WEAR_MAX) STATE.fabricator.broken = true;
   }
   if (o.item_consume) {
     const idx = STATE.items.indexOf(o.item_consume);
@@ -6123,7 +6194,7 @@ function applyOutcomeEffects(o) {
   //   crew_effect without severity:
   //     injure: -35 HP to the target (medic aboard softens crew damage)
   //     kill:   = severity lethal (medic / medkit softer landings)
-  //     heal:   +40 HP to all injured, or full heal for a specific role
+  //     heal:   +HEAL_ALL_INJURED_HP to all injured, or full heal for a specific role
   //             (or the delayed_crisis "patient").
   // Everyone aboard is in the pool — the captain too (owner ruling 29):
   // a bare severity can land on the captain, a delayed crisis can be
@@ -6140,11 +6211,11 @@ function applyOutcomeEffects(o) {
     const targetRole = named || (ce.target === 'crew' ? null : people[Math.floor(Math.random() * people.length)]);
     const severity = o.severity || (ce.type === 'kill' ? 'lethal' : null);
     if (ce.type === 'heal' && !o.severity) {
-      for (const r of healReach(ce)) setHP(r, ce.target === 'all_injured' ? hpOf(r) + 40 : 100);
+      for (const r of healReach(ce)) setHP(r, ce.target === 'all_injured' ? hpOf(r) + HEAL_ALL_INJURED_HP : 100);
     } else if (targetRole && severity) {
       applySeverity(targetRole, severity);
     } else if (targetRole && ce.type === 'injure') {
-      damageCrew(targetRole, 35);
+      damageCrew(targetRole, INJURE_HP);
     }
   }
 
@@ -6220,7 +6291,7 @@ function choiceEffort(choice) {
       available += v * specialistMult(src);
     }
   }
-  for (const r of STATE.crew) if (!listed.has(r)) available += 10;
+  for (const r of STATE.crew) if (!listed.has(r)) available += EFFORT_HANDS;
   // Time scaling (Bible §Effort) applies to the authored repair choices;
   // the clean-result odds to every hands-on job.
   const ratioOf = a => authored ? Math.min(2, Math.max(0.5, required / Math.max(1, a))) : 1;
@@ -6254,7 +6325,7 @@ function eventMinigameQuit(choice, harm) {
   const losses = Object.fromEntries(Object.entries(worst).filter(([, v]) => Number.isFinite(v) && v < 0));
   // The time too: a poor tier that costs extra days (engine_fault's limp
   // mode) is what a quit costs — the base time would undercut it (b4).
-  const TC = ['none', 'trivial', 'low', 'medium', 'high', 'extreme'];
+  const TC = Object.keys(TIME_COST_DAYS);
   const poorTime = ((choice.tier_outcomes || {}).poor || {}).time_cost;
   const time_cost = TC.indexOf(poorTime) > TC.indexOf(base.time_cost || 'trivial') ? poorTime : base.time_cost;
   const quit = { resources: losses, time_cost,
@@ -6264,7 +6335,7 @@ function eventMinigameQuit(choice, harm) {
   // table (MEDICAL) — a quit used to hand it back, beating a poor result.
   const p = harm && harm.patient;
   if (p && peopleAboard().includes(p) && Number.isFinite(harm.hp) && Number.isFinite(harm.startingHp) && harm.hp < harm.startingHp) {
-    const before = hpOf(p), after = Math.round(Math.max(5, before + (harm.hp - harm.startingHp)));
+    const before = hpOf(p), after = Math.round(Math.max(HURT_FLOOR_HP, before + (harm.hp - harm.startingHp)));
     if (after < before) {
       setHP(p, after);
       quit.hurt = PersonName(p) + ', the worst case: ' + (after - before) + ' HP.';
@@ -6292,7 +6363,7 @@ function resolveChoice(choice) {
     // MEDICAL (parity pass 2026-10-11): the game plays at the event's own
     // difficulty, on a real patient — the worst-hurt crew member (else
     // anyone aboard) — starting at their real HP; the result lands on
-    // them (demo contract: perfect +25 HP, good +10, poor keeps the loss).
+    // them (demo contract MEDICAL_HEAL_HP: perfect +25 HP, good +10, poor keeps the loss).
     const isMed = choice.launch_minigame === 'medical';
     const people = peopleAboard(); // the captain can be the patient too (owner ruling 29)
     const patient = isMed && people.length ? (worstHurtCrew() || people[Math.floor(Math.random() * people.length)]) : null;
@@ -6329,9 +6400,8 @@ function resolveChoice(choice) {
       if (patient && peopleAboard().includes(patient)) {
         const before = hpOf(patient);
         let after = before;
-        if (tier === 'perfect') after = Math.min(100, before + 25);
-        else if (tier === 'good') after = Math.min(100, before + 10);
-        else if (mgPayload && typeof mgPayload.hp === 'number' && typeof mgPayload.startingHp === 'number') after = Math.max(5, before + (mgPayload.hp - mgPayload.startingHp));
+        if (MEDICAL_HEAL_HP[tier]) after = Math.min(100, before + MEDICAL_HEAL_HP[tier]);
+        else if (mgPayload && typeof mgPayload.hp === 'number' && typeof mgPayload.startingHp === 'number') after = Math.max(HURT_FLOOR_HP, before + (mgPayload.hp - mgPayload.startingHp));
         after = Math.round(after);
         if (after !== before) {
           setHP(patient, after);

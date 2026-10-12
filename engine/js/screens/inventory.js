@@ -81,11 +81,11 @@ function worstHurtCrew() {
 }
 const ITEM_USE = {
   ration_brick:   { label: '+10 FOOD',  can: () => STATE.resources.food  >= resMax('food') ? 'Food stores are full' : null,  use: () => { return 'Ration brick unwrapped. +' + invAddRes('food', 10) + ' food. Nobody describes the flavour.'; } },
-  water_canister: { label: '+10 H2O',   can: () => STATE.resources.water >= 100 ? 'Water tanks are full' : null,  use: () => { return 'Water canister emptied into the tanks. +' + invAddRes('water', 10) + ' water.'; } },
+  water_canister: { label: '+10 H2O',   can: () => STATE.resources.water >= resMax('water') ? 'Water tanks are full' : null,  use: () => { return 'Water canister emptied into the tanks. +' + invAddRes('water', 10) + ' water.'; } },
   fuel_cell:      { label: '+15 FUEL',  can: () => STATE.resources.fuel  >= resMax('fuel') ? 'Fuel tank is full' : null, use: () => { return 'Fuel cell slotted in. +' + invAddRes('fuel', 15) + ' fuel.'; } },
   repair_kit:     { label: '+10 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { return 'Repair kit spent on the worst seams. +' + invAddRes('hull', 10) + ' hull.'; } },
   hull_patch:     { label: '+15 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { return 'Hull patch applied. +' + invAddRes('hull', 15) + ' hull. It holds. Probably.'; } },
-  o2_canister:    { label: '+14 O2',    can: () => STATE.resources.o2    >= 100 ? 'O2 is full' : null,               use: () => { return 'O2 canister vented into the air supply. +' + invAddRes('o2', 14) + ' O2.'; } },
+  o2_canister:    { label: '+14 O2',    can: () => STATE.resources.o2    >= resMax('o2') ? 'O2 is full' : null,         use: () => { return 'O2 canister vented into the air supply. +' + invAddRes('o2', 14) + ' O2.'; } },
   medkit:         { label: 'HEAL',      can: () => worstHurtCrew() ? null : 'Nobody is hurt',
                     use: () => { const r = worstHurtCrew(); setHP(r, 100); delete crewPendingOf()[r]; return 'Medkit opened. ' + PersonName(r) + ' is patched up and back on their feet.'; } },
   crop_treatment: { label: '+30 CROP',  can: () => !STATE.cropGrowth || STATE.cropGrowth.health <= 0 ? 'Nothing left to treat' : (STATE.cropGrowth.health >= 100 && !STATE.cropGrowth.pest ? 'The crop is healthy' : null),

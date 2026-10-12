@@ -129,7 +129,7 @@
   const MONITORED_STATUSES = [
     { id: 'wounded',            name: 'Wounded',            kind: 'critical', effect: 'Active skill disabled · passive halved' },
     // Per-crew morale (owner ruling 15): this member's own morale.
-    { id: 'morale_crisis',      name: 'Morale crisis',      kind: 'critical', effect: 'Morale under 25 · at 0 they walk off at the next station' },
+    { id: 'morale_crisis',      name: 'Morale crisis',      kind: 'critical', effect: 'Morale under ' + MORALE_CRISIS + ' · at 0 they walk off at the next station' },
     { id: 'deserting',          name: 'Deserting',          kind: 'critical', effect: 'Morale 0 · leaves at the next station unless it rises' },
     { id: 'malnourished',       name: 'Malnourished',       kind: 'negative', get effect() { return dep('food', 'starvation'); } },
     { id: 'dehydrated',         name: 'Dehydrated',         kind: 'negative', get effect() { return dep('water', 'dehydration'); } },
@@ -368,7 +368,7 @@
     },
     // Special Meal — effect {morale: 10, food_cost: 5} — every crew member.
     chef() {
-      if (STATE.resources.food < 5) return { ok: false, refusal: 'Not enough food for a special meal. Reyes takes this personally.' };
+      if (STATE.resources.food < 5) return { ok: false, refusal: 'Not enough food for a special meal. Reyes takes this personally.' }; // lint-ok: threshold — the meal's food_cost, not a low line
       if (STATE.crew.every(r => crewMoraleOf(r) >= 100)) return { ok: false, refusal: 'Everyone is already in top spirits. Reyes saves the good stuff.' };
       STATE.resources.food = Math.max(0, STATE.resources.food - 5);
       addCrewMorale(10);
@@ -452,7 +452,7 @@
   // captainHandsEffort / growbay tenderOf): the background keeps its half
   // strength, the captain's own hands count half.
   function captainWoundEffect() {
-    return 'Hands count half (effort +5)' + (STATE.captain === 'botanist' ? ' · tending halved' : '');
+    return 'Hands count half (effort +' + EFFORT_HANDS * WOUNDED_SKILL_MULT + ')' + (STATE.captain === 'botanist' ? ' · tending halved' : '');
   }
   function computeStatuses(hp, mo, role) {
     const fired = new Set();
@@ -467,7 +467,7 @@
     }
     // The captain has no morale (mo null): neither status applies.
     if (mo != null && mo <= 0) { fired.add('deserting'); fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'deserting')); }
-    else if (mo != null && mo < 25) { fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'morale_crisis')); }
+    else if (mo != null && mo < MORALE_CRISIS) { fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'morale_crisis')); }
     if (mo == null) { fired.add('morale_crisis'); fired.add('deserting'); } // not monitored for the captain either
     // Ship-wide deprivation: everyone aboard goes without.
     const dpv = STATE.deprived || {};

@@ -148,6 +148,16 @@
     }
   };
 
+  // Morale lines in a fight (demo-combat canon). Below the ship's own
+  // MORALE_LOW the crew is shaky (EVADE only softens the hit).
+  const MORALE_MUTINY = 10; // at or below: the crew refuses to fire
+  const MORALE_PANIC  = 15; // below: EVADE softens even less
+  const MORALE_STEADY = 70; // at or above: no missed shots, fewer defeat deaths
+  const MORALE_KEEN   = 75; // at or above: a small crit edge
+  const MORALE_HIGH   = 90; // at or above: the full crit edge, fewer defeat deaths still
+  // The HUD bars (demo-combat): red at or below CRIT, amber at or below WARN.
+  const BAR_CRIT_PCT = 25, BAR_WARN_PCT = 50;
+
   // Combat state — separate from STATE so it doesn't leak into the
   // encounter schema. Reconciled back into real STATE (hull/morale
   // delta, gold, materials, items, crew) in endCombatToOutcome().
@@ -248,13 +258,13 @@
     // Per-crew morale (owner ruling 15): the crew average, seeded at the
     // fight's start. No crew aboard (null): no morale edge either way.
     const m = COMBAT.player.morale;
-    if (m != null && m >= 90) total += 0.05;
-    else if (m != null && m >= 75) total += 0.03;
+    if (m != null && m >= MORALE_HIGH) total += 0.05;
+    else if (m != null && m >= MORALE_KEEN) total += 0.03;
     return total;
   }
   function playerMissChance() {
     const m = COMBAT.player.morale;
-    if (m == null || m >= 70) return 0; // the captain alone: no shaky crew
+    if (m == null || m >= MORALE_STEADY) return 0; // the captain alone: no shaky crew
     if (m >= 40) return 0.05;
     if (m >= 20) return 0.15;
     return 0.25;
@@ -315,14 +325,14 @@
     if (!fillH) return;
     fillH.style.width = hPct + '%';
     fillH.classList.remove('warn', 'crit');
-    if (hPct <= 25) fillH.classList.add('crit'); else if (hPct <= 50) fillH.classList.add('warn');
+    if (hPct <= BAR_CRIT_PCT) fillH.classList.add('crit'); else if (hPct <= BAR_WARN_PCT) fillH.classList.add('warn');
     document.getElementById('combat-num-hull').textContent = hPct + '%';
     document.getElementById('combat-fill-foe').style.width = fPct + '%';
     document.getElementById('combat-num-foe').textContent = fPct + '%';
     const fillM = document.getElementById('combat-fill-mor');
     fillM.style.width = mPct + '%';
     fillM.classList.remove('warn', 'crit');
-    if (!noMo) { if (mPct <= 25) fillM.classList.add('crit'); else if (mPct <= 50) fillM.classList.add('warn'); }
+    if (!noMo) { if (mPct <= BAR_CRIT_PCT) fillM.classList.add('crit'); else if (mPct <= BAR_WARN_PCT) fillM.classList.add('warn'); }
     document.getElementById('combat-num-mor').textContent = noMo ? '—' : (mPct > 0 ? Math.max(1, Math.round(mPct)) : 0); // fractional (daily ration drift): shown whole like the main HUD (crewMoraleAvg)
   }
 
@@ -436,7 +446,7 @@
     }));
     wrap.appendChild(makeActionBtn({
       verb: 'EVASIVE MANEUVERS',
-      sub: (COMBAT.player.morale != null && COMBAT.player.morale < 30 ? 'Soften next hit (shaky crew)' : 'Halve next hit') + (bonus('evade_full_dodge') > 0 ? ' · ' + Math.round(bonus('evade_full_dodge') * 100) + '% full dodge' : ''),
+      sub: (COMBAT.player.morale != null && COMBAT.player.morale < MORALE_LOW ? 'Soften next hit (shaky crew)' : 'Halve next hit') + (bonus('evade_full_dodge') > 0 ? ' · ' + Math.round(bonus('evade_full_dodge') * 100) + '% full dodge' : ''),
       cls: 'combat-evade', onClick: doEvade
     }));
 
@@ -1018,8 +1028,8 @@
       if (fullDodge > 0 && Math.random() < fullDodge) { dmg = 0; dodgedFull = true; }
       else {
         let evadeFactor = 0.5;
-        if (COMBAT.player.morale != null && COMBAT.player.morale < 15) evadeFactor = 0.75;
-        else if (COMBAT.player.morale != null && COMBAT.player.morale < 30) evadeFactor = 0.65;
+        if (COMBAT.player.morale != null && COMBAT.player.morale < MORALE_PANIC) evadeFactor = 0.75;
+        else if (COMBAT.player.morale != null && COMBAT.player.morale < MORALE_LOW) evadeFactor = 0.65;
         dmg *= evadeFactor;
       }
       COMBAT.evadingNextHit = false;
@@ -1096,7 +1106,7 @@
       if (COMBAT.state !== 'END') {
         COMBAT.state = (COMBAT.ftlCharge > 0) ? 'FTL_CHARGING' : 'PLAYER_TURN';
         if (COMBAT.state === 'PLAYER_TURN') fxScreen().classList.remove('combat-ftl-charging');
-        if (COMBAT.state === 'PLAYER_TURN' && COMBAT.player.morale != null && COMBAT.player.morale <= 10) {
+        if (COMBAT.state === 'PLAYER_TURN' && COMBAT.player.morale != null && COMBAT.player.morale <= MORALE_MUTINY) {
           COMBAT.state = 'MUTINY';
           setNarrCombat('CREW MUTINY', 'The crew refuses to fire. Morale is gone.', "They're looking at you. Stand down or wait for the next shot.");
           setAiCombat('Crew has stopped responding to combat orders.');
@@ -1280,8 +1290,8 @@
      is the engine's severity model: applySeverity(role, 'injury'). */
   function rollDefeatCasualties() {
     let deathChance = 0.12 - bonus('defeat_death_reduction');
-    if (COMBAT.player.morale != null && COMBAT.player.morale >= 70) deathChance -= 0.04;
-    if (COMBAT.player.morale != null && COMBAT.player.morale >= 90) deathChance -= 0.02;
+    if (COMBAT.player.morale != null && COMBAT.player.morale >= MORALE_STEADY) deathChance -= 0.04;
+    if (COMBAT.player.morale != null && COMBAT.player.morale >= MORALE_HIGH) deathChance -= 0.02;
     deathChance = Math.max(0.03, deathChance);
     // Everyone aboard can be a casualty — the captain too (owner ruling 29,
     // index.html peopleAboard).
@@ -1399,7 +1409,7 @@
   function bindCombatCrew() {
     const roles = ['pilot', 'engineer', 'medic', 'botanist', 'chef', 'diplomat', 'xenobiologist', 'veteran', 'merchant'];
     COMBAT.crew = {};
-    roles.forEach(r => { COMBAT.crew[r] = STATE.crew.includes(r) ? (crewHPOf(r) < CREW_WOUNDED_HP ? 0.5 : 1) : 0; });
+    roles.forEach(r => { COMBAT.crew[r] = STATE.crew.includes(r) ? woundedMult(r) : 0; });
     COMBAT.captainBg = STATE.captain || '';
   }
   /* A reload mid-fight (owner ruling 53, index.html loadRun): ATTEMPT
@@ -1984,7 +1994,7 @@
     renderCombatHud();
     renderCombatActions();
 
-    if (COMBAT.player.morale != null && COMBAT.player.morale <= 10 && !ramFailed) {
+    if (COMBAT.player.morale != null && COMBAT.player.morale <= MORALE_MUTINY && !ramFailed) {
       COMBAT.state = 'MUTINY';
       setNarrCombat('CREW MUTINY', 'The crew refuses to fire. Morale is gone before the fight even starts.', 'Stand down or wait for them to start shooting.');
       setAiCombat('Crew is not responding to combat orders.');

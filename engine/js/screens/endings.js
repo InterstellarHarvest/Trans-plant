@@ -97,7 +97,7 @@
 
   /* Resolves STATE.cropGrowth.health against the selected crop's own
      authored healthy_threshold/sick_threshold (crops.json) — falls
-     back to generic 70/30 if no crop was ever selected (shouldn't
+     back to the generic CROP_*_DEFAULT if the entry has none (shouldn't
      happen post-setup, but avoids a crash on the ?debug=fixed_path
      loop which doesn't run the setup wizard). Returns 'dead' with no
      crop selected at all, matching the bg matrix's 'noplant' case. */
@@ -105,8 +105,8 @@
     if (!STATE.crop) return { status: 'dead', cropBgId: 'noplant' };
     const cropDef = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
     const health = (STATE.cropGrowth && STATE.cropGrowth.health) || 0;
-    const healthyAt = (cropDef && cropDef.healthy_threshold) || 70;
-    const sickAt    = (cropDef && cropDef.sick_threshold) || 30;
+    const healthyAt = (cropDef && cropDef.healthy_threshold) || CROP_HEALTHY_DEFAULT;
+    const sickAt    = (cropDef && cropDef.sick_threshold) || CROP_SICK_DEFAULT;
     let status;
     if (health <= 0) status = 'dead';
     else if (health >= healthyAt) status = 'thriving';

@@ -1041,6 +1041,7 @@ function initMedical(container, onResult, medConfig){
   const VIT_SEV_FACTOR = 1.2;
   const VIT_WRONG_DIP  = 3;
   const VIT_RIGHT_BUMP = 2;
+  const VIT_DANGER_HP  = 35; // the HP bar pulses below this (demo-minigames canon)
   const SEV_RAMP       = cfg.sevRamp ?? 0.05;
   const TOTAL_TIME_MS  = cfg.timerMs ?? 18000;
 
@@ -1250,7 +1251,7 @@ function initMedical(container, onResult, medConfig){
     // Each whole HP the patient loses is harm a quit or a reload keeps.
     if(Math.round(hp) !== reportedHp){ reportedHp = Math.round(hp); reportJobHarm({ hp: reportedHp, startingHp }); }
     // Base colour is set by .med-vital[data-v=hp] CSS — only toggle danger pulse.
-    if(hp < 35) hpWrap.classList.add('danger');
+    if(hp < VIT_DANGER_HP) hpWrap.classList.add('danger');
     else        hpWrap.classList.remove('danger');
     // Death (only possible when patient entered critically wounded — floor=0).
     if(hp <= 0 && !done){ endGame(); return; }

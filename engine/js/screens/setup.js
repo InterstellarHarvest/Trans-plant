@@ -100,9 +100,9 @@
       ]
     },
     {
-      key: 'crew', label: 'Choose Your Crew', cat: 'Crew (0–2)',
+      key: 'crew', label: 'Choose Your Crew', cat: 'Crew (0–' + CREW_MAX + ')',
       desc: 'Pick up to two crew members. Each has passive skills, active skills, and narrative unlocks. Or take none and fly solo.',
-      multi: true, max: 2,
+      multi: true, max: CREW_MAX,
       options: [
         { id: 'botanist',      icon: '\u{1F33F}', crewId: 'osei',     name: 'Dr. Osei — Botanist', desc: 'Knows every plant. Has opinions about all of them.', stat: 'Crop care · Greenhouse Protocol' },
         { id: 'engineer',      icon: '\u{1F527}', crewId: 'kazuki',   name: 'Kazuki — Engineer', desc: 'Fixes things. Eats twice as much.', stat: 'Hull repair · Emergency Patch' },
@@ -213,7 +213,7 @@
       nextBtn.innerHTML = 'Next <span class="chevron">▶</span>';
     }
     if (blocked) nextBtn.className += ' disabled';
-    $('crew-count-badge').textContent = s.key === 'crew' ? (sel.crew.length + '/2 selected') : '';
+    $('crew-count-badge').textContent = s.key === 'crew' ? (sel.crew.length + '/' + CREW_MAX + ' selected') : '';
     if (freshStep) buildPips();
 
     const right = $('setup-right');
@@ -294,10 +294,10 @@
       $('setup-flavor').textContent = 'Pick one. The void will wait.';
       return;
     }
-    if (cur.key === 'crew' && sel.crew.length < 2) {
+    if (cur.key === 'crew' && sel.crew.length < CREW_MAX) {
       const msg = sel.crew.length === 0
         ? '⚠ No crew selected.\n\nYou will be flying solo. Are you sure?'
-        : '⚠ Only ' + sel.crew.length + ' of 2 crew selected.\n\nProceed with an incomplete crew?';
+        : '⚠ Only ' + sel.crew.length + ' of ' + CREW_MAX + ' crew selected.\n\nProceed with an incomplete crew?';
       if (!confirm(msg)) return;
     }
     if (step < STEPS.length - 1) { saveScroll(); step++; render(); }

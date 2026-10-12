@@ -272,22 +272,28 @@
     return recipe.inputs.every(([mat, qty]) => (FSTATE.stock[mat] || 0) >= qty);
   }
 
-  // recipes.json _meta misfire_curve: fabricator health → misfire odds
-  // (100→0%, 80→2%, 60→8%, 40→18%, 20→35%, 10→55%, 0→80%), interpolated.
+  // recipes.json _meta misfire_curve / misfire_outcomes (prose, so
+  // tools/lint_code.js checks these numbers against it): fabricator
+  // health → misfire odds, interpolated; a misfire yields fab_surplus
+  // MISFIRE_SURPLUS_CHANCE of the time (slag otherwise), and below
+  // MISFIRE_BREAK_HEALTH it can break the fab (MISFIRE_BREAK_CHANCE).
   const MISFIRE_CURVE = [[100, 0], [80, 0.02], [60, 0.08], [40, 0.18], [20, 0.35], [10, 0.55], [0, 0.80]];
+  const MISFIRE_SURPLUS_CHANCE = 0.15;
+  const MISFIRE_BREAK_HEALTH = 20;
+  const MISFIRE_BREAK_CHANCE = 0.5;
   function misfireChance(wear) {
-    const h = Math.max(0, Math.min(100, 100 - (wear || 0)));
+    const h = Math.max(0, Math.min(FAB_WEAR_MAX, FAB_WEAR_MAX - (wear || 0)));
     for (let i = 1; i < MISFIRE_CURVE.length; i++) {
       const [h0, p0] = MISFIRE_CURVE[i - 1], [h1, p1] = MISFIRE_CURVE[i];
       if (h >= h1) return p1 + (p0 - p1) * (h - h1) / (h0 - h1);
     }
-    return 0.80;
+    return MISFIRE_CURVE[MISFIRE_CURVE.length - 1][1];
   }
   window.fabMisfireChance = () => misfireChance(FSTATE.wear);
 
   // Fab-is-functional check. Broken = wear 100% OR hard toggle.
   function fabFunctional() {
-    return !FSTATE.broken && FSTATE.wear < 100;
+    return !FSTATE.broken && FSTATE.wear < FAB_WEAR_MAX;
   }
   // A started print is never stopped by its own wear (demo: the wear lands
   // at CRAFT and the job runs on). A job that took the fab to 100% runs to
@@ -295,7 +301,7 @@
   // hard break holds it.
   function jobRuns() {
     const c = FSTATE.craft;
-    return !!c && !FSTATE.broken && (c.wearBefore || 0) < 100;
+    return !!c && !FSTATE.broken && (c.wearBefore || 0) < FAB_WEAR_MAX;
   }
 
   // Can this recipe actually be crafted right now?
@@ -520,11 +526,11 @@
       : '';
 
     // Wear threshold warning — will push wear past service or break.
-    const postWear = Math.min(100, FSTATE.wear + recipeWear(r));
+    const postWear = Math.min(FAB_WEAR_MAX, FSTATE.wear + recipeWear(r));
     let wearWarn = '';
-    if (postWear >= 100) {
+    if (postWear >= FAB_WEAR_MAX) {
       wearWarn = '<div class="fb-warn wear-crit">⚠ Will break the fab (100% wear) · FAB SERVICE fixes it</div>';
-    } else if (postWear >= 80 && FSTATE.wear < 80) {
+    } else if (postWear >= FAB_SERVICE_WEAR && FSTATE.wear < FAB_SERVICE_WEAR) {
       wearWarn = '<div class="fb-warn wear-warn">⚠ Will push wear to ' + Math.round(postWear) + '% · service soon</div>';
     }
 
@@ -654,7 +660,7 @@
     const broken = !fabFunctional() && !jobRuns();
     overlay.classList.toggle('hidden', broken);
     if (!broken) {
-      const lit = Math.ceil(Math.max(0, 100 - FSTATE.wear) / 10);
+      const lit = Math.ceil(Math.max(0, FAB_WEAR_MAX - FSTATE.wear) / 10);
       const segs = overlay.querySelectorAll('.fb-wear-seg');
       segs.forEach((seg, i) => seg.classList.toggle('lit', i < lit));
     }
@@ -714,7 +720,7 @@
     // Wear lands at CRAFT (the fab spins up); the misfire odds are read
     // from the wear before it and rolled when the print comes out.
     const wearBefore = FSTATE.wear;
-    FSTATE.wear = Math.min(100, Math.round((FSTATE.wear + recipeWear(r)) * 10) / 10);
+    FSTATE.wear = Math.min(FAB_WEAR_MAX, Math.round((FSTATE.wear + recipeWear(r)) * 10) / 10);
     // The field repair fabricator's −10% is the part's: a job whose part
     // leaves the ship before the print comes out pays it back then.
     const partWear = Math.round((recipeWear(r, true) - recipeWear(r)) * 10) / 10;
@@ -943,12 +949,12 @@
     setFabFrame('idle');
     // The part's wear discount left with the part (see craftSelected).
     if (c.partWear && !STATE.items.includes('repair_fabricator')) {
-      FSTATE.wear = Math.min(100, Math.round((FSTATE.wear + c.partWear) * 10) / 10);
+      FSTATE.wear = Math.min(FAB_WEAR_MAX, Math.round((FSTATE.wear + c.partWear) * 10) / 10);
       fabLog('FABRICATOR — no Field Repair Fabricator aboard to ease the print: +' + c.partWear + '% wear.');
     }
     // A print that took the fab to 100% ran to the end; now the fab breaks.
     const wornOut = () => {
-      if (FSTATE.broken || FSTATE.wear < 100) return;
+      if (FSTATE.broken || FSTATE.wear < FAB_WEAR_MAX) return;
       breakFab();
       fabNotice('FAB BROKEN', 'The print wore the fabricator out. FAB SERVICE at a station fixes it.', 'danger');
     };
@@ -956,13 +962,13 @@
     const out = r.output;
 
     if (Math.random() < (c.misfireP || 0)) {
-      // A misfire spends the time and materials: ~85% waste, ~15%
-      // fab_surplus (the Surplus Collector buys it); below 20% health it
-      // can also break the fabricator outright.
+      // A misfire spends the time and materials: slag, or now and then a
+      // piece of fab_surplus (the Surplus Collector buys it); a fab nearly
+      // worn out can also break outright.
       const lines = MOD.flavor && MOD.flavor.fabricator_misfire_descriptions;
       const line = Array.isArray(lines) && lines.length ? lines[Math.floor(Math.random() * lines.length)] + ' ' : '';
       const dw = dWord(c.daysTotal);
-      if (Math.random() < 0.15 && typeof grantItem === 'function' && grantItem('fab_surplus')) {
+      if (Math.random() < MISFIRE_SURPLUS_CHANCE && typeof grantItem === 'function' && grantItem('fab_surplus')) {
         fabLog('MISFIRE — ' + line + 'No ' + out.name + '; a piece of Fabricator Surplus instead. (' + dw + ', materials spent.)');
         fabNotice('MISFIRE', 'No ' + out.name + ' — a piece of Fabricator Surplus instead. ' + dw + ', materials spent.', 'warn');
       } else {
@@ -970,7 +976,7 @@
         fabNotice('MISFIRE', 'The ' + out.name + ' came out as slag. ' + dw + ' and the materials, gone.', 'danger');
       }
       if (typeof window.pushAiSample === 'function') window.pushAiSample('fabricator_misfire');
-      if (100 - (c.wearBefore || 0) < 20 && Math.random() < 0.5) { breakFab(); fabNotice('MISFIRE — FAB BROKEN', 'The misfire took the fabricator with it. FAB SERVICE at a station fixes it.', 'danger'); }
+      if (FAB_WEAR_MAX - (c.wearBefore || 0) < MISFIRE_BREAK_HEALTH && Math.random() < MISFIRE_BREAK_CHANCE) { breakFab(); fabNotice('MISFIRE — FAB BROKEN', 'The misfire took the fabricator with it. FAB SERVICE at a station fixes it.', 'danger'); }
       wornOut();
       renderHUD();
       renderAll();

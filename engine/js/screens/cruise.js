@@ -557,18 +557,18 @@
   // hub, so its warning moved onto the bars). renderHUD() repaints them
   // too, so a change that only re-renders the HUD lands here as well.
   const BAR_SPEC = [
-    ['fuel',  'Fuel',   25], ['food', 'Food', 25], ['water', 'Water', 25],
-    ['o2',    'Oxygen', 25], ['hull', 'Hull', 30],
+    ['fuel', 'Fuel'], ['food', 'Food'], ['water', 'Water'],
+    ['o2',   'Oxygen'], ['hull', 'Hull'],
   ];
   function paintCruiseBars() {
     const r = STATE.resources;
-    for (const [k, name, lowAt] of BAR_SPEC) {
+    for (const [k, name] of BAR_SPEC) {
       const fill = $('res-fill-' + k);
       if (!fill) continue;
       const max = resMax(k);
       fill.style.width = clampPct(r[k] * 100 / max) + '%';
       const row = fill.parentNode.parentNode;
-      row.classList.toggle('crit', r[k] < lowAt);
+      row.classList.toggle('crit', r[k] < RES_LOW[k]);
       row.title = name + ': ' + Math.round(r[k]) + ' / ' + max;
     }
   }
@@ -696,7 +696,7 @@
     const why = [];
     if (cg.growth >= 100) why.push('Ready to harvest');
     const def = ((MOD.crops && MOD.crops.crops) || []).find(c => c.id === 'crop_' + STATE.crop);
-    if (cg.health < ((def && def.sick_threshold) || 30)) why.push('Sick');
+    if (cg.health < ((def && def.sick_threshold) || CROP_SICK_DEFAULT)) why.push('Sick');
     if (cg.pest) why.push('Pests');
     // The growbay's own thirst rule (pickAriaQuip): plant share >10
     // points under the crop's need.
@@ -714,7 +714,7 @@
     const STAGE_NAMES = ['SPROUTING', 'VEGETATIVE', 'FLOWERING', 'MATURING'];
     const stageIdx = growth <= 25 ? 0 : growth <= 50 ? 1 : growth <= 75 ? 2 : 3;
     const meta = typeof window.cropMetaOf === 'function' ? cropMetaOf(STATE.crop) : null;
-    const maturity = (meta && meta.maturity_days) || 90;
+    const maturity = (meta && meta.maturity_days) || CROP_MATURITY_DEFAULT;
     const day = cg ? cg.day : 0;
     $('crop-name').textContent = STATE.crop.replace(/_/g, ' ').toUpperCase();
     paintCropIcon(STATE.crop, stageIdx);
@@ -814,7 +814,9 @@
   // for a NEED the player can meet (materials, gold, an item, a berth)
   // stay, with their Need rows on hover.
   const hullIntact = () => STATE.resources.hull >= resMax('hull');
-  const fabGoodAsNew = () => { const f = STATE.fabricator || {}; return !f.broken && (f.wear || 0) < 10; };
+  // FAB SERVICE has nothing to do below this much wear.
+  const FAB_GOOD_AS_NEW_WEAR = 10;
+  const fabGoodAsNew = () => { const f = STATE.fabricator || {}; return !f.broken && (f.wear || 0) < FAB_GOOD_AS_NEW_WEAR; };
   // REST raises every crew member's morale (owner ruling 15). No crew
   // aboard: nothing to raise — locked, not offered as a morale verb.
   // Locked only when EVERYONE is in good spirits (one low member is
@@ -1161,8 +1163,7 @@
   const FAB_SERVICE_BASE = 40;
   const fabServiceFee = () => stationPrice(FAB_SERVICE_BASE);
   function fabServiceLockReason() {
-    const f = STATE.fabricator || {};
-    if (!f.broken && (f.wear || 0) < 10) return 'Fabricator is good as new';
+    if (fabGoodAsNew()) return 'Fabricator is good as new';
     if (STATE.goldAmount < fabServiceFee()) return 'Costs ' + fabServiceFee() + 'g';
     return null;
   }
@@ -1181,7 +1182,7 @@
   // rule's canonical upgrade-gated verb): a day of work, +12 water.
   function condenseLockReason() {
     if (!STATE.items.includes('atmospheric_condenser')) return 'Need: Atmospheric Condenser';
-    if (STATE.resources.water > 92) return 'Water tanks are nearly full'; // a day for under 8 water isn't a trade
+    if (STATE.resources.water > resMax('water') - 8) return 'Water tanks are nearly full'; // a day for under 8 water isn't a trade
     return null;
   }
   function handleCondenseVerb() {
@@ -1810,15 +1811,15 @@
     }
   }
 
-  // low mirrors activeTriggers()' thresholds (fuel/food/water/o2 <25,
-  // hull/morale <30); critical is a deeper second warning at <12.
-  const WARN_THRESHOLDS = { fuel: 25, food: 25, water: 25, o2: 25, hull: 30, morale: 30 };
+  // low is activeTriggers()' line (RES_LOW / MORALE_LOW); critical is a
+  // deeper second warning (RES_CRITICAL).
+  const WARN_THRESHOLDS = Object.assign({}, RES_LOW, { morale: MORALE_LOW });
   function checkResourceWarnings() {
     STATE.aiWarnLevels = STATE.aiWarnLevels || {};
     for (const [res, lowAt] of Object.entries(WARN_THRESHOLDS)) {
       // Morale = the crew average (owner ruling 15); no crew, no warning.
       const v = res === 'morale' ? crewMoraleAvg() : STATE.resources[res];
-      const level = v == null ? 'ok' : v < 12 ? 'critical' : (v < lowAt ? 'low' : 'ok');
+      const level = v == null ? 'ok' : v < RES_CRITICAL ? 'critical' : (v < lowAt ? 'low' : 'ok');
       const prev = STATE.aiWarnLevels[res] || 'ok';
       // Fire only on a downward crossing (ok→low, ok→critical, low→critical);
       // recovery resets silently so the next dip warns again.
@@ -1886,8 +1887,8 @@
     // sick_threshold, and re-arms once it recovers past healthy_threshold
     // — so a crop that yo-yos warns each relapse, not every render.
     const cropDef = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
-    const sickAt = (cropDef && cropDef.sick_threshold) || 30;
-    const healthyAt = (cropDef && cropDef.healthy_threshold) || 70;
+    const sickAt = (cropDef && cropDef.sick_threshold) || CROP_SICK_DEFAULT;
+    const healthyAt = (cropDef && cropDef.healthy_threshold) || CROP_HEALTHY_DEFAULT;
     if (health > 0 && health < sickAt && !STATE.flags.has('ai_noted_crop_sick')) {
       STATE.flags.add('ai_noted_crop_sick');
       // The AI's signature crop_sick line (ai_companions) the first time;
