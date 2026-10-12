@@ -238,14 +238,17 @@
     return STATE.daysElapsed + Math.ceil(100 / rate);
   }
 
+  // The headline reads the same bands as the growbay's water badges
+  // (growbay.js waterStatusAt — re-audit A4, b4-crew): it never says
+  // "both fine" above a morale-drain row, and PARCHED only where the
+  // plant takes damage.
   function waterDesc(plantPct) {
-    const plantRatio = plantPct / waterNeed();
-    const crewRatio = (100 - plantPct) / (100 - waterNeed());
-    if (plantRatio < 0.5)  return 'Plant parches. Crew bathes. Growth crawls.';
-    if (plantRatio < 0.85) return 'Plant thirsty. Crop slows.';
-    if (crewRatio < 0.5)   return 'Plant thrives. Crew goes dry.';
-    if (crewRatio < 0.85)  return 'Plant well-fed. Crew watches the taps.';
-    return 'Matched. Plant and crew both fine.';
+    const st = typeof window.cropWaterStatusAt === 'function' ? window.cropWaterStatusAt(plantPct) : null;
+    if (!st) return '';
+    const P = { parched: 'Plant parches — health falls.', dead: 'The crop is dead.', dry: 'Plant thirsty — crop slows.', soaked: 'Roots drowning — health falls.', fine: '', none: '' }[st.plant.band];
+    const C = { critical: 'Crew goes dry — morale and HP fall.', thirsty: 'Crew watches the taps — morale slips.', fine: '', none: '' }[st.crew.band];
+    if (!P && !C) return st.crew.band === 'none' ? 'Matched. The plant is fine.' : 'Matched. Plant and crew both fine.';
+    return [P || (st.plant.band === 'fine' ? 'Plant fine.' : ''), C || (st.crew.band === 'fine' ? 'Crew fine.' : '')].filter(Boolean).join(' ');
   }
 
   // ── Stat row HTML (demo statLine/dayDelta verbatim, od- classes) ─

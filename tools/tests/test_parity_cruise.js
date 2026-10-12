@@ -560,13 +560,13 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
         STATE.artSeed = a.seed; SceneArt.clearRunCaches(); STATE.currentId = a.id;
         document.body.classList.remove('stop-active'); renderCruise(); document.getElementById('stop-btn').click();
         const rnd = Math.random; Math.random = () => 0.1; // < 0.25 poison roll
-        const hp0 = STATE.crew.map(crewHPOf).reduce((a, b) => a + b, 0);
+        const hp0 = peopleAboard().map(hpOf).reduce((a, b) => a + b, 0); // anyone aboard, the captain too (owner ruling 29)
         window.openMinigame = (id, o, cb) => cb('good', { food: 10 });
         [...document.querySelectorAll('#stop-choices .stop-choice')].find(b => /FORAGE/.test(b.textContent)).click();
         Math.random = rnd;
-        return { hurt: hp0 - STATE.crew.map(crewHPOf).reduce((a, b) => a + b, 0), log: STATE.shipLog.slice(-1)[0].text };
+        return { hurt: hp0 - peopleAboard().map(hpOf).reduce((a, b) => a + b, 0), log: STATE.shipLog.slice(-1)[0].text };
       }, r.alien);
-      ok(pz.hurt > 0 && /disagreed/.test(pz.log), 'alien FORAGE: a poisoned crew member (−' + pz.hurt + ' HP after the medic)');
+      ok(pz.hurt > 0 && /disagreed/.test(pz.log), 'alien FORAGE: someone aboard is poisoned (−' + pz.hurt + ' HP after the medic)');
     }
     await page.close();
   }

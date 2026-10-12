@@ -36,7 +36,7 @@ const ENGINE_FLAG_NOTES = {
   ai_sampled_low_fuel: { set: 'first low-fuel AI sample line', check: 'cruise.js (once per run)' },
   ai_sampled_crop_sick: { set: 'first crop-sick AI sample line', check: 'cruise.js (once per run)' },
   crew_lost: { set: 'killCrew (index.html) / an unsafe jettison from the crew dossier (crew.js)', check: 'trigger crew_dead; endings.js crew_paragraphs partial; startCrew save migration' },
-  all_crew_dead: { set: 'killCrew / a jettison that leaves nobody aboard', check: 'checkFailure — crew_gone (death only; a solo-by-choice run is valid)' },
+  all_crew_dead: { set: 'killCrew when the last crew member dies', check: 'record only — a living captain flies on solo (owner rulings 26/29/30); crew_gone fires when the captain dies with nobody else aboard' },
   crop_death_accepted: { set: 'endContinueRun — the player presses on after crop_dead', check: 'checkFailure (no re-fire); trigger crop_dead' },
   emergency_patch_armed: { set: 'crew dossier — engineer\'s Emergency Patch active skill', check: 'applyOutcomeEffects / combat.js absorb one hull-damage event, then clear it' },
   negotiation_prepared: { set: 'crew dossier — diplomat\'s Negotiation active skill', check: 'market.js 15% off the next station market, then cleared; pirate/boarding "prepared terms" choices' },

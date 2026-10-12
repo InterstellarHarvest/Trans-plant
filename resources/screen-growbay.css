@@ -299,6 +299,13 @@ body:not(.modal-open) #gb-modal {
 .plant-sprite.stage-flash {
   animation: plant-sway 4.4s ease-in-out infinite, stage-flash 1.4s ease-out;
 }
+/* A dead crop (re-audit A3): grey and still — no sway, no stage flash. */
+.plant-sprite.dead,
+.plant-sprite.dead.stage-flash {
+  animation: none;
+  filter: grayscale(0.9) brightness(0.55);
+}
+.plant-stage-label.dead { color: #a05a50; }
 @keyframes stage-flash {
   0%   { filter: drop-shadow(0 0 0 rgba(255,172,0,0)) brightness(1); }
   25%  { filter: drop-shadow(0 0 24px rgba(255,172,0,0.9)) brightness(1.4); }

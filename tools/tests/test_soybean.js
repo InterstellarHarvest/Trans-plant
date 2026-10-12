@@ -30,7 +30,7 @@ async function boot(setup) {
     STATE.resources.water = 100;
     STATE.orders.waterSplit = Math.round(cropWaterNeed());
     tickCropGrowth();
-    STATE.cropGrowth.tenderId = 'none';
+    STATE.cropGrowth.tenderId = 'none'; STATE.cropGrowth.tenderChosen = true; // nobody tending, by choice (ruling 41 would seat a botanist)
     window._rand = Math.random; Math.random = () => 0.99;
   });
   return page;

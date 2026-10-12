@@ -292,7 +292,7 @@ function step() {
         window.__ctxTag = 'item:' + id; ITEM_USE[id].use(); window.__ctxTag = ''; STATE.items.splice(STATE.items.indexOf(id), 1); S.itemUses[id] = (S.itemUses[id] || 0) + 1;
       };
       useIt('fuel_cell', R.fuel < resMax('fuel') - 15); useIt('ration_brick', R.food < 85); useIt('water_canister', R.water < 85);
-      useIt('hull_patch', R.hull < 80); useIt('o2_canister', R.o2 < 80); useIt('medkit', STATE.crew.some(r => crewHPOf(r) < 50));
+      useIt('hull_patch', R.hull < 80); useIt('o2_canister', R.o2 < 80); useIt('medkit', peopleAboard().some(r => hpOf(r) < 50)); // the captain has real HP too (owner ruling 29)
       useIt('crop_treatment', STATE.cropGrowth && (STATE.cropGrowth.pest || STATE.cropGrowth.health < 60));
       // growbay
       if (STATE.cropGrowth && STATE.cropGrowth.health > 0 && typeof openGrowbay === 'function') {
@@ -314,7 +314,7 @@ function step() {
       if (window.__farm && ['asteroid_field', 'nebula', 'derelict'].includes(node.node_type) && !acts.did.mine && doVerb(/^MINE/, 'mine')) return { wait: 50 };
       const cap = P === 'stopper' ? 4 : 2;
       if (acts.n < cap) {
-        if (node.node_type === 'station' && STATE.crew.some(r => crewHPOf(r) < 60) && STATE.goldAmount >= 30 && !acts.did.medbay) { S.medbay++; if (doVerb(/MEDBAY/, 'medbay')) return { wait: 50 }; }
+        if (node.node_type === 'station' && peopleAboard().some(r => hpOf(r) < 60) && STATE.goldAmount >= 30 && !acts.did.medbay) { S.medbay++; if (doVerb(/MEDBAY/, 'medbay')) return { wait: 50 }; }
         if (R.hull < (P === 'stopper' ? 85 : 60) && (acts.did.repair || 0) < 2 && doVerb(/^REPAIR/, 'repair')) return { wait: 50 };
         if (crewMoraleRaw() != null && crewMoraleRaw() < (P === 'stopper' ? 80 : 40) && (acts.did.rest || 0) < 2 && doVerb(/^REST/, 'rest')) return { wait: 50 };
         if (R.fuel < (P === 'stopper' ? 80 : 55) && STATE.goldAmount >= 12 && !acts.did.trade) { window.__wantBuy = true; if (doVerb(/^TRADE$/, 'trade')) return { wait: 50 };
@@ -379,7 +379,7 @@ function step() {
     }
     res = await page.evaluate(() => ({
       end: window.__end || null, days: STATE.daysElapsed, baseDays: STATE.baseDays, res: Object.assign({}, STATE.resources), gold: STATE.goldAmount,
-      crew: STATE.crew.length, crewHP: Object.assign({}, STATE.crewHP), mats: Object.values(STATE.materials).reduce((a, b) => a + b, 0), items: STATE.items.slice(),
+      crew: STATE.crew.length, crewHP: Object.assign({}, STATE.crewHP), captainHP: captainHPOf(), mats: Object.values(STATE.materials).reduce((a, b) => a + b, 0), items: STATE.items.slice(),
       crop: STATE.cropGrowth ? { g: Math.round(STATE.cropGrowth.growth), h: Math.round(STATE.cropGrowth.health) } : null,
       nodes: STATE.nodes.length, visited: STATE.visited.size, stats: window.__stats,
     }));

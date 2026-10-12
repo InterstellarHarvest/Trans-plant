@@ -27,6 +27,9 @@
   --cdw-mod-stub:     #4a4f5a;
   --cdw-pb-red-hi: #c67878;
   --cdw-pb-red-lo: #3a1a1a;
+  /* demo-crew's own cream (re-audit B3): a page-level --cream (#e8d8a0)
+     won over every var(--cream, #e6d4a8) fallback in this file. */
+  --cream: #e6d4a8;
   z-index: 70; /* above stop menu / map, below pause (PauseBus mounts at 200) */
 }
 
@@ -101,7 +104,8 @@
   text-transform: uppercase;
   letter-spacing: 2px;
 }
-#overlay-crew .cd-subtitle .dot { color: #5a7a6a; }
+/* The subtitle "·" inherits the subtitle's cream (demo: only .cd-role .dot
+   is green-grey) — re-audit B3. */
 #overlay-crew .cd-close {
   font-family: 'Press Start 2P', cursive; line-height: 1;
   font-size: 10px;
@@ -207,6 +211,8 @@
 #overlay-crew .cd-nav.next { right: 2px; }
 #overlay-crew .cd-nav:hover { opacity: 1; filter: drop-shadow(0 0 4px rgba(200,168,90,0.55)); }
 #overlay-crew .cd-nav:active { transform: translateY(-50%) scale(0.9); }
+/* Solo captain: the chevrons stay where the demo puts them, inert. */
+#overlay-crew .cd-nav.inert { opacity: 0.15; pointer-events: none; }
 
 /* Portrait departure animations */
 #overlay-crew .cd-portrait.anim-dismiss {
@@ -448,6 +454,12 @@
 #overlay-crew .cd-status-row.nominal  { color: var(--cdw-mod-positive); }
 #overlay-crew .cd-status-row .s-name  { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #overlay-crew .cd-status-row .s-eff   { color: inherit; }
+/* The engine's effects state real numbers and run longer than the demo's
+   stubs — the name keeps its width (it was ellipsised to "Pending …") and
+   the effect takes the ellipsis instead; the whole effect is on the row's
+   tooltip (b4-crew). One line per row, so three statuses still fit. */
+#overlay-crew .cd-status-row .s-name  { flex-shrink: 0; margin-right: 8px; }
+#overlay-crew .cd-status-row .s-eff   { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #overlay-crew .cd-status-row.stub .s-eff { color: var(--cdw-mod-stub); }
 @keyframes cdw-mod-critical-pulse {
   0%, 100% { filter: brightness(1); }

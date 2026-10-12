@@ -103,6 +103,8 @@
       n['hp.' + r] = typeof crewHPOf === 'function' ? crewHPOf(r) : 100; names[r] = typeof crewNameOf === 'function' ? crewNameOf(r) : r;
       if (typeof crewMoraleOf === 'function') n['mo.' + r] = crewMoraleOf(r); // per-crew morale (owner ruling 15)
     }
+    // The captain's own HP (owner ruling 29) — "CAPTAIN −15 HP" in the record.
+    if (typeof captainHPOf === 'function') { n['hp.captain'] = captainHPOf(); names.captain = 'Captain'; }
     if (STATE.cropGrowth && STATE.cropGrowth.health > 0) n.crop = STATE.cropGrowth.health;
     if (STATE.fabricator) n.fab = STATE.fabricator.wear || 0;
     return { n, crew: (STATE.crew || []).slice(), names, broken: !!(STATE.fabricator && STATE.fabricator.broken), day: STATE.daysElapsed };

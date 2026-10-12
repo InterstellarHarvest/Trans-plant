@@ -11,11 +11,14 @@
    demo's presentation-only fields map as:
    • passive card NAME — demo's invented names, kept as a per-role
      display table (roster passives have effect ids, not names).
-   • hint line — roster narrative_unlocks[0] (authored, per-crew).
+   • hint line — the demo's per-crew flavour line (HINT_LINES below;
+     re-audit B9 — it was roster narrative_unlocks[0], a mechanic).
    • cost tag — derived from active_skill.effect resource fields.
    • captain — no roster entry (backgrounds live in setup.js's
      wizard config); reduced card: passive = background bonus,
-     no active card, no dismiss (the captain is the player).
+     no active card, no dismiss (the captain is the player). Real HP
+     since owner rulings 29/30 (index.html hpOf('captain')): the bar,
+     Wounded / Pending crisis / deprivation statuses are the captain's own.
 
    Charges: STATE.crewSkillCharges {role: usesRemaining} — seeded in
    applySetupToState/initState, lazily via ensureCrewSkillCharges()
@@ -89,6 +92,28 @@
     '[Name] has been released from the manifest. The manifest recovers quickly. The crew, less so.',
     '[Name] is now somebody else\'s specialist. The bunk is already suspiciously tidy.',
   ];
+
+  // Flavour hint under the bio — the demo's register (demo-crew CREW[].hint:
+  // Osei's and Tanaka's lines are the demo's own; the demo's other hints
+  // were mechanics, so their flavour is authored here in the same voice).
+  // {ai} = the active AI's name; {botanist} = whoever holds the role.
+  const HINT_LINES = {
+    botanist:      'Argues with {ai} about soil chemistry. Loses, politely.',
+    xenobiologist: 'Argues with {botanist} about whether the new thing is a plant.',
+    engineer:      'Talks to the reactor in a low voice. The reactor seems to listen.',
+    medic:         'Counts the medkits twice a day. Has never once been reassured.',
+    pilot:         'Names every manoeuvre after himself. Most of them work.',
+    chef:          'Keeps a spice rack nobody is allowed to alphabetize.',
+    diplomat:      'Has a toast ready for every species in the catalogue. Has given none of them.',
+    captain:       'Signs every form put in front of them. Reads most of them.',
+  };
+  function hintLine(key) {
+    const t = HINT_LINES[key];
+    if (!t) return '';
+    const ai = String(STATE.activeAI || 'the ship computer').toUpperCase();
+    const bot = STATE.crew.includes('botanist') && key !== 'botanist' ? crewNameOf('botanist') : 'anyone nearby';
+    return t.replace('{ai}', ai).replace('{botanist}', bot);
+  }
 
   // Monitored statuses — the demo's panel, holding only conditions the
   // engine really tracks, each with its real effect (owner rule: nothing
@@ -180,10 +205,10 @@
   }
   window.crewEpitaphSentences = splitSentences;
 
+  // Demo CREW_ORDER: the crew in roster order, the captain last.
   function memberList() {
-    const l = [];
+    const l = STATE.crew.slice();
     if (STATE.captain) l.push('captain');
-    for (const r of STATE.crew) l.push(r);
     return l;
   }
   function isOpen() {
@@ -308,16 +333,19 @@
       return { ok: true, log: 'EMERGENCY PATCH — Kazuki rigs a preemptive hull patch. The next hull damage event will be absorbed.' };
     },
     // Treatment — effect {heal_crew: 1} → restore the worst-injured
-    // crew member to healthy (100 HP).
+    // person aboard (the captain too — owner ruling 30) to healthy (100
+    // HP). Like MEDBAY, treatment closes a delayed wound's pending crisis
+    // (re-audit A8: it healed to 100 and left "Pending crisis").
     medic() {
       let worst = null, worstHp = 100;
-      for (const r of STATE.crew) {
-        const hp = (typeof crewHPOf === 'function') ? crewHPOf(r) : 100;
+      for (const r of peopleAboard()) {
+        const hp = hpOf(r);
         if (hp < worstHp) { worst = r; worstHp = hp; }
       }
       if (!worst || worstHp >= 100) return { ok: false, refusal: 'Nobody is injured. Dr. Vasquez remains anxious anyway.' };
-      STATE.crewHP[worst] = 100;
-      const name = crewNameOf(worst);
+      setHP(worst, 100);
+      delete crewPendingOf()[worst];
+      const name = personName(worst);
       return { ok: true, log: 'TREATMENT — Dr. Vasquez patches up ' + name + ' (restored to full health). Do not ask about the residency.' };
     },
     // Push Engines — effect {skip_node: true, fuel_cost_multiplier: 2}.
@@ -401,9 +429,7 @@
       return {
         key, isCaptain: true, crewId: 'captain', emoji: CD_ROLE_EMOJI.captain,
         name: 'Captain', role: 'Captain', bgTag: bg.name,
-        bio: bg.flavor || bg.desc, hint: ['botanist', 'engineer', 'medic', 'pilot', 'chef', 'xenobiologist', 'diplomat'].includes(STATE.captain)
-          ? 'With no specialist of your background aboard, you cover half their passive yourself.'
-          : 'No crew member shares your background. What you bring, only you bring.',
+        bio: bg.flavor || bg.desc, hint: hintLine('captain'),
         passiveName: bg.name + ' Background', passiveDesc: (bg.stat ? (typeof window.setupLiveStat === 'function' ? window.setupLiveStat('captain', { id: STATE.captain, stat: bg.stat }) : bg.stat) + ' — ' : '') + bg.desc,
         active: null,
       };
@@ -415,17 +441,26 @@
     return {
       key, isCaptain: false, crewId: idn ? null : CD_ROLE_TO_CREWID[key], emoji: CD_ROLE_EMOJI[key] || '👤',
       name: idn ? idn.name : (r.name || key), role: key.charAt(0).toUpperCase() + key.slice(1), bgTag: idn ? (idn.origin === 'rescued' ? 'Rescued' : 'Stowaway') : 'Crew', // scenes B: a rescued survivor isn't a stowaway
-      bio: idn ? idn.story : (r.bio || ''), hint: idn ? '' : ((r.narrative_unlocks && r.narrative_unlocks[0]) || ''),
+      bio: idn ? idn.story : (r.bio || ''), hint: idn ? '' : hintLine(key),
       passiveName: PASSIVE_NAME[key] || 'Passive',
       passiveDesc: (r.passive_skill && r.passive_skill.description) || '',
       active: r.active_skill || null,
     };
   }
 
+  // What a wound really does to the captain (owner ruling 29; index.html
+  // captainHandsEffort / growbay tenderOf): the background keeps its half
+  // strength, the captain's own hands count half.
+  function captainWoundEffect() {
+    return 'Hands count half (effort +5)' + (STATE.captain === 'botanist' ? ' · tending halved' : '');
+  }
   function computeStatuses(hp, mo, role) {
     const fired = new Set();
     const active = [];
-    if (hp < CREW_WOUNDED_HP) { fired.add('wounded'); active.push(MONITORED_STATUSES[0]); }
+    if (hp < CREW_WOUNDED_HP) {
+      fired.add('wounded');
+      active.push(role === 'captain' ? Object.assign({}, MONITORED_STATUSES[0], { effect: captainWoundEffect() }) : MONITORED_STATUSES[0]);
+    }
     // Delayed-severity wound awaiting treatment (index.html crewPendingOf).
     if (role && STATE.crewPending && STATE.crewPending[role]) {
       fired.add('pending_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'pending_crisis'));
@@ -460,10 +495,13 @@
 
   function render() {
     const m = memberData(cur);
-    const hp = m.isCaptain ? 100 : ((typeof crewHPOf === 'function') ? crewHPOf(m.key) : 100);
+    // Real HP — the captain's own too (owner ruling 29).
+    const hp = Math.round(hpOf(m.key));
     // Their own morale (owner ruling 15); the captain has none — no row.
+    // HUD rounding (index.html crewMoraleAvg): anything above 0 reads at
+    // least 1, so "0" means exactly the value that walks off (re-audit A10).
     const moRaw = m.isCaptain ? null : crewMoraleOf(m.key);
-    const mo = moRaw == null ? null : Math.round(moRaw);
+    const mo = moRaw == null ? null : (moRaw > 0 ? Math.max(1, Math.round(moRaw)) : 0);
 
     $('cd-name-banner').textContent = m.name.toUpperCase();
     $('cd-role-banner').textContent = m.role.toUpperCase();
@@ -508,6 +546,7 @@
         const row = document.createElement('div');
         row.className = 'cd-status-row ' + s.kind;
         row.innerHTML = '<span class="s-name">' + s.name + '</span><span class="s-eff">' + s.effect + '</span>';
+        row.title = s.name + ' — ' + s.effect; // the whole effect (the row ellipsises a long one)
         activeEl.appendChild(row);
       }
     }
@@ -522,8 +561,11 @@
     // Passive card
     $('cd-passive-name').textContent = m.passiveName.toUpperCase();
     $('cd-passive-desc').textContent = m.passiveDesc;
-    $('cd-passive-card').title = m.passiveName + '\n\n' + m.passiveDesc + '\n\nAlways on. Halved if this crew is injured.';
-    $('cd-passive-warn').classList.toggle('hidden', !isWounded);
+    $('cd-passive-card').title = m.passiveName + '\n\n' + m.passiveDesc + '\n\n' + (m.isCaptain
+      ? 'Always on, at half a specialist\'s strength — a wound doesn\'t change it.'
+      : 'Always on. Halved if this crew is injured.');
+    // The captain's background isn't halved by a wound (captainWoundEffect).
+    $('cd-passive-warn').classList.toggle('hidden', !isWounded || m.isCaptain);
 
     // Active card + charge state
     if (m.active) {
@@ -571,10 +613,14 @@
       dBtn.classList.toggle('jettison', !safe);
     }
 
-    // Chevrons only make sense with 2+ members aboard.
+    // Chevrons always sit in the portrait box (demo-crew); with nobody
+    // to cycle to (a solo captain) they stay but go inert.
     const many = memberList().length > 1;
-    $('cd-nav-prev').style.display = many ? '' : 'none';
-    $('cd-nav-next').style.display = many ? '' : 'none';
+    for (const id of ['cd-nav-prev', 'cd-nav-next']) {
+      $(id).style.display = '';
+      $(id).disabled = !many;
+      $(id).classList.toggle('inert', !many);
+    }
   }
 
   function setAiText(text, refusal) {
@@ -691,20 +737,15 @@
     // Ship's Log: an airlock death gets the memorial page (read before
     // the identity goes; shipslog.js).
     const memo = jettisoned && window.ShipLog ? ShipLog.deathEntry(role, '', { cause: 'out the airlock' }) : null;
-    const idx = STATE.crew.indexOf(role);
-    if (idx >= 0) STATE.crew.splice(idx, 1);
-    if (STATE.crewHP) delete STATE.crewHP[role];
-    if (STATE.crewSkillCharges) delete STATE.crewSkillCharges[role];
-    if (STATE.crewPending) delete STATE.crewPending[role];
-    if (STATE.crewIdentity) delete STATE.crewIdentity[role];
-    if (typeof forgetCrewMorale === 'function') forgetCrewMorale(role); // per-crew morale goes with them
+    // HP, charges, pending, identity, morale and any armed active skill
+    // (re-audit A9) go with them — index.html releaseCrewRole, one place.
+    releaseCrewRole(role);
     let line, logLine;
     if (jettisoned) {
       STATE.flags.add('crew_lost');
-      // An unsafe "dismissal" is explicitly an airlock death. Preserve
-      // solo-by-choice at stations/planets, but route a last-person
-      // jettison through the same crew_gone failure as killCrew().
-      if (STATE.crew.length === 0) STATE.flags.add('all_crew_dead');
+      // Owner ruling 26: jettisoning the LAST crew member is a solo run,
+      // the same as a safe dismissal — the epitaph shows, the captain
+      // flies on, no crew_gone (all_crew_dead is not set).
       // The airlock's own epitaphs (demo-crew canon, flavor_pools
       // airlock_epitaphs) — subjectless; the card puts the name above.
       // The general death pool (crew_epitaphs) is the fallback.
@@ -749,8 +790,8 @@
       setTimeout(() => {
         const departedName = crewNameOf(role);
         const line = removeCrew(role, true);
-        // crew_gone failure can fire from an empty roster — endRun()
-        // strips overlays itself, so just stop here if the run ended.
+        // A jettison never ends the run (ruling 26); another failure that
+        // was already due still does — endRun() strips overlays itself.
         if (typeof checkFailure === 'function' && checkFailure()) { departing = false; return; }
         pendingEpitaph = { role, name: departedName };
         $('cd-epitaph-name').textContent = pendingEpitaph.name.toUpperCase();

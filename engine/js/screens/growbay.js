@@ -178,14 +178,38 @@
     if (TENDER_ROLE[id] && !STATE.crew.includes(TENDER_ROLE[id])) return CREW.none;
     if (id === 'captain-botanist' && STATE.captain !== 'botanist') return CREW.none;
     let c = CREW[id] || CREW.none;
-    // A wounded tender works at half (crew_roster "halved if injured").
+    // A wounded tender works at half (crew_roster "halved if injured") —
+    // the captain too, whose HP is real (owner ruling 29).
     const role = TENDER_ROLE[id];
-    if (role && typeof crewHPOf === 'function' && crewHPOf(role) < CREW_WOUNDED_HP) {
-      c = Object.assign({}, c, { growth: c.growth / 2, yield: c.yield / 2, wounded: true });
-    }
+    const hurt = role ? (typeof crewHPOf === 'function' && crewHPOf(role) < CREW_WOUNDED_HP)
+      : (id === 'captain-botanist' && typeof captainHPOf === 'function' && captainHPOf() < CREW_WOUNDED_HP);
+    if (hurt) c = Object.assign({}, c, { growth: c.growth / 2, yield: c.yield / 2, wounded: true });
     const idn = role && typeof crewIdentityOf === 'function' ? crewIdentityOf(role) : null;
     return idn ? Object.assign({}, c, { name: idn.name, crewId: null, emoji: '🧑' }) : c;
   }
+  // Owner ruling 41: a botanist tends by default — a crew botanist (Osei
+  // or whoever holds the role), else a botanist captain. The player can
+  // change it in the picker (cropGrowth.tenderChosen); a chosen tender who
+  // leaves the ship hands the bed back to the default.
+  function defaultTenderId() {
+    if (STATE.crew.includes('botanist')) return 'osei';
+    if (STATE.captain === 'botanist') return 'captain-botanist';
+    return 'none';
+  }
+  function applyDefaultTender(cg) {
+    const gone = cg.tenderId && cg.tenderId !== 'none' && tenderOf(cg.tenderId) === CREW.none;
+    if (gone) cg.tenderChosen = false;
+    if (!cg.tenderChosen && (!cg.tenderId || cg.tenderId === 'none' || gone)) cg.tenderId = defaultTenderId();
+  }
+  // The tender's growbay sheet — from who really tends (tenderOf), never
+  // the stored id alone (re-audit A2): a stowaway holding the role has no
+  // sheet (it showed Osei), a dead or departed tender shows nobody.
+  function tenderSheetKey(id) {
+    const t = tenderOf(id);
+    if (t === CREW.none || !t.crewId) return null;
+    return CREW_SHEET_KEY[id] || null;
+  }
+  window.growbayTenderOf = function () { return STATE.cropGrowth ? tenderOf(STATE.cropGrowth.tenderId) : CREW.none; };
 
   // Animated crew spritesheets — 9 animation frames + 1 idle frame
   // per crew member, each sheet slightly different dimensions. Data
@@ -260,12 +284,13 @@
         health: (cropDef && cropDef.starting_health) || 80,
         pest: false,
         waterPlant: 50,
-        tenderId: 'none',
+        tenderId: defaultTenderId(), // owner ruling 41
         day: 0,
         lastTickDay: STATE.daysElapsed,
       };
     }
     GSTATE = STATE.cropGrowth;
+    applyDefaultTender(GSTATE); // owner ruling 41 (new runs, old saves, a tender who left)
     // Water unification (Restoration item 5): the Orders modal's water
     // slider and this modal's mini slider are THE SAME VALUE —
     // STATE.orders.waterSplit is canonical, waterPlant its synced alias
@@ -405,6 +430,56 @@
   // The crop's water need as the ship sees it (index.html cropWaterNeed:
   // botanist −15%, water purifier −10%), rounded for display.
   function waterNeed() { return typeof cropWaterNeed === 'function' ? Math.round(cropWaterNeed()) : CROP_META[GSTATE.cropId].water_need; }
+
+  /* THE water badges (re-audit A4) — read off the real model, shared by
+     the growbay's mini track and the Orders headline so the two surfaces
+     always agree:
+       plant (computeModifiers): tanks dry or more than 20 under the need
+         → PARCHED (health falls — the only band that does damage);
+         6–20 under → DRY (growth slowed); more than 20 over → SOAKED
+         (root rot); otherwise MATCHED. A dead crop → DEAD.
+       crew (index.html crewWaterDrainRate tiers): no drain → NOMINAL;
+         a morale drain (−0.1 / −0.5 a day) → THIRSTY; the driest tier
+         (−1.2 morale and −1 HP a day) → CRITICAL. No crew → NO CREW. */
+  function waterStatusAt(plantPct) {
+    const cg = STATE.cropGrowth;
+    const need = waterNeed();
+    let plant;
+    if (!STATE.crop || !cg) plant = { label: 'NO CROP', cls: 'matched', band: 'none' };
+    else if (cg.health <= 0) plant = { label: 'DEAD', cls: 'parched', band: 'dead' };
+    else if (STATE.resources.water <= 0 || plantPct - need < -20) plant = { label: 'PARCHED', cls: 'parched', band: 'parched' };
+    else if (plantPct - need < -5) plant = { label: 'DRY', cls: 'dry', band: 'dry' };
+    else if (plantPct - need > 20) plant = { label: 'SOAKED', cls: 'soaked', band: 'soaked' };
+    else plant = { label: 'MATCHED', cls: 'matched', band: 'fine' };
+    const ratio = Math.min(1, (100 - plantPct) / (100 - (typeof cropWaterNeed === 'function' ? cropWaterNeed() : need)));
+    const rate = ratio >= 1 ? 0 : ratio >= 0.7 ? 1 : ratio >= 0.4 ? 3 : 6;
+    let crew;
+    if (!STATE.crew.length) crew = { label: 'NO CREW', cls: 'nominal', band: 'none', rate };
+    else if (rate === 0) crew = { label: 'NOMINAL', cls: 'nominal', band: 'fine', rate };
+    else if (rate < 6) crew = { label: 'THIRSTY', cls: 'thirsty', band: 'thirsty', rate };
+    else crew = { label: 'CRITICAL', cls: 'critical', band: 'critical', rate };
+    return { plant, crew, need };
+  }
+  window.cropWaterStatusAt = function (plantPct) {
+    if (STATE.crop && STATE.cropGrowth) bindGrowbayState();
+    return waterStatusAt(plantPct);
+  };
+
+  /* What a harvest pays, tender bonus included — the same sum doHarvest
+     grants (re-audit A5: the preview said +40, the harvest paid +46). */
+  function harvestYield() {
+    const crop = CROP_META[GSTATE.cropId];
+    const tender = tenderOf(GSTATE.tenderId);
+    const base = crop.yield_amount;
+    return { base, bonus: Math.round(base * tender.yield / 100), total: base + Math.round(base * tender.yield / 100), label: crop.yield_label };
+  }
+  function yieldText() {
+    const y = harvestYield();
+    if (GSTATE.health <= 0) return 'none — the crop is dead';
+    return '+' + y.total + ' ' + y.label + (y.bonus ? ' (incl. +' + y.bonus + ' tending)' : '') +
+      (y.label === 'Morale' && !STATE.crew.length ? ' — no crew aboard to enjoy it' : '');
+  }
+  window.cropHarvestYield = function () { if (!STATE.crop) return null; bindGrowbayState(); return harvestYield(); };
   function shipNodeType() { const n = STATE.byId && STATE.byId[STATE.currentId]; return n ? n.node_type : null; }
 
   // ═════ Modifier math ═════════════════════════════════════
@@ -544,6 +619,15 @@
     return { active, monitored };
   }
 
+  /* What the panel shows (re-audit A3): a dead crop has no modifiers —
+     the daily tick skips them all at health 0, so listing them (a tender's
+     +15%, "well-watered +0.5 health/day") was decorative. One honest row,
+     and no threats left to monitor. */
+  function displayModifiers() {
+    if (GSTATE.health > 0) return computeModifiers();
+    return { active: [{ kind: 'critical', name: 'Crop dead', growth: 0, health: 0, delta: 'no growth · no recovery', dead: true }], monitored: [] };
+  }
+
   // Daily growth multiplier: crop health × every growth modifier.
   function growthFactor(mods) {
     const { active } = mods || computeModifiers();
@@ -595,6 +679,7 @@
     $('plant-sprite').style.backgroundPosition = '-' + frame.x + 'px -' + frame.y + 'px';
   }
   function stageName(growth) {
+    if (GSTATE && GSTATE.health <= 0) return 'DEAD'; // re-audit A3
     if (growth >= 100) return 'READY';
     return CROP_META[GSTATE.cropId].stages[stageIndex(growth)].name;
   }
@@ -615,13 +700,14 @@
         { label: 'Maturity', value: crop.maturity_days + ' days' },
         { label: 'Water', value: waterNeed() + '%' },
         { label: 'Temp', value: tMin + '–' + tMax + '°C' },
-        { label: 'Yield', value: '+' + crop.yield_amount + ' ' + crop.yield_label },
+        { label: 'Yield', value: yieldText() },
       ],
       list: crop.stages.map((s, i) => ({ text: s.name.charAt(0) + s.name.slice(1).toLowerCase() + ' — ' + s.tip, current: i === curIdx })),
     };
   }
 
   function nextStageLine() {
+    if (GSTATE.health <= 0) return 'Nothing grows here now.';
     const stages = CROP_META[GSTATE.cropId].stages;
     const idx = stageIndex(GSTATE.growth);
     if (GSTATE.growth >= 100) return 'Plant is READY to HARVEST!';
@@ -663,8 +749,13 @@
   const CREW_FRAME_MS = Math.round(CREW_ANIM_MS / 9);
 
   function sheetFor(crewId) {
-    const key = CREW_SHEET_KEY[crewId];
+    const key = tenderSheetKey(crewId);
     return key ? CREW_SHEETS[key] : null;
+  }
+  // Who is really standing in the bay — the animation restarts when this
+  // changes (a tender dying keeps the stored id but changes this).
+  function tenderKey() {
+    return GSTATE.tenderId + '|' + (tenderSheetKey(GSTATE.tenderId) || '-') + '|' + (GSTATE.health > 0 ? 'live' : 'dead');
   }
 
   function setCrewFrame(crewId, which /* 'idle' | 0..8 */) {
@@ -707,12 +798,14 @@
     stopCrewAnimation();
     setCrewFrame(crewId, 'idle');
     if (!sheetFor(crewId)) return;  // no sheet → stay empty
+    if (GSTATE.health <= 0) return; // a dead crop: the tender stands idle — nothing to tend
+    const key = tenderKey();
     const loop = () => {
       const delay = Math.random() * 10000;  // 0–10s gap between animations
       crewWaitTimer = setTimeout(() => {
-        // If the tender changed while we were waiting, this id is
-        // stale — bail. The new tender restarts its own loop.
-        if (GSTATE.tenderId !== crewId) return;
+        // If the tender changed (or left, or the crop died) while we were
+        // waiting, this loop is stale — bail. renderAll restarts the right one.
+        if (tenderKey() !== key) return;
         playAnimationOnce(crewId, loop);
       }, delay);
     };
@@ -880,19 +973,46 @@
     }
   });
   function pickAriaQuip() {
-    // Priority: critical state > pest > hot/cold > thirsty > ready > healthy
-    const { active } = computeModifiers();
+    // Priority: dead > ready > critical > pest > hot/cold > thirsty > dim >
+    // healthy — every branch read off the model's own modifiers (the
+    // "thirsty" line used to key off its own threshold).
     const ARIA_QUIPS = GROWBAY_QUIPS[growbayAI()]; // the active AI's table
+    if (GSTATE.health <= 0) return randPick(GROWBAY_EXTRA_QUIPS[growbayAI()].dead);
+    const { active } = computeModifiers();
+    const has = needle => active.some(m => m.name.indexOf(needle) === 0);
     if (GSTATE.growth >= 100) return randPick(ARIA_QUIPS.ready);
     if (active.some(m => m.kind === 'critical')) return randPick(ARIA_QUIPS.critical);
     if (GSTATE.pest) return randPick(ARIA_QUIPS.pests);
-    const [tMin, tMax] = idealBand();
-    if (GSTATE.temp > tMax) return randPick(ARIA_QUIPS.hot);
-    if (GSTATE.temp < tMin) return randPick(ARIA_QUIPS.cold);
-    const crop = CROP_META[GSTATE.cropId];
-    if (GSTATE.waterPlant < waterNeed() - 10) return randPick(ARIA_QUIPS.thirsty);
+    if (has('Heat')) return randPick(ARIA_QUIPS.hot);
+    if (has('Cold')) return randPick(ARIA_QUIPS.cold);
+    if (has('Underwatered') || has('Ship water dry')) return randPick(ARIA_QUIPS.thirsty);
+    if (has('Low light')) return randPick(GROWBAY_EXTRA_QUIPS[growbayAI()].dark);
     return randPick(ARIA_QUIPS.healthy);
   }
+  // Footer lines the demo never needed (re-audit A3/A6): a dead crop and a
+  // dim region. Each AI in its own register.
+  const GROWBAY_EXTRA_QUIPS = {
+    aria: {
+      dead: ['The plant has stopped. I keep checking anyway. It is a habit now.', 'Nothing in the bay is growing. I have left the lights on. For company.'],
+      dark: ['It is dim out here. The plant is leaning toward the one bright panel. So am I.', 'Low light. The plant is growing slowly and very politely.']
+    },
+    marv: {
+      dead: ['The crop is dead. I predicted this. Being right has never felt like less.', 'Nothing grows in the bay now. The bay has not noticed. I have.'],
+      dark: ['There is not enough light out here. There rarely is. The plant is learning what I know.', 'Dim region. Growth has slowed. Everything slows, eventually.']
+    },
+    rex: {
+      dead: ['The crop has fallen. It held its position to the end. Noted in the log.', 'Growbay lost. No further action possible. Standing watch anyway.'],
+      dark: ['Visibility poor. Light supply cut. The crop is holding but not advancing.', 'Low-light conditions. Growth rate reduced. Push through to brighter space.']
+    },
+    chip: {
+      dead: ['Your crop has reached the end of its service life! Replacement seeds are not included!', 'The plant is no longer growing! This is not covered! Very little is!'],
+      dark: ['Low light! Upgrade to SunPlus™ Grow Panels! Brighter space sold separately!', 'It is dim out here! Your plant is growing at Economy speed!']
+    },
+    ajoy: {
+      dead: ['The crop is dead. I won\'t say anything. I\'m just going to leave the log open.', 'Nothing is growing. I had notes. They don\'t matter now, I suppose.'],
+      dark: ['It\'s a bit dark out here for the plant. I\'d have taken the bright route. But you\'re flying.', 'Low light. The plant is coping. Better than some of us.']
+    }
+  };
   function randPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
   // ARIA's demo lines were written for the demo's wheat; say whichever
   // crop is actually planted.
@@ -921,6 +1041,7 @@
       row.onclick = (ev) => {
         ev.stopPropagation();
         GSTATE.tenderId = id;
+        GSTATE.tenderChosen = true; // the player's pick stands (ruling 41 default only fills a gap)
         slot.classList.remove('open');
         renderAll();
       };
@@ -999,28 +1120,15 @@
     $('gb-water-plant-pct').textContent  = plant + '%';
     $('gb-water-crew-pct').textContent   = crew  + '%';
 
-    // Plant status — distance from the crop's ideal water allocation.
-    // Bands match the growth-modifier logic (matched within ±5,
-    // DRY below, SOAKED far above). PARCHED is the red-zone case.
-    const plantDelta = plant - waterNeed();
-    let pLabel, pCls;
-    if      (plantDelta < -15) { pLabel = 'PARCHED'; pCls = 'parched'; }
-    else if (plantDelta <  -5) { pLabel = 'DRY';     pCls = 'dry';     }
-    else if (plantDelta >  20) { pLabel = 'SOAKED';  pCls = 'soaked';  } // root rot starts above +20 (computeModifiers)
-    else                       { pLabel = 'MATCHED'; pCls = 'matched'; }
+    // Both badges from THE model (waterStatusAt — the Orders headline
+    // reads the same function).
+    const st = waterStatusAt(plant);
     const pEl = $('gb-water-plant-status');
-    pEl.textContent = pLabel;
-    pEl.className   = 'gb-water-plant-status ' + pCls;
-
-    // Crew status — same band thresholds as Orders modal.
-    const crewRatio = crew / (100 - waterNeed());
-    let cLabel, cCls;
-    if (crewRatio < 0.4)      { cLabel = 'CRITICAL'; cCls = 'critical'; }
-    else if (crewRatio < 0.7) { cLabel = 'THIRSTY';  cCls = 'thirsty';  }
-    else                      { cLabel = 'NOMINAL';  cCls = 'nominal';  }
+    pEl.textContent = st.plant.label;
+    pEl.className   = 'gb-water-plant-status ' + st.plant.cls;
     const cEl = $('gb-water-crew-status');
-    cEl.textContent = cLabel;
-    cEl.className   = 'gb-water-crew-status ' + cCls;
+    cEl.textContent = st.crew.label;
+    cEl.className   = 'gb-water-crew-status ' + st.crew.cls;
   }
 
   // Pointer drag on the water track — COMMIT-ON-RELEASE model.
@@ -1124,8 +1232,8 @@
     // Restart the crew animation loop when the tender changes.
     // Otherwise leave it running (don't interrupt a playing anim
     // on every slider tick).
-    if (GSTATE.tenderId !== lastTenderId) {
-      lastTenderId = GSTATE.tenderId;
+    if (tenderKey() !== lastTenderId) {
+      lastTenderId = tenderKey();
       startCrewAnimationLoop(GSTATE.tenderId);
     }
 
@@ -1152,7 +1260,14 @@
     // Projected ready day
     const ready = projectedReadyDay();
     const readyLine = $('ready-line');
-    if (GSTATE.growth >= 100) {
+    const dead = GSTATE.health <= 0;
+    // A dead crop: grey, still — no sway, no stage flash (re-audit A3).
+    $('plant-sprite').classList.toggle('dead', dead);
+    $('plant-stage-label').classList.toggle('dead', dead);
+    if (dead) {
+      $('ready-day').textContent = 'NEVER';
+      readyLine.classList.add('warn');
+    } else if (GSTATE.growth >= 100) {
       $('ready-day').textContent = 'NOW';
       readyLine.classList.remove('warn');
     } else if (ready === Infinity) {
@@ -1173,7 +1288,7 @@
     // (positives + promoted threats). MONITORED shows the canonical
     // threat list with dim stubs for anything not firing, so players
     // learn the full threat landscape without being bitten first.
-    const { active, monitored } = computeModifiers();
+    const { active, monitored } = displayModifiers();
     const activeEl = $('mod-list-active');
     const monEl    = $('mod-list-monitored');
     activeEl.innerHTML = '';
@@ -1202,8 +1317,9 @@
     // so the tender slot only carries the name + bonus text below.
     $('tender-name').textContent = tender.name.toUpperCase();
     const tb = $('tender-bonus');
-    tb.innerHTML = formatBonusLines(tender);
-    tb.classList.toggle('no-bonus', tender.growth === 0 && tender.yield === 0);
+    // Nothing to tend on a dead crop — the bonus would do nothing.
+    tb.innerHTML = dead ? 'nothing to tend' : formatBonusLines(tender);
+    tb.classList.toggle('no-bonus', dead || (tender.growth === 0 && tender.yield === 0));
 
     // Ship-AI quip — speaker label + avatar follow the active AI.
     const nameEl = document.querySelector('.gb-aria-name');
@@ -1232,19 +1348,17 @@
 
   // ═════ Harvest ceremony ═════════════════════════════════════
   window.doHarvest = function() {
-    if (GSTATE.growth < 100 || GSTATE.health <= 0) return;
+    if (GSTATE.growth < 100 || GSTATE.health <= 0) return null;
     const crop = CROP_META[GSTATE.cropId];
-    const tender = tenderOf(GSTATE.tenderId);
-    const baseYield = crop.yield_amount;
-    const bonusYield = Math.round(baseYield * tender.yield / 100);
-    const total = baseYield + bonusYield;
+    const total = harvestYield().total; // the same sum the preview shows (A5)
 
     // Grant the real resource — Food for every crop except Zinnia
     // (Morale), per crop.yield_label.
-    let banked = 0;
+    let banked = 0, gotMorale = 0;
+    const f0 = STATE.resources.food;
     const cheerless = crop.yield_label === 'Morale' && !STATE.crew.length; // no crew aboard: nobody's morale to lift
     if (crop.yield_label === 'Morale') {
-      addCrewMorale(total); // every crew member (per-crew morale, owner ruling 15)
+      gotMorale = addCrewMorale(total); // every crew member (per-crew morale, owner ruling 15) — the real change
     } else {
       // Food past a full store is packed as ration bricks (10 food each)
       // instead of vanishing at the 100 cap — capacity permitting.
@@ -1253,14 +1367,27 @@
       let spare = Math.max(0, total - room);
       while (spare >= 10 && typeof grantItem === 'function' && grantItem('ration_brick')) { spare -= 10; banked++; }
     }
-    if (banked && typeof window.pushCruiseLog === 'function') {
-      window.pushCruiseLog('◆ HARVEST — the stores are full; the surplus is pressed into ' + banked + ' ration brick' + (banked > 1 ? 's' : '') + '.');
+    // What actually landed (re-audit A15): the food the stores took, the
+    // bricks pressed from the rest, the morale the crew really gained.
+    const gotFood = Math.round(STATE.resources.food - f0);
+    const gotMo = Math.round(gotMorale);
+    const cropWord = STATE.crop.replace(/_/g, ' ').toUpperCase();
+    const bricks = banked ? banked + ' ration brick' + (banked > 1 ? 's' : '') : '';
+    let logGain, burstText;
+    if (crop.yield_label === 'Morale') {
+      logGain = cheerless ? 'No crew aboard to enjoy them' : gotMo > 0 ? '+' + gotMo + ' morale' : 'Spirits were already as high as they go';
+      burstText = cheerless ? 'NO CREW TO CHEER' : gotMo > 0 ? '+' + gotMo + ' MORALE' : 'SPIRITS FULL';
+    } else {
+      logGain = gotFood > 0 ? '+' + gotFood + ' food' + (bricks ? ', ' + bricks : '') : bricks ? 'The stores were full: ' + bricks : 'The stores were already full';
+      burstText = gotFood > 0 ? '+' + gotFood + ' FOOD' + (banked ? ' +' + banked + ' BRICK' + (banked > 1 ? 'S' : '') : '') : banked ? '+' + banked + ' BRICK' + (banked > 1 ? 'S' : '') : 'STORES FULL';
     }
+    // One log line for every harvest path (growbay button and crop card).
+    if (typeof window.pushCruiseLog === 'function') window.pushCruiseLog('▶ Harvested ' + cropWord + '. ' + logGain + '. Cycle reset.');
     renderHUD();
 
     // Burst animation — amber number rises and fades
     const burst = $('harvest-burst');
-    burst.textContent = cheerless ? 'NO CREW TO CHEER' : '+' + total + ' ' + crop.yield_label.toUpperCase();
+    burst.textContent = burstText;
     burst.classList.remove('fire');
     void burst.offsetWidth;
     burst.classList.add('fire');
@@ -1290,6 +1417,7 @@
     }
 
     setTimeout(() => renderAll(), 50);
+    return { food: gotFood, morale: gotMo, bricks: banked, burst: burstText };
   };
 
   // ═════ Actions ═══════════════════════════════════════════════
@@ -1523,19 +1651,56 @@
       ]
     }
   });
+  // Every threat the engine can raise has a read (re-audit A6 — "Ship water
+  // dry" and "Low light" fell through to "No active threats"). The worst
+  // first: critical before negative, in computeModifiers' own order.
+  const INSPECT_CLASS_OF = [
+    ['Crop dead', 'dead'], ['Ship water dry', 'water_dry'], ['Pest', 'pest'], ['Cold', 'cold'], ['Heat', 'heat'],
+    ['Underwatered', 'water_low'], ['Root rot', 'water_high'], ['Low light', 'dark'],
+  ];
   function ariaInspectClass(active) {
-    const has = needle => active.some(m => m.name.indexOf(needle) === 0);
-    if (has('Cold')) return 'cold';
-    if (has('Heat')) return 'heat';
-    if (has('Underwatered')) return 'water_low';
-    if (has('Root rot')) return 'water_high';
-    if (has('Pest')) return 'pest';
+    const threats = active.filter(m => m.kind === 'critical' || m.kind === 'negative');
+    threats.sort((a, b) => (b.kind === 'critical') - (a.kind === 'critical'));
+    for (const t of threats) {
+      const hit = INSPECT_CLASS_OF.find(([needle]) => t.name.indexOf(needle) === 0);
+      if (hit) return hit[1];
+    }
     return 'idle';
   }
   function pickAriaInspect(active) {
-    const pool = GROWBAY_INSPECT_QUIPS[growbayAI()][ariaInspectClass(active)];
+    const cls = ariaInspectClass(active);
+    const pool = GROWBAY_INSPECT_QUIPS[growbayAI()][cls] || GROWBAY_INSPECT_EXTRA[growbayAI()][cls];
     return pool[Math.floor(Math.random() * pool.length)];
   }
+  window.growbayInspectClass = function () { bindGrowbayState(); return ariaInspectClass(displayModifiers().active); };
+  // The reads the demo never needed: dry tanks, a dim region, a dead crop.
+  const GROWBAY_INSPECT_EXTRA = {
+    aria: {
+      water_dry: ['The tanks are empty. The roots are reaching for water that is not there. I am reaching too.', 'No water in the ship at all. The plant is drinking from its own leaves now. That cannot last.'],
+      dark: ['Photosynthesis is running on scraps. The leaves have turned to face the one working panel.', 'Light levels are low. The plant is making sugar very slowly, and very carefully.'],
+      dead: ['No cellular activity. No transpiration. No growth. I ran the scan three times. I will not run it again.', 'The plant is dead. The soil is still good. I thought you should know that part too.']
+    },
+    marv: {
+      water_dry: ['The ship has no water. The plant has worked this out faster than the crew. It is losing tissue by the hour.', 'Tanks empty. Root pressure zero. The plant is now an experiment in how long a plant can be patient.'],
+      dark: ['Light is below what the leaves need. Growth has slowed to a rate I would describe as theoretical.', 'Dim region. The chloroplasts are idling. I recognise the posture.'],
+      dead: ['No metabolic activity. The crop has stopped. I have stopped modelling it. One of us had to.', 'Dead. The readings are very stable now. It is the most stable thing aboard.']
+    },
+    rex: {
+      water_dry: ['Water supply severed. The root network is cut off from all support. The crop is taking casualties.', 'Tanks dry. The plant is fighting on reserves. Reserves are finite. Resupply is the only objective.'],
+      dark: ['Light supply interdicted by the region. The crop is holding but cannot advance.', 'Low-light zone. Growth operations at minimum tempo. Recommend we move through quickly.'],
+      dead: ['No signs of life in the bay. The crop is down. It did not retreat.', 'Crop lost. Cause: sustained conditions. Logged with honours.']
+    },
+    chip: {
+      water_dry: ['Your ship is out of water! Your plant is out of water! You are out of options! Please refill!', 'Water supply: zero! The plant has entered Drought Mode™! This mode cannot be exited for free!'],
+      dark: ['Light levels are below recommended! Your plant is on the Economy Sunlight Plan!', 'Dim conditions detected! Growth has been throttled! Upgrade your star for faster service!'],
+      dead: ['Your plant has been discontinued! We thank it for its service!', 'No life signs! The plant\'s warranty expired some time ago! So, it turns out, did the plant!']
+    },
+    ajoy: {
+      water_dry: ['There\'s no water in the ship. At all. The plant noticed first. I noticed second. Just so you know the order.', 'The tanks are dry. The roots are looking for water that isn\'t there. I did mention the tanks.'],
+      dark: ['It\'s dim out here. The plant is making do. I\'d have picked a sunnier route, but nobody asked.', 'Low light. Growth is slow. Not the plant\'s fault, for the record.'],
+      dead: ['The plant is dead. I won\'t say I saw it coming. I\'ll just say the log is very thorough.', 'Nothing is alive in there. I checked twice. I\'m not going to check a third time.']
+    }
+  };
 
   // innerHTML is unavoidable for nested-grid markup; escape any
   // user-facing string before interpolating it.
@@ -1547,7 +1712,8 @@
   // shells (swap-in body and popup) — caller picks the container.
   function renderInspectInto(container) {
     const crop = CROP_META[GSTATE.cropId];
-    const { active } = computeModifiers();
+    const { active } = displayModifiers(); // a dead crop: one row, no decorative modifiers
+    const dead = GSTATE.health <= 0;
     const stages = crop.stages;
     const curIdx = GSTATE.growth >= 100 ? stages.length - 1 : stageIndex(GSTATE.growth);
     const [tMin, tMax] = idealBand();
@@ -1556,7 +1722,7 @@
     // Match the demo's actual growth math — base × health_factor —
     // so the projection here equals what advanceDay() applies.
     const baseRate = 100 / crop.maturity_days;
-    const curRate = baseRate * growthFactor();
+    const curRate = dead ? 0 : baseRate * growthFactor();
     const remaining = Math.max(0, 100 - GSTATE.growth);
     const daysLeft = curRate > 0.01 ? Math.ceil(remaining / curRate) : Infinity;
     const stageMin = curIdx === 0 ? 0 : stages[curIdx - 1].max;
@@ -1575,14 +1741,14 @@
       '<div class="ins-section">' +
         '<div class="ins-section-title">VITAL SIGNS</div>' +
         '<div class="ins-vitals">' +
-          vital('Stage', '<span class="ins-v-marker">▸</span>' + ihEsc(stages[curIdx].name) + ' <span class="ins-v-sub">(' + stagePct + '% through)</span>') +
+          vital('Stage', dead ? 'DEAD' : '<span class="ins-v-marker">▸</span>' + ihEsc(stages[curIdx].name) + ' <span class="ins-v-sub">(' + stagePct + '% through)</span>', dead ? 'stalled' : '') +
           vital('Growth', Math.round(GSTATE.growth) + '%') +
           vital('Health', Math.round(GSTATE.health) + '%') +
           (boost ? vital('Recovery', fmtMult(boost.mult) + ' <span class="ins-v-sub">(nitrogen fix, ' + boost.daysLeft + 'd left)</span>') : '') +
-          vital('Rate', curRate.toFixed(2) + '%/day' + (curRate <= 0.01 ? ' <span class="ins-v-sub">(stalled)</span>' : '')) +
+          vital('Rate', curRate.toFixed(2) + '%/day' + (dead ? ' <span class="ins-v-sub">(dead)</span>' : curRate <= 0.01 ? ' <span class="ins-v-sub">(stalled)</span>' : '')) +
           vital('Day', GSTATE.day + ' / ' + crop.maturity_days, overdue ? 'overdue' : '') +
           vital('Ready on',
-            GSTATE.growth >= 100
+            dead ? 'never' : GSTATE.growth >= 100
               ? '<span class="ins-v-marker">★</span>NOW'
               : (daysLeft === Infinity
                   ? 'stalled'
@@ -1600,7 +1766,7 @@
         '<div class="ins-row"><span class="ins-key">Maturity</span><span class="ins-val">' + crop.maturity_days + ' days</span></div>' +
         '<div class="ins-row"><span class="ins-key">Water need</span><span class="ins-val">' + waterNeed() + '%</span></div>' +
         '<div class="ins-row"><span class="ins-key">Ideal temp</span><span class="ins-val">' + tMin + '–' + tMax + '°C</span></div>' +
-        '<div class="ins-row"><span class="ins-key">Yield</span><span class="ins-val">+' + crop.yield_amount + ' ' + ihEsc(crop.yield_label) + '</span></div>' +
+        '<div class="ins-row"><span class="ins-key">Yield</span><span class="ins-val">' + ihEsc(yieldText()) + '</span></div>' +
       '</div>';
 
     // ── Lifecycle ribbon (full-width) — all 4 stages side-by-side. ─
@@ -1620,7 +1786,7 @@
       '</div>';
 
     // ── Active threats (full-width, 2-col internal grid) ──────
-    const threats = active.filter(m => m.kind === 'negative' || m.kind === 'critical');
+    const threats = active.filter(m => (m.kind === 'negative' || m.kind === 'critical') && !m.dead);
     const threatRows = threats.map(t => {
       const info = THREAT_INFO[t.name] || { cause: t.delta, fix: 'Apply matching treatment.' };
       return '<div class="ins-threat' + (t.kind === 'critical' ? ' critical' : '') + '">' +
@@ -1632,7 +1798,8 @@
     const threatsHTML =
       '<div class="ins-section ins-fullwidth">' +
         '<div class="ins-section-title">ACTIVE THREATS</div>' +
-        (threats.length === 0
+        (dead ? '<div class="ins-threats-empty">The crop is dead. Nothing can hurt it now, and nothing will grow.</div>'
+          : threats.length === 0
           ? '<div class="ins-threats-empty">Plant is in good shape — nothing biting it right now.</div>'
           : '<div class="ins-threats">' + threatRows + '</div>') +
       '</div>';
