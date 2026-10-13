@@ -1,7 +1,8 @@
 {
   "_meta": {
     "description": "Map generation rules per trail difficulty. Single starting point, branches and reconnections, single destination. All paths lead to the final node. Harder branches offer better rewards but more risk. FTL/StS-style galactic map — visually distinct per trail.",
-    "visual_note": "Lunar maps are blue-gray and close, rocky. Mars maps are warm amber, dusty. Interstellar maps are deep indigo to black with distant stars. The visual should tell you the difficulty before you read a label."
+    "visual_note": "Lunar maps are blue-gray and close, rocky. Mars maps are warm amber, dusty. Interstellar maps are deep indigo to black with distant stars. The visual should tell you the difficulty before you read a label.",
+    "repeat_cooldown_note": "Ruling 65: trails.*.repeat_cooldown_stops — a repeatable event (once: false) drawn at one stop stays out of that trail's pool for the next N stops. A stop where every eligible event is cooling down still draws: the least recently drawn. An event SCAN already locked in still fires."
   },
   "trails": {
     "lunar": {
@@ -58,6 +59,7 @@
         },
         "notes": "Ruling 58: past from_progress (legs flown over the path's legs) the difficulty weights move in a straight line from event_difficulty_weights to weights_at_arrival at the destination. Re-weights eligible events only; pity relief suspends it. ultra stays 0 here: the ultra tier is interstellar's late legs only."
       },
+      "repeat_cooldown_stops": 4,
       "visual_palette": {
         "background": "blue-gray, rocky, close objects",
         "star_density": "medium",
@@ -119,6 +121,7 @@
         },
         "notes": "Ruling 58: past from_progress (legs flown over the path's legs) the difficulty weights move in a straight line from event_difficulty_weights to weights_at_arrival at the destination. Re-weights eligible events only; pity relief suspends it. ultra stays 0 here: the ultra tier is interstellar's late legs only."
       },
+      "repeat_cooldown_stops": 4,
       "visual_palette": {
         "background": "warm amber, dusty, medium distance",
         "star_density": "medium-high",
@@ -180,6 +183,7 @@
         },
         "notes": "Ruling 58: past from_progress (legs flown over the path's legs) the difficulty weights move in a straight line from event_difficulty_weights to weights_at_arrival at the destination. Re-weights eligible events only; pity relief suspends it. Ruling 60: ultra is 0 for the first half and climbs to 15 at arrival, so the ultra events (trail-gated to interstellar) only turn up on the late legs."
       },
+      "repeat_cooldown_stops": 4,
       "visual_palette": {
         "background": "deep indigo to black, distant stars, vast emptiness",
         "star_density": "low, decreasing",
