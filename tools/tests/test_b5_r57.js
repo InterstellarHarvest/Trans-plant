@@ -84,7 +84,7 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
     ok(r.prevMo.includes('−3 MORALE · ENGINEER −12'), 'with crew morale: "−3 MORALE · ENGINEER −12": ' + r.prevMo.join(', '));
     ok(r.cost.some(l => /−3 MORALE · ENGINEER −12/.test(l)), 'the hover cost line says it too: ' + r.cost.join(' / '));
     ok(r.after.engineer === 45 && r.after.medic === 57, 'outcome: engineer 60−3−12 = 45, medic 57 (' + JSON.stringify(r.after) + ')');
-    ok(!r.patchPrev.some(t => /ENGINEER/.test(t)) && r.patched.engineer === 45, 'patched hit: no ENGINEER in the preview (' + r.patchPrev.join(', ') + '), none landed');
+    ok(!r.patchPrev.some(t => /ENGINEER/.test(t)) && r.patchPrev.includes('PATCH STOPS −20 HULL') && r.patched.engineer === 45, 'patched hit: the preview says the patch stops it, no ENGINEER (' + r.patchPrev.join(', ') + '), none landed');
     ok(r.tip.some(t => /^Morale 45\/100 — the hull damage weighs on the engineer$/.test(t)), 'MO tooltip says why: "' + r.tip.join('" / "') + '"');
     await page.close();
   }

@@ -5542,6 +5542,8 @@ function outcomeFacts(o) {
     if (!Number.isFinite(v0) || !v0 || !RES_LABEL[k]) continue;
     const v = k === 'gold' ? (v0 < 0 ? -eventGold(-v0) : v0) : effectiveResDelta(k, v0);
     if (!v) continue;
+    // An armed Emergency Patch takes the whole hit (applyOutcomeEffects).
+    if (k === 'hull' && v < 0 && !o.combat_net && STATE.flags.has('emergency_patch_armed')) { facts.push({ text: 'PATCH STOPS −' + Math.abs(v) + ' HULL', weight: 4, good: true }); continue; }
     // Morale (owner ruling 15): no crew aboard, nothing lands — no claim.
     // morale_to names one member: the preview names them too.
     let label = RES_LABEL[k];
