@@ -513,6 +513,11 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
     // The other kinds: only events eligible at this stop, once-only respected.
     const kinds = await page.evaluate(() => {
       advanceAfterEvent();
+      // The pirate just fired here: the repeat cooldown (ruling 65) holds it
+      // for the next stops. Pinned, then cleared so the sample below is
+      // what each kind of stop can draw.
+      const held = (() => { const n = STATE.nodes.find(x => x.node_type === 'asteroid_field'); if (!n) return null; const was = STATE.currentId; STATE.currentId = n.id; const s = new Set(); for (let i = 0; i < 200; i++) { const p = cruiseWaitEventPick(); if (p) s.add(p.ev); } STATE.currentId = was; return s.has('event_encounter_pirate_001'); })();
+      STATE.eventLastStop = {};
       // A map without one of these types borrows a node for the sample.
       const sample = t => {
         let n = STATE.nodes.find(x => x.node_type === t), was = null;
@@ -526,8 +531,9 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
       const ano = sample('anomaly');
       STATE.seenEventIds.add('event_encounter_drifter_001'); const seen = sample('asteroid_field');
       const st = sample('station');
-      return { ast, ano, seen, st };
+      return { ast, ano, seen, st, held };
     });
+    ok(kinds.held === false || kinds.held === null, 'repeat cooldown: the pirate that just fired isn\'t drawn again at once');
     ok(kinds.ast.includes('distress:event_encounter_drifter_001') && kinds.ast.includes('pirate:event_encounter_pirate_001') && !kinds.ast.some(k => /^anomaly/.test(k)), 'asteroid field: pirate or distress call (' + kinds.ast.join(', ') + ')');
     ok(kinds.ano.some(k => /^anomaly:event_anomaly_/.test(k)), 'anomaly: anomalous drift fires anomaly events');
     ok(!kinds.seen.some(k => /drifter/.test(k)), 'the once-only distress call is not repeated');

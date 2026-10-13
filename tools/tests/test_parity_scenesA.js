@@ -117,6 +117,18 @@ async function shot(page, name) {
 }
 // Applies a layered outcome through the real click and returns the
 // before/after state the outcome touched.
+// Role concerns (ruling 57: the wounded, the engineer's hull, a pilot's
+// pace or the chef's rations over the days an outcome takes) move morale on
+// top of an outcome's own: tapped, so an expectation adds what the game
+// really applied, as the crew average (window.__conc).
+const tapConcerns = page => page.evaluate(() => {
+  window.__conc = 0;
+  if (window.__concTapped) return;
+  window.__concTapped = true;
+  const real = applyConcern;
+  applyConcern = function (role) { const b = crewMoraleOf(role); const r = real.apply(this, arguments); window.__conc += (crewMoraleOf(role) - b) / STATE.crew.length; return r; };
+});
+const concerns = page => page.evaluate(() => window.__conc || 0);
 const snap = page => page.evaluate(() => ({
   res: Object.assign({}, STATE.resources, { morale: crewMoraleRaw() }) /* per-crew morale: the crew average */, gold: STATE.goldAmount, items: STATE.items.slice(),
   flags: [...STATE.flags], day: STATE.daysElapsed, crewHP: Object.assign({}, STATE.crewHP, Number.isFinite(STATE.captainHP) ? { captain: STATE.captainHP } : {}) /* the captain can be hurt too (ruling 29) */, mats: Object.assign({}, STATE.materials),
@@ -219,13 +231,17 @@ const snap = page => page.evaluate(() => ({
     await click(page, 'Go back');
     const back = await page.evaluate(() => ({ layer: STATE.layerStack.slice(-1)[0], body: document.getElementById('enc-narr-body').textContent }));
     ok(back.layer === 'intro' && /Nobody has waved again/.test(back.body), 'Go back → intro, with its revisit line');
-    // HIDE → success, morale, corridor.
+    // HIDE → success, the rations they take, corridor.
     const s0 = await snap(page);
+    await tapConcerns(page);
     await click(page, 'HIDE');
     const h = await scene(page, 'our_ship/corridor');
     const s1 = await snap(page);
+    const c1 = await concerns(page);
     ok(h.outcome === 'boarding_hide' && h.main === 'our_ship/corridor.jpg', `HIDE → PAST YOU over the corridor (${h.main})`);
-    ok(s1.res.morale === Math.min(100, s0.res.morale + 2) && s1.day > s0.day, `+2 morale, days pass (${s0.day}→${s1.day})`);
+    // Ruling 60: a hard event has no free option — hiding costs the rations
+    // they leave with (it was +2 morale).
+    ok(s1.res.food <= s0.res.food - 10 && Math.abs(s1.res.morale - (s0.res.morale + c1)) < 0.01 && s1.day > s0.day, `−10 food (${s0.res.food.toFixed(1)} → ${s1.res.food.toFixed(1)} with the days' rations), morale only by role concerns (${c1.toFixed(2)}), days pass (${s0.day}→${s1.day})`);
     await page.close();
   }
   {
@@ -278,10 +294,12 @@ const snap = page => page.evaluate(() => ({
       if (nav) await click(page, nav);
       await page.waitForTimeout(50);
       const s0 = await snap(page);
+      await tapConcerns(page);
       await click(page, label);
       const s1 = await snap(page);
+      const conc = await concerns(page);
       const hurt = Object.keys(s1.crewHP).filter(r => s1.crewHP[r] < 40);
-      const res = k => s1.res[k] - s0.res[k];
+      const res = k => k === 'morale' ? Math.round((s1.res.morale - s0.res.morale - conc) * 100) / 100 : s1.res[k] - s0.res[k];
       const checks = [];
       if (expect.hull) checks.push(res('hull') === expect.hull);
       if (expect.food) checks.push(res('food') < 0 && res('food') <= expect.food);
@@ -289,7 +307,7 @@ const snap = page => page.evaluate(() => ({
       if (expect.morale && !expect.tax) checks.push(res('morale') === expect.morale);
       if (expect.tax && expect.morale) checks.push(res('morale') === expect.morale - expect.tax);
       if (expect.tax && !expect.morale) checks.push(res('morale') === -expect.tax);
-      ok(checks.every(Boolean), `${label}: hull ${res('hull')}, food ${res('food')}, morale ${res('morale')}, wounded ${hurt.join(',') || 'none'}`);
+      ok(checks.every(Boolean), `${label}: hull ${res('hull')}, food ${res('food')}, morale ${res('morale')} (role concerns ${conc.toFixed(2)} on top), wounded ${hurt.join(',') || 'none'}`);
       await page.close();
     }
   }

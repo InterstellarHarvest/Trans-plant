@@ -368,7 +368,8 @@ const snap = page => page.evaluate(() => ({
     await enter(page, { health: 50, gold: 50 });
     await click(page, 'BUY CROP TREATMENT');
     const v = await view(page);
-    ok(pick(v, 'TREAT IT HERE').sub === '+31 CROP', 'a botanist aboard: the preview says +31 (25 × 1.25)');
+    // …and the botanist's own lift at the crop's recovery (ruling 57's role concern).
+    ok(/^\+31 CROP( · BOTANIST \+\d+ MORALE)?$/.test(pick(v, 'TREAT IT HERE').sub), 'a botanist aboard: the preview says +31 (25 × 1.25): ' + pick(v, 'TREAT IT HERE').sub);
     await click(page, 'TREAT IT HERE');
     ok((await snap(page)).health === 81, 'and +31 lands');
     await page.close();
