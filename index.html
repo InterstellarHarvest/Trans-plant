@@ -2435,6 +2435,18 @@ function itemValueKnown(shortId) {
   return !(d && (d.tags || []).includes('spectrometer_reveals_value')) || STATE.items.includes('spectrometer');
 }
 function fenceValueOf(v) { return Math.max(1, Math.round(v * FENCE_MULT)); }
+// Where trade goods turn up outside authored events: items.json find_odds
+// { salvage | forage: chance } — salvage on a good SALVAGE haul, forage on
+// a good FORAGE (cruise.js). Each item is its own roll. 0 when it isn't
+// found that way.
+function itemFindOdds(shortId, source) {
+  const d = itemDef(shortId), p = d && d.find_odds && d.find_odds[source];
+  return Number.isFinite(p) && p > 0 ? p : 0;
+}
+// The short ids found by `source`, in items.json order.
+function itemsFoundBy(source) {
+  return (MOD.items || []).filter(d => d.active !== false).map(d => d.id.replace(/^item_/, '').replace(/_\d+$/, '')).filter(sid => itemFindOdds(sid, source) > 0);
+}
 // "15–45g" — what an unappraised copy is shown as (mult: the fence's premium).
 function itemValueRangeLabel(shortId, mult) {
   const r = sellRangeOf(shortId);

@@ -60,9 +60,12 @@
   function allMaterialDefs() {
     return (typeof MOD !== 'undefined' && MOD.materials && MOD.materials.materials) || [];
   }
-  // ×2.5: at ×5, mining-for-sale out-earned every other gold source
-  // several times over (economy sim).
-  const materialPrice = m => Math.max(1, Math.round((m.value || 0.2) * 2.5));
+  // A unit of raw material sells for its authored value × materials.json
+  // station_sell_multiplier (its _meta says why it stays under 5: mining
+  // for sale). The Market Row, the cargo hold's SELL and every SELL PRICE
+  // readout read this one function, so the shown price is the paid one.
+  const materialSellMult = () => MOD.materials.station_sell_multiplier;
+  const materialPrice = m => Math.max(1, Math.round((m.value || 0.2) * materialSellMult()));
   // What a station trader pays for one unit of sid (item or material), or
   // null when no trader buys it — the cargo hold's SELL PRICE / price
   // corner read this (one source with stationVendor's buyPrices).

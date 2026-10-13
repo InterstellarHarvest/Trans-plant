@@ -983,9 +983,10 @@
         if (line) gained += ' ' + line;
       }
       // A good forage on alien ground can turn up the suspicious fungus
-      // (the chef's Secret Project — event_shipboard_016).
+      // (the chef's Secret Project — event_shipboard_016); its items.json
+      // find_odds.forage is the chance.
       if (tier !== 'poor' && (regionKey === 'anomaly' || regionKey === 'planet_orbit_habitable' || alien) &&
-          !STATE.items.includes('suspicious_fungus') && Math.random() < 0.15 && grantItem('suspicious_fungus')) {
+          !STATE.items.includes('suspicious_fungus') && Math.random() < itemFindOdds('suspicious_fungus', 'forage') && grantItem('suspicious_fungus')) {
         gained += ' Also: a fungus nobody can name. The chef has asked to keep it.';
       }
       settleMinigame('◆ ' + label + ' — ' + gained);
@@ -1030,11 +1031,12 @@
         else if (key === 'gold') { STATE.goldAmount += 5 * qty; got.push(5 * qty + 'g'); }
         else if (key !== 'useless_scrap') { let n = 0; for (let i = 0; i < qty; i++) if (grantItem(key) !== false) n++; if (n) got.push(key.replace(/_/g, ' ')); }
       }
-      // Wrecks hold curiosities the fence pays for (items.json "pure trade
-      // good" — they had no source).
-      if (tier !== 'poor' && Math.random() < 0.2) {
-        const cur = ['pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_bone'][Math.floor(Math.random() * 3)];
-        if (grantItem(cur)) got.push(cur.replace(/_/g, ' '));
+      // Wrecks hold curiosities the fence pays for: on a good haul each
+      // item with an items.json find_odds.salvage gets its own roll.
+      if (tier !== 'poor') {
+        for (const cur of itemsFoundBy('salvage')) {
+          if (Math.random() < itemFindOdds(cur, 'salvage') && grantItem(cur)) got.push(cur.replace(/_/g, ' '));
+        }
       }
       renderHUD();
       settleMinigame('◆ SALVAGE — recovered ' + (got.join(', ') || 'nothing usable') + '.');

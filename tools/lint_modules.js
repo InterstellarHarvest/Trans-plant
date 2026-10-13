@@ -365,11 +365,20 @@ for (const m of (readJSON('modules/materials/materials.json').materials || [])) 
   if ('cargo_slots' in m) err(`materials.json ${m.id}: "cargo_slots" is the item field — materials stack: use cargo_slots_per_10`);
   if ('cargo_slots_per_10' in m && !(Number.isFinite(m.cargo_slots_per_10) && m.cargo_slots_per_10 >= 0)) err(`materials.json ${m.id}: cargo_slots_per_10 must be a number ≥ 0`);
   // flavor: the cargo hold's player-facing line. It may
-  // not state a price — the trader's price lives in market.js, and the
-  // old "5 metal = 1g" notes contradicted the 1g a unit it pays.
+  // not state a price — the trader pays value × station_sell_multiplier,
+  // and the old "5 metal = 1g" notes contradicted the 1g a unit it paid.
   if ('flavor' in m && (typeof m.flavor !== 'string' || !m.flavor.trim())) err(`materials.json ${m.id}: flavor must be a non-empty string`);
-  if (typeof m.flavor === 'string' && /\d\s*(g|cr|gold|credits?)\b|=\s*\d/i.test(m.flavor)) err(`materials.json ${m.id}: flavor states a price ("${m.flavor}") — prices live in market.js`);
+  if (typeof m.flavor === 'string' && /\d\s*(g|cr|gold|credits?)\b|=\s*\d/i.test(m.flavor)) err(`materials.json ${m.id}: flavor states a price ("${m.flavor}") — the price is value × station_sell_multiplier`);
   if ('notes' in m) err(`materials.json ${m.id}: "notes" is retired — player-facing text goes in flavor (no prices)`);
+  if (!(Number.isFinite(m.value) && m.value > 0)) err(`materials.json ${m.id}: value must be a number > 0 (the trader pays value × station_sell_multiplier)`);
+}
+// The one material price knob (market.js materialPrice). At 5 minerals
+// round up to 2g and a mining day's haul sells for a third more
+// (materials.json _meta.sell_multiplier_note): mining for sale, the old
+// faucet, pulls ahead of everything else again.
+{
+  const mult = readJSON('modules/materials/materials.json').station_sell_multiplier;
+  if (!(Number.isFinite(mult) && mult > 0 && mult < 5)) err(`materials.json: station_sell_multiplier must be a number in (0, 5) (got ${JSON.stringify(mult)}) — at 5 minerals round up to 2g and mining for sale pulls ahead again`);
 }
 // passive_skill.fabricator_contribution: the fabricator's crew speed
 // — the one source fabricator.js reads (absent = 0).
@@ -393,9 +402,10 @@ let engineGrantedItems = {}; // filled by the item-sources block; read by the it
     fuel_cell: 'engine/js/combat.js', repair_kit: 'engine/js/combat.js',                     // combat loot
     logbook_fragment: 'engine/js/screens/cruise.js', medkit: 'engine/js/screens/cruise.js',  // forage rare finds (RARE_TO_REAL)
     fab_surplus: 'engine/js/screens/fabricator.js',                                          // fabricator misfires
-    suspicious_fungus: 'engine/js/screens/cruise.js',                                        // good forage on alien ground
-    pre_collapse_artifact: 'engine/js/screens/cruise.js', corporate_memorabilia: 'engine/js/screens/cruise.js', unidentified_bone: 'engine/js/screens/cruise.js', // salvage curiosities
   };
+  // Items with an items.json find_odds turn up on SALVAGE / FORAGE
+  // (cruise.js reads the odds), so the data itself is their source.
+  const FIND_SOURCES = ['salvage', 'forage'];
   for (const [id, file] of Object.entries(ENGINE_GRANTED_ITEMS)) {
     const src = engineSrcByFile.get(file);
     if (src == null) err(`ENGINE_GRANTED_ITEMS.${id}: ${file} does not exist`);
@@ -406,6 +416,18 @@ let engineGrantedItems = {}; // filled by the item-sources block; read by the it
   const items = readJSON('modules/items/items.json').filter(i => !i._section);
   const sourced = new Set(Object.keys(ENGINE_GRANTED_ITEMS));
   for (const i of items) if (i.item_source === 'purchasable') sourced.add(i.id.replace(/^item_/, '').replace(/_\d+$/, ''));
+  for (const i of items) {
+    if (i.find_odds == null) continue;
+    const fo = i.find_odds, at = `items.json ${i.id}: find_odds`;
+    if (typeof fo !== 'object' || Array.isArray(fo) || !Object.keys(fo).length) { err(`${at} must be { ${FIND_SOURCES.join(' | ')}: chance }`); continue; }
+    for (const [k, p] of Object.entries(fo)) {
+      if (!FIND_SOURCES.includes(k)) err(`${at}.${k}: not a find source (${FIND_SOURCES.join(', ')}) — nothing would roll it`);
+      if (!(Number.isFinite(p) && p > 0 && p <= 1)) err(`${at}.${k} must be a chance in (0, 1] (got ${JSON.stringify(p)})`);
+    }
+    // The finds are the fence's stock: keep them to things someone buys.
+    if (!(i.tags || []).includes('trade_good')) err(`${at} on an item without the trade_good tag — found cargo nobody buys`);
+    if (i.active !== false) sourced.add(i.id.replace(/^item_/, '').replace(/_\d+$/, ''));
+  }
   const recipesRaw = readJSON('modules/recipes/recipes.json');
   const recipes = Array.isArray(recipesRaw) ? recipesRaw : (recipesRaw.recipes || []);
   for (const r of recipes) { const out = r.output && (r.output.item_id || r.output.item || r.output); if (typeof out === 'string') sourced.add(out); }

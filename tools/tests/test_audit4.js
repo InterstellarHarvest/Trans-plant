@@ -189,9 +189,10 @@ const nodeOfType = (page, t) => page.evaluate(t => { const n = STATE.nodes.find(
       btn.click();
       const after = { gold: STATE.goldAmount, exotic: STATE.materials.exotic };
       MarketModal.close();
-      return { rows, after };
+      const ex = MOD.materials.materials.find(x => x.id === 'exotic');
+      return { rows, after, want: 10 + Math.max(1, Math.round(ex.value * MOD.materials.station_sell_multiplier)) };
     });
-    ok(/EXOTIC/.test(m.rows) && m.after.gold === 15 && m.after.exotic === 1, `station buys materials at value × 2.5 (${JSON.stringify(m.after)})`);
+    ok(/EXOTIC/.test(m.rows) && m.after.gold === m.want && m.after.exotic === 1, `station buys materials at value × station_sell_multiplier (${JSON.stringify(m.after)})`);
     ok(!page._errs.length, 'no page errors' + (page._errs.length ? ': ' + page._errs.join(' | ') : ''));
     await page.close();
   }

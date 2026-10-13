@@ -81,7 +81,8 @@ const RANGED = ['pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_
       STATE.items = []; STATE.itemValues = {};
       const n = STATE.nodes.find(x => x.node_type !== 'fork' && x.node_type !== 'station'); n.node_type = 'derelict'; STATE.currentId = n.id;
       window.openMinigame = (id, opts, onDone) => onDone('perfect', { salvage: {} });
-      const real = Math.random; Math.random = () => 0.1; // < 0.2 → a curio; 0.1×3 → the artifact
+      const roll = Math.min(...itemsFoundBy('salvage').map(id => itemFindOdds(id, 'salvage'))) / 2;
+      const real = Math.random; Math.random = () => roll; // under every curio's find_odds.salvage: the artifact among them
       try {
         document.body.classList.remove('stop-active'); document.getElementById('stop-btn').textContent = 'Stop'; returnToHub();
         await new Promise(r => setTimeout(r, 150));
