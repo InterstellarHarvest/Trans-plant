@@ -422,6 +422,42 @@ if (T) {
   if (brk == null || Number(brk) !== num('MISFIRE_BREAK_HEALTH')) err(`fabricator.js MISFIRE_BREAK_HEALTH ${num('MISFIRE_BREAK_HEALTH')} ≠ recipes.json _meta.misfire_outcomes "Below ${brk}% health"`);
 }
 
+// ── Role concerns: the data and the engine name the same concerns ───
+// crew_roster.json morale_concern holds every amount (ruling 57); the
+// engine reads them by id — concernDef(role, 'id'), orderConcernPerDay(
+// role, 'id', …), applyConcern(role, amount, 'id'). An id the code names
+// that the data lacks is a reaction that silently never fires (and a
+// tooltip with no why); an id the data carries that no code reads is a
+// decorative number. A role-targeted morale change with a role written
+// out — addCrewMorale(n, 'engineer') — skips the why: use applyConcern.
+{
+  const roster = JSON.parse(read('modules/crew/crew_roster.json'));
+  const dataIds = new Map(); // id -> roles that carry it
+  for (const c of roster) for (const id of Object.keys(c.morale_concern || {})) dataIds.set(id, (dataIds.get(id) || []).concat(c.role));
+  const roles = new Set(roster.map(c => c.role));
+  const named = new Map(); // id -> [{ where, role }]
+  const sources = [{ file: 'index.html', code: indexScan.scripts.join('\n') }, ...jsScans.map(s => ({ file: s.file, code: s.code }))];
+  const note = (id, role, where) => named.set(id, (named.get(id) || []).concat({ role, where }));
+  for (const { file, code } of sources) {
+    const at = i => file + ':' + lineOf(code)(i);
+    for (const m of code.matchAll(/\b(?:concernDef|orderConcernPerDay)\(\s*(?:'(\w+)'|[^,()]+)\s*,\s*'(\w+)'/g)) note(m[2], m[1] || null, at(m.index));
+    for (const m of code.matchAll(/\bapplyConcern\(\s*(?:'(\w+)'|[^,()]+)\s*,[^;]*?,\s*'(\w+)'\s*\)/g)) note(m[2], m[1] || null, at(m.index));
+    for (const m of code.matchAll(/\baddCrewMorale\([^;]*?,\s*'(\w+)'\s*\)/g)) if (roles.has(m[1])) err(`${at(m.index)}: addCrewMorale(…, '${m[1]}') — a role-targeted change goes through applyConcern(role, amount, id) so the MO tooltip says why`);
+  }
+  for (const [id, refs] of named) {
+    for (const r of refs) {
+      const holders = dataIds.get(id) || [];
+      if (r.role ? !holders.includes(r.role) : !holders.length) err(`${r.where}: concern '${id}'${r.role ? ' of the ' + r.role : ''} is not in crew_roster.json morale_concern`);
+    }
+  }
+  for (const [id, holders] of dataIds) {
+    for (const role of holders) {
+      const refs = named.get(id) || [];
+      if (!refs.some(r => r.role === role || r.role === null)) err(`crew_roster.json ${role}: morale_concern.${id} is read by no engine code (a decorative number)`);
+    }
+  }
+}
+
 // ── Globals: exports and shared maps (own scope: its helpers are local) ──
 {
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');

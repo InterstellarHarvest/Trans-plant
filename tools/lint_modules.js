@@ -386,6 +386,36 @@ for (const c of readJSON('modules/crew/crew_roster.json')) {
   const v = c && c.passive_skill && c.passive_skill.fabricator_contribution;
   if (v !== undefined && !(Number.isFinite(v) && v >= 0)) err(`crew_roster.json ${c.role}: passive_skill.fabricator_contribution must be a number ≥ 0`);
 }
+// morale_concern (ruling 57): each role's own concerns, read by the
+// engine's ROLE CONCERNS block (tools/lint_code.js ties the ids to the
+// code). Every concern has a non-zero number and a "why" naming {who} —
+// the MO tooltip, the dossier and the cruise log are written from it.
+// Every role takes a wound, and alike: a preview of an injury that lands
+// at random ("HURT −8") must be exact whoever it hits.
+{
+  const roster = readJSON('modules/crew/crew_roster.json');
+  const matIds = new Set((readJSON('modules/materials/materials.json').materials || []).map(m => m.id));
+  const amounts = d => ['morale', 'per_day'].filter(k => k in d && typeof d[k] !== 'object').map(k => d[k])
+    .concat(...['per_day', 'per_travel_day'].filter(k => d[k] && typeof d[k] === 'object').map(k => Object.values(d[k])));
+  const wounds = new Set();
+  for (const c of roster) {
+    const mc = c.morale_concern;
+    if (!mc || typeof mc !== 'object') { err(`crew_roster.json ${c.role}: morale_concern missing — every role has its own concern (ruling 57)`); continue; }
+    if (!mc.wounded) err(`crew_roster.json ${c.role}: morale_concern.wounded missing — every role takes a wound`);
+    else wounds.add(mc.wounded.morale);
+    for (const [id, d] of Object.entries(mc)) {
+      const at = `crew_roster.json ${c.role}: morale_concern.${id}`;
+      if (!d || typeof d !== 'object') { err(`${at} must be an object`); continue; }
+      const nums = amounts(d);
+      if (!nums.length || !nums.every(v => Number.isFinite(v) && v !== 0)) err(`${at}: needs a non-zero morale / per_day / per_travel_day amount`);
+      if ('per' in d && !(Number.isFinite(d.per) && d.per > 0)) err(`${at}: per must be a number > 0`);
+      if (typeof d.why !== 'string' || !d.why.includes('{who}')) err(`${at}: why must be a sentence naming {who} (the tooltip and the log say it)`);
+      for (const m of d.materials || []) if (!matIds.has(m)) err(`${at}: material "${m}" is not in materials.json`);
+      for (const i of d.items || []) if (!itemIds.has(i)) err(`${at}: item "${i}" is not in items.json`);
+    }
+  }
+  if (wounds.size > 1) err(`crew_roster.json: morale_concern.wounded differs by role (${[...wounds].join(', ')}) — an injury's preview names one amount`);
+}
 
 let engineGrantedItems = {}; // filled by the item-sources block; read by the item-sinks block
 // Item sources (nothing orphaned): every item a choice, event or recipe

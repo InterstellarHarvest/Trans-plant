@@ -42,7 +42,7 @@
     choice: '{title}: chose “{choice}”.', outcome_good: '{line} {effects}.', outcome_bad: '{line} {effects}.',
     death: '{name} died. {crew_left}.', memorial_title: 'IN MEMORY OF {name}',
     stowaway_join: '{name} joined as {role}. Crew {crew_count}.', stowaway_passenger: '{name} rides as a passenger. Crew {crew_count}.',
-    morale_zero: '{name} is at zero morale: leaves at the next station.', morale_back: '{name} is back above zero. Staying.',
+    morale_zero: '{name} is at zero morale: leaves at the next station.', morale_back: '{name} is back to 25. Staying.',
     desertion: '{name} ({role}) walked off at {place}. {crew_left}.',
     crop_stage: '{crop}: {stage}, {growth}% grown, health {health}.', crop_ready: '{crop} ready to harvest. Health {health}.',
     arrival: 'Arrived at {place}. The leg cost {costs}.',

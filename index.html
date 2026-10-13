@@ -1624,6 +1624,10 @@ const MORALE_LOW = 30;
 const MORALE_CRISIS = 25;
 // The captain plus at most this many chosen crew (owner ruling 23).
 const CREW_MAX = 2;
+// A warned member walks off at the next station unless their own morale
+// is back to MORALE_CRISIS (owner 2026-10-12); role concerns count this much
+// while only one crew member is aboard (owner 2026-10-12).
+const SOLO_CONCERN_MULT = 0.5;
 
 // The wound line (owner ruling 2026-10-09 — one number everywhere):
 // below CREW_WOUNDED_HP a crew member is WOUNDED — active skill
@@ -1800,6 +1804,7 @@ const STATE = {
   },
   crewMorale:   {},   // role -> 0-100 (the captain has none); crewMoraleAvg() is the crew average
   moraleWarned: {},   // role -> true: warned at 0 morale, walks off at the next station unless raised
+  moraleWhy:    {},   // role -> { id, low }: the role concern that last moved them (ruling 57)
   daysElapsed: 0,
   baseDays:    120,
   // Standing orders (Restoration item 5, demo-orders.html) — pace id,
@@ -1836,6 +1841,7 @@ const SAVED_FIELDS = [
   'resources', 'daysElapsed', 'baseDays', 'activeAI',
   'hardStreak', 'pityRelief', 'npcCache', 'crewHP', 'shipLog',
   'crewMorale', 'moraleWarned', // per-crew morale + who is warned at 0 (owner ruling 15)
+  'moraleWhy', // the role concern that last moved each member (ruling 57)
   'captainHP', // the captain's own HP (owner rulings 29/30)
   'stowaway', 'cropGrowth', 'postCombatLegs', 'aiWarnLevels', 'fabricator',
   'consumedActions', 'crewSkillCharges', 'orders', 'crewPending',
@@ -1932,7 +1938,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, captainHP: () => 100 }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2662,6 +2668,7 @@ function killCrew(role) {
   const memorial = window.ShipLog ? ShipLog.deathEntry(role, epitaph) : null;
   releaseCrewRole(role);
   STATE.flags.add('crew_lost');
+  { const m = concernDef('medic', 'death'); if (m) applyConcern('medic', m.morale, 'death'); } // a dead medic minds nothing (released above)
   // all_crew_dead records that the crew all DIED (the Ship's Log / story
   // flag). It no longer ends the run by itself: with real captain HP
   // (owner rulings 26/29/30) a living captain flies on solo, exactly as
@@ -2745,14 +2752,17 @@ function disembarkPassengers(node) {
      hit EVERY crew member: addCrewMorale(delta).
    - A named change hits one member: addCrewMorale(delta, role) (an
      outcome's morale_to: "lowest" | "speaker" | a role).
+   - Role concerns hit one member on top of the group change, with a
+     why (applyConcern — ROLE CONCERNS below).
    - crewMoraleAvg() — the crew average as the HUD shows it (rounded,
      anything above 0 reads at least 1), or null with nobody aboard —
      drives low_morale (<30), mutiny (0), every display and threshold.
    - Desertion: a member whose own morale is 0 is warned at the hub
      (crewMoraleWatch, the cruise log) and walks off at the next station
-     arrival (crewDesertions, from travelTo — never mid-encounter). Any
-     raise above 0 before then cancels it (the warning clears with a
-     line). Their role is freed exactly as if they were gone.
+     arrival (crewDesertions, from travelTo — never mid-encounter) unless
+     their own morale is back to MORALE_CRISIS by then (owner 2026-10-12: a
+     passive +1 is not enough; the warning clears with a line at 25).
+     Their role is freed exactly as if they were gone.
    - No crew aboard (solo, or the last one lost): no morale at all —
      null average, no low_morale / mutiny, the effort tax costs nothing,
      REST is locked.
@@ -2769,6 +2779,7 @@ function trailStartMorale(trail) {
 function initCrewMorale(v) {
   STATE.crewMorale = {};
   STATE.moraleWarned = {};
+  STATE.moraleWhy = {};
   for (const role of STATE.crew) STATE.crewMorale[role] = clamp(Number.isFinite(v) ? v : trailStartMorale(), 0, 100);
 }
 // A member's own morale (null for anyone not aboard — the captain
@@ -2830,34 +2841,38 @@ function moraleTargetRole(spec) {
 function forgetCrewMorale(role) {
   if (STATE.crewMorale) delete STATE.crewMorale[role];
   if (STATE.moraleWarned) delete STATE.moraleWarned[role];
+  if (STATE.moraleWhy) delete STATE.moraleWhy[role];
 }
 // Hub check (cruise.js renderCruise, every safe between-actions point):
-// a member newly at 0 gets the warning line; one raised back above 0
-// gets the all-clear and the desertion is off.
+// a member newly at 0 gets the warning line; one back to MORALE_CRISIS
+// gets the all-clear and the desertion is off (owner 2026-10-12: a passive +1 —
+// ARIA, the chef — no longer cancels it; REST, a good outcome, rations do).
 function crewMoraleWatch() {
   if (!STATE.moraleWarned || typeof STATE.moraleWarned !== 'object') STATE.moraleWarned = {};
   const w = STATE.moraleWarned;
   for (const r of Object.keys(w)) if (!STATE.crew.includes(r)) delete w[r];
+  // A concern's warning line re-arms once they are back at MORALE_LOW.
+  for (const [r, why] of Object.entries(moraleWhyMap())) if (why && why.low && crewMoraleOf(r) != null && crewMoraleOf(r) >= MORALE_LOW) why.low = false;
   for (const r of STATE.crew) {
     const zero = crewMoraleOf(r) <= 0;
     if (zero && !w[r]) {
       w[r] = true;
       if (window.ShipLog) ShipLog.moraleZero(r);
       else window.pushCruiseLog('◆ ' + crewNameOf(r) + '’s morale is at zero. At the next station they walk.');
-    } else if (!zero && w[r]) {
+    } else if (w[r] && crewMoraleOf(r) >= MORALE_CRISIS) {
       delete w[r];
       if (window.ShipLog) ShipLog.moraleBack(r);
-      else window.pushCruiseLog('◆ ' + crewNameOf(r) + ' is back above zero. Nobody is leaving.');
+      else window.pushCruiseLog('◆ ' + crewNameOf(r) + ' is back to ' + MORALE_CRISIS + '. Nobody is leaving.');
     }
   }
 }
 // Station arrival (travelTo, before the stop's event): everyone warned
-// at 0 who is still at 0 walks off here. The warning always comes first
+// at 0 who is not back to MORALE_CRISIS walks off here. The warning always comes first
 // — someone who hit 0 on the leg in is warned at the hub and leaves at
 // the station after. Returns the roles that left.
 function crewDesertions(node) {
   const w = STATE.moraleWarned || {};
-  const gone = STATE.crew.filter(r => w[r] && crewMoraleOf(r) <= 0);
+  const gone = STATE.crew.filter(r => w[r] && crewMoraleOf(r) < MORALE_CRISIS);
   for (const role of gone) {
     // The log entry reads who they were — composed before they go.
     const entry = window.ShipLog ? ShipLog.desertionEntry(role, node) : null;
@@ -2866,6 +2881,210 @@ function crewDesertions(node) {
     window.pushCruiseLog(entry || ('◆ ' + name + ' walked off at ' + ((node && node.name) || 'the station') + '.'), entry ? { ai: true, instant: true } : undefined);
   }
   return gone;
+}
+// Walks off at the next station: warned and not back to MORALE_CRISIS
+// (crewDesertions' own test), or at 0 now (the hub warns them first).
+function crewDeserting(role) {
+  if (!STATE.crew.includes(role)) return false;
+  const mo = crewMoraleOf(role);
+  return mo <= 0 || (!!(STATE.moraleWarned || {})[role] && mo < MORALE_CRISIS);
+}
+// The MO bar's and the dossier's hover: "Morale 12/100 — the hull damage
+// weighs on the engineer; walks off at the next station — needs 25 to stay".
+function crewMoraleTip(role) {
+  const mo = crewMoraleOf(role);
+  if (mo == null) return '';
+  const why = crewMoraleWhy(role);
+  return 'Morale ' + (mo > 0 ? Math.max(1, Math.round(mo)) : 0) + '/100' + (why ? ' — ' + why : '')
+    + (crewDeserting(role) ? (why ? '; ' : ' — ') + 'walks off at the next station — needs ' + MORALE_CRISIS + ' to stay' : '');
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ROLE CONCERNS (ruling 57; Bible §8 "per-crew morale drives desertion
+   at the individual level"). Group changes alone kept the crew in
+   lockstep, so the average always hit mutiny before anyone could walk.
+   On top of them each role minds its own part of the ship, and whoever
+   is wounded takes it personally — crew_roster.json morale_concern:
+     botanist   crop_drop / crop_recovery (every `per` points of crop
+                health lost or regained, net — noteCropSwing), harvest
+     engineer   hull_damage (scaled: `morale` per `per` hull lost)
+     medic      injury (anyone aboard hurt), death (a crew member lost)
+     pilot      slow_pace / fast_pace (per day flown at that pace)
+     chef       short_rations (per day on those rations), food_gone
+                (per day without food)
+     diplomat   combat (any ship-to-ship fight)
+     xenobio.   alien_find (an outcome or haul that lands the listed
+                materials / items)
+     everyone   wounded (an injury severity or an injure crew_effect)
+   A concern lands on whoever holds the role (a joined stowaway takes
+   the role's concern), never on the captain (no morale), and counts
+   SOLO_CONCERN_MULT while only one crew member is aboard (owner 2026-10-12: a
+   lone member's concern is the whole crew average — it was mutiny, not
+   desertion). Previews add
+   the same amounts (outcomeConcerns → outcomeFacts); the MO tooltip and
+   dossier say why (crewMoraleWhy); the cruise log speaks only when a
+   concern first pushes someone under MORALE_CRISIS.
+   ──────────────────────────────────────────────────────────────── */
+function concernDef(role, id) {
+  const c = (MOD.crew_roster || []).find(x => x.role === role);
+  return (c && c.morale_concern && c.morale_concern[id]) || null;
+}
+// STATE.moraleWhy = { role: { id, low } }: the concern that last moved
+// them (id), and whether its warning line is spent until they recover.
+function moraleWhyMap() {
+  if (!STATE.moraleWhy || typeof STATE.moraleWhy !== 'object') STATE.moraleWhy = {};
+  return STATE.moraleWhy;
+}
+// The solo scale, held for a whole outcome (applyOutcomeEffects) so a
+// death or a join inside it can't change what its preview promised.
+let concernScaleHold = null;
+function concernScale() {
+  return concernScaleHold != null ? concernScaleHold : STATE.crew.length === 1 ? SOLO_CONCERN_MULT : 1;
+}
+// A concern as it lands now (previews show this number).
+function concernAmount(v) { return Number.isFinite(v) ? Math.round(v * concernScale() * 100) / 100 : 0; }
+// Collects every concern that lands while it is open (the combat end
+// card lists them); null when nobody is collecting.
+let concernReceipt = null;
+function openConcernReceipt() { concernReceipt = []; }
+function closeConcernReceipt() { const r = concernReceipt || []; concernReceipt = null; return r; }
+// Applies one concern to whoever holds role: the real change (0 when
+// nobody holds it, or the clamp left nothing to move).
+function applyConcern(role, delta, id) {
+  delta = concernAmount(delta);
+  if (!delta || !STATE.crew.includes(role)) return 0;
+  const before = crewMoraleOf(role);
+  const moved = addCrewMorale(delta, role);
+  if (!moved) return 0;
+  const w = moraleWhyMap();
+  const now = crewMoraleOf(role);
+  w[role] = { id, low: !!(w[role] && w[role].low) };
+  if (concernReceipt) concernReceipt.push({ role, v: moved });
+  // One line when a concern first pushes them under the crisis line (not
+  // again until the hub sees them back at MORALE_LOW — crewMoraleWatch);
+  // the zero warning and the desertion keep their own lines.
+  if (moved < 0 && before >= MORALE_CRISIS && now < MORALE_CRISIS && now > 0 && !w[role].low) {
+    w[role].low = true;
+    const why = concernWhyText(role, id, crewNameOf(role));
+    window.pushCruiseLog('◆ ' + why.charAt(0).toUpperCase() + why.slice(1) + '. Morale ' + Math.max(1, Math.round(now)) + ' — at zero, they walk at the next station.');
+  }
+  return moved;
+}
+function concernWhyText(role, id, who) {
+  const def = concernDef(role, id);
+  return def && def.why ? def.why.replace(/\{who\}/g, who || 'the ' + role) : '';
+}
+// Why a member's morale moved apart from the crew's ('' when no concern
+// has touched them): "the hull damage weighs on the engineer".
+function crewMoraleWhy(role) {
+  const w = (STATE.moraleWhy || {})[role];
+  return w && STATE.crew.includes(role) ? concernWhyText(role, w.id) : '';
+}
+// Whether that concern lifts them (a harvest, a fast burn) or weighs.
+function crewMoraleWhyLifts(role) {
+  const w = (STATE.moraleWhy || {})[role];
+  const d = w && concernDef(role, w.id);
+  if (!d) return false;
+  const v = Number.isFinite(d.morale) ? d.morale : Number.isFinite(d.per_day) ? d.per_day : Object.values(d.per_day || d.per_travel_day || {})[0];
+  return v > 0;
+}
+
+// Engineer: the morale a hull loss of `loss` points costs.
+function hullConcern(loss) {
+  const c = concernDef('engineer', 'hull_damage');
+  return c && loss > 0 && c.per > 0 ? Math.round(loss * c.morale / c.per) : 0;
+}
+function applyHullConcern(loss) { return applyConcern('engineer', hullConcern(loss), 'hull_damage'); }
+// Botanist: crop health swings, netted on STATE.cropGrowth.swing — every
+// `per` points lost (or regained) since the last reaction is one
+// reaction, whether it came in a day, a leg or one outcome. Pure: what a
+// swing of d would do from here ({ morale, id, swing }).
+function cropSwingConcern(d) {
+  const cg = STATE.cropGrowth;
+  let s = ((cg && cg.swing) || 0) + (d || 0), morale = 0, id = null;
+  const drop = concernDef('botanist', 'crop_drop'), up = concernDef('botanist', 'crop_recovery');
+  if (drop && drop.per > 0) while (s <= -drop.per) { s += drop.per; morale += drop.morale; id = 'crop_drop'; }
+  if (up && up.per > 0) while (s >= up.per) { s -= up.per; morale += up.morale; id = id || 'crop_recovery'; }
+  return { morale, id, swing: s };
+}
+function noteCropSwing(d) {
+  const cg = STATE.cropGrowth;
+  if (!cg || !Number.isFinite(d) || !d) return 0;
+  const r = cropSwingConcern(d);
+  cg.swing = Math.round(r.swing * 100) / 100;
+  return r.id ? applyConcern('botanist', r.morale, r.id) : 0;
+}
+// Medic + the wounded: an injury lands on `who` (anyone aboard).
+function applyInjuryConcern(who) {
+  const w = concernDef(who, 'wounded');
+  if (w) applyConcern(who, w.morale, 'wounded');
+  const m = concernDef('medic', 'injury');
+  if (m) applyConcern('medic', m.morale, 'injury');
+}
+// Xenobiologist: what a landing ({ material: qty } and item ids) is worth.
+function alienFindConcern(mats, items) {
+  const c = concernDef('xenobiologist', 'alien_find');
+  if (!c) return 0;
+  const found = (c.materials || []).some(m => (mats || {})[m] > 0) || (c.items || []).some(i => (items || []).includes(i));
+  return found ? c.morale : 0;
+}
+function applyAlienFind(mats, items) { return applyConcern('xenobiologist', alienFindConcern(mats, items), 'alien_find'); }
+// A per-day concern keyed by a standing order (pilot pace, chef rations).
+function orderConcernPerDay(role, id, orderId) {
+  const c = concernDef(role, id);
+  const t = c && (c.per_travel_day || c.per_day);
+  return t && Number.isFinite(t[orderId]) ? t[orderId] : 0;
+}
+// Pilot: morale per day flown at this pace ({ v, id }; v 0 = no reaction).
+function paceConcern(paceId) {
+  const slow = orderConcernPerDay('pilot', 'slow_pace', paceId);
+  if (slow) return { v: slow, id: 'slow_pace' };
+  return { v: orderConcernPerDay('pilot', 'fast_pace', paceId), id: 'fast_pace' };
+}
+function rationsConcern(rationsId) { return orderConcernPerDay('chef', 'short_rations', rationsId); }
+
+/* The concerns an outcome sets off, as previews state them (outcomeFacts)
+   — the same helpers applyOutcomeEffects applies them with:
+   [{ label, v, maybe }]. label is the role, or HURT when the injury's
+   target is drawn at random; maybe = the reaction to a death that a
+   medic or medkit may still prevent (shown "IF LOST, MEDIC −15"). */
+function outcomeConcerns(o) {
+  const out = [];
+  if (!o || !STATE.crew.length) return out;
+  const add = (role, v, maybe) => { v = concernAmount(v); if (v && (role === 'HURT' || STATE.crew.includes(role))) out.push({ label: role.toUpperCase(), v, maybe: !!maybe }); };
+  const res = o.resources || {};
+  // Hull lost as it will land (an armed emergency patch takes the hit).
+  if (Number.isFinite(res.hull) && res.hull < 0 && (o.combat_net || !STATE.flags.has('emergency_patch_armed'))) add('engineer', hullConcern(-effectiveResDelta('hull', res.hull)));
+  if (Number.isFinite(o.crop_health) && o.crop_health) add('botanist', cropSwingConcern(cropDeltaLanding(o.crop_health)).morale);
+  if (o.combat_net) { const c = concernDef('diplomat', 'combat'); if (c) add('diplomat', c.morale); }
+  add('xenobiologist', alienFindConcern(materialLandings(o.materials || {}), [].concat(o.item_grant || [])));
+  // Injury and death (applyOutcomeEffects' crew-effect block).
+  const ce = o.crew_effect || {};
+  const severity = o.severity || (ce.type === 'kill' ? 'lethal' : null);
+  const hurts = severity === 'injury' || severity === 'delayed' || (!severity && ce.type === 'injure');
+  if ((hurts || severity === 'lethal') && peopleAboard().length) {
+    const named = ce.target === 'specific_role' ? (peopleAboard().includes(ce.role) ? ce.role : null)
+      : ce.target === 'patient' && peopleAboard().includes(STATE.crisisPatient) ? STATE.crisisPatient : null;
+    if (hurts) {
+      // Every role takes a wound alike (lint_modules checks), so a
+      // random target's reaction is known.
+      const w = concernDef(named || STATE.crew[0], 'wounded');
+      if (w && named !== 'captain') add(named || 'HURT', w.morale);
+      const m = concernDef('medic', 'injury');
+      if (m) add('medic', m.morale);
+    } else if (named !== 'medic') {
+      const m = concernDef('medic', 'death');
+      if (m) add('medic', m.morale, true);
+    }
+  }
+  // One entry per label (an injured medic minds both).
+  const merged = [];
+  for (const c of out) { const m = merged.find(x => x.label === c.label && x.maybe === c.maybe); if (m) m.v += c.v; else merged.push(Object.assign({}, c)); }
+  return merged;
+}
+// "ENGINEER −4 · IF LOST, MEDIC −10"
+function concernText(list) {
+  return list.map(c => (c.maybe ? 'IF LOST, ' : '') + c.label + ' ' + (c.v > 0 ? '+' : '−') + Math.abs(c.v)).join(' · ');
 }
 
 /* Station services recharge the crew's active skills — per each skill's
@@ -2984,6 +3203,7 @@ function applySeverity(role, severity) {
   }
   if (severity !== 'injury' && severity !== 'delayed') return;
   woundCrew(role);
+  applyInjuryConcern(role);
   if (severity === 'delayed') {
     crewPendingOf()[role] = true;
     log(name + ' is wounded, and it is not healing right. It needs treatment before the next station.');
@@ -3901,7 +4121,7 @@ function cropDrama() {
   // No crew aboard: nobody's mood to swing — the crop takes the drama.
   const swings = STATE.crew.length ? [['crop', 5], ['crop', -5], ['morale', 2], ['morale', -2]] : [['crop', 5], ['crop', -5]];
   const [k, v] = swings[Math.floor(Math.random() * swings.length)];
-  if (k === 'crop') cg.health = clamp(cg.health + v, 1, 100);
+  if (k === 'crop') { const h0 = cg.health; cg.health = clamp(cg.health + v, 1, 100); noteCropSwing(cg.health - h0); }
   else addCrewMorale(v); // the whole crew
   window.pushCruiseLog('◆ ' + line + ' (' + (v > 0 ? '+' : '−') + Math.abs(v) + (k === 'crop' ? ' crop health)' : ' morale)'));
 }
@@ -4132,6 +4352,10 @@ function passDays(days, opts) {
 
   // PACE — crew drain while actually flying (drainMult < 1 rests them).
   if (opts.travel) morale -= (pace.drainMult - 1) * ORDERS_BASE.paceMoraleFactor * days;
+  // Role concerns (ruling 57): the pilot minds the pace flown, the chef
+  // the rations served — and, below, every day the galley is empty.
+  const pc = opts.travel ? paceConcern(pace.id) : null;
+  const chefDays = rationsConcern(ra.id) * days;
 
   // WATER — stock draw + crew-side pressure (the plant side of the
   // dual-drain lives in growbay's own per-day tick off waterPlant).
@@ -4163,11 +4387,14 @@ function passDays(days, opts) {
     if (onset) dry = Math.min(dry, d.failAfter - 1);
     STATE.deprived[res] = (STATE.deprived[res] || 0) + dry;
     morale -= d.morale * dry;
+    if (res === 'food') { const g = concernDef('chef', 'food_gone'); if (g) applyConcern('chef', g.per_day * dry, 'food_gone'); }
     // Everyone aboard goes without — the captain included (owner ruling 29).
     for (const who of peopleAboard()) damageCrew(who, d.hp * dry);
   }
 
   addCrewMorale(morale); // every crew member (kept to 0.01 there)
+  if (pc && pc.v) applyConcern('pilot', pc.v * days, pc.id);
+  if (chefDays) applyConcern('chef', chefDays, 'short_rations');
   // No float drift (83.79999999999997): resources are kept to 0.01.
   for (const k of ['fuel', 'food', 'water', 'o2', 'hull']) r[k] = Math.round(r[k] * 100) / 100;
 }
@@ -4210,8 +4437,10 @@ function travelTo(nodeId, opts) {
     STATE.resources.fuel = clamp(STATE.resources.fuel - leg.fuel, 0, resMax('fuel'));
     // Drive coil (items.json): 5% per leg it misfires — minor hull damage.
     if (STATE.items.includes('drive_coil') && Math.random() < 0.05) {
-      STATE.resources.hull = clamp(STATE.resources.hull - 3, 0, resMax('hull'));
+      const h0 = STATE.resources.hull;
+      STATE.resources.hull = clamp(h0 - 3, 0, resMax('hull'));
       window.pushCruiseLog('◆ The drive coil misfires mid-burn. A bang, a smell, three points of hull. It keeps working, unrepentant.');
+      applyHullConcern(h0 - STATE.resources.hull);
     }
     passDays(leg.days, { travel: true });
     // ARIA's passive (ai_companions morale_bonus): +1 morale per leg.
@@ -5208,6 +5437,9 @@ function renderChoicesInner(choices) {
     // stopgap convention; .ui-tip primitive stays parked by design rule).
     if (!locked) {
       const tip = [];
+      // The whole preview, every extra included: the sub-label is one line
+      // and may end in "…" (standing rule: detail goes to the tooltip).
+      if (preview) tip.push(preview);
       if (ch.effort) tip.push('Effort ' + ch.effort + '/5' + (effortTax(ch.effort) ? ' · −' + effortTax(ch.effort) + ' morale' : '')); // no crew aboard: no morale to tax
       if (ch.gold_cost) tip.push('-' + eventGold(ch.gold_cost) + ' gold');
       // Time + resource costs, for everyone (ruling 34, demo composeTooltip
@@ -5222,7 +5454,7 @@ function renderChoicesInner(choices) {
       if (effort && effort.kit) tip.push('Uses up one ' + prettyItem(effort.kit) + ' — it counts toward the effort.');
       if (welcomes && idn.join_note) tip.push(idn.join_note);
       if (cj && cj.name) tip.push(crewJoinRole(cj) ? cj.name + ' joins the crew as ' + cj.join_role + (cj.join_note ? ' — ' + cj.join_note : '') : 'No room in the crew: ' + cj.name + ' rides to the next station as a passenger and eats with everyone' + ((cj.passenger && cj.passenger.reward && cj.passenger.reward.gold) ? '; their family pays ' + cj.passenger.reward.gold + ' gold there' : '') + '.');
-      if (effort && effort.check) { const con = Object.entries(effort.check.con).filter(([k]) => k !== 'morale' || STATE.crew.length).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).join(', '); tip.push('Short of effort: half the resource gains, ' + (effort.authored ? 'a day more' : 'two more days') + (con ? ', ' + con : '') + '. Crew and tools raise the odds.'); } // no crew aboard: a morale setback lands on nobody
+      if (effort && effort.check) { const con = Object.entries(effort.check.con).filter(([k]) => k !== 'morale' || STATE.crew.length).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).concat(STATE.crew.includes('engineer') && hullConcern(-(effort.check.con.hull || 0)) ? [concernText([{ label: 'ENGINEER', v: concernAmount(hullConcern(-effort.check.con.hull)) }]) + ' MORALE'] : []).join(', '); tip.push('Short of effort: half the resource gains, ' + (effort.authored ? 'a day more' : 'two more days') + (con ? ', ' + con : '') + '. Crew and tools raise the odds.'); } // no crew aboard: a morale setback lands on nobody
       if (tip.length) btn.title = tip.join('\n');
     }
     // Held until the text lands, then the cascade (prepareDelivery /
@@ -5391,6 +5623,8 @@ function outcomeFacts(o) {
     if (!Number.isFinite(v0) || !v0 || !RES_LABEL[k]) continue;
     const v = k === 'gold' ? (v0 < 0 ? -eventGold(-v0) : v0) : effectiveResDelta(k, v0);
     if (!v) continue;
+    // An armed Emergency Patch takes the whole hit (applyOutcomeEffects).
+    if (k === 'hull' && v < 0 && !o.combat_net && STATE.flags.has('emergency_patch_armed')) { facts.push({ text: 'PATCH STOPS −' + Math.abs(v) + ' HULL', weight: 4, good: true }); continue; }
     // Morale (owner ruling 15): no crew aboard, nothing lands — no claim.
     // morale_to names one member: the preview names them too.
     let label = RES_LABEL[k];
@@ -5398,7 +5632,17 @@ function outcomeFacts(o) {
       if (!STATE.crew.length) continue;
       if (o.morale_to) { const who = moraleTargetRole(o.morale_to); if (!who) continue; label = crewNameOf(who).toUpperCase() + ' MORALE'; }
     }
-    facts.push({ text: (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + label, weight: Math.abs(v) / (k === 'gold' ? 5 : 1), good: v > 0 });
+    facts.push({ text: (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + label, weight: Math.abs(v) / (k === 'gold' ? 5 : 1), good: v > 0, morale: k === 'morale' });
+  }
+  // Role concerns (ruling 57) ride on the morale fact, so no preview
+  // shows the crew's MORALE without the extra a role takes on top:
+  // "−3 MORALE · ENGINEER −4"; alone, "ENGINEER −4 MORALE".
+  const concerns = outcomeConcerns(withPctResources(o));
+  if (concerns.length) {
+    const mf = facts.find(f => f.morale);
+    const w = concerns.reduce((a, c) => a + Math.abs(c.v), 0), bad = concerns.some(c => c.v < 0);
+    if (mf) { mf.text += ' · ' + concernText(concerns); mf.weight += w; mf.good = mf.good && !bad; }
+    else facts.push({ text: concernText(concerns) + ' MORALE', weight: w, good: !bad });
   }
   // Materials are cargo: a gain shows only what the hold can take now.
   const matLand = materialLandings(o.materials || {});
@@ -5538,10 +5782,16 @@ function choiceCostOutcome(ch) {
    carries (outcomeFacts — what applyOutcomeEffects will really do), and
    for the fight choices what the fight risks. MARV's sub-label preview
    stays his perk; this is the hover, for everyone. */
+// A fight's one fixed cost (role concern, ruling 57): the diplomat's.
+function fightConcernLine() {
+  const c = concernDef('diplomat', 'combat');
+  return c && STATE.crew.includes('diplomat') ? 'Any fight: ' + concernText([{ label: 'DIPLOMAT', v: concernAmount(c.morale) }]) + ' MORALE' : null;
+}
 function choiceCostLines(ch) {
   const lines = [];
   if (ch.triggerCombat || ch.combat_trigger) {
     lines.push('Ship-to-ship combat: the fight decides what it costs');
+    if (fightConcernLine()) lines.push(fightConcernLine());
     return lines;
   }
   const o = choiceCostOutcome(ch);
@@ -5554,6 +5804,7 @@ function choiceCostLines(ch) {
     if (ch.triggerRamResolve) {
       const fail = Math.round(((window.RAM_FAIL_CHANCE != null) ? window.RAM_FAIL_CHANCE : 0.3) * 100);
       lines.push(fail + '% they hold: −' + (ch.hull || 18) + ' hull and a fight');
+      if (fightConcernLine()) lines.push(fightConcernLine());
     }
   } else if (ch.launch_minigame) {
     const base = ch.outcome && typeof ch.outcome === 'object' ? ch.outcome : null;
@@ -6011,6 +6262,8 @@ function healReach(ce) {
    ev.outcomes[id]. Both shapes carry the same effect fields. */
 function applyOutcomeEffects(o) {
   o = o || {};
+  concernScaleHold = null;
+  concernScaleHold = concernScale(); // released before the days pass (below)
   // set_orders: an outcome that changes standing orders ("cut to half
   // rations, effective immediately") — {pace, rations, waterSplit}.
   if (o.set_orders && typeof o.set_orders === 'object') {
@@ -6041,6 +6294,7 @@ function applyOutcomeEffects(o) {
         // inside the fight (the emergency patch absorbs one landed hit
         // there; the engineer's HULL PATCH is its own action).
         STATE.resources.hull = clamp(STATE.resources.hull + v, 0, resMax('hull'));
+        if (v < 0) applyHullConcern(-v);
       } else if (k === 'hull' && v < 0 && STATE.flags.has('emergency_patch_armed')) {
         // Emergency Patch (engineer active skill) — absorbs one hull
         // damage event, then it's spent. crew_roster.json's authored
@@ -6061,6 +6315,9 @@ function applyOutcomeEffects(o) {
         if (STATE.halfEffect && dv > 0) dv = Math.floor(dv / 2); // captain standing in: half the gains (rounded down)
         if (STATE.effortCon && dv > 0) dv = Math.floor(dv / 2);  // short of effort: thinner gains
         STATE.resources[k] = clamp(STATE.resources[k] + dv, 0, resMax(k));
+        // The engineer minds the damage as authored, like the preview
+        // (outcomeConcerns), not what was left of the plating to lose.
+        if (k === 'hull' && dv < 0) applyHullConcern(-dv);
       }
     }
   }
@@ -6069,20 +6326,26 @@ function applyOutcomeEffects(o) {
       if (k === 'gold') STATE.goldAmount = Math.max(0, STATE.goldAmount + v);
       else if (k === 'morale') addCrewMorale(v); // the whole crew feels the botched job
       else if (k in STATE.resources) STATE.resources[k] = clamp(STATE.resources[k] + v, 0, resMax(k));
+      if (k === 'hull' && v < 0) applyHullConcern(-v);
     }
   }
+  // A fight sours the diplomat, however it ended.
+  if (o.combat_net) { const c = concernDef('diplomat', 'combat'); if (c) applyConcern('diplomat', c.morale, 'combat'); }
 
+  const granted = [];
   if (o.item_grant) {
     const grants = Array.isArray(o.item_grant) ? o.item_grant : [o.item_grant];
-    for (const g of grants) grantItem(g); // capacity-enforced; logs refusals
+    for (const g of grants) if (grantItem(g)) granted.push(g); // capacity-enforced; logs refusals
   }
   // Materials grant (additive schema field, mirrors combat loot's
   // direct STATE.materials routing) — map of material id -> quantity.
+  let matsGot = {};
   if (o.materials) {
     // Captain standing in: half the gains — materials too (rounded down).
     // Capacity-enforced (materials are cargo): what fits lands, the rest is logged left behind.
-    grantMaterials(Object.fromEntries(Object.entries(o.materials).map(([mat, qty]) => [mat, STATE.halfEffect && qty > 0 ? Math.floor(qty / 2) : qty])));
+    matsGot = grantMaterials(Object.fromEntries(Object.entries(o.materials).map(([mat, qty]) => [mat, STATE.halfEffect && qty > 0 ? Math.floor(qty / 2) : qty]))).got;
   }
+  applyAlienFind(matsGot, granted);
 
   // Stowaway resolution (outcome field on reveal-event choices):
   //   welcome         — they join. If their identity carries a crew
@@ -6161,7 +6424,9 @@ function applyOutcomeEffects(o) {
     // Botanist passive "crop health events resolve more favorably": +25%
     // on crop recovery (captain botanist half).
     const ch = effectiveCropDelta(o.crop_health);
+    const h0 = STATE.cropGrowth.health;
     STATE.cropGrowth.health = clamp(STATE.cropGrowth.health + ch, 1, 100);
+    noteCropSwing(STATE.cropGrowth.health - h0);
   }
   if (o.fabricator_repair && STATE.fabricator) {
     STATE.fabricator.broken = false;
@@ -6216,6 +6481,7 @@ function applyOutcomeEffects(o) {
       applySeverity(targetRole, severity);
     } else if (targetRole && ce.type === 'injure') {
       damageCrew(targetRole, INJURE_HP);
+      if (peopleAboard().includes(targetRole)) applyInjuryConcern(targetRole);
     }
   }
 
@@ -6227,9 +6493,12 @@ function applyOutcomeEffects(o) {
   // a repair choice's days scale by effort_required / effort available.
   const scale = STATE.effortScale || 1;
   // time_cost "none": no day passes (a wave-off costs no time — owner ruling).
+  concernScaleHold = null;
   if (tier === 'none' && !STATE.effortCon) return;
   if (window.ShipLog) ShipLog.timeStart(); // Ship's Log: the ship's own daily draw isn't the outcome's effect
+  const receipt = concernReceipt; concernReceipt = null; // …nor are the days' own concerns (short rations)
   passDays(Math.max(1, Math.round(base * scale)) + (STATE.effortCon ? (STATE.effortCon.days || 2) : 0));
+  concernReceipt = receipt;
   if (window.ShipLog) ShipLog.timeEnd();
 }
 

@@ -624,9 +624,11 @@
       // Their OWN morale (owner ruling 15). The captain has none: no MO bar.
       const mo = m.key === 'captain' ? null : crewMoraleOf(m.key);
       // HUD rounding (crewMoraleAvg): above 0 reads at least 1 — "0" only when they walk.
-      const moTip = mo == null ? '' : 'Morale ' + (mo > 0 ? Math.max(1, Math.round(mo)) : 0) + '/100' + (mo <= 0 ? ' — walks off at the next station unless it rises' : '');
+      // …why it moved apart from the crew's (role concerns, ruling 57), and
+      // a warned member's "needs 25 to stay" (owner 2026-10-12).
+      const moTip = mo == null ? '' : escapeHTML(crewMoraleTip(m.key));
       const moBar = mo == null ? ''
-        : '<div class="crew-bar mo' + (mo <= 0 ? ' zero' : '') + '" title="' + moTip + '"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(mo) + '%"></div></div></div>';
+        : '<div class="crew-bar mo' + (crewDeserting(m.key) ? ' zero' : '') + '" title="' + moTip + '"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(mo) + '%"></div></div></div>';
       slot.innerHTML =
         '<div class="crew-slot-top">' + iconHtml +
           '<div class="crew-info"><div class="crew-name">' + m.label + '</div><div class="crew-role">' + m.role + '</div></div>' +
@@ -1021,6 +1023,7 @@
       // Materials are cargo (owner ruling 2026-10-11): one capacity-enforced
       // grant for the whole haul; grantMaterials logs what stays behind.
       const matRes = grantMaterials(Object.fromEntries(Object.entries(haul).filter(([k, q]) => q && MATS.has(k))));
+      applyAlienFind(matRes.got); // the xenobiologist's concern (ruling 57)
       for (const [key, qty] of Object.entries(haul)) {
         if (!qty) continue;
         if (MATS.has(key)) { if (matRes.got[key]) got.push(matRes.got[key] + ' ' + key); }
@@ -1051,6 +1054,7 @@
       // Materials are cargo (owner ruling 2026-10-11): the haul comes aboard
       // as far as the hold allows; grantMaterials logs what stays behind.
       const res = grantMaterials(inv);
+      applyAlienFind(res.got); // the xenobiologist's concern (ruling 57)
       for (const [mat, qty] of Object.entries(inv)) {
         if (!qty) continue;
         if (res.got[mat]) granted.push(res.got[mat] + ' ' + mat);

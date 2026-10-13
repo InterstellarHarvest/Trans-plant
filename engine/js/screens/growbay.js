@@ -313,6 +313,7 @@
     const realCrop = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + GSTATE.cropId) || {};
     const daysPassed = Math.max(0, STATE.daysElapsed - (GSTATE.lastTickDay || 0));
     const firstDay = (GSTATE.lastTickDay || 0) + 1;
+    const health0 = GSTATE.health;
     for (let i = 0; i < daysPassed; i++) {
       GSTATE.day++;
       tickDay = firstDay + i; // the ship day being ticked (soybean recovery window)
@@ -338,6 +339,8 @@
     }
     tickDay = null;
     GSTATE.lastTickDay = STATE.daysElapsed;
+    // The days' net health swing reaches the botanist (ruling 57).
+    if (GSTATE.health !== health0) noteCropSwing(GSTATE.health - health0);
   }
 
   /* Soybean nitrogen fixing (crops.json strengths.nitrogen_fixing):
@@ -472,8 +475,16 @@
   function yieldText() {
     const y = harvestYield();
     if (GSTATE.health <= 0) return 'none — the crop is dead';
+    const hc = concernAmount(harvestConcern()); // as it lands (half with one crew member)
     return '+' + y.total + ' ' + y.label + (y.bonus ? ' (incl. +' + y.bonus + ' tending)' : '') +
-      (y.label === 'Morale' && !STATE.crew.length ? ' — no crew aboard to enjoy it' : '');
+      (y.label === 'Morale' && !STATE.crew.length ? ' — no crew aboard to enjoy it' : '') +
+      (hc ? ' · ' + concernText([{ label: 'BOTANIST', v: hc }]) + ' morale' : '');
+  }
+  // The botanist's reaction to a harvest (role concern, ruling 57): what
+  // doHarvest applies, and what the Yield row says first.
+  function harvestConcern() {
+    const c = concernDef('botanist', 'harvest');
+    return c && STATE.crew.includes('botanist') ? c.morale : 0;
   }
   function cropHarvestYield() { if (!STATE.crop) return null; bindGrowbayState(); return harvestYield(); }
   function shipNodeType() { const n = STATE.byId && STATE.byId[STATE.currentId]; return n ? n.node_type : null; }
@@ -1389,11 +1400,14 @@
 
     // Replant — fresh growth cycle at the crop's real starting health
     // (crops.json field; CROP_META above is presentation-only content
-    // and doesn't carry it).
+    // and doesn't carry it). The replant is no swing for the botanist:
+    // the harvest is its own reaction, and the new plant starts level.
     const realCropDef = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + GSTATE.cropId);
     GSTATE.growth = 0;
     GSTATE.day = 0;
     GSTATE.health = (realCropDef && realCropDef.starting_health) || 80;
+    GSTATE.swing = 0;
+    applyConcern('botanist', harvestConcern(), 'harvest');
     lastStageIdx = -1;  // allow the next stage transition to flash
     // Re-arm the AI lifecycle announcements for the fresh cycle
     // (without this, the second crop's maturity/sickness milestones
