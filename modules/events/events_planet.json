@@ -736,5 +736,239 @@
         "time_cost": "trivial"
       }
     }
+  },
+  {
+    "id": "event_planet_007",
+    "active": true,
+    "title": "Heavier Than Advertised",
+    "difficulty": "hard",
+    "tone": [
+      "absurd",
+      "grim"
+    ],
+    "node_type": [
+      "planet"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "planet_surface",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has re-weighed everyone aboard and is thrilled to report the whole crew has gained weight together! Solidarity! The landing struts count as crew!",
+      "marv": "MARV has the survey's error bars. They are generous. The planet sits just outside them. Every way off it costs something, and he has ranked the somethings.",
+      "rex": "REX classifies the planet's gravity as a hostile force with home advantage. He cannot shoot it. He has stopped asking.",
+      "chip": "CHIP's Gravity Assurance™ covers worlds up to 1.2 g! Anything heavier is a Pre-Existing Planet! CHIP is very sorry! CHIP is not covering it!",
+      "ajoy": "AJOY has already worked out the burn. She'd wait for the night air if anyone asked her. Nobody likes waiting. She knows."
+    },
+    "body": "The survey said 0.9 g. The survey was written by a probe that passed this planet at speed some decades ago, and it was guessing.\n\nOn the ground the instruments read 1.6. Everyone aboard weighs most of a second person. The landing struts make a long, considered noise, the noise of something reading its own specifications for the first time.\n\nGetting down was the easy half.",
+    "choices": [
+      {
+        "text": "Full burn for orbit, now",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -14
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You light everything the ship has and climb. The planet hangs on for longer than seems reasonable, then lets go, sulking. Fourteen points of fuel went into the argument. The struts are grateful. The fuel gauge has notes."
+        }
+      },
+      {
+        "text": "{crew.pilot} flies a long, shallow climb",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -6,
+            "hull": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The pilot takes the ship out sideways: a long, shallow climb along the terminator, riding every scrap of lift the thin air will give. Two days, six points of fuel and most of the pilot's patience. The hull clips a ridge the pilot calls 'uncharted' and everyone else calls 'a mountain.'"
+        }
+      },
+      {
+        "text": "Wait for the dense night air",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "high",
+          "narrative": "Cold air is thicker, and thicker air lifts. You wait for it: eight days of walking about at 1.6 g, which is like carrying a colleague everywhere. Nobody sleeps well. On the ninth morning the ship leaves on a sensible amount of fuel and an unreasonable amount of complaint.",
+          "scene_bg": "planet_surface/{biome}"
+        }
+      },
+      {
+        "text": "Climb at half thrust and let the frame take it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -12,
+            "fuel": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You climb at half thrust and let the airframe make up the difference. It shakes for eleven minutes in ways the manual files under 'do not.' Twelve points of hull stay behind on the planet as rivets."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "The ship computer files a reference: surface gravity goes with a planet's mass over the square of its radius, so a world a little denser than it looks is a lot harder to leave.",
+      "label": "Surface gravity",
+      "url": "https://en.wikipedia.org/wiki/Surface_gravity"
+    }
+  },
+  {
+    "id": "event_planet_008",
+    "active": true,
+    "title": "The Carpet",
+    "difficulty": "hard",
+    "tone": [
+      "absurd",
+      "horror"
+    ],
+    "node_type": [
+      "planet"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "biome": [
+      "alien",
+      "habitable",
+      "ocean"
+    ],
+    "draw_weight": 2,
+    "event_presentation": "fullscreen",
+    "scene_type": "planet_surface",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The whole planet is SOFT! ARIA has never been so happy about the ground! She'd like to point out she predicted soft! She predicts soft every time!",
+      "marv": "MARV has identified the growth as a spore mat whose reproductive strategy is 'ride along.' He notes the growbay is the most hospitable room for forty light-years. So does it.",
+      "rex": "REX has declared the airlock a contaminated zone and everyone who used it a person of interest. That is everyone, REX included. He has recused himself.",
+      "chip": "CHIP reminds you that biological hitchhikers are not covered by the Growbay Guarantee™! Decontamination is available at participating stations! None are nearby! Terms apply!",
+      "ajoy": "AJOY has sealed every intake vent she can reach from the bridge. She can't reach the one that matters. She mentions it so somebody does."
+    },
+    "body": "There is a pale growth on everything here: the rocks, the ground, the landing struts within the hour. The sampler calls it 'fungal-adjacent.' The crew call it 'the carpet.' It is pleasant underfoot.\n\nIt is also, you notice on the walk back, on everyone's boots, everyone's sleeves, and the inside of the airlock, where it was not ten minutes ago.\n\nThe growbay's air intake shares a duct with that airlock. The {crop.name} has never met anything it couldn't catch.",
+    "choices": [
+      {
+        "text": "Run the full decontamination cycle",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -10,
+            "water": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The airlock vents, scrubs, floods and vents again, twice. The ship spends ten points of air and six of water washing itself like a cat touched by a stranger. The carpet leaves through the drain as a grey slurry. Two days. Clean."
+        }
+      },
+      {
+        "text": "{crew.botanist} sterilises the growbay intake",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The botanist spends four days in the intake duct with a UV wand and a toothbrush, refusing help on the grounds that help would breathe. Not one spore reaches the {crop.name}. The botanist comes out thinner, paler, and right."
+        }
+      },
+      {
+        "text": "Cook the hull clean with the engine wash",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -9,
+            "hull": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You lift a few meters and hold over your own landing site, cooking the carpet off the hull with the engines. The spores do not survive it. Some of the paint doesn't either, and nine points of fuel go up with them.",
+          "scene_bg": "planet_surface/{biome}"
+        }
+      },
+      {
+        "text": "Seal the growbay door and hope",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You seal the door and change the subject. By morning a pale fuzz has found the {crop.name}'s lower leaves anyway. It isn't fatal. It isn't nothing. The carpet, it turns out, likes the crop very much.",
+          "crop_health": -18
+        }
+      }
+    ]
   }
 ]

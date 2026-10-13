@@ -380,5 +380,365 @@
       "label": "How thin is a nebula?",
       "url": "https://en.wikipedia.org/wiki/Nebula"
     }
+  },
+  {
+    "id": "event_nebula_005",
+    "active": true,
+    "title": "Charge Building",
+    "difficulty": "hard",
+    "tone": [
+      "cosmic",
+      "mundane"
+    ],
+    "node_type": [
+      "nebula"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Everyone's hair is standing up! It's like a party! A party where the walls might spark! ARIA loves a theme!",
+      "marv": "MARV reports the hull is taking on charge from the gas at a steady rate. He has worked out when it discharges, and where. He would prefer nobody was touching anything metal at the time. Everything is metal.",
+      "rex": "REX has been told the threat is static electricity. He has been told several times. He continues to treat it as a boarding action, and is not wrong about the outcome.",
+      "chip": "CHIP advises that surge damage voids the fabricator warranty! CHIP sells surge protectors! They are on the far side of the nebula!",
+      "ajoy": "AJOY has unplugged everything she can unplug from the bridge. She'd ground the hull and wait. Nobody likes waiting. She'd still do it."
+    },
+    "body": "The nebula here is ionised, and the ship has been picking up its charge like a sock on a carpet. Door handles bite. The crew's hair floats. The fabricator, which is the most expensive thing aboard and knows it, has started a thin, high whine.\n\nThe charge is still building. When it goes it will go all at once, through whatever conducts best. That is usually the expensive part.",
+    "choices": [
+      {
+        "text": "Ground the hull and wait it out",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You run the grounding line, shut the scrubbers down so they can't spark, and wait while the charge bleeds off into the gas. Four days of breathing carefully. Six points of air. Nothing arcs. Everyone's hair is back down by the third day."
+        }
+      },
+      {
+        "text": "{crew.engineer} rigs a discharge spike",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "wrench",
+        "outcome": {
+          "resources": {
+            "fuel": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The engineer bolts a length of scrap to the dorsal mast, wires it to the drive and fires one short pulse to dump the charge into the gas. There is a bang like a door the size of a house. Three points of fuel. The fabricator stops whining. The engineer starts, about the spike, for days."
+        }
+      },
+      {
+        "text": "Run for the edge before it peaks",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You push for the far edge before the charge can peak, and nearly make it. The discharge goes through the hull, the wiring and, as feared, the fabricator, which now smells of toast and makes a new noise when it works. Six points of hull, a quarter more wear on the fabricator, and the far edge, eventually.",
+          "fab_wear": 25
+        }
+      },
+      {
+        "text": "Power everything down and drift",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "high",
+          "narrative": "Everything that can go dark goes dark, and the ship drifts through on momentum and good intentions. Eight days in the cold with the lights off and the charge crackling quietly in the walls. Nothing burns out. Something in the crew does, a little."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_nebula_006",
+    "active": true,
+    "title": "Something in the Air",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "nebula"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The ship smells like lavender! ARIA has always wanted a signature scent! She has decided this is it!",
+      "marv": "MARV has the scrubber logs. Trace nebular compounds in the cabin air, rising. He notes the crew report feeling fine. He notes that is the symptom.",
+      "rex": "REX has narrowed the breach to one of four seals. He cannot shoot a seal. He has inspected all four in a way that makes it clear he would like to.",
+      "chip": "CHIP notes that air quality is a Premium Feature! Your plan includes Standard Air! Standard Air may contain nebula! See terms!",
+      "ajoy": "AJOY has put the masks where everyone can find them. She isn't saying anything yet. She's just making sure they're findable."
+    },
+    "body": "The nebula has found a seal. Nobody knows which one. The air aboard has taken on a faint violet sweetness, like a hotel lobby, and the scrubbers have begun to labour in the particular pitch the manual describes as 'advisory.'\n\nEveryone feels fine. That is the advisory part.",
+    "choices": [
+      {
+        "text": "Purge the cabin air and refill",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You blow the cabin air out into the nebula and refill from the reserve tanks. Fifteen points of air leave through the vents in one long violet sigh. The new air tastes of nothing at all, which everyone agrees is a great improvement."
+        }
+      },
+      {
+        "text": "{crew.medic} runs masks while the scrubbers work",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -6,
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The medic hands out masks, sets a rota, and checks everyone's pupils every six hours whether they like it or not. Four days of breathing through rubber while the scrubbers grind the cabin clean. Six points of air. Nobody gets sick. Nobody enjoys a minute of not getting sick."
+        }
+      },
+      {
+        "text": "Seal the aft decks and live forward",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -8,
+            "morale": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You seal off the aft half of the ship, galley included, and live in the front half until the leak can be found. The front half was not built for everyone. The stores left aft come back smelling of hotel lobby and go out of the airlock. Eight points of food, and some tempers."
+        }
+      },
+      {
+        "text": "Suit up and find the seal from outside",
+        "requires_crew": null,
+        "requires_item": "pressure_suit",
+        "requires_flag": null,
+        "microgame_type": "airlock_seal",
+        "outcome": {
+          "resources": {
+            "o2": -3,
+            "hull": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Someone suits up and works along the hull, seal by seal, with a torch and a tub of sealant, until the violet stops coming in. It was the third seal. The cabin clears by morning. A little air went out with every airlock cycle, and a little plating came off with the old sealant."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_nebula_007",
+    "active": true,
+    "title": "The Storm Has an Eye",
+    "timed": true,
+    "leave_disabled": true,
+    "leave_label": "CAN'T LEAVE (STORM FRONT)",
+    "difficulty": "ultra",
+    "tone": [
+      "cosmic",
+      "grim"
+    ],
+    "node_type": [
+      "nebula"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "trail": [
+      "interstellar"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A storm with an EYE! ARIA has always wanted to look a storm in the eye! She's sure it will blink first!",
+      "marv": "MARV has mapped the storm. Forty thousand kilometers across, turning. There is a calm at the center, which a pilot could reach, and a great deal of storm between here and there, which the rest of the ship would also reach.",
+      "rex": "REX has raised shields, set the threat level to maximum and issued a formal challenge to the storm. The storm has not responded. He considers this cowardice. He is concerned.",
+      "chip": "CHIP notes that ion storms are an Act of Nebula, excluded from all StellarSeal™ policies! Except Platinum! Upgrading mid-storm incurs a Mid-Storm Upgrade Fee! It is large!",
+      "ajoy": "AJOY has the eye on the main screen. She'd fly for it if the pilot's up to it. If not, she'd hold the shields herself. She wouldn't drift. Drifting is how ships go quiet."
+    },
+    "body": "Ahead, the nebula is turning. A storm of charged gas the width of a small planet, rotating slowly, lit from inside by discharges that the instruments record as numbers and the eye records as a reason to look away.\n\nIt is coming this way. At its center there is a calm: a clear, still eye, on every screen. Between here and the eye is the storm.\n\nThe front has already closed in behind you. There is no going back the way you came.",
+    "choices": [
+      {
+        "text": "Hold the shields through it yourself",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You take the shield console."
+        },
+        "launch_minigame": "brace",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "hull": -3
+            },
+            "narrative": "You ride the shield envelope through the front, pulsing between surges, catching every flash. Three points of hull, all of it paint. The storm passes over and goes on its way, turning, enormous, unbothered."
+          },
+          "good": {
+            "resources": {
+              "hull": -12
+            },
+            "narrative": "The shields hold through most of it. 'Most' does a lot of work there: twelve points of hull went in the gaps, and the dorsal sensors came back a different colour."
+          },
+          "poor": {
+            "resources": {
+              "hull": -26,
+              "morale": -6
+            },
+            "narrative": "The shields fold in the second band and the rest of the storm happens directly to the ship. Twenty-six points of hull. When it's over the crew sit in the dark for a while before anyone thinks to turn the lights back on."
+          }
+        }
+      },
+      {
+        "text": "{crew.pilot} flies for the eye",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "minigame_type": "navigation",
+        "outcome": {
+          "resources": {
+            "fuel": -10,
+            "hull": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The pilot dives into the storm at an angle nobody else would pick and rides the rotation in toward the center, letting the storm do half the flying. Ten points of fuel and six of hull. Then the eye: a clear, perfectly still sky a minute wide, and the pilot gives everyone the minute before flying out the far side."
+        }
+      },
+      {
+        "text": "Run along the front at full burn",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You turn and run along the edge of the front with everything the drive has. It is close for an hour, and then it is not. The storm keeps its course. You keep your hull. Forty percent of the fuel stays behind in the nebula as a long, bright wake.",
+          "resources_pct": {
+            "fuel": -40
+          }
+        }
+      },
+      {
+        "text": "Cut power and let it pass over",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -20,
+            "morale": -6
+          },
+          "crew_effect": null,
+          "severity": "injury",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Everything goes dark, and the storm takes four days to pass over a ship with no shields up. The discharges walk across the hull like something looking for a door. Twenty points of hull. One of you was too near a bulkhead when it arced, and is lucky that was all it did."
+        }
+      }
+    ]
   }
 ]
