@@ -937,6 +937,77 @@ const eventOnTrail = (ev, trail) => {
   }
 }
 
+// ── No free option in a hard event (ruling 60, added 2026-10-12) ───
+// Every option of a hard or ultra event costs something real: a resource
+// lost (or a share of one), a wound or death risked, an item spent, crop
+// or fabricator damage, a morale effort tax, or time past the low tier —
+// every stop already spends a day or two, so trivial/low time alone is
+// free. A minigame choice costs what its best tier costs; a fight risks
+// the hull. A layered event's leave row ends the event with no outcome,
+// so it must be locked, hidden, or a costed exit (leave_as). A dock room
+// is optional (the player can simply not walk in), so a hard station
+// event plays as the docking instead (flat or a comm-screen scenario).
+const hardChoiceCost = (() => {
+  const src = engineSrcByFile.get('index.html');
+  const tm = src.match(/const TIME_COST_DAYS = \{([^}]*)\}/);
+  const em = src.match(/const MORALE_BY_EFFORT = \[([^\]]*)\]/);
+  if (!tm || !em) { err('index.html: TIME_COST_DAYS / MORALE_BY_EFFORT not found (lint parses them for the hard-event cost rule)'); return () => 1; }
+  const DAYS = Object.fromEntries([...tm[1].matchAll(/(\w+):\s*(\d+)/g)].map(m => [m[1], +m[2]]));
+  const TAX = em[1].split(',').map(Number);
+  const RES = ['fuel', 'food', 'water', 'o2', 'hull', 'morale', 'gold'];
+  const outcomeCost = o => {
+    if (!o) return 0;
+    let c = 0;
+    for (const k of RES) { const v = (o.resources || {})[k]; if (Number.isFinite(v) && v < 0) c -= v; }
+    for (const v of Object.values(o.resources_pct || {})) if (Number.isFinite(v) && v < 0) c -= v;
+    for (const v of Object.values(o.materials || {})) if (Number.isFinite(v) && v < 0) c -= v;
+    const days = Number.isFinite(o.time_days) ? o.time_days : (DAYS[o.time_cost || 'trivial'] ?? 1);
+    if (days > DAYS.low) c += days - DAYS.low;
+    const ce = o.crew_effect && o.crew_effect.type;
+    if (o.severity || ce === 'injure' || ce === 'kill') c += 10;
+    if (o.item_consume) c += 5;
+    if (Number.isFinite(o.crop_health) && o.crop_health < 0) c -= o.crop_health;
+    if (Number.isFinite(o.fab_wear) && o.fab_wear > 0) c += o.fab_wear / 10;
+    return c;
+  };
+  // null: a navigation choice (next/back/a station room), not an option.
+  return (ev, ch) => {
+    const tax = TAX[Math.max(0, Math.min(5, ch.effort | 0))] || 0;
+    const gold = Number.isFinite(ch.gold_cost) ? ch.gold_cost : 0;
+    if (ch.triggerCombat || ch.combat_trigger) return 10; // the fight decides, and it always risks the hull
+    const base = typeof ch.outcome === 'string' ? (ev.outcomes || {})[ch.outcome] : ch.outcome;
+    if (ch.triggerRamResolve) return outcomeCost(base) + (ch.hull || 0) + tax;
+    if (ch.launch_minigame) {
+      const b = base || {};
+      const tiers = Object.values(ch.tier_outcomes || {});
+      const costs = (tiers.length ? tiers : [{}]).map(t => outcomeCost(Object.assign({}, b, t, { resources: Object.assign({}, b.resources || {}, t.resources || {}) })));
+      return Math.min(...costs) + tax + gold;
+    }
+    if (!base || typeof base !== 'object') return null;
+    return outcomeCost(base) + tax + gold;
+  };
+})();
+{
+  for (const { file, event: ev } of eventsById.values()) {
+    const tier = Array.isArray(ev.difficulty) ? ev.difficulty[0] : ev.difficulty;
+    if (ev.active === false || (tier !== 'hard' && tier !== 'ultra')) continue;
+    for (const { layer, choices } of choiceSetsOf(ev)) {
+      for (const ch of choices) {
+        const c = hardChoiceCost(ev, ch);
+        if (c !== null && !(c > 0)) err(`${atOf(file, ev.id, layer)}: ${tier} event option "${ch.text || ch.label}" costs nothing — ruling 60: every option of a hard event costs time (past low), fuel, hull, morale, supplies or a risk to someone`);
+      }
+    }
+    if (ev.layers && !ev.no_leave && !ev.leave_disabled && !Object.values(ev.layers).every(l => l.leaveHidden)) {
+      const c = ev.leave_as ? hardChoiceCost(ev, ev.leave_as) : 0;
+      if (!(c > 0)) err(`${file} ${ev.id}: ${tier} event's leave row ("${ev.leave_label || 'LEAVE'}") is a free exit — give it a costed leave_as, or lock it (leave_disabled) (ruling 60)`);
+    }
+    const nts = ev.node_type || [];
+    const n = ev.npc;
+    const room = ev.layers && (ev.station_room || ((ev.comm_mode || 'in_person') === 'in_person' && n && (n.disposition === 'station_crew' || n.disposition === 'trader')));
+    if (nts.includes('station') && room) err(`${file} ${ev.id}: ${tier} station event is a dock room — the player can skip it free; make it play as the docking (flat, or comm_mode screen) (ruling 60)`);
+  }
+}
+
 // ── Item sinks, per trail (added 2026-10-11, owner: nothing orphaned) ──
 // Every item needs somewhere to GO: a USE button (index.html ITEM_USE), a
 // sale price, the fence's trade_good tag, a content reference that needs

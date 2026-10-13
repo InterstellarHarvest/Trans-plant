@@ -710,6 +710,9 @@
       "species": null
     },
     "leave_label": "BREAK OFF",
+    "leave_as": {
+      "outcome": "boarding_left"
+    },
     "entryLayer": "intro",
     "layers": {
       "intro": {
@@ -831,11 +834,14 @@
       "boarding_left": {
         "title": "THEIR WRECK NOW",
         "tone": null,
-        "body": "You disengage and burn away. Behind you, the derelict's lights stay on — someone's home now, by the only law that operates this far out, which is presence.",
-        "resources": {},
+        "body": "You disengage and burn away. The squatters put a warning shot across your bow on the way out — close enough to take paint and a sensor mast, which is how they say goodbye. Behind you, the derelict's lights stay on: someone's home now, by the only law that operates this far out, which is presence.",
+        "resources": {
+          "fuel": -3,
+          "hull": -5
+        },
         "sets_flag": null,
         "time_cost": "trivial",
-        "narrative": "You left the squatters their wreck. The salvage charts get one more annotation: OCCUPIED. DISPUTED. SKIP."
+        "narrative": "You left the squatters their wreck, minus some paint and a sensor mast they kept as a parting shot. The salvage charts get one more annotation: OCCUPIED. DISPUTED. SKIP."
       }
     }
   },
@@ -994,27 +1000,28 @@
       "boarding_hide": {
         "title": "PAST YOU",
         "tone": "success",
-        "body": "They pass through your ship looking for someone who isn't there, and leave empty-handed. The crew spends the rest of the day climbing out of the vents and agreeing it was dignified.",
+        "body": "They pass through your ship looking for someone who isn't there, and leave with a crate of rations for their trouble. The crew spends the rest of the day climbing out of the vents and agreeing it was dignified.",
         "resources": {
-          "morale": 2
+          "food": -6
         },
         "time_cost": "low",
         "scene_bg": "our_ship/corridor",
-        "narrative": "Hid in the vents while boarders searched the ship. They left empty-handed."
+        "narrative": "Hid in the vents while boarders searched the ship. They left with a crate of rations and nothing else."
       },
       "boarding_who": {
         "title": "AN ANSWER",
         "tone": "success",
-        "body": "The voice breaks a little. {crew.medic} volunteers before you decide, crosses to their ship with a kit, and comes back the next morning saying only that she'll live. The intruders leave the way they came and close the airlock behind them.",
+        "body": "The voice breaks a little. {crew.medic} volunteers before you decide, crosses to their ship with a kit and a crate of our rations, and comes back the next morning saying only that she'll live. The intruders leave the way they came and close the airlock behind them.",
         "line": "Her name is Isa.",
         "resources": {
-          "morale": 5
+          "morale": 5,
+          "food": -4
         },
         "sets_flag": "treated_isa",
         "time_cost": "low",
         "scene_bg": "our_ship/bridge",
         "scene_bg_base": "space/deep",
-        "narrative": "Asked the boarders who was sick. {crew.medic} treated a pirate named Isa, and the boarders left without taking anything."
+        "narrative": "Asked the boarders who was sick. {crew.medic} treated a pirate named Isa with our kit and our rations, and the boarders left without taking anything else."
       },
       "boarding_fuel_only": {
         "title": "FUEL TAKEN",
