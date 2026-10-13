@@ -214,6 +214,9 @@ function step() {
         const dayCost = { trivial: 1, low: 2, medium: 4, high: 8, extreme: 14 };
         const scoreOut = (o) => {
           if (!o) return 0;
+          // A share of what's aboard (resources_pct) reads as the amount it
+          // takes right now, the same figure the choice's tooltip shows.
+          o = withPctResources(o);
           let s = 0;
           for (const [k, v] of Object.entries(o.resources || {})) if (Number.isFinite(v)) s += (k === 'gold' ? v * 0.25 : v * w(k));
           s -= (dayCost[o.time_cost || 'trivial'] || 1) * 0.6;
@@ -224,6 +227,8 @@ function step() {
           if (o.item_grant) s += 4;
           if (o.materials) s += 2;
           if (o.item_consume) s -= 3;
+          // The crop is the run: a careful player weighs its health too.
+          if (Number.isFinite(o.crop_health) && STATE.cropGrowth && STATE.cropGrowth.health > 0) s += o.crop_health * 0.5;
           return s;
         };
         let best = -1e9;
