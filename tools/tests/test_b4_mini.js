@@ -117,7 +117,11 @@ const toPlainStop = page => page.evaluate(() => {
       window.scoreBracket = real;
       await w(450);
       window.showEndReport();
-      await w(700); // card rise
+      await w(100);
+      // The card's rise (and the overlay fade) run out before measuring: a
+      // fixed 700ms measured a scaled, mid-rise card under load.
+      const card = document.getElementById('end-report-card');
+      await Promise.all([card, card.parentElement].flatMap(el => el ? el.getAnimations({ subtree: true }) : []).filter(a => a.effect && a.effect.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => {})));
       const $ = id => document.getElementById(id);
       const rect = el => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, h: r.height, w: r.width }; };
       const vis = el => el && getComputedStyle(el).display !== 'none' && !el.closest('[hidden]') && el.getBoundingClientRect().height > 0;
@@ -301,7 +305,7 @@ const toPlainStop = page => page.evaluate(() => {
   {
     const page = await boot({ crew: ['engineer', 'pilot'] });
     const src = await page.evaluate(async () => (await (await fetch('engine/js/minigames.js')).text()));
-    ok(/fedup:'WALKED OUT'/.test(src) && /ABANDONED is now the\s*\/\/\s*player's own QUIT/.test(src.replace(/\n\s*/g, '\n  ')), 'MEDICAL fedup reads WALKED OUT, and the code says why (ABANDONED = a player quit)');
+    ok(/fedup:'WALKED OUT'/.test(src) && /ABANDONED is (now )?the\s*\/\/\s*player's own QUIT/.test(src.replace(/\n\s*/g, '\n  ')), 'MEDICAL fedup reads WALKED OUT, and the code says why (ABANDONED = a player quit)');
     const quitTitle = await page.evaluate(async () => (await (await fetch('index.html')).text()).includes("renderOutcomeView({ title: 'ABANDONED'"));
     ok(quitTitle, '…the event quit outcome is the one titled ABANDONED');
     const r = await page.evaluate(() => {
