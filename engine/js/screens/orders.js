@@ -275,7 +275,10 @@
 
     // Pace drains crew MORALE (index.html passDays) — no crew aboard, no drain (owner ruling 15).
     const noCrew = !STATE.crew.length;
-    const crewLabel = noCrew ? 'NO CREW' : p.drainMult < 1 ? 'EASING' : (p.drainMult > 1 ? 'RISING' : 'STEADY');
+    // …and the pilot minds the pace on top (role concern, ruling 57).
+    const pc = STATE.crew.includes('pilot') ? paceConcern(p.id).v : 0;
+    const crewLabel = (noCrew ? 'NO CREW' : p.drainMult < 1 ? 'EASING' : (p.drainMult > 1 ? 'RISING' : 'STEADY'))
+      + (pc ? ' · ' + concernText([{ label: 'PILOT', v: pc }]) + '/DAY' : '');
     let crewDeltaText = null, crewDeltaCls = null;
     if (!noCrew && p.drainMult !== s.drainMult) {
       crewDeltaText = p.drainMult > s.drainMult ? '▲' : '▼';
@@ -328,11 +331,13 @@
     }
 
     const foodWarn = foodEmpty < arrival;
+    // The chef minds short rations on top (role concern, ruling 57).
+    const rc = STATE.crew.includes('chef') ? rationsConcern(r.id) : 0;
 
     $('od-rations-preview').innerHTML =
       statLine('FOOD EMPTY', 'DAY ' + foodEmpty,          foodDelta.text, foodDelta.cls, foodWarn) +
       statLine('FOOD / DAY', Math.round(fpd * 100) / 100, fpdText,        'neutral',     false) +
-      statLine('MORALE',     noCrew ? 'NO CREW' : r.morale, moraleDelta,  moraleCls,     false);
+      statLine('MORALE',     (noCrew ? 'NO CREW' : r.morale) + (rc ? ' · ' + concernText([{ label: 'CHEF', v: rc }]) + '/DAY' : ''), moraleDelta, moraleCls, false);
 
     $('od-rations-desc').textContent = RATIONS_DESCS[preview.rations];
     $('od-rations-warn').classList.toggle('on', foodWarn);

@@ -1580,7 +1580,11 @@
   // ASCII "-", as the demo writes them.
   function costNotes(d) {
     const sgn = (n, label, pre) => n ? (pre ? `${label} ${n > 0 ? '+' : '-'}${Math.abs(n)}` : `${n > 0 ? '+' : '-'}${Math.abs(n)} ${label}`) : null;
-    return [sgn(d.hull, 'Hull', true), sgn(d.morale, 'Morale', true), sgn(d.fuel, 'fuel'), sgn(d.food, 'food'),
+    // Each role concern on its own (one per role: "Engineer -3").
+    const byRole = {};
+    for (const c of d.concerns || []) byRole[c.role] = (byRole[c.role] || 0) + c.v;
+    const concerns = Object.entries(byRole).map(([r, v]) => sgn(Math.round(v), r.charAt(0).toUpperCase() + r.slice(1), true));
+    return [sgn(d.hull, 'Hull', true), sgn(d.morale, 'Morale', true), ...concerns, sgn(d.fuel, 'fuel'), sgn(d.food, 'food'),
       sgn(d.gold, 'gold'), d.cargoLost || null,
       d.leftBehind || null].filter(Boolean).join(' · ');
   }
@@ -1707,6 +1711,10 @@
     const moraleIn = outcome.resources.morale;
     const moraleApplied = Number.isFinite(moraleIn) && moraleIn && STATE.crew.length
       ? STATE.crew.reduce((s, r) => s + clamp(crewMoraleOf(r) + moraleIn, 0, 100) - crewMoraleOf(r), 0) / STATE.crew.length : 0;
+    // Role concerns the fight sets off (ruling 57: the engineer's hull,
+    // the diplomat's fight, the wounded, an alien find in the loot) — the
+    // card names each one.
+    openConcernReceipt();
     applyOutcomeEffects(outcome);
     // The save's own line (the medic's or the medkit's, naming who lived);
     // combat writes it into its own crew line.
@@ -1738,7 +1746,9 @@
           if (landed < it.count) { leftBehind.push({ label: it.label, count: it.count - landed }); it.count = landed; }
         }
       }
+      applyAlienFind(Object.fromEntries(lootItems.filter(it => it.material && it.count > 0).map(it => [it.id, it.count])), lootItems.filter(it => it.isItem && it.count > 0).map(it => it.id));
     }
+    const concerns = closeConcernReceipt();
     // Cargo loss on defeat — exactly what onPlayerDefeat named.
     let cargoLost = '';
     if (result.outcome === 'defeated' && result.cargoLoss && typeof result.cargoLoss === 'object') {
@@ -1769,6 +1779,7 @@
       food: -Math.round((result.outcome === 'tribute' ? Math.min(result.foodCost || 0, before.food) : 0) + (COMBAT.foodSpent || 0)),
       gold: lootItems ? 0 : goldDelta,
       cargoLost, leftBehind: leftLine,
+      concerns,
     };
 
     // The outcome view underneath: its text names what came aboard (the

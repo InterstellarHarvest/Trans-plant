@@ -87,7 +87,7 @@ const ITEM_USE = {
   medkit:         { label: 'HEAL',      can: () => worstHurtCrew() ? null : 'Nobody is hurt',
                     use: () => { const r = worstHurtCrew(); setHP(r, 100); delete crewPendingOf()[r]; return 'Medkit opened. ' + PersonName(r) + ' is patched up and back on their feet.'; } },
   crop_treatment: { label: '+30 CROP',  can: () => !STATE.cropGrowth || STATE.cropGrowth.health <= 0 ? 'Nothing left to treat' : (STATE.cropGrowth.health >= 100 && !STATE.cropGrowth.pest ? 'The crop is healthy' : null),
-                    use: () => { const cg = STATE.cropGrowth; const had = cg.pest; if (had) clearCropPest(); cg.health = Math.min(100, cg.health + 30); return 'Crop treatment applied. +30 crop health' + (had ? '; pests cleared.' : '.'); } },
+                    use: () => { const cg = STATE.cropGrowth; const had = cg.pest; if (had) clearCropPest(); const h0 = cg.health; cg.health = Math.min(100, cg.health + 30); noteCropSwing(cg.health - h0); return 'Crop treatment applied. +30 crop health' + (had ? '; pests cleared.' : '.'); } },
   // items.json: "reveals the type of one future node… consumed on use" —
   // a good SCAN's worth: the next stop(s) locked in and reported.
   star_chart_fragment: { label: 'SCOUT', can: () => { const n = STATE.byId && STATE.byId[STATE.currentId]; return n && connectionsOf(n).length ? null : 'Nothing left to chart'; },

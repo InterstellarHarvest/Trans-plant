@@ -320,7 +320,9 @@
       if (!STATE.crop || !cg) return { ok: false, refusal: 'No crop aboard to stabilize.' };
       if (cg.health <= 0) return { ok: false, refusal: 'The crop is past stabilizing. Dr. Osei declines to discuss it.' };
       if (cg.health >= 100) return { ok: false, refusal: 'The crop is at full health. Dr. Osei is quietly proud.' };
+      const h0 = cg.health;
       cg.health = Math.min(100, cg.health + 15);
+      noteCropSwing(cg.health - h0); // the botanist minds the crop (ruling 57)
       return { ok: true, log: 'GREENHOUSE PROTOCOL — Dr. Osei stabilizes the crop (+15 health). The plants seem grateful, botanically speaking.' };
     },
     // Emergency Patch — effect {hull_damage_prevented: 1} → arms a run
@@ -467,6 +469,10 @@
     if (mo != null && mo <= 0) { fired.add('deserting'); fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'deserting')); }
     else if (mo != null && mo < MORALE_CRISIS) { fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'morale_crisis')); }
     if (mo == null) { fired.add('morale_crisis'); fired.add('deserting'); } // not monitored for the captain either
+    // What their own role concern did last (ruling 57) — why their morale
+    // moved apart from the crew's.
+    const why = mo != null && role ? crewMoraleWhy(role) : '';
+    if (why) active.push({ id: 'concern', name: 'On their mind', kind: crewMoraleWhyLifts(role) ? 'positive' : 'negative', effect: why.charAt(0).toUpperCase() + why.slice(1) });
     // Ship-wide deprivation: everyone aboard goes without.
     const dpv = STATE.deprived || {};
     for (const [res, id] of [['food', 'malnourished'], ['water', 'dehydrated'], ['o2', 'suffocating']]) {
@@ -524,6 +530,9 @@
     $('cd-stat-mo-fill').parentNode.parentNode.style.display = mo == null ? 'none' : '';
     $('cd-stat-mo-fill').style.width = (mo || 0) + '%';
     $('cd-stat-mo-val').textContent = mo == null ? '' : mo;
+    // The row's hover reads like the crew strip's MO bar.
+    const moWhy = mo == null ? '' : crewMoraleWhy(m.key);
+    $('cd-stat-mo-fill').parentNode.parentNode.title = mo == null ? '' : 'Morale ' + mo + '/100' + (moWhy ? ' — ' + moWhy : '');
     const rgb = glowRGB(hp);
     $('overlay-crew').style.setProperty('--cdw-glow-color', rgb.join(','));
     $('cd-stat-hp-fill').style.background = 'rgb(' + rgb.join(',') + ')';
