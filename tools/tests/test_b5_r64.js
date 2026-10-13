@@ -119,7 +119,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
           const facts = outcomeFacts(withPctPreview(o)).filter(f => !f.good).map(f => f.text);
           const want = {};
           const op = withPctResources(o); // a share of the tank, as it lands now
-          for (const k of RES_KEYS) { const v = (op.resources || {})[k]; if (Number.isFinite(v) && v) want[k] = effectiveResDelta(k, v); }
+          for (const k of RES_KEYS) { const v = (op.resources || {})[k]; if (Number.isFinite(v) && v) want[k] = effectiveResDelta(k, v, op); }
           const before = Object.assign({}, STATE.resources);
           btn.click();
           await wait(500);

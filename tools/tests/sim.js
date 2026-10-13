@@ -234,7 +234,9 @@ function step() {
           // takes right now, the same figure the choice's tooltip shows.
           o = withPctResources(o);
           let s = 0;
-          for (const [k, v] of Object.entries(o.resources || {})) if (Number.isFinite(v)) s += (k === 'gold' ? v * 0.25 : v * w(k));
+          // Supplies as they land (effectiveResDelta: the trail's supply
+          // bite, the recycler, the engineer), as the preview shows them.
+          for (const [k, v] of Object.entries(o.resources || {})) if (Number.isFinite(v)) s += (k === 'gold' ? v * 0.25 : k === 'morale' ? v * w(k) : effectiveResDelta(k, v, o) * w(k));
           s -= (dayCost[o.time_cost || 'trivial'] || 1) * 0.6;
           const sev = o.severity || (o.crew_effect && o.crew_effect.type === 'kill' ? 'lethal' : null);
           if (sev === 'lethal') s -= 80; else if (sev === 'delayed') s -= 30; else if (sev === 'injury') s -= 20;

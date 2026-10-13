@@ -5680,23 +5680,42 @@ function cropDeltaLanding(v) {
   if (!cg || !(cg.health > 0)) return 0;
   return clamp(cg.health + effectiveCropDelta(v), 1, 100) - cg.health;
 }
-function effectiveResDelta(k, v) {
+// o: the outcome the delta belongs to — a fight's own numbers and a
+// resources_pct share are left as they are (eventSupplyCost).
+function effectiveResDelta(k, v, o) {
   let dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.trunc(v * RECYCLER_O2_LOSS_MULT) : v; // toward zero: a −1 loss becomes 0
   // Engineer passive: hull repairs land 25% further (captain half).
   if (k === 'hull' && dv > 0) dv = Math.round(dv * (1 + 0.25 * specialistMult('engineer')));
-  return dv;
+  return eventSupplyCost(k, dv, o);
+}
+/* Per-trail supply bite (ruling 68): the trail's event_supply_cost_mult
+   (map_rules.json) scales what an event outcome costs in water and food,
+   so the same event bites harder on a shorter trail. Only costs: gains,
+   the daily draw, purchases and a fight's own tally (combat_net) are
+   untouched. A resources_pct share (withPctResources' _pctShare) stays
+   the share it names — "forty-five percent of the food" is still 45%. */
+function eventSupplyCost(k, v, o) {
+  if ((k !== 'water' && k !== 'food') || !(v < 0) || (o && o.combat_net)) return v;
+  const rules = MOD.map_rules.trails[STATE.trail];
+  const m = rules && rules.event_supply_cost_mult && rules.event_supply_cost_mult[k];
+  if (!(Number.isFinite(m) && m > 0)) return v;
+  const share = (o && o._pctShare && o._pctShare[k]) || 0;
+  const flat = v - share;
+  return flat < 0 ? share - Math.round(-flat * m) : v; // half a point rounds toward the bigger cost
 }
 /* resources_pct (outcome field): a share of what's aboard — "thirty
    percent fuel" — resolved against the current stock. */
 function withPctResources(o) {
   if (!o || !o.resources_pct) return o;
-  const res = Object.assign({}, o.resources || {});
+  const res = Object.assign({}, o.resources || {}), share = {};
   for (const [k, pct] of Object.entries(o.resources_pct)) {
     if (!Number.isFinite(pct)) continue;
     const have = k === 'gold' ? STATE.goldAmount : k === 'morale' ? (crewMoraleRaw() || 0) : (STATE.resources[k] || 0);
-    res[k] = (res[k] || 0) + Math.round(have * pct / 100);
+    share[k] = Math.round(have * pct / 100);
+    res[k] = (res[k] || 0) + share[k];
   }
-  return Object.assign({}, o, { resources: res, resources_pct: null });
+  // _pctShare: how much of each figure is the share (eventSupplyCost).
+  return Object.assign({}, o, { resources: res, resources_pct: null, _pctShare: share });
 }
 function outcomeFacts(o) {
   const facts = [];
@@ -5706,7 +5725,7 @@ function outcomeFacts(o) {
   }
   for (const [k, v0] of Object.entries(o.resources || {})) {
     if (!Number.isFinite(v0) || !v0 || !RES_LABEL[k]) continue;
-    const v = k === 'gold' ? (v0 < 0 ? -eventGold(-v0) : v0) : effectiveResDelta(k, v0);
+    const v = k === 'gold' ? (v0 < 0 ? -eventGold(-v0) : v0) : effectiveResDelta(k, v0, o);
     if (!v) continue;
     // An armed Emergency Patch takes the whole hit (applyOutcomeEffects).
     if (k === 'hull' && v < 0 && !o.combat_net && STATE.flags.has('emergency_patch_armed')) { facts.push({ text: 'PATCH STOPS −' + Math.abs(v) + ' HULL', weight: 4, good: true }); continue; }
@@ -6396,7 +6415,7 @@ function applyOutcomeEffects(o) {
         if (o.morale_to) { const who = moraleTargetRole(o.morale_to); if (who) addCrewMorale(dv, who); }
         else addCrewMorale(dv);
       } else if (k in STATE.resources) {
-        let dv = effectiveResDelta(k, v);
+        let dv = effectiveResDelta(k, v, o);
         if (STATE.halfEffect && dv > 0) dv = Math.floor(dv / 2); // captain standing in: half the gains (rounded down)
         if (STATE.effortCon && dv > 0) dv = Math.floor(dv / 2);  // short of effort: thinner gains
         STATE.resources[k] = clamp(STATE.resources[k] + dv, 0, resMax(k));
