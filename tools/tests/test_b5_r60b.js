@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
 const URL = process.env.URL || 'http://localhost:8177/index.html';
 const HARD = ['event_planet_007', 'event_planet_008', 'event_asteroid_005', 'event_asteroid_006',
   'event_nebula_005', 'event_nebula_006', 'event_shipboard_018', 'event_shipboard_019'];
-const ULTRA = ['event_asteroid_007', 'event_nebula_007', 'event_shipboard_020'];
+const ULTRA = ['event_asteroid_007', 'event_nebula_007', 'event_shipboard_020', 'event_shipboard_021'];
 const IDS = [...HARD, ...ULTRA];
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } };
@@ -221,7 +221,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       const n = ['asteroid_field', 'nebula', 'station', 'void', 'planet'].reduce((s, t) => s + r[`interstellar/${label}/${t}`].n, 0);
       ok(n === 0, `interstellar ${label} (${label === 'early' ? 25 : 50}% of the path): 0 ultra draws`);
     }
-    for (const [type, id] of [['asteroid_field', 'event_asteroid_007'], ['nebula', 'event_nebula_007'], ['station', 'event_shipboard_020'], ['void', 'event_shipboard_020']]) {
+    for (const [type, id] of [['asteroid_field', 'event_asteroid_007'], ['nebula', 'event_nebula_007'], ['station', 'event_shipboard_020'], ['void', 'event_shipboard_021'], ['planet', 'event_shipboard_021']]) {
       const d = r[`interstellar/late/${type}`];
       ok((d.hits[id] || 0) > 0, `interstellar late, ${type}: ${id} drawn ${d.hits[id] || 0}/${d.total} (all ultra ${d.n})`);
     }
