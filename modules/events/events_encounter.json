@@ -710,6 +710,9 @@
       "species": null
     },
     "leave_label": "BREAK OFF",
+    "leave_as": {
+      "outcome": "boarding_left"
+    },
     "entryLayer": "intro",
     "layers": {
       "intro": {
@@ -831,11 +834,14 @@
       "boarding_left": {
         "title": "THEIR WRECK NOW",
         "tone": null,
-        "body": "You disengage and burn away. Behind you, the derelict's lights stay on — someone's home now, by the only law that operates this far out, which is presence.",
-        "resources": {},
+        "body": "You disengage and burn away. The squatters put a warning shot across your bow on the way out — close enough to take paint and a sensor mast, which is how they say goodbye. Behind you, the derelict's lights stay on: someone's home now, by the only law that operates this far out, which is presence.",
+        "resources": {
+          "fuel": -3,
+          "hull": -5
+        },
         "sets_flag": null,
         "time_cost": "trivial",
-        "narrative": "You left the squatters their wreck. The salvage charts get one more annotation: OCCUPIED. DISPUTED. SKIP."
+        "narrative": "You left the squatters their wreck, minus some paint and a sensor mast they kept as a parting shot. The salvage charts get one more annotation: OCCUPIED. DISPUTED. SKIP."
       }
     }
   },
@@ -994,27 +1000,28 @@
       "boarding_hide": {
         "title": "PAST YOU",
         "tone": "success",
-        "body": "They pass through your ship looking for someone who isn't there, and leave empty-handed. The crew spends the rest of the day climbing out of the vents and agreeing it was dignified.",
+        "body": "They pass through your ship looking for someone who isn't there, and leave with a crate of rations for their trouble. The crew spends the rest of the day climbing out of the vents and agreeing it was dignified.",
         "resources": {
-          "morale": 2
+          "food": -6
         },
         "time_cost": "low",
         "scene_bg": "our_ship/corridor",
-        "narrative": "Hid in the vents while boarders searched the ship. They left empty-handed."
+        "narrative": "Hid in the vents while boarders searched the ship. They left with a crate of rations and nothing else."
       },
       "boarding_who": {
         "title": "AN ANSWER",
         "tone": "success",
-        "body": "The voice breaks a little. {crew.medic} volunteers before you decide, crosses to their ship with a kit, and comes back the next morning saying only that she'll live. The intruders leave the way they came and close the airlock behind them.",
+        "body": "The voice breaks a little. {crew.medic} volunteers before you decide, crosses to their ship with a kit and a crate of our rations, and comes back the next morning saying only that she'll live. The intruders leave the way they came and close the airlock behind them.",
         "line": "Her name is Isa.",
         "resources": {
-          "morale": 5
+          "morale": 5,
+          "food": -4
         },
         "sets_flag": "treated_isa",
         "time_cost": "low",
         "scene_bg": "our_ship/bridge",
         "scene_bg_base": "space/deep",
-        "narrative": "Asked the boarders who was sick. {crew.medic} treated a pirate named Isa, and the boarders left without taking anything."
+        "narrative": "Asked the boarders who was sick. {crew.medic} treated a pirate named Isa with our kit and our rations, and the boarders left without taking anything else."
       },
       "boarding_fuel_only": {
         "title": "FUEL TAKEN",
@@ -1162,6 +1169,407 @@
         "time_cost": "trivial",
         "scene_bg": "space/deep",
         "narrative": "Burned away from an unknown vessel. The pulse repeated once, then silence."
+      }
+    }
+  },
+  {
+    "id": "event_encounter_toll_001",
+    "active": true,
+    "title": "The Toll Chain",
+    "difficulty": "hard",
+    "tone": [
+      "absurd",
+      "grim"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "pirate",
+      "species": null
+    },
+    "leave_label": "TURN BACK",
+    "leave_as": {
+      "outcome": "toll_detour"
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE TOLL CHAIN",
+        "body": "A line of tethered buoys crosses your heading, blinking in sequence, strung between two ships that have clearly been here a while. A third ship sits at the gap with its guns politely visible. Someone has painted PAY HERE on the nearest buoy. {npc.quirk}",
+        "line": "Lane maintenance fee. We maintain the lane. Mostly by being in it.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A toll road! Civilization reaches even here! ARIA wants a receipt for the scrapbook!",
+          "marv": "MARV counts three ships, two of them armed, and a buoy line that would fold like paper. The buoys are not the problem. The ships are the problem.",
+          "rex": "REX recommends punching the gap at full burn. He has run blockades. He ran them in a warship. He is choosing not to dwell on the difference.",
+          "chip": "CHIP can process the toll through our partner network! A small convenience fee applies! The convenience is ours!",
+          "ajoy": "AJOY notes the gap ship has a patched reactor housing and a captain who keeps glancing at it. She'd use that. You probably won't. It's fine."
+        },
+        "revisit": {
+          "body": "The buoys are still blinking. The gap ship's guns are still politely visible."
+        },
+        "choices": [
+          {
+            "text": "Pay the toll — 15 gold",
+            "gate": {
+              "gold": 15
+            },
+            "outcome": "toll_paid"
+          },
+          {
+            "text": "Pay in fuel",
+            "sub": "Their tender siphons a fifth of the tank",
+            "outcome": "toll_fuel"
+          },
+          {
+            "text": "Haggle",
+            "sub": "{crew.diplomat} asks about the standard of maintenance",
+            "gate": {
+              "crew": "diplomat"
+            },
+            "next": "haggle"
+          },
+          {
+            "text": "Run the gap",
+            "sub": "{crew.pilot} at the helm · they will shoot",
+            "gate": {
+              "crew": "pilot"
+            },
+            "risky": true,
+            "outcome": "toll_run_pilot"
+          },
+          {
+            "text": "Punch through",
+            "sub": "Full burn at the gap · they will shoot",
+            "risky": true,
+            "outcome": "toll_run"
+          },
+          {
+            "text": "Open fire",
+            "triggerCombat": true
+          }
+        ]
+      },
+      "haggle": {
+        "title": "TERMS",
+        "body": "{crew.diplomat} opens the channel and starts asking about lane maintenance — what is maintained, how often, by whom, to what standard — with the patience of a person who has never once been in a hurry.",
+        "line": "Look. Nobody's ever asked about the standard.",
+        "pose": "listening",
+        "ai": {
+          "aria": "Negotiation! ARIA is sending positive thoughts down the channel! Lots of them!",
+          "marv": "MARV notes the toll-keeper has started answering questions instead of asking for money. That is how these go wrong for them.",
+          "rex": "REX stands ready. He would like it known that he is standing ready, and that he expected to be needed by now.",
+          "chip": "CHIP is drafting a Lane Maintenance Service Agreement! It has a satisfaction survey! Nobody will be satisfied!",
+          "ajoy": "AJOY would have opened with the reactor housing. This works too. Slower."
+        },
+        "choices": [
+          {
+            "text": "Settle at half — 7 gold",
+            "gate": {
+              "gold": 7
+            },
+            "outcome": "toll_half"
+          },
+          {
+            "text": "Offer to fix their reactor instead",
+            "sub": "{crew.engineer} pays the toll in labor",
+            "gate": {
+              "crew": "engineer"
+            },
+            "outcome": "toll_repair"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "toll_paid": {
+        "title": "PAID UP",
+        "tone": null,
+        "body": "The gold transfers. The buoy line parts with a little sequence of green lights, like a shop door. The gap ship's captain salutes, which is the most expensive salute you have ever received.",
+        "resources": {
+          "gold": -15
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Paid fifteen gold at a pirate toll chain for a gap in some buoys."
+      },
+      "toll_fuel": {
+        "title": "SIPHONED",
+        "tone": null,
+        "body": "Their tender noses up to your fuel port and drinks a fifth of the tank with an audible slurp. The buoys part. The tender's pilot waves. Nobody waves back.",
+        "resources": {},
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Paid the toll chain in fuel. A fifth of the tank, siphoned with an audible slurp.",
+        "resources_pct": {
+          "fuel": -20
+        }
+      },
+      "toll_run_pilot": {
+        "title": "THROUGH THE GAP",
+        "tone": "danger",
+        "body": "{crew.pilot} takes the gap at an angle no reasonable ship would, under fire from both tethered ships. Two hits land on the stern. The buoy line parts like a ribbon at a ceremony nobody wanted.",
+        "resources": {
+          "fuel": -5,
+          "hull": -6
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Ran the toll chain with {crew.pilot} at the helm. Two hits on the stern, no toll paid."
+      },
+      "toll_run": {
+        "title": "THROUGH, MOSTLY",
+        "tone": "danger",
+        "body": "You go for the gap at full burn. Both tethered ships fire. Most of the fire hits. The ship comes out the far side trailing a buoy, a cloud of insulation, and a strong argument for hiring a pilot.",
+        "resources": {
+          "hull": -14,
+          "fuel": -4
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Punched through the toll chain at full burn and took most of what they fired."
+      },
+      "toll_half": {
+        "title": "HALF PRICE",
+        "tone": null,
+        "body": "The toll-keeper agrees to half, on the condition that nobody tells the other ships. {crew.diplomat} agrees, and then, being thorough, tells the other ships.",
+        "resources": {
+          "gold": -7
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "{crew.diplomat} talked the toll chain down to seven gold."
+      },
+      "toll_repair": {
+        "title": "SERVICE CALL",
+        "tone": "success",
+        "body": "{crew.engineer} crosses over, spends four days inside a reactor housing held together with optimism, and comes back with grease to the elbows and free passage, in writing. The toll-keeper calls it the best maintenance the lane has ever had. It is not a high bar. It is a bar.",
+        "resources": {},
+        "sets_flag": "fixed_toll_reactor",
+        "time_cost": "medium",
+        "narrative": "Paid the toll chain in four days of {crew.engineer}'s labor on a pirate reactor."
+      },
+      "toll_detour": {
+        "title": "THE LONG WAY",
+        "tone": null,
+        "body": "You turn back and go around the chain. It is a long way around, which is the whole business model. The toll-keepers watch you go with the patience of people who will still be here when you come back.",
+        "resources": {
+          "fuel": -8
+        },
+        "sets_flag": null,
+        "time_cost": "medium",
+        "narrative": "Went the long way around a pirate toll chain. Four days and eight fuel to keep fifteen gold."
+      }
+    }
+  },
+  {
+    "id": "event_encounter_inspection_001",
+    "active": true,
+    "title": "Spot Check",
+    "difficulty": "hard",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "drifter",
+      "species": "human",
+      "displayName": "INSPECTOR"
+    },
+    "leave_label": "CAN'T LEAVE (CLAMPED ON)",
+    "leave_disabled": true,
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "SPOT CHECK",
+        "body": "A boxy cutter with LANE AUTHORITY stencilled on it, in three different hands, matches your velocity and clamps on without asking. The Lane Authority, as far as anyone can determine, is the cutter. It has a uniform, a clipboard and a very large boarding clamp, which out here is all the authority anyone needs.",
+        "line": "Routine biosecurity inspection. Nothing to worry about. Unless there's something to worry about.",
+        "pose": "listening",
+        "ai": {
+          "aria": "An inspector! ARIA has tidied! ARIA tidied the growbay twice and the airlock once, which was plenty!",
+          "marv": "MARV has checked the registry. There is no Lane Authority. There is a cutter, a uniform and a clamp rated for twice our mass. In practical terms, there is a Lane Authority.",
+          "rex": "REX has the boarding party's sidearms at three. He has their patience at fewer than three. He recommends the inspection proceed briskly.",
+          "chip": "CHIP recommends full cooperation and a five-star rating! The inspector's ratings affect their bonus! Everybody's ratings affect somebody's bonus!",
+          "ajoy": "AJOY notes the inspector's 'biosecurity kit' is a cooler and a pair of shears. She leaves it to you what that means. She'd rather not, but she will."
+        },
+        "revisit": {
+          "body": "The clamp is still on. The inspector is still holding the clipboard as if it were a warrant."
+        },
+        "choices": [
+          {
+            "text": "Let them inspect",
+            "sub": "They want to see the growbay",
+            "next": "inspect"
+          },
+          {
+            "text": "Question their authority",
+            "sub": "{crew.diplomat} asks to see the charter",
+            "gate": {
+              "crew": "diplomat"
+            },
+            "outcome": "insp_talked"
+          },
+          {
+            "text": "Pay the 'inspection fee' — 12 gold",
+            "gate": {
+              "gold": 12
+            },
+            "outcome": "insp_paid"
+          },
+          {
+            "text": "Refuse the boarding",
+            "sub": "They have a cutting torch",
+            "risky": true,
+            "outcome": "insp_refused"
+          }
+        ]
+      },
+      "inspect": {
+        "title": "THE INSPECTION",
+        "comm_mode": "in_person",
+        "bg": "our_ship/growbay/{crop}",
+        "body": "The inspector walks your growbay with a pair of shears and the air of a connoisseur. A cooler hums on a strap at their hip. They stop at the healthiest plant aboard, as people with shears always do.",
+        "line": "This one's showing signs of something. We'll need a sample. A big sample.",
+        "pose": "pleased",
+        "ai": {
+          "aria": "They LIKE our crop! It's the best one they've seen! ARIA can tell by the shears!",
+          "marv": "MARV notes the 'sample' is about a fifth of the crop by mass. Contraband botany sells well at the outer stations. He has the prices. He wishes he didn't.",
+          "rex": "REX has positioned himself between the inspector and the crop, in the sense that he has turned the growbay lights up very bright.",
+          "chip": "CHIP notes that samples taken during inspection are non-refundable! Like most things! Like everything, really!",
+          "ajoy": "AJOY would point at the cooler and ask what else is in it, in front of their own crew. But you're the captain. Apparently."
+        },
+        "choices": [
+          {
+            "text": "Hand over the sample",
+            "outcome": "insp_sample"
+          },
+          {
+            "text": "Offer cuttings instead",
+            "sub": "{crew.botanist} prepares a tray",
+            "gate": {
+              "crew": "botanist"
+            },
+            "outcome": "insp_cuttings"
+          },
+          {
+            "text": "Ask what else is in the cooler",
+            "sub": "In front of their crew",
+            "risky": true,
+            "outcome": "insp_cooler"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "insp_talked": {
+        "title": "JURISDICTION",
+        "tone": null,
+        "body": "{crew.diplomat} asks to see the Lane Authority's charter, then its founding vote, then the minutes of the founding vote. The inspector takes one small, face-saving sample and unclamps before anyone asks to see the seal.",
+        "resources": {
+          "morale": -1
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "{crew.diplomat} argued jurisdiction with a self-appointed Lane Authority. They took a small sample and left.",
+        "crop_health": -5
+      },
+      "insp_paid": {
+        "title": "FEE RECEIVED",
+        "tone": null,
+        "body": "The fee is accepted, the clipboard signed, the shears holstered. The cutter unclamps with a courteous bump. It is exactly like being robbed, except that you are thanked.",
+        "resources": {
+          "gold": -12
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Paid a Lane Authority 'inspection fee' of twelve gold. Thanked for it, too."
+      },
+      "insp_refused": {
+        "title": "FORCED",
+        "tone": "danger",
+        "body": "You refuse. They cut through the outer airlock seal anyway, take their sample at gunpoint, and leave a citation for 'obstruction' taped to the inner door. The seal will need work. The citation is framed by lunchtime.",
+        "resources": {
+          "hull": -8
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Refused a Lane Authority boarding. They cut the airlock seal, took a sample anyway and left a citation.",
+        "crop_health": -10
+      },
+      "insp_sample": {
+        "title": "SAMPLED",
+        "tone": null,
+        "body": "The inspector takes a fifth of the crop, labels it BIOHAZARD in a confident hand, and leaves. The cooler sounds heavier on the way out. The crew watched the whole thing and did nothing, and will be thinking about that for a while.",
+        "resources": {
+          "morale": -2
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Let a Lane Authority inspector take a fifth of the crop as a 'sample.'",
+        "crop_health": -15
+      },
+      "insp_cuttings": {
+        "title": "CUTTINGS",
+        "tone": "success",
+        "body": "{crew.botanist} offers a tray of cuttings, prepared on the spot, with a short lecture on viability. The inspector, outmatched on botany, accepts the tray and the lecture. The crop loses a few stems. {crew.botanist} loses patience, briefly and audibly.",
+        "resources": {
+          "morale": -1
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "{crew.botanist} fobbed a Lane Authority inspector off with a tray of cuttings.",
+        "crop_health": -5
+      },
+      "insp_cooler": {
+        "title": "CALLED",
+        "tone": "success",
+        "body": "You ask, in front of their crew, what else is in the cooler. The inspector's crew looks at the cooler. The inspector looks at the inspector's crew. The cutter unclamps so fast it takes a ring of your airlock seal with it, and is gone before anyone says 'contraband.'",
+        "resources": {
+          "hull": -5
+        },
+        "sets_flag": "called_the_inspectors_bluff",
+        "time_cost": "trivial",
+        "narrative": "Asked a Lane Authority inspector what else was in the cooler. The cutter left in a hurry, with a ring of our airlock seal."
       }
     }
   }

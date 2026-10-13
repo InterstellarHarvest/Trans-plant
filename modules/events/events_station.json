@@ -2097,5 +2097,344 @@
         "waves_off": true
       }
     }
+  },
+  {
+    "id": "event_station_015",
+    "active": true,
+    "title": "Customs Hold",
+    "difficulty": "hard",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "bg": "station/office",
+    "ai_flavor": {
+      "aria": "A customs check! ARIA loves paperwork! Every form is a little promise that someone, somewhere, is keeping track!",
+      "marv": "MARV has read the flag. It cites a manifest field we filled in correctly. The flag is not about the manifest. It is about the queue, which needs feeding.",
+      "rex": "REX has assessed the tape. It is not load-bearing. He has also assessed the officer behind the tape, who is, and recommends no sudden movements.",
+      "chip": "CHIP can expedite this with a Priority Clearance Pass™! Terms apply! The terms are mostly the price!",
+      "ajoy": "AJOY would have filed the manifest in the station's own format three legs ago. She mentions it now only so it's on record that she mentioned it."
+    },
+    "body": "The berth clamps engage, and so does Customs.\n\nA notice scrolls across the airlock display: your cargo manifest has been flagged for 'irregularities in the description of irregularities.' Until the matter is resolved, your hold is sealed with a strip of yellow tape that the station insists is load-bearing.\n\nThe Customs office is open. It has a queue. The queue has a queue.",
+    "choices": [
+      {
+        "text": "Pay the expedite fee — 12 gold",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": -12
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The fee clears the irregularity at once, which is how you learn what the irregularity was. The tape comes down. The receipt is longer than the manifest."
+        },
+        "gate": {
+          "gold": 12
+        }
+      },
+      {
+        "text": "Let them take a \"sample\" of the stores",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Customs selects a representative sample of your provisions, which is to say the good ones. The tape comes down. Somewhere on the station, an officer has a very well-stocked lunch."
+        }
+      },
+      {
+        "text": "Diplomat argues the classification",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The diplomat wins on a point of classification nobody else aboard understands, and spends the next two days explaining it to everyone, in full, at every meal."
+        }
+      },
+      {
+        "text": "Wait your turn in the queue",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "high",
+          "narrative": "Eight days in the queue. The officer, when you finally reach the window, stamps the manifest without reading it and calls the next ship. The crew spends the week learning the station's three television channels by heart."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_station_016",
+    "active": true,
+    "title": "The Clamp",
+    "difficulty": "hard",
+    "tone": [
+      "mundane",
+      "grim"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "bg": "station/dock",
+    "ai_flavor": {
+      "aria": "The station is HUGGING us! Very firmly! ARIA is choosing to find this flattering!",
+      "marv": "MARV estimates the clamp's closing force at four times rated. The plating by the airlock was rated by optimists. He has started a countdown he is not sharing.",
+      "rex": "REX classifies the clamp as hostile. The dockmaster says it is not hostile, it is 'on a ticket.' REX has heard that before, usually right before something exploded.",
+      "chip": "CHIP notes this berth's Terms of Docking waive all liability for 'clamp enthusiasm'! It's in clause nine! Nobody reads clause nine!",
+      "ajoy": "AJOY points out there were two free berths and you picked the one with the scorch marks. She's sure it seemed like a good idea at the time."
+    },
+    "body": "The berth clamp closes on your hull with a sound like a filing cabinet falling down a stairwell, and does not stop closing.\n\nThe dockmaster apologizes over comms. The clamp has done this before. There is a ticket open about it. The ticket is older than some of your crew.\n\nThe plating by the airlock is starting to make conversation.",
+    "choices": [
+      {
+        "text": "Engineer overrides the clamp from inside",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The engineer opens the clamp's service panel from our side, finds the relay that has been stuck since before the ticket, and hits it with a wrench in a precise and loving way. The clamp lets go. The plating keeps a dent shaped like an apology."
+        }
+      },
+      {
+        "text": "Pay for a 'priority release' — 10 gold",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": -10,
+            "hull": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Money changes hands. The clamp, inexplicably, opens at once. The dent it leaves is small, and is described on the receipt as 'normal wear.'"
+        },
+        "gate": {
+          "gold": 10
+        }
+      },
+      {
+        "text": "Sit tight while the station crew frees you",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Four days of a maintenance crew arguing about whose clamp it is, while the clamp goes on making its point on your plating. It is eventually freed by a junior technician who was not told it couldn't be done."
+        }
+      },
+      {
+        "text": "Burn free",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -10,
+            "fuel": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You burn against the clamp until one of you gives. It is mostly the clamp. The rest is a strip of your plating, now permanently part of the station."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_station_017",
+    "active": true,
+    "title": "Fumigation Notice",
+    "difficulty": "hard",
+    "tone": [
+      "corporate",
+      "grim"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Spa day for the growbay! ARIA is sure the plants will come out refreshed! Mostly refreshed! Some of them will come out!",
+      "marv": "MARV has read the fumigant's data sheet. It kills spores. It also kills most things that are not spores, and is mildly hostile to the things it doesn't kill.",
+      "rex": "REX respects the officer's commitment. Scorched-earth biosecurity. He would have done the same. He would have done it sooner.",
+      "chip": "CHIP is pleased to offer FumiGuard™ Premium, which kills ninety percent fewer crops than FumiGuard™ Standard! For a modest upgrade fee!",
+      "ajoy": "AJOY notes the officer's scanner was calibrated three updates ago. She's not saying the reading is wrong. She's saying it's old, like the officer's opinion of you."
+    },
+    "body": "The station's agricultural officer meets you at the airlock with a scanner, a respirator, and the expression of someone who has already decided.\n\nYour growbay has tripped the station's biosecurity threshold. Possibly a spore. Possibly a sensor. The officer does not distinguish between the two, on principle.\n\nThe station offers fumigation. The station insists on fumigation. The station has never, in its history, been talked out of fumigation.",
+    "choices": [
+      {
+        "text": "Let them fumigate",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The growbay is sealed, gassed and vented in an afternoon, and the vent takes some of the ship's air with it. The station is satisfied. The crop is alive, technically, and has the look of something that has been given bad news.",
+          "crop_health": -20
+        }
+      },
+      {
+        "text": "Botanist demands a proper culture first",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The botanist cites three standards and a precedent. The officer runs a real culture, which takes four days and finds a single spore, which the botanist removes by hand, with tweezers and contempt. A few leaves go with it.",
+          "crop_health": -5
+        }
+      },
+      {
+        "text": "Pay for the gentle treatment — 15 gold",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": -15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The gentle treatment is the same gas at a lower concentration and a higher price. The crop comes through it singed rather than stunned. The officer signs the release with a pen that cost more than your hull plating.",
+          "crop_health": -8
+        },
+        "gate": {
+          "gold": 15
+        }
+      },
+      {
+        "text": "Refuse, and undock without clearance",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You decline. The officer logs you as non-compliant, and the station closes every service to a non-compliant ship: no berth, no market, no medbay. You keep the crop exactly as it was, and nothing else from this stop.",
+          "waves_off": true
+        }
+      }
+    ]
   }
 ]
