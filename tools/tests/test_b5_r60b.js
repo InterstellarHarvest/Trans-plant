@@ -89,6 +89,9 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     await load();
     const crew = [r.c.crew || 'chef', r.c.crew === 'medic' ? 'chef' : 'medic'];
     const before = await page.evaluate(({ id, crew, item, tier }) => {
+      // Seeded, so who a severity lands on (and so which asserts run) is the
+      // same in every browser.
+      let a = 6060; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
       applySetupToState({ trail: 'interstellar', ai: 'ajoy', captain: 'veteran', crew, crop: 'wheat', ship: 'B' });
       STATE.stowaway = null;
       if (item && !STATE.items.includes(item)) STATE.items.push(item);
