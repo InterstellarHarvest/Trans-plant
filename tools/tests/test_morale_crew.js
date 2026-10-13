@@ -3,7 +3,7 @@
 // none (no MO bar, never averaged); group changes hit everyone, a named
 // change hits one; the crew AVERAGE (crewMoraleAvg) drives low_morale
 // (<30) and mutiny (0); a member warned at 0 walks off at the next
-// station (Ship's Log entry, role freed) unless raised first; no crew
+// station (Ship's Log entry, role freed) unless back to 25 first; no crew
 // aboard → no morale at all ("—", no low_morale / mutiny, REST locked).
 // Saves migrate an old single morale; per-member morale round-trips.
 // Also (owner, batch 3): the cruise crew strip is always captain + 2
@@ -177,22 +177,23 @@ const stationAhead = page => page.evaluate(() => {
     await page.close();
   }
 
-  console.log('— closed loop: raised above 0 before the station cancels it');
+  console.log('— closed loop: back to 25 before the station cancels it (ruling 62)');
   {
     const page = await boot({ ai: 'rex' });
     await page.evaluate(() => { setCrewMorale(0, 'medic'); renderCruise(); });
-    // REST through the real Stop menu (2 days) — every member rises.
+    // REST through the real Stop menu (5 days, +30) — every member rises;
+    // the warning holds until they are back to MORALE_CRISIS (ruling 62).
     await page.evaluate(() => {
       window.__rnd = Math.random; Math.random = () => 0.99; // no interrupts, no trader
       if (!document.body.classList.contains('stop-active')) document.getElementById('stop-btn').click();
       [...document.querySelectorAll('#stop-choices .stop-choice')].find(b => /^REST/.test(b.querySelector('.stop-choice-body').textContent)).click();
-      [...document.querySelectorAll('.day-step')][1].click();
+      [...document.querySelectorAll('.day-step')][4].click();
     });
-    await page.waitForFunction(() => crewMoraleOf('medic') > 0 && !document.querySelector('.stop-choice.day-picker'), null, { timeout: 15000 }).catch(() => {});
+    await page.waitForFunction(() => crewMoraleOf('medic') >= MORALE_CRISIS && !document.querySelector('.stop-choice.day-picker'), null, { timeout: 30000 }).catch(() => {});
     await page.waitForTimeout(2600);
     const r = await page.evaluate(() => { Math.random = window.__rnd; renderCruise(); return { mo: crewMoraleOf('medic'), warned: !!(STATE.moraleWarned || {}).medic }; });
     const log = await logText(page);
-    ok(r.mo > 0 && !r.warned, 'REST lifted the medic to ' + r.mo + ': the warning is cleared');
+    ok(r.mo >= 25 && !r.warned, 'REST lifted the medic to ' + r.mo + ': back to 25, the warning is cleared');
     ok(/Desertion risk cleared/.test(log), "REX's all-clear line is in the log");
     const st = await stationAhead(page);
     const crew = await page.evaluate(n => { document.body.classList.remove('stop-active'); travelTo(n, { skipEvent: true }); return STATE.crew.slice(); }, st);

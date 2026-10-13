@@ -10,6 +10,10 @@
 // dossier, the one cruise-log line, a stowaway taking the role's concern,
 // and a scripted desertion: one member falls alone to 0, is warned, and
 // walks at the next station while the crew average never reaches mutiny.
+// Ruling 62: the warning holds until their own morale is back to 25 (a
+// passive +1 doesn't cancel it; "needs 25 to stay" on the MO bar and the
+// dossier). Ruling 63: concerns count half while only one crew member is
+// aboard, previews included. The full preview line is in the tooltip.
 const { chromium } = require('playwright');
 const URL = process.env.URL || 'http://localhost:8177/index.html';
 let pass = 0, fail = 0;
@@ -353,6 +357,130 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
     ok(r.eng === 0 && r.med === 70 && r.avg === 35 && r.fail === false, `engineer 0 alone, medic 70, average ${r.avg}: no mutiny`);
     ok(r.warned && /zero/i.test(log), 'warned at the hub');
     ok(r.crew.length === 1 && r.crew[0] === 'medic' && !r.ended && /walk|left|off/i.test(log), 'walked off at the next station; the medic flies on (' + r.crew.join(',') + ')');
+    await page.close();
+  }
+
+  console.log('— ruling 62: a passive +1 no longer cancels the warning; back to 25 does');
+  {
+    // ARIA's +1 a leg lifts the warned engineer off 0 — they walk anyway.
+    const page = await boot({ crew: ['engineer', 'medic'], ai: 'aria' });
+    const r = await page.evaluate(() => {
+      Math.random = () => 0.99;
+      setCrewMorale(70); setCrewMorale(0, 'engineer');
+      renderCruise();
+      const out = { warned: !!STATE.moraleWarned.engineer };
+      const bar = () => [...document.querySelectorAll('#crew-strip .crew-bar.mo')][0];
+      out.tip0 = bar().title; out.red0 = bar().classList.contains('zero');
+      // A good outcome to 20: still short of 25 — still warned, still red.
+      applyOutcomeEffects({ resources: { morale: 20 }, morale_to: 'engineer', time_cost: 'none' });
+      renderCruise();
+      out.mid = { mo: crewMoraleOf('engineer'), warned: !!STATE.moraleWarned.engineer, tip: bar().title, red: bar().classList.contains('zero') };
+      openCrewDetail('engineer');
+      out.dossier = { st: document.getElementById('cd-status-active').innerText, hover: document.getElementById('cd-stat-mo-fill').closest('.cd-stat-row').title };
+      hideOverlay('overlay-crew');
+      setCrewMorale(0, 'engineer');
+      const n = [...nextAvailableNodes()][0];
+      STATE.byId[n].node_type = 'station';
+      travelTo(n, { skipEvent: true });
+      out.crew = STATE.crew.slice();
+      return out;
+    });
+    ok(r.warned && /needs 25 to stay/.test(r.tip0) && r.red0, 'warned at 0: MO tooltip "' + r.tip0 + '"');
+    ok(r.mid.mo === 20 && r.mid.warned && r.mid.red && /^Morale 20\/100 — walks off at the next station — needs 25 to stay$/.test(r.mid.tip), 'raised to 20: still warned ("' + r.mid.tip + '")');
+    ok(/Deserting/.test(r.dossier.st) && /needs 25 to stay/.test(r.dossier.st) && /needs 25 to stay/.test(r.dossier.hover), 'dossier: Deserting · needs 25 to stay (hover "' + r.dossier.hover + '")');
+    ok(!r.crew.includes('engineer') && r.crew.includes('medic'), 'ARIA lifted them off 0 on the leg in, and they walked anyway (' + r.crew.join(',') + ')');
+    await page.close();
+  }
+  {
+    const page = await boot({ crew: ['engineer', 'medic'], ai: 'rex' });
+    const r = await page.evaluate(() => {
+      Math.random = () => 0.99;
+      setCrewMorale(70); setCrewMorale(0, 'engineer');
+      renderCruise();
+      applyOutcomeEffects({ resources: { morale: 25 }, morale_to: 'engineer', time_cost: 'none' });
+      renderCruise();
+      const out = { warned: !!STATE.moraleWarned.engineer, tip: [...document.querySelectorAll('#crew-strip .crew-bar.mo')][0].title };
+      const n = [...nextAvailableNodes()][0];
+      STATE.byId[n].node_type = 'station';
+      travelTo(n, { skipEvent: true });
+      out.crew = STATE.crew.slice();
+      return out;
+    });
+    const log = await logText(page);
+    ok(!r.warned && /Desertion risk cleared/.test(log) && !/needs 25/.test(r.tip), 'back to 25: the warning clears with its line (tooltip "' + r.tip + '")');
+    ok(r.crew.includes('engineer'), 'and they stay at the next station');
+    await page.close();
+  }
+
+  console.log('— ruling 63: concerns count half with one crew member aboard; previews say so');
+  {
+    const page = await boot({ crew: ['engineer'] });
+    const r = await page.evaluate(() => {
+      setCrewMorale(60);
+      const out = { prev: outcomeFacts({ resources: { hull: -20 } }).map(f => f.text), hurt: outcomeFacts({ severity: 'injury' }).map(f => f.text) };
+      applyOutcomeEffects({ resources: { hull: -20 }, time_cost: 'none' });
+      out.eng = crewMoraleOf('engineer');
+      // A second member joins: full strength again.
+      joinAsCrew({ id: 'stow_d', name: 'Ilse Varn', story: 's', join_role: 'diplomat' }, 100);
+      out.duo = outcomeFacts({ resources: { hull: -20 } }).map(f => f.text);
+      out.fight = choiceCostLines({ triggerCombat: true });
+      return out;
+    });
+    ok(r.prev.includes('ENGINEER −6 MORALE') && r.eng === 54, 'alone: −20 hull previews and lands ENGINEER −6 (' + r.prev.join(', ') + '; now ' + r.eng + ')');
+    ok(r.hurt.includes('HURT −12.5 MORALE'), 'alone: a wound previews HURT −12.5 (' + r.hurt.join(', ') + ')');
+    ok(r.duo.includes('ENGINEER −12 MORALE') && r.fight.includes('Any fight: DIPLOMAT −20 MORALE'), 'two aboard: full again (' + r.duo.join(', ') + ' / ' + r.fight.join(' / ') + ')');
+    await page.close();
+  }
+  {
+    const page = await boot({ crew: ['pilot'] });
+    const r = await page.evaluate(() => {
+      openOrders();
+      document.querySelectorAll('#od-engines-pills .od-pill')[0].click();
+      const panel = document.getElementById('od-engines-preview').textContent;
+      setCrewMorale(60); STATE.orders.pace = 'light'; Math.random = () => 0.99;
+      hideOverlay('overlay-orders');
+      const d0 = STATE.daysElapsed, m0 = crewMoraleOf('pilot');
+      passDays(10, { travel: true });
+      const shared = -(ORDERS_PACE[0].drainMult - 1) * ORDERS_BASE.paceMoraleFactor * 10;
+      return { panel, extra: crewMoraleOf('pilot') - m0 - shared, days: STATE.daysElapsed - d0 };
+    });
+    ok(/PILOT −0\.15\/DAY/.test(r.panel), 'alone: Orders shows PILOT −0.15/DAY (' + r.panel.replace(/\s+/g, ' ') + ')');
+    ok(Math.abs(r.extra + 1.5) < 0.011, '10 days flown at LIGHT alone: pilot −1.5 extra (' + r.extra.toFixed(2) + ')');
+    await page.close();
+  }
+  {
+    const page = await boot({ crew: ['botanist'] });
+    const r = await page.evaluate(() => {
+      tickCropGrowth();
+      setCrewMorale(60);
+      STATE.cropGrowth.growth = 100; STATE.cropGrowth.health = 70;
+      openGrowbay(); openInspect();
+      const y = ([...document.querySelectorAll('.ins-row')].find(e => /Yield/.test(e.textContent)) || { textContent: '' }).textContent;
+      closeInspect();
+      const b0 = crewMoraleOf('botanist');
+      doHarvest();
+      const got = crewMoraleOf('botanist') - b0;
+      closeGrowbay();
+      return { y, got };
+    });
+    ok(/BOTANIST \+2\.5 morale/.test(r.y) && r.got === 2.5, 'alone: the Yield row says BOTANIST +2.5 and the harvest pays it (' + r.y + ')');
+    await page.close();
+  }
+
+  console.log('— the whole preview line is in the choice tooltip too');
+  {
+    const page = await boot({ crew: ['engineer', 'botanist'] });
+    const r = await page.evaluate(() => {
+      tickCropGrowth();
+      enterEvent(STATE.byId[STATE.currentId], EVENTS.event_encounter_pirate_001);
+      STATE.currentEvent = Object.assign({}, STATE.currentEvent, { outcomes: {} });
+      STATE.layerStack = null;
+      renderChoicesInner([{ text: 'Posted terms', preview: true, outcome: { resources: { hull: -20, morale: -3, fuel: -5 }, crop_health: 20, time_cost: 'none' } }]);
+      const b = document.querySelector('#enc-choices .enc-choice');
+      return { sub: (b.querySelector('.ch-sub') || {}).textContent || '', title: b.title || b.dataset.tipDescription || '' };
+    });
+    ok(r.sub.length > 0 && r.title.includes(r.sub), 'the tooltip carries the sub-label\'s full line: "' + r.sub + '"');
+    ok(/BOTANIST \+/.test(r.title) && /ENGINEER −12/.test(r.title), 'positive extras included (BOTANIST +…) alongside costs');
     await page.close();
   }
 

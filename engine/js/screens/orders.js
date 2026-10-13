@@ -276,7 +276,7 @@
     // Pace drains crew MORALE (index.html passDays) — no crew aboard, no drain (owner ruling 15).
     const noCrew = !STATE.crew.length;
     // …and the pilot minds the pace on top (role concern, ruling 57).
-    const pc = STATE.crew.includes('pilot') ? paceConcern(p.id).v : 0;
+    const pc = STATE.crew.includes('pilot') ? concernAmount(paceConcern(p.id).v) : 0;
     const crewLabel = (noCrew ? 'NO CREW' : p.drainMult < 1 ? 'EASING' : (p.drainMult > 1 ? 'RISING' : 'STEADY'))
       + (pc ? ' · ' + concernText([{ label: 'PILOT', v: pc }]) + '/DAY' : '');
     let crewDeltaText = null, crewDeltaCls = null;
@@ -332,7 +332,7 @@
 
     const foodWarn = foodEmpty < arrival;
     // The chef minds short rations on top (role concern, ruling 57).
-    const rc = STATE.crew.includes('chef') ? rationsConcern(r.id) : 0;
+    const rc = STATE.crew.includes('chef') ? concernAmount(rationsConcern(r.id)) : 0;
 
     $('od-rations-preview').innerHTML =
       statLine('FOOD EMPTY', 'DAY ' + foodEmpty,          foodDelta.text, foodDelta.cls, foodWarn) +

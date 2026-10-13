@@ -1624,6 +1624,10 @@ const MORALE_LOW = 30;
 const MORALE_CRISIS = 25;
 // The captain plus at most this many chosen crew (owner ruling 23).
 const CREW_MAX = 2;
+// A warned member walks off at the next station unless their own morale
+// is back to MORALE_CRISIS (owner 2026-10-12); role concerns count this much
+// while only one crew member is aboard (owner 2026-10-12).
+const SOLO_CONCERN_MULT = 0.5;
 
 // The wound line (owner ruling 2026-10-09 — one number everywhere):
 // below CREW_WOUNDED_HP a crew member is WOUNDED — active skill
@@ -2741,9 +2745,10 @@ function disembarkPassengers(node) {
      drives low_morale (<30), mutiny (0), every display and threshold.
    - Desertion: a member whose own morale is 0 is warned at the hub
      (crewMoraleWatch, the cruise log) and walks off at the next station
-     arrival (crewDesertions, from travelTo — never mid-encounter). Any
-     raise above 0 before then cancels it (the warning clears with a
-     line). Their role is freed exactly as if they were gone.
+     arrival (crewDesertions, from travelTo — never mid-encounter) unless
+     their own morale is back to MORALE_CRISIS by then (owner 2026-10-12: a
+     passive +1 is not enough; the warning clears with a line at 25).
+     Their role is freed exactly as if they were gone.
    - No crew aboard (solo, or the last one lost): no morale at all —
      null average, no low_morale / mutiny, the effort tax costs nothing,
      REST is locked.
@@ -2825,8 +2830,9 @@ function forgetCrewMorale(role) {
   if (STATE.moraleWhy) delete STATE.moraleWhy[role];
 }
 // Hub check (cruise.js renderCruise, every safe between-actions point):
-// a member newly at 0 gets the warning line; one raised back above 0
-// gets the all-clear and the desertion is off.
+// a member newly at 0 gets the warning line; one back to MORALE_CRISIS
+// gets the all-clear and the desertion is off (owner 2026-10-12: a passive +1 —
+// ARIA, the chef — no longer cancels it; REST, a good outcome, rations do).
 function crewMoraleWatch() {
   if (!STATE.moraleWarned || typeof STATE.moraleWarned !== 'object') STATE.moraleWarned = {};
   const w = STATE.moraleWarned;
@@ -2839,20 +2845,20 @@ function crewMoraleWatch() {
       w[r] = true;
       if (window.ShipLog) ShipLog.moraleZero(r);
       else window.pushCruiseLog('◆ ' + crewNameOf(r) + '’s morale is at zero. At the next station they walk.');
-    } else if (!zero && w[r]) {
+    } else if (w[r] && crewMoraleOf(r) >= MORALE_CRISIS) {
       delete w[r];
       if (window.ShipLog) ShipLog.moraleBack(r);
-      else window.pushCruiseLog('◆ ' + crewNameOf(r) + ' is back above zero. Nobody is leaving.');
+      else window.pushCruiseLog('◆ ' + crewNameOf(r) + ' is back to ' + MORALE_CRISIS + '. Nobody is leaving.');
     }
   }
 }
 // Station arrival (travelTo, before the stop's event): everyone warned
-// at 0 who is still at 0 walks off here. The warning always comes first
+// at 0 who is not back to MORALE_CRISIS walks off here. The warning always comes first
 // — someone who hit 0 on the leg in is warned at the hub and leaves at
 // the station after. Returns the roles that left.
 function crewDesertions(node) {
   const w = STATE.moraleWarned || {};
-  const gone = STATE.crew.filter(r => w[r] && crewMoraleOf(r) <= 0);
+  const gone = STATE.crew.filter(r => w[r] && crewMoraleOf(r) < MORALE_CRISIS);
   for (const role of gone) {
     // The log entry reads who they were — composed before they go.
     const entry = window.ShipLog ? ShipLog.desertionEntry(role, node) : null;
@@ -2861,6 +2867,22 @@ function crewDesertions(node) {
     window.pushCruiseLog(entry || ('◆ ' + name + ' walked off at ' + ((node && node.name) || 'the station') + '.'), entry ? { ai: true, instant: true } : undefined);
   }
   return gone;
+}
+// Walks off at the next station: warned and not back to MORALE_CRISIS
+// (crewDesertions' own test), or at 0 now (the hub warns them first).
+function crewDeserting(role) {
+  if (!STATE.crew.includes(role)) return false;
+  const mo = crewMoraleOf(role);
+  return mo <= 0 || (!!(STATE.moraleWarned || {})[role] && mo < MORALE_CRISIS);
+}
+// The MO bar's and the dossier's hover: "Morale 12/100 — the hull damage
+// weighs on the engineer; walks off at the next station — needs 25 to stay".
+function crewMoraleTip(role) {
+  const mo = crewMoraleOf(role);
+  if (mo == null) return '';
+  const why = crewMoraleWhy(role);
+  return 'Morale ' + (mo > 0 ? Math.max(1, Math.round(mo)) : 0) + '/100' + (why ? ' — ' + why : '')
+    + (crewDeserting(role) ? (why ? '; ' : ' — ') + 'walks off at the next station — needs ' + MORALE_CRISIS + ' to stay' : '');
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -2881,7 +2903,10 @@ function crewDesertions(node) {
                 materials / items)
      everyone   wounded (an injury severity or an injure crew_effect)
    A concern lands on whoever holds the role (a joined stowaway takes
-   the role's concern), never on the captain (no morale). Previews add
+   the role's concern), never on the captain (no morale), and counts
+   SOLO_CONCERN_MULT while only one crew member is aboard (owner 2026-10-12: a
+   lone member's concern is the whole crew average — it was mutiny, not
+   desertion). Previews add
    the same amounts (outcomeConcerns → outcomeFacts); the MO tooltip and
    dossier say why (crewMoraleWhy); the cruise log speaks only when a
    concern first pushes someone under MORALE_CRISIS.
@@ -2896,6 +2921,14 @@ function moraleWhyMap() {
   if (!STATE.moraleWhy || typeof STATE.moraleWhy !== 'object') STATE.moraleWhy = {};
   return STATE.moraleWhy;
 }
+// The solo scale, held for a whole outcome (applyOutcomeEffects) so a
+// death or a join inside it can't change what its preview promised.
+let concernScaleHold = null;
+function concernScale() {
+  return concernScaleHold != null ? concernScaleHold : STATE.crew.length === 1 ? SOLO_CONCERN_MULT : 1;
+}
+// A concern as it lands now (previews show this number).
+function concernAmount(v) { return Number.isFinite(v) ? Math.round(v * concernScale() * 100) / 100 : 0; }
 // Collects every concern that lands while it is open (the combat end
 // card lists them); null when nobody is collecting.
 let concernReceipt = null;
@@ -2904,7 +2937,8 @@ function closeConcernReceipt() { const r = concernReceipt || []; concernReceipt 
 // Applies one concern to whoever holds role: the real change (0 when
 // nobody holds it, or the clamp left nothing to move).
 function applyConcern(role, delta, id) {
-  if (!Number.isFinite(delta) || !delta || !STATE.crew.includes(role)) return 0;
+  delta = concernAmount(delta);
+  if (!delta || !STATE.crew.includes(role)) return 0;
   const before = crewMoraleOf(role);
   const moved = addCrewMorale(delta, role);
   if (!moved) return 0;
@@ -3003,7 +3037,7 @@ function rationsConcern(rationsId) { return orderConcernPerDay('chef', 'short_ra
 function outcomeConcerns(o) {
   const out = [];
   if (!o || !STATE.crew.length) return out;
-  const add = (role, v, maybe) => { if (v && (role === 'HURT' || STATE.crew.includes(role))) out.push({ label: role.toUpperCase(), v, maybe: !!maybe }); };
+  const add = (role, v, maybe) => { v = concernAmount(v); if (v && (role === 'HURT' || STATE.crew.includes(role))) out.push({ label: role.toUpperCase(), v, maybe: !!maybe }); };
   const res = o.resources || {};
   // Hull lost as it will land (an armed emergency patch takes the hit).
   if (Number.isFinite(res.hull) && res.hull < 0 && (o.combat_net || !STATE.flags.has('emergency_patch_armed'))) add('engineer', hullConcern(-effectiveResDelta('hull', res.hull)));
@@ -5359,6 +5393,9 @@ function renderChoicesInner(choices) {
     // stopgap convention; .ui-tip primitive stays parked by design rule).
     if (!locked) {
       const tip = [];
+      // The whole preview, every extra included: the sub-label is one line
+      // and may end in "…" (standing rule: detail goes to the tooltip).
+      if (preview) tip.push(preview);
       if (ch.effort) tip.push('Effort ' + ch.effort + '/5' + (effortTax(ch.effort) ? ' · −' + effortTax(ch.effort) + ' morale' : '')); // no crew aboard: no morale to tax
       if (ch.gold_cost) tip.push('-' + eventGold(ch.gold_cost) + ' gold');
       // Time + resource costs, for everyone (ruling 34, demo composeTooltip
@@ -5373,7 +5410,7 @@ function renderChoicesInner(choices) {
       if (effort && effort.kit) tip.push('Uses up one ' + prettyItem(effort.kit) + ' — it counts toward the effort.');
       if (welcomes && idn.join_note) tip.push(idn.join_note);
       if (cj && cj.name) tip.push(crewJoinRole(cj) ? cj.name + ' joins the crew as ' + cj.join_role + (cj.join_note ? ' — ' + cj.join_note : '') : 'No room in the crew: ' + cj.name + ' rides to the next station as a passenger and eats with everyone' + ((cj.passenger && cj.passenger.reward && cj.passenger.reward.gold) ? '; their family pays ' + cj.passenger.reward.gold + ' gold there' : '') + '.');
-      if (effort && effort.check) { const con = Object.entries(effort.check.con).filter(([k]) => k !== 'morale' || STATE.crew.length).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).concat(STATE.crew.includes('engineer') && hullConcern(-(effort.check.con.hull || 0)) ? [concernText([{ label: 'ENGINEER', v: hullConcern(-effort.check.con.hull) }]) + ' MORALE'] : []).join(', '); tip.push('Short of effort: half the resource gains, ' + (effort.authored ? 'a day more' : 'two more days') + (con ? ', ' + con : '') + '. Crew and tools raise the odds.'); } // no crew aboard: a morale setback lands on nobody
+      if (effort && effort.check) { const con = Object.entries(effort.check.con).filter(([k]) => k !== 'morale' || STATE.crew.length).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).concat(STATE.crew.includes('engineer') && hullConcern(-(effort.check.con.hull || 0)) ? [concernText([{ label: 'ENGINEER', v: concernAmount(hullConcern(-effort.check.con.hull)) }]) + ' MORALE'] : []).join(', '); tip.push('Short of effort: half the resource gains, ' + (effort.authored ? 'a day more' : 'two more days') + (con ? ', ' + con : '') + '. Crew and tools raise the odds.'); } // no crew aboard: a morale setback lands on nobody
       if (tip.length) btn.title = tip.join('\n');
     }
     // Held until the text lands, then the cascade (prepareDelivery /
@@ -5704,7 +5741,7 @@ function choiceCostOutcome(ch) {
 // A fight's one fixed cost (role concern, ruling 57): the diplomat's.
 function fightConcernLine() {
   const c = concernDef('diplomat', 'combat');
-  return c && STATE.crew.includes('diplomat') ? 'Any fight: ' + concernText([{ label: 'DIPLOMAT', v: c.morale }]) + ' MORALE' : null;
+  return c && STATE.crew.includes('diplomat') ? 'Any fight: ' + concernText([{ label: 'DIPLOMAT', v: concernAmount(c.morale) }]) + ' MORALE' : null;
 }
 function choiceCostLines(ch) {
   const lines = [];
@@ -6181,6 +6218,8 @@ function healReach(ce) {
    ev.outcomes[id]. Both shapes carry the same effect fields. */
 function applyOutcomeEffects(o) {
   o = o || {};
+  concernScaleHold = null;
+  concernScaleHold = concernScale(); // released before the days pass (below)
   // set_orders: an outcome that changes standing orders ("cut to half
   // rations, effective immediately") — {pace, rations, waterSplit}.
   if (o.set_orders && typeof o.set_orders === 'object') {
@@ -6410,6 +6449,7 @@ function applyOutcomeEffects(o) {
   // a repair choice's days scale by effort_required / effort available.
   const scale = STATE.effortScale || 1;
   // time_cost "none": no day passes (a wave-off costs no time — owner ruling).
+  concernScaleHold = null;
   if (tier === 'none' && !STATE.effortCon) return;
   if (window.ShipLog) ShipLog.timeStart(); // Ship's Log: the ship's own daily draw isn't the outcome's effect
   const receipt = concernReceipt; concernReceipt = null; // …nor are the days' own concerns (short rations)

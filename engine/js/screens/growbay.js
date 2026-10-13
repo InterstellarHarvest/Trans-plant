@@ -475,7 +475,7 @@
   function yieldText() {
     const y = harvestYield();
     if (GSTATE.health <= 0) return 'none — the crop is dead';
-    const hc = harvestConcern();
+    const hc = concernAmount(harvestConcern()); // as it lands (half with one crew member)
     return '+' + y.total + ' ' + y.label + (y.bonus ? ' (incl. +' + y.bonus + ' tending)' : '') +
       (y.label === 'Morale' && !STATE.crew.length ? ' — no crew aboard to enjoy it' : '') +
       (hc ? ' · ' + concernText([{ label: 'BOTANIST', v: hc }]) + ' morale' : '');

@@ -129,7 +129,7 @@
     { id: 'wounded',            name: 'Wounded',            kind: 'critical', effect: 'Active skill disabled · passive halved' },
     // Per-crew morale (owner ruling 15): this member's own morale.
     { id: 'morale_crisis',      name: 'Morale crisis',      kind: 'critical', effect: 'Morale under ' + MORALE_CRISIS + ' · at 0 they walk off at the next station' },
-    { id: 'deserting',          name: 'Deserting',          kind: 'critical', effect: 'Morale 0 · leaves at the next station unless it rises' },
+    { id: 'deserting',          name: 'Deserting',          kind: 'critical', effect: 'Leaves at the next station · needs ' + MORALE_CRISIS + ' to stay' },
     { id: 'malnourished',       name: 'Malnourished',       kind: 'negative', get effect() { return dep('food', 'starvation'); } },
     { id: 'dehydrated',         name: 'Dehydrated',         kind: 'negative', get effect() { return dep('water', 'dehydration'); } },
     { id: 'suffocating',        name: 'Suffocating',        kind: 'critical', get effect() { return dep('o2', 'suffocation'); } },
@@ -466,7 +466,8 @@
       fired.add('pending_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'pending_crisis'));
     }
     // The captain has no morale (mo null): neither status applies.
-    if (mo != null && mo <= 0) { fired.add('deserting'); fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'deserting')); }
+    // Warned at 0, they walk unless back to MORALE_CRISIS (owner 2026-10-12).
+    if (mo != null && role && crewDeserting(role)) { fired.add('deserting'); fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'deserting')); }
     else if (mo != null && mo < MORALE_CRISIS) { fired.add('morale_crisis'); active.push(MONITORED_STATUSES.find(s => s.id === 'morale_crisis')); }
     if (mo == null) { fired.add('morale_crisis'); fired.add('deserting'); } // not monitored for the captain either
     // What their own role concern did last (ruling 57) — why their morale
@@ -530,9 +531,8 @@
     $('cd-stat-mo-fill').parentNode.parentNode.style.display = mo == null ? 'none' : '';
     $('cd-stat-mo-fill').style.width = (mo || 0) + '%';
     $('cd-stat-mo-val').textContent = mo == null ? '' : mo;
-    // The row's hover reads like the crew strip's MO bar.
-    const moWhy = mo == null ? '' : crewMoraleWhy(m.key);
-    $('cd-stat-mo-fill').parentNode.parentNode.title = mo == null ? '' : 'Morale ' + mo + '/100' + (moWhy ? ' — ' + moWhy : '');
+    // The row's hover is the crew strip's MO bar's.
+    $('cd-stat-mo-fill').parentNode.parentNode.title = mo == null ? '' : crewMoraleTip(m.key);
     const rgb = glowRGB(hp);
     $('overlay-crew').style.setProperty('--cdw-glow-color', rgb.join(','));
     $('cd-stat-hp-fill').style.background = 'rgb(' + rgb.join(',') + ')';

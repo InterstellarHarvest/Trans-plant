@@ -624,11 +624,11 @@
       // Their OWN morale (owner ruling 15). The captain has none: no MO bar.
       const mo = m.key === 'captain' ? null : crewMoraleOf(m.key);
       // HUD rounding (crewMoraleAvg): above 0 reads at least 1 — "0" only when they walk.
-      // …and why it moved apart from the crew's (role concerns, ruling 57).
-      const moWhy = mo == null ? '' : crewMoraleWhy(m.key);
-      const moTip = mo == null ? '' : escapeHTML('Morale ' + (mo > 0 ? Math.max(1, Math.round(mo)) : 0) + '/100' + (moWhy ? ' — ' + moWhy : '') + (mo <= 0 ? (moWhy ? '; ' : ' — ') + 'walks off at the next station unless it rises' : ''));
+      // …why it moved apart from the crew's (role concerns, ruling 57), and
+      // a warned member's "needs 25 to stay" (owner 2026-10-12).
+      const moTip = mo == null ? '' : escapeHTML(crewMoraleTip(m.key));
       const moBar = mo == null ? ''
-        : '<div class="crew-bar mo' + (mo <= 0 ? ' zero' : '') + '" title="' + moTip + '"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(mo) + '%"></div></div></div>';
+        : '<div class="crew-bar mo' + (crewDeserting(m.key) ? ' zero' : '') + '" title="' + moTip + '"><span class="crew-bar-label">MO</span><div class="crew-bar-track"><div class="crew-bar-fill" style="width:' + clampPct(mo) + '%"></div></div></div>';
       slot.innerHTML =
         '<div class="crew-slot-top">' + iconHtml +
           '<div class="crew-info"><div class="crew-name">' + m.label + '</div><div class="crew-role">' + m.role + '</div></div>' +
