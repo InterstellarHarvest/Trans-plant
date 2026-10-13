@@ -130,6 +130,16 @@
     return (STATE.flags.has('crew_lost') || count < start) ? 'partial' : 'full';
   }
 
+  // {passengers} (names joined "A", "A and B", "A, B and C"), {is_are},
+  // {passenger_count} ("one very quiet passenger" / "two very quiet passengers").
+  function passengerText(names) {
+    const list = names.length < 2 ? names[0] : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+    const words = ['one', 'two', 'three', 'four', 'five'];
+    const count = (words[names.length - 1] || String(names.length)) + ' very quiet passenger' + (names.length > 1 ? 's' : '');
+    return str => String(str).replace(/\{passengers\}/g, list).replace(/\{is_are\}/g, names.length > 1 ? 'are' : 'is')
+      .replace(/\{passenger_count\}/g, count);
+  }
+
   /* Builds the {category, toneId, title, body, quote, showReport,
      stats, ...} shape both render functions consume, from a resolved
      ending/failure module + real STATE. Mirrors the demo's buildEnding()
@@ -158,17 +168,24 @@
 
     if (end.kind === 'failure') {
       const f = end.module;
+      // A failure can author its passengers-aboard copy (crew_gone: the
+      // captain dies alone but a stowaway or a rescued survivor still rides
+      // along — "no living crew" alone would erase them).
+      const riders = typeof passengerNames === 'function' ? passengerNames() : [];
+      const ride = riders.length && f.body_passengers ? passengerText(riders) : null;
+      const body = ride ? ride(f.body_passengers) : f.body;
+      const epitaph = ride && f.epitaph_passengers ? ride(f.epitaph_passengers) : f.epitaph;
       return {
         category: 'failure',
         toneId: f.failure_type,
         title: f.title,
-        body: f.body,
+        body,
         // The report card leads with the body's first paragraph (Bible §17
         // "title + body sentence"); the rest waits behind the expander.
-        lead: firstPara(f.body),
-        rest: restParas(f.body),
+        lead: firstPara(body),
+        rest: restParas(body),
         record,
-        quote: f.epitaph ? `— ${f.epitaph}` : null,
+        quote: epitaph ? `— ${epitaph}` : null,
         showReport: !CINEMATIC_ONLY_FAILURES.has(f.failure_type),
         // failures.json can author a continue_option (crop_dead does:
         // "Keep flying") — a non-terminal failure the player can accept

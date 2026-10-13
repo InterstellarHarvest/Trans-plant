@@ -65,10 +65,15 @@
   // volley (damage, the drive's miss odds, the charge turns, what absorbs
   // a hit). ev: the event fought in (a station's arrival event still
   // leads on to the approach). extra.defeat: the defeat beat's own save.
+  // won: a result already decided (a kill, a surrender offered or taken,
+  // their retreat, our completed jump) — a reload lands it, never the
+  // break-off (index.html loadRun → settleCombatWon).
   function saveFightPoint(extra) {
     if (STATE.ended) return;
     const charging = COMBAT.ftlCharge > 0;
+    const won = COMBAT._won || (COMBAT.state === 'SURRENDER_DECISION' ? { outcome: 'victory_surrendered', moraleAdd: 5 } : null);
     const pc = {
+      won, species: COMBAT.species,
       hull: COMBAT.player.hull, hullMax: COMBAT.player.hullMax,
       morale: COMBAT.player.morale == null ? null : COMBAT.player.morale - COMBAT.player.moraleStart,
       moraleNow: COMBAT.player.morale,
@@ -86,6 +91,8 @@
     };
     writeSnapshot(undefined, { pendingCombat: Object.assign(pc, extra || {}) });
   }
+  // The fight's result is decided (its beat still playing): saved now.
+  function decided(result) { COMBAT._won = result; saveFightPoint(); }
   // The pirate's own voice (flavor_pools npc_disposition_lines.pirate,
   // species-coloured by index.html interpolateNpcTokens): their answer
   // when you open fire instead of paying, and their line when they give up.
@@ -1127,6 +1134,7 @@
   function enemyRetreats() {
     if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
     COMBAT.state = 'END';
+    decided({ outcome: 'enemy_retreat' });
     hideTurnIndicator();
     fxScreen().classList.remove('combat-ftl-charging');
     fxScreen().classList.add('combat-ended');
@@ -1153,6 +1161,7 @@
       // Mark combat ended NOW so enemyTurn's tail doesn't queue another
       // invisible-ship shot while the FTL flash plays (demo canon).
       COMBAT.state = 'END';
+      decided({ outcome: 'escape', fuelCost: 15 });
       fxScreen().classList.add('combat-ended');
       hideTurnIndicator();
       if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
@@ -1215,6 +1224,8 @@
   function onEnemyDestroyed() {
     COMBAT.state = 'END';
     COMBAT._firing = false;
+    // Until SALVAGE or LEAVE is picked, a reload takes the lesser haul.
+    decided({ outcome: 'victory_destroyed', salvaged: false });
     hideTurnIndicator();
     fxScreen().classList.remove('combat-targeting', 'combat-ftl-charging');
     fxScreen().classList.add('combat-ended');
@@ -1243,6 +1254,7 @@
   function resolveVictoryChoice(result) {
     if (COMBAT._resolved || COMBAT._victoryPicked) return;
     COMBAT._victoryPicked = true;
+    decided(result);
     document.getElementById('enc-choices').innerHTML = '';
     setNarrCombat('TARGET DESTROYED',
       result.salvaged ? 'Wreckage cracked open. Loot pool drawn.' : 'You leave the wreck behind.',
@@ -1254,6 +1266,7 @@
     COMBAT.state = 'END';
     const crewMo = COMBAT.player.morale != null;
     if (crewMo) COMBAT.player.morale = clamp(COMBAT.player.morale + 5, 0, 100);
+    decided({ outcome: 'victory_surrendered' });
     hideTurnIndicator();
     fxScreen().classList.add('combat-ended');
     setAiCombat(combatLine('surrender_accepted'));
@@ -1269,6 +1282,7 @@
     const crewMo = COMBAT.player.morale != null;
     if (crewMo) COMBAT.player.morale = clamp(COMBAT.player.morale - 10, 0, 100);
     COMBAT.enemy.hull = 0; COMBAT.enemy.alive = false;
+    decided({ outcome: 'victory_executed' });
     hideTurnIndicator();
     fxScreen().classList.add('combat-ended');
     renderCombatActions();
@@ -1454,6 +1468,38 @@
     STATE.postCombatLegs = 2;
     return 'The fight broke off when the logs did. The ship ran for it: ' + under + '−15 fuel, hull ' + Math.round(hull) + '.';
   }
+  /* A reload after the fight's result was decided (its beat still
+     playing): that result lands as the fight would have landed it — the
+     loot, the hull and morale as they stood, its time — never the
+     break-off. A surrender still on offer is taken (+5 morale, as
+     ACCEPT). Returns the line for the log. */
+  function settleCombatWon(pc) {
+    const w = pc.won;
+    bindCombatCrew(); // the salvage bonus reads the crew aboard
+    const { outcome, lootItems, title, body } = endOutcome(w, pc.species || 'human');
+    outcome.resources.hull = (outcome.resources.hull || 0) + (Math.min(STATE.resources.hull, pc.hull) - STATE.resources.hull);
+    outcome.combat_net = true;
+    if (Number.isFinite(pc.morale)) {
+      const add = Number.isFinite(pc.moraleNow) ? clamp(pc.moraleNow + (w.moraleAdd || 0), 0, 100) - pc.moraleNow : 0;
+      if (pc.morale + add) outcome.resources.morale = (outcome.resources.morale || 0) + pc.morale + add;
+    }
+    const before = STATE.goldAmount;
+    if (lootItems) {
+      const goldItem = lootItems.find(it => it.id === 'gold');
+      if (goldItem) outcome.resources.gold = (outcome.resources.gold || 0) + goldItem.count;
+    }
+    openConcernReceipt();
+    applyOutcomeEffects(outcome);
+    const leftBehind = landLoot(lootItems);
+    closeConcernReceipt();
+    STATE.postCombatLegs = 2;
+    const got = (lootItems || []).filter(it => it.count > 0 && it.id !== 'gold').map(it => `${it.count}× ${it.label}`);
+    const gold = Math.round(STATE.goldAmount - before);
+    if (gold > 0) got.unshift(gold + ' gold');
+    const loot = lootItems ? (got.length ? ' Recovered: ' + got.join(', ') + '.' : ' No loot recovered.') : '';
+    const left = leftBehind.length ? ' Hold full: ' + leftBehind.map(it => `${it.count}× ${it.label}`).join(', ') + ' left behind.' : '';
+    return title + ' — the fight was decided before the logs cut out. ' + body + loot + left;
+  }
   /* A reload during the defeat beat (index.html loadRun): the LIMP AWAY
      that was coming lands as the fight would have landed it — hull 1,
      the named cargo, the casualty roll, the fight's morale, high time.
@@ -1589,37 +1635,10 @@
       d.leftBehind || null].filter(Boolean).join(' · ');
   }
 
-  /* ── Exit: reconcile COMBAT.* back into real STATE, paint the
-     encounter's own outcome view underneath (save point, Continue,
-     AJOY's hindsight), then raise the end card over it. ─────────── */
-  function endCombatToOutcome(result) {
-    // One resolution per fight — late timers (an in-flight enemy shot,
-    // a double-clicked choice) must not apply a second outcome.
-    if (COMBAT._resolved) return;
-    COMBAT._resolved = true;
-    if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
-    COMBAT.state = 'END';
-    COMBAT.active = false;
-    COMBAT._firing = false;
-    COMBAT._lastOutcome = result.outcome;
-
-    const scr = document.getElementById('screen-encounter');
-    scr.classList.remove('combat-mode', 'combat-targeting', 'combat-vignette', 'combat-ftl-charging');
-    scr.classList.add('combat-ended'); // every END entrypoint kills the red alert
-    document.getElementById('enc-choices').classList.remove('combat-actions', 'combat-locked', 'combat-fade-in', 'combat-fade-out');
-    document.getElementById('enc-subject').classList.remove('combat-locking');
-    // Defensive sweep of transient FTL/retreat FX: the flash overlay
-    // self-removes at 900ms and the charge class at 1000ms, but any
-    // path that ends combat mid-effect must not leave them orphaned.
-    document.querySelectorAll('#screen-encounter .combat-ftl-flash').forEach(el => el.remove());
-    const spEnd = document.getElementById('enc-backdrop-sprite');
-    if (spEnd) spEnd.classList.remove('combat-enemy-charge', 'combat-low-hp');
-    // combat-ended + the destroyed ship's inline opacity/CRT classes +
-    // the escaped/retreated ship's combat-ftl-vanish persist through the
-    // outcome on purpose — the wreck/vanished ship stays gone while the
-    // player reads the result. SceneArt resets them on the NEXT event.
-    hideTurnIndicator();
-
+  /* What each ending is: the outcome to apply, the loot rolled, the card's
+     title/body/tone, a backdrop it takes you to. Shared by the fight's own
+     end and a reload that lands a decided result (settleCombatWon). */
+  function endOutcome(result, species) {
     const outcome = { resources: {} };
     let lootItems = null;
     let title, body, tone;
@@ -1638,7 +1657,7 @@
         lootItems = rollCombatLoot('surrender');
         body = 'Pirates stripped, ship intact. They live to disappoint someone else.';
         // Stripping them means going aboard: their own interior, by species.
-        scene = 'ship_interior/pirate/' + COMBAT.species;
+        scene = 'ship_interior/pirate/' + species;
         outcome.time_cost = 'medium';
         break;
       case 'victory_executed':
@@ -1652,7 +1671,7 @@
         title = 'TRIBUTE RESOLVED'; tone = 'success';
         body = `They took the ${result.friendly ? 'cookies' : 'harvest'} and went somewhere else.${result.friendly ? ' Meet that crew again before the next station and they will remember the cookies.' : ''}`;
         outcome.resources.food = -(result.foodCost || 0); // morale is in the net reconciliation below
-        if (result.friendly) outcome.sets_flag = `friendly_with_pirate_${COMBAT.species}`;
+        if (result.friendly) outcome.sets_flag = `friendly_with_pirate_${species}`;
         outcome.time_cost = 'low';
         break;
       case 'escape':
@@ -1686,6 +1705,71 @@
         break;
       }
     }
+
+    return { outcome, lootItems, title, body, tone, scene };
+  }
+  // Loot isn't part of the standard outcome schema (applyOutcomeEffects
+  // only knows resources/item_grant/crew_effect/sets_flag): what fits
+  // lands, each tile's count becomes what landed; returns what was left.
+  function landLoot(lootItems) {
+    const leftBehind = [];
+    if (lootItems) {
+      for (const it of lootItems) {
+        if (it.id === 'gold') continue;
+        if (it.isItem) {
+          // Capacity-enforced: grantItem logs anything left with the wreck.
+          let landed = 0;
+          for (let i = 0; i < it.count; i++) {
+            if (window.grantItem(it.id) !== false) landed++;
+          }
+          if (landed < it.count) { leftBehind.push({ label: it.label, count: it.count - landed }); it.count = landed; }
+        }
+        else {
+          // Materials are cargo (owner ruling 2026-10-11): what fits lands; the
+          // card's notes name the rest (leftBehind), the tile shows what landed.
+          it.material = true;
+          const landed = window.grantMaterial(it.id, it.count, { quiet: true });
+          if (landed < it.count) { leftBehind.push({ label: it.label, count: it.count - landed }); it.count = landed; }
+        }
+      }
+      applyAlienFind(Object.fromEntries(lootItems.filter(it => it.material && it.count > 0).map(it => [it.id, it.count])), lootItems.filter(it => it.isItem && it.count > 0).map(it => it.id));
+    }
+    return leftBehind;
+  }
+  /* ── Exit: reconcile COMBAT.* back into real STATE, paint the
+     encounter's own outcome view underneath (save point, Continue,
+     AJOY's hindsight), then raise the end card over it. ─────────── */
+  function endCombatToOutcome(result) {
+    // One resolution per fight — late timers (an in-flight enemy shot,
+    // a double-clicked choice) must not apply a second outcome.
+    if (COMBAT._resolved) return;
+    COMBAT._resolved = true;
+    if (COMBAT._ftlTickTimer) { clearTimeout(COMBAT._ftlTickTimer); COMBAT._ftlTickTimer = null; }
+    COMBAT.state = 'END';
+    COMBAT.active = false;
+    COMBAT._firing = false;
+    COMBAT._lastOutcome = result.outcome;
+
+    const scr = document.getElementById('screen-encounter');
+    scr.classList.remove('combat-mode', 'combat-targeting', 'combat-vignette', 'combat-ftl-charging');
+    scr.classList.add('combat-ended'); // every END entrypoint kills the red alert
+    document.getElementById('enc-choices').classList.remove('combat-actions', 'combat-locked', 'combat-fade-in', 'combat-fade-out');
+    document.getElementById('enc-subject').classList.remove('combat-locking');
+    // Defensive sweep of transient FTL/retreat FX: the flash overlay
+    // self-removes at 900ms and the charge class at 1000ms, but any
+    // path that ends combat mid-effect must not leave them orphaned.
+    document.querySelectorAll('#screen-encounter .combat-ftl-flash').forEach(el => el.remove());
+    const spEnd = document.getElementById('enc-backdrop-sprite');
+    if (spEnd) spEnd.classList.remove('combat-enemy-charge', 'combat-low-hp');
+    // combat-ended + the destroyed ship's inline opacity/CRT classes +
+    // the escaped/retreated ship's combat-ftl-vanish persist through the
+    // outcome on purpose — the wreck/vanished ship stays gone while the
+    // player reads the result. SceneArt resets them on the NEXT event.
+    hideTurnIndicator();
+
+    const end = endOutcome(result, COMBAT.species);
+    const { outcome, lootItems, title, tone, scene } = end;
+    let body = end.body;
 
     // Hull/morale are the NET change across the whole fight (tracked
     // live on COMBAT.player.* every turn), not a flat per-case
@@ -1726,28 +1810,7 @@
     // (applyOutcomeEffects only knows resources/item_grant/crew_effect/
     // sets_flag) — applied directly here rather than extending that
     // shared contract for a combat-only need.
-    const leftBehind = [];
-    if (lootItems) {
-      for (const it of lootItems) {
-        if (it.id === 'gold') continue;
-        if (it.isItem) {
-          // Capacity-enforced: grantItem logs anything left with the wreck.
-          let landed = 0;
-          for (let i = 0; i < it.count; i++) {
-            if (window.grantItem(it.id) !== false) landed++;
-          }
-          if (landed < it.count) { leftBehind.push({ label: it.label, count: it.count - landed }); it.count = landed; }
-        }
-        else {
-          // Materials are cargo (owner ruling 2026-10-11): what fits lands; the
-          // card's notes name the rest (leftBehind), the tile shows what landed.
-          it.material = true;
-          const landed = window.grantMaterial(it.id, it.count, { quiet: true });
-          if (landed < it.count) { leftBehind.push({ label: it.label, count: it.count - landed }); it.count = landed; }
-        }
-      }
-      applyAlienFind(Object.fromEntries(lootItems.filter(it => it.material && it.count > 0).map(it => [it.id, it.count])), lootItems.filter(it => it.isItem && it.count > 0).map(it => it.id));
-    }
+    const leftBehind = landLoot(lootItems);
     const concerns = closeConcernReceipt();
     // Cargo loss on defeat — exactly what onPlayerDefeat named.
     let cargoLost = '';
@@ -1922,6 +1985,7 @@
     COMBAT.enemy.alive = true;
     COMBAT.enemy.surrendered = false;
     COMBAT.enemy.surrenderOffered = false;
+    COMBAT._won = null;
 
     COMBAT.turn = 1;
     COMBAT.ftlCharge = -1;
@@ -2017,7 +2081,7 @@
 
   Object.assign(window, {
     // engine API
-    settleCombatBreakOff, settleCombatDefeat, hideCombatEndCard: hideEndCard,
+    settleCombatBreakOff, settleCombatDefeat, settleCombatWon, hideCombatEndCard: hideEndCard,
     triggerFleeResolve, RAM_FAIL_CHANCE, triggerRamResolve, abortCombat,
     triggerCombat,
   });

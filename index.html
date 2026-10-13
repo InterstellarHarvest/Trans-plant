@@ -2022,6 +2022,10 @@ function loadRun(key) {
       // AWAY), never a break-off at hull 0.
       const line = window.settleCombatDefeat(pc.defeat);
       window.pushCruiseLog('◆ LIMP AWAY — the fight was lost before the logs cut out. ' + line);
+    } else if (pc.won) {
+      // Saved after the result was decided (a kill, a surrender, their
+      // retreat, our jump): that result lands, never worse than playing on.
+      window.pushCruiseLog('◆ ' + window.settleCombatWon(pc));
     } else {
       // Mid-fight: ATTEMPT ESCAPE played out (owner ruling 53).
       const line = window.settleCombatBreakOff(pc);
@@ -2726,6 +2730,15 @@ function joinAsCrew(idn, hp) {
   return role;
 }
 
+/* Everyone riding along who isn't crew: rescued passengers to the next
+   station, and a welcomed stowaway with no crew role. Names, in boarding
+   order (a failure that leaves only them aboard says who they are). */
+function passengerNames() {
+  const names = (STATE.passengers || []).map(p => p.name).filter(Boolean);
+  const stow = STATE.stowaway && STATE.stowaway.identity;
+  if (STATE.flags.has('stowaway_passenger') && stow && stow.name && !names.includes(stow.name)) names.unshift(stow.name);
+  return names;
+}
 /* Passengers (crew_join with no room aboard): ride to the next station,
    eat like anyone else (mouthsMult), and step off there — the rescued
    survivor's family pays the reunification reward (crew_join.passenger). */
