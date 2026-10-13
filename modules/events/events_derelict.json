@@ -760,5 +760,233 @@
         "time_cost": "trivial"
       }
     }
+  },
+  {
+    "id": "event_derelict_006",
+    "active": true,
+    "title": "Lockdown",
+    "difficulty": "hard",
+    "tone": [
+      "horror",
+      "mundane"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The derelict wants us to STAY! That's so welcoming! ARIA wishes it would say so with fewer bulkheads!",
+      "marv": "MARV has the lockdown cycle from the recording: seventy-two hours, then an automatic release. The away team's suits are rated for sixty. He did that subtraction first.",
+      "rex": "REX respects a good lockdown. This is a good lockdown. He would like the away team to know that while he works out how to beat it.",
+      "chip": "CHIP notes this vessel's security contractor went out of business! Their lockdowns, sadly, did not!",
+      "ajoy": "AJOY would like it noted that the door had a label, and the label had a skull on it. She concedes it was a small skull."
+    },
+    "body": "The derelict's security system wakes the moment the away team is inside, which is the moment it was built for.\n\nBulkheads drop. Lights go red. A recorded voice announces a lockdown in a language that was official somewhere, once, then repeats it in a language that was official nowhere. The away team is on one side of a pressure door. The ship is on the other. The pressure door has opinions about which side matters.",
+    "choices": [
+      {
+        "text": "Engineer cracks the door controls",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The engineer finds the control junction behind a panel marked, in four languages, DO NOT. Twenty minutes and one small fire later, the door gives up. The suits come back low on air and high on stories."
+        }
+      },
+      {
+        "text": "Cut through the bulkhead",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": "injury",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The cutter goes through the bulkhead in an hour and through someone's glove in one second. The away team comes home with a wound, an armful of bulkhead, and firm new views on gloves.",
+          "materials": {
+            "metal": 2
+          }
+        }
+      },
+      {
+        "text": "Blow the door from outside",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -6,
+            "fuel": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You line the ship up and fire the docking thrusters into the derelict until the door frame gives. The away team tumbles out. So does a section of your docking collar."
+        }
+      },
+      {
+        "text": "Wait out the cycle",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Three days on suit air topped up through a hose from the ship. The lockdown releases on schedule, cheerfully, as if nothing happened. The away team does not speak of the three days. The O2 ledger does."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_derelict_007",
+    "active": true,
+    "title": "Hot Core",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Free fuel AND a light show! ARIA thinks this might be the best derelict yet!",
+      "marv": "MARV gives the core between forty minutes and four hours. The spread is the honest part. He would like the record to show that he gave a spread.",
+      "rex": "REX recommends leaving at full burn and re-evaluating from no less than one blast radius away. He has the blast radius. It is large.",
+      "chip": "CHIP reminds you that salvage from an exploding vessel is still salvage! Ownership transfers on explosion! It's in the code!",
+      "ajoy": "AJOY has seen your face when you look at the fuel gauge. She knows what you're going to do. She'd just like it noted that she knew."
+    },
+    "body": "The derelict's reactor is still running. The derelict's reactor is also, according to every gauge you can read from the docking port, about to stop running in the most dramatic way available to it.\n\nThere is fuel aboard. A lot of fuel. Right next to the reactor, which is the problem with fuel.",
+    "choices": [
+      {
+        "text": "Engineer scrams the reactor",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 14
+          },
+          "crew_effect": {
+            "type": "injure",
+            "target": "specific_role",
+            "role": "engineer"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The engineer goes into the reactor room in a suit not designed for it and comes out with the core cold and a dose the medic writes down in red. The fuel bay is yours. All of it."
+        }
+      },
+      {
+        "text": "Grab the fuel cells and run",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 8,
+            "hull": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The away team hauls what fuel it can reach in twelve minutes and runs. The core goes on minute fourteen. The blast catches the stern on the way out, as a reminder of the two minutes."
+        }
+      },
+      {
+        "text": "Stand off, then pick through the debris",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You stand off at a safe distance and wait. It goes at hour three. Picking through what's left takes days and turns up scrap, metal and one boot, which is not discussed.",
+          "materials": {
+            "metal": 2,
+            "scrap": 2
+          }
+        }
+      },
+      {
+        "text": "Undock and burn clear now",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -5,
+            "hull": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You undock with the clamps still half-latched and burn hard. The core holds for another hour out of spite, then goes, lighting the sky behind you. Nobody says 'that could have been us.' Everyone thinks it, in unison."
+        }
+      }
+    ]
   }
 ]
