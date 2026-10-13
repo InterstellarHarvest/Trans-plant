@@ -365,19 +365,20 @@ for (const m of (readJSON('modules/materials/materials.json').materials || [])) 
   if ('cargo_slots' in m) err(`materials.json ${m.id}: "cargo_slots" is the item field — materials stack: use cargo_slots_per_10`);
   if ('cargo_slots_per_10' in m && !(Number.isFinite(m.cargo_slots_per_10) && m.cargo_slots_per_10 >= 0)) err(`materials.json ${m.id}: cargo_slots_per_10 must be a number ≥ 0`);
   // flavor: the cargo hold's player-facing line. It may
-  // not state a price — the trader's price lives in market.js, and the
-  // old "5 metal = 1g" notes contradicted the 1g a unit it pays.
+  // not state a price — the trader pays value × station_sell_multiplier,
+  // and the old "5 metal = 1g" notes contradicted the 1g a unit it paid.
   if ('flavor' in m && (typeof m.flavor !== 'string' || !m.flavor.trim())) err(`materials.json ${m.id}: flavor must be a non-empty string`);
   if (typeof m.flavor === 'string' && /\d\s*(g|cr|gold|credits?)\b|=\s*\d/i.test(m.flavor)) err(`materials.json ${m.id}: flavor states a price ("${m.flavor}") — the price is value × station_sell_multiplier`);
   if ('notes' in m) err(`materials.json ${m.id}: "notes" is retired — player-facing text goes in flavor (no prices)`);
   if (!(Number.isFinite(m.value) && m.value > 0)) err(`materials.json ${m.id}: value must be a number > 0 (the trader pays value × station_sell_multiplier)`);
 }
-// The one material price knob (market.js materialPrice). At 5, minerals
-// round up to 2g and mining for sale outpaces every other gold source
-// again (materials.json _meta.sell_multiplier_note).
+// The one material price knob (market.js materialPrice). At 5 minerals
+// round up to 2g and a mining day's haul sells for a third more
+// (materials.json _meta.sell_multiplier_note): mining for sale, the old
+// faucet, pulls ahead of everything else again.
 {
   const mult = readJSON('modules/materials/materials.json').station_sell_multiplier;
-  if (!(Number.isFinite(mult) && mult > 0 && mult < 5)) err(`materials.json: station_sell_multiplier must be a number in (0, 5) (got ${JSON.stringify(mult)}) — at 5 mining for sale is a faucet again`);
+  if (!(Number.isFinite(mult) && mult > 0 && mult < 5)) err(`materials.json: station_sell_multiplier must be a number in (0, 5) (got ${JSON.stringify(mult)}) — at 5 minerals round up to 2g and mining for sale pulls ahead again`);
 }
 // passive_skill.fabricator_contribution: the fabricator's crew speed
 // — the one source fabricator.js reads (absent = 0).
