@@ -306,7 +306,14 @@ async function secondReload(page, label, b) {
       await page.waitForTimeout(250);
     }
     await page.waitForSelector('#title-buttons.visible', { timeout: 20000 });
-    await page.evaluate(() => { const R = Math.random; Math.random = () => 0.5; try { document.getElementById('btn-continue').click(); } finally { Math.random = R; } });
+    // Role concerns the settle sets off (ruling 57: the engineer's hull, the
+    // wounded) are tapped: window.__conc, as the crew average.
+    await page.evaluate(() => {
+      window.__conc = 0;
+      const real = applyConcern;
+      applyConcern = function (role) { const b = crewMoraleOf(role); const r = real.apply(this, arguments); window.__conc += (crewMoraleOf(role) - b) / STATE.crew.length; return r; };
+      const R = Math.random; Math.random = () => 0.5; try { document.getElementById('btn-continue').click(); } finally { Math.random = R; }
+    });
     await page.waitForTimeout(700);
   }
   const midFight = async (page, hull) => {
@@ -329,7 +336,8 @@ async function secondReload(page, label, b) {
     const heavy = 15 > (m.hullMax || 100) * 0.15 ? 2 : 1;
     ok(r.hull === m.hull - 45 && !r.ended, `three volleys of 15 land: hull ${m.hull} → ${r.hull}`);
     ok(r.fuel === 45 && r.day - a.day === 4 && nothingGained(a, r), `−15 fuel (60 → ${r.fuel}), +${r.day - a.day}d, no loot`);
-    ok(Math.abs((r.morale - a.morale) - (m.morale - 3 * heavy)) < 0.6, `the fight's morale and the hits' (${(r.morale - a.morale).toFixed(1)} = ${m.morale.toFixed(1)} − ${3 * heavy})`);
+    const conc = await page.evaluate(() => window.__conc || 0);
+    ok(Math.abs((r.morale - a.morale) - (m.morale - 3 * heavy + conc)) < 0.6, `the fight's morale, the hits' and the role concerns (${(r.morale - a.morale).toFixed(1)} = ${m.morale.toFixed(1)} − ${3 * heavy} ${conc < 0 ? '−' : '+'} ${Math.abs(conc).toFixed(1)})`);
     ok(/drive spooled under fire \(−15, −15, −15\)/.test(r.log), 'the log names the volleys');
     await secondReload(page, 'combat', r);
     await page.close();

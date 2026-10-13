@@ -86,12 +86,20 @@ const hud = page => page.evaluate(() => document.getElementById('combat-num-foe'
       await click(page, 'FIRE AT CENTER'); await page.waitForTimeout(1600);
     }
     const shown = +(await page.evaluate(() => document.getElementById('combat-num-mor').textContent)).replace(/\D/g, '');
+    // Role concerns (ruling 57: the engineer's hull, the wounded) land with
+    // the fight's end on top of its own morale: tapped, so the expectation
+    // adds what the game really applied (as the crew average).
+    await page.evaluate(() => {
+      window.__conc = 0;
+      const real = applyConcern;
+      applyConcern = function (role) { const b = crewMoraleOf(role); const r = real.apply(this, arguments); window.__conc += (crewMoraleOf(role) - b) / STATE.crew.length; return r; };
+    });
     await click(page, which);
     // The demo's finish beat is 1500ms (combat parity): wait for the
-    // morale change to land instead of sampling right at the boundary.
-    await page.waitForFunction(([s0, d]) => Math.abs(Math.round(crewMoraleRaw()) - (s0 + d)) <= 1, [shown, delta], { timeout: 5000 }).catch(() => {});
-    const after = await page.evaluate(() => Math.round(crewMoraleRaw()));
-    ok(Math.abs(after - (shown + delta)) <= 1, `${which}: morale ${shown} → ${after} (expected ≈${shown + delta})`);
+    // end card (the fight's morale and its concerns have landed).
+    await page.waitForFunction(() => document.getElementById('combat-end-overlay').classList.contains('show'), null, { timeout: 5000 }).catch(() => {});
+    const { after, conc } = await page.evaluate(() => ({ after: Math.round(crewMoraleRaw()), conc: window.__conc }));
+    ok(Math.abs(after - (shown + delta + conc)) <= 1, `${which}: morale ${shown} → ${after} (expected ≈${Math.round(shown + delta + conc)}: ${delta > 0 ? '+' : ''}${delta}, role concerns ${conc.toFixed(1)})`);
     await page.close();
   }
   {
