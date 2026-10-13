@@ -59,7 +59,7 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
       medic: [K('medic', 'injury').morale, K('medic', 'death').morale], chef: [K('chef', 'short_rations').per_day.vending, K('chef', 'food_gone').per_day],
       pilot: [K('pilot', 'slow_pace').per_travel_day.light, K('pilot', 'fast_pace').per_travel_day.ludicrous, K('pilot', 'fast_pace').per_travel_day.plaid],
       dip: K('diplomat', 'combat').morale, xeno: K('xenobiologist', 'alien_find').morale }; });
-    ok(JSON.stringify(T) === JSON.stringify({ w: -25, hull: [-6, 10], crop: [-10, 2, 5, 10], medic: [-12, -25], chef: [-0.3, -2], pilot: [-0.3, 0.1, 0.2], dip: -20, xeno: 3 }), 'tuned sizes: ' + JSON.stringify(T));
+    ok(JSON.stringify(T) === JSON.stringify({ w: -25, hull: [-4, 10], crop: [-9, 2, 5, 10], medic: [-12, -25], chef: [-0.3, -2], pilot: [-0.3, 0.1, 0.2], dip: -20, xeno: 3 }), 'tuned sizes: ' + JSON.stringify(T));
     await page.close();
   }
 
@@ -84,12 +84,12 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
       out.tip = [...document.querySelectorAll('#crew-strip .crew-bar.mo')].map(b => b.title || b.dataset.tipDescription || '');
       return out;
     });
-    ok(r.prev.includes('ENGINEER −12 MORALE'), '−20 hull previews ENGINEER −12 MORALE: ' + r.prev.join(', '));
-    ok(r.prevMo.includes('−3 MORALE · ENGINEER −12'), 'with crew morale: "−3 MORALE · ENGINEER −12": ' + r.prevMo.join(', '));
-    ok(r.cost.some(l => /−3 MORALE · ENGINEER −12/.test(l)), 'the hover cost line says it too: ' + r.cost.join(' / '));
-    ok(r.after.engineer === 45 && r.after.medic === 57, 'outcome: engineer 60−3−12 = 45, medic 57 (' + JSON.stringify(r.after) + ')');
-    ok(!r.patchPrev.some(t => /ENGINEER/.test(t)) && r.patchPrev.includes('PATCH STOPS −20 HULL') && r.patched.engineer === 45, 'patched hit: the preview says the patch stops it, no ENGINEER (' + r.patchPrev.join(', ') + '), none landed');
-    ok(r.tip.some(t => /^Morale 45\/100 — the hull damage weighs on the engineer$/.test(t)), 'MO tooltip says why: "' + r.tip.join('" / "') + '"');
+    ok(r.prev.includes('ENGINEER −8 MORALE'), '−20 hull previews ENGINEER −8 MORALE: ' + r.prev.join(', '));
+    ok(r.prevMo.includes('−3 MORALE · ENGINEER −8'), 'with crew morale: "−3 MORALE · ENGINEER −8": ' + r.prevMo.join(', '));
+    ok(r.cost.some(l => /−3 MORALE · ENGINEER −8/.test(l)), 'the hover cost line says it too: ' + r.cost.join(' / '));
+    ok(r.after.engineer === 49 && r.after.medic === 57, 'outcome: engineer 60−3−8 = 49, medic 57 (' + JSON.stringify(r.after) + ')');
+    ok(!r.patchPrev.some(t => /ENGINEER/.test(t)) && r.patchPrev.includes('PATCH STOPS −20 HULL') && r.patched.engineer === 49, 'patched hit: the preview says the patch stops it, no ENGINEER (' + r.patchPrev.join(', ') + '), none landed');
+    ok(r.tip.some(t => /^Morale 49\/100 — the hull damage weighs on the engineer$/.test(t)), 'MO tooltip says why: "' + r.tip.join('" / "') + '"');
     await page.close();
   }
 
@@ -127,9 +127,9 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
       closeGrowbay();
       return out;
     });
-    ok(r.prev.includes('BOTANIST −20 MORALE') && r.drop === 40, '−20 crop: BOTANIST −20 (previewed: ' + r.prev.join(', ') + '; now ' + r.drop + ')');
-    ok(r.half === 40 && r.prev2.includes('BOTANIST −10 MORALE') && r.full === 30, 'two −5 swings: nothing, then −10 on the second (previewed ' + r.prev2.join(', ') + ')');
-    ok(r.prevUp.includes('BOTANIST +2 MORALE') && r.up === 32 && r.medic === 60, 'recovery +13: BOTANIST +2, the medic untouched (' + r.prevUp.join(', ') + ')');
+    ok(r.prev.includes('BOTANIST −18 MORALE') && r.drop === 42, '−20 crop: BOTANIST −18 (previewed: ' + r.prev.join(', ') + '; now ' + r.drop + ')');
+    ok(r.half === 42 && r.prev2.includes('BOTANIST −9 MORALE') && r.full === 33, 'two −5 swings: nothing, then −9 on the second (previewed ' + r.prev2.join(', ') + ')');
+    ok(r.prevUp.includes('BOTANIST +2 MORALE') && r.up === 35 && r.medic === 60, 'recovery +13: BOTANIST +2, the medic untouched (' + r.prevUp.join(', ') + ')');
     ok(/BOTANIST \+5 morale/.test(r.yield) && r.harvest === 5 && r.swing === 0, 'harvest: Yield row "' + r.yield + '", botanist +' + r.harvest + ', the replant starts level');
     await page.close();
   }
@@ -148,7 +148,7 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
       return { lost: h0 - STATE.cropGrowth.health, b: crewMoraleOf('botanist'), m: crewMoraleOf('medic'), swing: STATE.cropGrowth.swing };
     });
     const steps = Math.floor(r.lost / 10);
-    ok(r.lost > 10 && r.b === 60 - 10 * steps && r.m === 60, `40 dry days: crop −${r.lost.toFixed(1)} → botanist −${10 * steps} (${r.b}), medic 60, remainder ${r.swing}`);
+    ok(r.lost > 10 && r.b === 60 - 9 * steps && r.m === 60, `40 dry days: crop −${r.lost.toFixed(1)} → botanist −${9 * steps} (${r.b}), medic 60, remainder ${r.swing}`);
     await page.close();
   }
 
@@ -262,10 +262,10 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
     });
     for (let k = 0; k < 40; k++) await page.clock.fastForward(100);
     const r = await page.evaluate(() => ({ notes: (document.querySelector('#combat-end-card .end-loot-notes') || {}).textContent || document.getElementById('combat-end-card').innerText, mo: Object.assign({}, STATE.crewMorale), hull: STATE.resources.hull }));
-    // Hull 30 → 1: −29, the engineer −17 for it (−42 if the defeat wounded them too).
+    // Hull 30 → 1: −29, the engineer −12 for it (−37 if the defeat wounded them too).
     const n = re => { const m = r.notes.match(re); return m ? Number(m[1]) : 0; };
     const shared = n(/Morale (-?\d+)/), eng = n(/Engineer (-?\d+)/), dip = n(/Diplomat (-?\d+)/);
-    ok(dip === -20 && (eng === -17 || eng === -42), 'end card names each concern: "' + r.notes.replace(/\s+/g, ' ') + '"');
+    ok(dip === -20 && (eng === -12 || eng === -37), 'end card names each concern: "' + r.notes.replace(/\s+/g, ' ') + '"');
     ok(r.mo.engineer === 60 + shared + eng && r.mo.diplomat === 60 + shared + dip, 'the card is what landed (' + JSON.stringify(r.mo) + ')');
     await page.close();
   }
@@ -299,7 +299,7 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
       return { none, role, eng: crewMoraleOf('engineer'), tip };
     });
     ok(!r.none.some(t => /ENGINEER/.test(t)), 'no engineer aboard: no concern in the preview (' + r.none.join(', ') + ')');
-    ok(r.role === 'engineer' && r.eng === 48 && r.tip.some(t => /hull damage weighs on the engineer/.test(t)), 'Pell Marrow (stowaway engineer) takes it: 48, "' + r.tip.join('" / "') + '"');
+    ok(r.role === 'engineer' && r.eng === 52 && r.tip.some(t => /hull damage weighs on the engineer/.test(t)), 'Pell Marrow (stowaway engineer) takes it: 52, "' + r.tip.join('" / "') + '"');
     await page.close();
   }
 
@@ -308,9 +308,9 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
     const page = await boot();
     const r = await page.evaluate(() => {
       setCrewMorale(30);
-      applyOutcomeEffects({ resources: { hull: -10 }, time_cost: 'none' }); // 30 → 24: under MORALE_CRISIS
+      applyOutcomeEffects({ resources: { hull: -15 }, time_cost: 'none' }); // 30 → 24: under MORALE_CRISIS
       const log1 = (STATE.shipLog || []).map(e => (e && e.text) || e).filter(t => /weighs on/.test(t));
-      applyOutcomeEffects({ resources: { hull: -5 }, time_cost: 'none' }); // 24 → 21: no second line
+      applyOutcomeEffects({ resources: { hull: -8 }, time_cost: 'none' }); // 24 → 21: no second line
       const log2 = (STATE.shipLog || []).map(e => (e && e.text) || e).filter(t => /weighs on/.test(t));
       openCrewDetail('engineer');
       const rows = [...document.querySelectorAll('#cd-status-active .cd-status-row')].map(e => ({ t: e.textContent, cls: e.className }));
@@ -319,7 +319,7 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
       hideOverlay('overlay-crew');
       // Back at MORALE_LOW, the line re-arms.
       setCrewMorale(40, 'engineer'); renderCruise();
-      applyOutcomeEffects({ resources: { hull: -30 }, time_cost: 'none' }); // 40 → 22
+      applyOutcomeEffects({ resources: { hull: -45 }, time_cost: 'none' }); // 40 → 22
       const log3 = (STATE.shipLog || []).map(e => (e && e.text) || e).filter(t => /weighs on/.test(t));
       return { log1, log2, log3, rows, moTitle, cursor, name: crewNameOf('engineer') };
     });
@@ -341,8 +341,7 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
       setCrewMorale(70); setCrewMorale(20, 'engineer');
       STATE.resources.hull = 115;
       // Hull damage the engineer minds: 20 → 0 while the medic stays put.
-      applyOutcomeEffects({ resources: { hull: -20 }, time_cost: 'none' });
-      applyOutcomeEffects({ resources: { hull: -20 }, time_cost: 'none' });
+      applyOutcomeEffects({ resources: { hull: -50 }, time_cost: 'none' });
       const out = { eng: crewMoraleOf('engineer'), med: crewMoraleOf('medic'), avg: crewMoraleAvg(), fail: checkFailure() };
       renderCruise(); // the hub check warns them
       out.warned = !!(STATE.moraleWarned || {}).engineer;
@@ -426,9 +425,9 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
       out.fight = choiceCostLines({ triggerCombat: true });
       return out;
     });
-    ok(r.prev.includes('ENGINEER −6 MORALE') && r.eng === 54, 'alone: −20 hull previews and lands ENGINEER −6 (' + r.prev.join(', ') + '; now ' + r.eng + ')');
+    ok(r.prev.includes('ENGINEER −4 MORALE') && r.eng === 56, 'alone: −20 hull previews and lands ENGINEER −4 (' + r.prev.join(', ') + '; now ' + r.eng + ')');
     ok(r.hurt.includes('HURT −12.5 MORALE'), 'alone: a wound previews HURT −12.5 (' + r.hurt.join(', ') + ')');
-    ok(r.duo.includes('ENGINEER −12 MORALE') && r.fight.includes('Any fight: DIPLOMAT −20 MORALE'), 'two aboard: full again (' + r.duo.join(', ') + ' / ' + r.fight.join(' / ') + ')');
+    ok(r.duo.includes('ENGINEER −8 MORALE') && r.fight.includes('Any fight: DIPLOMAT −20 MORALE'), 'two aboard: full again (' + r.duo.join(', ') + ' / ' + r.fight.join(' / ') + ')');
     await page.close();
   }
   {
@@ -480,7 +479,7 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
       return { sub: (b.querySelector('.ch-sub') || {}).textContent || '', title: b.title || b.dataset.tipDescription || '' };
     });
     ok(r.sub.length > 0 && r.title.includes(r.sub), 'the tooltip carries the sub-label\'s full line: "' + r.sub + '"');
-    ok(/BOTANIST \+/.test(r.title) && /ENGINEER −12/.test(r.title), 'positive extras included (BOTANIST +…) alongside costs');
+    ok(/BOTANIST \+/.test(r.title) && /ENGINEER −8/.test(r.title), 'positive extras included (BOTANIST +…) alongside costs');
     await page.close();
   }
 
