@@ -69,3 +69,4 @@ Rulings 1–25 date from 2026-10-11 and 26–56 from 2026-10-12.
 63. Lone crew (owner 2026-10-12): role concerns count half while only one crew member is aboard, previews included.
 64. Lunar/Mars bite (owner 2026-10-13): more hard-event costs point at water and food (the only supplies that ever run short), re-simmed toward ~90% careful wins on Mars and ~95% on Lunar (Lunar stays the gentle trail).
 65. Repeat cooldown (owner 2026-10-13): a repeatable event can't fire again within the next 4 stops (a per-trail data value); it applies to every repeatable event.
+68. Per-trail supply bite (owner 2026-10-13): a map_rules value per trail scales event water/food costs (e.g. Mars ×2, Lunar ×1.5, Interstellar ×1), applied once in the engine so every preview shows the real number; tuned toward ~90% careful wins on Mars and ~95% on Lunar.
