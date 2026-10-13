@@ -1187,13 +1187,27 @@ const eventOnTrail = (ev, trail) => {
 // that has no active event able to fire on it.
 {
   const rules = readJSON('modules/maps/map_rules.json');
+  // late_difficulty (ruling 58) is the same table at the destination,
+  // reached from from_progress (a share of the trail's legs).
   for (const [trail, t] of Object.entries(rules.trails || {})) {
-    for (const [tier, w] of Object.entries(t.event_difficulty_weights || {})) {
-      if (!(w > 0)) continue;
-      const any = [...eventsById.values()].some(({ event: ev }) => ev.active !== false
-        && (Array.isArray(ev.difficulty) ? ev.difficulty[0] : (ev.difficulty || 'medium')) === tier
-        && (!ev.trail || ev.trail.includes(trail)));
-      if (!any) err(`map_rules ${trail}: event_difficulty_weights.${tier} is ${w} but no active event of that tier can fire on ${trail} — set it to 0 or write the events`);
+    const late = t.late_difficulty;
+    if (late) {
+      if (!(typeof late.from_progress === 'number' && late.from_progress >= 0 && late.from_progress < 1)) err(`map_rules ${trail}: late_difficulty.from_progress must be a number in [0, 1)`);
+      for (const [tier, w] of Object.entries(late.weights_at_arrival || {})) {
+        if (!(t.event_difficulty_weights || {}).hasOwnProperty(tier)) err(`map_rules ${trail}: late_difficulty.weights_at_arrival.${tier} is not an event_difficulty_weights tier`);
+        if (!(typeof w === 'number' && w >= 0)) err(`map_rules ${trail}: late_difficulty.weights_at_arrival.${tier} must be a number >= 0`);
+        // It re-weights the pool, never empties a tier out of it.
+        if (w === 0 && (t.event_difficulty_weights || {})[tier] > 0) err(`map_rules ${trail}: late_difficulty.weights_at_arrival.${tier} is 0 but event_difficulty_weights.${tier} is ${t.event_difficulty_weights[tier]} — the late shift re-weights, it can't take a tier out of the draw`);
+      }
+    }
+    for (const [where, table] of [['event_difficulty_weights', t.event_difficulty_weights], ['late_difficulty.weights_at_arrival', late && late.weights_at_arrival]]) {
+      for (const [tier, w] of Object.entries(table || {})) {
+        if (!(w > 0)) continue;
+        const any = [...eventsById.values()].some(({ event: ev }) => ev.active !== false
+          && (Array.isArray(ev.difficulty) ? ev.difficulty[0] : (ev.difficulty || 'medium')) === tier
+          && (!ev.trail || ev.trail.includes(trail)));
+        if (!any) err(`map_rules ${trail}: ${where}.${tier} is ${w} but no active event of that tier can fire on ${trail} — set it to 0 or write the events`);
+      }
     }
   }
 }

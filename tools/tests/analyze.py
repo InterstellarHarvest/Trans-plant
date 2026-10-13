@@ -1,4 +1,12 @@
-import json, sys, statistics as st, collections
+import json, sys, statistics as st, collections, glob, os
+# Event difficulty tiers, for the early/late draw split (ruling 58).
+TIER = {}
+for f in glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'modules', 'events', '*.json')):
+    d = json.load(open(f))
+    for ev in (d if isinstance(d, list) else d.get('events', [])):
+        if isinstance(ev, dict) and 'id' in ev:
+            t = ev.get('difficulty') or 'medium'
+            TIER[ev['id']] = t[0] if isinstance(t, list) else t
 d = json.load(open(sys.argv[1]))
 R = d['results']
 print('runs', len(R), 'errors', len(d['errors']), collections.Counter(e[:60] for e in d['errors']).most_common(5))
@@ -54,3 +62,16 @@ for trail in ['lunar', 'mars', 'interstellar']:
         top = sorted(src.items(), key=lambda kv: -kv[1])[:6]
         print('   gold in/run by source', {k: round(v / n, 1) for k, v in top}, '| goods sold/run', round(sum(s.get('goodsSold', 0) for s in S) / n, 2),
               'trader gold', round(sum(s.get('goodsGold', 0) for s in S) / n, 1), 'fence would pay', round(sum(s.get('fenceWouldPay', 0) for s in S) / n, 1))
+        # Draws by half of the trail (legs flown; event order when a run
+        # predates eventFrac): the hard share, and how often the late half
+        # repeats a hard event.
+        half = {'early': collections.Counter(), 'late': collections.Counter()}
+        lateHard = collections.Counter()
+        for s in S:
+            ids = s['eventIds']; fr = s.get('eventFrac') or [i / max(1, len(ids)) for i in range(len(ids))]
+            for i, eid in enumerate(ids):
+                h = 'late' if fr[i] > 0.5 else 'early'
+                t = TIER.get(eid, '?'); half[h][t] += 1
+                if h == 'late' and t in ('hard', 'ultra'): lateHard[eid] += 1
+        share = {h: f"{100 * (c['hard'] + c['ultra']) / max(1, sum(c.values())):.1f}% of {round(sum(c.values()) / n, 1)}/run" for h, c in half.items()}
+        print('   hard+ultra share', share, '| late hard draws', dict(lateHard.most_common(8)))

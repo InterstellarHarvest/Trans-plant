@@ -3095,16 +3095,20 @@ function weightedDraw(candidates, weightFn) {
 
 /* Replaces the flat node.event_id lookup. Filters EVENTS by node_type
    + active trigger match + once/seen + active:true, weights by
-   difficulty (map_rules.json's event_difficulty_weights, reweighted
+   difficulty (map_rules.json's event_difficulty_weights, shifted
+   toward hard over the second half by late_difficulty, reweighted
    by the pity counter), and gives currently-active crisis triggers a
    large-but-not-guaranteed weight bump so normal content isn't fully
    locked out during a crisis. Returns null if nothing matches. */
 function selectEvent(node) {
   const triggers = activeTriggers();
   const rules = MOD.map_rules.trails[STATE.trail];
+  // Pity relief reweights the trail's own table and suspends the late
+  // shift, so relief after a hard streak feels the same at any point of
+  // the run (ruling 58 keeps the pity counter's cap).
   const baseWeights = STATE.pityRelief > 0
     ? { easy: (rules.event_difficulty_weights.easy || 0) * 3 + 10, medium: (rules.event_difficulty_weights.medium || 0) * 2 + 5, hard: (rules.event_difficulty_weights.hard || 0) * 0.3, ultra: (rules.event_difficulty_weights.ultra || 0) * 0.1 }
-    : rules.event_difficulty_weights;
+    : lateDifficultyWeights(rules, journeyFrac());
 
   let candidates = Object.values(EVENTS).filter(ev => eventEligible(ev, node, triggers));
   // Departure comes first: until the ship has 'departed', a launch event
@@ -3116,6 +3120,32 @@ function selectEvent(node) {
   }
   if (!candidates.length) return null;
   return drawWeightedEvent(candidates, triggers, baseWeights, node.branch);
+}
+
+/* Share of the trail flown: legs flown (the one into the stop being
+   drawn included) over the path's legs. Legs, not days: a careful run
+   arrives on ~75% of baseDays, so a day count never reaches the end. */
+function journeyFrac() {
+  const legs = STATE.visited ? STATE.visited.size : 0;
+  return legs / pathLegs();
+}
+
+/* The trail's difficulty table at `frac` of the way (ruling 58: the
+   second half leans hard). map_rules.json late_difficulty: from
+   `from_progress` the weights move in a straight line from
+   event_difficulty_weights to `weights_at_arrival` at the destination.
+   Only the weights change, never which events can fire. */
+function lateDifficultyWeights(rules, frac) {
+  const base = rules.event_difficulty_weights;
+  const late = rules.late_difficulty;
+  if (!late || !late.weights_at_arrival || !(frac > late.from_progress)) return base;
+  const t = Math.min(1, (frac - late.from_progress) / (1 - late.from_progress));
+  const out = {};
+  for (const tier of new Set([...Object.keys(base), ...Object.keys(late.weights_at_arrival)])) {
+    const a = base[tier] || 0, b = late.weights_at_arrival[tier] ?? a;
+    out[tier] = a + (b - a) * t;
+  }
+  return out;
 }
 
 /* Branch labels are real (owner ruling 2026-10-11, Bible §9 Fork System):

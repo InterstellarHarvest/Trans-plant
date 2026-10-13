@@ -26,7 +26,7 @@ function installHarness(policy) {
     forageFood: 0, harvests: 0, harvestFood: 0, harvestMorale: 0, verbs: {}, events: 0, eventDays: 0, verbDays: 0, travelDays: 0,
     travelFuel: 0, mins: { fuel: 999, food: 999, water: 999, o2: 999, hull: 999, morale: 999 }, itemUses: {}, goldMax: 0,
     goldIn: 0, goldOut: 0, floats: [], nan: [], combat: 0, traderBuys: 0, medbay: 0, eventIds: [], resDelta: {}, lockedGold: 0,
-    deprivedDays: 0, pests: 0, cropDeadAt: null, fuelBought: 0, matsGained: 0,
+    deprivedDays: 0, pests: 0, cropDeadAt: null, fuelBought: 0, matsGained: 0, eventFrac: [],
   };
   window.openMinigame = (id, opts, onDone) => {
     const tier = T();
@@ -171,7 +171,7 @@ function step() {
     const nonAdv = btns.filter(b => !b.classList.contains('advance'));
     window.__evSteps = (window.__evSteps || 0) + 1;
     if (!nonAdv.length || STATE.currentOutcomeId || STATE.outcomeMode || window.__evSteps > 25) {
-      window.__evSteps = 0; S.events++; S.eventIds.push(STATE.currentEvent && STATE.currentEvent.id);
+      window.__evSteps = 0; S.events++; S.eventIds.push(STATE.currentEvent && STATE.currentEvent.id); S.eventFrac.push(journeyFrac());
       advanceAfterEvent(); return { wait: 50 };
     }
     // Leave rows are real exits (b4 2026-10-12: every sim run used to burn
