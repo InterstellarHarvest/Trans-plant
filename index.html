@@ -1959,7 +1959,9 @@ function loadRun(key) {
   if (!('crewIdentity' in snap)) STATE.crewIdentity = {};
   if (!('scouted' in snap)) STATE.scouted = {};
   if (!('startCrew' in snap)) STATE.startCrew = Math.max(STATE.crew.length, STATE.flags.has('crew_lost') ? STATE.crew.length + 1 : 0);
-  STATE.scanIntelEvent = null;
+  // SCAN intel belongs to the event it was read for: an in-event save comes
+  // back with it (a reload used to strip the previews the SCAN paid for).
+  if (!(snap.pendingEvent && snap.scanIntelEvent === snap.pendingEvent)) STATE.scanIntelEvent = null;
   // Saves from before the "planted" announcement existed: the crop was
   // planted long ago — don't announce it on resume.
   if (STATE.cropGrowth) STATE.flags.add('ai_noted_crop_planted');
