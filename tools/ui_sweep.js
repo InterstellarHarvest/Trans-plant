@@ -53,10 +53,14 @@ const INERT_OK = new Set([]);
     let h = 0; for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) | 0;
     return (active ? active.id : '') + '#' + overlays + '#' + modal + '#' + st + '#' + h;
   });
+  // A disabled-looking control that "acted" may only have coincided with
+  // the screen changing by itself (a timer, an animation's text). Wait the
+  // same time without a click: if the screen changes then too, it's noise.
+  const quietChange = async ms => { const a = await sig(); await page.waitForTimeout(ms); return a !== (await sig()); };
   const looksDisabled = el => page.evaluate(el => {
     const cs = getComputedStyle(el);
     // A current tab/selection (.active/.selected/aria-selected) is legitimately inert on re-click.
-    if ((el.classList.contains('active') || el.classList.contains('selected') || el.getAttribute('aria-selected') === 'true') && /tab|pip|option|card/i.test(el.className)) return true;
+    if ((el.classList.contains('active') || el.classList.contains('selected') || el.getAttribute('aria-selected') === 'true') && /tab|pip|pill|option|card/i.test(el.className)) return true;
     return el.disabled || el.classList.contains('disabled') || el.classList.contains('locked') ||
            el.classList.contains('combat-locked') || cs.pointerEvents === 'none' ||
            (cs.filter !== 'none' && /grayscale|brightness\(0\.[0-6]/.test(cs.filter)) || parseFloat(cs.opacity) < 0.6;
@@ -177,7 +181,7 @@ const INERT_OK = new Set([]);
     const after = await sig();
     const changed = before !== after;
     swept++;
-    if (dis && changed) flag('looks DISABLED but acted', b.label);
+    if (dis && changed && !(await quietChange(350))) flag('looks DISABLED but acted', b.label);
     if (!dis && !changed && !INERT_OK.has(b.label)) flag('looks ENABLED but inert', b.label);
     // Overlay interior sweep
     const openOv = await page.evaluate(() => [...document.querySelectorAll('.overlay.active')].map(o => o.id));
@@ -198,7 +202,7 @@ const INERT_OK = new Set([]);
         await page.waitForTimeout(250);
         const ich = ib4 !== (await sig());
         n++;
-        if (idis && ich) flag('[' + ovId + '] looks DISABLED but acted', ib.label);
+        if (idis && ich && !(await quietChange(250))) flag('[' + ovId + '] looks DISABLED but acted', ib.label);
         if (!idis && !ich && !INERT_OK.has(ib.label)) flag('[' + ovId + '] looks ENABLED but inert', ib.label);
         // A nested overlay/modal may have opened (expand modal, confirm) — leave it to closeAnyOverlay
         if (!(await page.evaluate(id => document.getElementById(id).classList.contains('active'), ovId))) break;
