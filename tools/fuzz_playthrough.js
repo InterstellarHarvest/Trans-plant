@@ -12,6 +12,9 @@
  *   - at least one of its trigger values was actually active
  *   - its node_type actually matched the node it fired at
  *   - once:true events never fire twice in a run
+ *   - a repeatable event never fires again within the trail's
+ *     repeat_cooldown_stops stops (ruling 65), unless SCAN locked it in
+ *     or the draw fell back (every eligible event cooling down)
  * Plus per-leg STATE invariants:
  *   - resources finite and within [0,100]; gold >= 0; days finite
  *   - items all strings; materials finite and >= 0; crop health finite
@@ -78,6 +81,22 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
     window.__drawViolations = [];
     window.__firedOnce = new Set();
     window.__firedOnceAt = {}; // event id → the node it fired at (station room re-entry)
+    // Repeat cooldown audit: what the pool drew per node (and whether it
+    // was the fallback), what SCAN delivered per node, and the stop each
+    // repeatable event last fired at.
+    window.__drawnAt = {}; window.__scoutedAt = {}; window.__repeatLast = {};
+    const realSelect = window.selectEvent;
+    window.selectEvent = function (node, stop) {
+      const ev = realSelect(node, stop);
+      if (ev) window.__drawnAt[node.id] = { ev: ev.id, fallback: !!(STATE._lastDraw && STATE._lastDraw.fallback) };
+      return ev;
+    };
+    const realScouted = window.scoutedEventFor;
+    window.scoutedEventFor = function (node) {
+      const ev = realScouted(node);
+      if (ev) window.__scoutedAt[node.id] = ev.id;
+      return ev;
+    };
     const realEnter = window.enterEvent;
     window.enterEvent = function (node, ev) {
       const v = window.__drawViolations;
@@ -120,6 +139,24 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
         if (window.__firedOnce.has(ev.id) && !reentry) v.push(`once:true event ${ev.id} fired TWICE`);
         window.__firedOnce.add(ev.id);
         window.__firedOnceAt[ev.id] = node.id;
+      }
+      if (!ev.once) {
+        const stop = currentStop(), N = repeatCooldownStops();
+        const drawn = window.__drawnAt[node.id];
+        const fromDraw = !!(drawn && drawn.ev === ev.id);
+        const scouted = window.__scoutedAt[node.id] === ev.id;
+        // Not a draw: the station approach and Market Row the dock opens at
+        // every stop (station.js), a delayed crisis, and the trader the
+        // TRADE / WAIT FOR TRADER verbs summon.
+        const sv = STATE.stationVisit;
+        const service = !fromDraw && !scouted && (forcedApproach || forcedCrisis ||
+          ev.id === 'event_encounter_trader_001' || (sv && sv.node === node.id && sv.roomEv !== ev.id));
+        const last = window.__repeatLast[ev.id];
+        // Same stop = a dock room walked back into, one firing.
+        if (!service && !scouted && !(fromDraw && drawn.fallback) && last != null && stop !== last && stop - last <= N) {
+          v.push(`repeatable ${ev.id} fired at stop ${stop}, ${stop - last} after stop ${last} (cooldown ${N})`);
+        }
+        if (!service) window.__repeatLast[ev.id] = stop;
       }
       return realEnter(node, ev);
     };

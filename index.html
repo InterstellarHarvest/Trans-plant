@@ -1823,6 +1823,7 @@ const STATE = {
   seenEventIds: new Set(),  // once:true events already fired this run
   hardStreak:   0,          // consecutive hard/ultra events selected (pity counter)
   pityRelief:   0,          // legs remaining where difficulty weights favor easy/medium
+  eventLastStop: {},        // repeatable event id → the stop it last fired at (repeat cooldown)
   hubScreen:    'screen-cruise', // which screen travelTo()/advanceAfterEvent() return to between nodes — 'screen-map' under ?debug=fixed_path
 };
 
@@ -1850,6 +1851,7 @@ const SAVED_FIELDS = [
   'crewIdentity', // joined stowaways keep their own name in a crew role
   'researchReady', 'researchKey', // Academic captain: one Research preview per station leg, and the layer it is on (a reload mid-event kept it spent but hid it)
   'scouted', // SCAN: events locked in at the stops ahead
+  'eventLastStop', // repeat cooldown (ruling 65): each repeatable event's last stop
   'soilSurveys', // soil sampler planet surveys (ending score)
   'startCrew',   // crew size at launch (ending crew paragraph / score)
   'dayCarry',    // fractional travel day carried between legs
@@ -1938,7 +1940,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2179,7 +2181,7 @@ function applySetupToState(sel) {
   STATE.postCombatLegs = 0; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.lastAmbientNode = null; STATE.alertedNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.goneNames = null;
-  STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0;
+  STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0; STATE.eventLastStop = {};
   STATE.traderAt = {}; STATE.forcedEvent = null; // cruise.js: trader-presence rolls, during-wait event
   STATE.passengers = []; STATE.eventSpeaker = null; STATE.joinNote = null; STATE.stationVisit = null;
   STATE.flagFirstSeen = {}; STATE.calledBack = []; STATE.lastCallbackLeg = null;
@@ -3332,7 +3334,7 @@ function weightedDraw(candidates, weightFn) {
    by the pity counter), and gives currently-active crisis triggers a
    large-but-not-guaranteed weight bump so normal content isn't fully
    locked out during a crisis. Returns null if nothing matches. */
-function selectEvent(node) {
+function selectEvent(node, stop) {
   const triggers = activeTriggers();
   const rules = MOD.map_rules.trails[STATE.trail];
   // Pity relief reweights the trail's own table and suspends the late
@@ -3351,7 +3353,75 @@ function selectEvent(node) {
     if (launch.length) candidates = launch;
   }
   if (!candidates.length) return null;
-  return drawWeightedEvent(candidates, triggers, baseWeights, node.branch);
+  // Repeat cooldown (ruling 65): a repeatable event drawn within the
+  // trail's last repeat_cooldown_stops stops sits this draw out. When
+  // every eligible event is cooling down the stop still gets one: the
+  // least recently drawn (never an empty stop because of the cooldown).
+  if (stop == null) stop = currentStop();
+  const gap = repeatGaps(stop);
+  const N = repeatCooldownStops();
+  let pool = candidates.filter(ev => ev.once || gap(ev) > N);
+  const fallback = !pool.length;
+  if (fallback) {
+    const far = Math.max(...candidates.map(gap));
+    pool = candidates.filter(ev => gap(ev) === far);
+  }
+  const ev = drawWeightedEvent(pool, triggers, baseWeights, node.branch);
+  STATE._lastDraw = { node: node.id, ev: ev.id, stop, fallback };
+  return ev;
+}
+
+/* The stop the ship is at: legs flown to reach it (the start is stop 0).
+   The stop being drawn isn't in `visited` yet; back at the hub it is. */
+function currentStop() {
+  const v = STATE.visited;
+  if (!v) return 0;
+  return v.size - (v.has(STATE.currentId) ? 1 : 0);
+}
+
+/* Repeat cooldown (ruling 65): the trail's repeat_cooldown_stops
+   (map_rules.json) — 0 when unauthored, no cooldown. */
+function repeatCooldownStops() {
+  const rules = MOD.map_rules.trails[STATE.trail];
+  const n = rules && rules.repeat_cooldown_stops;
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/* gap(ev): how many stops lie between `stop` and the nearest stop `ev`
+   was drawn for (Infinity: never). A SCAN lock-in at a stop ahead
+   counts as a draw there, so a two-stop scan can't lock one repeatable
+   event into back-to-back stops. Locks on a branch the ship didn't take
+   are out of reach and don't count. */
+function repeatGaps(stop) {
+  const at = {}; // event id → the stops it was drawn for
+  const note = (id, s) => { (at[id] = at[id] || []).push(s); };
+  for (const [id, s] of Object.entries(STATE.eventLastStop || {})) note(id, s);
+  if (STATE.scouted && STATE.byId) {
+    const here = currentStop();
+    const seen = new Set([STATE.currentId]);
+    let frontier = [STATE.currentId], depth = 0;
+    while (frontier.length) {
+      depth++;
+      const next = [];
+      for (const id of frontier) for (const nid of connectionsOf(STATE.byId[id] || {})) {
+        if (seen.has(nid) || STATE.visited.has(nid) || !STATE.byId[nid]) continue;
+        seen.add(nid); next.push(nid);
+        const sc = STATE.scouted[nid];
+        if (sc && sc.ev) note(sc.ev, here + depth);
+      }
+      frontier = next;
+    }
+  }
+  return ev => (at[ev.id] || []).reduce((g, s) => Math.min(g, Math.abs(stop - s)), Infinity);
+}
+
+/* A repeatable event fired as a stop's event (drawn, or locked in by
+   SCAN) or as a during-wait interrupt: the stop it fired at, for the
+   repeat cooldown. */
+function noteEventDrawn(ev) {
+  if (!ev || ev.once) return;
+  STATE.eventLastStop = STATE.eventLastStop || {};
+  STATE.eventLastStop[ev.id] = currentStop();
 }
 
 /* Share of the trail flown: legs flown (the one into the stop being
@@ -3509,6 +3579,7 @@ function scoutAhead(depth, intel) {
   STATE.scouted = STATE.scouted || {};
   const pity = [STATE.hardStreak, STATE.pityRelief]; // a scan isn't a draw for pity purposes
   const lines = [];
+  const here = currentStop();
   let frontier = [STATE.currentId];
   for (let d = 0; d < depth; d++) {
     const next = [];
@@ -3520,7 +3591,7 @@ function scoutAhead(depth, intel) {
         next.push(nid);
         if (!connectionsOf(n).length) { lines.push((n.name || 'Destination') + ': the destination.'); continue; }
         const prev = STATE.scouted[nid];
-        const ev = prev ? (prev.ev && EVENTS[prev.ev]) : selectEvent(n);
+        const ev = prev ? (prev.ev && EVENTS[prev.ev]) : selectEvent(n, here + d + 1);
         STATE.scouted[nid] = { ev: ev ? ev.id : null, intel: !!(intel || (prev && prev.intel)) };
         const diff = ev ? (Array.isArray(ev.difficulty) ? ev.difficulty[0] : ev.difficulty) : null;
         lines.push((n.name || n.node_type) + ': ' + (ev ? (ev.title || 'contact') + (diff ? ' [' + String(diff).toUpperCase() + ']' : '') : 'quiet — nothing on the scopes'));
@@ -4503,6 +4574,7 @@ function travelTo(nodeId, opts) {
   const scouted = scoutedEventFor(node);
   if (STATE.scouted) delete STATE.scouted[node.id];
   const ev = crisis || (node.event_id && EVENTS[node.event_id]) || (scouted !== undefined ? scouted : selectEvent(node));
+  if (ev !== crisis) noteEventDrawn(ev); // the repeat cooldown counts from here (a delayed crisis is never pool-drawn)
   STATE.scanIntelEvent = (ev && scouted === ev && scoutRec && scoutRec.intel) ? ev.id : null;
   // Station stop (owner ruling 2026-10-11, demo station_approach): every
   // stop opens on the bridge with the approach — HAIL / DOCK / the wave-off
@@ -6730,6 +6802,7 @@ function resolveStuckFork() {
   if (!node || node.node_type !== 'fork' || branchPick()) return false;
   const ev = selectEvent(node) || Object.values(EVENTS).find(e => e.active !== false && (e.node_type || []).includes('fork'));
   if (!ev) return false;
+  noteEventDrawn(ev);
   enterEvent(node, ev);
   return true;
 }

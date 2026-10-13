@@ -29,6 +29,22 @@ function installHarness(policy) {
     travelFuel: 0, mins: { fuel: 999, food: 999, water: 999, o2: 999, hull: 999, morale: 999 }, itemUses: {}, goldMax: 0,
     goldIn: 0, goldOut: 0, floats: [], nan: [], combat: 0, traderBuys: 0, medbay: 0, eventIds: [], resDelta: {}, lockedGold: 0,
     deprivedDays: 0, pests: 0, cropDeadAt: null, fuelBought: 0, matsGained: 0, eventFrac: [],
+    fires: [], draws: 0, fallbacks: 0, fallbackIds: [],
+  };
+  // Every event entry with the stop it happened at ([id, stop]; a dock room
+  // re-entered is one entry per stop in the analysis), and how many pool
+  // draws fell back to the least recently drawn event (the repeat cooldown).
+  const realEnter = window.enterEvent;
+  window.enterEvent = function (node, ev, ...rest) {
+    const v = STATE.visited;
+    if (ev) S.fires.push([ev.id, v ? v.size - (v.has(STATE.currentId) ? 1 : 0) : 0]);
+    return realEnter(node, ev, ...rest);
+  };
+  const realSelect = window.selectEvent;
+  window.selectEvent = function (...a) {
+    const ev = realSelect(...a);
+    if (ev) { S.draws++; if (STATE._lastDraw && STATE._lastDraw.fallback) { S.fallbacks++; S.fallbackIds.push(ev.id); } }
+    return ev;
   };
   window.openMinigame = (id, opts, onDone) => {
     const tier = T();

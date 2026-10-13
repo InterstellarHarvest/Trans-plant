@@ -528,6 +528,39 @@ function assignKeys(src) {
   }
 }
 
+// ── The event draw's repeat cooldown (ruling 65) ─────────────────────
+// Every trail authors repeat_cooldown_stops, read through
+// repeatCooldownStops alone. A function that draws from the event pool
+// (calls eventEligible or selectEvent) holds repeatables back (repeatGaps)
+// or records what it fired (noteEventDrawn) — a draw that does neither
+// is a repeat the cooldown can't see. Exempt: eventEligible itself,
+// scoutedEventFor (a SCAN lock-in fires regardless) and scoutAhead (its
+// lock-ins are recorded on arrival).
+{
+  const blank = s => s.replace(/[^\n]/g, ' ');
+  const stripComments = src => src.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/(^|\s)\/\/.*$/gm, blank);
+  const rules = JSON.parse(read('modules/maps/map_rules.json'));
+  for (const [trail, t] of Object.entries(rules.trails || {})) {
+    if (!(Number.isInteger(t.repeat_cooldown_stops) && t.repeat_cooldown_stops > 0)) err(`modules/maps/map_rules.json: trail ${trail} has no positive integer repeat_cooldown_stops`);
+  }
+  const EXEMPT = new Set(['eventEligible', 'scoutedEventFor', 'scoutAhead', 'repeatCooldownStops']);
+  for (const rel of ['index.html', ...ENGINE]) {
+    const src = stripComments(read(rel)).replace(/'[^'\n]*'|"[^"\n]*"/g, blank);
+    // Function bodies: from each declaration to the next one at its indent.
+    const decls = [...src.matchAll(/^([ \t]*)function ([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/gm)];
+    decls.forEach((d, i) => {
+      const end = src.indexOf('\n' + d[1] + '}', d.index);
+      const body = src.slice(d.index, end < 0 ? undefined : end);
+      const name = d[2];
+      if (/\brepeat_cooldown_stops\b/.test(body) && name !== 'repeatCooldownStops') err(`${rel}:${lineOf(src, d.index)}: ${name} reads repeat_cooldown_stops — use repeatCooldownStops()`);
+      if (EXEMPT.has(name)) return;
+      const inner = body.slice(body.indexOf('{') + 1);
+      if (!/\b(eventEligible|selectEvent)\s*\(/.test(inner.replace(/\bfunction \w+\s*\([^)]*\)\s*\{[\s\S]*$/, ''))) return;
+      if (!/\b(repeatGaps|noteEventDrawn)\s*\(/.test(body)) err(`${rel}:${lineOf(src, d.index)}: ${name} draws from the event pool without the repeat cooldown (repeatGaps / noteEventDrawn)`);
+    });
+  }
+}
+
 // ── Engine window exports something outside the file reads ──────────
 {
   const stripComments = src => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1');

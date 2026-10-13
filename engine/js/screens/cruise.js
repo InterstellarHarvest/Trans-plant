@@ -1300,9 +1300,12 @@
     const node = STATE.byId && STATE.byId[STATE.currentId];
     if (!node) return null;
     const trig = activeTriggers();
+    // The repeat cooldown (ruling 65) holds here too: an interrupt is the
+    // world firing an event. A kind with nothing off cooldown sits out.
+    const gap = repeatGaps(currentStop()), N = repeatCooldownStops();
     const kinds = [];
     for (const [kind, d] of Object.entries(WAIT_EVENTS)) {
-      const ids = d.events().filter(id => EVENTS[id] && eventEligible(EVENTS[id], node, trig));
+      const ids = d.events().filter(id => EVENTS[id] && eventEligible(EVENTS[id], node, trig) && (EVENTS[id].once || gap(EVENTS[id]) > N));
       if (ids.length) kinds.push({ kind, d, ids });
     }
     if (!kinds.length) return null;
@@ -1555,6 +1558,7 @@
     tickerKey = null;
     if (!ev) { renderCruise(); return; }
     closeStopMenu();
+    noteEventDrawn(ev);
     enterEvent(STATE.byId[STATE.currentId], ev);
   }
   function shakeScreen() {
