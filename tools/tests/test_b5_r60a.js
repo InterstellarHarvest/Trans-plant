@@ -48,6 +48,9 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
           STATE.goldAmount = 200;
           STATE.resources.hull = 80; STATE.resources.fuel = 80; STATE.resources.food = 80; STATE.resources.water = 80; STATE.resources.o2 = 80;
           for (const it of ['hull_patch', 'medkit', 'pressure_suit', 'spectrometer', 'solar_array', 'alien_seed_pod']) if (!STATE.items.includes(it)) STATE.items.push(it);
+          // …and whatever item the option (or its pair) itself requires.
+          const item = c => c && (c.requires_item || (c.gate && c.gate.item));
+          for (const it of [item(ch), item(also)].filter(Boolean)) if (!STATE.items.includes(it)) STATE.items.push(it);
           for (const f of [ch && ch.requires_flag, ev && ev.requires_flag].filter(Boolean)) STATE.flags.add(f);
           if (STATE.cropGrowth) STATE.cropGrowth.health = 80;
           const want = (ev && (ev.node_type || [])[0]) || 'any';

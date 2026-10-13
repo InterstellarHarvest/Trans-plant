@@ -88,7 +88,9 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       return { fe, fl, early, late };
     }, [trail, type]);
     ok(r.early.n > 1000 && r.late.n > 1000, `${trail}/${type}: ${r.early.n} early and ${r.late.n} late draws`);
-    ok(r.late.hardShare - r.early.hardShare >= 0.05 && r.late.hardShare >= r.early.hardShare * 1.3,
+    // A pool that is already mostly hard early can't grow 1.3×: there the
+    // lean shows as the easier share shrinking by a quarter.
+    ok(r.late.hardShare - r.early.hardShare >= 0.05 && (r.late.hardShare >= r.early.hardShare * 1.3 || (1 - r.late.hardShare) <= 0.75 * (1 - r.early.hardShare)),
       `${trail}/${type}: hard share ${(100 * r.early.hardShare).toFixed(1)}% at ${(100 * r.fe).toFixed(0)}% of the path → ${(100 * r.late.hardShare).toFixed(1)}% at ${(100 * r.fl).toFixed(0)}%`);
     ok(!r.early.ineligible.length && !r.late.ineligible.length, `${trail}/${type}: every drawn event was eligible at its stop`);
   }
