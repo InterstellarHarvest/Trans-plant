@@ -55,7 +55,7 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
       medic: [K('medic', 'injury').morale, K('medic', 'death').morale], chef: [K('chef', 'short_rations').per_day.vending, K('chef', 'food_gone').per_day],
       pilot: [K('pilot', 'slow_pace').per_travel_day.light, K('pilot', 'fast_pace').per_travel_day.ludicrous, K('pilot', 'fast_pace').per_travel_day.plaid],
       dip: K('diplomat', 'combat').morale, xeno: K('xenobiologist', 'alien_find').morale }; });
-    ok(JSON.stringify(T) === JSON.stringify({ w: -25, hull: [-6, 10], crop: [-10, 2, 5, 10], medic: [-12, -25], chef: [-0.3, -4], pilot: [-0.3, 0.1, 0.2], dip: -20, xeno: 3 }), 'tuned sizes: ' + JSON.stringify(T));
+    ok(JSON.stringify(T) === JSON.stringify({ w: -25, hull: [-6, 10], crop: [-10, 2, 5, 10], medic: [-12, -25], chef: [-0.3, -2], pilot: [-0.3, 0.1, 0.2], dip: -20, xeno: 3 }), 'tuned sizes: ' + JSON.stringify(T));
     await page.close();
   }
 
@@ -165,7 +165,7 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
       return out;
     });
     ok(Math.abs(r.short + 3) < 1e-6, '10 days on VENDING MACHINE: the chef −3 more than the medic (' + r.short + ')');
-    ok(Math.abs(r.gone + 12) < 1e-6 && /empty galley/.test(r.why), '3 days without food: the chef −12 more ("' + r.why + '")');
+    ok(Math.abs(r.gone + 6) < 1e-6 && /empty galley/.test(r.why), '3 days without food: the chef −6 more ("' + r.why + '")');
     await page.close();
   }
 
