@@ -73,7 +73,9 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       ok(t.arrive && t.mid && t.past, `${t.trail}: a straight line to weights_at_arrival at the destination (and no further)`);
       ok(t.shares[0] < t.shares[1] && t.shares[1] < t.shares[2], `${t.trail}: hard share ${t.shares.join('% → ')}% (start → 3/4 → arrival)`);
       ok(t.keepsTiers, `${t.trail}: every tier the trail weights stays weighted at arrival (re-weights, never removes)`);
-      ok(t.ultra === 0, `${t.trail}: ultra stays 0 (no ultra events yet)`);
+      // Ruling 60: the ultra tier is interstellar's late legs only.
+      if (t.trail === 'interstellar') ok(t.ultra > 0, `${t.trail}: ultra rises to ${t.ultra} at arrival (0 in the first half)`);
+      else ok(t.ultra === 0, `${t.trail}: ultra stays 0`);
     }
   }
 
@@ -144,7 +146,10 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
             // An event is drawable when its tier carries weight: the same set
             // under the trail's own table and under the shifted one.
             const live = w => pool.filter(ev => (w[R.tierOf(ev)] ?? 1) > 0).map(ev => ev.id).sort().join();
-            const same = live(rules.event_difficulty_weights) === live(lateDifficultyWeights(rules, journeyFrac()));
+            // The one tier the shift may bring in is ultra (0 for the first
+            // half, rising late on interstellar — ruling 60).
+            const noUltra = w => Object.assign({}, w, { ultra: 0 });
+            const same = live(noUltra(rules.event_difficulty_weights)) === live(noUltra(lateDifficultyWeights(rules, journeyFrac())));
             out.push({ trail, type, frac, n: pool.length, same });
           }
         }
