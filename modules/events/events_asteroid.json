@@ -437,5 +437,422 @@
       "label": "Piezoelectricity: rocks that sing",
       "url": "https://en.wikipedia.org/wiki/Piezoelectricity"
     }
+  },
+  {
+    "id": "event_asteroid_005",
+    "active": true,
+    "title": "The Shoal",
+    "difficulty": "hard",
+    "tone": [
+      "cosmic",
+      "grim"
+    ],
+    "node_type": [
+      "asteroid_field"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "asteroid_field",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Look at them all moving together! It's like a school of fish! Fish are friendly! These are rocks, but in spirit!",
+      "marv": "MARV has modelled the shoal. Three thousand bodies, most of them small, all of them turning. He has found a line through. He notes the line is narrowing at a rate he would describe, if pressed, as brisk.",
+      "rex": "REX counts three thousand inbound contacts and zero hostiles. He finds the zero unconvincing. Point defense is warm. Point defense will not help.",
+      "chip": "CHIP's Collision Waiver covers impacts with up to one (1) object per voyage! You are about to exceed it! CHIP has pre-filed the paperwork!",
+      "ajoy": "AJOY would go around. It costs fuel and days and nobody gets a story out of it. She's fine without the story."
+    },
+    "body": "A shoal of rocks has drifted across your heading: a few thousand of them, none bigger than a house, all of them turning. They move together, the way fish do, for reasons that are entirely gravitational and look entirely deliberate.\n\nThere is a gap through the middle. It is closing. Most of the rocks are small. Small, at these speeds, is a relative term.",
+    "choices": [
+      {
+        "text": "Thread the gap at speed",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -16
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You aim at the gap and go. The gap is narrower at the far end than it looked from the near one, which is how gaps work. Sixteen points of hull, three of them in one bang that everyone aboard will describe differently for the rest of their lives."
+        }
+      },
+      {
+        "text": "{crew.pilot} picks a line through",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "minigame_type": "navigation",
+        "outcome": {
+          "resources": {
+            "fuel": -6,
+            "hull": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The pilot slows to a crawl and takes the shoal rock by rock, matching the tumble, never quite touching. Two days. Six points of fuel. One gentle scrape, which the pilot apologises to the ship for, out loud."
+        }
+      },
+      {
+        "text": "Back out and go around",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -14
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You turn and fly the long way round the shoal, which is very long, because the shoal is very wide. Four days and fourteen points of fuel. Not one rock touches the ship. Nobody has anything to say about it at dinner, which was the point."
+        }
+      },
+      {
+        "text": "Shields up and ride it out",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You take the shield console and point the ship at the gap."
+        },
+        "launch_minigame": "brace",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "hull": -3
+            },
+            "narrative": "You hold the shields through the thick of it, easing off between impacts and slamming them up on every flash. Three points of hull, all of it scuffs. The shoal closes behind you like a door."
+          },
+          "good": {
+            "resources": {
+              "hull": -10
+            },
+            "narrative": "The shields take most of it. Most is not all: ten points of hull got through in the seconds you were catching your breath. The shoal closes behind you, unbothered."
+          },
+          "poor": {
+            "resources": {
+              "hull": -20,
+              "morale": -4
+            },
+            "narrative": "The shields drop mid-shoal. The rest of the crossing happens to the hull directly, at length. Twenty points of it. The crew spends the evening listening to the ship tick as it cools, counting."
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_asteroid_006",
+    "active": true,
+    "title": "The Rock Exhales",
+    "difficulty": "hard",
+    "tone": [
+      "absurd",
+      "grim"
+    ],
+    "node_type": [
+      "asteroid_field"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "asteroid_field",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The asteroid is breathing! ARIA always knew rocks had feelings! It is a very big breath! She is sure it will finish soon!",
+      "marv": "MARV estimates the pocket held four billion years of frozen gas. He estimates it will finish venting at about the moment the spin becomes a problem. He has started a clock. He did not want to.",
+      "rex": "REX has identified the asteroid as the aggressor. It fired first. It is still firing. He recommends disengaging from the asteroid, a sentence he never expected to say.",
+      "chip": "CHIP notes the anchor cable is rental equipment! Cutting it incurs a Non-Return Fee! CHIP will add it to the invoice! The invoice is getting long!",
+      "ajoy": "AJOY has her hand on the cable release. She isn't pulling it. She's just making it very clear that it's there."
+    },
+    "body": "The anchor bit into the asteroid at 0400. At 0412 the asteroid exhaled.\n\nUnder the anchor point there was a pocket of frozen gas that had waited four billion years for someone to put a hole in it, and it has opinions. A white plume is venting past the hull, and the ship, still tethered, is beginning to turn with the rock. Slowly. Then less slowly.",
+    "choices": [
+      {
+        "text": "Cut the cable and burn clear",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -12,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The cable goes with a twang you feel in your teeth, and you burn clear before the spin takes hold. Twelve points of fuel. The anchor stays in the rock, which now has a small monument to you sticking out of it. Nobody suggests going back for it."
+        }
+      },
+      {
+        "text": "{crew.engineer} vents it down the drill shaft",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "pressure_gauge",
+        "outcome": {
+          "resources": {
+            "o2": -4,
+            "fuel": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The engineer feeds the plume back down the drill shaft and throttles it with a valve that was not designed for this and does it anyway. The spin stops. The shaft coughs up a load of loose ore on its way. The airlock cycled four times getting them in and out, and holding the ship steady while they worked burned a little fuel.",
+          "materials": {
+            "minerals": 2
+          }
+        }
+      },
+      {
+        "text": "Ride the spin until it runs out",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -10,
+            "morale": -4
+          },
+          "crew_effect": {
+            "type": "injure",
+            "target": "random"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You hold on. Everyone holds on. The spin climbs for an hour and then, as the pocket empties, winds down for another two, the tether groaning the whole time. Somebody lost their grip in the second hour and met a bulkhead. Everybody else lost their lunch."
+        }
+      },
+      {
+        "text": "Cap the vent with a hull patch",
+        "requires_crew": null,
+        "requires_item": "hull_patch",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "hull_patch",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You slap the patch over the vent, sticky side down, instructions side up. It holds. The rock goes quiet and stays quiet, wearing a small square of the ship's stores that will outlast everyone aboard. A little air got out while you worked."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_asteroid_007",
+    "active": true,
+    "title": "Collision Cascade",
+    "timed": true,
+    "leave_disabled": true,
+    "leave_label": "CAN'T LEAVE (THE FRONT IS COMING)",
+    "difficulty": "ultra",
+    "tone": [
+      "cosmic",
+      "grim"
+    ],
+    "node_type": [
+      "asteroid_field"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "trail": [
+      "interstellar"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "asteroid_field",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Two asteroids met! And now there are thousands of little asteroids! That's how families work! ARIA is so happy for them!",
+      "marv": "MARV watched the collision. He has modelled the debris front. It expands at a rate he has written down and underlined twice. He notes that a cascade does not end. It only thins.",
+      "rex": "REX reports the largest coordinated inbound assault of his career. Thousands of projectiles. No command structure. No demands. He respects it. He would like to leave.",
+      "chip": "CHIP's Impact Protection™ is priced per impact! CHIP has done the arithmetic! CHIP recommends declaring bankruptcy now, while it's affordable!",
+      "ajoy": "AJOY has the scanner on wide sweep. There will be holes in that cloud and somebody has to find them fast. She'd rather it was a person than luck."
+    },
+    "body": "Two rocks the size of cities have met, a few thousand kilometers ahead, at a speed neither of them had planned for. There was no sound. There will be no sound. There is, instead, a cloud: a sphere of everything they were, expanding at several kilometers a second, and the ship is inside the radius it will reach in about twenty minutes.\n\nThe cloud is mostly gaps. The gaps are moving too.",
+    "choices": [
+      {
+        "text": "Scan for the gaps and fly them",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You take the scanner and look for holes."
+        },
+        "launch_minigame": "scan",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "hull": -3
+            },
+            "narrative": "You lock onto the gaps one after another and call the turns, and the ship slips through the front in a run of hard, sickening swerves. Three points of hull, four of fuel. Behind you the cloud keeps going, and will for a long time."
+          },
+          "good": {
+            "resources": {
+              "hull": -10
+            },
+            "narrative": "You find most of the gaps. The ones you miss find the ship instead: ten points of hull, most of it in one long, loud second near the end."
+          },
+          "poor": {
+            "resources": {
+              "hull": -22,
+              "morale": -5
+            },
+            "narrative": "The scanner loses the gaps halfway through and the ship goes through the front blind. Twenty-two points of hull. Everyone aboard can now say, accurately, that they were caught in an asteroid collision. Nobody wants to."
+          }
+        }
+      },
+      {
+        "text": "{crew.engineer} turns the cargo doors into a shield",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort_cost": "medium",
+        "effort_required": 45,
+        "requires_effort_from": [
+          "engineer",
+          "item:repair_kit"
+        ],
+        "outcome": {
+          "resources": {
+            "hull": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The engineer unbolts the cargo doors, swings them out on the crane arms and angles them into the front like two very expensive umbrellas. The debris hits the doors, which is the idea. Eight points of hull get round the edges. With enough hands the doors go back on quickly; without them, it is days of hammering."
+        }
+      },
+      {
+        "text": "Hide behind the biggest fragment",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -8,
+            "hull": -10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You tuck in behind the largest piece of what used to be a city-sized rock and let it take the front. It takes the front. It also spins, which nobody had fully thought about, and the ship spends four days dodging its own shelter. Eight points of fuel, ten of hull."
+        }
+      },
+      {
+        "text": "Turn back the way you came",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You turn round and burn hard back down your own track, then round the edge of the front the very long way. Four days. The cloud never catches you. The fuel gauge does: a third of the tank, gone into running away.",
+          "resources_pct": {
+            "fuel": -35
+          }
+        }
+      },
+      {
+        "text": "Punch straight through the front",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -28
+          },
+          "crew_effect": null,
+          "severity": "lethal",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You aim for the middle and go through at full speed, on the theory that less time inside is less time being hit. The theory is half right. Twenty-eight points of hull, and one fragment that came through the plating into a cabin that was occupied."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "The ship computer files a reference: collisions that make debris that makes more collisions have a name, and the people who keep satellites flying around Earth worry about it a great deal.",
+      "label": "Collision cascades",
+      "url": "https://en.wikipedia.org/wiki/Kessler_syndrome"
+    }
   }
 ]

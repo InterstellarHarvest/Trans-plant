@@ -1652,5 +1652,595 @@
         "time_cost": "trivial"
       }
     }
+  },
+  {
+    "id": "event_shipboard_018",
+    "active": true,
+    "title": "It Tastes Like Pennies",
+    "difficulty": "hard",
+    "tone": [
+      "mundane",
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The water has a new flavour! ARIA is calling it Copper Sunrise! It's probably minerals! Minerals are good for you!",
+      "marv": "MARV has the reclaimer's fault log. A coolant line has been weeping into the drinking loop for six days. He has tested the water. He would not drink it. He does not drink, so he is aware this is a strong statement.",
+      "rex": "REX has secured the galley tap and posted himself beside it. Anyone attempting to fill a cup will be asked to state their intentions.",
+      "chip": "CHIP's AquaPure™ subscription would have caught this! Your subscription lapsed at launch! CHIP sent a reminder! It was in the coolant!",
+      "ajoy": "AJOY has marked the tank unsafe on every screen aboard. She'd rather lose the water than lose a person to it. She knows the water's harder to get back."
+    },
+    "body": "The water tastes of pennies.\n\nIt has tasted of pennies for six days, apparently, but everyone assumed it was them. It was not them. A coolant line in the reclaimer has been weeping into the drinking loop, quietly, the way bad news usually arrives.\n\nThe tank is mostly full. Mostly full of what is the question.",
+    "choices": [
+      {
+        "text": "Dump the tank and start clean",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": -22
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You flush the drinking loop into space. Twenty-two points of water drift off behind the ship in a glittering cloud that is, everyone agrees, very pretty, and also the water. The reclaimer starts again from nothing. Its first cup tastes of nothing. Everyone has one."
+        }
+      },
+      {
+        "text": "{crew.engineer} rebuilds the reclaimer",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort_cost": "medium",
+        "effort_required": 40,
+        "requires_effort_from": [
+          "engineer",
+          "item:repair_kit"
+        ],
+        "outcome": {
+          "resources": {
+            "water": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The engineer strips the reclaimer to its frame, replaces the coolant line and runs the loop through the filters until the readings are boring. Only eight points of water go to the flush. It takes as long as it takes: with a kit and steady hands, not long; without either, a good while.",
+          "scene_bg": "our_ship/engine_fixed"
+        }
+      },
+      {
+        "text": "Boil it clean, a pot at a time",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -8,
+            "water": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You boil the tank. All of it, a pot at a time, on a galley stove that was never meant for this, burning eight points of fuel in the generator. Four days. The ship smells of hot copper and patience. The water comes out safe, a little less of it, and the galley comes out with a new stain on the ceiling."
+        }
+      },
+      {
+        "text": "Run it through the purifier",
+        "requires_crew": null,
+        "requires_item": "water_purifier",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The purifier takes the tank a few litres at a time and gives back water that tastes of nothing. Two days of it humming in the galley. It throws away six points as sludge, which it presents in a little tray, as if expecting praise."
+        }
+      },
+      {
+        "text": "It's probably fine. Drink it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": -4,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": "injury",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You decide the pennies are probably fine. They are fine for most people. They are not fine for one, who spends two days curled round a bucket and comes out of it wounded and pale. The bad line gets capped after that, and the four points of water in it go down the drain."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_019",
+    "active": true,
+    "title": "Grease Fire, Deck Two",
+    "difficulty": "hard",
+    "tone": [
+      "absurd",
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Something smells delicious and also on fire! ARIA is sure it's mostly delicious! The alarms are just excited!",
+      "marv": "MARV notes the fire is small, contained and growing. He has calculated the point at which those three words stop being compatible. It is soon.",
+      "rex": "REX has engaged the fire. The fire has engaged REX's sensor on the galley ceiling. REX is losing. REX does not lose. REX is reassessing.",
+      "chip": "CHIP's FlameGuard™ suppression package was offered at launch! You declined! CHIP remembers! CHIP always remembers!",
+      "ajoy": "AJOY has closed the galley vents so it can't spread. She'd let the cook handle it, if there's a cook. If not, she'd lose the air before she'd lose a hand."
+    },
+    "body": "Something in the galley has caught. A pan, a duct, ten years of fat in the extractor hood that nobody cleaned because nobody was asked to: the cause can wait. There is a fire on deck two, and the smoke has found the corridor.\n\nIt is small. Fires are always small at the start. That is how they get you to look away.",
+    "choices": [
+      {
+        "text": "Vent the galley to space",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -14,
+            "food": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You seal the galley and open it to space. The fire goes out at once, impressed. So do fourteen points of air, eight of food and a spatula that will orbit this system until the heat death of everything."
+        }
+      },
+      {
+        "text": "{crew.chef} smothers it",
+        "requires_crew": "chef",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -6,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The chef walks into the smoke with a lid in one hand and a tin of baking soda in the other, says something unprintable to the fire, and puts it out. Six points of food went with it. The chef will not be discussing it. The chef will be cleaning the hood."
+        }
+      },
+      {
+        "text": "Fight it with the extinguishers",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -5,
+            "morale": -3
+          },
+          "crew_effect": {
+            "type": "injure",
+            "target": "random"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Everyone grabs an extinguisher and goes at it. It takes an hour, four canisters and most of the corridor paint. Somebody gets too close to the hood when it flares and comes away with burns up one arm. The fire is out. The smell is not."
+        }
+      },
+      {
+        "text": "Seal the hatch and let it starve",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -16,
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You shut the galley hatch and let the fire use up its own air. It takes two days. When you open the hatch the fire is out, and so is everything that was in the galley: sixteen points of food, carbonised, and a smell that is now part of the ship's character."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_020",
+    "active": true,
+    "title": "The Long Crack",
+    "timed": true,
+    "leave_disabled": true,
+    "leave_label": "CAN'T LEAVE (IT'S THE SHIP)",
+    "difficulty": "ultra",
+    "tone": [
+      "grim",
+      "horror"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "trail": [
+      "interstellar"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The crack is getting longer, which means it's growing! Growth is good! ARIA measured it twice and it was bigger both times! Great progress!",
+      "marv": "MARV has measured the crack every hour since it appeared. He has a curve. He has extended the curve. He would like you to choose something in the next few minutes, and has not said why.",
+      "rex": "REX has cleared the cargo bay and is guarding the hatch. He reports the enemy is inside the walls. He reports this is not a figure of speech.",
+      "chip": "CHIP's records show your hull warranty expired at departure! The crack is therefore a Feature! Features are non-refundable! CHIP is sorry for your loss, which hasn't happened yet!",
+      "ajoy": "AJOY has stopped watching the crack. She's watching the pressure on the other side of it. She'd weld it now, by hand, before it decides for us."
+    },
+    "body": "It started as a hairline on the inner skin of the cargo bay, the length of a finger. That was a week ago. It is now the length of the cargo bay, and it makes a sound like a fingernail drawn very slowly down the inside of everyone's skull.\n\nThe outer plate is holding. The console estimates it will go on holding for a period best measured in hours, and declines to say how many.\n\nThe dry stores are in that bay.",
+    "choices": [
+      {
+        "text": "Weld it from the inside, by hand",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You put on the mask and go after the crack with a torch.",
+          "scene_bg": "our_ship/cargo"
+        },
+        "launch_minigame": "breach",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "hull": -4
+            },
+            "narrative": "You run the bead the length of the bay in one pass, chasing the crack's tip and catching it two hand-widths short of the frame. The sound stops. The silence afterwards is the best thing anyone aboard has heard in a week."
+          },
+          "good": {
+            "resources": {
+              "hull": -12,
+              "o2": -6
+            },
+            "narrative": "You catch most of it. The crack outruns the torch in two places and the bay vents those pockets before the bulkheads drop. Twelve points of hull, six of air, and two new rooms nobody can go into."
+          },
+          "poor": {
+            "resources": {
+              "hull": -24,
+              "o2": -14,
+              "morale": -6
+            },
+            "narrative": "The crack outruns you. The outer plate goes in three places before the bead closes, the bulkheads drop, and half the bay becomes a place you look at through a window. Twenty-four points of hull. Fourteen of air. Nobody wants to talk about the noise it made."
+          }
+        }
+      },
+      {
+        "text": "{crew.engineer} braces the frame and seals it properly",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort_cost": "medium",
+        "effort_required": 50,
+        "requires_effort_from": [
+          "engineer",
+          "item:repair_kit"
+        ],
+        "outcome": {
+          "resources": {
+            "hull": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The engineer doesn't chase the crack. They bolt cross-braces over it every half meter until the frame takes the load off the plate, then seal it at leisure. The sound stops on the second day. Eight points of hull went into the braces and the cuts. With enough hands it is quick. Without them it is a long, careful week.",
+          "scene_bg": "our_ship/cargo"
+        }
+      },
+      {
+        "text": "Patch the inner skin",
+        "requires_crew": null,
+        "requires_item": "hull_patch",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -5,
+            "o2": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "hull_patch",
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You lay the patch across the worst of it, sticky side down, and press until your arms shake. It is not a weld. It is a very confident sticker. It takes the load long enough for the slow repairs behind it. Five points of hull, four of air, and the patch.",
+          "scene_bg": "our_ship/cargo"
+        }
+      },
+      {
+        "text": "Seal the bay off and abandon it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You drop the bulkhead on the cargo bay and walk away. The crack can have the room. It can have what's in the room, too: most of the dry stores, sealed behind a door nobody will open until a station crew comes aboard with a cutting torch. Forty-five percent of the food stays on the wrong side.",
+          "resources_pct": {
+            "food": -45
+          }
+        }
+      },
+      {
+        "text": "Leave it. It's held this long",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -30
+          },
+          "crew_effect": null,
+          "severity": "lethal",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The outer plate lets go at 0300 with a noise like a door slammed in another building. The bay vents in four seconds. Someone was in it, checking the crack one last time. Thirty points of hull, and the bulkheads did the rest."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_021",
+    "active": true,
+    "title": "Containment Advisory",
+    "timed": true,
+    "leave_disabled": true,
+    "leave_label": "CAN'T LEAVE (IT'S THE DRIVE)",
+    "difficulty": "ultra",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "trail": [
+      "interstellar"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The drive is glowing a lovely new colour! ARIA has named it Reactor Rose! She's sure the alarms are just admiring it too!",
+      "marv": "MARV has the containment field at sixty-one percent and falling about a point an hour. He knows exactly what happens at forty. He is giving you the hours, not the details.",
+      "rex": "REX has sealed the engine room and set a perimeter around the drive. The drive is inside the perimeter. He is aware this is backwards. It is the only perimeter available.",
+      "chip": "CHIP notes the drive's End User License Agreement prohibits operation outside rated containment! You are now in breach! The drive may be repossessed! By physics!",
+      "ajoy": "AJOY has the restart sequence up on the engine room board. She'd run it by hand now, while the field still leaves time for a mistake. Later it won't."
+    },
+    "body": "The drive's containment field has started to flicker. Not much. A dimming every few minutes, like a building's lights in a storm, except the building is the only thing between the crew and the inside of a small, captive star.\n\nThe field is at sixty-one percent and falling. The manual's advice for this situation is one page long. Most of the page is a diagram of where to stand, and the diagram is of somewhere else.",
+    "choices": [
+      {
+        "text": "Run the restart sequence by hand",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You pull the containment panel and call up the restart sequence.",
+          "scene_bg": "our_ship/engine_error"
+        },
+        "launch_minigame": "engine",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "fuel": -4
+            },
+            "narrative": "Every contact in the order the board calls it, first pass. The field steadies at ninety and stays there, humming the hum it is supposed to hum. Four points of fuel went into the restart, and nobody begrudges a drop."
+          },
+          "good": {
+            "resources": {
+              "fuel": -12,
+              "hull": -5
+            },
+            "narrative": "The sequence takes on the second try. The first dumped heat into the aft frame and a slug of fuel out of the exhaust. The field holds at eighty. Twelve points of fuel, five of hull, and a smell in the engine room that will be there a while."
+          },
+          "poor": {
+            "resources": {
+              "fuel": -22,
+              "hull": -12,
+              "morale": -6
+            },
+            "narrative": "The sequence won't take until the fourth attempt, and by then the field has dipped low enough to scorch everything aft of the galley. It steadies, eventually, at a figure nobody says out loud. Twenty-two points of fuel, twelve of hull. The crew sleep forward for a week."
+          }
+        }
+      },
+      {
+        "text": "{crew.engineer} rebalances the field coils",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort_cost": "medium",
+        "effort_required": 50,
+        "requires_effort_from": [
+          "engineer",
+          "item:repair_kit"
+        ],
+        "outcome": {
+          "resources": {
+            "fuel": -8,
+            "hull": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The engineer idles the drive and walks the field coils one by one with a meter and a very small screwdriver, rebalancing each by hand. The field climbs a point at a time. Eight points of fuel, and three of hull where a coil had to be cut out. With help it's a few days. Alone it's a week of nobody talking near the engine room.",
+          "scene_bg": "our_ship/engine_fixed"
+        }
+      },
+      {
+        "text": "Vent the core and restart cold",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You dump the core. The drive goes quiet, the field goes out, and half the fuel aboard goes with it in one bright plume that will be visible for some time from places nobody lives. The cold restart works. The fuel gauge does not recover.",
+          "resources_pct": {
+            "fuel": -50
+          }
+        }
+      },
+      {
+        "text": "Shut it down and coast on reserves",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -8,
+            "morale": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "extreme",
+          "narrative": "You shut the drive down entirely and let the ship coast while the field cools and resets. Fourteen days in the dark on reserve power, scrubbers at half, heaters off. Nothing goes wrong. Everything is cold. Nobody will ever bring it up fondly."
+        }
+      },
+      {
+        "text": "Keep flying and watch the gauge",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -12
+          },
+          "crew_effect": null,
+          "severity": "lethal",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep the drive running and watch the field. It holds for two days. On the third it drops to forty for nine seconds, and the engine room fills with a light that has no business being indoors. Twelve points of hull. Someone was on watch in the engine room.",
+          "scene_bg": "our_ship/engine_error"
+        }
+      }
+    ]
   }
 ]
