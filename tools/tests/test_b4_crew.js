@@ -207,10 +207,16 @@ const openDossier = async (page, role) => {
     await page.evaluate(() => { Object.assign(STATE.cropGrowth, { growth: 50 }); closeGrowbay(); openGrowbay(); });
     // Off the element first, so the hover is a fresh mouseenter (the
     // pointer can already sit there after the reopen), then a patient wait.
-    await page.mouse.move(2, 2);
-    await page.hover('#crop-display-name');
-    await page.waitForFunction(() => [...document.querySelectorAll('.ui-tip')].some(t => /Yield/.test(t.innerText) && getComputedStyle(t).visibility !== 'hidden'), null, { timeout: 8000 }).catch(() => {});
-    const tipText = await page.evaluate(() => [...document.querySelectorAll('.ui-tip')].map(t => t.innerText).join(' '));
+    // Under load (two suites at once) one hover can miss its mouseenter:
+    // re-hover up to three times, each a fresh enter from off the element.
+    let tipText = '';
+    for (let tries = 0; tries < 3 && !/\+46 Food/.test(tipText); tries++) {
+      await page.mouse.move(2, 2);
+      await page.waitForTimeout(150);
+      await page.hover('#crop-display-name');
+      await page.waitForFunction(() => [...document.querySelectorAll('.ui-tip')].some(t => /Yield/.test(t.innerText) && getComputedStyle(t).visibility !== 'hidden'), null, { timeout: 8000 }).catch(() => {});
+      tipText = await page.evaluate(() => [...document.querySelectorAll('.ui-tip')].map(t => t.innerText).join(' '));
+    }
     ok(/\+46 Food \(incl\. \+6 tending\)/.test(tipText), 'species tooltip Yield row: +46 Food (incl. +6 tending)' + (/\+46 Food/.test(tipText) ? '' : ' — tooltips: ' + tipText.replace(/\s+/g, ' ').slice(0, 200)));
     await page.close();
   }

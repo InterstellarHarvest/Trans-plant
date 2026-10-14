@@ -386,7 +386,8 @@ const NOTE = /\b(Stackable|Craftable|Fabricated|Pure trade good|Info-only|Gate i
     ok(sn && sn.fuel - 30 === exp.fuel && sn.food - 30 === exp.food && (mats.metal || 0) === exp.metal && (mats.exotic || 0) === exp.exotic && medGot === exp.medkit && !mats.useless_scrap,
       `granted exactly that: +${sn && sn.fuel - 30} fuel, +${sn && sn.food - 30} food, ${mats.metal || 0} metal, ${mats.exotic || 0} exotic, ${medGot} medkit(s); hazards nothing`);
     const extra = sn ? sn.items.filter(i => i !== 'medkit' && !before.items.includes(i)) : [];
-    ok(extra.every(i => ['pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_bone'].includes(i)) && extra.length <= 1 && (!extra.length || after.log.includes(extra[0].replace(/_/g, ' '))), `nothing else lands except the logged wreck curio roll (${extra.join(', ') || 'none this run'})`);
+    // Each trade good is its own roll on a good haul (ruling 59, index.html itemFindOdds), so any of the three can land, together; each one logged.
+    ok(extra.every(i => ['pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_bone'].includes(i)) && new Set(extra).size === extra.length && extra.every(i => after.log.includes(i.replace(/_/g, ' '))), `nothing else lands except the logged wreck curio roll (${extra.join(', ') || 'none this run'})`);
     ok(/SALVAGE — recovered/.test(after.log), `log: ${after.log.slice(0, 110)}`);
     const seenD = after.seen.filter(s => /minigames\/derelict\//.test(s));
     ok(seenD.length === after.seen.length && seenD.length >= 3, `every drifting sprite came from the derelict set (${seenD.length} distinct seen)`);
