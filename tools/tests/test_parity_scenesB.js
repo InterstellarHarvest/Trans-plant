@@ -432,7 +432,9 @@ const settleSubject = page => page.waitForFunction(() => {
     document.querySelectorAll('#stop-choices [data-verb-id]').forEach(b => { out[b.dataset.verbId] = b.classList.contains('locked') ? 'locked:' + b.innerText.replace(/\s+/g, ' ') : 'open'; });
     return out;
   }, !!needy);
-  const approachArt = page => page.waitForFunction(() => document.getElementById('enc-approach-sprite').dataset.station, null, { timeout: 4000 }).then(() => true).catch(() => false);
+  // The station sprite and the space behind both resolve asynchronously
+  // (image probes): wait for the pair, not just the sprite.
+  const approachArt = page => page.waitForFunction(() => document.getElementById('enc-approach-sprite').dataset.station && !document.getElementById('enc-backdrop-base').classList.contains('hidden'), null, { timeout: 6000 }).then(() => true).catch(() => false);
   {
     // Every station arrival opens the approach; rolls ≈ 1 in 3.
     const page = await boot({ crew: ['engineer', 'pilot'], ai: 'aria' });
@@ -494,7 +496,7 @@ const settleSubject = page => page.waitForFunction(() => {
     await settleSubject(page);
     let v = await view(page);
     const art = await page.evaluate(() => ({ base: document.getElementById('enc-backdrop-base').classList.contains('hidden') ? null : 'shown', station: document.getElementById('enc-approach-sprite').dataset.station, comm: document.getElementById('screen-encounter').classList.contains('comm-screen') }));
-    ok(v.title === 'STATION INBOUND' && v.scene === 'our_ship/bridge' && art.base && art.station && art.comm, 'arrival: our bridge, space behind, the node\'s station in the viewport (' + art.station + '), comm screen');
+    ok(v.title === 'STATION INBOUND' && v.scene === 'our_ship/bridge' && art.base && art.station && art.comm, 'arrival: our bridge, space behind, the node\'s station in the viewport (' + art.station + '), comm screen' + (v.title === 'STATION INBOUND' && v.scene === 'our_ship/bridge' && art.base && art.comm ? '' : ' — ' + JSON.stringify({ title: v.title, scene: v.scene, base: art.base, comm: art.comm })));
     ok(v.noSubject && /make the first move/.test(v.body) && v.line === null, 'nobody on comms yet (2 in 3): no subject, the silent body');
     ok(JSON.stringify(v.choices) === '["HAIL"]', 'only HAIL until comms open');
     let lr = await leaveRow(page);
