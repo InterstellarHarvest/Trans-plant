@@ -1038,6 +1038,65 @@ const hardChoiceCost = (() => {
   }
 }
 
+// ── Water/food figures in narratives (ruling 70, added 2026-10-13) ──
+// A trail scales what an event costs in water and food (map_rules
+// event_supply_cost_mult), so a narrative never states that figure as a
+// bare number ("six points of water", "ten of food", "weeps six more"):
+// it writes {cost.water} / {cost.food}, which index.html fills with the
+// real figure. A {cost.*} token sits only on an outcome that costs that
+// resource (else it reads "no points of water"). A minigame tier's text
+// reads the tier merged over the choice's base outcome.
+{
+  const NUM = "(?:\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|dozen)(?:-[a-z]+)?";
+  const NOUN = { water: 'water|h2o', food: 'food|stores|rations|meals|provisions' };
+  const OTHER = 'hull|fuel|air|oxygen|o2|morale|gold|crop|wear';
+  // Measure words between a number and its noun ("six points of water").
+  const UNIT = "points?|of|units?|litres?|liters?|kilos?|days'?|weeks?|crates?|tins?|cups?|sacks?|boxes|box";
+  const bare = (k, text) => {
+    const re = [
+      new RegExp(`\\b${NUM}(?:\\s+(?:${UNIT}))*\\s+(?:${NOUN[k]})\\b`, 'i'), // six points of water, ten of food, four days of rations
+      new RegExp(`\\b${NUM}\\s+more\\b`, 'i'),                                       // the tank weeps six more
+      new RegExp(`\\b${NUM}\\s+points?\\b(?!\\s+(?:of\\s+)?(?:${OTHER})\\b)`, 'i'),   // throws away six points
+    ];
+    for (const r of re) { const m = text.match(r); if (m) return m[0]; }
+    return null;
+  };
+  const costs = o => ['water', 'food'].filter(k => Number.isFinite(((o && o.resources) || {})[k]) && o.resources[k] < 0);
+  const check = (at, o, texts) => {
+    const ks = costs(o);
+    for (const [fld, t] of texts) {
+      if (typeof t !== 'string') continue;
+      for (const k of ks) { const b = bare(k, t); if (b) err(`${at}: ${fld} states a ${k} figure as a bare number ("${b}") — the trail scales it; write {cost.${k}} (ruling 70)`); }
+      for (const m of t.matchAll(/\{cost\.([\w.]+)\}/g)) {
+        const [k, fmt] = m[1].split('.');
+        if (!NOUN[k] || (fmt && fmt !== 'num') || m[1].split('.').length > 2) err(`${at}: ${fld} has an unknown token {cost.${m[1]}} (only {cost.water}, {cost.food}, or .num)`);
+        else if (!ks.includes(k)) err(`${at}: ${fld} writes {cost.${k}} but the outcome costs no ${k} — it would read "no"`);
+      }
+    }
+  };
+  const textsOf = o => [['narrative', o.narrative], ['body', o.body], ['line', o.line]];
+  const merge = (b, t) => Object.assign({}, b, t, { resources: Object.assign({}, b.resources || {}, t.resources || {}) });
+  for (const { file, event: ev } of eventsById.values()) {
+    for (const [id, o] of Object.entries(ev.outcomes || {})) check(`${file} ${ev.id}/outcomes.${id}`, o, textsOf(o));
+    const choiceLists = choiceSetsOf(ev).map(s => [s.layer, s.choices]);
+    if (ev.stowaway_variant) choiceLists.push(['stowaway', ev.stowaway_variant.stowaway_choices || []]);
+    if (ev.leave_as) choiceLists.push(['leave_as', [ev.leave_as]]);
+    for (const [layer, choices] of choiceLists) for (const ch of choices) {
+      const base = ch.outcome && typeof ch.outcome === 'object' ? ch.outcome : null;
+      const at = `${atOf(file, ev.id, layer)} "${ch.text || ch.label || 'leave'}"`;
+      const tiers = Object.entries(ch.tier_outcomes || {});
+      if (!base) continue;
+      if (!tiers.length) { check(at, base, textsOf(base)); continue; }
+      // The base text shows under every tier that doesn't write its own.
+      for (const [t, to] of tiers) {
+        const m = merge(base, to);
+        check(`${at} tier ${t}`, m, textsOf(to));
+        if (!to.narrative) check(`${at} (base text, tier ${t})`, m, textsOf(base));
+      }
+    }
+  }
+}
+
 // ── Item sinks, per trail (added 2026-10-11, owner: nothing orphaned) ──
 // Every item needs somewhere to GO: a USE button (index.html ITEM_USE), a
 // sale price, the fence's trade_good tag, a content reference that needs
