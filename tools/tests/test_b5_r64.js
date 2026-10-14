@@ -19,7 +19,8 @@ const EDITED = ['event_anomaly_003', 'event_asteroid_005', 'event_asteroid_006',
 // resolves (each minigame tier, each layered outcome): before ruling 64
 // (a168a59) and after it.
 const POOL_BEFORE = { lunar: { water: 83, food: 80 }, mars: { water: 83, food: 80 } };
-const POOL_AFTER = { lunar: { water: 180, food: 170 }, mars: { water: 180, food: 181 } };
+// Re-recorded 2026-10-14 (ruling 81): the hard station dockings and the hard forks add water/food costs.
+const POOL_AFTER = { lunar: { water: 186, food: 184 }, mars: { water: 186, food: 195 } };
 const RES = ['fuel', 'food', 'water', 'o2', 'hull'];
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + m); } };
