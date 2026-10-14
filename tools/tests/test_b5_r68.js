@@ -10,6 +10,11 @@
 //      losses).
 //   5. Gains, a fight's own tally (combat_net), a resources_pct share and
 //      the daily draw are not scaled.
+//   6. Narratives write the real figure ({cost.water} / {cost.food},
+//      ruling 70): the scaled one on Mars, the authored one on
+//      Interstellar, in words, capitalised opening a sentence.
+//   7. Mars starts short of water and food (ruling 69), and the setup
+//      card's "Food N" says what a Chef captain really starts with.
 const { chromium, firefox } = require('playwright');
 const URL = process.env.URL || 'http://localhost:8177/index.html';
 let pass = 0, fail = 0;
@@ -211,6 +216,82 @@ const TRAILS = ['lunar', 'mars', 'interstellar'];
     return out;
   });
   ok(JSON.stringify(dd.mars) === JSON.stringify(dd.interstellar), `the daily draw is the same on Mars and Interstellar (${JSON.stringify(dd)})`);
+
+  console.log('— 6. narratives write the real figure ({cost.*})');
+  const words = await page.evaluate(() => [numberWords(0), numberWords(6), numberWords(22), numberWords(66), numberWords(110), interpolateCostTokens('{cost.water} gone. Then {cost.water} more, {cost.food.num} food.', { resources: { water: -4, food: -10 } })]);
+  ok(JSON.stringify(words.slice(0, 5)) === JSON.stringify(['no', 'six', 'twenty-two', 'sixty-six', 'a hundred and ten']), `numberWords ${JSON.stringify(words.slice(0, 5))}`);
+  const interWant = await page.evaluate(() => { __r68.setup('interstellar'); return interpolateCostTokens('{cost.water} gone. Then {cost.water} more, {cost.food.num} food.', { resources: { water: -4, food: -10 } }); });
+  ok(interWant === 'Four gone. Then four more, 10 food.', `interstellar tokens: "${interWant}"`);
+  // [event, choice index, crew, tier|null, resource, the sentence with {n} for the figure]
+  const CASES = [
+    ['event_shipboard_018', 3, ['medic', 'chef'], null, 'water', 'It throws away {n} points as sludge'],
+    ['event_shipboard_019', 1, ['chef', 'medic'], null, 'food', '{N} points of food went with it.'],
+    ['event_crisis_016', 0, ['medic', 'chef'], 'good', 'water', 'boiling off {n} points of water'],
+  ];
+  for (const trail of ['mars', 'interstellar']) {
+    for (const [id, ci, crew, tier, k, sentence] of CASES) {
+      await boot();
+      const r = await page.evaluate(async ({ id, ci, crew, tier, trail }) => {
+        const ev = EVENTS[id];
+        const node = __r68.setup(trail, crew);
+        const item = ev.choices[ci].requires_item || (ev.choices[ci].gate && ev.choices[ci].gate.item);
+        if (item && !STATE.items.includes(item)) STATE.items.push(item);
+        if (tier) window.openMinigame = (mg, o, cb) => setTimeout(() => cb(tier, {}), 10);
+        enterEvent(node, ev);
+        finishAllTyping();
+        await __r68.wait(300);
+        const ch = ev.choices[ci];
+        const btn = __r68.btnOf(ch);
+        if (!btn) return { err: 'button missing: ' + (lockReason(ch) || '?') };
+        btn.click();
+        await __r68.wait(500);
+        finishAllTyping();
+        await __r68.wait(100);
+        const o = Object.assign({}, ch.outcome, tier ? ch.tier_outcomes[tier] : {}, { resources: Object.assign({}, (ch.outcome || {}).resources, tier ? ch.tier_outcomes[tier].resources : {}) });
+        return { body: document.getElementById('enc-narr-body').textContent, log: (STATE.shipLog || []).map(e => (e && e.text) || String(e)).join(' | '), authored: o.resources };
+      }, { id, ci, crew, tier, trail });
+      const at = `${trail} ${id}${tier ? ' [' + tier + ']' : ''}`;
+      if (r.err) { ok(false, `${at}: ${r.err}`); continue; }
+      const fig = await page.evaluate(({ trail, k, v }) => -__r68.scaled(trail, k, v), { trail, k, v: r.authored[k] });
+      const w = await page.evaluate(n => numberWords(n), fig);
+      const want = sentence.replace('{n}', w).replace('{N}', w.charAt(0).toUpperCase() + w.slice(1));
+      ok(r.body.includes(want), `${at}: narrative says "${want}" (${r.body.slice(0, 160)}…)`);
+      ok(!/\{cost\./.test(r.body) && !/\{cost\./.test(r.log), `${at}: no raw {cost.*} token in the narrative or the log`);
+      if (trail === 'interstellar') ok(fig === -r.authored[k], `${at}: Interstellar states the authored ${-r.authored[k]}`);
+      if (trail === 'mars') ok(fig > -r.authored[k], `${at}: Mars states more than the authored ${-r.authored[k]} (${fig})`);
+    }
+  }
+
+  console.log('— 7. Mars starts short of water and food; the setup card says so');
+  await boot();
+  const st = await page.evaluate(async () => {
+    const out = { rules: {}, state: {} };
+    for (const trail of ['lunar', 'mars', 'interstellar']) {
+      out.rules[trail] = MOD.map_rules.trails[trail].starting_resources;
+      __r68.setup(trail);
+      applySetupToState({ trail, ai: 'aria', captain: 'chef', crew: ['medic', 'pilot'], crop: 'wheat', ship: 'B' });
+      out.state[trail] = { food: STATE.resources.food, water: STATE.resources.water, foodMax: resMax('food') };
+    }
+    // The setup wizard: Mars, then the captain step's Chef card.
+    localStorage.removeItem('transplant_save_v1');
+    startNewGame();
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    await wait(100);
+    const cards = () => [...document.querySelectorAll('#setup-right .sel-card')];
+    const stat = () => [...document.querySelectorAll('#setup-right .card-stat')].map(e => e.textContent);
+    cards()[1].click(); document.getElementById('btn-next').click(); await wait(100); // Mars
+    cards()[0].click(); document.getElementById('btn-next').click(); await wait(100); // an AI
+    out.marsCards = stat();
+    return out;
+  });
+  for (const k of ['water', 'food']) {
+    ok(st.rules.mars[k] < st.rules.lunar[k] && st.rules.mars[k] < st.rules.interstellar[k], `Mars starts with less ${k} (${st.rules.mars[k]} vs ${st.rules.lunar[k]}/${st.rules.interstellar[k]})`);
+    ok(st.state.mars[k] === st.rules.mars[k] + (k === 'food' ? 5 : 0), `Mars run starts at ${st.state.mars[k]} ${k} (map_rules ${st.rules.mars[k]}, + the Chef's 5 food)`);
+  }
+  ok(st.state.lunar.food === 105 && st.state.interstellar.food === 105, `Lunar/Interstellar Chef food 105 (${st.state.lunar.food}/${st.state.interstellar.food})`);
+  ok(st.state.mars.foodMax === 105, `the tank is still 100 (+5 Chef): ${st.state.mars.foodMax}`);
+  const chefWant = 'Food ' + (st.rules.mars.food + 5);
+  ok(st.marsCards.some(s => s.includes(chefWant)), `Mars setup: Chef card says "${chefWant}" (${st.marsCards.filter(s => /Food/.test(s)).join(' | ')})`);
 
   ok(!errors.length, 'page errors: ' + errors.join(' | '));
   console.log(`\nruling 68: ${pass} passed, ${fail} failed`);

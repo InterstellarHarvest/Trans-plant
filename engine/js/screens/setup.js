@@ -37,7 +37,8 @@
      ruling 2026-10-11): {ai:type} the AI's passive value, {aicut:type}
      its ×0.85-style modifier as a percent cut, {cut:key} / {pct:key} a
      captain passive as a cut / a percent, {sb:key} / {sb100:key} a
-     starting bonus as itself / on top of the base 100. */
+     starting bonus as itself / on top of the chosen trail's starting
+     value (map_rules starting_resources; Mars starts short of food). */
   function liveStat(stepKey, opt) {
     const r = n => Math.round(n * 100);
     const capDef = () => ((MOD.captains && MOD.captains.captains) || []).find(c => c.background === opt.id) || {};
@@ -49,7 +50,10 @@
       if (v == null) return m;
       if (kind === 'aicut' || kind === 'cut') return String(r(1 - v));
       if (kind === 'pct') return String(r(v));
-      if (kind === 'sb100') return String(100 + v);
+      if (kind === 'sb100') {
+        const start = sel.trail && MOD.map_rules.trails[sel.trail].starting_resources[key];
+        return String((Number.isFinite(start) ? start : 100) + v);
+      }
       return String(v);
     });
   }

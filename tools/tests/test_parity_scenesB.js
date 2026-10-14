@@ -218,7 +218,9 @@ const settleSubject = page => page.waitForFunction(() => {
     const b = await page.evaluate(() => ({ f: STATE.resources.food, w: STATE.resources.water }));
     await click(page, 'LEAVE HER WITH SUPPLIES');
     const a = await page.evaluate(() => ({ f: STATE.resources.food, w: STATE.resources.water, flag: STATE.flags.has('promised_mira'), tone: document.getElementById('enc-narrative').classList.contains('tone-danger') }));
-    ok(b.f - a.f >= 4 && b.f - a.f < 5 && b.w - a.w >= 4 && b.w - a.w < 5 && a.flag && a.tone, 'LEFT: −4 food, −4 water, flag promised_mira, danger tone');
+    // The authored −4 / −4, through the trail's supply bite (ruling 68).
+    const want = await page.evaluate(() => ({ f: -effectiveResDelta('food', -4, {}), w: -effectiveResDelta('water', -4, {}) }));
+    ok(b.f - a.f >= want.f && b.f - a.f < want.f + 1 && b.w - a.w >= want.w && b.w - a.w < want.w + 1 && a.flag && a.tone, `LEFT: −${want.f} food, −${want.w} water, flag promised_mira, danger tone`);
     await page.close();
   }
   {
