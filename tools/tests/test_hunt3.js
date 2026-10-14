@@ -196,6 +196,7 @@ const hud = page => page.evaluate(() => document.getElementById('combat-num-foe'
       openMarket({});
       const sell = [...document.querySelectorAll('#enc-market .market-row-btn')].find(b => b.textContent === 'SELL' && !b.disabled);
       sell.click();
+      { const c = document.getElementById('market-confirm'); if (c && !c.classList.contains('hidden')) document.getElementById('market-confirm-yes').click(); } // the geiger counter has a callback event (ruling 84): the sale asks first
       const n = STATE.items.length;
       return { n, used: cargoSlotsUsed(), cap: cargoCapacity() };
     });
