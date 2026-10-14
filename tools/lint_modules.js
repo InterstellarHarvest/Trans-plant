@@ -382,6 +382,17 @@ for (const m of (readJSON('modules/materials/materials.json').materials || [])) 
 }
 // passive_skill.fabricator_contribution: the fabricator's crew speed
 // — the one source fabricator.js reads (absent = 0).
+// Crew active-skill numbers the engine reads (ruling 75: crew.js reads
+// active_skill.effect, as the captain / AI numbers are read) must be numbers.
+{
+  const roster = readJSON('modules/crew/crew_roster.json');
+  const NEEDS = { botanist: ['crop_health'], chef: ['morale', 'food_cost'], pilot: ['fuel_cost_multiplier'] };
+  for (const [role, keys] of Object.entries(NEEDS)) {
+    const c = roster.find(x => x.role === role);
+    const eff = c && c.active_skill && c.active_skill.effect;
+    for (const k of keys) if (!eff || !(Number.isFinite(eff[k]) && eff[k] > 0)) err(`crew_roster.json ${role}: active_skill.effect.${k} must be a number > 0 (crew.js reads it)`);
+  }
+}
 for (const c of readJSON('modules/crew/crew_roster.json')) {
   const v = c && c.passive_skill && c.passive_skill.fabricator_contribution;
   if (v !== undefined && !(Number.isFinite(v) && v >= 0)) err(`crew_roster.json ${c.role}: passive_skill.fabricator_contribution must be a number ≥ 0`);

@@ -313,24 +313,28 @@
   // ── Active-skill mapping — roster active_skill.effect → engine hook.
   // Each returns { ok, log } or { ok:false, refusal }. Effects that
   // change resources call renderHUD + checkFailure at the call site.
+  // The numbers come from crew_roster.json active_skill.effect (ruling 75:
+  // one source of truth, as for captains and AIs; lint_modules checks
+  // them), and the names from crewNameOf (a joined stowaway keeps theirs).
+  const skillEffect = role => (((MOD.crew_roster || []).find(c => c.role === role) || {}).active_skill || {}).effect || {};
   const SKILL_EFFECTS = {
     // Greenhouse Protocol — effect {crop_health: 15} → STATE.cropGrowth.
     botanist() {
-      const cg = STATE.cropGrowth;
+      const cg = STATE.cropGrowth, who = crewNameOf('botanist'), gain = skillEffect('botanist').crop_health;
       if (!STATE.crop || !cg) return { ok: false, refusal: 'No crop aboard to stabilize.' };
-      if (cg.health <= 0) return { ok: false, refusal: 'The crop is past stabilizing. Dr. Osei declines to discuss it.' };
-      if (cg.health >= 100) return { ok: false, refusal: 'The crop is at full health. Dr. Osei is quietly proud.' };
+      if (cg.health <= 0) return { ok: false, refusal: 'The crop is past stabilizing. ' + who + ' declines to discuss it.' };
+      if (cg.health >= 100) return { ok: false, refusal: 'The crop is at full health. ' + who + ' is quietly proud.' };
       const h0 = cg.health;
-      cg.health = Math.min(100, cg.health + 15);
+      cg.health = Math.min(100, cg.health + gain);
       noteCropSwing(cg.health - h0); // the botanist minds the crop (ruling 57)
-      return { ok: true, log: 'GREENHOUSE PROTOCOL — Dr. Osei stabilizes the crop (+15 health). The plants seem grateful, botanically speaking.' };
+      return { ok: true, log: 'GREENHOUSE PROTOCOL — ' + who + ' stabilizes the crop (+' + (cg.health - h0) + ' health). The plants seem grateful, botanically speaking.' };
     },
     // Emergency Patch — effect {hull_damage_prevented: 1} → arms a run
     // flag consumed by applyOutcomeEffects' hull-damage branch.
     engineer() {
-      if (STATE.flags.has('emergency_patch_armed')) return { ok: false, refusal: 'A patch is already in place. Kazuki sees no reason to waste another.' };
+      if (STATE.flags.has('emergency_patch_armed')) return { ok: false, refusal: 'A patch is already in place. ' + crewNameOf('engineer') + ' sees no reason to waste another.' };
       STATE.flags.add('emergency_patch_armed');
-      return { ok: true, log: 'EMERGENCY PATCH — Kazuki rigs a preemptive hull patch. The next hull damage event will be absorbed.' };
+      return { ok: true, log: 'EMERGENCY PATCH — ' + crewNameOf('engineer') + ' rigs a preemptive hull patch. The next hull damage event will be absorbed.' };
     },
     // Treatment — effect {heal_crew: 1} → restore the worst-injured
     // person aboard (the captain too — owner ruling 30) to healthy (100
@@ -342,11 +346,11 @@
         const hp = hpOf(r);
         if (hp < worstHp) { worst = r; worstHp = hp; }
       }
-      if (!worst || worstHp >= 100) return { ok: false, refusal: 'Nobody is injured. Dr. Vasquez remains anxious anyway.' };
+      if (!worst || worstHp >= 100) return { ok: false, refusal: 'Nobody is injured. ' + crewNameOf('medic') + ' remains anxious anyway.' };
       setHP(worst, 100);
       delete crewPendingOf()[worst];
       const name = personName(worst);
-      return { ok: true, log: 'TREATMENT — Dr. Vasquez patches up ' + name + ' (restored to full health). Do not ask about the residency.' };
+      return { ok: true, log: 'TREATMENT — ' + crewNameOf('medic') + ' patches up ' + name + ' (restored to full health). Do not ask about the residency.' };
     },
     // Push Engines — effect {skip_node: true, fuel_cost_multiplier: 2}.
     // Now that travel has a real per-leg fuel line item (Restoration
@@ -360,19 +364,20 @@
       if (nextIds.length !== 1) return { ok: false, refusal: nextIds.length === 0 ? 'No route forward to push toward.' : 'The route forks ahead — pick a heading first.' };
       const next = STATE.byId[nextIds[0]];
       const isArrival = next && next.connects_to && (Array.isArray(next.connects_to) ? next.connects_to.length === 0 : Object.keys(next.connects_to).length === 0);
-      if (isArrival) return { ok: false, refusal: 'That is the destination. Reeves refuses to skip the ending.' };
+      if (isArrival) return { ok: false, refusal: 'That is the destination. ' + crewNameOf('pilot') + ' refuses to skip the ending.' };
       const legFuel = legTravelCost().fuel;
-      if (STATE.resources.fuel < legFuel * 2) return { ok: false, refusal: 'Not enough fuel to burn double. Reeves keeps the tally to himself.' };
+      if (STATE.resources.fuel < legFuel * 2) return { ok: false, refusal: 'Not enough fuel to burn double. ' + crewNameOf('pilot') + ' keeps the tally private.' };
       STATE.resources.fuel = Math.max(0, STATE.resources.fuel - legFuel);
-      return { ok: true, log: 'PUSH ENGINES — Reeves burns double fuel for the leg (−' + (legFuel * 2) + ' total) and blows straight past ' + ((next && next.name) || 'the next stop') + '. Statistically correct, this time.', skipTo: nextIds[0] };
+      return { ok: true, log: 'PUSH ENGINES — ' + crewNameOf('pilot') + ' burns double fuel for the leg (−' + (legFuel * 2) + ' total) and blows straight past ' + ((next && next.name) || 'the next stop') + '. Statistically correct, this time.', skipTo: nextIds[0] };
     },
     // Special Meal — effect {morale: 10, food_cost: 5} — every crew member.
     chef() {
-      if (STATE.resources.food < 5) return { ok: false, refusal: 'Not enough food for a special meal. Reyes takes this personally.' }; // lint-ok: threshold — the meal's food_cost, not a low line
-      if (STATE.crew.every(r => crewMoraleOf(r) >= 100)) return { ok: false, refusal: 'Everyone is already in top spirits. Reyes saves the good stuff.' };
-      STATE.resources.food = Math.max(0, STATE.resources.food - 5);
-      addCrewMorale(10);
-      return { ok: true, log: 'SPECIAL MEAL — Reyes cooks the good stuff (−5 food, +10 morale). The crew is civil again.' };
+      const who = crewNameOf('chef'), e = skillEffect('chef'), cost = e.food_cost, lift = e.morale;
+      if (STATE.resources.food < cost) return { ok: false, refusal: 'Not enough food for a special meal. ' + who + ' takes this personally.' };
+      if (STATE.crew.every(r => crewMoraleOf(r) >= 100)) return { ok: false, refusal: 'Everyone is already in top spirits. ' + who + ' saves the good stuff.' };
+      STATE.resources.food = Math.max(0, STATE.resources.food - cost);
+      addCrewMorale(lift);
+      return { ok: true, log: 'SPECIAL MEAL — ' + who + ' cooks the good stuff (−' + cost + ' food, +' + lift + ' morale). The crew is civil again.' };
     },
     // Field Analysis — effect {reveal_biological_properties: true}.
     // Examines one un-analysed biological/unknown item in cargo and

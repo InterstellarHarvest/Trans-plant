@@ -75,3 +75,7 @@ Rulings 1–25 date from 2026-10-11 and 26–56 from 2026-10-12.
 69. Mars supply pressure (owner 2026-10-13): Mars event water/food costs ×3 (not ×5) plus Mars starting water and food about 15% lower (map_rules starting_resources), re-simmed toward ~90% careful wins.
 70. Narrative figures (owner 2026-10-13): event narratives that state a water/food cost write the real scaled figure through a token (e.g. {cost.water}), so the text always matches the outcome on every trail.
 71. Lunar stays gentle (owner 2026-10-13): no extra supply pressure on Lunar; 100% careful wins there is fine. Mars and Interstellar carry the challenge.
+72. Mars start (owner 2026-10-13): Mars keeps 70 water and 70 food at departure (ruling 69's figure); ~88–92% careful wins is the intended pressure, no easing to 85.
+73. Desertion line (owner 2026-10-13): ruling 62 stands — a warned member needs 25 morale to stay; the line is not lowered to 15.
+74. Mars trail card (owner 2026-10-13): the setup card says the run leaves short on water and food ("Leaves short on water and food."), engine and demo-setup alike.
+75. Crew skill numbers (owner 2026-10-13): the crew active skills read crew_roster.json active_skill.effect (Greenhouse Protocol crop_health, Special Meal morale / food_cost) — one source of truth as for captains and AIs — and speak the holder's name through crewNameOf, never a hard-coded roster name.
