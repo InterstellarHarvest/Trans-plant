@@ -972,5 +972,155 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_planet_009",
+    "active": true,
+    "title": "The Terminator Wind",
+    "timed": true,
+    "difficulty": "ultra",
+    "tone": [
+      "cosmic",
+      "grim"
+    ],
+    "node_type": [
+      "planet"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "trail": [
+      "interstellar"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "planet_surface",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The WIND is coming! A whole HEMISPHERE of wind! ARIA thinks it's magnificent! ARIA thinks the landing team should come home NOW!",
+      "marv": "MARV estimates the front at a hundred and forty kilometres an hour, arriving in under an hour. The lander is rated for eighty. He has the lift-off sums. He also has the sums for staying. Neither set is good.",
+      "rex": "REX has the lander's anchors deployed. They are rated for eighty kilometres an hour. He has stopped looking at the rating.",
+      "chip": "CHIP regrets to inform you that the lander's insurance excludes 'acts of planet'! CHIP has argued with the policy! The policy is very old! It has seen this before!",
+      "ajoy": "AJOY says the lander can be held down if someone holds it. Hands on the anchors, all of them. It's the only plan that keeps everything."
+    },
+    "body": "The planet always shows the same face to its star. One side is a desert that has never seen night. The other is a glacier that has never seen day. Between them, in a narrow band of permanent twilight, the air is breathable and the landing team has set down.\n\nNow the wind is changing. The hot side's air has been pouring toward the cold side for a billion years, and something has shifted that flow toward the twilight band. On the horizon, under a sky the colour of a bruise, a wall of dust is coming.",
+    "choices": [
+      {
+        "text": "Brace the lander and ride it out",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "launch_minigame": "brace",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "hull": -4
+            },
+            "narrative": "The front hits like a wall. You call the bracing beat by beat and the lander holds, rocking on its anchors, dust screaming over it for six hours. When it passes, the lander is buried to the hatch and dented and whole. Everyone in it is fine. Everyone in it will tell this story for the rest of their lives."
+          },
+          "good": {
+            "resources": {
+              "hull": -12,
+              "morale": -3
+            },
+            "narrative": "The lander holds, just. One anchor pulls and the hull takes the storm side-on for an hour before you get it braced again. Twelve points of hull, and a lot of sand in a lot of places."
+          },
+          "poor": {
+            "resources": {
+              "hull": -22,
+              "morale": -6
+            },
+            "severity": "injury",
+            "crew_effect": {
+              "type": "injure",
+              "target": "crew"
+            },
+            "narrative": "Two anchors go. The lander slides sixty metres across the twilight band with the crew inside it, tumbling. It stops against a ridge. Twenty-two points of hull, and someone is hurt badly enough that the rest of the trip will be careful around them."
+          }
+        },
+        "outcome": {
+          "resources": {
+            "o2": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Everyone on the anchors, braced, and the storm hits."
+        }
+      },
+      {
+        "text": "Emergency lift-off before it hits",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 4,
+        "outcome": {
+          "resources": {
+            "fuel": -18,
+            "hull": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.pilot} lifts off with the front ten minutes out, flying straight up through air already full of grit. The lander shakes all the way to orbit. You leave the survey gear on the ground and most of the fuel in the sky, but everybody is aboard and the dust never catches you."
+        }
+      },
+      {
+        "text": "Abandon the lander and run for the ship",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -10,
+            "morale": -5,
+            "o2": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the lander anchored and bring the crew up on the emergency tether lift, in suits, through the first edge of the storm. Everyone makes it. The lander doesn't: by the time the storm passes it is half a kilometre downwind and in pieces. You salvage what you can from orbit. It isn't much."
+        }
+      },
+      {
+        "text": "Seal the lander and wait out the night",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -14,
+            "morale": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "high",
+          "narrative": "You seal everything and wait. The storm doesn't pass in hours. It passes in days, eight of them, with the lander buried in dust and the air recycler running on prayer. When the sky finally clears to its usual bruise, you dig out and lift off on what's left of the air. Nobody talks much on the way up."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "A planet that always shows one face to its star is tidally locked. Models suggest strong winds flowing from the hot day side to the frozen night side.",
+      "label": "Tidally locked planets",
+      "url": "https://en.wikipedia.org/wiki/Tidal_locking"
+    }
   }
 ]

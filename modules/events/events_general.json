@@ -3626,5 +3626,371 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_general_042",
+    "active": true,
+    "title": "The Toll Lane",
+    "difficulty": "medium",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "fork"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A TOLL BOOTH! In SPACE! ARIA has never paid a toll! ARIA would love to pay a toll!",
+      "marv": "MARV has checked the toll beacon's licence. It expired nine years ago. The beacon is collecting anyway. He notes that nobody has come to stop it, and that nobody will.",
+      "rex": "REX notes the toll booth has no weapons. It has a very firm voice. He is not going to argue with the voice.",
+      "chip": "CHIP has a frequent-traveller card for this toll! It has lapsed! CHIP is deeply sorry! CHIP is also proud it ever had one!",
+      "ajoy": "AJOY says pay and keep the hull, or keep the gold and take the rocks. Or let the pilot slip past it."
+    },
+    "body": "The fork has a toll booth.\n\nIt's a beacon the size of a shipping container, parked in the mouth of the port lane, broadcasting a price list. The port lane is marked {branch.alpha.label}; its first stop reads as {branch.alpha.first}. The starboard lane, marked {branch.beta.label}, first stop {branch.beta.first}, has no toll. It has a debris field instead, which is cheaper, and louder.",
+    "choices": [
+      {
+        "text": "Pay the toll: port lane",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 8
+        },
+        "outcome": {
+          "resources": {
+            "gold": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "You pay. The beacon thanks you warmly, issues a receipt and raises a barrier that is entirely symbolic. The port lane is clear and quiet and smells, somehow, of tarmac."
+        }
+      },
+      {
+        "text": "Take the free lane: starboard, through the debris",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_beta",
+          "time_cost": "trivial",
+          "narrative": "You take the free lane and the debris field that comes with it. It rattles the hull for a long hour. Four points of hull. The toll beacon wishes you a pleasant journey as you pass, in a tone that suggests it doesn't mean it."
+        }
+      },
+      {
+        "text": "The pilot slips past the booth",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 2,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "{crew.pilot} waits for the beacon's scanner to sweep the other way and slides through the gap behind it at a speed the beacon has no rule for. It sends an invoice anyway, to an address that has been closed for years. The crew finds this very satisfying."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_043",
+    "active": true,
+    "title": "Lane Closed for Works",
+    "difficulty": "medium",
+    "tone": [
+      "corporate",
+      "mundane"
+    ],
+    "node_type": [
+      "fork"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ROADWORKS! In SPACE! Someone is FIXING space! ARIA had no idea space could be fixed! ARIA wants to watch!",
+      "marv": "MARV estimates the works have progressed eleven metres in fourteen years. At this rate the lane will reopen in about two thousand years. The long way round costs fuel. The slow zone costs days.",
+      "rex": "REX notes the drone is unarmed and slow. It is the least threatening thing he has seen this trip. He is suspicious of it on principle.",
+      "chip": "CHIP knows the contractor! They won the bid! They have been winning the bid for fourteen years! CHIP admires them enormously!",
+      "ajoy": "AJOY says crawl through the works and lose a day, or go round and burn the fuel. Neither is wrong."
+    },
+    "body": "The fork has roadworks.\n\nA string of orange beacons blocks most of the port lane, which is marked {branch.alpha.label} and leads first to {branch.alpha.first}. A maintenance drone is working in it, very slowly, on something nobody can see. A sign says SLOW · WORKS AHEAD · 12 DAYS. The sign is fourteen years old.\n\nThe starboard lane, {branch.beta.label}, first stop {branch.beta.first}, is open, but it's the long way round.",
+    "choices": [
+      {
+        "text": "Crawl through the works: port lane",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "low",
+          "narrative": "You crawl through the slow zone at the posted speed, which is barely faster than standing still, past the drone, which does not look up. It takes two days. Nobody aboard has ever been this bored. The lane on the far side is, at least, very smooth."
+        }
+      },
+      {
+        "text": "Go the long way: starboard lane",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_beta",
+          "time_cost": "trivial",
+          "narrative": "You go round. The starboard lane is open, empty and long, and the extra distance burns four points of fuel. Behind you, the maintenance drone carries on with whatever it is doing, the way it has for fourteen years."
+        }
+      },
+      {
+        "text": "The engineer offers the drone a hand",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "low",
+          "narrative": "{crew.engineer} gets on the drone's channel, works out what it has been trying to fix, and sends it the part number it needed fourteen years ago. The drone finishes the job in an afternoon and switches off the beacons. You're the first ship through the port lane in fourteen years. The drone plays you a little tune."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_044",
+    "active": true,
+    "title": "Both Lanes Watched",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "fork"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "PIRATES! Or a STORM! ARIA likes neither of them! ARIA would like a third option! ARIA has been told there isn't one!",
+      "marv": "MARV has the picket's demand at roughly a tenth of the cargo. The storm's hull damage is harder to estimate. He has estimated it. He does not like the estimate.",
+      "rex": "REX has the picket on the scope. Two ships, light weapons, heavy attitude. He could fight them. He would rather not, on a fork, with a storm next door.",
+      "chip": "CHIP must point out that pirate tolls are not tax deductible! CHIP has asked! The pirates laughed! It was a very rude laugh!",
+      "ajoy": "AJOY says the storm only takes hull. The pirates take what they like. Unless someone talks them down."
+    },
+    "body": "Both lanes ahead are a problem.\n\nThe port lane, marked {branch.alpha.label}, first stop {branch.alpha.first}, has a pirate picket sitting in its mouth: two armed ships, engines idling, a polite request on the open channel for a share of whatever you're carrying. The starboard lane, marked {branch.beta.label}, first stop {branch.beta.first}, has no pirates in it, because it has a dust storm in it, and pirates aren't stupid.\n\nThere is no third lane. The ship computer has looked.",
+    "choices": [
+      {
+        "text": "Pay the picket: port lane",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -10,
+            "water": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "You pay. The pirates take a share of the food and water, call it fair, and wave you through with something close to courtesy. The port lane beyond them is quiet. The galley is quieter."
+        }
+      },
+      {
+        "text": "Run the storm: starboard lane",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -10,
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_beta",
+          "time_cost": "trivial",
+          "narrative": "You take the storm. It sandblasts the ship for six hours: grit in the vents, static on every channel, the hull hissing like a kettle. Ten points of hull. The pirates, safe in their lane, watch you go in and do not follow."
+        }
+      },
+      {
+        "text": "The diplomat talks the picket down",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 3,
+        "outcome": {
+          "resources": {
+            "food": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "{crew.diplomat} opens a channel and talks to the picket for an hour about the price of fuel, the weather, and the many other ships that will be along shortly with richer cargoes. The pirates settle for a token, a crate of rations, and let you through laughing. The diplomat refuses to say what the joke was."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_045",
+    "active": true,
+    "title": "The Closing Gap",
+    "difficulty": "hard",
+    "tone": [
+      "cosmic",
+      "grim"
+    ],
+    "node_type": [
+      "fork"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "asteroid_field",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The gap is CLOSING! Like a DOOR! ARIA would like to go through the door! ARIA would like to go through it NOW!",
+      "marv": "MARV puts the port gap at forty minutes from closing. The ship can make it in thirty. Ten minutes is a margin. It is not a large one. The long way is safe and costs fuel and days.",
+      "rex": "REX has calculated the gap's closing speed. It is slow. It is also two rocks the size of cities. He would not like to be between them for the last of it.",
+      "chip": "CHIP's navigation subscription would have warned you about this! It was cancelled for non-payment! CHIP is just mentioning it! At a very bad time!",
+      "ajoy": "AJOY says if you're going through, go now and don't hesitate. Otherwise go round and don't look back."
+    },
+    "body": "The fork is a pair of gaps between two drifting rocks, and one of them is closing.\n\nThe port gap, marked {branch.alpha.label}, first stop {branch.alpha.first}, is narrowing by the minute as the two rocks drift together. It is still wide enough, now. It will not be in an hour. The starboard route, marked {branch.beta.label}, first stop {branch.beta.first}, goes all the way round the outside of both rocks: open, safe, and long.",
+    "choices": [
+      {
+        "text": "Shoot the closing gap: port",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -6,
+            "hull": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "You burn hard for the gap and make it with minutes to spare, the rock faces close enough on either side to read the strata. The hull scrapes once near the end, a long grinding note. Six of fuel, six of hull. Behind you, an hour later, the gap closes with a silent shudder that rings the field for days."
+        }
+      },
+      {
+        "text": "Go round the outside: starboard",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_beta",
+          "time_cost": "medium",
+          "narrative": "You go round. It takes four days and five points of fuel to circle both rocks, by which time the gap has closed behind you and the field is quiet again. Nobody was squashed. That was the point."
+        }
+      },
+      {
+        "text": "The pilot threads it at full speed",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 3,
+        "outcome": {
+          "resources": {
+            "fuel": -8,
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "chose_alpha",
+          "time_cost": "trivial",
+          "narrative": "{crew.pilot} takes the gap at a speed nobody aboard would have chosen, straight down the middle, without a scratch. Eight points of fuel for the burn. The crew comes out the far side cheering, and the pilot pretends that wasn't the plan all along."
+        }
+      }
+    ]
   }
 ]

@@ -1069,5 +1069,100 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_asteroid_010",
+    "active": true,
+    "title": "Tail Lights",
+    "difficulty": "easy",
+    "tone": [
+      "cosmic",
+      "heartwarming"
+    ],
+    "node_type": [
+      "asteroid_field"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "asteroid_field",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A COMET! With a TAIL! ARIA has wanted to see one since before ARIA was installed! ARIA was installed eleven months ago! It still counts!",
+      "marv": "MARV notes the tail points away from the star, not behind the comet's path. The star's wind pushes it. The comet is, strictly, being blown about. He finds this relatable.",
+      "rex": "REX has plotted the dust density in the tail. Fine particles. The hull will be polished, not punctured. He is permitting it.",
+      "chip": "CHIP would like to offer comet-tail ice as a luxury product! Four billion years old! Never been opened! Slightly dirty!",
+      "ajoy": "AJOY says the ice is mostly water. Also some of the oldest material in the system. She'd take a little of both."
+    },
+    "body": "A comet is passing through the field.\n\nIt is small, as comets go: a dirty snowball a few kilometres across, falling in toward a star it will not reach for years. But it has started to wake up. Gas and dust are boiling off its sunward face, and its tail streams out behind it for a hundred thousand kilometres, glowing, pointing straight away from the light like a weathervane in a solar wind.\n\nThe ship is close enough to fly through the edge of it.",
+    "choices": [
+      {
+        "text": "Skim ice from the tail",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Two days running alongside the comet with the collector scoops open. The ice comes in grey and gritty and melts down to water as clean as any you have had. The filter keeps a small jar of the grit. Somebody labels it 'older than everything'."
+        }
+      },
+      {
+        "text": "Fly the ship through the tail",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You fly straight through the edge of the tail. For twenty minutes the viewports glitter, every window full of tiny lights blowing past the wrong way, and the hull hisses softly under it like rain on a tent. The crew watches the whole way through without anyone saying a word."
+        }
+      },
+      {
+        "text": "Xenobiologist bags the dust",
+        "requires_crew": "xenobiologist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "materials": {
+            "biocomponent": 1
+          },
+          "narrative": "{crew.xenobiologist} spends two days in a suit at the cargo airlock catching dust on sticky plates, and comes back in with three plates of grime and a grin. Comet dust carries organic molecules, the building blocks of the chemistry of life, delivered by snowball. One sample is worth something to any lab. The grin is not for sale."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "A comet's tail always points away from the Sun, pushed by sunlight and the solar wind, so a comet heading outward travels tail-first.",
+      "label": "Comet tails",
+      "url": "https://en.wikipedia.org/wiki/Comet_tail"
+    }
   }
 ]

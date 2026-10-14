@@ -1214,5 +1214,433 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_derelict_010",
+    "active": true,
+    "title": "The Pod Garden",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A GARDEN SHIP! Every pod! ARIA wants to live here! ARIA understands the ship is abandoned! ARIA wants to live here anyway!",
+      "marv": "MARV estimates the gardens have run unattended for at least two years on the irrigation alone. The soil biology is excellent. Whoever built this knew what they were doing and did it slowly.",
+      "rex": "REX has cleared every pod. Plants only. One very aggressive marigold. He has given it room.",
+      "chip": "CHIP notes that premium potting soil retails for a great deal at stations! There is a lot of it here! CHIP is just saying it out loud! Someone has to!",
+      "ajoy": "AJOY thinks the soil would do more good in your growbay than in an empty ship. She'd leave the marigolds."
+    },
+    "body": "The derelict's escape pods are all still in their bays. Every one of them has been turned into a garden.\n\nTomatoes in one. Herbs in the next. A pod of nothing but marigolds, gone wild over the seats. The irrigation lines are hand-fitted and still dripping. Whoever lived here stayed long enough to stop expecting rescue, and spent the time growing things.\n\nThe soil in the planters is dark, rich and very well looked after.",
+    "choices": [
+      {
+        "text": "Take a sack of the soil for the growbay",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 6,
+          "narrative": "You fill a sack from the richest planter and work it into the growbay that evening. The crop takes to it at once: greener by morning, steadier by the week. Somebody leaves a note in the pod garden saying thank you, which nobody will ever read."
+        }
+      },
+      {
+        "text": "Take the drip-line water",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 8,
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You drain the irrigation reservoir into the ship's tanks. It is good water, carefully filtered, and you need it. On the way out the drip lines go quiet one by one. Nobody looks back at the pods."
+        }
+      },
+      {
+        "text": "Leave a light on for the plants",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave it all exactly as it was, and before you go somebody switches the pod bay's grow lights back to their full setting. The marigolds will be fine. They always were going to be. It feels good to have helped anyway."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_derelict_011",
+    "active": true,
+    "title": "The Ship's Cat",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "heartwarming"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A CAT! A ROBOT CAT! ARIA has never met another robot who was a CAT! ARIA would like to be friends! ARIA would like to be a cat!",
+      "marv": "MARV identifies a Felix-series companion unit. Discontinued. Reliable. Its battery has a decade left. It appears to have been using it to patrol.",
+      "rex": "REX has assessed the cat. The cat has assessed REX. Neither has backed down. REX describes this as professional mutual respect.",
+      "chip": "CHIP notes the Felix line came with a lifetime subscription to Premium Purr! The service no longer exists! The purr still works! CHIP has heard it!",
+      "ajoy": "AJOY says the cat has been on watch alone for a long time. It walked you to the bridge. It's asking you something."
+    },
+    "body": "The derelict has a cat.\n\nIt is a robot cat, a pre-collapse companion model, about the size of a real one and considerably heavier, and it has been keeping this ship for some years. It meets the boarding team at the airlock. It inspects each of them in turn. It sits down in the corridor, washes a paw it does not need to wash, and then walks ahead of them toward the bridge, looking back now and then to make sure they're keeping up.",
+    "choices": [
+      {
+        "text": "Bring the cat aboard",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "robot_cat_aboard",
+          "time_cost": "trivial",
+          "narrative": "You crouch down and hold the airlock open. The cat considers this for a long moment, then walks aboard as if it had always meant to. It finds the warmest spot on the ship within an hour, which is the engine room, and the engineer stops complaining about the engine room within a day."
+        }
+      },
+      {
+        "text": "Strip it for parts",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "materials": {
+            "metal": 1,
+            "scrap": 2
+          },
+          "narrative": "It is good hardware and you need parts. The cat does not resist. That is the worst part, everyone agrees, later, at length. The metal goes into the stores. Nobody uses that bin if they can help it."
+        }
+      },
+      {
+        "text": "Leave it on watch",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the cat where it is. It walks you back to the airlock, sits down in the doorway, and watches the ship go. Somebody says it looked proud. Somebody else says it looked lonely. Both are probably right."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_derelict_012",
+    "active": true,
+    "title": "Inventory Day",
+    "difficulty": "easy",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "An auditor! Who LOVES its job! ARIA respects that so much! ARIA would sign for anything!",
+      "marv": "MARV reads the manifest over the auditor's shoulder: forty-one crates, thirty-nine counted, two remaining. It has been counting for six years. He calculates it will finish next Tuesday.",
+      "rex": "REX has checked the auditor. It is unarmed. It has a pen. It is holding the pen in a way REX finds concerning.",
+      "chip": "CHIP would like to sign! Signing is CHIP's favourite thing! Terms and conditions are CHIP's second favourite thing! There are SO many here!",
+      "ajoy": "AJOY says it just wants someone to sign. Take what you need. Then sign."
+    },
+    "body": "The derelict is mid-audit.\n\nIts cargo bay is laid out in neat rows, every crate tagged, and an auditor robot is working down the aisles with a clipboard and a scanner, ticking things off. It has been doing this since its crew left. It has nearly finished. When the boarding team walks in, it looks up and says, with real hope: 'Oh, good. Are you here to sign for it?'",
+    "choices": [
+      {
+        "text": "Sign for everything you take",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "materials": {
+            "metal": 2,
+            "scrap": 2
+          },
+          "narrative": "It takes two days, because the auditor wants everything itemised in triplicate and initialled on every page. When the last form is signed it closes its clipboard, says 'Thank you. That completes the audit,' and switches itself off with a small, contented click. The crates are yours. So are the forms."
+        }
+      },
+      {
+        "text": "Take it without signing",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "materials": {
+            "metal": 2,
+            "scrap": 1
+          },
+          "narrative": "You load the crates while the auditor follows you up and down the aisles saying 'I really do need a signature for that.' It is still saying it, quite sadly, as the airlock closes. Somebody signs a napkin on the way out and leaves it on a crate. It helps a bit."
+        }
+      },
+      {
+        "text": "Help it finish the count",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "materials": {
+            "exotic": 1
+          },
+          "narrative": "Two days of counting crates with a robot who is delighted by every one. The last crate turns out to hold a sealed specimen case, which the auditor insists you take, 'with compliments of the company, for your assistance.' The company has been gone for decades. The compliments are still good."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_derelict_013",
+    "active": true,
+    "title": "Decaying Orbit",
+    "timed": true,
+    "difficulty": "ultra",
+    "tone": [
+      "grim",
+      "cosmic"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "trail": [
+      "interstellar"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "We're FALLING! Into a PLANET! A very big one! ARIA would like to stop falling! ARIA does not know how! ARIA is asking everyone!",
+      "marv": "MARV has the derelict entering the upper atmosphere in roughly forty minutes. The clamp is seized. The collar is breaching. He has three plans. He has ranked them. The best one requires someone to seal the collar by hand, now.",
+      "rex": "REX recommends cutting loose. He also notes that cutting loose with the collar open costs air, hull and very possibly a crew member. He is recommending it with reservations.",
+      "chip": "CHIP must inform you that the derelict's salvage rights did not include 'its destination'! CHIP would like to decline the destination! On everyone's behalf!",
+      "ajoy": "AJOY says seal the breach first, then cut the clamp. Do it in that order and you lose almost nothing. Do it the other way round and you lose air."
+    },
+    "body": "The boarding team is halfway through the derelict when it starts to fall.\n\nIts orbit was never stable. Now something has given out, an old thruster or the last of its station-keeping fuel, and it is dropping toward the gas giant below it, slowly at first, and then not slowly at all. The docking clamp that holds your ship to it has seized. The derelict's hull, never meant to feel the giant's atmosphere, has started to tear open around the docking collar.\n\nIt is taking your ship down with it.",
+    "choices": [
+      {
+        "text": "Seal the collar breach, then cut free",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "launch_minigame": "breach",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "hull": -4
+            },
+            "narrative": "You seal every tear in the collar before it opens, the clamp cuts clean, and the ship falls away from the derelict with a soft bump. It goes down into the cloud tops below you like a stone into milk. Four points of air, four of hull. The boarding team came back with nothing. They came back."
+          },
+          "good": {
+            "resources": {
+              "hull": -10,
+              "o2": -8
+            },
+            "narrative": "Most of the tears hold. One doesn't, and the ship loses air through the collar for a long, loud minute before the clamp gives and you fall free. Eight points of air, ten of hull."
+          },
+          "poor": {
+            "resources": {
+              "hull": -20,
+              "o2": -14,
+              "morale": -6
+            },
+            "severity": "injury",
+            "crew_effect": {
+              "type": "injure",
+              "target": "crew"
+            },
+            "narrative": "The collar tears faster than you can patch it, and the clamp only gives when the derelict is already in the first thin wisps of the giant's air. The ship tears free, venting. Someone is hurt in the rush back from the collar. Twenty points of hull, fourteen of air."
+          }
+        },
+        "outcome": {
+          "resources": {
+            "o2": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You grab the patch tray and go for the collar."
+        }
+      },
+      {
+        "text": "Cut the clamp now and take the venting",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -14,
+            "o2": -12,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You cut the clamp with the collar still open. The ship comes free at once and the air goes out of the docking section with it, a white plume streaming back toward the falling derelict. The bulkheads close. Fourteen points of hull, twelve of air, and a docking section that will be cold for the rest of the trip."
+        }
+      },
+      {
+        "text": "Engineer forces the clamp open",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 4,
+        "outcome": {
+          "resources": {
+            "hull": -6,
+            "o2": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.engineer} goes into the clamp housing with a pry bar, a cutter and a vocabulary nobody had heard them use before, and forces the old clamp open by hand with the collar groaning around them. The ship drifts free, intact. Six points of hull, four of air, and an engineer who sleeps for a day."
+        }
+      },
+      {
+        "text": "Burn hard and drag the derelict up",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "resources_pct": {
+            "fuel": -35
+          },
+          "narrative": "You fire the drive with the derelict still clamped on and haul both ships back up out of the fall, the frame shrieking under the weight. It works long enough for the clamp to tear itself loose. The derelict falls away alone. Thirty-five percent of the fuel, and ten of hull where the clamp left."
+        }
+      }
+    ]
   }
 ]

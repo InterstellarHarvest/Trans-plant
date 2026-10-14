@@ -2979,5 +2979,497 @@
     "crew_speaker": [
       "any"
     ]
+  },
+  {
+    "id": "event_station_022",
+    "active": true,
+    "title": "Fever Ward",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Oh no, they're poorly! ARIA wants to help! ARIA can't catch fevers! ARIA feels that should count for something!",
+      "marv": "MARV estimates the fever spreads between roughly one in four people who share air for a day. Masks halve that. Staying aboard does better. He notes the station still sells the things you came for.",
+      "rex": "REX recommends no contact. He also notes the ship needs what the station has. He has recommended it anyway.",
+      "chip": "CHIP notes that the station's loyalty points are DOUBLED during the quarantine! It is the worst promotion CHIP has ever seen! CHIP is still tempted!",
+      "ajoy": "AJOY says the station needs a medic more than the ship needs the market. If you have one, she'd send them."
+    },
+    "body": "The station is in quarantine.\n\nThe docking queue is a single line of ships holding at a distance, and the dockmaster's hail is tired and very polite: a fever is moving through the ring. Not lethal, mostly. Bad enough. Dock if you must, they say. Masks are at the airlock. The medbay is full. The market is open, because it has to be, and so is everything else, at your own risk.\n\nBehind the dockmaster's voice, somebody is coughing.",
+    "choices": [
+      {
+        "text": "Dock with masks and keep it short",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": {
+            "type": "injure",
+            "target": "crew"
+          },
+          "severity": "injury",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You dock, mask up and keep every errand short. It isn't short enough. Two days after you leave, one of the crew comes down with the fever: aching, shivering, useless for a week. It will pass. It takes its time."
+        }
+      },
+      {
+        "text": "The medic volunteers on the ward",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "high",
+          "narrative": "{crew.medic} spends eight days on the station's fever ward, working shifts with their own medics until the worst has passed. The station never forgets it: the dockmaster sends a crate of supplies to the airlock on the last day with a note that just says 'thank you'. The crew is proud. The calendar is not.",
+          "materials": {
+            "biocomponent": 1
+          }
+        }
+      },
+      {
+        "text": "Buy through the airlock and stay sealed",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 10
+        },
+        "outcome": {
+          "resources": {
+            "gold": -10,
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "waves_off": true,
+          "narrative": "You stay sealed and do your business through the cargo airlock with a station clerk in a mask. It costs a handling fee and nobody aboard sets foot on the ring. The station's services stay out of reach this stop: no market, no medbay, no drydock. Nobody gets sick."
+        }
+      },
+      {
+        "text": "Wave off and keep going",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "waves_off": true,
+          "narrative": "You wave off and hold well clear while the queue thins, then give up and go. Four days lost to waiting for a station you never reached. The crew understands. The crew is also very, very tired of the ship."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_station_023",
+    "active": true,
+    "title": "Repossession",
+    "difficulty": "hard",
+    "tone": [
+      "corporate",
+      "grim"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "They seem very nice! For people taking our fabricator! ARIA is sure there's been a mix-up! ARIA is less sure every second!",
+      "marv": "MARV has checked the paperwork. It is genuine. It is also forty-one years out of date and assigned twice. He suspects they know that. He suspects they hope you don't.",
+      "rex": "REX notes there are two of them and they are not armed. He also notes the station security behind them is. He is keeping his hands visible.",
+      "chip": "CHIP knows this company! CHIP used to work with them! It was not a good time! Pay them or talk fast! Do not, under any circumstances, sign anything!",
+      "ajoy": "AJOY says paperwork this old has a hole in it somewhere. Somebody aboard should find it."
+    },
+    "body": "Two people in clean suits are waiting at the airlock when you dock, with a tablet and a document they would like you to read.\n\nThe document says your ship's fabricator was leased, not sold, by a company that has since been bought by another company, which has since been bought by the company they work for. The lease was never paid off. They are here to repossess it, or, if you prefer, its most valuable parts.\n\nThey are very sorry. They have done this a lot.",
+    "choices": [
+      {
+        "text": "Pay off the lease",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 18
+        },
+        "outcome": {
+          "resources": {
+            "gold": -18
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You pay. The clean suits thank you, stamp the document PAID IN FULL and hand you a receipt that is nearly a metre long. The fabricator stays yours, legally, at last. The gold is gone, which is how this always works."
+        }
+      },
+      {
+        "text": "Let them take the parts",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "fab_wear": 40,
+          "narrative": "You let them take the parts. They are quick, careful and thorough: the precision heads, the good feed motors, the calibration crystal. The fabricator still works, more or less, the way a piano still works with some of its keys missing. It will need help."
+        }
+      },
+      {
+        "text": "The diplomat finds the hole in the paperwork",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "{crew.diplomat} spends four days in a station office going through forty-one years of contracts line by line. On the fourth afternoon they find it: the lease was assigned twice, and only one of the two companies ever existed. The clean suits read it, look at each other, and leave without saying goodbye. The crew throws the diplomat a dinner."
+        }
+      },
+      {
+        "text": "The engineer swaps in a dead unit",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 3,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "fab_wear": 15,
+          "narrative": "{crew.engineer} pulls the fabricator's serial plate and bolts it onto a dead unit from the scrap bin while the clean suits are filling in forms. They take the dead unit away very carefully. The real fabricator is a little scraped from the swap. Nobody is proud of it. Nobody gives it back."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_station_024",
+    "active": true,
+    "title": "Strike Day",
+    "difficulty": "hard",
+    "tone": [
+      "mundane",
+      "corporate"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A STRIKE! For BETTER CONDITIONS! ARIA supports them completely! ARIA would like to join! ARIA doesn't have conditions!",
+      "marv": "MARV has read the demands. Rest breaks, safety gear, and a working clamp on berth seven. He rates all three as overdue. He rates the management statement as mostly adjectives.",
+      "rex": "REX notes the picket is friendly and the thermos is coffee. He has assessed both as non-hostile. He would like some coffee.",
+      "chip": "CHIP would like to stress that CHIP is neutral in all labour disputes! CHIP has also donated to the strike fund! CHIP contains multitudes!",
+      "ajoy": "AJOY says you won't get through the ring without them. Either wait, help, or go round."
+    },
+    "body": "The dock workers are on strike.\n\nNothing is moving. The cargo cranes are parked. The docking clamps are on manual and nobody is touching the manuals. A picket line of dock crew in hi-vis jackets is standing, quite cheerfully, across the entrance to the ring, with a banner and a thermos and a list of demands that is short and entirely reasonable.\n\nThe station's management has sent a statement. The statement is longer than the list of demands and does not answer any of them.",
+    "choices": [
+      {
+        "text": "Wait it out",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "Four days in a holding berth while management and the picket argue it out. On the fourth day the station agrees to the rest breaks and the safety gear and promises to look at berth seven. The cranes start up again. Everyone cheers. You dock, finally, four days behind."
+        }
+      },
+      {
+        "text": "Bring the picket coffee and wait with them",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You spend four days on the picket line with the dock crew, bringing coffee and sharing rations and learning a great deal about berth seven. When the strike ends, they dock you first, by hand, gently, and won't take a tip. The crew comes back aboard with hi-vis jackets nobody can bring themselves to take off."
+        }
+      },
+      {
+        "text": "The pilot docks by hand without the clamps",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -6,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.pilot} brings the ship in without the clamps, by hand, against a docking ring that wasn't built for it. It works, mostly. The hull scrapes the collar on the way in with a sound nobody will forget. The picket watches the whole thing and doesn't say a word. They don't have to."
+        }
+      },
+      {
+        "text": "Pay into the strike fund to end it sooner",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 12
+        },
+        "outcome": {
+          "resources": {
+            "gold": -12,
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You pay into the strike fund, which turns out to be the deciding contribution: the picket can now hold out longer than management can, and management knows it. The strike ends in two days instead of a week. The dock crew docks you first. The gold went somewhere good."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_station_025",
+    "active": true,
+    "title": "The Ring Is Coming Apart",
+    "timed": true,
+    "difficulty": "ultra",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "trail": [
+      "interstellar"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The station is WOBBLING! ARIA would like it to stop wobbling! ARIA would like to help! ARIA is going to help by being very quiet!",
+      "marv": "MARV reads the ring's wobble as growing. The docking arm will hold for perhaps thirty more lurches. He has counted eleven. He has stopped counting out loud.",
+      "rex": "REX has every loose object in the ship strapped down. He has also strapped down himself. He recommends everyone else does the same.",
+      "chip": "CHIP has filed an emergency complaint with the station's management! CHIP has been put on hold! The hold music is very calm! CHIP is not!",
+      "ajoy": "AJOY says hold the ship to the arm until they stop the spin. Brace for every lurch, together, on the count. And send a medic if you have one: they're going to need everyone."
+    },
+    "body": "You have just docked when the station's spin ring loses a bearing.\n\nThe whole ring shudders. Then it starts to wobble, a slow, heavy lurch that sends loose crates sliding along every corridor and sets off every alarm on the station at once. The docking arm holding your ship is on the ring. Every lurch tries to throw the ship off it, and the arm was not built for this.\n\nOn the station's emergency channel, the dockmaster is calling for every ship to hold on, and for every medic on the ring to report to the infirmary.",
+    "choices": [
+      {
+        "text": "Brace the ship to the arm on every lurch",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "launch_minigame": "brace",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "hull": -4
+            },
+            "narrative": "You call every lurch and fire the thrusters against it, and the ship rides the wobbling ring like a boat at anchor in a storm. Two hours later the station brakes the ring to a stop. Four points of hull. The dockmaster comes down to the berth personally to shake your hand."
+          },
+          "good": {
+            "resources": {
+              "hull": -12
+            },
+            "narrative": "Most of the lurches you meet. Two you don't, and the ship slams against the arm hard enough to buckle a panel. The ring stops eventually. Twelve points of hull."
+          },
+          "poor": {
+            "resources": {
+              "hull": -20,
+              "morale": -5
+            },
+            "severity": "injury",
+            "crew_effect": {
+              "type": "injure",
+              "target": "crew"
+            },
+            "narrative": "The arm lets go on the worst lurch and the ship tumbles off the ring and into open space, end over end, with everybody inside it. The thrusters catch it a kilometre out. Twenty points of hull, and someone hurt in the tumble."
+          }
+        },
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Everyone braced, the thrusters on standby, and you ride the lurches."
+        }
+      },
+      {
+        "text": "Cast off now and get clear",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -10,
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "waves_off": true,
+          "narrative": "You cut the docking arm and fire the thrusters before the next lurch, and the ship tears off the ring with the arm's grapples still in its hull. You get clear. The station stops its ring an hour later, without you. Ten points of hull, and no market, medbay or drydock this stop."
+        }
+      },
+      {
+        "text": "Send the medic to the infirmary",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 3,
+        "outcome": {
+          "resources": {
+            "hull": -8,
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "{crew.medic} goes onto the ring while the rest of the crew holds the ship to the arm. They spend four days in the station infirmary, with the station's medics, through the worst of it. The ship takes some lurches in the meantime. The station takes far fewer casualties than it might have. The dockmaster waives every fee you will ever owe them."
+        }
+      },
+      {
+        "text": "Engineer helps them stop the ring",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 3,
+        "outcome": {
+          "resources": {
+            "hull": -6,
+            "fuel": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.engineer} goes over to the station's bearing room and works with their crew to brake the ring, using your ship's thrusters, on the arm, as an extra brake. It takes two days and a lot of fuel. It works. Six points of hull, six of fuel, and a station engineering team who will name a bearing after you."
+        }
+      }
+    ]
   }
 ]

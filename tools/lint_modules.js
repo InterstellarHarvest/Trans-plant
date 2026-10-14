@@ -50,6 +50,10 @@ function checkOutcomeRefs(file, evId, where, o) {
   if (o.materials) {
     for (const mat of Object.keys(o.materials)) {
       if (!materialIds.has(mat)) err(`${file} ${evId}${where ? '/' + where : ''}: materials grant "${mat}" is not an id in materials.json`);
+      // A material cost has no gate in the event schema: with an empty hold
+      // the preview's "−n METAL" would land nothing (previews must equal
+      // outcomes), so event outcomes only grant materials.
+      if (Number.isFinite(o.materials[mat]) && o.materials[mat] < 0) err(`${file} ${evId}${where ? '/' + where : ''}: materials "${mat}" is negative — an ungated material cost lands nothing on an empty hold; cost something else`);
     }
   }
 }
