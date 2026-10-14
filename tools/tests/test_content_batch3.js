@@ -189,17 +189,18 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
       STATE.daysElapsed = Math.round(STATE.baseDays * frac);
     };
     const P = () => pathLegs();
-    const on = (legs, share) => { setup(legs, 0); STATE.daysElapsed = Math.round(STATE.baseDays * share); return activeTriggers().has('behind_schedule'); };
-    const half = Math.round(P() / 2);
-    // Half the trail flown: projected share = days share ÷ 0.5ish.
-    out.ahead = on(half, 0.35 * half / P());    // pace projects 35% of the deadline
-    out.behind = on(half, 0.92 * half / P());   // projects 92%
-    out.nearly = on(half, 0.88 * half / P());   // projects 88%
-    out.early = on(1, 0.9);                     // leg 1: never, however slow
+    // Each setup builds a new map: the legs and the days come from that map (frac = visited ÷ pathLegs, as activeTriggers reads them).
+    const on = (projected) => { setup(1, 0); const P = pathLegs(); const legs = Math.round(P / 2); STATE.visited = new Set(STATE.nodes.map(n => n.id).slice(0, legs));
+      const frac = STATE.visited.size / pathLegs(); STATE.daysElapsed = Math.round(STATE.baseDays * frac * projected); return { hit: activeTriggers().has('behind_schedule'), proj: (STATE.daysElapsed / STATE.baseDays) / frac }; };
+    out.ahead = on(0.35).hit;    // the pace projects 35% of the deadline
+    out.behind = on(0.93).hit;   // projects 93%
+    out.nearly = on(0.86).hit;   // projects 86%
+    setup(1, 0); STATE.daysElapsed = Math.round(STATE.baseDays * 0.9); out.early = activeTriggers().has('behind_schedule'); // leg 1: never, however slow
     out.share = SCHEDULE_PROJECTED_SHARE; out.from = SCHEDULE_CHECK_FROM;
     // engine_strain: three PLAID legs in a row through the real travel code; a slower leg resets it.
     setup(1, 0); STATE.orders.pace = 'plaid'; STATE.resources.fuel = 120;
-    const fly = () => { const next = [...nextAvailableNodes()][0]; travelTo(next); };
+    // Fly one leg forward; at a fork, take the alpha lane so the map has a next stop.
+    const fly = () => { let ns = [...nextAvailableNodes()]; if (!ns.length) { STATE.flags.add('chose_alpha'); ns = [...nextAvailableNodes()]; } travelTo(ns[0]); };
     const strain = [];
     for (let i = 0; i < 3; i++) { STATE.currentEvent = null; fly(); strain.push([STATE.plaidLegs, activeTriggers().has('engine_strain')]); }
     STATE.currentEvent = null; STATE.orders.pace = 'ludicrous'; fly(); strain.push([STATE.plaidLegs, activeTriggers().has('engine_strain')]);
@@ -227,7 +228,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
     return out;
   });
   ok(k.share === 0.9 && k.from === 0.25, `behind_schedule thresholds: projects ${k.share} of the deadline, from ${k.from} of the trail`);
-  ok(!k.ahead && k.behind && !k.nearly && !k.early, `behind_schedule: off when the pace projects 35% (${k.ahead}), on at 92% (${k.behind}), off at 88% (${k.nearly}), off on leg 1 (${k.early})`);
+  ok(!k.ahead && k.behind && !k.nearly && !k.early, `behind_schedule: off when the pace projects 35% (${k.ahead}), on at 93% (${k.behind}), off at 86% (${k.nearly}), off on leg 1 (${k.early})`);
   ok(k.strainLegs === 3 && JSON.stringify(k.strain) === '[[1,false],[2,false],[3,true],[0,false]]', `engine_strain: PLAID legs count 1, 2, 3 (fires), a LUDICROUS leg resets (${JSON.stringify(k.strain)})`);
   ok(k.afterRid === 'ludicrous' && k.factRid.includes('PACE: LUDICROUS SPEED'), `pace "faster" from RIDICULOUS lands LUDICROUS and says so (${k.factRid})`);
   ok(k.afterPlaid === 'plaid' && !k.factPlaid.some(f => /PACE/.test(f)), `pace "faster" at PLAID stays PLAID and promises nothing (${JSON.stringify(k.factPlaid)})`);
