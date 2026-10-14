@@ -123,7 +123,9 @@ async function defeat(page, setup, rnd, before) {
 
   console.log('— A4 + A13: the stowaway reveal choices');
   {
-    const page = await boot({ crew: ['pilot', 'engineer'] });
+    // ARIA, not MARV: MARV's cost read takes the costliest choice's
+    // sub-label, which on Mars (supply bite, ruling 68) is the welcome's food.
+    const page = await boot({ crew: ['pilot', 'engineer'], ai: 'aria' });
     await page.evaluate(() => {
       STATE.stowaway = { identity: MOD.flavor.stowaway_identities.find(x => x.id === 'stowaway_kid'), revealed: false };
       enterEvent(STATE.byId[STATE.currentId], EVENTS.event_shipboard_001);

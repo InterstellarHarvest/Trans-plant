@@ -561,6 +561,53 @@ function assignKeys(src) {
   }
 }
 
+// ── The trail's supply bite (ruling 68): one reader ─────────────────
+// Every trail authors event_supply_cost_mult ({water, food}, 1 = as
+// authored). eventSupplyCost alone reads it, and effectiveResDelta alone
+// calls eventSupplyCost — the one point the outcome and every preview
+// share, so a second reader is a preview that disagrees with the outcome.
+// effectiveResDelta with a resource key that isn't a literal passes the
+// outcome too: without it a fight's own tally (combat_net) or a
+// resources_pct share would be scaled.
+{
+  const blank = s => s.replace(/[^\n]/g, ' ');
+  const stripComments = src => src.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/(^|\s)\/\/.*$/gm, blank);
+  const rules = JSON.parse(read('modules/maps/map_rules.json'));
+  for (const [trail, t] of Object.entries(rules.trails || {})) {
+    const m = t.event_supply_cost_mult;
+    if (!m || typeof m !== 'object') { err(`modules/maps/map_rules.json: trail ${trail} has no event_supply_cost_mult ({water, food}; 1 = as authored)`); continue; }
+    for (const k of ['water', 'food']) if (!(Number.isFinite(m[k]) && m[k] > 0)) err(`modules/maps/map_rules.json: trail ${trail} event_supply_cost_mult.${k} is not a positive number`);
+    for (const k of Object.keys(m)) if (k !== 'water' && k !== 'food') err(`modules/maps/map_rules.json: trail ${trail} event_supply_cost_mult.${k} — only water and food are scaled`);
+  }
+  for (const rel of ['index.html', ...ENGINE]) {
+    const raw = stripComments(read(rel));
+    const src = raw.replace(/'[^'\n]*'|"[^"\n]*"/g, blank);
+    const decls = [...src.matchAll(/^([ \t]*)function ([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/gm)];
+    decls.forEach(d => {
+      const end = src.indexOf('\n' + d[1] + '}', d.index);
+      const body = src.slice(d.index, end < 0 ? undefined : end);
+      const name = d[2];
+      if (/\bevent_supply_cost_mult\b/.test(body) && name !== 'eventSupplyCost') err(`${rel}:${lineOf(src, d.index)}: ${name} reads event_supply_cost_mult — scale through effectiveResDelta (eventSupplyCost)`);
+      if (/\beventSupplyCost\s*\(/.test(body.slice(body.indexOf('{') + 1)) && name !== 'effectiveResDelta') err(`${rel}:${lineOf(src, d.index)}: ${name} calls eventSupplyCost — call effectiveResDelta, the point previews and outcomes share`);
+    });
+    // effectiveResDelta(k, v) with a variable key: the outcome must ride along.
+    for (const m of raw.matchAll(/\beffectiveResDelta\s*\(/g)) {
+      if (/function\s+$/.test(raw.slice(Math.max(0, m.index - 12), m.index))) continue;
+      let depth = 1, i = m.index + m[0].length, commas = 0;
+      const start = i;
+      for (; i < raw.length && depth; i++) {
+        const c = raw[i];
+        if (c === '(' || c === '[' || c === '{') depth++;
+        else if (c === ')' || c === ']' || c === '}') depth--;
+        else if (c === ',' && depth === 1) commas++;
+      }
+      const args = raw.slice(start, i - 1);
+      if (/^\s*['"]/.test(args)) continue; // a literal key ('hull'): not water or food
+      if (commas < 2) err(`${rel}:${lineOf(raw, m.index)}: effectiveResDelta(${args.trim()}) — pass the outcome as the third argument (a fight's tally and a resources_pct share are not scaled)`);
+    }
+  }
+}
+
 // ── Engine window exports something outside the file reads ──────────
 {
   const stripComments = src => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1');

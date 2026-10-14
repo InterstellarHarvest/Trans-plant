@@ -4812,6 +4812,33 @@ function interpolateStowawayTokens(text) {
     .replace(/\{stowaway\.line\}/g,  id ? id.line  : '');
 }
 
+/* {cost.water} / {cost.food} (ruling 70): what an outcome really costs in
+   water or food — the authored figure through effectiveResDelta, so the
+   trail's supply bite is in it and the text agrees with the preview on
+   every trail. Written in words ("twelve"), capitalised opening a
+   sentence; {cost.water.num} writes digits. An outcome that costs none
+   of it reads "no". o: the outcome whose resources the text describes
+   (a minigame's tier merged over its base). */
+function interpolateCostTokens(text, o) {
+  if (!text || text.indexOf('{cost.') === -1) return text;
+  const fig = k => { const v = o && o.resources && o.resources[k]; return Number.isFinite(v) && v < 0 ? -effectiveResDelta(k, v, o) : 0; };
+  const word = k => numberWords(fig(k));
+  return text
+    .replace(/(^|[.!?…]["\u201d')]*\s+|\n\s*)\{cost\.(water|food)\}/g, (m, pre, k) => pre + word(k).charAt(0).toUpperCase() + word(k).slice(1))
+    .replace(/\{cost\.(water|food)(\.num)?\}/g, (m, k, num) => num ? String(fig(k)) : word(k));
+}
+// 0–999 in words, the way the narratives write figures: "twenty-two",
+// "a hundred and ten"; 0 is "no".
+function numberWords(n) {
+  n = Math.round(Math.abs(n));
+  const ONES = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+  if (n >= 1000) return String(n);
+  if (n >= 100) { const r = n % 100; return (Math.floor(n / 100) === 1 ? 'a' : ONES[Math.floor(n / 100)]) + ' hundred' + (r ? ' and ' + numberWords(r) : ''); }
+  if (n < 20) return ONES[n];
+  return TENS[Math.floor(n / 10)] + (n % 10 ? '-' + ONES[n % 10] : '');
+}
+
 function currentLayer() {
   const ev = STATE.currentEvent;
   if (!ev.layers || !STATE.layerStack) return null;
@@ -5253,7 +5280,9 @@ function flashEncPanels() {
    resolveChoice(), layered via handleChoiceClick()'s outcome branch).
    Side effects (resources/flags/etc) are already applied by the
    caller before this runs; this only paints. */
-function renderOutcomeView(outcome) {
+// src: the outcome whose costs a {cost.*} token states, when `outcome`
+// is a view built from it (a flat choice, a minigame's merged tier).
+function renderOutcomeView(outcome, src) {
   STATE.outcomeMode = true;
   // The outcome has landed: a reload from here resumes at the hub with it
   // applied (the entry save above would otherwise offer the choice again).
@@ -5261,7 +5290,7 @@ function renderOutcomeView(outcome) {
   _renderGen++;
   // An untitled outcome takes the event's own title (ruling 37).
   document.getElementById('enc-narr-title').textContent = outcome.title || eventOutcomeTitle();
-  let bodyText = interpolateStowawayTokens(interpolateNpcTokens(outcome.body || outcome.narrative || '...', STATE.npcCtx));
+  let bodyText = interpolateCostTokens(interpolateStowawayTokens(interpolateNpcTokens(outcome.body || outcome.narrative || '...', STATE.npcCtx)), src || outcome);
   // A lethal outcome the medic/medkit turned into an injury still reads
   // as a death in authored text — say what actually happened.
   if (STATE.lethalSaved) bodyText += '\n\n' + STATE.lethalSaved;
@@ -5285,7 +5314,7 @@ function renderOutcomeView(outcome) {
   if (outcome.line) {
     const who = STATE.lastSpeaker || STATE.npcCtx;
     document.getElementById('enc-dialog-name').textContent = who ? who.displayName : '';
-    lineText = interpolateStowawayTokens(interpolateNpcTokens(outcome.line, who));
+    lineText = interpolateCostTokens(interpolateStowawayTokens(interpolateNpcTokens(outcome.line, who)), src || outcome);
     beats.push({ el: document.getElementById('enc-dialog-line'), text: quoteLine(lineText), ms: TYPE_MS.spoken,
                  onStart: () => { if (window.SceneArt && SceneArt.talk) SceneArt.talk(lineText); },
                  onStop: () => { if (window.SceneArt) SceneArt.stopTalking(); } });
@@ -5680,23 +5709,42 @@ function cropDeltaLanding(v) {
   if (!cg || !(cg.health > 0)) return 0;
   return clamp(cg.health + effectiveCropDelta(v), 1, 100) - cg.health;
 }
-function effectiveResDelta(k, v) {
+// o: the outcome the delta belongs to — a fight's own numbers and a
+// resources_pct share are left as they are (eventSupplyCost).
+function effectiveResDelta(k, v, o) {
   let dv = (k === 'o2' && v < 0 && STATE.items.includes('o2_recycler')) ? Math.trunc(v * RECYCLER_O2_LOSS_MULT) : v; // toward zero: a −1 loss becomes 0
   // Engineer passive: hull repairs land 25% further (captain half).
   if (k === 'hull' && dv > 0) dv = Math.round(dv * (1 + 0.25 * specialistMult('engineer')));
-  return dv;
+  return eventSupplyCost(k, dv, o);
+}
+/* Per-trail supply bite (ruling 68): the trail's event_supply_cost_mult
+   (map_rules.json) scales what an event outcome costs in water and food,
+   so the same event bites harder on a shorter trail. Only costs: gains,
+   the daily draw, purchases and a fight's own tally (combat_net) are
+   untouched. A resources_pct share (withPctResources' _pctShare) stays
+   the share it names — "forty-five percent of the food" is still 45%. */
+function eventSupplyCost(k, v, o) {
+  if ((k !== 'water' && k !== 'food') || !(v < 0) || (o && o.combat_net)) return v;
+  const rules = MOD.map_rules.trails[STATE.trail];
+  const m = rules && rules.event_supply_cost_mult && rules.event_supply_cost_mult[k];
+  if (!(Number.isFinite(m) && m > 0)) return v;
+  const share = (o && o._pctShare && o._pctShare[k]) || 0;
+  const flat = v - share;
+  return flat < 0 ? share - Math.round(-flat * m) : v; // half a point rounds toward the bigger cost
 }
 /* resources_pct (outcome field): a share of what's aboard — "thirty
    percent fuel" — resolved against the current stock. */
 function withPctResources(o) {
   if (!o || !o.resources_pct) return o;
-  const res = Object.assign({}, o.resources || {});
+  const res = Object.assign({}, o.resources || {}), share = {};
   for (const [k, pct] of Object.entries(o.resources_pct)) {
     if (!Number.isFinite(pct)) continue;
     const have = k === 'gold' ? STATE.goldAmount : k === 'morale' ? (crewMoraleRaw() || 0) : (STATE.resources[k] || 0);
-    res[k] = (res[k] || 0) + Math.round(have * pct / 100);
+    share[k] = Math.round(have * pct / 100);
+    res[k] = (res[k] || 0) + share[k];
   }
-  return Object.assign({}, o, { resources: res, resources_pct: null });
+  // _pctShare: how much of each figure is the share (eventSupplyCost).
+  return Object.assign({}, o, { resources: res, resources_pct: null, _pctShare: share });
 }
 function outcomeFacts(o) {
   const facts = [];
@@ -5706,7 +5754,7 @@ function outcomeFacts(o) {
   }
   for (const [k, v0] of Object.entries(o.resources || {})) {
     if (!Number.isFinite(v0) || !v0 || !RES_LABEL[k]) continue;
-    const v = k === 'gold' ? (v0 < 0 ? -eventGold(-v0) : v0) : effectiveResDelta(k, v0);
+    const v = k === 'gold' ? (v0 < 0 ? -eventGold(-v0) : v0) : effectiveResDelta(k, v0, o);
     if (!v) continue;
     // An armed Emergency Patch takes the whole hit (applyOutcomeEffects).
     if (k === 'hull' && v < 0 && !o.combat_net && STATE.flags.has('emergency_patch_armed')) { facts.push({ text: 'PATCH STOPS −' + Math.abs(v) + ' HULL', weight: 4, good: true }); continue; }
@@ -6396,7 +6444,7 @@ function applyOutcomeEffects(o) {
         if (o.morale_to) { const who = moraleTargetRole(o.morale_to); if (who) addCrewMorale(dv, who); }
         else addCrewMorale(dv);
       } else if (k in STATE.resources) {
-        let dv = effectiveResDelta(k, v);
+        let dv = effectiveResDelta(k, v, o);
         if (STATE.halfEffect && dv > 0) dv = Math.floor(dv / 2); // captain standing in: half the gains (rounded down)
         if (STATE.effortCon && dv > 0) dv = Math.floor(dv / 2);  // short of effort: thinner gains
         STATE.resources[k] = clamp(STATE.resources[k] + dv, 0, resMax(k));
@@ -6767,7 +6815,7 @@ function resolveChoice(choice) {
       if (slog) ShipLog.resolved(slog, STATE.currentEvent, choice, merged);
       renderHUD();
       if (checkFailure()) return;
-      renderOutcomeView(Object.assign({ title: eventOutcomeTitle(), body: merged.narrative || '...', tone: deltaIsBad(merged) ? 'danger' : (deltaIsGood(merged) ? 'success' : null) }, outcomeScene(merged)));
+      renderOutcomeView(Object.assign({ title: eventOutcomeTitle(), body: merged.narrative || '...', tone: deltaIsBad(merged) ? 'danger' : (deltaIsGood(merged) ? 'success' : null) }, outcomeScene(merged)), merged);
     });
     return;
   }
@@ -6778,7 +6826,7 @@ function resolveChoice(choice) {
   renderHUD();
   if (checkFailure()) return;
 
-  renderOutcomeView(Object.assign({ title: eventOutcomeTitle(), body: o.narrative || '...', tone: deltaIsBad(o) ? 'danger' : (deltaIsGood(o) ? 'success' : null) }, outcomeScene(o)));
+  renderOutcomeView(Object.assign({ title: eventOutcomeTitle(), body: o.narrative || '...', tone: deltaIsBad(o) ? 'danger' : (deltaIsGood(o) ? 'success' : null) }, outcomeScene(o)), o);
 }
 
 /* A flat outcome's scene override (scene_bg / scene_bg_base /

@@ -67,14 +67,15 @@
   const voiced = (key, tok) => fill(template(key), tok);
   const cap1 = s => { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); };
   const clean = s => String(s == null ? '' : s).replace(/^\s*[◆▶]\s*/, '');
-  function interp(s) {
+  // o: the outcome a narrative describes ({cost.water} states its real cost).
+  function interp(s, o) {
     s = String(s || '');
-    s = interpolateStowawayTokens(interpolateNpcTokens(s, STATE.npcCtx));
+    s = interpolateCostTokens(interpolateStowawayTokens(interpolateNpcTokens(s, STATE.npcCtx)), o);
     return s.replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ').trim();
   }
   // First sentence of a narrative, cut at a word to fit `max`.
-  function oneLine(text, max) {
-    let s = interp(text).replace(/\s*\n+\s*/g, ' ');
+  function oneLine(text, max, o) {
+    let s = interp(text, o).replace(/\s*\n+\s*/g, ' ');
     const m = s.match(/^.+?[.!?](?=\s|$)/);
     if (m) s = m[0];
     if (s.length <= max) return s;
@@ -229,7 +230,7 @@
     let line = '';
     if (key.startsWith('outcome')) {
       const room = MAX_ENTRY - build('').length - 1;
-      line = oneLine(info.line != null ? info.line : (o.narrative || o.body || ''), Math.min(70, room));
+      line = oneLine(info.line != null ? info.line : (o.narrative || o.body || ''), Math.min(70, room), o);
     }
     const entry = { text: build(line), type: 'event', day };
     if (info.lore) entry.expand = info.lore;
@@ -249,7 +250,7 @@
     const l = o && o.log_lore;
     if (!l || !l.text) return null;
     // Paragraph breaks survive (interp() flattens whitespace for one-liners).
-    const text = String(l.text).split(/\n\s*\n/).map(interp).filter(Boolean).join('\n\n');
+    const text = String(l.text).split(/\n\s*\n/).map(p => interp(p, o)).filter(Boolean).join('\n\n');
     return { title: String(l.title || 'FROM THE LOG').toUpperCase(), text, kind: 'lore' };
   }
 

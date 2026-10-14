@@ -11,7 +11,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   await page.goto(URL);
   await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.items && MOD.crew_roster);
   const S = await page.evaluate(() => {
-    const out = {};
+    const out = { marsFood: MOD.map_rules.trails.mars.starting_resources.food };
     for (const c of MOD.captains.captains) {
       localStorage.clear();
       applySetupToState({ trail: 'mars', ai: 'aria', captain: c.background, crew: ['pilot', 'medic'], crop: 'wheat', ship: 'D' });
@@ -25,7 +25,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   ok(S.engineer.r.hull === 105 && S.engineer.max.hull === 105 && S.engineerAfter === 105, `engineer: hull 105, ceiling 105, kept after a change (${S.engineer.r.hull}/${S.engineer.max.hull}/${S.engineerAfter})`);
   ok(S.medic.items.filter(i => i === 'medkit').length === 1, `medic: starts with a medkit (${S.medic.items})`);
   ok(S.pilot.r.fuel === 105 && S.pilot.max.fuel === 105, `pilot: fuel 105 (${S.pilot.r.fuel})`);
-  ok(S.chef.r.food === 105 && S.chef.max.food === 105, `chef: food 105 (${S.chef.r.food})`);
+  // Mars starts short of food (ruling 69): the Chef's +5 lands on the trail's start; the tank is 100 + 5.
+  ok(S.chef.r.food === S.marsFood + 5 && S.chef.max.food === 105, `chef: food ${S.marsFood} + 5 on Mars, ceiling 105 (${S.chef.r.food}/${S.chef.max.food})`);
   ok(S.xenobiologist.items.includes('spectrometer'), 'xenobiologist: spectrometer');
   ok(S.academic.items.includes('gas_analyzer') && !S.veteran.items.includes('gas_analyzer'), 'academic: gas analyzer (others no longer start with one)');
   ok(S.veteran.items.includes('pressure_suit'), 'veteran: pressure suit');

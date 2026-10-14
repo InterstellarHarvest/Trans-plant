@@ -117,9 +117,12 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
           // minigame the tier it plays (merged as resolveChoice merges).
           const [, o] = __r64.resolutions(ev, ch).find(([, , t]) => t === tier);
           const facts = outcomeFacts(withPctPreview(o)).filter(f => !f.good).map(f => f.text);
-          const want = {};
+          const want = {}, fig = {};
           const op = withPctResources(o); // a share of the tank, as it lands now
-          for (const k of RES_KEYS) { const v = (op.resources || {})[k]; if (Number.isFinite(v) && v) want[k] = effectiveResDelta(k, v); }
+          for (const k of RES_KEYS) { const v = (op.resources || {})[k]; if (Number.isFinite(v) && v) fig[k] = effectiveResDelta(k, v, op); }
+          // What lands: the figure, clamped to the tank (a cost bigger than
+          // what's aboard empties it).
+          for (const [k, v] of Object.entries(fig)) { const d = clamp(STATE.resources[k] + v, 0, resMax(k)) - STATE.resources[k]; if (d) want[k] = d; }
           const before = Object.assign({}, STATE.resources);
           btn.click();
           await wait(500);
@@ -127,7 +130,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
           for (const k of RES_KEYS) { const d = Math.round((STATE.resources[k] - before[k]) * 100) / 100; if (d) got[k] = d; }
           const out = document.getElementById('enc-narr-body').textContent;
           return {
-            outcome: !!(STATE.outcomeMode || STATE.currentOutcomeId), want, got, tip, facts,
+            outcome: !!(STATE.outcomeMode || STATE.currentOutcomeId), want, fig, got, tip, facts,
             tokens: (body + ' ' + out).match(/\{[a-z]+(\.[a-z]+)*\}/g) || [], body: body.length,
           };
         }, { id, p, tier });
@@ -141,8 +144,8 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
         // minigame's tooltip says the tier decides).
         if (tier) ok(/minigame/.test(r.tip), `${at}: tooltip says a minigame decides (${r.tip})`);
         else {
-          for (const k of ['water', 'food']) if (r.want[k] < 0) {
-            const t = '−' + Math.abs(r.want[k]) + ' ' + (k === 'water' ? 'H2O' : 'FOOD');
+          for (const k of ['water', 'food']) if (r.fig[k] < 0) {
+            const t = '−' + Math.abs(r.fig[k]) + ' ' + (k === 'water' ? 'H2O' : 'FOOD');
             ok(r.tip.includes(t), `${at}: tooltip shows "${t}" (${r.tip})`);
           }
           ok(r.facts.length > 0 || /Takes ([4-9]|1\d) days/.test(r.tip), `${at}: costs something (${r.tip})`);
