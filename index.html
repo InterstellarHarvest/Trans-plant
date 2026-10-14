@@ -1621,6 +1621,14 @@ const RES_CRITICAL = 12;
 // possible). Below MORALE_CRISIS a crew member's own card shows a morale
 // crisis (demo-crew).
 const MORALE_LOW = 30;
+// behind_schedule trigger (ruling 82): the pace so far, carried to the end,
+// would use this share of the deadline (days used ÷ trail flown), checked
+// once SCHEDULE_CHECK_FROM of the trail is flown. A straight days-vs-trail
+// gap never fired: every run keeps about a quarter of the deadline in hand.
+const SCHEDULE_PROJECTED_SHARE = 0.90;
+const SCHEDULE_CHECK_FROM = 0.25;
+// engine_strain trigger (ruling 82): this many legs in a row flown at PLAID.
+const ENGINE_STRAIN_LEGS = 3;
 const MORALE_CRISIS = 25;
 // The captain plus at most this many chosen crew (owner ruling 23).
 const CREW_MAX = 2;
@@ -1824,6 +1832,7 @@ const STATE = {
   hardStreak:   0,          // consecutive hard/ultra events selected (pity counter)
   pityRelief:   0,          // legs remaining where difficulty weights favor easy/medium
   eventLastStop: {},        // repeatable event id → the stop it last fired at (repeat cooldown)
+  plaidLegs:    0,          // legs in a row flown at PLAID (engine_strain trigger, ruling 82)
   crafted:      {},         // item id → copies aboard that the fabricator printed (ruling 79: a station pays their materials' value)
   hubScreen:    'screen-cruise', // which screen travelTo()/advanceAfterEvent() return to between nodes — 'screen-map' under ?debug=fixed_path
 };
@@ -1853,6 +1862,7 @@ const SAVED_FIELDS = [
   'researchReady', 'researchKey', // Academic captain: one Research preview per station leg, and the layer it is on (a reload mid-event kept it spent but hid it)
   'scouted', // SCAN: events locked in at the stops ahead
   'eventLastStop', // repeat cooldown (ruling 65): each repeatable event's last stop
+  'plaidLegs', // legs in a row at PLAID (engine_strain, ruling 82)
   'crafted', // fabricator prints aboard (ruling 79): sold at their materials' value
   'soilSurveys', // soil sampler planet surveys (ending score)
   'startCrew',   // crew size at launch (ending crew paragraph / score)
@@ -1942,7 +1952,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2184,7 +2194,7 @@ function applySetupToState(sel) {
   // Every other per-run field starts clean too (a run started in-page
   // after another used to inherit its log, fabricator, sectors…).
   STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
-  STATE.postCombatLegs = 0; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
+  STATE.postCombatLegs = 0; STATE.plaidLegs = 0; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.lastAmbientNode = null; STATE.alertedNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.goneNames = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0; STATE.eventLastStop = {};
@@ -3283,6 +3293,12 @@ function activeTriggers() {
   if (frac <= 0.15 || legs <= 1) active.add('journey_start');
   if (frac >= 0.85 || P - legs <= 2) active.add('journey_end');
   if (frac >= 0.35 && frac <= 0.65) active.add('journey_mid');
+  // Behind schedule (ruling 82): at the pace so far, the trip would use
+  // SCHEDULE_PROJECTED_SHARE of the deadline or more (days used ÷ trail
+  // flown). Only once a quarter of the trail is flown: early stops swing it.
+  if (frac >= SCHEDULE_CHECK_FROM && STATE.baseDays > 0 && (STATE.daysElapsed / STATE.baseDays) / frac >= SCHEDULE_PROJECTED_SHARE) active.add('behind_schedule');
+  // Engine strain (ruling 82): ENGINE_STRAIN_LEGS legs in a row at PLAID.
+  if ((STATE.plaidLegs || 0) >= ENGINE_STRAIN_LEGS) active.add('engine_strain');
   // Crop state — thresholds from the selected crop's own crops.json
   // entry. crop_dead only activates AFTER the player accepts the loss
   // via the failure screen's "Keep flying" (before that, checkFailure()
@@ -4016,6 +4032,23 @@ const ORDERS_BASE = {
   crewWaterHPTier:  6,    // at the driest tier, crew also take 1 HP/day
 };
 
+// set_orders.pace "faster" (ruling 82): one notch quicker than the pace
+// in force, never past PLAID; any other value is a pace id.
+function targetPace(p) {
+  if (p !== 'faster') return p;
+  const i = ORDERS_PACE.findIndex(x => x.id === ordersPace().id);
+  return ORDERS_PACE[Math.min(ORDERS_PACE.length - 1, i + 1)].id;
+}
+// What an outcome's set_orders changes, as preview text ("PACE: LUDICROUS SPEED").
+function ordersChanges(o) {
+  const so = o && o.set_orders;
+  if (!so || typeof so !== 'object') return [];
+  const out = [];
+  if (so.pace) { const id = targetPace(so.pace); if (id !== ordersPace().id) { const d = ORDERS_PACE.find(x => x.id === id); if (d) out.push('PACE: ' + d.name); } }
+  if (so.rations && so.rations !== ordersRations().id) { const d = ORDERS_RATIONS.find(x => x.id === so.rations); if (d) out.push('RATIONS: ' + d.name); }
+  if (Number.isFinite(so.waterSplit) && Math.round(so.waterSplit) !== Math.round(ensureOrders().waterSplit)) out.push('CROP WATER ' + Math.round(so.waterSplit) + '%');
+  return out;
+}
 function ensureOrders() {
   if (!STATE.orders || !STATE.orders.pace) {
     STATE.orders = {
@@ -4532,6 +4565,8 @@ function travelTo(nodeId, opts) {
       applyHullConcern(h0 - STATE.resources.hull);
     }
     passDays(leg.days, { travel: true });
+    // Engine strain (ruling 82): legs in a row at PLAID; any slower leg resets it.
+    STATE.plaidLegs = ordersPace().id === 'plaid' ? (STATE.plaidLegs || 0) + 1 : 0;
     // ARIA's passive (ai_companions morale_bonus): +1 morale per leg.
     const ariaMorale = aiPassive('morale_bonus');
     if (ariaMorale) addCrewMorale(ariaMorale); // every crew member
@@ -5795,7 +5830,9 @@ function outcomeFacts(o) {
   if (o.fabricator_repair) facts.push({ text: o.fabricator_repair === 'full' ? 'FAB GOOD AS NEW' : 'FAB REPAIRED', weight: 12, good: true });
   // Only a real outbreak is cleared (a clean bay has nothing to show).
   if (o.clears_pest && STATE.cropGrowth && STATE.cropGrowth.pest) facts.push({ text: 'PESTS CLEARED', weight: 10, good: true });
-  if (o.set_orders) facts.push({ text: 'ORDERS CHANGE', weight: 4, good: false });
+  // Orders the outcome sets, named as they will land (ruling 82): no fact
+  // for a setting already in force (pace "faster" at PLAID changes nothing).
+  for (const ch of ordersChanges(o)) facts.push({ text: ch, weight: 4, good: false });
   if (o.severity && SEVERITY_LABEL[o.severity]) facts.push({ text: SEVERITY_LABEL[o.severity], weight: o.severity === 'lethal' ? 40 : 15, good: false });
   // With a severity the crew_effect only picks who (applyOutcomeEffects):
   // the severity's own fact says what happens — a kill authored with
@@ -6408,7 +6445,7 @@ function applyOutcomeEffects(o) {
   // rations, effective immediately") — {pace, rations, waterSplit}.
   if (o.set_orders && typeof o.set_orders === 'object') {
     const ord = ensureOrders();
-    if (o.set_orders.pace) ord.pace = o.set_orders.pace;
+    if (o.set_orders.pace) ord.pace = targetPace(o.set_orders.pace);
     if (o.set_orders.rations) ord.rations = o.set_orders.rations;
     if (Number.isFinite(o.set_orders.waterSplit)) setWaterSplit(o.set_orders.waterSplit);
     window.pushCruiseLog('◆ Standing orders changed — check ORDERS.');

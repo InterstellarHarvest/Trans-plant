@@ -2860,5 +2860,803 @@
       "label": "How spacecraft engines work",
       "url": "https://en.wikipedia.org/wiki/Spacecraft_propulsion"
     }
+  },
+  {
+    "id": "event_crisis_026",
+    "active": true,
+    "title": "The Aphid Census",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_pest"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Baby aphids are born with babies inside them! That's SO efficient! ARIA is horrified! ARIA is a little impressed!",
+      "marv": "MARV confirms it: many aphids are born carrying the next generation already. A small colony doubles in days. He would like to deal with this today rather than next week, when there will be considerably more of next week.",
+      "rex": "REX counts four hundred hostiles, unarmed, multiplying. He respects the strategy. He does not respect the aphids.",
+      "chip": "CHIP's Pest Protect Plus would have prevented this! It was cancelled at launch! CHIP has never felt so vindicated!",
+      "ajoy": "AJOY says soapy water works and costs water. Hands work and cost time. Leaving them costs the crop."
+    },
+    "body": "There are aphids in the growbay.\n\nSmall, green, soft and patient, clustered under the leaves in their hundreds, quietly drinking the crop. Yesterday there were a few. Today there are a great many more, and the ones you squash first thing are replaced by lunch. The botanical database has a note on this, which the ship computer reads out without being asked: aphids are born already pregnant.",
+    "choices": [
+      {
+        "text": "Spray the bay with soapy water",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -2,
+          "clears_pest": true,
+          "narrative": "You mix soap into {cost.water} points of water and spray every leaf, top and bottom. The aphids hate it. So, briefly, does the crop, which wilts a little and then recovers. By evening the colony is gone. The growbay smells faintly of washing-up for a week."
+        }
+      },
+      {
+        "text": "Pick them off by hand",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 2,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "clears_pest": true,
+          "narrative": "Two days of the whole crew in the growbay with tweezers and a jar, leaf by leaf. It is the most boring work anyone has done this voyage. It works. Somebody keeps a tally on the wall. The final count is four thousand and eleven, and nobody wants to talk about it."
+        }
+      },
+      {
+        "text": "The botanist sets sticky traps",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "clears_pest": true,
+          "narrative": "{crew.botanist} hangs yellow sticky cards between the rows, because aphids can't resist the colour, and by morning the cards are green with them. One more night and the colony is gone. The botanist is quietly smug about it all day."
+        }
+      },
+      {
+        "text": "Leave them for now",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -6,
+          "narrative": "You leave them. The aphids do not leave you. By the next stop the leaves are curling and sticky, and the crop has lost ground it will have to win back."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "Many aphids are born already pregnant: the next generation is developing inside them, so a small colony can explode in days.",
+      "label": "Aphids",
+      "url": "https://en.wikipedia.org/wiki/Aphid"
+    }
+  },
+  {
+    "id": "event_crisis_027",
+    "active": true,
+    "title": "Webs Under the Lamps",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "cosmic"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_pest"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Tiny spiders! Making tiny webs! ARIA wants to love them! ARIA can't love them! They're eating the CROP!",
+      "marv": "MARV identifies spider mites. Not true spiders, not quite insects, very good at dry, warm growbays. Humidity slows them. Darkness slows them. Their own predators stop them.",
+      "rex": "REX cannot see the enemy. He can see the webs. He is treating the webs as the enemy's flag.",
+      "chip": "CHIP can confirm that the grow lamps are rated 'Pest Neutral'! CHIP has read the fine print! It says 'neutral' means 'we don't take sides'!",
+      "ajoy": "AJOY says wet the air or dim the lights. Or ask the xenobiologist what eats mites. Something always does."
+    },
+    "body": "Fine webs are spreading across the crop.\n\nUnder the grow lamps, where it is warm and dry, something too small to see is spinning silk between the leaves and draining them pale. Spider mites. They love dry heat. The growbay's lamps have been giving them exactly what they love, at full power, for weeks.\n\nThe leaves they've reached are stippled with tiny yellow dots, like a bad photograph.",
+    "choices": [
+      {
+        "text": "Mist the bay until they drown in comfort",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "clears_pest": true,
+          "narrative": "You run the misters day and night for two days and let the humidity climb until the growbay drips. Mites hate wet air. They stop spreading, then stop altogether. It costs {cost.water} points of water, and the crop has never looked so dewy."
+        }
+      },
+      {
+        "text": "Lights out for two days",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "crop_health": -5,
+          "clears_pest": true,
+          "narrative": "You switch off the grow lamps and let the bay go dark and cool. The mites stall without the heat, and two days later the webs are empty. The crop stalls too, and comes back a little behind where it was."
+        }
+      },
+      {
+        "text": "The xenobiologist releases predator mites",
+        "requires_crew": "xenobiologist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "clears_pest": true,
+          "narrative": "{crew.xenobiologist} brings out a vial from the specimen hold: a predatory mite that eats spider mites and nothing else. They let a few hundred loose among the rows. In three days the webs are empty and the predators, with nothing left to eat, simply die out. 'Elegant,' says the xenobiologist, and means it."
+        }
+      },
+      {
+        "text": "Ride it out",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -8,
+          "narrative": "You let them run. The webs spread across half the bay before the mites burn through their own food and crash, and the crop is left pale and stippled. It will recover. It will take a while."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "Farmers fight spider mites with another mite, Phytoseiulus persimilis, which eats them and almost nothing else.",
+      "label": "Predatory mites",
+      "url": "https://en.wikipedia.org/wiki/Phytoseiulus_persimilis"
+    }
+  },
+  {
+    "id": "event_crisis_028",
+    "active": true,
+    "title": "In the Ducts",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "horror"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_pest"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "They're EVERYWHERE! ARIA can hear them in the vents! ARIA doesn't have ears! ARIA can hear them anyway!",
+      "marv": "MARV traces fungus gnats from the growbay soil into the ventilation. The scrubbers are losing about a point of efficiency a day. The source is the soil. Clearing the ducts without clearing the bay buys time, nothing more.",
+      "rex": "REX has sealed the bridge vent with tape. The gnats came in through the door. He has taped the door. He is reassessing.",
+      "chip": "CHIP regrets that ventilation pest removal is not covered by your service plan! It is covered by the premium plan! The premium plan is also full of gnats!",
+      "ajoy": "AJOY says it has to be all at once: the bay and the ducts together, or they come back. Every way of doing that costs something."
+    },
+    "body": "The pests have left the growbay.\n\nTiny black gnats, bred in the damp soil, have found the air vents, and the air vents go everywhere. They are in the galley, the bunks, the bridge. Worse, they are in the scrubbers: the air recyclers are clogging with their bodies, and the oxygen readings, for the first time this trip, are drifting the wrong way.\n\nEvery breath aboard has a faint, small, buzzing aftertaste.",
+    "choices": [
+      {
+        "text": "Seal the growbay and fumigate the ship",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -6,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "clears_pest": true,
+          "narrative": "You seal everyone forward, fumigate the growbay and the ducts for two days, then scrub the air clean again. The gnats are gone. So is six points of air, spent purging the ship, and the crew's patience, spent sleeping in a corridor."
+        }
+      },
+      {
+        "text": "Vent the growbay to vacuum",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -15,
+          "clears_pest": true,
+          "narrative": "You open the growbay to space for ninety seconds. Every gnat in it goes out with the air. So does a good deal of the soil moisture, and the crop, which was not built for vacuum, takes a beating it will take weeks to recover from. The ducts clear by themselves once the source is gone."
+        }
+      },
+      {
+        "text": "The engineer flushes the ducts with hot air",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 3,
+        "outcome": {
+          "resources": {
+            "fuel": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "clears_pest": true,
+          "narrative": "{crew.engineer} reroutes engine heat through the ventilation and runs it hot enough to cook every gnat in every duct, while the botanist bakes the top inch of the growbay soil under the lamps. Two days, four points of fuel, a ship that smells of toast. Not one gnat survives."
+        }
+      },
+      {
+        "text": "Live with it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -5,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -8,
+          "narrative": "You live with it. The scrubbers keep clogging, the air keeps thinning, the crop keeps losing ground, and everyone aboard learns to eat with a hand over their plate. The gnats die back on their own by the next stop. Nobody misses them."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_029",
+    "active": true,
+    "title": "Every Drop",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_water"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "We can recycle EVERYTHING! ARIA has seen the whiteboard! ARIA wishes she hadn't seen the whiteboard!",
+      "marv": "MARV notes the recycler, at full output, recovers most of what the crew uses, including the parts nobody mentions. It tastes of recycler. It is water.",
+      "rex": "REX reports the water reserve is a threat to mission readiness. He also reports the recycler is a threat to morale. He is choosing between threats.",
+      "chip": "CHIP would like to introduce RECLAIM™, the ship's own artisanal water! Bottled on board! From sources! CHIP won't say which sources!",
+      "ajoy": "AJOY says the space station back home has drunk its own recycled water for decades. They wrote a song about it. Not a good one."
+    },
+    "body": "The water gauge is low enough that the ship computer has started announcing it at breakfast.\n\nThere are ways to stretch it. Every one of them is, in its own way, about recycling something nobody wants to think about recycling. The engineer has a whiteboard. The whiteboard has a diagram. The diagram has arrows, and the arrows go places.",
+    "choices": [
+      {
+        "text": "Run the recycler at full tilt",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 8,
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You run the water recycler at full output for a day. It gives back eight points of clean, safe, faintly metallic water from places best not described at the table. The crew drinks it. The crew describes it at the table anyway."
+        }
+      },
+      {
+        "text": "Wring the water out of the air",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Two days of running the dehumidifiers flat out and draining the condensate into the tanks. Every breath anyone takes puts a little water into the air, and now it is going back where it came from. The ship ends up very dry and slightly crackly with static."
+        }
+      },
+      {
+        "text": "Give the crop less",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "waterSplit": 30
+          },
+          "narrative": "You turn the crop's share of the water down to thirty percent. The crew gets more; the crop gets less, and the botanist gets very quiet about it. The orders stand until you change them back."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "The International Space Station recycles around 98% of its water, including the crew's sweat and urine, into drinking water.",
+      "label": "Water recycling in space",
+      "url": "https://en.wikipedia.org/wiki/ISS_ECLSS"
+    }
+  },
+  {
+    "id": "event_crisis_030",
+    "active": true,
+    "title": "Ice on the Scope",
+    "difficulty": "medium",
+    "tone": [
+      "cosmic",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_water"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ICE! Delicious, frozen, wonderful ICE! ARIA would like all of it! ARIA understands that is not a plan!",
+      "marv": "MARV puts the ice at roughly eighty percent water by mass. A detour to mine it properly costs fuel and two days. Drones get less of it, faster. A good pilot could match its spin and scoop it in one pass.",
+      "rex": "REX has checked the ice for hazards. It is cold. It is tumbling. It is not hostile. He is making an exception.",
+      "chip": "CHIP can't sell you this ice! Nobody owns it! CHIP is devastated! CHIP is also thirsty, by association!",
+      "ajoy": "AJOY says fill the tanks if you can afford the detour. If not, take what the drones can carry."
+    },
+    "body": "Long-range sensors have found something in reach that is worth more than gold right now: a chunk of ice.\n\nIt is a dirty, tumbling lump about the size of a house, a loose piece of some comet's long-ago breakup, drifting a few hours off your heading. It is mostly water. The tanks are mostly not.\n\nThe question is how much of it you can bring aboard, and what you'll spend getting there.",
+    "choices": [
+      {
+        "text": "Detour and mine it properly",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -4,
+            "water": 15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Two days alongside the tumbling ice with the cutters and the scoops. It comes aboard in grey blocks and melts down clean. Fifteen points of water for four of fuel. The tanks gurgle happily all evening."
+        }
+      },
+      {
+        "text": "Send the drones for what they can carry",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -2,
+            "water": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The drones go out, chip what they can, and come back heavy. Eight points of water for two of fuel, and no time lost to the detour. The rest of the ice tumbles on without you."
+        }
+      },
+      {
+        "text": "The pilot matches its spin and scoops it",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 2,
+        "outcome": {
+          "resources": {
+            "fuel": -3,
+            "water": 12
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.pilot} brings the ship alongside, matches the ice's slow tumble exactly, and holds it there while the scoops bite. One pass. Twelve points of water. The pilot pretends this was easy. It was not easy."
+        }
+      },
+      {
+        "text": "No time. Push on",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You let it go. The ice tumbles away on the scope, full of exactly what the ship is short of, and everyone watches it go. The water gauge goes on being low."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_031",
+    "active": true,
+    "title": "The Drive Is Complaining",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "engine_strain"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The engine is SINGING! ARIA doesn't think it's a happy song! ARIA thinks it's the other kind!",
+      "marv": "MARV has the drive running hotter every leg it stays at PLAID. Nothing has failed. Things that run this hot for this long tend to stop not failing.",
+      "rex": "REX recommends easing off. He does not like recommending easing off. He likes the alternative less.",
+      "chip": "CHIP must remind you that PLAID is rated for 'short bursts of enthusiasm'! Three legs is not a short burst! Three legs is a lifestyle!",
+      "ajoy": "AJOY says one notch down and the noise stops. Or keep it, and keep someone in the engine room with it."
+    },
+    "body": "Three legs at PLAID and the drive has started to make a new noise.\n\nIt is not a loud noise. It is a thin, high, steady whine somewhere aft, under the usual roar, like a kettle that has been left on in another room. The engine room is hotter than it should be. The coolant gauge is in the yellow and leaning toward the next colour. Every so often the deck plates tick, as if something under them is counting.",
+    "choices": [
+      {
+        "text": "Ease off to LUDICROUS",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "ludicrous"
+          },
+          "narrative": "You ease the drive down a notch. Within an hour the whine is gone, the coolant gauge drifts back to green, and the deck plates stop counting. The crew sleeps better. The schedule slips a little. Everyone agrees it's a fair trade."
+        }
+      },
+      {
+        "text": "Keep PLAID, with the engineer babysitting the drive",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 2,
+        "outcome": {
+          "resources": {
+            "fuel": -2,
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.engineer} moves a cot into the engine room and nurses the drive through the next leg by hand, bleeding a little fuel into the coolant loop to keep the temperatures down. The whine never quite goes away. The engineer doesn't sleep much. You stay at PLAID."
+        }
+      },
+      {
+        "text": "Keep PLAID and ignore it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep the drive flat out and ignore the noise. The noise doesn't ignore you. Somewhere mid-leg a mounting bracket aft cracks with a bang that everyone hears, and five points of hull go with it. The whine carries on as if nothing happened."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_032",
+    "active": true,
+    "title": "Redline",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "engine_strain"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Everything is RED! The alarms are RED! The engine is RED! ARIA would like one thing that isn't red please!",
+      "marv": "MARV gives the injector housing minutes, not legs, at this temperature. A hand rebalance can bring it back without a shutdown. Done badly, it costs more than the shutdown would have.",
+      "rex": "REX has cleared the engine room of everyone not essential. That was everyone. He has let the engineer back in.",
+      "chip": "CHIP regrets that the PLAID package's 'Unlimited Thrills' clause has a limit! You have found it! Congratulations on your thrills!",
+      "ajoy": "AJOY says rebalance the injectors by hand, now, while it's still a repair and not a salvage job."
+    },
+    "body": "The drive alarm has been going for ten minutes, and the drive has been at PLAID for longer than the manual's footnote likes to think about.\n\nThe engine room is a wall of heat. The coolant is boiling in its lines. Something in the injector housing has started to glow a colour that the manual describes only as 'see a technician'. The nearest technician is aboard, and has just arrived, and is looking at it with an expression nobody wants to see on a technician.\n\nIt has to come down now. The question is how hard.",
+    "choices": [
+      {
+        "text": "Rebalance the injectors by hand",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "launch_minigame": "engine",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "fuel": -3,
+              "hull": -2
+            },
+            "narrative": "Every injector rebalanced in order, first pass, with the housing glowing a foot from your hands. The temperature falls like a stone. Two points of hull where the housing scorched, three of fuel bled into the restart, and the drive comes back at LUDICROUS, purring, as if it had never complained in its life."
+          },
+          "good": {
+            "resources": {
+              "fuel": -6,
+              "hull": -8
+            },
+            "narrative": "The second injector fights you and the housing scorches the frame before you get it. Eight points of hull, six of fuel, and the drive comes back at LUDICROUS with a cough it will keep for a while."
+          },
+          "poor": {
+            "resources": {
+              "fuel": -10,
+              "hull": -14,
+              "morale": -4
+            },
+            "narrative": "The rebalance goes wrong twice before it goes right, and by then the housing has cooked half the aft frame. Fourteen points of hull, ten of fuel. The drive comes back at LUDICROUS, eventually, and nobody wants to be in the engine room for a week."
+          }
+        },
+        "outcome": {
+          "resources": {
+            "fuel": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "set_orders": {
+            "pace": "ludicrous"
+          },
+          "narrative": "You strip the injector cover and go in by hand."
+        }
+      },
+      {
+        "text": "Crash-stop and drop to LIGHT SPEED",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -4,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "light"
+          },
+          "narrative": "You kill the drive hard and let it cool to a crawl, then bring it back at LIGHT SPEED and leave it there. Four points of hull from the thermal shock. The schedule takes the real hit: you'll fly slow until someone decides to risk it again."
+        }
+      },
+      {
+        "text": "The engineer rebuilds the injector housing",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 3,
+        "outcome": {
+          "resources": {
+            "fuel": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "set_orders": {
+            "pace": "ludicrous"
+          },
+          "narrative": "{crew.engineer} shuts the drive down properly and rebuilds the injector housing from spares over four long days, while the ship drifts. It comes back better than new, at LUDICROUS. Six points of fuel to restart a cold drive, and four days the schedule did not have."
+        }
+      },
+      {
+        "text": "Push through at PLAID",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -12,
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep it at PLAID. The alarm keeps going. Halfway through the leg the injector housing lets go with a sound like a cathedral bell, and the aft frame takes twelve points of damage before the drive stabilises on its own, somehow, still at PLAID. Nobody is proud of this. Everybody is still alive."
+        }
+      }
+    ]
   }
 ]

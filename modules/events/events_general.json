@@ -3992,5 +3992,467 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_general_046",
+    "active": true,
+    "title": "Halfway",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_mid"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "HALFWAY! We're HALFWAY! ARIA made the banner! ARIA was asked not to say! ARIA has said!",
+      "marv": "MARV confirms the midpoint by distance. By time it was two days ago. He has decided not to mention that.",
+      "rex": "REX notes halfway means the same distance in either direction. He will not be suggesting the other direction.",
+      "chip": "CHIP has a Halfway Celebration Package! It contains a banner! You already have a banner! CHIP is offering a second banner!",
+      "ajoy": "AJOY says let them have it. People need a middle to a journey, or it's all just distance."
+    },
+    "body": "The navigation display ticks over to 50%.\n\nHalf of the trail is behind you. Half is ahead. It is, technically, just another number on a screen. The crew has decided it is not just another number on a screen. There is a banner in the galley that says HALFWAY!!, with two exclamation marks, which nobody will admit to having made.",
+    "choices": [
+      {
+        "text": "Break out the good rations",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -6,
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You open the sealed crate of good rations, the one with the real chocolate in it, and the halfway party runs late into third watch. It costs {cost.food} points of food. Nobody regrets a crumb of it."
+        }
+      },
+      {
+        "text": "A small toast, then back to work",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Everyone crowds into the galley for five minutes and raises whatever they're drinking at the banner. Somebody makes a short speech. Then back to work, with the banner left up, which is the right amount of celebration for half of something."
+        }
+      },
+      {
+        "text": "Mark it on the hull and keep going",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You scratch a line on the inside of the airlock door at eye height, with the date, and carry on. It isn't much of a ceremony. By the end of the week three other people have added their initials beside it."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_047",
+    "active": true,
+    "title": "Past the Point",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "cosmic"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_mid"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Turning back was never the plan! ARIA is fine! ARIA is absolutely fine! ARIA would like a moment!",
+      "marv": "MARV has run the return figures four times. The answer has not improved. It is, he notes, the first time a sum has made him feel anything.",
+      "rex": "REX notes there is no retreat. He has never favoured retreat. He finds he would have liked the option.",
+      "chip": "CHIP regrets that this voyage is now non-refundable! It always was! It's just more noticeable now!",
+      "ajoy": "AJOY says tell them. People can carry almost anything if you hand it to them straight."
+    },
+    "body": "The ship computer asks for a private word on the bridge.\n\nIt has done the sum it does every day, and today the answer has changed: there is no longer enough fuel to turn round and get home. Not at any pace, not with any luck. From here on, the only way out of this voyage is through it.\n\nIt thought you should know first. It would like to know who else you'd like to know.",
+    "choices": [
+      {
+        "text": "Gather the crew and say it plainly",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You call everyone to the galley and tell them straight: no turning back from here. There is a silence. Then the chef says 'well, I wasn't going to,' and someone laughs, and it turns into the best evening the ship has had in a while."
+        }
+      },
+      {
+        "text": "The pilot re-plots with what you know now",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.pilot} spends two days re-plotting the rest of the route from scratch, with every lesson of the first half folded in. The new line is tighter than the old one, and the fuel it saves is real. The point of no return is still behind you, but the way forward is a little shorter."
+        }
+      },
+      {
+        "text": "Keep it to yourself",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep it to yourself. It sits with you, heavy, at every meal. The crew can tell something's wrong. They don't know what. That turns out to be worse."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_048",
+    "active": true,
+    "title": "Something Left Behind",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_start"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "No COFFEE? ARIA doesn't drink coffee! ARIA is panicking on everyone's behalf!",
+      "marv": "MARV estimates turning back costs two days and some fuel. Not turning back costs morale, compounded daily, for months. He has graphed it. The graph is not encouraging.",
+      "rex": "REX does not drink coffee. REX is aware he is in a minority of one. He is keeping his opinions to himself, for his own safety.",
+      "chip": "CHIP's Bean There loyalty card has eleven stamps! The twelfth is free! The twelfth is on the dock!",
+      "ajoy": "AJOY says the fabricator can print something coffee-shaped. It won't be coffee. It might be close enough."
+    },
+    "body": "Two days out, the chef comes up to the bridge looking stricken.\n\nThe coffee is not aboard. The entire supply, every sealed tin of it, is sitting on a pallet on the departure dock, where it was put down 'just for a second' during loading. The ship has tea. Nobody on the ship drinks tea. The next coffee is a very long way away.",
+    "choices": [
+      {
+        "text": "Turn back for it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -3,
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You turn back. It costs two days and three points of fuel and a very embarrassing hail to the departure dock, where the coffee is waiting exactly where it was left. The crew greets the pallet like a returning hero. Nobody mentions the two days ever again."
+        }
+      },
+      {
+        "text": "Print a substitute on the fabricator",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "requires_fab": true,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "fab_wear": 5,
+          "narrative": "The fabricator prints something brown, granular and roughly coffee-adjacent out of the ship's organic stores. It is not coffee. It is hot and bitter and it comes in a cup, and by the third week the crew insists it's better than the real thing, which is a lie everyone agrees to."
+        }
+      },
+      {
+        "text": "Do without",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You do without. The first week is grim. The second week, someone discovers the tea is quite good, actually. By the third week there is a tea rota, and a tea faction, and the coffee is never spoken of again."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_049",
+    "active": true,
+    "title": "The Schedule Meeting",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "behind_schedule"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "We're LATE! ARIA hates being late! ARIA has never been late before! ARIA has never been anywhere before!",
+      "marv": "MARV puts the ship roughly a sixth of the deadline behind its distance. At this pace the gap closes before arrival, just. One bad stop and it does not. A faster pace closes it with room to spare, at the cost of fuel and tempers.",
+      "rex": "REX recommends speed. REX always recommends speed. This time he has the figures.",
+      "chip": "CHIP notes that the colony charter's late-arrival clause is very strict! CHIP has read it! It's mostly the word 'forfeit'!",
+      "ajoy": "AJOY says pick a pace you can hold. A fast pace you give up on halfway is just a slow pace with extra steps."
+    },
+    "body": "The ship computer has put the deadline on the main screen in the galley, which it only does when it wants a meeting.\n\nThe numbers are simple. You have used more of the time than you have flown of the trail. Not disastrously, yet. But the gap is growing, and the colony slot will not wait for a ship that arrives late, however good its reasons.\n\nEverybody has an opinion. Most of the opinions involve going faster.",
+    "choices": [
+      {
+        "text": "Burn harder from here",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "faster"
+          },
+          "narrative": "You order the pace up a notch, effective now. The drive note rises, the fuel gauge starts falling faster, and the crew settles in for a harder, shorter voyage. The gap on the galley screen starts, slowly, to close."
+        }
+      },
+      {
+        "text": "Burn harder, and cut rations to pay for it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "faster",
+            "rations": "vending"
+          },
+          "narrative": "Faster pace and short rations both, effective now: the food you save pays for the fuel you burn, more or less. The crew grumbles at the vending-machine meals and gets on with it. The gap on the screen starts closing at once."
+        }
+      },
+      {
+        "text": "Accept it. Arrive late, arrive whole",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep the pace as it is. Better to arrive late than not at all, you tell them, and some of them agree. The deadline stays on the galley screen anyway, ticking, where everyone can see it at every meal."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_050",
+    "active": true,
+    "title": "Cutting Corners",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "behind_schedule"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The FOOTNOTE pace! ARIA has always wanted to see the footnote pace! ARIA has also read the footnote! ARIA is less keen!",
+      "marv": "MARV has read the footnote. It describes the fastest pace as 'not recommended for sustained use.' He notes 'sustained' is undefined. He suspects the pilot noticed that too.",
+      "rex": "REX approves of speed. He disapproves of the rattle. He is holding both positions firmly.",
+      "chip": "CHIP's warranty is void at the footnote pace! CHIP would like to stress the warranty was already void! For other reasons! Several!",
+      "ajoy": "AJOY says decide now. Every stop you think about it costs the time you're trying to save."
+    },
+    "body": "The pilot has a proposal, and has brought a diagram, which is never a good sign.\n\nThe ship is behind, and falling further behind. The proposal is to stop being careful about it: fly hard, skip the maintenance stops, run the drive at a pace the manual describes only in a footnote. It will get you there. It will get you there tired, short of fuel and with a ship that rattles.\n\nThe alternative is to arrive after the slot is gone.",
+    "choices": [
+      {
+        "text": "Plaid, and don't look back",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "plaid"
+          },
+          "narrative": "PLAID, effective now. The drive goes up to a pitch you can feel in your teeth and stays there. Fuel burns like paper. Everybody sleeps badly. The gap on the deadline screen shrinks every single day, and nobody aboard has ever been so glad to watch a number."
+        }
+      },
+      {
+        "text": "One notch faster, and keep the maintenance",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "faster"
+          },
+          "narrative": "You compromise: one notch faster, and you spend three points of fuel on a proper drive service first so the ship can take it. The pilot calls it the coward's footnote. The ship stops rattling. The gap starts closing."
+        }
+      },
+      {
+        "text": "Let it go. You'll get there when you get there",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You turn the proposal down. The pilot takes the diagram back without a word. The ship flies on at the pace it was flying, the gap on the screen keeps growing, and the crew starts doing the sum in their heads at dinner."
+        }
+      }
+    ]
   }
 ]

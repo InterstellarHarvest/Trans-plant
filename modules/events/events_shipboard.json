@@ -2243,5 +2243,94 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_shipboard_022",
+    "active": true,
+    "title": "The Cat Knows",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "robot_cat_aboard",
+    "ai_flavor": {
+      "aria": "The cat has found something! ARIA trusts the cat completely! ARIA has no evidence! ARIA trusts the cat anyway!",
+      "marv": "MARV's sensors show nothing behind the panel. The cat's sensors, he notes, were built by a company that took its pets very seriously.",
+      "rex": "REX is standing behind the cat. He has not been asked to. He is backing up the cat.",
+      "chip": "CHIP recalls that the Felix series came with an Early Leak Detection feature! It was marketed as 'the purr that saves your hull'! CHIP thought it was a joke! CHIP is reconsidering!",
+      "ajoy": "AJOY says open the panel. Cats don't stare at nothing for three hours. Not even robot ones."
+    },
+    "body": "The robot cat has been sitting in front of the same wall panel for three hours.\n\nIt doesn't move. It doesn't wash. It stares at the panel with the fixed intensity of something that has detected something, its tail twitching once every few minutes. When the engineer tries to shoo it away, it moves six inches to the left and resumes staring.\n\nThe panel looks completely normal.",
+    "choices": [
+      {
+        "text": "Open the panel the cat is staring at",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Behind the panel: a hairline crack in a coolant line, weeping a drop a minute into the insulation, days away from becoming a very expensive problem. You seal it in ten minutes. The cat watches the whole job, then walks off, tail high, to sleep in the engine room. The hull is better for it."
+        }
+      },
+      {
+        "text": "Give the cat a medal anyway",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Whatever it's found, the cat has earned a medal for dedication. The crew makes one out of a bottle cap and a ribbon. The cat accepts it with dignity, then goes back to staring at the panel. Nobody opens it. It seems rude to interrupt."
+        }
+      },
+      {
+        "text": "Move the cat to another room",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You carry the cat to the galley and shut the door. It sulks. Two days later the coolant line behind that panel gives way, exactly where the cat was staring, and the repair takes most of a shift. The cat is let back out. It does not gloat. It doesn't need to."
+        }
+      }
+    ]
   }
 ]

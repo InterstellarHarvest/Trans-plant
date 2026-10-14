@@ -3471,5 +3471,118 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_station_026",
+    "active": true,
+    "title": "The Lark",
+    "difficulty": "medium",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "left_a_note",
+    "ai_flavor": {
+      "aria": "It's the LARK! ARIA knows them! ARIA has never met them! ARIA feels like she knows them!",
+      "marv": "MARV confirms the registry: the Lark, eleven weeks ahead of you once, now stuck. Their drive coupling is a common part. You may have one. You certainly have an engineer.",
+      "rex": "REX has assessed the Lark's crew. Tired. Friendly. Out of noodles. No threat.",
+      "chip": "CHIP notes the Lark's crew are not customers! They are friends! CHIP is unfamiliar with this category! CHIP is learning!",
+      "ajoy": "AJOY says they left you half. It'd be good to leave them something back."
+    },
+    "body": "There is a small colony hauler in the next berth, with LARK stencilled on its nose.\n\nIt's the same Lark. The crew who left the note on the derelict, the ones who took half and left half. Their ship is in a bad way: a drive coupling gone, a week in dock already, a crew sitting on crates outside their own airlock eating station noodles. When they hear your ship's name, nothing happens. When you tell them about their note, and the one you left next to it, they all stand up at once.",
+    "choices": [
+      {
+        "text": "Share a crate of supplies with them",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -6,
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "helped_the_lark",
+          "time_cost": "trivial",
+          "narrative": "You haul a crate of your own supplies across the dock, {cost.food} points of food that you can just about spare. The Lark's crew insists on cooking it for everyone, both crews together, on crates, in the berth. It is the best meal of the trip. They promise to leave a note for whoever's next. You believe them."
+        }
+      },
+      {
+        "text": "The engineer fixes their coupling",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 5,
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "helped_the_lark",
+          "time_cost": "low",
+          "narrative": "{crew.engineer} spends two days in the Lark's drive room and gets the coupling running with a part from your own spares. The Lark's crew pays you back the only way they can: five points of fuel from their tank, poured into yours by hand, and a promise to wait for you at the colony with something to drink."
+        }
+      },
+      {
+        "text": "Swap route notes over a drink",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 6
+        },
+        "outcome": {
+          "resources": {
+            "gold": -6,
+            "fuel": 3,
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You buy the Lark's crew a round at the station bar and swap notes on the route ahead. Their pilot knows a quieter line past the next hazard. It saves fuel. The drink was worth it before that, though."
+        }
+      },
+      {
+        "text": "Wave across the dock and get on with your stop",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You wave. They wave back. Everybody has a schedule. As your ship undocks, somebody on the Lark's crew holds up a ration wrapper with 'FAIR'S FAIR' written on it in marker, and you laugh all the way out of the berth."
+        }
+      }
+    ]
   }
 ]

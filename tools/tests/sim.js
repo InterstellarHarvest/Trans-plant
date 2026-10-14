@@ -29,7 +29,7 @@ function installHarness(policy) {
     travelFuel: 0, mins: { fuel: 999, food: 999, water: 999, o2: 999, hull: 999, morale: 999 }, itemUses: {}, goldMax: 0,
     goldIn: 0, goldOut: 0, floats: [], nan: [], combat: 0, traderBuys: 0, medbay: 0, eventIds: [], resDelta: {}, lockedGold: 0,
     deprivedDays: 0, pests: 0, cropDeadAt: null, fuelBought: 0, matsGained: 0, eventFrac: [],
-    fires: [], draws: 0, fallbacks: 0, fallbackIds: [],
+    fires: [], draws: 0, fallbacks: 0, fallbackIds: [], maxScheduleGap: -1, schedule: [],
   };
   // Every event entry with the stop it happened at ([id, stop]; a dock room
   // re-entered is one entry per stop in the analysis), and how many pool
@@ -38,6 +38,8 @@ function installHarness(policy) {
   window.enterEvent = function (node, ev, ...rest) {
     const v = STATE.visited;
     if (ev) S.fires.push([ev.id, v ? v.size - (v.has(STATE.currentId) ? 1 : 0) : 0]);
+    // Schedule gap (ruling 82's behind_schedule): days used minus trail flown, as shares; the worst point of the run.
+    if (v && STATE.baseDays > 0 && typeof pathLegs === 'function') { S.maxScheduleGap = Math.max(S.maxScheduleGap, STATE.daysElapsed / STATE.baseDays - v.size / pathLegs()); S.schedule.push([Math.round(1000 * STATE.daysElapsed / STATE.baseDays) / 1000, Math.round(1000 * v.size / pathLegs()) / 1000]); }
     return realEnter(node, ev, ...rest);
   };
   const realSelect = window.selectEvent;

@@ -983,6 +983,27 @@ const eventOnTrail = (ev, trail) => {
   }
 }
 
+// ── set_orders values (ruling 82) ────────────────────────────────
+// pace is a pace id or "faster"; rations a rations id; waterSplit 15–85.
+{
+  const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const ids = name => { const m = src.match(new RegExp('const ' + name + ' = \\[([\\s\\S]*?)\\];')); return m ? [...m[1].matchAll(/id: '(\w+)'/g)].map(x => x[1]) : []; };
+  const PACES = new Set(ids('ORDERS_PACE').concat('faster')), RATIONS = new Set(ids('ORDERS_RATIONS'));
+  if (PACES.size < 2 || !RATIONS.size) err('index.html: ORDERS_PACE / ORDERS_RATIONS not found (lint reads them for set_orders)');
+  for (const { file, event: ev } of eventsById.values()) {
+    (function walk(o, where) {
+      if (!o || typeof o !== 'object') return;
+      const so = o.set_orders;
+      if (so && typeof so === 'object') {
+        if (so.pace != null && !PACES.has(so.pace)) err(`${file} ${ev.id}: set_orders.pace "${so.pace}" is not a pace id or "faster"`);
+        if (so.rations != null && !RATIONS.has(so.rations)) err(`${file} ${ev.id}: set_orders.rations "${so.rations}" is not a rations id`);
+        if (so.waterSplit != null && !(Number.isFinite(so.waterSplit) && so.waterSplit >= 15 && so.waterSplit <= 85)) err(`${file} ${ev.id}: set_orders.waterSplit must be 15–85`);
+      }
+      for (const k in o) if (k !== 'set_orders') walk(o[k], where);
+    })(ev, '');
+  }
+}
+
 // ── No free option in a hard event (ruling 60, added 2026-10-12) ───
 // Every option of a hard or ultra event costs something real: a resource
 // lost (or a share of one), a wound or death risked, an item spent, crop
