@@ -75,6 +75,34 @@
     const d = defBy(sid);
     return d && Number.isFinite(d.base_price) && d.base_price > 0 ? sellPrice(d.base_price) : null;
   }
+  /* Crafted copies (ruling 79): a fabricator print sells for what its
+     materials would (the recipe's inputs at materialPrice), not the shelf
+     price — a repair kit prints from 8g of metal and scrap and sold for
+     27g. STATE.crafted[sid] counts the prints aboard (fabricator.js
+     claimOutput); copies that came any other way sell first at the full
+     price, so the price shown is the one the next sale pays. */
+  const recipeFor = sid => (((typeof MOD !== 'undefined' && MOD.recipes && MOD.recipes.recipes) || [])).find(r => r && r.active !== false && r.output && (r.output.item_id === sid || r.output.item === sid));
+  function craftedPrice(sid) {
+    const r = recipeFor(sid);
+    if (!r) return null;
+    let g = 0;
+    for (const i of r.inputs || []) { const m = allMaterialDefs().find(x => x.id === i.material_id); if (m) g += materialPrice(m) * (i.count || 0); }
+    return Math.max(1, Math.round(g));
+  }
+  const heldCount = sid => STATE.items.filter(x => x === sid).length;
+  function craftedHeld(sid) {
+    const n = STATE.crafted && Number.isFinite(STATE.crafted[sid]) ? STATE.crafted[sid] : 0;
+    return craftedPrice(sid) == null ? 0 : Math.max(0, Math.min(n, heldCount(sid)));
+  }
+  // Is the next copy sold a crafted one (no full-price copy left)?
+  const nextIsCrafted = sid => craftedHeld(sid) > 0 && craftedHeld(sid) >= heldCount(sid);
+  // What the next sale of sid pays at a station (the hold's SELL PRICE and SELL button).
+  function stationBuyPriceNext(sid) {
+    return nextIsCrafted(sid) ? craftedPrice(sid) : stationBuyPrice(sid);
+  }
+  function noteCraftedSold(sid) {
+    if (STATE.crafted && STATE.crafted[sid] > 0) { STATE.crafted[sid] -= 1; if (!STATE.crafted[sid]) delete STATE.crafted[sid]; }
+  }
   // What a fence pays for one sid (one rule for every trade good, the one
   // items.json states — "a fence pays half again as much" as a station
   // trader): a rolled copy FENCE_MULT × its value, a
@@ -107,17 +135,19 @@
     if (!STATE.items.includes(sid)) return { why: 'None left' };
     if (!canRemoveItem(sid)) return { why: 'The cargo bay is holding things. Clear some space first.' };
     const vals = itemValuesOf(sid);
-    let paid;
+    let paid, crafted = false;
     if (vals.length) {
       const k = Number.isInteger(copy) && copy >= 0 && copy < vals.length ? copy : 0;
       paid = takeItemCopy(sid, k);
     } else {
-      paid = window.stationBuyPrice(sid);
+      crafted = nextIsCrafted(sid);
+      paid = crafted ? craftedPrice(sid) : window.stationBuyPrice(sid);
       if (paid == null) return { why: 'No trader buys it' };
       STATE.items.splice(STATE.items.lastIndexOf(sid), 1);
+      if (crafted) noteCraftedSold(sid);
     }
     STATE.goldAmount += paid;
-    return { paid };
+    return { paid, crafted };
   }
   function allItemDefs() {
     return (typeof MOD !== 'undefined' && MOD.items) ? MOD.items : [];
@@ -337,6 +367,23 @@
     const seen = {};
     return STATE.items.map(sid => { const k = seen[sid] = (seen[sid] == null ? 0 : seen[sid] + 1); return cargoEntry(sid, k); });
   }
+  // The Market Row lists a crafted copy at its materials' value (ruling 79):
+  // the last craftedHeld copies of each id are the prints, so the full-price
+  // copies sell first.
+  function markCraftedEntries(entries) {
+    const held = {}, idx = {};
+    for (const e of entries) held[e.id] = (held[e.id] || 0) + 1;
+    for (const e of entries) {
+      const k = idx[e.id] = (idx[e.id] == null ? 0 : idx[e.id] + 1);
+      const c = craftedHeld(e.id);
+      if (e.copy != null || !c || k < held[e.id] - c) continue;
+      e.key = e.id + '#c' + k;
+      e.crafted = true;
+      e.price = craftedPrice(e.id);
+      e.desc += (e.desc ? '  ' : '') + 'A fabricator print: the trader pays what its materials are worth.';
+    }
+    return entries;
+  }
 
   // Trial-fit: would one more of `sid` fit the hold? Mirrors
   // grantItem's own check without committing (push → measure → pop).
@@ -407,7 +454,7 @@
       setGold: v => { STATE.goldAmount = Math.max(0, v); renderHUD(); },
       // Items, then one entry per unit of each raw material (the list
       // stacks them) — materials sell at stations; each unit sold frees its share of hold space.
-      getCargo: () => cargoEntries().concat(
+      getCargo: () => markCraftedEntries(cargoEntries()).concat(
         (vendor.sinister || opts.vendor === 'surplus') ? [] : allMaterialDefs().flatMap(m => Array.from({ length: STATE.materials[m.id] || 0 }, () => ({
           id: m.id, name: (m.name || m.id).toUpperCase(), icon: 'sprites/cargo/materials/' + m.id + '.png', desc: m.description || '', tags: [], material: true,
         })))),
@@ -431,6 +478,7 @@
         if (entry && entry.copy != null) { takeItemCopy(sid, entry.copy); renderHUD(); return; }
         const i = STATE.items.indexOf(sid);
         if (i >= 0) STATE.items.splice(i, 1);
+        if (entry && entry.crafted) noteCraftedSold(sid); // a print sold at its materials' value
         renderHUD();
       },
       onClose: () => {
@@ -465,6 +513,6 @@
 
   Object.assign(window, {
     // engine API
-    stationBuyPrice, fenceBuyPrice, stationSellOne, openMarket,
+    stationBuyPrice, stationBuyPriceNext, craftedPrice, craftedHeld, fenceBuyPrice, stationSellOne, openMarket,
   });
 })();

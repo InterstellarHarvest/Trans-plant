@@ -2791,9 +2791,9 @@ function initBreach(container, onResult){
   counter.textContent = `0 / ${N} SEALED`;
 
   // ── Time budget: 3s per hole, 4s per hole with engineer ──
-  // TODO: drive the countdown by game-world time elapsed during the action
-  // (the action button showing the allotted time before committing); it
-  // runs on real seconds via makeTimer().
+  // Ruling 76 (owner 2026-10-14): the countdown stays on real seconds
+  // (makeTimer); the launching choice's tooltip says so and states the
+  // days the job takes (index.html choiceCostLines).
   const perHole = 3000 + 1000 * engineerMult; // wounded engineer: +0.5s
   const totalTime = Math.round(N * perHole * (rexAboard() ? 1.15 : 1)); // REX: 15% more time
 

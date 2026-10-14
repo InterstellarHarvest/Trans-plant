@@ -124,15 +124,17 @@ const arriveWith = (page, evId) => page.evaluate(async id => {
         setCrewMorale(60); STATE.resources.fuel = 80; STATE.seenEventIds.delete('event_crisis_025');
         enterEvent(STATE.byId[STATE.currentId], EVENTS.event_crisis_025);
         await new Promise(r => setTimeout(r, 300)); finishAllTyping();
-        const a = { day: STATE.daysElapsed, fuel: STATE.resources.fuel, mo: crewMoraleRaw(), tax: effortTax(tax) };
+        // Ruling 77: the rebuild (choice 1) lifts the engineer repair_done on top of the tax — on the crew average, lift / crew.
+        const lift = i === 1 ? concernAmount(concernDef('engineer', 'repair_done').morale) / STATE.crew.length : 0;
+        const a = { day: STATE.daysElapsed, fuel: STATE.resources.fuel, mo: crewMoraleRaw(), tax: effortTax(tax), lift };
         const pips = document.querySelectorAll('#enc-choices .enc-choice')[i].querySelector('.effort');
         a.pips = pips && pips.textContent;
         document.querySelectorAll('#enc-choices .enc-choice')[i].click();
         await new Promise(r => setTimeout(r, 500));
         return Object.assign(a, { day2: STATE.daysElapsed, fuel2: STATE.resources.fuel, mo2: crewMoraleRaw() });
       }, [i, tax]);
-      ok(r.day2 - r.day === days && Math.round(r.fuel2 - r.fuel) === fuel && Math.abs((r.mo - r.mo2) - r.tax) < 0.01 && r.pips === '●'.repeat(tax) + '○'.repeat(5 - tax),
-        `choice ${i}: +${r.day2 - r.day}d, fuel ${Math.round(r.fuel2 - r.fuel)}, the ${r.pips} effort tax (−${r.tax} morale) — as previewed`);
+      ok(r.day2 - r.day === days && Math.round(r.fuel2 - r.fuel) === fuel && Math.abs((r.mo - r.mo2) - (r.tax - r.lift)) < 0.01 && r.pips === '●'.repeat(tax) + '○'.repeat(5 - tax),
+        `choice ${i}: +${r.day2 - r.day}d, fuel ${Math.round(r.fuel2 - r.fuel)}, the ${r.pips} effort tax (−${r.tax} morale${r.lift ? ', +' + r.lift + ' average from the engineer\'s lift' : ''}) — as previewed`);
       await page.evaluate(() => { const b = document.querySelector('#enc-choices .enc-choice.advance'); b && b.click(); });
       await page.waitForTimeout(300);
     }

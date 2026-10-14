@@ -1824,6 +1824,7 @@ const STATE = {
   hardStreak:   0,          // consecutive hard/ultra events selected (pity counter)
   pityRelief:   0,          // legs remaining where difficulty weights favor easy/medium
   eventLastStop: {},        // repeatable event id → the stop it last fired at (repeat cooldown)
+  crafted:      {},         // item id → copies aboard that the fabricator printed (ruling 79: a station pays their materials' value)
   hubScreen:    'screen-cruise', // which screen travelTo()/advanceAfterEvent() return to between nodes — 'screen-map' under ?debug=fixed_path
 };
 
@@ -1852,6 +1853,7 @@ const SAVED_FIELDS = [
   'researchReady', 'researchKey', // Academic captain: one Research preview per station leg, and the layer it is on (a reload mid-event kept it spent but hid it)
   'scouted', // SCAN: events locked in at the stops ahead
   'eventLastStop', // repeat cooldown (ruling 65): each repeatable event's last stop
+  'crafted', // fabricator prints aboard (ruling 79): sold at their materials' value
   'soilSurveys', // soil sampler planet surveys (ending score)
   'startCrew',   // crew size at launch (ending crew paragraph / score)
   'dayCarry',    // fractional travel day carried between legs
@@ -1940,7 +1942,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -3072,6 +3074,7 @@ function outcomeConcerns(o) {
   if (Number.isFinite(res.hull) && res.hull < 0 && (o.combat_net || !STATE.flags.has('emergency_patch_armed'))) add('engineer', hullConcern(-effectiveResDelta('hull', res.hull)));
   if (Number.isFinite(o.crop_health) && o.crop_health) add('botanist', cropSwingConcern(cropDeltaLanding(o.crop_health)).morale);
   if (o.combat_net) { const c = concernDef('diplomat', 'combat'); if (c) add('diplomat', c.morale); }
+  if (o.repair_done) { const c = concernDef('engineer', 'repair_done'); if (c) add('engineer', c.morale); }
   add('xenobiologist', alienFindConcern(materialLandings(o.materials || {}), [].concat(o.item_grant || [])));
   // Injury and death (applyOutcomeEffects' crew-effect block).
   const ce = o.crew_effect || {};
@@ -5944,6 +5947,8 @@ function choiceCostLines(ch) {
     const tierTime = Object.values(ch.tier_outcomes || {}).some(t => t && (t.time_cost || Number.isFinite(t.time_days)));
     if (base && !tierTime) { const d = outcomeDays(base, 1); lines.push(d ? 'Takes ' + d + (d === 1 ? ' day' : ' days') : 'Takes no time'); }
     lines.push('A minigame: how well you play decides the result');
+    // Ruling 76: the breach countdown is a real clock, said up front.
+    if (ch.launch_minigame === 'breach') lines.push('Timed: a real clock — about 3 seconds a breach, 4 with an engineer');
   }
   return lines;
 }
@@ -6464,6 +6469,8 @@ function applyOutcomeEffects(o) {
   }
   // A fight sours the diplomat, however it ended.
   if (o.combat_net) { const c = concernDef('diplomat', 'combat'); if (c) applyConcern('diplomat', c.morale, 'combat'); }
+  // A finished repair lifts the engineer (ruling 77; outcome field repair_done).
+  if (o.repair_done) { const c = concernDef('engineer', 'repair_done'); if (c) applyConcern('engineer', c.morale, 'repair_done'); }
 
   const granted = [];
   if (o.item_grant) {

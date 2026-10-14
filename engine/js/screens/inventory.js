@@ -165,7 +165,7 @@ function invPrice(en) {
     if (itemValueKnown(en.id)) return { num: en.value, label: en.value + 'g' };
     return { num: r ? (r[0] + r[1]) / 2 : 0, label: '??', unknown: true };
   }
-  const p = window.stationBuyPrice(en.id);
+  const p = window.stationBuyPriceNext ? window.stationBuyPriceNext(en.id) : window.stationBuyPrice(en.id);
   if (p == null) return { num: 0, label: '—', none: true };
   return { num: p, label: p + 'g' };
 }
@@ -340,6 +340,9 @@ function renderInvDetail(en) {
     const p = invPrice(en);
     const f = fence ? window.fenceBuyPrice(en.id) : null;
     sell = p.none ? '—' : p.label + (en.n > 1 ? ' each' : '') + (f != null ? ' · fence ' + f + 'g' : '');
+    // Crafted copies (ruling 79) sell at their materials' value, after any full-price copy.
+    const c = !en.material && window.craftedHeld ? window.craftedHeld(en.id) : 0;
+    if (c) note = c >= en.n ? 'fabricator print' + (en.n > 1 ? 's' : '') + ': pays the materials\' value' : c + ' of these ' + (c === 1 ? 'is a print and pays ' : 'are prints and pay ') + window.craftedPrice(en.id) + 'g';
   }
   invSetBlock('inv-detail-meta', invStat('COUNT', '×' + en.n) + invStat('SLOT COST', slot) + invStat('SELL PRICE', sell) + (note ? invStat('', note, 'note') : ''));
 

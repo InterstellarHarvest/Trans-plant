@@ -914,6 +914,17 @@
   // REPAIR costs materials (owner ruling 2026-10-10): 2 metal + 1 scrap,
   // spent only when the patch is done (a quit keeps them, costs the day).
   const REPAIR_COST = { metal: 2, scrap: 1 };
+  // Ruling 77: a finished repair (REPAIR, DRYDOCK, the Engine Fault's
+  // rebuild) lifts the engineer — crew_roster.json morale_concern
+  // repair_done, the way back from hull_damage. The verb tooltips show it.
+  function repairLift() {
+    const c = window.concernDef && concernDef('engineer', 'repair_done');
+    return c ? applyConcern('engineer', c.morale, 'repair_done') : 0;
+  }
+  function repairLiftTip() {
+    const c = window.concernDef && concernDef('engineer', 'repair_done');
+    return c && STATE.crew.includes('engineer') ? ' · ' + concernText([{ label: 'ENGINEER', v: concernAmount(c.morale) }]) + ' MORALE' : '';
+  }
   function repairLockReason() {
     const m = STATE.materials || {};
     if (STATE.resources.hull >= resMax('hull')) return 'Hull is intact';
@@ -932,6 +943,7 @@
       const before = STATE.resources.hull;
       STATE.resources.hull = clamp(STATE.resources.hull + 20 + Math.round(10 * specialistMult('engineer')), 0, resMax('hull'));
       const gain = Math.round(STATE.resources.hull - before); // the log reports what actually landed
+      repairLift(); // the engineer minds a finished repair (ruling 77)
       settleMinigame('◆ REPAIR — ' + (result.allFixed ? 'all four systems nominal' : n + '/4 faults cleared') + ', hull patched (+' + gain + ').');
     });
   }
@@ -1194,6 +1206,7 @@
     const before = STATE.resources.hull;
     STATE.resources.hull = clamp(STATE.resources.hull + 30, 0, resMax('hull'));
     pushLogEntry('◆ DRYDOCK — station crews weld, rivet and invoice. +' + Math.round(STATE.resources.hull - before) + ' hull, −' + fee + 'g.');
+    repairLift(); // the engineer minds a finished repair (ruling 77)
     renderHUD();
     renderCruise();
     renderStopMenu();
@@ -1653,7 +1666,7 @@
       if (lockReason) btn.classList.add('locked');
       if (lockReason && window.Tooltip) Tooltip.attach(btn, lockTip(labelStr, lockReason));
       btn.setAttribute('data-verb-id', verbId);
-      if (!lockReason && verb.effort && window.effortTax) btn.title = 'Effort ' + verb.effort + '/5' + (effortTax(verb.effort) ? ' · costs ' + effortTax(verb.effort) + ' morale' + (verbId === 'fab' ? ' per craft' : WAIT_VERBS[verbId] ? ' for the whole wait' : '') : ''); // no crew aboard: no tax to state
+      if (!lockReason && verb.effort && window.effortTax) btn.title = 'Effort ' + verb.effort + '/5' + (effortTax(verb.effort) ? ' · costs ' + effortTax(verb.effort) + ' morale' + (verbId === 'fab' ? ' per craft' : WAIT_VERBS[verbId] ? ' for the whole wait' : '') : '') + ((verbId === 'repair' || verbId === 'drydock') ? repairLiftTip() : ''); // no crew aboard: no tax to state
       btn.addEventListener('click', () => {
         if (lockReason) return;
         if (btn.classList.contains('day-picker')) return; // picking days on this button

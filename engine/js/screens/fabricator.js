@@ -1035,7 +1035,9 @@
       return;
     }
     for (let i = 0; i < r.output.count; i++) {
-      grantItem(r.output.item);
+      // A print is a crafted copy (ruling 79): a station pays its
+      // materials' value for it, not the shelf price.
+      if (grantItem(r.output.item)) { if (!STATE.crafted || typeof STATE.crafted !== 'object') STATE.crafted = {}; STATE.crafted[r.output.item] = (STATE.crafted[r.output.item] || 0) + 1; }
     }
     FSTATE.pendingOutput = null;
     STATE.fabricator.owedOutput = null;
