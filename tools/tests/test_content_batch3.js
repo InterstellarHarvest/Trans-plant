@@ -197,14 +197,19 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
     out.nearly = on(0.86).hit;   // projects 86%
     setup(1, 0); STATE.daysElapsed = Math.round(STATE.baseDays * 0.9); out.early = activeTriggers().has('behind_schedule'); // leg 1: never, however slow
     out.share = SCHEDULE_PROJECTED_SHARE; out.from = SCHEDULE_CHECK_FROM;
-    // engine_strain: three PLAID legs in a row through the real travel code; a slower leg resets it.
-    setup(1, 0); STATE.orders.pace = 'plaid'; STATE.resources.fuel = 120;
-    // Fly one leg forward; at a fork, take the alpha lane so the map has a next stop.
+    // engine_strain (ruling 83): the chance doubles with heat, capped at 95%; a slower leg cools a step, LIGHT fully.
+    out.curve = [1, 2, 3, 4, 5, 6, 7].map(h => Math.round(1000 * engineStrainChance(h)) / 1000);
+    setup(1, 0); const rnd = Math.random;
+    Math.random = () => 0.999; for (let i = 0; i < 5; i++) rollEngineStrain('plaid'); out.heat5 = STATE.plaidLegs;
+    rollEngineStrain('ludicrous'); out.cooled = STATE.plaidLegs; rollEngineStrain('light'); out.rested = STATE.plaidLegs;
+    Math.random = () => 0.5; STATE.plaidLegs = 3; out.roll4 = rollEngineStrain('plaid'); out.roll5 = rollEngineStrain('plaid');
+    Math.random = rnd;
+    STATE.engineStrain = true; out.active = activeTriggers().has('engine_strain');
+    noteEventDrawn(EVENTS.event_crisis_031); out.cleared = !STATE.engineStrain && !activeTriggers().has('engine_strain');
+    // One real leg at PLAID heats the drive (travelTo).
+    setup(1, 0); STATE.orders.pace = 'plaid'; STATE.resources.fuel = 120; STATE.currentEvent = null;
     const fly = () => { let ns = [...nextAvailableNodes()]; if (!ns.length) { STATE.flags.add('chose_alpha'); ns = [...nextAvailableNodes()]; } travelTo(ns[0]); };
-    const strain = [];
-    for (let i = 0; i < 3; i++) { STATE.currentEvent = null; fly(); strain.push([STATE.plaidLegs, activeTriggers().has('engine_strain')]); }
-    STATE.currentEvent = null; STATE.orders.pace = 'ludicrous'; fly(); strain.push([STATE.plaidLegs, activeTriggers().has('engine_strain')]);
-    out.strain = strain; out.strainLegs = ENGINE_STRAIN_LEGS;
+    fly(); out.flown = STATE.plaidLegs;
     // set_orders pace "faster": one notch, never past PLAID; the preview names it.
     setup(4, 0);
     const o = { set_orders: { pace: 'faster' }, resources: {}, time_cost: 'none' };
@@ -229,7 +234,11 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
   });
   ok(k.share === 0.9 && k.from === 0.25, `behind_schedule thresholds: projects ${k.share} of the deadline, from ${k.from} of the trail`);
   ok(!k.ahead && k.behind && !k.nearly && !k.early, `behind_schedule: off when the pace projects 35% (${k.ahead}), on at 93% (${k.behind}), off at 86% (${k.nearly}), off on leg 1 (${k.early})`);
-  ok(k.strainLegs === 3 && JSON.stringify(k.strain) === '[[1,false],[2,false],[3,true],[0,false]]', `engine_strain: PLAID legs count 1, 2, 3 (fires), a LUDICROUS leg resets (${JSON.stringify(k.strain)})`);
+  ok(JSON.stringify(k.curve) === '[0.055,0.11,0.22,0.44,0.88,0.95,0.95]', `engine strain chance by heat: ${k.curve.join(', ')} (doubling, capped at 95%)`);
+  ok(k.heat5 === 5 && k.cooled === 4 && k.rested === 0, `heat builds per PLAID leg (5), a LUDICROUS leg cools one step (${k.cooled}), LIGHT SPEED rests it (${k.rested})`);
+  ok(k.roll4 === false && k.roll5 === true, `at a 0.5 roll: heat 4 (44%) holds, heat 5 (88%) strains (${k.roll4}, ${k.roll5})`);
+  ok(k.active && k.cleared, `a strain raises engine_strain until its event is drawn (${k.active}, cleared ${k.cleared})`);
+  ok(k.flown === 1, `a real PLAID leg heats the drive (${k.flown})`);
   ok(k.afterRid === 'ludicrous' && k.factRid.includes('PACE: LUDICROUS SPEED'), `pace "faster" from RIDICULOUS lands LUDICROUS and says so (${k.factRid})`);
   ok(k.afterPlaid === 'plaid' && !k.factPlaid.some(f => /PACE/.test(f)), `pace "faster" at PLAID stays PLAID and promises nothing (${JSON.stringify(k.factPlaid)})`);
   ok(k.factRations.includes('RATIONS: VENDING MACHINE') && !k.factSame.some(f => /RATIONS/.test(f)), `rations change named; no fact for the rations already in force (${k.factRations} / ${JSON.stringify(k.factSame)})`);

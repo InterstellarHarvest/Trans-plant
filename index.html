@@ -1627,8 +1627,12 @@ const MORALE_LOW = 30;
 // gap never fired: every run keeps about a quarter of the deadline in hand.
 const SCHEDULE_PROJECTED_SHARE = 0.90;
 const SCHEDULE_CHECK_FROM = 0.25;
-// engine_strain trigger (ruling 82): this many legs in a row flown at PLAID.
-const ENGINE_STRAIN_LEGS = 3;
+// engine_strain trigger (ruling 83): each leg flown at PLAID rolls for strain,
+// the chance doubling with the drive's heat (STATE.plaidLegs): about 5.5%,
+// 11%, 22%, 44%, 88%, then capped at ENGINE_STRAIN_MAX. A slower leg cools
+// the drive one step; LIGHT SPEED rests it fully.
+const ENGINE_STRAIN_BASE = 0.055;
+const ENGINE_STRAIN_MAX = 0.95;
 const MORALE_CRISIS = 25;
 // The captain plus at most this many chosen crew (owner ruling 23).
 const CREW_MAX = 2;
@@ -1832,7 +1836,8 @@ const STATE = {
   hardStreak:   0,          // consecutive hard/ultra events selected (pity counter)
   pityRelief:   0,          // legs remaining where difficulty weights favor easy/medium
   eventLastStop: {},        // repeatable event id → the stop it last fired at (repeat cooldown)
-  plaidLegs:    0,          // legs in a row flown at PLAID (engine_strain trigger, ruling 82)
+  plaidLegs:    0,          // drive heat: PLAID legs, cooled one per slower leg (engine_strain, ruling 83)
+  engineStrain: false,      // a strain roll came up: the next stop draws an engine_strain event (ruling 83)
   crafted:      {},         // item id → copies aboard that the fabricator printed (ruling 79: a station pays their materials' value)
   hubScreen:    'screen-cruise', // which screen travelTo()/advanceAfterEvent() return to between nodes — 'screen-map' under ?debug=fixed_path
 };
@@ -1862,7 +1867,7 @@ const SAVED_FIELDS = [
   'researchReady', 'researchKey', // Academic captain: one Research preview per station leg, and the layer it is on (a reload mid-event kept it spent but hid it)
   'scouted', // SCAN: events locked in at the stops ahead
   'eventLastStop', // repeat cooldown (ruling 65): each repeatable event's last stop
-  'plaidLegs', // legs in a row at PLAID (engine_strain, ruling 82)
+  'plaidLegs', 'engineStrain', // drive heat and a pending strain (engine_strain, ruling 83)
   'crafted', // fabricator prints aboard (ruling 79): sold at their materials' value
   'soilSurveys', // soil sampler planet surveys (ending score)
   'startCrew',   // crew size at launch (ending crew paragraph / score)
@@ -1952,7 +1957,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, engineStrain: () => false, itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2194,7 +2199,7 @@ function applySetupToState(sel) {
   // Every other per-run field starts clean too (a run started in-page
   // after another used to inherit its log, fabricator, sectors…).
   STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
-  STATE.postCombatLegs = 0; STATE.plaidLegs = 0; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
+  STATE.postCombatLegs = 0; STATE.plaidLegs = 0; STATE.engineStrain = false; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.lastAmbientNode = null; STATE.alertedNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.goneNames = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0; STATE.eventLastStop = {};
@@ -3297,8 +3302,8 @@ function activeTriggers() {
   // SCHEDULE_PROJECTED_SHARE of the deadline or more (days used ÷ trail
   // flown). Only once a quarter of the trail is flown: early stops swing it.
   if (frac >= SCHEDULE_CHECK_FROM && STATE.baseDays > 0 && (STATE.daysElapsed / STATE.baseDays) / frac >= SCHEDULE_PROJECTED_SHARE) active.add('behind_schedule');
-  // Engine strain (ruling 82): ENGINE_STRAIN_LEGS legs in a row at PLAID.
-  if ((STATE.plaidLegs || 0) >= ENGINE_STRAIN_LEGS) active.add('engine_strain');
+  // Engine strain (ruling 83): a PLAID leg's strain roll came up.
+  if (STATE.engineStrain) active.add('engine_strain');
   // Crop state — thresholds from the selected crop's own crops.json
   // entry. crop_dead only activates AFTER the player accepts the loss
   // via the failure screen's "Keep flying" (before that, checkFailure()
@@ -3453,6 +3458,8 @@ function repeatGaps(stop) {
    SCAN) or as a during-wait interrupt: the stop it fired at, for the
    repeat cooldown. */
 function noteEventDrawn(ev) {
+  // A pending engine strain (ruling 83) is spent by the strain event it drew.
+  if (ev && (ev.trigger || []).includes('engine_strain')) STATE.engineStrain = false;
   if (!ev || ev.once) return;
   STATE.eventLastStop = STATE.eventLastStop || {};
   STATE.eventLastStop[ev.id] = currentStop();
@@ -4049,6 +4056,16 @@ function ordersChanges(o) {
   if (Number.isFinite(so.waterSplit) && Math.round(so.waterSplit) !== Math.round(ensureOrders().waterSplit)) out.push('CROP WATER ' + Math.round(so.waterSplit) + '%');
   return out;
 }
+// Engine strain (ruling 83): heat builds one step per PLAID leg and each
+// PLAID leg rolls engineStrainChance(heat); a slower leg cools it a step,
+// LIGHT SPEED to zero. Returns whether this leg strained the drive.
+function engineStrainChance(heat) { return heat > 0 ? Math.min(ENGINE_STRAIN_MAX, ENGINE_STRAIN_BASE * Math.pow(2, heat - 1)) : 0; }
+function rollEngineStrain(paceId) {
+  const heat = STATE.plaidLegs || 0;
+  if (paceId !== 'plaid') { STATE.plaidLegs = paceId === 'light' ? 0 : Math.max(0, heat - 1); return false; }
+  STATE.plaidLegs = heat + 1;
+  return Math.random() < engineStrainChance(STATE.plaidLegs);
+}
 function ensureOrders() {
   if (!STATE.orders || !STATE.orders.pace) {
     STATE.orders = {
@@ -4566,7 +4583,7 @@ function travelTo(nodeId, opts) {
     }
     passDays(leg.days, { travel: true });
     // Engine strain (ruling 82): legs in a row at PLAID; any slower leg resets it.
-    STATE.plaidLegs = ordersPace().id === 'plaid' ? (STATE.plaidLegs || 0) + 1 : 0;
+    STATE.engineStrain = rollEngineStrain(ordersPace().id) || !!STATE.engineStrain;
     // ARIA's passive (ai_companions morale_bonus): +1 morale per leg.
     const ariaMorale = aiPassive('morale_bonus');
     if (ariaMorale) addCrewMorale(ariaMorale); // every crew member
