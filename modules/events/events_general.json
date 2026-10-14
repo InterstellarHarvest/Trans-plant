@@ -4454,5 +4454,94 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_general_051",
+    "active": true,
+    "title": "Delivery Day",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_end"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "carried_letters",
+    "ai_flavor": {
+      "aria": "The LETTERS! We're nearly there with the LETTERS! ARIA has checked on them every single morning! They're fine! They're still letters!",
+      "marv": "MARV has counted the colony's registry against the envelopes. One hundred and ninety-one of the addressees are on it. The other twenty-three are addressed to 'anyone.' He thinks that might be the most important pile.",
+      "rex": "REX has guarded the box since the station. He would like it noted that not one letter was lost. He would like that noted in the log, permanently.",
+      "chip": "CHIP would like to waive the delivery fee! There was never a delivery fee! CHIP is waiving it anyway! It feels wonderful!",
+      "ajoy": "AJOY says send the names ahead. People should get to wait for something good for once."
+    },
+    "body": "The colony's comms are in range for the first time.\n\nAnd so, in the hold, is the dockmaster's box: two hundred and fourteen letters, still sealed, from people who never got a berth to people who did. You could transmit the names ahead now, so the colony knows they're coming. You could wait and hand them over in person when you land. The box seems heavier than it did, sitting there, so close to where it's going.",
+    "choices": [
+      {
+        "text": "Transmit the names ahead",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You send the colony the list of names. Within the hour the replies start coming back: people who had given up on hearing from home, asking if it's really true, asking when you land, asking you to say thank you to someone at a station they'll never see. The crew reads the replies aloud at dinner. Some of them have to stop partway through."
+        }
+      },
+      {
+        "text": "Read the 'to anyone' letters to the crew",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You open the twenty-three letters addressed to 'anyone' (they were written for whoever found them, after all) and read them aloud to the crew over three evenings. Messages from strangers on a dying planet, to strangers on a new one. Everyone aboard counts as anyone. Everyone listens."
+        }
+      },
+      {
+        "text": "Keep them sealed and deliver by hand",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep the box sealed. Some things should be handed over in person, and you will. The crew agrees, without much discussion, that the box will be the first thing off the ship."
+        }
+      }
+    ]
   }
 ]

@@ -1642,5 +1642,108 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_derelict_014",
+    "active": true,
+    "title": "Hot Spot",
+    "difficulty": "medium",
+    "tone": [
+      "cosmic",
+      "grim"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_item": "geiger_counter",
+    "ai_flavor": {
+      "aria": "It's WARM! And CLICKING! ARIA has never been so excited and so frightened at the same time! ARIA thinks that might be what science is!",
+      "marv": "MARV identifies a radioisotope power unit: plutonium-238, decaying, giving off heat that thermocouples turn into power. The probes Voyager 1 and 2 still run on them, half a century out. Handled by the shielded cradle, it is safe. Handled by the hands, it is not.",
+      "rex": "REX recommends nobody touches it without the counter in their other hand. He has said this twice. He will say it a third time if he has to.",
+      "chip": "CHIP must point out that nuclear batteries are not covered by any warranty in the known universe! CHIP has checked several universes!",
+      "ajoy": "AJOY says the counter is the only reason anyone knew it was here. Let it tell you where it's safe to stand, and take the thing home."
+    },
+    "body": "The geiger counter starts clicking the moment the airlock opens.\n\nNot the lazy, scattered clicks of background radiation. Steady ones, quickening as the boarding team moves aft, until the counter is chattering like an excited bird at a sealed hatch marked POWER. Behind it, on its own cradle, sits a squat finned cylinder about the size of a beer keg, still faintly warm to the sensors after however many years.\n\nIt's a nuclear battery: a lump of plutonium inside a lot of shielding, quietly making electricity from its own heat. It will keep doing that for decades.",
+    "choices": [
+      {
+        "text": "Recover it, with the counter guiding every step",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "materials": {
+            "exotic": 1
+          },
+          "narrative": "Two days of slow, careful work, the counter held out in front like a metal detector on a beach, until the power unit sits on its cradle in your engine room behind every bit of shielding aboard. It feeds the drive's reserve cells a steady trickle. The fuel gauge reads six points higher by the time you leave. The counter, at last, calms down."
+        }
+      },
+      {
+        "text": "Strip the shielding and take it fast",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": {
+            "type": "injure",
+            "target": "crew"
+          },
+          "severity": "injury",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "materials": {
+            "metal": 2,
+            "exotic": 1
+          },
+          "narrative": "You go in fast, unbolting the shielding to get at the good metal underneath, and the counter screams the whole time. Somebody stays too close for too long. They'll recover, the medical database says, eventually. The metal is very good metal."
+        }
+      },
+      {
+        "text": "Leave it shielded on its cradle",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave it where it is, still warm, still clicking, quietly powering a ship nobody is coming back for. The boarding team backs out of the compartment with the counter held up like a lamp. Some things are safest exactly where they are."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "A radioisotope power unit turns the heat of decaying plutonium-238 into electricity. Voyager 1 and 2 still run on them, nearly fifty years after launch.",
+      "label": "Radioisotope thermoelectric generators",
+      "url": "https://en.wikipedia.org/wiki/Radioisotope_thermoelectric_generator"
+    }
   }
 ]

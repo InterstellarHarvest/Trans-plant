@@ -2332,5 +2332,186 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_shipboard_023",
+    "active": true,
+    "title": "Early Warning",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_item": "medical_scanner",
+    "requires_crew_aboard": true,
+    "ai_flavor": {
+      "aria": "The scanner is looking after us! ARIA loves the scanner! ARIA would like to be the scanner! ARIA is a little bit the scanner, technically!",
+      "marv": "MARV confirms the reading. Caught now it is a course of rest. Caught later it is a crisis. He notes the scanner paid for itself the moment it flagged this.",
+      "rex": "REX would like it noted that the threat was found before it attacked. That is the best kind of threat.",
+      "chip": "CHIP reminds you that the scanner's Early Detection feature is included with the device! For once there is no upgrade tier! CHIP finds this suspicious!",
+      "ajoy": "AJOY says deal with it now while it's small. That's the whole reason you carry the thing."
+    },
+    "body": "The medical scanner's routine overnight sweep has flagged someone.\n\nNothing they've noticed. No fever, no pain, nothing they'd mention. But the scanner reads a small, slow change in their blood that, it says in its careful clinical way, tends to become a much larger and faster change over the next few weeks if nobody does anything about it.\n\nThe scanner would like someone to do something about it.",
+    "choices": [
+      {
+        "text": "Bed rest and fluids, starting now",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Two days of bed rest, fluids and mild complaints. The scanner's next sweep reads clean. The crew member in question says they felt fine the whole time and that this was all very unnecessary, and is quietly grateful."
+        }
+      },
+      {
+        "text": "The medic treats it on the spot",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.medic} reads the scanner's report over breakfast, prescribes something from the med locker, and has it handled before lunch. The next sweep reads clean. The medic looks extremely pleased with the scanner and slightly less pleased that a machine spotted it first."
+        }
+      },
+      {
+        "text": "Keep an eye on it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": {
+            "type": "injure",
+            "target": "crew"
+          },
+          "severity": "delayed",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You note it and carry on. Nothing happens for a while. Then, the way the scanner said it would, it gets worse quickly, and what could have been two days of rest becomes something that needs a medbay."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_024",
+    "active": true,
+    "title": "The Bone Is Warm",
+    "difficulty": "easy",
+    "tone": [
+      "cosmic",
+      "horror"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_item": "unidentified_bone",
+    "ai_flavor": {
+      "aria": "The bone is WARM! Like it's ALIVE! ARIA hopes it's alive! ARIA hopes it isn't! ARIA can't decide!",
+      "marv": "MARV reads a slow, steady heat release consistent with a mineral relaxing after a long time under strain. It is not alive. He is almost certain it is not alive. He is checking again.",
+      "rex": "REX has moved the crate to the end of the hold. The bone is still warm. REX is still watching it.",
+      "chip": "CHIP can't find the bone in any heating appliance catalogue! It's not a product! CHIP is fascinated and a little afraid!",
+      "ajoy": "AJOY says put it somewhere a little warmth would do some good. The growbay runs cold at night."
+    },
+    "body": "Somebody on third watch noticed it first: the unidentified bone, in its crate in the hold, is warm.\n\nNot hot. Just warmer than everything around it, the way a stone stays warm after the sun has gone. The thermal camera shows it glowing a soft orange in a cold grey hold. It has been doing this, the logs suggest, for about a week. Nobody can say why it started, or what it is warming up for.",
+    "choices": [
+      {
+        "text": "Move it next to the growbay",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 4,
+          "narrative": "You set the crate beside the growbay's coldest corner. By morning the plants nearest it have perked up, leaning very slightly toward the crate, and the botanist has written 'do not move the bone' on the wall in large letters."
+        }
+      },
+      {
+        "text": "Sit with it a while",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "A few of the crew start spending the end of their shifts in the hold, sitting near the crate with their backs against it, the way you'd sit against a warm wall. Nobody talks much. It becomes, somehow, the quietest, kindest spot on the ship."
+        }
+      },
+      {
+        "text": "Put it in the cold locker",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You move the bone into the cold locker and shut the door. It goes on being warm in there, gently, and the locker's thermostat spends the rest of the trip fighting it. Everyone feels slightly bad about it, for reasons nobody can name."
+        }
+      }
+    ]
   }
 ]
