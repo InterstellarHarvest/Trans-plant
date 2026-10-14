@@ -498,5 +498,196 @@
         }
       }
     }
+  },
+  {
+    "id": "event_void_005",
+    "active": true,
+    "title": "Lights Behind the Eyes",
+    "difficulty": "easy",
+    "tone": [
+      "cosmic",
+      "horror"
+    ],
+    "node_type": [
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA thinks it's like having your own private fireworks! ARIA cannot see them herself! ARIA is a little jealous!",
+      "marv": "MARV traces the flashes to particles fast enough to pass through the hull, and through the crew. Their eyes report the hits the only way eyes can. He confirms this is, in the ordinary sense, normal. He confirms it is not, in any sense, nice.",
+      "rex": "REX cannot see the flashes and cannot stop them. He has doubled the hull watch anyway. It is something to do.",
+      "chip": "CHIP notes that particle shielding is available in three convenient tiers! Tier one is 'sleep behind the water tank'! It's free! CHIP is not thrilled about that!",
+      "ajoy": "AJOY says the dark out here isn't empty. It just doesn't show itself. She recommends the crew sleep with the water between them and it."
+    },
+    "body": "Third watch reports it first, then everyone: small flashes of light, with your eyes shut. Streaks. Specks. A single bright point that isn't there. They come every few minutes, whether you are looking or not, and they are worst in the dark of the bunks.\n\nThe ship computer can see nothing. The crew can see nothing else.",
+    "choices": [
+      {
+        "text": "Move the bunks behind the water tanks",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "It takes two days to move every bunk into the ship's core, behind the water tanks and the cargo, where the flashes thin to almost nothing. It is cramped and it is ugly and it smells of somebody's socks. Everyone sleeps through the night for the first time in a week."
+        }
+      },
+      {
+        "text": "The medic explains what it is",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.medic} gathers everyone in the galley and explains: particles from exploded stars, fast enough to pass through the ship and through you, and your eye lights up as one goes by. Astronauts have seen it since the first Moon landing. It is real, it is ordinary, and it is not in your head. Except literally. The crew finds this enormously reassuring, in a way."
+        }
+      },
+      {
+        "text": "Tell everyone it's nothing",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You tell the crew it's nothing, which is accurate in the sense that nothing visible is doing it. Nobody is convinced. The flashes carry on until you are clear of the dark patch, a day later, and so does the muttering."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "Astronauts since Apollo 11 have seen flashes of light with their eyes closed. They are cosmic rays passing through the eye.",
+      "label": "Cosmic ray visual phenomena",
+      "url": "https://en.wikipedia.org/wiki/Cosmic_ray_visual_phenomena"
+    }
+  },
+  {
+    "id": "event_void_006",
+    "active": true,
+    "title": "Nobody's Planet",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "cosmic"
+    ],
+    "node_type": [
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A planet with nobody to go round! ARIA is going to cry! ARIA cannot cry! ARIA is doing the next best thing, which is talking very fast!",
+      "marv": "MARV estimates the planet was thrown out of its home system billions of years ago and has been falling between stars ever since. It is not lost, he notes. It has simply never been anywhere.",
+      "rex": "REX confirms no signals, no structures, no threat. One planet, alone. REX respects that.",
+      "chip": "CHIP can confirm that nobody owns it! Yet! CHIP has filed a claim on behalf of the sponsor! The claim was rejected by CHIP, on reflection! Even CHIP has limits!",
+      "ajoy": "AJOY thinks it would be kind to light it up. Just for a minute. It will never happen again."
+    },
+    "body": "There is a planet out here.\n\nNo star. No sun to go round. It is simply passing through the dark on its own, the way you are: a little bigger than Earth and a great deal colder, its night side and its day side the same side. It is on no chart. It has never been lit.\n\nThe ship's floodlight would be the first light anyone has ever pointed at it.",
+    "choices": [
+      {
+        "text": "Light it up and give it a name",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -3,
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "named_rogue_planet",
+          "time_cost": "trivial",
+          "narrative": "You burn the fuel to hold position and turn the floodlight on it for a full minute. A grey world comes up out of the dark: ice plains, a long scar of a canyon, frost on the frost. The crew argues about a name for an hour and settles on Margaret, which is nobody's grandmother and everybody's. It goes in the log as Margaret. The light goes off. Margaret goes on."
+        }
+      },
+      {
+        "text": "Scan it for the survey office",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Two days of passive scanning: mass, temperature, the faint warmth still leaking from its core. Somebody back home will be delighted to receive it.",
+          "log_lore": {
+            "title": "SURVEY NOTE: UNCHARTED BODY",
+            "text": "Mass: 1.3 Earths. Surface: 38 kelvin. Host star: none.\n\nA rogue planet, cast out of whatever system made it and left to fall between the stars. Astronomers back home think there may be billions of them in the galaxy, more planets drifting than planets with suns. Most will never be found. This one was.\n\nThe core is still faintly warm. Under the ice, the computer notes without being asked, there may be an ocean."
+          }
+        }
+      },
+      {
+        "text": "Leave it in the dark",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You let it pass. It seemed polite: it has managed this long without anyone. The crew watches the sensor ghost of it slide off the scope and doesn't say much. Nobody quite says goodbye. Nobody quite doesn't."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "Planets with no star, thrown out of their home systems, drift between the stars. Astronomers think there may be billions of them in our galaxy.",
+      "label": "Rogue planets",
+      "url": "https://en.wikipedia.org/wiki/Rogue_planet"
+    }
   }
 ]

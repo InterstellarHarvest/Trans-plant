@@ -743,5 +743,223 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_nebula_008",
+    "active": true,
+    "title": "Raspberry, With Notes of Rum",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "corporate"
+    ],
+    "node_type": [
+      "nebula"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "anomaly",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "RASPBERRIES! In SPACE! ARIA would like to stay here forever! ARIA understands that is not the mission! ARIA would still like it noted!",
+      "marv": "MARV confirms ethyl formate, ethanol and water ice. He calculates the cloud holds more alcohol than every bar that has ever existed. He has been asked not to calculate how many drinks that is. He has.",
+      "rex": "REX has checked the intake filters. Nothing in the cloud is hostile. Some of it is a cocktail. He is monitoring the crew, not the cloud.",
+      "chip": "CHIP has trademarked NEBULA NOIR, NEBULA ROSE and a seasonal raspberry blend! The cloud cannot object! CHIP has checked!",
+      "ajoy": "AJOY notes that the cloud is full of water, under all the fruit. She suggests taking the useful part and leaving the wedding to itself."
+    },
+    "body": "The nebula smells of raspberries.\n\nNot the cloud itself: you are in a sealed ship. But the hull sniffer has been tasting the gas for an hour, and its readout has given up on chemistry and started writing tasting notes. Ethyl formate, which is what makes raspberries taste of raspberries. Ethyl alcohol, an enormous amount of it. Water, as everywhere.\n\nA cloud the size of a solar system, with roughly the composition of the punch bowl at a wedding that has gone on too long.",
+    "choices": [
+      {
+        "text": "Condense a tank of it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Two days of running the condenser pulls water out of the cloud along with everything else in it. Filtered three times it is just water, clean and drinkable, with an aftertaste nobody can stop talking about. The crew rates it four stars. The filters rate it zero."
+        }
+      },
+      {
+        "text": "Let CHIP bottle a sample",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "materials": {
+            "exotic": 1
+          },
+          "narrative": "CHIP supervises the bottling himself, narrating a launch campaign for the whole hour, with jingle. The sample is genuinely rare and will sell for real money at any station with a chemistry department. The jingle is genuinely in everyone's head and will not sell at all."
+        }
+      },
+      {
+        "text": "Xenobiologist runs a full spectrum",
+        "requires_crew": "xenobiologist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "materials": {
+            "exotic": 1,
+            "biocomponent": 1
+          },
+          "narrative": "{crew.xenobiologist} spends two days with the intake spectrometer and comes out with two sealed sample flasks and a list of molecules three pages long, some of them almost alive and most of them almost dessert. The flasks are worth something. The list, apparently, is worth more, and is read aloud at dinner."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "A real cloud near the centre of our galaxy, Sagittarius B2, contains ethyl formate, the molecule that flavours raspberries, along with vast amounts of alcohol.",
+      "label": "Sagittarius B2: the raspberry cloud",
+      "url": "https://en.wikipedia.org/wiki/Sagittarius_B2"
+    }
+  },
+  {
+    "id": "event_nebula_009",
+    "active": true,
+    "title": "The Nursery",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "cosmic"
+    ],
+    "node_type": [
+      "nebula"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "anomaly",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A BABY SOLAR SYSTEM! ARIA would like to name every planet! ARIA has already named eleven! There may only be four!",
+      "marv": "MARV counts four clear gaps in the disc. Four planets in the making, at a guess. Give it a few million years and one of them might have weather. He finds he would like to know how it turns out.",
+      "rex": "REX has no threat to report. He is reporting that anyway, because it is the first time this trip.",
+      "chip": "CHIP has reserved the second planet for a future resort! Opening date to be confirmed! In roughly forty million years! Deposits are refundable!",
+      "ajoy": "AJOY suggests the crew look for a while. Nobody aboard will ever see this again. Nobody, she points out, ever has."
+    },
+    "body": "Deep in the cloud, something is glowing from the inside.\n\nA young star, still wrapped in the dust it was made from, with a flat bright disc turning slowly around it, like a record. In the disc there are dark rings: clean lanes, swept clear. The ship computer says, very quietly for a ship computer, that lanes like those are where planets are being made.\n\nYou are looking at somebody's solar system before it has anybody in it.",
+    "choices": [
+      {
+        "text": "Map the disc properly",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "launch_minigame": "scan",
+        "minigame_opts": {
+          "difficulty": "easy"
+        },
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "morale": 4
+            },
+            "materials": {
+              "exotic": 1
+            },
+            "narrative": "Two days of careful scanning and the map is beautiful: the disc, the four gaps, a faint knot in the third gap that might be a planet catching its first moon. The dust you skim at the edge is the raw stuff of worlds and worth something to any lab. The map itself goes up on the galley wall, next to nothing else at all."
+          },
+          "good": {
+            "resources": {
+              "morale": 3
+            },
+            "narrative": "The map comes out clean enough to count the gaps and sketch where the planets will be. It goes on the galley wall. Someone starts a list of names for them. The list is already longer than the planets."
+          },
+          "poor": {
+            "resources": {
+              "morale": 1
+            },
+            "narrative": "The dust scatters every sweep and the map comes out blurred, like a photograph of a fan. You can still see the disc in it, if you know it was there. The crew does. That's most of the point."
+          }
+        },
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You hold station and map the disc."
+        }
+      },
+      {
+        "text": "Hold here so everyone can look",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "Two days in the cloud, viewport lights off, a rota so everyone gets an hour with the young star and nobody has to share it. Nobody says much. Afterwards the ship is quieter in a good way, the way a house is after a wedding."
+        }
+      },
+      {
+        "text": "Push on, and look back as we go",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep the burn and let the stern camera hold the disc as long as it can. It shrinks to a smudge, then a spark, then nothing. The crew watches the whole way. It costs no time at all, and somehow still feels like you stayed."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "Telescopes have photographed discs like this around young stars, with dark gaps where new planets are thought to be clearing their orbits.",
+      "label": "Protoplanetary discs",
+      "url": "https://en.wikipedia.org/wiki/Protoplanetary_disk"
+    }
   }
 ]

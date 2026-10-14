@@ -2438,5 +2438,546 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_station_018",
+    "active": true,
+    "title": "Letters for the Colony",
+    "difficulty": "medium",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "station_crew",
+      "job": "captain",
+      "species": null
+    },
+    "leave_label": "NOT TODAY",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE DOCKMASTER'S BOX",
+        "body": "The dockmaster's office is one desk, one chair and one box. The box is full of letters: paper, in envelopes, addressed in a dozen different hands to the colony you are flying to.",
+        "line": "Every ship that comes through, I ask. Most say no. Weight allowance, they say. It's eleven grams a letter.",
+        "pose": "listening",
+        "ai": {
+          "aria": "Letters! Real paper ones! ARIA would carry every single one personally if ARIA had hands!",
+          "marv": "Box mass: 3.2 kilograms. Cargo impact: none worth measuring.",
+          "rex": "Checked the box. Paper. Nothing else.",
+          "chip": "Courier services are a growth sector! CHIP is just mentioning it!",
+          "ajoy": "Ask who they're from. Then decide."
+        },
+        "choices": [
+          {
+            "text": "\"Who are they from?\"",
+            "dialog": true,
+            "sub": "Ask about the names",
+            "next": "who"
+          },
+          {
+            "text": "TAKE THE BOX",
+            "sub": "Carry them to the colony",
+            "outcome": "letters_take"
+          },
+          {
+            "text": "\"What's it worth to you?\"",
+            "dialog": true,
+            "sub": "Ask something back",
+            "outcome": "letters_paid"
+          }
+        ],
+        "revisit": {
+          "body": "The box is still on the desk. The dockmaster hasn't moved it.",
+          "line": "Changed your mind?"
+        }
+      },
+      "who": {
+        "title": "THE NAMES",
+        "body": "The dockmaster tips the box toward you so you can read the envelopes. Mothers, mostly. Brothers. A child's handwriting, very large. One addressed simply to 'whoever is in charge out there, please'.",
+        "line": "People who didn't get a berth. Parents of people who did. A few who just want somebody out there to know they're still here.",
+        "pose": "listening",
+        "ai": {
+          "aria": "ARIA is not crying! ARIA has no eyes to cry with! It's very close, though!",
+          "marv": "Letters in the box: 214. Addressed to named colonists: 187. To 'anyone': 27.",
+          "rex": "Not my lane. Take the box.",
+          "chip": "CHIP would like to waive all fees! For once! Don't get used to it!",
+          "ajoy": "This is the part where you take the box."
+        },
+        "choices": [
+          {
+            "text": "TAKE THE BOX",
+            "sub": "All 214 of them",
+            "outcome": "letters_take"
+          },
+          {
+            "text": "\"I can't. I'm sorry.\"",
+            "dialog": true,
+            "sub": "Turn it down",
+            "outcome": "letters_decline"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "letters_take": {
+        "title": "SIGNED FOR",
+        "tone": "success",
+        "body": "The dockmaster stamps the box CARRIED BY and writes your ship's name under it, slowly, the way you write a name you mean to remember. The box goes in the hold. It weighs almost nothing. It feels heavier than that.",
+        "resources": {
+          "morale": 4
+        },
+        "sets_flag": "carried_letters",
+        "time_cost": "trivial"
+      },
+      "letters_paid": {
+        "title": "COURIER RATES",
+        "body": "The dockmaster doesn't argue. They pay in what the station has spare: a crate of station rations, a little dented. You take the box as well. Nobody aboard quite looks at it on the way back to the ship.",
+        "resources": {
+          "food": 8,
+          "morale": -1
+        },
+        "sets_flag": "carried_letters",
+        "time_cost": "trivial"
+      },
+      "letters_decline": {
+        "title": "NEXT SHIP, THEN",
+        "body": "The dockmaster nods like they expected it, and slides the box back to its place on the desk. 'Next ship, then.' You hear them say it again to the empty office as the door closes.",
+        "resources": {
+          "morale": -2
+        },
+        "time_cost": "trivial"
+      }
+    }
+  },
+  {
+    "id": "event_station_019",
+    "active": true,
+    "title": "Quarantine Flag",
+    "difficulty": "medium",
+    "tone": [
+      "corporate",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "station_crew",
+      "job": "security",
+      "species": null
+    },
+    "leave_label": "CAN'T LEAVE (QUARANTINED)",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "PORT HEALTH",
+        "body": "A security officer with a clipboard meets you at the office counter, wearing the face of someone who has said 'regrettably' many thousands of times. Your ship has been flagged. The flag reads BIOLOGICAL CARGO, UNDECLARED. It is your crop.",
+        "line": "Regrettably, live agriculture requires a forty-eight hour inspection. Regrettably, the inspector is on leave. Regrettably, so is the form.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A forty-eight hour inspection! Of our plants! ARIA hopes they pass! ARIA knows they'll pass!",
+          "marv": "Expedited review fee: 12 gold. Standard wait: 2 days. Inspector availability: unclear.",
+          "rex": "Officer is armed with a clipboard. The clipboard is winning.",
+          "chip": "CHIP has a loyalty card for this exact office! It's expired! Regrettably!",
+          "ajoy": "The crop is the reason. It can be the way out too."
+        },
+        "choices": [
+          {
+            "text": "WAIT IT OUT",
+            "sub": "Two days in a holding berth",
+            "outcome": "q_wait"
+          },
+          {
+            "text": "PAY FOR AN EXPEDITED REVIEW",
+            "gate": {
+              "gold": 12
+            },
+            "sub": "12 gold · same day",
+            "outcome": "q_pay"
+          },
+          {
+            "text": "THE MEDIC SIGNS A HEALTH CERTIFICATE",
+            "gate": {
+              "crew": "medic"
+            },
+            "effort": 2,
+            "sub": "Medic · the paperwork",
+            "outcome": "q_medic"
+          },
+          {
+            "text": "\"It's a crop. Come and see it.\"",
+            "dialog": true,
+            "gate": {
+              "crop": "alive"
+            },
+            "sub": "Show them the growbay",
+            "next": "show"
+          }
+        ],
+        "revisit": {
+          "body": "The officer is still at the counter. The clipboard hasn't moved.",
+          "line": "Regrettably, you're still flagged."
+        }
+      },
+      "show": {
+        "title": "THE GROWBAY",
+        "body": "The officer follows you aboard and down to the growbay, clipboard first. Then they see the {crop.name} under the lamps and stop. The clipboard comes down slowly.",
+        "line": "My grandmother grew these. On Earth. In a window box. I haven't seen a living one in eleven years.",
+        "pose": "listening",
+        "ai": {
+          "aria": "They LOVE it! ARIA knew they would! Everyone loves the crop!",
+          "marv": "Officer's heart rate: up. Clipboard grip: down. The inspection is over.",
+          "rex": "Officer stood down.",
+          "chip": "CHIP recommends a souvenir photo package! It's a beautiful moment! It's billable!",
+          "ajoy": "Let them stay a minute."
+        },
+        "choices": [
+          {
+            "text": "\"Stay as long as you like.\"",
+            "dialog": true,
+            "sub": "Give them a minute",
+            "outcome": "q_show"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "q_wait": {
+        "title": "CLEARED, EVENTUALLY",
+        "body": "Two days in a holding berth with nothing to do but read the station's safety posters, of which there are forty-one. The inspector returns, glances at the crop for nine seconds and stamps everything. The crew can recite all forty-one posters now.",
+        "resources": {
+          "morale": -2
+        },
+        "time_cost": "low"
+      },
+      "q_pay": {
+        "title": "EXPEDITED",
+        "body": "The fee clears, the flag clears, and the officer stamps a form that did not exist an hour ago. Expedited review, it turns out, is the same review, faster, and with a receipt.",
+        "resources": {
+          "gold": -12
+        },
+        "time_cost": "trivial"
+      },
+      "q_medic": {
+        "title": "CERTIFIED",
+        "tone": "success",
+        "body": "{crew.medic} fills in the health certificate at the counter in four minutes flat, in handwriting the officer cannot read and therefore cannot dispute. The flag lifts. The officer looks quietly impressed and asks for the form number, for next time.",
+        "resources": {},
+        "time_cost": "trivial"
+      },
+      "q_show": {
+        "title": "INSPECTION COMPLETE",
+        "tone": "success",
+        "body": "The officer stays twenty minutes and doesn't say much. At the end they sign the inspection form against the growbay wall, mark it PASSED, and leave a station sweet next to the lamp, for the plant. The crew talks about it for days.",
+        "resources": {
+          "morale": 3
+        },
+        "time_cost": "trivial"
+      }
+    },
+    "leave_disabled": true
+  },
+  {
+    "id": "event_station_020",
+    "active": true,
+    "title": "A Cutting for the Garden",
+    "difficulty": "medium",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "station_crew",
+      "job": "botanist",
+      "species": null
+    },
+    "leave_label": "WALK ON",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE MEMORIAL GARDEN",
+        "body": "Off the promenade there is a garden no bigger than a cargo bay, and in it, one plant from every colony ship that has ever docked here. Each has a small brass tag with a ship's name. The station botanist is looking at your crop's manifest entry with frank longing.",
+        "line": "We don't have a {crop.name}. Not one. Would you spare a cutting? A small one. It would get a tag with your ship's name on it.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A garden of every ship! Our crop could be in it! ARIA would like that more than anything! ARIA has said that before! ARIA means it this time!",
+          "marv": "A cutting costs the crop a little health. It recovers, given time and water.",
+          "rex": "Garden is secure. Botanist is unarmed. Tags are brass.",
+          "chip": "A permanent memorial placement is a premium product at most stations! This one is free! CHIP is having complicated feelings!",
+          "ajoy": "Ask about the garden first."
+        },
+        "choices": [
+          {
+            "text": "GIVE THEM A CUTTING",
+            "gate": {
+              "crop": "cuttable"
+            },
+            "sub": "Costs the crop a little",
+            "outcome": "cut_give"
+          },
+          {
+            "text": "TRADE IT FOR CROP MEDICINE",
+            "gate": {
+              "crop": "cuttable"
+            },
+            "sub": "A cutting for a treatment",
+            "outcome": "cut_trade"
+          },
+          {
+            "text": "\"Tell me about the garden.\"",
+            "dialog": true,
+            "sub": "Ask about the tags",
+            "next": "garden"
+          }
+        ],
+        "revisit": {
+          "body": "The botanist is back among the brass tags, watering.",
+          "line": "Still thinking it over?"
+        }
+      },
+      "garden": {
+        "title": "THE TAGS",
+        "body": "The botanist walks you along the beds, reading the tags aloud as they go. Some of the plants are thriving. Some are nearly gone. All of them are labelled with the same care.",
+        "line": "First one came off a ship called the Patience. It never arrived where it was going. The plant did fine, though. They mostly do.",
+        "pose": "listening",
+        "ai": {
+          "aria": "ARIA is reading every tag! ARIA has read all of them twice!",
+          "marv": "Plants in the garden: 61. Ships recorded as arrived: 44. The other 17 tags are memorials.",
+          "rex": "Respect.",
+          "chip": "CHIP has nothing to sell here. CHIP is going to stand quietly for a moment.",
+          "ajoy": "Now you know what it is."
+        },
+        "choices": [
+          {
+            "text": "GIVE THEM A CUTTING",
+            "gate": {
+              "crop": "cuttable"
+            },
+            "sub": "For the garden",
+            "outcome": "cut_give"
+          },
+          {
+            "text": "\"Not this time.\"",
+            "dialog": true,
+            "sub": "Keep the crop whole",
+            "outcome": "cut_no"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "cut_give": {
+        "title": "A NEW TAG",
+        "tone": "success",
+        "body": "The botanist takes the cutting with two fingers and a pair of tiny scissors, as if it might break, and plants it at the end of the row. The new brass tag has your ship's name on it. The crop will miss the leaf for a few days. The crew won't miss the garden at all; they'll remember it.",
+        "crop_health": -8,
+        "resources": {
+          "morale": 4
+        },
+        "sets_flag": "gave_cutting",
+        "time_cost": "trivial"
+      },
+      "cut_trade": {
+        "title": "A FAIR TRADE",
+        "body": "The botanist takes the cutting and hands over a sealed vial of crop treatment from the station's own stores. 'For when it needs it,' they say. 'It will.' The cutting goes into the garden all the same, under a temporary tag.",
+        "crop_health": -8,
+        "item_grant": "crop_treatment",
+        "time_cost": "trivial"
+      },
+      "cut_no": {
+        "title": "MAYBE NEXT TIME",
+        "body": "The botanist nods and goes back to watering. 'Next time, then,' they say, and mean it. The empty space at the end of the row stays empty.",
+        "resources": {
+          "morale": -1
+        },
+        "time_cost": "trivial"
+      }
+    }
+  },
+  {
+    "id": "event_station_021",
+    "active": true,
+    "title": "Someone Asked for You",
+    "difficulty": "medium",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": true,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "station_crew",
+      "job": "bartender",
+      "species": "robot"
+    },
+    "leave_label": "LEAVE THE BAR",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "A MESSAGE AT THE BAR",
+        "body": "The robot bartender sets down a coaster in front of you with a name written on it in grease pencil. It's {speaker.name}'s.",
+        "line": "Somebody's been asking after your {speaker.role}. Sat right there three days running. Says they served together, a long time ago. They're in the corner booth. They look nervous.",
+        "pose": "listening",
+        "ai": {
+          "aria": "An old friend! ARIA loves old friends! ARIA doesn't have any yet! ARIA is working on it!",
+          "marv": "Corner booth occupant: one human, nervous, on their third cup of something weak.",
+          "rex": "Checked the booth. Not a threat. Just nervous.",
+          "chip": "Reunions drive repeat custom! CHIP recommends the bar's two-for-one menu!",
+          "ajoy": "Let them have this."
+        },
+        "choices": [
+          {
+            "text": "GIVE THEM THE EVENING",
+            "sub": "A day in port",
+            "outcome": "friend_evening"
+          },
+          {
+            "text": "\"Drinks on the ship. Everyone.\"",
+            "dialog": true,
+            "gate": {
+              "gold": 10
+            },
+            "sub": "10 gold · the whole crew",
+            "outcome": "friend_drinks"
+          },
+          {
+            "text": "\"We leave at dawn. Five minutes.\"",
+            "dialog": true,
+            "sub": "Keep the schedule",
+            "outcome": "friend_brief"
+          },
+          {
+            "text": "\"Who are they?\"",
+            "dialog": true,
+            "sub": "Ask the bartender",
+            "next": "who"
+          }
+        ],
+        "revisit": {
+          "body": "The coaster is still on the bar. The booth is still occupied.",
+          "line": "They're still waiting."
+        }
+      },
+      "who": {
+        "title": "THE CORNER BOOTH",
+        "body": "The bartender polishes a glass that is already clean, which is how it thinks.",
+        "line": "Says they owe {speaker.name} their life. Says {speaker.name} would tell it differently. That's usually how you know it's true.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A LIFE DEBT! That's so dramatic! ARIA is invested!",
+          "marv": "Two versions of one story. The truth is usually in the gap.",
+          "rex": "Good crew does that. Doesn't talk about it.",
+          "chip": "CHIP is drafting a feature film! Working title: 'Owed'!",
+          "ajoy": "Go and say hello. Then let them talk."
+        },
+        "choices": [
+          {
+            "text": "GIVE THEM THE EVENING",
+            "sub": "A day in port",
+            "outcome": "friend_evening"
+          },
+          {
+            "text": "\"We leave at dawn. Five minutes.\"",
+            "dialog": true,
+            "sub": "Keep the schedule",
+            "outcome": "friend_brief"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "friend_evening": {
+        "title": "AN EVENING",
+        "tone": "success",
+        "body": "{speaker.name} spends the evening in the corner booth and comes back at closing, quieter than usual, with red eyes and a station napkin covered in someone's address. They don't say what was talked about. They hum all the way back to the ship.",
+        "resources": {
+          "morale": 8
+        },
+        "morale_to": "speaker",
+        "time_cost": "trivial"
+      },
+      "friend_drinks": {
+        "title": "ON THE SHIP",
+        "tone": "success",
+        "body": "The whole crew crowds into the corner booth, which was not built for it. The old friend tells the story; {speaker.name} keeps interrupting to say it wasn't like that. It was exactly like that. The bar closes around you. Nobody notices.",
+        "resources": {
+          "gold": -10,
+          "morale": 4
+        },
+        "time_cost": "trivial"
+      },
+      "friend_brief": {
+        "title": "FIVE MINUTES",
+        "body": "Five minutes in the booth, a handshake that turns into a hug, and {speaker.name} is back at the ship on time, as ordered. They don't complain. They don't say much of anything until the next station.",
+        "resources": {
+          "morale": -3
+        },
+        "morale_to": "speaker",
+        "time_cost": "none"
+      }
+    },
+    "crew_speaker": [
+      "any"
+    ]
   }
 ]

@@ -806,7 +806,8 @@ const eventOnTrail = (ev, trail) => {
       // needs a morale change to carry.
       if (o && o.morale_to != null) {
         const mat = atOf(file, ev.id, where);
-        if (o.morale_to !== 'lowest' && !crewRoles.has(o.morale_to)) err(`${mat}: morale_to "${o.morale_to}" must be "lowest" or a crew role`);
+        if (o.morale_to !== 'lowest' && o.morale_to !== 'speaker' && !crewRoles.has(o.morale_to)) err(`${mat}: morale_to "${o.morale_to}" must be "lowest", "speaker" or a crew role`);
+        if (o.morale_to === 'speaker' && !ev.crew_speaker) err(`${mat}: morale_to "speaker" on an event with no crew_speaker — nobody is the speaker`);
         if (!(o.resources && Number.isFinite(o.resources.morale) && o.resources.morale)) err(`${mat}: morale_to without a resources.morale change — it moves nothing`);
       }
       const cj = o && o.crew_join;

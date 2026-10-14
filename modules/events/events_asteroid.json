@@ -859,5 +859,215 @@
       "label": "Collision cascades",
       "url": "https://en.wikipedia.org/wiki/Kessler_syndrome"
     }
+  },
+  {
+    "id": "event_asteroid_008",
+    "active": true,
+    "title": "Loose Gravel",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "cosmic"
+    ],
+    "node_type": [
+      "asteroid_field"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "asteroid_field",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The poor little probe! It's stuck in a ball pit! ARIA wants to rescue it! ARIA also wants to try the ball pit!",
+      "marv": "MARV reads the rock as a rubble pile, loose debris holding together under its own very weak gravity. It is less a rock than a suggestion of one. He advises anchoring to something else.",
+      "rex": "REX has checked the probe for a beacon, a charge or a trap. It is a probe. It is stuck. He is almost disappointed.",
+      "chip": "CHIP can see the probe's maker's logo! The company still exists! It will want its probe back! CHIP will be happy to negotiate a finder's fee! For the probe! In its own logo!",
+      "ajoy": "AJOY notes that the probe has been blinking that light for years. Someone built it to call for help. Nobody came. Until now."
+    },
+    "body": "There is a mining probe half-buried in one of the rocks.\n\nIt did not crash. It landed, very gently, and then kept going: down into the asteroid as if into a ball pit, until only its antenna and one slightly embarrassed status light were left above the surface.\n\nThe rock is not really a rock. It is a pile of gravel and boulders held together by little more than the good manners of its own gravity, and the probe found this out the hard way.",
+    "choices": [
+      {
+        "text": "Send a tethered team down for the probe",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "launch_minigame": "salvage",
+        "tier_outcomes": {
+          "perfect": {
+            "materials": {
+              "metal": 3,
+              "scrap": 2
+            },
+            "narrative": "The team goes down on tethers and digs the probe out like a dog digging out a ball, gravel floating up around them in slow clouds. It comes up whole. The hull plating, the drill head and its little wiring loom are all worth stripping, and the status light, unplugged at last, goes out with what everyone agrees was relief."
+          },
+          "good": {
+            "materials": {
+              "metal": 2,
+              "scrap": 1
+            },
+            "narrative": "The team frees most of the probe before the gravel slides back over the rest. What comes up is enough to strip for metal. The status light comes up too, still blinking. Someone keeps it."
+          },
+          "poor": {
+            "resources": {
+              "morale": -1
+            },
+            "materials": {
+              "scrap": 1
+            },
+            "narrative": "Every scoop brings down more gravel than it lifts. The team comes back up two days later with the probe's antenna, a handful of wire and a great deal of grit in places grit should not be."
+          }
+        },
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "A tethered team goes down after the probe."
+        }
+      },
+      {
+        "text": "Snag the antenna with the grapple",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "materials": {
+            "metal": 1
+          },
+          "narrative": "Three passes with the grapple and it catches. The antenna comes away clean; the probe stays down. You get a length of good metal for the fuel it took to hold position. The status light, now attached to nothing, keeps blinking all the way to the cargo bay."
+        }
+      },
+      {
+        "text": "Leave it; nothing about that rock looks solid",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Nothing about the rock looks safe to stand on, and nothing about the probe looks worth sinking for. You log its position for the maker and move on. The status light blinks after you, patiently, the way it has for years."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "Many small asteroids are rubble piles: loose gravel held together by gravity. When NASA's OSIRIS-REx touched the asteroid Bennu in 2020, its sampling arm sank in as if into a ball pit.",
+      "label": "Rubble-pile asteroids",
+      "url": "https://en.wikipedia.org/wiki/Rubble_pile"
+    }
+  },
+  {
+    "id": "event_asteroid_009",
+    "active": true,
+    "title": "Prime Orbital Real Estate",
+    "difficulty": "easy",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "asteroid_field"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "asteroid_field",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A HOUSE! In SPACE! With a VIEW! ARIA has always wanted a house! ARIA understands she lives in the ship! It's not the same!",
+      "marv": "MARV has reviewed the sales pitch. The 'stunning views' are of other rocks. The 'easy commute' is to nowhere. The 'low fees' are, technically, accurate, because the company is gone and nobody is collecting them.",
+      "rex": "REX reports the sign is drawing more power than the beacon. Someone wired it to last. They did a good job. On the wrong thing.",
+      "chip": "CHIP LOVES this sign! CHIP has never felt so understood! CHIP would like a moment!",
+      "ajoy": "AJOY points out that the sign is made of good metal and nobody is going to buy this rock. She leaves the conclusion to you."
+    },
+    "body": "A large rock in the field is wearing a sign.\n\nIt is lit. It is enormous. It says LUXURY ESTATE · STUNNING VIEWS · AVAILABLE NOW, above a contact code for a company that went bankrupt before your grandparents were born. A beacon under the sign plays a sales pitch on a loop, in a voice that is still very excited about the 'quiet neighbourhood'.\n\nThere are no neighbours. That was the whole selling point.",
+    "choices": [
+      {
+        "text": "Strip the sign for parts",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "materials": {
+            "metal": 2,
+            "scrap": 2
+          },
+          "narrative": "It takes two days to take the sign down, letter by letter. The frame is good metal, the lettering is good scrap, and the beacon makes its pitch right up until the moment you cut its power, mid-sentence, on the word 'opportunity'. CHIP observes a moment of silence. Nobody else does."
+        }
+      },
+      {
+        "text": "Answer the sales pitch",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You open a channel and ask about the rock. The recorded salesman, who has waited three generations for this, is thrilled. He walks you through the rock's features (rock), its amenities (also rock) and the financing (rock-based). The crew asks follow-up questions for an hour. It's the most fun anyone has had in weeks."
+        }
+      },
+      {
+        "text": "Leave the sign lit",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave it lit. It isn't hurting anyone, and out here a light is a light. As the field falls behind, the sign is the last thing on the scope: AVAILABLE NOW, for whoever comes next. Someone salutes it. It isn't clear whether they're joking."
+        }
+      }
+    ]
   }
 ]

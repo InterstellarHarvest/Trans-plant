@@ -989,5 +989,230 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_derelict_008",
+    "active": true,
+    "title": "Dinner for Six",
+    "difficulty": "easy",
+    "tone": [
+      "horror",
+      "mundane"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Somebody made dinner! For six! That's so thoughtful! ARIA is sure they'll be back any minute! ARIA is a little less sure than she sounds!",
+      "marv": "MARV counts six sealed trays, six chairs, no bodies, no damage and one log that ends at 'and then we'. He would like the rest of that sentence. He doubts he will get it.",
+      "rex": "REX has swept every compartment twice. Empty. He has swept the mess a third time. Still empty. He is not leaving the doorway.",
+      "chip": "CHIP notes the rations are a premium brand, with a best-before date that has not yet passed! Somebody spent good money on this dinner! CHIP finds that very sad!",
+      "ajoy": "AJOY says the card wasn't for you. She would think carefully before sitting down."
+    },
+    "body": "The derelict is in perfect order.\n\nThe lights come up as you board. The air is stale but breathable. In the mess, the table is set for six: plates, cutlery, a sealed ration tray at every place, and a small folded card at the head of the table that says WELCOME BACK in careful handwriting.\n\nThere is no one aboard. There is no damage. The ship's log stops mid-sentence, on what looks like an ordinary Tuesday.",
+    "choices": [
+      {
+        "text": "Take the rations",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 12,
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You take the trays. They are sealed, in date and perfectly good, and every one of them is eaten over the next week in silence. Nobody says why they don't like it. Nobody has to. The card stays where it was."
+        }
+      },
+      {
+        "text": "Leave everything as it is",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the table exactly as you found it. On the way out somebody straightens a fork that was already straight. The airlock cycles shut behind you, and the derelict's lights go down one by one, politely, as if it had been expecting someone else."
+        }
+      },
+      {
+        "text": "Read the last log entry properly",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.engineer} spends two days coaxing the last log entry back out of the derelict's memory, a word at a time. It ends happily, which no one expected.",
+          "materials": {
+            "scrap": 1
+          },
+          "log_lore": {
+            "title": "LAST ENTRY, RECOVERED",
+            "text": "'— and then we heard the rescue ship's hail on the open band, so we're leaving the table set. Silly, I know. If it's us who comes back for the ship, dinner's ready. If it's you, whoever you are, then welcome. Eat something. Leave the card.'\n\nThe rescue ship's transponder code is in the entry. It matches a station register: six names, all signed in, all safe."
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_derelict_009",
+    "active": true,
+    "title": "For Whoever's Next",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "derelict_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A NOTE! From another crew! Heading our way! ARIA loves them! ARIA has never met them! ARIA doesn't think that matters!",
+      "marv": "MARV has checked the registry. The Lark is a small colony hauler, eleven weeks ahead of you on the same trail. Their note is accurate about the panel. He suspects it is accurate about the rest.",
+      "rex": "REX has checked the panel for a trap. There is no trap. There is a second, smaller note that says 'we checked for traps too'. REX approves of the Lark.",
+      "chip": "CHIP notes that 'half' is not a legally binding quantity! CHIP is just saying! CHIP will not be saying it again! The crew is looking at CHIP!",
+      "ajoy": "AJOY says the Lark could have taken everything and nobody would have known. She thinks that's worth remembering, whatever you do next."
+    },
+    "body": "Someone has been here before you, and they left the light on.\n\nTaped inside the airlock is a note, written by hand on the back of a ration wrapper:\n\n'Good stuff is behind the cargo bay panel, third from the left. We took half. Leave half. Fair's fair. Good luck out there. — the crew of the Lark, heading the same way you are.'",
+    "choices": [
+      {
+        "text": "Open the panel and take half",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "launch_minigame": "salvage",
+        "minigame_opts": {
+          "setting": "derelict"
+        },
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "food": 6
+            },
+            "materials": {
+              "metal": 2,
+              "scrap": 2
+            },
+            "narrative": "Behind the panel: a neat cache of ration packs, sheet metal and spare parts, divided into two careful piles with a strip of tape between them. You take your half and not one bolt more. The Lark's pile stays exactly where they left it, for the crew after you."
+          },
+          "good": {
+            "resources": {
+              "food": 4
+            },
+            "materials": {
+              "metal": 1,
+              "scrap": 2
+            },
+            "narrative": "The cache is where the note said, and you get most of your half out before the panel's old hinges jam it shut on the rest. The other half stays put behind it, safe, for the next crew."
+          },
+          "poor": {
+            "materials": {
+              "scrap": 1
+            },
+            "narrative": "The panel's hinges have rusted shut, and two days of prying get you one corner open and a handful of scrap. The rest of the cache stays where it is, half yours and half theirs, all of it for whoever has better tools."
+          }
+        },
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You open the panel and start sorting."
+        }
+      },
+      {
+        "text": "Take half and leave a note of your own",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "left_a_note",
+          "time_cost": "trivial",
+          "materials": {
+            "metal": 1,
+            "scrap": 1
+          },
+          "narrative": "You take a small share, then the crew spends an hour writing a note of its own, on the back of one of your ration wrappers: who you are, where you're going, which way the trouble was. You tape it next to the Lark's. Two notes now. Somebody will find them."
+        }
+      },
+      {
+        "text": "Take all of it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 6,
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "materials": {
+            "metal": 3,
+            "scrap": 2
+          },
+          "narrative": "You take everything behind the panel. It is a good haul. Nobody says anything about it, then or later, and the Lark's note stays taped inside the airlock, saying 'fair's fair' to an empty ship."
+        }
+      }
+    ]
   }
 ]

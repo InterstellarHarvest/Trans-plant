@@ -2851,6 +2851,8 @@ function setCrewMorale(v, who) {
 function moraleTargetRole(spec) {
   if (!spec || !STATE.crew.length) return null;
   if (spec === 'lowest') return STATE.crew.reduce((a, r) => (crewMoraleOf(r) < crewMoraleOf(a) ? r : a), STATE.crew[0]);
+  // The crew member a crew_speaker event is about (STATE.eventSpeaker, saved with the event).
+  if (spec === 'speaker') return STATE.eventSpeaker && STATE.crew.includes(STATE.eventSpeaker) ? STATE.eventSpeaker : null;
   return STATE.crew.includes(spec) ? spec : null;
 }
 // A member leaving the ship by any road (death, airlock, dismissal,
