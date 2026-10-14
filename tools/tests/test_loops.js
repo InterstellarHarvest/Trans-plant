@@ -18,7 +18,9 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
 
   const verb = (type, name, stub) => page.evaluate(async ({ type, name, stub }) => {
     if (stub) (new Function(stub))();
-    const n = STATE.nodes.find(x => x.node_type === type);
+    // A random map can lack the type: borrow a plain stop and retype it (test_b4_cruise parkAt).
+    let n = STATE.nodes.find(x => x.node_type === type);
+    if (!n) { n = STATE.nodes.find(x => !['station', 'fork'].includes(x.node_type) && x !== STATE.nodes[0] && x !== STATE.nodes[STATE.nodes.length - 1]); n.node_type = type; }
     STATE.currentId = n.id; renderCruise();
     document.body.classList.remove('stop-active'); // a new region: reopen the menu fresh
     document.getElementById('stop-btn').click();
