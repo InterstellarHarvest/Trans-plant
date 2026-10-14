@@ -103,7 +103,7 @@ const RANGED = ['pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_
       try {
         openMarket({});
         const row = [...document.querySelectorAll('#market-buy-list .market-row')].find(x => /UNIDENTIFIED BONE/.test(x.textContent));
-        row.querySelector('.market-row-btn').click();
+        row.querySelector('.market-row-btn').click();; { const c = document.getElementById('market-confirm'); if (c && !c.classList.contains('hidden')) document.getElementById('market-confirm-yes').click(); } // events can still need it aboard (ruling 84): the sale asks first; { const c = document.getElementById('market-confirm'); if (c && !c.classList.contains('hidden')) document.getElementById('market-confirm-yes').click(); } // events can still need it aboard (ruling 84): the sale asks first
         MarketModal.close();
       } finally { d.item_source = keep.src; d.base_price = keep.bp; }
       const [lo, hi] = sellRangeOf('unidentified_bone');
@@ -216,7 +216,7 @@ const RANGED = ['pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_
       const shown = rows().map(x => x.querySelector('.market-row-cost').textContent);
       // Sell the middle one (44) — hidden: its row shows the range.
       const g0 = STATE.goldAmount;
-      rows()[1].querySelector('.market-row-btn').click();
+      rows()[1].querySelector('.market-row-btn').click();; { const c = document.getElementById('market-confirm'); if (c && !c.classList.contains('hidden')) document.getElementById('market-confirm-yes').click(); } // events can still need it aboard (ruling 84): the sale asks first
       const paid = STATE.goldAmount - g0;
       const log = document.getElementById('market-log').textContent;
       MarketModal.close();
@@ -231,7 +231,7 @@ const RANGED = ['pre_collapse_artifact', 'corporate_memorabilia', 'unidentified_
       openMarket({ sinister: true });
       const row = [...document.querySelectorAll('#market-sell-list .market-row')].find(x => /PRE-COLLAPSE ARTIFACT/.test(x.textContent) && /\+45g/.test(x.textContent));
       const shown = row && row.querySelector('.market-row-cost').textContent;
-      row.querySelector('.market-row-btn').click();
+      row.querySelector('.market-row-btn').click();; { const c = document.getElementById('market-confirm'); if (c && !c.classList.contains('hidden')) document.getElementById('market-confirm-yes').click(); } // events can still need it aboard (ruling 84): the sale asks first
       const paid = STATE.goldAmount;
       MarketModal.close();
       return { shown, paid, left: itemValuesOf('pre_collapse_artifact') };

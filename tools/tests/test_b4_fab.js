@@ -472,7 +472,10 @@ const pickRecipe = (page, name) => page.evaluate(n => { const r = [...document.q
       const g1 = STATE.goldAmount;
       document.querySelector('#inv-grid .inv-tile[data-id="unidentified_bone"]').click();
       document.getElementById('inv-sell-btn').click();
-      const bone = { gold: STATE.goldAmount - g1, left: STATE.items.includes('unidentified_bone'), vals: JSON.stringify(STATE.itemValues.unidentified_bone || []) };
+      // Events can still need the bone aboard (ruling 84 callbacks): SELL asks first, naming them; yes sells.
+      const warned = document.getElementById('inv-route-warn').textContent;
+      document.getElementById('inv-confirm-yes').click();
+      const bone = { warned, gold: STATE.goldAmount - g1, left: STATE.items.includes('unidentified_bone'), vals: JSON.stringify(STATE.itemValues.unidentified_bone || []) };
       invSetTab('materials');
       const g2 = STATE.goldAmount;
       document.querySelector('#inv-grid .inv-tile[data-id="metal"]').click();
@@ -490,6 +493,7 @@ const pickRecipe = (page, name) => page.evaluate(n => { const r = [...document.q
     ok(r.docked.vinyl.shown && /SELL · 17g/i.test(r.docked.vinyl.text) && !r.docked.cls.shown && !r.docked.log.shown, `docked: SELL on what the trader buys ("${r.docked.vinyl.text}"); none on classified / story cargo`);
     ok(r.docked.warn && /⚠Classified/.test(r.docked.cls.notes) && /NOTES/.test(r.docked.cls.notes), `docked: the classified tile wears ⚠ and NOTES explains it ("${r.docked.cls.notes.slice(0, 60)}")`);
     ok(r.sold.gold === r.sold.price && r.sold.left === 1 && /Sold from the hold: Sealed Vinyl/.test(r.sold.log), `SELL pays the Market Row price (+${r.sold.gold}g = stationBuyPrice), one unit, logged`);
+    ok(/Required for: .*The Collector/.test(r.bone.warned), `selling the bone asks first, naming the events that need it (${r.bone.warned})`);
     ok(r.bone.gold === 11 && !r.bone.left && r.bone.vals === '[]', `a rolled copy sells for its own value (+${r.bone.gold}g) and leaves with it`);
     ok(r.metal.gold === r.metal.price && r.metal.left === 2, `materials sell by the unit (+${r.metal.gold}g, ${r.metal.left} left)`);
     ok(!r.waved.shown, 'waved off: the station sells nothing, the hold neither');
