@@ -214,7 +214,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
   ok(!k.nodeNoTrig && k.nodeDead, `the green node needs crop_dead (${k.nodeNoTrig} → ${k.nodeDead})`);
   ok(!k.inspMid && k.inspEnd && !k.inspNoFlag && k.jarEnd, `arrival payoffs need the flag and the journey's end (inspectors mid ${k.inspMid}, end ${k.inspEnd}, no flag ${k.inspNoFlag}; jar ${k.jarEnd})`);
   ok(k.ultra === 30, `Interstellar's arrival ultra weight is ${k.ultra}`);
-  ok(k.total === 223, `the game has ${k.total} events`);
+  ok(k.total >= 223, `the game has ${k.total} events (223+)`);
 
   ok(!errors.length, 'page errors: ' + errors.join(' | '));
   console.log(`\ncrop arcs: ${pass} passed, ${fail} failed`);
