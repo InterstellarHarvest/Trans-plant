@@ -10,7 +10,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   page.on('pageerror', e => errors.push(e.stack || e.message));
   await page.goto(URL);
   await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.items && MOD.crew_roster);
-  await page.evaluate(() => { applySetupToState({ trail: 'mars', ai: 'rex', captain: 'veteran', crew: ['engineer'], crop: 'soybean', ship: 'C' }); STATE.stowaway = null; });
+  await page.evaluate(() => { applySetupToState({ trail: 'mars', ai: 'rex', captain: 'veteran', crew: ['engineer'], crop: 'soybean', ship: 'C' }); STATE.stowaway = null; STATE.tipsShown = Object.keys(MOD.flavor.ai_universal.tips).filter(k => !k.startsWith('_')); /* tips (ruling 87) would take the stop's AI line these checks read */ });
   await page.waitForTimeout(400);
   const logText = () => page.evaluate(() => (STATE.shipLog || []).map(e => (typeof e === 'string' ? e : e.text)).join('\n'));
   const pool = await page.evaluate(() => ({

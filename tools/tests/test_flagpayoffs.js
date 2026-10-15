@@ -15,6 +15,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     localStorage.clear();
     applySetupToState({ trail: 'mars', ai, captain: 'veteran', crew: ['engineer', 'pilot'], crop: 'wheat', ship: 'D' });
     STATE.stowaway = null;
+    STATE.tipsShown = Object.keys(MOD.flavor.ai_universal.tips).filter(k => !k.startsWith('_')); /* tips (ruling 87) would take the stop's AI line these checks read */
   }, ai);
 
   // Callbacks: a flagged choice comes back two+ legs later, once, in the active AI's voice.

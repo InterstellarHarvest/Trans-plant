@@ -1320,6 +1320,8 @@ const hardChoiceCost = (() => {
       const list = Array.isArray(v) ? v : [v];
       if (!list.length || list.some(line => typeof line !== 'string' || !line.trim())) err(`endings.json arrival_lines.${t}.${c}: missing or blank line — that arrival could show no destination line`);
       if (new Set(list).size !== list.length) err(`endings.json arrival_lines.${t}.${c}: duplicate line`);
+      // The end card keeps the demo's size (ruling 31): no line longer than the demo's longest (119).
+      for (const line of list) if (typeof line === 'string' && line.length > 120) err(`endings.json arrival_lines.${t}.${c}: "${line.slice(0, 40)}…" is ${line.length} chars (max 120 — a longer line grows the end card)`);
       for (const line of list) if (typeof line === 'string' && /\{(?!day\})[^}]*\}/.test(line)) err(`endings.json arrival_lines.${t}.${c}: unknown token in "${line.slice(0, 40)}…" (only {day} is filled)`);
     }
     for (const t of Object.keys(al)) {
@@ -1332,6 +1334,7 @@ const hardChoiceCost = (() => {
       const list = Array.isArray(v) ? v : [v];
       if (!list.length || list.some(q => typeof q !== 'string' || !q.trim())) err(`endings.json tier_quotes.${b}: missing or blank quote — that bracket's arrival could show no quote`);
       if (new Set(list).size !== list.length) err(`endings.json tier_quotes.${b}: duplicate quote`);
+      for (const q of list) if (typeof q === 'string' && q.length > 105) err(`endings.json tier_quotes.${b}: "${q.slice(0, 40)}…" is ${q.length} chars (max 105 — a longer quote grows the end card)`);
     }
     for (const b of Object.keys(sec.tier_quotes || {})) if (!brackets.includes(b)) err(`endings.json tier_quotes.${b}: not a registered ending_score bracket`);
   }
