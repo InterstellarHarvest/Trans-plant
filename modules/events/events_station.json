@@ -3857,5 +3857,255 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_station_030",
+    "active": true,
+    "title": "The Other Botanist",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "ANOTHER botanist! With the SAME crop! ARIA wants them to be friends! ARIA can sense they are not going to be friends!",
+      "marv": "MARV has reviewed the other ship's public growbay figures. Their crop is about level with yours. They do not seem to know that. He will not be telling them.",
+      "rex": "REX notes the other botanist has a soil probe. He has assessed the soil probe as a weapon. He has concluded it is not one. He is keeping an eye on it.",
+      "chip": "CHIP sees a sponsorship opportunity! A crop-off! Two colony ships! One winner! CHIP would sell tickets!",
+      "ajoy": "AJOY says you can make a friend or a rival here. Both will remember you at the next station."
+    },
+    "body": "There is another colony ship in the next berth, and its botanist has come over to look at your crop.\n\nThey are carrying a crop of their own: a {crop.name}, as it happens, in a bay the same size, bound for a colony of their own. They would very much like to compare. They have brought notes. They have brought a soil probe. They have brought, it becomes clear quite quickly, the strong opinion that their crop is doing better than yours.",
+    "choices": [
+      {
+        "text": "Compare crops, friendly",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "rival_friend",
+          "time_cost": "trivial",
+          "narrative": "You walk them through your growbay and they walk you through theirs, and somewhere between the soil probes and the watering schedules it stops being a competition. You trade contact codes at the airlock. They promise to leave something for you at the next station."
+        }
+      },
+      {
+        "text": "Tell them yours is better",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "rival_rival",
+          "time_cost": "trivial",
+          "narrative": "You tell them, politely, that your crop is doing better than theirs. They tell you, less politely, that it isn't. The crew enjoys the whole thing enormously. The other botanist leaves with a look that suggests this is not over."
+        }
+      },
+      {
+        "text": "Swap growing tips",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "rival_friend",
+          "time_cost": "low",
+          "crop_health": 4,
+          "narrative": "Two days of trading techniques over station tea: their trick for root rot, your trick for leaf curl, an argument about water timing that both of you win. Your crop comes out of it better. So, presumably, does theirs."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_station_031",
+    "active": true,
+    "title": "A Parcel at the Dock",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "rival_friend",
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "A PRESENT! From our botanist FRIEND! ARIA is so happy! ARIA has never been given a present! ARIA has technically still not been given one, but it feels like it!",
+      "marv": "MARV identifies the parcel's contents by weight and shape as a vial of crop treatment. A practical gift. The best kind.",
+      "rex": "REX has scanned the parcel. Safe. He has also scanned the note. Friendly. He is pleased.",
+      "chip": "CHIP notes the parcel came with free shipping! Between friends! CHIP has never seen this business model! CHIP is moved!",
+      "ajoy": "AJOY says open it, and send something back. That's how a friendship lasts across a whole trail."
+    },
+    "body": "There's a parcel waiting at the dockmaster's desk with your ship's name on it.\n\nIt's from the other botanist, the one with the same crop, who docked here two days ahead of you and has gone on. The parcel is small and carefully wrapped, and the note taped to it is in a botanist's tiny, precise handwriting: 'Found this at the market. Thought of your back row. Good luck out there. Don't let mine beat you.'",
+    "choices": [
+      {
+        "text": "Open it and keep it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "crop_treatment",
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Inside: a vial of crop treatment, and a pressed leaf from their crop, labelled 'for luck'. The treatment goes into the hold for when the crop needs it. The leaf goes up on the growbay wall."
+        }
+      },
+      {
+        "text": "Open it and leave something in return",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -4,
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": "crop_treatment",
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You take the vial of treatment and leave a parcel of your own at the dockmaster's desk for their next stop: some of the good rations, {cost.food} points of them, and a note in your own handwriting. The crew argues for an hour about what the note should say, which is the best hour anyone's had this week."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_station_032",
+    "active": true,
+    "title": "Footprints in the Growbay",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "rival_rival",
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "Someone SNUCK in! To see our CROP! ARIA is outraged! ARIA is also a little flattered!",
+      "marv": "MARV has the growbay logs. Someone was in the bay for nine minutes. Nothing was taken. Something was measured. He would like to know what.",
+      "rex": "REX recommends confronting the suspect immediately. He has identified the suspect. He has prepared a stern expression.",
+      "chip": "CHIP must point out that corporate espionage is a serious matter! CHIP has done some! CHIP knows how serious it is!",
+      "ajoy": "AJOY says check the crop before you march over there. You'll want to know what they did before you ask them why."
+    },
+    "body": "Someone has been in your growbay while you were docked.\n\nThere are footprints in the spilled soil by the back row, boots, not crew issue. One of the pots has been moved an inch to the left. The soil probe readings jumped at about the time the other colony ship docked in the berth next to yours, and the botanist on that ship, the one who was so sure their crop was better than yours, is the only person on the station who would care.",
+    "choices": [
+      {
+        "text": "Storm over to their berth",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You march over to the other ship and demand an explanation. The other botanist, red-faced, admits it: they only wanted to measure your soil, because yours was doing better and they couldn't work out why. It is very hard to stay angry at someone who has just told you that your crop is better. You manage it for about a minute."
+        }
+      },
+      {
+        "text": "Check the crop first",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 3,
+          "narrative": "You check the crop. Nothing's damaged. In fact the pH on the back row has been corrected, a problem you hadn't spotted, and there's a folded note tucked under the moved pot: 'Your soil was too acid. Fixed it. Don't tell anyone I was here.' The crew decides, unanimously, never to tell anyone."
+        }
+      },
+      {
+        "text": "Lock the growbay and say nothing",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You change the growbay's lock code, say nothing, and keep a close eye on the other ship until it leaves. Nothing else happens. You never find out what they were doing in there. That bothers everyone for longer than it should."
+        }
+      }
+    ]
   }
 ]

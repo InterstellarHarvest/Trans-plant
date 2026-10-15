@@ -3558,6 +3558,8 @@ function eventEligible(ev, node, triggers) {
     // Copy that needs the crew in the scene (the crew visit the patient)
     // doesn't fire for a captain flying alone.
     if (ev.requires_crew_aboard && !STATE.crew.length) return false;
+    // A story about the living crop (crop arcs, ruling 85) needs one aboard.
+    if (ev.requires_crop_alive && !(STATE.crop && STATE.cropGrowth && STATE.cropGrowth.health > 0)) return false;
     const nodeTypes = ev.node_type || ['any'];
     // Fork nodes are the one node_type that MUST resolve chose_alpha/
     // chose_beta to keep the run moving forward — a generic node_type:

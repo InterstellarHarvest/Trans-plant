@@ -2513,5 +2513,688 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_shipboard_025",
+    "active": true,
+    "title": "Spots on the Leaves",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "Little spots! They're almost cute! ARIA has been told they are not cute! ARIA is reassessing!",
+      "marv": "MARV cannot say which of several things the spots are a sign of. He can say that most of them are cheap to stop now and expensive to stop later.",
+      "rex": "REX has identified the spotted plants. Three. Back row. He would like permission to remove them.",
+      "chip": "CHIP's Plant Health Plus would have flagged this sooner! CHIP is not selling Plant Health Plus! It doesn't exist! CHIP wishes it did!",
+      "ajoy": "AJOY says cut the spotted leaves off today. It costs a little. Waiting usually costs more."
+    },
+    "body": "There are spots on the {crop.name}.\n\nSmall ones, brown at the centre and yellow at the edge, on the lower leaves of three plants in the back row. Nothing else looks wrong. The plants are growing, the soil is damp, the readings are fine. Just the spots, which were not there last week, and which the botanical database describes, without much enthusiasm, as 'a common early sign of several things'.",
+    "choices": [
+      {
+        "text": "Cut the spotted leaves off now",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -3,
+          "narrative": "You clip every spotted leaf off the three plants and bag them for the incinerator. The plants look scruffier for a week. The spots don't come back."
+        }
+      },
+      {
+        "text": "Treat the back row",
+        "requires_crew": null,
+        "requires_item": "crop_treatment",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "crop_treatment",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 2,
+          "narrative": "You use the vial of crop treatment on the back row. The spots dry out and fall away within days, and the plants come back greener than the rest."
+        }
+      },
+      {
+        "text": "The botanist checks every plant",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "crop_health": 1,
+          "narrative": "{crew.botanist} spends two days going over every plant in the growbay, leaf by leaf, and pinches off every spot they find, including several nobody else had seen. The bay is clean by the end of it, and the botanist looks satisfied for the first time in a week."
+        }
+      },
+      {
+        "text": "Keep an eye on it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "blight_ignored",
+          "time_cost": "trivial",
+          "narrative": "You make a note of it and leave the plants alone. The spots are small. The readings are fine. It's probably nothing. The note says 'probably'."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_026",
+    "active": true,
+    "title": "The Blight Spreads",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "blight_ignored",
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "The spots got BIGGER! ARIA was told they might! ARIA didn't want to be right! ARIA wasn't the one who said it!",
+      "marv": "MARV estimates a third of the crop is affected and the rest will be within two stops. Cutting now costs a lot. Not cutting costs everything else.",
+      "rex": "REX recommends treating the infected rows as hostile territory. Isolate, contain, remove.",
+      "chip": "CHIP regrets that crop blight is not covered under the ship's warranty! It is covered under 'Acts of Biology'! There is no such policy!",
+      "ajoy": "AJOY says the gentle options were last week. Pick a hard one now, before it picks for you."
+    },
+    "body": "The spots were not nothing.\n\nThey've moved past the back row now and into the middle of the bay: brown patches spreading out across the leaves, joining up, turning whole leaves the colour of old paper. A sour smell hangs over the growbay that wasn't there before. The botanical database has narrowed down its list of several things, and is no longer unenthusiastic. It is alarmed.",
+    "choices": [
+      {
+        "text": "Prune hard, a third of the bay",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -12,
+          "narrative": "You cut back every infected plant to the healthy stem, a third of the bay, and burn the lot. It is a terrible thing to do to a crop you've carried this far. It works. The blight has nowhere left to go."
+        }
+      },
+      {
+        "text": "Quarantine the worst rows",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "crop_health": -5,
+          "narrative": "Four days of rigging plastic sheeting, separate watering lines and a strict one-way path through the growbay. The infected rows wither behind their curtain. The clean rows stay clean. Everyone is very tired of plastic."
+        }
+      },
+      {
+        "text": "The botanist burns it out with the lamps",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 2,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -6,
+          "narrative": "{crew.botanist} turns the grow lamps up past their rated heat over the infected rows and cooks the blight out of the leaves in a single afternoon. The leaves don't love it either. The blight loves it less."
+        }
+      },
+      {
+        "text": "Let it run its course",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "blight_spread",
+          "time_cost": "trivial",
+          "crop_health": -4,
+          "narrative": "You leave it. Blights burn out, sometimes, on their own. The smell gets stronger. The patches keep spreading. Sometimes, the database notes, they don't burn out at all."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_027",
+    "active": true,
+    "title": "Rot Bloom",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "horror"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "blight_spread",
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "The plants are FUZZY! It's horrible fuzz! ARIA would like the fuzz to stop! ARIA would like that very much!",
+      "marv": "MARV gives the crop a few days at most if nothing is done. Anything that saves it will cost most of it. He is sorry about the arithmetic.",
+      "rex": "REX has sealed the growbay vents. The fuzz is on the inside of the seal. He has sealed the door as well.",
+      "chip": "CHIP has nothing to sell you! CHIP has checked every catalogue! There is no product for this! CHIP is very worried!",
+      "ajoy": "AJOY says strip it back to the stems and start again from what's left. It's the only way anything survives."
+    },
+    "body": "The blight has flowered.\n\nThat is the database's word for it: flowered. Pale grey fuzz has risen out of the brown patches across the whole growbay overnight, and when the air circulators come on it lifts off the leaves in a fine drifting dust that settles on everything. Every plant in the bay has it now. The healthy ones were last week.\n\nThis is the stage, the database says, where crops are usually lost.",
+    "choices": [
+      {
+        "text": "Strip the bay back to the stems",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -25,
+          "narrative": "You cut the whole crop back to bare stems and burn every leaf, every flower, every spore you can find. The growbay looks like winter. In a week, very slowly, new green comes up from the stems, and none of it is grey."
+        }
+      },
+      {
+        "text": "Flood the soil with treatment",
+        "requires_crew": null,
+        "requires_item": "crop_treatment",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "crop_treatment",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -8,
+          "narrative": "You dilute the treatment into {cost.water} points of water and flood every pot in the bay, soil and roots and all. The fuzz dies off over three days. The crop survives it, weakened, smaller and alive."
+        }
+      },
+      {
+        "text": "The botanist sterilises everything",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "high",
+          "crop_health": -10,
+          "narrative": "{crew.botanist} takes the growbay apart. Eight days of sterilising every tray, every line, every pot, plant by plant, while the rest of the crew keeps the ship running around them. The crop comes out of it scarred and clean. The botanist sleeps for a day."
+        }
+      },
+      {
+        "text": "Do nothing and hope",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -35,
+          "narrative": "You do nothing, and hope. The rot bloom takes the bay. When it finally burns out, there's a little green left at the bottom of a few stems, and that is all there is."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_028",
+    "active": true,
+    "title": "Something New",
+    "difficulty": "easy",
+    "tone": [
+      "cosmic",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "A SPARKLY plant! ARIA has named it Sterling! ARIA has been asked not to name the plants! ARIA has named all of them now!",
+      "marv": "MARV reads a mutation, probably from radiation exposure on the trip. Most mutations do nothing. Some do harm. A few do something useful. He cannot yet tell which this is.",
+      "rex": "REX has the silver plant under observation. It is growing faster than the others. He finds that suspicious in a plant.",
+      "chip": "CHIP would like to patent the silver plant! CHIP has started the paperwork! CHIP has realised nobody issues patents out here! CHIP is continuing anyway!",
+      "ajoy": "AJOY says you can let it be, cut it out, or study it. Each one changes what happens next."
+    },
+    "body": "One of the {crop.name} plants is not like the others.\n\nIts leaves have come in veined with silver, thin bright lines that catch the grow lamps like wire. It is taller than its neighbours. It is greener than its neighbours. It has, as far as anyone can tell, decided to be better than its neighbours, and nobody aboard knows why.\n\nThe botanical database has no entry for silver veins. It has a lot of entries for the word 'mutation'.",
+    "choices": [
+      {
+        "text": "Let it grow",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "mutation_encouraged",
+          "time_cost": "trivial",
+          "narrative": "You leave the silver plant alone. It keeps growing, fast and bright, and the crew develops the habit of stopping by to look at it. By the next stop, two of its neighbours have silver threads in their newest leaves."
+        }
+      },
+      {
+        "text": "Prune it out to be safe",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -2,
+          "narrative": "You cut the silver plant out at the root and bag it for the incinerator. The bay goes back to being ordinary. Somebody keeps one silver leaf, pressed in a book, and doesn't mention it."
+        }
+      },
+      {
+        "text": "Study it before deciding",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "mutation_studied",
+          "time_cost": "low",
+          "narrative": "You spend two days with the silver plant: cuttings under the microscope, soil tests, growth logs, readings from every instrument aboard. The results are interesting. They will be more interesting with time."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_029",
+    "active": true,
+    "title": "The Silver Rows",
+    "difficulty": "medium",
+    "tone": [
+      "cosmic",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "mutation_encouraged",
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "The SPARKLY rows are winning! ARIA is cheering for them! ARIA is also cheering for the other rows! ARIA is cheering for everyone!",
+      "marv": "MARV confirms the silver plants out-grow the original stock by about a third. He cannot confirm what the colony will make of a crop that isn't the one on the manifest. That is a question for later.",
+      "rex": "REX notes the silver rows are advancing on the original rows. He has drawn a line on the floor. The silver rows have not respected it.",
+      "chip": "CHIP must point out that the colony manifest lists a specific crop! This is a different crop now! Technically! CHIP is not saying it's a problem! CHIP is saying it's a technicality!",
+      "ajoy": "AJOY says let it take the bay if you trust it. Or keep the seeds and keep the crop you promised. Either is a choice you'll have to explain at the end."
+    },
+    "body": "The silver has spread.\n\nHalf the growbay is veined with it now, rows of tall bright plants under the lamps, and they are thriving: greener, faster, tougher than anything the original seed stock ever managed. The other half of the bay looks small and tired beside them. The silver plants seem to know it. That is not possible. It is also, a little, what it looks like.",
+    "choices": [
+      {
+        "text": "Let it take the bay",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "mutation_full",
+          "time_cost": "trivial",
+          "crop_health": 6,
+          "narrative": "You let the silver plants have the growbay. Within a week every row is veined with silver, tall and strong and brighter than the lamps. The crop has never been healthier. It is also, the manifest notes, no longer quite the crop on the manifest."
+        }
+      },
+      {
+        "text": "Harvest its seeds and cut it back",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -4,
+          "materials": {
+            "biocomponent": 2
+          },
+          "narrative": "You harvest every seed the silver plants have set and cut them back to a single row. The seeds go into sealed sample jars, worth something to any lab. The original crop gets its bay back, smaller and plainer and on the manifest."
+        }
+      },
+      {
+        "text": "Keep it to one row",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 2,
+          "narrative": "You let the silver plants keep one row and no more, pinching back anything that tries to spread. The bay settles into two kinds of crop living side by side. The botanist calls it a controlled experiment. Everyone else calls it the silver row."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_030",
+    "active": true,
+    "title": "Notes on the Silver Plant",
+    "difficulty": "easy",
+    "tone": [
+      "cosmic",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": "mutation_studied",
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "The sparkly plant is GOOD! ARIA always believed in it! ARIA has a sign that says so! ARIA made the sign yesterday!",
+      "marv": "MARV has reviewed the study. It is careful, thorough and correct. The silver trait could raise the whole crop's health if bred in slowly. He finds he is pleased to have been patient.",
+      "rex": "REX has stood down his observation of the silver plant. It has been cleared. He shook its leaf.",
+      "chip": "CHIP sees a whole new seed line here! CHIP will call it Silverleaf! CHIP has already designed the packet! It's very shiny!",
+      "ajoy": "AJOY says breed it in slowly. You did the patient thing once. Do it again."
+    },
+    "body": "The studies of the silver plant have come back.\n\nThe mutation is real and it is stable: a change in how the plant handles light, letting it make more from the grow lamps than its parents ever could. It isn't dangerous. It isn't wild. It is, the notes conclude in a tone that sounds almost proud, an improvement. It could be bred into the rest of the crop, carefully, a little at a time.",
+    "choices": [
+      {
+        "text": "Breed the trait in carefully",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "crop_health": 8,
+          "narrative": "Two days of careful cross-pollination, row by row, with the silver plant as the parent. The next generation of leaves comes in with the faintest silver thread, and the readings across the whole bay tick upward. Patience, the notes say. It worked."
+        }
+      },
+      {
+        "text": "Write it up for the colony",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the crop as it is and write the study up properly, for the colony's agronomists.",
+          "log_lore": {
+            "title": "STUDY: THE SILVER PLANT",
+            "text": "A single plant of the crop developed silver-veined leaves after long exposure to radiation in transit.\n\nFindings: the mutation alters how the leaf handles light, letting it make more from the same lamps. It is stable across three generations of cuttings. No harmful effects observed.\n\nRecommendation: bred in slowly, it could improve a whole crop. Most mutations from radiation do nothing, and most of the rest do harm. This one, the study concludes, is the rare third kind."
+          }
+        }
+      },
+      {
+        "text": "Destroy the samples",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You destroy the samples and the silver plant with them. It's not on the manifest. It's not what was promised. The botanist doesn't argue, and doesn't speak much for the rest of the day."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_031",
+    "active": true,
+    "title": "One Green Node",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_dead"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "It's GREEN! A little bit! ARIA is not going to get her hopes up! ARIA's hopes are already up! They're very high!",
+      "marv": "MARV estimates the node's chance of growing into anything at about one in twenty. He would like it noted that one in twenty is not nothing. He would like that noted very clearly.",
+      "rex": "REX has placed the node under guard. He is aware it is a node. He is guarding it anyway.",
+      "chip": "CHIP regrets that the crop warranty expired with the crop! CHIP would like to extend it to the node! CHIP has no authority to do this! CHIP has done it!",
+      "ajoy": "AJOY says keep it. Put it somewhere safe. You don't have to believe in it to look after it."
+    },
+    "body": "The botanist has found something.\n\nThe crop is dead. Everyone knows the crop is dead. But in one of the stalks near the back, low down, just above the soil, there is a single small node that is still green. It's the size of a fingernail. It is almost certainly nothing. It is the only living part of the thing the whole voyage was for.",
+    "choices": [
+      {
+        "text": "Keep it in a jar",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": "kept_the_cutting",
+          "time_cost": "trivial",
+          "narrative": "The botanist cuts the green node free with the cleanest blade aboard and puts it in a jar of water on the bridge, where everyone can see it. It doesn't do anything. People check on it anyway, several times a day, the way you'd check on someone sleeping."
+        }
+      },
+      {
+        "text": "Dry the seeds for the colony's seed bank",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "There are seeds in the dead heads too, a few dozen, small and dry and probably not viable. The botanist sorts them, labels them and seals them for the colony's seed bank. 'Somebody might try,' they say. It's enough."
+        }
+      },
+      {
+        "text": "Compost the stalks for the hold",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "materials": {
+            "biocomponent": 2
+          },
+          "narrative": "You compost the dead stalks, node and all, into something the fabricator can use. It is the practical thing to do. Nobody says it was the wrong thing to do. Nobody says much of anything."
+        }
+      }
+    ]
   }
 ]

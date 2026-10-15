@@ -786,6 +786,7 @@ const eventOnTrail = (ev, trail) => {
     // requires_crew_aboard (eventEligible): copy that needs the crew in the
     // scene never fires for a captain flying alone.
     if (ev.requires_crew_aboard != null && ev.requires_crew_aboard !== true) err(`${at}: requires_crew_aboard must be true (or absent)`);
+    if (ev.requires_crop_alive != null && ev.requires_crop_alive !== true) err(`${at}: requires_crop_alive must be true (or absent)`);
     if (ev.draw_weight != null && !(Number.isFinite(ev.draw_weight) && ev.draw_weight > 0 && ev.draw_weight <= 5)) err(`${at}: draw_weight must be a number in (0, 5]`);
     if (ev.draw_weight != null && !ev.biome) warn(`${at}: draw_weight without a biome gate — only narrow gates should need it`);
     if (ev.crew_speaker != null) {
