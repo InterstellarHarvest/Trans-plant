@@ -162,9 +162,10 @@ const toPlainStop = page => page.evaluate(() => {
     ok(r.quote === r.wantQuote, 'the tier quote under it');
     ok(r.visible && r.actions, 'title, line, quote, Run Report, expander and Back / New Run all visible inside the card');
     ok(r.noScroll && r.inFrame, `no scrolling needed (card ${r.cardW}×${r.cardH} in the 960×640 frame)`);
-    // 481 = the original demo copy at its tallest (the legendary / rough / hollow quotes wrap to two
-    // lines); lint_modules caps new arrival lines and quotes at the originals' length (ruling 88).
-    ok(r.cardW === 600 && r.cardH <= 485, `demo card size: 600 wide, ${r.cardH} tall (demo ≈ 400 + the expander row, up to two quote lines)`);
+    // 481 = the original demo copy at its tallest in Chromium (the legendary / rough / hollow quotes
+    // wrap to two lines; Firefox's text metrics run ~6px taller, 487); lint_modules caps new arrival
+    // lines and quotes at the originals' length (ruling 88).
+    ok(r.cardW === 600 && r.cardH <= 490, `demo card size: 600 wide, ${r.cardH} tall (demo ≈ 400 + the expander row, up to two quote lines)`);
     ok(r.fullHidden && /Arrival is procedural|colony/i.test(r.body), 'the module paragraphs are there but folded away');
     ok(r.more === 'READ THE COLONY REPORT ▾', `expander reads "${r.more}"`);
     ok(r.recordInFull && !r.recordVisible, "the Ship's Record folds away with the report");
