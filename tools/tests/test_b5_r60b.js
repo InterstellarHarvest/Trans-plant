@@ -247,7 +247,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       return { armed, pc, w, reliefUltra, arrival: rules.late_difficulty.weights_at_arrival.ultra, early: rules.event_difficulty_weights.ultra };
     });
     ok(r.armed.relief === r.pc.relief_duration && r.armed.streak === 0, `an ultra draw counts toward the pity counter (${JSON.stringify(r.armed)})`);
-    ok(r.early === 0 && r.arrival >= 10 && r.arrival <= 15, `interstellar ultra weight 0 for the first half → ${r.arrival} at arrival (${r.w.ultra.toFixed(1)} at 95%)`);
+    // Ruling 85 raised the arrival weight from 15 to 30.
+    ok(r.early === 0 && r.arrival === 30, `interstellar ultra weight 0 for the first half → ${r.arrival} at arrival (${r.w.ultra.toFixed(1)} at 95%)`);
     ok(r.reliefUltra === 0, 'pity relief draws no ultra');
   }
 
