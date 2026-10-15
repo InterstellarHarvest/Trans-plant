@@ -685,6 +685,12 @@
     if (split < Math.round(cropWaterNeed()) - 10) why.push('Thirsty');
     return why;
   }
+  // Crop problems in the order the card names them (the worst first).
+  const CROP_ISSUES = [
+    { why: 'Pests', label: 'PESTS: TREAT IT', tip: 'Pests are eating the crop. Open the growbay and TREAT (it takes a day), or USE a crop treatment from the hold.' },
+    { why: 'Sick', label: 'SICK', tip: "The crop's health is below its sick line. Open the growbay to see what's hurting it." },
+    { why: 'Thirsty', label: 'THIRSTY', tip: "The crop's share of the water is below what it needs. Raise it in Orders or the growbay." },
+  ];
   function renderCropCard() {
     const card = $('crop-card-mini');
     if (!STATE.crop) return;
@@ -699,7 +705,8 @@
     const day = cg ? cg.day : 0;
     $('crop-name').textContent = STATE.crop.replace(/_/g, ' ').toUpperCase();
     paintCropIcon(STATE.crop, stageIdx);
-    $('crop-stage').textContent = !alive ? 'DEAD' : mature ? 'READY' : STAGE_NAMES[stageIdx];
+    const stageEl = $('crop-stage');
+    stageEl.textContent = !alive ? 'DEAD' : mature ? 'READY' : STAGE_NAMES[stageIdx];
     const dayEl = $('crop-day');
     dayEl.textContent = 'DAY ' + day + ' / ' + maturity;
     const overdue = alive && day > maturity && growth < 100;
@@ -712,6 +719,17 @@
     const led = $('crop-alert-led');
     led.classList.toggle('on', why.length > 0);
     led.title = why.length ? why.join(' · ') : 'Nothing needs attention';
+    // A problem takes the stage line until it is dealt with (owner
+    // 2026-10-15, ruling 86): the worst first, in amber, with what to do
+    // on hover. The plant shows it too: pests pulse it amber, sickness
+    // drains its colour. The LED stays the demo's general cue.
+    const issue = alive ? CROP_ISSUES.find(i => why.includes(i.why)) : null;
+    stageEl.classList.toggle('issue', !!issue && !mature);
+    if (issue && !mature) stageEl.textContent = issue.label;
+    stageEl.title = issue ? issue.tip : '';
+    const icon = $('crop-icon');
+    icon.classList.toggle('pest', alive && !!(cg && cg.pest));
+    icon.classList.toggle('sick', alive && why.includes('Sick'));
   }
   function harvestFromCard(e) {
     if (e) e.stopPropagation(); // the card itself opens the growbay

@@ -499,6 +499,14 @@ body.stop-active #stop-menu { opacity: 1; }
 @keyframes crop-alert-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
 .crop-growing { display: flex; flex-direction: column; gap: 3px; }
 .crop-stage { font-family: 'Press Start 2P', cursive; line-height: 1; font-size: 8px; letter-spacing: 1.5px; color: var(--crop-border-color); text-shadow: 0 0 4px rgba(200,168,90,0.25); }
+/* A crop problem (ruling 86): the stage line names it in the alert amber;
+   pests pulse the plant, sickness drains its colour. */
+#crop-card-mini .crop-stage.issue { color: var(--crop-alert-color); text-shadow: 0 0 6px rgba(255,172,0,0.35); }
+#crop-card-mini .crop-icon.has-plant-sprite.sick { filter: saturate(0.3) sepia(0.35) brightness(0.85) drop-shadow(0 0 8px rgba(140,200,144,0.15)); }
+#crop-card-mini .crop-icon.has-plant-sprite.pest { filter: drop-shadow(0 0 6px var(--crop-alert-color)); animation: crop-pest-pulse 1.4s ease-in-out infinite; }
+#crop-card-mini .crop-icon.has-plant-sprite.pest.sick { filter: saturate(0.3) sepia(0.35) brightness(0.85) drop-shadow(0 0 6px var(--crop-alert-color)); }
+@keyframes crop-pest-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+@media (prefers-reduced-motion: reduce) { #crop-card-mini .crop-icon.has-plant-sprite.pest { animation: none; } }
 .crop-day { font-family: 'VT323', monospace; font-size: 13px; letter-spacing: 0.5px; color: var(--card-desc-color); transition: color 0.3s, text-shadow 0.3s; }
 /* Past maturity days and still not grown (poor health). */
 .crop-day.overdue { color: var(--red); text-shadow: 0 0 4px rgba(204,51,51,0.4); }
