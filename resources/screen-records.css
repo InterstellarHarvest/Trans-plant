@@ -1,0 +1,96 @@
+/* ── Records — run history + best scores (owner ruling 89) ─────────
+   Opened from the title screen. The end report card's register (dark
+   slate, gold edge, Press Start 2P heads over VT323 rows); outcome
+   colours come from screen-end.css's tier / failure table, which is
+   scoped to this overlay too. Logic: engine/js/screens/records.js. */
+#overlay-records {
+  --rec-cream: #e8d8a0;
+  --rec-text:  #aab5c4;
+  --rec-dim:   #6f7a88;
+  --rec-line:  rgba(200,168,90,0.22);
+  background: rgba(4,8,16,0.78);
+  z-index: 70;
+}
+#rec-card {
+  position: absolute; left: 50%; top: 50%;
+  translate: -50% -50%;
+  width: 720px; max-height: 600px;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 18px 24px 16px;
+  background: linear-gradient(180deg, #1a2030, #0e1320);
+  border: 2px solid rgba(200,168,90,0.6);
+  border-radius: 4px;
+  box-shadow: 0 0 28px rgba(0,0,0,0.55), 0 6px 32px rgba(0,0,0,0.55);
+  scale: 0.96; transition: scale 0.25s ease;
+}
+#overlay-records.active #rec-card { scale: 1; }
+
+#rec-card .rec-header { display: flex; align-items: center; justify-content: center; position: relative; padding-bottom: 6px; border-bottom: 2px solid var(--rec-line); }
+#rec-card .rec-title {
+  font-family: 'Press Start 2P', monospace; font-weight: normal;
+  font-size: 14px; letter-spacing: 3px; color: var(--rec-cream); margin: 0;
+}
+#rec-card .rec-x {
+  position: absolute; right: -6px; top: -6px;
+  width: 26px; height: 26px; line-height: 22px;
+  font-family: 'VT323', monospace; font-size: 24px;
+  color: var(--rec-cream); background: transparent;
+  border: 1px solid transparent; border-radius: 3px;
+  cursor: var(--cursor-hand, pointer);
+}
+#rec-card .rec-x:hover { border-color: rgba(200,168,90,0.45); }
+
+#rec-card .rec-section-title {
+  font-family: 'Press Start 2P', monospace; font-size: 7px; letter-spacing: 1.5px;
+  color: var(--gold); margin-top: 6px;
+}
+
+/* Best per destination: DEST · SCORE · outcome + who/what/when. */
+#rec-best { display: flex; flex-direction: column; gap: 4px; }
+#rec-card .rec-best {
+  display: grid; grid-template-columns: 110px 56px 1fr; align-items: center; gap: 10px;
+  padding: 5px 8px; border: 1px solid var(--rec-line); border-radius: 3px;
+  font-family: 'VT323', monospace; font-size: 17px; color: var(--rec-text);
+}
+#rec-card .rec-best.empty { grid-template-columns: 110px 1fr; }
+#rec-card .rec-best .rec-score { font-size: 26px; color: var(--rec-cream); text-align: right; }
+#rec-card .rec-what { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+
+#rec-card .rec-dest { font-family: 'Press Start 2P', monospace; font-size: 8px; letter-spacing: 1.2px; color: var(--rec-cream); }
+#rec-card .rec-sub { color: var(--rec-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#rec-card .rec-none { color: var(--rec-dim); font-family: 'VT323', monospace; font-size: 17px; }
+
+/* Last voyages: date · dest · outcome · score · ship/crop/day. */
+#rec-runs { display: flex; flex-direction: column; }
+#rec-card .rec-run {
+  display: grid; grid-template-columns: 56px 100px 190px 44px 1fr; align-items: center; gap: 8px;
+  padding: 3px 8px; border-bottom: 1px solid var(--rec-line);
+  font-family: 'VT323', monospace; font-size: 17px; color: var(--rec-text);
+}
+#rec-card .rec-run:last-child { border-bottom: none; }
+#rec-card .rec-run .rec-date { color: var(--rec-dim); }
+#rec-card .rec-run .rec-score { color: var(--rec-cream); text-align: right; }
+#rec-card .rec-tone { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 1px; }
+
+/* Outcome colours: records.js sets each .rec-tone's colour to the end
+   screen's tier / failure token (var(--tier-<bracket>-color) etc.). */
+
+#rec-card .rec-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 6px; padding-top: 8px; border-top: 2px solid var(--rec-line);
+  font-family: 'VT323', monospace; font-size: 16px; color: var(--rec-text);
+}
+#rec-card .rec-note { color: var(--rec-dim); }
+#rec-card .rec-btn {
+  font-family: 'Press Start 2P', monospace; line-height: 1;
+  font-size: 8px; letter-spacing: 1.4px; text-transform: uppercase;
+  padding: 9px 14px;
+  background: linear-gradient(180deg, #2a3040 0%, #141820 100%);
+  color: var(--rec-cream);
+  border: 2px solid rgba(200,168,90,0.45); border-radius: 3px;
+  cursor: var(--cursor-hand, pointer);
+}
+#rec-card .rec-btn:hover { filter: brightness(1.2); border-color: var(--gold); }
+#rec-card .rec-btn:active { transform: translate(1px, 1px); }
+#rec-card .rec-btn:disabled { opacity: 0.35; cursor: var(--cursor-denied, not-allowed); filter: none; }
+#rec-card .rec-btn.danger { border-color: rgba(204,51,51,0.7); color: #e8b0a0; }

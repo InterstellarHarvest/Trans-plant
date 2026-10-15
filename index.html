@@ -22,6 +22,7 @@
 <link href="resources/screen-orders.css" rel="stylesheet">
 <link href="resources/screen-end.css" rel="stylesheet">
 <link href="resources/screen-shipslog.css" rel="stylesheet">
+<link href="resources/screen-records.css" rel="stylesheet">
 <link href="resources/screen-inventory.css" rel="stylesheet"> <!-- cargo hold -->
 <script>
 /* Double-click launch: browsers block fetch()/XHR on file:// pages, so
@@ -671,6 +672,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
       <div class="title-buttons" id="title-buttons">
         <button class="retro-btn accent" id="btn-new"><span class="btn-led" style="background:#2a3040"></span>New Game</button>
         <button class="retro-btn disabled" id="btn-continue"><span class="btn-led" style="background:#333"></span>Continue</button>
+        <button class="retro-btn disabled" id="btn-records"><span class="btn-led" style="background:#333"></span>Records</button><!-- ruling 89: engine/js/screens/records.js -->
       </div>
     </div>
 
@@ -1017,6 +1019,27 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
           <div class="scroll-track"><div class="scroll-thumb"></div></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Records — run history + best scores (owner ruling 89). Opened from
+       the title screen; logic engine/js/screens/records.js, styles
+       resources/screen-records.css. -->
+  <div id="overlay-records" class="overlay dim-behind" role="dialog" aria-label="Records">
+    <div id="rec-card">
+      <header class="rec-header">
+        <h1 class="rec-title">RECORDS</h1>
+        <button class="rec-x" id="rec-x" aria-label="Close" data-esc-close>×</button>
+      </header>
+      <div class="rec-section-title">BEST ARRIVAL PER DESTINATION</div>
+      <div id="rec-best"></div>
+      <div class="rec-section-title" id="rec-runs-title">LAST 10 VOYAGES</div>
+      <div id="rec-runs"></div>
+      <footer class="rec-footer">
+        <span class="rec-note">Best arrivals count only runs whose crop arrived alive.</span>
+        <button class="rec-btn" id="rec-clear">Clear Records</button>
+        <span id="rec-confirm" style="display:none;">Clear every record? <button class="rec-btn danger" id="rec-yes">Yes, clear</button> <button class="rec-btn" id="rec-no">Keep</button></span>
+      </footer>
     </div>
   </div>
 
@@ -1692,6 +1715,7 @@ const CROP_MATURITY_DEFAULT = 90;
 <script src="engine/js/screens/market.js"></script>
 <script src="engine/js/screens/crew.js"></script>
 <script src="engine/js/screens/endings.js"></script>
+<script src="engine/js/screens/records.js"></script>
 <script src="engine/js/shipslog.js"></script>
 <script src="engine/js/screens/inventory.js"></script> <!-- cargo hold -->
 

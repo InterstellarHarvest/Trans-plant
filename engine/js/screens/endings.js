@@ -161,6 +161,8 @@
       days:  STATE.daysElapsed,
       baseDays: STATE.baseDays,
       failed: end.kind === 'failure',
+      // The arrival's score (ruling 89; index.html scoreValue, whole points).
+      score: end.kind === 'failure' || typeof runScore !== 'function' ? null : runScore(),
     };
 
     // Ship's Record — the voyage's notable choices (index.html shipsRecordLines).
@@ -299,8 +301,12 @@
     else if (delta > 0) { cmp = nDays(delta) + ' EARLY'; cmpClass = 'early'; }
     else if (delta < 0) { cmp = nDays(-delta) + ' LATE'; cmpClass = 'late'; }
     else { cmp = 'ON TIME'; cmpClass = ''; }
+    // Ruling 89: an arrival shows its score, and says when it is the
+    // destination's new best (records.js).
+    const scoreBit = stats.score == null ? '' : ` · SCORE <span class="day-score">${stats.score}</span>` +
+      (currentView && currentView.recorded && currentView.recorded.newBest ? ' <span class="day-best">NEW BEST</span>' : '');
     $('end-day-line').innerHTML =
-      `DAY <span class="day-num">${stats.days}</span> OF ${stats.baseDays} · <span class="day-cmp ${cmpClass}">${cmp}</span>` +
+      `DAY <span class="day-num">${stats.days}</span> OF ${stats.baseDays} · <span class="day-cmp ${cmpClass}">${cmp}</span>` + scoreBit +
       // The rest of what the score counts (index.html scoreValue). A
       // failure has no score, so no score extras either.
       (!stats.failed && (stats.soil || stats.cropBonus > 1) ? '<span class="score-extras">' + [
@@ -345,7 +351,7 @@
       paintRecord('end-cine-quote', null); // arrivals show it on the report card
     } else {
       btn.textContent = 'New Run';
-      btn.onclick = () => { clearSave(); location.reload(); };
+      btn.onclick = () => { recordFinal(); clearSave(); location.reload(); };
       bodyEl.textContent = view.body || '';
       bodyEl.style.display = view.body ? 'block' : 'none';
       if (view.quote) { quoteEl.textContent = view.quote; quoteEl.style.display = 'block'; }
@@ -476,8 +482,16 @@
   }
   function startStars() { if (starRunning) return; starRunning = true; starLast = 0; requestAnimationFrame(drawStars); }
 
+  /* Ruling 89: the run goes in the records once its ending is final — at
+     once, unless it offers a way on (Keep flying, the beacon); then when
+     the player accepts it (reads the report, or starts a new run). */
+  function recordFinal() {
+    if (!currentView || currentView.recorded || typeof recordRun !== 'function') return;
+    currentView.recorded = recordRun(currentView) || { newBest: false };
+  }
   function renderEndScreen(end) {
     currentView = buildEndView(end);
+    if (!currentView.continueOption && !currentView.beaconOption) recordFinal();
     renderCinematic(currentView);
     showScreen('screen-end');
     revealScene(currentView);
@@ -492,6 +506,7 @@
     STATE._resumableEnd = false;
     const b2 = $('end-cine-btn2');
     if (b2) { b2.style.display = 'none'; b2.onclick = null; }
+    recordFinal();
     if (currentView) renderReport(currentView);
   }
   function endBackToCinematic() {

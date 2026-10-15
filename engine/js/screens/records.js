@@ -1,0 +1,175 @@
+'use strict';
+/* ────────────────────────────────────────────────────────────────
+   RECORDS — run history and best scores (owner ruling 89, 2026-10-15).
+
+   Every finished run is written to localStorage (RECORDS_KEY, apart from
+   the run save, so a new run never clears it): arrivals with their tier
+   and score, failures with how the voyage ended. The last RECORDS_KEEP
+   runs are kept, newest first; each destination's best arrival (highest
+   score, crop alive — the crop is the mission) is kept for good.
+   The title screen's RECORDS button opens the panel; CLEAR RECORDS
+   (confirmed) empties it.
+
+   A run is recorded once, when its ending is final: at once for an
+   arrival or a terminal failure, and when the player accepts a failure
+   that offered a way on (Keep flying, the beacon) by reading its report
+   or starting a new run. The run's art seed is its id, so rendering the
+   same ending twice (a reload of a pending failure) updates one entry.
+   ?debug= URLs record nothing, as they save nothing.
+
+   Load-order note: loads before index.html's inline script; reads MOD /
+   STATE only inside functions called later.
+   ──────────────────────────────────────────────────────────────── */
+(function () {
+  const RECORDS_KEY = 'transplant_records_v1';
+  const RECORDS_KEEP = 10;
+  const DEST_LABEL = { lunar: 'LUNAR', mars: 'MARS', interstellar: 'FAR GARDEN' };
+  const TIER_LABEL = { legendary: 'MADE IT', good: 'MOSTLY MADE IT', rough: 'BARELY MADE IT', pyrrhic: "NOBODY'S SURE", hollow: "MADE IT. IT DIDN'T" };
+  const $ = id => document.getElementById(id);
+
+  function blank() { return { runs: [], best: {} }; }
+  function loadRecords() {
+    try {
+      const r = JSON.parse(localStorage.getItem(RECORDS_KEY));
+      if (r && Array.isArray(r.runs) && r.best && typeof r.best === 'object') return r;
+    } catch (_) {}
+    return blank();
+  }
+  function saveRecords(r) {
+    try { localStorage.setItem(RECORDS_KEY, JSON.stringify(r)); return true; } catch (_) { return false; }
+  }
+  function recordingOff() { return new URLSearchParams(location.search).has('debug'); }
+
+  // The shown score: whole points, rounded down so it never reads past
+  // the bracket it earned (124.6 is MOSTLY MADE IT, not 125).
+  function runScore() { return Math.max(0, Math.floor(scoreValue())); }
+
+  /* One finished run, from the end view endings.js built. */
+  function entryFor(view) {
+    const arrival = view.category === 'arrival';
+    const crop = STATE.crop || null;
+    return {
+      id: STATE.artSeed || 0,
+      ts: Date.now(),
+      ship: STATE.shipName || 'The Ship',
+      trail: STATE.trail,
+      crop,
+      cropAlive: !!(crop && STATE.cropGrowth && STATE.cropGrowth.health > 0),
+      captain: STATE.captain || null,
+      kind: arrival ? 'arrival' : 'failure',
+      tone: view.toneId,                       // bracket, or failure_type
+      title: arrival ? TIER_LABEL[view.toneId] || view.toneId : String(view.title || '').toUpperCase(),
+      score: arrival ? runScore() : null,
+      days: STATE.daysElapsed,
+      baseDays: STATE.baseDays,
+      crew: STATE.crew.length,
+      startCrew: STATE.startCrew != null ? STATE.startCrew : STATE.crew.length,
+    };
+  }
+  const countsForBest = e => e.kind === 'arrival' && e.cropAlive;
+  const beats = (a, b) => !b || a.score > b.score || (a.score === b.score && a.days < b.days);
+
+  /* Records a finished run. Returns { entry, newBest } (newBest: it is now
+     its destination's best), or null when nothing was recorded. */
+  function recordRun(view) {
+    if (!view || recordingOff() || !STATE.trail) return null;
+    const r = loadRecords();
+    const e = entryFor(view);
+    r.runs = [e].concat(r.runs.filter(x => x.id !== e.id)).slice(0, RECORDS_KEEP);
+    let newBest = false;
+    if (countsForBest(e)) {
+      const cur = r.best[e.trail];
+      if (cur && cur.id === e.id) { r.best[e.trail] = e; newBest = true; }
+      else if (beats(e, cur)) { r.best[e.trail] = e; newBest = true; }
+    }
+    saveRecords(r);
+    return { entry: e, newBest };
+  }
+
+  function clearRecords() { try { localStorage.removeItem(RECORDS_KEY); } catch (_) {} }
+  function hasRecords() { const r = loadRecords(); return r.runs.length > 0 || Object.keys(r.best).length > 0; }
+
+  /* ── Panel ─────────────────────────────────────────────────── */
+  const cropName = id => {
+    const c = id && ((MOD.crops && MOD.crops.crops) || []).find(x => x.id === 'crop_' + id);
+    return c ? c.name : (id ? id : 'No crop');
+  };
+  const captainName = id => id ? id.charAt(0).toUpperCase() + id.slice(1) : '';
+  const fmtDate = ts => { try { return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch (_) { return ''; } };
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // The end screen's colour table (screen-end.css, scoped to this overlay too).
+  const toneStyle = e => `color: var(--${e.kind === 'arrival' ? 'tier' : 'fail'}-${String(e.tone).replace(/[^a-z_]/g, '')}-color)`;
+
+  function bestRow(trail, e) {
+    if (!e) return `<div class="rec-best empty"><span class="rec-dest">${DEST_LABEL[trail]}</span><span class="rec-none">No arrival yet</span></div>`;
+    return `<div class="rec-best"><span class="rec-dest">${DEST_LABEL[trail]}</span>` +
+      `<span class="rec-score">${e.score}</span>` +
+      `<span class="rec-what"><span class="rec-tone" style="${toneStyle(e)}">${esc(e.title)}</span>` +
+      `<span class="rec-sub">${esc(e.ship)} · ${esc(cropName(e.crop))} · ${esc(captainName(e.captain))} · day ${e.days} of ${e.baseDays} · crew ${e.crew}/${e.startCrew}</span></span></div>`;
+  }
+  function runRow(e) {
+    return `<div class="rec-run">` +
+      `<span class="rec-date">${esc(fmtDate(e.ts))}</span>` +
+      `<span class="rec-dest">${DEST_LABEL[e.trail] || esc(e.trail)}</span>` +
+      `<span class="rec-tone" style="${toneStyle(e)}">${esc(e.title)}</span>` +
+      `<span class="rec-score">${e.score == null ? '—' : e.score}</span>` +
+      `<span class="rec-sub">${esc(e.ship)} · ${esc(cropName(e.crop))} · day ${e.days}</span></div>`;
+  }
+
+  function paintRecords() {
+    const r = loadRecords();
+    $('rec-best').innerHTML = ['lunar', 'mars', 'interstellar'].map(t => bestRow(t, r.best[t])).join('');
+    $('rec-runs').innerHTML = r.runs.length ? r.runs.map(runRow).join('') : '<div class="rec-none">No voyages finished yet.</div>';
+    $('rec-runs-title').textContent = 'LAST ' + RECORDS_KEEP + ' VOYAGES';
+    const clear = $('rec-clear');
+    clear.disabled = !(r.runs.length || Object.keys(r.best).length);
+    setConfirm(false);
+  }
+  function setConfirm(on) {
+    $('rec-clear').style.display = on ? 'none' : '';
+    $('rec-confirm').style.display = on ? '' : 'none';
+  }
+  function openRecords() {
+    paintRecords();
+    showOverlay('overlay-records');
+    $('rec-x').focus({ preventScroll: true });
+  }
+  function closeRecords() {
+    hideOverlay('overlay-records');
+    refreshRecordsButton();
+  }
+  function refreshRecordsButton() {
+    const btn = $('btn-records');
+    if (!btn) return;
+    const has = hasRecords();
+    btn.classList.toggle('disabled', !has);
+    const led = btn.querySelector('.btn-led');
+    if (led) led.style.background = has ? '#c8a85a' : '#333';
+  }
+
+  function wire() {
+    const btn = $('btn-records');
+    if (!btn || btn.dataset.wired) return;
+    btn.dataset.wired = '1';
+    btn.addEventListener('click', () => { if (hasRecords()) openRecords(); });
+    $('rec-x').addEventListener('click', closeRecords);
+    $('overlay-records').addEventListener('click', e => { if (e.target.id === 'overlay-records') closeRecords(); });
+    $('rec-clear').addEventListener('click', () => setConfirm(true));
+    $('rec-no').addEventListener('click', () => setConfirm(false));
+    $('rec-yes').addEventListener('click', () => { clearRecords(); paintRecords(); refreshRecordsButton(); });
+    // Same refresh rhythm as Continue: whenever the title buttons appear.
+    const buttons = $('title-buttons');
+    if (buttons) new MutationObserver(() => { if (buttons.classList.contains('visible')) refreshRecordsButton(); })
+      .observe(buttons, { attributes: true, attributeFilter: ['class'] });
+    refreshRecordsButton();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
+
+  Object.assign(window, {
+    // engine API (endings.js)
+    recordRun, runScore,
+    // test hook: tools/tests/test_records.js reads the stored records
+    loadRecords,
+  });
+})();

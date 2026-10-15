@@ -252,6 +252,8 @@
 #screen-end .day-line .day-cmp { color: var(--gold); }
 #screen-end .day-line .day-cmp.late  { color: #cc6c4c; }
 #screen-end .day-line .day-cmp.early { color: var(--teal); }
+#screen-end .day-line .day-score { color: var(--cream); }
+#screen-end .day-line .day-best { color: var(--gold); letter-spacing: 2px; }
 
 #end-report-actions { display: flex; gap: 12px; margin-top: 4px; flex-shrink: 0; }
 /* demo-endings .endings-btn — gold pixel buttons. */
@@ -272,7 +274,7 @@
 /* ── Tier / failure colour table — drives title colour + card border.
    Failure ids share the table via a --fail- prefix (see
    engine/js/screens/endings.js's setTierColours()). ─────────────── */
-#screen-end {
+#screen-end, #overlay-records { /* records.js colours each run's outcome from the same table */
   --tier-legendary-color:    #c8a85a;
   --tier-legendary-border:   rgba(200,168,90,0.85);
   --tier-good-color:         #8cc890;
