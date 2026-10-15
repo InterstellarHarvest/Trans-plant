@@ -45,7 +45,7 @@
 <body>
 
 <h1>Trans-plant NPC Sprite Checklist</h1>
-<div class="subtitle">Target: 5 per species per role. Disk re-scanned 2026-04-29. Checks persist in localStorage.</div>
+<div class="subtitle">Target: 5 per species per role (bartender is a one-off). Disk re-scanned 2026-10-14. Checks persist in localStorage.</div>
 
 <div class="totals">
   <div><div class="big" id="total-pkg" style="color:#6ec4d8;">0</div><div class="label">Packaged</div></div>
@@ -70,8 +70,14 @@
 const SPECIES = ['human', 'insect', 'reptile', 'robot', 'rock', 'water', 'unknown'];
 const PER_SPECIES = 5;
 
-// Disk re-scanned 2026-04-29. 94 packaged folders on disk.
-// (demo-npc.html's NPC_DATA is in sync at 94 entries as of the same scan.)
+// One-off characters outside the 5-per-species target. Only the listed
+// species render, each with `slots` checkboxes, and only those count in totals.
+const UNIQUE_ROLES = { bartender: { species: ['robot'], slots: 1 } };
+const speciesFor = role => (UNIQUE_ROLES[role] || { species: SPECIES }).species;
+const slotsFor   = role => (UNIQUE_ROLES[role] || { slots: PER_SPECIES }).slots;
+
+// Disk re-scanned 2026-10-14. 97 packaged folders on disk.
+// (demo-npc.html's NPC_DATA is in sync at 97 entries as of the same scan.)
 //   pkg     = folder has BOTH spritesheet.png + spritesheet.json (demo-ready)
 //   done    = folder has 9+ source images but no spritesheet pack yet
 //   waiting = folder exists with some files but <9 (source partial)
@@ -96,13 +102,13 @@ const DISK = {
     unknown: { pkg: [1],       done: [], waiting: [] }
   },
   trader: {
-    human:   { pkg: [1, 2, 3], done: [], waiting: [] },
-    insect:  { pkg: [1, 2, 3], done: [], waiting: [] },
-    reptile: { pkg: [1, 2],    done: [], waiting: [] },
-    robot:   { pkg: [1, 2, 3], done: [], waiting: [] },
-    rock:    { pkg: [1, 2],    done: [], waiting: [] },
-    water:   { pkg: [1, 2],    done: [], waiting: [] },
-    unknown: { pkg: [1, 2, 3], done: [], waiting: [4] }
+    human:   { pkg: [1, 2, 3],    done: [], waiting: [] },
+    insect:  { pkg: [1, 2, 3],    done: [], waiting: [] },
+    reptile: { pkg: [1, 2],       done: [], waiting: [] },
+    robot:   { pkg: [1, 2, 3],    done: [], waiting: [] },
+    rock:    { pkg: [1, 2],       done: [], waiting: [] },
+    water:   { pkg: [1, 2],       done: [], waiting: [] },
+    unknown: { pkg: [1, 2, 3, 4], done: [], waiting: [] }
   },
   station_crew: {
     botanist: {
@@ -111,35 +117,35 @@ const DISK = {
       reptile: { pkg: [1],       done: [], waiting: [] },
       robot:   { pkg: [1],       done: [], waiting: [] },
       rock:    { pkg: [1],       done: [], waiting: [] },
-      water:   { pkg: [1],       done: [], waiting: [] },
+      water:   { pkg: [1],       done: [], waiting: [2] },
       unknown: { pkg: [1, 2, 3], done: [], waiting: [] }
     },
     captain: {
-      human:   { pkg: [1],       done: [], waiting: [] },
-      insect:  { pkg: [1],       done: [], waiting: [] },
-      reptile: { pkg: [1, 2],    done: [], waiting: [] },
-      robot:   { pkg: [1],       done: [], waiting: [] },
-      rock:    { pkg: [1],       done: [], waiting: [] },
-      water:   { pkg: [1],       done: [], waiting: [] },
-      unknown: { pkg: [1],       done: [], waiting: [] }
+      human:   { pkg: [1],    done: [], waiting: [] },
+      insect:  { pkg: [1],    done: [], waiting: [] },
+      reptile: { pkg: [1, 2], done: [], waiting: [] },
+      robot:   { pkg: [1],    done: [], waiting: [] },
+      rock:    { pkg: [1],    done: [], waiting: [] },
+      water:   { pkg: [1],    done: [], waiting: [] },
+      unknown: { pkg: [1],    done: [], waiting: [] }
     },
     engineer: {
-      human:   { pkg: [1, 2],    done: [], waiting: [] },
-      insect:  { pkg: [1],       done: [], waiting: [] },
-      reptile: { pkg: [1],       done: [], waiting: [] },
-      robot:   { pkg: [1],       done: [], waiting: [] },
-      rock:    { pkg: [1],       done: [], waiting: [] },
-      water:   { pkg: [1],       done: [], waiting: [] },
-      unknown: { pkg: [1, 2],    done: [], waiting: [] }
+      human:   { pkg: [1, 2], done: [], waiting: [] },
+      insect:  { pkg: [1],    done: [], waiting: [] },
+      reptile: { pkg: [1],    done: [], waiting: [] },
+      robot:   { pkg: [1],    done: [], waiting: [] },
+      rock:    { pkg: [1],    done: [], waiting: [] },
+      water:   { pkg: [1],    done: [], waiting: [] },
+      unknown: { pkg: [1, 2], done: [], waiting: [] }
     },
     janitor: {
-      human:   { pkg: [1],       done: [], waiting: [] },
-      insect:  { pkg: [1],       done: [], waiting: [] },
-      reptile: { pkg: [1, 2],    done: [], waiting: [] },
-      robot:   { pkg: [1, 2],    done: [], waiting: [3] }, // slot 3 has 1 source frame (in progress)
-      rock:    { pkg: [1],       done: [], waiting: [] },
-      water:   { pkg: [1],       done: [], waiting: [] },
-      unknown: { pkg: [],        done: [2], waiting: [1] } // slot 2 has 10 source frames, slot 1 partial
+      human:   { pkg: [1],    done: [], waiting: [] },
+      insect:  { pkg: [1],    done: [], waiting: [] },
+      reptile: { pkg: [1, 2], done: [], waiting: [] },
+      robot:   { pkg: [1, 2], done: [], waiting: [3] },
+      rock:    { pkg: [1],    done: [], waiting: [] },
+      water:   { pkg: [1],    done: [], waiting: [] },
+      unknown: { pkg: [2],    done: [], waiting: [1] }
     },
     medic: {
       human:   { pkg: [1, 2],    done: [], waiting: [] },
@@ -151,13 +157,16 @@ const DISK = {
       unknown: { pkg: [1, 2, 3], done: [], waiting: [] }
     },
     security: {
-      human:   { pkg: [1, 2],    done: [], waiting: [] },
-      insect:  { pkg: [1],       done: [], waiting: [] },
-      reptile: { pkg: [1],       done: [], waiting: [] },
-      robot:   { pkg: [1],       done: [], waiting: [] },
-      rock:    { pkg: [1],       done: [], waiting: [] },
-      water:   { pkg: [1],       done: [], waiting: [] },
-      unknown: { pkg: [1],       done: [], waiting: [] }
+      human:   { pkg: [1, 2], done: [], waiting: [] },
+      insect:  { pkg: [1],    done: [], waiting: [] },
+      reptile: { pkg: [1],    done: [], waiting: [] },
+      robot:   { pkg: [1],    done: [], waiting: [] },
+      rock:    { pkg: [1],    done: [], waiting: [] },
+      water:   { pkg: [1],    done: [], waiting: [] },
+      unknown: { pkg: [1],    done: [], waiting: [] }
+    },
+    bartender: {
+      robot:   { pkg: [1], done: [], waiting: [] }
     }
   }
 };
@@ -189,7 +198,7 @@ function diskState(slotInfo, n) {
   return 'empty';
 }
 
-function renderColumnHeader() {
+function renderColumnHeader(slotCount = PER_SPECIES) {
   const row = document.createElement('div');
   row.className = 'col-header';
   const name = document.createElement('span');
@@ -200,7 +209,7 @@ function renderColumnHeader() {
   row.appendChild(prog);
   const slots = document.createElement('span');
   slots.className = 'slots';
-  for (let n = 1; n <= PER_SPECIES; n++) {
+  for (let n = 1; n <= slotCount; n++) {
     const m = document.createElement('span');
     m.className = 'col-marker';
     m.dataset.col = n;
@@ -227,7 +236,7 @@ function refreshColumnMarkers() {
   });
 }
 
-function renderSpeciesRow(pathPrefix, slotInfo) {
+function renderSpeciesRow(pathPrefix, slotInfo, slotCount = PER_SPECIES) {
   // slotInfo: { done:[...], waiting:[...] }
   const row = document.createElement('div');
   row.className = 'species-row';
@@ -247,7 +256,7 @@ function renderSpeciesRow(pathPrefix, slotInfo) {
   row.appendChild(slots);
 
   let doneCount = 0;
-  for (let n = 1; n <= PER_SPECIES; n++) {
+  for (let n = 1; n <= slotCount; n++) {
     const id = `${pathPrefix}/${n}`;
     const state = diskState(slotInfo, n);
     const onDisk = state === 'pkg' || state === 'done';
@@ -270,13 +279,13 @@ function renderSpeciesRow(pathPrefix, slotInfo) {
       label.classList.toggle('done', cb.checked);
       save();
       const newDone = Array.from(slots.querySelectorAll('input')).filter(c => c.checked).length;
-      prog.textContent = `${newDone}/${PER_SPECIES}`;
+      prog.textContent = `${newDone}/${slotCount}`;
     });
     label.appendChild(cb);
     label.appendChild(document.createTextNode(n));
     slots.appendChild(label);
   }
-  prog.textContent = `${doneCount}/${PER_SPECIES}`;
+  prog.textContent = `${doneCount}/${slotCount}`;
   return row;
 }
 
@@ -309,10 +318,10 @@ function renderGroup(name, speciesData, pathPrefix) {
 
 function updateTotals() {
   let pkg = 0, done = 0, waiting = 0, total = 0;
-  const scan = (data, prefix) => {
-    for (const species of SPECIES) {
+  const scan = (data, prefix, role) => {
+    for (const species of speciesFor(role)) {
       const info = data[species] || { pkg: [], done: [], waiting: [] };
-      for (let n = 1; n <= PER_SPECIES; n++) {
+      for (let n = 1; n <= slotsFor(role); n++) {
         total++;
         const id = `${prefix}/${species}/${n}`;
         const state = diskState(info, n);
@@ -327,7 +336,7 @@ function updateTotals() {
   scan(DISK.pirate, 'pirate');
   scan(DISK.trader, 'trader');
   for (const pos of Object.keys(DISK.station_crew)) {
-    scan(DISK.station_crew[pos], `station_crew/${pos}`);
+    scan(DISK.station_crew[pos], `station_crew/${pos}`, pos);
   }
   document.getElementById('total-pkg').textContent = pkg;
   document.getElementById('total-done').textContent = done;
@@ -365,10 +374,10 @@ for (const pos of Object.keys(DISK.station_crew)) {
   const h3 = document.createElement('h3');
   h3.textContent = pos;
   sub.appendChild(h3);
-  sub.appendChild(renderColumnHeader());
-  for (const species of SPECIES) {
+  sub.appendChild(renderColumnHeader(slotsFor(pos)));
+  for (const species of speciesFor(pos)) {
     const slotInfo = DISK.station_crew[pos][species] || { done: [], waiting: [] };
-    sub.appendChild(renderSpeciesRow(`station_crew/${pos}/${species}`, slotInfo));
+    sub.appendChild(renderSpeciesRow(`station_crew/${pos}/${species}`, slotInfo, slotsFor(pos)));
   }
   crewWrap.appendChild(sub);
 }
