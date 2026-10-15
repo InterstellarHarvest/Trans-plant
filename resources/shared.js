@@ -1134,6 +1134,12 @@ const PauseMenu = (() => {
           '</button>' +
         '</div>' +
         '<div class="pause-row">' +
+          '<label>SHOW TIPS</label>' +
+          '<button type="button" class="pause-toggle" data-field="showTips" data-on="' + (s.showTips === false ? '0' : '1') + '">' +
+            (s.showTips === false ? 'OFF' : 'ON') +
+          '</button>' +
+        '</div>' +
+        '<div class="pause-row">' +
           '<label>TEXT SPEED</label>' +
           '<div class="pause-radios" data-field="textSpeed">' +
             ['slow','normal','fast'].map(v =>
@@ -1170,7 +1176,16 @@ const PauseMenu = (() => {
       });
     });
 
-    // Stub — persist for future text-speed wiring.
+    // Show tips (ruling 87): the AI's first-run tips, on by default.
+    const tipsTog = w.querySelector('.pause-toggle[data-field="showTips"]');
+    if (tipsTog) tipsTog.addEventListener('click', () => {
+      const nv = tipsTog.dataset.on !== '1';
+      tipsTog.dataset.on = nv ? '1' : '0';
+      tipsTog.textContent = nv ? 'ON' : 'OFF';
+      tpSaveSettings({ showTips: nv });
+    });
+
+    // Text speed: read by index.html textSpeedMult (typewriter speed).
     w.querySelectorAll('.pause-radios').forEach(group => {
       group.addEventListener('click', e => {
         const b = e.target.closest('.pause-radio'); if (!b) return;

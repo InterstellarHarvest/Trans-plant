@@ -1794,9 +1794,53 @@
     return true;
   }
 
+  /* First-run tips (ruling 87): the AI says one tip, in its own voice, at
+     the first new stop where the topic applies — the most urgent first,
+     then the introductions one stop at a time. Each topic once per run
+     (STATE.tipsShown, saved); the pause menu's SHOW TIPS switches them off
+     (settings showTips). Lines: flavor_pools ai_universal.tips.<topic>. */
+  const TIP_TOPICS = [
+    { id: 'treat', when: () => !!(STATE.cropGrowth && STATE.cropGrowth.health > 0 && STATE.cropGrowth.pest) },
+    { id: 'wounded', when: () => peopleAboard().some(r => hpOf(r) < CREW_WOUNDED_HP) },
+    { id: 'supplies_low', when: () => Object.keys(RES_LOW).some(k => STATE.resources[k] < RES_LOW[k]) },
+    { id: 'morale_low', when: () => STATE.crew.some(r => crewMoraleOf(r) < MORALE_LOW) },
+    // The welcome: always the first tip after anything urgent (the departure stop).
+    { id: 'stop_menu', when: () => true },
+    { id: 'harvest', when: () => !!(STATE.cropGrowth && STATE.cropGrowth.health > 0 && STATE.cropGrowth.growth >= 100) },
+    { id: 'station', when: () => { const n = STATE.byId[STATE.currentId]; return !!n && n.node_type === 'station'; } },
+    { id: 'fabricator', when: () => Object.values(STATE.materials || {}).reduce((a, q) => a + (q || 0), 0) >= 5 },
+    { id: 'fork', when: () => [...nextAvailableNodes()].some(id => STATE.byId[id] && STATE.byId[id].node_type === 'fork') },
+    { id: 'cargo', when: () => STATE.items.length > 0 && legsFlown() >= 2 },
+    // Then one introduction per stop.
+    { id: 'orders', when: () => legsFlown() >= 1 },
+    { id: 'growbay', when: () => !!STATE.crop && legsFlown() >= 2 },
+    { id: 'map', when: () => legsFlown() >= 3 },
+  ];
+  const legsFlown = () => (STATE.visited ? STATE.visited.size - 1 : 0);
+  function tipsOn() {
+    try { return typeof tpLoadSettings !== 'function' || tpLoadSettings().showTips !== false; } catch (_) { return true; }
+  }
+  function maybePushTip() {
+    if (!tipsOn()) return false;
+    if (!Array.isArray(STATE.tipsShown)) STATE.tipsShown = [];
+    for (const t of TIP_TOPICS) {
+      if (STATE.tipsShown.includes(t.id)) continue;
+      let due = false;
+      try { due = t.when(); } catch (_) { due = false; }
+      if (!due) continue;
+      const line = aiPool(['tips', t.id]);
+      if (!line) continue;
+      STATE.tipsShown.push(t.id);
+      pushLogEntry('◆ ' + line, { ai: true });
+      return true;
+    }
+    return false;
+  }
+
   function maybePushAmbient() {
     if (STATE.lastAmbientNode === STATE.currentId) return;
     STATE.lastAmbientNode = STATE.currentId;
+    if (maybePushTip()) return;
     if (maybePushCallback()) return;
     // Node-specific commentary (map_commentary.node_entering — currently
     // authored for station/derelict) takes priority over generic ambient
