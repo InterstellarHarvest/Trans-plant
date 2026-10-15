@@ -132,8 +132,8 @@ const toPlainStop = page => page.evaluate(() => {
       const tok = getComputedStyle(sv).getPropertyValue('--tier-' + bracket + '-color').trim();
       const out = {
         title: $('end-report-title').textContent, titleColor: getComputedStyle($('end-report-title')).color, tok,
-        lead: $('end-report-arrival').textContent, wantLead: ((MOD.endingLines.arrival_lines || {})[trail] || {})[crop],
-        quote: $('end-report-quote').textContent, wantQuote: MOD.endingLines.tier_quotes[bracket],
+        lead: $('end-report-arrival').textContent, wantLead: [].concat(((MOD.endingLines.arrival_lines || {})[trail] || {})[crop]).find(l => l === $('end-report-arrival').textContent),
+        quote: $('end-report-quote').textContent, wantQuote: [].concat(MOD.endingLines.tier_quotes[bracket]).find(q => q === $('end-report-quote').textContent),
         visible: ['end-report-title', 'end-report-arrival', 'end-report-quote', 'end-report-score', 'end-report-more'].every(id => vis($(id)) && inCard($(id))),
         actions: [...document.querySelectorAll('#end-report-actions .end-btn')].every(b => vis(b) && inCard(b)),
         noScroll: sc.scrollHeight <= sc.clientHeight + 1,

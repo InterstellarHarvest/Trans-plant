@@ -947,7 +947,7 @@
   }
 
   const SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, talk, sceneSpecFor, layerSpecFor, outcomeSpecFor, expandPath, biomeFor,
-    stationApproachFor, paintStationView, STATION_APPROACH_POOL };
+    stationApproachFor, paintStationView, STATION_APPROACH_POOL, stablePick };
 
   Object.assign(window, {
     // engine API

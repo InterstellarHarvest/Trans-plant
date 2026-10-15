@@ -1316,15 +1316,23 @@ const hardChoiceCost = (() => {
     const crops = (readJSON('modules/crops/crops.json').crops || []).map(c => String(c.id).replace(/^crop_/, '')).concat('noplant');
     const al = sec.arrival_lines || {};
     for (const t of trails) for (const c of crops) {
-      const line = (al[t] || {})[c];
-      if (typeof line !== 'string' || !line.trim()) err(`endings.json arrival_lines.${t}.${c}: missing — that arrival shows no destination line`);
+      const v = (al[t] || {})[c];
+      const list = Array.isArray(v) ? v : [v];
+      if (!list.length || list.some(line => typeof line !== 'string' || !line.trim())) err(`endings.json arrival_lines.${t}.${c}: missing or blank line — that arrival could show no destination line`);
+      if (new Set(list).size !== list.length) err(`endings.json arrival_lines.${t}.${c}: duplicate line`);
+      for (const line of list) if (typeof line === 'string' && /\{(?!day\})[^}]*\}/.test(line)) err(`endings.json arrival_lines.${t}.${c}: unknown token in "${line.slice(0, 40)}…" (only {day} is filled)`);
     }
     for (const t of Object.keys(al)) {
       if (!trails.includes(t)) err(`endings.json arrival_lines.${t}: not a trail in map_rules.json`);
       for (const c of Object.keys(al[t] || {})) if (!crops.includes(c)) err(`endings.json arrival_lines.${t}.${c}: not a crop id (or noplant)`);
     }
     const brackets = Object.keys((registry.ending_score || {}).values || {}).filter(b => b !== 'any');
-    for (const b of brackets) if (typeof (sec.tier_quotes || {})[b] !== 'string' || !sec.tier_quotes[b].trim()) err(`endings.json tier_quotes.${b}: missing — that bracket's arrival shows no quote`);
+    for (const b of brackets) {
+      const v = (sec.tier_quotes || {})[b];
+      const list = Array.isArray(v) ? v : [v];
+      if (!list.length || list.some(q => typeof q !== 'string' || !q.trim())) err(`endings.json tier_quotes.${b}: missing or blank quote — that bracket's arrival could show no quote`);
+      if (new Set(list).size !== list.length) err(`endings.json tier_quotes.${b}: duplicate quote`);
+    }
     for (const b of Object.keys(sec.tier_quotes || {})) if (!brackets.includes(b)) err(`endings.json tier_quotes.${b}: not a registered ending_score bracket`);
   }
 }

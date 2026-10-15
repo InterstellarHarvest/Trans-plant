@@ -47,6 +47,8 @@ const NOTE = /\b(Stackable|Craftable|Fabricated|Pure trade good|Info-only|Gate i
     const r = await page.evaluate(async () => {
       const w = ms => new Promise(res => setTimeout(res, ms));
       const L = MOD.endingLines;
+      // Ruling 88: each entry is a list; the report shows the run's seeded pick.
+      const pick = (k, v) => Array.isArray(v) ? SceneArt.stablePick(k, v) : v;
       const out = { combos: [], data: !!(L && L.arrival_lines && L.tier_quotes), stillEnding: MOD.endings.every(e => e.id && !e._section) };
       const crops = MOD.crops.crops.map(c => c.id.replace(/^crop_/, ''));
       for (const trail of ['lunar', 'mars', 'interstellar']) {
@@ -60,9 +62,9 @@ const NOTE = /\b(Stackable|Craftable|Fabricated|Pure trade good|Info-only|Gate i
           window.showEndReport(); await w(20);
           const a = document.getElementById('end-report-arrival'), q = document.getElementById('end-report-quote');
           const bracket = scoreBracket();
-          out.combos.push({ trail, crop, bracket, shown: a.textContent, want: L.arrival_lines[trail][crop],
+          out.combos.push({ trail, crop, bracket, shown: a.textContent, want: pick('arrival:' + trail + ':' + crop, L.arrival_lines[trail][crop]), list: [].concat(L.arrival_lines[trail][crop]),
             vis: getComputedStyle(a).display !== 'none' && a.getBoundingClientRect().height > 0,
-            quote: q.textContent, wantQ: L.tier_quotes[bracket], qvis: getComputedStyle(q).display !== 'none',
+            quote: q.textContent, wantQ: pick('quote:' + bracket, L.tier_quotes[bracket]), qvis: getComputedStyle(q).display !== 'none',
             bg: getComputedStyle(document.getElementById('end-scene')).backgroundImage });
         }
       }
@@ -74,7 +76,7 @@ const NOTE = /\b(Stackable|Craftable|Fabricated|Pure trade good|Info-only|Gate i
         window.scoreBracket = () => b;
         window.renderEndScreen({ kind: 'ending', module: MOD.endings[0] });
         window.showEndReport(); await w(20);
-        out.brackets.push({ b, quote: document.getElementById('end-report-quote').textContent, want: L.tier_quotes[b], title: document.getElementById('end-cine-title').textContent });
+        out.brackets.push({ b, quote: document.getElementById('end-report-quote').textContent, want: pick('quote:' + b, L.tier_quotes[b]), title: document.getElementById('end-cine-title').textContent });
       }
       window.scoreBracket = real;
       // styles + motion (batch 1) on a fresh report
@@ -92,18 +94,21 @@ const NOTE = /\b(Stackable|Craftable|Fabricated|Pure trade good|Info-only|Gate i
       // paragraph in this slot — never an arrival line.
       out.failArrival = document.getElementById('end-report-arrival').textContent;
       out.failLead = MOD.failures.find(f => f.failure_type === 'no_fuel').body.split(/\n\s*\n/)[0].trim();
-      out.failArrivalLines = Object.values(L.arrival_lines).flatMap(t => Object.values(t));
+      out.failArrivalLines = Object.values(L.arrival_lines).flatMap(t => Object.values(t)).flat();
       return out;
     });
     ok(r.data && r.stillEnding, 'arrival_lines + tier_quotes load from endings.json into MOD.endingLines; MOD.endings holds only endings');
     ok(r.combos.length === 18, `18 destination × crop combos rendered (${r.combos.length})`);
-    const bad = r.combos.filter(c => c.shown !== c.want || !c.vis || !c.want);
+    const fillDay = (want, shown) => { const m = /^(.*)\{day\}(.*)$/s.exec(want || ''); return m && shown.startsWith(m[1]) && shown.endsWith(m[2]) && /^\d+$/.test(shown.slice(m[1].length, shown.length - m[2].length)) ? shown : want; };
+    const bad = r.combos.filter(c => c.shown !== fillDay(c.want, c.shown) || !c.vis || !c.want || !c.list.includes(c.want));
     ok(!bad.length, `every combo shows its own line on the report (${bad.map(c => c.trail + '/' + c.crop).join(', ') || 'all 18'})`);
     const badQ = r.combos.filter(c => c.quote !== c.wantQ || !c.qvis || !c.wantQ);
     ok(!badQ.length, `every combo shows its bracket's tier quote (${badQ.map(c => c.trail + '/' + c.crop + ':' + c.bracket).join(', ') || 'all 18'})`);
     const lw = r.combos.find(c => c.trail === 'lunar' && c.crop === 'wheat'), fz = r.combos.find(c => c.trail === 'interstellar' && c.crop === 'zinnia');
-    ok(lw.shown !== fz.shown && /Lunar wheat/.test(lw.shown) && /Far Garden/.test(fz.shown), `lunar wheat and Far Garden zinnia read differently ("${lw.shown.slice(0, 32)}…" / "${fz.shown.slice(0, 32)}…")`);
+    ok(lw.shown !== fz.shown, `lunar wheat and Far Garden zinnia read differently ("${lw.shown.slice(0, 32)}…" / "${fz.shown.slice(0, 32)}…")`);
     ok(new Set(r.combos.map(c => c.shown)).size === 18, 'all 18 lines distinct');
+    const allLines = r.combos.flatMap(c => c.list);
+    ok(r.combos.every(c => c.list.length >= 3) && new Set(allLines).size === allLines.length, `ruling 88: every combo has 3+ lines, none shared (${allLines.length})`);
     ok(r.combos.filter(c => c.crop === 'noplant').every(c => c.bracket === 'hollow' && /noplant/.test(c.bg)), 'a dead crop reads the noplant line under the hollow bracket (matches the noplant backdrop)');
     ok(r.brackets.every(x => x.quote === x.want && x.want), `each of the 5 brackets shows its own quote (${r.brackets.map(x => x.b).join('/')})`);
     ok(/VT323/.test(r.style.font) && r.style.color === 'rgb(232, 216, 160)' && r.style.size === '19px' && r.style.qItalic === 'italic' && r.style.order === 'arrival-first',

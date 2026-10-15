@@ -226,7 +226,11 @@
     // lead line under the report title, and the bracket's closing quote.
     const lines = MOD.endingLines || {};
     const cropKey = cropInfo.status === 'dead' || !STATE.crop ? 'noplant' : STATE.crop;
-    const arrival = ((lines.arrival_lines || {})[STATE.trail] || {})[cropKey] || '';
+    // Each is a list (ruling 88); one per run, seeded on STATE.artSeed so
+    // a reload shows the same line. A plain string still reads as one.
+    const onePerRun = (key, v) => !Array.isArray(v) ? v
+      : (window.SceneArt && SceneArt.stablePick ? SceneArt.stablePick(key, v) : v[0]);
+    const arrival = onePerRun('arrival:' + STATE.trail + ':' + cropKey, ((lines.arrival_lines || {})[STATE.trail] || {})[cropKey]) || '';
 
     return {
       record,
@@ -236,7 +240,7 @@
       reportTitle: m.title,
       arrival: arrival.replaceAll('{day}', stats.days),
       body,
-      quote: (lines.tier_quotes || {})[bracket] || null,
+      quote: onePerRun('quote:' + bracket, (lines.tier_quotes || {})[bracket]) || null,
       showReport: true,
       trail: STATE.trail,
       cropBgId: cropInfo.cropBgId,

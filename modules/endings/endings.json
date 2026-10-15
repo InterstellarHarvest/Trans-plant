@@ -272,39 +272,136 @@
   },
   {
     "_section": "arrival_lines",
-    "design_note": "Not an ending. The arrival report's lead line and closing quote (demo-endings.html ARRIVAL_BODY + TIER_QUOTE, owner-approved copy). arrival_lines[trail][crop] is the destination x crop sentence shown under the report title; the crop key is crops.json's id without 'crop_', and 'noplant' covers a dead or missing crop (the same case the noplant backdrop shows). tier_quotes[bracket] is the italic quote under the body. index.html's loader moves this entry to MOD.endingLines; endings.js reads it. '{day}' in a line becomes the arrival day.",
+    "design_note": "Not an ending. The arrival report's lead line and closing quote (each list's first entry is demo-endings.html's owner-approved ARRIVAL_BODY / TIER_QUOTE copy; the rest were added 2026-10-15, ruling 88). arrival_lines[trail][crop] is a list of destination x crop sentences shown under the report title; the crop key is crops.json's id without 'crop_', and 'noplant' covers a dead or missing crop (the same case the noplant backdrop shows). tier_quotes[bracket] is a list of italic quotes under the body. endings.js shows one of each list per run (scene_art.js stablePick on STATE.artSeed, so a reload shows the same one). index.html's loader moves this entry to MOD.endingLines; endings.js reads it. '{day}' in a line becomes the arrival day.",
     "arrival_lines": {
       "lunar": {
-        "sweet_potato": "The first lunar potato came up in week three. The colony admin filed it as \"vegetable, edible, sentimental value high.\"",
-        "soybean": "Soybeans took to the regolith faster than anyone modelled. The protein situation, for once, is unconcerning.",
-        "tomato": "The dome smells like tomatoes now. Reports are split on whether that is good.",
-        "wheat": "Lunar wheat: shorter stalks, denser heads, slightly metallic. The bakery opens Thursday.",
-        "zinnia": "Nobody can eat them. They came up anyway. Three colonists have started visiting them daily.",
-        "noplant": "You arrived. The greenhouse is empty. Colony admin is asking, very politely, what happened."
+        "sweet_potato": [
+          "The first lunar potato came up in week three. The colony admin filed it as \"vegetable, edible, sentimental value high.\"",
+          "The lunar potato beds run along the dome's south wall, where the light lasts longest. There is already a waiting list for the first bake.",
+          "Potatoes grown in low gravity come out round enough to roll. The colony has banned rolling them. The ban is not working."
+        ],
+        "soybean": [
+          "Soybeans took to the regolith faster than anyone modelled. The protein situation, for once, is unconcerning.",
+          "The soy went from the ship into the trays on day {day}. By the next shift the colony nutritionist had stopped worrying out loud.",
+          "Lunar tofu now exists. The cafeteria lists it under “experimental” and has no plans to move it."
+        ],
+        "tomato": [
+          "The dome smells like tomatoes now. Reports are split on whether that is good.",
+          "Tomatoes under a black sky look redder than they should. Colonists keep stopping at the dome window to check.",
+          "The tomato plants lean toward Earth. The botanists say it's the lamps. Nobody wants it to be the lamps."
+        ],
+        "wheat": [
+          "Lunar wheat: shorter stalks, denser heads, slightly metallic. The bakery opens Thursday.",
+          "The wheat trays went in by the airlock, where everyone passes them twice a day. A field, of a kind, one metre wide.",
+          "The colony's first loaf is a little flat and very celebrated. Earth gets a photo of it before it gets the status report."
+        ],
+        "zinnia": [
+          "Nobody can eat them. They came up anyway. Three colonists have started visiting them daily.",
+          "The zinnias sit in the dome's only window box. The mining shift asks what they're for. Nobody has a good answer, and nobody moves them.",
+          "Zinnia petals fall slowly enough in lunar gravity to catch. Catching them has become a game."
+        ],
+        "noplant": [
+          "You arrived. The greenhouse is empty. Colony admin is asking, very politely, what happened.",
+          "The lunar dome kept a growbay bed open for your crop. It is still open. Someone has put a small sign in it.",
+          "You docked with the crew and an empty tray. Colony admin wrote “crop: pending” on the board and hasn't rubbed it out."
+        ]
       },
       "mars": {
-        "sweet_potato": "Martian potatoes turn out grey-skinned and large. Nobody will discuss the taste in print.",
-        "soybean": "The soy beds went in before the second dust storm. They held. Most of them.",
-        "tomato": "A vine reached the second tier of the dome before anyone thought to prune it.",
-        "wheat": "Mars wheat: enough for one harvest festival, possibly two. The bread is dense and serious.",
-        "zinnia": "A row of zinnias against the regolith wall. Photogenic. Several careers were started.",
-        "noplant": "You arrived on Mars without the cargo. The press release says \"phase one complete.\" It is being workshopped."
+        "sweet_potato": [
+          "Martian potatoes turn out grey-skinned and large. Nobody will discuss the taste in print.",
+          "The potatoes go into Martian soil washed three times to get the perchlorate out. They come up anyway, red with dust.",
+          "The first Mars potato harvest gets a festival. It is small and loud and over by sundown, which on Mars comes a little later."
+        ],
+        "soybean": [
+          "The soy beds went in before the second dust storm. They held. Most of them.",
+          "Soy fixes nitrogen, so the soy is quietly improving the soil for everything planted after it. The agronomist calls it “the intern.”",
+          "Mars soy grows short and stubborn. Once the beds are in, nobody runs short of protein again."
+        ],
+        "tomato": [
+          "A vine reached the second tier of the dome before anyone thought to prune it.",
+          "Tomatoes in the Mars dome blush under the pink sky. The first ripe one goes to the youngest colonist, by vote.",
+          "Somebody leaves a tomato on the dome's command console as a joke. It stays there a week. After that it's a tradition."
+        ],
+        "wheat": [
+          "Mars wheat: enough for one harvest festival, possibly two. The bread is dense and serious.",
+          "The wheat goes into a dome that was a storage shed until you landed. The forklift drivers resent it, briefly.",
+          "Martian wheat, ground in a mill built from spare rover parts. The flour is faintly pink. The bread is fine."
+        ],
+        "zinnia": [
+          "A row of zinnias against the regolith wall. Photogenic. Several careers were started.",
+          "Zinnias in a Mars greenhouse: the only colour for a hundred kilometres that didn't come from a paint chart.",
+          "The zinnias stand against the dome glass where the dust storms hit. When the storms clear, they're still there."
+        ],
+        "noplant": [
+          "You arrived on Mars without the cargo. The press release says \"phase one complete.\" It is being workshopped.",
+          "Mars receives the crew and not the crop. The empty bed in the dome stays watered, on someone's own time.",
+          "The Mars colony built a whole greenhouse for your cargo. It is now being used, temporarily, for storage. Temporarily."
+        ]
       },
       "interstellar": {
-        "sweet_potato": "Far Garden potatoes are blue-fleshed and slightly sweet. Nobody warned the chef.",
-        "soybean": "Soybeans under a different star. The cell counts are weird but the yield is the yield.",
-        "tomato": "A tomato grew large enough that two colonists shared it. There is a photograph.",
-        "wheat": "The first interstellar wheat harvest. Three children were named after it. This is not a metaphor.",
-        "zinnia": "Far Garden's first flowers. They opened at the wrong time of day and nobody minded.",
-        "noplant": "You arrived. Far Garden remains a garden in name only. The optimist who named it is unavailable for comment."
+        "sweet_potato": [
+          "Far Garden potatoes are blue-fleshed and slightly sweet. Nobody warned the chef.",
+          "The sweet potato vines go into soil that has never held a root. By the second month they cover the first terrace.",
+          "Under a stranger sun the sweet potato leaves turn almost purple. The tubers don't care. They're delicious."
+        ],
+        "soybean": [
+          "Soybeans under a different star. The cell counts are weird but the yield is the yield.",
+          "The soybeans and the local soil bacteria reach a working arrangement within weeks. The microbiologists are thrilled and slightly unsettled.",
+          "The first Far Garden soy harvest is weighed, logged and sent home in a message that will take years to arrive. It reads: “It works.”"
+        ],
+        "tomato": [
+          "A tomato grew large enough that two colonists shared it. There is a photograph.",
+          "Far Garden's long days push the tomatoes to twice their catalogue height. Ladders have been requisitioned.",
+          "The cook makes sauce from the first Far Garden tomatoes. Everyone agrees it needs salt. Everyone has seconds."
+        ],
+        "wheat": [
+          "The first interstellar wheat harvest. Three children were named after it. This is not a metaphor.",
+          "The wheat goes into the first open-air field anyone here has planted. The wind across it is local wind. People go and stand in it.",
+          "Far Garden wheat ripens to a colour nobody has a word for yet. There are three proposals and a vote scheduled."
+        ],
+        "zinnia": [
+          "Far Garden's first flowers. They opened at the wrong time of day and nobody minded.",
+          "Local insects find the zinnias within a day. Nobody knows what the insects are. The zinnias don't seem to mind.",
+          "The zinnias are the first Earth colour in the valley. The colony's first map marks them."
+        ],
+        "noplant": [
+          "You arrived. Far Garden remains a garden in name only. The optimist who named it is unavailable for comment.",
+          "The survey crew left a terrace cleared for your crop. It sits bare under the new sun, waiting, the way the whole planet is.",
+          "You crossed between stars with nothing alive in the growbay. At the dock, the colony hands you a seed packet. It feels like a question."
+        ]
       }
     },
     "tier_quotes": {
-      "legendary": "“Ahead of schedule. Full crew. Standing ovation we weren't sure how to receive.” — Captain's log",
-      "good": "“It was a journey. We made it. There will be a debrief.” — Captain's log",
-      "rough": "“Calling it a success would be generous. We are being generous.” — Colony report",
-      "pyrrhic": "They named a hill after Jenkins. Jenkins was not a hill person.",
-      "hollow": "“Mission status: incomplete. Crew status: present. The form has no field for the rest.” — Colony report"
+      "legendary": [
+        "“Ahead of schedule. Full crew. Standing ovation we weren't sure how to receive.” — Captain's log",
+        "“Every system green on arrival. I'd like it noted that I'm not sure how.” — Captain's log",
+        "“The colony asked for our secret. We said: keep the plant watered and don't fly into things.” — Captain's log",
+        "“A textbook crossing. Somebody is already writing the textbook.” — Colony report"
+      ],
+      "good": [
+        "“It was a journey. We made it. There will be a debrief.” — Captain's log",
+        "“Arrived on time, more or less, with everything we needed, more or less.” — Captain's log",
+        "“Crew tired. Crop alive. Ship in need of a wash.” — Colony report",
+        "“Nothing to report. On a crossing, that's the best thing a log can say.” — Captain's log"
+      ],
+      "rough": [
+        "“Calling it a success would be generous. We are being generous.” — Colony report",
+        "“The ship arrived in one piece. Most of the pieces it started with.” — Dock inspector",
+        "“We made it. I'm going to go lie down for a month.” — Captain's log",
+        "“Recommend the vessel be repaired, the crew rested, and nobody ask about the middle part.” — Colony report"
+      ],
+      "pyrrhic": [
+        "They named a hill after Jenkins. Jenkins was not a hill person.",
+        "“We arrived. I'm going to stop the log there.” — Captain's log",
+        "“Arrival confirmed. Cost: see attached. Attachment: long.” — Colony report",
+        "“The welcome banner was printed for a full ship. They took it down before we came out.” — Colony report"
+      ],
+      "hollow": [
+        "“Mission status: incomplete. Crew status: present. The form has no field for the rest.” — Colony report",
+        "“The growbay lights stayed on the whole last leg. Nobody could bring themselves to switch them off.” — Captain's log",
+        "“Crop lost in transit. Crew delivered. Please advise.” — Colony report",
+        "“We brought the seed vault. That has to count for something. Tomorrow it will.” — Captain's log"
+      ]
     }
   }
 ]
