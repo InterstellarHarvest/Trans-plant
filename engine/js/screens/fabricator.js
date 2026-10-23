@@ -1016,7 +1016,7 @@
     const r = FSTATE.pendingOutput;
     // Capacity check: a full hold leaves the print in the
     // output bay — pendingOutput stays set, so the player can jettison
-    // something (INV) and claim again. Nothing is silently lost. A trial
+    // something from the cargo hold and claim again. Nothing is silently lost. A trial
     // fit first, then the print comes aboard through grantItem like any
     // other pickup (NEW badge, Recent order, values).
     const fits = (() => {

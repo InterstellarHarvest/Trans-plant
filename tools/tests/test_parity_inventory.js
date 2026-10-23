@@ -138,7 +138,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
       return { mats: Object.assign({}, STATE.materials), used: cargoSlotsUsed(), cap: cargoCapacity(), log: STATE.shipLog.slice(-4).map(x => x.text).join(' | ') };
     }, { type, re, stub });
     const m = await verb('asteroid_field', '^MINE', 'mine');
-    ok(!m.missing && m.mats.metal === 15 && !m.mats.minerals && m.used === m.cap && /20 minerals left behind/.test(m.log) && /no room for minerals/.test(m.log), `MINE: the haul lands as far as the hold allows (${JSON.stringify(m.mats || m.missing)}; ${(m.log || '').slice(0, 140)})`);
+    ok(!m.missing && m.mats.metal === 15 && !m.mats.minerals && m.used === m.cap && /20 minerals left behind/.test(m.log) && /no room in the hold for minerals/.test(m.log), `MINE: the haul lands as far as the hold allows (${JSON.stringify(m.mats || m.missing)}; ${(m.log || '').slice(0, 140)})`);
     const v = await verb('derelict', '^SALVAGE', 'salvage');
     ok(!v.missing && v.mats.scrap === 20 && !v.mats.metal && /5 scrap, 5 metal left behind/.test(v.log), `SALVAGE: same rule (${JSON.stringify(v.mats || v.missing)}; ${(v.log || '').slice(0, 140)})`);
     await page.close();
@@ -247,14 +247,14 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
     ok(t.every(x => x.segs === 10) && t[0].lit === 6 && t[1].lit === 3 && t[2].lit === 1 && t[0].litOpacity === '1', `10-segment gauges lit from the level: ${t.map(x => x.lit).join('/')}`);
     const want = await page.evaluate(() => {
       const leg = legTravelCost();
-      const f = leg.fuel / leg.exactDays;
+      const f = leg.fuel; // fuel burns per leg: the tile says "/ LEG", its EMPTY day is Orders' projection
       const food = ORDERS_BASE.foodPerDay * ordersRations().foodMult * foodBurnMult() * mouthsMult();
-      const w = ORDERS_BASE.waterPerDay;
-      return { f, food, w, ef: 20 + Math.floor(64 / f), efood: 20 + Math.floor(31 / food), ew: 20 + Math.floor(7 / w) };
+      const w = dailyDraw().water; // the crop's water saving included
+      return { f, food, w, ef: window.ordersFuelEmptyDay(), efood: 20 + Math.floor(31 / food), ew: 20 + Math.floor(7 / w) };
     });
     // b4 A13: one decimal when exact, else two — the figure EMPTY uses (0.35 read "0.3").
-    const fmt = v => '~' + (Math.abs(Math.round(v * 10) / 10 - v) < 1e-9 ? v.toFixed(1) : (Math.round(v * 100) / 100).toFixed(2)) + ' / DAY';
-    ok(t[0].stats[0] === '64 / 100' && t[0].stats[1] === fmt(want.f) && t[0].stats[2] === 'DAY ' + want.ef, `FUEL: ${t[0].stats.join(' · ')} (legTravelCost: pace × fuelBurnMult)`);
+    const fmt = (v, per) => '~' + (Math.abs(Math.round(v * 10) / 10 - v) < 1e-9 ? v.toFixed(1) : (Math.round(v * 100) / 100).toFixed(2)) + ' / ' + (per || 'DAY');
+    ok(t[0].stats[0] === '64 / 100' && t[0].stats[1] === fmt(want.f, 'LEG') && t[0].stats[2] === 'DAY ' + want.ef, `FUEL: ${t[0].stats.join(' · ')} (legTravelCost: pace × fuelBurnMult)`);
     ok(t[1].stats[1] === fmt(want.food) && t[1].stats[2] === 'DAY ' + want.efood, `FOOD: ${t[1].stats.join(' · ')} (rations × foodBurnMult × mouths)`);
     ok(t[2].stats[1] === fmt(want.w) && t[2].stats[2] === 'DAY ' + want.ew, `H2O: ${t[2].stats.join(' · ')}`);
     await page.evaluate(() => { ensureOrders().pace = 'plaid'; ensureOrders().rations = 'pigout'; STATE.crew.push('chef'); STATE.crewHP.chef = 100; });

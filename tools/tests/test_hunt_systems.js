@@ -233,7 +233,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       return { day0, late, empty };
     });
     ok(r.day0.length > 0, 'day 0 with materials: ' + r.day0.length + ' recipes craftable now');
-    ok(r.late.length === 0 && /No recipes match filter/.test(r.empty), 'at the deadline nothing lists as craftable (CRAFT reads PAST DEADLINE): ' + JSON.stringify(r.late));
+    ok(r.late.length > 0, 'ruling 94: past the deadline recipes still list as craftable (a craft is warned, never locked): ' + JSON.stringify(r.late));
     await page.close();
   }
 

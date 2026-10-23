@@ -443,7 +443,7 @@ function showReady(id, onStart, opts){
   if(hold){
     const derelict = id === 'salvage_derelict';
     const kept = roomText(hold.room);
-    mechanicHtml += `<br><br><span class="ready-warn"><strong>CARGO HOLD FULL:</strong> ${kept ? 'only ' + kept + ' more can be kept (topping up the stacks aboard); no' : 'no'} ${derelict ? 'new materials or medkits' : 'new materials, parts or crate finds'} until you free space (INV). ${derelict ? 'Fuel cells and ration cans' : 'O₂ tanks and gold chips'} still count.</span>`;
+    mechanicHtml += `<br><br><span class="ready-warn"><strong>CARGO HOLD FULL:</strong> ${kept ? 'only ' + kept + ' more can be kept (topping up the stacks aboard); no' : 'no'} ${derelict ? 'new materials or medkits' : 'new materials, parts or crate finds'} until you free space in the cargo hold. ${derelict ? 'Fuel cells and ration cans' : 'O₂ tanks and gold chips'} still count.</span>`;
   }
   const situation = typeof opts.briefing === 'string' && opts.briefing ? escHtml(opts.briefing) : b.situation[activeAi];
   ga.innerHTML = `

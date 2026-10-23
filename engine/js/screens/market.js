@@ -511,7 +511,7 @@
       // Capacity gate BEFORE any cost applies — a refused buy must
       // leave gold untouched (shared.js MarketModal optional hook).
       canAddCargo: ware => cargoFits(ware.id, ware.cost && ware.cost.item),
-      cargoFullMsg: 'No room in the hold. Jettison something (INV) first.',
+      cargoFullMsg: 'No room in the hold. Jettison something (the crate icon) first.',
       addCargo: entry => { grantItem(entry.id); renderHUD(); },
       // The cargo bay can't leave while the hold needs its extra slots.
       canRemoveCargo: sid => allMaterialDefs().some(m => m.id === sid) || canRemoveItem(sid),

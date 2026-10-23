@@ -2437,7 +2437,7 @@ function grantMaterials(want, opts) {
   }
   const leftList = Object.entries(left).map(([id, n]) => n + ' ' + id);
   if (leftList.length && !(opts && opts.quiet)) {
-    window.pushCruiseLog('◆ CARGO FULL — ' + leftList.join(', ') + ' left behind. Jettison something (INV) to make room.');
+    window.pushCruiseLog('◆ CARGO FULL — ' + leftList.join(', ') + ' left behind. Jettison something from the cargo hold (the crate icon) to make room.');
   }
   return { got, left };
 }
@@ -2465,7 +2465,7 @@ function grantItem(shortId) {
   if (!(capDef && capDef.slot_bonus) && cargoSlotsUsed() > cargoCapacity()) {
     STATE.items.pop();
     const def = itemDef(shortId);
-    window.pushCruiseLog('◆ CARGO FULL — ' + ((def && def.name) || shortId) + ' left behind. Jettison something (INV) to make room.');
+    window.pushCruiseLog('◆ CARGO FULL — ' + ((def && def.name) || shortId) + ' left behind. Jettison something from the cargo hold (the crate icon) to make room.');
     return false;
   }
   syncItemValues(); // a trade good's value is rolled here, at pickup
