@@ -21,10 +21,10 @@
     "sets_flag": null,
     "requires_flag": null,
     "ai_flavor": {
-      "aria": "ARIA thinks both routes look wonderful! She recommends the one with the asteroid field because 'shiny rocks!'",
-      "marv": "MARV has analyzed both routes. Route Alpha: tedious. Route Beta: concerning. He recommends neither. You must choose one.",
-      "rex": "REX recommends Route Beta. The derelict may contain salvageable weapons. REX would like salvageable weapons.",
-      "chip": "CHIP notes that Route Alpha passes through a mining zone with potential mineral extraction opportunities! Route Beta is 'off-brand.'",
+      "aria": "ARIA thinks both routes look wonderful! She recommends the one with the nicer name! She has not checked what the name means!",
+      "marv": "MARV has analyzed both routes. Each has its own way of going wrong. He recommends neither. You must choose one.",
+      "rex": "REX recommends whichever route has something worth salvaging on it. He would like salvageable weapons. He is not fussy about where.",
+      "chip": "CHIP notes that both routes are full of monetisable opportunities! One of them is 'off-brand'! CHIP will say which after you choose!",
       "ajoy": "AJOY has opinions about both routes. She'll share them after you choose. That way she can explain why the other one was better."
     },
     "body": "Long-range scans show two routes forward.\n\nRoute Alpha is marked {branch.alpha.label}. Its first stop reads as {branch.alpha.first}.\n\nRoute Beta is marked {branch.beta.label}. Its first stop reads as {branch.beta.first}.\n\nThe ship computer presents both options without commentary.",
@@ -141,7 +141,12 @@
       "absurd"
     ],
     "node_type": [
-      "any"
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
     ],
     "trigger": [
       "any"
@@ -187,7 +192,7 @@
           "item_consume": null,
           "sets_flag": "paid_tribute",
           "time_cost": "low",
-          "narrative": "You transmitted the tribute. The other ship collected it and powered down its weapons. They didn't say thank you. They didn't say anything. The intercept course resolved. The ship computer has logged this as 'resolved — cost: 30 gold.' It does not evaluate value for money."
+          "narrative": "You transmitted the tribute. The other ship collected it and powered down its weapons. They didn't say thank you. They didn't say anything. The intercept course resolved. The ship computer has logged this as 'resolved — cost: tribute.' It does not evaluate value for money."
         },
         "gate": {
           "gold": 30
@@ -209,7 +214,7 @@
           "item_consume": null,
           "sets_flag": "negotiated_pirate",
           "time_cost": "medium",
-          "narrative": "Your diplomat opened a channel. Thirty minutes of careful negotiation produced an agreement: half the demanded tribute, no boarding, mutual non-aggression for this sector. The pirate captain seemed almost disappointed. The ship computer has noted this as an 'efficient outcome' which is diplomat-speak for 'surprisingly good.'"
+          "narrative": "Your diplomat opened a channel. A long, careful negotiation produced an agreement: half the demanded tribute, no boarding, mutual non-aggression for this sector. The pirate captain seemed almost disappointed. The ship computer has noted this as an 'efficient outcome' which is diplomat-speak for 'surprisingly good.'"
         },
         "gate": {
           "gold": 15
@@ -253,10 +258,12 @@
           "item_consume": null,
           "sets_flag": "fled_pirates",
           "time_cost": "low",
-          "narrative": "The FTL drive engaged. The pirate ship's weapons fired once — a parting shot that grazed the hull for 5 points of damage — and then you were gone. Jump complete. They did not follow. Fuel cost was significant. The hull is slightly worse. The crew is slightly rattled. The ship computer has logged this as 'escape: successful.' Everyone agrees."
+          "narrative": "The FTL drive engaged. The pirate ship's weapons fired once — a parting shot that grazed the hull — and then you were gone. Jump complete. They did not follow. Fuel cost was significant. The hull is slightly worse. The crew is slightly rattled. The ship computer has logged this as 'escape: successful.' Everyone agrees."
         }
       }
-    ]
+    ],
+    "family": "pirate",
+    "draw_weight": 0.25
   },
   {
     "id": "event_general_004",
@@ -378,7 +385,7 @@
     "body": "The ship crosses the midpoint of the voyage at 0300, ship time, marked by nothing.\n\nNo line in space. No sensor chirp. Just a coordinate scrolling past like all the others, that happens to divide everything into a half that's done and a half that isn't. Home is now a place you're from. The destination is now the closer of the two.\n\nSomeone should probably say something. That's what middles are for.",
     "choices": [
       {
-        "text": "Mark it — small ceremony, real juice",
+        "text": "Mark it — small ceremony, real cups",
         "requires_crew": null,
         "requires_item": null,
         "requires_flag": null,
@@ -393,7 +400,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "trivial",
-          "narrative": "The crew assembles at the viewport for the equator crossing. Reconstituted juice in real cups, one toast per person, ARIA's certificate displayed with full honors. It is a small, silly ceremony, and like all small silly ceremonies performed far from home, it is load-bearing."
+          "narrative": "The crew assembles at the viewport for the equator crossing. Reconstituted juice in real cups, one toast per person, a printed certificate displayed with full honors. It is a small, silly ceremony, and like all small silly ceremonies performed far from home, it is load-bearing."
         }
       },
       {
@@ -436,7 +443,7 @@
       }
     ],
     "science_link": {
-      "text": "MARV files a note on what looking back at everything from far away does to crews. The effect has a name.",
+      "text": "The ship computer files a note on what looking back at everything from far away does to crews. The effect has a name.",
       "label": "The overview effect",
       "url": "https://en.wikipedia.org/wiki/Overview_effect"
     },
@@ -510,7 +517,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "You gather the crew and walk through the engagement start to finish: what happened, what worked, what got lucky. Saying it out loud shrinks it to something that fits in a report instead of a nightmare. REX's 'everyone did their job' closes the meeting. Somehow that's the sentence everyone needed."
+          "narrative": "You gather the crew and walk through the engagement start to finish: what happened, what worked, what got lucky. Saying it out loud shrinks it to something that fits in a report instead of a nightmare. Somebody says 'everyone did their job', and that closes the meeting. Somehow that's the sentence everyone needed."
         }
       },
       {
@@ -529,7 +536,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "medium",
-          "narrative": "You channel the post-fight voltage into a full damage sweep: patch, weld, test, next. The crew works like a pit team until the adrenaline is spent honestly and the ship is tighter than before the fight. Kevin the dent is deemed structural character and retained."
+          "narrative": "You channel the post-fight voltage into a full damage sweep: patch, weld, test, next. The crew works like a pit team until the adrenaline is spent honestly and the ship is tighter than before the fight. The biggest new dent is deemed structural character and retained."
         }
       }
     ]
@@ -581,11 +588,11 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "An honest afternoon with the manifest: every item justified, every 'archaeological' one tagged for the airlock the moment something better turns up. Two crew members are not speaking to you about specific tags. They'll recover. The hold is still full. Now it is full on purpose."
+          "narrative": "An honest afternoon with the manifest: every item justified, every 'archaeological' one tagged for the airlock the moment something better turns up. Somebody is not speaking to you about specific tags. They'll recover. The hold is still full. Now it is full on purpose."
         }
       },
       {
-        "text": "Have the merchant-minded repack it",
+        "text": "Have {crew.diplomat} repack it",
         "requires_crew": "diplomat",
         "requires_item": null,
         "requires_flag": null,
@@ -670,7 +677,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "The fabricator hums for a day, turning raw stock into a neat row of sellable staples. The hold gains its first tenants. The echo shortens by a measurable amount, which ARIA logs with what can only be called grief.",
+          "narrative": "The fabricator hums for a day, turning raw stock into a neat row of sellable staples. The hold gains its first tenants. The echo shortens by a measurable amount, which the ship computer logs with what can only be called grief.",
           "fab_wear": 3
         },
         "requires_fab": true
@@ -955,7 +962,7 @@
         }
       },
       {
-        "text": "Answer it — transmit ARIA's recording back",
+        "text": "Answer it — transmit the old recording back",
         "requires_crew": null,
         "requires_item": null,
         "requires_flag": null,
@@ -1368,7 +1375,7 @@
       }
     ],
     "science_link": {
-      "text": "CHIP files a reference next to the Provident's registry entry: ships built to carry whole generations are a real, seriously-studied idea.",
+      "text": "The ship computer files a reference next to the Provident's registry entry: ships built to carry whole generations are a real, seriously-studied idea.",
       "label": "Generation ships, seriously studied",
       "url": "https://en.wikipedia.org/wiki/Generation_ship"
     }
@@ -1421,7 +1428,7 @@
           "item_consume": null,
           "sets_flag": "saved_the_provident",
           "time_cost": "high",
-          "narrative": "You come alongside and spend the better part of a week lending hands, welders, and water. Their engineer and yours develop a friendship conducted entirely in grunts. When the Provident's drive relights, their whole crew lines their viewports as you separate. Nobody says the word 'debt.' It's said anyway.",
+          "narrative": "You come alongside and spend the better part of a week lending hands, welders, and water. Their engineer and whoever is holding your welder develop a friendship conducted entirely in grunts. When the Provident's drive relights, their whole crew lines their viewports as you separate. Nobody says the word 'debt.' It's said anyway.",
           "scene_bg": "ship_interior/generic"
         }
       },
@@ -1684,7 +1691,11 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "You take enough to be safe and wave off the rest; they take the refusal about as well as you took their mayday — which is to say, they understand it completely and override half of it. The transfer line runs twice as long as you authorized. Some arguments are just generosity with extra steps."
+          "narrative": "You take enough to be safe and wave off the rest; they take the refusal about as well as you took their mayday — which is to say, they understand it completely and override half of it. The transfer line runs twice as long as you authorized, and what you wouldn't take in supplies comes across as spare plate and scrap, 'for the hull, which looks terrible.' Some arguments are just generosity with extra steps.",
+          "materials": {
+            "metal": 2,
+            "scrap": 1
+          }
         }
       }
     ]
@@ -1812,7 +1823,7 @@
       "recur_fight": {
         "title": "FIRED ON A FRIEND",
         "tone": "danger",
-        "body": "The first volley lands before their shields are up. They take it, and a second, before they answer. The log in your captain's quarters gets shorter tonight.",
+        "body": "The first volley lands before their shields are up. They take it, and a second, before they answer. The log in your quarters gets shorter tonight.",
         "line": "...Really?"
       },
       "recur_ignore": {
@@ -1941,7 +1952,7 @@
           "item_consume": null,
           "sets_flag": "inspector_refused",
           "time_cost": "medium",
-          "narrative": "You decline, politely, in front of witnesses. The inspector's smile recalibrates; the clipboard opens; the inspection takes four vengeful hours and finds three violations, all real, all fixed on the spot by a crew working with grim satisfaction. The stamp lands. The enrollment ends. The inspector does not say 'see you down the line.' There's nothing to see anymore."
+          "narrative": "You decline, politely, in front of witnesses. The inspector's smile recalibrates; the clipboard opens; the inspection takes days, vengeful ones, and finds three violations, all real, all fixed on the spot by a crew working with grim satisfaction. The stamp lands. The enrollment ends. The inspector does not say 'see you down the line.' There's nothing to see anymore."
         }
       },
       {
@@ -1961,7 +1972,7 @@
           "item_consume": null,
           "sets_flag": "inspector_reported",
           "time_cost": "low",
-          "narrative": "You file the report — including your own part in it, which stings and is the only version that works. Station authority takes it seriously: the inspector is reassigned to auditing empty warehouses, and your honesty costs you a fine of ten gold and buys you something the trail rarely sells: a clean ledger. Both receipts are framed."
+          "narrative": "You file the report — including your own part in it, which stings and is the only version that works. Station authority takes it seriously: the inspector is reassigned to auditing empty warehouses, and your honesty costs you a fine and buys you something the trail rarely sells: a clean ledger. Both receipts are framed."
         },
         "gate": {
           "gold": 10
@@ -2016,7 +2027,7 @@
           "item_consume": null,
           "sets_flag": "water_promise_kept",
           "time_cost": "medium",
-          "narrative": "Four days of melt-and-filter. The tanks reach a number they haven't shown since the trail began, and the ship's plumbing, asked to carry abundance for once, gurgles like it's celebrating. First full showers in weeks. The hot water lottery is won by the chef, who trades it to the engineer for reasons nobody questions.",
+          "narrative": "Four days of melt-and-filter. The tanks reach a number they haven't shown since the trail began, and the ship's plumbing, asked to carry abundance for once, gurgles like it's celebrating. First full showers in weeks. The hot water lottery is won, and promptly traded, for reasons nobody questions.",
           "scene_bg": "planet_surface/{biome}"
         }
       },
@@ -2236,12 +2247,12 @@
     "requires_flag": null,
     "ai_flavor": {
       "aria": "The frontier claim registry is broadcasting! It's a WALL of names and coordinates! Everyone out here is CALLING DIBS on everything!",
-      "marv": "MARV is parsing the mars-lane claim registry: mining stakes, homestead filings, one man who has claimed 'the concept of the horizon.' The filing was accepted. MARV has questions about the clerk.",
+      "marv": "MARV is parsing the Mars-lane claim registry: mining stakes, homestead filings, one man who has claimed 'the concept of the horizon.' The filing was accepted. MARV has questions about the clerk.",
       "rex": "REX notes the claim boards are the frontier's real map — who's dug in where, who's overextended, whose stake just went quiet. He reads them like troop positions. Old habits, useful habits.",
       "chip": "A LIVE CLAIMS MARKET! Stakes bought, sold, disputed! CHIP has never seen property law this FERAL and he has never been happier!",
       "ajoy": "AJOY has filtered the registry to entries relevant to your route. Two stakes ahead went delinquent this month. She notes that delinquent stakes and abandoned equipment travel together."
     },
-    "body": "Every ship on the mars lanes gets the claim-board broadcast — the frontier's rolling registry of who has staked what.\n\nMining claims, homestead filings, water rights on ice deposits, salvage titles, disputes in ALL CAPS. It scrolls past like the classified ads of a civilization mid-sprawl: hopeful, greedy, half-broke, alive.\n\nThe boards reward the attentive. Somewhere in the scroll there's always an opening.",
+    "body": "Every ship on the Mars lanes gets the claim-board broadcast — the frontier's rolling registry of who has staked what.\n\nMining claims, homestead filings, water rights on ice deposits, salvage titles, disputes in ALL CAPS. It scrolls past like the classified ads of a civilization mid-sprawl: hopeful, greedy, half-broke, alive.\n\nThe boards reward the attentive. Somewhere in the scroll there's always an opening.",
     "choices": [
       {
         "text": "Cross-reference the delinquent stakes with your route",
@@ -2259,7 +2270,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "AJOY's filter plus an hour of squinting produces two delinquent claims within reach of your route — abandoned equipment, unworked rock, fair game under frontier rules. You mark both on the chart. The boards giveth to those who read the fine print.",
+          "narrative": "The ship computer's filter plus an afternoon of squinting produces two delinquent claims within reach of your route — abandoned equipment, unworked rock, fair game under frontier rules. You mark both on the chart. The boards giveth to those who read the fine print.",
           "materials": {
             "metal": 1,
             "scrap": 1
@@ -2283,7 +2294,7 @@
           "item_consume": null,
           "sets_flag": "filed_mars_claim",
           "time_cost": "trivial",
-          "narrative": "Five gold files a homestead marker on an unremarkable patch of Martian nowhere — a legal fiction, a souvenir, a dot with the ship's name on it that will outlast everyone aboard. The certificate prints. The crew frames it next to the betting ledger. You own a piece of Mars now. Sort of. Officially sort of."
+          "narrative": "A few gold files a homestead marker on an unremarkable patch of Martian nowhere — a legal fiction, a souvenir, a dot with the ship's name on it that will outlast everyone aboard. The certificate prints. The crew frames it next to the betting ledger. You own a piece of Mars now. Sort of. Officially sort of."
         },
         "gate": {
           "gold": 5
@@ -2380,7 +2391,7 @@
           "item_consume": null,
           "sets_flag": "crossed_the_line",
           "time_cost": "low",
-          "narrative": "The engineer EVAs over with a spare cell and buys the beacon another decade of blinking for ships you'll never meet. Forty years of thankless service, serviced. AJOY's thank-you note gets a companion entry in the maintenance log: the ship's name, the date, and 'still blinking.' Then you cross."
+          "narrative": "The engineer EVAs over with a spare cell and buys the beacon another decade of blinking for ships you'll never meet. Forty years of thankless service, serviced. The maintenance log gets a new entry: the ship's name, the date, and 'still blinking.' Then you cross."
         }
       },
       {
@@ -2400,7 +2411,7 @@
           "item_consume": null,
           "sets_flag": "crossed_the_line",
           "time_cost": "low",
-          "narrative": "This is where the handwriting goes bad. The logbook's last third was written on the far side of this beacon: a fuel plan that was optimistic by the second month, a burn they shouldn't have made, then shorter and shorter entries. You redo your own burn plan against their mistakes and find eight units of fuel you would have wasted. Nobody reads the final page aloud."
+          "narrative": "This is where the handwriting goes bad. The logbook's last third was written on the far side of this beacon: a fuel plan that was optimistic by the second month, a burn they shouldn't have made, then shorter and shorter entries. You redo your own burn plan against their mistakes and find fuel you would have wasted. Nobody reads the final page aloud."
         }
       },
       {
@@ -2427,7 +2438,7 @@
       "interstellar"
     ],
     "science_link": {
-      "text": "AJOY appends a reference beside the beacon's log entry: humanity has real machines still calling home from past the edge of everything.",
+      "text": "The ship computer appends a reference beside the beacon's log entry: humanity has real machines still calling home from past the edge of everything.",
       "label": "Voyager 1, still transmitting",
       "url": "https://en.wikipedia.org/wiki/Voyager_1"
     }
@@ -2670,9 +2681,9 @@
       "marv": "Completion estimate: four years. Funding estimate: eighteen months. MARV admires the optimism the way one admires a cliff diver.",
       "rex": "Work crew, unarmed, exhausted. Threat level: they might ask us to hold something.",
       "chip": "The relay is a public-private partnership! CHIP can explain which parts are which! Nobody has ever let CHIP finish!",
-      "ajoy": "Give them the hour. Someday you'll be glad this thing has a signal."
+      "ajoy": "Give them the time. Someday you'll be glad this thing has a signal."
     },
-    "body": "Halfway to Mars, somebody is building the future, slowly, out of girders.\n\nA comm relay hangs half-finished against the dark — the project that's supposed to make this corridor safe enough for families someday. A work crew of six waves you down: their tug blew a coupling and the next supply run is nine days out.\n\nThey need an hour of a working ship's time. They can pay in the only currency construction crews have: fuel from their reserve, and the right to say you helped.",
+    "body": "Halfway to Mars, somebody is building the future, slowly, out of girders.\n\nA comm relay hangs half-finished against the dark — the project that's supposed to make this corridor safe enough for families someday. A work crew of six waves you down: their tug blew a coupling and the next supply run is nine days out.\n\nThey need a working ship's time. They can pay in the only currency construction crews have: fuel from their reserve, and the right to say you helped.",
     "choices": [
       {
         "text": "Give them the time",
@@ -2691,7 +2702,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "medium",
-          "narrative": "Your ship holds the girder steady while their welders walk the seam. When it's done, a stretch of the future is 2% more finished, and your name is on a beam where nobody will ever see it. The foreman tops off your fuel from the reserve and shakes every hand aboard."
+          "narrative": "Your ship holds the girder steady while their welders walk the seam. When it's done, a stretch of the future is a little more finished, and your name is on a beam where nobody will ever see it. The foreman tops off your fuel from the reserve and shakes every hand aboard."
         }
       },
       {
@@ -2770,10 +2781,10 @@
       "chip": "Beyond this point CHIP's home office cannot audit CHIP! CHIP has never felt so alive!",
       "ajoy": "Whatever you're saving for a better moment — this is the moment. There isn't another one on the schedule."
     },
-    "body": "The comms officer's math says today is the day the numbers go sideways: past this point, a message home and its answer stop being a conversation and start being correspondence. Months each way. Then years.\n\nThe crew has known this day was on the calendar since launch. It is on the calendar anyway, the way weather is.\n\nOne hour of usable bandwidth left on the relay chain. The question is only how to spend it.",
+    "body": "The ship computer's math says today is the day the numbers go sideways: past this point, a message home and its answer stop being a conversation and start being correspondence. Months each way. Then years.\n\nThe crew has known this day was on the calendar since launch. It is on the calendar anyway, the way weather is.\n\nThe last usable window on the relay chain is closing. The question is only how to spend it.",
     "choices": [
       {
-        "text": "Open the channel to everyone — one hour, all hands",
+        "text": "Open the channel to everyone — all hands",
         "requires_crew": null,
         "requires_item": null,
         "requires_flag": null,
@@ -2788,7 +2799,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "trivial",
-          "narrative": "For one hour the ship is a phone booth. Laughter from the mess. Long silences from the bunks, which are also calls. When the window closes, nobody says anything for a while, and then everybody starts cooking at once, which is how crews hug."
+          "narrative": "For the length of the window the ship is a phone booth. Laughter from the mess. Long silences from the bunks, which are also calls. When the window closes, nobody says anything for a while, and then everybody starts cooking at once, which is how crews hug."
         }
       },
       {
@@ -2808,7 +2819,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "medium",
-          "narrative": "Duty first: the full mission record goes home, and the agency's automated bounty for complete telemetry lands in your account with fifteen minutes of window to spare. The crew splits the remainder into ninety-second calls. It is not enough. They make it enough."
+          "narrative": "Duty first: the full mission record goes home, and the slow chain takes most of the window and days of patient resends to swallow it. The agency's automated bounty for complete telemetry lands in your account at the very end. The crew splits what's left into short calls. It is not enough. They make it enough."
         }
       }
     ]
@@ -3386,7 +3397,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "trivial",
-          "narrative": "You turn the armored bow into the stream and let it hiss against the plating for nine hours. The hull holds. The forward water tank, which sits behind the bow plating for exactly this reason, takes the rest: a seam opens and weeps {cost.water} points before anyone finds it. The forward viewport now looks like frosted glass, artistically."
+          "narrative": "You turn the armored bow into the stream and let it hiss against the plating for nine hours. The hull takes a scouring. The forward water tank, which sits behind the bow plating for exactly this reason, takes the rest: a seam opens and weeps {cost.water} points before anyone finds it. The forward viewport now looks like frosted glass, artistically."
         }
       },
       {
@@ -3559,7 +3570,7 @@
       "chip": "CHIP offers ConflictBuddy™ mediation, billed per grievance! Early estimates suggest this crew is very billable!",
       "ajoy": "AJOY saw this coming at the second mention of the mug. She'd have stepped in then. She's stepping in now, which is later, which is your schedule, not hers."
     },
-    "body": "Two of the crew have stopped speaking to each other. Then a third stopped speaking to either of them, in solidarity, though nobody is sure with whom.\n\nIt began with a missing mug. It is no longer about the mug. The galley rota has become a treaty, and the treaty has become a border.",
+    "body": "Nobody aboard is speaking to anybody. It started with two people and spread, in solidarity, though nobody is sure with whom.\n\nIt began with a missing mug. It is no longer about the mug. The galley rota has become a treaty, and the treaty has become a border.",
     "choices": [
       {
         "text": "Chef cooks a peace dinner",
@@ -3643,8 +3654,8 @@
       }
     ],
     "alt_bodies": [
-      "The galley now has two sittings, which nobody scheduled, and two kettles, which nobody bought. Two of the crew are not speaking. A third has joined the silence on principle, and is vague about which side.\n\nIt was a mug, once. It has become a treaty, with clauses, and the treaty has a border running down the middle of the galley table.",
-      "Somebody's mug went missing a week ago. It has not been found, and it has stopped mattering, because the argument outgrew it.\n\nTwo of the crew now talk only through a third, who has lately stopped passing the messages on. The galley rota reads like a treaty. The table has a border. Nobody remembers drawing it."
+      "The galley now has two sittings, which nobody scheduled, and two kettles, which nobody bought. Nobody aboard is speaking to anybody else, on principle, and everyone is vague about which principle.\n\nIt was a mug, once. It has become a treaty, with clauses, and the treaty has a border running down the middle of the galley table.",
+      "Somebody's mug went missing a week ago. It has not been found, and it has stopped mattering, because the argument outgrew it.\n\nThe crew now talk only through the ship computer, which has lately stopped passing the messages on. The galley rota reads like a treaty. The table has a border. Nobody remembers drawing it."
     ]
   },
   {
@@ -3673,7 +3684,7 @@
       "marv": "MARV has checked the toll beacon's licence. It expired nine years ago. The beacon is collecting anyway. He notes that nobody has come to stop it, and that nobody will.",
       "rex": "REX notes the toll booth has no weapons. It has a very firm voice. He is not going to argue with the voice.",
       "chip": "CHIP has a frequent-traveller card for this toll! It has lapsed! CHIP is deeply sorry! CHIP is also proud it ever had one!",
-      "ajoy": "AJOY says pay and keep the hull, or keep the gold and take the rocks. Or let the pilot slip past it."
+      "ajoy": "AJOY says pay and keep the hull, or keep the gold and take the rocks. Or, with a good hand at the helm, slip past it."
     },
     "body": "The fork has a toll booth.\n\nIt's a beacon the size of a shipping container, parked in the mouth of the port lane, broadcasting a price list. The port lane is marked {branch.alpha.label}; its first stop reads as {branch.alpha.first}. The starboard lane, marked {branch.beta.label}, first stop {branch.beta.first}, has no toll. It has a debris field instead, which is cheaper, and louder.",
     "choices": [
@@ -4095,7 +4106,7 @@
         }
       },
       {
-        "text": "Mark it on the hull and keep going",
+        "text": "Mark it on the airlock door and keep going",
         "requires_crew": null,
         "requires_item": null,
         "requires_flag": null,
@@ -4110,7 +4121,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "trivial",
-          "narrative": "You scratch a line on the inside of the airlock door at eye height, with the date, and carry on. It isn't much of a ceremony. By the end of the week three other people have added their initials beside it."
+          "narrative": "You scratch a line on the inside of the airlock door at eye height, with the date, and carry on. It isn't much of a ceremony. By the end of the week there are more initials beside it."
         }
       }
     ],
@@ -4165,7 +4176,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "trivial",
-          "narrative": "You call everyone to the galley and tell them straight: no turning back from here. There is a silence. Then the chef says 'well, I wasn't going to,' and someone laughs, and it turns into the best evening the ship has had in a while."
+          "narrative": "You call everyone to the galley and tell them straight: no turning back from here. There is a silence. Then somebody says 'well, I wasn't going to,' and someone laughs, and it turns into the best evening the ship has had in a while."
         }
       },
       {
@@ -4240,7 +4251,7 @@
       "chip": "CHIP's Bean There loyalty card has eleven stamps! The twelfth is free! The twelfth is on the dock!",
       "ajoy": "AJOY says the fabricator can print something coffee-shaped. It won't be coffee. It might be close enough."
     },
-    "body": "Two days out, the chef comes up to the bridge looking stricken.\n\nThe coffee is not aboard. The entire supply, every sealed tin of it, is sitting on a pallet on the departure dock, where it was put down 'just for a second' during loading. The ship has tea. Nobody on the ship drinks tea. The next coffee is a very long way away.",
+    "body": "The galley inventory comes back with one line missing.\n\nThe coffee is not aboard. The entire supply, every sealed tin of it, is sitting on a pallet on the departure dock, where it was put down 'just for a second' during loading. The ship has tea. Nobody on the ship drinks tea. The next coffee is a very long way away.",
     "choices": [
       {
         "text": "Turn back for it",
@@ -4327,7 +4338,7 @@
     "requires_flag": null,
     "ai_flavor": {
       "aria": "We're LATE! ARIA hates being late! ARIA has never been late before! ARIA has never been anywhere before!",
-      "marv": "MARV puts the ship roughly a sixth of the deadline behind its distance. At this pace the gap closes before arrival, just. One bad stop and it does not. A faster pace closes it with room to spare, at the cost of fuel and tempers.",
+      "marv": "MARV puts the ship roughly a sixth of the deadline behind its distance. At this pace it keeps slipping. One bad stop and it slips faster. A faster pace closes it with room to spare, at the cost of fuel and tempers.",
       "rex": "REX recommends speed. REX always recommends speed. This time he has the figures.",
       "chip": "CHIP notes that the colony charter's late-arrival clause is very strict! CHIP has read it! It's mostly the word 'forfeit'!",
       "ajoy": "AJOY says pick a pace you can hold. A fast pace you give up on halfway is just a slow pace with extra steps."
@@ -4423,12 +4434,12 @@
     "requires_flag": null,
     "ai_flavor": {
       "aria": "The FOOTNOTE pace! ARIA has always wanted to see the footnote pace! ARIA has also read the footnote! ARIA is less keen!",
-      "marv": "MARV has read the footnote. It describes the fastest pace as 'not recommended for sustained use.' He notes 'sustained' is undefined. He suspects the pilot noticed that too.",
+      "marv": "MARV has read the footnote. It describes the fastest pace as 'not recommended for sustained use.' He notes 'sustained' is undefined. He suspects whoever drew the diagram noticed that too.",
       "rex": "REX approves of speed. He disapproves of the rattle. He is holding both positions firmly.",
       "chip": "CHIP's warranty is void at the footnote pace! CHIP would like to stress the warranty was already void! For other reasons! Several!",
       "ajoy": "AJOY says decide now. Every stop you think about it costs the time you're trying to save."
     },
-    "body": "The pilot has a proposal, and has brought a diagram, which is never a good sign.\n\nThe ship is behind, and falling further behind. The proposal is to stop being careful about it: fly hard, skip the maintenance stops, run the drive at a pace the manual describes only in a footnote. It will get you there. It will get you there tired, short of fuel and with a ship that rattles.\n\nThe alternative is to arrive after the slot is gone.",
+    "body": "A proposal has turned up on the bridge, with a diagram, which is never a good sign.\n\nThe ship is behind, and falling further behind. The proposal is to stop being careful about it: fly hard, skip the maintenance stops, run the drive at a pace the manual describes only in a footnote. It will get you there. It will get you there tired, short of fuel and with a ship that rattles.\n\nThe alternative is to arrive after the slot is gone.",
     "choices": [
       {
         "text": "Plaid, and don't look back",
@@ -4471,7 +4482,7 @@
           "set_orders": {
             "pace": "faster"
           },
-          "narrative": "You compromise: one notch faster, and you spend three points of fuel on a proper drive service first so the ship can take it. The pilot calls it the coward's footnote. The ship stops rattling. The gap starts closing."
+          "narrative": "You compromise: one notch faster, and you spend a little fuel on a proper drive service first so the ship can take it. The diagram's margin now calls it the coward's footnote. The ship stops rattling. The gap starts closing."
         }
       },
       {
@@ -4490,7 +4501,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "trivial",
-          "narrative": "You turn the proposal down. The pilot takes the diagram back without a word. The ship flies on at the pace it was flying, the gap on the screen keeps growing, and the crew starts doing the sum in their heads at dinner."
+          "narrative": "You turn the proposal down. The diagram goes back in its folder without a word. The ship flies on at the pace it was flying, the gap on the screen keeps growing, and the crew starts doing the sum in their heads at dinner."
         }
       }
     ]
@@ -4704,7 +4715,7 @@
       "chip": "CHIP is restoring the crop warranty! Retroactively! For the whole voyage! CHIP has no authority! CHIP has never cared less!",
       "ajoy": "AJOY says plant it first. Before anything else is unloaded. The colony can wait five minutes."
     },
-    "body": "The jar on the bridge has a leaf in it.\n\nOne leaf, small and pale and new, unfolding out of the green node the botanist cut from the dead crop all those stops ago. Nobody saw it happen. It was simply there one morning, as the colony's lights came up on the long-range scope. The botanist has not stopped looking at it.",
+    "body": "The jar on the bridge has a leaf in it.\n\nOne leaf, small and pale and new, unfolding out of the green node cut from the dead crop all those stops ago. Nobody saw it happen. It was simply there one morning, as the colony's lights came up on the long-range scope. Nobody aboard has stopped looking at it.",
     "choices": [
       {
         "text": "Plant it first thing",
@@ -4722,7 +4733,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "trivial",
-          "narrative": "Before the cargo, before the crew, before anything else comes off the ship, the botanist carries the jar down the ramp and plants the little leaf in the colony's first bed. A small crowd gathers. Nobody explains it to them. They work it out."
+          "narrative": "Before the cargo, before the crew, before anything else comes off the ship, you carry the jar down the ramp and plants the little leaf in the colony's first bed. A small crowd gathers. Nobody explains it to them. They work it out."
         }
       },
       {
@@ -4861,7 +4872,7 @@
       }
     ],
     "science_link": {
-      "text": "AJOY attaches the original: a probe on its way out of the system was once turned round to take exactly this picture.",
+      "text": "The ship computer attaches the original: a probe on its way out of the system was once turned round to take exactly this picture.",
       "label": "Pale Blue Dot",
       "url": "https://en.wikipedia.org/wiki/Pale_Blue_Dot"
     }
@@ -5398,7 +5409,7 @@
       }
     ],
     "science_link": {
-      "text": "MARV attaches the weather office's reference: some Martian dust storms grow until they cover the planet, and one ended a rover's mission by burying its solar panels.",
+      "text": "The ship computer attaches the weather office's reference: some Martian dust storms grow until they cover the planet, and one ended a rover's mission by burying its solar panels.",
       "label": "Dust storms on Mars",
       "url": "https://en.wikipedia.org/wiki/Climate_of_Mars"
     }
@@ -5431,7 +5442,7 @@
       "chip": "CHIP recommends the CHIP Balance Pro™ cargo app! It tells you your hold is full! In three colours!",
       "ajoy": "AJOY says the heaviest thing back there is the thing you keep meaning to use. Use it, or move it. Carrying it both ways is the expensive choice."
     },
-    "body": "The hold is full, and the ship has started to fly like it knows.\n\nEverything heavy has worked its way aft, the way heavy things do. The drive pushes a little off its line on every burn to make up for it, and the pilot's coffee has begun to creep across the console during manoeuvres, which the pilot is taking personally.\n\nThe cure is less mass, or better-placed mass. The hold has opinions about both.",
+    "body": "The hold is full, and the ship has started to fly like it knows.\n\nEverything heavy has worked its way aft, the way heavy things do. The drive pushes a little off its line on every burn to make up for it, and the coffee on the console has begun to creep across it during manoeuvres, which the bridge is taking personally.\n\nThe cure is less mass, or better-placed mass. The hold has opinions about both.",
     "choices": [
       {
         "text": "Use the repair kit now, not later",
@@ -5470,7 +5481,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "trivial",
-          "narrative": "You leave the hold as it is and let the drive push crooked. It costs fuel on every burn, a little at a time, the way the expensive things always do. The pilot moves the coffee to a cup holder and says nothing further on the matter."
+          "narrative": "You leave the hold as it is and let the drive push crooked. It costs fuel on every burn, a little at a time, the way the expensive things always do. The coffee moves to a cup holder, and the matter is not raised again."
         }
       },
       {
@@ -5647,7 +5658,7 @@
     "requires_flag": null,
     "requires_crop_alive": true,
     "science_link": {
-      "text": "MARV notes that crowded plants really do sense their neighbours: leaves reflect far-red light, and a plant that sees too much of it stretches tall and thin to get away.",
+      "text": "The ship computer notes that crowded plants really do sense their neighbours: leaves reflect far-red light, and a plant that sees too much of it stretches tall and thin to get away.",
       "label": "Shade avoidance",
       "url": "https://en.wikipedia.org/wiki/Shade_avoidance"
     },
@@ -5698,7 +5709,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "trivial",
-          "narrative": "Each crew member gets a corner of the hold and a curtain. One becomes a reading nook, one a gym, one is never explained. Heating and cycling the air in a room people now live in costs the scrubbers a little. Nobody minds."
+          "narrative": "The hold is divided into corners, each with a curtain. One becomes a reading nook, one a gym, one is never explained. Heating and cycling the air in a room people now live in costs the scrubbers a little. Nobody minds."
         }
       },
       {
@@ -5837,18 +5848,18 @@
     "sets_flag": null,
     "requires_flag": null,
     "science_link": {
-      "text": "The pilot's wall is the rocket equation: the fuel a burn needs rises steeply with the mass it has to move, so shedding mass is the oldest way to go faster for the same fuel.",
+      "text": "The galley wall is the rocket equation: the fuel a burn needs rises steeply with the mass it has to move, so shedding mass is the oldest way to go faster for the same fuel.",
       "label": "Tsiolkovsky rocket equation",
       "url": "https://en.wikipedia.org/wiki/Tsiolkovsky_rocket_equation"
     },
     "ai_flavor": {
       "aria": "ARIA has a GREAT idea! Throw things away! ARIA does it all the time! ARIA has never been sure what she threw away!",
-      "marv": "MARV confirms the pilot's figures. A lighter ship takes a faster pace for less fuel. MARV adds that everything on the list is on the list because someone once thought the ship needed it.",
+      "marv": "MARV confirms the figures on the wall. A lighter ship takes a faster pace for less fuel. MARV adds that everything on the list is on the list because someone once thought the ship needed it.",
       "rex": "REX would strip the ship to the frame for speed. He has been asked which part of the frame he'd keep. He is thinking.",
       "chip": "CHIP reminds you that jettisoned property is not covered by your policy! Nothing is covered by your policy! CHIP has checked!",
       "ajoy": "AJOY says pick the thing you can make again. Water comes back at a station. Hull plate does too, at a price. Air is harder."
     },
-    "body": "The pilot has done the sums and written them on the galley wall, so nobody can pretend not to have seen them.\n\nThe ship is behind. A faster pace would close the gap, but a faster pace burns fuel the ship can't easily spare. Unless the ship is lighter. Every kilo not carried is fuel not spent carrying it, and the ship is carrying a great many kilos it could, at a pinch, live without.\n\nThe pinch is here.",
+    "body": "Somebody has done the sums and written them on the galley wall, so nobody can pretend not to have seen them.\n\nThe ship is behind. A faster pace would close the gap, but a faster pace burns fuel the ship can't easily spare. Unless the ship is lighter. Every kilo not carried is fuel not spent carrying it, and the ship is carrying a great many kilos it could, at a pinch, live without.\n\nThe pinch is here.",
     "choices": [
       {
         "text": "Dump the reserve water tank",
@@ -5893,7 +5904,7 @@
           "set_orders": {
             "pace": "faster"
           },
-          "narrative": "The spare plating comes off the racks and the doubled panels come off the quiet side of the hull, and all of it goes out of the lock. The ship is lighter and faster and noticeably thinner-skinned. The pilot says it handles like a dream. The engineer says it handles like a soap bubble."
+          "narrative": "The spare plating comes off the racks and the doubled panels come off the quiet side of the hull, and all of it goes out of the lock. The ship is lighter and faster and noticeably thinner-skinned. On the stick it handles like a dream. From inside the hull it feels like a soap bubble."
         }
       },
       {

@@ -245,7 +245,8 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
   await boot();
   const w = await page.evaluate(() => {
     const T = ['event_encounter_trader_001', 'event_encounter_trader_002', 'event_encounter_trader_003', 'event_encounter_trader_004'].map(i => EVENTS[i]);
-    const P = ['event_encounter_pirate_001', 'event_encounter_pirate_002', 'event_encounter_pirate_003'].map(i => EVENTS[i]);
+    // event_general_003 joined the pirate family (2026-10-23 content hunt): four at 0.25.
+    const P = ['event_encounter_pirate_001', 'event_encounter_pirate_002', 'event_encounter_pirate_003', 'event_general_003'].map(i => EVENTS[i]);
     const sum = a => Math.round(a.reduce((s, e) => s + e.draw_weight, 0) * 1000) / 1000;
     const same = (a, k) => new Set(a.map(e => JSON.stringify(e[k]))).size === 1;
     // drawWeightedEvent itself, swept over Math.random: against one weight-1
@@ -259,7 +260,9 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
     };
     const fill = tier => ({ id: 'filler', difficulty: tier, trigger: ['any'] });
     const tShare = share([fill('easy'), ...T], T.map(e => e.id)), pShare = share([fill('medium'), ...P], P.map(e => e.id));
-    const tags = a => a.map(e => JSON.stringify(eventBranchTags(e)));
+    // Truthiness, as branchEventMult reads them (a flat event with no npc tags
+    // corporate as undefined, not false).
+    const tags = a => a.map(e => JSON.stringify(Object.fromEntries(Object.entries(eventBranchTags(e)).map(([k, v]) => [k, !!v]))));
     return { tSum: sum(T), pSum: sum(P), tSame: ['difficulty', 'node_type', 'trigger', 'once'].every(k => same(T, k)), pSame: ['difficulty', 'node_type', 'trigger', 'once'].every(k => same(P, k)),
       tShare, pShare, tTags: tags(T), pTags: tags(P) };
   });

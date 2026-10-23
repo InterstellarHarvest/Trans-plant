@@ -25,7 +25,7 @@
       "aria": "ARIA describes the planet as 'beautiful' which is generous for a featureless rock. She means it, though.",
       "marv": "MARV has analyzed the soil. It is, he concedes, 'adequate.' From MARV this is practically a sonnet.",
       "rex": "REX has completed a threat assessment of the dirt. Threat level: negligible. He seems personally offended by how safe it is.",
-      "chip": "CHIP notes that soil analysis services are available at participating stations for a reasonable fee. You already have a soil sampler. CHIP does not acknowledge this.",
+      "chip": "CHIP notes that soil analysis services are available at participating stations for a reasonable fee. Any soil sampler you may already own is not a participating station. CHIP does not acknowledge it.",
       "ajoy": "AJOY observes the soil quality is excellent. She also observes you could have landed 200 meters east for even better readings. But this is fine too. It's fine."
     },
     "body": "A rocky planet with surprisingly rich subsurface minerals and topsoil deposits.\n\nThe surface is featureless, windless, and profoundly boring. The ship computer describes it as 'optimal,' which is the nicest thing it has ever said about anything.\n\nThe soil sampler, if you have one, reveals nutrient profiles that would make an agronomist weep. Without one, the assessment is 'probably useful dirt.'",
@@ -234,7 +234,7 @@
       "chip": "CHIP notes that rain is complimentary on this world! Free water falling from the sky! CHIP cannot monetize weather and finds this planet frankly anarchic!",
       "ajoy": "AJOY opened the topside vents four minutes before anyone thought to ask. The tanks are already filling. She mentions this in the interest of accuracy."
     },
-    "body": "It is raining on this planet.\n\nNot toxic rain, not ammonia drizzle, not anything that requires a suit rating. Water. Falling out of the sky, for free, onto the hull, in a steady drumming rhythm that half the crew has not heard since Earth.\n\nWork has, unofficially, stopped. Three crew members are standing in the open cargo ramp with their hands out. Nobody is stopping them. What would be the point of anything, if you stopped them.",
+    "body": "It is raining on this planet.\n\nNot toxic rain, not ammonia drizzle, not anything that requires a suit rating. Water. Falling out of the sky, for free, onto the hull, in a steady drumming rhythm that half the crew has not heard since Earth.\n\nWork has, unofficially, stopped. Anyone not on watch is standing in the open cargo ramp with their hands out. Nobody is stopping them. What would be the point of anything, if you stopped them.",
     "choices": [
       {
         "text": "Open the tanks and collect",
@@ -293,8 +293,12 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "The botanist bottles rainwater like vintage, muttering about mineral profiles. The crop gets watered with genuine sky-water that evening. Whether plants can tell the difference is scientifically unresolved. The botanist says they can. The botanist says it dares anyone to test them on it.",
-          "scene_bg": "planet_surface/{biome}"
+          "narrative": "The botanist bottles rainwater like vintage, muttering about mineral profiles. The crop gets watered with genuine sky-water that evening. Whether plants can tell the difference is scientifically unresolved. The botanist says they can. The botanist dares anyone to test them on it.",
+          "scene_bg": "planet_surface/{biome}",
+          "crop_health": 6
+        },
+        "gate": {
+          "crop": "alive"
         }
       },
       {
@@ -319,7 +323,7 @@
       }
     ],
     "science_link": {
-      "text": "ARIA adds, for anyone curious, that recycling every drop is exactly how real space stations survive.",
+      "text": "The ship computer adds, for anyone curious, that recycling every drop is exactly how real space stations survive.",
       "label": "How the ISS recycles its water",
       "url": "https://en.wikipedia.org/wiki/ISS_ECLSS"
     }
@@ -410,7 +414,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "medium",
-          "narrative": "The xenobiologist spends six hours in the ruins and comes back changed in the direction of thoughtful. Their report: the builders left deliberately, in good order, in one season. 'It wasn't a disaster,' they say. 'They just went somewhere.' Somehow that's the version that helps.",
+          "narrative": "The xenobiologist spends days in the ruins and comes back changed in the direction of thoughtful. Their report: the builders left deliberately, in good order, in one season. 'It wasn't a disaster,' they say. 'They just went somewhere.' Somehow that's the version that helps.",
           "scene_bg": "planet_surface/{biome}"
         }
       },
@@ -580,9 +584,8 @@
           {
             "text": "APPROACH CAREFULLY",
             "effort": 2,
-            "risky": true,
-            "sub": "Walk toward the tree line",
-            "next": "contact"
+            "sub": "Downwind, unseen · study it",
+            "outcome": "planet_watch"
           },
           {
             "text": "COLLECT SAMPLES",
@@ -692,10 +695,22 @@
         },
         "time_cost": "trivial"
       },
+      "planet_watch": {
+        "title": "UNSEEN",
+        "tone": "success",
+        "body": "You work along the tree line downwind and watch it from cover for an afternoon. It grazes on a pale lichen at the edge of a spring, then wanders back into the green. It never knows you were there. You leave with the spring's water and a bag of the lichen.",
+        "resources": {
+          "water": 6
+        },
+        "materials": {
+          "biocomponent": 2
+        },
+        "time_cost": "low"
+      },
       "planet_camp": {
         "title": "CAMP SET",
         "tone": "success",
-        "body": "Two days on the surface. Readings, readings, readings. You leave with three times the data, a hold of things that grow, and two minor rashes.",
+        "body": "Two days on the surface. Readings, readings, readings. You leave with three times the data and a hold of things that grow.",
         "resources": {
           "food": 8,
           "water": 6
@@ -1097,7 +1112,7 @@
         }
       },
       {
-        "text": "Seal the lander and wait out the night",
+        "text": "Seal the lander and wait out the storm",
         "requires_crew": null,
         "requires_item": null,
         "requires_flag": null,

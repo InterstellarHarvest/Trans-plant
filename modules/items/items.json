@@ -7,7 +7,7 @@
     "id": "item_gas_analyzer_001",
     "active": true,
     "name": "Gas Analyzer",
-    "description": "Identifies atmospheric composition. Required for safe planet assessment.",
+    "description": "Identifies atmospheric composition. Some survey and analysis choices need one.",
     "real_purpose": "Atmospheric analysis — determines if air is breathable, toxic, or 'interesting'",
     "item_source": "purchasable",
     "item_behavior": [
@@ -19,7 +19,7 @@
     "passive_flavor": "The gas analyzer hums quietly near the viewport. It knows things you don't.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Planet events reveal atmospheric safety before committing. Without it, outcomes are a coin flip."
+    "gameplay_effect": "Unlocks extra survey and analysis choices in some planet, nebula, anomaly and derelict events."
   },
   {
     "id": "item_repair_kit_001",
@@ -170,7 +170,7 @@
     "id": "item_pressure_suit_001",
     "active": true,
     "name": "Pressure Suit (EVA)",
-    "description": "Required for vacuum operations. Without this, certain choices don't appear.",
+    "description": "Required for vacuum operations. Some boarding and EVA choices stay locked without one.",
     "real_purpose": "Extravehicular activity in vacuum",
     "item_source": "purchasable",
     "item_behavior": [
@@ -182,7 +182,7 @@
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Required for derelict boarding, hull exterior repair, and EVA events. No suit, no option.",
+    "gameplay_effect": "Unlocks suited choices in some derelict, nebula and void events: boarding, EVA, hull work.",
     "design_note": "Gate item."
   },
   {
@@ -425,7 +425,7 @@
     "analysis": "Edible, technically. Cultured, definitely. Left near the chef it becomes cheese; left alone it becomes a story.",
     "active": true,
     "name": "Suspicious Fungus",
-    "description": "The chef has been looking at this in a way that concerns the medic.",
+    "description": "Found growing somewhere it shouldn't. Anyone who cooks has been looking at it in a way that concerns everyone else.",
     "item_source": "event_reward",
     "item_behavior": [
       "passive_effect"
@@ -436,11 +436,11 @@
     "find_odds": {
       "forage": 0.25
     },
-    "passive_flavor": "The fungus is growing. Slowly. The chef checks on it daily. The medic checks on the chef daily.",
+    "passive_flavor": "The fungus is growing. Slowly. Someone checks on it daily. Someone else checks on them.",
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "With a chef aboard, it may turn into something remarkable.",
-    "design_note": "Key for event_shipboard_016, the Chef's Secret Project (requires chef). Produces artisanal_space_cheese. Found on a good FORAGE on alien, habitable or anomalous ground: find_odds.forage is the chance (cruise.js).",
+    "gameplay_effect": "With a chef in the crew, it may turn into something remarkable. Some alien vendors will trade for it.",
+    "design_note": "Key for event_shipboard_016, the Chef's Secret Project (requires_role chef: a chef aboard as crew). Produces artisanal_space_cheese. Found on a good FORAGE on alien, habitable or anomalous ground: find_odds.forage is the chance (cruise.js).",
     "tags": [
       "food",
       "biological",
@@ -809,7 +809,7 @@
     "passive_flavor": null,
     "one_use": false,
     "effort_contribution": null,
-    "gameplay_effect": "Deliver it to the station authority the next time you dock. No sell value.",
+    "gameplay_effect": "A station authority further along may ask for it, and pass it on to the family. No sell value.",
     "design_note": "Triggers a station follow-up event when docked; resolves a narrative thread.",
     "tags": [
       "story",
