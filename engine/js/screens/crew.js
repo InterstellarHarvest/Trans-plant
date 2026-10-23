@@ -129,7 +129,7 @@
     { id: 'wounded',            name: 'Wounded',            kind: 'critical', effect: 'Active skill disabled · passive halved' },
     // Per-crew morale (owner ruling 15): this member's own morale.
     { id: 'morale_crisis',      name: 'Morale crisis',      kind: 'critical', effect: 'Morale under ' + MORALE_CRISIS + ' · at 0 they walk off at the next station' },
-    { id: 'deserting',          name: 'Deserting',          kind: 'critical', effect: 'Leaves at the next station · needs ' + MORALE_CRISIS + ' to stay' },
+    { id: 'deserting',          name: 'Deserting',          kind: 'critical', effect: 'Needs ' + MORALE_CRISIS + ' to stay · walks off at the next station' },
     { id: 'malnourished',       name: 'Malnourished',       kind: 'negative', get effect() { return dep('food', 'starvation'); } },
     { id: 'dehydrated',         name: 'Dehydrated',         kind: 'negative', get effect() { return dep('water', 'dehydration'); } },
     { id: 'suffocating',        name: 'Suffocating',        kind: 'critical', get effect() { return dep('o2', 'suffocation'); } },
@@ -636,10 +636,16 @@
     }
   }
 
-  function setAiText(text, refusal) {
+  // narration: the line isn't the AI speaking (a skill's result, "GREENHOUSE
+  // PROTOCOL — Dr. Osei stabilizes…") — no AI chip or avatar beside it. A
+  // line that names its own AI keeps the avatar but drops the "NAME:" chip
+  // (ruling 32, index.html namesTheAI).
+  function setAiText(text, refusal, narration) {
     const el = $('cd-ai-text');
     el.textContent = text;
     el.classList.toggle('refusal', !!refusal);
+    $('cd-ai-name').style.display = narration || namesTheAI(String(text || '')) ? 'none' : '';
+    $('cd-ai-icon').style.display = narration ? 'none' : '';
   }
 
   // ── Open / close / cycle ───────────────────────────────────────
@@ -699,7 +705,7 @@
     }
     renderCruise();
     render();
-    setAiText(res.log, false);
+    setAiText(res.log, false, true); // the skill result, not the AI speaking
   }
 
   // ── Dismiss / Jettison ─────────────────────────────────────────

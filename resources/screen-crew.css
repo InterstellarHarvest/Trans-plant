@@ -462,6 +462,10 @@
 #overlay-crew .cd-status-row .s-name  { flex-shrink: 0; margin-right: 8px; }
 #overlay-crew .cd-status-row .s-eff   { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #overlay-crew .cd-status-row.stub .s-eff { color: var(--cdw-mod-stub); }
+/* An active status's effect wraps rather than clip ("Deserting — Needs 25
+   to stay · walks off at the next station", ruling 62): the column scrolls
+   if several long ones stack. */
+#overlay-crew .cd-status-active .cd-status-row .s-eff { white-space: normal; text-align: right; }
 @keyframes cdw-mod-critical-pulse {
   0%, 100% { filter: brightness(1); }
   50%      { filter: brightness(1.4); }

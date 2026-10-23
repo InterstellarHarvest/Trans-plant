@@ -103,3 +103,21 @@
   border-color: #cc6666 #4a1a1a #4a1a1a #cc6666;
   color: #e0a0a0;
 }
+
+/* Barter rows ("3g + ration brick") took the name's room and ellipsised it
+   ("O2 CANIST…"): a barter or mixed price wraps onto two right-aligned
+   lines, and a name that still runs long wraps instead of clipping. */
+#overlay-market .market-row-name {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: break-word;
+  line-height: 17px;
+}
+#overlay-market .market-row-cost.barter,
+#overlay-market .market-row-cost.mixed {
+  white-space: normal;
+  text-align: right;
+  max-width: 96px;
+  line-height: 15px;
+}

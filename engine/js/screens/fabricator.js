@@ -373,7 +373,7 @@
       return list.filter(r => recipeLockState(r) === 'available');
     }
     if (FSTATE.filter === 'craftable') {
-      return list.filter(r => recipeLockState(r) === 'available' && hasMaterials(r) && fabFunctional());
+      return list.filter(canCraft); // the CRAFT button's own test (deadline, a job running, …)
     }
     return list;
   }

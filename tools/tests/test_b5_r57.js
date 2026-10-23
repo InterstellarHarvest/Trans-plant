@@ -386,7 +386,7 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
     });
     ok(r.warned && /needs 25 to stay/.test(r.tip0) && r.red0, 'warned at 0: MO tooltip "' + r.tip0 + '"');
     ok(r.mid.mo === 20 && r.mid.warned && r.mid.red && /^Morale 20\/100 — walks off at the next station — needs 25 to stay$/.test(r.mid.tip), 'raised to 20: still warned ("' + r.mid.tip + '")');
-    ok(/Deserting/.test(r.dossier.st) && /needs 25 to stay/.test(r.dossier.st) && /needs 25 to stay/.test(r.dossier.hover), 'dossier: Deserting · needs 25 to stay (hover "' + r.dossier.hover + '")');
+    ok(/Deserting/.test(r.dossier.st) && /[Nn]eeds 25 to stay/.test(r.dossier.st) && /needs 25 to stay/.test(r.dossier.hover), 'dossier: Deserting · needs 25 to stay (hover "' + r.dossier.hover + '")');
     ok(!r.crew.includes('engineer') && r.crew.includes('medic'), 'ARIA lifted them off 0 on the leg in, and they walked anyway (' + r.crew.join(',') + ')');
     await page.close();
   }

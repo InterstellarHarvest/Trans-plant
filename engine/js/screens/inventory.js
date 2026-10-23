@@ -67,7 +67,12 @@ function materialDefOf(id) {
 }
 
 /* ── Consumables the player can use from the hold (items.json "on use"
-   effects). can() → null when usable, else the reason it isn't. ── */
+   effects). can() → null when usable, else the reason it isn't; label()
+   and tip() state what will really land (cap-aware) and use() returns the
+   log line with what did — the same arithmetic, so the button never
+   promises +15 when the tank takes 5. ── */
+// What adding n to a resource really adds (up to its cap) — invAddRes's own sum.
+function invLand(k, n) { const b = STATE.resources[k]; return Math.round(clamp(b + n, 0, resMax(k)) - b); }
 // Adds to a resource up to its cap; returns what actually went in (USE lines report that).
 function invAddRes(k, n) { const b = STATE.resources[k]; STATE.resources[k] = clamp(b + n, 0, resMax(k)); return Math.round(STATE.resources[k] - b); }
 // The worst-hurt person aboard — the captain included (owner ruling 29:
@@ -77,21 +82,64 @@ function worstHurtCrew() {
   for (const r of peopleAboard()) if (hpOf(r) < 100 && (!worst || hpOf(r) < hpOf(worst))) worst = r;
   return worst;
 }
+// A resource refill: n of k, labelled tag, with its refusal and its log line.
+function invRefill(k, n, tag, item, full, line) {
+  return {
+    label: () => '+' + invLand(k, n) + ' ' + tag,
+    tip: () => {
+      const g = invLand(k, n);
+      return g < n ? 'A ' + item + ' holds ' + n + '; the ' + tag + ' gauge has room for ' + g + ' (' + Math.round(STATE.resources[k]) + ' / ' + Math.round(resMax(k)) + '). The rest is lost.'
+        : 'Adds ' + n + ' ' + tag + '.';
+    },
+    can: () => STATE.resources[k] >= resMax(k) ? full : null,
+    use: () => line(invAddRes(k, n)),
+  };
+}
+// Crop treatment: up to +30 health (the crop caps at 100), and it clears pests.
+const INV_CROP_TREAT = 30;
+function invCropTreatGain() {
+  const cg = STATE.cropGrowth;
+  return cg ? Math.round(Math.min(100, cg.health + INV_CROP_TREAT) - cg.health) : 0;
+}
 const ITEM_USE = {
-  ration_brick:   { label: '+10 FOOD',  can: () => STATE.resources.food  >= resMax('food') ? 'Food stores are full' : null,  use: () => { return 'Ration brick unwrapped. +' + invAddRes('food', 10) + ' food. Nobody describes the flavour.'; } },
-  water_canister: { label: '+10 H2O',   can: () => STATE.resources.water >= resMax('water') ? 'Water tanks are full' : null,  use: () => { return 'Water canister emptied into the tanks. +' + invAddRes('water', 10) + ' water.'; } },
-  fuel_cell:      { label: '+15 FUEL',  can: () => STATE.resources.fuel  >= resMax('fuel') ? 'Fuel tank is full' : null, use: () => { return 'Fuel cell slotted in. +' + invAddRes('fuel', 15) + ' fuel.'; } },
-  repair_kit:     { label: '+10 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { return 'Repair kit spent on the worst seams. +' + invAddRes('hull', 10) + ' hull.'; } },
-  hull_patch:     { label: '+15 HULL',  can: () => STATE.resources.hull  >= resMax('hull') ? 'Hull is intact' : null,    use: () => { return 'Hull patch applied. +' + invAddRes('hull', 15) + ' hull. It holds. Probably.'; } },
-  o2_canister:    { label: '+14 O2',    can: () => STATE.resources.o2    >= resMax('o2') ? 'O2 is full' : null,         use: () => { return 'O2 canister vented into the air supply. +' + invAddRes('o2', 14) + ' O2.'; } },
-  medkit:         { label: 'HEAL',      can: () => worstHurtCrew() ? null : 'Nobody is hurt',
-                    use: () => { const r = worstHurtCrew(); setHP(r, 100); delete crewPendingOf()[r]; return 'Medkit opened. ' + PersonName(r) + ' is patched up and back on their feet.'; } },
-  crop_treatment: { label: '+30 CROP',  can: () => !STATE.cropGrowth || STATE.cropGrowth.health <= 0 ? 'Nothing left to treat' : (STATE.cropGrowth.health >= 100 && !STATE.cropGrowth.pest ? 'The crop is healthy' : null),
-                    use: () => { const cg = STATE.cropGrowth; const had = cg.pest; if (had) clearCropPest(); const h0 = cg.health; cg.health = Math.min(100, cg.health + 30); noteCropSwing(cg.health - h0); return 'Crop treatment applied. +30 crop health' + (had ? '; pests cleared.' : '.'); } },
+  ration_brick:   invRefill('food', 10, 'FOOD', 'ration brick', 'Food stores are full', g => 'Ration brick unwrapped. +' + g + ' food. Nobody describes the flavour.'),
+  water_canister: invRefill('water', 10, 'H2O', 'water canister', 'Water tanks are full', g => 'Water canister emptied into the tanks. +' + g + ' water.'),
+  fuel_cell:      invRefill('fuel', 15, 'FUEL', 'fuel cell', 'Fuel tank is full', g => 'Fuel cell slotted in. +' + g + ' fuel.'),
+  repair_kit:     invRefill('hull', 10, 'HULL', 'repair kit', 'Hull is intact', g => 'Repair kit spent on the worst seams. +' + g + ' hull.'),
+  hull_patch:     invRefill('hull', 15, 'HULL', 'hull patch', 'Hull is intact', g => 'Hull patch applied. +' + g + ' hull. It holds. Probably.'),
+  o2_canister:    invRefill('o2', 14, 'O2', 'O2 canister', 'O2 is full', g => 'O2 canister vented into the air supply. +' + g + ' O2.'),
+  medkit: {
+    label: () => 'HEAL',
+    tip: () => { const r = worstHurtCrew(); return r ? 'Restores ' + PersonName(r) + ' (the worst hurt aboard) to full health.' : 'Restores the worst hurt aboard to full health.'; },
+    can: () => worstHurtCrew() ? null : 'Nobody is hurt',
+    use: () => { const r = worstHurtCrew(); setHP(r, 100); delete crewPendingOf()[r]; return 'Medkit opened. ' + PersonName(r) + ' is patched up and back on their feet.'; },
+  },
+  crop_treatment: {
+    label: () => { const g = invCropTreatGain(), pest = STATE.cropGrowth && STATE.cropGrowth.pest; return g > 0 ? '+' + g + ' CROP' + (pest ? ' · PESTS' : '') : 'CLEAR PESTS'; },
+    tip: () => {
+      const g = invCropTreatGain(), pest = STATE.cropGrowth && STATE.cropGrowth.pest;
+      return (g > 0 ? '+' + g + ' crop health' + (g < INV_CROP_TREAT ? ' (health caps at 100)' : '') : 'No health to add') + (pest ? ', and it clears the pests.' : '.');
+    },
+    can: () => !STATE.cropGrowth || STATE.cropGrowth.health <= 0 ? 'Nothing left to treat' : (STATE.cropGrowth.health >= 100 && !STATE.cropGrowth.pest ? 'The crop is healthy' : null),
+    use: () => {
+      if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth(); // health caught up first: the line reports what landed
+      const cg = STATE.cropGrowth, had = cg.pest;
+      if (had) clearCropPest();
+      const h0 = cg.health;
+      cg.health = Math.min(100, cg.health + INV_CROP_TREAT);
+      noteCropSwing(cg.health - h0);
+      const g = Math.round(cg.health - h0);
+      return 'Crop treatment applied. ' + (g > 0 ? '+' + g + ' crop health' : 'No health to add') + (had ? '; pests cleared.' : '.');
+    },
+  },
   // items.json: "reveals the type of one future node… consumed on use" —
   // a good SCAN's worth: the next stop(s) locked in and reported.
-  star_chart_fragment: { label: 'SCOUT', can: () => { const n = STATE.byId && STATE.byId[STATE.currentId]; return n && connectionsOf(n).length ? null : 'Nothing left to chart'; },
-                    use: () => { const r = scoutAhead(1, false); return 'Star chart fragment matched to the route. ' + (r.length ? r.join(' · ') : 'Nothing ahead but the destination.'); } },
+  star_chart_fragment: {
+    label: () => 'SCOUT',
+    tip: () => 'Reveals what waits at the next stop on the route (both, at a fork).',
+    can: () => { const n = STATE.byId && STATE.byId[STATE.currentId]; return n && connectionsOf(n).length ? null : 'Nothing left to chart'; },
+    use: () => { const r = scoutAhead(1, false); return 'Star chart fragment matched to the route. ' + (r.length ? r.join(' · ') : 'Nothing ahead but the destination.'); },
+  },
 };
 
 /* ── View state ─────────────────────────────────────────────── */
@@ -105,6 +153,8 @@ let _invJettisonCopy = null;     // which copy of a rolled-value trade good goes
 let _invJettisonCount = 1;
 let _invJettisonMax = 1;
 let _invSellPending = false;     // the confirm panel is asking about a SELL, not the airlock
+let _invJettisonText = '';       // the confirm's question, before any capacity-loss line
+let _invJettisonCapItem = null;  // the item id whose capacity loss the confirm states
 let _invAi = { key: null, line: '' };       // the AI line stays put across repaints; re-picked per click
 let _invReadout = { used: null, cap: null }; // last slot numbers shown (flash on change)
 let _invGold = { shown: 0, timer: null };   // rolling gold counter (demo: rolls from 0 on the first open)
@@ -381,10 +431,11 @@ function renderInvDetail(en) {
   useBtn.style.display = iu ? '' : 'none';
   if (iu) {
     const why = iu.can();
-    useBtn.textContent = 'USE · ' + iu.label;
+    useBtn.textContent = 'USE · ' + iu.label();
     useBtn.disabled = !!why;
+    useBtn.dataset.tipTitle = 'USE ONE';
     if (why) { useBtn.dataset.tipDescription = why; useBtn.dataset.tipTone = 'danger'; }
-    else { delete useBtn.dataset.tipDescription; delete useBtn.dataset.tipTone; }
+    else { useBtn.dataset.tipDescription = iu.tip(); delete useBtn.dataset.tipTone; }
   }
   document.getElementById('inv-detail-actions').classList.remove('inv-hide');
 }
@@ -396,14 +447,16 @@ function renderInvDetail(en) {
 function invSellSelected(confirmed) {
   if (!_invSelected || _invSelectedRes || !invDocked() || INV_CLASSIFIED.has(_invSelected)) return;
   const id = _invSelected, isMat = materialPer10(id) != null;
-  if (confirmed !== true && !isMat && invRequiredFor(id).length) return invOpenSellConfirm(id);
+  const capLoss = isMat ? [] : invCapLoss(id, 1);
+  if (confirmed !== true && !isMat && (invRequiredFor(id).length || capLoss.length)) return invOpenSellConfirm(id);
   const copy = !isMat && sellRangeOf(id) ? (_invSelectedCopy || 0) : null;
   const tileEl = document.querySelector('#inv-grid .inv-tile[data-key="' + id + (copy != null ? '#' + copy : '') + '"]');
   const r = window.stationSellOne(id, copy);
   if (!r || r.why || !Number.isFinite(r.paid)) return;
   if (!isMat) { syncItemValues(); syncItemPickups(); }
   renderHUD();
-  window.pushCruiseLog('◆ Sold from the hold: ' + invNameOf(id, isMat) + ' to the Market Row trader. +' + r.paid + 'g.');
+  window.pushCruiseLog('◆ Sold from the hold: ' + invNameOf(id, isMat) + ' to the Market Row trader. +' + r.paid + 'g.' +
+    (capLoss.length ? ' The extra ' + invCapLossText(capLoss) + ' went with it.' : ''));
   const whole = isMat ? !STATE.materials[id] : (!STATE.items.includes(id) || copy != null);
   if (whole && _invSelected === id) { _invSelected = null; _invSelectedCopy = null; }
   invJettisonFx(tileEl, whole);
@@ -424,7 +477,9 @@ function invRenderAiLine(key, path) {
   }
   const ai = (MOD.ai_companions || []).find(a => a.id === 'ai_' + STATE.activeAI);
   const name = (ai && ai.name) || String(STATE.activeAI || '').toUpperCase();
-  invSetBlock('inv-detail-ai', _invAi.line ? '<span class="detail-ai-name">' + escapeHTML(name) + ':</span>' + escapeHTML(_invAi.line) : '');
+  // No "NAME:" chip on a line that already names its AI (ruling 32): "MARV has done the arithmetic."
+  const chip = namesTheAI(_invAi.line) ? '' : '<span class="detail-ai-name">' + escapeHTML(name) + ':</span>';
+  invSetBlock('inv-detail-ai', _invAi.line ? chip + escapeHTML(_invAi.line) : '');
 }
 
 /* ── USED FOR / Required for — derived from the event data ──────── */
@@ -599,6 +654,31 @@ function invRollGold(target) {
   }, duration / steps);
 }
 
+/* ── Capacity upgrades: what leaves with the last copy ─────────
+   An Expanded Fuel Tank or Hull Plating raises a gauge's cap (index.html
+   resMax); selling or jettisoning the last one drops the cap, and
+   renderHUD trims whatever sat above it. Before the removal: which gauges
+   lose what ([{ k, lost, from, to }]), so the confirm can say so. */
+const INV_CAP_KEYS = ['fuel', 'hull', 'food', 'water', 'o2'];
+const INV_CAP_LABEL = { fuel: 'fuel', hull: 'hull', food: 'food', water: 'water', o2: 'O2' };
+function invCapLoss(id, count) {
+  const have = STATE.items.filter(x => x === id).length;
+  if (!have || (count || 1) < have) return [];
+  const saved = STATE.items;
+  const out = [];
+  try {
+    const before = {};
+    for (const k of INV_CAP_KEYS) before[k] = resMax(k);
+    STATE.items = saved.filter(x => x !== id);
+    for (const k of INV_CAP_KEYS) {
+      const to = resMax(k), level = STATE.resources[k] || 0;
+      if (to < before[k] && level > to) out.push({ k, lost: Math.round(level - to), from: Math.round(level), to: Math.round(to) });
+    }
+  } finally { STATE.items = saved; }
+  return out.filter(x => x.lost > 0);
+}
+const invCapLossText = loss => loss.map(x => x.lost + ' ' + INV_CAP_LABEL[x.k] + ' (' + INV_CAP_LABEL[x.k] + ' ' + x.from + ' → ' + x.to + ')').join(' and ');
+
 /* ── Jettison ───────────────────────────────────────────────── */
 function invOpenJettison() {
   if (!_invSelected || _invSelectedRes) return;
@@ -613,9 +693,11 @@ function invOpenJettison() {
   _invJettisonCount = 1;
   _invSellPending = false;
   document.querySelector('#inv-jett-panel .jettison-title').textContent = '⚠ JETTISON?';
-  document.getElementById('inv-confirm-text').textContent = blocked
+  _invJettisonText = blocked
     ? 'The ' + name + ' is holding cargo. Clear some space first.'
     : (_invJettisonMax > 1 ? 'Drop some of your ' + name + ' (×' + _invJettisonMax + ') into space?' : 'Drop your ' + name + ' into space?') + ' The airlock does not do refunds.';
+  _invJettisonCapItem = blocked || isMat ? null : id;
+  document.getElementById('inv-confirm-text').textContent = _invJettisonText;
   // "Required for:" — only when an event ahead needs it aboard to happen.
   const req = blocked || isMat ? [] : invRequiredFor(id);
   const warn = document.getElementById('inv-route-warn');
@@ -628,17 +710,20 @@ function invOpenJettison() {
   invUpdateJettisonCount();
   document.getElementById('inv-confirm').classList.remove('hidden');
 }
-// SELL of cargo an event ahead needs: the jettison confirm, one unit, SELL.
+// SELL of cargo an event ahead needs, or of the last capacity upgrade
+// (its headroom goes with it): the jettison confirm, one unit, SELL.
 function invOpenSellConfirm(id) {
   const req = invRequiredFor(id);
+  const loss = invCapLoss(id, 1);
   _invJettisonPending = null;
   _invSellPending = true;
   document.querySelector('#inv-jett-panel .jettison-title').textContent = '⚠ SELL?';
-  document.getElementById('inv-confirm-text').textContent = 'Sell your ' + invNameOf(id) + ' to the Market Row trader?';
+  document.getElementById('inv-confirm-text').textContent = 'Sell your ' + invNameOf(id) + ' to the Market Row trader?' +
+    (loss.length ? ' The extra ' + invCapLossText(loss) + ' goes with it.' : '');
   const warn = document.getElementById('inv-route-warn');
-  warn.innerHTML = 'Required for: <strong>' + req.map(escapeHTML).join(' · ') + '</strong>';
-  warn.classList.remove('hidden');
-  document.getElementById('inv-jett-panel').classList.add('route-warn');
+  warn.innerHTML = req.length ? 'Required for: <strong>' + req.map(escapeHTML).join(' · ') + '</strong>' : '';
+  warn.classList.toggle('hidden', !req.length);
+  document.getElementById('inv-jett-panel').classList.toggle('route-warn', !!req.length);
   document.getElementById('inv-jett-count-row').classList.add('hidden');
   document.getElementById('inv-jett-all').classList.add('hidden');
   const yes = document.getElementById('inv-confirm-yes');
@@ -647,6 +732,11 @@ function invOpenSellConfirm(id) {
   document.getElementById('inv-confirm').classList.remove('hidden');
 }
 function invUpdateJettisonCount() {
+  // The last capacity upgrade out takes its headroom with it — said before the yes.
+  if (!_invSellPending && _invJettisonCapItem) {
+    const loss = invCapLoss(_invJettisonCapItem, _invJettisonCount);
+    document.getElementById('inv-confirm-text').textContent = _invJettisonText + (loss.length ? ' The extra ' + invCapLossText(loss) + ' goes with it.' : '');
+  }
   document.getElementById('inv-jett-count').textContent = _invJettisonCount;
   document.getElementById('inv-confirm-yes').textContent = 'JETTISON ' + _invJettisonCount;
   document.getElementById('inv-jett-minus').disabled = _invJettisonCount <= 1;
@@ -686,6 +776,7 @@ function invJettison(count) {
   const have = STATE.items.filter(x => x === id).length;
   const n = Math.max(1, Math.min(count, have, _invJettisonMax));
   const tileEl = document.querySelector('#inv-grid .inv-tile[data-key="' + id + (copy != null && sellRangeOf(id) ? '#' + copy : '') + '"]');
+  const capLoss = invCapLoss(id, n);
   let gone = 0;
   for (let i = 0; i < n; i++) {
     if (!STATE.items.includes(id) || !canRemoveItem(id)) break;
@@ -696,7 +787,8 @@ function invJettison(count) {
   if (!gone) return invCloseJettison();
   syncItemValues(); syncItemPickups();
   renderHUD();
-  window.pushCruiseLog('◆ Jettisoned: ' + (gone > 1 ? gone + '× ' : '') + invNameOf(id) + '. ' + (gone > 1 ? 'They tumble' : 'It tumbles') + ' off into the dark, unemployed.');
+  const lostLine = gone === n && capLoss.length ? ' The extra ' + invCapLossText(capLoss) + ' went with it.' : '';
+  window.pushCruiseLog('◆ Jettisoned: ' + (gone > 1 ? gone + '× ' : '') + invNameOf(id) + '. ' + (gone > 1 ? 'They tumble' : 'It tumbles') + ' off into the dark, unemployed.' + lostLine);
   const whole = !STATE.items.includes(id) || copy != null;
   if (whole && _invSelected === id) { _invSelected = null; _invSelectedCopy = null; }
   invCloseJettison();
