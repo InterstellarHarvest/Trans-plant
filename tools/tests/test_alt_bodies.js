@@ -131,6 +131,41 @@ const FIRE = `(id) => {
   ok(cap.plain === 1, 'an ordinary event is untouched');
   ok(Math.abs(cap.both - 1) < 1e-9, 'an event in two situations takes its better share');
 
+  console.log('— trader and pirate families');
+  await boot(page);
+  const fam = await page.evaluate(() => {
+    const traders = Object.values(EVENTS).filter(e => e.family === 'trader'), pirates = Object.values(EVENTS).filter(e => e.family === 'pirate');
+    const sum = l => l.reduce((s, e) => s + (e.draw_weight || 1), 0);
+    // one face per stop, stable; faces vary across stops and runs
+    const nodes = STATE.nodes.slice(0, 12);
+    const faces = new Set(), stable = nodes.every(n => familyEvent('trader', n) === familyEvent('trader', n));
+    for (const seed of [1, 2, 3, 4, 5, 6]) { STATE.artSeed = seed; for (const n of nodes) faces.add(familyEvent('trader', n).id); }
+    // the cooldown is the family's
+    STATE.eventLastStop = {};
+    const t2 = EVENTS.event_encounter_trader_002;
+    noteEventDrawn(t2);
+    const gap = repeatGaps(currentStop());
+    const famGap = traders.map(e => gap(e)), otherGap = gap(EVENTS.event_encounter_pirate_001);
+    // a save from before families (keyed by the trader's own id) still cools it down
+    STATE.eventLastStop = { event_encounter_trader_001: currentStop() };
+    const oldSave = repeatGaps(currentStop())(EVENTS.event_encounter_trader_001);
+    // the wait's pirate is any of the family
+    return { nT: traders.length, nP: pirates.length, sumT: sum(traders), sumP: sum(pirates), stable, faces: faces.size,
+      famGap, otherGap, oldSave, key: repeatKey(t2) };
+  });
+  ok(fam.nT === 4 && fam.nP === 3 && Math.abs(fam.sumT - 1) < 0.02 && Math.abs(fam.sumP - 1) < 0.02, `4 traders and 3 pirates, each family's odds sum to one event's (${fam.sumT} / ${fam.sumP})`);
+  ok(fam.stable && fam.faces === 4, `TRADE's trader is fixed per stop and every face turns up across stops and runs (${fam.faces} of 4)`);
+  ok(fam.key === 'family:trader' && fam.famGap.every(g => g === 0) && fam.otherGap === Infinity, 'one trader drawn cools down the whole family, not the pirates');
+  ok(fam.oldSave === 0, 'an old save keyed by the trader id still holds its cooldown');
+  const verb = await page.evaluate(async () => {
+    // away from a station: TRADE opens this stop's family trader
+    const node = STATE.nodes.find(n => n.node_type !== 'station' && n.node_type !== 'fork' && connectionsOf(n).length);
+    STATE.currentId = node.id;
+    const want = familyEvent('trader', node).id;
+    return { want };
+  });
+  ok(/event_encounter_trader_00[1-4]/.test(verb.want), `this stop's trader: ${verb.want}`);
+
   console.log('— every authored alt_bodies renders');
   await boot(page);
   const authored = await page.evaluate(async (FIRE) => {

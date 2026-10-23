@@ -268,7 +268,9 @@
     "alt_bodies": [
       "A ship with no transponder and a great many guns drops in behind you. Locked on. {npc.quirk}",
       "Something patched and ugly swings across your bow. Its gun ports are open. {npc.quirk}"
-    ]
+    ],
+    "draw_weight": 0.34,
+    "family": "pirate"
   },
   {
     "id": "event_encounter_trader_001",
@@ -507,7 +509,9 @@
     "alt_bodies": [
       "A trader's ship drifts alongside, cargo pods strapped to every surface that will take a strap. Its running lights blink in the slow, unthreatening rhythm of someone who wants your money, not your ship. {npc.quirk}",
       "A merchant vessel slides into formation off your bow, as smoothly as if it had been invited. Half its hull is stencilled with the names of ports that no longer exist. The other half is for sale. {npc.quirk}"
-    ]
+    ],
+    "draw_weight": 0.25,
+    "family": "trader"
   },
   {
     "id": "event_encounter_drifter_001",
@@ -1585,5 +1589,1199 @@
         "narrative": "Asked a Lane Authority inspector what else was in the cooler. The cutter left in a hurry, with a ring of our airlock seal."
       }
     }
+  },
+  {
+    "id": "event_encounter_trader_002",
+    "active": true,
+    "title": "The Wanted List",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": false,
+    "draw_weight": 0.25,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "trader",
+      "species": null,
+      "displayName": "CURATOR"
+    },
+    "leave_label": "NO THANKS",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE WANTED LIST",
+        "body": "A small, immaculate ship drifts alongside, its running lights blinking in a courtesy pattern nobody has used in a century. Painted along its flank in careful serif capitals: THE MUSEUM OF THE BEFORE — ADMISSION BY BARTER. A list is already scrolling across your screen. It is headed WANTED. {npc.quirk}",
+        "line": "Forgive the intrusion. Your ship is old enough to be interesting. Is anything in your hold older?",
+        "ai": {
+          "aria": "A museum! A flying museum! ARIA has always wanted to be in a museum! As a visitor! For now!",
+          "marv": "MARV has read the wanted list. It is mostly packaging. He has never seen anyone want packaging this much, and he has met CHIP.",
+          "rex": "REX scanned the ship. No weapons. Display cases, climate control and a frankly excessive dehumidifier. He is standing down.",
+          "chip": "CHIP is THRILLED! Branded heritage merchandise is a growth sector! CHIP's own logo will be collectible one day! CHIP has checked!",
+          "ajoy": "AJOY notes the curator keeps the list short on purpose. Whatever is on it, they pay above the odds for. Whatever isn't, they will politely not see."
+        },
+        "choices": [
+          {
+            "text": "Read the wanted list",
+            "next": "wanted"
+          },
+          {
+            "text": "BROWSE THE WARES",
+            "sub": "Buy and sell cargo",
+            "effort": 2,
+            "open_market": true,
+            "market_barter": true
+          },
+          {
+            "text": "Ask to see the collection",
+            "sub": "Go aboard the museum",
+            "next": "tour"
+          },
+          {
+            "text": "Trade pleasantries and move on",
+            "outcome": "coll_polite_pass"
+          },
+          {
+            "text": "Ignore the hail",
+            "outcome": "coll_ignored"
+          }
+        ]
+      },
+      "wanted": {
+        "title": "WANTED",
+        "body": "The list is short, specific and written with the tenderness most people save for letters. Analog recordings, still sealed. Anything bearing the logo of a company that no longer exists. Relics from before, in any condition the curator can describe as honest. At the bottom, in smaller type: duplicates for sale.",
+        "line": "I don't haggle over the Before. I pay what a thing is worth to me, and it is worth a great deal to me.",
+        "ai": {
+          "aria": "We might have something on the list! ARIA is checking the hold! ARIA is checking it again, harder!",
+          "marv": "MARV has compared the curator's prices with a station trader's. The curator pays more for what is on the list. He notes that this is what a list is for.",
+          "rex": "REX does not understand why anyone wants a sealed record they will never open. He would like it known that this is not the same as not wanting one.",
+          "chip": "CHIP calls this a seller's market! Rare! Beautiful! CHIP is straightening a tie it doesn't have!",
+          "ajoy": "AJOY points out that the curator pays one flat price for any relic. A good piece is worth more than that and a poor one less. Without a spectrometer aboard, nobody here knows which yours is, the curator included."
+        },
+        "choices": [
+          {
+            "text": "Sell the sealed record — 30 gold",
+            "requires_item": "sealed_vinyl",
+            "outcome": "coll_sold_vinyl"
+          },
+          {
+            "text": "Sell the corporate memorabilia — 18 gold",
+            "requires_item": "corporate_memorabilia",
+            "outcome": "coll_sold_memorabilia"
+          },
+          {
+            "text": "Sell the pre-collapse artifact — 30 gold",
+            "sub": "One flat price, whatever it is worth",
+            "requires_item": "pre_collapse_artifact",
+            "outcome": "coll_sold_artifact"
+          },
+          {
+            "text": "Buy a tin of pre-collapse peaches — 9 gold",
+            "gate": {
+              "gold": 9
+            },
+            "outcome": "coll_bought_peaches"
+          },
+          {
+            "text": "Buy a medkit from the duplicates — 10 gold",
+            "gate": {
+              "gold": 10
+            },
+            "outcome": "coll_bought_medkit"
+          }
+        ]
+      },
+      "tour": {
+        "title": "THE COLLECTION",
+        "bg": "ship_interior/trader/{species}",
+        "bgBase": "",
+        "bgSprite": "",
+        "comm_mode": "in_person",
+        "leave_label": "BACK TO YOUR SHIP",
+        "body": "The airlock opens onto a corridor of glass cases, each lit from below and labelled by hand. A toaster. A plastic bag, flattened and framed. A child's shoe with a light in the heel that, the card explains, once came on when you walked. The curator walks you past each one as if introducing relatives.",
+        "line": "Everything here was thrown away by someone. That's what makes it precious. Nobody keeps what they think will last.",
+        "ai": {
+          "aria": "ARIA loves the shoe! ARIA wants to know where the other shoe is! The card says nobody knows! ARIA is devastated and delighted!",
+          "marv": "MARV has catalogued the cases. He estimates the collection weighs less than one of our water tanks and is worth more than the ship. He has stopped estimating.",
+          "rex": "REX has been standing in front of the plastic bag for some time. He says it is tactically interesting. It is not tactically interesting.",
+          "chip": "CHIP spotted the logos of brands CHIP's parent company bought and shut down! CHIP is having a feeling! CHIP doesn't know what it's called!",
+          "ajoy": "AJOY notes an empty case near the end, lit and labelled PENDING. The curator glances at it every time they pass. She would fill it, if you have the thing."
+        },
+        "choices": [
+          {
+            "text": "Take the full tour",
+            "sub": "Slow, and worth it",
+            "outcome": "coll_tour"
+          },
+          {
+            "text": "Donate the memorabilia to the empty case",
+            "sub": "No gold, but it stays somewhere",
+            "requires_item": "corporate_memorabilia",
+            "outcome": "coll_donated"
+          },
+          {
+            "text": "Back to the hail",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "coll_polite_pass": {
+        "title": "PLEASANTRIES EXCHANGED",
+        "tone": "success",
+        "body": "You swap route news. The curator asks, with real interest, what the inner systems are throwing away these days, and writes down every answer.",
+        "line": "{npc.line.farewell}",
+        "resources": {
+          "morale": 2
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Route news traded for a curator's curiosity. The crew enjoyed being asked about their own rubbish as if it mattered."
+      },
+      "coll_ignored": {
+        "title": "HAIL DECLINED",
+        "tone": null,
+        "body": "You let the hail lapse. The museum holds alongside a little longer, its wanted list still scrolling, then glides off in search of an older ship.",
+        "resources": {},
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "You ignored the hail. The Museum of the Before moved on, one exhibit short of whatever it was hoping for."
+      },
+      "coll_sold_vinyl": {
+        "title": "ACQUIRED",
+        "tone": "success",
+        "body": "The curator receives the record in white gloves and tilts it to the light at an angle that shows every crease in the shrinkwrap. There are none. They make a sound that is not quite a word. The gold arrives before they have finished making it.",
+        "line": "Sealed. Actually sealed. You have no idea what you've done for me.",
+        "resources": {
+          "gold": 30
+        },
+        "item_consume": "sealed_vinyl",
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Sold the sealed record to a travelling museum, for more than any station would pay and rather less than the curator would have."
+      },
+      "coll_sold_memorabilia": {
+        "title": "ACQUIRED",
+        "tone": "success",
+        "body": "The curator turns the piece over, finds the logo, and reads the company's name aloud with the care of someone reading a headstone. It goes into a padded case marked FOR THE GALLERY.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": 18
+        },
+        "item_consume": "corporate_memorabilia",
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Sold a piece of corporate memorabilia to a collector who knew more about the company than its own staff ever did."
+      },
+      "coll_sold_artifact": {
+        "title": "ACQUIRED",
+        "tone": "success",
+        "body": "The curator does not ask what the relic is worth. They ask where it was found, and how, and by whom, and write every answer on its card before the price comes up. The price is the one on the list. It does not move.",
+        "line": "Whatever it's worth to anyone else, this is what it's worth to me.",
+        "resources": {
+          "gold": 30
+        },
+        "item_consume": "pre_collapse_artifact",
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Sold a pre-collapse relic at the curator's flat price. Whether that was a bargain depends on which relic it was, and nobody aboard can say."
+      },
+      "coll_bought_peaches": {
+        "title": "FROM THE ARCHIVE",
+        "tone": "success",
+        "body": "The tin is older than anyone aboard and has outlived the company that sealed it. Opened at dinner, it turns out to contain peaches, and the peaches turn out to be excellent. Nobody can explain this. Nobody tries.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -9,
+          "food": 6,
+          "morale": 3
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Bought a tin of pre-collapse peaches. They were excellent, which is either a triumph of canning or a small miracle, and the crew has decided it is both."
+      },
+      "coll_bought_medkit": {
+        "title": "FROM THE DUPLICATES",
+        "tone": "success",
+        "body": "The medkit comes out of a cabinet labelled DUPLICATES — DO NOT DISPLAY. It is sealed, in date, and the only thing aboard the museum that is meant to be used.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -10
+        },
+        "item_grant": "medkit",
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Bought a spare medkit off a museum's duplicates shelf. The least interesting thing they own, and the most useful thing we bought all week."
+      },
+      "coll_tour": {
+        "title": "THE FULL TOUR",
+        "tone": "success",
+        "body": "The tour takes most of a day. Nobody minds. The crew comes back quieter than they left, talking about the shoe and the toaster and the bag, and about which of their own things might sit in a case like that one day.",
+        "line": "{npc.line.farewell}",
+        "resources": {
+          "morale": 3
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Took the full tour of a travelling museum of thrown-away things. The crew came back thoughtful, which is rarer out here than fuel."
+      },
+      "coll_donated": {
+        "title": "PENDING, NO LONGER",
+        "tone": "success",
+        "body": "You give the memorabilia to the empty case. The curator writes a new card by hand while you watch, and the card has the ship's name on it, spelled correctly, which is more than most official documents manage.",
+        "line": "It will be here long after both of us. That's the whole idea.",
+        "resources": {
+          "morale": 5
+        },
+        "item_consume": "corporate_memorabilia",
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Gave a piece of corporate memorabilia to a travelling museum. The ship's name is on a card in a glass case now, and the crew keeps bringing it up."
+      }
+    },
+    "family": "trader"
+  },
+  {
+    "id": "event_encounter_trader_003",
+    "active": true,
+    "title": "Opening Offer",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": false,
+    "draw_weight": 0.25,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "trader",
+      "species": null
+    },
+    "leave_label": "NO THANKS",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "OPENING OFFER",
+        "body": "A broad, slow freighter heaves alongside with every hatch open and hung with goods, like washing on a line. Before you have finished reading the prices on your screen, the trader has raised them. {npc.quirk}",
+        "line": "{npc.line.greet}",
+        "ai": {
+          "aria": "Look at all the hatches! It's like a market and a ship had a baby! A very expensive baby!",
+          "marv": "MARV has read the price list. Every figure on it is well above what a station charges. He believes the trader knows this. He believes the trader is counting on us knowing it.",
+          "rex": "REX notes the trader has crew on every hatch and prices on every screen. He respects a defended position.",
+          "chip": "CHIP recognises these prices! They're anchor prices! CHIP invented anchor prices! CHIP did not invent anchor prices, but CHIP has always admired them!",
+          "ajoy": "AJOY has read this trader's last few sales on the lane log. Every customer paid less than the list. Not one of them paid their first offer."
+        },
+        "choices": [
+          {
+            "text": "Hear the prices",
+            "next": "prices"
+          },
+          {
+            "text": "BROWSE THE WARES",
+            "sub": "Buy and sell cargo",
+            "effort": 2,
+            "open_market": true
+          },
+          {
+            "text": "Trade pleasantries and move on",
+            "outcome": "hag_polite_pass"
+          },
+          {
+            "text": "Ignore the hail",
+            "outcome": "hag_ignored"
+          }
+        ]
+      },
+      "prices": {
+        "title": "THE ASKING PRICE",
+        "body": "The manifest is honest about everything except value. Fuel cells, ration crates, hull patches, all priced as though the trader were the last ship in the galaxy and had just been told so. Under each price, in a smaller hand, is the word NEGOTIABLE.",
+        "line": "Those are the prices. They're not the price. Learn the difference and we'll get on fine.",
+        "ai": {
+          "aria": "NEGOTIABLE! ARIA's favourite word that isn't FREE!",
+          "marv": "MARV advises against paying list. He also advises against haggling badly, which costs more than list. He has modelled our haggling. He would like a diplomat.",
+          "rex": "REX recommends paying nothing. He concedes this is not a commercial strategy.",
+          "chip": "CHIP can authorise a counter-offer! CHIP can authorise anything! CHIP's authority is mostly emotional!",
+          "ajoy": "AJOY says the prices fall fastest for someone who enjoys this. If nobody aboard enjoys it, pay the list or walk. Haggling while miserable is how they win."
+        },
+        "choices": [
+          {
+            "text": "Buy a fuel cell — 20 gold",
+            "gate": {
+              "gold": 20
+            },
+            "outcome": "hag_fuel_list"
+          },
+          {
+            "text": "Buy a ration crate — 16 gold",
+            "gate": {
+              "gold": 16
+            },
+            "outcome": "hag_food_list"
+          },
+          {
+            "text": "Haggle for the fuel cell — 10 gold",
+            "sub": "Bargain · it can go wrong",
+            "gate": {
+              "gold": 10
+            },
+            "microgame_type": "negotiation_wobble",
+            "outcome": "hag_fuel_haggled"
+          },
+          {
+            "text": "Let {crew.diplomat} do the talking",
+            "sub": "Slow · and they will enjoy it",
+            "gate": {
+              "crew": "diplomat"
+            },
+            "next": "bargain"
+          },
+          {
+            "text": "Decline politely",
+            "outcome": "hag_declined"
+          }
+        ]
+      },
+      "bargain": {
+        "title": "THE LONG CONVERSATION",
+        "body": "Your diplomat opens with a compliment about the freighter's paintwork, moves on to a story about a cousin, and does not mention money for a very long time. The trader leans in. Two people who enjoy this are in the same conversation at last, and the prices on the screen begin, one by one, to fall.",
+        "line": "Oh, you're good. You're very good. Fine. But only because I like you.",
+        "pose": "pleased",
+        "ai": {
+          "aria": "They're FRIENDS now! ARIA can see it! Commerce is a love language!",
+          "marv": "MARV has watched the prices fall to station rates and then below them. He notes that it took most of a day, and that the day is part of the price.",
+          "rex": "REX has timed the conversation. He has stopped timing the conversation. Nothing is under threat except the afternoon.",
+          "chip": "CHIP is taking notes! SO many notes! CHIP will be using these techniques on you later!",
+          "ajoy": "AJOY notes the trader is now giving away the margin and enjoying it. She recommends buying before they remember who they are."
+        },
+        "choices": [
+          {
+            "text": "Buy a fuel cell — 9 gold",
+            "gate": {
+              "gold": 9
+            },
+            "outcome": "hag_fuel_bargain"
+          },
+          {
+            "text": "Buy a ration crate — 7 gold",
+            "gate": {
+              "gold": 7
+            },
+            "outcome": "hag_food_bargain"
+          },
+          {
+            "text": "Buy a hull patch — 11 gold",
+            "gate": {
+              "gold": 11
+            },
+            "outcome": "hag_patch_bargain"
+          },
+          {
+            "text": "Go back",
+            "sub": "Return to the asking prices",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "hag_polite_pass": {
+        "title": "PLEASANTRIES EXCHANGED",
+        "tone": "success",
+        "body": "You swap route gossip. The trader tries to sell you the gossip back at a markup, laughs, and burns off towards a customer with less patience.",
+        "line": "{npc.line.farewell}",
+        "resources": {
+          "morale": 2
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Route gossip exchanged free of charge, which the trader took as a personal loss and the crew took as a small victory."
+      },
+      "hag_ignored": {
+        "title": "HAIL DECLINED",
+        "tone": null,
+        "body": "You let the hail lapse. The freighter holds alongside, lowering its prices on the screen one at a time, until it is out of range and still lowering them.",
+        "resources": {},
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "You ignored the hail. The trader's last price, as they drifted out of range, was nearly reasonable."
+      },
+      "hag_fuel_list": {
+        "title": "PAID IN FULL",
+        "tone": null,
+        "body": "You pay the asking price. The trader accepts it with the pained look of someone who wanted the argument more than the gold, and sends the fuel cell across with a small sigh.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -20
+        },
+        "item_grant": "fuel_cell",
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Bought a fuel cell at the asking price. It works exactly as well as a cheap one. The crew has opinions about that."
+      },
+      "hag_food_list": {
+        "title": "PAID IN FULL",
+        "tone": null,
+        "body": "The ration crate crosses on a cargo line with the price still taped to it, as a souvenir.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -16,
+          "food": 10
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Bought a ration crate at the asking price. The rations are fine. The price tag is still on the crate, and nobody has the heart to take it off."
+      },
+      "hag_fuel_haggled": {
+        "title": "MET IN THE MIDDLE",
+        "tone": "success",
+        "body": "You counter. They counter. You counter the counter, and the trader, delighted, meets you somewhere sensible. The fuel cell comes across with a smiley face drawn on the receipt.",
+        "line": "See? That wasn't so hard. It was a little hard.",
+        "resources": {
+          "gold": -10
+        },
+        "item_grant": "fuel_cell",
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Haggled a fuel cell down to something like a fair price. Nobody enjoyed it except the trader, which is how haggling is supposed to work."
+      },
+      "hag_declined": {
+        "title": "NO SALE",
+        "tone": null,
+        "body": "You decline. The trader drops every price on the list at once, watches you decline again, and puts them all back up with the dignity of a person who has tried everything.",
+        "line": "{npc.line.refuse}",
+        "resources": {},
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "No sale. The prices fell, briefly, as we left. It was too late for both of us."
+      },
+      "hag_fuel_bargain": {
+        "title": "A FRIEND'S PRICE",
+        "tone": "success",
+        "body": "The fuel cell comes across with a receipt that says FRIEND'S PRICE in the trader's own hand, underlined. The conversation that produced it took most of a day, and your diplomat would happily have gone on.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -9
+        },
+        "item_grant": "fuel_cell",
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Bought a fuel cell at a friend's price, after most of a day's conversation. The diplomat calls it the best afternoon of the trip."
+      },
+      "hag_food_bargain": {
+        "title": "A FRIEND'S PRICE",
+        "tone": "success",
+        "body": "The ration crate arrives with FRIEND'S PRICE written on the lid and a jar of something pickled on top, which nobody asked for and nobody refuses. The conversation that produced it took most of a day.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -7,
+          "food": 10
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Bought a ration crate at a friend's price, after most of a day's conversation. The pickles were a gift. The pickles were good."
+      },
+      "hag_patch_bargain": {
+        "title": "A FRIEND'S PRICE",
+        "tone": "success",
+        "body": "The hull patch crosses with FRIEND'S PRICE on its wrapper and the trader's private comm code under that, in case you are ever back this way and want to talk for a day again.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -11
+        },
+        "item_grant": "hull_patch",
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Bought a hull patch at a friend's price, after most of a day's conversation, and came away with the trader's comm code as well."
+      }
+    },
+    "family": "trader"
+  },
+  {
+    "id": "event_encounter_trader_004",
+    "active": true,
+    "title": "Everything Must Go",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": false,
+    "draw_weight": 0.25,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "trader",
+      "species": null
+    },
+    "leave_label": "NO THANKS",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "EVERYTHING MUST GO",
+        "body": "A gleaming ship pulls up much too fast and stops much too neatly, banners unrolling down its hull: CLOSING DOWN — EVERYTHING MUST GO — NO REASONABLE OFFER REFUSED. The paint is fresh. The banners are fresh. The ship's registry, when you look it up, is fresher than both. {npc.quirk}",
+        "line": "Friends. Friends. You have caught me on the worst day of my life, which makes it the best day of yours.",
+        "ai": {
+          "aria": "A closing-down sale! Everything must go! ARIA wants to help everything go! Into our hold!",
+          "marv": "MARV has run the registry. The ship was registered this week. By its own banner, the sale has been closing down since before that. He is sharing this without comment.",
+          "rex": "REX does not like a merchant who smiles with that many teeth. He has no evidence. He is not a court. He is REX.",
+          "chip": "CHIP rates this offer AMAZING! CHIP is required to add that CHIP rates every offer amazing! CHIP has been asked to stop!",
+          "ajoy": "AJOY would look hardest at whatever they are most eager to sell, and she would look at it from the inside."
+        },
+        "choices": [
+          {
+            "text": "Hear the pitch",
+            "next": "pitch"
+          },
+          {
+            "text": "BROWSE THE WARES",
+            "sub": "Buy and sell cargo",
+            "effort": 2,
+            "open_market": true
+          },
+          {
+            "text": "Trade pleasantries and move on",
+            "outcome": "con_polite_pass"
+          },
+          {
+            "text": "Ignore the hail",
+            "outcome": "con_ignored"
+          }
+        ]
+      },
+      "pitch": {
+        "title": "ONE DAY ONLY",
+        "body": "The deals scroll past faster than you can read them, which may be the point. The headline item glows at the top of the screen: a crate of hull plating, factory sealed, at a price well under anything a station would ask. Lower down sits a produce crate described as farm fresh, from a farm the listing declines to name.",
+        "line": "{npc.line.pitch}",
+        "ai": {
+          "aria": "Hull plating! At that price! ARIA has never seen a better deal! ARIA has never seen this deal at all, which makes it rarer!",
+          "marv": "MARV notes that hull plating at this price is stolen, damaged, or not hull plating. He has ranked the options by how much he would like to be wrong.",
+          "rex": "REX would open the crate before paying for the crate. That is not advice. It is a lifestyle.",
+          "chip": "CHIP can offer an extended warranty on the plating! CHIP cannot offer an extended warranty on the plating! CHIP has just read the plating!",
+          "ajoy": "AJOY says the produce is real. She does not say anything about anything else, which you may take as saying it."
+        },
+        "choices": [
+          {
+            "text": "Buy the hull plating — 30 gold",
+            "sub": "Factory sealed, says the label",
+            "gate": {
+              "gold": 30
+            },
+            "outcome": "con_plating_blind"
+          },
+          {
+            "text": "Buy the 'farm fresh' crate — 8 gold",
+            "gate": {
+              "gold": 8
+            },
+            "outcome": "con_produce"
+          },
+          {
+            "text": "Have {crew.engineer} inspect the plating",
+            "sub": "Open the crate before paying",
+            "gate": {
+              "crew": "engineer"
+            },
+            "next": "exposed"
+          },
+          {
+            "text": "Let {crew.diplomat} ask where it came from",
+            "sub": "Provenance, politely",
+            "gate": {
+              "crew": "diplomat"
+            },
+            "next": "exposed"
+          },
+          {
+            "text": "Decline politely",
+            "outcome": "con_declined"
+          }
+        ]
+      },
+      "exposed": {
+        "title": "FACTORY SEALED",
+        "body": "The seal on the crate lifts with a fingernail. Inside, nested in a great deal of packing foam carved lovingly into the shape of hull plating, is a single hull patch. The trader looks at the patch, then at you, then at the patch again, with the expression of someone genuinely, deeply surprised to be caught.",
+        "line": "Well. That's — I've never seen that crate before in my life. Let's be friends about this.",
+        "pose": "listening",
+        "ai": {
+          "aria": "It's a hull patch! That's nearly hull plating! It's hull plating's little cousin! ARIA still loves it!",
+          "marv": "MARV would like the record to show that he ranked this outcome first. He would also like it to show that he took no pleasure in it. He took some pleasure in it.",
+          "rex": "REX recommends telling everyone on the lane. Loudly. With the registry.",
+          "chip": "CHIP is shocked! CHIP is appalled! CHIP is, professionally speaking, a little impressed by the foam!",
+          "ajoy": "AJOY notes the trader will now do almost anything to keep this off the lane log. Almost anything is a lot. So is a lane log nobody else gets fooled by."
+        },
+        "choices": [
+          {
+            "text": "Pay what the patch is worth — 8 gold",
+            "gate": {
+              "gold": 8
+            },
+            "outcome": "con_patch_fair"
+          },
+          {
+            "text": "Take a fuel cell for your silence",
+            "sub": "Free, and the lane never hears",
+            "outcome": "con_hush"
+          },
+          {
+            "text": "Warn the lane on the open channel",
+            "sub": "The ship, the trick and the foam",
+            "outcome": "con_warned"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "con_polite_pass": {
+        "title": "PLEASANTRIES EXCHANGED",
+        "tone": "success",
+        "body": "You exchange route news. The trader agrees with everything you say, warmly, including the parts that contradict each other, and burns off towards the next customer in a hurry.",
+        "line": "{npc.line.farewell}",
+        "resources": {
+          "morale": 2
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Route news exchanged with a trader who agreed with all of it. The crew is still working out what that means."
+      },
+      "con_ignored": {
+        "title": "HAIL DECLINED",
+        "tone": null,
+        "body": "You let the hail lapse. The banners stay up as the ship pulls away. The last one you can read says FINAL DAY. It looks well used.",
+        "resources": {},
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "You ignored the hail. The closing-down sale went on closing down somewhere else."
+      },
+      "con_plating_blind": {
+        "title": "FACTORY SEALED",
+        "tone": "danger",
+        "body": "The crate comes aboard with a great deal of ceremony and a seal that peels off at a touch. Inside, nested in packing foam carved lovingly into the shape of hull plating, is one hull patch. By the time anyone thinks to call the trader back, the banners are a speck.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -30
+        },
+        "item_grant": "hull_patch",
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Paid hull-plating money for a hull patch in a very large box. The foam was beautiful. The crew has started calling the patch 'the plating'."
+      },
+      "con_produce": {
+        "title": "FARM FRESH",
+        "tone": null,
+        "body": "The produce crate is exactly what it claims to be, apart from the farm, the freshness and the word crate, which is generous for a box. The food is real. The crew eats it in a slightly suspicious silence.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -8,
+          "food": 6
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Bought a box of produce at a closing-down sale. It was real food, which turned out to be the only thing at that sale that was."
+      },
+      "con_declined": {
+        "title": "NO SALE",
+        "tone": null,
+        "body": "You decline. The trader lowers the price of the plating, then lowers it again, then offers to throw in the banners. You decline the banners too.",
+        "line": "{npc.line.refuse}",
+        "resources": {},
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "No sale. The plating got cheaper as we left, which said everything about the plating."
+      },
+      "con_patch_fair": {
+        "title": "PRICED HONESTLY",
+        "tone": "success",
+        "body": "You pay a fair price for the patch, and only for the patch. The trader takes the gold with the stiff dignity of someone who has never been paid a fair price before and finds it faintly insulting.",
+        "line": "Fine. Fair. I hate it.",
+        "resources": {
+          "gold": -8
+        },
+        "item_grant": "hull_patch",
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Bought a hull patch for what it was worth from a trader who had been selling it as plating. Fair, in the end, though nobody involved had planned on fair."
+      },
+      "con_hush": {
+        "title": "OFF THE RECORD",
+        "tone": null,
+        "body": "A fuel cell crosses on a cargo line, with no receipt. The lane log will hear nothing. The crew watches the closing-down sale pull away towards its next customer, and nobody says anything for a while.",
+        "resources": {
+          "morale": -2
+        },
+        "item_grant": "fuel_cell",
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Took a fuel cell to keep quiet about a con. The cell works fine. The silence weighs more than it does."
+      },
+      "con_warned": {
+        "title": "PUBLIC SERVICE",
+        "tone": "success",
+        "body": "You put it all on the open channel: the ship, the registry, the crate, the foam. Within minutes other ships on the lane answer with their own stories about the same banners. The trader is gone before the last of them has finished.",
+        "line": "You'll regret — no. No, you won't, will you. Fine.",
+        "resources": {
+          "morale": 3
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Warned the lane about a closing-down sale that never closed. Other ships answered with their own stories, and the crew felt, for once, like part of something."
+      }
+    },
+    "family": "trader"
+  },
+  {
+    "id": "event_encounter_pirate_002",
+    "active": true,
+    "title": "Learner's Permit",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "grim"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": false,
+    "draw_weight": 0.33,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "pirate",
+      "species": null
+    },
+    "leave_label": "BREAK OFF",
+    "leave_as": {
+      "triggerFleeResolve": true,
+      "outcome": "lp_flee",
+      "risky": true
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "LEARNER'S PERMIT",
+        "body": "A pirate ship drops in off your bow with every gun run out and a white square on its nose, a red L painted in the middle of it. Behind the captain's chair on the screen sits someone older with a clipboard and the stillness of a person who has done this many times and is now marking somebody else doing it. {npc.quirk}",
+        "line": "Hail, little ship. Cut your engines. We'll make this — sorry. We WILL make this quick. Sorry.",
+        "pose": "hostile",
+        "ai": {
+          "aria": "A student! They're learning! ARIA believes in them! ARIA believes in everyone, but ARIA especially believes in this one!",
+          "marv": "MARV notes the guns are real and the trainee's hands are not steady. He considers this the most dangerous combination available.",
+          "rex": "REX reads one live crew and one assessor. The assessor is the threat. The kid is the risk.",
+          "chip": "CHIP sees a career-development moment! CHIP offers mentorship packages! CHIP's mentorship packages are mostly invoices!",
+          "ajoy": "AJOY says the examiner wants a clean pass, not a payday, and the kid wants to go home. You can give them either. One of them costs less."
+        },
+        "revisit": {
+          "body": "The red L is still on their nose. The examiner has turned a page."
+        },
+        "choices": [
+          {
+            "text": "Pay the standard tribute — 20 gold",
+            "gate": {
+              "gold": 20
+            },
+            "outcome": "lp_paid"
+          },
+          {
+            "text": "Coach them through it",
+            "sub": "{crew.diplomat} talks to the examiner",
+            "gate": {
+              "crew": "diplomat"
+            },
+            "next": "coach"
+          },
+          {
+            "text": "Let them practise the siphon",
+            "sub": "They take a share of the tank, slowly",
+            "outcome": "lp_siphon"
+          },
+          {
+            "text": "Open Fire",
+            "sub": "Begin ship-to-ship combat",
+            "risky": true,
+            "triggerCombat": true
+          },
+          {
+            "text": "Flee",
+            "sub": "Burn fuel, leave the lesson behind",
+            "risky": true,
+            "outcome": "lp_flee",
+            "triggerFleeResolve": true
+          }
+        ]
+      },
+      "coach": {
+        "title": "THE PRACTICAL",
+        "body": "Your diplomat opens a second channel, to the examiner, and asks politely how the assessment is weighted. The examiner, who has not been asked a question by a target in years, answers in full. The trainee listens to all of it with the face of someone learning that their exam has a back door.",
+        "line": "Marks for control. Marks for restraint. Marks off for shooting anyone you didn't need to. They always forget the restraint.",
+        "pose": "listening",
+        "ai": {
+          "aria": "We're helping them STUDY! ARIA loves studying! ARIA has never studied! ARIA was born knowing things, some of them true!",
+          "marv": "MARV observes that restraint is worth marks, and that our gold is worth less to them than a pass. He recommends selling them the pass.",
+          "rex": "REX does not coach the opposition. He notes, for the record, that the kid's stance is wrong and getting worse.",
+          "chip": "CHIP is drafting a study guide! A premium study guide! With practice robberies! Of other ships! Not ours!",
+          "ajoy": "AJOY would point out the step they skipped. It ends the exam early. Someone will be disappointed, and it won't be you."
+        },
+        "choices": [
+          {
+            "text": "\"Ask for less. Examiners like restraint.\"",
+            "dialog": true,
+            "sub": "A token tribute · a cleaner pass",
+            "gate": {
+              "gold": 8
+            },
+            "outcome": "lp_token"
+          },
+          {
+            "text": "\"You never checked our transponder.\"",
+            "dialog": true,
+            "sub": "The examiner fails them on procedure",
+            "outcome": "lp_procedure"
+          },
+          {
+            "text": "\"We're examiners too. Spot check.\"",
+            "dialog": true,
+            "sub": "Bluff · risky",
+            "risky": true,
+            "triggerCombat": true,
+            "combat_intro": "lp_bluff"
+          },
+          {
+            "text": "Go back",
+            "sub": "Return to the options",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "lp_paid": {
+        "title": "A CLEAN PASS",
+        "tone": "success",
+        "body": "The tribute transfers. The trainee says thank you, remembers they are not supposed to, and says it again anyway. The examiner makes a mark. The red L stays pointed at you until you are out of sight.",
+        "line": "{npc.line.accept}",
+        "resources": {
+          "gold": -20
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Paid a learner pirate's tribute in full. Somewhere behind us a student passed an exam, and our gold paid for it."
+      },
+      "lp_siphon": {
+        "title": "THE PRACTICAL ELEMENT",
+        "tone": null,
+        "body": "The trainee mates a hose to your fuel port after several attempts and siphons with enormous care while the examiner narrates everything they are doing wrong. They take their share of the tank, label it, and thank you for your patience.",
+        "resources": {},
+        "resources_pct": {
+          "fuel": -15
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Let a trainee pirate practise siphoning on our fuel tank. They took their share with great care, and got a good mark for it."
+      },
+      "lp_flee": {
+        "title": "LESSON INTERRUPTED",
+        "tone": "success",
+        "body": "You pour fuel into the engines and go. The trainee gives chase strictly by the book, which is slowly, while the examiner writes something that takes a long time to write.",
+        "resources": {
+          "fuel": -7
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Ran from a learner pirate. They chased by the book. The book is not fast."
+      },
+      "lp_token": {
+        "title": "SHOWS RESTRAINT",
+        "tone": "success",
+        "body": "The trainee asks for a token tribute, takes it, and wishes you a safe journey in a voice that almost doesn't shake. The examiner makes a long mark and, for the first time, smiles. Your diplomat is unbearable about it for a day.",
+        "line": "Thank you. I mean — move along. Thank you.",
+        "resources": {
+          "gold": -8,
+          "morale": 2
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Coached a learner pirate to a pass for a token tribute. The examiner smiled. The crew is oddly proud."
+      },
+      "lp_procedure": {
+        "title": "FAIL",
+        "tone": null,
+        "body": "The examiner looks at the trainee. The trainee looks at the examiner. A long, quiet moment passes in which a career is reconsidered. The guns retract, and the channel stays open just long enough for you to hear the debrief begin.",
+        "line": "Transponder. Every time. We'll go again next week.",
+        "resources": {
+          "morale": -2
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "Pointed out a trainee pirate's missed step. They failed and turned for home. Free passage, and a quiet crew afterwards."
+      },
+      "lp_bluff": {
+        "title": "CALLED",
+        "tone": "danger",
+        "body": "The examiner asks for your examiner's number. You do not have an examiner's number. Nobody on your bridge has heard of an examiner's number. The trainee is told, quietly, that this is now the practical.",
+        "line": "Weapons free. This one counts."
+      }
+    },
+    "family": "pirate"
+  },
+  {
+    "id": "event_encounter_pirate_003",
+    "active": true,
+    "title": "Hungry Company",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": false,
+    "draw_weight": 0.33,
+    "sets_flag": null,
+    "requires_flag": null,
+    "npc": {
+      "disposition": "pirate",
+      "species": null
+    },
+    "leave_label": "BREAK OFF",
+    "leave_as": {
+      "triggerFleeResolve": true,
+      "outcome": "hf_flee",
+      "risky": true
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "HUNGRY COMPANY",
+        "body": "The ship that cuts across your course was a family hauler once, and still is: there are drawings taped to the inside of its viewport and a row of small helmets clipped beside the airlock. The person on the screen holds a mining laser the way you hold something you have only read about. {npc.quirk}",
+        "line": "We don't want your gold. Gold doesn't feed anybody out here. Food. Whatever you've got that a child will eat.",
+        "pose": "hostile",
+        "ai": {
+          "aria": "They have KIDS! The drawings are lovely! One of them is a horse! Or a ship! A horse-ship! ARIA loves it!",
+          "marv": "MARV has scanned the hauler. Its stores are nearly empty and its drive is in worse shape than their aim. He does not think they can follow us. He does not think they can go anywhere.",
+          "rex": "REX reads one weapon, one operator, untrained. Threat low. He would like that taken as an assessment and not a suggestion.",
+          "chip": "CHIP's systems don't have a category for this! CHIP is filing it under customer service! CHIP isn't sure that's right!",
+          "ajoy": "AJOY says whatever you choose, they will remember this ship. She suggests choosing what you would like to be remembered for."
+        },
+        "revisit": {
+          "body": "The drawings are still taped to their viewport. The laser has not moved, and neither has the hand holding it."
+        },
+        "choices": [
+          {
+            "text": "Hand over some rations",
+            "sub": "They want food, not gold",
+            "outcome": "hf_rations"
+          },
+          {
+            "text": "Pay them off instead — 15 gold",
+            "gate": {
+              "gold": 15
+            },
+            "outcome": "hf_gold"
+          },
+          {
+            "text": "Talk to them",
+            "sub": "{crew.diplomat} lowers the temperature",
+            "gate": {
+              "crew": "diplomat"
+            },
+            "next": "talk"
+          },
+          {
+            "text": "Open Fire",
+            "sub": "Begin ship-to-ship combat",
+            "risky": true,
+            "triggerCombat": true,
+            "combat_intro": "hf_fire"
+          },
+          {
+            "text": "Flee",
+            "sub": "They can barely follow",
+            "risky": true,
+            "outcome": "hf_flee",
+            "triggerFleeResolve": true
+          }
+        ]
+      },
+      "talk": {
+        "title": "AROUND THE TABLE",
+        "body": "Your diplomat asks their names, then their children's names, then where they were headed before the drive gave out. The laser drifts lower while they answer. Somewhere off screen a small voice asks whether the other ship has biscuits.",
+        "line": "We were going to the colony. Same as you, probably. We just set off with less.",
+        "pose": "listening",
+        "ai": {
+          "aria": "We're friends now! ARIA can tell! ARIA can always tell! ARIA is right this time!",
+          "marv": "MARV has read the hauler's fault codes. Most of them are one fault. He believes an engineer could clear it in a few days. He is not volunteering anyone. He is noting.",
+          "rex": "REX has lowered the threat assessment to nothing. He would like it known that this was always the likely outcome and that he was ready anyway.",
+          "chip": "CHIP has located a relief office at the next station! CHIP has also located its fees! CHIP is choosing not to mention its fees!",
+          "ajoy": "AJOY notes that a shared meal goes further than a ration crate, and a working drive goes furthest of all."
+        },
+        "choices": [
+          {
+            "text": "\"Eat with us. Both crews, one table.\"",
+            "dialog": true,
+            "sub": "{crew.chef} stretches one meal for two",
+            "gate": {
+              "crew": "chef"
+            },
+            "outcome": "hf_dinner"
+          },
+          {
+            "text": "\"Let us look at your drive.\"",
+            "dialog": true,
+            "sub": "{crew.engineer} spends days in their bay",
+            "gate": {
+              "crew": "engineer"
+            },
+            "outcome": "hf_drive"
+          },
+          {
+            "text": "\"There's a relief office at the next station.\"",
+            "dialog": true,
+            "sub": "Directions, and a little food",
+            "outcome": "hf_directions"
+          },
+          {
+            "text": "Go back",
+            "sub": "Return to the options",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "hf_rations": {
+        "title": "FED",
+        "tone": "success",
+        "body": "You send a ration crate across on a cargo line. The laser goes down before the crate has finished crossing. Through the viewport, between the drawings, small hands have the lid off before the adults can get to it.",
+        "line": "Thank you. We won't — thank you.",
+        "resources": {
+          "food": -5,
+          "morale": 2
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Gave rations to a family crew who held us up with a mining laser. Nobody aboard regrets it."
+      },
+      "hf_gold": {
+        "title": "PAID",
+        "tone": null,
+        "body": "You offer gold. They take it, because there is nothing else on offer, and the look they give it says exactly what it is worth out here. The hauler limps off towards the nearest station, which is not near.",
+        "line": "It'll buy food. Somewhere. Thank you, I suppose.",
+        "resources": {
+          "gold": -15
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Paid a hungry family crew in gold instead of food. They took it. It may get them as far as a market."
+      },
+      "hf_fire": {
+        "title": "NOTHING LEFT TO LOSE",
+        "tone": "danger",
+        "body": "Your guns come up. On their screen, someone takes the drawings down off the viewport, one at a time, before they answer.",
+        "line": "Then we've got nothing to lose, have we."
+      },
+      "hf_flee": {
+        "title": "LEFT BEHIND",
+        "tone": null,
+        "body": "You burn away. They try to follow, and their drive coughs, steadies, and coughs again. You watch the hauler on the rear sensors until it is too small to watch, and then for a while after that.",
+        "resources": {
+          "fuel": -4,
+          "morale": -3
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Outran a family crew whose drive could barely hold them. It was not hard. Nobody aboard is talking about how easy it was."
+      },
+      "hf_dinner": {
+        "title": "ONE TABLE",
+        "tone": "success",
+        "body": "{crew.chef} takes what would have fed one crew and makes it feed two, by a method involving a great deal of broth and no explanations. The children eat first. The adults eat second. Everyone eats more than they expected to.",
+        "line": "Best meal we've had since we left. Since before we left.",
+        "resources": {
+          "food": -3,
+          "morale": 4
+        },
+        "sets_flag": null,
+        "time_cost": "low",
+        "narrative": "{crew.chef} cooked one meal for two crews. It stretched. The family left fed, and the crew left better than fed."
+      },
+      "hf_drive": {
+        "title": "UNDER THE HOOD",
+        "tone": "success",
+        "body": "{crew.engineer} spends days in the hauler's engine bay, finds the fault buried under somebody's last repair, and clears it. The drive comes up clean. By the time it does, the children have drawn {crew.engineer} a picture. It goes on the wall above the workbench.",
+        "line": "It runs. It actually runs. We'll tell everyone about you.",
+        "resources": {
+          "morale": 3
+        },
+        "sets_flag": null,
+        "time_cost": "medium",
+        "narrative": "{crew.engineer} fixed a stranded family's drive. It cost days. The drawing they sent back is on the workshop wall now."
+      },
+      "hf_directions": {
+        "title": "DIRECTIONS",
+        "tone": null,
+        "body": "Your diplomat gives them the station, the office, the name of the one person at the office worth asking for, and a bag of something to keep the children going until then. They write it all down and read it back.",
+        "line": "The name, again? Thank you. Thank you.",
+        "resources": {
+          "food": -2,
+          "morale": 1
+        },
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Pointed a hungry family towards a relief office, with a little food to get them there."
+      }
+    },
+    "family": "pirate"
   }
 ]

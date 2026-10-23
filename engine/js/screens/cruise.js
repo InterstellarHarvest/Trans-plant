@@ -1121,7 +1121,8 @@
     // (a vendor in person at a stall); anywhere else a trader ship
     // answers the call.
     const here = STATE.byId[STATE.currentId];
-    const ev = (here && here.node_type === 'station' && EVENTS['event_station_013']) || EVENTS['event_encounter_trader_001'];
+    // Away from a station: this stop's trader (ruling 90 — one of the trader family, the same one all stop).
+    const ev = (here && here.node_type === 'station' && EVENTS['event_station_013']) || familyEvent('trader', here) || EVENTS['event_encounter_trader_001'];
     if (!ev) { pushLogEntry('◆ No traders registered on this route.'); return; }
     closeStopMenu();
     enterEvent(STATE.byId[STATE.currentId], ev);
@@ -1309,7 +1310,7 @@
   // from those eligible here (node type, once-only, flags).
   const WAIT_EVENTS = {
     pirate: {
-      weight: 5, events: () => ['event_encounter_pirate_001'],
+      weight: 5, events: () => Object.values(EVENTS).filter(e => e.family === 'pirate').map(e => e.id), // ruling 90: any of the pirate family
       log: 'Pirate signature on long-range scan. They saw you sitting still.',
       flash: 'PIRATE INBOUND', variant: 'event-danger',
       ticker: 'PIRATE SIGNATURE — WEAPONS HOT',
@@ -1476,7 +1477,7 @@
       activeWait = null;
       renderCruise();
       if (leaving || STATE.ended) return;
-      const ev = EVENTS.event_encounter_trader_001;
+      const ev = familyEvent('trader', STATE.byId[STATE.currentId]) || EVENTS.event_encounter_trader_001;
       if (ev) { closeStopMenu(); enterEvent(STATE.byId[STATE.currentId], ev); }
       else renderStopMenu();
     };

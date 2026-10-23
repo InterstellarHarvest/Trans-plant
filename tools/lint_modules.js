@@ -791,7 +791,7 @@ const eventOnTrail = (ev, trail) => {
     if (ev.requires_crew_aboard != null && ev.requires_crew_aboard !== true) err(`${at}: requires_crew_aboard must be true (or absent)`);
     if (ev.requires_crop_alive != null && ev.requires_crop_alive !== true) err(`${at}: requires_crop_alive must be true (or absent)`);
     if (ev.draw_weight != null && !(Number.isFinite(ev.draw_weight) && ev.draw_weight > 0 && ev.draw_weight <= 5)) err(`${at}: draw_weight must be a number in (0, 5]`);
-    if (ev.draw_weight != null && !ev.biome) warn(`${at}: draw_weight without a biome gate — only narrow gates should need it`);
+    if (ev.draw_weight != null && !ev.biome && !ev.family) warn(`${at}: draw_weight without a biome gate — only narrow gates should need it`);
     if (ev.crew_speaker != null) {
       const list = Array.isArray(ev.crew_speaker) ? ev.crew_speaker : [ev.crew_speaker];
       if (!list.length) err(`${at}: crew_speaker is empty`);
@@ -1300,6 +1300,21 @@ const hardChoiceCost = (() => {
     if (ge == null) continue;
     const m = String(ge).match(NOTE);
     if (m) err(`items.json ${it.id}: gameplay_effect carries an authoring note ("${m[0]}") — players see this text; move it to design_note`);
+  }
+}
+
+// ── Event families (ruling 90) ─────────────────────────────────────
+// A family (the traders, the pirates) shares one old event's odds: its
+// draw_weights sum to 1, and its members share difficulty, node_type,
+// trigger and once (so the split is a change of face, not of frequency).
+{
+  const fam = {};
+  for (const [id, { event: ev }] of eventsById) if (ev.family) (fam[ev.family] = fam[ev.family] || []).push(ev);
+  for (const [f, list] of Object.entries(fam)) {
+    const sum = list.reduce((s, e) => s + (Number.isFinite(e.draw_weight) ? e.draw_weight : 1), 0);
+    if (Math.abs(sum - 1) > 0.02) err(`family "${f}": draw_weights sum to ${sum.toFixed(2)} (must be 1 — the family shares one event's odds)`);
+    const sig = e => JSON.stringify([e.difficulty, [...(e.node_type || [])].sort(), [...(e.trigger || [])].sort(), !!e.once]);
+    for (const e of list) if (sig(e) !== sig(list[0])) err(`family "${f}": ${e.id} differs from ${list[0].id} in difficulty / node_type / trigger / once`);
   }
 }
 

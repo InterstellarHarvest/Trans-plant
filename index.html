@@ -3455,6 +3455,21 @@ function repeatCooldownStops() {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
+/* A family (ruling 90: the traders, the pirates) cools down as one: a
+   trader at this stop keeps every trader away for the cooldown, as the
+   single trader used to. */
+function repeatKey(ev) { return ev && ev.family ? 'family:' + ev.family : ev.id; }
+/* The family's face for this stop: a weighted pick (draw_weight) seeded on
+   the run and the stop, so TRADE / a WAIT's trader at one stop is always
+   the same ship. */
+function familyEvent(family, node) {
+  const list = Object.values(EVENTS).filter(e => e.family === family && e.active !== false && (!e.trail || e.trail.includes(STATE.trail)));
+  if (!list.length) return null;
+  const slots = [];
+  for (const e of list) for (let i = 0; i < Math.max(1, Math.round((e.draw_weight || 1) * 100)); i++) slots.push(e);
+  const key = 'family:' + family + ':' + (node ? node.id : '?');
+  return (window.SceneArt && SceneArt.stablePick) ? SceneArt.stablePick(key, slots) : slots[0];
+}
 /* gap(ev): how many stops lie between `stop` and the nearest stop `ev`
    was drawn for (Infinity: never). A SCAN lock-in at a stop ahead
    counts as a draw there, so a two-stop scan can't lock one repeatable
@@ -3475,12 +3490,13 @@ function repeatGaps(stop) {
         if (seen.has(nid) || STATE.visited.has(nid) || !STATE.byId[nid]) continue;
         seen.add(nid); next.push(nid);
         const sc = STATE.scouted[nid];
-        if (sc && sc.ev) note(sc.ev, here + depth);
+        if (sc && sc.ev) note(repeatKey(EVENTS[sc.ev] || { id: sc.ev }), here + depth);
       }
       frontier = next;
     }
   }
-  return ev => (at[ev.id] || []).reduce((g, s) => Math.min(g, Math.abs(stop - s)), Infinity);
+  // (at[ev.id] too: a save from before families keyed the trader by id)
+  return ev => (at[repeatKey(ev)] || []).concat(at[ev.id] || []).reduce((g, s) => Math.min(g, Math.abs(stop - s)), Infinity);
 }
 
 /* A repeatable event fired as a stop's event (drawn, or locked in by
@@ -3491,7 +3507,7 @@ function noteEventDrawn(ev) {
   if (ev && (ev.trigger || []).includes('engine_strain')) STATE.engineStrain = false;
   if (!ev || ev.once) return;
   STATE.eventLastStop = STATE.eventLastStop || {};
-  STATE.eventLastStop[ev.id] = currentStop();
+  STATE.eventLastStop[repeatKey(ev)] = currentStop();
 }
 
 /* Share of the trail flown: legs flown (the one into the stop being

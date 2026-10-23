@@ -407,7 +407,8 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
     ok(ta.flash === 'TRADER APPROACHING' && /success/.test(ta.cls) && ta.here === true, 'trader arrives: TRADER APPROACHING (gold), trader now in range');
     await shot(page, '08_trader_approaching');
     const trEv = await waitFor(page, () => !cruiseWaitActive() && (STATE.currentEvent ? STATE.currentEvent.id : false));
-    ok(trEv === 'event_encounter_trader_001', 'the trader encounter opens');
+    const wantTr = await page.evaluate(() => familyEvent('trader', STATE.byId[STATE.currentId]).id);
+    ok(trEv === wantTr && /^event_encounter_trader_00\d$/.test(trEv), `the trader encounter opens: this stop's trader (${trEv}, ruling 90)`);
     await page.evaluate(() => { Math.random = window.__rnd; advanceAfterEvent(); });
 
     // REST: 2 days, morale paid on completion.
@@ -534,7 +535,7 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
       return { ast, ano, seen, st, held };
     });
     ok(kinds.held === false || kinds.held === null, 'repeat cooldown: the pirate that just fired isn\'t drawn again at once');
-    ok(kinds.ast.includes('distress:event_encounter_drifter_001') && kinds.ast.includes('pirate:event_encounter_pirate_001') && !kinds.ast.some(k => /^anomaly/.test(k)), 'asteroid field: pirate or distress call (' + kinds.ast.join(', ') + ')');
+    ok(kinds.ast.includes('distress:event_encounter_drifter_001') && kinds.ast.some(k => /^pirate:event_encounter_pirate_00\d$/.test(k)) /* ruling 90: any of the pirate family */ && !kinds.ast.some(k => /^anomaly/.test(k)), 'asteroid field: pirate or distress call (' + kinds.ast.join(', ') + ')');
     ok(kinds.ano.some(k => /^anomaly:event_anomaly_/.test(k)), 'anomaly: anomalous drift fires anomaly events');
     ok(!kinds.seen.some(k => /drifter/.test(k)), 'the once-only distress call is not repeated');
     ok(kinds.st.length === 0, 'nothing is eligible to interrupt at a station');
