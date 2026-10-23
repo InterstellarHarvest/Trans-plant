@@ -1313,6 +1313,8 @@ const hardChoiceCost = (() => {
     const orig = entry ? entry.body : ev.body;
     if (!Array.isArray(ev.alt_bodies) || !ev.alt_bodies.length) { err(`${id}: alt_bodies must be a non-empty list`); continue; }
     if (typeof orig !== 'string' || !orig.trim()) { err(`${id}: alt_bodies on an event with no opening body`); continue; }
+    // Openings that are always replaced would never show (body_by_speaker, standard_variants).
+    if ((entry || ev).body_by_speaker || ev.standard_variants) { err(`${id}: alt_bodies never show — the opening is replaced by ${ev.standard_variants ? 'standard_variants' : 'body_by_speaker'}`); continue; }
     const seen = new Set([orig]);
     ev.alt_bodies.forEach((b, i) => {
       const at = `${id}: alt_bodies[${i}]`;

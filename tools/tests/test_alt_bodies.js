@@ -140,7 +140,10 @@ const FIRE = `(id) => {
       STATE.eventDraws = {};
       const seen = new Set();
       for (let i = 0; i <= ev.alt_bodies.length; i++) {
-        try { const r = fire(ev.id); seen.add(r.pick); if (/\{[a-z_.]+\}/.test(r.text)) out.push({ id: ev.id, bad: 'raw token: ' + r.text.match(/\{[a-z_.]+\}/)[0] }); }
+        try { const r = fire(ev.id); seen.add(r.pick);
+          const want = r.pick ? ev.alt_bodies[r.pick - 1] : null;
+          if (want && !r.text.includes(want.replace(/\{[^}]*\}/g, '\u0000').split('\u0000')[0].slice(0, 30))) out.push({ id: ev.id, bad: 'opening ' + r.pick + ' not on screen' });
+          if (/\{[a-z_.]+\}/.test(r.text)) out.push({ id: ev.id, bad: 'raw token: ' + r.text.match(/\{[a-z_.]+\}/)[0] }); }
         catch (e) { out.push({ id: ev.id, bad: e.message }); break; }
       }
       if (seen.size !== ev.alt_bodies.length + 1) out.push({ id: ev.id, bad: 'saw ' + seen.size + ' of ' + (ev.alt_bodies.length + 1) });

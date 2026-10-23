@@ -4829,7 +4829,11 @@ function openingBody(ev, layerId, body) {
   const i = STATE.bodyPick || 0;
   if (!i || !Array.isArray(ev.alt_bodies) || !ev.alt_bodies[i - 1]) return body;
   const entry = ev.layers ? (ev.entryLayer || Object.keys(ev.layers)[0]) : null;
-  return (!ev.layers || layerId === entry) ? ev.alt_bodies[i - 1] : body;
+  if (ev.layers && layerId !== entry) return body;
+  // Only in place of the authored opening: a variant that already swapped
+  // it (the station hail, a revisit) keeps its own words.
+  const authored = ev.layers ? ev.layers[entry].body : ev.body;
+  return body === authored ? ev.alt_bodies[i - 1] : body;
 }
 function saveEventProgress() {
   const ev = STATE.currentEvent;
