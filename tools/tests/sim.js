@@ -220,10 +220,16 @@ function step() {
     } else {
       const ev = STATE.currentEvent;
       // shopping intent at the trader
-      if (ev && ev.id === 'event_encounter_trader_001' && window.__wantBuy) {
-        const want = chs.find(c => /fuel cell/i.test(c.text || '') && STATE.resources.fuel < 75)
-          || chs.find(c => /sealed rations/i.test(c.text || '') && STATE.resources.food < 40)
-          || chs.find(c => /pitch/i.test(c.text || ''));
+      // (ruling 90: any trader of the family — each lays its menus out
+      // differently, so a menu that leads to fuel or rations is followed.)
+      if (ev && (ev.id === 'event_encounter_trader_001' || ev.family === 'trader') && window.__wantBuy) {
+        const fuelRe = /fuel cell/i, foodRe = /rations|ration crate/i;
+        const leadsTo = (c, re) => !!(c.next && ev.layers && ev.layers[c.next] && (ev.layers[c.next].choices || []).some(x => re.test(x.text || '')));
+        const want = chs.find(c => fuelRe.test(c.text || '') && STATE.resources.fuel < 75)
+          || chs.find(c => foodRe.test(c.text || '') && STATE.resources.food < 40)
+          || chs.find(c => STATE.resources.fuel < 75 && leadsTo(c, fuelRe))
+          || chs.find(c => STATE.resources.food < 40 && leadsTo(c, foodRe))
+          || (ev.id === 'event_encounter_trader_001' ? chs.find(c => /pitch/i.test(c.text || '')) : null);
         if (want) { if (/fuel cell/i.test(want.text)) { S.traderBuys++; S.fuelBought++; } else if (/rations/i.test(want.text)) S.traderBuys++; ch = want; }
         if (!want) window.__wantBuy = false;
       }
