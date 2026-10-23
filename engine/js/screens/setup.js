@@ -96,8 +96,8 @@
         { id: 'pilot',         icon: '\u{1F680}', sprite: 'sprites/interface/careers/pilot.png',         name: 'Pilot',         desc: 'You can fly. Slightly better than expected.',                             stat: 'Fuel -{cut:fuel_burn_modifier}% · Fuel {sb100:fuel}',            flavor: 'You are statistically correct 68% of the time.' },
         { id: 'chef',          icon: '\u{1F373}', sprite: 'sprites/interface/careers/chef.png',          name: 'Chef',          desc: 'You can make algae taste like something other than regret.',              stat: 'Food -{cut:food_consumption_modifier}% · Food {sb100:food}',            flavor: 'You know 47 ways to prepare algae. Forty-six are bad.' },
         { id: 'xenobiologist', icon: '\u{1F9EC}', sprite: 'sprites/interface/careers/xenobiologist.png', name: 'Xenobiologist', desc: 'You studied aliens. You have never met one.',                             stat: 'Anomaly safer · Spectrometer',       flavor: 'Your thesis was theoretical. Everything is about to become very applied.' },
-        { id: 'diplomat',      icon: '\u{1F91D}', sprite: 'sprites/interface/careers/diplomat.png',      name: 'Diplomat',      desc: 'Very good at making people feel heard while doing nothing.',              stat: 'Credits +{sb:credits}',         flavor: 'Your crew does not find this reassuring.' },
-        { id: 'merchant',      icon: '\u{1F4CA}', sprite: 'sprites/interface/careers/merchant.png',      name: 'Merchant',      desc: 'You ran a business.',                                                     stat: 'Prices -{cut:station_price_modifier}% · Credits +{sb:credits}',         flavor: 'You are going to run this mission like a business.' },
+        { id: 'diplomat',      icon: '\u{1F91D}', sprite: 'sprites/interface/careers/diplomat.png',      name: 'Diplomat',      desc: 'Very good at making people feel heard while doing nothing.',              stat: 'Gold +{sb:credits}',         flavor: 'Your crew does not find this reassuring.' },
+        { id: 'merchant',      icon: '\u{1F4CA}', sprite: 'sprites/interface/careers/merchant.png',      name: 'Merchant',      desc: 'You ran a business.',                                                     stat: 'Prices -{cut:station_price_modifier}% · Gold +{sb:credits}',         flavor: 'You are going to run this mission like a business.' },
         { id: 'academic',      icon: '\u{1F4DA}', sprite: 'sprites/interface/careers/academic.png',      name: 'Academic',      desc: 'You have a PhD. In what is not immediately relevant.',                    stat: 'Research · Gas analyzer',    flavor: 'Your grant funding was cut. You are in space. These events are related.' },
         { id: 'veteran',       icon: '\u{1F396}', sprite: 'sprites/interface/careers/veteran.png',       name: 'Veteran',       desc: 'You served. Where is classified.',                                        stat: 'Combat edge · Pressure suit', flavor: 'You don\'t talk about it.' }
       ]
@@ -266,6 +266,11 @@
           const idx = sel[s.key].indexOf(opt.id);
           if (idx >= 0) sel[s.key].splice(idx, 1);
           else if (sel[s.key].length < s.max) sel[s.key].push(opt.id);
+          else {
+            // Full: say so (a third pick used to do nothing, silently).
+            $('setup-flavor').textContent = 'The ship berths ' + s.max + '. Click a picked crew member to swap them out.';
+            return;
+          }
         } else {
           sel[s.key] = opt.id;
         }
@@ -301,10 +306,22 @@
       const msg = sel.crew.length === 0
         ? '⚠ No crew selected.\n\nYou will be flying solo. Are you sure?'
         : '⚠ Only ' + sel.crew.length + ' of ' + CREW_MAX + ' crew selected.\n\nProceed with an incomplete crew?';
-      if (!confirm(msg)) return;
+      // The game's own dialog (it was the browser's confirm()).
+      tpConfirm({ title: sel.crew.length === 0 ? 'FLY SOLO?' : 'INCOMPLETE CREW', message: msg.replace(/^⚠\s*/, ''), yes: 'PROCEED' })
+        .then(ok => { if (ok) advance(); });
+      return;
     }
-    if (step < STEPS.length - 1) { saveScroll(); step++; render(); }
-    else { applySetupToState(sel); }
+    advance();
+  }
+  async function advance() {
+    if (step < STEPS.length - 1) { saveScroll(); step++; render(); return; }
+    // LAUNCH over a saved voyage replaces it: ask first.
+    if (typeof hasSave === 'function' && hasSave() &&
+        !(await tpConfirm({ title: 'ABANDON THE SAVED VOYAGE?', message: 'Launching starts a new voyage. The one saved for Continue will be lost.', yes: 'LAUNCH', danger: true }))) return;
+    applySetupToState(sel);
+    // Ruling 92: the departure plays at the station on day 0, then the hub
+    // opens stopped there.
+    if (typeof playDeparture === 'function') playDeparture();
   }
   function prevStep() {
     if (step > 0) { saveScroll(); step--; render(); }

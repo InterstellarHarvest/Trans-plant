@@ -583,3 +583,25 @@ body.stop-active .stop-btn, body.event-active .stop-btn {
 }
 body.event-active #screen-cruise { --stop-pulse-color: var(--red); }
 body.stop-active #cruise-resrow { filter: brightness(0.55) saturate(0.7); transition: filter 0.25s ease; }
+
+/* AI speech bubble at a stop (owner ruling 91; cruise.js syncAiBubble):
+   the AI's portrait and its lines for this stop, over the ship view. */
+#ai-bubble {
+  position: absolute; left: 18px; top: 18px; z-index: 13;
+  display: flex; align-items: flex-start; gap: 10px;
+  max-width: 470px; padding: 10px 30px 10px 10px;
+  background: var(--ai-bg); border: 1px solid rgba(200,168,90,0.55); border-radius: 4px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.55);
+  opacity: 0; transform: translateY(-6px); pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  cursor: var(--cursor-hand, pointer);
+}
+#ai-bubble.show { opacity: 1; transform: none; pointer-events: auto; }
+#ai-bubble .ai-bubble-avatar { flex: 0 0 44px; width: 44px; height: 44px; background-size: contain; background-repeat: no-repeat; background-position: center; image-rendering: pixelated; }
+#ai-bubble .ai-bubble-body { min-width: 0; }
+#ai-bubble .ai-bubble-name { font-family: 'Press Start 2P', cursive; font-size: 8px; letter-spacing: 2px; color: var(--ai-name-color); margin: 2px 0 6px; }
+#ai-bubble .ai-bubble-lines p { margin: 0 0 6px; font-family: 'VT323', monospace; font-size: 17px; line-height: 1.3; color: #d6dde6; }
+#ai-bubble .ai-bubble-lines p:last-child { margin-bottom: 0; }
+#ai-bubble .ai-bubble-x { position: absolute; right: 6px; top: 4px; background: none; border: 0; color: var(--ai-name-color); font-family: 'VT323', monospace; font-size: 20px; line-height: 1; cursor: var(--cursor-hand, pointer); padding: 2px 4px; }
+#ai-bubble .ai-bubble-x:hover { color: #e8d8a0; }
+@media (prefers-reduced-motion: reduce) { #ai-bubble { transition: none; } }

@@ -559,6 +559,12 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
   overflow-y: auto;
   min-height: 0; /* lets the flex item actually shrink so overflow-y engages at the panel cap */
 }
+.enc-narrative.has-more::after {
+  /* the body runs past the panel: say so (scrolls with wheel / drag) */
+  content: '▾ MORE'; position: absolute; right: 18px; bottom: 2px;
+  font-family: 'Press Start 2P', cursive; font-size: 7px; letter-spacing: 1.5px;
+  color: #e8d8a0; background: rgba(8,12,18,0.92); padding: 3px 6px; border-radius: 2px; pointer-events: none;
+}
 .enc-narrative.tone-success { border-color: #7fb8a8; box-shadow: 0 0 14px rgba(127,184,168,0.18); }
 .enc-narrative.tone-success .enc-narr-title { color: #a8d8c8; text-shadow: 0 0 6px rgba(127,184,168,0.45); } /* demo :792-803 glow per tone */
 .enc-narrative.tone-danger  { border-color: #c25555; box-shadow: 0 0 14px rgba(194,85,85,0.18); }
@@ -750,6 +756,12 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
             </div>
             <div id="wait-flash"><div class="wait-flash-label"></div></div>
             <div id="ship-silhouette"></div>
+            <!-- The AI's speech bubble at a stop (ruling 91; cruise.js syncAiBubble). -->
+            <div id="ai-bubble" role="status" aria-live="polite">
+              <div class="ai-bubble-avatar"></div>
+              <div class="ai-bubble-body"><div class="ai-bubble-name"></div><div class="ai-bubble-lines"></div></div>
+              <button type="button" class="ai-bubble-x" aria-label="Dismiss">×</button>
+            </div>
           </div>
           <div id="cruise-resrow">
             <!-- Standing-orders readout (Restoration item 5). Live —
@@ -2257,6 +2269,22 @@ function applySetupToState(sel) {
   showScreen('screen-cruise');
 }
 
+/* The departure (owner ruling 92): right after LAUNCH one launch event
+   plays at Earth Orbital Station on day 0 (they share the 'departed' flag,
+   so it's the only one); its Continue opens the hub stopped there.
+   selectEvent's old first-ordinary-stop draw stays as the fallback for a
+   save made before the ship departed. */
+function playDeparture() {
+  const node = STATE.byId && STATE.byId[STATE.currentId];
+  if (!node || STATE.flags.has('departed')) return;
+  const triggers = activeTriggers();
+  const pool = Object.values(EVENTS).filter(ev => /^event_launch_/.test(ev.id) && eventEligible(ev, node, triggers));
+  if (!pool.length) { returnToHub(); return; }
+  const ev = pool[Math.floor(Math.random() * pool.length)];
+  noteEventDrawn(ev);
+  enterEvent(node, ev);
+}
+
 /* ────────────────────────────────────────────────────────────────
    CARGO CAPACITY (user decision 2026-08-03: full enforcement).
    Slot data comes entirely from authored content: items.json's
@@ -3141,7 +3169,7 @@ function outcomeConcerns(o) {
       // Every role takes a wound alike (lint_modules checks), so a
       // random target's reaction is known.
       const w = concernDef(named || STATE.crew[0], 'wounded');
-      if (w && named !== 'captain') add(named || 'HURT', w.morale);
+      if (w && named !== 'captain') add(named || 'INJURED', w.morale); // the one hurt (it read as HP: "HURT −25")
       const m = concernDef('medic', 'injury');
       if (m) add('medic', m.morale);
     } else if (named !== 'medic') {
@@ -4545,6 +4573,13 @@ function dailyDraw() {
     water: ORDERS_BASE.waterPerDay,
   };
 }
+/* Ruling 94: the deadline passing is said once, in the AI's voice. */
+function deadlineNotice() {
+  if (STATE.flags.has('deadline_passed')) return;
+  STATE.flags.add('deadline_passed');
+  if (typeof window.pushCruiseLog === 'function')
+    window.pushCruiseLog('The deadline has passed. The colony will still take us, late — and every day from here comes off the arrival.', { ai: true });
+}
 function passDays(days, opts) {
   days = Math.max(0, Math.round(days));
   if (!days) return;
@@ -5134,6 +5169,7 @@ function typeInto(el, text, ms, onDone) {
       const scale = er.height / el.offsetHeight || 1;
       if (cr.bottom > er.bottom && cr.top - er.bottom < 40 * scale) el.scrollTop += Math.ceil((cr.bottom - er.bottom) / scale) + 2;
     }
+    if (el.id === 'enc-narr-body') updateNarrCue();
     if (i >= text.length) finish(false);
   }, ms);
   return finish;
@@ -5198,6 +5234,7 @@ function snapDelivery() {
   }
   d.i = d.beats.length;
   landChoices(d);
+  updateNarrCue();
   return true;
 }
 /* A new paint (or combat taking the column over) abandons the delivery:
@@ -5591,8 +5628,24 @@ function fitEncounterColumns() {
   // gap.
   const MIN_NARR = Math.max(130, Math.min(190, narr.offsetHeight)), GAP = 8;
   ch.style.maxHeight = Math.max(80, narrBottom - MIN_NARR - GAP - ch.offsetTop) + 'px';
-  const chBottom = ch.offsetTop + ch.offsetHeight;
+  // The panel grows up to the LAST BUTTON, not to the column's box (the box
+  // always reaches its CSS bottom, so the panel never grew and 3 in 4
+  // openings hid their end behind a scroll).
+  let contentBottom = 0;
+  for (const c of ch.children) if (c.offsetParent) contentBottom = Math.max(contentBottom, c.offsetTop + c.offsetHeight);
+  const chBottom = ch.offsetTop + Math.min(ch.offsetHeight, contentBottom - ch.scrollTop);
   narr.style.maxHeight = Math.min(340, Math.max(MIN_NARR, narrBottom - chBottom - GAP)) + 'px';
+  updateNarrCue();
+}
+/* A body taller than its panel shows "▾ MORE" until it's read to the end. */
+function updateNarrCue() {
+  const narr = document.getElementById('enc-narrative'), body = document.getElementById('enc-narr-body');
+  if (!narr || !body) return;
+  narr.classList.toggle('has-more', body.scrollHeight > body.clientHeight + 2 && body.scrollTop + body.clientHeight < body.scrollHeight - 2);
+}
+{
+  const body = document.getElementById('enc-narr-body');
+  if (body) body.addEventListener('scroll', updateNarrCue, { passive: true });
 }
 
 function renderChoices(choices) {
@@ -5997,6 +6050,22 @@ function costWeight(o) { return outcomeFacts(o).filter(f => !f.good).reduce((s, 
 // choice's costs ("the cost of accuracy is knowing how bad it is").
 // Academic captain: one full outcome per station leg (kept for re-renders
 // of the same layer).
+/* A preview is a one-line sub-label (owner rule): facts go in while they
+   fit; a morale fact too long with its per-role concerns keeps just the
+   crew figure (the tooltip has every concern). */
+const PREVIEW_MAX_CHARS = 46;
+function fitPreview(prefix, facts) {
+  let line = prefix || '';
+  for (const f of facts) {
+    const join = t => (line ? line + ' · ' : '') + t;
+    if (join(f).length <= PREVIEW_MAX_CHARS) { line = join(f); continue; }
+    const head = f.split(' · ')[0];
+    const short = /MORALE$/.test(f) && !/MORALE$/.test(head) ? head + ' MORALE' : head;
+    if (short !== f && join(short).length <= PREVIEW_MAX_CHARS) line = join(short);
+    break;
+  }
+  return line;
+}
 function choicePreviews(choices) {
   const out = new Map();
   const cands = choices.filter(ch => !lockReason(ch) && choiceOutcome(ch));
@@ -6007,20 +6076,20 @@ function choicePreviews(choices) {
   for (const ch of cands) {
     if (!ch.preview) continue;
     const facts = outcomeFacts(choiceOutcome(ch)).filter(f => !/ GOLD$/.test(f.text)).slice(0, 3).map(f => f.text);
-    if (facts.length) out.set(ch, facts.join(' · '));
+    if (facts.length) out.set(ch, fitPreview('', facts));
   }
   const unposted = cands.filter(ch => !out.has(ch));
   if (STATE.activeAI === 'marv' && unposted.length) {
     const worst = unposted.slice().sort((a, b) => costWeight(choiceOutcome(b)) - costWeight(choiceOutcome(a)))[0];
     const costs = outcomeFacts(choiceOutcome(worst)).filter(f => !f.good).slice(0, 2).map(f => f.text);
-    if (costs.length) out.set(worst, 'MARV · ' + costs.join(' · '));
+    if (costs.length) out.set(worst, fitPreview('MARV', costs));
   }
   // A perfect SCAN's intel: every choice of the scouted event shows its outcome.
   if (STATE.scanIntelEvent && STATE.currentEvent && STATE.scanIntelEvent === STATE.currentEvent.id) {
     for (const ch of cands) {
       if (out.has(ch)) continue;
       const facts = outcomeFacts(choiceOutcome(ch)).slice(0, 2).map(f => f.text);
-      out.set(ch, 'SCAN · ' + (facts.length ? facts.join(' · ') : 'NO EFFECT'));
+      out.set(ch, facts.length ? fitPreview('SCAN', facts) : 'SCAN · NO EFFECT');
     }
   }
   // Medical scanner (items.json "reveals injury cause; unlocks treatment
@@ -6029,7 +6098,7 @@ function choicePreviews(choices) {
     for (const ch of cands) {
       if (out.has(ch)) continue;
       const facts = outcomeFacts(choiceOutcome(ch)).slice(0, 2).map(f => f.text);
-      if (facts.length) out.set(ch, 'SCANNER · ' + facts.join(' · '));
+      if (facts.length) out.set(ch, fitPreview('SCANNER', facts));
     }
   }
   // Geiger counter (items.json "warns before hazard events — without it
@@ -6926,7 +6995,7 @@ function eventMinigameQuit(choice, harm) {
     const before = hpOf(p), after = Math.round(Math.max(HURT_FLOOR_HP, before + (harm.hp - harm.startingHp)));
     if (after < before) {
       setHP(p, after);
-      quit.hurt = PersonName(p) + ', the worst case: ' + (after - before) + ' HP.';
+      quit.hurt = PersonName(p) + ' comes out worse: ' + (after - before) + ' HP.';
       quit.narrative += '\n\n' + quit.hurt;
     }
   }
@@ -6945,6 +7014,18 @@ function eventMinigameBegun(harm) {
 // …and again each time harm lands in play (cruise.js onJobHarm), so a
 // reload keeps it too.
 function eventMinigameHarm(harm) { eventMinigameBegun(harm); }
+/* A minigame tier's outcome: the base outcome with the tier's own fields
+   on top (tier resources replace the base's per key). medical's 'fedup'
+   (the patient walked out) scores as poor unless authored. */
+function mergedTierOutcome(choice, tier) {
+  const base = (choice.outcome && typeof choice.outcome === 'object') ? choice.outcome : {};
+  const tiers = choice.tier_outcomes || {};
+  const t = tiers[tier] || (tier === 'fedup' ? tiers.poor : null) || {};
+  return Object.assign({}, base, t, {
+    resources: Object.assign({}, base.resources || {}, t.resources || {}),
+    narrative: t.narrative || base.narrative,
+  });
+}
 function resolveChoice(choice) {
   if (choice.launch_minigame) {
     eventMinigameChoice = choice;
@@ -6960,6 +7041,17 @@ function resolveChoice(choice) {
     if (isMed) {
       if (!mgOpts.difficulty) mgOpts.difficulty = (STATE.currentEvent && STATE.currentEvent.difficulty) || 'medium';
       if (patient && mgOpts.startingHp == null) mgOpts.startingHp = hpOf(patient);
+    }
+    // Ruling 93: an event's minigame shows the event's reward, tier by tier
+    // (what applyOutcomeEffects will land), never a free-play haul.
+    // tierOutcomes: the merged outcome objects; tierRewards: their facts.
+    if (choice.tier_outcomes) {
+      mgOpts.tierOutcomes = {}; mgOpts.tierRewards = {};
+      for (const t of ['perfect', 'good', 'poor']) {
+        const m = mergedTierOutcome(choice, t);
+        mgOpts.tierOutcomes[t] = m;
+        mgOpts.tierRewards[t] = outcomeFacts(m).map(f => f.text);
+      }
     }
     openMinigame(choice.launch_minigame, mgOpts, (tier, mgPayload) => {
       eventMinigameChoice = null; eventMinigamePatient = null;
@@ -6977,12 +7069,7 @@ function resolveChoice(choice) {
       // medical's 'fedup' (patient walked out) is a failure: it scores as
       // poor unless authored — it used to fall back to the base outcome,
       // which beat poor.
-      const tiers = choice.tier_outcomes || {};
-      const t = tiers[tier] || (tier === 'fedup' ? tiers.poor : null) || {};
-      const merged = Object.assign({}, base, t, {
-        resources: Object.assign({}, base.resources || {}, t.resources || {}),
-        narrative: t.narrative || base.narrative,
-      });
+      const merged = mergedTierOutcome(choice, tier);
       const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: closed below, once the patient's HP has landed too
       applyOutcomeEffects(merged);
       if (patient && peopleAboard().includes(patient)) {
@@ -6994,7 +7081,7 @@ function resolveChoice(choice) {
         if (after !== before) {
           setHP(patient, after);
           const d = after - before;
-          merged.narrative = (merged.narrative || '') + '\n\n' + PersonName(patient) + ', the worst case: ' + (d > 0 ? '+' : '') + d + ' HP.';
+          merged.narrative = (merged.narrative || '') + '\n\n' + PersonName(patient) + (d > 0 ? ' is patched up: +' + d + ' HP.' : ' comes out worse: ' + d + ' HP.');
         }
       }
       if (choice.launch_minigame === 'breach') pushAiSample('hull_breach');
@@ -7097,7 +7184,9 @@ function checkFailure(opts) {
   else if (captainHPOf() <= 0) type = STATE.crew.length ? 'captain_lost' : 'crew_gone';
   else if (crewMoraleAvg() === 0) type = 'mutiny'; // the crew AVERAGE at 0 (owner ruling 15); no crew, no mutiny
   else if (deprivationFailure()) type = deprivationFailure();
-  else if (STATE.daysElapsed > STATE.baseDays && !arriving) type = 'time_expired';
+  // Ruling 94: past the deadline the ship flies on and arrives late (the
+  // score pays for every day); the AI says so once (deadlineNotice).
+  else if (STATE.daysElapsed > STATE.baseDays) deadlineNotice();
   // Phase 4's Growbay now tracks real STATE.cropGrowth.health, so this
   // branch is genuinely reachable — but nothing currently decrements
   // health automatically (only the one-time seed at crop selection),

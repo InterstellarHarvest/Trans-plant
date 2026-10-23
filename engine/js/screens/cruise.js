@@ -471,10 +471,10 @@
     const slog = document.getElementById('overlay-shipslog');
     if (slog && slog.classList.contains('active')) window.renderShipsLog();
     const line = displayLine(text, voice);
-    // While stopped the log column is under the Stop menu: the AI's
-    // lines go up on the ticker instead (the entry still lands, so the
-    // log is whole on Resume).
-    if (voice && isStopped() && cruiseVisible()) tickerNews(line, { title: String(voice).toUpperCase(), description: String(text == null ? '' : text).replace(/^\s*[◆▶]\s*/, ''), tone: 'quote' });
+    // At a stop the log column is under the Stop menu: the AI says this
+    // stop's lines in a speech bubble over the ship (ruling 91). Lines
+    // pushed before the menu opens (tips, comments, warnings) wait for it.
+    if (voice) queueAiBubble(String(text == null ? '' : text).replace(/^\s*[◆▶]\s*/, ''), voice);
     const sticky = isAtBottom(log);
     finishTyping();
     log.querySelectorAll('.ai-entry.latest').forEach(e => e.classList.remove('latest'));
@@ -505,7 +505,7 @@
       if (window.PauseBus && PauseBus.paused) { t.timer = setTimeout(tick, 120); return; }
       span.textContent += line.charAt(i++);
       follow();
-      if (i < line.length) t.timer = setTimeout(tick, TYPE_MS);
+      if (i < line.length) t.timer = setTimeout(tick, TYPE_MS * (typeof textSpeedMult === 'function' ? textSpeedMult() : 1)); // pause menu TEXT SPEED
       else finishTyping();
     })();
     follow();
@@ -756,6 +756,8 @@
   $('crop-harvest-btn').addEventListener('click', harvestFromCard);
   // Stop Menu header LOG button → the Ship's Log (Bible §18 "📜 LOG").
   $('stop-log-btn').addEventListener('click', () => { window.openShipsLog(); });
+  // The AI bubble: a click anywhere on it dismisses (ruling 91).
+  if ($('ai-bubble')) $('ai-bubble').addEventListener('click', () => clearAiBubble());
   // Any readout cell opens the Orders modal (demo-orders.html's
   // cg-readout behavior — the whole strip is one click target).
   $('cruise-readout').addEventListener('click', () => {
@@ -1714,7 +1716,39 @@
     renderStopMenu();
     syncTicker();
     syncPaused();
+    syncAiBubble();
     wakeStars(); // decelerate to a stop
+  }
+
+  /* AI speech bubble (owner ruling 91): the AI's lines at a stop — first-run
+     tips, comments, warnings, callbacks — in a bubble with its portrait over
+     the ship view, the newest three. Click or × dismisses; RESUME clears it
+     (the lines stay in the log and the Ship's Log). */
+  const AI_BUBBLE_MAX = 3;
+  let aiBubbleLines = [];
+  function queueAiBubble(text, voice) {
+    if (!text) return;
+    aiBubbleLines.push({ text, voice });
+    if (aiBubbleLines.length > AI_BUBBLE_MAX) aiBubbleLines = aiBubbleLines.slice(-AI_BUBBLE_MAX);
+    syncAiBubble();
+  }
+  function clearAiBubble() { aiBubbleLines = []; syncAiBubble(); }
+  function syncAiBubble() {
+    const el = $('ai-bubble');
+    if (!el) return;
+    const show = aiBubbleLines.length > 0 && isStopped() && cruiseVisible();
+    el.classList.toggle('show', show);
+    if (!show) return;
+    const ai = STATE.activeAI || 'marv';
+    el.querySelector('.ai-bubble-avatar').style.backgroundImage = "url('" + (AI_SPRITE[ai] || AI_SPRITE.marv) + "')";
+    // Ruling 32: a line that names its own AI carries no name chip.
+    const named = aiBubbleLines.every(l => typeof namesTheAI === 'function' && namesTheAI(l.text));
+    const nameEl = el.querySelector('.ai-bubble-name');
+    nameEl.textContent = named ? '' : ai.toUpperCase();
+    nameEl.style.display = named ? 'none' : '';
+    const lines = el.querySelector('.ai-bubble-lines');
+    lines.innerHTML = '';
+    for (const l of aiBubbleLines) { const p = document.createElement('p'); p.textContent = l.text; lines.appendChild(p); }
   }
   function closeStopMenu() {
     document.querySelectorAll('#stop-choices .stop-choice.day-picker').forEach(collapseDayPicker);
@@ -1746,6 +1780,7 @@
       return;
     }
     closeStopMenu();
+    clearAiBubble(); // this stop's lines are said; the next stop has its own
     markUnderway();
     travelTo(nextIds[0]);
   }

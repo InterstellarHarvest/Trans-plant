@@ -907,6 +907,44 @@ window.PauseBus = PauseBus;
 const TP_SETTINGS_KEY = 'transplant:settings';
 const TP_SAVE_PREFIX  = 'transplant:save:';
 
+/* tpConfirm — the game's own yes/no dialog (the pause terminal's look), in
+   place of the browser's confirm(): a voyage about to be replaced, a filled
+   slot about to be overwritten, an incomplete crew. Resolves true on yes.
+   ESC or the backdrop says no; ENTER says yes. */
+function tpConfirm(opts) {
+  opts = opts || {};
+  return new Promise(resolve => {
+    const host = document.getElementById('game') || document.body;
+    const ov = document.createElement('div');
+    ov.className = 'tp-confirm-overlay' + (host === document.body ? ' fixed' : '');
+    ov.innerHTML =
+      '<div class="tp-confirm" role="alertdialog" aria-modal="true">' +
+        '<h2 class="pause-h' + (opts.danger ? ' danger' : '') + '"></h2>' +
+        '<p class="tp-confirm-msg"></p>' +
+        '<div class="pause-quit-actions">' +
+          '<button type="button" class="pause-btn' + (opts.danger ? ' pause-btn-danger' : '') + '" data-act="yes"></button>' +
+          '<button type="button" class="pause-btn" data-act="no"></button>' +
+        '</div>' +
+      '</div>';
+    ov.querySelector('h2').textContent = opts.title || 'ARE YOU SURE?';
+    ov.querySelector('.tp-confirm-msg').textContent = opts.message || '';
+    ov.querySelector('[data-act="yes"]').textContent = opts.yes || 'CONFIRM';
+    ov.querySelector('[data-act="no"]').textContent = opts.no || 'CANCEL';
+    const done = v => { document.removeEventListener('keydown', onKey, true); ov.remove(); resolve(v); };
+    const onKey = e => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); }
+      else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); done(true); }
+    };
+    document.addEventListener('keydown', onKey, true);
+    ov.addEventListener('click', e => { if (e.target === ov) done(false); });
+    ov.querySelector('[data-act="yes"]').addEventListener('click', () => done(true));
+    ov.querySelector('[data-act="no"]').addEventListener('click', () => done(false));
+    host.appendChild(ov);
+    ov.querySelector('[data-act="no"]').focus({ preventScroll: true });
+  });
+}
+window.tpConfirm = tpConfirm;
+
 function tpLoadSettings() {
   try { return JSON.parse(localStorage.getItem(TP_SETTINGS_KEY)) || {}; }
   catch (e) { return {}; }
@@ -1214,9 +1252,11 @@ const PauseMenu = (() => {
       '<div class="pause-slots">' +
         slots.map(s => {
           const empty = !s.blob;
-          const ts = empty ? '' : new Date(s.blob.ts || 0).toISOString().replace('T',' ').slice(0,16);
+          // Local time (it read UTC), and the ship's name so slots tell apart.
+          const d = new Date(s.blob ? (s.blob.ts || 0) : 0), p2 = x => String(x).padStart(2, '0');
+          const ts = empty ? '' : d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes());
           const label = empty ? 'EMPTY' : (inEngine && s.blob.v === 1
-            ? String(s.blob.trail || 'RUN').toUpperCase() + ' · DAY ' + Math.floor(s.blob.daysElapsed || 0)
+            ? (s.blob.shipName ? String(s.blob.shipName).toUpperCase() + ' · ' : '') + String(s.blob.trail || 'RUN').toUpperCase() + ' · DAY ' + Math.floor(s.blob.daysElapsed || 0)
             : (s.blob.label || 'SAVE'));
           return (
             '<div class="pause-slot' + (empty ? ' empty' : '') + '" data-slot="' + s.n + '">' +
@@ -1233,8 +1273,10 @@ const PauseMenu = (() => {
     w.querySelectorAll('.pause-slot').forEach(row => {
       const n = parseInt(row.dataset.slot, 10);
       const btn = row.querySelector('.pause-btn');
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
+        const filled = !!slots[n - 1].blob;
         if (btn.dataset.act === 'save') {
+          if (inEngine && filled && !(await tpConfirm({ title: 'OVERWRITE SLOT ' + n + '?', message: 'The voyage saved there will be replaced.', yes: 'OVERWRITE', danger: true }))) return;
           if (inEngine) {
             if (!window.saveRun(TP_SAVE_PREFIX + n)) {
               toast((typeof window.saveBlockedReason === 'function' && window.saveBlockedReason()) || 'SAVE UNAVAILABLE — RETURN TO CRUISE');
@@ -1249,6 +1291,9 @@ const PauseMenu = (() => {
         } else {
           if (btn.disabled) return;
           if (inEngine) {
+            // A voyage under way is replaced by the slot (its autosave too).
+            const live = typeof STATE !== 'undefined' && STATE.trail && STATE.nodes && STATE.nodes.length && !STATE.ended;
+            if (live && !(await tpConfirm({ title: 'LOAD SLOT ' + n + '?', message: 'The voyage you are flying now will be replaced. Anything since its last save is lost.', yes: 'LOAD', danger: true }))) return;
             if (window.loadRun(TP_SAVE_PREFIX + n)) close();
             else toast('LOAD FAILED — SLOT IS NOT A RUN SAVE');
           } else {

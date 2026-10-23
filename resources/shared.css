@@ -930,3 +930,10 @@ html, body { cursor: var(--cursor-pointer, default); }
   font-family: 'VT323', monospace; font-size: 32px;
   color: rgba(232,216,160,0.35); font-style: normal;
 }
+
+/* tpConfirm — the game's yes/no dialog (shared.js), the pause terminal's look. */
+.tp-confirm-overlay { position: absolute; inset: 0; z-index: 100001; background: rgba(2,4,8,0.78); display: flex; align-items: center; justify-content: center; }
+.tp-confirm-overlay.fixed { position: fixed; }
+.tp-confirm { min-width: 360px; max-width: 520px; padding: 22px 26px; background: var(--pause-bg); border: 2px solid var(--pause-bezel-edge); box-shadow: 0 0 0 1px rgba(200,168,90,0.35), 0 8px 30px rgba(0,0,0,0.7); color: var(--pause-amber-bright); }
+.tp-confirm .pause-h { margin: 0 0 10px; }
+.tp-confirm-msg { font-family: 'VT323', monospace; font-size: 19px; line-height: 1.3; margin: 0 0 16px; color: var(--pause-amber-bright); white-space: pre-line; }
