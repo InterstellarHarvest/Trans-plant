@@ -1861,6 +1861,8 @@ const STATE = {
   pityRelief:   0,          // legs remaining where difficulty weights favor easy/medium
   eventLastStop: {},        // repeatable event id → the stop it last fired at (repeat cooldown)
   tipsShown:    [],         // first-run tips already said this run (ruling 87)
+  eventDraws:   {},         // firings per event with alt_bodies (ruling 90)
+  bodyPick:     0,          // this firing's opening (0 = the authored body; ruling 90)
   plaidLegs:    0,          // drive heat: PLAID legs, cooled one per slower leg (engine_strain, ruling 83)
   engineStrain: false,      // a strain roll came up: the next stop draws an engine_strain event (ruling 83)
   crafted:      {},         // item id → copies aboard that the fabricator printed (ruling 79: a station pays their materials' value)
@@ -1903,6 +1905,7 @@ const SAVED_FIELDS = [
   'itemValues', // trade goods: each copy's value, rolled at pickup
   'itemPickups', 'itemSeq', // inventory: each copy's NEW flag + pickup order (Recent sort), and the counter
   'materialPickups', // inventory: each material stack's NEW flag + last pickup (Recent sort) — same counter
+  'eventDraws', // ruling 90: firings per event with alt_bodies (which opening comes next)
   'artSeed', // scene_art.js picks backdrop + NPC-face variants from it: a reload shows the same images
   'passengers', // rescued survivors riding to the next station
   'stationVisit', // station approach: this stop's rolls (hail-first, fee), drawn event, docked / waved off
@@ -1983,7 +1986,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, engineStrain: () => false, tipsShown: () => [], itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, engineStrain: () => false, tipsShown: () => [], eventDraws: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2084,7 +2087,7 @@ function loadRun(key) {
   // same layer — they're in the snapshot).
   const pe = snap.pendingEvent && EVENTS[snap.pendingEvent];
   STATE._shoppedThisEvent = !!(pe && snap.pendingShopped); // walking off still costs the haggling day
-  if (pe && STATE.byId[STATE.currentId]) enterEvent(STATE.byId[STATE.currentId], pe, { variantIndex: snap.pendingVariant, layerStack: snap.pendingLayers, layerVisits: snap.pendingVisits, speaker: snap.pendingSpeaker });
+  if (pe && STATE.byId[STATE.currentId]) enterEvent(STATE.byId[STATE.currentId], pe, { variantIndex: snap.pendingVariant, bodyPick: snap.pendingBodyPick, layerStack: snap.pendingLayers, layerVisits: snap.pendingVisits, speaker: snap.pendingSpeaker });
   return true;
 }
 
@@ -2225,7 +2228,7 @@ function applySetupToState(sel) {
   // Every other per-run field starts clean too (a run started in-page
   // after another used to inherit its log, fabricator, sectors…).
   STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
-  STATE.postCombatLegs = 0; STATE.plaidLegs = 0; STATE.engineStrain = false; STATE.tipsShown = []; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
+  STATE.postCombatLegs = 0; STATE.plaidLegs = 0; STATE.engineStrain = false; STATE.tipsShown = []; STATE.eventDraws = {}; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.lastAmbientNode = null; STATE.alertedNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.goneNames = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0; STATE.eventLastStop = {};
@@ -3602,6 +3605,16 @@ function eventEligible(ev, node, triggers) {
     return evTriggers.some(t => triggers.has(t));
 }
 
+const CRISIS_POOL_CAP = 3;
+function crisisShare(ev, triggers, candidates) {
+  let best = 0;
+  for (const t of ev.trigger || []) {
+    if (t === 'any' || t === 'journey_start' || t === 'journey_end' || !triggers.has(t)) continue;
+    const n = candidates.filter(c => (c.trigger || []).includes(t)).length;
+    best = Math.max(best, Math.min(1, CRISIS_POOL_CAP / Math.max(1, n)));
+  }
+  return best || 1;
+}
 function drawWeightedEvent(candidates, triggers, baseWeights, branch) {
   const chosen = weightedDraw(candidates, ev => {
     const tier = Array.isArray(ev.difficulty) ? ev.difficulty[0] : (ev.difficulty || 'medium');
@@ -3618,7 +3631,10 @@ function drawWeightedEvent(candidates, triggers, baseWeights, branch) {
     // run (found during the pool-content verification pass).
     const isCrisis = evTriggers.some(t => t !== 'any' && t !== 'journey_start' && t !== 'journey_end' && triggers.has(t));
     const isPositional = !isCrisis && evTriggers.some(t => (t === 'journey_start' || t === 'journey_end') && triggers.has(t));
-    if (isCrisis) w *= 15;      // likely, not guaranteed — normal content can still surface
+    // likely, not guaranteed — normal content can still surface. Ruling 90:
+    // a situation's events share one pull (CRISIS_POOL_CAP events' worth),
+    // so a fuller pool brings variety, not more crisis scenes.
+    if (isCrisis) w *= 15 * crisisShare(ev, triggers, candidates);
     else if (isPositional) w *= 3;
     return w;
   });
@@ -4763,6 +4779,10 @@ function enterEvent(node, ev, opts) {
   STATE.variantIndex = (opts && Number.isInteger(opts.variantIndex)) ? opts.variantIndex
     : (ev.standard_variants && ev.standard_variants.length)
     ? Math.floor(Math.random() * ev.standard_variants.length) : 0;
+  // Alternate openings (ruling 90): which telling of the opening this
+  // firing shows — held for every re-render and saved with the in-event
+  // save, so a reload shows the same one.
+  STATE.bodyPick = (opts && Number.isInteger(opts.bodyPick)) ? opts.bodyPick : nextBodyPick(ev);
   saveEventProgress();
 
   // The delayed-crisis patient belongs to the crisis event alone.
@@ -4788,11 +4808,34 @@ function enterEvent(node, ev, opts) {
    layers the player stands (written at entry and at every layer step,
    before the new layer paints — so the visit set is the one that layer
    was entered with). An outcome overwrites it with a hub save. */
+/* Alternate openings (owner ruling 90): an event's `alt_bodies` are other
+   tellings of its opening (a flat event's body, a layered event's entry
+   layer body). Pick 0 is the authored body. Each run starts the rotation
+   at its own place (seeded on the art seed, so runs differ), and every
+   later firing in the run moves one along, so a repeat reads differently.
+   STATE.eventDraws counts the firings (saved). */
+function nextBodyPick(ev) {
+  const alts = Array.isArray(ev.alt_bodies) ? ev.alt_bodies : null;
+  if (!alts || !alts.length) return 0;
+  const n = alts.length + 1;
+  STATE.eventDraws = STATE.eventDraws || {};
+  const k = STATE.eventDraws[ev.id] || 0;
+  STATE.eventDraws[ev.id] = k + 1;
+  const picks = Array.from({ length: n }, (_, i) => i);
+  const start = (window.SceneArt && SceneArt.stablePick) ? SceneArt.stablePick('body:' + ev.id, picks) : 0;
+  return (start + k) % n;
+}
+function openingBody(ev, layerId, body) {
+  const i = STATE.bodyPick || 0;
+  if (!i || !Array.isArray(ev.alt_bodies) || !ev.alt_bodies[i - 1]) return body;
+  const entry = ev.layers ? (ev.entryLayer || Object.keys(ev.layers)[0]) : null;
+  return (!ev.layers || layerId === entry) ? ev.alt_bodies[i - 1] : body;
+}
 function saveEventProgress() {
   const ev = STATE.currentEvent;
   if (!ev || STATE.ended || !STATE.trail || !STATE.nodes.length) return;
   STATE._evSave = {
-    pendingEvent: ev.id, pendingVariant: STATE.variantIndex,
+    pendingEvent: ev.id, pendingVariant: STATE.variantIndex, pendingBodyPick: STATE.bodyPick || 0,
     pendingLayers: STATE.layerStack ? STATE.layerStack.slice() : null,
     pendingVisits: Object.keys(STATE._layerVisits || {}),
     pendingSpeaker: STATE.eventSpeaker || null,
@@ -5178,9 +5221,8 @@ function renderEncounterState(opts) {
   // Revisit variants (demo machinery): returning to a layer already
   // seen this entry swaps in its `revisit` overrides (body/line/ai).
   const layerId = ev.layers && STATE.layerStack ? STATE.layerStack[STATE.layerStack.length - 1] : null;
-  if (layer && layer.revisit && STATE._layerVisits && STATE._layerVisits[layerId]) {
-    layer = Object.assign({}, layer, layer.revisit);
-  }
+  const revisited = !!(layer && layer.revisit && STATE._layerVisits && STATE._layerVisits[layerId]);
+  if (revisited) layer = Object.assign({}, layer, layer.revisit);
   // Station approach: the layer as this visit has it (dockmaster on the
   // comms or not, the parking fee, the dock's rooms) — station.js.
   if (layer && ev.station_approach && window.StationVisit) layer = StationVisit.approachLayer(layerId, layer);
@@ -5205,6 +5247,8 @@ function renderEncounterState(opts) {
   }
 
   let body    = layer ? layer.body : ev.body;
+  // This firing's telling of the opening (ruling 90); a revisit keeps its own text.
+  if (!revisited) body = openingBody(ev, layerId, body);
   // body_by_speaker: the narrator line that depends on who's talking
   // (role → body; "any" covers the rest).
   if (layer && layer.body_by_speaker && STATE.eventSpeaker) body = layer.body_by_speaker[STATE.eventSpeaker] || layer.body_by_speaker.any || body;

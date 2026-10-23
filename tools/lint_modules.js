@@ -1300,6 +1300,32 @@ const hardChoiceCost = (() => {
   }
 }
 
+// ── Alternate openings (ruling 90) ─────────────────────────────────
+// alt_bodies are other tellings of an event's opening (flat body, or the
+// entry layer's body). They must carry the same {tokens} (same facts the
+// choices rely on), state no figures, keep narration free of "!", and be
+// within the original's length range so the panel doesn't overflow.
+{
+  const toks = t => [...new Set(String(t).match(/\{[a-z_.]+\}/g) || [])].sort().join(',');
+  for (const [id, { event: ev }] of eventsById) {
+    if (ev.alt_bodies === undefined) continue;
+    const entry = ev.layers ? ev.layers[ev.entryLayer || Object.keys(ev.layers)[0]] : null;
+    const orig = entry ? entry.body : ev.body;
+    if (!Array.isArray(ev.alt_bodies) || !ev.alt_bodies.length) { err(`${id}: alt_bodies must be a non-empty list`); continue; }
+    if (typeof orig !== 'string' || !orig.trim()) { err(`${id}: alt_bodies on an event with no opening body`); continue; }
+    const seen = new Set([orig]);
+    ev.alt_bodies.forEach((b, i) => {
+      const at = `${id}: alt_bodies[${i}]`;
+      if (typeof b !== 'string' || !b.trim()) return err(`${at} is blank`);
+      if (seen.has(b)) err(`${at} repeats another opening`); seen.add(b);
+      if (toks(b) !== toks(orig)) err(`${at} tokens ${toks(b) || 'none'} ≠ the opening's ${toks(orig) || 'none'}`);
+      if (/\d/.test(b.replace(/\{[^}]*\}/g, ''))) err(`${at} states a figure (the preview shows the real ones)`);
+      if (b.includes('!')) err(`${at}: "!" in narration (only ARIA and CHIP use it)`);
+      if (b.length < orig.length * 0.5 || b.length > orig.length * 1.6 + 40) err(`${at} is ${b.length} chars against the opening's ${orig.length}`);
+    });
+  }
+}
+
 // ── Arrival lines + tier quotes (added 2026-10-11) ─────────────────
 // endings.json's { _section: 'arrival_lines' } entry (index.html moves it
 // to MOD.endingLines; endings.js reads it): every trail × every crop (+
