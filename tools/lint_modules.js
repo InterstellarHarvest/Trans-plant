@@ -225,6 +225,9 @@ for (const file of eventFiles) {
     // Engine-contract field validation on choices (both schemas).
     for (const { layer, choices } of choiceSets) {
       for (const ch of choices) {
+        // Forage shows its food haul but an event outcome never applies it (the
+        // FORAGE stop verb does): from an event the screen would mislead.
+        if (ch.launch_minigame === 'forage') err(`${file} ${ev.id}${layer ? '/' + layer : ''}: launch_minigame "forage" from an event shows a haul it never pays — use the FORAGE stop verb's game elsewhere`);
         if (ch.launch_minigame && !MINIGAME_IDS.has(ch.launch_minigame)) {
           err(`${file} ${ev.id}${layer ? '/' + layer : ''}: launch_minigame "${ch.launch_minigame}" is not a valid minigame id (${[...MINIGAME_IDS].join('/')})`);
         }

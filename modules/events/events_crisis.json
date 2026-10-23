@@ -4895,5 +4895,1874 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_crisis_033",
+    "active": true,
+    "title": "Property of the Lane Authority",
+    "difficulty": "medium",
+    "tone": [
+      "corporate",
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_fuel"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A buoy! Full of fuel! Just floating there! ARIA is sure the Lane Authority would WANT us to have it! ARIA has not asked them!",
+      "marv": "MARV has read the plate. Tampering is an offence. MARV has also read the fuel gauge, which describes a larger offence, and one the vacuum will fine us for.",
+      "rex": "REX notes the buoy is unarmed, unmanned and unwatched. He says this in the tone of a man who hopes you will not ask him what he means by it.",
+      "chip": "CHIP is pleased to report the buoy accepts all major payment methods! The emergency tariff is very reasonable, for an emergency! That's what makes it an emergency tariff!",
+      "ajoy": "AJOY has the lane chart up. If the marker drifts, the next ship through here is a freighter, a few weeks behind you. She just thought you should know who it's for."
+    },
+    "body": "A navigation buoy drifts off the bow, blinking its lane marker into the dark for anyone who might be lost.\n\nIt is a squat, sensible machine with a reserve tank to keep its station-keeping thrusters lit for longer than anyone aboard will live, and a plate riveted to its side: PROPERTY OF THE LANE AUTHORITY. TAMPERING IS AN OFFENCE. IN AN EMERGENCY, CALL THE NUMBER BELOW.\n\nThe number below has been scratched off. Underneath, in marker, someone has written: 'they don't pick up.'\n\nThe buoy's reserve tank is full. Yours is not.",
+    "choices": [
+      {
+        "text": "Drain the buoy dry",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 14,
+            "morale": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You dock with the buoy and empty its reserve into your own tank. The gauge climbs out of the danger band. Behind you the lane marker flickers, steadies, and begins to drift, a little further off its mark with every hour, for whoever comes along the lane next. Nobody aboard says anything about it. Everybody watches it go."
+        }
+      },
+      {
+        "text": "Pay the Lane Authority's emergency tariff",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 15
+        },
+        "outcome": {
+          "resources": {
+            "fuel": 12,
+            "gold": -15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The buoy has a payment slot, of course. You feed it the tariff and it releases a measured, receipted share of its reserve, prints a thank-you message to your console and goes back to blinking. The fuel is entirely legal. The receipt says so, twice."
+        }
+      },
+      {
+        "text": "Bleed off only what it can spare",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "bypass",
+        "outcome": {
+          "resources": {
+            "fuel": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.engineer} talks the buoy's tank controller into running a maintenance purge, the kind it does on schedule anyway, and catches the purge in your lines instead of letting it vent. The buoy loses nothing it would have kept. The lane stays marked. The gauge rises less than anyone hoped, and enough to matter."
+        }
+      },
+      {
+        "text": "Leave it blinking",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the buoy to its work. The lane stays lit behind you, a small steady light for the next ship that comes this way short on luck, and the crew is quietly glad of it. The fuel gauge is exactly as worrying as it was."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_034",
+    "active": true,
+    "title": "Water Is Also Propellant",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_fuel"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Water is fuel! Fuel is water! Everything is everything! ARIA has never been prouder of chemistry!",
+      "marv": "MARV confirms the chemistry. Every litre split for the drive is a litre nobody drinks. He has put both gauges side by side so nobody can pretend otherwise.",
+      "rex": "REX approves of fuel that cannot be stolen, because you are already carrying it. He would like to stop thinking about where else that logic leads.",
+      "chip": "CHIP reminds you that HydroBurn™ electrolysis is a premium feature! Your ship came with it anyway! CHIP is investigating how that happened!",
+      "ajoy": "AJOY checked the electrolysers last night. They work. She hasn't run them. Splitting the drinking water felt like your call."
+    },
+    "body": "The ship computer has found fuel. It is in the water tank.\n\nSplit water with enough electricity and you get hydrogen and oxygen, which is what the reserve thrusters burn on a bad day. The computer has drawn a diagram to explain this. The diagram has a cartoon droplet on it, smiling, walking cheerfully into the engine.\n\nNobody likes the droplet.",
+    "choices": [
+      {
+        "text": "Crack water into propellant",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 10,
+            "water": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The electrolysers run through the night, splitting water into gas and piping the gas aft. The fuel gauge climbs. {cost.water} points of water went into it, and the cartoon droplet is removed from the diagram by popular request."
+        }
+      },
+      {
+        "text": "Burn some breathing reserve as oxidiser",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 7,
+            "o2": -7
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You bleed reserve oxygen into the thruster feed, where it burns a clean, eager blue that would be very beautiful if it were not the air. The fuel gauge rises. Everyone breathes a little more carefully afterwards, which is, on reflection, the point."
+        }
+      },
+      {
+        "text": "The pilot flies the leg on attitude jets",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 2,
+        "outcome": {
+          "resources": {
+            "fuel": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.pilot} shuts down the main drive and flies the leg on attitude jets and patience, nudging the ship along the cheapest line there is. It saves fuel. It costs the pilot a night's sleep and their entire opinion of attitude jets."
+        }
+      },
+      {
+        "text": "Leave the water where it is",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep the water for drinking. The droplet goes back in its folder. The fuel arithmetic stays on the screen a while longer, unchanged, as if waiting for you to change your mind."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV attaches the chemistry: water splits into hydrogen and oxygen with enough electricity, and serious mission plans would refuel spacecraft from ice found along the way.",
+      "label": "Splitting water",
+      "url": "https://en.wikipedia.org/wiki/Electrolysis_of_water"
+    }
+  },
+  {
+    "id": "event_crisis_035",
+    "active": true,
+    "title": "Falling Past a Giant",
+    "difficulty": "medium",
+    "tone": [
+      "cosmic",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_fuel"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "deep_void",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "It's SO BIG! And it's going to throw us! For FREE! ARIA loves a planet that gives back!",
+      "marv": "MARV has the closest approach timed to the second. He would like it on record that the second is quite short and the planet is quite hard.",
+      "rex": "REX has flown slingshots before. He does not describe them. He tightens his harness and recommends everyone do the same.",
+      "chip": "CHIP reminds you that gravity is provided free of charge by the planet and is not a CHIP product! CHIP is looking into that!",
+      "ajoy": "AJOY says burn at the bottom of the fall, not before. Everyone burns before. She says it gently, the way you tell someone where the step is."
+    },
+    "body": "A gas giant hangs off the starboard bow, banded in rust and cream, too large for the viewport to hold.\n\nSwing close past something that heavy and you borrow a little of its momentum for free. Fire the engines at the bottom of the fall, at the very closest point, and the same burn buys far more speed than it would anywhere else. The manual calls this efficient. It calls the closest point 'the part where timing matters.'\n\nThe planet does not care whether you time it. It is very large and has never needed to.",
+    "choices": [
+      {
+        "text": "Time the burn at the bottom of the fall",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "launch_minigame": "scan",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "fuel": 12
+            },
+            "narrative": "The burn lights at the deepest point of the fall, to the second, and the ship comes out the far side of the giant flung onto its heading like a stone from a sling. The tank barely noticed. The planet, receding, looks exactly as unimpressed as before."
+          },
+          "good": {
+            "resources": {
+              "fuel": 7
+            },
+            "narrative": "Close enough. The burn lights a shade late, past the bottom of the fall, and buys less than a perfect one would have. It still buys plenty. The giant shrinks behind you, still banded, still enormous, still not interested."
+          },
+          "poor": {
+            "resources": {
+              "fuel": -3,
+              "hull": -4
+            },
+            "narrative": "The burn lights early, high on the fall, and the ship spends fuel shoving against the very gravity it came to borrow. You skim lower to make up for it, through the edge of the cloud tops, and come out with less fuel than you went in with and the paint scoured off the belly."
+          }
+        },
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You take the ship down toward the cloud tops and wait for the moment."
+        }
+      },
+      {
+        "text": "Take the long, lazy orbit",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "high",
+          "narrative": "You let the giant take its time with you: a wide, patient loop, no burn to speak of, the planet's pull doing all the work. It is free fuel, paid for in days. The giant fills the viewport for so long that the crew stops looking at it, which nobody would have believed at the start."
+        }
+      },
+      {
+        "text": "The pilot flies the fall by hand",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "calibration",
+        "outcome": {
+          "resources": {
+            "fuel": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.pilot} flies the fall by hand, so low that the cloud tops slide past like a floor, and lights the burn at the bottom without once looking at the computer. The ship comes out on its heading with fuel to spare. The pilot spends the evening explaining how easy it was to anyone within range."
+        }
+      },
+      {
+        "text": "Skim the cloud tops with the intakes open",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 12,
+            "hull": -8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You drop into the giant's upper atmosphere with the intakes open and scoop hydrogen like a whale taking krill. It works. The tank fills. The hull, which was never designed for weather of any kind, comes out the other side scorched, buffeted and a good deal thinner in places."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV appends the physics: a burn made at the lowest, fastest point of a fall buys the most speed, the Oberth effect, and real probes pair it with gravity assists past giant planets.",
+      "label": "The Oberth effect",
+      "url": "https://en.wikipedia.org/wiki/Oberth_effect"
+    }
+  },
+  {
+    "id": "event_crisis_036",
+    "active": true,
+    "title": "Feed Grade",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_food"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_exterior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Oats! Mostly! ARIA thinks 'mostly' is a lovely word! It leaves room for surprises!",
+      "marv": "MARV has read the label twice. The calories are real. The 'something else' is listed as 'binder'. MARV has elected not to look it up.",
+      "rex": "REX has scanned the freighter. It is a cattle bus with a drive. REX stands down, slightly offended to have been asked.",
+      "chip": "CHIP notes that NutriLoaf™ is also mostly oats! NutriLoaf™ costs more! That's the NutriLoaf™ difference!",
+      "ajoy": "AJOY has checked the pellets against the medical database. They won't hurt anyone. She would still fry them."
+    },
+    "body": "A bulk freighter overtakes you on the lane, hails, and asks whether you would like to buy some feed.\n\nIt is hauling animal fodder to a ranching colony: pressed pellets, sealed by the tonne, stamped NOT FOR HUMAN CONSUMPTION on the front and, in smaller letters on the back, BUT IT WON'T KILL YOU. The freighter's master has seen your drive plume and done the arithmetic everyone does when they see a ship running lean.\n\n'It's mostly oats,' they say. 'And something else. Mostly oats.'",
+    "choices": [
+      {
+        "text": "Buy a pallet, fair and square",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 12
+        },
+        "outcome": {
+          "resources": {
+            "food": 12,
+            "gold": -12
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You pay, they pass a pallet across on a line, and the galley fills with a smell that is mostly oats. Fried, it is edible. Fried with salt, it is nearly good. The ranching colony will never know what it lost."
+        }
+      },
+      {
+        "text": "Swap fuel for feed",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 10,
+            "fuel": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Out here the freighter's master would rather have fuel than gold. You pump some across and a pallet comes back the other way. The pellets are mostly oats. The fuel was entirely fuel. It seemed like a fair trade at the time, and may yet."
+        }
+      },
+      {
+        "text": "Lend them the engineer for a shift",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 2,
+        "outcome": {
+          "resources": {
+            "food": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.engineer} spends a long shift aboard the freighter fixing a cargo crane that has been jammed since the last colony, and comes back smelling of hydraulic fluid and oats, towing a pallet of feed as payment. Fair's fair, says the master. Mostly oats."
+        }
+      },
+      {
+        "text": "Thank them and decline",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You thank the freighter and decline. It pulls ahead, unhurried, carrying enough fodder for a whole ranch, and the galley goes back to counting what's left. Somebody mentions the oats at dinner. Nobody laughs."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_037",
+    "active": true,
+    "title": "Something in the Flour",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_food"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "bg": "our_ship/cargo",
+    "ai_flavor": {
+      "aria": "The flour is ALIVE! That's basically sourdough! ARIA has named the biggest one!",
+      "marv": "MARV has estimated the weevil population. He will not share the figure. He will say it is larger than the crew, by a margin that is not close.",
+      "rex": "REX has declared the dry stores a hostile position. He has not yet worked out how a person surrenders to a beetle.",
+      "chip": "CHIP's records show the grain was certified pest-free at loading! The certificate is also in the sack! It has been partly eaten!",
+      "ajoy": "AJOY noticed the sacks settling weeks ago and assumed it was the grain. It wasn't the grain. She's sorry she didn't look."
+    },
+    "body": "The dry stores are moving.\n\nWeevils: small, brown, patient beetles that came aboard as eggs inside the grain and have spent the voyage turning the reserve sacks into something that looks like flour and is mostly beetle. They are not dangerous. They are simply everywhere, they have eaten a real share of what was left, and they are still going.\n\nWhat remains can be saved. None of the ways of saving it are pleasant.",
+    "choices": [
+      {
+        "text": "Sift it, bake it, call it protein",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 8,
+            "morale": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You sift out what can be sifted and bake the rest, weevils included, into a dense brown bread that is, as the ship computer points out, higher in protein than it has ever been. The stores stretch. Dinner is eaten in a silence that has a texture."
+        }
+      },
+      {
+        "text": "Heat-treat the sacks against the drive",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 6,
+            "fuel": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You stack the sacks against the drive housing and run it warm for days, until nothing in the flour is alive to argue. Heat is the old cure for weevils, and it works, at the price of the fuel it took to make the heat and the days it took to wait. What comes out is plain, sifted, entirely dead flour. It has never looked so good."
+        }
+      },
+      {
+        "text": "The chef makes a feature of it",
+        "requires_crew": "chef",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 3,
+        "outcome": {
+          "resources": {
+            "food": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.chef} declares the weevils an ingredient, roasts them separately with salt and the last of the paprika, and serves them beside the bread like croutons. It takes a long day in the galley and a great deal of persuasion. By the end of the week people are asking for extra."
+        }
+      },
+      {
+        "text": "Space the lot and start clean",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -4,
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Every sack goes out of the airlock, beetles and all, and the hold is scrubbed down to the metal. Nobody has to eat a weevil. The stores are {cost.food} points of food smaller, and the captain who gave the order is, for one evening, extremely popular."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "AJOY attaches the reference: grain weevils lay their eggs inside the kernels, so a sealed sack can hatch its own infestation, and heat or deep cold is how stored grain is treated.",
+      "label": "The wheat weevil",
+      "url": "https://en.wikipedia.org/wiki/Wheat_weevil"
+    }
+  },
+  {
+    "id": "event_crisis_038",
+    "active": true,
+    "title": "Green, Lightly Salted",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_food"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "It's a SALAD! A liquid salad! ARIA has always wanted to drink a salad!",
+      "marv": "MARV confirms the culture is edible, nutritious and able to keep a crew alive. He has also read the tasting notes. He recommends salt.",
+      "rex": "REX has eaten worse in the field. He does not specify. Nobody asks him to.",
+      "chip": "CHIP notes that GreenGains™ algae smoothies sell for a fortune on Earth! You have a whole tank! CHIP is drafting a franchise agreement!",
+      "ajoy": "AJOY has been giving the culture a little extra light for weeks. In case. She didn't think it would be in case of this, but here we are."
+    },
+    "body": "Behind the life-support panel, in a tank nobody has opened since launch, the backup algae culture has been quietly doing its job: drinking light, breathing out oxygen, and growing.\n\nIt has grown a great deal. It is a thick, bright, faintly alarming green, and according to the manual it is also food: complete protein, vitamins, everything a body needs, in a form no body has ever wanted.\n\nThe tank's maintenance tag reads HARVEST IF REQUIRED. It is required.",
+    "choices": [
+      {
+        "text": "Skim the tank down to the glass",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 8,
+            "o2": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You skim the culture down to the glass. It comes out as a green paste with the texture of wet felt and a taste best described as 'pond'. It is extremely nutritious. With the culture cut back, the backup air supply makes less backup air, and the O2 gauge says so."
+        }
+      },
+      {
+        "text": "Crop it a little each day",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You crop the culture a little each day, never more than it can replace, so the tank keeps breathing while it feeds you. It is slow, careful farming of the least appetising crop aboard. It costs days. It costs nothing else."
+        }
+      },
+      {
+        "text": "Feed it to the growbay instead",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "crop": "alive"
+        },
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Algae makes a fine fertiliser. You stir a bucket of it into the growbay's soil loop and the plants perk up within the day. The galley is no fuller, but the crop is thriving, and the crop is the reason anybody is out here.",
+          "crop_health": 6
+        }
+      },
+      {
+        "text": "Leave it to make air",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You close the panel. The culture goes on doing what it was put there to do. The air stays good, the stores stay low, and the green tank glows faintly behind its panel like a pantry somebody locked."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV attaches the reference: green algae such as chlorella have been studied for decades as a way to feed a crew and refresh its air at the same time.",
+      "label": "Chlorella, food and air",
+      "url": "https://en.wikipedia.org/wiki/Chlorella"
+    }
+  },
+  {
+    "id": "event_crisis_039",
+    "active": true,
+    "title": "The Coolant Is Water",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_water"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "bg": "our_ship/engine_error",
+    "ai_flavor": {
+      "aria": "There's water in the engine! The engine has been HIDING water! ARIA feels betrayed and also thirsty!",
+      "marv": "MARV has the coolant loop's volume. It would help. He also has the drive's temperature without it. That would not.",
+      "rex": "REX advises against draining coolant in a hostile sector. He has checked. The sector's only hostile feature is the thirst.",
+      "chip": "CHIP reminds you that CoolFlow™ coolant is rated for 'incidental contact'! CHIP is checking whether drinking it counts as incidental!",
+      "ajoy": "AJOY says the loop can spare some, not all. She knows exactly how much. She'll tell whoever is holding the valve."
+    },
+    "body": "Someone has noticed that the drive's coolant loop is, chemically speaking, mostly water.\n\nIt is filtered, deionised, treated and plumbed through the hottest parts of the ship, and there is a good deal of it. The manual says the loop must never be drawn down in flight. Everybody's dry mouth says otherwise.\n\nTake water from the loop and the drive runs hotter. Something will have to give: the pace, the hull, or the argument.",
+    "choices": [
+      {
+        "text": "Draw it down and ease off to LIGHT SPEED",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You draw off what the loop can lose and drop the drive to LIGHT SPEED, where it runs cool enough not to miss it. The tanks are fuller. The ship is slower, and will stay slower until you decide to risk it again. The stars, as usual, are in no hurry either.",
+          "set_orders": {
+            "pace": "light"
+          }
+        }
+      },
+      {
+        "text": "Draw it down and keep the pace",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 10,
+            "hull": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You draw off the coolant and leave the drive at speed. It runs hot, then hotter, and the frame around the drive housing pays for it, warping and ticking its way through the leg. The tanks are fuller. The aft bulkheads have a new curve to them."
+        }
+      },
+      {
+        "text": "Swap in the reserve coolant",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "pressure_gauge",
+        "outcome": {
+          "resources": {
+            "water": 7
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.engineer} isolates a section of the loop, drains it into the drinking tank and backfills it from reserve coolant canisters nobody remembered were aboard. The gauges argue for an afternoon, then settle. The drive never notices. The water tastes faintly of metal and is very welcome.",
+          "scene_bg": "our_ship/engine_fixed"
+        }
+      },
+      {
+        "text": "Leave the loop alone",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the coolant where the manual wants it. The drive runs cool and sweet and indifferent, and the water tanks stay where they were, which is low. Everyone drinks a little less and looks at the coolant pipes a little more."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV appends the reference: water is one of the best coolants there is, which is why so many reactors and engines run on it, and why taking it out has consequences.",
+      "label": "Water as a coolant",
+      "url": "https://en.wikipedia.org/wiki/Coolant"
+    }
+  },
+  {
+    "id": "event_crisis_040",
+    "active": true,
+    "title": "Water from the Fuel Cells",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_water"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The power units make WATER! And we've been throwing it away! ARIA is going to drink a glass of electricity!",
+      "marv": "MARV has the exchange rate: fuel in, water out, a little warmth for the trouble. He would call it poor, if the alternative were not worse.",
+      "rex": "REX approves of a system that makes its own drinking water. He has opinions about who left the box unticked. He is holding them in reserve.",
+      "chip": "CHIP notes that RECOVER was a premium setting in the original configuration! It has been unlocked as a goodwill gesture! The goodwill invoice follows!",
+      "ajoy": "AJOY ticked that box at launch. Someone unticked it. She has an idea who. She is not going to say."
+    },
+    "body": "The auxiliary power units are fuel cells, and fuel cells have a side effect the ship computer has only now thought to mention.\n\nFeed them hydrogen and oxygen and they make electricity, a little heat, and water: pure, clean, warm water, trickling out of an exhaust line into a waste tank that has been venting it overboard since launch, because nobody ticked the box marked RECOVER.\n\nThe box is now ticked. The question is how hard to run them.",
+    "choices": [
+      {
+        "text": "Run the cells flat out",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 10,
+            "fuel": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You run the auxiliary cells flat out and route the exhaust into the drinking tank. Water trickles in, warm and pure and faintly smug. The fuel it took to make it is gone for good. On balance, it is easier to fly slowly than to fly thirsty."
+        }
+      },
+      {
+        "text": "Let them tick over through the night",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 5,
+            "fuel": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You let the cells tick over through the night shift, sipping fuel and dripping water, and by morning the tank is a little fuller and the fuel gauge has barely moved. It is the most restful fix anyone aboard has ever made."
+        }
+      },
+      {
+        "text": "Run a fuel cell from cargo through them",
+        "requires_crew": null,
+        "requires_item": "fuel_cell",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 12
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "fuel_cell",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You plug a spare fuel cell from cargo into the auxiliary loop and let its whole charge run through into water. The cell comes out empty and the tank comes out fuller. It is, technically, the most expensive drink in the sector. Nobody minds."
+        }
+      },
+      {
+        "text": "Keep the cells on standby",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the fuel cells on standby. The water stays low, the fuel stays in the fuel tank where the manual likes it, and the box marked RECOVER stays ticked, for whatever good it does a machine that isn't running."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV attaches the history: the fuel cells that powered the Apollo spacecraft and the Space Shuttle made the crew's drinking water as a by-product.",
+      "label": "Fuel cells and their water",
+      "url": "https://en.wikipedia.org/wiki/Alkaline_fuel_cell"
+    }
+  },
+  {
+    "id": "event_crisis_041",
+    "active": true,
+    "title": "Oxygen Candles",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_o2"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crew_aboard": true,
+    "ai_flavor": {
+      "aria": "Candles that make AIR! It's like a birthday party where everyone gets to keep breathing!",
+      "marv": "MARV has the candles' chemistry. They are reliable, mostly. MARV notes that 'mostly' is the word that ended up in the incident report on the old Mir station.",
+      "rex": "REX has located the fire extinguisher, the fire blanket and the second fire extinguisher. He is holding all of them.",
+      "chip": "CHIP notes the candles are BreatheEasy™ brand and well past their best-before date! The warranty has also expired! Unlike the candles, the warranty cannot catch fire!",
+      "ajoy": "AJOY has read the card twice. She says one at a time, every time, with somebody watching. She says it like she has seen the other way."
+    },
+    "body": "In the emergency locker, under years of dust and a laminated card nobody has read, there is a crate of oxygen candles.\n\nThey are canisters of chemical that burns hot and slow and gives off breathable oxygen as it goes: the last-ditch air of submarines and old space stations. The crate's expiry date has passed. The card says, in bold, LIGHT ONE AT A TIME, IN A FIREPROOF HOLDER, AND NEVER LEAVE IT UNATTENDED.\n\nNext to the words there is a little drawing of a flame, crossed out. It is not reassuring.",
+    "choices": [
+      {
+        "text": "Burn them one at a time, by the book",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You burn them one by one in the fireproof holder, someone on watch beside each candle from the first spark to the last grey ash. It takes days of shifts, and nobody sleeps near the locker. The air thickens back into something you don't have to think about."
+        }
+      },
+      {
+        "text": "Light the whole crate at once",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 14,
+            "hull": -3
+          },
+          "crew_effect": {
+            "type": "injure",
+            "target": "crew"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You light the whole crate in the cargo bay and stand well back. The candles burn fast and very hot, and one of them, past its date, spits a jet of molten slag across the deck before anyone can reach it. Someone takes a burn putting it out. The air comes back all at once, thick and warm. The deck has a new scar."
+        }
+      },
+      {
+        "text": "The engineer builds a proper burner",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 2,
+        "outcome": {
+          "resources": {
+            "o2": 12
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.engineer} builds a proper burner out of a coolant jacket and a length of exhaust pipe, feeds the candles through it one after another with the heat dumped into the hull, and keeps a fire blanket over one shoulder the whole time. It is tidy, quick and slightly terrifying to watch. The air comes back."
+        }
+      },
+      {
+        "text": "Leave them in the locker",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You close the locker. Expired chemical fires are a last resort, and this is not the last of anything yet. The air stays thin. The candles stay where they are, waiting, as they have for years, for things to get worse."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV attaches the record: chemical oxygen generators keep submarines and space stations breathing in emergencies, and in 1997 one started a serious fire aboard the Mir space station.",
+      "label": "Oxygen candles",
+      "url": "https://en.wikipedia.org/wiki/Chemical_oxygen_generator"
+    }
+  },
+  {
+    "id": "event_crisis_042",
+    "active": true,
+    "title": "The Oxygen Generator Sulks",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_o2"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "bg": "our_ship/engine_error",
+    "ai_flavor": {
+      "aria": "The air machine is having a little rest! ARIA understands! ARIA would just like it to rest a bit faster!",
+      "marv": "MARV has catalogued every fault code the generator can display. There is one. MARV considers this a design philosophy rather than a fault.",
+      "rex": "REX has threatened the generator. It did not respond. REX respects that, and intends to keep trying.",
+      "chip": "CHIP notes that AirWorks™ Premium Support could diagnose this remotely! Remote support requires a working air supply on your end! CHIP will hold!",
+      "ajoy": "AJOY has seen this fault before. It's always the membrane. She has told the generator so. It doesn't listen to her either."
+    },
+    "body": "The oxygen generator has stopped generating.\n\nIt is the unit that splits water into breathable oxygen and spare hydrogen, and it has gone into a protective shutdown over something it refuses to name. Its display shows a single amber light and the word FAULT, which is all it ever shows, for every fault, in a manner that suggests you should already know.\n\nThe restart sequence is in the manual. It is long. It must be done in order.",
+    "choices": [
+      {
+        "text": "Run the restart sequence by hand",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "launch_minigame": "engine",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "o2": 12
+            },
+            "scene_bg": "our_ship/engine_fixed",
+            "narrative": "Every step in order, first time. The amber light blinks, considers, and turns green, and the generator settles back into its long patient work of turning water into air. By evening the O2 curve has turned the right way up."
+          },
+          "good": {
+            "resources": {
+              "o2": 8
+            },
+            "scene_bg": "our_ship/engine_fixed",
+            "narrative": "You lose your place and have to start over, but the light goes green in the end. The generator restarts grudgingly, a little under its old rate, as if it has not entirely forgiven you."
+          },
+          "poor": {
+            "resources": {
+              "o2": 3,
+              "morale": -2
+            },
+            "narrative": "The sequence trips the protective shutdown again, and again, and when it finally restarts it runs at a fraction of its rate with a new fault code nobody can find in the manual. The air improves a little. The mood does not."
+          }
+        },
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You open the manual at the restart sequence and start at the top."
+        }
+      },
+      {
+        "text": "Force it on in emergency mode",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 12,
+            "water": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You skip the diagnosis and force the generator back on in emergency mode, which splits water as fast as the pumps can feed it and wastes a good deal doing so. The air comes back quickly. The tank pays {cost.water} points of water for the speed, and the amber light glares the whole time."
+        }
+      },
+      {
+        "text": "The engineer strips it down",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 2,
+        "outcome": {
+          "resources": {
+            "o2": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "{crew.engineer} takes the generator apart on the galley table, finds a hairline crack in a membrane, replaces it from spares and puts everything back together over several careful days. It runs better than it has in months. The amber light, for once, has nothing to say.",
+          "repair_done": true,
+          "scene_bg": "our_ship/engine_fixed"
+        }
+      },
+      {
+        "text": "Live on the reserve tanks for now",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the generator sulking and draw on the reserve tanks. Nothing gets better. Nothing gets worse yet, either. Everybody aboard has started breathing in the slow, deliberate way people breathe when they are thinking about it."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV attaches the reference: the International Space Station makes its oxygen the same way, by splitting water, and still carries older backups for the days the generator won't.",
+      "label": "Making oxygen in orbit",
+      "url": "https://en.wikipedia.org/wiki/ISS_ECLSS"
+    }
+  },
+  {
+    "id": "event_crisis_043",
+    "active": true,
+    "title": "Load-Bearing Furniture",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_hull"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "We're redecorating! On the OUTSIDE! ARIA has always said this ship needed an open-plan layout!",
+      "marv": "MARV has costed every fitting aboard by weight of usable plate. The galley table is worth the most. MARV did not put it first. MARV is capable of mercy, occasionally.",
+      "rex": "REX would strip his own bunk first. He has offered. It is on the list.",
+      "chip": "CHIP must point out that the bunk partitions are leased! The lease does not cover use as hull plating! CHIP has added a small fee, for creativity!",
+      "ajoy": "AJOY says the racks will grow back faster than trust in the bunk room. She'd start with the racks. She'd ask the botanist first."
+    },
+    "body": "The hull needs plating, and the stores don't run to plating. The ship, on the other hand, is full of metal. It is just that all of it is currently being something else.\n\nThere are the partitions between the bunks. There are the growbay's spare racks. There is the galley table, which is the only thing aboard everyone agrees about. All of it unbolts. All of it would make a decent patch.\n\nThe ship computer has drawn up a list of what could go. It has, tactfully, left the galley table to last.",
+    "choices": [
+      {
+        "text": "Strip the partitions between the bunks",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 12,
+            "morale": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The partitions come down and go up again on the outer hull, cut and bent and welded over the worst of the damage. The hull holds better. The bunk room is now one long open dormitory where nobody gets a moment to themselves, and everyone has opinions about it."
+        }
+      },
+      {
+        "text": "Take the growbay's spare racks",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "crop": "alive"
+        },
+        "outcome": {
+          "resources": {
+            "hull": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The spare racks come out of the growbay and go onto the hull. The crop loses its overflow trays and some of its light, and shows it within the day. The hull shows the patch. The botanist, if aboard, shows nothing at all, which is worse.",
+          "crop_health": -6
+        }
+      },
+      {
+        "text": "Rework the load paths instead",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "wrench",
+        "outcome": {
+          "resources": {
+            "hull": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "{crew.engineer} spends days with the structural drawings and a torque wrench, shifting load off the damaged panels onto frames that can take it, and bolts on nothing new at all. The hull is stronger without a single partition coming down. Nobody quite understands how. The engineer is happy to explain, at length.",
+          "repair_done": true
+        }
+      },
+      {
+        "text": "Leave the ship in one piece",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave everything bolted where it is. The partitions stay up, the racks stay full and the galley table stays a galley table. The hull stays exactly as thin as it was, and the list stays on the screen, in case."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_044",
+    "active": true,
+    "title": "Cash Welds",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "low_hull"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "bg": "station/dock",
+    "ai_flavor": {
+      "aria": "A WELDER! With a SIGN! ARIA trusts anyone who writes their prices in marker!",
+      "marv": "MARV has examined the welder's work on the ship two berths down. It is good. MARV is mildly annoyed by this.",
+      "rex": "REX rates the welder a low threat and a high skill. He would like to know where they learned. He suspects the answer is a war.",
+      "chip": "CHIP must warn that unlicensed welds void your StellarSeal™ hull warranty! Your warranty was voided some time ago! CHIP mentions it for completeness!",
+      "ajoy": "AJOY has watched the apprentice for a while. Their welds are better than the sign suggests. Slower, but better."
+    },
+    "body": "In the berth next to yours, a welder with a home-built rig and a hand-lettered sign is doing hull work for cash, no questions asked.\n\nThe sign says WELDS. Underneath, smaller: CHEAPER THAN THE YARD. Underneath that, smaller still and added later: APPRENTICES HALF PRICE.\n\nThe welder has looked your hull up and down, sucked their teeth, and named a price. It is lower than the yard's. It is not lower than nothing.",
+    "choices": [
+      {
+        "text": "Pay for the full job",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 10
+        },
+        "outcome": {
+          "resources": {
+            "hull": 14,
+            "gold": -10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The welder works through the station night, fast and neat and smoking slightly, and by morning the worst of your hull is new steel. They take the money, tip their mask and are already eyeing the next berth. It is honestly good work. You check it twice anyway.",
+          "repair_done": true
+        }
+      },
+      {
+        "text": "Pay the welder in fuel",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 10,
+            "fuel": -6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The welder runs their rig off a fuel cell and is always short. You pump some of yours across, and they patch the worst of it for that, quickly and well. The hull is better, the tank is lighter, and everyone at the berth agrees this is how things used to be done."
+        }
+      },
+      {
+        "text": "Let the apprentice practise on you",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "The apprentice is keen, slow, and learning on your ship. The welds go on one careful bead at a time, some of them twice, while the calendar ticks over in the berth. The hull ends up sound. The apprentice ends up good at it. The days end up gone."
+        }
+      },
+      {
+        "text": "Thank them and move on",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You thank the welder and leave the sign behind. The yard will charge more and do it properly, or you will fly on as you are. The welder shrugs and goes back to their coffee. They have seen ships like yours come back."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_045",
+    "active": true,
+    "title": "Licence to Seal",
+    "difficulty": "medium",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_hull"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The foam has a MASCOT! He's so happy! ARIA is sure he would let us use the foam if he could!",
+      "marv": "MARV has read the licence terms. The canister is ours. The foam inside it is not. MARV finds this the most honest thing a company has ever told him.",
+      "rex": "REX has a solution for the licence lock. It involves the lock no longer existing. He is waiting for permission.",
+      "chip": "CHIP is thrilled to see a SealRight™ product in the field! CHIP can renew your licence instantly! CHIP earns a small commission on renewals! The law says CHIP has to mention that!",
+      "ajoy": "AJOY has been in the SealRight™ customer care queue before. They do answer, eventually. Eventually is the important word."
+    },
+    "body": "The emergency locker holds a canister of SealRight™ expanding hull foam. Spray it on a damaged panel and it sets in seconds into something harder than the panel was.\n\nThe canister will not spray. A small screen on the nozzle explains that SealRight™ is a licensed product, that the licence lapsed when the ship's previous owner stopped paying, and that dispensing will resume upon renewal. There is a code to scan. There is a smiling foam mascot.\n\nThe hull, meanwhile, is not getting any less damaged.",
+    "choices": [
+      {
+        "text": "Renew the licence",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 12
+        },
+        "outcome": {
+          "resources": {
+            "hull": 14,
+            "gold": -12
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You scan the code, accept the terms without reading them, and pay. The nozzle's screen lights up, the mascot gives a thumbs-up, and the foam goes on thick and sets hard over the worst of the damage. It is, irritatingly, an excellent product. A receipt arrives. So does a newsletter."
+        }
+      },
+      {
+        "text": "Crack the licence lock",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": "override",
+        "outcome": {
+          "resources": {
+            "hull": 12
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You pry the cover off the nozzle and talk the licence chip into believing it is a much older, much more trusting chip. It believes you. The foam goes on and sets hard. Somewhere, a compliance server logs one canister as 'missing, presumed liberated'."
+        }
+      },
+      {
+        "text": "Open a ticket with customer care",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 14
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "high",
+          "narrative": "You open a ticket with SealRight™ customer care and wait. And wait. Days into the queue a cheerful agent grants a one-time courtesy unlock 'for a valued customer', and the foam goes on at last, thick and hard and excellent. You have been a valued customer for days. It felt longer."
+        }
+      },
+      {
+        "text": "Jam the whole canister in the worst hole",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You wedge the whole canister, licence lock and mascot and all, into the worst of the damage and weld a strap over it. It is not a repair. It is a very expensive bung. It holds. The mascot smiles out at the stars from the hull for the rest of the voyage."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_046",
+    "active": true,
+    "title": "Shore Leave",
+    "difficulty": "medium",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "planet"
+    ],
+    "trigger": [
+      "low_morale"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "planet_surface",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "GROUND! Real ground! ARIA wants everyone to roll in it! In suits! Responsibly!",
+      "marv": "MARV has the suit reserves, the schedule and the morale curve on one screen. Two of them argue against going down. MARV is not saying which one he agrees with.",
+      "rex": "REX has swept the landing zone. It contains rocks, dust and no threats. He recommends shore leave in the voice he uses for ordering an advance.",
+      "chip": "CHIP notes that ShoreLeave™ is a paid-tier crew benefit! You are on the free tier! The free tier includes looking at it!",
+      "ajoy": "AJOY says a day down there costs a day. She has also seen what a crew looks like after a day on real ground. She'd pay it."
+    },
+    "body": "Below the ship is real ground: rock and dust and an actual horizon under a sky, the first anyone aboard has seen in a long time.\n\nThe crew has been standing at the viewport without saying much. Nobody has asked to go down. Every face is asking.\n\nThe ship computer notes that the surface is survivable in suits, that the schedule is tight, and that morale is the lowest it has recorded this voyage.",
+    "choices": [
+      {
+        "text": "Give them a proper day on the surface",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 10
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You set the ship down and let them out. Mostly, they walk. Somebody throws a rock as far as it will go and somebody else measures it. Someone lies on their back in the dust and looks at the sky all afternoon. It costs days. Nobody who went down would trade them back."
+        }
+      },
+      {
+        "text": "A short walk in suits, and back",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 5,
+            "o2": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "A quick walk in suits: a loop around the ship and back to the airlock before the suit tanks run low, refilled afterwards from the ship's own air. It is not much. It is boots on the ground and a horizon, and the crew comes back in quieter, in the good way."
+        }
+      },
+      {
+        "text": "The pilot flies them low over it",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6,
+            "fuel": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.pilot} takes the ship down low and flies the long way round the valley, slow and steady, while everyone crowds the viewports. Nobody leaves the ship. Nobody needs to. It is the best flying anyone aboard has ever seen, and the pilot knows it."
+        }
+      },
+      {
+        "text": "No time. Keep to the schedule",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep the schedule. The ship lifts without anyone setting foot outside, and the crew watches the horizon curve away into the black. Nobody complains. That is not the same thing as nobody minding."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_047",
+    "active": true,
+    "title": "Work to Rule",
+    "difficulty": "hard",
+    "tone": [
+      "corporate",
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_morale"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "Everyone is following the RULES! ARIA loves rules! ARIA is beginning to see why other people don't!",
+      "marv": "MARV has timed the filter change. It took the whole morning, exactly as specified. MARV has never seen the manual followed before. He finds it more frightening than mutiny.",
+      "rex": "REX knows a work-to-rule when he sees one. He has seen one break a garrison. He has also seen one ended by somebody listening. He recommends the second.",
+      "chip": "CHIP notes that the Crew Grievance Procedure™ requires a reply within a set number of business days! There are no business days in space! CHIP is checking whether that helps you or them!",
+      "ajoy": "AJOY has read the list. Every item on it is fair. She'd start with the food. She knows you know that."
+    },
+    "body": "The crew has not gone on strike. The crew has gone by the book.\n\nEvery task aboard is now done exactly as the manual describes, no faster, with every optional safety check performed and every form filed in triplicate. A filter change takes a morning. A course correction needs a signed request. The galley closes for the mandated rest period, which nobody knew existed until today.\n\nNobody has said why. Everybody knows why. A list of grievances has been left, very correctly, in your in-tray.",
+    "choices": [
+      {
+        "text": "Meet them on the food",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -4,
+            "morale": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You agree to the first item on the list: real meals again, generous ones, starting tonight. The galley reopens with a feast that eats {cost.food} points of food, and the rations stay at PIG OUT after it. The manual goes back on the shelf, and the ship gets faster at everything. The stores will feel it.",
+          "set_orders": {
+            "rations": "pigout"
+          }
+        }
+      },
+      {
+        "text": "Pay a bonus from the ship's account",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 15
+        },
+        "outcome": {
+          "resources": {
+            "morale": 9,
+            "gold": -15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You pay a bonus from the ship's account, equal shares, no conditions. It does not fix the list. It does say you read it. By evening the forms are gone, and the filters change in minutes again."
+        }
+      },
+      {
+        "text": "Let the diplomat take the list",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 3,
+        "outcome": {
+          "resources": {
+            "morale": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.diplomat} takes the list, takes over the mess table, and takes most of a day going through every item with everyone, until each has an answer, even if it is not the one they wanted. It is exhausting for everybody. It works. The manual goes back on the shelf."
+        }
+      },
+      {
+        "text": "Ride it out by the book",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "high",
+          "narrative": "You let them work to rule, and do the same yourself. Everything aboard takes as long as the manual says it should, which is a very long time, and the voyage loses days it did not have. Somewhere in the slow stretch the anger runs out on its own. The crew is rested. The schedule is not."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_048",
+    "active": true,
+    "title": "Game Night",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "low_morale"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A GAME! With RULES! Pages of them! ARIA has a strategy already! It is called 'trust everyone'!",
+      "marv": "MARV has read the rules. They contain a loop that would let a game last forever. MARV has told no one. MARV suspects that is the point.",
+      "rex": "REX has played. REX won, by never trading with anybody. Nobody will play with REX any more. REX considers this a strategic victory.",
+      "chip": "CHIP notes the game closely resembles Commerce™, a registered product! CHIP will overlook it in exchange for a mention in the rules! THE AUDITOR is a good start!",
+      "ajoy": "AJOY isn't allowed to play. She can see every hand. She has been asked to referee instead, and she takes it very seriously."
+    },
+    "body": "Someone has invented a board game.\n\nIt is played on the navigation table, with ration-brick wrappers for tiles, bolts for pieces, and rules that run to several pages and are still being argued over. It involves trading, betrayal, and a card called THE AUDITOR that nobody wants to draw. Nobody has finished a game yet. Everyone wants to.\n\nThey have asked whether the captain would like to play.",
+    "choices": [
+      {
+        "text": "Pull up a chair",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You play. You lose, badly, to an alliance that forms and dissolves around you in the space of a single hand, and you draw THE AUDITOR at the worst possible moment. It is the best evening anyone can remember. It runs on into the next day, the work waits, and the ship does not seem to mind."
+        }
+      },
+      {
+        "text": "Print them a proper set",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "requires_fab": true,
+        "outcome": {
+          "resources": {
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The fabricator turns out a proper board, real tiles and a little grey AUDITOR holding a clipboard. It puts some wear on the fabricator. The crew treats the set like an heirloom, and the bolts go back where they belong.",
+          "fab_wear": 6
+        }
+      },
+      {
+        "text": "Put up a prize from the galley",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 7,
+            "food": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You put up a prize: the winner takes the good tin from the galley, the one everybody has been saving. The stakes turn a game into a tournament. The tin goes, {cost.food} points of food and worth every one of them, and the winner shares it anyway, which is how you know it worked."
+        }
+      },
+      {
+        "text": "Let them play; keep the watch yourself",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave them to it and keep the watch yourself. The game runs late, and from the bridge you can see the light in the mess stay on long past the end of shift. In the morning everyone is tired, and slightly better."
+        }
+      }
+    ]
   }
 ]
