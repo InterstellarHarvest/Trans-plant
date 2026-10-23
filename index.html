@@ -369,6 +369,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
   color: #0e1320; background: #8cc890; pointer-events: none; }
 .map-node.label-above .map-scanned { top: auto; bottom: -30px; }
 .map-scanned.d-medium { background: #d4b04a; }
+.under-here { opacity: 0.12; }
 .map-scanned.d-hard, .map-scanned.d-ultra { background: #cc6c4c; color: #f4e6d0; }
 #ovmap-footer {
   position: absolute; left: 14px; right: 14px; bottom: 14px;
@@ -4039,6 +4040,16 @@ function renderMap(ids) {
     nodesEl.appendChild(el);
   }
 
+  // YOU ARE HERE wins its spot: a port-lane label it would sit on (the
+  // lane passing above the current stop) fades under it.
+  const here = nodesEl.querySelector('.map-here');
+  if (here && here.getBoundingClientRect().width) {
+    const H = here.getBoundingClientRect();
+    for (const lab of nodesEl.querySelectorAll('.map-node-label, .map-scanned, .map-branch-flavor')) {
+      const L = lab.getBoundingClientRect();
+      if (L.width && L.left < H.right - 1 && H.left < L.right - 1 && L.top < H.bottom - 1 && H.top < L.bottom - 1) lab.classList.add('under-here');
+    }
+  }
   // Footer: current node info + (legacy screen-map only) Advance button.
   const cur = STATE.byId[STATE.currentId];
   const nextIds = [...available];
