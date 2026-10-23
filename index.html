@@ -3614,6 +3614,10 @@ function eventEligible(ev, node, triggers) {
     // Copy that needs the crew in the scene (the crew visit the patient)
     // doesn't fire for a captain flying alone.
     if (ev.requires_crew_aboard && !STATE.crew.length) return false;
+    // A scene about a particular crew member ("The medic is in the growbay")
+    // needs that role aboard as crew — the captain's background doesn't count
+    // (the text would be about "you").
+    if (ev.requires_role && ![].concat(ev.requires_role).every(r => STATE.crew.includes(r))) return false;
     // A story about the living crop (crop arcs, ruling 85) needs one aboard.
     if (ev.requires_crop_alive && !(STATE.crop && STATE.cropGrowth && STATE.cropGrowth.health > 0)) return false;
     const nodeTypes = ev.node_type || ['any'];

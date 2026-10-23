@@ -1303,6 +1303,16 @@ const hardChoiceCost = (() => {
   }
 }
 
+// ── requires_role: the event is about a crew role, which must exist ──
+{
+  const roles = new Set((readJSON('modules/crew/crew_roster.json') || []).map(c => c.role).filter(Boolean));
+  for (const [id, { event: ev }] of eventsById) {
+    if (ev.requires_role === undefined) continue;
+    const list = [].concat(ev.requires_role);
+    if (!list.length || list.some(r => !roles.has(r))) err(`${id}: requires_role ${JSON.stringify(ev.requires_role)} names no crew role (${[...roles].join('/')})`);
+  }
+}
+
 // ── Event families (ruling 90) ─────────────────────────────────────
 // A family (the traders, the pirates) shares one old event's odds: its
 // draw_weights sum to 1, and its members share difficulty, node_type,
