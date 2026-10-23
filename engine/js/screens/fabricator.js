@@ -35,10 +35,9 @@
    The misfire roll is made when the job finishes (odds fixed at CRAFT
    from the wear before it). A job is never stopped by its own wear: one
    that takes the fab to 100% runs on and breaks it when it comes out.
-   A job whose days are all spent comes out without another day. The
-   deadline lock holds: a craft that would finish
-   past STATE.baseDays can't start, and a held job that no longer fits
-   waits instead of ticking into time_expired.
+   A job whose days are all spent comes out without another day. A
+   craft that would finish past STATE.baseDays says so on its button;
+   ruling 94: the deadline never ends a run, so nothing is locked by it.
    Entry point: window.openFabricator(). No onDone callback needed —
    craftSelected() and claimOutput() already apply their effects to
    real STATE directly.

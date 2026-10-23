@@ -112,7 +112,7 @@
         { id: 'medic',         icon: '\u{1F48A}', crewId: 'vasquez',  name: 'Dr. Vasquez — Medic', desc: 'Chronically anxious. Excellent at their job.', stat: 'Crew health · Treatment' },
         { id: 'pilot',         icon: '\u{1F680}', crewId: 'reeves',   name: 'Reeves — Pilot', desc: 'Overconfident. Correct 78% of the time.', stat: 'Fuel · Push Engines' },
         { id: 'chef',          icon: '\u{1F373}', crewId: 'reyes',    name: 'Reyes — Chef', desc: 'The most important person on the ship.', stat: 'Food · Special Meal' },
-        { id: 'xenobiologist', icon: '\u{1F9EC}', crewId: 'tanaka',   name: 'Dr. Tanaka — Xenobiologist', desc: 'Deeply excited about everything that could kill them.', stat: 'Alien analysis' },
+        { id: 'xenobiologist', icon: '\u{1F9EC}', crewId: 'tanaka',   name: 'Dr. Tanaka — Xenobiologist', desc: 'Deeply excited about everything that could kill them.', stat: 'Field Analysis' },
         { id: 'diplomat',      icon: '\u{1F91D}', crewId: 'hargrove', name: 'Hargrove — Diplomat', desc: 'Useless except in the one specific situation.', stat: 'Negotiation' }
       ]
     },

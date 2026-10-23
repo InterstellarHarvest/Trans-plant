@@ -741,7 +741,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
              text's font + centring. renderHUD() keeps it current. -->
         <div class="header-gold" id="cruise-gold" data-tip="resource_gold"></div>
         <div class="header-actions">
-          <button class="header-icon-btn" style="background-image:url('sprites/interface/inv.png')" id="btn-inv" aria-label="Inventory" data-tip-description="Inventory"></button>
+          <button class="header-icon-btn" style="background-image:url('sprites/interface/inv.png')" id="btn-inv" aria-label="Cargo hold" data-tip-description="Cargo hold"></button>
           <button class="header-icon-btn" style="background-image:url('sprites/interface/map.png')" id="btn-map" aria-label="Map" data-tip-description="Map"></button>
         </div>
         <div class="header-right">
@@ -7400,7 +7400,7 @@ function endRun(end) {
   if (resumable && STATE.trail && STATE.nodes.length) writeSnapshot(SAVE_KEY, { pendingFailure: f.id });
   else clearSave();
   // A failure can fire while an overlay is open (growbay TREAT and
-  // fabricator crafts both advance days → time_expired) —
+  // fabricator crafts both advance days → a deprivation failure) —
   // overlays are independent of showScreen(), so without this the end
   // screen renders BURIED under the open overlay.
   for (const ov of document.querySelectorAll('.overlay.active')) ov.classList.remove('active');

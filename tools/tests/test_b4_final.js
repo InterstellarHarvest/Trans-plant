@@ -44,7 +44,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   ok(other.a === 'none' && other.b === '' && other.txt === 'REX', 'chip resets to visible for the next first-person line; any AI name counts');
 
   console.log('— failure titles = demo-endings');
-  const want = { no_fuel: 'ADRIFT', mutiny: 'OFFICIAL COMPLAINT', time_expired: 'WE REGRET TO INFORM', hull_zero: 'BREACH', crew_gone: 'AUTOPILOT' };
+  const want = { no_fuel: 'ADRIFT', mutiny: 'OFFICIAL COMPLAINT', hull_zero: 'BREACH', crew_gone: 'AUTOPILOT' }; // time_expired retired (ruling 94)
   for (const [type, title] of Object.entries(want)) {
     const t = await page.evaluate(async type => {
       STATE.ended = false;

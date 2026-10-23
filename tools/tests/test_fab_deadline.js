@@ -1,9 +1,7 @@
-// Fabricator deadline lock (re-audit A1, hotfix 2026-10-12): a craft that
-// would finish past the voyage deadline (STATE.baseDays) used to show a
-// "past arrival" warning, take CRAFT, pay its days up front and end the
-// run (time_expired) on the spot. Such a craft is now locked: PAST
-// DEADLINE on the button, the warning names the deadline, CRAFT (click
-// or Enter) does nothing and no day passes. A craft that fits stays open.
+// Fabricator and the deadline. Hotfix 2026-10-12 locked a craft that would
+// finish past the deadline (it used to end the run, time_expired). Ruling 94
+// (2026-10-23): the deadline never ends a run — the craft is open again, the
+// warning names the deadline, CRAFT runs and nothing fails.
 const { chromium } = require('playwright');
 const URL = process.env.URL || 'http://localhost:8177/index.html';
 let pass = 0, fail = 0;
@@ -26,7 +24,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     const warn = document.querySelector('.fb-warn.overrun');
     return { label: btn.textContent, locked: btn.classList.contains('locked'), warn: warn ? warn.textContent : '', day: STATE.daysElapsed, screen: document.querySelector('.screen.active') && document.querySelector('.screen.active').id, failed: !!STATE.failure };
   });
-  console.log('— a craft that would finish past the deadline is locked');
+  console.log('— a craft that would finish past the deadline: warned, still craftable (ruling 94)');
   // The longest open recipe, two days short of the deadline, so it overruns.
   const longest = await page.evaluate(() => {
     STATE.daysElapsed = 0; openFabricator();
@@ -42,18 +40,18 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   await page.waitForFunction(() => document.getElementById('fb-craft-btn').textContent.length > 0);
   ok(longest >= 2, 'picked a recipe of ' + longest + ' base days');
   const s0 = await state();
-  ok(s0.locked && s0.label === 'PAST DEADLINE', 'CRAFT reads PAST DEADLINE and is locked (' + s0.label + ')');
+  ok(!s0.locked && s0.label === 'CRAFT', 'CRAFT stays open (' + s0.label + ')');
   ok(/past the deadline/.test(s0.warn), 'warning names the deadline: ' + s0.warn.trim());
   await page.evaluate(() => { document.getElementById('fb-craft-btn').click(); craftSelected(); });
   await page.waitForTimeout(300);
   const s1 = await state();
-  ok(s1.day === s0.day && !s1.failed && s1.screen !== 'screen-end', 'CRAFT does nothing: no day passes, no failure (day ' + s1.day + ', screen ' + s1.screen + ')');
+  ok(!s1.failed && s1.screen !== 'screen-end', 'CRAFT runs and the voyage goes on: no failure (day ' + s1.day + ', screen ' + s1.screen + ')');
   await page.evaluate(() => closeFabricator());
-  console.log('— a craft that fits stays craftable');
+  console.log('— with room before the deadline: no warning');
   await page.evaluate(() => { STATE.baseDays = window.__base; openFabricator(); });
   await page.waitForFunction(() => document.getElementById('fb-craft-btn').textContent.length > 0);
   const s2 = await state();
-  ok(!s2.locked && s2.label === 'CRAFT' && !s2.warn, 'day 0: CRAFT open, no overrun warning (' + s2.label + ')');
+  ok(!s2.warn && /CRAFT|IN PROGRESS/.test(s2.label), 'deadline restored: no overrun warning, the print runs on (' + s2.label + ')');
   ok(errors.length === 0, 'no page errors ' + JSON.stringify(errors.slice(0, 3)));
   console.log(`fab_deadline: ${pass} passed, ${fail} failed`);
   await browser.close();
