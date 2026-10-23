@@ -1365,7 +1365,7 @@
   }
   const CRUISE_WAIT_TUNING = { WAIT_TICK_MS, WAIT_DAY_MAX, TRADER_PRESENT_CHANCE, TRADER_DAILY_CHANCE, INTERRUPT_DAILY_CHANCE, REST_MORALE_PER_DAY };
 
-  let activeWait = null; STATE.waitInProgress = null; // { verbId, days, day, node, region, timer, resolving, finish }
+  let activeWait = null; // { verbId, days, day, node, region, timer, resolving, finish }
   let bannerTimer = null;
   const waitHeld = () => (window.PauseBus && PauseBus.paused) || !cruiseVisible() || overlayOpen();
   function showActionBanner(label, day, days) {

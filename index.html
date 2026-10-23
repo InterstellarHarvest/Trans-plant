@@ -4015,7 +4015,9 @@ function renderMap(ids) {
       const disp = branchFlavorDisplay(n);
       const bf = document.createElement('div');
       bf.className = 'map-branch-flavor ' + disp.state + (disp.state === 'revealed' ? ' flavor-' + n.branch_flavor : '');
-      bf.textContent = disp.text;
+      // The lane's name, as the fork events say it: port (the top row,
+      // alpha) / starboard (the bottom row, beta).
+      bf.textContent = (branchMatch ? (branchMatch[1] === 'alpha' ? 'PORT · ' : 'STARBOARD · ') : '') + disp.text;
       el.classList.add('has-flavor');
       el.appendChild(bf);
     }
