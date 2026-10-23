@@ -5402,5 +5402,542 @@
       "label": "Dust storms on Mars",
       "url": "https://en.wikipedia.org/wiki/Climate_of_Mars"
     }
+  },
+  {
+    "id": "event_general_060",
+    "active": true,
+    "title": "Trim and Ballast",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "full_cargo"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has noticed the ship leans a tiny bit when it turns! ARIA thinks it's dancing! A slow dance! With the cargo!",
+      "marv": "MARV has located the ship's centre of mass. It is not where the drive expects it. The drive is correcting on every burn, and every correction is paid for in fuel.",
+      "rex": "REX notes an unbalanced load is a hazard in a hard turn. He would like the heavy things forward. He would like a lot of things.",
+      "chip": "CHIP recommends the CHIP Balance Pro™ cargo app! It tells you your hold is full! In three colours!",
+      "ajoy": "AJOY says the heaviest thing back there is the thing you keep meaning to use. Use it, or move it. Carrying it both ways is the expensive choice."
+    },
+    "body": "The hold is full, and the ship has started to fly like it knows.\n\nEverything heavy has worked its way aft, the way heavy things do. The drive pushes a little off its line on every burn to make up for it, and the pilot's coffee has begun to creep across the console during manoeuvres, which the pilot is taking personally.\n\nThe cure is less mass, or better-placed mass. The hold has opinions about both.",
+    "choices": [
+      {
+        "text": "Use the repair kit now, not later",
+        "requires_crew": null,
+        "requires_item": "repair_kit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "sub": "Spend it on the hull · frees a slot",
+        "outcome": {
+          "resources": {
+            "hull": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "repair_kit",
+          "sets_flag": null,
+          "time_cost": "low",
+          "repair_done": true,
+          "narrative": "You stop carrying the repair kit and start using it: every soft weld and tired seam it was bought for, done now, in one long afternoon. The hull is better for it, the hold has a slot free, and the coffee stays where it is put."
+        }
+      },
+      {
+        "text": "Fly heavy and pay the burn",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the hold as it is and let the drive push crooked. It costs fuel on every burn, a little at a time, the way the expensive things always do. The pilot moves the coffee to a cup holder and says nothing further on the matter."
+        }
+      },
+      {
+        "text": "{crew.pilot} re-trims the load by hand",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 1,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.pilot} spends a long shift moving crates forward a rack at a time, checking the burn after each one. By the end the ship flies true again. Nothing has left the hold; it just sits where the drive likes it now."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_061",
+    "active": true,
+    "title": "Space Available",
+    "difficulty": "easy",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "full_cargo"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A customer! ARIA LOVES customers! ARIA has never had a customer! ARIA has never had anything to sell!",
+      "marv": "MARV has seen the broker's prices. They are what MARV would charge a ship that had no other offers. MARV notes the ship has no other offers.",
+      "rex": "REX has the broker's freighter on the scope. Unarmed. Rusty. Patient. REX distrusts patient.",
+      "chip": "CHIP must disclose that the broker is not a CHIP Certified Reseller™! CHIP must also disclose that CHIP would have charged you more!",
+      "ajoy": "AJOY says sell the thing you'll miss least, not the thing that fetches most. They are rarely the same thing."
+    },
+    "body": "A tramp freighter falls in alongside and hails on the open channel. Its broker has heard, the way brokers hear things, that your hold is full.\n\nThe broker buys from full holds. Not at good prices: at what the broker calls 'the price of having room again.' A cargo tube is already reaching toward your airlock, hopefully.\n\nThe offer is good until the freighter gets bored.",
+    "choices": [
+      {
+        "text": "Sell them the repair kit",
+        "requires_crew": null,
+        "requires_item": "repair_kit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "repair_kit",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The kit goes down the tube and a little gold comes back up it. The broker pays less than any station would and more than nothing. The hold has room again. The next loose seam will have to wait for a station."
+        }
+      },
+      {
+        "text": "Sell them the soil sampler",
+        "requires_crew": null,
+        "requires_item": "soil_sampler",
+        "requires_flag": null,
+        "microgame_type": null,
+        "sub": "Better price · no more soil readings",
+        "outcome": {
+          "resources": {
+            "gold": 15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "soil_sampler",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The broker handles the soil sampler like an old friend and pays like an acquaintance. You have gold and a free slot. From here on, the ground on every planet gets read by eye and by hope."
+        }
+      },
+      {
+        "text": "{crew.diplomat} sells them a rumour instead",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.diplomat} talks for most of a watch about a market further on that is short of exactly what the broker carries. Some of it may even be true. The broker pays for the tip, keeps the tube extended a while in case of more, and leaves your hold exactly as full as it was."
+        }
+      },
+      {
+        "text": "Buy their spare fuel instead",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 10
+        },
+        "outcome": {
+          "resources": {
+            "gold": -10,
+            "fuel": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "If you can't sell, you can buy: the broker has fuel to spare and takes your gold for it without blinking. Fuel goes in the tank, not the hold, which is the only thing aboard with room in it."
+        }
+      },
+      {
+        "text": "Decline politely",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You thank the broker and decline. The cargo tube retracts with what can only be described as reluctance, and the freighter drifts off to find a fuller hold than yours."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_062",
+    "active": true,
+    "title": "Spare Room",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "empty_cargo"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "bg": "our_ship/cargo",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crop_alive": true,
+    "science_link": {
+      "text": "MARV notes that crowded plants really do sense their neighbours: leaves reflect far-red light, and a plant that sees too much of it stretches tall and thin to get away.",
+      "label": "Shade avoidance",
+      "url": "https://en.wikipedia.org/wiki/Shade_avoidance"
+    },
+    "ai_flavor": {
+      "aria": "An empty room! ARIA has so many ideas! ARIA would like a ball pit! ARIA has been told there is no ball pit budget!",
+      "marv": "MARV notes the hold is the largest volume aboard and currently stores air. MARV considers this an under-use of air.",
+      "rex": "REX would keep the hold clear for incoming cargo. He has been outvoted. He was the only vote.",
+      "chip": "CHIP can offer the hold as premium co-working space! CHIP has already listed it! There are no other ships nearby to rent it!",
+      "ajoy": "AJOY says the plants have been leaning away from each other for a week. She knows how they feel. She would give them the room."
+    },
+    "body": "With nothing in the hold, whoever has the watering can this week has started eyeing it.\n\nThe growbay is crowded. The {crop.name} trays sit close enough that the leaves have begun leaning away from each other, stretching for light they think the neighbours are stealing. The hold has light fittings, a clean floor and nothing in it.\n\nEveryone else has had the same thought about the hold, for different reasons.",
+    "choices": [
+      {
+        "text": "Spread the crop trays into the hold",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "sub": "Healthier crop · costs water",
+        "outcome": {
+          "resources": {
+            "water": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "crop_health": 6,
+          "narrative": "You carry half the trays into the hold and space them out under the work lights. Given room, the {crop.name} stops stretching and starts thickening. More floor means more watering: {cost.water} points of water over the week, for a crop that looks properly pleased with itself."
+        }
+      },
+      {
+        "text": "Give everyone a corner of it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4,
+            "o2": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Each crew member gets a corner of the hold and a curtain. One becomes a reading nook, one a gym, one is never explained. Heating and cycling the air in a room people now live in costs the scrubbers a little. Nobody minds."
+        }
+      },
+      {
+        "text": "Turn it into a cold store",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": 2,
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You shut the hold's heating off and move the galley stock in. Food keeps longer in the cold, and less of it spoils. The trips to fetch it are made in coats, and are not popular."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_063",
+    "active": true,
+    "title": "The Clock in the Corner",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "behind_schedule"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA loves a quick stop! In and out! Like a pit stop! ARIA has always wanted a pit crew!",
+      "marv": "MARV has been timing stops. At this rate the ship spends a meaningful share of the deadline parked. MARV has said nothing. MARV has put up a clock.",
+      "rex": "REX approves of short stops. Long stops are how convoys get caught.",
+      "chip": "CHIP offers Express Stop™ for frequent travellers! It is a stop! But you feel rushed! That is the premium part!",
+      "ajoy": "AJOY says the crew can run without rest for a while, and the schedule can run without slack for a while. Not both, and not for long."
+    },
+    "body": "The ship computer has started timing stops.\n\nIt doesn't say anything about it. It simply puts a small clock in the corner of every screen the moment the drive spools down, and lets it run. The crew has noticed. The crew has also noticed that the clock is red.\n\nYou are behind, and every stop is a day the trail doesn't give back.",
+    "choices": [
+      {
+        "text": "Top up and go, no shore time",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "sub": "Spends no day · the crew gets no rest",
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "none",
+          "narrative": "Nobody gets off, nobody sits down. The stop is a top-up and a headcount, and the drive is spooling again before anyone has finished complaining. The clock in the corner never gets past yellow. Neither does the mood."
+        }
+      },
+      {
+        "text": "Faster from here",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "faster"
+          },
+          "narrative": "You order the pace up a notch, effective when the drive spools up. The stop runs its usual length; the legs after it won't. The fuel gauge will notice before the crew does."
+        }
+      },
+      {
+        "text": "Take the long stop anyway",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "sub": "Rest for the crew · more of the deadline",
+        "outcome": {
+          "resources": {
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You let the stop run long, on purpose. People sleep, eat sitting down, call home if home is in range. The clock in the corner goes red and stays red. Everyone comes back aboard looking like themselves."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_064",
+    "active": true,
+    "title": "Dead Weight",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "behind_schedule"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "science_link": {
+      "text": "The pilot's wall is the rocket equation: the fuel a burn needs rises steeply with the mass it has to move, so shedding mass is the oldest way to go faster for the same fuel.",
+      "label": "Tsiolkovsky rocket equation",
+      "url": "https://en.wikipedia.org/wiki/Tsiolkovsky_rocket_equation"
+    },
+    "ai_flavor": {
+      "aria": "ARIA has a GREAT idea! Throw things away! ARIA does it all the time! ARIA has never been sure what she threw away!",
+      "marv": "MARV confirms the pilot's figures. A lighter ship takes a faster pace for less fuel. MARV adds that everything on the list is on the list because someone once thought the ship needed it.",
+      "rex": "REX would strip the ship to the frame for speed. He has been asked which part of the frame he'd keep. He is thinking.",
+      "chip": "CHIP reminds you that jettisoned property is not covered by your policy! Nothing is covered by your policy! CHIP has checked!",
+      "ajoy": "AJOY says pick the thing you can make again. Water comes back at a station. Hull plate does too, at a price. Air is harder."
+    },
+    "body": "The pilot has done the sums and written them on the galley wall, so nobody can pretend not to have seen them.\n\nThe ship is behind. A faster pace would close the gap, but a faster pace burns fuel the ship can't easily spare. Unless the ship is lighter. Every kilo not carried is fuel not spent carrying it, and the ship is carrying a great many kilos it could, at a pinch, live without.\n\nThe pinch is here.",
+    "choices": [
+      {
+        "text": "Dump the reserve water tank",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": -5,
+            "fuel": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "faster"
+          },
+          "narrative": "You open the reserve tank's dump valve and watch {cost.water} points of water glitter away aft as ice. Lighter, the ship takes a faster pace for the burn the old one cost. Everyone drinks a little more carefully from now on."
+        }
+      },
+      {
+        "text": "Strip the spare hull plating",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -6,
+            "fuel": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "faster"
+          },
+          "narrative": "The spare plating comes off the racks and the doubled panels come off the quiet side of the hull, and all of it goes out of the lock. The ship is lighter and faster and noticeably thinner-skinned. The pilot says it handles like a dream. The engineer says it handles like a soap bubble."
+        }
+      },
+      {
+        "text": "{crew.engineer} pulls the backup air scrubber",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -6,
+            "fuel": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "faster"
+          },
+          "narrative": "{crew.engineer} unbolts the backup scrubber, the heaviest single thing aboard that isn't the drive, and sends it out of the lock with a short speech. The ship is lighter and faster. The air is a little thicker, and will stay that way until arrival."
+        }
+      },
+      {
+        "text": "Keep it all and hold the pace",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep everything. The pace stays where it was, the sums stay on the galley wall, and nobody rubs them off. Every meal is now eaten next to the arithmetic."
+        }
+      }
+    ]
   }
 ]

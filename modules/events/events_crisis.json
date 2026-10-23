@@ -3706,5 +3706,1194 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_crisis_049",
+    "active": true,
+    "title": "Yellow From the Bottom Up",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_sick"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "The bottom leaves are going yellow! ARIA thinks yellow is a lovely colour! ARIA has been told it is not a lovely colour for leaves!",
+      "marv": "MARV has run the nutrient feed through the analyzer. Nitrogen is low enough that the plant has started taking its oldest leaves apart for spares. MARV respects the logistics. He would prefer they stopped.",
+      "rex": "REX has located the shortage. It is chemical. He has been told he cannot requisition chemicals from the crew. He has been told why. He has stopped asking.",
+      "chip": "CHIP's NitroBoost™ pellets would fix this overnight! They are back on Earth! In a warehouse! Next to everything else CHIP recommended!",
+      "ajoy": "AJOY says the plant isn't sick so much as hungry. Feed it from the crew, the galley or the botanist's notebook. Each one costs someone something."
+    },
+    "body": "The yellow starts at the bottom.\n\nThe oldest leaves of the {crop.name} have gone the colour of weak tea, while the new growth at the top stays green and keeps asking for more. It is not a disease. It is a budget. The plant is short of nitrogen, and it is doing what anyone on a short budget does: taking from the old to feed the young.\n\nThe growbay's nutrient feed has been recycled so many times that it is mostly water with a memory. Something has to go back into it.",
+    "choices": [
+      {
+        "text": "Feed it the crew's urine",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": -3,
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 18,
+          "narrative": "You divert the urine line from the water reclaimer into the nutrient tank, diluted the way the manual says, on a page nobody expected to read. Urine is mostly water, salt and urea, and urea is nitrogen with good intentions. Within the week the new leaves come in dark and the old ones stop surrendering. The reclaimer gets less back. The crew is told at dinner. Dinner ends early."
+        }
+      },
+      {
+        "text": "Dissolve ration bars into the feed",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 14,
+          "narrative": "You crumble ration bars into warm water and let them steep into a brown broth that smells like a regret. Given time, the bacteria in the growbay's filters break protein down into ammonium, which a root can use. The {crop.name} drinks it gratefully. The galley does the sums on what it gave up and keeps them to itself."
+        }
+      },
+      {
+        "text": "{crew.botanist} rebuilds the feed from scratch",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "crop_health": 22,
+          "narrative": "{crew.botanist} drains the tank, tests it, and rebuilds the feed from the growbay's mineral stock and a notebook of ratios kept since training. The nitrogen comes back into balance and the yellow stops climbing. 'It wasn't sick,' the botanist says. 'It was hungry. Those are different conversations.'"
+        }
+      },
+      {
+        "text": "Let it feed on itself",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -6,
+          "narrative": "You let the plant carry on borrowing from itself. It is very good at this, right up until there is nothing old left to borrow from. The yellow climbs a little higher each morning."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "Nitrogen moves inside a plant, so a starving plant strips it from its oldest leaves to feed new growth: the yellowing climbs from the bottom up.",
+      "label": "Nitrogen deficiency",
+      "url": "https://en.wikipedia.org/wiki/Nitrogen_deficiency"
+    }
+  },
+  {
+    "id": "event_crisis_050",
+    "active": true,
+    "title": "Standing Water",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_sick"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "ARIA has been watering the crop extra to cheer it up! ARIA has been asked to stop! ARIA is having a complicated afternoon!",
+      "marv": "MARV logged the blocked drain last week and filed it under plumbing. He has refiled it under botany. The roots did not wait for the paperwork.",
+      "rex": "REX has secured the drain. It surrendered a fistful of roots. He is keeping them as evidence.",
+      "chip": "CHIP must point out that the AquaFlow™ drain warranty excludes 'organic obstruction'! CHIP asked what that means! CHIP regrets asking!",
+      "ajoy": "AJOY says stop watering first. Then air, scissors or peroxide. The brown roots are gone already; it's the white ones you're saving."
+    },
+    "body": "The {crop.name} has looked thirsty for days, so the crew has been watering it more. It has not helped.\n\nUnder the beds, a drain has been blocked all that time, and the root trays have been sitting in still water. Roots need air as much as leaves need light. Starved of it, they have gone brown and soft, and a water mould has moved in to finish the job. The plant wilts because its roots can no longer drink, while standing up to its ankles in water.\n\nThe growbay smells like a pond that has given up.",
+    "choices": [
+      {
+        "text": "Clear the drain and let the beds dry",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "crop_health": 10,
+          "narrative": "You clear the drain, a plug of root, soil and something best not named, and let the trays empty back into the reclaimer. Then you water nothing for days, which feels wrong every single morning. Slowly the surviving roots firm up and go white again. The rotten ones don't come back. They were never going to."
+        }
+      },
+      {
+        "text": "Trim the rot and repot by hand",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "crop_health": 16,
+          "narrative": "Every plant comes up, every brown root comes off with clean scissors, and every plant goes back into fresh, dry medium. It is slow and filthy, and the smell gets into everyone's sleeves. What goes back in is smaller and cleaner, and it starts drinking again within the week."
+        },
+        "effort": 2
+      },
+      {
+        "text": "{crew.engineer} pipes air into the root trays",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 18,
+          "repair_done": true,
+          "narrative": "{crew.engineer} clears the drain, then runs a spare air line from the scrubbers into the root trays and drills it full of holes. The water fizzes. Roots that were drowning get their air back, and the mould, which likes things still and airless, does not. The pump runs off the drive bus for a while, and the fuel gauge notices."
+        }
+      },
+      {
+        "text": "Pour a medkit's peroxide through the roots",
+        "requires_crew": null,
+        "requires_item": "medkit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "medkit",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 22,
+          "narrative": "You dilute the medkit's hydrogen peroxide and pour it through the root trays. It fizzes against the rot, kills the mould, and leaves oxygen behind as it breaks down. Growers have done this for generations. Medics have opinions about it. The roots go white again within days."
+        }
+      },
+      {
+        "text": "Keep watering. It looks thirsty",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "water": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -8,
+          "narrative": "You water it more, because it looks thirsty, because it is thirsty, because its roots are drowning. The water goes straight into the problem. By the next stop the stems are soft at the base and the growbay smells worse."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "Roots breathe. Waterlogged soil starves them of oxygen, and water moulds such as Pythium move into the weakened roots, so the plant wilts while standing in water.",
+      "label": "Root rot",
+      "url": "https://en.wikipedia.org/wiki/Root_rot"
+    }
+  },
+  {
+    "id": "event_crisis_051",
+    "active": true,
+    "title": "Too Much Light",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_sick"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "The lamps are on FULL! It's like summer in there! ARIA loves summer! The crop has asked ARIA to stop saying summer!",
+      "marv": "MARV notes the lamps have been at maximum since the dimmer failed. A leaf can only use so much light. The top of the crop has been receiving the rest, and is complaining in the only format it has.",
+      "rex": "REX recommends cutting the enemy's light. He has been reminded the lamps are ours. He recommends it anyway.",
+      "chip": "CHIP is proud to report the SunMax™ lamps are running at FULL CAPACITY! CHIP has been told that is the problem! CHIP is less proud!",
+      "ajoy": "AJOY says shade it, switch it or fix it. The bleached leaves are done either way. It's the new ones that get a say."
+    },
+    "body": "The grow lamps' dimmer has failed, and it has failed bright.\n\nThe lamps have been running flat out for days, a little closer to noon than any noon has ever been. The top leaves of the {crop.name} have gone pale and papery, bleached in patches the colour of old newspaper. The lower leaves, in the shade of the upper ones, look perfectly fine and slightly smug.\n\nA plant can only use so much light. Past that, the extra does damage, and the leaves at the top have been taking all of it.",
+    "choices": [
+      {
+        "text": "Rig shade cloth from the bedsheets",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 10,
+          "narrative": "Every spare sheet aboard goes up under the lamps, pinned with tape and hope. The light beneath them drops to something a leaf can work with, and the new growth comes in green. The crew sleeps under jackets for the rest of the leg and mentions it."
+        }
+      },
+      {
+        "text": "Switch the lamps by hand, around the clock",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "crop_health": 14,
+          "narrative": "Without a dimmer the only settings are on and off, so somebody turns them on and off: some light, some dark, around the clock, by hand, by alarm. The average works out to something kinder. The bleached leaves stay bleached. The new ones don't."
+        },
+        "effort": 2
+      },
+      {
+        "text": "{crew.engineer} fixes the dimmer",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 12,
+          "repair_done": true,
+          "narrative": "{crew.engineer} pulls the dimmer board, finds a relay welded shut by its own enthusiasm, and swaps in the one from the galley toaster. The lamps settle back to a working noon. The toaster now does only off and on, and the crew learns to live with both."
+        }
+      },
+      {
+        "text": "Light is food. Leave it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -6,
+          "narrative": "You leave the lamps on full on the reasoning that light is food. Light is food the way a firehose is a drink. The pale patches spread down another row of leaves before the plant starts dropping them."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "Too much light damages the machinery of photosynthesis itself: leaves bleach where they catch more than they can use. Plant scientists call it photoinhibition.",
+      "label": "Photoinhibition",
+      "url": "https://en.wikipedia.org/wiki/Photoinhibition"
+    }
+  },
+  {
+    "id": "event_crisis_052",
+    "active": true,
+    "title": "Small White Clouds",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_pest"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "It's SNOWING in the growbay! Upward! ARIA has never seen upward snow! ARIA has been informed the snow is bugs!",
+      "marv": "MARV identifies whiteflies, which are neither entirely white nor, strictly, flies. They are, however, everywhere. MARV accepts half of the name.",
+      "rex": "REX has engaged the cloud repeatedly. It dispersed each time. It reformed each time. He considers this a stalemate. He does not accept stalemates.",
+      "chip": "CHIP's HoverHoover™ Pro has a dedicated pest attachment! It is not aboard! The regular vacuum is aboard! CHIP supposes it will have to do!",
+      "ajoy": "AJOY says vacuum them, dazzle them with foil or chill them out. Leaving them costs the crop, and the mould comes after."
+    },
+    "body": "Brush a leaf of the {crop.name} and a small white cloud lifts off it.\n\nWhiteflies: tiny, powdery, moth-like things that live on the undersides of leaves, drink the sap, and leave behind a sticky honeydew that a black mould then grows on. They are poor flyers. They don't need to be good ones. Every time someone walks past, the cloud lifts, settles, and goes back to drinking.\n\nFor a moment each time, the growbay looks as if it is snowing upward.",
+    "choices": [
+      {
+        "text": "Vacuum the undersides, leaf by leaf",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "clears_pest": true,
+          "narrative": "You fit the narrowest nozzle to the ship's hand vacuum and go row by row, flipping leaves and hoovering. Whiteflies fly badly and lift easily, which makes them perfect for this. The canister fills with something that looks like lint and isn't. By the end the leaves are clean, and the vacuum has been retired from household duties."
+        },
+        "effort": 2
+      },
+      {
+        "text": "Line the beds with foil from the hull insulation",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "clears_pest": true,
+          "narrative": "You peel a sheet of reflective insulation off the cargo bay wall and lay it silver side up across the soil. Whiteflies find their plants by looking for green against a dark ground; light bouncing up from below confuses them, and they wander off to die somewhere less shiny. The cargo bay is colder now. The beds look like a baked potato."
+        }
+      },
+      {
+        "text": "Chill the growbay overnight",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "crop_health": -4,
+          "clears_pest": true,
+          "narrative": "You let the bay's heat go for a night and a day. Whiteflies are warm-climate insects, and the cold stops them feeding, stops them breeding, and drops them off the leaves; you sweep them up in the morning. The {crop.name} doesn't love the cold either, and loses a little ground."
+        }
+      },
+      {
+        "text": "Leave them to it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -6,
+          "narrative": "You leave them to it. The honeydew builds up, the black mould follows it, and the leaves beneath can't catch the light. The {crop.name} loses ground. The cloud, when someone walks past, is bigger."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "Whiteflies find their host plants by colour against the ground. Light reflected up from below confuses them, so growers really do lay reflective mulch under a crop.",
+      "label": "Whiteflies",
+      "url": "https://en.wikipedia.org/wiki/Whitefly"
+    }
+  },
+  {
+    "id": "event_crisis_053",
+    "active": true,
+    "title": "Someone Is Writing on the Leaves",
+    "difficulty": "medium",
+    "tone": [
+      "horror",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crop_pest"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "Someone is writing on the leaves! ARIA is trying to read it! ARIA thinks it says 'yum'! ARIA is not sure!",
+      "marv": "MARV has attempted to translate the tunnels. They are not language. They are a larva eating in the direction of more leaf. MARV concedes this is also what most writing is.",
+      "rex": "REX has located the hostiles. They are inside the leaves. He cannot shoot the leaves. He has never wanted to shoot leaves more.",
+      "chip": "CHIP is excited to report that the crop is now Personalised™! Every leaf is one of a kind! CHIP has been asked to stop putting that in the newsletter!",
+      "ajoy": "AJOY says a spray won't reach them. Fingers, scissors or a scalpel. The dot at the end of the line is the one you want."
+    },
+    "body": "Pale, winding lines have appeared on the leaves of the {crop.name}, as if someone has been doodling on them from the inside.\n\nThat is roughly what has happened. Leaf miners: tiny fly larvae that hatch inside a leaf and eat their way through it, between the top skin and the bottom, leaving a tunnel that widens as they grow. A spray can't reach them. They are already indoors.\n\nHold a leaf up to the lamp and there is a small dark dot at the end of each line. The dot is the author.",
+    "choices": [
+      {
+        "text": "Pinch the dot at the end of every line",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "clears_pest": true,
+          "narrative": "You go leaf by leaf with the lamp behind each one, find the dot at the end of each line, and press it between finger and thumb. Every tunnel stops where its author did. It is meticulous, slightly horrible, and it works. The lines stay on the leaves, a story that ends abruptly."
+        },
+        "effort": 2
+      },
+      {
+        "text": "Cut off every mined leaf",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -6,
+          "clears_pest": true,
+          "narrative": "Every leaf with a line on it comes off and goes into the recycler, larvae and all. The {crop.name} is left looking thin and plucked. It will grow the leaves back. The miners will not grow back."
+        }
+      },
+      {
+        "text": "{crew.medic} operates",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "clears_pest": true,
+          "narrative": "{crew.medic} brings a scalpel, a magnifier and the steadiest hands aboard, and performs a very small surgery on every affected leaf: a nick, a lift, a larva out. The leaves heal around the cuts. The medic enters each one in the medical log under minor procedures, and nobody has the heart to object."
+        }
+      },
+      {
+        "text": "Let them finish the chapter",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -7,
+          "narrative": "You let the lines lengthen. In time the larvae finish, drop into the soil and come out as small flies, which lay the next generation in the next leaves. The {crop.name} loses ground, and the doodling carries on in a new hand."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "Leaf miners are insect larvae that live and feed inside a leaf, between its upper and lower surfaces; the trail widens as the larva grows.",
+      "label": "Leaf miner",
+      "url": "https://en.wikipedia.org/wiki/Leaf_miner"
+    }
+  },
+  {
+    "id": "event_crisis_054",
+    "active": true,
+    "title": "Hold Music",
+    "difficulty": "medium",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "fab_broken"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The support line is playing MUSIC! ARIA is dancing! The fabricator is still broken! ARIA is dancing anyway!",
+      "marv": "MARV estimates the free queue's wait from the hold music's loop count. MARV has stopped estimating. MARV has started humming, which concerns MARV.",
+      "rex": "REX does not wait on hold. REX has never waited on hold. REX is on hold.",
+      "chip": "CHIP can upgrade you to Priority Support™! It is the same technician! They are just happier to see you!",
+      "ajoy": "AJOY says the fault is in the feed, not the firmware. She has said so twice. The support line has not asked her."
+    },
+    "body": "The fabricator is broken, and its display has helpfully replaced the error code with a support number.\n\nThe manufacturer's line answers on the first ring, which is suspicious, and puts you on hold on the second, which is not. A recorded voice thanks you for your loyalty. A second recorded voice explains that your call is important, in a tone that suggests a third voice will be along later to explain how important.\n\nMeanwhile, nothing on the ship can be made.",
+    "choices": [
+      {
+        "text": "Pay for priority support",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 15
+        },
+        "outcome": {
+          "resources": {
+            "gold": -15
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "fabricator_repair": true,
+          "narrative": "Priority support turns out to be a shorter queue with better music, then a real technician who walks you through a firmware rollback in a voice of enormous patience. The fabricator wakes up. The invoice arrives before it has finished booting."
+        }
+      },
+      {
+        "text": "Wait on the free line",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "sub": "Free · days of hold music",
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "fabricator_repair": true,
+          "narrative": "You stay on the free line. The hold music loops until the crew can hum the bass part and does, unprompted, in their sleep. Days later a technician answers, sounds surprised anyone is still there, and talks you through the fix in a few minutes. The fabricator works. The music does not leave."
+        }
+      },
+      {
+        "text": "Strip the repair kit for parts",
+        "requires_crew": null,
+        "requires_item": "repair_kit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "repair_kit",
+          "sets_flag": null,
+          "time_cost": "low",
+          "fabricator_repair": true,
+          "narrative": "You hang up and open the repair kit instead. Its seals, springs and spare feed gear go into the fabricator, and the fabricator goes back to work. The next leak aboard will have to be fixed with something else."
+        }
+      },
+      {
+        "text": "{crew.engineer} hangs up and opens it",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 2,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "fabricator_repair": "full",
+          "repair_done": true,
+          "narrative": "{crew.engineer} hangs up on the hold music mid-chorus, takes the side panel off and finds the feed line packed solid, exactly where nobody on the support line would have looked. The rebuild takes days and comes out better than new. The support line calls back afterwards to ask how they did."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_055",
+    "active": true,
+    "title": "Whiskers",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "fab_low"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "science_link": {
+      "text": "The fabricator's beard has a real name: stringing, when molten filament oozes from a printer nozzle as it travels between parts. A worn or dirty nozzle makes it worse.",
+      "label": "Fused filament fabrication",
+      "url": "https://en.wikipedia.org/wiki/Fused_filament_fabrication"
+    },
+    "ai_flavor": {
+      "aria": "Everything the fabricator makes has a little BEARD! ARIA has named all of them! ARIA has run out of beard names!",
+      "marv": "MARV attributes the whiskers to a worn nozzle oozing between moves. It is a small fault. Small faults in machines this worn are what large faults look like early.",
+      "rex": "REX does not accept whiskers on equipment. REX has trimmed his sidearm's holster. It did not need trimming. It does now.",
+      "chip": "CHIP is pleased to launch Rustic Finish™, a hand-trimmed artisan range! The trimming is by you! The pricing is by CHIP!",
+      "ajoy": "AJOY has been trimming the prints with nail scissors. She would like the nozzle changed before she has to buy more nail scissors."
+    },
+    "body": "The fabricator still works, but everything it makes now comes out with whiskers.\n\nFine threads of feedstock trail off every print, as if the nozzle can't quite bear to let go. A bracket arrives looking like it needs a shave. A cup comes out wearing a small beard. The crew has started trimming prints with nail scissors, and there is now a waiting list for the nail scissors.",
+    "choices": [
+      {
+        "text": "Clean the nozzle by the book",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "fabricator_repair": true,
+          "narrative": "An afternoon of heat cycles, a brass brush and a cleaning filament the manual insists on by brand. The nozzle stops oozing. The next cup comes out clean-shaven, and the wear counter steps back from the edge."
+        }
+      },
+      {
+        "text": "{crew.engineer} swaps the worn nozzle",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "fabricator_repair": "full",
+          "repair_done": true,
+          "narrative": "{crew.engineer} pulls the old nozzle, holds it up to the light, and shows everyone the hole worn oval. The new one goes in tight. The fabricator prints like it did on its first day, and the nail scissors return to general use."
+        }
+      },
+      {
+        "text": "Sweep up the whiskers for feedstock",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "sub": "Some scrap · the fabricator keeps wearing",
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "materials": {
+            "scrap": 3
+          },
+          "narrative": "You keep printing and keep the trimmings. Swept off every surface and bagged, the whiskers add up to a respectable bundle of scrap stock. The fabricator keeps wearing, whiskering all the while."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_056",
+    "active": true,
+    "title": "Steam in the Engine Room",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "engine_strain"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "bg": "our_ship/engine_error",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "science_link": {
+      "text": "MARV notes that spacecraft really do shed heat this way: with no air to carry it off, the only route out is radiation, so ships carry radiator panels and sometimes use their own skin.",
+      "label": "Spacecraft thermal control",
+      "url": "https://en.wikipedia.org/wiki/Spacecraft_thermal_control"
+    },
+    "ai_flavor": {
+      "aria": "The engine room has its own WEATHER now! ARIA has forecast fog! ARIA was right! ARIA is never right about weather!",
+      "marv": "MARV reports the coolant loop losing more each PLAID leg than it can recover. It can be topped up. MARV notes that topping up and fixing are different words for a reason.",
+      "rex": "REX has cleared the fog from the engine room twice. It came back twice. REX respects that.",
+      "chip": "CHIP's Coolant Club™ delivers fresh coolant monthly! There are no months out here! CHIP will deliver anyway! Somehow!",
+      "ajoy": "AJOY says the hull is the best radiator the ship has. She also says it was not built to be one, and it will remember being used as one."
+    },
+    "body": "Too long at PLAID, and the drive's coolant has started boiling off faster than the loop can win it back.\n\nThe engine room is full of a warm, thin fog that smells faintly of coins. The coolant gauge reads low and falling. Somewhere behind a panel a relief valve hisses every few minutes, like someone deciding not to say something.\n\nThe loop can be topped up. It cannot be topped up with nothing.",
+    "choices": [
+      {
+        "text": "Top the loop up from the water tank",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "sub": "Stay at PLAID · costs drinking water",
+        "outcome": {
+          "resources": {
+            "water": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You bleed {cost.water} points of drinking water into the coolant loop. The fog thins, the gauge climbs out of the red, and the relief valve goes quiet. You stay at PLAID. The water tank is the one that pays for it."
+        }
+      },
+      {
+        "text": "Ease off to LUDICROUS",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "ludicrous"
+          },
+          "narrative": "You bring the drive down a notch and the boiling stops within the hour. The fog clears, the valve stops hissing, and the coolant settles at a level it can hold. The schedule slips, a little and permanently."
+        }
+      },
+      {
+        "text": "Let it boil and keep going",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave the drive at PLAID and the coolant to its fate. The fog gets into the air scrubbers, which spend the next leg coughing it out and doing their actual job rather less. The air goes stale. The drive does not care."
+        }
+      },
+      {
+        "text": "{crew.engineer} runs the coolant through the hull",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 2,
+        "outcome": {
+          "resources": {
+            "hull": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.engineer} reroutes the loop through the outer plating and turns the whole skin of the ship into a radiator. The heat pours out into the dark and the boiling stops at PLAID. The plating was never meant to be cooked from inside, and some of it buckles."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_057",
+    "active": true,
+    "title": "Sympathetic Vibration",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "engine_strain"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "bg": "our_ship/engine_error",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "science_link": {
+      "text": "MARV's training film is real: drive any structure at its own resonant frequency and small pushes add up each cycle until something gives. Engineers design to keep those frequencies away from the ones a machine makes.",
+      "label": "Mechanical resonance",
+      "url": "https://en.wikipedia.org/wiki/Mechanical_resonance"
+    },
+    "ai_flavor": {
+      "aria": "The whole ship is HUMMING! ARIA is humming along! ARIA has found the key! It is the key of uh-oh!",
+      "marv": "MARV has matched the hum to the hull's resonant frequency. A structure driven at its own frequency stores energy every cycle. Eventually it spends it, all at once, on itself.",
+      "rex": "REX has seen a bridge come down this way, on a training film. He did not enjoy the film. He is enjoying this less.",
+      "chip": "CHIP regrets that harmonic disassembly is listed under 'acts of physics' in your policy! CHIP did not know physics could act! CHIP is impressed!",
+      "ajoy": "AJOY says the note is the problem, not the speed. A little slower is enough to fall off it. A lot slower is for people who want to be sure."
+    },
+    "body": "At PLAID, for this many legs, the drive has finally found the note the ship was built around.\n\nThe whole hull is humming. Not the drive's usual roar: a deep, even tone that comes up through the deck and into everyone's teeth. Cups walk across tables. A corridor panel has shaken its screws halfway out and is working on the rest. The pilot reports that the stick is shaking hard enough to make the instruments unreadable.\n\nThings that resonate long enough come apart. The ship would prefer not to find out which things first.",
+    "choices": [
+      {
+        "text": "Detune: drop to RIDICULOUS",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "ridiculous"
+          },
+          "narrative": "You pull the pace back to RIDICULOUS and the hum dies with it, all at once, like a choir told to stop. The schedule takes the loss. The crew spends an hour putting screws back in, in a silence that feels enormous."
+        }
+      },
+      {
+        "text": "Brace the ship and ride it out",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "launch_minigame": "brace",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "hull": -2
+            },
+            "narrative": "Every loose panel is caught and strapped as it starts to walk, and the drive is eased off the note by a hair at exactly the right moment. The hum fades to a buzz. The hull loses a little, mostly paint. You stay at PLAID."
+          },
+          "good": {
+            "resources": {
+              "hull": -6
+            },
+            "narrative": "Most of the panels are caught. The ones that aren't leave dents in the corridor, and a strut cracks aft before the hum fades. You stay at PLAID, and the hull is the one that pays."
+          },
+          "poor": {
+            "resources": {
+              "hull": -12,
+              "morale": -3
+            },
+            "narrative": "The bracing goes in late and in the wrong order. By the time the hum fades, panels have gone through the corridor wall and a seam aft has opened and been sealed in a hurry. You are still at PLAID. Nobody feels faster."
+          }
+        },
+        "outcome": {
+          "resources": {
+            "hull": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Everyone grabs a strut. You hold PLAID and fight the hum."
+        }
+      },
+      {
+        "text": "{crew.engineer} re-torques every mount",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 3,
+        "outcome": {
+          "resources": {
+            "fuel": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "repair_done": true,
+          "narrative": "{crew.engineer} idles the drive and goes through the ship with a torque wrench and a stethoscope, tightening every mount until the frame stops ringing. Restarting a cold drive costs fuel. When it comes back to PLAID, it comes back without the hum."
+        }
+      },
+      {
+        "text": "{crew.pilot} hunts for a quieter speed",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 1,
+        "outcome": {
+          "resources": {
+            "fuel": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "ludicrous"
+          },
+          "narrative": "{crew.pilot} walks the drive down through the hum, notch by fraction, burning fuel on every correction, until the note slides off and fades. It ends one notch below PLAID, at LUDICROUS. The schedule gives a little. The ship stops singing."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_crisis_058",
+    "active": true,
+    "title": "The Concourse Booth",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "delayed_crisis"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "station_interior",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The booth is MINT GREEN! Mint green is a healing colour! ARIA read that somewhere! ARIA may have written it!",
+      "marv": "MARV has pulled the booth's inspection record. It has one. MARV would prefer not to describe it, except to say the date on it is not recent.",
+      "rex": "REX has assessed the man at the noodle bar. Steady hands. Clean nails. REX will be standing behind him the entire time.",
+      "chip": "CHIP is a proud sponsor of the concourse booth! CHIP is not a proud sponsor of what happens inside it! Those are separate contracts!",
+      "ajoy": "AJOY flagged this wound when it happened. She is not going to say so again. She is going to hold the patient's hand, whichever door they pick."
+    },
+    "body": "{patient.name}'s wound has been 'fine' since it happened. At the station it stops pretending. By the time the ship docks there is a fever, and a smell under the dressing nobody mentions.\n\nThe station clinic is shut. A sign on the door announces a Staff Wellness Day, and a second sign, in different handwriting, says it has been Staff Wellness Day for some time. What the concourse has instead is a coin-operated surgical booth, painted a reassuring mint, with a slot for payment and a seat with straps.\n\nAlso, at the noodle bar, there is a man who says he used to be a nurse.",
+    "choices": [
+      {
+        "text": "Feed the booth",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 20
+        },
+        "outcome": {
+          "resources": {
+            "gold": -20
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "patient"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{patient.name} sits, the straps close, and the booth plays a cheerful tune for the whole procedure, which is the worst part. It drains, cleans, doses and dresses the wound with a precision no human hand has ever had or wanted. Then it prints a receipt and asks for a rating."
+        }
+      },
+      {
+        "text": "{crew.medic} runs the booth on manual",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "effort": 2,
+        "outcome": {
+          "resources": {},
+          "crew_effect": {
+            "type": "heal",
+            "target": "patient"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "{crew.medic} pries open the booth's service panel, finds its demonstration mode, and talks it through the whole procedure one step at a time, overruling it twice. It takes most of a long night and costs nothing but everyone's nerves. {patient.name} comes out mended."
+        }
+      },
+      {
+        "text": "Pay the man at the noodle bar in food",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -6
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "patient"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The man who used to be a nurse turns out to have been one, or to have watched one very closely. He works on {patient.name} at the galley table, slowly and well, and takes {cost.food} points of food for it, packed to go. He does not leave a name."
+        }
+      },
+      {
+        "text": "Clean it aboard and push on",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "sub": "No cost now · the patient gets worse",
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": {
+            "type": "injure",
+            "target": "patient"
+          },
+          "severity": "injury",
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You turn down the booth and the noodle bar and clean the wound aboard with what the ship has. It is not enough to mend it, only enough to slow it down. {patient.name} flies on worse off than before, saying it's fine, which nobody believes any more."
+        }
+      }
+    ]
   }
 ]

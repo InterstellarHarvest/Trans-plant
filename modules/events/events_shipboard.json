@@ -219,16 +219,15 @@
         "requires_flag": null,
         "microgame_type": null,
         "outcome": {
-          "resources": {
-            "morale": 5
-          },
+          "resources": {},
           "crew_effect": null,
           "severity": null,
           "item_grant": null,
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "trivial",
-          "narrative": "You carry the tray down a deck and eat beside the glass, narrating your day to a plant with the shameless fluency of someone who stopped feeling silly about it weeks ago. The crop says nothing, magnificently. Best conversation you've had all month."
+          "narrative": "You carry the tray down a deck and eat beside the glass, narrating your day to a plant with the shameless fluency of someone who stopped feeling silly about it weeks ago. The crop says nothing, magnificently. Best conversation you've had all month.",
+          "crop_health": 3
         }
       },
       {
@@ -238,9 +237,7 @@
         "requires_flag": null,
         "microgame_type": null,
         "outcome": {
-          "resources": {
-            "morale": 3
-          },
+          "resources": {},
           "crew_effect": null,
           "severity": null,
           "item_grant": null,
@@ -258,7 +255,7 @@
         "microgame_type": null,
         "outcome": {
           "resources": {
-            "morale": -2
+            "hull": 2
           },
           "crew_effect": null,
           "severity": null,
@@ -1144,10 +1141,12 @@
         "microgame_type": null,
         "outcome": {
           "resources": {
-            "morale": 5,
             "food": -1
           },
-          "crew_effect": null,
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
           "severity": null,
           "item_grant": null,
           "item_consume": null,
@@ -1163,9 +1162,7 @@
         "requires_flag": null,
         "microgame_type": null,
         "outcome": {
-          "resources": {
-            "morale": -1
-          },
+          "resources": {},
           "crew_effect": null,
           "severity": null,
           "item_grant": null,
@@ -3209,6 +3206,896 @@
             "biocomponent": 2
           },
           "narrative": "You compost the dead stalks, node and all, into something the fabricator can use. It is the practical thing to do. Nobody says it was the wrong thing to do. Nobody says much of anything."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_032",
+    "active": true,
+    "title": "Incident in Transit",
+    "difficulty": "easy",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crew_injured"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "bg": "our_ship/medbay",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has read the whole form! There's a box for 'how did this injury make you feel?' ARIA has SO many answers!",
+      "marv": "MARV has read the form. It has more questions about the injury than the medical manual does, and fewer answers. MARV suspects they were written by the same committee on different days.",
+      "rex": "REX does not negotiate with lockers. He has been asked not to shoot this one. He has filed the request under pending.",
+      "chip": "CHIP is pleased to offer the Expedite™ option! It is the fastest way to get care! It is also the only fast way to get care! That is what makes it premium!",
+      "ajoy": "AJOY has filled in half the form from the ship's log already. The rest needs a human. One question needs a human to be generous about the customer experience. She has left that one for you."
+    },
+    "body": "The medical locker will not open.\n\nIts lock is managed, from a very long way away, by Colonial Personnel Services, who release anything stronger than a plaster only on receipt of a completed Incident in Transit form (Declaration Of). The form is on the screen. It is long. Near the end, it asks the injured party to rate the incident's overall customer experience.\n\nSomebody aboard is hurt, and somebody aboard is going to have to fill this in.",
+    "choices": [
+      {
+        "text": "Fill in every box",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "It takes most of a day. The form wants the injury's time, place, cause and the cause of the cause, plus signatures from a witness, a supervisor and the injured party, which aboard this ship means signing more than once. The locker clicks open. The patient gets what they needed. The customer experience question is answered honestly. It will not be read."
+        }
+      },
+      {
+        "text": "Pay the expedited processing fee",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": -8
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "There is a button marked EXPEDITE. It costs money, and it opens the locker at once, which tells you everything about what the form was for. The patient gets the good stuff. Colonial Personnel Services sends a receipt and a short survey about the expediting experience."
+        },
+        "gate": {
+          "gold": 8
+        }
+      },
+      {
+        "text": "{crew.engineer} opens it from the back",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.engineer} unscrews the locker's back panel, which is held on by a handful of screws and the assumption that nobody would try. The lock stays locked, with great dignity, on a door that no longer matters. The patient is patched up by lunch. Colonial Personnel Services is not informed."
+        }
+      },
+      {
+        "text": "Make do with plasters",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You make do with what the locker lets out without paperwork: plasters, a cold pack and a sympathetic look. The patient sits down for a while. It helps the way sitting down helps."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_033",
+    "active": true,
+    "title": "Out of Joint",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crew_injured"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "bg": "our_ship/medbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crew_aboard": true,
+    "ai_flavor": {
+      "aria": "ARIA has found the diagram! The little cartoon person in it is SMILING! ARIA thinks that's a good sign! ARIA is going to keep thinking that!",
+      "marv": "MARV notes that the window for an easy reduction closes as the muscles spasm. It is closing now. MARV is mentioning this once, at a normal volume, so nobody can say he didn't.",
+      "rex": "REX has put a shoulder back in the field. He did not enjoy it. Neither did the shoulder. Both made a full recovery.",
+      "chip": "CHIP must disclose that the manual's diagram is licensed for illustrative purposes only! CHIP has never seen a more illustrative purpose!",
+      "ajoy": "AJOY says soon is better than later, and gentle is better than fast. If there's a medic aboard, they know a trick with a water bottle."
+    },
+    "body": "The wound aboard has turned out to have a second chapter.\n\nWhen it happened, a shoulder came out of its socket as well, and it has been held in place since by stubbornness and a folded jacket. The arm hangs at an angle arms don't use. The patient is pale, sweating and very polite, which is what pain does to some people.\n\nThe longer a joint stays out, the harder the muscles around it clamp down, and the harder it is to put back. The medical manual has a diagram. The diagram is cheerful.",
+    "choices": [
+      {
+        "text": "Put it back in, by the diagram",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Out comes the manual, open at the diagram: slow traction, steady, and patience while the muscles give up."
+        },
+        "launch_minigame": "medical",
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "morale": 3
+            },
+            "narrative": "A slow, steady pull, a long breath out, and the shoulder slides home with a soft clunk everyone feels in their teeth. The colour is back in the patient's face before the sling goes on. The diagram, it turns out, was right to be cheerful."
+          },
+          "good": {
+            "narrative": "It takes a long minute and a second go, but the joint goes back where it belongs. The patient says a word the manual doesn't index. The sling goes on, and the mending starts."
+          },
+          "poor": {
+            "resources": {
+              "morale": -3
+            },
+            "time_cost": "low",
+            "narrative": "The muscles have clamped too hard. Attempt follows attempt, and the patient goes greyer with each, until you stop and strap the arm as it is. It will settle back eventually, the slow way. Everyone aboard heard every attempt."
+          }
+        }
+      },
+      {
+        "text": "{crew.medic} lets gravity do it",
+        "requires_crew": "medic",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.medic} lays the patient face down on the galley table with the arm hanging over the edge and a full water bottle taped to the wrist, then waits, talking about nothing, while gravity does the arguing. After a while the muscles tire, the shoulder slips back in on its own, and the medic looks as if this was always the plan. It was."
+        }
+      },
+      {
+        "text": "Muscle relaxant from a medkit, then try",
+        "requires_crew": null,
+        "requires_item": "medkit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "medkit",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The medkit's muscle relaxant does what persuasion couldn't. A little while later the shoulder goes back in with almost no argument, and the patient falls asleep in the middle of saying thank you."
+        }
+      },
+      {
+        "text": "Sling it and leave it for a station",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You strap the arm across the chest and leave the joint for someone with an X-ray. The patient is brave about it at every bump, every hatch and every attempt to sleep. Brave is tiring. Everyone gets tired."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "One old way to put a shoulder back: lay the patient face down with the arm hanging and a weight at the wrist, and let tired muscles do the rest. It's called the Stimson technique.",
+      "label": "Dislocated shoulder",
+      "url": "https://en.wikipedia.org/wiki/Dislocated_shoulder"
+    }
+  },
+  {
+    "id": "event_shipboard_034",
+    "active": true,
+    "title": "Covering the Shift",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crewmate_injured"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crew_aboard": true,
+    "ai_flavor": {
+      "aria": "ARIA has volunteered to cover the shift! ARIA has been reminded she can't hold a wrench! ARIA has volunteered to hold the clipboard!",
+      "marv": "MARV can cover the station. MARV will do it exactly as written. MARV has read what is written. MARV recommends someone else reads it before he starts.",
+      "rex": "REX does not leave a post unmanned. He has stood at the empty station for an hour. He has not touched anything. The post is, technically, manned.",
+      "chip": "CHIP offers ShiftCover™ automated staffing at no extra charge! The charge is in fuel! CHIP is legally required to call that no extra charge!",
+      "ajoy": "AJOY says they will rest when they believe the job is handled. Handle it any way you like, and say so out loud."
+    },
+    "body": "Someone in the crew is hurt, and their job did not get the memo.\n\nThe work is still there: the checks, the logs, the small daily jobs that keep a ship a ship. Their station sits empty, lights blinking politely. The patient keeps trying to get up to see to it. The patient keeps being told to lie down. Both of these keep happening.\n\nSomeone has to cover. Every someone has a price.",
+    "choices": [
+      {
+        "text": "Take their shift yourself",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You take their station on top of your own and do both badly enough to be honest about it. Everything aboard runs a little late. The patient, finally convinced the job is in someone's hands, sleeps properly for the first time since it happened, and the healing gets on with itself."
+        }
+      },
+      {
+        "text": "Hand it to the ship computer",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -3
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The ship computer takes over their station and runs it by the manual, which was written for a ship with more fuel than this one and errs on the side of burning it. The job gets done. The patient rests. The fuel gauge carries the cost quietly."
+        }
+      },
+      {
+        "text": "Let them run it from the bunk",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You run a cable to the bunk and a screen to the patient. They work their station lying down, cheerful and useful and healing at the speed of someone who is still working. Nobody can call it a bad idea to their face."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_035",
+    "active": true,
+    "title": "Can't Sleep",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crewmate_injured"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "bg": "our_ship/medbay",
+    "once": false,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crew_aboard": true,
+    "ai_flavor": {
+      "aria": "ARIA has been singing the patient a lullaby! In text! On the ceiling screen! It has not helped! It has been very pretty!",
+      "marv": "MARV has measured the drive's hum in sick bay. It sits exactly where a human ear finds it hardest to ignore. MARV did not design the ship. MARV would like that noted.",
+      "rex": "REX can sleep anywhere. He once slept through a hull breach. He does not understand the problem. He has stopped offering his method, which is exhaustion.",
+      "chip": "CHIP recommends the DreamPod™ sleep capsule! It is soundproofed, heated and very comfortable! It is also on the cancelled-features list, right after the second bathroom!",
+      "ajoy": "AJOY has dimmed sick bay and muted the alerts. It's the drive. Move them, stop it or dose them. Sleep is the medicine; the rest is delivery."
+    },
+    "body": "The patient can't sleep.\n\nIt isn't the pain, exactly, or not only. The sick bay cot sits against the bulkhead nearest the drive, and the drive hums all night in a key that gets into the bones, and the bones in question are already having a hard week. They lie awake counting the rivets in the ceiling. They know all of them now.\n\nMost healing happens during sleep. This patient has been doing very little of either.",
+    "choices": [
+      {
+        "text": "Move their cot into the growbay",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -3,
+          "narrative": "You move the cot between the planters and dim the lamps to night for them. The growbay is the quietest room aboard, warm and damp and smelling of soil, and the patient is asleep inside the hour. The crop loses its nights of full light and shows it. The patient wakes up better, and talking to the plants."
+        },
+        "gate": {
+          "crop": "alive"
+        }
+      },
+      {
+        "text": "Cut the drive and drift for a night",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You shut the drive down after dinner and let the ship coast through the dark in silence. The patient is asleep before the hum has finished fading and sleeps clean through to the restart. The schedule loses the night. The patient gets it."
+        }
+      },
+      {
+        "text": "A sedative from a medkit",
+        "requires_crew": null,
+        "requires_item": "medkit",
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "severity": null,
+          "item_grant": null,
+          "item_consume": "medkit",
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "A measured dose from the medkit, and the drive's hum becomes somebody else's problem. The patient sleeps the long, flat sleep of the chemically excused and wakes stiff, groggy and visibly mended."
+        }
+      },
+      {
+        "text": "They'll get used to it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Nobody gets used to it. The patient spends the nights learning the ceiling and the days yawning through a recovery that drags. By the end, the rivets are a personal matter."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_036",
+    "active": true,
+    "title": "Lodged",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "post_combat"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_exterior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "We have a new part! ARIA didn't order it! ARIA is calling it a gift!",
+      "marv": "MARV puts the object's mass at roughly that of a vending machine, mounted off-centre. The thrusters are correcting for it on every burn. MARV can do this all day. The fuel cannot.",
+      "rex": "REX wants to know whose it is. If it's theirs, it's a trophy. If it's ours, it's evidence. Either way he wants it inside.",
+      "chip": "CHIP is thrilled to announce the ship has an aftermarket accessory! It was not fitted by an authorised dealer! It voids the warranty in a whole new place!",
+      "ajoy": "AJOY says it's good metal if someone goes out for it, and a slow fuel leak if nobody does. A hard burn shakes it free and takes some plating with it."
+    },
+    "body": "After the fight, the hull sensors report something new: a lump.\n\nA piece of something, the other ship's or a stray round's or nobody's, has punched into the outer plating aft and stuck there, half in and half out, like a dart that missed the board and hit the wall. It hasn't gone through. It is heavy. Every time the drive fires, the ship pulls very slightly to one side, and the thrusters spend fuel pulling it back.",
+    "choices": [
+      {
+        "text": "Cut it out and keep the metal",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "materials": {
+            "metal": 2,
+            "scrap": 2
+          },
+          "narrative": "A spacewalk, a cutting torch and a long, careful afternoon. The lump comes free and comes inside, where it turns out to be good metal that someone else paid for. It leaves a hole behind, which is the thing about holes. You patch it as well as a patch can."
+        }
+      },
+      {
+        "text": "{crew.engineer} pulls it and plates the hole",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "materials": {
+            "metal": 2,
+            "scrap": 1
+          },
+          "repair_done": true,
+          "narrative": "{crew.engineer} goes out with the torch and comes back with the lump, then goes out again with plate and sealant and does the hole properly, stronger than the panel around it. The ship flies straight. The engineer sits in the airlock for a while afterwards with their helmet off, looking pleased."
+        },
+        "effort": 2
+      },
+      {
+        "text": "Leave it where it is",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You leave it. It stays, a souvenir nobody wanted, and on every burn for the rest of the leg the thrusters lean against it. The fuel spent keeping the ship straight adds up quietly, the way small leans do."
+        }
+      },
+      {
+        "text": "Shake it loose with a hard burn",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -2,
+            "hull": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You fire the drive hard and cut it, then again, like a dog shaking off water. On the second jolt the lump tears free and tumbles away into the dark. It takes a strip of plating with it, as a keepsake."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_037",
+    "active": true,
+    "title": "Everything in the Growbay Moved",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "grim"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "post_combat"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "The crop went on a ROLLERCOASTER! ARIA thinks it had a great time! ARIA has looked at its readings! ARIA has stopped thinking that!",
+      "marv": "MARV has checked the fight's manoeuvres against the growbay's tie-down procedure. There was no tie-down procedure. MARV has now written one. It is very short and would have taken a minute.",
+      "rex": "REX takes responsibility for the hard turns. He would take them again. Next time he will strap the planters down first.",
+      "chip": "CHIP notes that GroTray™ planters are rated for gentle cruising! CHIP has checked! A space battle is not gentle cruising! CHIP has updated the definition!",
+      "ajoy": "AJOY says roots in the air first; they dry fastest. The glass will hold a little while. The plants that only look bad can wait."
+    },
+    "body": "Nobody thought to strap down the growbay before the fight.\n\nEvery hard turn and every hit has been redistributed through the planters. There is soil on the walls. A tray of seedlings is upside down in the corner, looking surprised. The {crop.name} is still in its beds, mostly, at angles it did not choose, roots half out and leaves pressed flat against the glass, and one glass panel has a crack across it.\n\nIt is alive. It would like someone to come in.",
+    "choices": [
+      {
+        "text": "Scoop it all back by hand",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "crop_health": 6,
+          "narrative": "Scoop by scoop the soil goes back in the beds, the roots go back under the soil, and the upturned tray is turned the right way up and forgiven. It takes the rest of the day. By evening the bay looks like a growbay again, and the plants have stopped leaning."
+        },
+        "effort": 2
+      },
+      {
+        "text": "{crew.botanist} triages the beds",
+        "requires_crew": "botanist",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 10,
+          "narrative": "{crew.botanist} walks the bay once without touching anything, then fixes the plants in the order that matters: roots in the air first, the ones that only look bad last. It goes quickly, because it goes in the right order. The upturned tray turns out to have been fine. Only its soil was upside down."
+        }
+      },
+      {
+        "text": "Seal the cracked glass first",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -3,
+          "narrative": "You seal the cracked panel before anything else, because cracks spread and plants don't. It's a good seal. By the time you get to the beds, some of the roots that spent the afternoon in the air have dried past saving."
+        }
+      },
+      {
+        "text": "It's alive. Tidy up tomorrow",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": -4,
+          "narrative": "You close the door on the mess and see to the rest of the ship first. By the time anyone gets back to the growbay the exposed roots have dried and the leaves crushed against the glass have browned. Alive, still. Less of it."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_038",
+    "active": true,
+    "title": "Next of Kin",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "crew_dead"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA has unticked the survey box! It keeps ticking itself again! ARIA is going to keep unticking it for as long as it takes!",
+      "marv": "MARV has read the template. Every sentence in it is true, and none of it is about anyone. MARV did not know that was possible. He has learned something today he would rather not have.",
+      "rex": "REX has written these. Where he served, the commanding officer writes them by hand. It is the worst part of the job. It is supposed to be.",
+      "chip": "CHIP has switched off the notification survey! CHIP has never switched off a survey! CHIP does not care what it does to the metrics! This one is off!",
+      "ajoy": "AJOY has their record open, and the small things the log remembers that a record doesn't. She will read any of it out, if it helps you write. She will be quiet, if that helps more."
+    },
+    "body": "The next relay is close enough to send a message home, and there is a message that has to be sent.\n\nColonial Personnel Services has already provided a template. It arrived within the hour, which is the fastest anything from Colonial Personnel Services has ever arrived. It is warm the way a hand dryer is warm. It has a field for the name, a field for the date, and a box, ticked by default, for a short survey about the notification experience.\n\nSomebody, somewhere, is going to read whatever goes out. It should be something worth reading.",
+    "choices": [
+      {
+        "text": "Write it yourself",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "log_lore": {
+            "title": "THE LETTER",
+            "text": "To their family,\n\nYou will have had the official notice by now. This is the other one.\n\nThey were good at the work, and better at the parts of it nobody counts: knowing when someone needed a hand before they asked, fixing the thing on the list nobody else understood, laughing at the right moment and sometimes at the wrong one, which usually turned out to be the right one too.\n\nThe ship runs a little differently without them. We notice it every day. We are carrying on, because they would have been annoyed with us if we didn't, and because they believed in where we are going more loudly than most.\n\nThey were part of a crew, and the crew was better for it. I wanted you to know that most of all.\n\nThe Captain"
+          },
+          "narrative": "You untick the box and start from nothing. It takes most of a day and more drafts than you'll admit to, and the last one is the shortest. It says what they did aboard, what they were like to work beside, and the story they would have wanted told. It goes out at the relay. You keep a copy in the log, because someone should."
+        }
+      },
+      {
+        "text": "Everyone adds a line",
+        "requires_crew": "any",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You pass the screen round the galley table. Each person writes a line and passes it on without reading the others. Some are funny. One is only their nickname, spelled the way only a friend would spell it. The message goes out at the relay looking as if it was written by a crew, which it was."
+        }
+      },
+      {
+        "text": "{crew.diplomat} drafts it",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.diplomat} has written this letter before, in a different job, more often than anyone should. The draft arrives within the hour, in plain words, and it is exactly right. The diplomat asks for it to go out under your name. You send it under both."
+        }
+      },
+      {
+        "text": "Send the template",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You fill in the name and the date and send it as issued, survey and all. It is correct. It is on time. Somewhere a family will open a message from a ship and find a form, and aboard the ship, whenever the relay comes up, someone changes the subject."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_shipboard_039",
+    "active": true,
+    "title": "Crew Member B",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "solo_run"
+    ],
+    "event_presentation": "modal",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA can be Crew Member B! ARIA has no hands! ARIA has enthusiasm! The checklist does not have a box for enthusiasm!",
+      "marv": "MARV has checked who wrote the checklist. A committee, for a full crew. MARV notes that this ship currently has neither.",
+      "rex": "REX has run worse drills alone. He recommends running. He recommends running faster than you think you can.",
+      "chip": "CHIP is delighted to offer Crew Member B™ as a subscription! It is the ship computer! It is already aboard! The subscription is for the signature!",
+      "ajoy": "AJOY has timed the corridor. Done properly, it's a long run. The computer is quicker and not gentle. Skipping it isn't free; it's just billed later."
+    },
+    "body": "Today's maintenance checklist has a two-person job on it.\n\nThe coolant loop needs bleeding, which means a valve at the front of the ship held open while a valve at the back is turned, slowly, by someone else. The checklist calls them Crew Member A and Crew Member B, and gives them a signature line each. The crew roster has one name on it, and it's yours.\n\nThe valves are a long corridor apart. The checklist does not care.",
+    "choices": [
+      {
+        "text": "Run between the valves",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You tie the front valve open with a sock, run the length of the ship, turn the back valve a notch, run back to check the front, and run back again. Somewhere in the middle of it the loop gives up its air with a gurgle and the drive temperature drops. You sign the checklist as Crew Member A, then again, more slowly, as Crew Member B. The handwriting doesn't match. You were very tired by then."
+        }
+      },
+      {
+        "text": "Let the ship computer be Crew Member B",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The ship computer turns the back valve with a maintenance arm built for lifting crates, not for subtlety. It turns it all the way, at once, and the loop bangs like a dropped pan and cracks a bracket. The air is out. So, briefly, was your heart. The computer signs as Crew Member B in a perfect font."
+        }
+      },
+      {
+        "text": "Skip it. Who's checking?",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "Nobody's checking. The loop keeps its air bubble, the drive runs a little hot, and running hot it burns a little more for the same push, leg after leg. The item stays open on the checklist, its signature lines empty, waiting."
         }
       }
     ]
