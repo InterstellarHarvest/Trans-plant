@@ -1064,8 +1064,19 @@ const PauseMenu = (() => {
     });
   }
 
+  // No voyage under way (the title, the setup wizard): SAVE, SHIP'S LOG and
+  // QUIT have nothing to act on, so they're not offered.
+  function noVoyage() {
+    if (!document.getElementById('screen-title')) return false; // standalone demos keep every section
+    const on = id => { const el = document.getElementById(id); return !!(el && el.classList.contains('active')); };
+    return on('screen-title') || on('screen-setup') || typeof STATE === 'undefined' || !STATE.trail || !(STATE.nodes && STATE.nodes.length);
+  }
+  const NO_VOYAGE_HIDDEN = new Set(['save', 'log', 'quit']);
+  function visibleSections() { return noVoyage() ? SECTIONS.filter(sec => !NO_VOYAGE_HIDDEN.has(sec.id)) : SECTIONS; }
   function open() {
     if (!overlay) build();
+    const hide = noVoyage();
+    overlay.querySelectorAll('.pause-item').forEach(b => { b.hidden = hide && NO_VOYAGE_HIDDEN.has(b.dataset.section); });
     overlay.hidden = false;
     document.body.classList.add('pause-open');
     selected = 'resume';
@@ -1407,9 +1418,10 @@ const PauseMenu = (() => {
     if (!isOpen()) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
-      const i = SECTIONS.findIndex(s => s.id === selected);
-      const j = (i + (e.key === 'ArrowDown' ? 1 : -1) + SECTIONS.length) % SECTIONS.length;
-      select(SECTIONS[j].id, true);
+      const list = visibleSections();
+      const i = list.findIndex(s => s.id === selected);
+      const j = (i + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length;
+      select(list[j].id, true);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       activate(selected);

@@ -682,12 +682,12 @@
     // The growbay's own thirst rule (pickAriaQuip): plant share >10
     // points under the crop's need.
     const split = STATE.orders && Number.isFinite(STATE.orders.waterSplit) ? STATE.orders.waterSplit : cg.waterPlant;
-    if (split < Math.round(cropWaterNeed()) - 10) why.push('Thirsty');
+    if (split < Math.round(cropWaterNeed()) - 5) why.push('Thirsty'); // the growbay's DRY line (more than 5 under the need stalls growth)
     return why;
   }
   // Crop problems in the order the card names them (the worst first).
   const CROP_ISSUES = [
-    { why: 'Pests', label: 'PESTS: TREAT IT', tip: 'Pests are eating the crop. Open the growbay and TREAT (it takes a day), or USE a crop treatment from the hold.' },
+    { why: 'Pests', label: 'PESTS: TREAT IT', tip: () => 'Pests are eating the crop. Open the growbay and TREAT (' + (passiveMult('botanist') >= 1 ? 'the botanist does it in no time' : passiveMult('botanist') > 0 ? 'a day, or none if the botanist manages it' : 'it takes a day') + '), or USE a crop treatment from the hold.' },
     { why: 'Sick', label: 'SICK', tip: "The crop's health is below its sick line. Open the growbay to see what's hurting it." },
     { why: 'Thirsty', label: 'THIRSTY', tip: "The crop's share of the water is below what it needs. Raise it in Orders or the growbay." },
   ];
@@ -726,7 +726,7 @@
     const issue = alive ? CROP_ISSUES.find(i => why.includes(i.why)) : null;
     stageEl.classList.toggle('issue', !!issue && !mature);
     if (issue && !mature) stageEl.textContent = issue.label;
-    stageEl.title = issue ? issue.tip : '';
+    stageEl.title = issue ? (typeof issue.tip === 'function' ? issue.tip() : issue.tip) : '';
     const icon = $('crop-icon');
     icon.classList.toggle('pest', alive && !!(cg && cg.pest));
     icon.classList.toggle('sick', alive && why.includes('Sick'));
@@ -791,15 +791,15 @@
   // on verbs that cost no days.
   const STOP_VERBS = {
     // icon: demo-cruise.html STOP_VERBS iconUrl (demo canon), sprites/interface/.
-    mine:         { label: 'MINE',      sub: 'Pull raw materials from the rocks.',              effort: 3, icon: 'mining', time: '1d/run' },
-    salvage:      { label: 'SALVAGE',   sub: (region) => region === 'derelict' ? 'Board the hulk. Fuel cells, ration cans, the odd medkit.' : 'Pick through the wreckage. Mind the sharp bits.',  effort: 3, icon: 'salvage', time: '1d' },
+    mine:         { label: 'MINE',      sub: (region) => holdIsFull() ? 'Hold full: no room to keep what you mine.' : region === 'nebula' ? 'Skim the gas for materials and fuel.' : 'Pull raw materials from the rocks.',              effort: 3, icon: 'mining', time: '1d/run' },
+    salvage:      { label: 'SALVAGE',   sub: (region) => holdIsFull() ? 'Hold full: no room to keep what you find.' : region === 'derelict' ? 'Board the hulk. Fuel cells, ration cans, the odd medkit.' : 'Pick through the wreckage. Mind the sharp bits.',  effort: 3, icon: 'salvage', time: '1d' },
     forage_food:  { label: (region) => FORAGE_LABEL_BY_REGION[region] || 'FORAGE',
                     sub: (region) => region === 'planet_orbit_alien' ? 'Alien flora. Some of it bites back: someone aboard may be poisoned.' : 'Find something edible. Or interesting. Sometimes both.',
                     effort: 2, icon: 'forage', time: '1d', variantBy: (region) => region === 'planet_orbit_alien' ? 'risky' : null },
-    trade:        { label: 'TRADE',     sub: () => atStation() ? 'Market Row is open. Haggle in person.' : 'A trader is in range. Haggle. Or pretend to.', effort: 1, icon: 'trade', time: '≤1d', requires: () => traderHere() },
+    trade:        { label: 'TRADE',     sub: () => atStation() ? 'Market Row is open. Haggle in person.' : 'A trader is in range. Haggle. Or pretend to.', effort: 1, icon: 'trade', time: '0-2d', requires: () => traderHere() }, // browsing is free; a deal takes a day or two
     wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park. Roll the dice. Days will pass. Things will hear you.', effort: 1, hint: true, icon: 'wait', time: '1-7d', hideWhen: () => traderHere() },
     scan:         { label: 'SCAN',      sub: 'Read the signals. Find what is coming.',           effort: 2, hint: true, icon: 'scan', time: '1d' },
-    repair:       { label: 'REPAIR',    sub: 'Patch the hull: 2 metal + 1 scrap and a day.', effort: 3, locked: repairLockReason, icon: 'repair', time: '1d', hideWhen: () => hullIntact() },
+    repair:       { label: 'REPAIR',    sub: () => 'Patch the hull: +' + Math.min(repairHullGain(), Math.ceil(resMax('hull') - STATE.resources.hull)) + ' hull for 2 metal + 1 scrap.', effort: 3, locked: repairLockReason, icon: 'repair', time: '1d', hideWhen: () => hullIntact() },
     rest:         { label: 'REST',      sub: () => 'Crew morale up (+' + restPerDay() + ' a day). Days down.', effort: 1, hint: true, icon: 'rest', time: '1-7d', locked: restLockReason },
     fab:          { label: 'FABRICATOR', sub: 'Open the print queue. Long jobs need a still ship.', effort: 1, hint: true, icon: 'fab' },
     medbay:       { label: 'MEDBAY',    sub: () => 'Treat everyone aboard who is hurt. ' + medbayFee() + 'g, no days.', effort: 1, hint: true, locked: medbayLockReason, icon: 'medic', hideWhen: () => !medbayPatient() },
@@ -937,6 +937,15 @@
   // Ruling 77: a finished repair (REPAIR, DRYDOCK, the Engine Fault's
   // rebuild) lifts the engineer — crew_roster.json morale_concern
   // repair_done, the way back from hull_damage. The verb tooltips show it.
+  // The hold has no free slot (a MINE / SALVAGE haul would stay behind).
+  function holdIsFull() {
+    if (typeof materialLandings !== 'function') return false;
+    const ids = (MOD.materials && (MOD.materials.materials || MOD.materials) || []).map(m => m.id).filter(Boolean);
+    const land = materialLandings(Object.fromEntries(ids.map(id => [id, 1])));
+    return ids.length > 0 && ids.every(id => !land[id]); // not one unit of anything fits
+  }
+  // REPAIR's patch: +20 hull, +10 more with an engineer (half for a captain engineer).
+  function repairHullGain() { return 20 + Math.round(10 * specialistMult('engineer')); }
   function repairLift() {
     const c = window.concernDef && concernDef('engineer', 'repair_done');
     return c ? applyConcern('engineer', c.morale, 'repair_done') : 0;
@@ -961,7 +970,7 @@
       for (const [mat, q] of Object.entries(REPAIR_COST)) STATE.materials[mat] = Math.max(0, (STATE.materials[mat] || 0) - q);
       // Engineer aboard: the patch goes further (+10, captain half).
       const before = STATE.resources.hull;
-      STATE.resources.hull = clamp(STATE.resources.hull + 20 + Math.round(10 * specialistMult('engineer')), 0, resMax('hull'));
+      STATE.resources.hull = clamp(STATE.resources.hull + repairHullGain(), 0, resMax('hull'));
       const gain = Math.round(STATE.resources.hull - before); // the log reports what actually landed
       repairLift(); // the engineer minds a finished repair (ruling 77)
       settleMinigame('◆ REPAIR — ' + (result.allFixed ? 'all four systems nominal' : n + '/4 faults cleared') + ', hull patched (+' + gain + ').');
@@ -1082,7 +1091,7 @@
     openMining((haul) => {
       haul = haul || {};
       const inv = haul.inventory || {};
-      const granted = [];
+      const granted = [], noRoom = [];
       // Materials are cargo (owner ruling 2026-10-11): the haul comes aboard
       // as far as the hold allows; grantMaterials logs what stays behind.
       const res = grantMaterials(inv);
@@ -1090,9 +1099,9 @@
       for (const [mat, qty] of Object.entries(inv)) {
         if (!qty) continue;
         if (res.got[mat]) granted.push(res.got[mat] + ' ' + mat);
-        else granted.push('no room for ' + mat);
+        else noRoom.push(mat);
       }
-      if (!granted.length && !(haul.runs > 0)) { window.refundVerbTax(); activeVerb = null; renderCruise(); return; } // LEAVE with no run made — no time cost either
+      if (!granted.length && !noRoom.length && !(haul.runs > 0)) { window.refundVerbTax(); activeVerb = null; renderCruise(); return; } // LEAVE with no run made — no time cost either
       // Bible multi-path rule: asteroid ice melts into water, a nebula
       // run scoops fuel — scaled by how much was mined (cap 15).
       const mined = Object.values(inv).reduce((a, b) => a + (b || 0), 0);
@@ -1110,7 +1119,10 @@
       // One day per mining run: unlimited MINE AGAIN runs for a single
       // day are a gold and fuel faucet (economy sim).
       const runs = Math.max(1, haul.runs || 1);
-      settleMinigame('◆ MINE — ' + (runs > 1 ? runs + ' runs, ' + runs + ' days: ' : '') + (granted.length ? 'recovered ' + granted.join(', ') : 'the rocks gave up nothing') + '.' + (haul.summary ? ' ' + haul.summary : ''), runs); // summary: tier · sector · crew credit (mining.js, parity-shell)
+      const parts = [];
+      if (granted.length) parts.push('recovered ' + granted.join(', '));
+      if (noRoom.length) parts.push('no room in the hold for ' + noRoom.join(' or '));
+      settleMinigame('◆ MINE — ' + (runs > 1 ? runs + ' runs, ' + runs + ' days: ' : '') + (parts.length ? parts.join('; ') : 'the rocks gave up nothing') + '.' + (haul.summary ? ' ' + haul.summary : ''), runs); // summary: tier · sector · crew credit (mining.js, parity-shell)
     });
   }
 
@@ -1167,7 +1179,8 @@
     const treated = peopleAboard().filter(x => hpOf(x) < 100);
     for (const x of treated) { setHP(x, 100); if (STATE.crewPending) delete STATE.crewPending[x]; }
     const who = treated.map((x, i) => i ? personName(x) : PersonName(x));
-    pushLogEntry('◆ MEDBAY — ' + who.join(', ') + (treated.length > 1 ? ' are' : ' is') + ' treated, stitched and discharged with a lollipop each. −' + medbayFee() + 'g.');
+    const list = who.length > 1 ? who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1] : who[0]; // "A, B and C"
+    pushLogEntry('◆ MEDBAY — ' + list + (treated.length > 1 ? ' are' : ' is') + ' treated, stitched and discharged with a lollipop each. −' + medbayFee() + 'g.');
     renderHUD();
     renderCruise();
     renderStopMenu(); // the verb re-gates (nobody hurt / can't afford)
