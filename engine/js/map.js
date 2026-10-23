@@ -13,6 +13,10 @@
    second parallel rendering system to maintain.
    ──────────────────────────────────────────────────────────────── */
 
+// The map's own (short) label per type: two stops apart, "Asteroid Field 11"
+// ran into its neighbour.
+const MAP_LABELS = { asteroid_field: 'Asteroids' };
+const mapLabel = type => MAP_LABELS[type] || TYPE_LABELS[type];
 const TYPE_LABELS = {
   station: 'Station', planet: 'Planet', asteroid_field: 'Asteroid Field',
   derelict: 'Derelict', nebula: 'Nebula', void: 'Void', anomaly: 'Anomaly',
@@ -146,7 +150,7 @@ function generateMap(trailKey) {
     spine.push(add({
       id: 'node_spine_' + i,
       name: nodeName(type, i, rules),
-      short: (i === 0 || i === spineLen - 1) ? null : TYPE_LABELS[type] + ' ' + i,
+      short: i === 0 ? 'Departure' : i === spineLen - 1 ? null : mapLabel(type) + ' ' + i, // the full names are long for a map label
       description: TYPE_DESCS[type] || '',
       node_type: type, position: i, connects_to: [], event_id: null,
     }));
@@ -163,7 +167,7 @@ function generateMap(trailKey) {
     }
     if (cands.length) {
       const i = cands[Math.floor(Math.random() * cands.length)];
-      Object.assign(spine[i], { node_type: 'station', name: nodeName('station', i, rules), short: TYPE_LABELS.station + ' ' + i, description: TYPE_DESCS.station });
+      Object.assign(spine[i], { node_type: 'station', name: nodeName('station', i, rules), short: mapLabel('station') + ' ' + i, description: TYPE_DESCS.station });
     }
   }
 
@@ -186,7 +190,7 @@ function generateMap(trailKey) {
     const before = spine[gap], after = spine[gap + 1];
     const forkId = 'node_fork_' + branchNum;
     const forkNode = add({
-      id: forkId, name: 'Route Decision', description: 'The path splits here.',
+      id: forkId, name: 'Route Decision', short: 'Fork', description: 'The path splits here.',
       node_type: 'fork', position: gap + 0.5, connects_to: { alpha: [], beta: [] }, event_id: null,
     });
     before.connects_to = [forkId];
@@ -206,7 +210,7 @@ function generateMap(trailKey) {
         const id = 'node_branch_' + branchNum + '_' + key + '_' + j;
         branchIds.push(id);
         add({
-          id, name: flavorName(type) || TYPE_LABELS[type], short: TYPE_LABELS[type],
+          id, name: flavorName(type) || TYPE_LABELS[type], short: mapLabel(type),
           description: TYPE_DESCS[type] || '',
           // Distribute branch nodes evenly across the fork→rejoin gap
           // (0.5 position units). The old fixed 0.1 step packed a

@@ -290,3 +290,11 @@
   75% { transform: translateX(4px); }
 }
 #screen-setup .panel-btn.shake { animation: setup-btn-shake 0.25s ease-in-out 2; }
+
+/* Card lists longer than the panel (captain backgrounds: ten cards, six in
+   view) show an always-visible gold rail — macOS overlay scrollbars hide,
+   and four backgrounds sat unseen below the fold (as the end report). */
+#setup-right { scrollbar-width: thin; scrollbar-color: rgba(200,168,90,0.6) rgba(200,168,90,0.1); }
+#setup-right::-webkit-scrollbar { width: 6px; }
+#setup-right::-webkit-scrollbar-track { background: rgba(200,168,90,0.1); border-radius: 3px; }
+#setup-right::-webkit-scrollbar-thumb { background: rgba(200,168,90,0.6); border-radius: 3px; }

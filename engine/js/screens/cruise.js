@@ -1860,7 +1860,8 @@
     // The welcome: always the first tip after anything urgent (the departure stop).
     { id: 'stop_menu', when: () => true },
     { id: 'harvest', when: () => !!(STATE.cropGrowth && STATE.cropGrowth.health > 0 && STATE.cropGrowth.growth >= 100) },
-    { id: 'station', when: () => { const n = STATE.byId[STATE.currentId]; return !!n && n.node_type === 'station'; } },
+    // A station whose services are closed (waved off, blown past) waits for the next one: the tip talks about docking.
+    { id: 'station', when: () => { const n = STATE.byId[STATE.currentId]; return !!n && n.node_type === 'station' && !(window.StationVisit && StationVisit.servicesClosed()); } },
     { id: 'fabricator', when: () => Object.values(STATE.materials || {}).reduce((a, q) => a + (q || 0), 0) >= 5 },
     { id: 'fork', when: () => [...nextAvailableNodes()].some(id => STATE.byId[id] && STATE.byId[id].node_type === 'fork') },
     { id: 'cargo', when: () => STATE.items.length > 0 && legsFlown() >= 2 },

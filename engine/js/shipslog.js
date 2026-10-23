@@ -64,7 +64,8 @@
   function fill(t, tok) {
     return capSentences(String(t).replace(/\{(\w+)\}/g, (m, k) => (k in tok ? String(tok[k]) : '')).replace(/\s+/g, ' ').replace(/\s+([.,!?])/g, '$1').trim());
   }
-  const voiced = (key, tok) => fill(template(key), tok);
+  // A clipped name before a full stop read "…The….": one mark is enough.
+  const voiced = (key, tok) => fill(template(key), tok).replace(/…\./g, '…');
   const cap1 = s => { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); };
   const clean = s => String(s == null ? '' : s).replace(/^\s*[◆▶]\s*/, '');
   // o: the outcome a narrative describes ({cost.water} states its real cost).
@@ -322,7 +323,11 @@
         // Fit as the outcome lines do: no fact cut mid-word. The smallest
         // facts give way to a follow-up line; the leg's days never do (the
         // clip used to drop them first — they are listed last).
-        const shown = list.slice(), rest = [];
+        // "The leg cost …" lists costs only; a gain the leg brought (the
+        // chef's morale, a regen) goes on the "Also:" line.
+        const isGain = f => /^\+/.test(f.text);
+        const shown = list.filter(f => !isGain(f)), rest = list.filter(isGain);
+        if (!shown.length) shown.push({ text: 'nothing', w: 0 });
         const build = () => voiced('arrival', { place, costs: factText(shown) });
         const dayFact = shown.length && / DAYS?$/.test(shown[shown.length - 1].text);
         while (shown.length > (dayFact ? 2 : 1) && build().length > MAX_ENTRY) rest.unshift(shown.splice(shown.length - (dayFact ? 2 : 1), 1)[0]);

@@ -304,7 +304,10 @@
     // Ruling 89: an arrival shows its score, and says when it is the
     // destination's new best (records.js).
     const scoreBit = stats.score == null ? '' : ` · SCORE <span class="day-score">${stats.score}</span>` +
-      (currentView && currentView.recorded && currentView.recorded.newBest ? ' <span class="day-best">NEW BEST</span>' : '');
+      (currentView && currentView.recorded && currentView.recorded.newBest ? ' <span class="day-best">NEW BEST</span>' : '') +
+      // A dead crop's arrival scores the voyage, not the mission: say so
+      // beside the number (it never counts as a best, records.js).
+      (currentView && currentView.toneId === 'hollow' ? ' <span class="day-cmp late">CROP LOST</span>' : '');
     $('end-day-line').innerHTML =
       `DAY <span class="day-num">${stats.days}</span> OF ${stats.baseDays} · <span class="day-cmp ${cmpClass}">${cmp}</span>` + scoreBit +
       // The rest of what the score counts (index.html scoreValue). A

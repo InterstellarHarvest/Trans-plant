@@ -363,6 +363,13 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
 #ovmap-viewport { position: absolute; left: 40px; right: 40px; top: 100px; bottom: 70px; }
 #ovmap-connections { position: absolute; inset: 0; pointer-events: none; }
 #ovmap-nodes { position: absolute; inset: 0; }
+/* A scanned stop's tag (renderMap): what SCAN read there. */
+.map-scanned { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); white-space: nowrap;
+  font-family: 'Press Start 2P', cursive; font-size: 6px; letter-spacing: 1px; padding: 2px 4px; border-radius: 2px;
+  color: #0e1320; background: #8cc890; pointer-events: none; }
+.map-node.label-above .map-scanned { top: auto; bottom: -30px; }
+.map-scanned.d-medium { background: #d4b04a; }
+.map-scanned.d-hard, .map-scanned.d-ultra { background: #cc6c4c; color: #f4e6d0; }
 #ovmap-footer {
   position: absolute; left: 14px; right: 14px; bottom: 14px;
   display: flex; align-items: center; justify-content: space-between;
@@ -412,6 +419,9 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
 /* Stack clear of whatever already sits above the node: its label, then
    an alpha branch's flavor pill. */
 .map-node.label-above .map-here { bottom: calc(100% + 24px); }
+/* Every marker clears the label row, so a neighbour's raised label never
+   runs into it (dense interstellar maps overlapped 24 of 30). */
+.map-node.current .map-here { bottom: calc(100% + 24px); }
 .map-node.br-alpha.has-flavor .map-here { bottom: calc(100% + 46px); }
 .map-branch-flavor {
   position: absolute; top: calc(100% + 26px); left: 50%;
@@ -4000,6 +4010,18 @@ function renderMap(ids) {
       el.classList.add('has-flavor');
       el.appendChild(bf);
     }
+    // A stop SCAN has read (STATE.scouted): what waits there, on the map
+    // (the first-run MAP tip promises it; the map used to ignore scans).
+    const sc = STATE.scouted && STATE.scouted[n.id];
+    if (sc && !STATE.visited.has(n.id) && n.id !== STATE.currentId) {
+      const ev = sc.ev && EVENTS[sc.ev];
+      const diff = ev ? String(Array.isArray(ev.difficulty) ? ev.difficulty[0] : ev.difficulty || '').toUpperCase() : '';
+      const tag = document.createElement('div');
+      tag.className = 'map-scanned' + (diff ? ' d-' + diff.toLowerCase() : '');
+      tag.textContent = ev ? diff : 'QUIET'; // short: neighbours' tags alternate sides like the labels
+      el.appendChild(tag);
+      el.title = n.name + ' — scanned: ' + (ev ? (ev.title || 'contact') + ' [' + diff + ']' : 'quiet');
+    }
     if (!readOnly && available.has(n.id)) {
       el.addEventListener('click', () => travelTo(n.id));
     }
@@ -4010,7 +4032,7 @@ function renderMap(ids) {
   const cur = STATE.byId[STATE.currentId];
   const nextIds = [...available];
   const info = document.getElementById(ids.info);
-  info.innerHTML = `<b>${escapeHTML(cur.name)}</b>${cur.short ? ' <span class="sub">(' + escapeHTML(cur.short) + ')</span>' : ''} — ${cur.description}`;
+  info.innerHTML = `<b>${escapeHTML(cur.name)}</b>${cur.short && cur.short !== cur.name ? ' <span class="sub">(' + escapeHTML(cur.short) + ')</span>' : ''} — ${cur.description}`;
   if (readOnly) return;
   const btn = document.getElementById(ids.advanceBtn);
   if (nextIds.length === 1) {
@@ -4628,8 +4650,10 @@ function passDays(days, opts) {
   r.water = clamp(r.water - draw.water * days, 0, 100);
   const rate = crewWaterDrainRate();
   morale -= (ORDERS_BASE.crewWaterMorale[rate] || 0) * days;
-  if (rate >= ORDERS_BASE.crewWaterHPTier && STATE.crew.length) {
-    for (const role of STATE.crew.slice()) damageCrew(role, days);
+  // The crew's share is what the people aboard drink — the captain too
+  // (ruling 29), so flying solo the crew share still matters.
+  if (rate >= ORDERS_BASE.crewWaterHPTier) {
+    for (const role of peopleAboard().slice()) damageCrew(role, days);
   }
 
   // DEPRIVATION (owner ruling 2026-10-10 — all three consequences): a

@@ -148,6 +148,7 @@
     if (!btn) return;
     const has = hasRecords();
     btn.classList.toggle('disabled', !has);
+    btn.title = has ? 'Your voyages and best arrivals' : 'Finish a voyage to start your records';
     const led = btn.querySelector('.btn-led');
     if (led) led.style.background = has ? '#c8a85a' : '#333';
   }
