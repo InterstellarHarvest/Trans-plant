@@ -4259,7 +4259,7 @@
           "item_consume": null,
           "sets_flag": null,
           "time_cost": "low",
-          "narrative": "You turn back. It costs two days and three points of fuel and a very embarrassing hail to the departure dock, where the coffee is waiting exactly where it was left. The crew greets the pallet like a returning hero. Nobody mentions the two days ever again."
+          "narrative": "You turn back. It costs time, fuel and a very embarrassing hail to the departure dock, where the coffee is waiting exactly where it was left. The crew greets the pallet like a returning hero. Nobody mentions the detour ever again."
         }
       },
       {
@@ -4764,5 +4764,643 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_general_054",
+    "active": true,
+    "title": "Looking Back",
+    "difficulty": "easy",
+    "tone": [
+      "cosmic",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_mid"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A SELFIE with HOME! ARIA has wanted to do this for ages! Everybody squeeze in! Home, squeeze in!",
+      "marv": "MARV notes the camera faces forward because nothing dangerous comes from behind. He concedes that is not the only reason to look.",
+      "rex": "REX does not look back. It was in his training. He would like somebody to tell him what the picture looks like.",
+      "chip": "CHIP can offer the picture as a framed print, a mug or a commemorative blanket! The blanket is mostly black! Very slimming!",
+      "ajoy": "AJOY says people keep a picture of where they came from for the days they forget why they left. Sometimes it works the other way round."
+    },
+    "body": "The ship computer mentions, over breakfast, that nobody has looked back since departure.\n\nIt means it literally. The long-range camera has pointed forward the whole way, because that is where things come from. It could point the other way. Home is still back there. It checked.\n\nA proper picture means swinging the whole ship round and flying backwards for a watch, which costs fuel. The rear camera can manage without turning, badly, through the engine glare. Or there is the hull survey, which is overdue, and does not require anybody to feel anything.",
+    "choices": [
+      {
+        "text": "Turn the ship round for a proper picture",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -2,
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "The ship swings round on its thrusters and flies backwards for a whole watch. The picture, when it comes, is mostly black, with home in it, smaller than anyone expected. Somebody prints it and pins it in the galley, and people touch it on the way past without meaning to.",
+          "log_lore": {
+            "title": "THE PICTURE",
+            "text": "Pinned up in the galley, under the picture, somebody has written in marker: 'Everyone we know is in this one.'\n\nIt has been done before. Long ago a probe on its way out of the solar system was turned round, at the request of an astronomer who had to argue for it, to take a last family portrait of the planets. Earth came out as less than a single pixel, caught in a band of scattered sunlight. He called it a pale blue dot, and wrote that everyone who had ever lived had lived there.\n\nOurs came out a little different. It still counts."
+          }
+        }
+      },
+      {
+        "text": "Make do with the rear camera",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The rear camera, which mostly watches the engine, takes a grainy picture past the exhaust glare. Home is in it, somewhere, in a smudge everyone agrees is home. It goes up on the galley wall anyway, slightly crooked, which suits it."
+        }
+      },
+      {
+        "text": "Don't look back — do the hull survey",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 3,
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "repair_done": true,
+          "narrative": "You keep the camera pointed forward and spend the watch on the hull survey instead, tightening everything that needs tightening. The ship is better for it. Nobody mentions home at dinner, carefully, the way you avoid pressing on a bruise."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "AJOY attaches the original: a probe on its way out of the system was once turned round to take exactly this picture.",
+      "label": "Pale Blue Dot",
+      "url": "https://en.wikipedia.org/wiki/Pale_Blue_Dot"
+    }
+  },
+  {
+    "id": "event_general_055",
+    "active": true,
+    "title": "The Midpoint Service",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_mid"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "SERVICE DAY! ARIA loves service day! Everything gets a little wipe! ARIA has never had a little wipe!",
+      "marv": "MARV has read the procedure. The second-to-last step says 'inspect everything.' He has. Everything is, on average, fine, which is the most worrying kind of fine.",
+      "rex": "REX endorses scheduled maintenance. Equipment that is not maintained fails at the worst possible moment. He has been the worst possible moment. He does not recommend it.",
+      "chip": "CHIP's records show your authorized dealer was acquired, merged, rebranded and dissolved! CHIP can offer an extended warranty instead! It covers nothing! But it's EXTENDED!",
+      "ajoy": "AJOY has already laid the new cartridges out by the scrubber, in the right order. She says she was passing."
+    },
+    "body": "The maintenance schedule has been waiting for this. Halfway down its list, in letters slightly larger than the rest, the manual calls for the MIDPOINT SERVICE: scrubber cartridges, drive seals, the pump nobody likes, and a step that just says 'inspect everything,' written by somebody who never had to.\n\nThe last line of the procedure reads: 'Return vessel to your authorized dealer.' The authorized dealer is a very long way behind you, and went out of business before the ship was launched.\n\nThe ship will fly without the service. The manual is quite clear that it would rather not.",
+    "choices": [
+      {
+        "text": "The full service, by the book",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 6,
+            "hull": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "repair_done": true,
+          "narrative": "You do all of it, in order, including the pump. It takes days, and by the end everyone aboard can strip a drive seal in the dark. The air comes out of the new cartridges tasting faintly of nothing, which is what air is supposed to taste of. The manual, if it could, would be proud."
+        }
+      },
+      {
+        "text": "{crew.engineer} does the parts that matter",
+        "requires_crew": "engineer",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 5,
+            "hull": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "repair_done": true,
+          "narrative": "{crew.engineer} reads the procedure once, crosses out half of it, and does the other half properly in a fraction of the time. Asked about the crossed-out steps, {crew.engineer} says they were only there to sell dealer visits. The ship runs noticeably sweeter afterwards."
+        }
+      },
+      {
+        "text": "Just the scrubbers",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You change the scrubber cartridges and leave the rest for another day that will not come. The air is better at once. The pump nobody likes goes on making its noise, and everybody goes on not liking it."
+        }
+      },
+      {
+        "text": "Skip it. The ship is fine",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "o2": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You skip the service. The old cartridges keep scrubbing, slower every watch, and the air takes on the stale edge of a room nobody has opened a window in. The schedule marks the service OVERDUE in red and does not stop marking it."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_056",
+    "active": true,
+    "title": "The Halfway Shop",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "corporate"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_mid"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A SHOP! In the middle of NOWHERE! ARIA wants a mug! ARIA has no hands! ARIA wants a mug anyway!",
+      "marv": "MARV has read the kiosk's sales log. Its last customer was a long time ago. They bought a mug. He does not know what became of them and intends to keep it that way.",
+      "rex": "REX scanned the kiosk for weapons. It has none. It has a loyalty scheme. REX considers that worse.",
+      "chip": "A HalfwayMart™! CHIP thought they were a myth! CHIP has a loyalty card! It's for a different HalfwayMart™! They are all the same HalfwayMart™!",
+      "ajoy": "AJOY notes the patches are actually rather nice. Properly embroidered. Somebody cared about this, once."
+    },
+    "body": "Something hails the ship at the exact midpoint of the trail, to the metre.\n\nIt is a buoy about the size of a vending machine, because it is one. Its sign scrolls in cheerful capitals: YOU ARE HALFWAY. CONGRATULATIONS. COMMEMORATIVE MERCHANDISE AVAILABLE. Somebody put it here at enormous expense, on a trail that sees hardly any ships, and then, judging by the paint, forgot it existed.\n\nIt has a card reader. It has a little lit window full of patches, mugs and a HALFWAY SURVIVAL KIT. Flashing arrows ask whether you would like to browse.",
+    "choices": [
+      {
+        "text": "Buy a patch for everyone",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 6
+        },
+        "outcome": {
+          "resources": {
+            "gold": -6,
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The kiosk dispenses the patches one at a time, each with a small fanfare of blinking lights. They are embroidered: a little ship, a dotted line, a star at each end, HALFWAY in gold thread. By evening every jacket aboard has one sewn on, mostly straight."
+        }
+      },
+      {
+        "text": "Buy the survival kit",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "gate": {
+          "gold": 12
+        },
+        "outcome": {
+          "resources": {
+            "gold": -12,
+            "food": 6,
+            "water": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "The survival kit is heavier than it looks and contains, against every expectation, real things: sealed water, good rations, and a pamphlet called You're Halfway: Now What? The rations are a long way past their date and taste fine. The pamphlet's advice is to keep going."
+        }
+      },
+      {
+        "text": "Strip it for parts",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "materials": {
+            "scrap": 3,
+            "metal": 1
+          },
+          "narrative": "You send a crew out with cutters. The kiosk keeps its sign lit the whole time, and its last message, as the power cell comes free, is a discount code. The parts are good. The crew is quieter than usual at dinner."
+        }
+      },
+      {
+        "text": "Wave and fly on",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {},
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You fly past. The kiosk's sign changes as you go: THANK YOU FOR VISITING. SEE YOU ON THE WAY BACK. Nobody on the bridge points out that there is no way back. It is a nice thought, from a vending machine."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_057",
+    "active": true,
+    "title": "Approach Control",
+    "difficulty": "easy",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_end"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "The COLONY! They SPOKE to us! ARIA has a welcome message ready for every single person down there! ARIA will send them all at once!",
+      "marv": "MARV has checked the paper-towel schedule against the colony's orbital data. It is correct. He finds that more unsettling than if it had been wrong.",
+      "rex": "REX requested the controller's credentials. The controller asked whether REX has been flossing. REX has withdrawn the request.",
+      "chip": "CHIP notes the colony dental plan is not included in your arrival package! CHIP can add it! Early-slot pricing!",
+      "ajoy": "AJOY says the controller has been holding that schedule for a long time. She would guess the early slot was the one written in first."
+    },
+    "body": "The colony comes up on comms for the first time, and the first voice from the place you have spent the whole voyage trying to reach says: 'Sorry, hang on, I've got gloves on.'\n\nThe colony's approach controller is also, it turns out, its dentist, and was in the middle of a filling. She has your manifest. She has your crop readings. She has a landing schedule written on what sounds like a paper towel, with two slots on it: an early one, if you can burn hard enough to make it, and a later one, after the ore hauler, if you can't.\n\nShe says she doesn't mind which. She sounds like she very much hopes it's the early one.",
+    "choices": [
+      {
+        "text": "Burn for the early slot",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -4,
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "none",
+          "narrative": "You take the early slot and open the throttle to make it. The fuel margin gets thinner than anyone likes. The controller writes your ship's name on the paper towel in pen, which she says she only does for people she believes in, and goes back to her filling."
+        }
+      },
+      {
+        "text": "Take the later slot and smarten up the ship",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": 3,
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "repair_done": true,
+          "narrative": "You take the later slot behind the ore hauler and use the wait: loose panels tightened, scorch marks scrubbed, the worst of the dents knocked mostly flat. The ship you bring in will look like somebody looked after it. The controller says she'll be watching, between patients."
+        }
+      },
+      {
+        "text": "Put the crew on the channel to say hello",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You hand the channel round the ship. Everybody says hello, and some say a great deal more than hello, and the controller answers every one of them with the patience of somebody who talks to people with their mouths full of cotton wool for a living. She signs off with 'see you soon.' She means it as a fact."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_058",
+    "active": true,
+    "title": "The Shopping List",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "heartwarming"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_end"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "A SHOPPING LIST! ARIA loves a list! ARIA has ticked everything off already! ARIA hasn't got any of it! The ticks are aspirational!",
+      "marv": "MARV has compared the list with the hold. The ship can spare less than it would like and more than it thinks. He has not decided which half of that to say out loud.",
+      "rex": "REX classifies the request as resupply for a forward position. He approves. He would like the news to include the scores.",
+      "chip": "CHIP can fulfil this list at very competitive arrival-day prices! CHIP is being told that is not the point! CHIP is learning!",
+      "ajoy": "AJOY notes the line about old news is underlined twice. She has started putting it together already, oldest first, so it reads like a story."
+    },
+    "body": "The colony's comms officer sends a message ahead, politely, with a list attached.\n\nIt is not a demand. The colony has been waiting for this ship for a long time, and the things it was waiting for have run short in the meantime: food that didn't come out of their own greenhouse, spare parts, anything with a working circuit board. They know you need what you're carrying to get there. They are only asking what you might have left.\n\nAt the bottom, in a different hand: 'And news. Any news. We'll take old news.'",
+    "choices": [
+      {
+        "text": "Set food aside for them",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -6,
+            "morale": 5
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You set aside {cost.food} points of food in sealed crates and mark them for the colony, which means tighter meals until landing. Nobody complains. The comms officer's reply is very short, and arrives a long time after it should have, as if it took a while to write."
+        }
+      },
+      {
+        "text": "Print them spare parts",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "requires_fab": true,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "fab_wear": 10,
+          "narrative": "You run the fabricator flat out on the list: valves, brackets, a circuit board the fabricator has opinions about. It comes off the job hot, grumbling and noticeably more worn. The crate of parts waits by the airlock with a label in the neatest handwriting aboard."
+        }
+      },
+      {
+        "text": "Send them the news, all of it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You send everything the ship has: bulletins, scores, letters, the gossip from every stop on the trail, a recipe argument that has been running in the galley since departure. The colony's reply comes back within the hour. It asks who won the recipe argument."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_general_059",
+    "active": true,
+    "title": "Storm Season",
+    "difficulty": "medium",
+    "tone": [
+      "grim",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_end"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": null,
+    "requires_flag": null,
+    "trail": [
+      "mars"
+    ],
+    "ai_flavor": {
+      "aria": "A STORM! On a whole other PLANET! ARIA has never seen weather! ARIA is thrilled! ARIA is being asked to be less thrilled!",
+      "marv": "MARV has the storm's growth curve. Most of them blow themselves out. Some keep going until they cover the planet. He cannot yet say which kind this is, and has stopped pretending he can.",
+      "rex": "REX recommends speed. Grit gets into everything. He once spent a whole deployment finding it in places it had no business being.",
+      "chip": "CHIP's RedShield™ seal kit is rated for exactly this! It is not aboard! CHIP mentions it as a learning opportunity!",
+      "ajoy": "AJOY has sent the weather office your arrival estimate and asked them to keep the beacons lit. They said they always do. She asked anyway."
+    },
+    "body": "The colony's weather office sends a warning, in the flat voice of people who have seen a lot of weather: a dust storm is building over the landing zone.\n\nNot the kind that swallows the whole planet. Probably. But it will blot out the landing beacons, fill every seal with fine red grit, and it may sit over the site for a while. The ship can burn harder and get down before it closes in. It can hold back and let the storm blow through first. Or it can carry on as it is and land in whatever the storm leaves.",
+    "choices": [
+      {
+        "text": "Push the pace and beat it in",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -3,
+            "morale": 1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "set_orders": {
+            "pace": "faster"
+          },
+          "narrative": "You push the pace up a notch, effective now, and spend the extra fuel to get ahead of the storm. The weather office sends updates every watch, each one a little redder at the edges. The crew starts checking them before breakfast."
+        }
+      },
+      {
+        "text": "Hold back and let it blow through",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": -1
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "medium",
+          "narrative": "You hold back and wait while the storm crosses the landing zone, watching it on the long-range scope as a bruise moving across the planet's face. It costs days you had been counting on. When it clears, the weather office reports the site scoured clean and the beacons blinking."
+        }
+      },
+      {
+        "text": "Carry on and seal up for grit",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "hull": -3,
+            "o2": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You keep the pace and seal what can be sealed. It isn't enough. The grit finds the hull's joints and the air intakes both, and the scrubbers spend the rest of the approach coughing fine red dust into their filters. The ship will be finding Mars in its seams for years."
+        }
+      },
+      {
+        "text": "{crew.pilot} plots a line round its edge",
+        "requires_crew": "pilot",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -2,
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.pilot} spends a night with the weather office's maps and comes back with an approach that curls round the storm's quiet side, longer but clean. It costs a little fuel. The weather office calls it 'ambitious,' which from them is a compliment."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "MARV attaches the weather office's reference: some Martian dust storms grow until they cover the planet, and one ended a rover's mission by burying its solar panels.",
+      "label": "Dust storms on Mars",
+      "url": "https://en.wikipedia.org/wiki/Climate_of_Mars"
+    }
   }
 ]

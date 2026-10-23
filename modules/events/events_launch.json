@@ -180,5 +180,282 @@
       "The ship computer reads out the pre-launch checklist. Hull integrity: acceptable. Fuel reserves: adequate. Crew: present. Crop: growing.\n\nNothing on the list is wrong. Nothing on the list is right, either, exactly. The computer delivers each item in the tone of a doctor saying 'well, it's not nothing.'\n\nEarth drops away behind you. The computer logs the time of departure, the destination and the expected length of the trip. It worked out one more figure. It keeps that one to itself.",
       "Checklist. Hull integrity: acceptable. Fuel reserves: adequate. Crew: present. Crop: growing.\n\nThe ship computer reads each line, ticks it and moves on, and somehow the ticks read less like approval than like a reluctant signature. Acceptable. Adequate. The words are carrying more than their share.\n\nBehind the ship, Earth is getting smaller. The computer records the departure time, the destination and the journey estimate, and then one more calculation, which it files somewhere you can't read."
     ]
+  },
+  {
+    "id": "event_launch_003",
+    "active": true,
+    "title": "Porch Lights",
+    "difficulty": "easy",
+    "tone": [
+      "heartwarming",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_start"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": "departed",
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "ARIA is counting the lights! She has reached a very large number and started again! Every single one of them is for US!",
+      "marv": "MARV has matched the blinking against the census. Participation is unusually high. He suspects somebody declared a holiday. He finds he does not mind.",
+      "rex": "REX reads the pattern as unauthorised signalling across a whole continent. He has decided not to report it. He has decided this twice.",
+      "chip": "CHIP notes the electricity for this send-off is being paid for by the people down there! The most generous sponsorship CHIP has ever seen! CHIP is moved! CHIP is checking whether it's tax-deductible!",
+      "ajoy": "AJOY says the ship can wait an orbit for them. They waited a lot longer than that for the ship."
+    },
+    "body": "The first orbit out takes the ship across the night side of Earth.\n\nSomebody down there organised it. Nobody aboard knows who. As the ship passes over, the dark below starts to blink: porch lights, headlights, phone screens held up on rooftops, whole streets switching off and on in a slow ripple that follows your ground track across a continent.\n\nIt is the oldest send-off there is, done with every light they have. The departure burn is queued. The ship computer points out, unprompted, that it could also wait for another pass.",
+    "choices": [
+      {
+        "text": "Flash the running lights back",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 4
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You blink the running lights in the only pattern anyone aboard knows, which turns out to be the one for help. Below, a whole city goes dark, then bright, then dark again, which everyone decides means 'you're welcome.' The burn fires on schedule."
+        }
+      },
+      {
+        "text": "Hold the burn for another pass",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -2,
+            "morale": 6
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You stay up for another orbit and the lights are waiting, brighter, as if word got round. The correction burn afterwards costs fuel the plan didn't have in it. Nobody aboard will ever count that fuel as wasted, and the ship computer, for once, does not try."
+        }
+      },
+      {
+        "text": "Burn on the mark — the window won't wait",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You burn on the exact second the window opens, the cheapest departure the ship will ever make. The lights carry on blinking behind you on the rear camera, smaller and smaller, until they are just the night side again. The crew watches the screen until there is nothing left to watch."
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_launch_004",
+    "active": true,
+    "title": "The Hive",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_start"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "growbay",
+    "once": true,
+    "test_path": false,
+    "sets_flag": "departed",
+    "requires_flag": null,
+    "requires_crop_alive": true,
+    "ai_flavor": {
+      "aria": "BEES! ARIA has named every one of them! It took a while! Most of them are called Gary!",
+      "marv": "MARV has checked the manifest. The bees are not on it. Neither, he observes, is the forklift driver's sense of responsibility.",
+      "rex": "REX has assessed the hive. Several thousand armed units, no command structure he can identify, total loyalty. He respects them. He is staying on the bridge.",
+      "chip": "CHIP notes that pollination is a premium agricultural service! Normally billed by the hour! Per bee! CHIP is doing the maths and getting very excited!",
+      "ajoy": "AJOY says they'll be calmer if nobody shouts. She's turned the growbay lamps down a little. They've settled on the warm side."
+    },
+    "body": "An hour after departure, the growbay sensors report an unregistered life form. Several thousand of them.\n\nThey are bees. A whole hive, in a crate stencilled POLLINATION SERVICES — HANDLE WITH CONFIDENCE, meant for the colony ship in the next bay and loaded onto yours by a forklift driver who has, by now, gone home. The bees have already found the {crop.name}. They seem to approve of it.\n\nThe departure dock is still in range. Traffic control would like to know, on an open channel, why you are calling about bees.",
+    "choices": [
+      {
+        "text": "Keep them — the crop could use the help",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "food": -3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "crop_health": 5,
+          "narrative": "You keep the bees. They need feeding, which means the galley's sugar and a good part of the dried fruit go into a syrup tray by the lamps. In return they work the crop from first watch to last, and it fills out in a way no hand-brush ever managed."
+        }
+      },
+      {
+        "text": "Turn back and hand them over",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "fuel": -3,
+            "morale": 3
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You turn back, which costs fuel and an apologetic call to traffic control. The other ship's botanist meets you at the dock, takes the crate in both arms like a returned child, and makes the whole crew promise to visit. The second departure is a lot more cheerful than the first."
+        }
+      },
+      {
+        "text": "Hold for the dock's courier and charge for it",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": 8
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "low",
+          "narrative": "You hold position while the other ship sends a courier drone for its bees, and you invoice them for 'bee husbandry, in transit.' They pay, mostly to stop the conversation. The growbay is very quiet afterwards. Somebody misses them already and won't say so."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "AJOY files a reference beside the hive's entry: honeybees have flown in space before, and learned to build comb without gravity, eventually.",
+      "label": "Animals in space",
+      "url": "https://en.wikipedia.org/wiki/Animals_in_space"
+    }
+  },
+  {
+    "id": "event_launch_005",
+    "active": true,
+    "title": "The Sponsor",
+    "difficulty": "easy",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "journey_start"
+    ],
+    "event_presentation": "fullscreen",
+    "scene_type": "ship_interior",
+    "once": true,
+    "test_path": false,
+    "sets_flag": "departed",
+    "requires_flag": null,
+    "ai_flavor": {
+      "aria": "We have a MASCOT! ARIA has always wanted a mascot! ARIA is going to give the oat a name and a backstory!",
+      "marv": "MARV has read the contract. One clause grants the cereal company the naming rights to anything the ship discovers. He recommends discovering nothing.",
+      "rex": "REX has run the oat through target recognition. It came back friendly. He does not trust anything that smiles that widely.",
+      "chip": "CRUNCHEE-O'S™! CHIP has waited his whole life for this! CHIP also has a rival cereal on the other line! CHIP can start a bidding war!",
+      "ajoy": "AJOY points out the money is real and the paint comes off eventually. Space is very good at taking paint off. It just isn't quick about it."
+    },
+    "body": "A shuttle catches up with the ship before the first burn, which should not be possible, and docks without asking, which should not be allowed.\n\nOut steps a man in a very good suit and a pressure helmet with a logo on it. He represents CRUNCHEE-O'S, the breakfast cereal that is, he says, going further. He would like the ship to go further too, with the CRUNCHEE-O'S mascot painted down both sides of the hull: a cheerful cartoon oat with its arms flung wide.\n\nHe has a contract. He has a cheque. He has a drone outside that has already painted one arm.",
+    "choices": [
+      {
+        "text": "Sign. The oat stays",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": 12,
+            "morale": -2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You sign. The drone finishes the oat in an afternoon, and from then on the ship arrives everywhere as a giant smiling breakfast cereal. The money is very welcome. The crew learns to answer hails with a straight face, more or less."
+        }
+      },
+      {
+        "text": "Decline. Politely",
+        "requires_crew": null,
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "morale": 2
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "You decline. The man takes it well, shakes everyone's hand, and leaves a crate of free samples nobody eats. The drone leaves too, without removing the arm it already painted. The ship flies on with a single cartoon arm on its flank, waving at the dark, and the crew grows fond of it."
+        }
+      },
+      {
+        "text": "{crew.diplomat} negotiates the terms",
+        "requires_crew": "diplomat",
+        "requires_item": null,
+        "requires_flag": null,
+        "microgame_type": null,
+        "outcome": {
+          "resources": {
+            "gold": 9
+          },
+          "crew_effect": null,
+          "severity": null,
+          "item_grant": null,
+          "item_consume": null,
+          "sets_flag": null,
+          "time_cost": "trivial",
+          "narrative": "{crew.diplomat} takes the man into the galley for an hour. When they come out, the oat is going on the underside of the hull, where only the colony will see it, and the fee has somehow gone up, on the grounds of exclusivity. The man looks pleased and slightly confused. That is usually how it goes."
+        }
+      }
+    ]
   }
 ]
