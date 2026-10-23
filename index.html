@@ -1919,6 +1919,7 @@ const SAVED_FIELDS = [
   'eventLastStop', // repeat cooldown (ruling 65): each repeatable event's last stop
   'tipsShown', // first-run tips already said this run (ruling 87)
   'pendingArrival', // a stop a leg-in failure interrupted: Keep flying / the beacon still play it
+  'waitInProgress', // a REST / WAIT under way: a reload calls it off (loadRun logs it)
   'plaidLegs', 'engineStrain', // drive heat and a pending strain (engine_strain, ruling 83)
   'crafted', // fabricator prints aboard (ruling 79): sold at their materials' value
   'soilSurveys', // soil sampler planet surveys (ending score)
@@ -2010,7 +2011,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, engineStrain: () => false, tipsShown: () => [], pendingArrival: () => null, eventDraws: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, engineStrain: () => false, tipsShown: () => [], pendingArrival: () => null, waitInProgress: () => null, eventDraws: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2054,6 +2055,14 @@ function loadRun(key) {
   if (pf) { endRun({ kind: 'failure', module: pf }); return true; }
   renderCruise();
   showScreen('screen-cruise');
+  // Saved mid REST / WAIT: the reload called it off (a quit: the days are
+  // spent, the rest didn't land) — say so; it used to vanish silently.
+  if (STATE.waitInProgress) {
+    const w = STATE.waitInProgress;
+    STATE.waitInProgress = null;
+    window.pushCruiseLog('◆ ' + (w.verb === 'rest' ? 'REST' : 'WAIT') + ' — called off after ' + w.day + ' of ' + w.days + ' day' + (w.days === 1 ? '' : 's') + '. The days are spent' + (w.verb === 'rest' ? '; the rest didn\'t take.' : '; no trader came.'));
+    saveRun();
+  }
   // The log was rebuilt while the hub was hidden (its scroll-to-bottom did
   // nothing): open it at the newest lines.
   { const l = document.getElementById('ai-log'); if (l) l.scrollTop = l.scrollHeight; }
@@ -2261,7 +2270,7 @@ function applySetupToState(sel) {
   // Every other per-run field starts clean too (a run started in-page
   // after another used to inherit its log, fabricator, sectors…).
   STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
-  STATE.postCombatLegs = 0; STATE.plaidLegs = 0; STATE.engineStrain = false; STATE.tipsShown = []; STATE.eventDraws = {}; STATE.pendingArrival = null; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
+  STATE.postCombatLegs = 0; STATE.plaidLegs = 0; STATE.engineStrain = false; STATE.tipsShown = []; STATE.eventDraws = {}; STATE.pendingArrival = null; STATE.waitInProgress = null; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.lastAmbientNode = null; STATE.alertedNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.goneNames = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0; STATE.eventLastStop = {};
@@ -6227,8 +6236,12 @@ function choiceCostOutcome(ch) {
    stays his perk; this is the hover, for everyone. */
 // A fight's one fixed cost (role concern, ruling 57): the diplomat's.
 function fightConcernLine() {
+  const parts = [];
   const c = concernDef('diplomat', 'combat');
-  return c && STATE.crew.includes('diplomat') ? 'Any fight: ' + concernText([{ label: 'DIPLOMAT', v: concernAmount(c.morale) }]) + ' MORALE' : null;
+  if (c && STATE.crew.includes('diplomat')) parts.push(concernText([{ label: 'DIPLOMAT', v: concernAmount(c.morale) }]) + ' MORALE');
+  // The engineer minds every hull hit (ruling 57) — usually the larger toll.
+  if (STATE.crew.includes('engineer') && concernDef('engineer', 'hull_damage')) parts.push('ENGINEER minds every hull hit');
+  return parts.length ? 'Any fight: ' + parts.join(' · ') : null;
 }
 function choiceCostLines(ch) {
   const lines = [];
@@ -6253,6 +6266,12 @@ function choiceCostLines(ch) {
     const base = ch.outcome && typeof ch.outcome === 'object' ? ch.outcome : null;
     const tierTime = Object.values(ch.tier_outcomes || {}).some(t => t && (t.time_cost || Number.isFinite(t.time_days)));
     if (base && !tierTime) { const d = outcomeDays(base, 1); lines.push(d ? 'Takes ' + d + (d === 1 ? ' day' : ' days') : 'Takes no time'); }
+    else if (tierTime) {
+      // Each result takes its own time: say the range.
+      const ds = ['perfect', 'good', 'poor'].map(t => outcomeDays(mergedTierOutcome(ch, t), 1));
+      const lo = Math.min(...ds), hi = Math.max(...ds);
+      lines.push(hi === 0 ? 'Takes no time' : 'Takes ' + (lo === hi ? lo : lo + '–' + hi) + (hi === 1 ? ' day' : ' days') + (lo === hi ? '' : ', by how it goes'));
+    }
     lines.push('A minigame: how well you play decides the result');
     // Ruling 76: the breach countdown is a real clock, said up front.
     if (ch.launch_minigame === 'breach') lines.push('Timed: a real clock — about 3 seconds a breach, 4 with an engineer');
@@ -6487,7 +6506,9 @@ const NPC_GRAMMAR = {
   }).join(' '),
   dropped_articles: s => s.replace(/(^|\s)(a|an|the|A|An|The)\s+/g, '$1'),
   // Longer breaths: sentence breaks become semicolons, few hard stops.
-  flowing: s => s.replace(/([.!?])\s+([A-Z])/g, (m, p, ch) => '; ' + ch.toLowerCase()),
+  // A shouted word ("FINE") or "I" keeps its case ("fINE" was printed).
+  flowing: s => s.replace(/([.!?])\s+([A-Z])([A-Za-z']*)/g, (m, p, ch, rest) =>
+    '; ' + ((rest && rest === rest.toUpperCase()) || (ch === 'I' && (!rest || rest[0] === "'")) ? ch : ch.toLowerCase()) + rest),
   // Emphasized s-sounds in existing words ("yesss", "ssstation").
   sibilant: s => s.replace(/\b[Ss](?=[a-z])/g, m => m + 'ss').replace(/([a-z])s\b/g, '$1sss'),
   formal_expanded: s => NPC_CONTRACTIONS.reduce((acc, [re, rep]) => acc.replace(re, rep), s),
@@ -7373,6 +7394,27 @@ function endRun(end) {
   document.body.classList.remove('modal-open', 'stop-active');
   renderEndScreen(end);
 }
+
+/* Keyboard: 1–9 pick the Nth open choice of an encounter, or the Nth
+   Stop-menu verb (TAB / ENTER work on both, they're buttons). Not while
+   the pause terminal, a modal, an overlay or a text field has the keys. */
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || !/^[1-9]$/.test(e.key)) return;
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  if (document.body.classList.contains('pause-open') || document.body.classList.contains('modal-open')) return;
+  if (document.querySelector('.tp-confirm-overlay') || document.querySelector('#game .overlay.active')) return;
+  const active = document.querySelector('.screen.active');
+  const n = parseInt(e.key, 10) - 1;
+  let list = [];
+  if (active && active.id === 'screen-encounter') list = [...document.querySelectorAll('#enc-choices .enc-choice:not(.locked)')];
+  else if (active && active.id === 'screen-cruise' && document.body.classList.contains('stop-active')) list = [...document.querySelectorAll('#stop-choices .stop-choice:not(.locked)')];
+  const btn = list.filter(b => b.offsetParent !== null)[n];
+  if (!btn) return;
+  e.preventDefault();
+  btn.focus({ preventScroll: true });
+  btn.click();
+});
 
 /* ────────────────────────────────────────────────────────────────
    BOOT

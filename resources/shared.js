@@ -1360,9 +1360,9 @@ const PauseMenu = (() => {
           '<h3 class="pause-h3">KEYBOARD</h3>' +
           '<dl class="pause-dl">' +
             '<dt>ESC</dt><dd>Open this terminal · close modal</dd>' +
-            '<dt>↑ ↓</dt><dd>Navigate menu</dd>' +
-            '<dt>ENTER</dt><dd>Confirm</dd>' +
-            '<dt>← →</dt><dd>Cycle (where supported)</dd>' +
+            '<dt>1 – 9</dt><dd>Pick a choice in an encounter, or a Stop-menu verb</dd>' +
+            '<dt>TAB · ENTER</dt><dd>Move between buttons · press one</dd>' +
+            '<dt>↑ ↓ · ENTER</dt><dd>Navigate this terminal · confirm</dd>' +
           '</dl>' +
         '</div>' +
       '</div>' +

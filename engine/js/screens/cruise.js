@@ -1365,7 +1365,7 @@
   }
   const CRUISE_WAIT_TUNING = { WAIT_TICK_MS, WAIT_DAY_MAX, TRADER_PRESENT_CHANCE, TRADER_DAILY_CHANCE, INTERRUPT_DAILY_CHANCE, REST_MORALE_PER_DAY };
 
-  let activeWait = null; // { verbId, days, day, node, region, timer, resolving, finish }
+  let activeWait = null; STATE.waitInProgress = null; // { verbId, days, day, node, region, timer, resolving, finish }
   let bannerTimer = null;
   const waitHeld = () => (window.PauseBus && PauseBus.paused) || !cruiseVisible() || overlayOpen();
   function showActionBanner(label, day, days) {
@@ -1464,6 +1464,9 @@
     if (STATE.ended || STATE.currentId !== a.node) { stopWaitSilently(); return; }
     if (waitHeld()) { a.timer = setTimeout(waitTick, 250); return; }
     a.day++;
+    // Saved with the day (renderCruise autosaves): a reload mid-wait is a
+    // call-off, and loadRun says so in the log.
+    STATE.waitInProgress = { verb: a.verbId, day: a.day, days: a.days };
     passDays(1);
     renderHUD();
     showActionBanner(WAIT_CFG[a.verbId].label, a.day, a.days);
@@ -1480,6 +1483,7 @@
 
   function traderArrives(a) {
     a.resolving = true;
+    STATE.waitInProgress = null; // resolved (its own saves follow): not a call-off
     STATE.traderAt = STATE.traderAt || {};
     STATE.traderAt[a.node] = true;
     pushLogEntry('▶ A trader has appeared after ' + a.day + ' day' + (a.day === 1 ? '' : 's') + ' of waiting.');
@@ -1489,7 +1493,7 @@
     a.finish = leaving => {
       clearTimeout(a.timer);
       hideWaitFlash(); hideActionBanner();
-      activeWait = null;
+      activeWait = null; STATE.waitInProgress = null;
       renderCruise();
       if (leaving || STATE.ended) return;
       const ev = familyEvent('trader', STATE.byId[STATE.currentId]) || EVENTS.event_encounter_trader_001;
@@ -1501,6 +1505,7 @@
 
   function interruptWait(a, pick) {
     a.resolving = true;
+    STATE.waitInProgress = null; // resolved (its own saves follow): not a call-off
     const d = WAIT_EVENTS[pick.kind];
     pushLogEntry('▶ ' + d.log);
     // Bible interrupt rule: an interrupted action yields pro rata.
@@ -1520,7 +1525,7 @@
     a.finish = () => {
       clearTimeout(a.timer);
       hideWaitFlash(); hideActionBanner();
-      activeWait = null;
+      activeWait = null; STATE.waitInProgress = null;
       resolveForced();
     };
     whenFree(() => { showWaitFlash(d.flash, d.variant); whenFree(() => a.finish(false), 2000); }, 600);
@@ -1528,6 +1533,7 @@
 
   function waitTimeout(a) {
     a.resolving = true;
+    STATE.waitInProgress = null; // resolved (its own saves follow): not a call-off
     const cfg = WAIT_CFG[a.verbId];
     if (a.verbId === 'rest') {
       const got = Math.round(addCrewMorale(restPerDay() * a.days)); // every crew member
@@ -1540,7 +1546,7 @@
     a.finish = () => {
       clearTimeout(a.timer);
       hideWaitFlash(); hideActionBanner();
-      activeWait = null;
+      activeWait = null; STATE.waitInProgress = null;
       renderCruise();
       if (isStopped()) renderStopMenu();
       syncPaused();
@@ -1554,7 +1560,7 @@
     const a = activeWait;
     if (!a || a.resolving) return;
     clearTimeout(a.timer);
-    activeWait = null;
+    activeWait = null; STATE.waitInProgress = null;
     const n = a.day, dd = n + ' day' + (n === 1 ? '' : 's');
     pushLogEntry(a.verbId === 'rest'
       ? '▶ Rest cut short after ' + dd + '. Nobody feels any better for it.'
@@ -1575,7 +1581,7 @@
   }
   function stopWaitSilently() {
     if (activeWait) clearTimeout(activeWait.timer);
-    activeWait = null;
+    activeWait = null; STATE.waitInProgress = null;
     hideWaitFlash(); hideActionBanner();
     syncPaused();
   }
