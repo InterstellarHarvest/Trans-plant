@@ -45,6 +45,14 @@ const BRANCH_NODE_MULT = {
   scientific:     { planet: 2, anomaly: 2.5, nebula: 2 },
   agricultural:   { planet: 3, station: 1.2 },
 };
+/* The stop types a label promises: a labelled branch always holds at
+   least one of them (the trail allowing) — a DERELICT HEAVY lane with no
+   derelict, 70% of them on lunar, made the labels a lie. */
+const BRANCH_SIGNATURE = {
+  hostile: ['void', 'derelict', 'asteroid_field'], lucrative: ['asteroid_field', 'derelict'],
+  safe: ['station', 'planet'], corporate: ['station'], derelict_heavy: ['derelict'],
+  scientific: ['anomaly', 'nebula', 'planet'], agricultural: ['planet'],
+};
 function branchWeights(weights, flavor) {
   const m = BRANCH_NODE_MULT[flavor] || {};
   const out = {};
@@ -52,6 +60,12 @@ function branchWeights(weights, flavor) {
   return out;
 }
 
+// Types this trail's map can place at all (a weight above zero anywhere).
+function spawnableTypes(rules) {
+  const out = new Set();
+  for (const tbl of [rules.node_weights_start, rules.node_weights]) for (const [k, w] of Object.entries(tbl || {})) if (w > 0) out.add(k);
+  return out;
+}
 function pickWeighted(weights) {
   let total = 0;
   for (const k in weights) total += weights[k];
@@ -203,10 +217,15 @@ function generateMap(trailKey) {
     for (const key of ['alpha', 'beta']) {
       const flavor = flavors.pop();
       const branchIds = [];
+      const types = [];
       for (let j = 0; j < branchLen; j++) {
         const t = (gap + j + 1) / (spineLen - 1);
-        const weights = branchWeights(interpWeights(rules.node_weights_start, rules.node_weights, t), flavor);
-        const type = pickWeighted(weights);
+        types.push(pickWeighted(branchWeights(interpWeights(rules.node_weights_start, rules.node_weights, t), flavor)));
+      }
+      const sig = (BRANCH_SIGNATURE[flavor] || []).filter(ty => spawnableTypes(rules).has(ty));
+      if (sig.length && !types.some(ty => sig.includes(ty))) types[Math.floor(Math.random() * types.length)] = sig[0];
+      for (let j = 0; j < branchLen; j++) {
+        const type = types[j];
         const id = 'node_branch_' + branchNum + '_' + key + '_' + j;
         branchIds.push(id);
         add({
