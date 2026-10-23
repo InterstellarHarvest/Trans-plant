@@ -247,7 +247,7 @@
         "resources": {},
         "sets_flag": null,
         "time_cost": "low",
-        "narrative": "The captain snorts and takes the smaller cut of fuel, and leaves the repair kits alone. Fine. Twenty percent.",
+        "narrative": "The captain snorts and takes the smaller cut of fuel, and leaves the repair kits alone. 'Fine,' they say. 'Twenty percent.'",
         "resources_pct": {
           "fuel": -20
         }
@@ -269,7 +269,7 @@
       "A ship with no transponder and a great many guns drops in behind you. Locked on. {npc.quirk}",
       "Something patched and ugly swings across your bow. Its gun ports are open. {npc.quirk}"
     ],
-    "draw_weight": 0.34,
+    "draw_weight": 0.25,
     "family": "pirate"
   },
   {
@@ -359,9 +359,9 @@
             "outcome": "trader_bought_food"
           },
           {
-            "text": "Buy an emergency beacon — 60 gold",
+            "text": "Buy an emergency beacon — 135 gold",
             "gate": {
-              "gold": 60
+              "gold": 135
             },
             "outcome": "trader_bought_beacon"
           },
@@ -439,7 +439,7 @@
         "body": "You let the hail lapse. The merchant vessel holds alongside for another minute — commercial optimism dies slowly — then peels away without ceremony.",
         "resources": {},
         "sets_flag": null,
-        "time_cost": "trivial",
+        "time_cost": "none",
         "narrative": "You ignored the hail. The trader moved on. Somewhere in their ledger, you are now a demographic."
       },
       "trader_bought_fuel": {
@@ -489,16 +489,16 @@
         "line": "{npc.line.refuse}",
         "resources": {},
         "sets_flag": null,
-        "time_cost": "trivial",
+        "time_cost": "none",
         "narrative": "No sale. The trader moved on to softer wallets. The manifest, and its miscellaneous category, remain a road not taken."
       },
       "trader_bought_beacon": {
         "title": "INSURANCE, PORTABLE",
         "tone": "success",
-        "body": "The beacon crosses the gap in its original case, seals unbroken. 'Previous owner never needed it,' the trader says, then, after a pause neither of you enjoys: 'Never got to it, anyway. Sixty. It's good hardware.'",
+        "body": "The beacon crosses the gap in its original case, seals unbroken. 'Previous owner never needed it,' the trader says, then, after a pause neither of you enjoys: 'Never got to it, anyway. It's good hardware.'",
         "line": "{npc.line.accept}",
         "resources": {
-          "gold": -60
+          "gold": -135
         },
         "item_grant": "emergency_beacon",
         "sets_flag": null,
@@ -831,7 +831,7 @@
       "boarding_split": {
         "title": "PARTITIONED",
         "tone": "success",
-        "body": "The agreement lands: they keep the aft sections they've dug into, you take the bow. CHIP's contract is transmitted, mocked openly, and — notably — followed to the letter by both sides.",
+        "body": "The agreement lands: they keep the aft sections they've dug into, you take the bow. The ship computer's contract is transmitted, mocked openly, and — notably — followed to the letter by both sides.",
         "resources": {
           "fuel": 8,
           "morale": 3
@@ -945,14 +945,14 @@
         "bg": "our_ship/bridge",
         "bgBase": "space/deep",
         "body": "You cycle the intercom. A voice responds, calmly. One of those is not like the others.",
-        "line": "Fuel. Food. Your medic.",
+        "line": "Fuel. Food. And anyone aboard who knows medicine.",
         "pose": "listening",
         "ai": {
           "aria": "They sound reasonable!",
-          "marv": "They specifically asked for the medic. That is a targeted extraction.",
+          "marv": "They specifically asked for medical help. That is a targeted extraction.",
           "rex": "They are listening. Use it.",
           "chip": "This conversation is being recorded for quality purposes.",
-          "ajoy": "They want the medic because someone they love is dying. Ask."
+          "ajoy": "They want medical help because someone they love is dying. Ask."
         },
         "choices": [
           {
@@ -971,7 +971,7 @@
             "outcome": "boarding_fuel_only"
           },
           {
-            "text": "\"Not the medic.\"",
+            "text": "\"Nobody goes with you.\"",
             "dialog": true,
             "sub": "Line in the sand",
             "risky": true,
@@ -1023,7 +1023,7 @@
       "boarding_who": {
         "title": "AN ANSWER",
         "tone": "success",
-        "body": "The voice breaks a little. {crew.medic} volunteers before you decide, crosses to their ship with a kit and a crate of our rations, and comes back the next morning saying only that she'll live. The intruders leave the way they came and close the airlock behind them.",
+        "body": "The voice breaks a little. {crew.medic} volunteers before you decide, crosses to their ship with a kit and a crate of your rations, and comes back the next morning saying only that she'll live. The intruders leave the way they came and close the airlock behind them.",
         "line": "Her name is Isa.",
         "resources": {
           "morale": 5,
@@ -1033,7 +1033,7 @@
         "time_cost": "low",
         "scene_bg": "our_ship/bridge",
         "scene_bg_base": "space/deep",
-        "narrative": "Asked the boarders who was sick. {crew.medic} treated a pirate named Isa with our kit and our rations, and the boarders left without taking anything else."
+        "narrative": "Asked the boarders who was sick. {crew.medic} treated a pirate named Isa with the ship's kit and rations, and the boarders left without taking anything else."
       },
       "boarding_fuel_only": {
         "title": "FUEL TAKEN",
@@ -1049,7 +1049,7 @@
       "boarding_refuse": {
         "title": "NO DEAL",
         "tone": "danger",
-        "body": "They kick the door in anyway. This was always going to end in a fight. You win it on the cargo deck, and it costs more than the medic would have.",
+        "body": "They kick the door in anyway. This was always going to end in a fight. You win it on the cargo deck, and it costs more than a house call would have.",
         "resources": {
           "hull": -10,
           "morale": -4
@@ -1057,7 +1057,7 @@
         "severity": "injury",
         "time_cost": "low",
         "scene_bg": "our_ship/cargo",
-        "narrative": "Refused to hand over the medic. The boarders kicked the door in and lost the fight that followed, expensively for everyone."
+        "narrative": "Refused to hand anyone over. The boarders kicked the door in and lost the fight that followed, expensively for everyone."
       }
     }
   },
@@ -1145,7 +1145,7 @@
       "unknown_yes": {
         "title": "CONTACT",
         "tone": "success",
-        "body": "Your single pulse reaches them. They send back something complex. Your xenobiologist starts crying — joy, you think.",
+        "body": "Your single pulse reaches them. They send back something complex. Somebody on the bridge starts crying — joy, you think.",
         "line": "[a long warm chord]",
         "resources": {
           "morale": 8
@@ -1666,7 +1666,7 @@
           "aria": "We might have something on the list! ARIA is checking the hold! ARIA is checking it again, harder!",
           "marv": "MARV has compared the curator's prices with a station trader's. The curator pays more for what is on the list. He notes that this is what a list is for.",
           "rex": "REX does not understand why anyone wants a sealed record they will never open. He would like it known that this is not the same as not wanting one.",
-          "chip": "CHIP calls this a seller's market! Rare! Beautiful! CHIP is straightening a tie it doesn't have!",
+          "chip": "CHIP calls this a seller's market! Rare! Beautiful! CHIP is straightening a tie he doesn't have!",
           "ajoy": "AJOY points out that the curator pays one flat price for any relic. A good piece is worth more than that and a poor one less. Without a spectrometer aboard, nobody here knows which yours is, the curator included."
         },
         "choices": [
@@ -1699,6 +1699,10 @@
               "gold": 10
             },
             "outcome": "coll_bought_medkit"
+          },
+          {
+            "text": "Back to the hail",
+            "back": true
           }
         ]
       },
@@ -1944,10 +1948,11 @@
             "text": "Haggle for the fuel cell — 10 gold",
             "sub": "Bargain · it can go wrong",
             "gate": {
-              "gold": 10
+              "gold": 20
             },
             "microgame_type": "negotiation_wobble",
-            "outcome": "hag_fuel_haggled"
+            "outcome": "hag_fuel_haggled",
+            "detail": "Needs 20 gold on hand: a wobble costs extra."
           },
           {
             "text": "Let {crew.diplomat} do the talking",
@@ -2054,9 +2059,8 @@
         "narrative": "Bought a ration crate at the asking price. The rations are fine. The price tag is still on the crate, and nobody has the heart to take it off."
       },
       "hag_fuel_haggled": {
-        "title": "MET IN THE MIDDLE",
-        "tone": "success",
-        "body": "You counter. They counter. You counter the counter, and the trader, delighted, meets you somewhere sensible. The fuel cell comes across with a smiley face drawn on the receipt.",
+        "title": "A PRICE, EVENTUALLY",
+        "body": "You counter. They counter. You counter the counter. Somewhere in the back-and-forth a price gets agreed, and the fuel cell comes across on the cargo line with the receipt taped to it.",
         "line": "See? That wasn't so hard. It was a little hard.",
         "resources": {
           "gold": -10
@@ -2064,7 +2068,7 @@
         "item_grant": "fuel_cell",
         "sets_flag": null,
         "time_cost": "trivial",
-        "narrative": "Haggled a fuel cell down to something like a fair price. Nobody enjoyed it except the trader, which is how haggling is supposed to work."
+        "narrative": "Haggled for a fuel cell. Whether the price was fair depends on who is telling it."
       },
       "hag_declined": {
         "title": "NO SALE",
@@ -2383,7 +2387,7 @@
     "scene_type": "ship_exterior",
     "comm_mode": "screen",
     "once": false,
-    "draw_weight": 0.33,
+    "draw_weight": 0.25,
     "sets_flag": null,
     "requires_flag": null,
     "npc": {
@@ -2587,7 +2591,7 @@
     "scene_type": "ship_exterior",
     "comm_mode": "screen",
     "once": false,
-    "draw_weight": 0.33,
+    "draw_weight": 0.25,
     "sets_flag": null,
     "requires_flag": null,
     "npc": {
