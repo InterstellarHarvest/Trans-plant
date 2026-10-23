@@ -506,9 +506,10 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
       if (hunt) hunt.click();
       window.openMinigame = real;
       out.cruiseCtx = ctx && ctx.regionLabel;
-      // breach O2 starts at the ship's O2
+      // breach O2 starts at the ship's O2 (a number only with the event's
+      // tier O2 figures in hand — it never shows one that won't land)
       STATE.resources.o2 = 62;
-      openMinigame('breach', {}, () => {}); await w(60);
+      openMinigame('breach', { tierO2: { perfect: -2, good: -3, poor: -8 } }, () => {}); await w(60);
       document.getElementById('rstart').click(); await w(120);
       out.o2 = document.getElementById('bcr-o2val') && document.getElementById('bcr-o2val').textContent;
       document.getElementById('mclose').click(); await w(50);
