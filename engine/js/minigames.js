@@ -205,6 +205,32 @@ const Q = {
       chip:'Low yield! ScrapRight™ Interior Lighting Packs would have helped. Ask about our subscription tier!',
       ajoy:'The dead ship kept most of what it had. It is allowed to.'
     }
+  },
+  // SALVAGE played as an event's job (opts.tierRewards / opts.eventJob,
+  // owner 2026-10-23): the event's tier reward lands, not the haul, so
+  // these lines judge the load and promise nothing inside it.
+  salvage_job:{
+    perfect:{
+      aria:'A full bay! That\'s the best the job could go! Nice flying!',
+      marv:'Recovery volume at the top of the scale. The job is done as well as it can be done.',
+      rex:'Full bay. Clean grabs. That\'s the job done right.',
+      chip:'Top-tier result! ScrapRight™ — We Measure Success By The Load®!',
+      ajoy:'You brought in much. The job is as complete as it can be.'
+    },
+    good:{
+      aria:'A decent load! Some of it got away, but the job\'s mostly done!',
+      marv:'Adequate volume. Several items lost to drift. The job is done, with an asterisk.',
+      rex:'Solid load. A few got past us. Job done, not perfectly.',
+      chip:'Solid result! ScrapRight™ Pro users haul up to 22% more per shift. Ask your station rep!',
+      ajoy:'Some came to your hand, some kept drifting. The job is mostly done.'
+    },
+    poor:{
+      aria:'Oh! Not much made it into the bay! The job went... not great!',
+      marv:'Minimal volume recovered. The job will reflect that.',
+      rex:'Thin load. The job suffers for it. Grab closer to the bay next time.',
+      chip:'Low yield! ScrapRight™ Targeting Beacons would have helped. Ask about our subscription tier!',
+      ajoy:'Little came in. The job ends smaller than it began.'
+    }
   }
 };
 
@@ -299,8 +325,67 @@ const BRIEF = {
       ajoy:'The ship is quiet. Its things still drift where its people left them. Take them gently.'
     },
     mechanic:'<strong>Click and hold</strong> over a floating item to tractor it. Drag it into the <strong>marked stowage hatch</strong> at the bottom and release. Energy drains while the beam is on — <strong>longer drags cost more</strong>. Items that drift out of reach are gone. <strong>Fuel cells</strong> refuel the ship (small +5, medium +10, large +15), <strong>ration cans</strong> are +5 food, a <strong>component</strong> strips to 1 metal + 1 exotic, a <strong>medkit</strong> goes to the hold. Sparking junk is worthless.'
+  },
+  // An event's salvage job (owner 2026-10-23): what lands is the event's
+  // reward for the result, so the briefing promises no pickups.
+  salvage_job:{
+    icon:'📡',
+    situation:{
+      aria:'It\'s a job! Pull in everything you can reach! The more we bring in, the better it goes!',
+      marv:'The job is a tractor-beam exercise. Volume recovered decides how it is judged. Contents do not.',
+      rex:'Job\'s on the clock. Beam it in, put it in the bay. The count is what counts.',
+      chip:'Contract salvage! ScrapRight™ pays by the load — every item in the bay counts toward your result!',
+      ajoy:'Bring in what drifts. How much you bring decides how the job ends.'
+    },
+    mechanic:'<strong>Click and hold</strong> over a drifting item to tractor it. Drag it into the <strong>{bay}</strong> and release. Energy drains while the beam is on — <strong>longer drags cost more</strong>. Items that drift off-screen are gone. <strong>What the job pays depends on how well it goes</strong>: 8 or more items in is the best result, 4 or more a fair one. The haul itself isn\'t kept: the job\'s reward is what lands.'
   }
 };
+const TIER_WORDS = { perfect:'EXCELLENT', good:'ADEQUATE', poor:'INSUFFICIENT' };
+// A job launched from an event (owner 2026-10-23): opts.tierRewards
+// ({ perfect|good|poor: ['+6 FOOD', …] }, display strings from the event's
+// tier outcomes) or opts.eventJob. The event's own result lands, never a
+// free-play haul, so no card may claim pickups.
+const isEventJob = o => !!(o && (o.tierRewards || o.eventJob));
+// The reward a result tier earns (a walk-out scores as poor).
+function tierRewardList(o, tier){
+  const r = o && o.tierRewards;
+  if(!r) return null;
+  const list = r[tier] || (tier === 'fedup' ? r.poor : null) || [];
+  return Array.isArray(list) ? list : [String(list)];
+}
+const escHtml = s => (typeof escapeHTML === 'function') ? escapeHTML(String(s)) : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// "WHAT THE JOB PAYS" — each tier's reward, on the briefing.
+function tierRewardTable(o){
+  if(!(o && o.tierRewards)) return '';
+  const rows = ['perfect','good','poor'].map(t => {
+    const list = tierRewardList(o, t);
+    return `<div class="rt-row"><span class="rt-tier ${t}">${TIER_WORDS[t]}</span><span class="rt-list">${list.length ? list.map(escHtml).join(' · ') : 'nothing'}</span></div>`;
+  }).join('');
+  return `<div class="ready-rewards"><div class="rt-head">WHAT THE JOB PAYS</div>${rows}</div>`;
+}
+/* A full cargo hold (the grant's own rule, index.html materialLandings /
+   cargoSlotsUsed): null while a slot is free; else what can still come
+   aboard — { room: { metal: 7, … } } topping up the stacks already in
+   the hold (empty: nothing at all). MINE and SALVAGE say so on their
+   briefings, before the time is spent. */
+function cargoHoldRoom(){
+  if(typeof materialLandings !== 'function' || typeof cargoSlotsUsed !== 'function' || typeof MOD === 'undefined') return null;
+  if(cargoSlotsUsed() < cargoCapacity()) return null;
+  const room = {};
+  // Each on its own: a list is taken in order, each in the hold the last left.
+  for(const m of ((MOD.materials && MOD.materials.materials) || [])){
+    const n = materialLandings({ [m.id]: 999 })[m.id] || 0;
+    if(n > 0) room[m.id] = n;
+  }
+  return { room };
+}
+// "7 metal and 2 scrap"
+function roomText(room){
+  const parts = Object.entries(room).map(([id, n]) => n + ' ' + id);
+  return parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts[0] || '';
+}
+window.cargoHoldRoom = cargoHoldRoom; // mining.js's briefing reads it too
+window.cargoRoomText = roomText;
 
 // ─────────────────────────────────────────────
 // State
@@ -311,12 +396,13 @@ let engineerMult = 0; // engineer passive in effect: 1, 0.5 wounded, 0 absent
 let currentGame = null;
 let cleanupFn = null;
 let onMinigameDone = null; // (tier, payload) => void — supplied by openMinigame()'s caller
+let currentOpts = {};        // the open game's opts (an event job's tierRewards, briefing, quips…)
 let minigameStarted = false; // BEGIN pressed this visit — closing after this is a QUIT
 // The run's result is decided and its end beat (TIME'S UP flash, a
 // pause for the moment to land) is playing — ✕ now means "done", so
 // it waits for the result and closes through it instead of QUITting.
 let minigameEnding = false, closeAfterResult = false;
-function markMinigameEnding(){ minigameEnding = true; }
+function markMinigameEnding(){ minigameEnding = true; relabelCloseKept(); }
 function endBeat(fn, ms){ markMinigameEnding(); return setTimeout(fn, ms); }
 let minigameToken = 0;       // bumps per open/close: a quit game's delayed result can't land in the next one
 // Harm already done in play (a forage poisoning, the patient's HP lost on
@@ -334,22 +420,41 @@ const NAMES = {scan:'SCAN',engine:'ENGINE REPAIR',medical:'MEDICAL TRIAGE',forag
 // Games whose modal is sized larger than the default 500×400.
 const BIGMODAL_GAMES = new Set(['breach', 'medical', 'salvage', 'forage']);
 
-function showReady(id, onStart){
-  const b = BRIEF[id];
+/* The briefing. opts (an event's job may carry them):
+     briefing   — the AI's situation line in place of the game's generic
+                  one (plain text; the AI still says it)
+     tierRewards / eventJob — an event's job: the briefing promises no
+                  free-play pickups and lists what each result pays. */
+function showReady(id, onStart, opts){
+  opts = opts || {};
+  const job = isEventJob(opts);
+  const salvageJob = job && (id === 'salvage' || id === 'salvage_derelict');
+  const b = salvageJob ? BRIEF.salvage_job : BRIEF[id];
   const ga = document.getElementById('ga');
   // The real limit (REX forgives a 4th wrong click).
-  let mechanicHtml = b.mechanic.replace('{engineErrs}', ['Three', 'Four'][ENGINE_MAX_ERRS() - 3] || String(ENGINE_MAX_ERRS()));
+  let mechanicHtml = b.mechanic.replace('{engineErrs}', ['Three', 'Four'][ENGINE_MAX_ERRS() - 3] || String(ENGINE_MAX_ERRS()))
+    .replace('{bay}', id === 'salvage_derelict' ? 'marked stowage hatch' : 'glowing cargo bay');
   if(id==='breach' && engineerAboard){
     mechanicHtml += `<br><br><span style="color:var(--teal)"><strong>ENGINEER ABOARD:</strong> +${engineerMult < 1 ? 'half a second' : '1 second'} per breach${engineerMult < 1 ? (STATE.crew.includes('engineer') ? ' (wounded)' : ' (your engineering training)') : ''}.</span>`;
   }
+  // A full hold on a free-play salvage: say what can't be kept (the
+  // grant's own capacity rule) before the time is spent.
+  const hold = (id === 'salvage' || id === 'salvage_derelict') && !job ? cargoHoldRoom() : null;
+  if(hold){
+    const derelict = id === 'salvage_derelict';
+    const kept = roomText(hold.room);
+    mechanicHtml += `<br><br><span class="ready-warn"><strong>CARGO HOLD FULL:</strong> ${kept ? 'only ' + kept + ' more can be kept (topping up the stacks aboard); no' : 'no'} ${derelict ? 'new materials or medkits' : 'new materials, parts or crate finds'} until you free space (INV). ${derelict ? 'Fuel cells and ration cans' : 'O₂ tanks and gold chips'} still count.</span>`;
+  }
+  const situation = typeof opts.briefing === 'string' && opts.briefing ? escHtml(opts.briefing) : b.situation[activeAi];
   ga.innerHTML = `
-    <div class="ready">
+    <div class="ready${job && opts.tierRewards ? ' has-rewards' : ''}">
       <div class="ready-icon">${b.icon}</div>
       <div class="ready-situation">
         <span class="rsi-name">${AI_NAMES[activeAi]}</span>
-        <span class="rsi-text">${b.situation[activeAi]}</span>
+        <span class="rsi-text">${situation}</span>
       </div>
       <div class="ready-mechanic">${mechanicHtml}</div>
+      ${tierRewardTable(opts)}
       <button class="ready-start" id="rstart">▶ BEGIN</button>
     </div>`;
   document.getElementById('rstart').addEventListener('click', ()=>{
@@ -360,14 +465,27 @@ function showReady(id, onStart){
 
 /* Opens a minigame inside overlay-minigames. `id` is one of the 7 game
    keys (see NAMES above); `opts` is passed into the game's own
-   initX(container, onResult, opts) 3rd arg — only scan (difficulty)
-   and forage (mode/bg_id/ctx) read it, the rest ignore it. `onDone(tier,
+   initX(container, onResult, opts) 3rd arg — scan (difficulty; the
+   trail's when absent), forage (mode/bg_id/ctx), salvage (setting) and
+   breach (tierO2) read it. Every game also takes, from an event's
+   launch (index.html resolveChoice):
+     tierRewards { perfect|good|poor: ['+6 FOOD', …] } — the event's own
+                 reward per result (display strings). The briefing lists
+                 them, the result card shows the one earned, and nothing
+                 claims a free-play pickup (owner 2026-10-23).
+     eventJob    true — the same rule when there is no list to show.
+     briefing    the AI's situation line, in place of the generic one.
+     quips       { perfect|good|poor|fedup: text } (or one text): the
+                 result card's line, in place of the generic one.
+     resultLines (tier, payload) → [text]: side gains the caller lands
+                 too (shown on the result card). `onDone(tier,
    payload)` fires once the player closes the result screen, so the
    caller (Stop Menu verb handlers in cruise.js) can apply real STATE
    effects. activeAi/engineerAboard are read from live STATE at open
    time — the standalone demo let you toggle these by hand; the engine
    doesn't need that escape hatch. */
 function openMinigame(id, opts, onDone){
+  currentOpts = opts || {};
   activeAi = STATE.activeAI || 'marv';
   engineerMult = passiveMult('engineer'); // a captain engineer counts at half
   engineerAboard = engineerMult > 0;
@@ -393,8 +511,16 @@ function openMinigame(id, opts, onDone){
     window.onJobBegun(); // a reload from here settles as a quit
     const mclose = document.getElementById('mclose');
     mclose.textContent = '✕ QUIT'; Tooltip.attach(mclose, { description: 'Quit now: nothing is kept, and the time is still spent. In a crisis, the worst outcome lands.', tone: 'danger' });
-    cleanupFn = inits[id](document.getElementById('ga'), (tier, payload) => { if (token === minigameToken) showResult(tier, payload); }, opts || {});
-  });
+    cleanupFn = inits[id](document.getElementById('ga'), (tier, payload) => { if (token === minigameToken) showResult(tier, payload); }, currentOpts);
+  }, currentOpts);
+}
+// The result is decided (its end beat, the haul card, the result card):
+// ✕ now closes and keeps it — no longer the red QUIT.
+function relabelCloseKept(){
+  const mclose = document.getElementById('mclose');
+  if(!mclose || mclose.textContent === '✕ CLOSE') return;
+  mclose.textContent = '✕ CLOSE';
+  Tooltip.attach(mclose, { description: 'Close: the result is kept.' });
 }
 function closeMinigameOverlay(){
   minigameToken++;
@@ -419,23 +545,37 @@ function showResult(tier, payload){
   // a quit by nothing (kept deliberately).
   const labels = {perfect:'EXCELLENT',good:'ADEQUATE',poor:'INSUFFICIENT',fedup:'WALKED OUT'};
   rt.textContent = labels[tier];
+  relabelCloseKept(); // ✕ on the result card closes and keeps it
   const ai = activeAi;
+  const opts = currentOpts || {};
+  const job = isEventJob(opts);
   document.querySelector('#rquip .rname').textContent = AI_NAMES[ai];
-  document.querySelector('#rquip .rtext').textContent = Q[currentGame][tier][ai];
+  // opts.quips (an event's own lines): { perfect|good|poor|fedup: text } or one text for any result.
+  const own = opts.quips && (typeof opts.quips === 'string' ? opts.quips : (opts.quips[tier] || (tier === 'fedup' ? opts.quips.poor : null)));
+  const quipSet = job && currentGame.indexOf('salvage') === 0 ? Q.salvage_job : Q[currentGame];
+  document.querySelector('#rquip .rtext').textContent = own || quipSet[tier][ai];
 
-  // Optional itemized payload — currently emitted by forage; engine consumes
-  // food/rare_drops/sickness on its side. Other games still call onResult(tier).
+  // The itemized lines under the quip. An event's job shows the reward
+  // its result earns (opts.tierRewards) — the event lands that, never the
+  // game's own haul — so no free-play pickup is claimed. Free play: what
+  // forage found, as it lands (the food stores cap). opts.resultLines
+  // (tier, payload) → [text] adds the caller's own side gains.
   const resultEl = document.getElementById('result');
   const prevHaul = document.getElementById('rhaul');
   if(prevHaul) prevHaul.remove();
-  if(payload){
-    const haul = document.createElement('div');
-    haul.id = 'rhaul';
-    haul.className = 'rhaul';
-    const lines = [];
+  const lines = [];
+  let foodLanded = 0;
+  if(job){
+    const list = tierRewardList(opts, tier);
+    if(list) lines.push(`<span class="rh-line${list.length ? ' gold' : ''}">REWARD · ${list.length ? list.map(escHtml).join(' · ') : 'nothing'}</span>`);
+  } else if(payload){
     if(typeof payload.food === 'number'){
-      // Render with id so we can animate the count-up after insert.
+      // What lands: the tank caps (cruise.js FORAGE adds it the same way).
+      const f0 = STATE.resources.food, max = resMax('food');
+      foodLanded = Math.max(0, Math.round(Math.min(max, Math.max(0, f0 + payload.food)) - f0));
+      // Rendered with an id so the count-up can animate after insert.
       lines.push(`<span class="rh-line">FOOD GAINED <strong id="rh-food">0</strong></span>`);
+      if(payload.food > foodLanded) lines.push(`<span class="rh-line orange">STORES FULL · ${Math.round(payload.food)} FOUND, ${Math.round(payload.food) - foodLanded} LEFT BEHIND</span>`);
     }
     if(payload.rare_drops && payload.rare_drops.length){
       const names = payload.rare_drops.map(d=>d.name).join(', ');
@@ -451,15 +591,25 @@ function showResult(tier, payload){
         lines.push(`<span class="rh-line ${tone}">${head} · ${target} · ${s.severity} <em>(${s.reason})</em></span>`);
       });
     }
+  }
+  if(typeof opts.resultLines === 'function'){
+    let extra = [];
+    try { extra = opts.resultLines(tier, payload) || []; } catch(e){ extra = []; }
+    for(const t of extra) if(t) lines.push(`<span class="rh-line gold">${escHtml(t)}</span>`);
+  }
+  if(lines.length){
+    const haul = document.createElement('div');
+    haul.id = 'rhaul';
+    haul.className = 'rhaul';
     haul.innerHTML = lines.join('');
     resultEl.insertBefore(haul, resultEl.querySelector('.rbtns'));
 
-    // Animate the food number ticking up from 0 to target — arcade payoff
-    // beat. Cubic ease-out so it slows toward the final number.
-    if(typeof payload.food === 'number' && payload.food > 0){
+    // Animate the food number ticking up from 0 to what lands — arcade
+    // payoff beat. Cubic ease-out so it slows toward the final number.
+    if(foodLanded > 0){
       const foodEl = document.getElementById('rh-food');
       if(foodEl){
-        const target = payload.food;
+        const target = foodLanded;
         const duration = 750;
         const startT = performance.now();
         const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
@@ -477,8 +627,9 @@ function showResult(tier, payload){
   // ✕ pressed during the end beat — deliver this result and close.
   if(closeAfterResult){ closeAfterResult = false; setTimeout(()=>document.getElementById('rbquit').click(), 0); }
 }
-/* ✕ CLOSE / backdrop click (owner ruling 2026-10-09: quitting gains
-   nothing and costs time):
+/* ✕ CLOSE / ✕ QUIT / backdrop click (owner ruling 2026-10-09: quitting gains
+   nothing and costs time; the backdrop only on the briefing and the
+   result card):
    - result screen up → the game is over; same as the result's CLOSE.
    - game in progress → QUIT: the caller gets tier 'abandoned' and no
      payload, so nothing salvaged/foraged/earned so far is kept; callers
@@ -508,7 +659,11 @@ document.getElementById('ov').addEventListener('mousedown', e=>{ ovPressOnBackdr
 // A press in the first moment after the pause menu closes is the second
 // half of a double-clicked RESUME, not a quit that abandons the job.
 const justResumed = () => window.PauseBus && PauseBus.resumedAt && performance.now() - PauseBus.resumedAt < 400;
-document.getElementById('ov').addEventListener('click', e=>{ if(e.target===document.getElementById('ov') && ovPressOnBackdrop && !justResumed()) requestCloseMinigame(); ovPressOnBackdrop = false; });
+// Once BEGIN is pressed the backdrop does nothing until the result card
+// is up: a click just outside SALVAGE/FORAGE (targets drift in from the
+// edges) used to QUIT the job on the spot. ✕ QUIT stays the way out.
+const backdropCloses = () => !minigameStarted || document.getElementById('result').classList.contains('show');
+document.getElementById('ov').addEventListener('click', e=>{ if(e.target===document.getElementById('ov') && ovPressOnBackdrop && !justResumed() && backdropCloses()) requestCloseMinigame(); ovPressOnBackdrop = false; });
 // No "Play Again" — replaying a Stop Menu verb minigame for free without
 // re-opening the Stop Menu would let SALVAGE/FORAGE farm resources in a
 // tight loop (same exploit-avoidance concern the plan flagged for Mining's
@@ -618,12 +773,18 @@ const SCAN_DIFFICULTY = {
   hard:   { speed: 2.0, jitter: 0.36, lurch: 0.050, lockWindow: 18, lockFill: 1/95, jumpAt: 6000 },
 };
 
+// The trail's difficulty (the SCAN verb's own map, cruise.js
+// TRAIL_TO_SCAN_DIFFICULTY): an event's scan without an authored one
+// plays at it too — it used to fall back to medium everywhere.
+const SCAN_TRAIL_DIFFICULTY = { lunar: 'easy', mars: 'medium', interstellar: 'hard' };
 function initScan(container, onResult, opts){
   opts = opts || {};
-  const tier = SCAN_DIFFICULTY[opts.difficulty] || SCAN_DIFFICULTY.medium;
+  const trailKey = typeof STATE !== 'undefined' && STATE ? SCAN_TRAIL_DIFFICULTY[STATE.trail] : null;
+  const diffKey = SCAN_DIFFICULTY[opts.difficulty] ? opts.difficulty : SCAN_DIFFICULTY[trailKey] ? trailKey : 'medium';
+  const tier = SCAN_DIFFICULTY[diffKey];
   container.innerHTML = `
     <div class="tbar-wrap"><div class="tbar" id="scan-tb" style="width:100%"></div></div>
-    <div class="scan-wrap">
+    <div class="scan-wrap" data-difficulty="${diffKey}">
       <canvas id="scan-c" width="260" height="260"></canvas>
       <div class="lock-col">
         <div class="lock-lbl">LOCK</div>
@@ -2675,7 +2836,8 @@ const BREACH_REGIONS = {
   ]}
 };
 
-function initBreach(container, onResult){
+function initBreach(container, onResult, opts){
+  opts = opts || {};
   // ── Pick bg + regions ─────────────────────────
   const bgKeys = Object.keys(BREACH_REGIONS);
   const bgKey = bgKeys[Math.floor(Math.random()*bgKeys.length)];
@@ -2721,18 +2883,23 @@ function initBreach(container, onResult){
   const counter = tray.querySelector('#bcr-counter');
   // OXYGEN bar — bottom-center. Starts at the ship's O2 and drains while
   // breaches are open, stops when patched; the ship's real O2 loss lands
-  // through the event's tier_outcomes.
+  // through the event's tier_outcomes. With those losses in hand
+  // (opts.tierO2 { perfect|good|poor: −n }) the bar never shows a number
+  // the result won't land: it stays within the result the seals so far
+  // would earn and ends on exactly the landed figure. Without them it is
+  // a leak gauge only — no number.
+  const TIER_O2 = (opts.tierO2 && ['perfect','good','poor'].every(t => Number.isFinite(opts.tierO2[t]))) ? opts.tierO2 : null;
   const o2Bar = document.createElement('div');
-  o2Bar.className = 'breach-o2';
+  o2Bar.className = 'breach-o2' + (TIER_O2 ? '' : ' no-number');
   o2Bar.innerHTML =
     '<div class="breach-o2-lbl">OXYGEN</div>' +
     '<div class="breach-o2-track">' +
       '<div class="breach-o2-fill" id="bcr-o2fill" style="width:100%"></div>' +
-      '<div class="breach-o2-pct"><span id="bcr-o2val">100</span>%</div>' +
+      (TIER_O2 ? '<div class="breach-o2-pct"><span id="bcr-o2val">100</span>%</div>' : '<div class="breach-o2-pct">LEAKING</div>') +
     '</div>';
   scene.appendChild(o2Bar);
   const o2Fill = o2Bar.querySelector('#bcr-o2fill');
-  const o2Val  = o2Bar.querySelector('#bcr-o2val');
+  const o2Val  = o2Bar.querySelector('#bcr-o2val') || { textContent: '' }; // no number without tierO2
 
   // Blocked rects (in scene-px) — holes won't spawn within these.
   // 12px padding so holes don't kiss the UI either.
@@ -2828,11 +2995,23 @@ function initBreach(container, onResult){
   const O2_START = (typeof STATE !== 'undefined' && STATE && STATE.resources && typeof STATE.resources.o2 === 'number')
     ? Math.max(0, Math.min(100, Math.round(STATE.resources.o2))) : 100;
   let o2 = O2_START;
-  const O2_MAX_LOSS = 10; // % cap — total failure leaves 90% atmosphere,
-                          // so a breach event can stack with prior O2 loss
-                          // without ever soft-locking the run.
+  // Where a result tier leaves the air: the start plus its loss, as the
+  // engine lands it (clamped 0–100).
+  const o2After = t => Math.max(0, Math.min(100, O2_START + TIER_O2[t]));
+  // The worst the bar can show: the poor result's landing (with the
+  // event's numbers), else the old 10% gauge cap.
+  const O2_MAX_LOSS = TIER_O2 ? Math.max(0, O2_START - o2After('poor')) : 10;
   const O2_DRAIN_PER_HOLE = O2_MAX_LOSS / ((perHole / 1000) * N * N);
-  o2Fill.style.width = o2 + '%'; o2Val.textContent = o2;
+  // The result the seals so far would earn if the clock ran out now
+  // (the timer's own rule below).
+  const tierNow = () => { const m = N - holes.filter(x=>x.welded).length; return m === 0 ? 'perfect' : (N && m / N <= 0.34) ? 'good' : 'poor'; };
+  function paintO2(){
+    o2Fill.style.width = o2 + '%';
+    o2Val.textContent = Math.round(o2);
+  }
+  // The bar ends on what lands: the result's own figure.
+  function settleO2(t){ if(TIER_O2){ o2 = o2After(t); paintO2(); } }
+  paintO2();
 
   // ── Tray rendering ────────────────────────────
   function renderTray(){
@@ -2999,6 +3178,7 @@ function initBreach(container, onResult){
     counter.textContent=`${w} / ${N} SEALED`;
     if(w>=N){
       done=true;
+      settleO2('perfect');
       endBeat(()=>onResult('perfect'), 700);
       return;
     }
@@ -3048,15 +3228,16 @@ function initBreach(container, onResult){
     const open = holes.filter(h=>!h.patched).length;
     if(open === 0) return;
     o2 = Math.max(0, o2 - open * O2_DRAIN_PER_HOLE * dt);
-    o2Fill.style.width = o2 + '%';
-    o2Val.textContent = Math.round(o2);
-    // Bar sits in [start-10..start] thanks to the 10% cap. Thresholds map
-    // onto "how much of the allowable damage you've taken."
+    // Never below what the result earned so far would land.
+    if(TIER_O2) o2 = Math.max(o2, o2After(tierNow()));
+    paintO2();
+    // Bar sits in [start-max..start]. Thresholds map onto "how much of
+    // the allowable damage you've taken" (the old 10-point gauge: 7 / 4).
     const lost = O2_START - o2;
-    if(lost > 7){
+    if(lost > O2_MAX_LOSS * 0.7){
       o2Fill.style.background = 'var(--red)';
       o2Bar.classList.add('danger');
-    } else if(lost > 4){
+    } else if(lost > O2_MAX_LOSS * 0.4){
       o2Fill.style.background = 'var(--orange)';
       o2Bar.classList.remove('danger');
     } else {
@@ -3127,6 +3308,7 @@ function initBreach(container, onResult){
     if(missing===0) tier='perfect';
     else if(missingFrac<=0.34) tier='good';
     else tier='poor';
+    settleO2(tier);
     onResult(tier);
   });
 
@@ -3171,6 +3353,10 @@ function initSalvage(container, onResult, opts){
   // inside a derelict's hold — interior backdrop, no ship bay painted in,
   // a marked stowage hatch, and sprites/minigames/derelict/'s loot set.
   const DERELICT = !!(opts && opts.setting === 'derelict');
+  // An event's salvage job (owner 2026-10-23): the haul only sets the
+  // result tier; the event's reward for that tier is what lands, so the
+  // end card shows that reward — no processing, no inventory.
+  const JOB = isEventJob(opts);
   // ── Tuned values (from salvage-devtool.html JSON exports) ──
   const BAY    = {x:0.4447, y:0.7905, w:0.1417, h:0.1437};
   const EMIT   = {fx:0.52, fy:0.75};
@@ -3770,6 +3956,7 @@ function initSalvage(container, onResult, opts){
         ${c.sized ? `<span class="sal-haul-sz">${c.sz === '-' ? '?' : c.sz.toUpperCase()}</span>` : ''}
       </div>`).join('');
 
+    if (JOB) { showJobEnd(tier, tierBadge, haulHtml); return; }
     endEl.innerHTML = `
       <div class="sal-end-card">
         <div class="sal-end-cols">
@@ -4053,6 +4240,42 @@ function initSalvage(container, onResult, opts){
       closeAfterResult = true;
       closeBtn.click();
     });
+  }
+
+  // An event's job: the load decides the result, and the card shows what
+  // that result pays (opts.tierRewards) — the haul tiles are only the
+  // count. CLOSE hands back the tier alone (no salvage payload: the event
+  // grants its own reward). One CLOSE, as the free-play card.
+  function showJobEnd(tier, tierBadge, haulHtml) {
+    const list = tierRewardList(opts, tier);
+    const reward = list
+      ? (list.length ? list.map(t => `<div class="sal-job-line">${escHtml(t)}</div>`).join('') : '<div class="sal-job-line none">Nothing this time.</div>')
+      : '<div class="sal-job-line none">The job\'s outcome follows.</div>';
+    endEl.innerHTML = `
+      <div class="sal-end-card sal-job">
+        <div class="sal-end-cols">
+          <div class="sal-end-haul">
+            <div class="sal-end-title">HAUL · ${cargo.length} ${cargo.length>0 ? tierBadge : ''}</div>
+            <div class="sal-end-instr">${cargo.length===0 ? 'No items brought in.' : 'Brought in for the job · 8+ best, 4+ fair'}</div>
+            <div class="sal-haul-grid" id="sal-haul">${haulHtml}</div>
+          </div>
+          <div class="sal-end-inv">
+            <div class="sal-end-title">JOB RESULT ${tierBadge}</div>
+            <div class="sal-end-instr">What the job pays</div>
+            <div class="sal-job-reward" id="sal-job-reward">${reward}</div>
+          </div>
+        </div>
+        <div class="sal-end-buttons">
+          <button class="sal-end-btn" id="sal-close">CLOSE</button>
+        </div>
+      </div>`;
+    const closeBtn = endEl.querySelector('#sal-close');
+    closeBtn.addEventListener('click', () => {
+      if (closeBtn._closed) return;
+      closeBtn._closed = true;
+      onResult(tier, null);
+    });
+    if (closeAfterResult) setTimeout(() => closeBtn.click(), 0);
   }
 
   // ── Cleanup ──

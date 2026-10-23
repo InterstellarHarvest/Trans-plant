@@ -370,6 +370,8 @@
       btn.appendChild(sub);
     }
     if (!opts.locked && opts.onClick) btn.addEventListener('click', opts.onClick);
+    // An ending's tooltip: what it costs in full, its days included.
+    if (opts.tip && window.Tooltip) Tooltip.attach(btn, { description: opts.tip, tone: opts.tipTone });
     return btn;
   }
 
@@ -402,13 +404,22 @@
     wrap.innerHTML = '';
 
     if (COMBAT.state === 'MUTINY') {
-      wrap.appendChild(makeActionBtn({ verb: 'STAND DOWN', sub: COMBAT_CONFIG.surrenders[COMBAT.species] ? 'Yield: they take a toll (−25% fuel, −20% gold)' : 'They won\'t take a yield: limp away', cls: 'combat-danger', onClick: resolveMutinyStandDown }));
+      const yields = !!COMBAT_CONFIG.surrenders[COMBAT.species];
+      wrap.appendChild(makeActionBtn({ verb: 'STAND DOWN',
+        sub: yields ? 'Yield a toll: −25% fuel, −20% gold · ' + daysText('yielded') : 'They won\'t take a yield: limp away · ' + daysText('defeated'),
+        tip: yields ? 'They let you go for a toll: a quarter of the fuel and a fifth of the gold, no loot. Takes ' + daysText('yielded') + '.'
+          : 'They won\'t accept a yield: the ship limps away at hull 1 and loses cargo, as a lost fight does. Takes ' + daysText('defeated') + '.',
+        cls: 'combat-danger', onClick: resolveMutinyStandDown }));
       return;
     }
     if (COMBAT.state === 'SURRENDER_DECISION') {
       const crewMo = COMBAT.player.morale != null; // no crew aboard: no morale to promise
-      wrap.appendChild(makeActionBtn({ verb: 'ACCEPT SURRENDER', sub: '40% loot' + (crewMo ? ' · morale +5' : ''), cls: 'combat-tribute', onClick: acceptSurrender }));
-      wrap.appendChild(makeActionBtn({ verb: 'FINISH THEM', sub: 'Full loot' + (crewMo ? ' · morale -10' : '') + ' · sets flag', cls: 'combat-danger', onClick: finishSurrendered }));
+      wrap.appendChild(makeActionBtn({ verb: 'ACCEPT SURRENDER', sub: '40% loot' + (crewMo ? ' · morale +5' : '') + ' · ' + daysText('victory_surrendered'),
+        tip: 'Strip their ship and let them go: about 40% of the loot' + (crewMo ? ', crew morale +5' : '') + '. Takes ' + daysText('victory_surrendered') + '.',
+        cls: 'combat-tribute', onClick: acceptSurrender }));
+      wrap.appendChild(makeActionBtn({ verb: 'FINISH THEM', sub: 'Full loot' + (crewMo ? ' · morale -10' : '') + ' · ' + daysText('victory_executed'),
+        tip: 'Destroy the surrendered ship: the full loot' + (crewMo ? ', crew morale −10' : '') + ', and the deed is remembered (later events know). Takes ' + daysText('victory_executed') + '.',
+        tipTone: 'danger', cls: 'combat-danger', onClick: finishSurrendered }));
       return;
     }
     if (COMBAT.state === 'FTL_CHARGING') {
@@ -436,10 +447,10 @@
     // captain of that background offers at half strength).
     const tribPct = k => Math.round(tributeTerms(k).odds * 100);
     if (COMBAT.openingTurn && tributeTerms('botanist')) {
-      wrap.appendChild(makeActionBtn({ verb: 'OFFER HARVEST', sub: 'Botanist · ' + tribPct('botanist') + '% · -' + tributeTerms('botanist').cfg.tribute_food_cost + ' food · opening only', cls: 'combat-tribute', gate: { crew: 'botanist' }, onClick: () => offerTribute('botanist') }));
+      wrap.appendChild(makeActionBtn({ verb: 'OFFER HARVEST', sub: 'Botanist · ' + tribPct('botanist') + '% · -' + tributeTerms('botanist').cfg.tribute_food_cost + ' food · opening only', tip: tributeTip('botanist'), cls: 'combat-tribute', gate: { crew: 'botanist' }, onClick: () => offerTribute('botanist') }));
     }
     if (COMBAT.openingTurn && tributeTerms('chef')) {
-      wrap.appendChild(makeActionBtn({ verb: 'OFFER COOKIES', sub: 'Chef · ' + tribPct('chef') + '% · -' + tributeTerms('chef').cfg.tribute_food_cost + ' food · they remember you', cls: 'combat-tribute', gate: { crew: 'chef' }, onClick: () => offerTribute('chef') }));
+      wrap.appendChild(makeActionBtn({ verb: 'OFFER COOKIES', sub: 'Chef · ' + tribPct('chef') + '% · -' + tributeTerms('chef').cfg.tribute_food_cost + ' food · they remember you', tip: tributeTip('chef'), cls: 'combat-tribute', gate: { crew: 'chef' }, onClick: () => offerTribute('chef') }));
     }
 
     const fireBonusTags = [];
@@ -483,7 +494,8 @@
     }));
 
     wrap.appendChild(makeActionBtn({
-      verb: 'ATTEMPT ESCAPE', sub: `${ftlTurnsLabel()}-turn FTL charge · -15 fuel`,
+      verb: 'ATTEMPT ESCAPE', sub: `${ftlTurnsLabel()}-turn FTL charge · -15 fuel · ${daysText('escape')}`,
+      tip: `The drive spools for ${ftlTurnsLabel()} turns while they keep firing; if it jumps, −15 fuel and the escape takes ${daysText('escape')}.`,
       cls: 'combat-special', onClick: beginFtlCharge
     }));
   }
@@ -866,7 +878,7 @@
       const fc = enemyShipCenter();
       spawnDamageFloater(dmg, fc.x, fc.y - 28, isCrit ? 'crit' : 'normal');
       setNarrCombat('COMBAT LOG', combatLine('player_fires'),
-        `${isCrit ? 'CRITICAL HIT — ' : ''}-${dmg} hull. Enemy: ${Math.max(0, COMBAT.enemy.hull)}/${COMBAT.enemy.hullMax}.`);
+        `${isCrit ? 'CRITICAL HIT — e' : 'E'}nemy hull -${dmg}. Theirs: ${Math.max(0, COMBAT.enemy.hull)}/${COMBAT.enemy.hullMax}.`); // their hull, never read as ours
       if (!COMBAT.enemy.alive) { onEnemyDestroyed(); return; }
       if (!COMBAT.enemy.surrendered && !COMBAT.enemy.surrenderOffered &&
           (COMBAT.enemy.hull / COMBAT.enemy.hullMax) <= COMBAT_CONFIG.surrender_threshold &&
@@ -952,6 +964,12 @@
     return crew || cap;
   }
 
+  // A tribute offer's tooltip: the odds, the food (spent either way) and,
+  // if they take it, the days the ending costs.
+  function tributeTip(kind) {
+    const t = tributeTerms(kind);
+    return Math.round(t.odds * 100) + '% they take it: −' + t.cfg.tribute_food_cost + ' food either way. Taken, the fight ends' + (kind === 'chef' ? ' and they remember you' : '') + ': ' + daysText('tribute') + '. Refused, the fight goes on.';
+  }
   function offerTribute(kind) {
     if (!COMBAT.active || COMBAT.state !== 'PLAYER_TURN' || COMBAT.tributeUsed || !COMBAT.openingTurn || !tributeTerms(kind)) return;
     COMBAT.tributeUsed = true; COMBAT.openingTurn = false;
@@ -1100,7 +1118,7 @@
       } else {
         const dealt = Math.max(1, Math.round(dmg));
         applyPlayerDamage(dealt);
-        setNarrCombat('COMBAT LOG', pfx + combatLine('enemy_fires'), `Hull -${dealt}. Hull: ${Math.max(0, COMBAT.player.hull)}/${COMBAT.player.hullMax}.`);
+        setNarrCombat('COMBAT LOG', pfx + combatLine('enemy_fires'), `Our hull -${dealt}. Ours: ${Math.max(0, COMBAT.player.hull)}/${COMBAT.player.hullMax}.`);
         COMBAT._narrPrefix = null;
         const heavyHit = dealt > COMBAT.player.hullMax * 0.15;
         bumpMorale(heavyHit ? -2 : -1);
@@ -1243,11 +1261,13 @@
     const wrap = document.getElementById('enc-choices');
     wrap.innerHTML = '';
     wrap.appendChild(makeActionBtn({
-      verb: 'SALVAGE WRECKAGE', sub: 'Full loot · bonus crate roll', cls: 'combat-special',
+      verb: 'SALVAGE WRECKAGE', sub: 'Full loot · bonus crate roll · ' + daysText('salvaged'), cls: 'combat-special',
+      tip: 'Crack the wreck open: the full loot and a bonus crate roll. Takes ' + daysText('salvaged') + '.',
       onClick: () => resolveVictoryChoice({ outcome: 'victory_destroyed', salvaged: true })
     }));
     wrap.appendChild(makeActionBtn({
-      verb: 'LEAVE IT', sub: 'Partial loot · back on course sooner',
+      verb: 'LEAVE IT', sub: 'Partial loot · back sooner · ' + daysText('departed'),
+      tip: 'Take what floats free and go: partial loot, back on course sooner. Takes ' + daysText('departed') + '.',
       onClick: () => resolveVictoryChoice({ outcome: 'victory_destroyed', salvaged: false })
     }));
   }
@@ -1369,9 +1389,19 @@
     const m = ((MOD.materials && MOD.materials.materials) || []).find(x => x.id === id);
     return (m && m.name) || (id.charAt(0).toUpperCase() + id.slice(1));
   }
+  // An item's name as the hold shows it (items.json name).
+  function itemLabel(id) {
+    const d = typeof itemDef === 'function' && itemDef(id);
+    if (d && d.name) return d.name;
+    const p = String(id).replace(/_/g, ' ');
+    return p.charAt(0).toUpperCase() + p.slice(1);
+  }
+  // "Cargo lost: Repair Kit, 2× Medkit, 3 Metal": each item by name.
   function cargoLossText(loss) {
     const parts = [];
-    if (loss.items.length) parts.push(loss.items.length + (loss.items.length === 1 ? ' item' : ' items'));
+    const counts = {};
+    for (const id of loss.items) counts[id] = (counts[id] || 0) + 1;
+    for (const [id, n] of Object.entries(counts)) parts.push((n > 1 ? n + '× ' : '') + itemLabel(id));
     for (const [m, q] of Object.entries(loss.materials)) parts.push(q + ' ' + materialLabel(m));
     return parts.length ? 'Cargo lost: ' + parts.join(', ') : 'Nothing in the hold worth taking';
   }
@@ -1462,7 +1492,7 @@
       const line = window.settleCombatDefeat({ cargoLoss: planCargoLoss(irand(30, 50)), crewDied: cas.died, crewInjured: cas.injured, morale });
       return 'LIMP AWAY — the fight broke off when the logs did, and the escape didn\'t make it. ' + under + line;
     }
-    const outcome = { resources: { fuel: -15, hull: hull - STATE.resources.hull }, time_cost: 'medium', combat_net: true };
+    const outcome = { resources: { fuel: -15, hull: hull - STATE.resources.hull }, time_cost: END_TIME.escape, combat_net: true };
     if (morale) outcome.resources.morale = morale;
     applyOutcomeEffects(outcome);
     STATE.postCombatLegs = 2;
@@ -1506,7 +1536,7 @@
      The fight's own end card is gone, so it returns the line for the log. */
   function settleCombatDefeat(d) {
     const result = { outcome: 'defeated', cargoLoss: d.cargoLoss || { pct: 0, items: [], materials: {} }, crewDied: !!d.crewDied, crewInjured: d.crewInjured || 0 };
-    const outcome = { resources: { hull: 1 - STATE.resources.hull }, combat_net: true, time_cost: 'high' };
+    const outcome = { resources: { hull: 1 - STATE.resources.hull }, combat_net: true, time_cost: END_TIME.defeated };
     if (Number.isFinite(d.morale) && d.morale) outcome.resources.morale = d.morale;
     const kill = defeatDeath(result);
     if (kill) outcome.crew_effect = kill;
@@ -1632,14 +1662,35 @@
     const concerns = Object.entries(byRole).map(([r, v]) => sgn(Math.round(v), r.charAt(0).toUpperCase() + r.slice(1), true));
     return [sgn(d.hull, 'Hull', true), sgn(d.morale, 'Morale', true), ...concerns, sgn(d.fuel, 'fuel'), sgn(d.food, 'food'),
       sgn(d.gold, 'gold'), d.cargoLost || null,
-      d.leftBehind || null].filter(Boolean).join(' · ');
+      d.leftBehind || null, d.days ? d.days + (d.days === 1 ? ' day' : ' days') : null].filter(Boolean).join(' · ');
   }
+
+  /* How long each ending takes, as a time_cost tier (index.html
+     TIME_COST_DAYS: low 2, medium 4, high 8). endOutcome applies these and
+     the ending buttons / end card read their days from the same table —
+     a fight's ending says what it costs in days before and after. */
+  const END_TIME = {
+    salvaged: 'high', departed: 'low', // the kill: SALVAGE WRECKAGE / LEAVE IT
+    victory_surrendered: 'medium', victory_executed: 'high', tribute: 'low',
+    escape: 'medium', yielded: 'low', enemy_retreat: 'low', defeated: 'high',
+  };
+  function endTimeKey(result) {
+    return result.outcome === 'victory_destroyed' ? (result.salvaged ? 'salvaged' : 'departed') : result.outcome;
+  }
+  // The days applyOutcomeEffects passes for that tier (its own formula:
+  // the choice's effort scale, plus a short-of-effort setback's days).
+  function endDays(key) {
+    const base = outcomeBaseDays({ time_cost: END_TIME[key] });
+    return Math.max(1, Math.round(base * (STATE.effortScale || 1))) + (STATE.effortCon ? (STATE.effortCon.days || 2) : 0);
+  }
+  function daysText(key) { const n = endDays(key); return n + (n === 1 ? ' day' : ' days'); }
 
   /* What each ending is: the outcome to apply, the loot rolled, the card's
      title/body/tone, a backdrop it takes you to. Shared by the fight's own
      end and a reload that lands a decided result (settleCombatWon). */
   function endOutcome(result, species) {
-    const outcome = { resources: {} };
+    // The ending's days (END_TIME): leaving the wreck is the quick way out.
+    const outcome = { resources: {}, time_cost: END_TIME[endTimeKey(result)] };
     let lootItems = null;
     let title, body, tone;
     let scene = null; // outcome backdrop override (scene_bg), when the result takes you somewhere
@@ -1650,7 +1701,6 @@
         lootItems = rollCombatLoot(result.salvaged ? 'destroyed_salvage' : 'destroyed_leave',
           result.salvaged ? { bonusChance: 0.45 + bonus('salvage_bonus_rolls') * 0.10 } : {});
         body = result.salvaged ? 'Wreckage cracked open. Drives still warm.' : 'You leave the wreck behind. The galaxy is full of wrecks.';
-        outcome.time_cost = result.salvaged ? 'high' : 'low'; // leaving the wreck is the quick way out
         break;
       case 'victory_surrendered':
         title = 'SURRENDER ACCEPTED'; tone = 'success';
@@ -1658,27 +1708,23 @@
         body = 'Pirates stripped, ship intact. They live to disappoint someone else.';
         // Stripping them means going aboard: their own interior, by species.
         scene = 'ship_interior/pirate/' + species;
-        outcome.time_cost = 'medium';
         break;
       case 'victory_executed':
         title = 'SURRENDER REFUSED'; tone = 'danger';
         lootItems = rollCombatLoot('executed', { bonusChance: 0.45 });
         body = 'You finished a surrendered combatant. The crew noticed. The galaxy noticed.';
         outcome.sets_flag = 'executed_surrendered_pirate';
-        outcome.time_cost = 'high';
         break;
       case 'tribute':
         title = 'TRIBUTE RESOLVED'; tone = 'success';
         body = `They took the ${result.friendly ? 'cookies' : 'harvest'} and went somewhere else.${result.friendly ? ' Meet that crew again before the next station and they will remember the cookies.' : ''}`;
         outcome.resources.food = -(result.foodCost || 0); // morale is in the net reconciliation below
         if (result.friendly) outcome.sets_flag = `friendly_with_pirate_${species}`;
-        outcome.time_cost = 'low';
         break;
       case 'escape':
         title = 'FTL ESCAPED'; tone = 'success';
         body = "Drive achieved jump. The pirate is now a different sector’s problem.";
         outcome.resources.fuel = -(result.fuelCost || 15);
-        outcome.time_cost = 'medium';
         break;
       case 'yielded': {
         title = 'STOOD DOWN'; tone = 'danger';
@@ -1686,13 +1732,11 @@
         outcome.resources.fuel = -fuelToll;
         outcome.resources.gold = -goldToll;
         body = 'The crew is done, and the pirates can tell. They take a toll for the courtesy of letting you leave: ' + fuelToll + ' fuel siphoned and ' + goldToll + ' gold transferred. Nobody aboard looks at anybody else.';
-        outcome.time_cost = 'low';
         break;
       }
       case 'enemy_retreat':
         title = 'ENEMY FLED'; tone = 'success';
         body = 'They jumped before you could finish them. Faster ship, smaller pride.';
-        outcome.time_cost = 'low';
         break;
       case 'defeated': {
         title = 'LIMP AWAY'; tone = 'danger';
@@ -1701,7 +1745,6 @@
         body = `Hull at 1. ${cargoLossText(result.cargoLoss)}.`;
         const kill = defeatDeath(result);
         if (kill) outcome.crew_effect = kill;
-        outcome.time_cost = 'high';
         break;
       }
     }
@@ -1786,7 +1829,7 @@
 
     const crewBefore = STATE.crew.slice();
     const namesBefore = Object.fromEntries(crewBefore.map(r => [r, crewNameOf(r)]));
-    const before = { hull: STATE.resources.hull, fuel: STATE.resources.fuel, food: STATE.resources.food, gold: STATE.goldAmount };
+    const before = { hull: STATE.resources.hull, fuel: STATE.resources.fuel, food: STATE.resources.food, gold: STATE.goldAmount, day: STATE.daysElapsed };
     // Ship's Log: the fight's record (won/lost/fled/paid + real effects,
     // loot and cargo loss included) is closed below, before checkFailure.
     const slog = window.ShipLog && ShipLog.begin();
@@ -1843,6 +1886,7 @@
       gold: lootItems ? 0 : goldDelta,
       cargoLost, leftBehind: leftLine,
       concerns,
+      days: Math.round(STATE.daysElapsed - before.day), // the days the ending really took
     };
 
     // The outcome view underneath: its text names what came aboard (the

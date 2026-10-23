@@ -52,10 +52,15 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   await page.evaluate(() => { const n = (STATE.nodes.find(x => x.node_type === 'nebula' || x.node_type === 'anomaly' || x.node_type === 'void') || Object.assign(STATE.nodes.find(x => x !== STATE.nodes[0] && !['station', 'fork'].includes(x.node_type) && (STATE.byId[STATE.currentId] !== x)), { node_type: 'nebula' })); STATE.currentId = n.id; });
   await verb('SCAN');
   await page.click('#rstart'); await page.waitForTimeout(800);
-  await page.mouse.click(20, 20); // backdrop click = same as ✕
+  // Once BEGIN is pressed the backdrop does nothing (hunt 2026-10-23: a
+  // stray click just outside the modal used to quit the job); ✕ QUIT does.
+  await page.mouse.click(20, 20);
   await page.waitForTimeout(300);
   b = await st();
-  ok(!b.ov && b.day > a.day && /SCAN — abandoned/.test(b.log), 'backdrop click after BEGIN = quit (day spent)');
+  ok(b.ov && b.day === a.day, 'backdrop click after BEGIN does nothing (the job runs on)');
+  await page.click('#mclose'); await page.waitForTimeout(300);
+  b = await st();
+  ok(!b.ov && b.day > a.day && /SCAN — abandoned/.test(b.log), '✕ QUIT after BEGIN = quit (day spent)');
 
   console.log('— engine repair');
   const rep = await page.evaluate(() => {

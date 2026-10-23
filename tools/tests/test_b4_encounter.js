@@ -506,10 +506,15 @@ const near = (a, b, tol) => Math.abs(a - b) <= (tol == null ? 1 : tol);
     const r = await page.evaluate(() => ({ items: STATE.items.length, mats: Object.assign({}, STATE.materials), body: document.getElementById('combat-end-body').textContent, notes: (document.querySelector('#combat-end-card .end-loot-notes') || {}).textContent || '' }));
     const m = /Cargo lost: ([^.]+)/.exec(line);
     const said = {};
-    if (m) for (const part of m[1].split(', ')) { const [n, ...w] = part.split(' '); said[w.join(' ')] = +n; }
+    // Items by name ("Repair Kit", "2× Medkit"), materials by count ("6 Metal").
+    let saidItems = 0;
+    if (m) for (const part of m[1].split(', ')) {
+      const mat = /^(\d+) (\S+)$/.exec(part);
+      if (mat) said[mat[2]] = +mat[1];
+      else saidItems += +((/^(\d+)× /.exec(part) || [0, 1])[1]);
+    }
     const lostItems = before.items - r.items;
     const lostMats = Object.fromEntries(Object.keys(before.mats).map(k => [k, before.mats[k] - (r.mats[k] || 0)]));
-    const saidItems = (said.items || 0) + (said.item || 0);
     ok(!/%/.test(line) && !!m, 'defeat line names the loss, no bare percentage: ' + (m ? m[0] : line));
     ok(saidItems === lostItems, `items: said ${saidItems}, lost ${lostItems}`);
     ok(Object.entries(lostMats).every(([k, v]) => (said[k.charAt(0).toUpperCase() + k.slice(1)] || 0) === v) && Object.values(lostMats).some(v => v > 0), `materials: said ${JSON.stringify(said)}, lost ${JSON.stringify(lostMats)}`);

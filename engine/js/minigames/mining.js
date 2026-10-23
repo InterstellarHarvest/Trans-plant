@@ -463,12 +463,20 @@
     updateEnergyHud();
     updateSectorTag();
 
-    // Armed status in the top AI-bar slot — placeholder until BEGIN.
+    // Armed status in the top AI-bar slot — placeholder until BEGIN. A
+    // full hold says so plainly first: everything MINE yields is cargo,
+    // so at most the stacks aboard top up, else nothing can be kept (the
+    // grant's own rule, minigames.js cargoHoldRoom).
+    const hold = typeof window.cargoHoldRoom === 'function' ? window.cargoHoldRoom() : null;
+    const roomLeft = hold ? window.cargoRoomText(hold.room) : '';
     $('mining-ai-name').textContent = 'MINING';
-    $('mining-ai-text').textContent = 'TRACTOR BEAM READY · STANDBY';
+    $('mining-ai-text').textContent = !hold ? 'TRACTOR BEAM READY · STANDBY' : roomLeft ? 'CARGO HOLD FULL · ROOM FOR ' + roomLeft.toUpperCase() : 'CARGO HOLD FULL · NOTHING CAN BE KEPT';
+    $('mining-ai-text').classList.toggle('hold-full', !!hold);
 
-    // Bottom narrative carries the AI quip (ambient pre-commit line).
-    setAiQuip(MSTATE.activeAi, PRECOMMIT_AI[MSTATE.activeAi]);
+    // Bottom narrative carries the AI quip (ambient pre-commit line) — or,
+    // with the hold full, the plain warning.
+    if (hold) setNarrPlain('CARGO HOLD FULL', (roomLeft ? 'Only ' + roomLeft + ' more can be kept (topping up the stacks aboard); nothing else' : 'Nothing you mine can be kept') + ' until cargo space is freed: jettison or sell something (INV) first. A run still costs its day.');
+    else setAiQuip(MSTATE.activeAi, PRECOMMIT_AI[MSTATE.activeAi]);
 
     // Stage visible (shows bg) even pre-BEGIN. Apply now if probes are
     // resolved, else queue.
@@ -570,6 +578,12 @@
   // AI quip lives in the bottom narrative panel: title slot = AI name,
   // body slot = the line itself (italic). Top AI bar carries the live
   // status counters now, populated separately by updateStatusLine().
+  // The narrative panel without an AI voice (a plain warning).
+  function setNarrPlain(title, text) {
+    $('mining-narr-title').textContent = title;
+    $('mining-narr-body').textContent = text;
+    $('mining-narr-body').classList.remove('fading');
+  }
   function setAiQuip(aiId, line) {
     const titleEl = $('mining-narr-title');
     const bodyEl  = $('mining-narr-body');
@@ -1310,6 +1324,15 @@
       card.appendChild(grid);
     }
 
+    // What the visit's haul brings beside the rocks, and what a full hold
+    // refuses — as RETURN TO SHIP lands it (the cruise log said it alone).
+    for (const line of visitSideLines()) {
+      const el = document.createElement('div');
+      el.className = 'haul-side' + (line.warn ? ' warn' : '');
+      el.textContent = line.text;
+      card.appendChild(el);
+    }
+
     // Hollow tally — flavor only.
     if (MSTATE.hollowsHit > 0) {
       const tally = document.createElement('div');
@@ -1386,6 +1409,36 @@
 
     overlay.appendChild(card);
     overlay.classList.add('visible');
+  }
+
+  /* The visit's side gain (Bible multi-path rule): asteroid ice melts
+     into water, a nebula run scoops fuel — half the units mined, cap 15,
+     the tanks capping what lands. The same figures cruise.js MINE
+     (handleMineVerb) applies on RETURN TO SHIP. */
+  const SIDE_GAIN_CAP = 15;
+  function visitSideGain() {
+    const mined = Object.values(sessionInventory).reduce((a, b) => a + (b || 0), 0);
+    const side = Math.min(SIDE_GAIN_CAP, Math.round(mined / 2));
+    const region = typeof window.cruiseRegionKey === 'function' ? window.cruiseRegionKey() : null;
+    const res = region === 'asteroid_field' ? 'water' : region === 'nebula' ? 'fuel' : null;
+    if (!res || side <= 0) return null;
+    const max = res === 'water' ? 100 : resMax('fuel');
+    const b = STATE.resources[res];
+    return { res, side, got: Math.round(clamp(b + side, 0, max) - b) };
+  }
+  function visitSideLines() {
+    const lines = [];
+    const many = SESSION.runs > 1 ? ' (this visit)' : '';
+    const g = visitSideGain();
+    if (g && g.res === 'water') lines.push({ text: g.got > 0 ? 'Ice melts down: +' + g.got + ' water' + many : 'Ice too, but the water tanks are full', warn: !(g.got > 0) });
+    if (g && g.res === 'fuel') lines.push({ text: g.got > 0 ? 'Gas scooped: +' + g.got + ' fuel' + many : 'Gas too, but the fuel tank is full', warn: !(g.got > 0) });
+    // The hold's own rule (materialLandings): what can't come aboard.
+    if (typeof materialLandings === 'function') {
+      const land = materialLandings(sessionInventory);
+      const left = Object.entries(sessionInventory).filter(([k, n]) => n > (land[k] || 0)).map(([k, n]) => (n - (land[k] || 0)) + ' ' + (MAT_LABELS[k] || k).toLowerCase());
+      if (left.length) lines.push({ text: 'Hold full: ' + left.join(', ') + ' stays behind', warn: true });
+    }
+    return lines;
   }
 
   function resetToArmed() {
