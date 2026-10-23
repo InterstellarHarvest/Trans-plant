@@ -434,13 +434,13 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
       pick('#inv-grid .inv-tile[data-id="metal"]');
       out.metal = { rows: rows(), cat: document.getElementById('inv-detail-cat').textContent, name: document.getElementById('inv-detail-name').textContent, acts: getComputedStyle(document.getElementById('inv-detail-actions')).display, use: getComputedStyle(document.getElementById('inv-use-btn')).display, jett: getComputedStyle(document.getElementById('inv-jett-btn')).display, slot: rows()[1] };
       out.wantFuel = stationBuyPrice('fuel_cell'); out.wantMetal = stationBuyPrice('metal');
-      out.fumes = Object.values(EVENTS).find(e => JSON.stringify(e).includes('"requires_item": "fuel_cell"') || JSON.stringify(e).includes('"requires_item":"fuel_cell"'));
-      out.fumes = out.fumes && out.fumes.title;
+      // every event that asks for a fuel cell (ruling 90 added Water from the Fuel Cells)
+      out.fumes = Object.values(EVENTS).filter(e => JSON.stringify(e).includes('"requires_item":"fuel_cell"')).map(e => e.title);
       return out;
     });
     ok(r.fuel.cat === 'CONSUMABLE' && JSON.stringify(r.fuel.rows) === JSON.stringify(['COUNT×5', 'SLOT COST0.3 per unit 2 total', 'SELL PRICE' + r.wantFuel + 'g each']), 'stack detail: ' + r.fuel.rows.join(' | '));
     ok(r.fuel.corner === r.wantFuel + 'g' && r.fuel.count === '×5', `tile corners: count ${r.fuel.count}, price ${r.fuel.corner}`);
-    ok(r.fumes && r.fuel.used === 'USED FOR: ' + r.fumes, `USED FOR from the events (${r.fuel.used})`);
+    ok(r.fumes.length >= 1 && /^USED FOR: /.test(r.fuel.used) && r.fumes.every(t => r.fuel.used.includes(t)), `USED FOR from the events (${r.fuel.used})`);
     ok(/^MARV:/.test(r.fuel.ai), 'an AI line in the item detail (category pool): ' + r.fuel.ai.slice(0, 60));
     ok(r.log.cat === 'STORY' && r.log.marker === '⇄' && /NOTES⇄Not for sale/.test(r.log.notes) && r.log.rows[2] === 'SELL PRICE—' && /USED FOR: .+ · /.test(r.log.used), 'story item: ⇄ corner, NOTES, SELL PRICE —, several USED FOR events');
     ok(r.bone.corner === '??' && r.bone.rows[2] === 'SELL PRICE4–28g · fence 6–42g' && /needs a spectrometer/.test(r.bone.rows[3]) && r.bone.notes === '', 'rolled value hidden without a spectrometer (range + ??)');

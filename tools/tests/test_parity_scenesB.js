@@ -497,7 +497,8 @@ const settleSubject = page => page.waitForFunction(() => {
     let v = await view(page);
     const art = await page.evaluate(() => ({ base: document.getElementById('enc-backdrop-base').classList.contains('hidden') ? null : 'shown', station: document.getElementById('enc-approach-sprite').dataset.station, comm: document.getElementById('screen-encounter').classList.contains('comm-screen') }));
     ok(v.title === 'STATION INBOUND' && v.scene === 'our_ship/bridge' && art.base && art.station && art.comm, 'arrival: our bridge, space behind, the node\'s station in the viewport (' + art.station + '), comm screen' + (v.title === 'STATION INBOUND' && v.scene === 'our_ship/bridge' && art.base && art.comm ? '' : ' — ' + JSON.stringify({ title: v.title, scene: v.scene, base: art.base, comm: art.comm })));
-    ok(v.noSubject && /make the first move/.test(v.body) && v.line === null, 'nobody on comms yet (2 in 3): no subject, the silent body');
+    // the silent opening, or one of its alternate tellings (ruling 90)
+    ok(v.noSubject && /make the first move|it'll have to be you|Your move\./.test(v.body) && v.line === null, 'nobody on comms yet (2 in 3): no subject, the silent body');
     ok(JSON.stringify(v.choices) === '["HAIL"]', 'only HAIL until comms open');
     let lr = await leaveRow(page);
     ok(lr && lr.text === 'LEAVE STATION' && /Skip the stop · risky/.test(lr.sub), 'leave row: LEAVE STATION · Skip the stop · risky');

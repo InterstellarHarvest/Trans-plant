@@ -465,7 +465,7 @@ const openDossier = async (page, role) => {
       const body = interpolateStowawayTokens(EVENTS.event_crisis_021.body);
       return { pend, patient: STATE.crisisPatient, ev: ev && ev.id, body: body.slice(0, 260) };
     });
-    ok(r.pend && r.patient === 'captain' && /event_crisis_02/.test(r.ev), 'a delayed wound on the captain comes due as their own crisis (' + r.ev + ')');
+    ok(r.pend && r.patient === 'captain' && /^event_crisis_0(21|22|58)$/.test(r.ev), 'a delayed wound on the captain comes due as their own crisis (' + r.ev + ')');
     ok(/^The captain has insisted/.test(r.body) && /looks at the captain,/.test(r.body) && !/\{patient/.test(r.body), '{patient.name} → "The captain" opening a sentence, "the captain" inside one');
     // The crisis kill choice on the captain: softer landings, else captain_lost.
     const r2 = await page.evaluate(() => {

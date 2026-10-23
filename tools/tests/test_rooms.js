@@ -158,7 +158,7 @@ const computedIs = s => s.computed.includes(s.main.split('/').map(encodeURICompo
       const b = [...document.querySelectorAll('.stop-choice')].find(b => /TRADE/.test(b.textContent));
       if (b) b.click(); return STATE.currentEvent && STATE.currentEvent.id;
     });
-    ok(ev === 'event_encounter_trader_001' || ev === null, 'away from stations TRADE still hails a trader ship (' + ev + ')');
+    ok(/^event_encounter_trader_00\d$/.test(ev || '') || ev === null, /* ruling 90: the stop's trader from the family */ 'away from stations TRADE still hails a trader ship (' + ev + ')');
     await page.close();
   }
 

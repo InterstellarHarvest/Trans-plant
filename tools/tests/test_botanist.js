@@ -107,14 +107,16 @@ const snap = page => page.evaluate(() => ({
     const draws = await page.evaluate(() => {
       const st = STATE.nodes.find(n => n.node_type === 'station');
       STATE.currentId = st.id;
-      const count = () => { let n = 0; for (let i = 0; i < 400; i++) { STATE.hardStreak = 0; STATE.pityRelief = 0; if (selectEvent(st) && selectEvent(st).id === 'event_station_012') n++; } return n; };
+      const count = () => { let n = 0; for (let i = 0; i < 2000; i++) { STATE.hardStreak = 0; STATE.pityRelief = 0; if (selectEvent(st) && selectEvent(st).id === 'event_station_012') n++; } return n; };
       STATE.cropGrowth.pest = false; STATE.cropGrowth.health = 80;
       const calm = count();
       STATE.cropGrowth.pest = true;
       const pest = count();
       return { calm, pest };
     });
-    ok(draws.pest > draws.calm * 2, `an infested crop brings the botanist out (${draws.calm}/400 calm → ${draws.pest}/400 with pests)`);
+    // Ruling 90: a situation's events share one pull, so with seven pest events the
+    // botanist's lift is smaller than when it was one of five — still clearly up.
+    ok(draws.pest > draws.calm * 1.5, `an infested crop brings the botanist out (${draws.calm}/2000 calm → ${draws.pest}/2000 with pests)`);
     await enter(page);
     await page.waitForTimeout(600);
     const art = await page.evaluate(() => ({
