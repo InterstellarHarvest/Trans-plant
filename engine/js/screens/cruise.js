@@ -474,7 +474,7 @@
     // At a stop the log column is under the Stop menu: the AI says this
     // stop's lines in a speech bubble over the ship (ruling 91). Lines
     // pushed before the menu opens (tips, comments, warnings) wait for it.
-    if (voice) queueAiBubble(String(text == null ? '' : text).replace(/^\s*[◆▶]\s*/, ''), voice);
+    if (voice) queueAiBubble(String(text == null ? '' : text).replace(/^\s*[◆▶]\s*/, ''), voice, !!opts.tip);
     const sticky = isAtBottom(log);
     finishTyping();
     log.querySelectorAll('.ai-entry.latest').forEach(e => e.classList.remove('latest'));
@@ -1726,10 +1726,14 @@
      (the lines stay in the log and the Ship's Log). */
   const AI_BUBBLE_MAX = 3;
   let aiBubbleLines = [];
-  function queueAiBubble(text, voice) {
+  function queueAiBubble(text, voice, tip) {
     if (!text) return;
-    aiBubbleLines.push({ text, voice });
-    if (aiBubbleLines.length > AI_BUBBLE_MAX) aiBubbleLines = aiBubbleLines.slice(-AI_BUBBLE_MAX);
+    aiBubbleLines.push({ text, voice, tip });
+    // Over three: the oldest comment goes first; a first-run tip stays.
+    while (aiBubbleLines.length > AI_BUBBLE_MAX) {
+      const i = aiBubbleLines.findIndex(l => !l.tip);
+      aiBubbleLines.splice(i >= 0 ? i : 0, 1);
+    }
     syncAiBubble();
   }
   function clearAiBubble() { aiBubbleLines = []; syncAiBubble(); }
@@ -1867,7 +1871,7 @@
       const line = aiPool(['tips', t.id]);
       if (!line) continue;
       STATE.tipsShown.push(t.id);
-      pushLogEntry('◆ ' + line, { ai: true });
+      pushLogEntry('◆ ' + line, { ai: true, tip: true });
       return true;
     }
     return false;
