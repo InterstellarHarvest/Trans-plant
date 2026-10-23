@@ -127,7 +127,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
       // (Latent flake surfaced 2026-08-03 during Restoration item 1 —
       // pre-existing behavior, unrelated to that change.)
       if (node.node_type === 'fork') {
-        if (!nts.includes('fork') && ev.id !== 'event_encounter_trader_001') v.push(`${ev.id} (non-fork event) fired at a fork node`);
+        if (!nts.includes('fork') && ev.family !== 'trader' && ev.id !== 'event_encounter_trader_001') v.push(`${ev.id} (non-fork event) fired at a fork node`);
       } else if (!nts.includes('any') && !nts.includes(node.node_type)) {
         v.push(`${ev.id} fired at node_type "${node.node_type}" but targets ${JSON.stringify(nts)}`);
       }
@@ -149,14 +149,18 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
         // every stop (station.js), a delayed crisis, and the trader the
         // TRADE / WAIT FOR TRADER verbs summon.
         const sv = STATE.stationVisit;
+        // (ruling 90: the trader family; Market Row that TRADE opens at a station)
         const service = !fromDraw && !scouted && (forcedApproach || forcedCrisis ||
-          ev.id === 'event_encounter_trader_001' || (sv && sv.node === node.id && sv.roomEv !== ev.id));
-        const last = window.__repeatLast[ev.id];
+          ev.id === 'event_encounter_trader_001' || ev.family === 'trader' || ev.id === 'event_station_013' ||
+          (sv && sv.node === node.id && sv.roomEv !== ev.id));
+        // A family (ruling 90) cools down as one, as the engine keys it (repeatKey).
+        const rkey = ev.family ? 'family:' + ev.family : ev.id;
+        const last = window.__repeatLast[rkey];
         // Same stop = a dock room walked back into, one firing.
         if (!service && !scouted && !(fromDraw && drawn.fallback) && last != null && stop !== last && stop - last <= N) {
           v.push(`repeatable ${ev.id} fired at stop ${stop}, ${stop - last} after stop ${last} (cooldown ${N})`);
         }
-        if (!service) window.__repeatLast[ev.id] = stop;
+        if (!service) window.__repeatLast[rkey] = stop;
       }
       return realEnter(node, ev);
     };
