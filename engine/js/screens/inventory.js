@@ -481,6 +481,14 @@ function invResourceStats(key) {
     tip = 'Drawn every day; crew and crop share the tank.';
   }
   const daysLeft = perDay > 0 ? Math.floor(level / perDay) : null;
+  // Fuel burns per leg, not per day: the tile shows it per leg, and its
+  // EMPTY day is Orders' projection (legs left x a leg's days with the
+  // usual stop time), so the two screens agree.
+  if (key === 'fuel') {
+    const leg = legTravelCost();
+    const emptyDay = typeof window.ordersFuelEmptyDay === 'function' ? window.ordersFuelEmptyDay() : (daysLeft == null ? null : STATE.daysElapsed + daysLeft);
+    return { level, max, perDay, perLeg: leg.fuel, emptyDay, tip };
+  }
   return { level, max, perDay, emptyDay: daysLeft == null ? null : STATE.daysElapsed + daysLeft, tip };
 }
 function invSegColor(pos) {
@@ -509,7 +517,7 @@ function renderInvResources() {
     // The figure EMPTY is computed from: one decimal when that is exact,
     // else two (so H2O's 0.35 never reads "~0.3" beside an EMPTY day
     // worked out at 0.35).
-    const use = s.perDay > 0 ? '~' + invRate(s.perDay) + ' / DAY' : '—';
+    const use = s.perLeg != null ? (s.perLeg > 0 ? '~' + invRate(s.perLeg) + ' / LEG' : '—') : s.perDay > 0 ? '~' + invRate(s.perDay) + ' / DAY' : '—';
     const empty = s.level <= 0 ? 'NOW' : s.emptyDay == null ? '—' : 'DAY ' + s.emptyDay;
     tile.innerHTML =
       '<div class="res-tile-frame" style="background-image:url(\'' + r.sprite + '\')">' +

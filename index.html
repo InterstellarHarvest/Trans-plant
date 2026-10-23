@@ -1861,6 +1861,7 @@ const STATE = {
   pityRelief:   0,          // legs remaining where difficulty weights favor easy/medium
   eventLastStop: {},        // repeatable event id → the stop it last fired at (repeat cooldown)
   tipsShown:    [],         // first-run tips already said this run (ruling 87)
+  pendingArrival: null,     // { id, skipEvent }: a stop whose arrival a leg-in failure interrupted
   eventDraws:   {},         // firings per event with alt_bodies (ruling 90)
   bodyPick:     0,          // this firing's opening (0 = the authored body; ruling 90)
   plaidLegs:    0,          // drive heat: PLAID legs, cooled one per slower leg (engine_strain, ruling 83)
@@ -1895,6 +1896,7 @@ const SAVED_FIELDS = [
   'scouted', // SCAN: events locked in at the stops ahead
   'eventLastStop', // repeat cooldown (ruling 65): each repeatable event's last stop
   'tipsShown', // first-run tips already said this run (ruling 87)
+  'pendingArrival', // a stop a leg-in failure interrupted: Keep flying / the beacon still play it
   'plaidLegs', 'engineStrain', // drive heat and a pending strain (engine_strain, ruling 83)
   'crafted', // fabricator prints aboard (ruling 79): sold at their materials' value
   'soilSurveys', // soil sampler planet surveys (ending score)
@@ -1986,7 +1988,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, engineStrain: () => false, tipsShown: () => [], eventDraws: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, engineStrain: () => false, tipsShown: () => [], pendingArrival: () => null, eventDraws: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2088,6 +2090,12 @@ function loadRun(key) {
   const pe = snap.pendingEvent && EVENTS[snap.pendingEvent];
   STATE._shoppedThisEvent = !!(pe && snap.pendingShopped); // walking off still costs the haggling day
   if (pe && STATE.byId[STATE.currentId]) enterEvent(STATE.byId[STATE.currentId], pe, { variantIndex: snap.pendingVariant, bodyPick: snap.pendingBodyPick, layerStack: snap.pendingLayers, layerVisits: snap.pendingVisits, speaker: snap.pendingSpeaker });
+  // Saved on an outcome inside a station visit (the arrival event, a room):
+  // carry the visit on as Continue does — the approach, or back to the dock
+  // (never the hub with the station skipped).
+  else if (window.StationVisit && STATE.stationVisit && STATE.stationVisit.node === STATE.currentId && STATE.stationVisit.phase !== 'left') {
+    if (!StationVisit.afterQuit()) renderCruise();
+  }
   return true;
 }
 
@@ -2228,7 +2236,7 @@ function applySetupToState(sel) {
   // Every other per-run field starts clean too (a run started in-page
   // after another used to inherit its log, fabricator, sectors…).
   STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
-  STATE.postCombatLegs = 0; STATE.plaidLegs = 0; STATE.engineStrain = false; STATE.tipsShown = []; STATE.eventDraws = {}; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
+  STATE.postCombatLegs = 0; STATE.plaidLegs = 0; STATE.engineStrain = false; STATE.tipsShown = []; STATE.eventDraws = {}; STATE.pendingArrival = null; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.lastAmbientNode = null; STATE.alertedNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.goneNames = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0; STATE.eventLastStop = {};
@@ -4658,8 +4666,23 @@ function travelTo(nodeId, opts) {
     cropDrama();
     if (legLog) ShipLog.arrival(legLog, node);
     renderHUD();
+    // A failure on the leg in (crop dead, the tank dry) stops here; if the
+    // player presses on (Keep flying, the beacon), the arrival still plays
+    // — the stop's event or the station approach, never a skipped (free)
+    // stop. STATE.pendingArrival is saved for that.
+    STATE.pendingArrival = { id: nodeId, skipEvent: !!opts.skipEvent };
     if (checkFailure({ arriving: connectionsOf(node).length === 0 })) return;
+    STATE.pendingArrival = null;
   }
+  arriveAtNode(node, opts);
+}
+
+/* The arrival half of travelTo: the stop's station business, the
+   destination, a delayed crisis, Push Engines' skip, then the event. */
+function arriveAtNode(node, opts) {
+  opts = opts || {};
+  const nodeId = node.id;
+  STATE.pendingArrival = null;
 
   // Station arrival recharges crew active skills — per each skill's own
   // authored recharges_at in crew_roster.json (all current skills author

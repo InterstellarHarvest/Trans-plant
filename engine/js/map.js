@@ -100,11 +100,13 @@ function nodeName(type, index, rules) {
   if (index === rules.total_nodes - 1) return rules.destination;
   return flavorName(type) || (TYPE_LABELS[type] + ' ' + index);
 }
-// Real place names from flavor_pools (station_names / planet_names /
-// derelict_names), each used once per map; other types keep the type
-// label. The map draws the short type label (node.short) — these names
+// Real place names from flavor_pools (<type>_names: station, planet,
+// derelict, asteroid, nebula, anomaly, void), each used once per map; a
+// pool that runs dry falls back to the type label. The map draws the short type label (node.short) — these names
 // are for the encounter header, the log and the map footer.
-const NAME_POOL_BY_TYPE = { station: 'station_names', planet: 'planet_names', derelict: 'derelict_names' };
+const NAME_POOL_BY_TYPE = { station: 'station_names', planet: 'planet_names', derelict: 'derelict_names',
+  // every stop type has names: "Nebula 7" / "Asteroid Field (alpha)" read as debug labels
+  asteroid_field: 'asteroid_names', nebula: 'nebula_names', anomaly: 'anomaly_names', void: 'void_names' };
 let _namesLeft = {};
 function flavorName(type) {
   const key = NAME_POOL_BY_TYPE[type];
@@ -204,7 +206,7 @@ function generateMap(trailKey) {
         const id = 'node_branch_' + branchNum + '_' + key + '_' + j;
         branchIds.push(id);
         add({
-          id, name: flavorName(type) || (TYPE_LABELS[type] + ' (' + key + ')'), short: TYPE_LABELS[type],
+          id, name: flavorName(type) || TYPE_LABELS[type], short: TYPE_LABELS[type],
           description: TYPE_DESCS[type] || '',
           // Distribute branch nodes evenly across the fork→rejoin gap
           // (0.5 position units). The old fixed 0.1 step packed a

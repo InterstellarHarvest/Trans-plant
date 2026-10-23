@@ -63,7 +63,7 @@
         'Pig out! The cook disapproves but the crew does not.'
       ],
       water_matched: 'The plant\'s mood is exactly what one would hope for a plant\'s mood to be.',
-      water_plant_starving: 'Wheat is thirsty. Also, slightly offended.',
+      water_plant_starving: 'The crop is thirsty! Also, slightly offended.', // any crop (was "Wheat" on every run)
       water_crew_starving: 'Crew is thirsty. Also, audibly complaining.'
     },
     marv: {
@@ -540,6 +540,8 @@
   Object.assign(window, {
     // engine API
     openOrders,
+    // the cargo hold's fuel tile reads the same projection, so the two screens agree
+    ordersFuelEmptyDay: () => fuelEmptyDay(savedIdx().pace),
     // test hooks: tools/tests drive and read these through page.evaluate
     closeOrders,
   });

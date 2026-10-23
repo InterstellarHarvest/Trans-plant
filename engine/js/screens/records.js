@@ -13,8 +13,10 @@
    A run is recorded once, when its ending is final: at once for an
    arrival or a terminal failure, and when the player accepts a failure
    that offered a way on (Keep flying, the beacon) by reading its report
-   or starting a new run. The run's art seed is its id, so rendering the
-   same ending twice (a reload of a pending failure) updates one entry.
+   or starting a new run. Each finish is its own entry (id: art seed, day,
+   result), so a save slot replayed to a different end adds one rather than
+   overwriting the first; the same ending rendered twice stays one entry.
+   NEW BEST only when the score beats the stored best.
    ?debug= URLs record nothing, as they save nothing.
 
    Load-order note: loads before index.html's inline script; reads MOD /
@@ -48,8 +50,11 @@
   function entryFor(view) {
     const arrival = view.category === 'arrival';
     const crop = STATE.crop || null;
+    // One id per finish, not per run: a save slot replays the same run
+    // (same art seed), and each finish is its own entry.
+    // The same ending rendered twice (identical day and result) is one.
     return {
-      id: STATE.artSeed || 0,
+      id: [STATE.artSeed || 0, STATE.daysElapsed, view.toneId, arrival ? runScore() : 'x'].join(':'),
       ts: Date.now(),
       ship: STATE.shipName || 'The Ship',
       trail: STATE.trail,
@@ -79,8 +84,7 @@
     let newBest = false;
     if (countsForBest(e)) {
       const cur = r.best[e.trail];
-      if (cur && cur.id === e.id) { r.best[e.trail] = e; newBest = true; }
-      else if (beats(e, cur)) { r.best[e.trail] = e; newBest = true; }
+      if (!(cur && cur.id === e.id) && beats(e, cur)) { r.best[e.trail] = e; newBest = true; }
     }
     saveRecords(r);
     return { entry: e, newBest };

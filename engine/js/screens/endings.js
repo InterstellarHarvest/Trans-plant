@@ -553,13 +553,19 @@
   /* Pressing on from a non-terminal failure: any OTHER failure that
      landed at the same moment (hull 0, mutiny, deprivation…) still
      ends the run; reaching the destination still arrives (the failure
-     fired on the final leg, before triggerArrival); else back to hub. */
+     fired on the final leg, before triggerArrival); a stop the failure
+     interrupted on the way in still plays (STATE.pendingArrival); else
+     back to hub. */
   function resumeAfterFailure() {
     renderHUD();
     const node = STATE.byId && STATE.byId[STATE.currentId];
     const arriving = !!node && connectionsOf(node).length === 0;
     if (checkFailure({ arriving })) return;
     if (arriving) { triggerArrival(node); return; }
+    // The failure stopped the leg before the stop played: play it now (its
+    // event, or the station approach), never skipped.
+    const pa = STATE.pendingArrival;
+    if (pa && node && pa.id === node.id) { arriveAtNode(node, { skipEvent: pa.skipEvent }); return; }
     returnToHub();
   }
 

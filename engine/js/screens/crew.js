@@ -514,7 +514,8 @@
     const mo = moRaw == null ? null : (moRaw > 0 ? Math.max(1, Math.round(moRaw)) : 0);
 
     $('cd-name-banner').textContent = m.name.toUpperCase();
-    $('cd-role-banner').textContent = m.role.toUpperCase();
+    // The captain's banner names the background ("CAPTAIN · ENGINEER"), not "CAPTAIN · CAPTAIN".
+    $('cd-role-banner').textContent = (m.isCaptain ? m.bgTag : m.role).toUpperCase();
     $('cd-name').textContent = m.name.toUpperCase();
     $('cd-role-text').textContent = m.role;
     $('cd-bg-tag').textContent = m.bgTag;
