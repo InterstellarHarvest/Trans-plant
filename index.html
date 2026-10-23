@@ -3589,6 +3589,9 @@ function eventEligible(ev, node, triggers) {
     if (ev.requires_item && !STATE.items.includes(ev.requires_item)) return false;
     // Launch events are mutually exclusive: either one is the departure.
     if (/^event_launch_/.test(ev.id) && STATE.flags.has('departed')) return false;
+    // …and the halfway moment happens once (ruling 90): one ungated
+    // journey_mid scene marks it; a story follow-up (requires_flag) still can.
+    if (!ev.requires_flag && (ev.trigger || []).includes('journey_mid') && STATE.flags.has('midpoint_marked')) return false;
     // Trail targeting (registry dim 4.29 `trail`, previously unused by
     // any content or engine path): an event listing trails only enters
     // the pool on those trails. Gives each difficulty its own exclusive
@@ -4769,6 +4772,7 @@ function enterEvent(node, ev, opts) {
   if (ev.layers && opts && Array.isArray(opts.layerVisits)) for (const id of opts.layerVisits) if (ev.layers[id]) STATE._layerVisits[id] = true;
   STATE.seenEventIds.add(ev.id);
   if (ev.sets_flag) STATE.flags.add(ev.sets_flag); // event-level flag: meeting the event is the fact
+  if (!ev.requires_flag && (ev.trigger || []).includes('journey_mid')) STATE.flags.add('midpoint_marked'); // ruling 90: one halfway scene
   STATE.npcCtx = ev.npc ? resolveNpc(ev) : null;
   STATE.lastSpeaker = null;
 

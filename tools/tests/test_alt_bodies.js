@@ -166,6 +166,24 @@ const FIRE = `(id) => {
   });
   ok(/event_encounter_trader_00[1-4]/.test(verb.want), `this stop's trader: ${verb.want}`);
 
+  console.log('— the halfway scene happens once');
+  await boot(page);
+  const mid = await page.evaluate(() => {
+    const mids = Object.values(EVENTS).filter(e => (e.trigger || []).includes('journey_mid'));
+    const ungated = mids.filter(e => !e.requires_flag), gated = mids.filter(e => e.requires_flag);
+    const node = STATE.nodes.find(n => n.node_type !== 'station' && n.node_type !== 'fork' && connectionsOf(n).length);
+    const trig = new Set(['any', 'journey_mid']);
+    const before = ungated.filter(e => eventEligible(e, node, trig)).length;
+    enterEvent(node, ungated[0]);
+    const after = ungated.filter(e => eventEligible(e, node, trig)).length;
+    for (const g of gated) STATE.flags.add(g.requires_flag);
+    const followUps = gated.filter(e => eventEligible(e, node, trig)).length;
+    return { n: ungated.length, before, after, gated: gated.length, followUps, flag: STATE.flags.has('midpoint_marked') };
+  });
+  ok(mid.n >= 6 && mid.before === mid.n, `${mid.n} halfway scenes, all eligible before the halfway`);
+  ok(mid.flag && mid.after === 0, 'after one, no other halfway scene fires this run');
+  ok(mid.followUps === mid.gated, `a story follow-up at the halfway still can (${mid.followUps}/${mid.gated})`);
+
   console.log('— every authored alt_bodies renders');
   await boot(page);
   const authored = await page.evaluate(async (FIRE) => {

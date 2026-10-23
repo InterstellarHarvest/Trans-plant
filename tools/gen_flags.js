@@ -28,6 +28,7 @@ const HEADER = '# Flags Registry\n\n' +
 // Prose for engine-set literal flags. Keys must match what scanEngine()
 // finds; `set` / `check` describe the paths the scan can't name.
 const ENGINE_FLAG_NOTES = {
+  midpoint_marked: 'index.html enterEvent (ruling 90) — the first ungated journey_mid scene marks the halfway; eventEligible keeps every other ungated halfway scene out for the run (flag-gated follow-ups still fire)',
   ai_noted_crop_planted: { set: 'checkCropMilestones — once per growth cycle (growbay.js harvest re-arms it); index.html marks it on old-save load', check: 'cruise.js (announce once)' },
   ai_noted_crop_mature: { set: 'checkCropMilestones', check: 'cruise.js (announce once); growbay.js harvest clears it' },
   ai_noted_crop_sick: { set: 'checkCropMilestones', check: 'cruise.js (announce once; cleared on recovery); growbay.js harvest clears it' },
