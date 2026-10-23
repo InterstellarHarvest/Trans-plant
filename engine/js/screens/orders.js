@@ -415,7 +415,8 @@
     const savedDrain = crewWaterDrainRate(sv.water);
     // What the dry tiers actually do (index.html ORDERS_BASE): morale
     // per day, and at the driest tier 1 HP per crew member per day.
-    const crewLabel  = !STATE.crew.length ? 'NO CREW' : drain === 0 ? 'NOMINAL'
+    // Flying solo the crew share is the captain's own water (HP, no morale).
+    const crewLabel  = !STATE.crew.length ? (drain === 0 ? 'CAPTAIN · NOMINAL' : drain >= ORDERS_BASE.crewWaterHPTier ? 'CAPTAIN · HP −1/DAY' : 'CAPTAIN · THIRSTY') : drain === 0 ? 'NOMINAL'
       : 'MORALE −' + (ORDERS_BASE.crewWaterMorale[drain] || 0) + '/DAY' + (drain >= ORDERS_BASE.crewWaterHPTier ? ' · HP −1/DAY' : '');
 
     let crewDeltaText = null, crewDeltaCls = null;

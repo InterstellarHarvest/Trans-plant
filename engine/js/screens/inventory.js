@@ -532,7 +532,7 @@ function invResourceStats(key) {
     perDay = ORDERS_BASE.foodPerDay * ordersRations().foodMult * foodBurnMult() * mouthsMult();
     tip = 'Eaten every day at ' + ordersRations().name + ' rations by ' + (STATE.crew.length + 1) + ' aboard.';
   } else if (key === 'water') {
-    perDay = ORDERS_BASE.waterPerDay;
+    perDay = dailyDraw().water; // the crop's saving (botanist / purifier) included
     tip = 'Drawn every day; crew and crop share the tank.';
   }
   const daysLeft = perDay > 0 ? Math.floor(level / perDay) : null;

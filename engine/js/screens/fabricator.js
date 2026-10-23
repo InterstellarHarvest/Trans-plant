@@ -303,8 +303,9 @@
   }
 
   // Can this recipe actually be crafted right now?
-  // Days past the voyage deadline (STATE.baseDays) a craft would finish —
-  // any overrun is the time_expired failure, so such a craft is locked.
+  // Days past the voyage deadline (STATE.baseDays) a craft would finish.
+  // Ruling 94: the deadline no longer ends a run, so an overrun is only
+  // said (the craft's button and the strip), never a lock.
   function overrunDays(recipe) {
     return (FSTATE.tripDay + actualDays(recipe.days)) - FSTATE.arrivalDay;
   }
@@ -313,7 +314,6 @@
     if (!hasMaterials(recipe)) return false;
     if (!fabFunctional()) return false;
     if (FSTATE.craft) return false;       // one craft at a time
-    if (overrunDays(recipe) > 0) return false; // would end the voyage (time_expired)
     return true;
   }
 
@@ -573,9 +573,8 @@
       label = 'MISSING MATERIALS';
     } else if (FSTATE.craft) {
       label = 'IN PROGRESS…'; why = 'One print at a time.';
-    } else if (overrunDays(r) > 0) {
-      label = 'PAST DEADLINE'; why = 'It would finish ' + overrunDays(r) + 'd after the voyage deadline.';
     }
+    if (label === 'CRAFT' && overrunDays(r) > 0) why = 'It finishes ' + overrunDays(r) + 'd past the deadline: the arrival will be later.';
     btn.classList.toggle('locked', label !== 'CRAFT');
     btn.textContent = label;
     if (why) { btn.dataset.tipTitle = label; btn.dataset.tipDescription = why; }
@@ -759,7 +758,6 @@
     if (!c) return null;
     if (c.daysDone >= c.daysTotal) return null; // all its days spent: it only has to come out
     if (!jobRuns()) return 'FAB BROKEN';
-    if (STATE.daysElapsed + 1 > STATE.baseDays) return 'PAST DEADLINE';
     return null;
   }
   function clockRunning() {

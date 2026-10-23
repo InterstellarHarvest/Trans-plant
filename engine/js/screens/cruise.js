@@ -687,7 +687,7 @@
   }
   // Crop problems in the order the card names them (the worst first).
   const CROP_ISSUES = [
-    { why: 'Pests', label: 'PESTS: TREAT IT', tip: () => 'Pests are eating the crop. Open the growbay and TREAT (' + (passiveMult('botanist') >= 1 ? 'the botanist does it in no time' : passiveMult('botanist') > 0 ? 'a day, or none if the botanist manages it' : 'it takes a day') + '), or USE a crop treatment from the hold.' },
+    { why: 'Pests', label: 'PESTS: TREAT IT', tip: () => 'Pests are eating the crop. Open the growbay and TREAT (' + (window.cropTreatCostShort ? window.cropTreatCostShort() : 'it takes a day') + '), or USE a crop treatment from the hold.' }, // growbay.js: the rule TREAT rolls
     { why: 'Sick', label: 'SICK', tip: "The crop's health is below its sick line. Open the growbay to see what's hurting it." },
     { why: 'Thirsty', label: 'THIRSTY', tip: "The crop's share of the water is below what it needs. Raise it in Orders or the growbay." },
   ];
