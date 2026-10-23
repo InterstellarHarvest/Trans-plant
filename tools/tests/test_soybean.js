@@ -256,7 +256,7 @@ const SOY = () => MOD.crops.crops.find(c => c.id === 'crop_soybean').strengths.n
     ok(r.soy && !/contamination/i.test(r.soy), 'setup no longer promises unbuilt contamination resistance beyond pests');
     ok(r.wheat && !/fast/i.test(r.wheat), 'setup wheat card makes no speed claim: ' + r.wheat);
     ok(!r.clean.includes('PESTS CLEARED') && r.pest.includes('PESTS CLEARED'), 'event previews promise PESTS CLEARED only when there are pests');
-    ok(/^Crop treatment applied\. \+30 crop health\.$/.test(r.cleanMsg), 'the item no longer reports clearing pests that were not there');
+    ok(/^Crop treatment applied\. (\+\d+ crop health|No health to add)\.$/.test(r.cleanMsg), 'the item no longer reports clearing pests that were not there');
     await page.close();
   }
 

@@ -19,6 +19,9 @@
      trader pays exactly that and the fence FENCE_MULT × it. Without a
      spectrometer aboard the offer shows the range; the sale pays (and
      logs) the real figure. Standing discounts never touch selling.
+   • A lane trader (an event of the trader family — STATE.currentEvent)
+     shelves only its own hold (traderStock: consumables + a few items);
+     stations keep the whole catalogue.
    • Gold is STATE.goldAmount; every transaction renderHUD()s.
    • Buying routes through window.grantItem (capacity-enforced —
      NEVER pushes to STATE.items directly). The canAddCargo hook
@@ -156,11 +159,36 @@
     return itemDef(sid);
   }
 
+  /* A trader met in the lanes (the trader family — event_encounter_trader_*,
+     which every TRADE / WAIT FOR TRADER summons) carries a ship's hold, not
+     a station's shelves: the shelf consumables plus a few pieces of gear
+     that suit the trader. The closing-down sale (trader_004) sells fake
+     hull plating in its pitch, so its hold has no genuine plating. */
+  const TRADER_CONSUMABLES = ['fuel_cell', 'ration_brick', 'water_canister', 'o2_canister', 'hull_patch', 'medkit'];
+  const TRADER_GEAR = {
+    event_encounter_trader_001: ['repair_kit', 'geiger_counter', 'water_purifier'],   // the travelling merchant
+    event_encounter_trader_002: ['spectrometer', 'medical_scanner'],                  // the museum's duplicates shelf
+    event_encounter_trader_003: ['repair_kit', 'soil_sampler', 'portable_drill'],     // the haggler
+    event_encounter_trader_004: ['gas_analyzer', 'solar_array'],                      // the closing-down sale: no plating
+  };
+  const TRADER_GEAR_DEFAULT = ['repair_kit'];
+  // The trader event the market was opened from (STATE.currentEvent), or null at a station.
+  function traderEventId() {
+    const ev = typeof STATE !== 'undefined' && STATE.currentEvent;
+    return ev && ev.family === 'trader' ? ev.id : null;
+  }
+  function traderStock(evId) {
+    return new Set(TRADER_CONSUMABLES.concat(TRADER_GEAR[evId] || TRADER_GEAR_DEFAULT));
+  }
+
   // ── Vendor builders — demo VENDORS structure fed by items.json ──
-  function stationVendor() {
+  // stock: a Set of short ids to shelve (a lane trader's hold), or null
+  // for a station's whole catalogue.
+  function stationVendor(stock) {
     const wares = allItemDefs()
       .filter(d => d.item_source === 'purchasable' && d.active !== false &&
                    Number.isFinite(d.base_price) && d.base_price > 0)
+      .filter(d => !stock || stock.has(shortIdOf(d.id)))
       .map(d => {
         const sid = shortIdOf(d.id);
         return {
@@ -201,7 +229,8 @@
       if (d && (d.item_behavior || []).includes('upgrade') && STATE.items.includes(wares[i].id)) wares.splice(i, 1);
     }
     let negotiated = false;
-    if (typeof STATE !== 'undefined' && STATE.flags && STATE.flags.has('negotiation_prepared')) {
+    // Negotiation talks stations into better deals: a lane trader leaves it armed.
+    if (!stock && typeof STATE !== 'undefined' && STATE.flags && STATE.flags.has('negotiation_prepared')) {
       STATE.flags.delete('negotiation_prepared');
       negotiated = true;
       for (const w of wares) {
@@ -214,6 +243,19 @@
     for (const w of wares) {
       if (w.cost && w.cost.gold && buyPrices[w.id] != null) w.cost.gold = Math.max(w.cost.gold, buyPrices[w.id] + 1);
     }
+    if (stock) return {
+      name: 'TRADER\'S HOLD',
+      greeting: "It's a ship, not a station. What's in the hold is what's for sale.",
+      farewell: "Safe lanes. Maybe I'll see you at the next one.",
+      wares,
+      buyPrices,
+      flavor: {
+        buy:  ["Pleasure doing business.", "Fresh out of the hold.", "Don't crash it."],
+        sell: ["I'll take it.", "There's room in the hold for that.", "Somebody down the lane will want it."],
+        deny: ["Don't have the gold for that.", "Can't help you there."],
+        no_buyback: ["No use for that, sorry.", "Nobody's buying those this cycle."]
+      }
+    };
     return {
       name: 'OUTPOST TRADER',
       greeting: negotiated
@@ -409,11 +451,16 @@
   function askSellRequired(entry, proceed) {
     if (entry.material) return false;
     const req = window.invRequiredFor(entry.id);
+    // The last capacity upgrade sold takes its headroom with it (inventory.js invCapLoss).
+    const loss = invCapLoss(entry.id, 1);
     const c = $('market-confirm');
-    if (!req.length || !c) return false;
+    if ((!req.length && !loss.length) || !c) return false;
     const d = defBy(entry.id);
-    $('market-confirm-text').textContent = 'Sell your ' + ((d && d.name) || entry.id) + ' here?';
-    $('market-route-warn').innerHTML = 'Required for: <strong>' + req.map(escapeHTML).join(' · ') + '</strong>';
+    $('market-confirm-text').textContent = 'Sell your ' + ((d && d.name) || entry.id) + ' here?' +
+      (loss.length ? ' The extra ' + invCapLossText(loss) + ' goes with it.' : '');
+    const warn = $('market-route-warn');
+    warn.innerHTML = req.length ? 'Required for: <strong>' + req.map(escapeHTML).join(' · ') + '</strong>' : '';
+    warn.style.display = req.length ? '' : 'none';
     confirmYes = proceed;
     c.classList.remove('hidden');
     return true;
@@ -434,10 +481,13 @@
       return;
     }
     if (MarketModal.isOpen()) return;
+    // A lane trader's market is its own hold (traderStock); a station's is the catalogue.
+    const trader = traderEventId();
+    const stock = trader ? traderStock(trader) : null;
     const vendor = opts.sinister ? blackMarketVendor()
       : opts.vendor === 'surplus' ? surplusVendor()
-      : opts.barter ? addBarterWares(stationVendor())
-      : stationVendor();
+      : opts.barter ? addBarterWares(stationVendor(stock))
+      : stationVendor(stock);
 
     const marketEl = $('enc-market');
     if (marketEl) marketEl.classList.toggle('sinister', !!vendor.sinister);
@@ -476,10 +526,12 @@
         }
         // A rolled-value copy leaves with its own value (the one just paid for).
         if (entry && entry.copy != null) { takeItemCopy(sid, entry.copy); renderHUD(); return; }
+        const loss = invCapLoss(sid, 1); // the last capacity upgrade's headroom (renderHUD trims it)
         const i = STATE.items.indexOf(sid);
         if (i >= 0) STATE.items.splice(i, 1);
         if (entry && entry.crafted) noteCraftedSold(sid); // a print sold at its materials' value
         renderHUD();
+        if (loss.length) window.pushCruiseLog('◆ Sold the ' + ((defBy(sid) || {}).name || sid) + '. The extra ' + invCapLossText(loss) + ' went with it.');
       },
       onClose: () => {
         closeSellConfirm();

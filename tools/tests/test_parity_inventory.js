@@ -274,7 +274,8 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
         document.querySelector('.res-tile[data-res="fuel"]').click();
         const line = document.getElementById('inv-detail-ai').textContent;
         const pool = MOD.flavor.ai_universal.cargo_hold.resource.fuel[ai];
-        out[ai] = { line, inPool: pool.some(p => line.endsWith(p)), name: document.querySelector('#inv-detail-ai .detail-ai-name').textContent };
+        const chip = document.querySelector('#inv-detail-ai .detail-ai-name'); // ruling 32: no chip on a line that names its AI
+        out[ai] = { line, inPool: pool.some(p => line.endsWith(p)), name: chip ? chip.textContent : null, names: namesTheAI(chip ? line.slice(chip.textContent.length) : line) };
       }
       out.name = document.getElementById('inv-detail-name').textContent;
       out.cat = document.getElementById('inv-detail-cat').textContent;
@@ -284,7 +285,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
       return out;
     });
     ok(d.name === 'FUEL' && d.cat === 'SHIP RESOURCE' && /IN CARGO×3 Fuel Cell/.test(d.meta), `resource detail: ${d.name} · ${d.cat} · "${d.meta}"`);
-    ok(['aria', 'marv', 'rex', 'chip', 'ajoy'].every(a => d[a].inPool && d[a].name === a.toUpperCase() + ':'), 'the AI line comes from cargo_hold.resource in all 5 voices (' + d.ajoy.line.slice(0, 50) + '…)');
+    ok(['aria', 'marv', 'rex', 'chip', 'ajoy'].every(a => d[a].inPool && (d[a].names ? d[a].name === null : d[a].name === a.toUpperCase() + ':')), 'the AI line comes from cargo_hold.resource in all 5 voices (' + d.ajoy.line.slice(0, 50) + '…)');
     ok(d.selected && d.actions === 'none', 'the tile shows selected; no item actions under a resource');
     const pools = await page.evaluate(() => { const c = MOD.flavor.ai_universal.cargo_hold; let n = 0; for (const s of ['resource', 'category']) for (const k of Object.keys(c[s])) for (const ai of ['aria', 'marv', 'rex', 'chip', 'ajoy']) n += (c[s][k][ai] || []).length ? 1 : 0; return n; });
     ok(pools === 45, `flavor pool slot filled: 3 resources + 6 categories × 5 AIs (${pools}/45)`);
@@ -441,7 +442,7 @@ const STACKABLES = ['ration_brick', 'water_canister', 'fuel_cell', 'medkit', 'hu
     ok(r.fuel.cat === 'CONSUMABLE' && JSON.stringify(r.fuel.rows) === JSON.stringify(['COUNT×5', 'SLOT COST0.3 per unit 2 total', 'SELL PRICE' + r.wantFuel + 'g each']), 'stack detail: ' + r.fuel.rows.join(' | '));
     ok(r.fuel.corner === r.wantFuel + 'g' && r.fuel.count === '×5', `tile corners: count ${r.fuel.count}, price ${r.fuel.corner}`);
     ok(r.fumes.length >= 1 && /^USED FOR: /.test(r.fuel.used) && r.fumes.every(t => r.fuel.used.includes(t)), `USED FOR from the events (${r.fuel.used})`);
-    ok(/^MARV:/.test(r.fuel.ai), 'an AI line in the item detail (category pool): ' + r.fuel.ai.slice(0, 60));
+    ok(/MARV/.test(r.fuel.ai) && !/^MARV:/.test(r.fuel.ai) === /MARV/.test(r.fuel.ai.replace(/^MARV:/, '')), 'an AI line (ruling 32: no chip when it names MARV) in the item detail (category pool): ' + r.fuel.ai.slice(0, 60));
     ok(r.log.cat === 'STORY' && r.log.marker === '⇄' && /NOTES⇄Not for sale/.test(r.log.notes) && r.log.rows[2] === 'SELL PRICE—' && /USED FOR: .+ · /.test(r.log.used), 'story item: ⇄ corner, NOTES, SELL PRICE —, several USED FOR events');
     ok(r.bone.corner === '??' && r.bone.rows[2] === 'SELL PRICE4–28g · fence 6–42g' && /needs a spectrometer/.test(r.bone.rows[3]) && r.bone.notes === '', 'rolled value hidden without a spectrometer (range + ??)');
     ok(r.boneKnown.corner === '17g' && r.boneKnown.rows[2] === 'SELL PRICE17g · fence 26g', 'with a spectrometer: the exact copy value');

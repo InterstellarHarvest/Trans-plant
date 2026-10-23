@@ -1270,17 +1270,22 @@
     // A dead crop: grey, still — no sway, no stage flash.
     $('plant-sprite').classList.toggle('dead', dead);
     $('plant-stage-label').classList.toggle('dead', dead);
+    // "READY ON DAY 125", but "READY NOW" / "READY NEVER" (never "READY ON NOW").
+    const readyAs = (prefix, value) => {
+      if (readyLine.firstChild && readyLine.firstChild.nodeType === 3) readyLine.firstChild.textContent = prefix;
+      $('ready-day').textContent = value;
+    };
     if (dead) {
-      $('ready-day').textContent = 'NEVER';
+      readyAs('READY ', 'NEVER');
       readyLine.classList.add('warn');
     } else if (GSTATE.growth >= 100) {
-      $('ready-day').textContent = 'NOW';
+      readyAs('READY ', 'NOW');
       readyLine.classList.remove('warn');
     } else if (ready === Infinity) {
-      $('ready-day').textContent = 'NEVER (at current rate)';
+      readyAs('READY ', 'NEVER (at current rate)');
       readyLine.classList.add('warn');
     } else {
-      $('ready-day').textContent = 'DAY ' + ready;
+      readyAs('READY ON ', 'DAY ' + ready);
       readyLine.classList.toggle('warn', ready > GSTATE.arrivalDay);
     }
 
@@ -1332,7 +1337,7 @@
     if (nameEl) nameEl.textContent = growbayAIName() + ':';
     const avEl = document.querySelector('.gb-aria-avatar');
     if (avEl) avEl.style.backgroundImage = "url('sprites/interface/AI/" + growbayAI() + ".png')";
-    $('aria-text').textContent = forCrop(pickAriaQuip());
+    gbAiSay(forCrop(pickAriaQuip()));
 
     // Harvest button lock state
     const hbtn = $('harvest-btn');
@@ -1340,7 +1345,38 @@
 
     // Treat button — TREAT clears pests (doTreat); other threats
     // (underwatered, root rot risk) are fixed by water, not treatment.
-    $('treat-btn').classList.toggle('locked', !GSTATE.pest || GSTATE.health <= 0);
+    const tbtn = $('treat-btn');
+    tbtn.classList.toggle('locked', !GSTATE.pest || GSTATE.health <= 0);
+    // What TREAT costs, from openTreat's own roll (treatFreeChance).
+    tbtn.dataset.tipTitle = 'TREAT';
+    tbtn.dataset.tipDescription = GSTATE.health <= 0 ? 'The crop is dead. Nothing left to treat.'
+      : !GSTATE.pest ? 'Clears a pest outbreak. Nothing to treat right now.'
+      : 'Clears the pest outbreak. ' + treatCostText();
+  }
+  // The footer AI line; a line that names its own AI ("ARIA checked twice")
+  // shows without the "NAME:" chip (ruling 32, index.html namesTheAI).
+  function gbAiSay(text) {
+    $('aria-text').textContent = text;
+    const nameEl = document.querySelector('.gb-aria-name');
+    if (nameEl) nameEl.style.display = namesTheAI(String(text || '')) ? 'none' : '';
+  }
+  // TREAT's day: spared with the chance passiveMult('botanist') — a botanist
+  // aboard always, a wounded one or a botanist captain half the time.
+  function treatFreeChance() { return Math.max(0, Math.min(1, passiveMult('botanist'))); }
+  function treatCostText() {
+    const p = treatFreeChance();
+    const crewBot = STATE.crew.includes('botanist');
+    if (p >= 1) return 'No day spent: ' + (crewBot ? crewNameOf('botanist') : 'your botanist training') + ' handles it.';
+    if (p <= 0) return 'Takes 1 day (a botanist would spare it).';
+    const who = crewBot && woundedMult('botanist') < 1 ? crewNameOf('botanist') + ' is wounded' : 'your botanist training';
+    return 'Takes 1 day, or none ' + Math.round(p * 100) + '% of the time: ' + who + '.';
+  }
+  // The same rule as a short aside for other screens' hints (the cruise
+  // crop card's pest tooltip): "it takes a day" / "no day spent" / "a day,
+  // or none half the time".
+  function cropTreatCostShort() {
+    const p = treatFreeChance();
+    return p >= 1 ? 'no day spent' : p <= 0 ? 'it takes a day' : 'a day, or none ' + (p === 0.5 ? 'half the time' : Math.round(p * 100) + '% of the time');
   }
 
   // ═════ Animations ═══════════════════════════════════════════
@@ -1466,13 +1502,13 @@
   function openTreat() {
     const say = GROWBAY_TREAT_LINES[growbayAI()];
     if (!GSTATE || !GSTATE.pest) {
-      $('aria-text').textContent = say.nothing;
+      gbAiSay(say.nothing);
       return;
     }
     clearCropPest();
     // Botanist passive saves the day; a wounded botanist's halved
     // passive saves it half the time.
-    const hasBotanist = Math.random() < passiveMult('botanist');
+    const hasBotanist = Math.random() < treatFreeChance(); // the TREAT tooltip states this chance
     if (!hasBotanist) {
       passDays(1);
       renderHUD();
@@ -1481,7 +1517,7 @@
     renderAll();
     // After renderAll — it repaints the footer with a fresh state quip,
     // which used to overwrite this line before anyone could read it.
-    $('aria-text').textContent = hasBotanist ? say.botanist : say.alone;
+    gbAiSay(hasBotanist ? say.botanist : say.alone);
     window.pushCruiseLog('\u25c6 GROWBAY \u2014 pest outbreak treated.');
     saveRun(); // a reload used to undo the treat (and its day)
   }
@@ -1750,7 +1786,7 @@
           (boost ? vital('Recovery', fmtMult(boost.mult) + ' <span class="ins-v-sub">(nitrogen fix, ' + boost.daysLeft + 'd left)</span>') : '') +
           vital('Rate', curRate.toFixed(2) + '%/day' + (dead ? ' <span class="ins-v-sub">(dead)</span>' : curRate <= 0.01 ? ' <span class="ins-v-sub">(stalled)</span>' : '')) +
           vital('Day', GSTATE.day + ' / ' + crop.maturity_days, overdue ? 'overdue' : '') +
-          vital('Ready on',
+          vital(dead || GSTATE.growth >= 100 || daysLeft === Infinity ? 'Ready' : 'Ready on',
             dead ? 'never' : GSTATE.growth >= 100
               ? '<span class="ins-v-marker">★</span>NOW'
               : (daysLeft === Infinity
@@ -1809,12 +1845,13 @@
 
     // 4 — ARIA's read (full-width, top of view — replaces the
     // growbay footer ARIA quip which is hidden while inspect is open).
+    const read = forCrop(pickAriaInspect(active));
     const ariaHTML =
       '<div class="ins-section ins-aria ins-fullwidth">' +
         '<div class="ins-section-title">' + growbayAIName() + '\'S READ</div>' +
         '<div class="ins-aria-read">' +
           '<span class="ins-aria-avatar" style="background-image:url(\'sprites/interface/AI/' + growbayAI() + '.png\')"></span>' +
-          '<span><span class="ins-aria-name">' + growbayAIName() + ':</span> ' + escapeHTML(forCrop(pickAriaInspect(active))) + '</span>' +
+          '<span>' + (namesTheAI(read) ? '' : '<span class="ins-aria-name">' + growbayAIName() + ':</span> ') + escapeHTML(read) + '</span>' + // ruling 32
         '</div>' +
       '</div>';
 
@@ -1882,7 +1919,7 @@
   Object.assign(window, {
     // engine API
     cropMetaOf, cropContaminationRecovery: contaminationRecovery,
-    clearCropPest, cropWaterStatusAt, cropGrowthFactorAt, toggleTenderPicker,
+    clearCropPest, cropWaterStatusAt, cropGrowthFactorAt, toggleTenderPicker, cropTreatCostShort,
     doHarvest, openTreat, openInspect, closeInspect, closeGrowbay,
     onBackdropClick, openGrowbay, tickCropGrowth,
     // test hooks: tools/tests drive and read these through page.evaluate

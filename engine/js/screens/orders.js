@@ -260,6 +260,36 @@
     return { text, cls };
   }
 
+  const signed = v => (v > 0 ? '+' : '−') + Math.abs(v);
+
+  // Drive heat (engine strain, ruling 83): the heat the next leg leaves
+  // at the previewed pace and, at PLAID, the chance that leg strains the
+  // drive — index.html rollEngineStrain / engineStrainChance, so the
+  // preview is the roll. Shown while it matters: at PLAID, while the
+  // drive is still warm, or while a strain is waiting to surface.
+  function strainPct(c) {
+    const v = c * 100;
+    return (v < 10 ? Math.round(v * 10) / 10 : Math.round(v)) + '%';
+  }
+  function driveHeatLine(paceId) {
+    const heat = STATE.plaidLegs || 0;
+    const plaid = paceId === 'plaid';
+    if (!plaid && !heat && !STATE.engineStrain) return '';
+    const curve = [1, 2, 3, 4, 5].map(h => strainPct(engineStrainChance(h))).join(', ');
+    const tip = 'Each leg flown at PLAID heats the drive a step and rolls for a strain: ' + curve +
+      ' over five PLAID legs in a row (never above ' + strainPct(ENGINE_STRAIN_MAX) + '). A slower leg cools it a step; LIGHT SPEED cools it fully.';
+    let value, warn = false;
+    if (STATE.engineStrain) { value = 'STRAINED'; warn = true; }
+    else if (plaid) {
+      const c = engineStrainChance(heat + 1);
+      value = heat + ' → ' + (heat + 1) + ' · STRAIN ' + strainPct(c) + ' THIS LEG';
+      warn = c >= 0.4;
+    } else value = heat + ' → ' + (paceId === 'light' ? 0 : heat - 1) + ' · COOLING';
+    return '<div class="od-preview-stat od-drive-heat' + (warn ? ' warn' : '') + '" data-tip-title="DRIVE HEAT" data-tip-description="' +
+      escapeHTML(STATE.engineStrain ? 'A strain has come up: it surfaces at a coming stop. ' + tip : tip) + '">' +
+      'DRIVE HEAT · <strong>' + value + '</strong> <span class="od-warn-badge">⚠</span></div>';
+  }
+
   // ── Section renders (demo logic on engine state) ──────────────
   function renderEngines() {
     const sv = savedIdx();
@@ -273,16 +303,22 @@
     const arrDelta  = dayDelta(arrival, savedArr, false);   // sooner is better
     const fuelDelta = dayDelta(fuelEmpty, savedFuel, true); // later is better
 
-    // Pace drains crew MORALE (index.html passDays) — no crew aboard, no drain (owner ruling 15).
+    // Pace moves everyone's MORALE per day flown (index.html passDays:
+    // −(drainMult − 1) × paceMoraleFactor) — no crew aboard, nothing moves
+    // (owner ruling 15). The pilot's own reaction to the pace (role
+    // concern, ruling 57) lands on top, shown as its own figure.
     const noCrew = !STATE.crew.length;
-    // …and the pilot minds the pace on top (role concern, ruling 57).
+    const paceRate = p2 => Math.round(-(p2.drainMult - 1) * ORDERS_BASE.paceMoraleFactor * 100) / 100;
+    const rate = paceRate(p), savedRate = paceRate(s);
     const pc = STATE.crew.includes('pilot') ? concernAmount(paceConcern(p.id).v) : 0;
-    const crewLabel = (noCrew ? 'NO CREW' : p.drainMult < 1 ? 'EASING' : (p.drainMult > 1 ? 'RISING' : 'STEADY'))
-      + (pc ? ' · ' + concernText([{ label: 'PILOT', v: pc }]) + '/DAY' : '');
+    const crewLabel = noCrew ? 'NO CREW'
+      : (rate ? 'ALL ' + signed(rate) + '/DAY' : 'STEADY')
+        + (pc ? ' · ' + concernText([{ label: 'PILOT', v: pc }]) + '/DAY' : '');
     let crewDeltaText = null, crewDeltaCls = null;
-    if (!noCrew && p.drainMult !== s.drainMult) {
-      crewDeltaText = p.drainMult > s.drainMult ? '▲' : '▼';
-      crewDeltaCls  = p.drainMult > s.drainMult ? 'bad' : 'good';
+    if (!noCrew && rate !== savedRate) {
+      const d = Math.round((rate - savedRate) * 100) / 100;
+      crewDeltaText = signed(d);
+      crewDeltaCls  = d > 0 ? 'good' : 'bad';
     }
 
     const fuelWarn = fuelEmpty < arrival;
@@ -290,7 +326,8 @@
     $('od-engines-preview').innerHTML =
       statLine('ARRIVAL',    'DAY ' + arrival,   arrDelta.text,  arrDelta.cls,  false) +
       statLine('FUEL EMPTY', 'DAY ' + fuelEmpty, fuelDelta.text, fuelDelta.cls, fuelWarn) +
-      statLine('CREW DRAIN', crewLabel,          crewDeltaText,  crewDeltaCls,  false);
+      statLine('MORALE',     crewLabel,          crewDeltaText,  crewDeltaCls,  false) +
+      driveHeatLine(p.id);
 
     $('od-engines-desc').textContent = PACE_DESCS[preview.pace];
     $('od-engines-warn').classList.toggle('on', fuelWarn);
@@ -422,6 +459,7 @@
       else                                       line = q.water_matched;
     }
     $('od-ai-text').textContent = line;
+    $('od-ai-name').style.display = namesTheAI(line) ? 'none' : ''; // ruling 32: "…CHIP Loyalty Points!" carries no CHIP: chip
   }
 
   function renderAll() {
