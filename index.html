@@ -7151,6 +7151,14 @@ function resolveChoice(choice) {
         mgOpts.tierOutcomes[t] = m;
         mgOpts.tierRewards[t] = outcomeFacts(m).map(f => f.text);
       }
+      // The breach bar ends on the O2 this result lands (effective figures).
+      if (choice.launch_minigame === 'breach') {
+        mgOpts.tierO2 = {};
+        for (const t of ['perfect', 'good', 'poor']) {
+          const m = mgOpts.tierOutcomes[t], v = (m.resources || {}).o2 || 0;
+          mgOpts.tierO2[t] = v ? effectiveResDelta('o2', v, m) : 0;
+        }
+      }
     }
     openMinigame(choice.launch_minigame, mgOpts, (tier, mgPayload) => {
       eventMinigameChoice = null; eventMinigamePatient = null;
