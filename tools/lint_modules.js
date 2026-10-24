@@ -1465,6 +1465,26 @@ const hardChoiceCost = (() => {
   for (const [job, v] of Object.entries((registry.npc_station_job || {}).values || {})) {
     if (v.status !== 'deprecated' && !usedJobs.has(job)) warn(`npc_station_job "${job}" is registered but no event or layer npc uses it`);
   }
+  // Every line slot must be reachable: some event's {npc.line.<slot>}
+  // with a speaker of that disposition (and job) in the event, or an
+  // engine call (combat.js pirateSays('<slot>')). A slot nothing reaches
+  // never shows.
+  const reached = new Set();
+  const speakersOf = ev => { const out = []; (function walk(x) { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (typeof x.disposition === 'string') out.push(x); Object.values(x).forEach(walk); } })(ev); return out; };
+  const poolKey = n => n.disposition + (n.disposition === 'station_crew' ? '/' + (n.job || 'janitor') : '');
+  for (const { event: ev } of eventsById.values()) {
+    const slots = new Set(tokens(ev));
+    if (slots.size) for (const n of speakersOf(ev)) for (const slot of slots) reached.add(poolKey(n) + '.' + slot);
+  }
+  for (const src of engineSrcByFile.values()) {
+    for (const m of src.matchAll(/pirateSays\('(\w+)'\)/g)) reached.add('pirate.' + m[1]);
+    for (const m of src.matchAll(/\{npc\.line\.(\w+)\}/g)) reached.add('*.' + m[1]); // an engine-written token: any speaker
+  }
+  for (const [d, v] of Object.entries(pools)) {
+    for (const [key, slots] of d === 'station_crew' ? Object.entries(v).map(([j, s]) => [d + '/' + j, s]) : [[d, v]]) {
+      for (const slot of Object.keys(slots)) if (!reached.has(key + '.' + slot) && !reached.has('*.' + slot)) err(`flavor_pools.json npc_disposition_lines.${key.replace('/', '.')}.${slot}: no {npc.line.${slot}} reaches it (no event with a ${key} speaker uses it, no engine call) — the lines never show`);
+    }
+  }
 }
 
 // ── Sprite assets (added 2026-10-11) ───────────────────────────────
