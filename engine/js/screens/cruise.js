@@ -1719,7 +1719,7 @@
       }
       const subText = lockReason ? null : (typeof verb.sub === 'function' ? verb.sub(regionKey) : verb.sub);
       const btn = choiceButton({ label: labelStr, sub: subText, parts, variant, icon: lockReason ? 'lock' : (verb.icon || 'wait'), locked: !!lockReason });
-      if (lockReason) btn.classList.add('locked');
+      if (lockReason) { btn.classList.add('locked'); btn.tabIndex = -1; btn.setAttribute('aria-disabled', 'true'); }
       if (lockReason && window.Tooltip) Tooltip.attach(btn, lockTip(labelStr, lockReason));
       btn.setAttribute('data-verb-id', verbId);
       if (!lockReason && verb.effort && window.effortTax) btn.title = 'Effort ' + verb.effort + '/5' + (effortTax(verb.effort) ? ' · costs ' + effortTax(verb.effort) + ' morale' + (verbId === 'fab' ? ' per craft' : WAIT_VERBS[verbId] ? ' for the whole wait' : '') : '') + ((verbId === 'repair' || verbId === 'drydock') ? repairLiftTip() : ''); // no crew aboard: no tax to state

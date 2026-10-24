@@ -934,6 +934,36 @@ const eventOnTrail = (ev, trail) => {
     }
   }
 }
+// An event's minigame speaks for its event: every launch_minigame choice
+// carries minigame_opts.briefing (the situation line) and quips for each
+// result (perfect/good/poor, medical's fedup optional), one line per AI.
+// The generic minigame copy is written for free play and misreads events.
+{
+  const AIS = ['aria', 'marv', 'rex', 'chip', 'ajoy'];
+  const perAi = (v, at) => {
+    if (!v || typeof v !== 'object') return err(`${at}: needs one line per AI (${AIS.join('/')})`);
+    for (const ai of AIS) if (typeof v[ai] !== 'string' || !v[ai].trim()) err(`${at}: no ${ai} line`);
+    for (const k of Object.keys(v)) if (!AIS.includes(k)) err(`${at}: "${k}" is not an AI`);
+    for (const ai of ['marv', 'rex', 'ajoy']) if (/!/.test(v[ai] || '')) err(`${at}.${ai}: "!" (only ARIA and CHIP use it)`);
+  };
+  for (const { file, event: ev } of eventsById.values()) {
+    for (const { layer, choices } of choiceSetsOf(ev)) {
+      for (const ch of choices) {
+        if (!ch.launch_minigame) continue;
+        const at = `${atOf(file, ev.id, layer)}: choice "${ch.text || ch.label}" minigame_opts`;
+        const o = ch.minigame_opts || {};
+        perAi(o.briefing, at + '.briefing');
+        if (!o.quips || typeof o.quips !== 'object') { err(`${at}.quips: missing`); continue; }
+        for (const t of ['perfect', 'good', 'poor']) perAi(o.quips[t], `${at}.quips.${t}`);
+        for (const t of Object.keys(o.quips)) {
+          if (!['perfect', 'good', 'poor', 'fedup'].includes(t)) err(`${at}.quips: "${t}" is not a result`);
+          else if (t === 'fedup') { if (ch.launch_minigame !== 'medical') err(`${at}.quips.fedup: only MEDICAL ends fed up`); else perAi(o.quips.fedup, `${at}.quips.fedup`); }
+        }
+      }
+    }
+  }
+}
+
 
 // ── Effort contract + hands-on job types (added 2026-10-11) ────────
 // choiceEffort() only rolls effort when a choice authors BOTH

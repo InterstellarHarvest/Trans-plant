@@ -99,40 +99,63 @@
     })();
   }
 
+  // A click or key while the taglines type finishes them at once.
+  let introDone = false;
+  function finishIntro() {
+    if (introDone) return;
+    introDone = true;
+    twTimers.forEach(t => clearTimeout(t));
+    twTimers = [];
+    ['title-tagline', 'title-tagline-2', 'title-tagline-3'].forEach((id, i) => {
+      const el = $(id);
+      el.innerHTML = '';
+      el.style.color = TAGLINES[i].color;
+      el.style.fontSize = TAG_SIZE_PX + 'px';
+      const span = document.createElement('span');
+      span.textContent = TAGLINES[i].text;
+      el.appendChild(span);
+    });
+    $('title-buttons').classList.add('visible');
+  }
+
   function playIntro() {
     twTimers.forEach(t => clearTimeout(t));
     twTimers = [];
+    introDone = false;
     $('title-buttons').classList.remove('visible');
     $('title-tagline').innerHTML = '';
     $('title-tagline-2').innerHTML = '';
     $('title-tagline-3').innerHTML = '';
 
-    setTimeout(() => {
+    twTimers.push(setTimeout(() => {
       typewrite($('title-tagline'), TAGLINES[0].text, TYPE_SPEED_MS, TAGLINES[0].color, () => {
-        setTimeout(() => {
+        twTimers.push(setTimeout(() => {
           typewrite($('title-tagline-2'), TAGLINES[1].text, TYPE_SPEED_MS, TAGLINES[1].color, () => {
-            setTimeout(() => {
+            twTimers.push(setTimeout(() => {
               typewrite($('title-tagline-3'), TAGLINES[2].text, TYPE_SPEED_MS + 10, TAGLINES[2].color, () => {
-                setTimeout(() => $('title-buttons').classList.add('visible'), 400);
+                twTimers.push(setTimeout(() => { introDone = true; $('title-buttons').classList.add('visible'); }, 400));
               });
-            }, LINE_PAUSE_MS);
+            }, LINE_PAUSE_MS));
           });
-        }, LINE_PAUSE_MS);
+        }, LINE_PAUSE_MS));
       });
-    }, 400);
+    }, 400));
   }
 
   // ── Poster dismiss ───────────────────────────────────────────
-  let posterDismissed = false;
+  let posterDismissed = false, introStarting = false;
   function dismissPoster() {
     if (posterDismissed) return;
     posterDismissed = true;
     $('screen-title').classList.add('poster-dismissed');
-    setTimeout(playIntro, 600);
+    // The key that dismissed the poster must not also skip the intro.
+    introStarting = true;
+    setTimeout(() => { introStarting = false; playIntro(); }, 600);
   }
   function onSceneInput(e) {
     if (e && e.target && e.target.closest && e.target.closest('.retro-btn')) return;
     if (!posterDismissed) dismissPoster();
+    else if (!introStarting) finishIntro();
   }
   $('screen-title').addEventListener('click', onSceneInput);
   $('screen-title').addEventListener('keydown', onSceneInput);

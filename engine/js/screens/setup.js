@@ -334,6 +334,17 @@
 
   $('btn-back').addEventListener('click', prevStep);
   $('btn-next').addEventListener('click', nextStep);
+  // ENTER takes the next step (on a focused button it presses that button,
+  // as usual): not under a dialog or the pause terminal.
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!$('screen-setup').classList.contains('active')) return;
+    const t = e.target;
+    if (t && (t.tagName === 'BUTTON' || t.tagName === 'TEXTAREA' || t.tagName === 'A')) return;
+    if (document.body.classList.contains('pause-open') || document.querySelector('.tp-confirm-overlay')) return;
+    e.preventDefault();
+    nextStep();
+  });
 
   render();
 

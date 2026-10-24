@@ -445,7 +445,8 @@ function showReady(id, onStart, opts){
     const kept = roomText(hold.room);
     mechanicHtml += `<br><br><span class="ready-warn"><strong>CARGO HOLD FULL:</strong> ${kept ? 'only ' + kept + ' more can be kept (topping up the stacks aboard); no' : 'no'} ${derelict ? 'new materials or medkits' : 'new materials, parts or crate finds'} until you free space in the cargo hold. ${derelict ? 'Fuel cells and ration cans' : 'O₂ tanks and gold chips'} still count.</span>`;
   }
-  const situation = typeof opts.briefing === 'string' && opts.briefing ? escHtml(opts.briefing) : b.situation[activeAi];
+  const ownBrief = aiLine(opts.briefing, activeAi);
+  const situation = ownBrief ? escHtml(ownBrief) : b.situation[activeAi];
   ga.innerHTML = `
     <div class="ready${job && opts.tierRewards ? ' has-rewards' : ''}">
       <div class="ready-icon">${b.icon}</div>
@@ -474,9 +475,12 @@ function showReady(id, onStart, opts){
                  them, the result card shows the one earned, and nothing
                  claims a free-play pickup (owner 2026-10-23).
      eventJob    true — the same rule when there is no list to show.
-     briefing    the AI's situation line, in place of the generic one.
-     quips       { perfect|good|poor|fedup: text } (or one text): the
-                 result card's line, in place of the generic one.
+     briefing    the AI's situation line, in place of the generic one:
+                 text, or { aria, marv, rex, chip, ajoy }.
+     quips       { perfect|good|poor|fedup: line } (or one line): the
+                 result card's line, in place of the generic one; each
+                 line text or per AI, like briefing (an event's
+                 minigame_opts carries both).
      resultLines (tier, payload) → [text | {text, tone}]: side results
                  the caller lands too (shown on the result card). `onDone(tier,
    payload)` fires once the player closes the result screen, so the
@@ -529,6 +533,11 @@ function closeMinigameOverlay(){
   document.getElementById('result').classList.remove('show');
   hideOverlay('overlay-minigames');
 }
+// An event's own line for the active AI: text, or { aria, marv, rex, chip, ajoy }.
+function aiLine(v, ai){
+  if(typeof v === 'string') return v || null;
+  return v && typeof v === 'object' && typeof v[ai] === 'string' && v[ai] ? v[ai] : null;
+}
 function showResult(tier, payload){
   // Guard against orphaned setTimeouts from a finished game firing after
   // the modal was closed. If the modal isn't open, drop the result.
@@ -550,8 +559,9 @@ function showResult(tier, payload){
   const opts = currentOpts || {};
   const job = isEventJob(opts);
   document.querySelector('#rquip .rname').textContent = AI_NAMES[ai];
-  // opts.quips (an event's own lines): { perfect|good|poor|fedup: text } or one text for any result.
-  const own = opts.quips && (typeof opts.quips === 'string' ? opts.quips : (opts.quips[tier] || (tier === 'fedup' ? opts.quips.poor : null)));
+  // opts.quips (an event's own lines): { perfect|good|poor|fedup: line } or one line for any
+  // result; a line is text or { aria, marv, rex, chip, ajoy } (aiLine).
+  const own = opts.quips && (aiLine(opts.quips, ai) || aiLine(opts.quips[tier] || (tier === 'fedup' ? opts.quips.poor : null), ai));
   const quipSet = job && currentGame.indexOf('salvage') === 0 ? Q.salvage_job : Q[currentGame];
   document.querySelector('#rquip .rtext').textContent = own || quipSet[tier][ai];
 
@@ -567,7 +577,7 @@ function showResult(tier, payload){
   let foodLanded = 0;
   if(job){
     const list = tierRewardList(opts, tier);
-    if(list) lines.push(`<span class="rh-line${list.length ? ' gold' : ''}">REWARD · ${list.length ? list.map(escHtml).join(' · ') : 'nothing'}</span>`);
+    if(list) lines.push(`<span class="rh-line${list.length ? ' gold' : ''}">REWARD · ${list.length ? list.map(r => `<span class="rh-item">${escHtml(r)}</span>`).join(' · ') : 'nothing'}</span>`);
   } else if(payload){
     if(typeof payload.food === 'number'){
       // What lands: the tank caps (cruise.js FORAGE adds it the same way).
@@ -605,7 +615,8 @@ function showResult(tier, payload){
     const haul = document.createElement('div');
     haul.id = 'rhaul';
     haul.className = 'rhaul';
-    haul.innerHTML = lines.join('');
+    // Press Start 2P has no U+2212: its "−" falls back to a dot-like glyph.
+    haul.innerHTML = lines.join('').replace(/\u2212/g, '-');
     resultEl.insertBefore(haul, resultEl.querySelector('.rbtns'));
 
     // Animate the food number ticking up from 0 to what lands — arcade

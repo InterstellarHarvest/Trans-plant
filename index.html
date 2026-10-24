@@ -5765,6 +5765,8 @@ function renderChoicesInner(choices) {
       + (locked ? ' locked' : '')
       + (ch.risky ? ' risky' : '')
       + (ch.hint ? ' hint' : '');
+    // Locked: hover still explains it, but Tab skips it (it can't be pressed).
+    if (locked) { btn.tabIndex = -1; btn.setAttribute('aria-disabled', 'true'); }
 
     // Gate badge (demo-canon 32×32 cell): requirement icon when met,
     // padlock when locked — every locked choice gets the padlock (no red
