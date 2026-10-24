@@ -454,7 +454,6 @@ html, body { cursor: var(--cursor-pointer, default); }
   letter-spacing: 1.5px;
   color: var(--pause-amber-bright);
 }
-.pause-row.stub label { color: var(--pause-amber-dim); }
 .pause-swatches { display: flex; gap: 8px; }
 .pause-swatch {
   width: 26px; height: 26px;
@@ -480,27 +479,6 @@ html, body { cursor: var(--cursor-pointer, default); }
 .pause-toggle[data-on="1"] { background: rgba(200,168,90,0.18); color: var(--pause-amber-bright); }
 .pause-toggle:hover { color: var(--pause-amber-bright); border-color: var(--pause-amber-bright); }
 
-.pause-row input[type="range"] {
-  flex: 1;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;
-  background: rgba(200,168,90,0.25);
-  outline: none;
-}
-.pause-row input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px; height: 14px;
-  background: var(--pause-amber);
-  border: 1px solid #000;
-  cursor: var(--cursor-hand, pointer);
-}
-.pause-row input[type="range"]::-moz-range-thumb {
-  width: 14px; height: 14px;
-  background: var(--pause-amber);
-  border: 1px solid #000;
-  cursor: var(--cursor-hand, pointer);
-}
 .pause-radios { display: flex; gap: 6px; }
 .pause-radio {
   font-family: 'VT323', monospace;
@@ -846,8 +824,10 @@ html, body { cursor: var(--cursor-pointer, default); }
 .enc-market.sinister .market-side-sell.fence-mode .market-side-title { color: rgba(185, 60, 60, 0.95); }
 
 /* ── Tooltip (.ui-tip) — promoted from demo-tooltip.html ──────
-   (owner ruling 2026-10-11). Panel + 5 tones verbatim; the root mounts
-   inside #game (positions in game space) or at body level in demos. */
+   (owner ruling 2026-10-11). Panel + the warn / danger / good tones
+   verbatim (nothing in the game uses the demo's quote tone; the demo
+   keeps its own copy); the root mounts inside #game (positions in game
+   space) or at body level in demos. */
 :root {
   --tip-border-w: 1px;
   --tip-pad:      10px;
@@ -915,21 +895,6 @@ html, body { cursor: var(--cursor-pointer, default); }
 .ui-tip.tone-good   { border-color: var(--tip-good); }
 .ui-tip.tone-good   .ui-tip-title { color: var(--tip-good); }
 .ui-tip.tone-good   .ui-tip-list li.current .mk { color: var(--tip-good); }
-.ui-tip.tone-quote {
-  border-color: rgba(232,216,160,0.45);
-  background: rgba(20,16,10,0.92);
-  font-style: italic;
-  font-size: 15px;
-  color: rgba(232,216,160,0.82);
-  max-width: calc(var(--tip-maxw) - 30px);
-}
-.ui-tip.tone-quote .ui-tip-title { color: rgba(232,216,160,0.75); font-style: normal; font-size: 8px; }
-.ui-tip.tone-quote::before {
-  content: '“';
-  position: absolute; top: -6px; left: 6px;
-  font-family: 'VT323', monospace; font-size: 32px;
-  color: rgba(232,216,160,0.35); font-style: normal;
-}
 
 /* tpConfirm — the game's yes/no dialog (shared.js), the pause terminal's look. */
 .tp-confirm-overlay { position: absolute; inset: 0; z-index: 100001; background: rgba(2,4,8,0.78); display: flex; align-items: center; justify-content: center; }
