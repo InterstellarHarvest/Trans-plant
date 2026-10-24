@@ -1814,7 +1814,7 @@ const MarketModal = (function() {
 /* ============================================================
    Tooltip (.ui-tip) — promoted from demo-tooltip.html (owner ruling
    2026-10-11: "port the demo .ui-tip system now, one style
-   everywhere"). Five tones (default/warn/danger/good/quote), element-
+   everywhere"). Tones default/warn/danger/good (demo-tooltip adds quote), element-
    or cursor-anchored, flip + clamp, 50ms open delay / 80ms fade, a
    registry + data-tip-* authoring API, hidden on scroll / resize /
    Esc / pointer-down / PauseBus pause.

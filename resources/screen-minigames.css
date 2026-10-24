@@ -333,9 +333,7 @@
 /* ── FORAGE ───────────────────────────────────── */
 /* Forage runs in BIGMODAL — 720×480 stage. Anchor coords live at 960×640 native
    (matches the editor and source bg art) and are scaled by 0.75 at render.
-   Real-art path: .for-stage[data-art="1"] gets a bg jpg painted via inline style.
-   Placeholder path: .for-stage[data-mode=...] gets a gradient + emoji covers.
-   [STUB] Cover-overlay PNGs (alpha-masked) layer above target sprites once authored. */
+   .for-stage[data-art="1"] gets its bg jpg painted via inline style. */
 .for-scene{
   position:relative;width:100%;height:100%;background:#000;overflow:hidden;
   /* Hand cursor across the whole playspace — matches the harvest-action
@@ -404,14 +402,6 @@
   position:absolute;inset:0;
   background-size:cover;background-position:center;background-repeat:no-repeat;
 }
-/* Placeholder gradient backdrop when no real bg art is available */
-.for-stage[data-art="0"][data-mode="HUNT"]    {background:linear-gradient(180deg,#2a1f18 0%,#1a1410 70%,#0e0a08 100%);}
-.for-stage[data-art="0"][data-mode="GATHER"]  {background:linear-gradient(180deg,#243024 0%,#181f18 70%,#0c130c 100%);}
-.for-stage[data-art="0"][data-mode="SCAVENGE"]{background:linear-gradient(180deg,#1a1820 0%,#100e16 70%,#08070c 100%);}
-.for-stage[data-art="0"]::after{content:'';position:absolute;inset:0;pointer-events:none}
-.for-stage[data-art="0"][data-mode="HUNT"]::after    {background:radial-gradient(circle at 20% 95%,rgba(200,120,60,.12),transparent 45%),radial-gradient(circle at 80% 90%,rgba(180,100,50,.08),transparent 50%);}
-.for-stage[data-art="0"][data-mode="GATHER"]::after  {background:radial-gradient(circle at 30% 90%,rgba(140,200,144,.12),transparent 50%),radial-gradient(circle at 70% 95%,rgba(200,168,90,.06),transparent 50%);}
-.for-stage[data-art="0"][data-mode="SCAVENGE"]::after{background:repeating-linear-gradient(0deg,transparent 0,transparent 14px,rgba(200,168,90,.05) 14px,rgba(200,168,90,.05) 15px);}
 /* Subtle vignette over real art so HUD overlays read against bright bg areas */
 .for-stage[data-art="1"]::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.35) 100%)}
 
@@ -427,23 +417,6 @@
 /* A box holding a live target rises above the HUD strips, so a target
    spawning under DEPART is clickable instead of ending the run. */
 .for-anchor:has(.for-target.fauna:not(.retreating)), .for-anchor:has(.for-target.flora){z-index:11}
-.for-cover{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:34px;z-index:2;pointer-events:none;
-  filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));
-}
-/* Hide placeholder covers when real bg art is loaded — the bg painting has
-   the cover baked in, and the target sprite emerges visually at that spot. */
-.for-stage[data-art="1"] .for-cover{display:none}
-/* SCAVENGE placeholder cover = vent grate (CSS, no emoji), only when no bg art */
-.for-stage[data-art="0"][data-mode="SCAVENGE"] .for-cover{font-size:0}
-.for-stage[data-art="0"][data-mode="SCAVENGE"] .for-cover::before{
-  content:'';position:absolute;inset:4px;border-radius:2px;
-  background:linear-gradient(180deg,#3a4050,#141820);
-  border:1px solid #4a5060;
-  box-shadow:inset 0 0 6px rgba(0,0,0,.7),0 1px 2px rgba(0,0,0,.6);
-  background-image:repeating-linear-gradient(90deg,transparent 0,transparent 3px,rgba(0,0,0,.5) 3px,rgba(0,0,0,.5) 5px);
-}
 
 .for-target{
   /* Outer wrapper: position + animations (translate, scale ripen/spoil).
@@ -644,7 +617,6 @@
   to  {transform:translate(-50%,-32px);opacity:0}
 }
 
-.for-anchor:hover .for-cover{filter:drop-shadow(0 0 6px var(--teal)) drop-shadow(0 2px 3px rgba(0,0,0,.7))}
 
 /* Result-panel haul/sickness summary (used by forage; future games can reuse) */
 .rhaul{

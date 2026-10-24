@@ -92,7 +92,7 @@ function shuffle(arr) {
   return arr;
 }
 
-/* Placement-rule guards (GAME_BIBLE §9 / map_rules.json placement_rules):
+/* Placement-rule guards (GAME_BIBLE §9):
    no two identical node_type in a row, void only after node 5, anomaly
    not in the first two legs. `nextForced` excludes whatever type the
    FOLLOWING node is already locked to (only the final spine node is

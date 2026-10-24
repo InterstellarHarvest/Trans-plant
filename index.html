@@ -290,27 +290,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
   white-space: pre-wrap;
 }
 
-/* ── Map screen ─────────────────────────────────────────────────── */
-#screen-map { background: radial-gradient(ellipse at center, #1a2240 0%, #050810 70%, #020408 100%); }
-#map-header {
-  position: absolute; left: 14px; top: 14px;
-  font-family: 'Press Start 2P', cursive; line-height: 1;
-  font-size: 12px; letter-spacing: 2px; color: var(--gold);
-}
-#map-header .sub {
-  font-family: 'VT323', monospace;
-  font-size: 14px; letter-spacing: 1px; color: var(--body);
-  text-transform: none;
-  margin-top: 6px;
-}
-#map-viewport {
-  position: absolute;
-  left: 40px; right: 40px;
-  top: 100px; bottom: 110px;
-}
-#map-connections { position: absolute; inset: 0; pointer-events: none; }
-#map-nodes { position: absolute; inset: 0; }
-
+/* ── Map nodes (the MAP overlay's route view) ───────────────────── */
 .map-node {
   position: absolute;
   width: var(--node-size); height: var(--node-size);
@@ -362,23 +342,8 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
 }
 .map-node.locked .map-node-label { color: var(--body); opacity: 0.5; }
 /* Alternate branch-node labels above the shape so 2-node branches
-   never overlap each other's text (see renderMap's branch handling). */
+   never overlap each other's text (see renderMapOverlay's branch handling). */
 .map-node.label-above .map-node-label { top: auto; bottom: calc(100% + 6px); }
-
-#map-footer {
-  position: absolute; left: 14px; right: 14px; bottom: 14px;
-  display: flex; align-items: center; justify-content: space-between;
-  font-family: 'VT323', monospace;
-  font-size: 16px;
-  color: var(--cream);
-  letter-spacing: 1px;
-  background: rgba(8,12,18,0.78);
-  border: 1px solid rgba(95,168,208,0.25);
-  padding: 10px 14px;
-  border-radius: 3px;
-}
-#map-footer .info { color: var(--body); font-size: 14px; }
-#map-footer .info b { color: var(--gold); font-weight: normal; }
 
 /* ── MAP overlay (read-only route view over screen-cruise) ──────── */
 #overlay-map {
@@ -399,7 +364,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
 #ovmap-viewport { position: absolute; left: 40px; right: 40px; top: 100px; bottom: 70px; }
 #ovmap-connections { position: absolute; inset: 0; pointer-events: none; }
 #ovmap-nodes { position: absolute; inset: 0; }
-/* A scanned stop's tag (renderMap): what SCAN read there. */
+/* A scanned stop's tag (renderMapOverlay): what SCAN read there. */
 .map-scanned { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); white-space: nowrap;
   font-family: 'Press Start 2P', cursive; font-size: 6px; letter-spacing: 1px; padding: 2px 4px; border-radius: 2px;
   color: #0e1320; background: #8cc890; pointer-events: none; }
@@ -877,20 +842,6 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
           <button class="panel-btn accent-gold stop-btn" id="stop-btn">Stop</button>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- MAP -->
-  <div id="screen-map" class="screen">
-    <div id="map-header"></div>
-    <div class="hud" id="hud-map"></div>
-    <div id="map-viewport">
-      <svg id="map-connections"></svg>
-      <div id="map-nodes"></div>
-    </div>
-    <div id="map-footer">
-      <div class="info" id="map-info"></div>
-      <button class="btn accent-gold" id="btn-advance">Advance →</button>
     </div>
   </div>
 
@@ -4179,8 +4130,8 @@ function setWaterSplit(pct) {
   return pct;
 }
 
-/* Crop water need — growbay's CROP_META is the authority (window.cropMetaOf
-   export); CROP_WATER_NEED_DEFAULT when no crop/meta. */
+/* Crop water need — crops.json water_need, read through growbay's
+   cropMetaOf; CROP_WATER_NEED_DEFAULT when no crop/meta. */
 const PURIFIER_CROP_WATER_MULT = 0.9; // items.json water_purifier (prose): "crop water consumption reduced 10%"
 /* The crop's water need before any saving: the crew's need is its
    complement, so a botanist or purifier frees water for the crew

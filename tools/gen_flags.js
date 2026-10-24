@@ -115,7 +115,6 @@ function scan() {
         add(setBy, o ? o.sets_flag : ch.sets_flag, setter);
         add(setBy, ch.setFlag, setter); // open_market choices
         add(checkedBy, ch.requires_flag, ev.id);
-        add(checkedBy, ch.showFlag, ev.id);
         add(checkedBy, ch.hideFlag, ev.id); // choice hidden once the flag is set
         add(checkedBy, ch.gate && ch.gate.flag, ev.id);
       }

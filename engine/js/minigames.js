@@ -759,11 +759,8 @@ function makeTimer(barId, totalMs, onTick, onDone, colors){
 // stays a legitimate challenge without feeling unfair. 'easy' is a
 // real relaxation — Lunar should feel welcoming, not punishing.
 //
-// When the engine layer lands, the active trail's
-// `microgame_difficulty_modifier` tag resolves to one of these three
-// keys and `initScan(...)` gets that difficulty automatically. Until
-// then, the scan demo's ready screen lets the player pick directly
-// (3-button picker, see showReady() in the modal section above).
+// initScan plays an event's authored difficulty, else the trail's
+// (SCAN_TRAIL_DIFFICULTY below).
 //
 // Knob effects, low → high (each row): Easy / Medium / Hard
 //   speed       — blip drift speed in px per frame
@@ -1920,7 +1917,6 @@ function initForage(container, onResult, ctx){
       const sy = Math.round(cy * SCALE - 28);
       html += `<div class="for-anchor" id="fa${i}" style="left:${sx}px;top:${sy}px">
         <div class="for-target" id="ft${i}"><div class="for-target-img" id="ti${i}"></div></div>
-        <div class="for-cover"></div>
       </div>`;
       slotState[i] = 'idle';
     });

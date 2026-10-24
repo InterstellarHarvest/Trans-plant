@@ -174,7 +174,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     injuredPool: Object.values(EVENTS).filter(e => (e.trigger || []).some(t => t === 'crew_injured' || t === 'crewmate_injured')).length,
     crisisPool: Object.values(EVENTS).filter(e => (e.trigger || []).includes('delayed_crisis')).length,
   }));
-  ok(content.planet === 'injury' && content.anomaly1 === null, 'planet_002 injury kept; anomaly_001 "trivial" removed');
+  ok(content.planet === 'injury' && content.anomaly1 == null, 'planet_002 injury kept; anomaly_001 "trivial" removed');
   ok(content.injuredPool >= 3 && content.crisisPool >= 2, `crew_injured pool ${content.injuredPool} (3+), delayed_crisis pool ${content.crisisPool} (2+)`);
 
   ok(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.join(' | ') : ''));

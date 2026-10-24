@@ -142,13 +142,7 @@
         <span class="enc-ai-name" id="er-ai-name">ARIA</span>
         <span class="enc-ai-text" id="er-ai-text"></span>
       </div>
-      <div class="enc-resources" id="er-resources">
-        <div class="enc-res fuel"><span class="dot"></span><span id="er-res-fuel">–</span></div>
-        <div class="enc-res food"><span class="dot"></span><span id="er-res-food">–</span></div>
-        <div class="enc-res o2"  ><span class="dot"></span><span id="er-res-o2">–</span></div>
-        <div class="enc-res hull"><span class="dot"></span><span id="er-res-hull">–</span></div>
-        <div class="enc-res mor" ><span class="dot"></span><span id="er-res-mor">–</span></div>
-      </div>
+      <div class="enc-resources" id="er-resources"></div>
       ${hotspot('breaker', 'POWER RELAY', 'TRIPPED')}
       ${hotspot('switches', 'IGNITION ARRAY', 'MISCONFIG')}
       ${hotspot('valve', 'COOLANT VALVE', 'OVERPRESSURE')}

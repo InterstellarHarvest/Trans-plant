@@ -639,14 +639,14 @@ function trailCoverage() {
     ...fs.readdirSync(path.join(ROOT, 'engine/js/minigames')).map(f => 'engine/js/minigames/' + f)]
     .map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
   const AIS = ['aria', 'marv', 'rex', 'chip', 'ajoy'];
-  // Event-level setters and the other flag readers (showFlag / hideFlag /
-  // gate.flag) — not tracked by the main pass above.
+  // Event-level setters and the other flag readers (hideFlag / gate.flag)
+  // — not tracked by the main pass above.
   const sets = new Set(setsFlags), reads = new Set(requiresFlags);
   for (const { event } of eventsById.values()) {
     if (event.sets_flag) sets.add(event.sets_flag);
     (function walk(o) {
       if (!o || typeof o !== 'object') return;
-      for (const k of ['showFlag', 'hideFlag', 'requires_flag']) if (typeof o[k] === 'string') reads.add(o[k]);
+      for (const k of ['hideFlag', 'requires_flag']) if (typeof o[k] === 'string') reads.add(o[k]);
       if (o.gate && o.gate.flag) reads.add(o.gate.flag);
       if (typeof o.setFlag === 'string') sets.add(o.setFlag);
       if (typeof o.sets_flag === 'string') sets.add(o.sets_flag);
@@ -834,9 +834,9 @@ const eventOnTrail = (ev, trail) => {
 // ── Station approach (added 2026-10-11, owner ruling — engine/js/station.js) ──
 // leave_next names a layer of the event; leave_sub is a one-line string;
 // waves_off is boolean (closes the stop's services); choice.station is one
-// of the station.js actions; station_room names a room the approach
-// defines; exactly one station_approach event, engine-forced (trigger
-// station_arrival) with its room table, fee pool and captain.
+// of the station.js actions; exactly one station_approach event,
+// engine-forced (trigger station_arrival) with its room table, fee pool
+// and captain.
 {
   const ACTIONS = new Set(['hail', 'dock', 'room', 'to_dock']);
   const approaches = [...eventsById.values()].filter(x => x.event.station_approach);
@@ -857,7 +857,6 @@ const eventOnTrail = (ev, trail) => {
   for (const { file, event: ev } of eventsById.values()) {
     const at = `${file} ${ev.id}`;
     if ((ev.trigger || []).includes('station_arrival') && !ev.station_approach) err(`${at}: trigger station_arrival is the approach's alone`);
-    if (ev.station_room != null && !roomKeys.has(ev.station_room)) err(`${at}: station_room "${ev.station_room}" is not a room the approach defines`);
     if (ev.leave_sub != null && typeof ev.leave_sub !== 'string') err(`${at}: leave_sub must be a string`);
     for (const [lk, l] of Object.entries(ev.layers || {})) {
       if (l.leave_next != null && !(ev.layers || {})[l.leave_next]) err(`${at}/${lk}: leave_next "${l.leave_next}" is not a layer of this event`);
@@ -874,10 +873,24 @@ const eventOnTrail = (ev, trail) => {
   }
 }
 
+// Fields the engine no longer reads: authoring one does nothing, so it's an
+// error rather than silent dead data.
+{
+  const GONE_EVENT = ['event_presentation', 'test_path', 'test_path_position', 'combat_encounter', 'no_leave', 'station_room'];
+  const GONE_CHOICE = ['scenario', 'showFlag', 'effort_cost'];
+  for (const { file, event: ev } of eventsById.values()) {
+    for (const k of GONE_EVENT) if (k in ev) err(`${file} ${ev.id}: "${k}" is not read by the engine — remove it`);
+    for (const { layer, choices } of choiceSetsOf(ev)) {
+      for (const ch of choices) for (const k of GONE_CHOICE) if (k in ch) err(`${atOf(file, ev.id, layer)}: choice "${ch.text || ch.label}" has "${k}", which the engine does not read`);
+    }
+  }
+  for (const it of readJSON('modules/items/items.json').filter(i => !i._section)) if ('item_location_condition' in it) err(`items.json ${it.id}: "item_location_condition" is not read by the engine — remove it`);
+}
+
 // ── Encounter presentation fields (added 2026-10-11) ───────────────
 // The leave row (index.html renderLeaveRow; Bible §18 leaveLabel /
-// leaveDisabled): every layered event names its leave row (`leave_label`)
-// unless `no_leave` hides it; a forced event (`leave_disabled`, layered or
+// leaveDisabled): every layered event names its leave row (`leave_label`);
+// a forced event (`leave_disabled`, layered or
 // flat) shows it locked and must say why ("CAN'T LEAVE (…)"); a flat
 // event has no free leave row, so a label there without leave_disabled
 // would never show. Layers may rename it (`leave_label`) or hide it
@@ -894,9 +907,8 @@ const eventOnTrail = (ev, trail) => {
     if (ev.timed != null && typeof ev.timed !== 'boolean') err(`${at}: timed must be true/false`);
     if (ev.leave_disabled) {
       if (!/^CAN'T LEAVE \(.+\)$/.test(ev.leave_label || '')) err(`${at}: leave_disabled needs leave_label "CAN'T LEAVE (<why>)" — the locked row has to say why`);
-      if (ev.no_leave) err(`${at}: leave_disabled and no_leave together — the row is either locked or hidden`);
     } else if (ev.layers) {
-      if (!ev.no_leave && ev.active !== false && !ev.leave_label) err(`${at}: layered event has no leave_label (its leave row would read "LEAVE") — name it, or no_leave: true`);
+      if (ev.active !== false && !ev.leave_label) err(`${at}: layered event has no leave_label (its leave row would read "LEAVE") — name it`);
     } else if (ev.leave_label != null) {
       err(`${at}: flat event with leave_label but no leave_disabled — flat events have no leave row, the label never shows`);
     }
@@ -906,7 +918,7 @@ const eventOnTrail = (ev, trail) => {
       const la = ev.leave_as;
       if (typeof la !== 'object' || Array.isArray(la)) err(`${at}: leave_as must be a choice-shaped object`);
       else {
-        if (ev.no_leave || ev.leave_disabled) err(`${at}: leave_as on an event whose leave row is ${ev.no_leave ? 'hidden' : 'locked'} — it never runs`);
+        if (ev.leave_disabled) err(`${at}: leave_as on an event whose leave row is locked — it never runs`);
         if (!ev.layers) err(`${at}: leave_as on a flat event — flat events have no leave row`);
         if (!(la.triggerFleeResolve || la.triggerRamResolve || la.triggerCombat || la.outcome)) err(`${at}: leave_as does nothing (no outcome / flee / ram / combat)`);
         if (la.outcome != null && !(ev.outcomes || {})[la.outcome]) err(`${at}: leave_as.outcome "${la.outcome}" is not an outcome of this event`);
@@ -919,7 +931,7 @@ const eventOnTrail = (ev, trail) => {
     for (const [lk, l] of Object.entries(ev.layers || {})) {
       const lat = at + '/' + lk;
       if (l.leave_label != null && !isLabel(l.leave_label)) err(`${lat}: leave_label must be a non-empty UPPERCASE string`);
-      if (l.leave_label != null && (ev.no_leave || ev.leave_disabled)) err(`${lat}: layer leave_label on an event whose leave row is ${ev.no_leave ? 'hidden' : 'locked'} — it never shows`);
+      if (l.leave_label != null && ev.leave_disabled) err(`${lat}: layer leave_label on an event whose leave row is locked — it never shows`);
       if (l.leaveHidden != null && typeof l.leaveHidden !== 'boolean') err(`${lat}: leaveHidden must be true/false`);
       if (l.timed != null && typeof l.timed !== 'boolean') err(`${lat}: timed must be true/false`);
       if (l.pose != null && !POSES.has(l.pose)) err(`${lat}: pose "${l.pose}" is not styled (${[...POSES].join('/')})`);
@@ -1106,13 +1118,13 @@ const hardChoiceCost = (() => {
         if (c !== null && !(c > 0)) err(`${atOf(file, ev.id, layer)}: ${tier} event option "${ch.text || ch.label}" costs nothing — ruling 60: every option of a hard event costs time (past low), fuel, hull, morale, supplies or a risk to someone`);
       }
     }
-    if (ev.layers && !ev.no_leave && !ev.leave_disabled && !Object.values(ev.layers).every(l => l.leaveHidden)) {
+    if (ev.layers && !ev.leave_disabled && !Object.values(ev.layers).every(l => l.leaveHidden)) {
       const c = ev.leave_as ? hardChoiceCost(ev, ev.leave_as) : 0;
       if (!(c > 0)) err(`${file} ${ev.id}: ${tier} event's leave row ("${ev.leave_label || 'LEAVE'}") is a free exit — give it a costed leave_as, or lock it (leave_disabled) (ruling 60)`);
     }
     const nts = ev.node_type || [];
     const n = ev.npc;
-    const room = ev.layers && (ev.station_room || ((ev.comm_mode || 'in_person') === 'in_person' && n && (n.disposition === 'station_crew' || n.disposition === 'trader')));
+    const room = ev.layers && (ev.comm_mode || 'in_person') === 'in_person' && n && (n.disposition === 'station_crew' || n.disposition === 'trader');
     if (nts.includes('station') && room) err(`${file} ${ev.id}: ${tier} station event is a dock room — the player can skip it free; make it play as the docking (flat, or comm_mode screen) (ruling 60)`);
   }
 }
@@ -1522,8 +1534,7 @@ const hardChoiceCost = (() => {
     }
   };
   walk(path.join(SPR, 'backgrounds'), f => check(f, false));
-  // NPC art the engine loads: <disposition>/[<job>/]<species>/<N>/spritesheet.png
-  // (the loose source images at the npc/ root are never referenced).
+  // NPC art the engine loads: <disposition>/[<job>/]<species>/<N>/spritesheet.png.
   walk(path.join(SPR, 'npc'), f => { if (path.dirname(f) !== path.join(SPR, 'npc') && path.basename(f) === 'spritesheet.png') check(f, true); });
 }
 

@@ -183,7 +183,7 @@ const pickRecipe = (page, name) => page.evaluate(n => { const r = [...document.q
     await page.close();
   }
 
-  console.log('— ruling 27: misfire at the end; the deadline lock still holds');
+  console.log('— ruling 27: misfire at the end; past the deadline a job runs on (ruling 94)');
   {
     const page = await boot();
     const r = await page.evaluate(async () => {
@@ -201,7 +201,8 @@ const pickRecipe = (page, name) => page.evaluate(n => { const r = [...document.q
       return { early, late: fabNoticeText(), owed: STATE.fabricator.owedOutput, days: STATE.daysElapsed - d0 };
     });
     ok(!/MISFIRE/.test(r.early) && /MISFIRE/.test(r.late) && !r.owed && r.days === 1, `the misfire is rolled when the print finishes, after its day (${r.days}d): "${r.late.slice(0, 50)}"`);
-    // A held job that no longer fits the deadline waits instead of ending the run.
+    // Ruling 94: past the deadline nothing ends the run — a held job that
+    // no longer fits the deadline runs on to the end, days and all.
     const h = await page.evaluate(async () => {
       const w = ms => new Promise(r => setTimeout(r, ms));
       closeFabricator(); window.fabSetDayMs(60);
@@ -209,13 +210,14 @@ const pickRecipe = (page, name) => page.evaluate(n => { const r = [...document.q
       [...document.querySelectorAll('.fb-recipe-row')].find(x => /Repair Kit/.test(x.textContent)).click();
       craftSelected(); closeFabricator();
       const base = STATE.baseDays; STATE.baseDays = STATE.daysElapsed; // the voyage clock ran out meanwhile
+      if (STATE.cropGrowth) STATE.cropGrowth.lastTickDay = STATE.daysElapsed;
       openFabricator(); const d = STATE.daysElapsed;
-      await w(400);
-      const out = { d, d2: STATE.daysElapsed, ended: STATE.ended, strip: document.getElementById('fb-progress-days').textContent, held: window.fabCraftState().held };
+      for (let i = 0; i < 100 && window.fabCraftState(); i++) await w(20);
+      const out = { d, d2: STATE.daysElapsed, ended: STATE.ended, busy: !!window.fabCraftState() };
       STATE.baseDays = base;
       return out;
     });
-    ok(h.d2 === h.d && !h.ended && h.held === 'PAST DEADLINE' && /PAST DEADLINE/.test(h.strip), `a job that would run past the deadline holds — no day, no failure ("${h.strip}")`);
+    ok(h.d2 > h.d && !h.ended && !h.busy, `a job past the deadline runs on and finishes — ${h.d2 - h.d} day(s), no failure`);
     await page.close();
   }
 
