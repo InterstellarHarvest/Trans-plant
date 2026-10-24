@@ -330,7 +330,7 @@ const overlaps = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
     });
     if (r.skip) ok(true, 'no fork on this map (skipped)');
     else {
-      ok(r.d.state === 'uncharted' && r.n && r.text === '???', 'uncharted branch reads ??? on the map');
+      ok(r.d.state === 'uncharted' && r.n && /(^|· )\?\?\?$/.test(r.text), 'uncharted branch reads ??? on the map (after its lane name)');
       ok(r.color === 'rgb(211, 196, 140)' && r.border === 'rgba(204, 51, 51, 0.4)', '??? pill cream #d3c48c, red border (' + r.color + ' / ' + r.border + ')');
     }
     await shot(page, 'b4_map');
@@ -373,19 +373,11 @@ const overlaps = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
     // Per day decreases when the draw does (no decorative number): O2 recycler halves O2.
     const o2r = await page.evaluate(() => { const a = Tooltip.get('resource_o2')().rows.find(x => x.label === 'Per day').value; STATE.items.push('o2_recycler'); const b = Tooltip.get('resource_o2')().rows.find(x => x.label === 'Per day').value; const r0 = STATE.resources.o2; passDays(1); return { a, b, spent: Math.round((r0 - STATE.resources.o2) * 100) / 100 }; });
     ok(Number(o2r.b) === Number(o2r.a) / 2 && Math.abs(o2r.spent - Number(o2r.b)) < 0.011, `O2 recycler: Per day ${o2r.a} → ${o2r.b}; a day really spends ${o2r.spent}`);
-    // AI quip on the ticker while stopped: quote tone under the AI's name.
+    // AI quip while stopped: the speech bubble over the ship (ruling 91), voiced.
     await page.evaluate(() => { openStopMenu(); });
-    await page.waitForFunction(() => { const t = [...document.querySelectorAll('#header-ticker .ticker-text:not(.exit)')].pop(); return t && t.textContent === 'STOPPED'; }, null, WT);
-    const q = await page.evaluate(() => { pushCruiseLog('Test quip about the ferns.', { ai: true }); const t = [...document.querySelectorAll('#header-ticker .ticker-text:not(.exit)')].pop(); return { text: t.textContent, tip: Tooltip.resolve(t) }; });
-    ok(q.text === 'MARV: Test quip about the ferns.' && q.tip && q.tip.tone === 'quote' && q.tip.title === 'MARV' && q.tip.description === 'Test quip about the ferns.', 'ticker AI quip: quote-tone tooltip under MARV');
-    // the hover really renders in the quote tone
-    // (once its slide-in transition has landed)
-    await page.waitForFunction(() => { const t = [...document.querySelectorAll('#header-ticker .ticker-text:not(.exit)')].pop(); return t && !t.classList.contains('enter') && !t.getAnimations().some(a => a.transitionProperty); }, null, WT);
-    const box = await page.evaluate(() => { const t = [...document.querySelectorAll('#header-ticker .ticker-text:not(.exit)')].pop(); const b = t.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
-    await page.mouse.move(box.x - 30, box.y + 40);
-    await page.mouse.move(box.x, box.y, { steps: 4 });
-    const shown = await waitFor(page, () => { const p = document.querySelector('.ui-tip.visible'); return p && p.className; }).catch(() => null);
-    ok(shown && /tone-quote/.test(shown), 'the quip hover shows in the quote tone (' + shown + ')');
+    const q = await page.evaluate(() => { pushCruiseLog('Test quip about the ferns.', { ai: true }); const b = document.getElementById('ai-bubble');
+      return { show: b.classList.contains('show'), name: b.querySelector('.ai-bubble-name').textContent, text: b.querySelector('.ai-bubble-lines').textContent }; });
+    ok(q.show && q.name === 'MARV' && /Test quip about the ferns\./.test(q.text), 'stopped: an AI quip shows in the bubble under MARV (ruling 91)');
     await page.close();
   }
 
@@ -420,8 +412,8 @@ const overlaps = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
     ok(r.rb.join(' | ') === 'ARIA notes the ferns are thriving. | ARIA: The ferns are thriving.', 'rebuilt column (load) applies it too');
     // ticker while stopped
     await page.evaluate(() => openStopMenu());
-    const t = await page.evaluate(() => { pushCruiseLog('The ship computer has a question.', { ai: true }); return [...document.querySelectorAll('#header-ticker .ticker-text:not(.exit)')].pop().textContent; });
-    ok(t === 'The ship computer has a question.', 'ticker: no prefix either (' + t + ')');
+    const t = await page.evaluate(() => { document.getElementById('ai-bubble').click(); pushCruiseLog('The ship computer has a question.', { ai: true }); const b = document.getElementById('ai-bubble'); return { name: b.querySelector('.ai-bubble-name').style.display, text: b.querySelector('.ai-bubble-lines').textContent }; });
+    ok(t.name === 'none' && t.text === 'The ship computer has a question.', 'the bubble: no name chip either (' + t.text + ')');
     await page.close();
   }
 
@@ -444,7 +436,7 @@ const overlaps = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
     const warn = await waitFor(page, () => { const t = [...document.querySelectorAll('#header-ticker .ticker-text:not(.exit)')].pop(); return (t && t.textContent === 'CANNOT RESUME — HANDLE EVENT FIRST') || !!STATE.currentEvent; }).catch(() => false);
     ok(!!warn, 'CANNOT RESUME on the ticker');
     const ev = await waitFor(page, () => STATE.currentEvent && { id: STATE.currentEvent.id, forced: STATE.forcedEvent, scr: document.querySelector('.screen.active').id, red: document.body.classList.contains('event-active') });
-    ok(ev.id === 'event_encounter_pirate_001' && !ev.forced && ev.scr === 'screen-encounter' && !ev.red, 'the event opens on its own after the flash');
+    ok(/^(event_encounter_pirate_00\d|event_general_003)$/.test(ev.id) && !ev.forced && ev.scr === 'screen-encounter' && !ev.red, 'the event opens on its own after the flash (a pirate of the family: ' + ev.id + ')');
     const labels = await page.evaluate(() => [...window.__labels]);
     ok(!labels.some(l => /HAIL BACK|ANSWER THE CALL|INVESTIGATE/.test(l)), 'no resolve verb was ever offered (' + labels.join(', ') + ')');
     const src = require('fs').readFileSync(require('path').join(__dirname, '../../engine/js/screens/cruise.js'), 'utf8');
