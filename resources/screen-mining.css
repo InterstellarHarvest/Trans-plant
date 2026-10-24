@@ -22,8 +22,6 @@
   --void: #020408;
   --body: #8898a8;
 
-  --bg-empty: #020408;
-
   /* Narrative */
   --narr-height: 110px;
   --narr-bg: rgba(8,12,18,0.82);
@@ -34,12 +32,9 @@
   --ai-border: rgba(200,168,90,0.25);
   --ai-name-color: #c8a85a;
   --ai-text-color: #aab5c4;
-  --res-size: 13px;
   --ai-size: 14px;
 
   /* Resource HUD */
-  --res-bg: rgba(8,12,18,0.7);
-  --res-border: rgba(95,168,208,0.2);
   --res-fuel:  #e88830;
   --res-food:  #8cc890;
   --res-o2:    #b8e6ee;
@@ -65,8 +60,6 @@
   --sub-size: 12px;
 }
 
-
-}
 /* No #crt-overlay rule here: the old unscoped copy of the
    demo's (z-index 100) restyled the game-wide #crt-overlay from this
    file. The one in index.html already lays the demo-mining scanlines
@@ -74,10 +67,6 @@
    everything else. */
 
 /* ── Encounter shell (subset; subject machinery removed) ──────── */
-#mining-root {
-  position: absolute; inset: 0; z-index: 10;
-  background-color: var(--bg-empty);
-}
 /* Layered backdrop stack (back→front), matches encounter/combat:
      - .enc-backdrop-base   z=0, deep-space behind any transparency
      - .enc-backdrop        z=2, primary scene (bridge.png with viewport cutout)
@@ -106,37 +95,6 @@
   background: radial-gradient(ellipse at center,
     transparent 45%, rgba(0,0,0,0.55) 100%);
 }
-
-/* Resource HUD */
-#mining-root .enc-resources {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  display: flex;
-  gap: 6px;
-  padding: 6px 10px;
-  background: var(--res-bg);
-  border: 1px solid var(--res-border);
-  border-radius: 3px;
-  font-family: 'VT323', monospace;
-  font-size: var(--res-size);
-  letter-spacing: 0.5px;
-  z-index: 12;
-}
-#mining-root .enc-res {
-  display: flex; align-items: center; gap: 4px;
-  color: var(--cream);
-}
-#mining-root .enc-res .dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--r-color);
-  box-shadow: 0 0 4px var(--r-color);
-}
-#mining-root .enc-res.fuel { --r-color: var(--res-fuel); }
-#mining-root .enc-res.food { --r-color: var(--res-food); }
-#mining-root .enc-res.o2   { --r-color: var(--res-o2); }
-#mining-root .enc-res.hull { --r-color: var(--res-hull); }
-#mining-root .enc-res.mor  { --r-color: var(--res-mor); }
 
 /* AI bar */
 #mining-root .enc-ai-bar {
@@ -176,7 +134,6 @@
   white-space: nowrap;
   transition: opacity 0.25s;
 }
-#mining-root .enc-ai-text.fading { opacity: 0; }
 /* The bar already stops at right: 200px, short of the five-dot HUD
    (ruling 16, x ≥ 760) — the old extra 200px padding-right squeezed the
    chips into a dead strip and hid MINING MODE. Demo layout (demo-mining

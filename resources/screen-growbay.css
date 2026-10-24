@@ -832,10 +832,6 @@ body:not(.modal-open) #gb-modal {
   border-color: var(--pb-lo) var(--pb-hi) var(--pb-hi) var(--pb-lo);
   transform: translate(1px, 1px);
 }
-#overlay-growbay .panel-btn.accent-gold {
-  border-color: var(--pb-gold-hi) var(--pb-gold-lo) var(--pb-gold-lo) var(--pb-gold-hi);
-  color: var(--pb-gold-hi);
-}
 #overlay-growbay .panel-btn.harvest {
   border-color: var(--pb-green-hi) var(--pb-green-lo) var(--pb-green-lo) var(--pb-green-hi);
   color: #c8f0a0;
@@ -896,62 +892,13 @@ body:not(.modal-open) #gb-modal {
 }
 
 /* ═════ Inspect sub-view ═══════════════════════════════════════
-   Two presentation modes (selectable from dev panel):
-     swap  — replaces .gb-body inside the same modal frame
-     popup — smaller dialog floating over the modal
-   Both render the SAME content via renderInspectInto(). */
+   Replaces .gb-body inside the same modal frame; renderInspectInto()
+   fills it. */
 .ins-swap-wrap { display: none; flex: 1; min-height: 0; padding: 10px 16px 8px; overflow-y: auto; }
-body.ins-mode-swap.ins-open #gb-modal .gb-body { display: none; }
-body.ins-mode-swap.ins-open #gb-modal .ins-swap-wrap { display: block; }
+body.ins-open #gb-modal .gb-body { display: none; }
+body.ins-open #gb-modal .ins-swap-wrap { display: block; }
 
-.ins-popup-backdrop {
-  position: absolute; inset: 0; z-index: 30;
-  background: rgba(4,8,16,0.55);
-  display: none;
-  cursor: var(--cursor-hand, pointer);
-}
-.ins-popup {
-  position: absolute;
-  left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  width: 600px; max-width: calc(100% - 40px);
-  height: 440px; max-height: calc(100% - 40px);
-  z-index: 31;
-  background: linear-gradient(180deg, var(--modal-bg-top) 0%, var(--modal-bg-bot) 100%);
-  border: 3px solid var(--modal-border);
-  border-radius: 6px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.85);
-  display: none;
-  flex-direction: column;
-  overflow: hidden;
-}
-body.ins-mode-popup.ins-open .ins-popup-backdrop { display: block; }
-body.ins-mode-popup.ins-open .ins-popup { display: flex; }
-.ins-popup-header {
-  flex-shrink: 0; height: 36px; padding: 0 14px;
-  border-bottom: 2px solid rgba(86,207,215,0.25);
-  background: linear-gradient(180deg, rgba(20,28,40,0.7) 0%, rgba(14,20,32,0.7) 100%);
-  display: flex; align-items: center; gap: 12px;
-}
-.ins-popup-title {
-  font-family: 'Press Start 2P', cursive; line-height: 1;
-  font-size: 11px; letter-spacing: 2px;
-  color: var(--header-title-color);
-  flex: 1;
-}
-.ins-popup-close {
-  font-family: 'Press Start 2P', cursive; line-height: 1;
-  font-size: 9px; width: 22px; height: 22px;
-  border: 2px solid rgba(86,207,215,0.4);
-  background: rgba(14,20,32,0.6);
-  color: var(--header-title-color);
-  cursor: var(--cursor-hand, pointer);
-  display: flex; align-items: center; justify-content: center;
-}
-.ins-popup-close:hover { filter: brightness(1.25); border-color: var(--modal-border); }
-.ins-popup .ins-content { flex: 1; padding: 10px 12px; overflow-y: auto; }
-
-/* ‹ BACK affordance — appears in main header during swap mode. */
+/* ‹ BACK affordance — appears in the main header while Inspect is open. */
 .gb-back {
   display: none;
   font-family: 'Press Start 2P', cursive; line-height: 1;
@@ -964,7 +911,7 @@ body.ins-mode-popup.ins-open .ins-popup { display: flex; }
   flex-shrink: 0;
 }
 .gb-back:hover { filter: brightness(1.25); border-color: var(--modal-border); }
-body.ins-mode-swap.ins-open #gb-modal .gb-back { display: inline-flex; align-items: center; }
+body.ins-open #gb-modal .gb-back { display: inline-flex; align-items: center; }
 
 /* Shared content layout — two-column grid; ARIA spans full width. */
 .ins-content {
