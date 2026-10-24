@@ -89,11 +89,6 @@
     recipe_o2_canister:    { icon: '🫧', sprite: 'sprites/cargo/items/o2_canister.png' },
     recipe_fuel_cell:      { icon: '🔋', sprite: 'sprites/cargo/items/fuel_cell.png' },
   };
-  function prettyItemName(itemId) {
-    const real = (itemDef(itemId)) || (MOD.items || []).find(it => it.id === itemId || it.id === 'item_' + itemId);
-    if (real) return real.name;
-    return itemId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-  }
   // items.json gameplay_effect is player-facing text only (authoring
   // notes live in design_note) — shown as written.
   function outputEffectText(itemId) {
@@ -120,12 +115,12 @@
         id: raw.id.replace(/^recipe_/, ''),
         name: raw.name,
         inputs: raw.inputs.map(i => [i.material_id, i.count]),
-        output: { item: raw.output.item_id, name: prettyItemName(raw.output.item_id), count: raw.output.count, icon: pres.icon || '📦', sprite: pres.sprite || null },
+        output: { item: raw.output.item_id, name: itemNameOf(raw.output.item_id), count: raw.output.count, icon: pres.icon || '📦', sprite: pres.sprite || null },
         days: raw.craft_days,
         wear: raw.wear_cost,
         desc: raw.description,
         unlock,
-        unlock_note: raw.unlocked_by_default ? undefined : ('Requires ' + prettyItemName(raw.requires_item)),
+        unlock_note: raw.unlocked_by_default ? undefined : ('Requires ' + itemNameOf(raw.requires_item)),
       };
     });
   }
@@ -229,13 +224,12 @@
     return 'available';
   }
 
-  // The captain's own hands: the baseline, half while wounded — the same
-  // rule as every other hands-on job (index.html captainHandsEffort).
-  const captainHands = () => captainHandsEffort();
   // Aggregate total fab contribution — sum of crew + captain bg +
-  // captain's hands. Drives the total pill and the days reduction.
+  // captain's hands (captainHandsEffort: the baseline, half while wounded,
+  // as on every other hands-on job). Drives the total pill and the days
+  // reduction.
   function totalFabContribution() {
-    let total = captainHands();
+    let total = captainHandsEffort();
     for (const [id, on] of Object.entries(FSTATE.aboard)) {
       if (on) total += CREW[id].fab * on;
     }
@@ -341,7 +335,7 @@
       lines.push('  ' + c.name + ' (' + c.role + ')  ' + pct(c.fab));
       anyContributor = true;
     }
-    if (captainHands() < BASE_EFFORT) lines.push('  Captain · wounded  ' + Math.round((captainHands() - BASE_EFFORT) / BASE_EFFORT * 100) + '%');
+    if (captainHandsEffort() < BASE_EFFORT) lines.push('  Captain · wounded  ' + Math.round((captainHandsEffort() - BASE_EFFORT) / BASE_EFFORT * 100) + '%');
     else if (!anyContributor) lines.push('  (no crew assisting — solo)');
     lines.push('');
     const total = totalFabContribution();
@@ -565,7 +559,7 @@
       const need = r.unlock.slice(5);
       const d = itemDef(need);
       label = 'LOCKED · ' + (d && (d.item_behavior || []).includes('upgrade') ? 'NEEDS UPGRADE' : 'NEEDS PART');
-      why = 'Needs a ' + prettyItemName(need) + ' aboard.';
+      why = 'Needs a ' + itemNameOf(need) + ' aboard.';
     } else if (!fabFunctional() && !jobRuns()) {
       label = 'FAB BROKEN'; why = 'FAB SERVICE at a station fixes it.';
     } else if (!hasMaterials(r)) {
@@ -760,7 +754,7 @@
     return null;
   }
   function clockRunning() {
-    return !!FSTATE.craft && overlayOpen() && !STATE.ended && !(window.PauseBus && PauseBus.paused) && !heldReason();
+    return !!FSTATE.craft && overlayOpen() && !STATE.ended && !PauseBus.paused && !heldReason();
   }
   function startCraftClock(fresh) {
     stopCraftClock();
@@ -1103,7 +1097,7 @@
     const n = $('fb-notice');
     if (!n) return;
     n.className = 'fb-notice show tone-' + (tone || 'warn');
-    n.innerHTML = '<span class="fb-notice-title"></span><span class="fb-notice-text"></span>';
+    n.innerHTML = '<span class="fb-notice-title"></span><span></span>';
     n.firstChild.textContent = title;
     n.lastChild.textContent = text;
     clearTimeout(noticeTimer);

@@ -98,7 +98,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
             if (c !== null) rows.push({ ev: ev.id, layer, text: ch.text, cost: c });
           }
         }
-        if (ev.layers && !ev.no_leave && !ev.leave_disabled) {
+        if (ev.layers && !ev.leave_disabled) {
           __r60.setup(null, ev);
           rows.push({ ev: ev.id, layer: 'leave row', text: ev.leave_label, cost: ev.leave_as ? __r60.cost(ev, ev.leave_as) || [] : [] });
         }

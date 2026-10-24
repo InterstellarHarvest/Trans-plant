@@ -54,7 +54,7 @@
     const fight = COMBAT.fight;
     const run = () => {
       if (fight !== COMBAT.fight) return;
-      if (window.PauseBus && PauseBus.paused) return setTimeout(run, 150);
+      if (PauseBus.paused) return setTimeout(run, 150);
       fn();
     };
     return setTimeout(run, ms);
@@ -180,7 +180,7 @@
     crew: {},
     captainBg: '',
     player: { hull: 100, hullMax: 100, morale: 50 },
-    enemy: { hull: 50, hullMax: 50, alive: true, surrendered: false, surrenderOffered: false, hpMod: 1.0, dmgMod: 1.0 },
+    enemy: { hull: 50, hullMax: 50, alive: true, surrendered: false, surrenderOffered: false, dmgMod: 1.0 },
     ftlCharge: -1,
     hullPatchUsed: false,
     tributeUsed: false,
@@ -188,7 +188,6 @@
     evadingNextHit: false,
     identifiedByXeno: false,
     _firing: false,
-    _lastOutcome: null,
     _narrPrefix: null,
     _ftlTickTimer: null
   };
@@ -371,7 +370,7 @@
     }
     if (!opts.locked && opts.onClick) btn.addEventListener('click', opts.onClick);
     // An ending's tooltip: what it costs in full, its days included.
-    if (opts.tip && window.Tooltip) Tooltip.attach(btn, { description: opts.tip, tone: opts.tipTone });
+    if (opts.tip) Tooltip.attach(btn, { description: opts.tip, tone: opts.tipTone });
     return btn;
   }
 
@@ -511,7 +510,6 @@
      combat stays strictly turn-based per the Bible. */
   const WIN = { left: 160, top: 93, right: 800, bottom: 498 };
   const rand = (lo, hi) => lo + Math.random() * (hi - lo);
-  const pickOne = arr => arr[Math.floor(Math.random() * arr.length)];
 
   const FX = { beams: [], particles: [], sparks: [], mouseX: 480, mouseY: 320, mouseInside: false, running: false };
   function fxScreen() { return document.getElementById('screen-encounter'); }
@@ -553,7 +551,7 @@
       FX.particles.push({
         x: c.x + (Math.random() - 0.5) * 18, y: c.y + (Math.random() - 0.5) * 12,
         vx: Math.cos(angle) * speed * 0.014, vy: Math.sin(angle) * speed * 0.014 - rand(0.8, 2.2),
-        gravity: rand(0.05, 0.10), size: irand(3, 11), color: pickOne(colors),
+        gravity: rand(0.05, 0.10), size: irand(3, 11), color: pickRandom(colors),
         life: 0, ttl: rand(700, 1500),
       });
     }
@@ -563,7 +561,7 @@
         x: c.x, y: c.y,
         vx: Math.cos(angle) * speed * 0.012, vy: Math.sin(angle) * speed * 0.012 - rand(1.0, 2.0),
         gravity: rand(0.07, 0.12), size: irand(10, 18),
-        color: pickOne(['#aa6634', '#7a4020', '#9098a8', '#5a4030']),
+        color: pickRandom(['#aa6634', '#7a4020', '#9098a8', '#5a4030']),
         life: 0, ttl: rand(900, 1700),
       });
     }
@@ -600,7 +598,7 @@
           vy: (dy / norm) * speed,
           gravity: 0,
           size: irand(2, 5),
-          color: pickOne(colors),
+          color: pickRandom(colors),
           life: -wave * 160,
           ttl: rand(420, 680)
         });
@@ -682,7 +680,7 @@
     const fxCanvas = document.getElementById('combat-fx-canvas');
     const cursorCanvas = document.getElementById('combat-cursor-canvas');
     if (!fxCanvas || !cursorCanvas || !COMBAT.active && !FX.beams.length && !FX.particles.length && !FX.sparks.length) { FX.running = false; return; }
-    if (window.PauseBus && PauseBus.paused) { _fxLastTs = ts; requestAnimationFrame(combatFxLoop); return; }
+    if (PauseBus.paused) { _fxLastTs = ts; requestAnimationFrame(combatFxLoop); return; }
     const fxCtx = fxCanvas.getContext('2d');
     const cursorCtx = cursorCanvas.getContext('2d');
     const dt = Math.min(48, ts - (_fxLastTs || ts));
@@ -812,7 +810,7 @@
   // fallback; keyboard players press Enter, the fuzz harness clicks it.
   function fireAtCenter() {
     if (!COMBAT.active || COMBAT.state !== 'TARGETING') return;
-    if (window.PauseBus && PauseBus.paused) return;
+    if (PauseBus.paused) return;
     const ec = enemyShipCenter();
     resolveFire(ec.x + rand(-20, 20), ec.y + rand(-14, 14));
   }
@@ -1107,7 +1105,7 @@
         setNarrCombat('COMBAT LOG', pfx + combatLine('enemy_fires'), 'REX’s point-defense eats the shot. Hull untouched. Once.');
         setAiCombat('Point-defense engaged. That was the free one. Do not get comfortable.');
         COMBAT._narrPrefix = null;
-      } else if (typeof STATE !== 'undefined' && STATE.flags.has('emergency_patch_armed')) {
+      } else if (STATE.flags.has('emergency_patch_armed')) {
         // Emergency Patch (engineer active skill): one hull damage event
         // absorbed — in a fight, that's one landed hit.
         STATE.flags.delete('emergency_patch_armed');
@@ -1199,7 +1197,7 @@
     // red flash 150ms + shake on the viewport sprite, the same flinch on
     // the captain's head (scene_art subjectFX). Both self-clear, so the
     // ship's idle bob resumes once the shake has played.
-    if (window.SceneArt) SceneArt.subjectFX('hit');
+    SceneArt.subjectFX('hit');
     const sp = document.getElementById('enc-backdrop-sprite');
     sp.classList.add('combat-hit');
     setTimeout(() => sp.classList.remove('combat-hit'), 150);
@@ -1385,24 +1383,13 @@
     }
     return { pct, items, materials };
   }
-  function materialLabel(id) {
-    const m = ((MOD.materials && MOD.materials.materials) || []).find(x => x.id === id);
-    return (m && m.name) || (id.charAt(0).toUpperCase() + id.slice(1));
-  }
-  // An item's name as the hold shows it (items.json name).
-  function itemLabel(id) {
-    const d = typeof itemDef === 'function' && itemDef(id);
-    if (d && d.name) return d.name;
-    const p = String(id).replace(/_/g, ' ');
-    return p.charAt(0).toUpperCase() + p.slice(1);
-  }
   // "Cargo lost: Repair Kit, 2× Medkit, 3 Metal": each item by name.
   function cargoLossText(loss) {
     const parts = [];
     const counts = {};
     for (const id of loss.items) counts[id] = (counts[id] || 0) + 1;
-    for (const [id, n] of Object.entries(counts)) parts.push((n > 1 ? n + '× ' : '') + itemLabel(id));
-    for (const [m, q] of Object.entries(loss.materials)) parts.push(q + ' ' + materialLabel(m));
+    for (const [id, n] of Object.entries(counts)) parts.push((n > 1 ? n + '× ' : '') + itemNameOf(id));
+    for (const [m, q] of Object.entries(loss.materials)) parts.push(q + ' ' + materialNameOf(m));
     return parts.length ? 'Cargo lost: ' + parts.join(', ') : 'Nothing in the hold worth taking';
   }
   function applyCargoLoss(loss) {
@@ -1791,7 +1778,6 @@
     COMBAT.state = 'END';
     COMBAT.active = false;
     COMBAT._firing = false;
-    COMBAT._lastOutcome = result.outcome;
 
     const scr = document.getElementById('screen-encounter');
     scr.classList.remove('combat-mode', 'combat-targeting', 'combat-vignette', 'combat-ftl-charging');
@@ -1832,7 +1818,7 @@
     const before = { hull: STATE.resources.hull, fuel: STATE.resources.fuel, food: STATE.resources.food, gold: STATE.goldAmount, day: STATE.daysElapsed };
     // Ship's Log: the fight's record (won/lost/fled/paid + real effects,
     // loot and cargo loss included) is closed below, before checkFailure.
-    const slog = window.ShipLog && ShipLog.begin();
+    const slog = ShipLog.begin();
     // What the fight's morale change really does to each member (floored
     // at 0, capped at 100) — the card shows that, not the raw net.
     const moraleIn = outcome.resources.morale;
@@ -1911,7 +1897,7 @@
   function resolveToOutcome(choice, opts) {
     const ev = STATE.currentEvent;
     const outcome = ev.outcomes[choice.outcome];
-    const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: choice + outcome + real effects
+    const slog = ShipLog.begin(); // Ship's Log: choice + outcome + real effects
     applyOutcomeEffects(outcome);
     if (slog) ShipLog.resolved(slog, ev, choice, outcome, { line: outcome && (outcome.body || outcome.narrative) });
     renderHUD();
@@ -1919,7 +1905,7 @@
     STATE.currentOutcomeId = choice.outcome;
     if (opts && opts.hostileGone) fxScreen().classList.add('hostile-gone');
     renderEncounterState();
-    if (opts && opts.hostileGone && window.SceneArt) {
+    if (opts && opts.hostileGone) {
       const space = SceneArt.sceneSpecFor({ id: ev.id, scene_type: 'deep_void' }, STATE.currentNode, STATE.npcCtx).bg;
       SceneArt.renderOutcome(Object.assign({}, outcome, { scene_bg: space, line: null }), STATE.npcCtx);
     }
@@ -1933,7 +1919,7 @@
   const RAM_FAIL_CHANCE = 0.30;
   function triggerRamResolve(choice) {
     if (Math.random() < RAM_FAIL_CHANCE) {
-      if (window.ShipLog) ShipLog.fightStart(choice); // the fight's log entry names the ram
+      ShipLog.fightStart(choice); // the fight's log entry names the ram
       window.triggerCombat(choice, { ramFailed: true, ramHull: choice.hull || 18 });
     } else {
       resolveToOutcome(choice, { hostileGone: true });
@@ -1971,7 +1957,6 @@
     if (!STATE.npcCtx) {
       STATE.npcCtx = resolveNpc({ id: ev.id, npc: { disposition: 'pirate', species: null } });
     }
-    if (!window.SceneArt) return;
     const spec = SceneArt.sceneSpecFor({ id: ev.id, scene_type: 'ship_exterior' }, node, STATE.npcCtx);
     const scr = fxScreen();
     scr.classList.remove('comm-corrupted');
@@ -1997,7 +1982,7 @@
     if (!opts.ramFailed && STATE.flags.has('friendly_with_pirate_' + sp)) {
       const o = { time_cost: 'trivial', resources: { morale: 2 },
         narrative: 'Their weapons stay cold. Comms crackle: someone is still talking about the cookies. They wave you through and ask, quietly, whether there are more.' };
-      const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: waved through
+      const slog = ShipLog.begin(); // Ship's Log: waved through
       applyOutcomeEffects(o);
       if (slog) ShipLog.resolved(slog, STATE.currentEvent, choice, Object.assign({ tone: 'success' }, o));
       renderHUD();
@@ -2022,7 +2007,6 @@
 
     const speciesMul = speciesHpMod(COMBAT.species);
     const trailMul = COMBAT_CONFIG.trail_scaling[COMBAT.trail] || COMBAT_CONFIG.trail_scaling.mars;
-    COMBAT.enemy.hpMod = speciesMul;
     COMBAT.enemy.dmgMod = trailMul.dmg;
     COMBAT.enemy.hullMax = Math.floor(COMBAT_CONFIG.base_hp * speciesMul * trailMul.hp);
     COMBAT.enemy.hull = COMBAT.enemy.hullMax;
@@ -2042,7 +2026,6 @@
     COMBAT.evadingNextHit = false;
     COMBAT.identifiedByXeno = flagBonus('identify_enemy');
     COMBAT._firing = false;
-    COMBAT._lastOutcome = null;
     COMBAT._narrPrefix = null;
     COMBAT._resolved = false;
     COMBAT.fight = (COMBAT.fight || 0) + 1;

@@ -984,17 +984,17 @@
     // healthy — every branch read off the model's own modifiers (the
     // "thirsty" line used to key off its own threshold).
     const ARIA_QUIPS = GROWBAY_QUIPS[growbayAI()]; // the active AI's table
-    if (GSTATE.health <= 0) return randPick(GROWBAY_EXTRA_QUIPS[growbayAI()].dead);
+    if (GSTATE.health <= 0) return pickRandom(GROWBAY_EXTRA_QUIPS[growbayAI()].dead);
     const { active } = computeModifiers();
     const has = needle => active.some(m => m.name.indexOf(needle) === 0);
-    if (GSTATE.growth >= 100) return randPick(ARIA_QUIPS.ready);
-    if (active.some(m => m.kind === 'critical')) return randPick(ARIA_QUIPS.critical);
-    if (GSTATE.pest) return randPick(ARIA_QUIPS.pests);
-    if (has('Heat')) return randPick(ARIA_QUIPS.hot);
-    if (has('Cold')) return randPick(ARIA_QUIPS.cold);
-    if (has('Underwatered') || has('Ship water dry')) return randPick(ARIA_QUIPS.thirsty);
-    if (has('Low light')) return randPick(GROWBAY_EXTRA_QUIPS[growbayAI()].dark);
-    return randPick(ARIA_QUIPS.healthy);
+    if (GSTATE.growth >= 100) return pickRandom(ARIA_QUIPS.ready);
+    if (active.some(m => m.kind === 'critical')) return pickRandom(ARIA_QUIPS.critical);
+    if (GSTATE.pest) return pickRandom(ARIA_QUIPS.pests);
+    if (has('Heat')) return pickRandom(ARIA_QUIPS.hot);
+    if (has('Cold')) return pickRandom(ARIA_QUIPS.cold);
+    if (has('Underwatered') || has('Ship water dry')) return pickRandom(ARIA_QUIPS.thirsty);
+    if (has('Low light')) return pickRandom(GROWBAY_EXTRA_QUIPS[growbayAI()].dark);
+    return pickRandom(ARIA_QUIPS.healthy);
   }
   // Footer lines the demo never needed: a dead crop and a
   // dim region. Each AI in its own register.
@@ -1020,7 +1020,6 @@
       dark: ['It\'s a bit dark out here for the plant. I\'d have taken the bright route. But you\'re flying.', 'Low light. The plant is coping. Better than some of us.']
     }
   };
-  function randPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
   // ARIA's demo lines were written for the demo's wheat; say whichever
   // crop is actually planted.
   const CROP_NOUN = { wheat: 'wheat', tomato: 'tomato plant', sweet_potato: 'sweet potato', soybean: 'soybean', zinnia: 'zinnia' };
@@ -1091,9 +1090,9 @@
     { p: 100, c: [56,  138, 74 ] }   // deep green
   ];
   // Returns the interpolated [r,g,b] triplet for a given health %.
-  // healthColor() wraps this into an rgb() string; the glow consumes
-  // the raw triplet via a CSS custom property so the scene's warm
-  // backdrop tracks plant health in the same hues as the bar.
+  // The bar takes it as an rgb() string; the glow consumes the raw
+  // triplet via a CSS custom property so the scene's warm backdrop
+  // tracks plant health in the same hues as the bar.
   function healthRGB(pct) {
     pct = Math.max(0, Math.min(100, pct));
     for (let i = 0; i < HEALTH_STOPS.length - 1; i++) {
@@ -1109,7 +1108,6 @@
     }
     return HEALTH_STOPS[HEALTH_STOPS.length - 1].c.slice();
   }
-  function healthColor(pct) { return 'rgb(' + healthRGB(pct).join(',') + ')'; }
 
   // ═════ Mini water slider ═══════════════════════════════════
   // Crew-status thresholds match the Orders-modal water logic —
@@ -1148,31 +1146,13 @@
   (function wireWaterDrag() {
     const track = $('gb-water-track');
     if (!track) return;
-    const MIN = 15, MAX = 85;
-    let dragging = false;
     let revertTo = null;       // committed value captured at drag start
-
-    function pctFromEvent(e) {
-      const rect = track.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const p = Math.round(Math.max(0, Math.min(1, x)) * 100);
-      return Math.max(MIN, Math.min(MAX, p));
-    }
-    function beginDrag(e) {
-      dragging = true;
-      revertTo = GSTATE.waterPlant;
-      track.setPointerCapture(e.pointerId);
-      track.classList.add('previewing');
-      GSTATE.waterPlant = pctFromEvent(e);
+    const drag = wireWaterTrack(track, pct => {
+      if (revertTo == null) { revertTo = GSTATE.waterPlant; track.classList.add('previewing'); }
+      GSTATE.waterPlant = pct;
       renderAll();
-    }
-    function endDrag(e, commit) {
-      if (!dragging) return;
-      dragging = false;
+    }, commit => {
       track.classList.remove('previewing');
-      if (track.hasPointerCapture && e && e.pointerId !== undefined && track.hasPointerCapture(e.pointerId)) {
-        track.releasePointerCapture(e.pointerId);
-      }
       if (!commit) {
         // Revert to the committed value we saved on pointerdown.
         GSTATE.waterPlant = revertTo;
@@ -1183,26 +1163,16 @@
         setWaterSplit(GSTATE.waterPlant);
       }
       revertTo = null;
-      // If we committed, GSTATE.waterPlant already holds the new value.
-    }
-
-    track.addEventListener('pointerdown', (e) => { e.preventDefault(); beginDrag(e); });
-    track.addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      GSTATE.waterPlant = pctFromEvent(e);
-      renderAll();
     });
-    track.addEventListener('pointerup',     (e) => endDrag(e, true));
-    track.addEventListener('pointercancel', (e) => endDrag(e, false));
 
     // Global Esc while dragging → revert. Captured before the modal's
     // own Esc-close handler so a mid-drag cancel doesn't also close
     // the whole Growbay.
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && dragging) {
+      if (e.key === 'Escape' && drag.dragging()) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        endDrag({ pointerId: -1 }, false);
+        drag.cancel();
       }
     }, true);
   })();
@@ -1257,7 +1227,7 @@
     $('health-fill').style.width = Math.min(100, GSTATE.health) + '%';
     $('health-val').textContent  = Math.round(GSTATE.health) + '%';
     // Color shifts smoothly green → yellow → red along the full
-    // 100–0 range (see healthColor()). The same RGB is also pushed
+    // 100–0 range (see healthRGB()). The same RGB is also pushed
     // into --glow-color so the scene glow tracks plant health.
     const hRGB = healthRGB(GSTATE.health);
     $('health-fill').style.background = 'rgb(' + hRGB.join(',') + ')';

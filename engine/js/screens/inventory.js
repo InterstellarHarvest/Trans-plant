@@ -61,10 +61,6 @@ function invIconHtml(id, isMaterial) {
   if (!path) return '<span class="inv-tile-emoji">' + emo + '</span>';
   return '<img src="' + path + '" alt="" onerror="this.outerHTML=\'<span class=&quot;inv-tile-emoji&quot;>' + emo + '</span>\'">';
 }
-// materials.json entry for a material id.
-function materialDefOf(id) {
-  return ((MOD.materials && MOD.materials.materials) || []).find(m => m.id === id) || null;
-}
 
 /* ── Consumables the player can use from the hold (items.json "on use"
    effects). can() → null when usable, else the reason it isn't; label()
@@ -122,7 +118,7 @@ const ITEM_USE = {
     },
     can: () => !STATE.cropGrowth || STATE.cropGrowth.health <= 0 ? 'Nothing left to treat' : (STATE.cropGrowth.health >= 100 && !STATE.cropGrowth.pest ? 'The crop is healthy' : null),
     use: () => {
-      if (typeof window.tickCropGrowth === 'function') window.tickCropGrowth(); // health caught up first: the line reports what landed
+      window.tickCropGrowth(); // health caught up first: the line reports what landed
       const cg = STATE.cropGrowth, had = cg.pest;
       if (had) clearCropPest();
       const h0 = cg.health;
@@ -215,7 +211,7 @@ function invPrice(en) {
     if (itemValueKnown(en.id)) return { num: en.value, label: en.value + 'g' };
     return { num: r ? (r[0] + r[1]) / 2 : 0, label: '??', unknown: true };
   }
-  const p = window.stationBuyPriceNext ? window.stationBuyPriceNext(en.id) : window.stationBuyPrice(en.id);
+  const p = window.stationBuyPriceNext(en.id);
   if (p == null) return { num: 0, label: '—', none: true };
   return { num: p, label: p + 'g' };
 }
@@ -224,7 +220,7 @@ function invTileSlots(en) { return itemSlotsFor(en.id, en.n); } // materials are
 /* ── Entries per tab ────────────────────────────────────────── */
 function invEntries(tab) {
   if (tab === 'materials') {
-    const order = ((MOD.materials && MOD.materials.materials) || []).map(m => m.id);
+    const order = MOD.materials.materials.map(m => m.id);
     // NEW + Recent from STATE.materialPickups (grantMaterials marks a
     // stack that gains units); unmarked stacks (the launch
     // stores) are oldest, in materials.json order.
@@ -391,7 +387,7 @@ function renderInvDetail(en) {
     const f = fence ? window.fenceBuyPrice(en.id) : null;
     sell = p.none ? '—' : p.label + (en.n > 1 ? ' each' : '') + (f != null ? ' · fence ' + f + 'g' : '');
     // Crafted copies (ruling 79) sell at their materials' value, after any full-price copy.
-    const c = !en.material && window.craftedHeld ? window.craftedHeld(en.id) : 0;
+    const c = !en.material ? window.craftedHeld(en.id) : 0;
     if (c) note = c >= en.n ? 'fabricator print' + (en.n > 1 ? 's' : '') + ': pays the materials\' value' : c + ' of these ' + (c === 1 ? 'is a print and pays ' : 'are prints and pay ') + window.craftedPrice(en.id) + 'g';
   }
   invSetBlock('inv-detail-meta', invStat('COUNT', '×' + en.n) + invStat('SLOT COST', slot) + invStat('SELL PRICE', sell) + (note ? invStat('', note, 'note') : ''));
@@ -495,7 +491,7 @@ function invUsedIndex() {
     if (o.gate && typeof o.gate.item === 'string') add(used, o.gate.item, ev);
     for (const v of Object.values(o)) if (v && typeof v === 'object') walk(v, ev);
   };
-  for (const ev of Object.values(typeof EVENTS !== 'undefined' ? EVENTS : {})) {
+  for (const ev of Object.values(EVENTS)) {
     if (!ev || ev.active === false) continue;
     if (ev.trail && STATE.trail && !ev.trail.includes(STATE.trail)) continue;
     walk(ev, ev);
@@ -541,7 +537,7 @@ function invResourceStats(key) {
   // usual stop time), so the two screens agree.
   if (key === 'fuel') {
     const leg = legTravelCost();
-    const emptyDay = typeof window.ordersFuelEmptyDay === 'function' ? window.ordersFuelEmptyDay() : (daysLeft == null ? null : STATE.daysElapsed + daysLeft);
+    const emptyDay = window.ordersFuelEmptyDay();
     return { level, max, perDay, perLeg: leg.fuel, emptyDay, tip };
   }
   return { level, max, perDay, emptyDay: daysLeft == null ? null : STATE.daysElapsed + daysLeft, tip };
@@ -867,7 +863,7 @@ function invSetSort(key) {
   // open SORT flyout first (the jettison confirm's Esc lives in index.html).
   document.addEventListener('keydown', e => {
     if (!document.getElementById('overlay-inventory').classList.contains('active')) return;
-    if (typeof PauseMenu !== 'undefined' && PauseMenu.isOpen()) return;
+    if (PauseMenu.isOpen()) return;
     if (e.key === 'Escape' && sort.classList.contains('open')) {
       sort.classList.remove('open'); e.preventDefault(); e.stopImmediatePropagation(); return;
     }

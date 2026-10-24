@@ -129,7 +129,7 @@ let _namesLeft = {};
 function flavorName(type) {
   const key = NAME_POOL_BY_TYPE[type];
   if (!key) return null;
-  if (!_namesLeft[key]) _namesLeft[key] = shuffle((((typeof MOD !== 'undefined' && MOD.flavor) || {})[key] || []).slice());
+  if (!_namesLeft[key]) _namesLeft[key] = shuffle(((MOD.flavor || {})[key] || []).slice());
   return _namesLeft[key].pop() || null;
 }
 

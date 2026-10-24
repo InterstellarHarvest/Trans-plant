@@ -93,7 +93,7 @@
     }
   }
   function starFrame(now) {
-    if (!cruiseVisible() || (window.PauseBus && PauseBus.paused)) { starRunning = false; return; }
+    if (!cruiseVisible() || PauseBus.paused) { starRunning = false; return; }
     let dtFrame = (now - starLastT) / 16.6667;
     if (dtFrame > 3) dtFrame = 3;
     const dtSec = Math.min(0.2, (now - starLastT) / 1000);
@@ -112,7 +112,7 @@
     requestAnimationFrame(starFrame);
   }
   function wakeStars() {
-    if (starRunning || !cruiseVisible() || (window.PauseBus && PauseBus.paused)) return;
+    if (starRunning || !cruiseVisible() || PauseBus.paused) return;
     starRunning = true;
     starLastT = performance.now();
     requestAnimationFrame(starFrame);
@@ -188,7 +188,6 @@
   // above the ship (which drops lower to sit under it), at an integer
   // downscale if it would not fit; nothing at any other kind of stop.
   function syncStationView() {
-    if (!window.SceneArt || !SceneArt.paintStationView) return;
     const node = STATE.byId && STATE.byId[STATE.currentId];
     $('cruise-scene').classList.toggle('at-station', !!(node && node.node_type === 'station'));
     SceneArt.paintStationView($('cruise-station'), node, { maxW: 170, maxH: 130 });
@@ -218,7 +217,7 @@
     inner.className = 'ticker-inner';
     inner.textContent = text;
     el.appendChild(inner);
-    if (tip && window.Tooltip) Tooltip.attach(el, tip);
+    if (tip) Tooltip.attach(el, tip);
     else el.title = text;
     box.appendChild(el);
     void el.offsetWidth;            // the enter transform sticks, then transitions to centre
@@ -294,7 +293,7 @@
   function syncPaused() {
     const scr = $('screen-cruise');
     if (!scr) return;
-    const paused = (window.PauseBus && PauseBus.paused) || overlayOpen() ||
+    const paused = PauseBus.paused || overlayOpen() ||
       ((isStopped() || !!STATE.forcedEvent) && !activeWait);
     scr.classList.toggle('time-paused', !!paused);
   }
@@ -401,15 +400,15 @@
   // as the journal does.
   const payloadOf = en => {
     if (!en) return null;
-    if (en.expand && window.ShipLog) return { kind: 'expand' };
+    if (en.expand) return { kind: 'expand' };
     if (en.link && en.link.url) return { kind: 'link', link: en.link };
     return null;
   };
   function openLogLink(link) {
     if (!link || !link.url) return;
     window.open(link.url, '_blank', 'noopener');
-    if (typeof PauseMenu !== 'undefined' && PauseMenu.open && !(PauseMenu.isOpen && PauseMenu.isOpen())) PauseMenu.open();
-    else if (window.PauseBus) PauseBus.pause();
+    if (!PauseMenu.isOpen()) PauseMenu.open();
+    else PauseBus.pause();
   }
   function armPayload(entry, en) {
     const p = payloadOf(en);
@@ -442,7 +441,7 @@
     // Ship's Log (engine/js/shipslog.js): while an outcome is being
     // applied, lines are held and replayed after its choice/outcome
     // entries, so the record reads in order.
-    if (window.ShipLog && ShipLog.capture(entryOrText, opts)) return null;
+    if (ShipLog.capture(entryOrText, opts)) return null;
     opts = opts || {};
     const log = $('ai-log');
     const isObj = entryOrText && typeof entryOrText === 'object';
@@ -464,8 +463,8 @@
       crewName: (isObj && entryOrText.crewName) || null,
       voice: voice,
     };
-    STATE.shipLog.push(window.ShipLog ? ShipLog.store(stored) : stored);
-    if (window.ShipLog) ShipLog.compact();
+    STATE.shipLog.push(ShipLog.store(stored));
+    ShipLog.compact();
     // An entry that lands while the journal is open shows at once (a scene
     // alert fires a beat after returning to the hub, e.g.).
     const slog = document.getElementById('overlay-shipslog');
@@ -502,10 +501,10 @@
     (function tick() {
       if (typing !== t) return;                          // finished early by the next entry
       if (!entry.isConnected) { typing = null; return; } // log rebuilt (load)
-      if (window.PauseBus && PauseBus.paused) { t.timer = setTimeout(tick, 120); return; }
+      if (PauseBus.paused) { t.timer = setTimeout(tick, 120); return; }
       span.textContent += line.charAt(i++);
       follow();
-      if (i < line.length) t.timer = setTimeout(tick, TYPE_MS * (typeof textSpeedMult === 'function' ? textSpeedMult() : 1)); // pause menu TEXT SPEED
+      if (i < line.length) t.timer = setTimeout(tick, TYPE_MS * textSpeedMult()); // pause menu TEXT SPEED
       else finishTyping();
     })();
     follow();
@@ -687,7 +686,7 @@
   }
   // Crop problems in the order the card names them (the worst first).
   const CROP_ISSUES = [
-    { why: 'Pests', label: 'PESTS: TREAT IT', tip: () => 'Pests are eating the crop. Open the growbay and TREAT (' + (window.cropTreatCostShort ? window.cropTreatCostShort() : 'it takes a day') + '), or USE a crop treatment from the hold.' }, // growbay.js: the rule TREAT rolls
+    { why: 'Pests', label: 'PESTS: TREAT IT', tip: () => 'Pests are eating the crop. Open the growbay and TREAT (' + window.cropTreatCostShort() + '), or USE a crop treatment from the hold.' }, // growbay.js: the rule TREAT rolls
     { why: 'Sick', label: 'SICK', tip: "The crop's health is below its sick line. Open the growbay to see what's hurting it." },
     { why: 'Thirsty', label: 'THIRSTY', tip: "The crop's share of the water is below what it needs. Raise it in Orders or the growbay." },
   ];
@@ -855,7 +854,7 @@
   // the patient's HP) rides in the quit marker, so a reload keeps it as
   // ✕ QUIT does.
   function onJobHarm(harm) {
-    if (STATE.currentEvent) { window.eventMinigameHarm(harm); return; }
+    if (STATE.currentEvent) { window.eventMinigameBegun(harm); return; }
     if (jobMarker) writeSnapshot(undefined, { pendingAbandon: Object.assign({}, jobMarker, { harm }) });
   }
   // A quit's harm so far lands (✕ QUIT and loadRun's pendingAbandon): each
@@ -939,19 +938,18 @@
   // repair_done, the way back from hull_damage. The verb tooltips show it.
   // The hold has no free slot (a MINE / SALVAGE haul would stay behind).
   function holdIsFull() {
-    if (typeof materialLandings !== 'function') return false;
-    const ids = (MOD.materials && (MOD.materials.materials || MOD.materials) || []).map(m => m.id).filter(Boolean);
+    const ids = MOD.materials.materials.map(m => m.id);
     const land = materialLandings(Object.fromEntries(ids.map(id => [id, 1])));
     return ids.length > 0 && ids.every(id => !land[id]); // not one unit of anything fits
   }
   // REPAIR's patch: +20 hull, +10 more with an engineer (half for a captain engineer).
   function repairHullGain() { return 20 + Math.round(10 * specialistMult('engineer')); }
   function repairLift() {
-    const c = window.concernDef && concernDef('engineer', 'repair_done');
+    const c = concernDef('engineer', 'repair_done');
     return c ? applyConcern('engineer', c.morale, 'repair_done') : 0;
   }
   function repairLiftTip() {
-    const c = window.concernDef && concernDef('engineer', 'repair_done');
+    const c = concernDef('engineer', 'repair_done');
     return c && STATE.crew.includes('engineer') ? ' · ' + concernText([{ label: 'ENGINEER', v: concernAmount(c.morale) }]) + ' MORALE' : '';
   }
   function repairLockReason() {
@@ -1005,7 +1003,7 @@
       if (r.fungus) out.push(fungusFits() ? 'FIND · a fungus nobody can name' : { text: 'FIND · a fungus nobody can name · CARGO FULL, LEFT BEHIND', tone: 'orange' });
       return out;
     };
-    openMinigame('forage', { mode, return_to: 'cruise', origin_node: STATE.currentId, regionLabel: hudPlace, resultLines }, (tier, payload) => {
+    openMinigame('forage', { mode, regionLabel: hudPlace, resultLines }, (tier, payload) => {
       if (tier === 'abandoned') return settleAbandoned(label, payload && payload.harm);
       payload = payload || {};
       const r = rollSide(tier);
@@ -1074,7 +1072,7 @@
       // items (capacity-enforced), O₂ tanks as air, gold chips as gold;
       // 'useless_scrap' is what it says. No payload → the old tier table.
       const haul = (payload && payload.salvage) || { perfect: { metal: 3, scrap: 2 }, good: { metal: 2 }, poor: { scrap: 1 } }[tier] || {};
-      const MATS = new Set(((MOD.materials && MOD.materials.materials) || []).map(m => m.id));
+      const MATS = new Set(MOD.materials.materials.map(m => m.id));
       const TANK_O2 = { tank_s: 4, tank_m: 8, tank_l: 12 };
       const got = [];
       // Materials are cargo (owner ruling 2026-10-11): one capacity-enforced
@@ -1273,7 +1271,7 @@
     const region = NODE_TYPE_TO_REGION[node && node.node_type] || 'deep_space';
     // The planet's biome is the node's own sticky pick (scene_art.js) —
     // the same one its approach view and landing scenes show.
-    if (region === 'planet_orbit_habitable' && window.SceneArt && SceneArt.biomeFor && SceneArt.biomeFor(null, node) === 'alien') return 'planet_orbit_alien';
+    if (region === 'planet_orbit_habitable' && SceneArt.biomeFor(null, node) === 'alien') return 'planet_orbit_alien';
     if (region === 'debris_field' && derelictFormOf(node) === 'hulk') return 'derelict';
     return region;
   }
@@ -1383,7 +1381,7 @@
 
   let activeWait = null; // { verbId, days, day, node, region, timer, resolving, finish }
   let bannerTimer = null;
-  const waitHeld = () => (window.PauseBus && PauseBus.paused) || !cruiseVisible() || overlayOpen();
+  const waitHeld = () => PauseBus.paused || !cruiseVisible() || overlayOpen();
   function showActionBanner(label, day, days) {
     clearTimeout(bannerTimer);
     const b = $('action-banner');
@@ -1460,7 +1458,7 @@
     document.querySelectorAll('#stop-choices .stop-choice.day-picker').forEach(collapseDayPicker);
     days = Math.max(1, Math.min(WAIT_DAY_MAX, days | 0));
     // The verb's effort tax, once for the whole wait (it's one decision).
-    if (window.payEffortTax) payEffortTax(STOP_VERBS[verbId].effort);
+    payEffortTax(STOP_VERBS[verbId].effort);
     activeWait = { verbId, days, day: 0, node: STATE.currentId, region: currentRegionKey(), timer: null, resolving: false, finish: null };
     pushLogEntry(cfg.startLog(days));
     const fill = $('action-banner-fill');
@@ -1693,7 +1691,6 @@
     if (activeWait) {
       const cfg = WAIT_CFG[activeWait.verbId];
       const btn = choiceButton({ label: cfg.cancelLabel, sub: cfg.cancelSub, glyph: '✕', variant: 'risky' });
-      btn.classList.add('cancel-wait');
       btn.addEventListener('click', cancelWait);
       list.appendChild(btn);
       return;
@@ -1706,7 +1703,7 @@
       if (verb.requires && !verb.requires()) return;
       const labelStr = typeof verb.label === 'function' ? verb.label(regionKey) : verb.label;
       // A waved-off station (station.js): no berth, so its services are closed this stop.
-      const lockReason = (STATION_SERVICE_VERBS.has(verbId) && atStation() && window.stationServicesClosed && window.stationServicesClosed())
+      const lockReason = (STATION_SERVICE_VERBS.has(verbId) && atStation() && window.stationServicesClosed())
         ? 'Waved off — no berth here' : (verb.locked ? verb.locked() : null);
       const variant = lockReason ? null : (verb.variantBy && verb.variantBy(regionKey)) || (verb.hint ? 'hint' : null);
       const parts = [];
@@ -1714,15 +1711,15 @@
         parts.push(span('lock-need', '\u{1F512} ' + lockReason));
       } else {
         // The pips cost morale (Bible effort tax); the number says how much.
-        parts.push(span('effort', effortPips(verb.effort) + (window.effortTax && effortTax(verb.effort) ? ' −' + effortTax(verb.effort) + ' MO' : '')));
+        parts.push(span('effort', effortPips(verb.effort) + (effortTax(verb.effort) ? ' −' + effortTax(verb.effort) + ' MO' : '')));
         if (verb.time) parts.push(span('verb-time', verb.time));
       }
       const subText = lockReason ? null : (typeof verb.sub === 'function' ? verb.sub(regionKey) : verb.sub);
       const btn = choiceButton({ label: labelStr, sub: subText, parts, variant, icon: lockReason ? 'lock' : (verb.icon || 'wait'), locked: !!lockReason });
       if (lockReason) { btn.classList.add('locked'); btn.tabIndex = -1; btn.setAttribute('aria-disabled', 'true'); }
-      if (lockReason && window.Tooltip) Tooltip.attach(btn, lockTip(labelStr, lockReason));
+      if (lockReason) Tooltip.attach(btn, lockTip(labelStr, lockReason));
       btn.setAttribute('data-verb-id', verbId);
-      if (!lockReason && verb.effort && window.effortTax) btn.title = 'Effort ' + verb.effort + '/5' + (effortTax(verb.effort) ? ' · costs ' + effortTax(verb.effort) + ' morale' + (verbId === 'fab' ? ' per craft' : WAIT_VERBS[verbId] ? ' for the whole wait' : '') : '') + ((verbId === 'repair' || verbId === 'drydock') ? repairLiftTip() : ''); // no crew aboard: no tax to state
+      if (!lockReason && verb.effort) btn.title = 'Effort ' + verb.effort + '/5' + (effortTax(verb.effort) ? ' · costs ' + effortTax(verb.effort) + ' morale' + (verbId === 'fab' ? ' per craft' : WAIT_VERBS[verbId] ? ' for the whole wait' : '') : '') + ((verbId === 'repair' || verbId === 'drydock') ? repairLiftTip() : ''); // no crew aboard: no tax to state
       btn.addEventListener('click', () => {
         if (lockReason) return;
         if (btn.classList.contains('day-picker')) return; // picking days on this button
@@ -1730,7 +1727,7 @@
         const handler = VERB_HANDLERS[verbId];
         // Effort tax on use (the fabricator charges per craft instead —
         // opening its screen to look costs nothing).
-        if (handler && verbId !== 'fab' && window.payEffortTax) { const rc = {}; pendingVerbTax = payEffortTax(verb.effort, rc) ? rc : 0; renderHUD(); }
+        if (handler && verbId !== 'fab') { const rc = {}; pendingVerbTax = payEffortTax(verb.effort, rc) ? rc : 0; renderHUD(); }
         activeVerb = labelStr;
         if (handler) handler();
         else pushLogEntry('◆ ' + labelStr + ' isn’t wired into the engine yet.');
@@ -1781,7 +1778,7 @@
     const ai = STATE.activeAI || 'marv';
     el.querySelector('.ai-bubble-avatar').style.backgroundImage = "url('" + (AI_SPRITE[ai] || AI_SPRITE.marv) + "')";
     // Ruling 32: a line that names its own AI carries no name chip.
-    const named = aiBubbleLines.every(l => typeof namesTheAI === 'function' && namesTheAI(l.text));
+    const named = aiBubbleLines.every(l => namesTheAI(l.text));
     const nameEl = el.querySelector('.ai-bubble-name');
     nameEl.textContent = named ? '' : ai.toUpperCase();
     nameEl.style.display = named ? 'none' : '';
@@ -1883,7 +1880,7 @@
     { id: 'stop_menu', when: () => true },
     { id: 'harvest', when: () => !!(STATE.cropGrowth && STATE.cropGrowth.health > 0 && STATE.cropGrowth.growth >= 100) },
     // A station whose services are closed (waved off, blown past) waits for the next one: the tip talks about docking.
-    { id: 'station', when: () => { const n = STATE.byId[STATE.currentId]; return !!n && n.node_type === 'station' && !(window.StationVisit && StationVisit.servicesClosed()); } },
+    { id: 'station', when: () => { const n = STATE.byId[STATE.currentId]; return !!n && n.node_type === 'station' && !StationVisit.servicesClosed(); } },
     { id: 'fabricator', when: () => Object.values(STATE.materials || {}).reduce((a, q) => a + (q || 0), 0) >= 5 },
     { id: 'fork', when: () => [...nextAvailableNodes()].some(id => STATE.byId[id] && STATE.byId[id].node_type === 'fork') },
     { id: 'cargo', when: () => STATE.items.length > 0 && legsFlown() >= 2 },
@@ -1894,7 +1891,7 @@
   ];
   const legsFlown = () => (STATE.visited ? STATE.visited.size - 1 : 0);
   function tipsOn() {
-    try { return typeof tpLoadSettings !== 'function' || tpLoadSettings().showTips !== false; } catch (_) { return true; }
+    try { return tpLoadSettings().showTips !== false; } catch (_) { return true; }
   }
   function maybePushTip() {
     if (!tipsOn()) return false;
@@ -1962,7 +1959,7 @@
         // missing pools just skip (water/o2 land in the same pass as this wiring).
         // First time fuel runs low: the AI's signature low_fuel line.
         let line = null;
-        if (res === 'fuel' && !STATE.flags.has('ai_sampled_low_fuel') && window.aiSampleLine) {
+        if (res === 'fuel' && !STATE.flags.has('ai_sampled_low_fuel')) {
           STATE.flags.add('ai_sampled_low_fuel'); line = aiSampleLine('low_fuel');
         }
         line = line || aiPool(['resource_warning', res, level]);
@@ -1994,7 +1991,7 @@
   function checkCropMilestones() {
     if (!STATE.crop || !STATE.cropGrowth) return;
     checkZinniaArc();
-    if (window.ShipLog) ShipLog.cropCheck(); // Ship's Log: growth-stage milestones (shipslog.js)
+    ShipLog.cropCheck(); // Ship's Log: growth-stage milestones (shipslog.js)
     const growth = STATE.cropGrowth.growth || 0;
     const health = STATE.cropGrowth.health;
     // A fresh growth cycle (launch, or the replant after a harvest —
@@ -2028,7 +2025,7 @@
       // the crop_lifecycle pool for relapses.
       const first = !STATE.flags.has('ai_sampled_crop_sick');
       STATE.flags.add('ai_sampled_crop_sick');
-      const line = (first && window.aiSampleLine && aiSampleLine('crop_sick')) || aiPool(['crop_lifecycle', 'diseased']);
+      const line = (first && aiSampleLine('crop_sick')) || aiPool(['crop_lifecycle', 'diseased']);
       if (line) pushLogEntry('◆ ' + line, { ai: true });
     } else if (health >= healthyAt && STATE.flags.has('ai_noted_crop_sick')) {
       STATE.flags.delete('ai_noted_crop_sick');
@@ -2062,7 +2059,7 @@
   mo.observe($('screen-cruise'), { attributes: true, attributeFilter: ['class'] });
   mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   document.querySelectorAll('.overlay').forEach(ov => mo.observe(ov, { attributes: true, attributeFilter: ['class'] }));
-  if (window.PauseBus) PauseBus.onChange(() => { wakeStars(); syncPaused(); });
+  PauseBus.onChange(() => { wakeStars(); syncPaused(); });
 
   Object.assign(window, {
     // engine API

@@ -55,14 +55,11 @@
   };
   // Upgrades have their own art in sprites/cargo/upgrades (it existed
   // all along — the market showed emoji); emoji only where no art exists.
-  const iconOf = sid => itemSpritePath(sid) || (typeof NO_ITEM_ART !== 'undefined' && NO_ITEM_ART[sid]) || ICON_FALLBACK[sid] || ('sprites/cargo/items/' + sid + '.png');
+  const iconOf = sid => itemSpritePath(sid) || NO_ITEM_ART[sid] || ICON_FALLBACK[sid] || ('sprites/cargo/items/' + sid + '.png');
 
   // Demo sell-price convention: vendors pay ~2/3 of asking price.
   const sellPrice = bp => Math.max(1, Math.round(bp * 2 / 3));
 
-  function allMaterialDefs() {
-    return (typeof MOD !== 'undefined' && MOD.materials && MOD.materials.materials) || [];
-  }
   // A unit of raw material sells for its authored value × materials.json
   // station_sell_multiplier (its _meta says why it stays under 5: mining
   // for sale). The Market Row, the cargo hold's SELL and every SELL PRICE
@@ -73,7 +70,7 @@
   // null when no trader buys it — the cargo hold's SELL PRICE / price
   // corner read this (one source with stationVendor's buyPrices).
   function stationBuyPrice(sid) {
-    const m = allMaterialDefs().find(x => x.id === sid);
+    const m = materialDefOf(sid);
     if (m) return materialPrice(m);
     const d = defBy(sid);
     return d && Number.isFinite(d.base_price) && d.base_price > 0 ? sellPrice(d.base_price) : null;
@@ -84,12 +81,12 @@
      27g. STATE.crafted[sid] counts the prints aboard (fabricator.js
      claimOutput); copies that came any other way sell first at the full
      price, so the price shown is the one the next sale pays. */
-  const recipeFor = sid => (((typeof MOD !== 'undefined' && MOD.recipes && MOD.recipes.recipes) || [])).find(r => r && r.active !== false && r.output && (r.output.item_id === sid || r.output.item === sid));
+  const recipeFor = sid => ((MOD.recipes && MOD.recipes.recipes) || []).find(r => r && r.active !== false && r.output && (r.output.item_id === sid || r.output.item === sid));
   function craftedPrice(sid) {
     const r = recipeFor(sid);
     if (!r) return null;
     let g = 0;
-    for (const i of r.inputs || []) { const m = allMaterialDefs().find(x => x.id === i.material_id); if (m) g += materialPrice(m) * (i.count || 0); }
+    for (const i of r.inputs || []) { const m = materialDefOf(i.material_id); if (m) g += materialPrice(m) * (i.count || 0); }
     return Math.max(1, Math.round(g));
   }
   const heldCount = sid => STATE.items.filter(x => x === sid).length;
@@ -127,7 +124,7 @@
   // the same removal (materials by the unit, a rolled copy with its
   // value). Returns { paid } or { why }.
   function stationSellOne(sid, copy) {
-    const isMat = allMaterialDefs().some(m => m.id === sid);
+    const isMat = !!materialDefOf(sid);
     if (isMat) {
       if (!(STATE.materials[sid] > 0)) return { why: 'None left' };
       const p = window.stationBuyPrice(sid);
@@ -153,7 +150,7 @@
     return { paid, crafted };
   }
   function allItemDefs() {
-    return (typeof MOD !== 'undefined' && MOD.items) ? MOD.items : [];
+    return MOD.items || [];
   }
   function defBy(sid) {
     return itemDef(sid);
@@ -174,7 +171,7 @@
   const TRADER_GEAR_DEFAULT = ['repair_kit'];
   // The trader event the market was opened from (STATE.currentEvent), or null at a station.
   function traderEventId() {
-    const ev = typeof STATE !== 'undefined' && STATE.currentEvent;
+    const ev = STATE.currentEvent;
     return ev && ev.family === 'trader' ? ev.id : null;
   }
   function traderStock(evId) {
@@ -211,7 +208,7 @@
     }
     // Raw materials are "tradeable at stations" (materials.json) — the
     // trader buys them by the unit at their authored value.
-    for (const m of allMaterialDefs()) buyPrices[m.id] = materialPrice(m);
+    for (const m of MOD.materials.materials) buyPrices[m.id] = materialPrice(m);
     // Negotiation (diplomat active skill, crew.js): the armed flag buys
     // 15% off this station market's wares, then it's spent — the skill's
     // authored "talk stations into better deals" line, made mechanical.
@@ -230,7 +227,7 @@
     }
     let negotiated = false;
     // Negotiation talks stations into better deals: a lane trader leaves it armed.
-    if (!stock && typeof STATE !== 'undefined' && STATE.flags && STATE.flags.has('negotiation_prepared')) {
+    if (!stock && STATE.flags.has('negotiation_prepared')) {
       STATE.flags.delete('negotiation_prepared');
       negotiated = true;
       for (const w of wares) {
@@ -475,11 +472,6 @@
 
   function openMarket(opts, onClose) {
     opts = opts || {};
-    if (typeof MarketModal === 'undefined') {
-      console.warn('[market] MarketModal missing — shared.js not loaded?');
-      if (typeof onClose === 'function') onClose();
-      return;
-    }
     if (MarketModal.isOpen()) return;
     // A lane trader's market is its own hold (traderStock); a station's is the catalogue.
     const trader = traderEventId();
@@ -505,7 +497,7 @@
       // Items, then one entry per unit of each raw material (the list
       // stacks them) — materials sell at stations; each unit sold frees its share of hold space.
       getCargo: () => markCraftedEntries(cargoEntries()).concat(
-        (vendor.sinister || opts.vendor === 'surplus') ? [] : allMaterialDefs().flatMap(m => Array.from({ length: STATE.materials[m.id] || 0 }, () => ({
+        (vendor.sinister || opts.vendor === 'surplus') ? [] : MOD.materials.materials.flatMap(m => Array.from({ length: STATE.materials[m.id] || 0 }, () => ({
           id: m.id, name: (m.name || m.id).toUpperCase(), icon: 'sprites/cargo/materials/' + m.id + '.png', desc: m.description || '', tags: [], material: true,
         })))),
       // Capacity gate BEFORE any cost applies — a refused buy must
@@ -514,13 +506,13 @@
       cargoFullMsg: 'No room in the hold. Jettison something (the crate icon) first.',
       addCargo: entry => { grantItem(entry.id); renderHUD(); },
       // The cargo bay can't leave while the hold needs its extra slots.
-      canRemoveCargo: sid => allMaterialDefs().some(m => m.id === sid) || canRemoveItem(sid),
+      canRemoveCargo: sid => !!materialDefOf(sid) || canRemoveItem(sid),
       cargoLockedMsg: 'The cargo bay is holding things. Clear some space first.',
       // Cargo an event ahead needs (inventory.js invRequiredFor) asks
       // first, like the cargo hold's SELL and JETTISON.
       confirmRemoval: (entry, offer, proceed) => askSellRequired(entry, proceed),
       removeCargo: (sid, entry) => {
-        if (allMaterialDefs().some(m => m.id === sid)) {
+        if (materialDefOf(sid)) {
           STATE.materials[sid] = Math.max(0, (STATE.materials[sid] || 0) - 1);
           renderHUD(); return;
         }
@@ -554,7 +546,7 @@
   // Escape closes the market when open. Capture phase so we run
   // before the pause menu's Escape handler claims it (demo parity).
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && typeof MarketModal !== 'undefined' && MarketModal.isOpen()) {
+    if (e.key === 'Escape' && MarketModal.isOpen()) {
       e.stopPropagation();
       // An open sell confirm takes the Escape (its CANCEL), not the market.
       const c = $('market-confirm');

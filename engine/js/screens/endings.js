@@ -162,7 +162,7 @@
       baseDays: STATE.baseDays,
       failed: end.kind === 'failure',
       // The arrival's score (ruling 89; index.html scoreValue, whole points).
-      score: end.kind === 'failure' || typeof runScore !== 'function' ? null : runScore(),
+      score: end.kind === 'failure' ? null : runScore(),
     };
 
     // Ship's Record — the voyage's notable choices (index.html shipsRecordLines).
@@ -173,7 +173,7 @@
       // A failure can author its passengers-aboard copy (crew_gone: the
       // captain dies alone but a stowaway or a rescued survivor still rides
       // along — "no living crew" alone would erase them).
-      const riders = typeof passengerNames === 'function' ? passengerNames() : [];
+      const riders = passengerNames();
       const ride = riders.length && f.body_passengers ? passengerText(riders) : null;
       const body = ride ? ride(f.body_passengers) : f.body;
       const epitaph = ride && f.epitaph_passengers ? ride(f.epitaph_passengers) : f.epitaph;
@@ -231,7 +231,7 @@
     // Each is a list (ruling 88); one per run, seeded on STATE.artSeed so
     // a reload shows the same line. A plain string still reads as one.
     const onePerRun = (key, v) => !Array.isArray(v) ? v
-      : (window.SceneArt && SceneArt.stablePick ? SceneArt.stablePick(key, v) : v[0]);
+      : SceneArt.stablePick(key, v);
     const arrival = onePerRun('arrival:' + STATE.trail + ':' + cropKey, ((lines.arrival_lines || {})[STATE.trail] || {})[cropKey]) || '';
 
     return {
@@ -465,7 +465,7 @@
   function drawStars(now) {
     const cv = $('end-stars'), scr = $('screen-end');
     if (!cv || !scr || !scr.classList.contains('active')) { starRunning = false; return; }
-    if (window.PauseBus && PauseBus.paused) { starLast = now; requestAnimationFrame(drawStars); return; }
+    if (PauseBus.paused) { starLast = now; requestAnimationFrame(drawStars); return; }
     let dt = starLast ? (now - starLast) / 16.6667 : 1;
     if (dt > 3) dt = 3;
     starLast = now;
@@ -489,7 +489,7 @@
      once, unless it offers a way on (Keep flying, the beacon); then when
      the player accepts it (reads the report, or starts a new run). */
   function recordFinal() {
-    if (!currentView || currentView.recorded || typeof recordRun !== 'function') return;
+    if (!currentView || currentView.recorded) return;
     currentView.recorded = recordRun(currentView) || { newBest: false };
   }
   function renderEndScreen(end) {

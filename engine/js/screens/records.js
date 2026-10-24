@@ -118,7 +118,6 @@
   };
   const captainName = id => id ? id.charAt(0).toUpperCase() + id.slice(1) : '';
   const fmtDate = ts => { try { return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch (_) { return ''; } };
-  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   // The end screen's colour table (screen-end.css, scoped to this overlay too).
   const toneStyle = e => `color: var(--${e.kind === 'arrival' ? 'tier' : 'fail'}-${String(e.tone).replace(/[^a-z_]/g, '')}-color)`;
@@ -127,16 +126,16 @@
     if (!e) return `<div class="rec-best empty"><span class="rec-dest">${DEST_LABEL[trail]}</span><span class="rec-none">No arrival yet</span></div>`;
     return `<div class="rec-best"><span class="rec-dest">${DEST_LABEL[trail]}</span>` +
       `<span class="rec-score">${e.score}</span>` +
-      `<span class="rec-what"><span class="rec-tone" style="${toneStyle(e)}">${esc(e.title)}</span>` +
-      `<span class="rec-sub">${esc(e.ship)} · ${esc(cropName(e.crop))} · ${esc(captainName(e.captain))} · day ${e.days} of ${e.baseDays} · crew ${e.crew}/${e.startCrew}</span></span></div>`;
+      `<span class="rec-what"><span class="rec-tone" style="${toneStyle(e)}">${escapeHTML(e.title)}</span>` +
+      `<span class="rec-sub">${escapeHTML(e.ship)} · ${escapeHTML(cropName(e.crop))} · ${escapeHTML(captainName(e.captain))} · day ${e.days} of ${e.baseDays} · crew ${e.crew}/${e.startCrew}</span></span></div>`;
   }
   function runRow(e) {
     return `<div class="rec-run">` +
-      `<span class="rec-date">${esc(fmtDate(e.ts))}</span>` +
-      `<span class="rec-dest">${DEST_LABEL[e.trail] || esc(e.trail)}</span>` +
-      `<span class="rec-tone" style="${toneStyle(e)}">${esc(e.title)}</span>` +
+      `<span class="rec-date">${escapeHTML(fmtDate(e.ts))}</span>` +
+      `<span class="rec-dest">${DEST_LABEL[e.trail] || escapeHTML(e.trail)}</span>` +
+      `<span class="rec-tone" style="${toneStyle(e)}">${escapeHTML(e.title)}</span>` +
       `<span class="rec-score">${e.score == null ? '—' : e.score}</span>` +
-      `<span class="rec-sub">${esc(e.ship)} · ${esc(cropName(e.crop))} · day ${e.days}</span></div>`;
+      `<span class="rec-sub">${escapeHTML(e.ship)} · ${escapeHTML(cropName(e.crop))} · day ${e.days}</span></div>`;
   }
 
   function paintRecords() {

@@ -484,18 +484,22 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
     const page = await boot();
     const r = await page.evaluate(async () => {
       const w = ms => new Promise(r => setTimeout(r, ms));
-      const label = async ctx => {
+      // The bg is a random pick from the mode's pool: narrow the pool to one.
+      const label = async (ctx, bg) => {
+        const pool = FORAGE_BG_REGISTRY[ctx.mode];
+        FORAGE_BG_REGISTRY[ctx.mode] = pool.filter(b => b.id === bg);
         openMinigame('forage', ctx, () => {}); await w(60);
         document.getElementById('rstart').click(); await w(120);
+        FORAGE_BG_REGISTRY[ctx.mode] = pool;
         const t = (document.querySelector('.for-region') || {}).textContent;
         document.getElementById('mclose').click(); await w(50);
         return t;
       };
       const out = {};
-      out.ast = await label({ mode: 'HUNT', regionLabel: 'ASTEROID FIELD', bg_id: 'asteroid' });
-      out.desert = await label({ mode: 'HUNT', regionLabel: 'ASTEROID FIELD', bg_id: 'desert' });
-      out.ice = await label({ mode: 'HUNT', regionLabel: 'ASTEROID FIELD', bg_id: 'ice' });
-      out.planet = await label({ mode: 'GATHER', regionLabel: 'PLANET ORBIT', bg_id: 'forest' });
+      out.ast = await label({ mode: 'HUNT', regionLabel: 'ASTEROID FIELD' }, 'asteroid');
+      out.desert = await label({ mode: 'HUNT', regionLabel: 'ASTEROID FIELD' }, 'desert');
+      out.ice = await label({ mode: 'HUNT', regionLabel: 'ASTEROID FIELD' }, 'ice');
+      out.planet = await label({ mode: 'GATHER', regionLabel: 'PLANET ORBIT' }, 'forest');
       // cruise passes the real stop's label
       const node = STATE.nodes.find(n => n.node_type === 'asteroid_field') || STATE.nodes[1];
       node.node_type = 'asteroid_field'; STATE.currentId = node.id;

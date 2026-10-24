@@ -55,23 +55,12 @@
     return h >>> 0;
   }
   function runSeed() {
-    return (typeof STATE !== 'undefined' && STATE && STATE.artSeed) || 0;
+    return STATE.artSeed || 0;
   }
   function stablePick(key, list) {
     if (!list || !list.length) return null;
     return list[hashStr(runSeed() + '|' + key) % list.length];
   }
-
-  function probeImage(path) {
-    return new Promise(resolve => {
-      const img = new Image();
-      img.onload = () => resolve(path);
-      img.onerror = () => resolve(null);
-      img.src = path;
-    });
-  }
-
-  function pickSticky(pickKey, list) { return stablePick(pickKey, list); }
 
   /* Backdrop resolver — flat file first (bridge.png, corridor.jpg),
      then numbered folder pool. jpg-preferred for backdrops. */
@@ -234,7 +223,7 @@
     if (desc.frames.length < 2) return;
     _approachTimers.set(el, setInterval(() => {
       if (!el.isConnected) { stopApproachAnim(el); return; }
-      if ((window.PauseBus && window.PauseBus.paused) || !el.getClientRects().length) return;
+      if (PauseBus.paused || !el.getClientRects().length) return;
       tick();
     }, 1000 / APPROACH_FPS));
   }
@@ -319,7 +308,7 @@
       out = out.replace(/\{species\}/g, sp);
     }
     if (out.indexOf('{crop}') !== -1) {
-      out = out.replace(/\{crop\}/g, (typeof STATE !== 'undefined' && STATE.crop) || 'wheat');
+      out = out.replace(/\{crop\}/g, STATE.crop || 'wheat');
     }
     if (out.indexOf('{biome}') !== -1) out = out.replace(/\{biome\}/g, biomeFor(ev, node));
     return out;
@@ -371,7 +360,7 @@
       case 'growbay': {
         // Pool is crop-NAMED, not numbered (wheat.jpg … sweet_potato.jpg)
         // — resolve the run's own crop; no-crop runs get the wheat bay.
-        const crop = (typeof STATE !== 'undefined' && STATE.crop) || 'wheat';
+        const crop = STATE.crop || 'wheat';
         return { bg: 'our_ship/growbay/' + crop };
       }
       case 'station_interior': {
@@ -484,7 +473,7 @@
     } else {
       resolveBackground(spec.bg).then(list => {
         if (mySeq !== _bgSeq) return;
-        const path = pickSticky(pickKey + '|bg:' + spec.bg, list);
+        const path = stablePick(pickKey + '|bg:' + spec.bg, list);
         if (path) {
           main.style.backgroundImage = "url('" + path + "')";
           main.classList.add('has-bg-sprite');
@@ -501,7 +490,7 @@
     } else {
       resolveBackground(spec.bgBase).then(list => {
         if (mySeq !== _bgSeq) return;
-        const path = pickSticky(pickKey + '|base:' + spec.bgBase, list);
+        const path = stablePick(pickKey + '|base:' + spec.bgBase, list);
         if (path) {
           base.style.backgroundImage = "url('" + path + "')";
           base.classList.remove('hidden');
@@ -533,7 +522,7 @@
     } else {
       resolveSprite(spec.bgSprite).then(list => {
         if (mySeq !== _bgSeq) return;
-        const path = pickSticky((spriteKey || pickKey) + '|vs:' + spec.bgSprite, list);
+        const path = stablePick((spriteKey || pickKey) + '|vs:' + spec.bgSprite, list);
         if (path) {
           sprite.style.backgroundImage = "url('" + path + "')";
           sprite.classList.remove('hidden');
@@ -709,7 +698,7 @@
     const start = performance.now();
     function tick(now) {
       if (_activeSheet !== sheet) return;
-      if (window.PauseBus && window.PauseBus.paused) { _talkRAF = requestAnimationFrame(tick); return; }
+      if (PauseBus.paused) { _talkRAF = requestAnimationFrame(tick); return; }
       if (now >= _talkUntil) { setNpcFrame(sheet, sheet.idleIdx); _talkRAF = null; setHeadTalking(false); return; }
       // rAF's timestamp is the frame's START time and can precede the
       // performance.now() captured above — a negative elapsed indexed
@@ -841,7 +830,7 @@
       if (screen) {
         screen.classList.remove('hostile-gone', 'combat-ended');
         screen.querySelectorAll('.combat-ftl-flash').forEach(el => el.remove());
-        if (window.hideCombatEndCard) window.hideCombatEndCard(); // combat parity: the end card never outlives its fight
+        window.hideCombatEndCard(); // combat parity: the end card never outlives its fight
       }
       const sp = document.getElementById('enc-backdrop-sprite');
       if (sp) { sp.style.opacity = ''; sp.style.transition = ''; sp.classList.remove('combat-hit', 'combat-shake', 'combat-pre-explode', 'combat-ftl-vanish', 'combat-enemy-charge', 'combat-low-hp'); }
@@ -946,8 +935,8 @@
     _activeSheet = null;
   }
 
-  const SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, talk, sceneSpecFor, layerSpecFor, outcomeSpecFor, expandPath, biomeFor,
-    stationApproachFor, paintStationView, STATION_APPROACH_POOL, stablePick };
+  const SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, talk, sceneSpecFor, layerSpecFor, biomeFor,
+    stationApproachFor, paintStationView, stablePick };
 
   Object.assign(window, {
     // engine API

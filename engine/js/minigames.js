@@ -206,7 +206,7 @@ const Q = {
       ajoy:'Most of it stayed aboard. Closer to the hatch, I said.'
     }
   },
-  // SALVAGE played as an event's job (opts.tierRewards / opts.eventJob,
+  // SALVAGE played as an event's job (opts.tierRewards,
   // owner 2026-10-23): the event's tier reward lands, not the haul, so
   // these lines judge the load and promise nothing inside it.
   salvage_job:{
@@ -343,9 +343,9 @@ const BRIEF = {
 const TIER_WORDS = { perfect:'EXCELLENT', good:'ADEQUATE', poor:'INSUFFICIENT' };
 // A job launched from an event (owner 2026-10-23): opts.tierRewards
 // ({ perfect|good|poor: ['+6 FOOD', …] }, display strings from the event's
-// tier outcomes) or opts.eventJob. The event's own result lands, never a
-// free-play haul, so no card may claim pickups.
-const isEventJob = o => !!(o && (o.tierRewards || o.eventJob));
+// tier outcomes). The event's own result lands, never a free-play haul, so
+// no card may claim pickups.
+const isEventJob = o => !!(o && o.tierRewards);
 // The reward a result tier earns (a walk-out scores as poor).
 function tierRewardList(o, tier){
   const r = o && o.tierRewards;
@@ -353,13 +353,12 @@ function tierRewardList(o, tier){
   const list = r[tier] || (tier === 'fedup' ? r.poor : null) || [];
   return Array.isArray(list) ? list : [String(list)];
 }
-const escHtml = s => (typeof escapeHTML === 'function') ? escapeHTML(String(s)) : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // "WHAT THE JOB PAYS" — each tier's reward, on the briefing.
 function tierRewardTable(o){
   if(!(o && o.tierRewards)) return '';
   const rows = ['perfect','good','poor'].map(t => {
     const list = tierRewardList(o, t);
-    return `<div class="rt-row"><span class="rt-tier ${t}">${TIER_WORDS[t]}</span><span class="rt-list">${list.length ? list.map(escHtml).join(' · ') : 'nothing'}</span></div>`;
+    return `<div class="rt-row"><span class="rt-tier ${t}">${TIER_WORDS[t]}</span><span class="rt-list">${list.length ? list.map(escapeHTML).join(' · ') : 'nothing'}</span></div>`;
   }).join('');
   return `<div class="ready-rewards"><div class="rt-head">WHAT THE JOB PAYS</div>${rows}</div>`;
 }
@@ -369,11 +368,10 @@ function tierRewardTable(o){
    the hold (empty: nothing at all). MINE and SALVAGE say so on their
    briefings, before the time is spent. */
 function cargoHoldRoom(){
-  if(typeof materialLandings !== 'function' || typeof cargoSlotsUsed !== 'function' || typeof MOD === 'undefined') return null;
   if(cargoSlotsUsed() < cargoCapacity()) return null;
   const room = {};
   // Each on its own: a list is taken in order, each in the hold the last left.
-  for(const m of ((MOD.materials && MOD.materials.materials) || [])){
+  for(const m of MOD.materials.materials){
     const n = materialLandings({ [m.id]: 999 })[m.id] || 0;
     if(n > 0) room[m.id] = n;
   }
@@ -423,8 +421,8 @@ const BIGMODAL_GAMES = new Set(['breach', 'medical', 'salvage', 'forage']);
 /* The briefing. opts (an event's job may carry them):
      briefing   — the AI's situation line in place of the game's generic
                   one (plain text; the AI still says it)
-     tierRewards / eventJob — an event's job: the briefing promises no
-                  free-play pickups and lists what each result pays. */
+     tierRewards — an event's job: the briefing promises no free-play
+                  pickups and lists what each result pays. */
 function showReady(id, onStart, opts){
   opts = opts || {};
   const job = isEventJob(opts);
@@ -446,7 +444,7 @@ function showReady(id, onStart, opts){
     mechanicHtml += `<br><br><span class="ready-warn"><strong>CARGO HOLD FULL:</strong> ${kept ? 'only ' + kept + ' more can be kept (topping up the stacks aboard); no' : 'no'} ${derelict ? 'new materials or medkits' : 'new materials, parts or crate finds'} until you free space in the cargo hold. ${derelict ? 'Fuel cells and ration cans' : 'O₂ tanks and gold chips'} still count.</span>`;
   }
   const ownBrief = aiLine(opts.briefing, activeAi);
-  const situation = ownBrief ? escHtml(ownBrief) : b.situation[activeAi];
+  const situation = ownBrief ? escapeHTML(ownBrief) : b.situation[activeAi];
   ga.innerHTML = `
     <div class="ready${job && opts.tierRewards ? ' has-rewards' : ''}">
       <div class="ready-icon">${b.icon}</div>
@@ -474,7 +472,6 @@ function showReady(id, onStart, opts){
                  reward per result (display strings). The briefing lists
                  them, the result card shows the one earned, and nothing
                  claims a free-play pickup (owner 2026-10-23).
-     eventJob    true — the same rule when there is no list to show.
      briefing    the AI's situation line, in place of the generic one:
                  text, or { aria, marv, rex, chip, ajoy }.
      quips       { perfect|good|poor|fedup: line } (or one line): the
@@ -577,7 +574,7 @@ function showResult(tier, payload){
   let foodLanded = 0;
   if(job){
     const list = tierRewardList(opts, tier);
-    if(list) lines.push(`<span class="rh-line${list.length ? ' gold' : ''}">REWARD · ${list.length ? list.map(r => `<span class="rh-item">${escHtml(r)}</span>`).join(' · ') : 'nothing'}</span>`);
+    if(list) lines.push(`<span class="rh-line${list.length ? ' gold' : ''}">REWARD · ${list.length ? list.map(r => `<span class="rh-item">${escapeHTML(r)}</span>`).join(' · ') : 'nothing'}</span>`);
   } else if(payload){
     if(typeof payload.food === 'number'){
       // What lands: the tank caps (cruise.js FORAGE adds it the same way).
@@ -608,7 +605,7 @@ function showResult(tier, payload){
     // A line is text (gold, a gain) or {text, tone} (red / orange).
     for(const t of extra){
       const text = t && typeof t === 'object' ? t.text : t, tone = (t && t.tone) || 'gold';
-      if(text) lines.push(`<span class="rh-line ${escHtml(tone)}">${escHtml(text)}</span>`);
+      if(text) lines.push(`<span class="rh-line ${escapeHTML(tone)}">${escapeHTML(text)}</span>`);
     }
   }
   if(lines.length){
@@ -673,7 +670,7 @@ let ovPressOnBackdrop = false;
 document.getElementById('ov').addEventListener('mousedown', e=>{ ovPressOnBackdrop = (e.target===document.getElementById('ov')); });
 // A press in the first moment after the pause menu closes is the second
 // half of a double-clicked RESUME, not a quit that abandons the job.
-const justResumed = () => window.PauseBus && PauseBus.resumedAt && performance.now() - PauseBus.resumedAt < 400;
+const justResumed = () => PauseBus.resumedAt && performance.now() - PauseBus.resumedAt < 400;
 // Once BEGIN is pressed the backdrop does nothing until the result card
 // is up: a click just outside SALVAGE/FORAGE (targets drift in from the
 // edges) used to QUIT the job on the spot. ✕ QUIT stays the way out.
@@ -695,7 +692,7 @@ document.getElementById('rbquit').addEventListener('click', ()=>{
   if (cb) cb(tier, payload);
   if (openCargoAfterClose) {
     openCargoAfterClose = false;
-    if (!(typeof STATE !== 'undefined' && STATE.ended)) openInventory();
+    if (!STATE.ended) openInventory();
   }
 });
 
@@ -794,7 +791,7 @@ const SCAN_DIFFICULTY = {
 const SCAN_TRAIL_DIFFICULTY = { lunar: 'easy', mars: 'medium', interstellar: 'hard' };
 function initScan(container, onResult, opts){
   opts = opts || {};
-  const trailKey = typeof STATE !== 'undefined' && STATE ? SCAN_TRAIL_DIFFICULTY[STATE.trail] : null;
+  const trailKey = SCAN_TRAIL_DIFFICULTY[STATE.trail];
   const diffKey = SCAN_DIFFICULTY[opts.difficulty] ? opts.difficulty : SCAN_DIFFICULTY[trailKey] ? trailKey : 'medium';
   const tier = SCAN_DIFFICULTY[diffKey];
   container.innerHTML = `
@@ -1021,7 +1018,7 @@ function initEngine(container, onResult){
   // Pausing during the watch phase (ESC) used to let the plain
   // setTimeouts play the sequence behind the pause menu. Now a pause
   // mid-sequence cancels it and the whole sequence replays on resume.
-  const isPaused = () => typeof PauseBus !== 'undefined' && PauseBus.paused;
+  const isPaused = () => PauseBus.paused;
   function replayAfterPause(){
     timers.forEach(clearTimeout); timers=[];
     NODES.forEach((_,i)=>setState(i,''));
@@ -1087,9 +1084,7 @@ function initMedical(container, onResult, medConfig){
   //   minN, maxN,         // wound count range (default 2..4)
   //   sevRamp,            // severity climb rate (default 0.05 /sec)
   //   baseDrain,          // background HP drain (default 0.6 %/sec)
-  //   timerMs,            // round time (default 18000)
   //   startingHp,         // patient HP at entry (default 100)
-  //   damageCap,          // max % MAX HP this event can take (default 30)
   // }
   // Difficulty: the caller passes the event's
   // own difficulty; 'medium' is the tuned baseline (the demo's defaults).
@@ -1201,7 +1196,7 @@ function initMedical(container, onResult, medConfig){
   // (Updated to actual N after holes are picked.)
   // Patient health — defaults overridden by medConfig.
   const startingHp = cfg.startingHp ?? 100;
-  const EVENT_DAMAGE_CAP = cfg.damageCap ?? 30;
+  const EVENT_DAMAGE_CAP = 30; // max % MAX HP this event can take
   const damageFloor = Math.max(0, startingHp - EVENT_DAMAGE_CAP);
   let hp = startingHp, reportedHp = Math.round(startingHp);
   // Cleared count display — set initial N now.
@@ -1216,7 +1211,7 @@ function initMedical(container, onResult, medConfig){
   const VIT_RIGHT_BUMP = 2;
   const VIT_DANGER_HP  = 35; // the HP bar pulses below this (demo-minigames canon)
   const SEV_RAMP       = cfg.sevRamp ?? 0.05;
-  const TOTAL_TIME_MS  = cfg.timerMs ?? 18000;
+  const TOTAL_TIME_MS  = 18000;
 
   // ── Cursor handling ────────────────────────────
   // Scan mode: medical_scan reticle on the body panel + symptom canvases.
@@ -1637,8 +1632,7 @@ function initMedical(container, onResult, medConfig){
 // GAME 5 — FORAGE
 // ─────────────────────────────────────────────
 // Modes: HUNT (asteroid/desert/ice fauna), GATHER (planet flora+fauna),
-// SCAVENGE (ship interior, vermin only). Mode is set via ctx.mode or cycles
-// per-launch in the demo so each tier can be reviewed.
+// SCAVENGE (ship interior, vermin only). Mode is set via ctx.mode.
 //
 // Targets emerge from cover at fixed anchor positions on the stage:
 //   • fauna  — quick window, fixed food value
@@ -1651,12 +1645,10 @@ function initMedical(container, onResult, medConfig){
 // onResult contract: onResult(tier, payload) where payload is
 //   { food:int, rare_drops:[{id,name}], sickness:[{type,target,severity,reason}], mode }
 // The caller (cruise.js handleForageVerb) applies food, rare_drops and sickness.
-// Modes cycle per launch in the demo so all three can be reviewed without ctx.
-let _forageCycle = 0;
 
 // Bg registry — known bg ids per mode, with the biome each bg belongs to.
 // Biome drives sprite selection (see sprites.js + pickFauna/pickFlora).
-// `ext` is optional and defaults to 'jpg'; only set when a bg deviates.
+// Each bg is <folder>/<id>.jpg, its anchors in anchors.js.
 const FORAGE_BG_REGISTRY = {
   HUNT: [
     { id:'asteroid',  biome:'asteroid' },
@@ -1683,92 +1675,36 @@ const FORAGE_BG_REGISTRY = {
   ]
 };
 const FORAGE_MODE_FOLDER = { HUNT:'hunt', GATHER:'gather', SCAVENGE:'scav' };
-// Placeholder mode (no real bg art) picks a biome from this set so sprite
-// selection still has a basis. Once real bgs land, bg.biome takes over.
-const FORAGE_PLACEHOLDER_BIOMES = {
-  HUNT:     ['asteroid','ice','desert'],
-  GATHER:   ['forest','meadow','cave'],
-  SCAVENGE: ['ship_interior']
-};
 const FORAGE_SPRITE_DIR = 'sprites/minigames/forage/sprites/';
-// Fallback hardcoded anchors at 960×640 native, used when a bg has no JSON
-// (or no bg art exists for the mode at all). All point-type so the spawn
-// scheduler doesn't need to know about line/region in fallback paths.
-const FORAGE_FALLBACK_ANCHORS = {
-  HUNT: [
-    {type:'point',x:100,y:130,target:'fauna'}, {type:'point',x:430,y:90,target:'fauna'},
-    {type:'point',x:780,y:135,target:'fauna'},{type:'point',x:60,y:380,target:'flora'},
-    {type:'point',x:420,y:430,target:'fauna'},{type:'point',x:790,y:400,target:'fauna'},
-    {type:'point',x:240,y:265,target:'fauna'}
-  ],
-  GATHER: [
-    {type:'point',x:100,y:130,target:'flora'},{type:'point',x:430,y:90,target:'fauna'},
-    {type:'point',x:780,y:135,target:'flora'},{type:'point',x:60,y:380,target:'flora'},
-    {type:'point',x:420,y:430,target:'fauna'},{type:'point',x:790,y:400,target:'flora'},
-    {type:'point',x:240,y:265,target:'flora'}
-  ],
-  SCAVENGE: [
-    {type:'point',x:100,y:130,target:'fauna'},{type:'point',x:430,y:90,target:'fauna'},
-    {type:'point',x:780,y:135,target:'fauna'},{type:'point',x:60,y:380,target:'fauna'},
-    {type:'point',x:420,y:430,target:'fauna'},{type:'point',x:790,y:400,target:'fauna'},
-    {type:'point',x:240,y:265,target:'fauna'}
-  ]
-};
-
 // INBOUND CONTRACT — the caller (cruise.js handleForageVerb) passes a ctx
-// object so this run knows where it came from + what to render. Demo
-// cycles MODE per launch when ctx is missing.
+// object so this run knows what to render.
 //   ctx.mode         'HUNT' | 'GATHER' | 'SCAVENGE'   (which mechanic flavor)
-//   ctx.bg_id        string                            (specific bg, else random from mode pool)
-//   ctx.regionLabel  string                            (override the HUD region text)
-//   ctx.return_to    'cruise' | 'encounter' | etc.    (caller surface — onResult should route back)
-//   ctx.origin_node  string                            (map node id that triggered this; round-tripped in result)
-//   ctx.crew_in_party crewId[]                          (engine populates so sickness can target real crew)
-//   ctx.player_skill  number                           (optional difficulty modifier — unused today)
+//   ctx.regionLabel  string                            (the HUD region text)
 function initForage(container, onResult, ctx){
-  ctx = ctx || {};
-  const MODE = ctx.mode || ['HUNT','GATHER','SCAVENGE'][_forageCycle++ % 3];
-  // HUD region text: the cruise passes where the
-  // ship actually stopped (ctx.regionLabel, e.g. 'ASTEROID FIELD'); the
-  // demo's fixed per-mode table is only the fallback for a launch with no
-  // caller context. Set once the bg (and its biome) is picked, below.
-  let REGION;
+  const MODE = ctx.mode;
 
-  // Pick a bg from the registry (or null = placeholder mode)
-  const bgList = FORAGE_BG_REGISTRY[MODE] || [];
-  const pickedBg = ctx.bg_id !== undefined
-    ? bgList.find(b => b.id === ctx.bg_id) || null
-    : (bgList.length ? bgList[Math.floor(Math.random() * bgList.length)] : null);
-  const bgId = pickedBg ? pickedBg.id : null;
-  // Biome is bg-driven if real art available, otherwise picked from the
-  // mode's placeholder biome set so sprite selection has a basis.
-  const placeholderBiomes = FORAGE_PLACEHOLDER_BIOMES[MODE] || ['ship_interior'];
-  const BIOME = pickedBg
-    ? pickedBg.biome
-    : placeholderBiomes[Math.floor(Math.random() * placeholderBiomes.length)];
-  // A HUNT on a desert or ice rock is that rock, not "ASTEROID FIELD" —
-  // the biome names the ground the crew is standing on.
+  // A random bg from the mode's pool; its biome picks the sprites.
+  const bgList = FORAGE_BG_REGISTRY[MODE];
+  const pickedBg = bgList[Math.floor(Math.random() * bgList.length)];
+  const bgId = pickedBg.id;
+  const FOLDER = FORAGE_MODE_FOLDER[MODE];
+  const BIOME = pickedBg.biome;
+  // HUD region text: where the ship actually stopped (ctx.regionLabel,
+  // e.g. 'ASTEROID FIELD') — but a HUNT on a desert or ice rock is that
+  // rock: the biome names the ground the crew is standing on.
   const BIOME_PLACE = { desert: 'DESERT ROCK', ice: 'ICE ROCK' };
-  REGION = (BIOME_PLACE[BIOME] || ctx.regionLabel || ({
-    HUNT:'ASTEROID FIELD',
-    GATHER:'ALIEN FOREST',
-    SCAVENGE:'MAINTENANCE DECK'
-  })[MODE]) + ' · ' + MODE;
-
-  // Cover glyphs only show in placeholder mode (no real bg art). When real
-  // art loads, covers are baked into the painting; placeholder covers hide.
-  const COVER_GLYPH = {HUNT:'🪨', GATHER:'🌿', SCAVENGE:''};
+  const REGION = (BIOME_PLACE[BIOME] || ctx.regionLabel) + ' · ' + MODE;
 
   // Sprite pickers — biome-restricted, decoy-aware.
   function pickFaunaSprite(biome, wantDecoy){
-    const SPR = (window.FORAGE_SPRITES && window.FORAGE_SPRITES.fauna) || {};
+    const SPR = FORAGE_SPRITES.fauna;
     let candidates = Object.entries(SPR).filter(([_,s]) => s.biomes.includes(biome));
     if(!candidates.length) return null;
     if(wantDecoy){
       const decoyable = candidates.filter(([_,s]) => s.has_bad);
       if(!decoyable.length){
-        // Biome has no decoy-eligible fauna — caller flips to non-decoy.
-        return Object.assign(pickFaunaSprite(biome, false), { downgraded:true });
+        // Biome has no decoy-eligible fauna — a plain one instead.
+        return pickFaunaSprite(biome, false);
       }
       candidates = decoyable;
     }
@@ -1780,7 +1716,7 @@ function initForage(container, onResult, ctx){
     return { species, isDecoy:false, path: `${FORAGE_SPRITE_DIR}fauna_${species}${v}.png` };
   }
   function pickFloraSprite(biome, wantDecoy){
-    const SPR = (window.FORAGE_SPRITES && window.FORAGE_SPRITES.flora) || {};
+    const SPR = FORAGE_SPRITES.flora;
     let candidates = Object.entries(SPR).filter(([_,s]) => s.biomes.includes(biome));
     if(!candidates.length) return null;
     const [type, spec] = candidates[Math.floor(Math.random() * candidates.length)];
@@ -1820,7 +1756,6 @@ function initForage(container, onResult, ctx){
     {id:'med_herb',      name:'Medicinal Herb (medkit)'}
   ];
 
-  // Build base DOM up-front so DEPART can fire even before bg/anchors load.
   // Tip text is biome-specific so it never mentions shrooms on an ice bg etc.
   const TIP_BY_BIOME = {
     ship_interior: 'Quick clicks · vent dwellers are fast',
@@ -1834,7 +1769,7 @@ function initForage(container, onResult, ctx){
   const tipText = TIP_BY_BIOME[BIOME] || 'Click before they vanish';
   container.innerHTML = `
     <div class="for-scene">
-      <div class="for-stage" id="for-stage" data-mode="${MODE}" data-art="0"></div>
+      <div class="for-stage" id="for-stage" data-mode="${MODE}" data-art="1" style="background-image:url('sprites/minigames/forage/${FOLDER}/${bgId}.jpg')"></div>
       <div class="for-tbar-wrap"><div class="tbar" id="for-tb" style="width:100%"></div></div>
       <div class="for-hud-top">
         <div class="for-region">${REGION}</div>
@@ -1865,8 +1800,6 @@ function initForage(container, onResult, ctx){
   const slotMeta  = {};
   let anchors = [];
 
-  function rand(a,b){ return a + Math.random()*(b-a); }
-  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
   function decoyChance(elapsedMs){
     const t = Math.min(1, elapsedMs / TIMER_MS);
     return DECOY_BASE + (DECOY_LATE - DECOY_BASE) * t;
@@ -1966,45 +1899,9 @@ function initForage(container, onResult, ctx){
     return a.target || 'fauna';
   }
 
-  // ── Async load: bg image + anchor data, then start the game ──
-  // Source priority for authored anchors:
-  //   1. window.FORAGE_ANCHORS[folder][bgId].anchors  ← inline registry (file://-safe)
-  //   2. fetch(<bg_id>.json)                          ← only when served over HTTP
-  //   3. FORAGE_FALLBACK_ANCHORS[MODE]                ← hardcoded last resort
-  (async function start(){
-    const stage = document.getElementById('for-stage');
-    if(bgId && stage){
-      const folder = FORAGE_MODE_FOLDER[MODE];
-
-      // (1) Inline registry — populated by sprites/minigames/forage/anchors.js
-      const reg = (window.FORAGE_ANCHORS && window.FORAGE_ANCHORS[folder]) || {};
-      if(reg[bgId] && Array.isArray(reg[bgId].anchors)){
-        anchors = reg[bgId].anchors;
-      }
-
-      // (2) Fetch fallback — only attempt over HTTP, since file:// blocks fetch
-      if(!anchors.length && location.protocol !== 'file:'){
-        try{
-          const res = await fetch(`sprites/minigames/forage/${folder}/${bgId}.json`);
-          if(res.ok){
-            const data = await res.json();
-            if(Array.isArray(data.anchors) && data.anchors.length){
-              anchors = data.anchors;
-            }
-          }
-        }catch(e){ /* fall through */ }
-        if(cancelled) return;
-      }
-
-      const ext = (pickedBg && pickedBg.ext) || 'jpg';
-      stage.style.backgroundImage = `url('sprites/minigames/forage/${folder}/${bgId}.${ext}')`;
-      stage.dataset.art = '1';
-    }
-    // (3) Hardcoded last resort — keeps demo runnable for modes/bgs without authoring
-    if(!anchors.length) anchors = FORAGE_FALLBACK_ANCHORS[MODE];
-    if(cancelled) return;
-    runGame();
-  })();
+  // ── Authored anchors (the inline registry, file://-safe), then start ──
+  anchors = FORAGE_ANCHORS[FOLDER][bgId].anchors;
+  runGame();
 
   // ── Render anchor click boxes ───────────────────
   function renderAnchorBoxes(){
@@ -2021,10 +1918,9 @@ function initForage(container, onResult, ctx){
       else                         { cx = a.x + a.w/2;  cy = a.y + a.h/2; }
       const sx = Math.round(cx * SCALE - 28); // 56/2 = 28 for centering
       const sy = Math.round(cy * SCALE - 28);
-      const cover = COVER_GLYPH[MODE] || '';
       html += `<div class="for-anchor" id="fa${i}" style="left:${sx}px;top:${sy}px">
         <div class="for-target" id="ft${i}"><div class="for-target-img" id="ti${i}"></div></div>
-        <div class="for-cover">${cover}</div>
+        <div class="for-cover"></div>
       </div>`;
       slotState[i] = 'idle';
     });
@@ -2279,7 +2175,7 @@ function initForage(container, onResult, ctx){
 
     schedTimer = setInterval(()=>{
       if(done) return;
-      if(typeof PauseBus !== 'undefined' && PauseBus.paused) return;
+      if(PauseBus.paused) return;
       playElapsed += TICK_MS;
       const elapsed = playElapsed;
       if(elapsed > STOP_BY) return;
@@ -2427,7 +2323,7 @@ function initForage(container, onResult, ctx){
 
   function rollRare(){
     if(Math.random() < RARE_CHANCE){
-      rareDrops.push(pick(RARE_DROPS));
+      rareDrops.push(pickRandom(RARE_DROPS));
       flashStatus('RARE FIND', 'gold');
     }
   }
@@ -2544,11 +2440,7 @@ function initForage(container, onResult, ctx){
     // (~5/12/20). Tier ('perfect'|'good'|'poor') drives the AI quip.
     onResult(tier, {
       food, rare_drops: rareDrops, sickness,
-      mode: MODE, bg_id: bgId,
-      // Round-trip caller context so onResult handler can route back without
-      // having to remember which forage call it kicked off.
-      return_to:   ctx.return_to,
-      origin_node: ctx.origin_node
+      mode: MODE, bg_id: bgId
     });
   }
 
@@ -2603,7 +2495,7 @@ function initBrace(container, onResult){
     const fromLeft = Math.random() < 0.5;
     surges.push({
       warnAt: strikeAt - SURGE_WARN*1000, strikeAt,
-      struck:false, warned:false, dodged:false, fromLeft,
+      struck:false, fromLeft,
       waveEl: null,
     });
   }
@@ -2758,7 +2650,6 @@ function initBrace(container, onResult){
       if(elapsed >= s.strikeAt + SURGE_STRIKE*1000 && !s.struck){
         s.struck = true;
         if(s.braced){
-          s.dodged = true;
           shield = Math.min(100, shield + SURGE_BONUS);
           spawnDodgeRing();
         }
@@ -3007,7 +2898,7 @@ function initBreach(container, onResult, opts){
   // Where T = N * perHole_seconds, so R = cap / (perHole_seconds * N²).
   // The bar starts at the ship's real O2, not 100%: a breach on a
   // half-empty tank never shows a full one.
-  const O2_START = (typeof STATE !== 'undefined' && STATE && STATE.resources && typeof STATE.resources.o2 === 'number')
+  const O2_START = typeof STATE.resources.o2 === 'number'
     ? Math.max(0, Math.min(100, Math.round(STATE.resources.o2))) : 100;
   let o2 = O2_START;
   // Where a result tier leaves the air: the start plus its loss, as the
@@ -3483,18 +3374,16 @@ function initSalvage(container, onResult, opts){
   glowEl.style.height = (BAY.h*100)+'%';
 
   // ── HUD cursor (parametric reticle from shared.js) ──
-  if (typeof CURSOR_CONTEXTS !== 'undefined') {
-    CURSOR_CONTEXTS['salvage_tractor'] = {
-      family:'reticle', cursor:'hud',
-      size:HUDCUR.size, thickness:HUDCUR.thickness, gap:HUDCUR.gap,
-      color1:HUDCUR.color1, color2:HUDCUR.color2,
-      outline:HUDCUR.outline, dot:false, scale:2,
-    };
-    stage.style.cursor = generateCursor('salvage_tractor', {
-      color1:HUDCUR.color1, color2:HUDCUR.color2,
-      thickness:HUDCUR.thickness, outline:HUDCUR.outline, opacity:HUDCUR.opacity,
-    });
-  }
+  CURSOR_CONTEXTS['salvage_tractor'] = {
+    family:'reticle', cursor:'hud',
+    size:HUDCUR.size, thickness:HUDCUR.thickness, gap:HUDCUR.gap,
+    color1:HUDCUR.color1, color2:HUDCUR.color2,
+    outline:HUDCUR.outline, dot:false, scale:2,
+  };
+  stage.style.cursor = generateCursor('salvage_tractor', {
+    color1:HUDCUR.color1, color2:HUDCUR.color2,
+    thickness:HUDCUR.thickness, outline:HUDCUR.outline, opacity:HUDCUR.opacity,
+  });
 
   // ── Foreground drifting asteroid clutter ──
   // Only on space-context bgs (`space`, `deepspace`). The bg literally named
@@ -3510,9 +3399,7 @@ function initSalvage(container, onResult, opts){
     {scale:[0.85,1.2], speed:1.0,  bri:1.0,  z:3},  // front (full bright)
   ];
   function spawnAsteroid(initial) {
-    if (typeof pickAsteroids !== 'function') return;
-    const [src] = pickAsteroids('salvage-rock-' + (Date.now() ^ Math.random()*1e9 | 0), 1);
-    if (!src) return;
+    const src = pickRandom(ASTEROID_FILES);
     const layer = ASTEROID_LAYERS[Math.floor(Math.random() * ASTEROID_LAYERS.length)];
     const speedMul = layer.speed;
     let vx = drift.dx * speedMul + (Math.random()-0.5) * (drift.jx||0.01);
@@ -3563,9 +3450,8 @@ function initSalvage(container, onResult, opts){
   let lastMouseX = 0, lastMouseY = 0;
   let lastTick = performance.now();
   let rafId;
-  const items = [];           // {uid, el, fx, fy, vx, vy, type, alive}
+  const items = [];           // {el, fx, fy, vx, vy, type, alive}
   const cargo = [];           // {key, cat, sz, sprite}
-  let itemUid = 0;
 
   function pickItemType() {
     let r = Math.random() * ITEMS_TOTAL_WT;
@@ -3606,7 +3492,7 @@ function initSalvage(container, onResult, opts){
     const vrot = (Math.random()-0.5) * 14;       // ±7°/sec drift
     el.style.setProperty('--rot', rot+'deg');
     itemsEl.appendChild(el);
-    const item = {uid:itemUid++, el, fx, fy, vx, vy, rot, vrot, type, alive:true};
+    const item = {el, fx, fy, vx, vy, rot, vrot, type, alive:true};
     items.push(item);
     el.addEventListener('mousedown', (ev) => {
       if (done || held || energy <= 0) return;
@@ -3654,7 +3540,7 @@ function initSalvage(container, onResult, opts){
     el.style.setProperty('--scl', scale);
     el.style.setProperty('--rot', rot+'deg');
     itemsEl.appendChild(el);
-    const h = {uid:itemUid++, el, fx, fy, vx, vy, rot, vrot, sprite, scale, alive:true,
+    const h = {el, fx, fy, vx, vy, rot, vrot, sprite, scale, alive:true,
                type:{key:'hazard', cat:'hazard', sz:'-', sprite}};
     hazards.push(h);
     el.addEventListener('mousedown', (ev) => {
@@ -3789,7 +3675,7 @@ function initSalvage(container, onResult, opts){
         energy = 0;
         firing = false;
         if (held) { held.el.classList.remove('held'); held = null; }
-        endRunDepleted();
+        endRun('sal-depleted', 'TRACTOR BEAM<br>ENERGY DEPLETED');
         return;
       }
     }
@@ -3879,26 +3765,12 @@ function initSalvage(container, onResult, opts){
   // before transitioning to the end screen. Keeps the run-end beat
   // legible — players otherwise saw an instant cut to the haul card.
   const stopTimer = makeTimer('sal-tb', RUN_MS, null, () => {
-    if (!done) endRunTimeUp();
+    if (!done) endRun('sal-depleted timeup', "TIME'S UP");
   });
 
-  function endRun() {
-    if (done) return;
-    done = true;
-    markMinigameEnding();
-    cancelAnimationFrame(rafId);
-    clearInterval(spawnIv);
-    clearInterval(hazardSpawnIv);
-    if (asteroidSpawnIv) clearInterval(asteroidSpawnIv);
-    stopTimer();
-    stage.style.cursor = '';
-    // Leave stage visible behind the dimmed end-screen overlay — feels
-    // like an "add-on" rather than a screen replacement.
-    showEndScreen();
-  }
-
-  // Energy depletion: flash full-screen alert for 1.5s, then transition.
-  function endRunDepleted() {
+  // Energy depletion or the hidden timer: a full-screen alert for 2.5s,
+  // then the end screen (the stage stays visible behind its overlay).
+  function endRun(alertClass, msgHtml) {
     if (done) return;
     done = true;
     markMinigameEnding();
@@ -3909,29 +3781,8 @@ function initSalvage(container, onResult, opts){
     stopTimer();
     stage.style.cursor = '';
     const alert = document.createElement('div');
-    alert.className = 'sal-depleted';
-    alert.innerHTML = '<div class="sal-depleted-msg">TRACTOR BEAM<br>ENERGY DEPLETED</div>';
-    stage.appendChild(alert);
-    setTimeout(() => {
-      alert.remove();
-      showEndScreen();
-    }, 2500);
-  }
-
-  // Hidden-timer expiration: same flash treatment, gold register.
-  function endRunTimeUp() {
-    if (done) return;
-    done = true;
-    markMinigameEnding();
-    cancelAnimationFrame(rafId);
-    clearInterval(spawnIv);
-    clearInterval(hazardSpawnIv);
-    if (asteroidSpawnIv) clearInterval(asteroidSpawnIv);
-    stopTimer();
-    stage.style.cursor = '';
-    const alert = document.createElement('div');
-    alert.className = 'sal-depleted timeup';
-    alert.innerHTML = "<div class=\"sal-depleted-msg\">TIME'S UP</div>";
+    alert.className = alertClass;
+    alert.innerHTML = '<div class="sal-depleted-msg">' + msgHtml + '</div>';
     stage.appendChild(alert);
     setTimeout(() => {
       alert.remove();
@@ -4264,7 +4115,7 @@ function initSalvage(container, onResult, opts){
   function showJobEnd(tier, tierBadge, haulHtml) {
     const list = tierRewardList(opts, tier);
     const reward = list
-      ? (list.length ? list.map(t => `<div class="sal-job-line">${escHtml(t)}</div>`).join('') : '<div class="sal-job-line none">Nothing this time.</div>')
+      ? (list.length ? list.map(t => `<div class="sal-job-line">${escapeHTML(t)}</div>`).join('') : '<div class="sal-job-line none">Nothing this time.</div>')
       : '<div class="sal-job-line none">The job\'s outcome follows.</div>';
     endEl.innerHTML = `
       <div class="sal-end-card sal-job">
@@ -4317,6 +4168,6 @@ function initSalvage(container, onResult, opts){
     // engine API
     openMinigame, abortMinigame,
     // test hooks: tools/tests drive and read these through page.evaluate
-    SALVAGE_DERELICT, showResult,
+    SALVAGE_DERELICT, showResult, FORAGE_BG_REGISTRY,
   });
 })();

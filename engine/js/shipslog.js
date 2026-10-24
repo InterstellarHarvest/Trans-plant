@@ -49,8 +49,8 @@
     fight_won: '{title}: won. {effects}.', fight_lost: '{title}: lost. {effects}.', fight_fled: '{title}: fled. {effects}.', fight_paid: '{title}: paid them off. {effects}.',
   };
 
-  const ai = () => String((typeof STATE !== 'undefined' && STATE.activeAI) || 'marv');
-  function aiDef(id) { return ((typeof MOD !== 'undefined' && MOD.ai_companions) || []).find(x => x.id === 'ai_' + (id || ai())) || null; }
+  const ai = () => String(STATE.activeAI || 'marv');
+  function aiDef(id) { return (MOD.ai_companions || []).find(x => x.id === 'ai_' + (id || ai())) || null; }
   function template(key) {
     const a = aiDef();
     return (a && a.log_templates && a.log_templates[key]) || FALLBACK[key] || '';
@@ -91,14 +91,8 @@
   function roleTitle(role) { return String(role || 'crew').replace(/_/g, ' '); }
 
   // ── Real effects: a snapshot of everything an outcome can change ──
-  function itemName(id) {
-    const d = itemDef(id);
-    return String((d && d.name) || prettyItem(id)).toUpperCase();
-  }
-  function matName(id) {
-    const d = materialDefOf(id);
-    return String((d && d.name) || id).replace(/_/g, ' ').toUpperCase();
-  }
+  const itemName = id => itemNameOf(id).toUpperCase();
+  const matName = id => materialNameOf(id).replace(/_/g, ' ').toUpperCase();
   function snapshot() {
     const n = {};
     for (const k of RES_KEYS) n['res.' + k] = Number(STATE.resources[k]) || 0;
@@ -258,7 +252,7 @@
   // ── Public recording API (index.html / combat.js / crew.js hooks) ──
   const ShipLog = {
     fill, // test hook: the template fill (sentence capitals)
-    capture, begin, timeStart, timeEnd, snapshot, facts,
+    capture, begin, timeStart, timeEnd,
     // An event begins: the record measures from here.
     eventStart() { eventSnap = snapshot(); fightChoice = null; },
     eventEnd() { eventSnap = null; fightChoice = null; },
@@ -361,7 +355,7 @@
     },
     // Storage form of an entry: no empty fields (saves stay small).
     store, compact,
-    open: openShipsLog, render: renderShipsLog, openEntry,
+    openEntry,
   };
 
   function causeOfDeath() {
@@ -472,15 +466,15 @@
     const ex = expandOf(e);
     if (!ex) return;
     const card = $('slog-expand-card');
-    const death = e.type === 'death' || ex.kind === 'memorial' || !!ex.deceased;
+    const death = e.type === 'death' || ex.kind === 'memorial';
     card.classList.toggle('death-mode', death);
     card.querySelectorAll('.slog-death-header').forEach(h => h.remove());
     $('slog-expand-title').textContent = ex.title || (death ? 'IN MEMORIAM' : 'FROM THE LOG');
     if (death) {
       const hdr = document.createElement('div');
       hdr.className = 'slog-death-header';
-      const crewId = e.crewId || ex.deceased;
-      if (crewId && typeof CREW_ATLAS !== 'undefined' && CREW_ATLAS[crewId] && typeof applyCrewPortrait === 'function') {
+      const crewId = e.crewId;
+      if (crewId && CREW_ATLAS[crewId]) {
         const p = document.createElement('div');
         p.className = 'slog-portrait';
         applyCrewPortrait(p, crewId, 50, 120); // the full figure, desaturated (memory, not a live face)
