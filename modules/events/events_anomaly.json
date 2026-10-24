@@ -17,7 +17,6 @@
     "scene_type": "anomaly",
     "once": true,
     "sets_flag": "encountered_anomaly",
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA describes the anomaly as 'a wonderful mystery!' She has run seventeen scans. Each one says something different. She thinks this is exciting!",
       "marv": "MARV's sensors have returned four conflicting readings. He has averaged them. The average is also wrong. He is logging this under 'physics: check again later.'",
@@ -29,16 +28,10 @@
     "choices": [
       {
         "text": "Scan thoroughly — take readings from all arrays",
-        "requires_crew": null,
         "requires_item": "gas_analyzer",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "scanned_anomaly",
           "time_cost": "medium",
           "narrative": "The gas analyzer resolves the readings. The anomaly is a dense pocket of exotic matter wrapped in a refractive field — genuinely unusual, scientifically interesting, and completely harmless. You collect a sample. The ship computer updates its 'physics: check again later' file to 'physics: noted, moving on.'",
@@ -49,18 +42,11 @@
       },
       {
         "text": "Send a probe — see what comes back",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "probed_anomaly",
           "time_cost": "medium",
           "narrative": "The probe returns. It has collected something. The something registers as exotic matter on three of the four sensor arrays. The fourth sensor array is now humming a frequency it has never produced before. The ship computer has muted it.",
@@ -71,35 +57,20 @@
       },
       {
         "text": "Navigate around it — some readings are best left unread",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You took the long way around. The readings normalized once you were past it. The ship computer closed the anomaly file without a summary. This is the first time it has done that."
         }
       },
       {
         "text": "Fly straight through — the sensors are probably wrong",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "flew_through_anomaly",
           "time_cost": "trivial",
           "narrative": "You flew through it. Nothing happened. The sensors are still disagreeing. The ship computer has added a note to the navigation log: 'Unknown. Passed through. Fine. Probably.' The 'probably' is doing a lot of work."
@@ -125,7 +96,6 @@
     "scene_type": "anomaly",
     "once": true,
     "sets_flag": "anomaly_contact",
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA received the signal! She isn't sure what it said! She sent a greeting back! She feels this was the right choice! She is now less sure!",
       "marv": "MARV has analyzed the signal. It is not a natural phenomenon. It is also not in any known communication protocol. He is filing this under 'problems for future MARV.'",
@@ -138,15 +108,9 @@
       {
         "text": "Respond — transmit on the same frequency",
         "requires_crew": "xenobiologist",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "made_contact",
           "time_cost": "high",
           "narrative": "Your xenobiologist transmitted a response. Something replied. The exchange lasted forty minutes. At the end, two objects materialized in the cargo bay — dense, warm, and completely inert by every measure the ship can apply. The xenobiologist has not stopped writing. The ship computer has added this to its 'physics: notable' file.",
@@ -159,16 +123,12 @@
         "text": "Offer it the seed pod from the derelict",
         "requires_crew": "xenobiologist",
         "requires_item": "alien_seed_pod",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": 15,
             "morale": 8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
           "item_consume": "alien_seed_pod",
           "sets_flag": "returned_seed_pod",
           "time_cost": "medium",
@@ -180,19 +140,12 @@
       },
       {
         "text": "Record and move on — bring the data home",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -3,
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "recorded_contact",
           "time_cost": "low",
           "narrative": "You held station in the anomaly's wash for the full capture, which cost fuel, and played it back twice, which cost sleep. The anomaly did not follow. It did not transmit again. The three repeated words are still unidentified. The question mark is still a question mark."
@@ -200,18 +153,11 @@
       },
       {
         "text": "Emergency burn — leave immediately",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "fled_contact",
           "time_cost": "trivial",
           "narrative": "Emergency burn. The anomaly receded behind you. The transmission did not repeat. Fuel cost was significant. Nobody is criticizing the decision. The transmission was, on reflection, probably nothing. Probably."
@@ -236,8 +182,6 @@
     ],
     "scene_type": "anomaly",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has already said this! She is SURE she has already said this! She is saying it again with enthusiasm because what else is there!",
       "marv": "MARV's chronometer disagrees with his backup chronometer by eleven seconds. Both are correct. He has written that sentence four times now and it has not improved.",
@@ -249,20 +193,12 @@
     "choices": [
       {
         "text": "Push through at speed",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -5,
             "morale": -3
           },
-          "crew_effect": null,
           "severity": "injury",
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You burn straight through the stutter. The crossing takes eleven seconds, twice, and then it takes them again, and then you are out, trailing a wake of déjà vu. The clocks resynchronize sulkily. The coffee cup stays fallen. So does whoever met the same bulkhead three times running. The bruise did not resynchronize. Everyone agrees to call the rest a win."
         }
@@ -270,20 +206,14 @@
       {
         "text": "Let the xenobiologist take readings",
         "requires_crew": "xenobiologist",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2,
             "fuel": -2,
             "food": -6
           },
-          "crew_effect": null,
           "severity": null,
           "item_grant": "star_chart_fragment",
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The xenobiologist rides the loop like a tourist attraction, running the same experiment in the same eleven seconds an unknowable number of times. The data is impossible and beautiful: one perfect repetition, measured from the inside. Their notes end mid-sentence and then end mid-sentence. Holding station inside the loop took a little fuel and a great many meals: every meal eaten in there was eaten twice, and the stores were billed for both.",
           "log_lore": {
@@ -294,20 +224,12 @@
       },
       {
         "text": "Go around the whole region",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -6,
             "food": -5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "You give the stutter the widest berth the fuel budget allows. The detour costs real reserves, fuel and {cost.food} points of rations, and buys something harder to price: a linear afternoon, in which every event happens once, in order. The crew savors it like a delicacy."
         }
@@ -336,8 +258,6 @@
     ],
     "scene_type": "anomaly",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The anomaly said something NICE! ARIA is checking the translation! The translation holds! ARIA needs a moment!",
       "marv": "MARV has verified the signal is structured, directed, and addressed to this vessel specifically. Its content survives four translation passes unchanged. He has no protocol for this. Nobody has a protocol for this.",
@@ -349,18 +269,11 @@
     "choices": [
       {
         "text": "Transmit a thank-you",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "thanked_the_anomaly",
           "time_cost": "trivial",
           "narrative": "You compose a reply — brief, polite, proofread, nervously, by everyone aboard — and beam it at the lens. There is no answer. But the light through the anomaly seems to settle, the way a room does when a courtesy lands. The crew walks tall for days. The garden, it has been officially observed, is well kept."
@@ -368,38 +281,22 @@
       },
       {
         "text": "Ask it a question",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You transmit a single question: 'WHO IS KEEPING YOU?' The lens bends light in silence for a long minute. Then, tight-beam, one word: 'CONTINUING.' The linguistics debate over whether that was an answer, a description, or advice lasts the rest of the voyage and is never settled."
         }
       },
       {
         "text": "Log it and continue, as instructed",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You do exactly what the message said: continue. It is, the crew agrees, the only reviewed-and-approved course of action anyone has received all voyage — and from the most senior reviewer imaginable. The growbay gets its watering an hour early that night. Standards must be kept. Someone is watching."
         }
@@ -423,8 +320,6 @@
     ],
     "scene_type": "anomaly",
     "once": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has received a message from future ARIA! Future ARIA sounds tired! ARIA is sure that is just the signal!",
       "marv": "MARV has verified the message's signature. It is his. He would like it noted that even his future self has nothing encouraging to say.",
@@ -436,39 +331,23 @@
     "choices": [
       {
         "text": "Do exactly what it says",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The hatch stays shut. Nobody checks the coffee, which takes real discipline. Tomorrow arrives, ordinary in every way. Whatever was behind the hatch remains a private matter between it and the future."
         }
       },
       {
         "text": "Open the hatch. Carefully.",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": 4,
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Behind the hatch: a perfectly normal crate of rations, which you keep, and a perfectly normal feeling of having been warned, which you also keep. Nothing happens. The crew spends the rest of the week waiting for the thing that did not happen to happen."
         }
@@ -476,18 +355,11 @@
       {
         "text": "Have the xenobiologist answer it",
         "requires_crew": "xenobiologist",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The xenobiologist composes a reply and transmits it into the anomaly, addressed to yesterday. It reads: \"WE KNOW. WE GOT IT.\" Somewhere behind you, presumably, the circle closes. The xenobiologist is insufferable for days."
         }
@@ -511,8 +383,6 @@
     ],
     "scene_type": "anomaly",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "A SIGNAL! Every 1.3373 seconds! Someone out there is very, very punctual! ARIA has put five gold on 'tall and kind'!",
       "marv": "MARV has a theory. It involves a collapsed star and no aliens of any kind. He has been asked to keep it to himself until the betting closes.",
@@ -524,10 +394,6 @@
     "choices": [
       {
         "text": "Time the pulses for a navigation fix",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "launch_minigame": "scan",
         "minigame_opts": {
           "difficulty": "easy",
@@ -584,50 +450,30 @@
         },
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You time the pulses against the ship's clock."
         }
       },
       {
         "text": "Let the crew enjoy the theory",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "Nobody corrects anybody. For one long evening the ship is crewed by people who have made first contact, and the betting pool grows a second, more elaborate betting pool. Somebody draws the aliens. They are tall and kind and wave like your aunt. It goes up on the galley wall."
         }
       },
       {
         "text": "Broadcast a polite hello back",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -2,
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The hello goes out at full power, which costs fuel, from the whole crew, which costs dignity. It will arrive in about two thousand years. Whatever is ticking will not reply, because it is a star. Everyone feels better anyway. The ship computer has signed the message on behalf of the sponsor."
         }
@@ -656,8 +502,6 @@
     ],
     "scene_type": "anomaly",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "It's like a pen pal who only agrees with you! ARIA has said 'you're doing great' into it four times! It's doing great too!",
       "marv": "MARV logs a seven-second echo with no reflecting body in range. He has checked the antenna, the software and his own logs, in that order. He has found nothing to blame.",
@@ -669,38 +513,22 @@
     "choices": [
       {
         "text": "Say something kind into it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You key the handset and say, plainly: 'You're doing well. Keep going.' Seven seconds later the radio says it back to you, and it is, against every expectation, nice to hear. By the end of the watch half the crew has had a turn. Nobody admits what they said."
         }
       },
       {
         "text": "Record it for the science log",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Two days of careful recording: echoes of echoes, timed to the millisecond, logged against every instrument the ship has. None of it explains anything. All of it goes in the log, which makes it feel less like a ghost and more like data.",
           "log_lore": {
@@ -711,19 +539,11 @@
       },
       {
         "text": "Switch the radio off until we're clear",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "Radio off. The silence is worse than the echo, which nobody expected, and somebody keeps glancing at the dark handset as if it might speak on its own. It doesn't. You are clear of the anomaly in a day. The radio comes back on to ordinary static, and everyone pretends that was the plan."
         }
@@ -752,8 +572,6 @@
     ],
     "scene_type": "anomaly",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA is eleven seconds younger than the bridge! ARIA has never been younger than anything! ARIA is going to enjoy it!",
       "marv": "MARV confirms the drift. Time runs slower deeper in a gravity well. Back home, satellite navigation corrects for exactly this every day, or it would be wrong by kilometres. He has corrected the ship's clocks. He has not corrected the galley clock. It has earned its independence.",
@@ -765,19 +583,11 @@
     "choices": [
       {
         "text": "Resync the clocks and carry on",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You resync every clock aboard to the bridge. The galley clock is the last to agree, and drifts again an hour later, a second behind, in protest. The crew adopts it as a mascot. 'Galley time' becomes the ship's word for being slightly late on purpose."
         }
@@ -785,37 +595,22 @@
       {
         "text": "Use the drift to check the route",
         "requires_crew": "pilot",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Two days of comparing the clocks against each other tells the computer exactly how deep the anomaly's well is and where its edge runs. It is a better map than the chart had. The new line around it is shorter, and the fuel it saves is real."
         }
       },
       {
         "text": "Log it for the science record",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The clocks go into the log as they are, drift and all.",
           "log_lore": {
@@ -848,8 +643,6 @@
     ],
     "scene_type": "anomaly",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "It's US! From BEFORE! ARIA is waving! The other ARIA isn't waving back! She was very busy a few hours ago!",
       "marv": "MARV confirms the image is the ship's own light, bent the long way round the anomaly and arriving late. Nothing is out there. He would still like it to stop copying him.",
@@ -861,38 +654,22 @@
     "choices": [
       {
         "text": "Flash the lights at it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You flash the running lights at the ship ahead. It doesn't flash back, because it's you, hours ago, and you weren't looking. In a few hours the light you just sent will come round the anomaly the long way, and somewhere behind you an image of the ship will flash its lights at nobody. The crew finds this hilarious, then a little sad, then hilarious again."
         }
       },
       {
         "text": "Read the ship's own hull off the image",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "materials": {
             "exotic": 1
@@ -902,19 +679,11 @@
       },
       {
         "text": "Steer off and lose it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You steer off the line until the other ship slips behind the anomaly's edge and is gone. It's only light. Everyone agrees it's only light. Several people check the rear camera before bed for a week."
         }
@@ -938,8 +707,6 @@
     ],
     "scene_type": "anomaly",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The ship has a HALO! We're ANGELS! ARIA always suspected!",
       "marv": "MARV identifies a glory: light scattered back from droplets or dust exactly the right size, ringing the shadow of whoever is looking. Climbers and pilots see them on clouds. He has never seen one before. He is not going to say anything more for a while.",
@@ -951,57 +718,33 @@
     "choices": [
       {
         "text": "Hold here so everyone can see it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You hold the ship steady for two days with the star behind you and the dust ahead, and the halo stays where it is. People come up to the bridge between shifts and stand at the viewport without talking. Somebody's child, on a message home, asks whether you are all angels now. The answer sent back is 'sort of'."
         }
       },
       {
         "text": "Photograph it and keep moving",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "One perfect photograph: the ship's shadow, small and dark, with a ring of colour around it. It goes up in the galley and on the bridge and, by the end of the week, inside three bunks."
         }
       },
       {
         "text": "Sample the dust that makes it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "materials": {
             "exotic": 1
@@ -1037,8 +780,6 @@
     ],
     "scene_type": "anomaly",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "It's so SMALL! And so HEAVY! ARIA would like it to let go now! Please! ARIA is asking nicely!",
       "marv": "MARV reads a tiny, extremely dense object, possibly a primordial black hole, though nobody has ever confirmed one exists. The stretch on the frame is growing. He has worked out the burn to escape. It is a large burn. It is also the only number on his screen that gets smaller.",
@@ -1050,10 +791,6 @@
     "choices": [
       {
         "text": "Scan for the shallow line and burn along it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "launch_minigame": "scan",
         "minigame_opts": {
           "briefing": {
@@ -1114,11 +851,7 @@
           "resources": {
             "fuel": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You search the warped light for the shallowest way out."
         }
@@ -1126,39 +859,24 @@
       {
         "text": "Engineer braces the frame while you burn",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "effort": 3,
         "outcome": {
           "resources": {
             "fuel": -10,
             "hull": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "{crew.engineer} runs cables the length of the ship and winches the frame tight from bow to stern, while you burn out at a slow, careful, frame-saving crawl. It takes four days. The ship comes out whole and slightly shorter than it would otherwise have been. Ten points of fuel, six of hull."
         }
       },
       {
         "text": "Full burn, straight out",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "resources_pct": {
             "fuel": -40
@@ -1169,19 +887,12 @@
       {
         "text": "Swing round it and use the fall",
         "requires_crew": "pilot",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -16,
             "morale": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "{crew.pilot} doesn't fight it. They dive the ship around the thing in a tight, terrifying curve and let it throw you out the far side. It works. The ship comes out going faster than it went in, and the frame comes out bent in three places. Sixteen points of hull, and a crew that would like never to discuss it."
         }

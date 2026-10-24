@@ -15,8 +15,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA thinks both routes look wonderful! She recommends the one with the nicer name! She has not checked what the name means!",
       "marv": "MARV has analyzed both routes. Each has its own way of going wrong. He recommends neither. You must choose one.",
@@ -28,16 +26,9 @@
     "choices": [
       {
         "text": "Port lane — {branch.alpha.label}",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "Port lane it is. The ship computer logs your choice as 'pragmatic' and declines to elaborate."
@@ -45,16 +36,9 @@
       },
       {
         "text": "Starboard lane — {branch.beta.label}",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_beta",
           "time_cost": "trivial",
           "narrative": "Starboard lane it is. The ship computer logs your choice as 'interesting.' It does not define 'interesting.'"
@@ -79,8 +63,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA recommends the corporate-approved route! Insurance is important! She does not know what insurance does!",
       "marv": "MARV has read the insurance disclaimer. It covers nothing that will actually happen to you.",
@@ -92,16 +74,9 @@
     "choices": [
       {
         "text": "Corporate Approved route",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "You chose the insured route. The beacon acknowledges your selection and adds you to a mailing list. You did not consent to the mailing list."
@@ -109,16 +84,9 @@
       },
       {
         "text": "NOT Corporate Approved",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_beta",
           "time_cost": "trivial",
           "narrative": "You chose the uninsured route. The beacon makes a sound that might be disapproval. Your insurance has been voided. You did not know you had insurance."
@@ -148,8 +116,6 @@
     ],
     "scene_type": "ship_interior",
     "once": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA notes the approaching vessel is broadcasting on an unregistered frequency! She has replied with a friendly greeting! The ship computer has overridden the greeting!",
       "marv": "MARV has identified the ship. Vessel class: opportunistic. Intent: obvious. His recommendation is immediate evasive action. He is already certain you won't take it.",
@@ -161,27 +127,16 @@
     "choices": [
       {
         "text": "Fight — bring weapons online",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "combat_trigger": true,
         "setFlag": "entered_combat"
       },
       {
         "text": "Offer tribute — give them something and hope they leave",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "gold": -30
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "paid_tribute",
           "time_cost": "low",
           "narrative": "You transmitted the tribute. The other ship collected it and powered down its weapons. They didn't say thank you. They didn't say anything. The intercept course resolved. The ship computer has logged this as 'resolved — cost: tribute.' It does not evaluate value for money."
@@ -193,17 +148,12 @@
       {
         "text": "Negotiate — open a channel, stall for options",
         "requires_crew": "diplomat",
-        "requires_item": null,
-        "requires_flag": null,
         "microgame_type": "negotiation_wobble",
         "outcome": {
           "resources": {
             "gold": -15
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "negotiated_pirate",
           "time_cost": "medium",
           "narrative": "Your diplomat opened a channel. A long, careful negotiation produced an agreement: half the demanded tribute, no boarding, mutual non-aggression for this sector. The pirate captain seemed almost disappointed. The ship computer has noted this as an 'efficient outcome' which is diplomat-speak for 'surprisingly good.'"
@@ -215,17 +165,12 @@
       {
         "text": "Invoke the prepared terms — {crew.diplomat}'s groundwork",
         "requires_crew": "diplomat",
-        "requires_item": null,
         "requires_flag": "negotiation_prepared",
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "negotiated_pirate",
           "clears_flag": "negotiation_prepared",
           "time_cost": "low",
@@ -234,20 +179,13 @@
       },
       {
         "text": "Emergency FTL — charge the drive and run",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -12,
             "hull": -5,
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "fled_pirates",
           "time_cost": "low",
           "narrative": "The FTL drive engaged. The pirate ship's weapons fired once — a parting shot that grazed the hull — and then you were gone. Jump complete. They did not follow. Fuel cost was significant. The hull is slightly worse. The crew is slightly rattled. The ship computer has logged this as 'escape: successful.' Everyone agrees."
@@ -274,8 +212,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA can see the destination on long-range! It's real! It was always PROBABLY real, but now it's REALLY real!",
       "marv": "MARV confirms the destination is within terminal range. He has run the remaining-hazard projections. For once, he says, the list is short. He keeps rereading the list, on the grounds that short lists have historically been hiding something.",
@@ -287,57 +223,33 @@
     "choices": [
       {
         "text": "Call the crew to the forward viewport",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "All hands at the glass, engines humming underfoot, one small light dead ahead refusing to be just a light. Nobody makes a speech, which is itself the speech. The moment files itself in the part of memory that doesn't fade."
         }
       },
       {
         "text": "Run the arrival checklist early",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You work down the arrival checklist with the crew — seals, manifests, the growbay's transfer protocol — a full leg ahead of schedule. It is premature and everyone knows it and the checklist gets done at a sprint anyway. Readiness, it turns out, is a morale item."
         }
       },
       {
         "text": "Tend the crop — the mission isn't done",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You spend the watch in the growbay instead, because the light on the scopes isn't the mission. The green thing under the lamps is the mission. It has come exactly as far as everyone else aboard, without once seeing the view. You tell it about the light. This is not unusual anymore."
         }
@@ -361,8 +273,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA reports you are as far from home as you are from the destination! She calls it 'the equator of the trip!' She has made a certificate!",
       "marv": "MARV confirms the midpoint. Statistically the most dangerous stretch of any voyage — far from help in both directions. He mentions this because it is true, and because someone was about to feel good.",
@@ -374,57 +284,33 @@
     "choices": [
       {
         "text": "Mark it — small ceremony, real cups",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The crew assembles at the viewport for the equator crossing. Reconstituted juice in real cups, one toast per person, a printed certificate displayed with full honors. It is a small, silly ceremony, and like all small silly ceremonies performed far from home, it is load-bearing."
         }
       },
       {
         "text": "Recalculate everything for the second half",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You spend the crossing running the numbers instead: burn rates, margins, the drift between plan and fact. The second-half projections come out tighter than the first-half guesses ever were. Experience, it turns out, is the cargo you pick up en route."
         }
       },
       {
         "text": "Sleep through it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You sleep through the midpoint, on purpose, the way experienced travelers sleep through turbulence. Whatever line the ship crossed, it crossed without your supervision — proof of a crew and a vessel that no longer need every moment managed. That's its own kind of ceremony."
         }
@@ -457,8 +343,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has finished counting the new dents! There are several! She has named the biggest one! Its name is Kevin!",
       "marv": "MARV has completed the engagement analysis. Tactically, it went acceptably. He is now watching the crew clean up in silence, which his sensors classify, correctly, as the other half of combat.",
@@ -470,57 +354,34 @@
     "choices": [
       {
         "text": "Stand the crew down — mandatory rest",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You order everyone off shift, and take the con yourself so the order sticks. The wired ones argue, then sleep like the dead. The hollow ones sleep, then eat like the living. By next watch the corridors move at ship-speed again. The tool locker has never been this organized. Leave it."
         }
       },
       {
         "text": "Debrief it properly — everyone talks",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You gather the crew and walk through the engagement start to finish: what happened, what worked, what got lucky. Saying it out loud shrinks it to something that fits in a report instead of a nightmare. Somebody says 'everyone did their job', and that closes the meeting. Somehow that's the sentence everyone needed."
         }
       },
       {
         "text": "Repair sweep — put the energy to work",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
         "microgame_type": "wrench",
         "outcome": {
           "resources": {
             "hull": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "You channel the post-fight voltage into a full damage sweep: patch, weld, test, next. The crew works like a pit team until the adrenaline is spent honestly and the ship is tighter than before the fight. The biggest new dent is deemed structural character and retained."
         }
@@ -545,8 +406,6 @@
     "scene_type": "ship_interior",
     "bg": "our_ship/cargo",
     "once": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The cargo hold is FULL! ARIA calls it 'a wealth situation!' She recommends enjoying the wealth from a safe distance because nothing else fits in there!",
       "marv": "MARV reports cargo at capacity. Every future acquisition is now also a decision about a divestiture. He notes this is what economists call a portfolio, and what everyone else calls a problem.",
@@ -558,19 +417,11 @@
     "choices": [
       {
         "text": "Audit the manifest",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "An honest afternoon with the manifest: every item justified, every 'archaeological' one tagged for the airlock the moment something better turns up. Somebody is not speaking to you about specific tags. They'll recover. The hold is still full. Now it is full on purpose."
         }
@@ -578,34 +429,20 @@
       {
         "text": "Have {crew.diplomat} repack it",
         "requires_crew": "diplomat",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "A proper cargo-master's repack: nested containers, weight-balanced racks, every strap tensioned. The manifest still reads FULL, but the door finally closes without a shoulder against it, and the crew stops flinching every time the ship turns."
         }
       },
       {
         "text": "Full is fine. Touch nothing",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "hold_declared_full",
           "time_cost": "trivial",
           "narrative": "You declare the hold complete, like a collection. Nothing goes out; nothing new can come in; the manifest becomes, briefly, a finished work of art. The next opportunity the voyage offers will knock on a closed door. That's tomorrow's problem, framed."
@@ -631,8 +468,6 @@
     "scene_type": "ship_interior",
     "bg": "our_ship/cargo",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The cargo hold is empty! ARIA tested the echo! It's a GREAT echo! Seven full seconds! She has recorded it for the ship's archive!",
       "marv": "MARV confirms the hold contains atmosphere, netting, and potential. He notes potential has no mass. He notes the fuel savings. He is trying to help. This is what it looks like.",
@@ -644,20 +479,13 @@
     "choices": [
       {
         "text": "Fabricate trade stock from materials",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
           "item_grant": [
             "ration_brick",
             "ration_brick"
           ],
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The fabricator hums for a day, turning raw stock into a neat row of sellable staples. The hold gains its first tenants. The echo shortens by a measurable amount, which the ship computer logs with what can only be called grief.",
           "fab_wear": 3
@@ -666,38 +494,22 @@
       },
       {
         "text": "Hold a zero-G game night in it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 7
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You kill the gravity in the empty hold for one evening and let the crew have it. What happens in there — the games, the collisions, the laughter bouncing off bare racks — outperforms every morale line item in the manual. The echo was the feature all along."
         }
       },
       {
         "text": "Leave it empty — run light",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You embrace the lightness. An empty hold is mass not carried, fuel not burned, decisions not owed. The ship runs a shade more efficiently, and the hold keeps its echo, its drill laps, and its one unmentioned slow dance."
         }
@@ -722,7 +534,6 @@
     "scene_type": "ship_interior",
     "bg": "our_ship/cargo",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "bought_mystery_crate",
     "requires_item": "mystery_provisions",
     "ai_flavor": {
@@ -736,15 +547,10 @@
     "choices": [
       {
         "text": "Open it. Obviously. Open it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
           "item_grant": "drive_coil",
           "item_consume": "mystery_provisions",
@@ -758,17 +564,11 @@
       },
       {
         "text": "Sell it sealed at the next chance — mystery premium",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "gold": 22
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
           "item_consume": "mystery_provisions",
           "sets_flag": "sold_the_crate",
           "time_cost": "trivial",
@@ -777,18 +577,11 @@
       },
       {
         "text": "Never open it. It's the ship's mystery now",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "crate_enshrined",
           "time_cost": "trivial",
           "narrative": "By unanimous vote, the crate is granted permanent residency, unopened. It gets a corner, a cargo strap of honor, and a small stenciled label: 'NO.' Future crews will inherit it. The anonymous 'do not open it' bettor is never identified, and is respected enormously."
@@ -816,7 +609,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "executed_surrendered_pirate",
     "ai_flavor": {
       "aria": "A ship is hailing! ARIA opened the channel before reading the tone analysis! The tone analysis says... oh. Oh no. ARIA is still glad she has manners!",
@@ -829,18 +621,11 @@
     "choices": [
       {
         "text": "Say nothing. Fly on",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "reputation_marked",
           "time_cost": "trivial",
           "narrative": "You fly on in silence. The word is out and there is no outrunning a reputation at sublight. In the days after, dock clearances come slower, hails go unanswered, and the crew catches strangers' looks in every port. The decision was one moment. The paying for it is a subscription."
@@ -848,18 +633,11 @@
       },
       {
         "text": "Transmit an answer — no excuses, just the truth",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "reputation_answered",
           "time_cost": "trivial",
           "narrative": "You send back the only thing worth sending: what happened, without varnish, and that it sits with you. No absolution comes — the channel stays dead — but somewhere in the network's chatter your answer gets passed along with the story. The galaxy's log accepts amendments. It never accepts deletions."
@@ -868,18 +646,12 @@
       {
         "text": "Let the diplomat work the back channels",
         "requires_crew": "diplomat",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "gold": -15,
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "reputation_managed",
           "time_cost": "low",
           "narrative": "The diplomat spends favors and fifteen gold seeding the counter-story: context, circumstances, the parts the legend leaves out. It buys back some dock access and thins the worst of the glares. It does not touch the thing itself. Nothing does. That's what makes it the thing."
@@ -907,7 +679,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "heard_the_singing",
     "ai_flavor": {
       "aria": "The song! It's the SONG! ARIA never deleted her recording! She checked it every week! She will not be explaining why!",
@@ -920,18 +691,11 @@
     "choices": [
       {
         "text": "Open the speakers ship-wide one last time",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "song_reprise_heard",
           "time_cost": "trivial",
           "narrative": "Every deck, every speaker, the last hour of the crossing. Nobody works through it; whatever's due tomorrow stays due. The song thins as the destination grows, and fades altogether as the arrival light steadies — a handoff, one keeping to another. The log entry reads 'weather, clearing.'"
@@ -939,18 +703,11 @@
       },
       {
         "text": "Answer it — transmit the old recording back",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "song_answered",
           "time_cost": "trivial",
           "narrative": "You beam the old recording back along the signal's bearing: the song, returned to its singer, round-trip complete. There is no reply. There is, for one moment before the static, something that the entire bridge crew will separately, privately, describe as a rest — the musical kind. The kind before an ending."
@@ -977,7 +734,6 @@
     ],
     "scene_type": "deep_void",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "knocked_back",
     "ai_flavor": {
       "aria": "ARIA was NOT going to mention the sound! But everyone heard the sound! So! The sound! Let's all be very normal about the sound!",
@@ -990,18 +746,11 @@
     "choices": [
       {
         "text": "Do not answer. Correspondence closed",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "correspondence_closed",
           "time_cost": "trivial",
           "narrative": "You keep every hand off the hull. The silence that follows has a settled quality, like a letter filed. Nothing further is heard for the rest of the voyage — though for weeks, crew members passing the aft sections walk a little faster, and nobody will say why, and everybody knows why."
@@ -1009,18 +758,11 @@
       },
       {
         "text": "Answer once. Just once",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "knocked_twice",
           "time_cost": "trivial",
           "narrative": "One knock, your knuckles, the inner hull. The reply comes not in sound but in cessation: the ambient creaks and ticks of the ship — sounds you never consciously heard — stop, all of them, for nine seconds. Then resume exactly. You have never heard the ship so loud as in those nine seconds. Correspondence, you decide, is concluded."
@@ -1046,7 +788,6 @@
     ],
     "scene_type": "asteroid_field",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "read_the_note",
     "ai_flavor": {
       "aria": "ARIA matched the beacon registry! It's the med-ship! The one K went to flag down! ARIA has been hoping for this and is now un-hoping it as fast as she can!",
@@ -1059,18 +800,11 @@
     "choices": [
       {
         "text": "Board, and bring K home to the rig",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "brought_k_home",
           "time_cost": "medium",
           "narrative": "You find them in the med-bay, composed, out of air long ago, next to a logged distress call that never sent. You carry them back across the rocks to their own rig and their own claim, and leave them there with the beacon transmitting — a marker now, not an advertisement. The registry is updated: claimant, present. The claim, at last, is worked out.",
@@ -1079,18 +813,13 @@
       },
       {
         "text": "Read the logbook's page on K",
-        "requires_crew": null,
         "requires_item": "logbook_fragment",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
           "item_grant": "medkit",
-          "item_consume": null,
           "sets_flag": "brought_k_home",
           "time_cost": "medium",
           "narrative": "The logbook's author found this frigate not long after K did and could not bring themselves to go in. They wrote down where its sealed med stores were, 'for whoever is braver.' You are, today. You carry K home to the rig and take the medkit the frigate never got to use. The registry is updated: claimant, present. Under their last line about K, you add one of your own.",
@@ -1099,18 +828,11 @@
       },
       {
         "text": "Log the site and notify the registry",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "reported_k",
           "time_cost": "low",
           "narrative": "You chart both ships, transmit the full record to the claims registry, and let the officials finish it properly from their end. It is the correct procedure, completely. The beacon keeps transmitting behind you, patient as ever, to a sector that finally knows what it's been saying."
@@ -1135,7 +857,6 @@
     ],
     "scene_type": "station_interior",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "janitor_intel",
     "ai_flavor": {
       "aria": "Everything the janitor said is HAPPENING! The dock fees! The noodle pot! ARIA is witnessing prophecy and it smells like solvent!",
@@ -1148,39 +869,23 @@
     "choices": [
       {
         "text": "Work the market windows they mentioned",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "gold": 14
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Buy at the shift-change lull, sell before the freighter convoy docks — exactly as the mop foretold. The margins are small, honest, and stacked neatly in your favor by borrowed wisdom. Fourteen gold, and a debt of one future nod, gladly owed."
         }
       },
       {
         "text": "Dodge the trouble spots and resupply clean",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 6,
             "food": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You slot into the good berth, resupply during the quiet window, and clear customs before the alphabetizer's shift. The whole stop runs friction-free, invisible, perfect — the specific luxury of knowing where not to stand. Somewhere below decks, a floor is being maintained by the best-informed person in the sector."
         }
@@ -1204,7 +909,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "stowaway_welcomed",
     "ai_flavor": {
       "aria": "{stowaway.name} fixed the squeaky vent in corridor two! Nobody asked them to! ARIA has updated the crew manifest with a small star! The star is unofficial! The star is PERMANENT!",
@@ -1217,18 +921,11 @@
     "choices": [
       {
         "text": "Make it official — full crew entry in the log",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "stowaway_official",
           "time_cost": "trivial",
           "narrative": "You open the ship's log and enter them properly: name, duties, start date backdated to the day they were found. The computer accepts the record without comment. At dinner, someone slides the log entry across the table for them to see. They read it twice, say nothing, and do the dishes for a week unasked."
@@ -1236,19 +933,11 @@
       },
       {
         "text": "No ceremony. Things are fine as they are",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You leave the paperwork alone. Some arrangements work precisely because nobody names them, and this one is working. The mug stays theirs, the bunk stays theirs, and the manifest stays one discrepancy short of the truth — the pleasant kind of wrong, which every good manifest has at least one of."
         }
@@ -1272,8 +961,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "Another colony ship! Going OUR way! ARIA has waved with the running lights! They waved BACK! We have a FRIEND! (Rival!) (Friend-rival!)",
       "marv": "MARV has identified the vessel: the Provident, colony-class, same destination filing as ours. He notes that 'there's room for everyone' is a phrase used exclusively by people about to race.",
@@ -1285,18 +972,11 @@
     "choices": [
       {
         "text": "Hail them — friendly, mostly",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "met_the_provident",
           "time_cost": "trivial",
           "narrative": "You open a channel and spend an hour trading route notes, complaints about ration bricks, and precisely calibrated compliments. Their captain seems decent. Competent, even. You both sign off with 'see you out there,' and both of you mean it in at least two ways."
@@ -1304,16 +984,9 @@
       },
       {
         "text": "Note them in the log and stay professional",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "met_the_provident",
           "time_cost": "trivial",
           "narrative": "You log the contact and keep the channel closed. Two ships on one trail is a coincidence; talking would make it a relationship, and relationships out here come with obligations. The Provident holds its parallel course, patient as a mirror."
@@ -1321,19 +994,12 @@
       },
       {
         "text": "Push the engines — set the tone early",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -4,
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "met_the_provident",
           "time_cost": "trivial",
           "narrative": "You stretch the ship's legs, pulling measurably ahead by next watch. It costs fuel and settles nothing — the trail is long — but the crew stands straighter and someone tapes a hand-drawn '1st' to the helm console. The Provident, infuriatingly, does not respond at all."
@@ -1363,7 +1029,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "met_the_provident",
     "ai_flavor": {
       "aria": "It's the Provident! They're hurt! ARIA is already composing the 'we're coming' message and would appreciate permission RETROACTIVELY!",
@@ -1376,20 +1041,13 @@
     "choices": [
       {
         "text": "Full stop. Render assistance",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -3,
             "water": -5,
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "saved_the_provident",
           "time_cost": "high",
           "narrative": "You come alongside and spend the better part of a week lending hands, welders, and water. Their engineer and whoever is holding your welder develop a friendship conducted entirely in grunts. When the Provident's drive relights, their whole crew lines their viewports as you separate. Nobody says the word 'debt.' It's said anyway.",
@@ -1398,19 +1056,12 @@
       },
       {
         "text": "Transfer supplies and keep moving",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": -5,
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "helped_the_provident",
           "time_cost": "low",
           "narrative": "You match velocity long enough to line-transfer water and patch stock, then burn back to the lane. Half a rescue — the useful half. Their thanks comes through the comm slightly stiff, the sound of a proud crew doing arithmetic on a kindness."
@@ -1418,18 +1069,11 @@
       },
       {
         "text": "They didn't signal. Respect that. Pass on",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "passed_the_provident",
           "time_cost": "trivial",
           "narrative": "They never asked; you never answered what wasn't asked. The Provident shrinks in the aft scopes, still venting, still working, and the bridge is very quiet for a long while after. The lane ahead is clear and the berth office processes arrivals in docking order and nobody aboard feels like saying either fact out loud."
@@ -1454,7 +1098,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "met_the_provident",
     "ai_flavor": {
       "aria": "The Provident is on the arrival scope! ARIA has been secretly hoping for this! Not secretly! She told everyone!",
@@ -1467,19 +1110,12 @@
     "choices": [
       {
         "text": "Race them. Properly",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -5,
             "morale": 8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "raced_the_provident",
           "time_cost": "trivial",
           "narrative": "You give the crew the throttle and the two ships pour down the approach lane like it owes them money — trading the lead twice, both AIs narrating, both crews howling. You dock ninety seconds apart. Which order? Both logs mysteriously disagree, and both captains have agreed to keep it that way forever."
@@ -1487,18 +1123,11 @@
       },
       {
         "text": "Wave them in first",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "yielded_to_provident",
           "time_cost": "trivial",
           "narrative": "You ease the throttle and let the Provident take the lane, running lights dipped in the old courtesy. Whatever they owe you or don't, whatever the months decided — someone had to dock second, and your crew chose to be the ship that could afford to. The berth office notices nothing. Both crews notice everything."
@@ -1528,8 +1157,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "A mayday! Faint but REAL! ARIA has boosted the receiver and is holding very still, which does not help but feels correct!",
       "marv": "MARV has localized the signal: small ship, prospector class, life support on reserves. Response time: we are it. There is no one else. There is rarely anyone else.",
@@ -1541,19 +1168,12 @@
     "choices": [
       {
         "text": "Answer it. Burn hard",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -6,
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "answered_the_mayday",
           "time_cost": "medium",
           "narrative": "You pull them out of their dying rig with forty minutes of air to spare — a prospector named Okonkwo, shaking, laughing, apologizing for the mess. You drop them at the next stop with a meal in them. They memorize your hull registry before they go. 'I'm good for it,' they say. Out here, people usually are."
@@ -1561,18 +1181,11 @@
       },
       {
         "text": "Relay the signal boosted — someone closer may hear",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "relayed_the_mayday",
           "time_cost": "trivial",
           "narrative": "You put your transmitter's full power behind their whisper and fling it up and down the lane, then hold course. It is something. It is not enough, and the bridge knows the math as well as you do. The signal fades off the scope somewhere behind you, unanswered as far as your receivers reach."
@@ -1598,7 +1211,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "answered_the_mayday",
     "ai_flavor": {
       "aria": "A ship is hailing US! It's OKONKWO! The prospector! They have a BIGGER ship now and they're saying words like 'finally' and 'about time!'",
@@ -1611,10 +1223,6 @@
     "choices": [
       {
         "text": "Accept, with grace",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 12,
@@ -1622,32 +1230,20 @@
             "water": 10,
             "morale": 8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Supplies flow across the transfer line for an hour — fuel, rations, water, and a crate marked 'THE GOOD COFFEE, DON'T RATION IT.' Okonkwo waves off every thank-you: 'Forty minutes of air. This is me rounding down.' They burn off toward their claims, lighter by cargo, square by their own ledger, and the trail feels measurably less empty for weeks."
         }
       },
       {
         "text": "Accept the minimum — they've their own road",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 6,
             "food": 5,
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You take enough to be safe and wave off the rest; they take the refusal about as well as you took their mayday — which is to say, they understand it completely and override half of it. The transfer line runs twice as long as you authorized, and what you wouldn't take in supplies comes across as spare plate and scrap, 'for the hull, which looks terrible.' Some arguments are just generosity with extra steps.",
           "materials": {
@@ -1681,7 +1277,6 @@
     "scene_type": "ship_exterior",
     "comm_mode": "screen",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "pirate_sympathy",
     "npc": {
       "disposition": "pirate",
@@ -1856,7 +1451,6 @@
     ],
     "scene_type": "station_interior",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "bribed_inspector",
     "ai_flavor": {
       "aria": "The inspector from before is at the airlock! With the clipboard! ARIA has checked and we ARE up to code this time! Mostly! Largely! ARIA will be in the growbay!",
@@ -1869,19 +1463,12 @@
     "choices": [
       {
         "text": "Pay again — 15 gold, smoother every time",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "gold": -15,
             "morale": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "inspector_paid_twice",
           "time_cost": "trivial",
           "narrative": "The gold changes hands; the clipboard stays closed; the inspection takes six minutes. The inspector departs with a cheerful 'see you down the line,' which lands exactly as intended: not a farewell, an itinerary. The crew watches them go. The word 'again' hangs in the corridor, unspoken and expensive."
@@ -1892,18 +1479,11 @@
       },
       {
         "text": "Refuse — take the full inspection, clean",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "inspector_refused",
           "time_cost": "medium",
           "narrative": "You decline, politely, in front of witnesses. The inspector's smile recalibrates; the clipboard opens; the inspection takes days, vengeful ones, and finds three violations, all real, all fixed on the spot by a crew working with grim satisfaction. The stamp lands. The enrollment ends. The inspector does not say 'see you down the line.' There's nothing to see anymore."
@@ -1911,19 +1491,12 @@
       },
       {
         "text": "Report the arrangement to station authority",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2,
             "gold": -10
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "inspector_reported",
           "time_cost": "low",
           "narrative": "You file the report — including your own part in it, which stings and is the only version that works. Station authority takes it seriously: the inspector is reassigned to auditing empty warehouses, and your honesty costs you a fine and buys you something the trail rarely sells: a clean ledger. Both receipts are framed."
@@ -1951,7 +1524,6 @@
     ],
     "scene_type": "planet_surface",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "searching_for_water",
     "ai_flavor": {
       "aria": "SCANS CONFIRM! Sub-surface ice! LOTS of it! ARIA has been holding this scan since the rationing started and is SO glad to finally say it!",
@@ -1964,19 +1536,12 @@
     "choices": [
       {
         "text": "Melt and filter until the tanks run high",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": 30,
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "water_promise_kept",
           "time_cost": "medium",
           "narrative": "Four days of melt-and-filter. The tanks reach a number they haven't shown since the trail began, and the ship's plumbing, asked to carry abundance for once, gurgles like it's celebrating. First full showers in weeks. The hot water lottery is won, and promptly traded, for reasons nobody questions.",
@@ -1985,19 +1550,12 @@
       },
       {
         "text": "Fill halfway and bank the daylight",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": 15,
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "water_promise_kept",
           "time_cost": "low",
           "narrative": "Half-full tanks and an early departure — enough water to retire the rationing chart, enough schedule kept to stay honest with the deadline. The promise counts as kept. The crew counts it too. Both maths come out ahead.",
@@ -2023,8 +1581,6 @@
     ],
     "scene_type": "ship_interior",
     "once": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "SO many ships! ARIA is waving at all of them! Three have waved back! One was probably a sensor glitch but it COUNTS!",
       "marv": "MARV counts fourteen vessels within hailing range. On the outer trails, he notes, you can fly a month without seeing one. He is not sure which condition he distrusts more.",
@@ -2036,57 +1592,33 @@
     "choices": [
       {
         "text": "Join the chatter — swap news up and down the lane",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "An hour on the open channels: route gossip from the ore hauler, a recipe from the liner's galley officer, thirdhand news from home. Nothing important. Everything important. The crew signs off with three new callsigns in the friends column of the log."
         }
       },
       {
         "text": "Draft behind the big freighter — save fuel",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You tuck into the freighter's wake and let its bulk part the particle drag for a full shift. Perfectly legal, mildly cheeky, and the freighter captain flashes their running lights in the old 'I see you back there' pattern — permission, granted with amusement."
         }
       },
       {
         "text": "Peel out of the corridor — too crowded",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You slide out of the flow into the empty margin lanes, trading company for quiet. The traffic dwindles to a glitter behind you. Some crews are corridor crews. Yours, apparently, is already practicing for the deep."
         }
@@ -2117,8 +1649,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The tourist liner is hailing! They want to LOOK at us! ARIA has never felt so seen! Literally! Optically!",
       "marv": "MARV confirms the liner's request: a slow flyby so its passengers can photograph 'a genuine colony ship.' He notes we have become an exhibit, and that the exhibit could stand to wipe down its hull.",
@@ -2130,39 +1660,23 @@
     "choices": [
       {
         "text": "Give them a show — roll the ship, light the bays",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -2,
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You light the growbay's viewport glass and roll the ship in a slow, showman's arc — the crop silhouetted green against the black. The liner's decks flash like a paparazzi line. For one afternoon on the lunar loop, three hundred tourists believe in colony ships, and the crew believes in itself in a new, slightly embarrassed way."
         }
       },
       {
         "text": "Hold course, wave once — dignity intact",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You keep the line and authorize exactly one wave, which the whole crew delivers from the viewports in accidental unison. The tour guide narrates it as 'the quiet resolve of the pioneer.' The crew adopts the phrase immediately and insufferably."
         }
@@ -2189,8 +1703,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The frontier claim registry is broadcasting! It's a WALL of names and coordinates! Everyone out here is CALLING DIBS on everything!",
       "marv": "MARV is parsing the Mars-lane claim registry: mining stakes, homestead filings, one man who has claimed 'the concept of the horizon.' The filing was accepted. MARV has questions about the clerk.",
@@ -2202,19 +1714,11 @@
     "choices": [
       {
         "text": "Cross-reference the delinquent stakes with your route",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The ship computer's filter plus an afternoon of squinting produces two delinquent claims within reach of your route — abandoned equipment, unworked rock, fair game under frontier rules. You mark both on the chart. The boards giveth to those who read the fine print.",
           "materials": {
@@ -2225,19 +1729,12 @@
       },
       {
         "text": "File a modest claim of your own — 5 gold",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "gold": -5,
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "filed_mars_claim",
           "time_cost": "trivial",
           "narrative": "A few gold files a homestead marker on an unremarkable patch of Martian nowhere — a legal fiction, a souvenir, a dot with the ship's name on it that will outlast everyone aboard. The certificate prints. The crew frames it next to the betting ledger. You own a piece of Mars now. Sort of. Officially sort of."
@@ -2248,17 +1745,9 @@
       },
       {
         "text": "Let the scroll roll by",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You let the frontier advertise at somebody else. The boards scroll on behind you, names and stakes and disputes, the long ledger of everyone trying to own a piece of the road you're just passing down."
         }
@@ -2285,8 +1774,6 @@
     ],
     "scene_type": "deep_void",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "That's it! The LAST navigation beacon! After this it's just... us! And the charts! And each other! ARIA is fine! ARIA is doing GREAT!",
       "marv": "MARV confirms: beyond this marker, no infrastructure exists. Every signal from here forward will be starlight, noise, or you. He has archived the beacon's ID with unusual care.",
@@ -2298,18 +1785,11 @@
     "choices": [
       {
         "text": "Pause at the beacon — the traditional hour",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "crossed_the_line",
           "time_cost": "low",
           "narrative": "You hold at the beacon for the traditional hour. Some crews toast, some sit quiet, yours does both in sequence. The beacon blinks. The deep waits, without malice, without welcome, without end. When you cross the line, everyone is at the viewports, and nobody says anything, and that is the correct amount to say.",
@@ -2322,17 +1802,11 @@
       {
         "text": "Top off the beacon's power cell — pay it forward",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "crossed_the_line",
           "time_cost": "low",
           "narrative": "The engineer EVAs over with a spare cell and buys the beacon another decade of blinking for ships you'll never meet. Forty years of thankless service, serviced. The maintenance log gets a new entry: the ship's name, the date, and 'still blinking.' Then you cross."
@@ -2340,19 +1814,13 @@
       },
       {
         "text": "Read the logbook's last pages before crossing",
-        "requires_crew": null,
         "requires_item": "logbook_fragment",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 8,
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "crossed_the_line",
           "time_cost": "low",
           "narrative": "This is where the handwriting goes bad. The logbook's last third was written on the far side of this beacon: a fuel plan that was optimistic by the second month, a burn they shouldn't have made, then shorter and shorter entries. You redo your own burn plan against their mistakes and find fuel you would have wasted. Nobody reads the final page aloud."
@@ -2360,18 +1828,11 @@
       },
       {
         "text": "Cross without ceremony — the deep is just more sky",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "crossed_the_line",
           "time_cost": "trivial",
           "narrative": "You pass the beacon at cruise speed, ceremony declined. The blink slides off the aft scope and the deep opens ahead, exactly as much sky as before with exactly less permission. The helm logs the crossing in one line. The line gets read more than once over the following weeks."
@@ -2404,8 +1865,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA loves handwriting! Handwriting means PEOPLE! She has not considered what happened to the people.",
       "marv": "MARV has dated the graffiti by paint oxidation. The warnings are older than the endorsements. He finds this instructive.",
@@ -2417,16 +1876,9 @@
     "choices": [
       {
         "text": "Port lane — long but honest",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "You take the honest lane. Somewhere behind you, the graffiti approves in silence."
@@ -2434,16 +1886,9 @@
       },
       {
         "text": "Starboard lane — 'fine but only in a good ship'",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_beta",
           "time_cost": "trivial",
           "narrative": "You decide, provisionally, that yours is a good ship. The ship says nothing to contradict you. Yet."
@@ -2469,7 +1914,6 @@
     ],
     "scene_type": "deep_void",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "relayed_the_mayday",
     "ai_flavor": {
       "aria": "ARIA is sure they got picked up! By someone! Space is full of someones!",
@@ -2482,18 +1926,12 @@
     "choices": [
       {
         "text": "Bring the beacon tag aboard",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -4
           },
-          "crew_effect": null,
           "severity": null,
           "item_grant": "distress_beacon_tag",
-          "item_consume": null,
           "sets_flag": "recovered_beacon_tag",
           "time_cost": "low",
           "narrative": "The tag comes free with a click that sounds louder than it is. The crew stands a moment at the airlock. Nobody assigns the moment a name. You'll carry the tag to a station authority — someone should tell the family something true."
@@ -2501,19 +1939,11 @@
       },
       {
         "text": "Log the position and keep flying",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You file the coordinates with a registry that will process them in the order received. The rig drifts off your scope the way the signal once did. Slower, somehow."
         }
@@ -2540,8 +1970,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "A citation! ARIA has never gotten one before! ARIA is framing it!",
       "marv": "The fine is 5 gold. The appeal process costs 40 hours. MARV has done the math so you don't have to feel hope.",
@@ -2553,19 +1981,11 @@
     "choices": [
       {
         "text": "Pay the fine",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "gold": -5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You pay. The survey asks how likely you are to recommend Lunar Approach Control to a friend. You leave it blank with tremendous force."
         },
@@ -2575,19 +1995,11 @@
       },
       {
         "text": "Slow down and wave at the camera",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You drop to corridor speed and give the traffic buoy a slow, courteous wave. The citation is rescinded by an algorithm that interprets the gesture as contrition. The crew interprets it correctly, which is why morale goes up."
         }
@@ -2614,8 +2026,6 @@
     ],
     "scene_type": "deep_void",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "A construction site! In SPACE! ARIA wants a tiny hard hat!",
       "marv": "Completion estimate: four years. Funding estimate: eighteen months. MARV admires the optimism the way one admires a cliff diver.",
@@ -2627,20 +2037,12 @@
     "choices": [
       {
         "text": "Give them the time",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 10,
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "Your ship holds the girder steady while their welders walk the seam. When it's done, a stretch of the future is a little more finished, and your name is on a beam where nobody will ever see it. The foreman tops off your fuel from the reserve and shakes every hand aboard."
         }
@@ -2648,38 +2050,23 @@
       {
         "text": "Engineer-assist the coupling repair",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 14,
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "Your engineer fixes the tug's coupling over a long shift and spends the evenings arguing joyfully with their chief about torque specs. The crew leaves with topped-up tanks, a standing dinner invitation, and the particular glow of people whose competence got witnessed."
         }
       },
       {
         "text": "Signal apologies and keep formation",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "Schedules are schedules. The work crew waves you through anyway, because construction crews understand schedules better than anyone. The half-built relay slides past your windows for a long, quiet minute."
         }
@@ -2706,8 +2093,6 @@
     ],
     "scene_type": "deep_void",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "science_link": {
       "url": "https://en.wikipedia.org/wiki/Interstellar_communication",
       "label": "Interstellar communication — Wikipedia",
@@ -2724,39 +2109,23 @@
     "choices": [
       {
         "text": "Open the channel to everyone — all hands",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "For the length of the window the ship is a phone booth. Laughter from the mess. Long silences from the bunks, which are also calls. When the window closes, nobody says anything for a while, and then everybody starts cooking at once, which is how crews hug."
         }
       },
       {
         "text": "Send the ship's log and mission data home first",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2,
             "gold": 10
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "Duty first: the full mission record goes home, and the slow chain takes most of the window and days of patient resends to swallow it. The agency's automated bounty for complete telemetry lands in your account at the very end. The crew splits what's left into short calls. It is not enough. They make it enough."
         }
@@ -2780,8 +2149,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA thinks both beacons are right! In their own way! ARIA has given each of them a gold star!",
       "marv": "MARV has read both beacons' maintenance logs. Both lanes are open. Both beacons are faulty. He has known this for some time.",
@@ -2793,16 +2160,9 @@
     "choices": [
       {
         "text": "Port lane — the starboard beacon is the faulty one",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "You go port. The starboard beacon logs your transit as a violation and files the complaint with itself."
@@ -2810,16 +2170,9 @@
       },
       {
         "text": "Starboard lane — the port beacon has a shifty look",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_beta",
           "time_cost": "trivial",
           "narrative": "You go starboard. The port beacon flashes a warning that has, judging by the bulb, been flashing since before you were born."
@@ -2828,17 +2181,11 @@
       {
         "text": "Have the diplomat mediate between the beacons",
         "requires_crew": "diplomat",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "The diplomat opens a channel to both beacons at once and lets them talk. Within a minute they agree the port lane is open and that the real problem is management. You go port. The crew cannot stop laughing."
@@ -2863,8 +2210,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA LOVES a survey! Both lanes are rated \"acceptable!\" That is the second-best rating! ARIA has not checked what the best rating is!",
       "marv": "MARV notes that \"mostly\" and a missing attachment are the two most expensive words in navigation. He has costed both.",
@@ -2876,16 +2221,9 @@
     "choices": [
       {
         "text": "Port — \"mostly\" is an honest word",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "You take the lane that admits its flaws. It is, so far, mostly fine. The footnote was accurate, which is more than most footnotes manage."
@@ -2893,16 +2231,9 @@
       },
       {
         "text": "Starboard — trust the missing attachment",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_beta",
           "time_cost": "trivial",
           "narrative": "You take the lane with the unknown appendix. Whatever was in the attachment, you will now read it the slow way."
@@ -2911,17 +2242,11 @@
       {
         "text": "Have the pilot read the raw survey data",
         "requires_crew": "pilot",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_beta",
           "time_cost": "low",
           "narrative": "The pilot ignores the ratings and reads the raw numbers. The missing attachment, it turns out, was a gravity slope along the starboard lane that saves fuel if you ride it. You ride it."
@@ -2946,8 +2271,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA adores democracy! She has prepared ballots! The ballots have stickers! The stickers are mandatory!",
       "marv": "MARV has modeled both lanes. The difference in outcomes is smaller than the margin of error. The vote will therefore be decided by personality, as votes are.",
@@ -2959,18 +2282,11 @@
     "choices": [
       {
         "text": "Let the crew vote",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "Port wins by one vote after a recount, a challenge, and a second recount. The losing side accepts the result with grace, then mentions it at every meal for a week. Morale is, somehow, up."
@@ -2978,18 +2294,11 @@
       },
       {
         "text": "Captain's call: starboard",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_beta",
           "time_cost": "trivial",
           "narrative": "You make the call. The posters come down. The crew respects the decision in the specific way people respect a decision they were not consulted on."
@@ -2997,16 +2306,9 @@
       },
       {
         "text": "Flip a coin",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "You flip a coin. In zero gravity it does not land. It tumbles slowly toward the port viewport, and everyone agrees, with relief, that this counts."
@@ -3031,8 +2333,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has reclassified every scorch mark as a \"battle souvenir!\" The ship now has forty-one souvenirs! What a collection!",
       "marv": "MARV has itemized the damage. The list is long and accurate. He suspects nobody will read past item nine, which is the interesting one.",
@@ -3044,57 +2344,33 @@
     "choices": [
       {
         "text": "Full inspection, every panel",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Every panel, every seam, every weld the shots came near. You find two problems nobody had noticed and fix them before they could be noticed the hard way. The ship feels sturdier. So does the crew."
         }
       },
       {
         "text": "Patch what is obvious and keep moving",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The viewport seal gets resealed and the toast-smelling loom gets a strip of tape and a stern look. The rest can wait. The rest, as a rule, does not like waiting."
         }
       },
       {
         "text": "Let the crew talk it through first",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Everyone sits in the galley and says what they saw. It takes an hour. Nobody is fixing anything during that hour, and it is the most useful hour of the week."
         }
@@ -3119,8 +2395,6 @@
     "scene_type": "ship_interior",
     "bg": "our_ship/cargo",
     "once": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has measured the hold and found it is 100% full of OPPORTUNITY! Also crates! Mostly crates!",
       "marv": "MARV has run every packing configuration. There are 4,812. They all hold exactly the same amount, which is the amount you already have.",
@@ -3132,38 +2406,22 @@
     "choices": [
       {
         "text": "Reorganize the hold properly",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Six hours of lifting, labeling, and arguing about labels. When it is done, everything fits exactly as well as it did before, but now it is alphabetical. You will still have to drop something to pick anything up."
         }
       },
       {
         "text": "Declare the corridors official storage",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The corridors are now cargo. The crew learns to walk sideways and develops strong opinions about who left the sack there. The filter-box nightstand is formally recognized. The hold remains full."
         }
@@ -3188,8 +2446,6 @@
     "scene_type": "ship_interior",
     "bg": "our_ship/cargo",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has never seen the hold floor before! It is beige! ARIA loves beige! ARIA has announced a dance!",
       "marv": "MARV notes that an empty hold is either a sign of efficient trading or of having nothing left to trade. He has looked at the books. He will not be specifying.",
@@ -3201,38 +2457,22 @@
     "choices": [
       {
         "text": "Hold a dance in the hold",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "There is no band, so the crew claps the rhythm and argues about the tempo. It is the worst dance anyone has attended and nobody leaves early. The cartwheel record falls twice."
         }
       },
       {
         "text": "Seal it off to save on air",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You seal the empty hold and stop heating and cycling a room with nothing in it. The air budget improves slightly. The crew stands at the sealed door for a moment, as if at a closed park."
         }
@@ -3256,8 +2496,6 @@
     ],
     "scene_type": "ship_interior",
     "once": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "Space glitter! ARIA has always wanted to see it up close! It is coming up VERY close!",
       "marv": "MARV puts the stream at nine hours wide on this heading. Each grain carries the energy of a thrown stone. He has multiplied. He wishes he hadn't.",
@@ -3270,77 +2508,48 @@
       {
         "text": "Pilot threads the gaps",
         "requires_crew": "pilot",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The pilot reads the stream like weather, sliding the ship through its thin places on short, expensive burns. A few grains get through anyway. The paint keeps most of its opinions."
         }
       },
       {
         "text": "Patch the thin plates first",
-        "requires_crew": null,
         "requires_item": "hull_patch",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
           "item_consume": "hull_patch",
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You slap patches on the thinnest plates before the stream arrives. The sleet hisses across the ship for nine hours and finds almost nothing worth the effort. The patch tray is lighter."
         }
       },
       {
         "text": "Bow into it and take the sleet",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -5,
             "water": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You turn the armored bow into the stream and let it hiss against the plating for nine hours. The hull takes a scouring. The forward water tank, which sits behind the bow plating for exactly this reason, takes the rest: a seam opens and weeps {cost.water} points before anyone finds it. The forward viewport now looks like frosted glass, artistically."
         }
       },
       {
         "text": "Go the long way around",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -4,
             "food": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "The detour is wide and slow and burns what detours burn: fuel, and {cost.food} points of food for no distance at all. The stream passes harmlessly to port, glittering, as though it was never interested."
         }
@@ -3368,8 +2577,6 @@
     ],
     "scene_type": "ship_interior",
     "once": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "An indoor water feature! ARIA has always said this ship needed more ambiance!",
       "marv": "MARV has the loss rate. At this pace the reclaimer is dry in nine days. He has also, unasked, worked out how long the crew lasts after that. It is the shorter number.",
@@ -3382,37 +2589,22 @@
       {
         "text": "Engineer swaps the seal",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": -5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The engineer crawls in, swaps the seal, crawls out, and wrings a sleeve out over the reclaimer intake, on principle. Some of the water is gone for good. The rest is back where it belongs."
         }
       },
       {
         "text": "Print a replacement seal",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The fabricator turns out a seal in the wrong color and roughly the right shape. It holds. The fabricator sounds tired afterwards, and the crawlspace dries out in its own time.",
           "fab_wear": 15
@@ -3421,39 +2613,23 @@
       },
       {
         "text": "Bail it back by hand — all hands",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": -7,
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Everyone takes a bucket. The crawlspace is bailed back into the loop one indignity at a time. The water comes back, mostly. The dignity does not."
         }
       },
       {
         "text": "Bypass the loop and ration",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": -14
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You bypass the reclaimer and put the crew on rations until a station can sell you a seal. The crawlspace stays full. The tanks don't."
         }
@@ -3481,8 +2657,6 @@
     ],
     "scene_type": "ship_interior",
     "once": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_crew_aboard": true,
     "ai_flavor": {
       "aria": "The crew is having FEELINGS! Together! Sort of together! ARIA is counting this as team-building!",
@@ -3496,78 +2670,47 @@
       {
         "text": "Chef cooks a peace dinner",
         "requires_crew": "chef",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -6,
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The chef cooks something out of nothing, which is the chef's whole job, and seats the feud at opposite ends of the same bench. By the second course they are complaining about the chef together. The chef considers this a success, and is correct."
         }
       },
       {
         "text": "Break out the good rations",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -10
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The good rations come out and the galley table fills back up. Nobody discusses the mug. Everyone discusses the food. The border dissolves somewhere around dessert, and so do a week of stores."
         }
       },
       {
         "text": "Call a meeting and hash it out",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2,
             "food": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "It takes an evening, three apologies, one walkout and every biscuit aboard, because nobody can hold a meeting without them. The mug is found. The treaty is dissolved. Everyone is a little worse off and a little closer, which is most of what a crew is."
         }
       },
       {
         "text": "Let them sort it out themselves",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -6,
             "food": -5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You let it run. It runs through the ship for a week, on separate sittings with separate pots and twice the waste, and settles, as these things do, on one person, who takes the brunt of it and says nothing. That is not the same as it being over.",
           "morale_to": "lowest"
@@ -3596,8 +2739,6 @@
     ],
     "scene_type": "ship_exterior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "A TOLL BOOTH! In SPACE! ARIA has never paid a toll! ARIA would love to pay a toll!",
       "marv": "MARV has checked the toll beacon's licence. It expired nine years ago. The beacon is collecting anyway. He notes that nobody has come to stop it, and that nobody will.",
@@ -3609,10 +2750,6 @@
     "choices": [
       {
         "text": "Pay the toll: port lane",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "gate": {
           "gold": 8
         },
@@ -3620,10 +2757,7 @@
           "resources": {
             "gold": -8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "You pay. The beacon thanks you warmly, issues a receipt and raises a barrier that is entirely symbolic. The port lane is clear and quiet and smells, somehow, of tarmac."
@@ -3631,18 +2765,11 @@
       },
       {
         "text": "Take the free lane: starboard, through the debris",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_beta",
           "time_cost": "trivial",
           "narrative": "You take the free lane and the debris field that comes with it. It rattles the hull for a long hour. Four points of hull. The toll beacon wishes you a pleasant journey as you pass, in a tone that suggests it doesn't mean it."
@@ -3651,18 +2778,12 @@
       {
         "text": "The pilot slips past the booth",
         "requires_crew": "pilot",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "effort": 2,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "{crew.pilot} waits for the beacon's scanner to sweep the other way and slides through the gap behind it at a speed the beacon has no rule for. It sends an invoice anyway, to an address that has been closed for years. The crew finds this very satisfying."
@@ -3687,8 +2808,6 @@
     ],
     "scene_type": "ship_exterior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ROADWORKS! In SPACE! Someone is FIXING space! ARIA had no idea space could be fixed! ARIA wants to watch!",
       "marv": "MARV estimates the works have progressed eleven metres in fourteen years. At this rate the lane will reopen in about two thousand years. The long way round costs fuel. The slow zone costs days.",
@@ -3700,18 +2819,11 @@
     "choices": [
       {
         "text": "Crawl through the works: port lane",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "low",
           "narrative": "You crawl through the slow zone at the posted speed, which is barely faster than standing still, past the drone, which does not look up. It takes two days. Nobody aboard has ever been this bored. The lane on the far side is, at least, very smooth."
@@ -3719,18 +2831,11 @@
       },
       {
         "text": "Go the long way: starboard lane",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_beta",
           "time_cost": "trivial",
           "narrative": "You go round. The starboard lane is open, empty and long, and the extra distance burns four points of fuel. Behind you, the maintenance drone carries on with whatever it is doing, the way it has for fourteen years."
@@ -3739,17 +2844,11 @@
       {
         "text": "The engineer offers the drone a hand",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "low",
           "narrative": "{crew.engineer} gets on the drone's channel, works out what it has been trying to fix, and sends it the part number it needed fourteen years ago. The drone finishes the job in an afternoon and switches off the beacons. You're the first ship through the port lane in fourteen years. The drone plays you a little tune."
@@ -3778,8 +2877,6 @@
     ],
     "scene_type": "ship_exterior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "PIRATES! Or a STORM! ARIA likes neither of them! ARIA would like a third option! ARIA has been told there isn't one!",
       "marv": "MARV has the picket's demand at roughly a tenth of the cargo. The storm's hull damage is harder to estimate. He has estimated it. He does not like the estimate.",
@@ -3791,19 +2888,12 @@
     "choices": [
       {
         "text": "Pay the picket: port lane",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -10,
             "water": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "You pay. The pirates take a share of the food and water, call it fair, and wave you through with something close to courtesy. The port lane beyond them is quiet. The galley is quieter."
@@ -3811,19 +2901,12 @@
       },
       {
         "text": "Run the storm: starboard lane",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -10,
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_beta",
           "time_cost": "trivial",
           "narrative": "You take the storm. It sandblasts the ship for six hours: grit in the vents, static on every channel, the hull hissing like a kettle. Ten points of hull. The pirates, safe in their lane, watch you go in and do not follow."
@@ -3832,18 +2915,12 @@
       {
         "text": "The diplomat talks the picket down",
         "requires_crew": "diplomat",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "effort": 3,
         "outcome": {
           "resources": {
             "food": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "{crew.diplomat} opens a channel and talks to the picket for an hour about the price of fuel, the weather, and the many other ships that will be along shortly with richer cargoes. The pirates settle for a token, a crate of rations, and let you through laughing. The diplomat refuses to say what the joke was."
@@ -3872,8 +2949,6 @@
     ],
     "scene_type": "asteroid_field",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The gap is CLOSING! Like a DOOR! ARIA would like to go through the door! ARIA would like to go through it NOW!",
       "marv": "MARV puts the port gap at forty minutes from closing. The ship can make it in thirty. Ten minutes is a margin. It is not a large one. The long way is safe and costs fuel and days.",
@@ -3885,19 +2960,12 @@
     "choices": [
       {
         "text": "Shoot the closing gap: port",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -6,
             "hull": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "You burn hard for the gap and make it with minutes to spare, the rock faces close enough on either side to read the strata. The hull scrapes once near the end, a long grinding note. Six of fuel, six of hull. Behind you, an hour later, the gap closes with a silent shudder that rings the field for days."
@@ -3905,18 +2973,11 @@
       },
       {
         "text": "Go round the outside: starboard",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_beta",
           "time_cost": "medium",
           "narrative": "You go round. It takes four days and five points of fuel to circle both rocks, by which time the gap has closed behind you and the field is quiet again. Nobody was squashed. That was the point."
@@ -3925,19 +2986,13 @@
       {
         "text": "The pilot threads it at full speed",
         "requires_crew": "pilot",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "effort": 3,
         "outcome": {
           "resources": {
             "fuel": -8,
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "chose_alpha",
           "time_cost": "trivial",
           "narrative": "{crew.pilot} takes the gap at a speed nobody aboard would have chosen, straight down the middle, without a scratch. Eight points of fuel for the burn. The crew comes out the far side cheering, and the pilot pretends that wasn't the plan all along."
@@ -3966,8 +3021,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "HALFWAY! We're HALFWAY! ARIA made the banner! ARIA was asked not to say! ARIA has said!",
       "marv": "MARV confirms the midpoint by distance. By time it was two days ago. He has decided not to mention that.",
@@ -3979,58 +3032,34 @@
     "choices": [
       {
         "text": "Break out the good rations",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -6,
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You open the sealed crate of good rations, the one with the real chocolate in it, and the halfway party runs late into third watch. It costs {cost.food} points of food. Nobody regrets a crumb of it."
         }
       },
       {
         "text": "A small toast, then back to work",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "Everyone crowds into the galley for five minutes and raises whatever they're drinking at the banner. Somebody makes a short speech. Then back to work, with the banner left up, which is the right amount of celebration for half of something."
         }
       },
       {
         "text": "Mark it on the airlock door and keep going",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You scratch a line on the inside of the airlock door at eye height, with the date, and carry on. It isn't much of a ceremony. By the end of the week there are more initials beside it."
         }
@@ -4058,8 +3087,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "Turning back was never the plan! ARIA is fine! ARIA is absolutely fine! ARIA would like a moment!",
       "marv": "MARV has run the return figures four times. The answer has not improved. It is, he notes, the first time a sum has made him feel anything.",
@@ -4071,19 +3098,11 @@
     "choices": [
       {
         "text": "Gather the crew and say it plainly",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You call everyone to the galley and tell them straight: no turning back from here. There is a silence. Then somebody says 'well, I wasn't going to,' and someone laughs, and it turns into the best evening the ship has had in a while."
         }
@@ -4091,37 +3110,22 @@
       {
         "text": "The pilot re-plots with what you know now",
         "requires_crew": "pilot",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "{crew.pilot} spends two days re-plotting the rest of the route from scratch, with every lesson of the first half folded in. The new line is tighter than the old one, and the fuel it saves is real. The point of no return is still behind you, but the way forward is a little shorter."
         }
       },
       {
         "text": "Keep it to yourself",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You keep it to yourself. It sits with you, heavy, at every meal. The crew can tell something's wrong. They don't know what. That turns out to be worse."
         }
@@ -4149,8 +3153,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "No COFFEE? ARIA doesn't drink coffee! ARIA is panicking on everyone's behalf!",
       "marv": "MARV estimates turning back costs two days and some fuel. Not turning back costs morale, compounded daily, for months. He has graphed it. The graph is not encouraging.",
@@ -4162,40 +3164,24 @@
     "choices": [
       {
         "text": "Turn back for it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -3,
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You turn back. It costs time, fuel and a very embarrassing hail to the departure dock, where the coffee is waiting exactly where it was left. The crew greets the pallet like a returning hero. Nobody mentions the detour ever again."
         }
       },
       {
         "text": "Print a substitute on the fabricator",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "requires_fab": true,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "fab_wear": 5,
           "narrative": "The fabricator prints something brown, granular and roughly coffee-adjacent out of the ship's organic stores. It is not coffee. It is hot and bitter and it comes in a cup, and by the third week the crew insists it's better than the real thing, which is a lie everyone agrees to."
@@ -4203,19 +3189,11 @@
       },
       {
         "text": "Do without",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You do without. The first week is grim. The second week, someone discovers the tea is quite good, actually. By the third week there is a tea rota, and a tea faction, and the coffee is never spoken of again."
         }
@@ -4239,8 +3217,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "We're LATE! ARIA hates being late! ARIA has never been late before! ARIA has never been anywhere before!",
       "marv": "MARV puts the ship roughly a sixth of the deadline behind its distance. At this pace it keeps slipping. One bad stop and it slips faster. A faster pace closes it with room to spare, at the cost of fuel and tempers.",
@@ -4252,19 +3228,11 @@
     "choices": [
       {
         "text": "Burn harder from here",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "set_orders": {
             "pace": "faster"
@@ -4274,19 +3242,11 @@
       },
       {
         "text": "Burn harder, and cut rations to pay for it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "set_orders": {
             "pace": "faster",
@@ -4297,19 +3257,11 @@
       },
       {
         "text": "Accept it. Arrive late, arrive whole",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You keep the pace as it is. Better to arrive late than not at all, you tell them, and some of them agree. The deadline stays on the galley screen anyway, ticking, where everyone can see it at every meal."
         }
@@ -4333,8 +3285,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The FOOTNOTE pace! ARIA has always wanted to see the footnote pace! ARIA has also read the footnote! ARIA is less keen!",
       "marv": "MARV has read the footnote. It describes the fastest pace as 'not recommended for sustained use.' He notes 'sustained' is undefined. He suspects whoever drew the diagram noticed that too.",
@@ -4346,19 +3296,11 @@
     "choices": [
       {
         "text": "Plaid, and don't look back",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "set_orders": {
             "pace": "plaid"
@@ -4368,19 +3310,11 @@
       },
       {
         "text": "One notch faster, and keep the maintenance",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "set_orders": {
             "pace": "faster"
@@ -4390,19 +3324,11 @@
       },
       {
         "text": "Let it go. You'll get there when you get there",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You turn the proposal down. The diagram goes back in its folder without a word. The ship flies on at the pace it was flying, the gap on the screen keeps growing, and the crew starts doing the sum in their heads at dinner."
         }
@@ -4426,7 +3352,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "carried_letters",
     "ai_flavor": {
       "aria": "The LETTERS! We're nearly there with the LETTERS! ARIA has checked on them every single morning! They're fine! They're still letters!",
@@ -4439,57 +3364,33 @@
     "choices": [
       {
         "text": "Transmit the names ahead",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You send the colony the list of names. Within the hour the replies start coming back: people who had given up on hearing from home, asking if it's really true, asking when you land, asking you to say thank you to someone at a station they'll never see. The crew reads the replies aloud at dinner. Some of them have to stop partway through."
         }
       },
       {
         "text": "Read the 'to anyone' letters to the crew",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You open the twenty-three letters addressed to 'anyone' (they were written for whoever found them, after all) and read them aloud to the crew over three evenings. Messages from strangers on a dying planet, to strangers on a new one. Everyone aboard counts as anyone. Everyone listens."
         }
       },
       {
         "text": "Keep them sealed and deliver by hand",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You keep the box sealed. Some things should be handed over in person, and you will. The crew agrees, without much discussion, that the box will be the first thing off the ship."
         }
@@ -4513,7 +3414,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "mutation_full",
     "requires_crop_alive": true,
     "ai_flavor": {
@@ -4527,19 +3427,11 @@
     "choices": [
       {
         "text": "Show them everything",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": 5,
           "narrative": "You send them every reading, every log and every picture of the silver plants, from the first strange leaf onward. They go very quiet, then very loud. By the time you land they have cleared space in the colony's main greenhouse for it, and they meet the growbay at the airlock with gloves on."
@@ -4548,37 +3440,22 @@
       {
         "text": "The diplomat makes the case",
         "requires_crew": "diplomat",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "{crew.diplomat} takes the call and makes the case: what the crop was, what it became, and what it might mean for a colony that needs every advantage. By the end the agronomists are arguing with each other about where to plant it first. The crop is not on the manifest. It is now at the top of it."
         }
       },
       {
         "text": "Let them take samples on arrival",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": -6,
           "narrative": "You agree to let them sample it when you land. They take a great many samples. The crop arrives a little thinner than it left the growbay, and very famous."
@@ -4603,7 +3480,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
     "requires_flag": "kept_the_cutting",
     "ai_flavor": {
       "aria": "It GREW! It actually GREW! ARIA said it would! ARIA said it would at least four hundred times!",
@@ -4616,57 +3492,33 @@
     "choices": [
       {
         "text": "Plant it first thing",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "Before the cargo, before the crew, before anything else comes off the ship, you carry the jar down the ramp and plants the little leaf in the colony's first bed. A small crowd gathers. Nobody explains it to them. They work it out."
         }
       },
       {
         "text": "Give it to the colony's seed bank",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You hand the jar to the colony's seed bank, where the people who will look after it know exactly what they're looking at. They give it its own label and its own shelf. The label says what crop it came from, and what ship."
         }
       },
       {
         "text": "Keep it on the bridge a little longer",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You keep the jar on the bridge for the last leg in, where everyone can see it. There's no hurry. It has come this far. It can come the rest of the way with the crew."
         }
@@ -4690,8 +3542,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "A SELFIE with HOME! ARIA has wanted to do this for ages! Everybody squeeze in! Home, squeeze in!",
       "marv": "MARV notes the camera faces forward because nothing dangerous comes from behind. He concedes that is not the only reason to look.",
@@ -4703,20 +3553,12 @@
     "choices": [
       {
         "text": "Turn the ship round for a proper picture",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -2,
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The ship swings round on its thrusters and flies backwards for a whole watch. The picture, when it comes, is mostly black, with home in it, smaller than anyone expected. Somebody prints it and pins it in the galley, and people touch it on the way past without meaning to.",
           "log_lore": {
@@ -4727,39 +3569,23 @@
       },
       {
         "text": "Make do with the rear camera",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The rear camera, which mostly watches the engine, takes a grainy picture past the exhaust glare. Home is in it, somewhere, in a smudge everyone agrees is home. It goes up on the galley wall anyway, slightly crooked, which suits it."
         }
       },
       {
         "text": "Don't look back — do the hull survey",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": 3,
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "repair_done": true,
           "narrative": "You keep the camera pointed forward and spend the watch on the hull survey instead, tightening everything that needs tightening. The ship is better for it. Nobody mentions home at dinner, carefully, the way you avoid pressing on a bruise."
@@ -4789,8 +3615,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "SERVICE DAY! ARIA loves service day! Everything gets a little wipe! ARIA has never had a little wipe!",
       "marv": "MARV has read the procedure. The second-to-last step says 'inspect everything.' He has. Everything is, on average, fine, which is the most worrying kind of fine.",
@@ -4802,20 +3626,12 @@
     "choices": [
       {
         "text": "The full service, by the book",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": 6,
             "hull": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "repair_done": true,
           "narrative": "You do all of it, in order, including the pump. It takes days, and by the end everyone aboard can strip a drive seal in the dark. The air comes out of the new cartridges tasting faintly of nothing, which is what air is supposed to taste of. The manual, if it could, would be proud."
@@ -4824,19 +3640,12 @@
       {
         "text": "{crew.engineer} does the parts that matter",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": 5,
             "hull": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "repair_done": true,
           "narrative": "{crew.engineer} reads the procedure once, crosses out half of it, and does the other half properly in a fraction of the time. Asked about the crossed-out steps, {crew.engineer} says they were only there to sell dealer visits. The ship runs noticeably sweeter afterwards."
@@ -4844,38 +3653,22 @@
       },
       {
         "text": "Just the scrubbers",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You change the scrubber cartridges and leave the rest for another day that will not come. The air is better at once. The pump nobody likes goes on making its noise, and everybody goes on not liking it."
         }
       },
       {
         "text": "Skip it. The ship is fine",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You skip the service. The old cartridges keep scrubbing, slower every watch, and the air takes on the stale edge of a room nobody has opened a window in. The schedule marks the service OVERDUE in red and does not stop marking it."
         }
@@ -4899,8 +3692,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "A SHOP! In the middle of NOWHERE! ARIA wants a mug! ARIA has no hands! ARIA wants a mug anyway!",
       "marv": "MARV has read the kiosk's sales log. Its last customer was a long time ago. They bought a mug. He does not know what became of them and intends to keep it that way.",
@@ -4912,10 +3703,6 @@
     "choices": [
       {
         "text": "Buy a patch for everyone",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "gate": {
           "gold": 6
         },
@@ -4924,21 +3711,13 @@
             "gold": -6,
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The kiosk dispenses the patches one at a time, each with a small fanfare of blinking lights. They are embroidered: a little ship, a dotted line, a star at each end, HALFWAY in gold thread. By evening every jacket aboard has one sewn on, mostly straight."
         }
       },
       {
         "text": "Buy the survival kit",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "gate": {
           "gold": 12
         },
@@ -4948,30 +3727,18 @@
             "food": 6,
             "water": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The survival kit is heavier than it looks and contains, against every expectation, real things: sealed water, good rations, and a pamphlet called You're Halfway: Now What? The rations are a long way past their date and taste fine. The pamphlet's advice is to keep going."
         }
       },
       {
         "text": "Strip it for parts",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "materials": {
             "scrap": 3,
@@ -4982,17 +3749,9 @@
       },
       {
         "text": "Wave and fly on",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You fly past. The kiosk's sign changes as you go: THANK YOU FOR VISITING. SEE YOU ON THE WAY BACK. Nobody on the bridge points out that there is no way back. It is a nice thought, from a vending machine."
         }
@@ -5016,8 +3775,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The COLONY! They SPOKE to us! ARIA has a welcome message ready for every single person down there! ARIA will send them all at once!",
       "marv": "MARV has checked the paper-towel schedule against the colony's orbital data. It is correct. He finds that more unsettling than if it had been wrong.",
@@ -5029,40 +3786,24 @@
     "choices": [
       {
         "text": "Burn for the early slot",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -4,
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "none",
           "narrative": "You take the early slot and open the throttle to make it. The fuel margin gets thinner than anyone likes. The controller writes your ship's name on the paper towel in pen, which she says she only does for people she believes in, and goes back to her filling."
         }
       },
       {
         "text": "Take the later slot and smarten up the ship",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": 3,
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "repair_done": true,
           "narrative": "You take the later slot behind the ore hauler and use the wait: loose panels tightened, scorch marks scrubbed, the worst of the dents knocked mostly flat. The ship you bring in will look like somebody looked after it. The controller says she'll be watching, between patients."
@@ -5070,19 +3811,11 @@
       },
       {
         "text": "Put the crew on the channel to say hello",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You hand the channel round the ship. Everybody says hello, and some say a great deal more than hello, and the controller answers every one of them with the patience of somebody who talks to people with their mouths full of cotton wool for a living. She signs off with 'see you soon.' She means it as a fact."
         }
@@ -5106,8 +3839,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "A SHOPPING LIST! ARIA loves a list! ARIA has ticked everything off already! ARIA hasn't got any of it! The ticks are aspirational!",
       "marv": "MARV has compared the list with the hold. The ship can spare less than it would like and more than it thinks. He has not decided which half of that to say out loud.",
@@ -5119,40 +3850,24 @@
     "choices": [
       {
         "text": "Set food aside for them",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -6,
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You set aside {cost.food} points of food in sealed crates and mark them for the colony, which means tighter meals until landing. Nobody complains. The comms officer's reply is very short, and arrives a long time after it should have, as if it took a while to write."
         }
       },
       {
         "text": "Print them spare parts",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "requires_fab": true,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "fab_wear": 10,
           "narrative": "You run the fabricator flat out on the list: valves, brackets, a circuit board the fabricator has opinions about. It comes off the job hot, grumbling and noticeably more worn. The crate of parts waits by the airlock with a label in the neatest handwriting aboard."
@@ -5160,19 +3875,11 @@
       },
       {
         "text": "Send them the news, all of it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You send everything the ship has: bulletins, scores, letters, the gossip from every stop on the trail, a recipe argument that has been running in the galley since departure. The colony's reply comes back within the hour. It asks who won the recipe argument."
         }
@@ -5196,8 +3903,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "trail": [
       "mars"
     ],
@@ -5212,20 +3917,12 @@
     "choices": [
       {
         "text": "Push the pace and beat it in",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -3,
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "set_orders": {
             "pace": "faster"
@@ -5235,39 +3932,23 @@
       },
       {
         "text": "Hold back and let it blow through",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "You hold back and wait while the storm crosses the landing zone, watching it on the long-range scope as a bruise moving across the planet's face. It costs days you had been counting on. When it clears, the weather office reports the site scoured clean and the beacons blinking."
         }
       },
       {
         "text": "Carry on and seal up for grit",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -3,
             "o2": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You keep the pace and seal what can be sealed. It isn't enough. The grit finds the hull's joints and the air intakes both, and the scrubbers spend the rest of the approach coughing fine red dust into their filters. The ship will be finding Mars in its seams for years."
         }
@@ -5275,19 +3956,12 @@
       {
         "text": "{crew.pilot} plots a line round its edge",
         "requires_crew": "pilot",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -2,
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "{crew.pilot} spends a night with the weather office's maps and comes back with an approach that curls round the storm's quiet side, longer but clean. It costs a little fuel. The weather office calls it 'ambitious,' which from them is a compliment."
         }
@@ -5316,8 +3990,6 @@
     ],
     "scene_type": "ship_interior",
     "once": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has noticed the ship leans a tiny bit when it turns! ARIA thinks it's dancing! A slow dance! With the cargo!",
       "marv": "MARV has located the ship's centre of mass. It is not where the drive expects it. The drive is correcting on every burn, and every correction is paid for in fuel.",
@@ -5329,20 +4001,14 @@
     "choices": [
       {
         "text": "Use the repair kit now, not later",
-        "requires_crew": null,
         "requires_item": "repair_kit",
-        "requires_flag": null,
-        "microgame_type": null,
         "sub": "Spend it on the hull · frees a slot",
         "outcome": {
           "resources": {
             "hull": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
           "item_consume": "repair_kit",
-          "sets_flag": null,
           "time_cost": "low",
           "repair_done": true,
           "narrative": "You stop carrying the repair kit and start using it: every soft weld and tired seam it was bought for, done now, in one long afternoon. The hull is better for it, the hold has a slot free, and the coffee stays where it is put."
@@ -5350,19 +4016,11 @@
       },
       {
         "text": "Fly heavy and pay the burn",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You leave the hold as it is and let the drive push crooked. It costs fuel on every burn, a little at a time, the way the expensive things always do. The coffee moves to a cup holder, and the matter is not raised again."
         }
@@ -5370,17 +4028,10 @@
       {
         "text": "{crew.pilot} re-trims the load by hand",
         "requires_crew": "pilot",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "effort": 1,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "{crew.pilot} spends a long shift moving crates forward a rack at a time, checking the burn after each one. By the end the ship flies true again. Nothing has left the hold; it just sits where the drive likes it now."
         }
@@ -5404,8 +4055,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "A customer! ARIA LOVES customers! ARIA has never had a customer! ARIA has never had anything to sell!",
       "marv": "MARV has seen the broker's prices. They are what MARV would charge a ship that had no other offers. MARV notes the ship has no other offers.",
@@ -5417,39 +4066,27 @@
     "choices": [
       {
         "text": "Sell them the repair kit",
-        "requires_crew": null,
         "requires_item": "repair_kit",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "gold": 8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
           "item_consume": "repair_kit",
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The kit goes down the tube and a little gold comes back up it. The broker pays less than any station would and more than nothing. The hold has room again. The next loose seam will have to wait for a station."
         }
       },
       {
         "text": "Sell them the soil sampler",
-        "requires_crew": null,
         "requires_item": "soil_sampler",
-        "requires_flag": null,
-        "microgame_type": null,
         "sub": "Better price · no more soil readings",
         "outcome": {
           "resources": {
             "gold": 15
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
           "item_consume": "soil_sampler",
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The broker handles the soil sampler like an old friend and pays like an acquaintance. You have gold and a free slot. From here on, the ground on every planet gets read by eye and by hope."
         }
@@ -5457,28 +4094,17 @@
       {
         "text": "{crew.diplomat} sells them a rumour instead",
         "requires_crew": "diplomat",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "gold": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "{crew.diplomat} talks for most of a watch about a market further on that is short of exactly what the broker carries. Some of it may even be true. The broker pays for the tip, keeps the tube extended a while in case of more, and leaves your hold exactly as full as it was."
         }
       },
       {
         "text": "Buy their spare fuel instead",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "gate": {
           "gold": 10
         },
@@ -5487,28 +4113,16 @@
             "gold": -10,
             "fuel": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "If you can't sell, you can buy: the broker has fuel to spare and takes your gold for it without blinking. Fuel goes in the tank, not the hold, which is the only thing aboard with room in it."
         }
       },
       {
         "text": "Decline politely",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You thank the broker and decline. The cargo tube retracts with what can only be described as reluctance, and the freighter drifts off to find a fuller hold than yours."
         }
@@ -5533,8 +4147,6 @@
     "scene_type": "ship_interior",
     "bg": "our_ship/cargo",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_crop_alive": true,
     "science_link": {
       "text": "The ship computer notes that crowded plants really do sense their neighbours: leaves reflect far-red light, and a plant that sees too much of it stretches tall and thin to get away.",
@@ -5552,20 +4164,12 @@
     "choices": [
       {
         "text": "Spread the crop trays into the hold",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "sub": "Healthier crop · costs water",
         "outcome": {
           "resources": {
             "water": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "crop_health": 6,
           "narrative": "You carry half the trays into the hold and space them out under the work lights. Given room, the {crop.name} stops stretching and starts thickening. More floor means more watering: {cost.water} points of water over the week, for a crop that looks properly pleased with itself."
@@ -5573,40 +4177,24 @@
       },
       {
         "text": "Give everyone a corner of it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4,
             "o2": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The hold is divided into corners, each with a curtain. One becomes a reading nook, one a gym, one is never explained. Heating and cycling the air in a room people now live in costs the scrubbers a little. Nobody minds."
         }
       },
       {
         "text": "Turn it into a cold store",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": 2,
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You shut the hold's heating off and move the galley stock in. Food keeps longer in the cold, and less of it spoils. The trips to fetch it are made in coats, and are not popular."
         }
@@ -5630,8 +4218,6 @@
     ],
     "scene_type": "ship_interior",
     "once": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA loves a quick stop! In and out! Like a pit stop! ARIA has always wanted a pit crew!",
       "marv": "MARV has been timing stops. At this rate the ship spends a meaningful share of the deadline parked. MARV has said nothing. MARV has put up a clock.",
@@ -5643,37 +4229,21 @@
     "choices": [
       {
         "text": "Top up and go, no shore time",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "sub": "Spends no day · the crew gets no rest",
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "none",
           "narrative": "Nobody gets off, nobody sits down. The stop is a top-up and a headcount, and the drive is spooling again before anyone has finished complaining. The clock in the corner never gets past yellow. Neither does the mood."
         }
       },
       {
         "text": "Faster from here",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "set_orders": {
             "pace": "faster"
@@ -5683,20 +4253,12 @@
       },
       {
         "text": "Take the long stop anyway",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "sub": "Rest for the crew · more of the deadline",
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You let the stop run long, on purpose. People sleep, eat sitting down, call home if home is in range. The clock in the corner goes red and stays red. Everyone comes back aboard looking like themselves."
         }
@@ -5720,8 +4282,6 @@
     ],
     "scene_type": "ship_interior",
     "once": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "science_link": {
       "text": "The galley wall is the rocket equation: the fuel a burn needs rises steeply with the mass it has to move, so shedding mass is the oldest way to go faster for the same fuel.",
       "label": "Tsiolkovsky rocket equation",
@@ -5738,20 +4298,12 @@
     "choices": [
       {
         "text": "Dump the reserve water tank",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": -5,
             "fuel": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "set_orders": {
             "pace": "faster"
@@ -5761,20 +4313,12 @@
       },
       {
         "text": "Strip the spare hull plating",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -6,
             "fuel": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "set_orders": {
             "pace": "faster"
@@ -5785,19 +4329,12 @@
       {
         "text": "{crew.engineer} pulls the backup air scrubber",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": -6,
             "fuel": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "set_orders": {
             "pace": "faster"
@@ -5807,19 +4344,11 @@
       },
       {
         "text": "Keep it all and hold the pace",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You keep everything. The pace stays where it was, the sums stay on the galley wall, and nobody rubs them off. Every meal is now eaten next to the arithmetic."
         }

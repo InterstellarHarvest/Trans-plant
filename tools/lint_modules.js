@@ -1257,7 +1257,7 @@ const hardChoiceCost = (() => {
     const r = it.sell_range, tags = it.tags || [];
     if (r !== undefined && r !== null) {
       if (!Array.isArray(r) || r.length !== 2 || !r.every(v => Number.isInteger(v) && v > 0) || r[0] > r[1]) err(`items.json ${it.id}: sell_range must be [lo, hi] — positive integers, lo <= hi (got ${JSON.stringify(r)})`);
-      if (it.base_price != null) err(`items.json ${it.id}: has a sell_range AND base_price ${it.base_price} — the rolled value replaces the fixed price (set base_price null)`);
+      if (it.base_price != null) err(`items.json ${it.id}: has a sell_range AND base_price ${it.base_price} — the rolled value replaces the fixed price (drop base_price)`);
       if (!tags.includes('trade_good')) err(`items.json ${it.id}: sell_range on an item without the trade_good tag — nobody would buy it`);
       if (it.item_source === 'purchasable') err(`items.json ${it.id}: a purchasable item can't have a sell_range — the station shelves it at base_price`);
     }
