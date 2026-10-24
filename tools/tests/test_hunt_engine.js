@@ -88,6 +88,9 @@ const clickContinue = page => page.evaluate(() => {
     await setup(page);
     const r = await page.evaluate(() => {
       STATE.daysElapsed = STATE.baseDays + 3;
+      // Jumped there, not flown: the crop's clock jumps too (unwatered
+      // catch-up days would kill it, and a dead crop is a failure).
+      if (STATE.cropGrowth) STATE.cropGrowth.lastTickDay = STATE.daysElapsed;
       const f = checkFailure();
       const lines = (STATE.shipLog || []).filter(e => /deadline has passed/.test(e.text)).length;
       checkFailure();
@@ -95,6 +98,14 @@ const clickContinue = page => page.evaluate(() => {
     });
     ok(!r.f && !r.ended, 'past the deadline: no failure');
     ok(r.lines === 1 && r.again === 1, 'the AI says the deadline passed, once');
+    // A late run still fails like any other: the crop dying past the
+    // deadline raises EMPTY GROWBAY (the notice used to cut the chain).
+    const c = await page.evaluate(() => {
+      STATE.ended = false; STATE.cropGrowth.health = 0;
+      const f = checkFailure();
+      return { f, ended: STATE.ended, screen: (document.querySelector('.screen.active') || {}).id };
+    });
+    ok(c.f && c.ended && c.screen === 'screen-end', `past the deadline, a dead crop still ends in its failure (${c.screen})`);
     await page.close();
   }
 

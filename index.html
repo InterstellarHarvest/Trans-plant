@@ -7307,21 +7307,19 @@ function checkFailure(opts) {
   else if (captainHPOf() <= 0) type = STATE.crew.length ? 'captain_lost' : 'crew_gone';
   else if (crewMoraleAvg() === 0) type = 'mutiny'; // the crew AVERAGE at 0 (owner ruling 15); no crew, no mutiny
   else if (deprivationFailure()) type = deprivationFailure();
-  // Ruling 94: past the deadline the ship flies on and arrives late (the
-  // score pays for every day); the AI says so once (deadlineNotice).
-  else if (STATE.daysElapsed > STATE.baseDays) deadlineNotice();
-  // Phase 4's Growbay now tracks real STATE.cropGrowth.health, so this
-  // branch is genuinely reachable — but nothing currently decrements
-  // health automatically (only the one-time seed at crop selection),
-  // so in practice this stays dead until a pest/threat mechanic lands.
-  // Wired now rather than left as a TODO so that future mechanic needs
-  // zero checkFailure() changes. The crop_death_accepted flag is set by
-  // the failure screen's "Keep flying" continue_option (failures.json
-  // authors it on crop_dead; endings.js implements it) — after accepting,
-  // the run continues toward the 'hollow' arrival bracket instead of
-  // re-firing this failure on every subsequent resource mutation.
+  // The crop died (thirst, pests, sickness). The crop_death_accepted flag
+  // is set by the failure screen's "Keep flying" continue_option
+  // (failures.json authors it on crop_dead; endings.js implements it) —
+  // after accepting, the run continues toward the 'hollow' arrival
+  // bracket instead of re-firing this failure on every later check.
   else if (STATE.crop && STATE.cropGrowth && STATE.cropGrowth.health <= 0 && !STATE.flags.has('crop_death_accepted')) type = 'crop_dead';
-  if (!type) return false;
+  if (!type) {
+    // Ruling 94: past the deadline the ship flies on and arrives late (the
+    // score pays for every day); the AI says so once. Checked after the
+    // failures, never instead of them: a late run still fails like any other.
+    if (STATE.daysElapsed > STATE.baseDays) deadlineNotice();
+    return false;
+  }
 
   const failure = filterThenRandomDraw(MOD.failures, f => f.failure_type === type) || MOD.failures[0];
   endRun({ kind: 'failure', module: failure });
