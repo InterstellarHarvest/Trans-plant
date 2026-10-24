@@ -30,13 +30,22 @@ for t in $TESTS; do
   echo "$r" | grep -E -A3 '✗|Error' | head -12 # a failure's detail lines follow it
 done
 cd "$ROOT"
+# The fuzz and the sweep end on a summary (VIOLATIONS: / FLAGS:, kept whole
+# from there on: a flag list spans lines). A harness that died before it
+# prints its last lines and exit status instead, so a crash never reads clean.
+summary() { # summary <first summary word> <command…>
+  local head="$1"; shift
+  local out st; out=$("$@" 2>&1); st=$?
+  if echo "$out" | grep -q "^$head"; then echo "$out" | sed -n "/^$head/,\$p"; else echo "$out" | tail -8; fi
+  [ $st -ne 0 ] && echo "($(basename "${@: -1}") exited $st)"
+  return 0
+}
 $NVM/bin/node tools/lint_modules.js 2>&1 | tail -1
 $NVM/bin/node tools/lint_code.js 2>&1 | tail -4
-FUZZ_URL="${URL%index.html}index.html?debug=fuzz" $NVM/bin/node tools/fuzz_playthrough.js 2>&1 | tail -2
+summary VIOLATIONS: env FUZZ_URL="${URL%index.html}index.html?debug=fuzz" $NVM/bin/node tools/fuzz_playthrough.js
 if [ -z "$SMOKE" ]; then
-  FUZZ_URL="$FILE?debug=fuzz" $NVM/bin/node tools/fuzz_playthrough.js 2>&1 | tail -2
-  SWEEP_URL="$URL" $NVM/bin/node tools/ui_sweep.js 2>&1 | sed -n '/^FLAGS:/,$p'
+  summary VIOLATIONS: env FUZZ_URL="$FILE?debug=fuzz" $NVM/bin/node tools/fuzz_playthrough.js
+  summary FLAGS: env SWEEP_URL="$URL" $NVM/bin/node tools/ui_sweep.js
 fi
-# From FLAGS: on, whole: a flag list spans lines (tail -2 once showed a bare "]").
-SWEEP_URL="$FILE" $NVM/bin/node tools/ui_sweep.js 2>&1 | sed -n '/^FLAGS:/,$p'
+summary FLAGS: env SWEEP_URL="$FILE" $NVM/bin/node tools/ui_sweep.js
 echo "total: $((SECONDS - T0))s"
