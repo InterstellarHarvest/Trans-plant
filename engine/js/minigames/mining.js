@@ -110,42 +110,42 @@
       marv: "The rocks are not going to mine themselves. I have run that simulation.",
       rex:  "Field's not getting smaller on its own. Pick a target.",
       chip: "Inactive tractor beam cycles still bill at 60% standby rate.",
-      ajoy: "The rocks are patient. The hold is not."
+      ajoy: "We could be mining. Just a thought."
     },
     hollow_hit: {
       aria: "An empty one! Don't worry, lots of these have STUFF in them. Probably.",
       marv: "You struck a hollow rock. I had not considered this outcome. I have now.",
       rex:  "Dead rock. Move on.",
       chip: "Hollow strike registered. ScrapRight™ does not refund energy spent on empty mass.",
-      ajoy: "Some rocks are full. Some are empty. Both look like rocks."
+      ajoy: "Hollow. I'd have picked the other one. But sure."
     },
     large_split: {
       aria: "It broke into PIECES! More pieces means more loot! Probably!",
       marv: "Structural integrity gave way. We anticipated this. We did not anticipate enjoying it.",
       rex:  "Good shot. Clean up the fragments before they drift.",
       chip: "Fragmentation event logged. Cleanup yields billed at fragment-rate.",
-      ajoy: "What was one is now several. The math is the same. The work is not."
+      ajoy: "It split. Fragments drift, so maybe chase them. Just noting."
     },
     rich_crack: {
       aria: "SPARKLES! Those are the GOOD ones! We're rich! Sort of!",
       marv: "Exotic matter detected. Begin the paperwork. Or do not. I am not a notary.",
       rex:  "High-value target down. Don't lose the fragments.",
       chip: "Exotic detection! ScrapRight™ Pro members keep 12% more rare yield. Ask your station rep.",
-      ajoy: "The rare ones glitter because they want to be found. Or because they cannot help it."
+      ajoy: "A rich one. I'd have shot it first, but fine. Do collect the bits."
     },
     fragment_lost: {
       aria: "It floated away! Hopefully someone else gets it! Friendly reminder, no one else is here!",
       marv: "That one drifted off. The galaxy has it now.",
       rex:  "Lost a fragment. Tighten the firing arc.",
       chip: "Drift-loss event. Recoverable via ScrapRight™ Drift Recovery — sold separately.",
-      ajoy: "It went where it needed to go."
+      ajoy: "Lost one. I saw that coming."
     },
     low_energy: {
       aria: "Energy low! But also, we're DOING it! So! Choices!",
       marv: "Tractor beam is at 24%. Below 20% I am required to mention it again.",
       rex:  "Energy low. Make the next shot count.",
       chip: "Low reserves! ScrapRight™ Power Cells available at all major stations.",
-      ajoy: "The well is drawing down. Choose your last few rocks well."
+      ajoy: "Energy's low. Maybe aim before firing, this time."
     },
 
     // End-state triggers — pulled by the haul card.
@@ -154,21 +154,21 @@
       marv: "Yield exceeds projection. The asteroid field will recover. Eventually.",
       rex:  "Clean run. Energy spent efficiently. Logged.",
       chip: "Excellent yield! Brought to you by ScrapRight™ — One Person's Trash, Your Cargo Manifest®.",
-      ajoy: "You took much. The belt has more. It always has more."
+      ajoy: "Great haul. I'd have taken the same rocks. Mostly."
     },
     adequate: {
       aria: "A pretty good haul! Some rocks survived but you tried so hard!",
       marv: "Adequate yield. Acceptable energy expenditure. Several rocks remain. So do we.",
       rex:  "Solid run. Could have been tighter. Conserve energy on the next pass.",
       chip: "Solid haul! ScrapRight™ Pro users report 28% higher yield per session. Ask about upgrades.",
-      ajoy: "Some came to your hand. Some kept turning."
+      ajoy: "Decent. I'd have used less energy. Noted."
     },
     insufficient: {
       aria: "A little haul! But the experience was the real treasure!",
       marv: "Minimal recovery. Energy spent without commensurate return. Suggest revised approach.",
       rex:  "Low yield. The field won this round. Don't make a habit of it.",
       chip: "Low return! ScrapRight™ Targeting Beacons would have helped. Subscription tiers available.",
-      ajoy: "The belt asked little of you, and you gave little. It is fair."
+      ajoy: "Low yield. I had a better approach ready. Nobody asked."
     }
   };
 
@@ -203,42 +203,42 @@
       marv: "Standard distribution. Most rocks contain material. A few do not.",
       rex:  "Routine field. Maintain target prioritization. Hollow contacts likely.",
       chip: "Standard sector! ScrapRight™ yield projections within nominal range.",
-      ajoy: "A field like any other. The rocks have not decided who they are."
+      ajoy: "Standard field. Some are hollow. I'll tell you which, afterward."
     },
     dense: {
       aria: "DENSE field! The rocks are PACKED in here! More for us!",
       marv: "Mineral density elevated. Yield should exceed projection if executed.",
       rex:  "Dense pocket. Don't get tunnel vision — fragments overlap here.",
       chip: "Dense sector premium! Yield uplift averages 18% in this density.",
-      ajoy: "Many rocks. Many possibilities. We move through them one by one."
+      ajoy: "Dense field. Fragments overlap. Try to keep up. I will."
     },
     dead_zone: {
       aria: "DEAD zone! That sounds BAD but it just means lots of empty rocks!",
       marv: "Hollow content elevated. Statistically a poor draw. Press on.",
       rex:  "Dead zone. Most contacts are duds. Conserve energy on the obvious.",
       chip: "Dead zone warning! ScrapRight™ does not refund energy on hollow strikes.",
-      ajoy: "Hollow rocks are still rocks. They wait, like the rest of us."
+      ajoy: "Dead zone. Mostly hollow. Do save some energy, for once."
     },
     breaking: {
       aria: "BREAKING field! These rocks are READY to crack! Heehee!",
       marv: "Pre-fragmented material. Larger ratios. The field was disturbed.",
       rex:  "Breaking field. Splits favored. Watch the fragment spread.",
       chip: "Pre-cracked yield! BreakRight™ rated optimal for split-loot recovery.",
-      ajoy: "Others have come before us. They left things half-finished. We finish them."
+      ajoy: "Breaking field. Lots of splits. Do pick up the pieces, ideally."
     },
     still: {
       aria: "Everything is so SLOW! Like a peaceful little nap! For ROCKS!",
       marv: "Tumble velocity near zero. The rocks have stopped moving for now.",
       rex:  "Static field. Aim is easier. Use the extra second per shot.",
       chip: "Still sector! ScrapRight™ Premium Aim certification recommended.",
-      ajoy: "The rocks have stopped turning. We have time. We may not have it long."
+      ajoy: "Still field. Easy aim, so no excuses. I'm just saying."
     },
     rich_seam: {
       aria: "SPARKLY everywhere! It's a RICH SEAM! We are RICH ALREADY!",
       marv: "Exotic readings across the field. The seam is genuine. Take care.",
       rex:  "Rich seam. Prioritize the bright ones. Make every shot count.",
       chip: "RICH SEAM! ScrapRight™ Platinum window — yield modifiers stack.",
-      ajoy: "The rare things gather here. They have been waiting for us specifically. Or anyone."
+      ajoy: "Rich seam. Bright ones first. I shouldn't have to say it, but here we are."
     }
   };
 
@@ -252,35 +252,35 @@
       marv: "Mineral content nominal. Silicates. The fabricator will know what to do.",
       rex:  "Minerals. Hull-grade. Stockpile them.",
       chip: "Minerals! ScrapRight™ accepts these at most major stations. 0.4 cr per unit.",
-      ajoy: "Minerals. These were stars once. Now they will be walls."
+      ajoy: "Minerals. Hull material. Given your flying, keep them."
     },
     scrap: {
       aria: "Scrap! Twisted metal, but you can still DO things with it!",
       marv: "Scrap recovered. Suboptimal but not useless. Fabricator-eligible at low yield.",
       rex:  "Scrap. Field-repair material. Save it.",
       chip: "Scrap! ScrapRight™ buys at 0.1 cr per — better than nothing.",
-      ajoy: "Scrap. What others have left. We take what they could not finish."
+      ajoy: "Scrap. Repair stock. Keep it. You'll break something."
     },
     metal: {
       aria: "METAL! The good stuff! We can build pretty much anything with this!",
       marv: "Metal acquired. High-utility input. Fabricator recipes open up considerably.",
       rex:  "Metal. Real metal. Hold onto it — we'll want it.",
       chip: "Metal! ScrapRight™ Premium tier — 1.2 cr per. Tell a friend.",
-      ajoy: "The hard things. The lasting things. Metal."
+      ajoy: "Metal. The fabricator wants it. So do I."
     },
     exotic: {
       aria: "EXOTIC! That's the SPARKLY one! That means we are RICH!",
       marv: "Exotic matter. The rare drops. The recipes that needed this just unlocked.",
       rex:  "Exotic. Don't lose it. Don't trade it cheap.",
       chip: "Exotic! ScrapRight™ Black Tier — 6.0 cr per. Schedule a sit-down with your station rep.",
-      ajoy: "Exotic. The rocks have been keeping this for a very long time. It is ours now."
+      ajoy: "Exotic. Rare. Please don't trade it for a sandwich at the next station."
     },
     biocomponent: {
       aria: "BIOCOMPONENT! Wait — that came from a ROCK?! Anyway, the growbay will LOVE it.",
       marv: "Biocomponent in asteroid matter. Statistically improbable. Growbay nutrient feed.",
       rex:  "Biocomp. Don't ask how. Feed the growbay with it.",
       chip: "Biocomponent! ForageRight™ partners pay 2.1 cr — cross-tier credit applies.",
-      ajoy: "Something living was here. Or will be. The growbay knows."
+      ajoy: "Biocomp. Growbay feed. I'll remind you again later."
     }
   };
 
@@ -290,7 +290,7 @@
     marv: "Mineral density is within nominal parameters. A small percentage of these rocks contain nothing. We will find out which.",
     rex:  "No contacts. Noisy field. Stay sharp.",
     chip: "Unlicensed mining in contested belts voids insurance.",
-    ajoy: "The rocks have been waiting. Some of them have nothing to give. They are still waiting."
+    ajoy: "Some of these are hollow. I'd tell you which, but you prefer to find out yourself."
   };
 
   // ─────────────────────────────────────────────────────────────

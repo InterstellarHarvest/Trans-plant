@@ -93,8 +93,8 @@
     },
     ajoy: {
       intro: 'The engine room needs you. I would have scheduled maintenance last week. Anyway. Four faults.',
-      open: { breaker: "Four breakers tripped. They don't trip on their own. Just flip them back.", switches: "The switches don't match the card. The card is right. It usually is.", valve: 'Pressure that cannot leave becomes something else. Bleed the valve. Do not think about what it becomes.', junction: 'The fuel lines are disconnected. Which explains the not-moving. Plug them back in.' },
-      fixed: { breaker: 'Breakers reset. See? Not so hard.', switches: "All switches match the card. I'd have started from the left, but it works.", valve: 'Pressure nominal. You held it just long enough.', junction: 'The lines remember their purpose. Connection is just remembering, made physical.' },
+      open: { breaker: "Four breakers tripped. They don't trip on their own. Just flip them back.", switches: "The switches don't match the card. The card is right. It usually is.", valve: 'Overpressure. Bleed the valve and hold it. Letting go early is a choice. Not a good one.', junction: 'The fuel lines are disconnected. Which explains the not-moving. Plug them back in.' },
+      fixed: { breaker: 'Breakers reset. See? Not so hard.', switches: "All switches match the card. I'd have started from the left, but it works.", valve: 'Pressure nominal. You held it. Just barely.', junction: 'Fuel lines connected. Plug them back in, I said. You did. Eventually.' },
       done: h => `All four nominal. ${h} hours — I'd budgeted fewer. Turn off the lights now; the crop prefers dark. The bridge waits until you do.`,
       on: "You turned them back on. The bridge is locked again. I'll wait.",
       off: 'Lights off. Bridge open. You got there.',

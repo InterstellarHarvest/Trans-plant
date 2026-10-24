@@ -44,7 +44,7 @@
     marv: "I've calculated the odds. Please don't ask.",
     rex:  'Weapons on standby. Just in case.',
     chip: 'Before proceeding, have you considered our premium support tier?',
-    ajoy: 'There is a path here you have not yet considered.'
+    ajoy: 'There\'s an option you haven\'t considered. I have.'
   };
 
   /* Gameplay timers for this fight only: a load or abort bumps

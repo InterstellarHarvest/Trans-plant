@@ -18,21 +18,21 @@ const Q = {
       marv:'Signal acquired. The universe briefly acknowledged your existence. Don\'t expect a follow-up.',
       rex:'Target locked. Good dish discipline.',
       chip:'Signal locked! Brought to you by OmniComm™ — We Find Things®.',
-      ajoy:'The signal and the seeker became one. For a moment.'
+      ajoy:'Locked. Right where I said it was. You\'re welcome.'
     },
     good:{
       aria:'Close enough! Technically you found it. That\'s what matters!',
       marv:'Marginal lock. Adequate. Like most things on this ship.',
       rex:'Sloppy approach, but the lock held. In the field, sloppy gets people killed.',
       chip:'Signal located! OmniComm™ Pro offers 40% faster acquisition. Ask your station.',
-      ajoy:'You found the signal. The signal was not looking for you.'
+      ajoy:'Found it. Eventually. I\'d have gone left first, but sure.'
     },
     poor:{
       aria:'Oh! The signal got away. That happens to the best of us. And also to you!',
       marv:'Signal lost. I\'d calculated this outcome. I didn\'t mention it because it wouldn\'t have helped.',
       rex:'Lost the target. We are not going to talk about this.',
       chip:'Signal lost! OmniComm™ EasyTrack — starting at 29.99/month. Terms apply.',
-      ajoy:'Some signals are not meant to be found.'
+      ajoy:'Lost it. I did say it wanders. Twice.'
     }
   },
   engine:{
@@ -41,21 +41,21 @@ const Q = {
       marv:'Sequence correct. The engine will continue working until it next decides not to.',
       rex:'Correct sequence, no errors. That\'s how it\'s done.',
       chip:'Engine restored! Brought to you by EngineRight™ — Factory Quality, Field Applied.',
-      ajoy:'You remembered the order. The engine remembers nothing.'
+      ajoy:'Correct order. I was mouthing it along. Credit shared.'
     },
     good:{
       aria:'Engine repaired! A few sparks, but sparks are basically tiny fireworks!',
       marv:'Repaired, despite errors. Barely functional, which is technically enough.',
       rex:'Sequence complete with errors. Those sparks will cost us. Monitor the drive coil.',
       chip:'Engine repaired! Those sparks? Normal. Not a recall issue. Please don\'t file a report.',
-      ajoy:'The engine runs again. It does not forgive the errors. Engines are like that.'
+      ajoy:'It runs. With sparks. The sequence was shown once, slowly, but fine.'
     },
     poor:{
       aria:'Limp mode! That\'s still a mode! We\'re still moving! Sort of!',
       marv:'Sequence failed. Limp mode active. I had predicted this. I keep predicting things.',
       rex:'Limp mode engaged. This is not a combat-ready condition. I want that on record.',
       chip:'Limp mode! EngineRight™ emergency kits available at participating stations!',
-      ajoy:'The engine limps forward. Perhaps this is its true nature.'
+      ajoy:'Limp mode. I\'d have written the sequence down. Anyway.'
     }
   },
   medical:{
@@ -64,28 +64,28 @@ const Q = {
       marv:'Correct procedure. Patient will recover. I\'m noting this as a statistical anomaly.',
       rex:'Treatment administered correctly. No friendly fire. Good.',
       chip:'Treatment successful! MediRight™ — because your crew is a liability either way.',
-      ajoy:'You gave what was needed. Whether it was enough is a different question.'
+      ajoy:'Correct treatment. Scan first, like I always say. They\'ll recover.'
     },
     good:{
       aria:'Treatment complete! Two tries, but the important thing is feelings!',
       marv:'Second attempt succeeded. The crew will recover. The first attempt was concerning.',
       rex:'Second pass. In the field, second pass means the first pass failed. We\'re not in the field.',
       chip:'Treatment complete on attempt two! MediRight™ Pro offers guided first-attempt success rates.',
-      ajoy:'Healing came, eventually. That is usually enough.'
+      ajoy:'Second try. The colors were labeled, but fine.'
     },
     poor:{
       aria:'Oh! The treatment was a little wrong but the crew member is... resting! Comfortably!',
       marv:'Treatment failed. Crew health declining. I\'d like to say I\'m surprised.',
       rex:'Treatment failed. Crew member down. Adding this to the incident report.',
       chip:'Unsuccessful! Liability waived per clause 7.4 of your MediRight™ user agreement.',
-      ajoy:'Sometimes the body decides on its own schedule.'
+      ajoy:'Failed. The colors were labeled. Just noting.'
     },
     fedup:{
       aria:'Look! The patient sat up and did it themselves! Self-care is so important!',
       marv:'Patient elected to self-administer. Cited \'concerns about your training.\' Recovered without further input.',
       rex:'Patient discharged themselves. Said the field was safer than the medbay. They have a point.',
       chip:'Patient redirected to MediRight™ Self-Service Bay. A 14% surcharge has been added to their account.',
-      ajoy:'The body waited. The body chose. The body rose without you.'
+      ajoy:'They did it themselves. I can\'t say I blame them.'
     }
   },
   forage:{
@@ -94,21 +94,21 @@ const Q = {
       marv:'Maximum yield. The ecosystem is aware it\'s been exploited. So are we.',
       rex:'All targets acquired. Area swept. I\'m not sure \'foraging\' is the right word.',
       chip:'Excellent haul! ForageRight™ — turning alien ecosystems into caloric content since 2144.',
-      ajoy:'You gathered what was offered. The land has noted this transaction.'
+      ajoy:'Full haul. That worked. Mostly because I pointed at things.'
     },
     good:{
       aria:'Good forage! Some things escaped, but they probably had places to be!',
       marv:'Adequate calories acquired. The ones that escaped returned to the food chain.',
       rex:'Good coverage. A few targets evaded. I recommend a second sweep. No time.',
       chip:'Solid haul! ForageRight™ Pro users report 28% higher catch rates on average.',
-      ajoy:'Some things were caught. Others chose differently.'
+      ajoy:'Some got away. I did point at them. Loudly.'
     },
     poor:{
       aria:'Oh! Most things got away! But you learned so much about the local wildlife!',
       marv:'Minimal food acquired. Rations will be tight. I\'ve adjusted the mortality projection.',
       rex:'The targets evaded us. In a combat scenario this would be catastrophic. It still is.',
       chip:'Low yield! ForageRight™ Assisted Hunting Kit — because sometimes the food wins.',
-      ajoy:'The creatures returned to wherever creatures go.'
+      ajoy:'Most got away. They\'re fast. I mentioned that.'
     }
   },
   brace:{
@@ -117,21 +117,21 @@ const Q = {
       marv:'Shields maintained. Hull integrity preserved. Well done. I hate to say that.',
       rex:'Held position under fire. Full duration. That\'s discipline.',
       chip:'Shields held! Brought to you by StellarSeal™ — Holding It Together®.',
-      ajoy:'You held against the light. The light passed.'
+      ajoy:'Held. You vented when I would have. Fine.'
     },
     good:{
       aria:'Great bracing! The shields dipped a little but we\'re mostly here!',
       marv:'Partial shield integrity maintained. Damage taken. We\'ll survive. I\'d predicted worse.',
       rex:'Held longer than expected. Some hull damage. Acceptable in a contested environment.',
       chip:'Shields partially held! StellarSeal™ repair kits available in our store!',
-      ajoy:'You held as long as you could. The storm took what it took.'
+      ajoy:'Some damage. Orange flash means release. As I mentioned.'
     },
     poor:{
       aria:'Oh! The shields dropped a bit early but the important thing is morale!',
       marv:'Shields failed early. Hull damage significant. I\'ve added this to the list.',
       rex:'You released too soon. Hull\'s taken a hit. This is why we train.',
       chip:'Shield failure! StellarSeal™ Emergency Hull Patch — apply directly to the breach!',
-      ajoy:'Some storms cannot be held at bay. They can only be survived.'
+      ajoy:'Shields failed. Hold, vent, hold. It was a short plan.'
     }
   },
   breach:{
@@ -140,21 +140,21 @@ const Q = {
       marv:'All breaches welded. Atmosphere stable. The hull holds. For now.',
       rex:'All breaches sealed inside the window. That\'s a clean repair. Logged.',
       chip:'Hull integrity restored! Brought to you by StellarSeal™ — Holding It Together®.',
-      ajoy:'You closed every wound. The ship will not remember. Neither will the vacuum.'
+      ajoy:'Every breach sealed. See what happens when you listen? Rarely, but still.'
     },
     good:{
       aria:'Most of the breaches got patched! Bulkheads sealed the rest! The crew is breathing! Mostly air!',
       marv:'Partial seal. Auto-bulkhead closed the unsealed sections. Atmospheric loss within survivable parameters.',
       rex:'Most breaches sealed. Auto-vent dropped the rest behind blast doors. We lost a storage bay. Crew\'s on rationed air.',
       chip:'Mostly sealed! StellarSeal™ Emergency Bulkheads handled the rest — billed to your hull insurance.',
-      ajoy:'Some holes stayed open. The ship closed them with steel. The void was given its rooms.'
+      ajoy:'Bulkheads sealed off the ones you missed. I\'d have welded faster. Just noting.'
     },
     poor:{
       aria:'A lot of breaches stayed open! But the bulkheads slammed shut and sealed those sections! We\'re fine!',
       marv:'Multiple breaches unsealed. Auto-vent protocol activated. Half a deck is now hard vacuum behind sealed doors.',
       rex:'Couldn\'t seal them in time. The ship vented the affected sections and dropped bulkheads. We lost two cabins. Not the crew.',
       chip:'Hull failure! StellarSeal™ Emergency Vent — protecting you from yourself since 2147. Cabin loss is not covered.',
-      ajoy:'You closed few. The ship closed many. The void took the rooms it was offered.'
+      ajoy:'Few sealed. The ship vented those rooms itself. I had a patch order in mind.'
     }
   },
   salvage:{
@@ -163,21 +163,21 @@ const Q = {
       marv:'Cargo bay at capacity. Recovery yield exceeds projection. The crates remain sealed. We will open them.',
       rex:'Full bay. Clean grab pattern. Energy reserves spent efficiently. Logged as a model run.',
       chip:'Excellent salvage! Brought to you by ScrapRight™ — One Person\'s Trash, Your Cargo Manifest®.',
-      ajoy:'You drew much from the drift. The drift will replace what was taken. It always does.'
+      ajoy:'Full bay. I\'d have grabbed the close ones first, but it worked out. This time.'
     },
     good:{
       aria:'A pretty good haul! Some things drifted past us but we got plenty! And mystery crates!',
       marv:'Adequate yield. Several items lost to drift. Energy budget acceptable.',
       rex:'Solid recovery. A few items got past us. Energy spend was a little loose. Tighten up next run.',
       chip:'Solid haul! ScrapRight™ Pro users tractor up to 22% more debris per shift. Ask your station rep.',
-      ajoy:'Some came to your hand. Some kept drifting. Both are correct.'
+      ajoy:'Some drifted off. Shorter drags, I keep saying.'
     },
     poor:{
       aria:'Oh! Most things drifted past! But we got a few! And every crate is a surprise!',
       marv:'Minimal recovery. Energy spent on drag-distance instead of catches. Suggest tighter approach vectors.',
       rex:'Low yield. The drift won this round. Conserve energy by grabbing items closer to the bay.',
       chip:'Low yield! ScrapRight™ Targeting Beacons would have helped. Ask about our subscription tier!',
-      ajoy:'The drift moves at its own pace. Today, you moved at yours.'
+      ajoy:'Not much. Long drags eat energy. As I mentioned.'
     }
   },
   // SALVAGE inside a derelict (owner ruling 2026-10-11 #12): the same game
@@ -189,21 +189,21 @@ const Q = {
       marv:'Hold stripped. Recovery exceeds projection. The previous crew left more than they took. They did not take much.',
       rex:'Clean sweep. Every useful thing in that compartment is aboard. Model run.',
       chip:'Outstanding recovery! ScrapRight™ Interior Edition — Their Loss, Your Manifest®.',
-      ajoy:'The ship gave what it had kept. It had been waiting for someone to ask.'
+      ajoy:'Cleaned it out. I\'d have started at the hatch, but it worked.'
     },
     good:{
       aria:'A good haul! Some of it floated off into the dark, but we got plenty!',
       marv:'Adequate recovery. Several items lost to the corridors. Energy budget acceptable.',
       rex:'Solid recovery. Some of it got away down the passage. Tighter grabs next time.',
       chip:'Solid haul! ScrapRight™ Pro users recover up to 22% more per derelict. Ask your station rep.',
-      ajoy:'Some things came with you. Some stayed with the ship. Both are where they belong.'
+      ajoy:'Some floated off down the corridor. I did say grab closer. Fine.'
     },
     poor:{
       aria:'Not much this time! But we got a little! And nobody touched the sparky stuff! Mostly!',
       marv:'Minimal recovery. Most of the hold drifted past the beam. The ship keeps its secrets.',
       rex:'Low yield. The dark won this one. Work closer to the hatch next time.',
       chip:'Low yield! ScrapRight™ Interior Lighting Packs would have helped. Ask about our subscription tier!',
-      ajoy:'The dead ship kept most of what it had. It is allowed to.'
+      ajoy:'Most of it stayed aboard. Closer to the hatch, I said.'
     }
   },
   // SALVAGE played as an event's job (opts.tierRewards / opts.eventJob,
@@ -215,21 +215,21 @@ const Q = {
       marv:'Recovery volume at the top of the scale. The job is done as well as it can be done.',
       rex:'Full bay. Clean grabs. That\'s the job done right.',
       chip:'Top-tier result! ScrapRight™ — We Measure Success By The Load®!',
-      ajoy:'You brought in much. The job is as complete as it can be.'
+      ajoy:'Full bay. Best result the job has. I\'m almost impressed.'
     },
     good:{
       aria:'A decent load! Some of it got away, but the job\'s mostly done!',
       marv:'Adequate volume. Several items lost to drift. The job is done, with an asterisk.',
       rex:'Solid load. A few got past us. Job done, not perfectly.',
       chip:'Solid result! ScrapRight™ Pro users haul up to 22% more per shift. Ask your station rep!',
-      ajoy:'Some came to your hand, some kept drifting. The job is mostly done.'
+      ajoy:'Mostly done. A few drifted past. I\'d have grabbed those first.'
     },
     poor:{
       aria:'Oh! Not much made it into the bay! The job went... not great!',
       marv:'Minimal volume recovered. The job will reflect that.',
       rex:'Thin load. The job suffers for it. Grab closer to the bay next time.',
       chip:'Low yield! ScrapRight™ Targeting Beacons would have helped. Ask about our subscription tier!',
-      ajoy:'Little came in. The job ends smaller than it began.'
+      ajoy:'Thin load. The job will reflect that. So will I.'
     }
   }
 };
@@ -245,7 +245,7 @@ const BRIEF = {
       marv:'There is a signal. It may be meaningful. Statistically, probably not.',
       rex:'Unknown contact on sensors. Lock it down. We don\'t leave signals unidentified.',
       chip:'Signal detected! Could be a trade opportunity! ScanRight™ — Know Before You Go®.',
-      ajoy:'Something out there is trying to be found. Or it isn\'t. Point the dish.'
+      ajoy:'A signal. It wanders. Do stay on it. I\'ll be watching.'
     },
     mechanic:'Move your cursor over the <strong>blinking blip</strong> on the radar and hold it there until the lock bar fills. The blip wanders — stay with it.'
   },
@@ -256,7 +256,7 @@ const BRIEF = {
       marv:'Drive system fault. I will show you the restart sequence once. Do pay attention.',
       rex:'Engine fault. I\'m reading you the sequence. One time. Don\'t make me repeat myself.',
       chip:'Engine trouble! EngineRight™ field kits — because breakdowns happen to everyone.',
-      ajoy:'The engine has forgotten what it was doing. Remind it gently, in order.'
+      ajoy:'Engine fault. Watch the order. I\'d take notes, but you do you.'
     },
     mechanic:'Watch the components <strong>light up in sequence</strong>. Then click them in the same order from memory. {engineErrs} wrong clicks and the drive goes to limp mode.'
   },
@@ -267,7 +267,7 @@ const BRIEF = {
       marv:'Patient inbound. Diagnostic phase first. Treatment phase second. Don\'t mix them up.',
       rex:'Casualty on the table. Scan, identify, treat. In that order. Don\'t freelance.',
       chip:'Medical event! MediRight™ — diagnosis and treatment, ALL in one easy two-step procedure!',
-      ajoy:'The body presents its questions. Listen first. Then answer.'
+      ajoy:'Patient. Scan first, then treat. I know, radical.'
     },
     mechanic:'<strong>Turn on your scanner</strong>, then click each unknown wound to reveal what you need. <strong>Match the treatment to the color.</strong> Wrong treatment hurts the patient! Must treat in the order marked with the brackets.'
   },
@@ -278,7 +278,7 @@ const BRIEF = {
       marv:'Foraging window. Most of what emerges is edible. A small fraction is not. The non-edible specimens cost us crew.',
       rex:'Lifeforms in cover. Move on them fast. One in every batch is bait. Don\'t take the bait.',
       chip:'Foraging time! ForageRight™ — turning alien ecosystems into caloric content since 2144.',
-      ajoy:'Things hide. Things ripen. Things mimic. Choose only what is willing to be chosen.'
+      ajoy:'Food and decoys. Wait for the ripe glow. Skip the decoys. Obviously.'
     },
     mechanic:'Targets emerge from cover at fixed spots. <strong>Fauna</strong> vanish in ~1s — click fast. <strong>Flora ripens</strong>: wait for the gold glow for max yield, but past the glow it spoils (low food + crew morale hit). <strong>Decoys</strong> are eye-marked or off-tinted — clicking one poisons someone aboard. Tap <strong>DEPART</strong> any time to lock your haul early; decoy rate climbs as the timer runs down.'
   },
@@ -289,7 +289,7 @@ const BRIEF = {
       marv:'Solar flare event. Shield integrity is a function of how long you maintain pressure. Don\'t let go.',
       rex:'Incoming flare. BRACE FOR IMPACT. You hold that button until I say otherwise.',
       chip:'Solar flare alert! StellarSeal™ — Holding It Together® since the first flare season.',
-      ajoy:'The star expresses itself. Hold against it. There is no negotiating with light.'
+      ajoy:'Solar flare. Hold to brace, let go to vent. I\'d practice, but no time.'
     },
     mechanic:'<strong>Hold to brace</strong> — shield holds, but heat builds. <strong>Release to vent heat.</strong> If heat hits 100%, the brace fries. Watch for <strong>surge flashes</strong>: the screen flares orange ~1 second before a surge — release during the strike or take a hit. Shield % at the end is your score.'
   },
@@ -300,7 +300,7 @@ const BRIEF = {
       marv:'Multiple breaches. Atmosphere is escaping into vacuum. Patches are in the tray. Move quickly.',
       rex:'HULL BREACH. Grab a patch. Cover the hole. Weld it. Repeat. We don\'t have time to discuss it.',
       chip:'Hull integrity compromised! StellarSeal™ patches are pre-loaded. Welding kit included with every kit!',
-      ajoy:'The ship has openings. The void wants to come in. Close the openings. Do not drop the patch.'
+      ajoy:'Hull breaches. Patch, weld, repeat. Try not to drop the patch. I\'ve seen you hold things.'
     },
     mechanic:'<strong>Drag a patch</strong> from the tray onto a hole. It snaps into place. <strong>Click the snapped patch to weld it</strong> — the orange glow means it\'s holding. Drop a patch outside a hole and it falls. Pick it up off the floor to try again. You can only handle one patch at a time.'
   },
@@ -311,7 +311,7 @@ const BRIEF = {
       marv:'Recoverable debris in the drift field. Tractor beam is hot. Cargo bay is below. Crates are sealed; contents unknown until recovery.',
       rex:'Salvage op. Beam is online. Drag the items into the bay. Don\'t waste energy on long-distance grabs.',
       chip:'Salvage opportunity detected! ScrapRight™ tractor beam is engaged. Cargo bay is accepting deposits!',
-      ajoy:'The drift offers what it has lost. Take what you can carry. The bay will accept it.'
+      ajoy:'Debris. Grab the close ones; long drags burn energy. Remember I said that.'
     },
     mechanic:'<strong>Click and hold</strong> over a drifting item to tractor it. Drag it into the <strong>glowing cargo bay</strong> at the bottom of the ship and release. Energy drains while the beam is on — <strong>longer drags cost more</strong>. Items that drift off-screen are gone. <strong>Crates open on the end screen</strong> — you don\'t know what\'s inside until then.'
   },
@@ -322,7 +322,7 @@ const BRIEF = {
       marv:'Interior hold of the derelict. No gravity, no power. Fuel cells, ration cans and parts adrift. The stowage hatch is marked below.',
       rex:'Boarding salvage. Beam is online. Grab what floats, put it through the hatch. Leave the sparking junk alone.',
       chip:'Derelict detected! ScrapRight™ Interior Recovery is go. Everything not bolted down is a business opportunity!',
-      ajoy:'The ship is quiet. Its things still drift where its people left them. Take them gently.'
+      ajoy:'A derelict. Grab near the hatch and skip the sparking junk. I\'ll keep a tally.'
     },
     mechanic:'<strong>Click and hold</strong> over a floating item to tractor it. Drag it into the <strong>marked stowage hatch</strong> at the bottom and release. Energy drains while the beam is on — <strong>longer drags cost more</strong>. Items that drift out of reach are gone. <strong>Fuel cells</strong> refuel the ship (small +5, medium +10, large +15), <strong>ration cans</strong> are +5 food, a <strong>component</strong> strips to 1 metal + 1 exotic, a <strong>medkit</strong> goes to the hold. Sparking junk is worthless.'
   },
@@ -335,7 +335,7 @@ const BRIEF = {
       marv:'The job is a tractor-beam exercise. Volume recovered decides how it is judged. Contents do not.',
       rex:'Job\'s on the clock. Beam it in, put it in the bay. The count is what counts.',
       chip:'Contract salvage! ScrapRight™ pays by the load — every item in the bay counts toward your result!',
-      ajoy:'Bring in what drifts. How much you bring decides how the job ends.'
+      ajoy:'A job. The load decides how it ends. I\'ll be counting.'
     },
     mechanic:'<strong>Click and hold</strong> over a drifting item to tractor it. Drag it into the <strong>{bay}</strong> and release. Energy drains while the beam is on — <strong>longer drags cost more</strong>. Items that drift off-screen are gone. <strong>What the job pays depends on how well it goes</strong>: 8 or more items in is the best result, 4 or more a fair one. The haul itself isn\'t kept: the job\'s reward is what lands.'
   }
