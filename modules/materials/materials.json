@@ -2,6 +2,7 @@
   "_meta": {
     "description": "Raw materials and currency. Gold is the unit of account. Materials have gold-denominated trade values. Mixed payment: any transaction can be paid in any combination of gold + materials totaling the price. Three paths to any craftable item: buy at a station, mine-and-fabricate, or barter.",
     "flavor_note": "Each material's flavor line is player-facing (the cargo hold detail). Prices are not stated here: a station trader pays value × station_sell_multiplier, at least 1g a unit (market.js materialPrice — the Market Row, the cargo hold's SELL and every SELL PRICE readout).",
+    "sources_note": "Each material's sources line is the fabricator's where-to-get-it hover. It names what the engine actually grants (mining crate pools, cruise SALVAGE, combat wreck loot, event materials outcomes, forage finds); no station sells materials, so none says \"buy\".",
     "origin": "VA economy primitives + ST credit system merged. Currency is gold — same function as prior 'Credits' system, unified naming. Display unit: 'g' (e.g. 50g). Variable name in engine: goldAmount.",
     "sell_multiplier_note": "station_sell_multiplier is the one material price knob (owner ruling 59 raised it from 2.5 toward 4 so careful runs earn gold). It once sat at 5 with unlimited MINE AGAIN runs inside one day, and mining for sale out-earned every other gold source several times over. Every mining run now costs a day (cruise.js MINE), so days and supplies are the brake: a day's haul (13 units at the field's odds) sells for about 18g at 2.5 and 21g at 4. At 5 minerals round up to 2g and the day jumps to about 28g, so lint holds the multiplier under 5. Common materials floor at 1g, so the multiplier mostly moves exotic and biocomponent."
   },
@@ -19,10 +20,7 @@
       "name": "Metal",
       "value": 0.2,
       "description": "Common structural material. Found in asteroids and derelicts.",
-      "sources": [
-        "mining",
-        "salvage"
-      ],
+      "sources": "Mine asteroids · SALVAGE wrecks · pirate wreckage · derelict and asteroid finds.",
       "cargo_slots_per_10": 1,
       "flavor": "The bread and butter of fabrication: hull patches, repair kits, O2 canisters."
     },
@@ -31,11 +29,7 @@
       "name": "Scrap",
       "value": 0.1,
       "description": "Salvaged junk. Barely useful. Better than nothing.",
-      "sources": [
-        "salvage",
-        "derelict",
-        "event_reward"
-      ],
+      "sources": "Mine asteroids · pirate wreckage · derelict and wreck finds.",
       "cargo_slots_per_10": 1,
       "flavor": "The ship computer does not consider scrap a resource. The fabricator disagrees."
     },
@@ -44,10 +38,7 @@
       "name": "Minerals",
       "value": 0.3,
       "description": "Unprocessed mineral ore. Useful in fabrication or tradeable at stations.",
-      "sources": [
-        "mining",
-        "event_reward"
-      ],
+      "sources": "Mine asteroids — the main yield · asteroid finds · salt crystals on a forage.",
       "cargo_slots_per_10": 1,
       "flavor": "The asteroid field's main export, one rock at a time."
     },
@@ -56,11 +47,7 @@
       "name": "Exotic Matter",
       "value": 2.0,
       "description": "Rare material of unclear origin. High trade value. The ship computer has opinions about touching it.",
-      "sources": [
-        "anomaly",
-        "derelict",
-        "event_reward"
-      ],
+      "sources": "Rare: rich asteroid veins · SALVAGE wrecks · anomaly and asteroid finds.",
       "cargo_slots_per_10": 1,
       "flavor": "Rare. The fabricator can use it, but won't say what for until you try."
     },
@@ -69,11 +56,7 @@
       "name": "Biocomponent",
       "value": 1.0,
       "description": "Organic material with fabrication applications. Also technically food, though the chef has asked everyone not to test this.",
-      "sources": [
-        "planet",
-        "derelict",
-        "event_reward"
-      ],
+      "sources": "Rare in asteroid rock · planet, derelict and station finds · pirate wreckage.",
       "cargo_slots_per_10": 1,
       "flavor": "Crop treatments and ration bricks start here. The chef keeps a wary eye on the stack."
     }

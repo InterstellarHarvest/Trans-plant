@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 'use strict';
-/* Standalone authoring-safety lint for modules/*.json (no build
- * pipeline to hook this into automatically — run manually before a
- * content push). Per POOL_READINESS_AUDIT_HANDOFF.md item A8.
+/* Authoring-safety lint for modules/*.json against the engine and
+ * registry/tag_registry.json; it also fails on a stale portable bundle,
+ * registry or registry/flags.md. tools/tests/run_all.sh runs it; run it
+ * after any content change.
  *
  * Usage: node tools/lint_modules.js   (run from the Trans-plant root)
  */
@@ -377,6 +378,8 @@ for (const m of (readJSON('modules/materials/materials.json').materials || [])) 
   if ('flavor' in m && (typeof m.flavor !== 'string' || !m.flavor.trim())) err(`materials.json ${m.id}: flavor must be a non-empty string`);
   if (typeof m.flavor === 'string' && /\d\s*(g|cr|gold|credits?)\b|=\s*\d/i.test(m.flavor)) err(`materials.json ${m.id}: flavor states a price ("${m.flavor}") — the price is value × station_sell_multiplier`);
   if ('notes' in m) err(`materials.json ${m.id}: "notes" is retired — player-facing text goes in flavor (no prices)`);
+  // sources: the fabricator's where-to-get-it hover (fabricator.js), shown as written.
+  if (typeof m.sources !== 'string' || !m.sources.trim()) err(`materials.json ${m.id}: sources must be a non-empty string (the fabricator's where-to-get-it hover)`);
   if (!(Number.isFinite(m.value) && m.value > 0)) err(`materials.json ${m.id}: value must be a number > 0 (the trader pays value × station_sell_multiplier)`);
 }
 // The one material price knob (market.js materialPrice). At 5 minerals
@@ -743,7 +746,6 @@ const eventOnTrail = (ev, trail) => {
     const at = `${file} ${ev.id}`;
     regCheck(at, 'scene_type', 'scene_type', ev.scene_type);
     regCheck(at, 'comm_mode', 'comm_mode', ev.comm_mode);
-    regCheck(at, 'event_presentation', 'event_presentation', ev.event_presentation);
     npcCheck(at, ev.npc, ev);
     for (const [lk, l] of Object.entries(ev.layers || {})) {
       regCheck(at + '/' + lk, 'comm_mode', 'comm_mode', l.comm_mode);
@@ -764,7 +766,6 @@ const eventOnTrail = (ev, trail) => {
   for (const c of (crops.crops || [])) regCheck(`crops.json ${c.id}`, 'crop id', 'crop_type', String(c.id).replace(/^crop_/, ''));
   for (const e of readJSON('modules/endings/endings.json').filter(e => !e._section)) {
     regCheck(`endings.json ${e.id}`, 'ending_score', 'ending_score', e.ending_score);
-    regCheck(`endings.json ${e.id}`, 'event_presentation', 'event_presentation', e.event_presentation);
   }
 }
 
@@ -1259,7 +1260,7 @@ const hardChoiceCost = (() => {
     const r = it.sell_range, tags = it.tags || [];
     if (r !== undefined && r !== null) {
       if (!Array.isArray(r) || r.length !== 2 || !r.every(v => Number.isInteger(v) && v > 0) || r[0] > r[1]) err(`items.json ${it.id}: sell_range must be [lo, hi] — positive integers, lo <= hi (got ${JSON.stringify(r)})`);
-      if (it.base_price != null) err(`items.json ${it.id}: has a sell_range AND base_price ${it.base_price} — the rolled value replaces the fixed price (set base_price null)`);
+      if (it.base_price != null) err(`items.json ${it.id}: has a sell_range AND base_price ${it.base_price} — the rolled value replaces the fixed price (drop base_price)`);
       if (!tags.includes('trade_good')) err(`items.json ${it.id}: sell_range on an item without the trade_good tag — nobody would buy it`);
       if (it.item_source === 'purchasable') err(`items.json ${it.id}: a purchasable item can't have a sell_range — the station shelves it at base_price`);
     }
@@ -1465,6 +1466,26 @@ const hardChoiceCost = (() => {
   for (const [job, v] of Object.entries((registry.npc_station_job || {}).values || {})) {
     if (v.status !== 'deprecated' && !usedJobs.has(job)) warn(`npc_station_job "${job}" is registered but no event or layer npc uses it`);
   }
+  // Every line slot must be reachable: some event's {npc.line.<slot>}
+  // with a speaker of that disposition (and job) in the event, or an
+  // engine call (combat.js pirateSays('<slot>')). A slot nothing reaches
+  // never shows.
+  const reached = new Set();
+  const speakersOf = ev => { const out = []; (function walk(x) { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (typeof x.disposition === 'string') out.push(x); Object.values(x).forEach(walk); } })(ev); return out; };
+  const poolKey = n => n.disposition + (n.disposition === 'station_crew' ? '/' + (n.job || 'janitor') : '');
+  for (const { event: ev } of eventsById.values()) {
+    const slots = new Set(tokens(ev));
+    if (slots.size) for (const n of speakersOf(ev)) for (const slot of slots) reached.add(poolKey(n) + '.' + slot);
+  }
+  for (const src of engineSrcByFile.values()) {
+    for (const m of src.matchAll(/pirateSays\('(\w+)'\)/g)) reached.add('pirate.' + m[1]);
+    for (const m of src.matchAll(/\{npc\.line\.(\w+)\}/g)) reached.add('*.' + m[1]); // an engine-written token: any speaker
+  }
+  for (const [d, v] of Object.entries(pools)) {
+    for (const [key, slots] of d === 'station_crew' ? Object.entries(v).map(([j, s]) => [d + '/' + j, s]) : [[d, v]]) {
+      for (const slot of Object.keys(slots)) if (!reached.has(key + '.' + slot) && !reached.has('*.' + slot)) err(`flavor_pools.json npc_disposition_lines.${key.replace('/', '.')}.${slot}: no {npc.line.${slot}} reaches it (no event with a ${key} speaker uses it, no engine call) — the lines never show`);
+    }
+  }
 }
 
 // ── Sprite assets (added 2026-10-11) ───────────────────────────────
@@ -1549,6 +1570,14 @@ const hardChoiceCost = (() => {
       const v = k.split('.').reduce((o, p) => o && o[p], c.passive_effect);
       if (!Number.isFinite(v)) err(`captains.json ${c.id}: passive_effect.${k} must be a number (the engine reads it)`);
     }
+  }
+  // The growbay's numbers (growbay.js CROP_META reads them here).
+  for (const c of readJSON('modules/crops/crops.json').crops || []) {
+    const at = `crops.json ${c.id}`, t = c.ideal_temp;
+    if (!(Number.isFinite(c.maturity_days) && c.maturity_days > 0)) err(`${at}: maturity_days must be a number > 0 (the growbay reads it)`);
+    if (!(Number.isFinite(c.water_need) && c.water_need >= 0 && c.water_need <= 100)) err(`${at}: water_need must be a number 0–100 (the plant share of the water split)`);
+    if (!(Array.isArray(t) && t.length === 2 && t.every(Number.isFinite) && t[0] < t[1])) err(`${at}: ideal_temp must be [low, high] in °C`);
+    if (!(Number.isFinite(c.yield_amount) && c.yield_amount >= 0)) err(`${at}: yield_amount must be a number ≥ 0 (what a harvest gives)`);
   }
   const ais = readJSON('modules/ai/ai_companions.json');
   for (const [id, type] of [['ai_aria', 'morale_bonus'], ['ai_chip', 'price_reduction']]) {

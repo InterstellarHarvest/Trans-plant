@@ -7,12 +7,9 @@
    GSTATE.x read/write in this file persists automatically, so
    growth/health/day/tenderId/pest survive between Stop Menu visits.
    See bindGrowbayState() for the reference-binding + day-catchup tick.
-   CROP_META (presentation content: maturity_days/stages/sprites) stays
-   local — crops.json doesn't define these fields, only the economy
-   side (starting_health/food_output_per_leg/etc). Harvest yield still
-   uses CROP_META's own yield_amount (crops.json has no per-harvest
-   number, only per-leg drain — a genuine content-schema gap, not
-   silently invented here, flagged in the Phase 4 handoff).
+   CROP_META holds the presentation content (names, stages, sprites);
+   its growth / water / temperature / yield numbers are read from
+   crops.json.
    Entry point: window.openGrowbay(). No onDone callback — growth is
    applied continuously to real STATE via the live reference, and
    harvest grants STATE.resources.food/morale directly, so there's
@@ -39,18 +36,11 @@
   // In the real game these are populated from engine + crops.json.
   // The demo hand-rolls enough shape to exercise the UI.
 
-  // Per-crop metadata — normally in modules/crops/crops.json. One
-  // wheat profile for this demo. yield_amount is a placeholder
-  // pending the economy-balance pass.
+  // Per-crop presentation; the numbers are crops.json's (below).
   const CROP_META = {
     wheat: {
       name: 'Wheat',
       blurb: 'Staple grain. Calorie-dense and shelf-stable.',
-      maturity_days: 90,
-      water_need: 50,           // 0–100 %; 50 means the Orders water
-                                // slider should be at 50% plant for max rate
-      ideal_temp: [18, 26],     // °C — outside this range, temp stress applies
-      yield_amount: 40,         // +FOOD on harvest (TBD in economy pass)
       yield_label: 'Food',
       sprite: 'sprites/interface/crops/wheat.png',
       fallback_icon: '🌾',
@@ -64,10 +54,6 @@
     tomato: {
       name: 'Tomato',
       blurb: 'Fresh fruit. High morale payload; finicky environment.',
-      maturity_days: 75,
-      water_need: 60,
-      ideal_temp: [20, 28],
-      yield_amount: 50,         // highest food per day (crops.json food_output_per_leg 4 — setup "Food: highest")
       yield_label: 'Food',
       sprite: 'sprites/interface/crops/tomato.png',
       fallback_icon: '🍅',
@@ -81,10 +67,6 @@
     sweet_potato: {
       name: 'Sweet Potato',
       blurb: 'Reliable tuber. Slow but heavy yield; drought-tolerant.',
-      maturity_days: 120,
-      water_need: 40,
-      ideal_temp: [21, 30],
-      yield_amount: 50,
       yield_label: 'Food',
       sprite: 'sprites/interface/crops/potato.png',
       fallback_icon: '🍠',
@@ -98,10 +80,6 @@
     soybean: {
       name: 'Soybean',
       blurb: 'Protein crop. Fixes its own nitrogen; versatile processing.',
-      maturity_days: 100,
-      water_need: 45,
-      ideal_temp: [20, 30],
-      yield_amount: 35,         // moderate food (crops.json food_output_per_leg 2)
       yield_label: 'Food',
       sprite: 'sprites/interface/crops/soybeans.png',
       fallback_icon: '🌱',
@@ -115,10 +93,6 @@
     zinnia: {
       name: 'Zinnia',
       blurb: 'Ornamental bloom. No food value — crew morale payload.',
-      maturity_days: 60,
-      water_need: 35,
-      ideal_temp: [18, 28],
-      yield_amount: 30,
       yield_label: 'Morale',
       sprite: 'sprites/interface/crops/zinnia.png',
       fallback_icon: '🌼',
@@ -130,6 +104,13 @@
       ]
     }
   };
+  // The numbers live in crops.json (maturity_days, water_need, ideal_temp,
+  // yield_amount): each entry reads its crop's.
+  for (const [id, meta] of Object.entries(CROP_META)) {
+    for (const k of ['maturity_days', 'water_need', 'ideal_temp', 'yield_amount']) {
+      Object.defineProperty(meta, k, { enumerable: true, get: () => { const d = ((MOD.crops && MOD.crops.crops) || []).find(c => c.id === 'crop_' + id); return d ? d[k] : undefined; } });
+    }
+  }
   function currentCropId() { return STATE.crop || 'wheat'; }
   // Crop metadata accessor for the Orders modal / index.html's water
   // math (Restoration item 5) — CROP_META stays private otherwise.

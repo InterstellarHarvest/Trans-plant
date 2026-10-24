@@ -68,19 +68,6 @@
   // avoid this because they only ever touch MOD/STATE inside functions
   // that run later, after boot() has finished).
   const MATERIAL_ICONS = { metal: '🔩', scrap: '♻️', exotic: '✨', biocomponent: '🌱', minerals: '💎' };
-  // Where-to-get-it prose for the input hover (demo-fabricator MATERIALS
-  // .source), not the raw materials.json source ids ("mining ·
-  // salvage"). Written against what
-  // the engine actually grants (mining.js crate pools, cruise SALVAGE,
-  // combat wreck loot, event `materials` outcomes, forage finds); no
-  // station sells materials, so none of these lines says "buy".
-  const MATERIAL_SOURCES = {
-    metal:        'Mine asteroids · SALVAGE wrecks · pirate wreckage · derelict and asteroid finds.',
-    scrap:        'Mine asteroids · pirate wreckage · derelict and wreck finds.',
-    minerals:     'Mine asteroids — the main yield · asteroid finds · salt crystals on a forage.',
-    exotic:       'Rare: rich asteroid veins · SALVAGE wrecks · anomaly and asteroid finds.',
-    biocomponent: 'Rare in asteroid rock · planet, derelict and station finds · pirate wreckage.',
-  };
   const RECIPE_PRESENTATION = {
     recipe_hull_patch:     { icon: '🛠️', sprite: 'sprites/cargo/items/hull_patch.png' },
     recipe_repair_kit:     { icon: '🧰', sprite: 'sprites/cargo/items/repair_kit.png' },
@@ -110,7 +97,7 @@
         name: m.name,
         icon: MATERIAL_ICONS[m.id] || '📦',
         sprite: 'sprites/cargo/materials/' + m.id + '.png',
-        source: MATERIAL_SOURCES[m.id] || '',
+        source: m.sources || '', // the input hover's where-to-get-it line (demo-fabricator MATERIALS .source)
       };
     }
     RECIPES = ((MOD.recipes && MOD.recipes.recipes) || []).filter(r => r.active !== false).map(raw => {

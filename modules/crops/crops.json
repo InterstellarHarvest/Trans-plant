@@ -2,7 +2,8 @@
   "_meta": {
     "description": "Crop definitions. The crop IS the mission. Each crop drains different resources at different rates, gets sick under different conditions, and has different payoffs at arrival. Crop death is a failure state (failure_type: crop_dead) but extremely hard to trigger — the crop can get very sick, but killing it requires sustained neglect or catastrophic events.",
     "health_range": "0-100. Starts at 80 (seedling, not yet established). Above healthy_threshold = thriving. Below sick_threshold = visibly struggling, triggers crop_sick events. At 0 = dead.",
-    "per_leg_drain": "Each leg of travel, the crop consumes resources. Water is the primary cost. Some crops also consume food (nutrients) or affect other resources.",
+    "per_leg_drain": "resource_consumption_per_leg.light (standard / moderate / high): at a dim stop the growbay's Low light penalty is twice as hard on a high-light crop. The water the crop drinks is the Orders water split, not a per-crop number.",
+    "growbay_note": "maturity_days (base days to full growth), water_need (the plant share of the water split, 0-100%, that grows at full rate), ideal_temp ([low, high] °C before temperature_tolerance widens or narrows it) and yield_amount (food, or morale for zinnias, per harvest) are the growbay's numbers (growbay.js reads them here).",
     "science_note": "All crop properties are rooted in real agricultural science. Wheat IS monoculture-vulnerable. Soybeans DO fix nitrogen. Zinnias WERE grown on the ISS by Scott Kelly. Sweet potatoes ARE NASA's top candidate for space agriculture. Tomatoes ARE drama."
   },
 
@@ -10,19 +11,16 @@
     {
       "id": "crop_wheat",
       "name": "Wheat",
-      "scientific_name": "Triticum aestivum",
-      "selection_flavor": "Reliable. Predictable. The sensible choice. You will never feel clever for picking wheat, but you probably won't regret it.",
-      "food_value": "high",
-      "food_output_per_leg": 3,
+      "maturity_days": 90,
+      "water_need": 50,
+      "ideal_temp": [18, 26],
+      "yield_amount": 40,
       "morale_bonus": 0,
       "starting_health": 80,
       "healthy_threshold": 70,
       "sick_threshold": 30,
-      "death_threshold": 0,
 
       "resource_consumption_per_leg": {
-        "water": 3,
-        "nutrients": 1,
         "light": "standard"
       },
 
@@ -37,7 +35,6 @@
       },
 
       "strengths": {
-        "water_efficiency": "moderate",
         "healthy_recovery_multiplier": 2.0,
         "description": "Recovers health faster once it is thriving: at or above healthy_threshold, the daily health recovery from good watering is doubled (+1 health/day instead of +0.5)."
       },
@@ -59,19 +56,16 @@
     {
       "id": "crop_tomato",
       "name": "Tomatoes",
-      "scientific_name": "Solanum lycopersicum",
-      "selection_flavor": "High maintenance. High reward. High drama. The tomatoes will demand your attention and you will give it to them.",
-      "food_value": "high",
-      "food_output_per_leg": 4,
+      "maturity_days": 75,
+      "water_need": 60,
+      "ideal_temp": [20, 28],
+      "yield_amount": 50,
       "morale_bonus": 2,
       "starting_health": 75,
       "healthy_threshold": 65,
       "sick_threshold": 35,
-      "death_threshold": 0,
 
       "resource_consumption_per_leg": {
-        "water": 5,
-        "nutrients": 2,
         "light": "high"
       },
 
@@ -86,8 +80,6 @@
       },
 
       "strengths": {
-        "food_output": "highest",
-        "morale_contribution": "Crew morale +2 when tomatoes are healthy. Real food, not algae.",
         "description": "Best food output of any crop. Also generates bonus morale — people care about tomatoes."
       },
 
@@ -99,7 +91,6 @@
 
       "triggers_extra_events": true,
       "extra_event_chance": 0.15,
-      "extra_event_note": "Tomatoes generate 15% more random events than other crops. They are drama magnets. This is historically accurate.",
 
       "narrative_hooks": [
         "The tomatoes are fine. The tomatoes are always either fine or in crisis. There is no middle state.",
@@ -113,19 +104,16 @@
     {
       "id": "crop_sweet_potato",
       "name": "Sweet Potatoes",
-      "scientific_name": "Ipomoea batatas",
-      "selection_flavor": "NASA's top pick for space agriculture. The ship computer approves of this choice. It will mention this.",
-      "food_value": "high",
-      "food_output_per_leg": 3,
+      "maturity_days": 120,
+      "water_need": 40,
+      "ideal_temp": [21, 30],
+      "yield_amount": 50,
       "morale_bonus": 0,
       "starting_health": 85,
       "healthy_threshold": 60,
       "sick_threshold": 25,
-      "death_threshold": 0,
 
       "resource_consumption_per_leg": {
-        "water": 3,
-        "nutrients": 1,
         "light": "moderate"
       },
 
@@ -140,20 +128,12 @@
       },
 
       "strengths": {
-        "hardiness": "highest",
-        "resource_efficiency": "Sweet potatoes need less of everything. The balanced choice.",
-        "description": "Highest starting health. Widest tolerance bands. Lowest resource drain. The safe pick — but slow to bounce back from trouble.",
-        "starting_health_bonus": 5
+        "description": "Highest starting health. Widest tolerance bands. Lowest resource drain. The safe pick — but slow to bounce back from trouble."
       },
 
       "arrival_bonus": {
         "description": "Sweet potatoes are the optimal colony starter crop. Ending score +10%. Ship computer notes this with mild approval.",
         "ending_score_modifier": 1.1
-      },
-
-      "ai_approval": {
-        "note": "The ship AI (any variant) occasionally acknowledges this was the correct agricultural choice. MARV: 'A defensible decision. I have so few of those to log.' ARIA: 'NASA chose sweet potatoes! We chose sweet potatoes! We're basically NASA!'",
-        "frequency": "rare"
       },
 
       "narrative_hooks": [
@@ -168,21 +148,17 @@
     {
       "id": "crop_soybean",
       "name": "Soybeans",
-      "scientific_name": "Glycine max",
-      "selection_flavor": "Fixes nitrogen. Resists contamination. Does its job without complaint. The engineer of crops.",
-      "food_value": "moderate",
-      "food_output_per_leg": 2,
+      "maturity_days": 100,
+      "water_need": 45,
+      "ideal_temp": [20, 30],
+      "yield_amount": 35,
       "morale_bonus": 0,
       "starting_health": 80,
       "healthy_threshold": 65,
       "sick_threshold": 30,
-      "death_threshold": 0,
 
       "resource_consumption_per_leg": {
-        "water": 3,
-        "nutrients": 0,
-        "light": "moderate",
-        "nutrient_note": "Soybeans fix their own nitrogen — zero nutrient drain. This is real."
+        "light": "moderate"
       },
 
       "vulnerabilities": {
@@ -202,7 +178,6 @@
           "contamination_recovery_days": 10,
           "duration_note": "10 days is about one travel leg (legs run ~8 days on the Lunar trail, ~12 on Mars, ~17 Interstellar). At matched water a soybean recovers +0.5 health/day, so the window is worth +5 extra health, about what three untreated pest days cost it (-1.5/day). A reward for clearing pests quickly, not a second health bar."
         },
-        "self_sustaining": "Zero nutrient cost per leg — they make their own.",
         "description": "No nutrient drain. High contamination resistance (a pest outbreak is half as likely as on a moderate-resistance crop). Health recovers 2x for 10 days after a pest outbreak is cleared. The crop that helps itself."
       },
 
@@ -223,19 +198,16 @@
     {
       "id": "crop_zinnia",
       "name": "Zinnias",
-      "scientific_name": "Zinnia elegans",
-      "selection_flavor": "No food value. No practical purpose. They are flowers. This is either the bravest or the stupidest choice you can make.",
-      "food_value": "none",
-      "food_output_per_leg": 0,
+      "maturity_days": 60,
+      "water_need": 35,
+      "ideal_temp": [18, 28],
+      "yield_amount": 30,
       "morale_bonus": 8,
       "starting_health": 70,
       "healthy_threshold": 60,
       "sick_threshold": 25,
-      "death_threshold": 0,
 
       "resource_consumption_per_leg": {
-        "water": 2,
-        "nutrients": 1,
         "light": "high"
       },
 
@@ -252,7 +224,6 @@
       "strengths": {
         "morale_engine": {
           "description": "Massive morale bonus when healthy. Crew becomes emotionally dependent on the flowers. This is a feature and a vulnerability.",
-          "morale_bonus_when_healthy": 8,
           "morale_penalty_when_sick": -5,
           "notes": "When zinnias get sick, morale DROPS because the crew cares. This is the trap and the gift."
         },
@@ -266,23 +237,18 @@
         "notes": "Zinnias don't boost score — they change the ending text. A run with zinnia_survived gets a different final paragraph."
       },
 
-      "hard_mode_warning": "Zinnias produce no food. Food must come entirely from other sources — stations, planets, events. Choosing zinnias is choosing hard mode on food in exchange for a morale engine and the most interesting narrative arc.",
-
       "zinnia_arc": {
         "description": "Three-beat background story. Only fires when crop_zinnia is selected.",
         "beat_1": {
           "trigger": "journey_start",
-          "tag_produced": "zinnia_bloomed",
           "first_line": "The zinnias are in. Not a bud yet, and they will feed no one when they come. Spirits aboard are up anyway, and nobody will say why."
         },
         "beat_2": {
           "trigger": "journey_mid",
-          "tag_produced": "crew_loves_zinnias",
           "first_line": "Someone has named the zinnia. Nobody will admit to it. The ship computer has logged this as a morale event, which it officially is not."
         },
         "beat_3": {
           "trigger": "crop_sick",
-          "tag_produced": "zinnia_sacrifice_or_zinnia_saved",
           "first_line": "The zinnia is dying. The crew has proposed four plans. None of them are rational. All of them might work."
         }
       },

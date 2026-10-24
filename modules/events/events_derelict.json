@@ -14,13 +14,9 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": true,
-    "test_path": true,
-    "test_path_position": 5,
     "sets_flag": "visited_derelict",
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA notes the derelict is called The Optimistic Projection! She appreciates the optimism! She does not acknowledge the irony!",
       "marv": "MARV has analyzed the ship's last transmission. It was a status update: 'All systems nominal.' This was sent fourteen months ago. He has no further comment.",
@@ -32,19 +28,14 @@
     "choices": [
       {
         "text": "Board and salvage supplies",
-        "requires_crew": null,
         "requires_item": "pressure_suit",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 10,
             "food": 5
           },
-          "crew_effect": null,
           "severity": null,
           "item_grant": "ration_brick",
-          "item_consume": null,
           "sets_flag": "salvaged_optimistic",
           "time_cost": "medium",
           "narrative": "You salvaged what you could. Fuel cells still had charge. Emergency rations in a sealed compartment. Scrap from non-essential systems. The ship's log was intact. You did not read it. Some stories tell themselves by what was left behind.",
@@ -58,14 +49,10 @@
         "text": "Investigate the biolab specimen",
         "requires_crew": "xenobiologist",
         "requires_item": "pressure_suit",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
           "item_grant": "alien_seed_pod",
-          "item_consume": null,
           "sets_flag": "has_alien_seed_pod",
           "time_cost": "medium",
           "narrative": "The xenobiologist approached the sealed container with the controlled enthusiasm of someone who has waited their entire career for this moment. 'This is not from any catalogued biosphere,' they said, already reaching for it. The specimen pulses. It is warm. Your xenobiologist is holding an alien seed pod and grinning. The ship computer logs this as 'concerning.'"
@@ -73,16 +60,11 @@
       },
       {
         "text": "Take the specimen unexamined",
-        "requires_crew": null,
         "requires_item": "pressure_suit",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
           "item_grant": "alien_seed_pod",
-          "item_consume": null,
           "sets_flag": "has_alien_seed_pod",
           "time_cost": "low",
           "narrative": "You took the specimen. You do not know what it is. It pulses faintly in its container. It is warm. The ship computer recommends not opening it. The ship computer has not been wrong yet. This is noted."
@@ -92,14 +74,10 @@
         "text": "Let the botanist study the growth",
         "requires_crew": "botanist",
         "requires_item": "pressure_suit",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
           "item_grant": "alien_seed_pod",
-          "item_consume": null,
           "sets_flag": "has_alien_seed_pod",
           "time_cost": "medium",
           "narrative": "The botanist spent a long time in the cargo bay. They returned with samples, a biocomponent extraction, and a sealed specimen from the biolab. They also returned with an expression that suggested they had seen something they understood and did not like. 'The plants are in excellent health,' they said. 'That is the most alarming thing about it.'",
@@ -110,20 +88,13 @@
       },
       {
         "text": "Follow the logbook to the stores",
-        "requires_crew": null,
         "requires_item": "logbook_fragment",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 10,
             "food": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The logbook's author passed this ship too, and wrote it down in a steady hand: the crew dumped a stores pod before they left, and it is still tumbling a kilometre off the bow. You fetch it without anyone setting foot aboard. Fuel cells, ration packs, a strip of scrap. The logbook has one more line about the Optimistic Projection, underlined twice: 'Do not go in.'",
           "materials": {
@@ -133,16 +104,9 @@
       },
       {
         "text": "Do not board — too risky",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "skipped_derelict",
           "time_cost": "trivial",
           "narrative": "You observed from a safe distance and moved on. The Optimistic Projection drifted on. Whatever is growing in its cargo bay will continue to grow. For now, that is someone else's problem. Or no one's."
@@ -165,12 +129,9 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": true,
-    "test_path": false,
     "sets_flag": "visited_verdun9",
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has searched for Verdun-9 in the station registry! No results found! She's sure it's just a filing error!",
       "marv": "MARV has noted the station is not in any registry. He has also noted the plants inside are alive. He finds the combination of these facts 'deeply unpleasant.'",
@@ -182,16 +143,11 @@
     "choices": [
       {
         "text": "Explore the research wing",
-        "requires_crew": null,
         "requires_item": "pressure_suit",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": "delayed",
           "item_grant": "alien_seed_pod",
-          "item_consume": null,
           "sets_flag": "has_alien_seed_pod",
           "time_cost": "medium",
           "narrative": "The research wing contains a sealed specimen case. Inside: a biological sample of unknown origin. It pulses with warmth. The research logs are encrypted. What you can read suggests the station's crew found something. Then the station's crew left. The order of these events seems important. Back aboard, whoever carried the case finds a warm patch on their wrist where the suit seal sat. It is not getting cooler."
@@ -200,15 +156,9 @@
       {
         "text": "Have the botanist examine the corridor gardens",
         "requires_crew": "botanist",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "botanist_examined_verdun",
           "time_cost": "medium",
           "narrative": "The botanist recognized the species in the corridor. Earth species. But the growth patterns were wrong — too uniform, too healthy, too organized. 'These plants are being cultivated,' they said. 'By something that understands botany better than I do.' They took samples. They did not look comfortable.",
@@ -219,37 +169,22 @@
       },
       {
         "text": "Collect supplies and leave quickly",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": 10,
             "water": 10
           },
-          "crew_effect": null,
           "severity": null,
           "item_grant": "water_canister",
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You took food and water from the station's functioning stores. You left quickly. The grow lights continued cycling behind you. The plants continued growing. You chose not to think about who they were growing for."
         }
       },
       {
         "text": "Do not dock",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You did not dock. Verdun-9 continued to not be in any registry. The plants continued to grow. The lights continued to cycle. You continued to not think about it."
         }
@@ -271,12 +206,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The derelict's bridge light is on! ARIA notes that's practically a welcome mat! ARIA is being brave for everyone!",
       "marv": "MARV has dated the ship's last log entry. Six days ago. He has dated the dust on its consoles. Six years. He presents both facts without reconciliation, because he has none.",
@@ -288,20 +219,14 @@
     "choices": [
       {
         "text": "Salvage fast and leave faster",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
         "microgame_type": "bypass",
         "outcome": {
           "resources": {
             "fuel": 5,
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
           "item_grant": "fuel_cell",
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You strip the accessible bays in ninety focused minutes — fuel cells, metal stock, nobody working alone, nobody past the bridge. The haul is decent. The mug is not discussed, then or ever, and the not-discussing comes back aboard with everyone. Some salvage runs end with cargo. This one also ends with a rule.",
           "materials": {
@@ -311,18 +236,11 @@
       },
       {
         "text": "Investigate the four-watt draw",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "found_the_clock",
           "time_cost": "medium",
           "narrative": "You trace the draw through six years of dead conduit to a crew cabin, where a small desk clock is running. Wound, analog, seven-day movement. Someone has been winding it. The away team returns at a pace just under a run, and the derelict falls astern unmourned. The clock, presumably, keeps time."
@@ -330,39 +248,24 @@
       },
       {
         "text": "Check the log's final sentence",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
           "item_grant": "logbook_fragment",
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The last entry, mid-sentence, reads: 'resupply complete, crew accounted for, and I want it on record that we are all agreed the knocking is just the hull cooli—'. You close the terminal. You are, every one of you, suddenly very ready to go."
         }
       },
       {
         "text": "Leave without boarding",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -3,
             "hull": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You wave off the docking ring's invitation. The ring does not take the hint: its clamps hold for an hour, and breaking free costs a burn and a strip of docking collar. Behind you the derelict's bridge light stays on, patient as ever. Hospitality, of a kind, for whoever's next."
         }
@@ -384,12 +287,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The derelict is FULL of plants! ARIA is crying! ARIA cannot cry! She has filed a feature request!",
       "marv": "MARV confirms the derelict's growbay breached its containment decades ago. The plants did not respect the breach as a boundary. The plants, he notes, did not respect anything as a boundary.",
@@ -402,19 +301,12 @@
       {
         "text": "Gather seeds and cuttings",
         "requires_crew": "botanist",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": 6,
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "The botanist moves through the wild growbay like a pilgrim, taking cuttings with permission-asking care. The samples are hardy beyond reason — forty generations of nobody's help. Your own crop seems to sit up straighter when they come aboard. That is not science. It is reported anyway.",
           "log_lore": {
@@ -425,61 +317,40 @@
       },
       {
         "text": "Salvage what the plants haven't claimed",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
         "microgame_type": "wrench",
         "outcome": {
           "resources": {
             "fuel": 4
           },
-          "crew_effect": null,
           "severity": null,
           "item_grant": [
             "drive_coil",
             "sealed_vinyl"
           ],
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You work around the growth, taking only what the vines have declined: fuel cells, sealed stock, a coil the moss found uninteresting, and one record, still in its shrinkwrap, that the vines had carefully grown around. It is the politest salvage run in the ship's log. The tree in the bulkhead door is given a wide, respectful berth."
         }
       },
       {
         "text": "Let the crew walk the green corridors",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 7
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "One hour of shore leave aboard a ship that grew a forest. The crew wanders the corridors touching leaves like museum-goers who've been told they're allowed. Whatever the mission takes out of people, an hour inside someone else's miracle puts some of it back."
         }
       },
       {
         "text": "Check the logbook: they sketched the seed vault",
-        "requires_crew": null,
         "requires_item": "logbook_fragment",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": 6,
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The logbook's author came through here and drew the floor plan in the margin: the old seed vault, behind the tree, down a ladder the moss has since claimed. It is still sealed and still cold. The stock goes straight into your growbay, and the crop takes to it like it had been waiting. Someone pencils a tick next to the sketch.",
           "crop_health": 8,
@@ -490,19 +361,11 @@
       },
       {
         "text": "Log the site and move on",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You chart it, photograph it, and leave it exactly as found: a garden, mid-journey, needing nothing. The nav chart entry reads 'DERELICT — OCCUPIED.' Occupied by what, the chart doesn't say. The chart doesn't have to."
         }
@@ -529,13 +392,9 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "comm_mode": "in_person",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "npc": {
       "disposition": "drifter",
       "species": null,
@@ -776,12 +635,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": false,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The derelict wants us to STAY! That's so welcoming! ARIA wishes it would say so with fewer bulkheads!",
       "marv": "MARV has the lockdown cycle from the recording: seventy-two hours, then an automatic release. The away team's suits are rated for sixty. He did that subtraction first.",
@@ -794,35 +649,20 @@
       {
         "text": "Engineer cracks the door controls",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The engineer finds the control junction behind a panel marked, in four languages, DO NOT. Twenty minutes and one small fire later, the door gives up. The suits come back low on air and high on stories."
         }
       },
       {
         "text": "Cut through the bulkhead",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": "injury",
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The cutter goes through the bulkhead in an hour and through someone's glove in one second. The away team comes home with a wound, an armful of bulkhead, and firm new views on gloves.",
           "materials": {
@@ -832,40 +672,24 @@
       },
       {
         "text": "Blow the door from outside",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -6,
             "fuel": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You line the ship up and fire the docking thrusters into the derelict until the door frame gives. The away team tumbles out. So does a section of your docking collar."
         }
       },
       {
         "text": "Wait out the cycle",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": -6,
             "water": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "Days on suit air and suit water, both topped up through a hose from the ship. The lockdown releases on schedule, cheerfully, as if nothing happened. The away team does not speak of those days. The ship's tanks do."
         }
@@ -887,12 +711,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "Free fuel AND a light show! ARIA thinks this might be the best derelict yet!",
       "marv": "MARV gives the core between forty minutes and four hours. The spread is the honest part. He would like the record to show that he gave a spread.",
@@ -905,9 +725,6 @@
       {
         "text": "Engineer scrams the reactor",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 14
@@ -918,48 +735,29 @@
             "role": "engineer"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The engineer goes into the reactor room in a suit not designed for it and comes out with the core cold and a dose that goes into the medical log in red. The fuel bay is yours. All of it."
         }
       },
       {
         "text": "Grab the fuel cells and run",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 8,
             "hull": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The away team hauls what fuel it can reach in twelve minutes and runs. The core goes on minute fourteen. The blast catches the stern on the way out, as a reminder of the two minutes."
         }
       },
       {
         "text": "Stand off, then pick through the debris",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "You stand off at a safe distance and wait. It goes at hour three. Picking through what's left takes days and turns up scrap, metal and one boot, which is not discussed.",
           "materials": {
@@ -970,20 +768,12 @@
       },
       {
         "text": "Undock and burn clear now",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -5,
             "hull": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You undock with the clamps still half-latched and burn hard. The core holds for another hour out of spite, then goes, lighting the sky behind you. Nobody says 'that could have been us.' Everyone thinks it, in unison."
         }
@@ -1005,12 +795,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "Somebody made dinner! For six! That's so thoughtful! ARIA is sure they'll be back any minute! ARIA is a little less sure than she sounds!",
       "marv": "MARV counts six sealed trays, six chairs, no bodies, no damage and one log, locked from the inside. He would like to know what is in it. He doubts he will be told.",
@@ -1022,39 +808,23 @@
     "choices": [
       {
         "text": "Take the rations",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": 12,
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You take the trays. They are sealed, in date and perfectly good, and every one of them is eaten over the next week in silence. Nobody says why they don't like it. Nobody has to. The card stays where it was."
         }
       },
       {
         "text": "Leave everything as it is",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You leave the table exactly as you found it. On the way out somebody straightens a fork that was already straight. The airlock cycles shut behind you, and the derelict's lights go down one by one, politely, as if it had been expecting someone else."
         }
@@ -1062,18 +832,11 @@
       {
         "text": "Read the last log entry properly",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "{crew.engineer} spends two days coaxing the locked log open, a word at a time. It ends happily, which no one expected.",
           "materials": {
@@ -1102,12 +865,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "A NOTE! From another crew! Heading our way! ARIA loves them! ARIA has never met them! ARIA doesn't think that matters!",
       "marv": "MARV has checked the registry. The Lark is a small colony hauler, eleven weeks ahead of you on the same trail. Their note is accurate about the panel. He suspects it is accurate about the rest.",
@@ -1119,10 +878,6 @@
     "choices": [
       {
         "text": "Open the panel and take half",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "launch_minigame": "salvage",
         "minigame_opts": {
           "briefing": {
@@ -1187,29 +942,18 @@
         },
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You open the panel and start sorting."
         }
       },
       {
         "text": "Take half and leave a note of your own",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "left_a_note",
           "time_cost": "trivial",
           "materials": {
@@ -1221,20 +965,12 @@
       },
       {
         "text": "Take all of it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": 6,
             "morale": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "materials": {
             "metal": 3,
@@ -1260,12 +996,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "A GARDEN SHIP! Every pod! ARIA wants to live here! ARIA understands the ship is abandoned! ARIA wants to live here anyway!",
       "marv": "MARV estimates the gardens have run unattended for at least two years on the irrigation alone. The soil biology is excellent. Whoever built this knew what they were doing and did it slowly.",
@@ -1277,17 +1009,9 @@
     "choices": [
       {
         "text": "Take a sack of the soil for the growbay",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": 6,
           "narrative": "You fill a sack from the richest planter and work it into the growbay that evening. The crop takes to it at once: greener by morning, steadier by the week. Somebody leaves a note in the pod garden saying thank you, which nobody will ever read."
@@ -1295,39 +1019,23 @@
       },
       {
         "text": "Take the drip-line water",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": 8,
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You drain the irrigation reservoir into the ship's tanks. It is good water, carefully filtered, and you need it. On the way out the drip lines go quiet one by one. Nobody looks back at the pods."
         }
       },
       {
         "text": "Leave a light on for the plants",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You leave it all exactly as it was, and before you go somebody switches the pod bay's grow lights back to their full setting. The marigolds will be fine. They always were going to be. It feels good to have helped anyway."
         }
@@ -1349,12 +1057,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "A CAT! A ROBOT CAT! ARIA has never met another robot who was a CAT! ARIA would like to be friends! ARIA would like to be a cat!",
       "marv": "MARV identifies a Felix-series companion unit. Discontinued. Reliable. Its battery has a decade left. It appears to have been using it to patrol.",
@@ -1366,18 +1070,11 @@
     "choices": [
       {
         "text": "Bring the cat aboard",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "robot_cat_aboard",
           "time_cost": "trivial",
           "narrative": "You crouch down and hold the airlock open. The cat considers this for a long moment, then walks aboard as if it had always meant to. It finds the warmest spot on the ship within an hour, which is the engine room, and nobody complains about the engine room being cold ever again."
@@ -1385,19 +1082,11 @@
       },
       {
         "text": "Strip it for parts",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "materials": {
             "metal": 1,
@@ -1408,19 +1097,11 @@
       },
       {
         "text": "Leave it on watch",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You leave the cat where it is. It walks you back to the airlock, sits down in the doorway, and watches the ship go. Somebody says it looked proud. Somebody else says it looked lonely. Both are probably right."
         }
@@ -1442,12 +1123,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "An auditor! Who LOVES its job! ARIA respects that so much! ARIA would sign for anything!",
       "marv": "MARV reads the manifest over the auditor's shoulder: forty-one crates, thirty-nine counted, two remaining. It has been counting for six years. He calculates it will finish next Tuesday.",
@@ -1459,17 +1136,9 @@
     "choices": [
       {
         "text": "Sign for everything you take",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "materials": {
             "metal": 2,
@@ -1480,19 +1149,11 @@
       },
       {
         "text": "Take it without signing",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "materials": {
             "metal": 2,
@@ -1503,19 +1164,11 @@
       },
       {
         "text": "Help it finish the count",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "materials": {
             "exotic": 1
@@ -1544,12 +1197,8 @@
     "trail": [
       "interstellar"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "We're FALLING! Into a PLANET! A very big one! ARIA would like to stop falling! ARIA does not know how! ARIA is asking everyone!",
       "marv": "MARV has the derelict entering the upper atmosphere in roughly forty minutes. The clamp is seized. The collar is breaching. He has three plans. He has ranked them. The best one requires someone to seal the collar by hand, now.",
@@ -1561,10 +1210,6 @@
     "choices": [
       {
         "text": "Seal the collar breach, then cut free",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "launch_minigame": "breach",
         "minigame_opts": {
           "briefing": {
@@ -1630,32 +1275,20 @@
           "resources": {
             "o2": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You grab the patch tray and go for the collar."
         }
       },
       {
         "text": "Cut the clamp now and take the venting",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -14,
             "o2": -12,
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You cut the clamp with the collar still open. The ship comes free at once and the air goes out of the docking section with it, a white plume streaming back toward the falling derelict. The bulkheads close. Fourteen points of hull, twelve of air, and a docking section that will be cold for the rest of the trip."
         }
@@ -1663,39 +1296,24 @@
       {
         "text": "Engineer forces the clamp open",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "effort": 4,
         "outcome": {
           "resources": {
             "hull": -6,
             "o2": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "{crew.engineer} goes into the clamp housing with a pry bar, a cutter and a vocabulary nobody had heard them use before, and forces the old clamp open by hand with the collar groaning around them. The ship drifts free, intact. Six points of hull, four of air, and an engineer who sleeps for a day."
         }
       },
       {
         "text": "Burn hard and drag the derelict up",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -10
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "resources_pct": {
             "fuel": -35
@@ -1720,12 +1338,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "derelict_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_item": "geiger_counter",
     "ai_flavor": {
       "aria": "It's WARM! And CLICKING! ARIA has never been so excited and so frightened at the same time! ARIA thinks that might be what science is!",
@@ -1738,19 +1352,11 @@
     "choices": [
       {
         "text": "Recover it, with the counter guiding every step",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "materials": {
             "exotic": 1
@@ -1760,10 +1366,6 @@
       },
       {
         "text": "Strip the shielding and take it fast",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
           "crew_effect": {
@@ -1771,9 +1373,6 @@
             "target": "crew"
           },
           "severity": "injury",
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "materials": {
             "metal": 2,
@@ -1784,19 +1383,11 @@
       },
       {
         "text": "Leave it shielded on its cradle",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You leave it where it is, still warm, still clicking, quietly powering a ship nobody is coming back for. The boarding team backs out of the compartment with the counter held up like a lamp. Some things are safest exactly where they are."
         }

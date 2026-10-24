@@ -13,13 +13,9 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "bg": "our_ship/cargo",
     "once": true,
-    "test_path": true,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has detected an anomaly in Cargo Bay 3! She describes it as 'an exciting surprise!'",
       "marv": "MARV has detected a life sign in Cargo Bay 3. He waited 3 days to mention it. He was hoping it would resolve itself.",
@@ -39,7 +35,6 @@
             "resources": {
               "food": -5
             },
-            "sets_flag": null,
             "narrative": "Someone new is aboard for good. They are grateful. They are also hungry. The food reserves notice.",
             "stowaway_resolve": "welcome"
           }
@@ -130,12 +125,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "modal",
     "scene_type": "growbay",
     "once": false,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA reports the crop is doing GREAT! She checks the numbers. The crop is doing 'okay.' She reports it as 'great with potential!'",
       "marv": "MARV delivers the growbay report. He does not editorialize. The numbers speak for themselves. The numbers are not optimistic.",
@@ -147,34 +138,18 @@
     "choices": [
       {
         "text": "Check the crop personally",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You visited the growbay. The crop looks like a crop. You are not sure what you expected. The visit made you feel better. The ship computer logs this as 'routine botanical inspection' which is generous."
         }
       },
       {
         "text": "Acknowledge the report and continue",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "Report acknowledged. The crop continues to grow. The ship continues to fly. The computer continues to not care about plants."
         }
@@ -197,12 +172,8 @@
     "trigger": [
       "solo_run"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has calculated that you plus her plus the crop equals three! Three is a crew! She will not be taking questions on the math!",
       "marv": "MARV notes that solo operation is within vessel parameters. He notes separately that parameters were written by committees, and committees have never eaten dinner alone at a fold-down table in deep space.",
@@ -214,17 +185,9 @@
     "choices": [
       {
         "text": "Eat with the growbay",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You carry the tray down a deck and eat beside the glass, narrating your day to a plant with the shameless fluency of someone who stopped feeling silly about it weeks ago. The crop says nothing, magnificently. Best conversation you've had all month.",
           "crop_health": 3
@@ -232,36 +195,20 @@
       },
       {
         "text": "Ask the AI to run dinner conversation",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You ask for conversation and receive it: your AI's best attempt at small talk, which arrives with the cadence of a weather report and the sincerity of a handwritten letter. It is strange. It is also, unmistakably, company. You both improve with practice."
         }
       },
       {
         "text": "Work through the meal — the ship needs you",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You eat over a maintenance readout, because the ship needs you, which is true, and because busy is easier than quiet, which is also true. The tray goes back barely touched. The readout gets memorized. The quiet waits. It's patient, the quiet. It has you outnumbered."
         }
@@ -283,12 +230,8 @@
     "trigger": [
       "crew_dead"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has left their duty roster slot exactly as it was! She checked with everyone first! Everyone agreed without saying anything! That is a kind of agreeing!",
       "marv": "MARV has completed the personnel file. Cause, time, coordinates. The file also has a field labeled 'remarks.' MARV has been staring at the remarks field for some time.",
@@ -300,18 +243,11 @@
     "choices": [
       {
         "text": "Hold a service in the mess hall",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "held_memorial",
           "time_cost": "low",
           "narrative": "Everyone gathers. Stories get told — the good ones, the unflattering ones, the one nobody was supposed to know. Laughter happens, then the other thing, then laughter again. The mug stays in the rack afterward, by unanimous silence. It's not a shrine. It's just theirs."
@@ -319,18 +255,11 @@
       },
       {
         "text": "Finish their whiteboard list",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "held_memorial",
           "time_cost": "medium",
           "narrative": "Their maintenance list, completed item by item in their memory: the sticky vent, the dim panel, the thing in the galley nobody else understood. The last item gets checked off and the board wiped clean — except the name. The name stays. They'd have liked that."
@@ -338,19 +267,11 @@
       },
       {
         "text": "Keep moving — they'd understand",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The voyage continues, because it has to, because deadlines don't grieve. Everyone works. The bunk stays empty and the mug stays racked and nothing is said, day after day, with increasing effort. They would have understood, it's true. That was never the question."
         }
@@ -372,13 +293,9 @@
     "trigger": [
       "stowaway_aboard"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "bg": "our_ship/cargo",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has been keeping a secret! She is TERRIBLE at it! She has been humming near Cargo Bay 3 for two weeks!",
       "marv": "MARV has known since day four. Heat signature, ration drift, a life sign politely holding still during scans. He said nothing. He was curious how long it would take everyone else. His notes on that are sealed.",
@@ -390,20 +307,12 @@
     "choices": [
       {
         "text": "Welcome them aboard",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -5,
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "They're aboard. Officially, now. The ration math adjusts, the bunk situation adjusts, and the ship — which has known for weeks — adjusts least of all. The crew shakes hands like this is a formality. It was.",
           "stowaway_resolve": "welcome"
@@ -411,19 +320,12 @@
       },
       {
         "text": "They can stay — working passage",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -4,
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "stowaway_working",
           "time_cost": "trivial",
           "narrative": "Passage for work: galley shifts, filter scrubbing, whatever needs hands. They accept before the sentence finishes. By the end of the first week the arrangement is indistinguishable from belonging, which was quietly the point.",
@@ -432,18 +334,11 @@
       },
       {
         "text": "Confine them until the next stop",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "stowaway_refused",
           "time_cost": "trivial",
           "narrative": "You assign them quarters and a schedule that keeps them out of the way. It is correct, defensible, and joyless — three words the crew does not say at dinner, loudly. The next station will take them. The corridors feel narrower until then.",
@@ -467,12 +362,8 @@
     "trigger": [
       "crewmate_injured"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": false,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has redesigned the duty roster with a new category called 'supervising from a chair!' It has one member! They hate it!",
       "marv": "MARV notes the injured crew member has attempted their normal duties three times today. He has locked three doors. He can do this all week.",
@@ -484,10 +375,6 @@
     "choices": [
       {
         "text": "Order full rest — no arguments",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
@@ -497,9 +384,6 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You make it an order, which lets them surrender to the bunk without surrendering any pride. They sleep eleven hours, complain magnificently, and heal at double speed. The crew covers the gap without being asked. That part gets logged."
         }
@@ -507,9 +391,6 @@
       {
         "text": "Medic supervised recovery program",
         "requires_crew": "medic",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
@@ -519,9 +400,6 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The medic builds a proper recovery program: rest intervals, mobility work, and a chart with stickers on it that everyone pretends is beneath them and nobody misses a sticker of. Recovery runs ahead of schedule. The chart is later framed.",
           "scene_bg": "our_ship/medbay"
@@ -529,10 +407,7 @@
       },
       {
         "text": "Spend a medkit — patch them up properly",
-        "requires_crew": null,
         "requires_item": "medkit",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
           "crew_effect": {
@@ -540,9 +415,7 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
           "item_consume": "medkit",
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The medkit's contents do in an afternoon what rest would do in a week: sealed, splinted, dosed, done. The empty kit goes into recycling with the quiet dignity of used emergency equipment. Its patient goes back on shift, mended.",
           "scene_bg": "our_ship/medbay"
@@ -550,19 +423,11 @@
       },
       {
         "text": "They say they're fine. Believe them",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You take 'fine' at face value, and 'fine' does what it always does: works the injury deeper while everyone watches and says nothing. Healing will happen eventually, the long way. The crew's helpfulness orbit tightens by one meter."
         }
@@ -584,13 +449,9 @@
     "trigger": [
       "crew_injured"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "bg": "our_ship/medbay",
     "once": false,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_crew_aboard": true,
     "ai_flavor": {
       "aria": "ARIA has drafted a get-well card on behalf of the whole ship! It is forty pages long! Page nine is a word search!",
@@ -603,10 +464,6 @@
     "choices": [
       {
         "text": "Set visiting hours and enforce them",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
@@ -616,9 +473,6 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Visiting hours: two to four, ship time, one guest at a time. The patient sleeps through most of them, which is the point. Recovery picks up. The waiting list for the cot does not."
         }
@@ -626,9 +480,6 @@
       {
         "text": "Chef runs room service",
         "requires_crew": "chef",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -3,
@@ -639,28 +490,17 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The chef declares the cot a restaurant and the patient its only customer. Broth, then toast, then a dish the chef refuses to name. The patient is back on their feet in record time, mostly to ask what it was."
         }
       },
       {
         "text": "Let the crew visit whenever",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The curtain stays open. The patient heals at the speed of a person who is never once allowed to be bored, which is to say slowly, and happily. The puzzle gets finished. It was missing four pieces."
         }
@@ -682,13 +522,9 @@
     "trigger": [
       "crew_injured"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "bg": "our_ship/medbay",
     "once": false,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has read the whole manual in four milliseconds! Chapter Eleven is her favorite! Chapter Twelve is about amputation, so she skipped it!",
       "marv": "MARV has checked Chapter Eleven against the injury. The binder is correct. MARV finds this personally disappointing.",
@@ -700,10 +536,6 @@
     "choices": [
       {
         "text": "Follow Chapter Eleven to the letter",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
           "crew_effect": {
@@ -711,9 +543,6 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "Rest, fluids, elevation, and a compress folded exactly to the diagram. The binder is smug about it. The patient improves on schedule, which is the most a binder can promise."
         }
@@ -721,9 +550,6 @@
       {
         "text": "The medic skips to the good part",
         "requires_crew": "medic",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
@@ -733,28 +559,17 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The medic closes the binder, says \"no,\" and does something faster that is not in any chapter. The patient is up by dinner. The binder goes back on its shelf, where it sulks."
         }
       },
       {
         "text": "Have the ship computer read it aloud",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The ship computer performs Chapter Eleven in full, with voices. The patient falls asleep during the section on splints. It is not treatment. It is, the patient admits on waking, a very good performance."
         }
@@ -776,11 +591,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
     "requires_flag": "has_creature",
     "ai_flavor": {
       "aria": "ARIA has added the creature to the crew manifest! Its role is \"Morale Officer!\" Its salary is crumbs! It has never once been late!",
@@ -793,38 +605,22 @@
     "choices": [
       {
         "text": "Make it the ship's mascot",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "It gets a crew patch, sewn by someone who will not admit to sewing it, and a line in the ship's log. It celebrates by sleeping through the ceremony. The crew counts this as in character."
         }
       },
       {
         "text": "Let it patrol the growbay",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "It takes the night shift in the growbay. Anything small and many-legged among the planters stops being a problem, and then stops being anything at all. Whoever minds the growbay pretends not to approve.",
           "clears_pest": true
@@ -832,20 +628,12 @@
       },
       {
         "text": "Put it on rations like everyone else",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": 3,
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "It accepts its ration with great dignity, then steals a second one with greater dignity. The food math improves slightly. The mood in the galley does not."
         }
@@ -868,11 +656,8 @@
       "low_o2",
       "low_hull"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
     "requires_flag": "has_creature",
     "ai_flavor": {
       "aria": "ARIA thinks the creature is trying to tell you something! ARIA thinks it is saying \"I love you!\" It may also be saying \"leak!\"",
@@ -885,40 +670,24 @@
     "choices": [
       {
         "text": "Open the panel",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": 10,
             "hull": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Behind the panel, a seal has been letting air out a thimble at a time, for weeks. The creature watches you fix it, then walks off to the food locker like an inspector who has seen enough. Nobody argues about its rations again."
         }
       },
       {
         "text": "It's a creature. Shoo it along",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": -3,
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You move the creature. It comes back. You move it again. Not long after, the instruments find the leak behind that exact panel, and the creature is sitting in front of it, making no comment whatsoever."
         }
@@ -940,12 +709,8 @@
     "trigger": [
       "crop_dead"
     ],
-    "event_presentation": "modal",
     "scene_type": "growbay",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA is calling the planter \"resting!\" She has scheduled it a nap! She has not scheduled it a wake-up!",
       "marv": "MARV keeps the growbay sensors running. There is nothing to sense. He keeps them running anyway, and has not been asked why.",
@@ -957,57 +722,33 @@
     "choices": [
       {
         "text": "Clear out the planter",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You empty the planter, cancel the schedule, and wipe the label. The growbay is clean and correct and nobody goes in there afterward. Correct is not the same as better."
         }
       },
       {
         "text": "Leave it as it is",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You leave it. The watering schedule keeps running. Someone keeps adjusting the stake. Nobody mentions it, which is how the ship has decided to mention it."
         }
       },
       {
         "text": "Hold a short service in the growbay",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The crew gathers among the empty racks. Someone says a few words about the crop, including two jokes and one fact about photosynthesis. It is the right length. The schedule is cancelled afterward, gently."
         }
@@ -1029,12 +770,8 @@
     "trigger": [
       "crop_dead"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has drafted the loss report! It describes the crop as \"pursuing other opportunities!\" ARIA is very proud of the phrasing!",
       "marv": "MARV has pre-filled every field of the form except \"Cause.\" He has tried several wordings for \"Cause.\" None of them are wrong, and none of them are kind.",
@@ -1046,38 +783,22 @@
     "choices": [
       {
         "text": "File the form, every field",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You fill in all eleven fields, including Field 7, which takes longest. The form is transmitted. Somewhere a clerk will stamp it without reading it, and that is, oddly, a comfort."
         }
       },
       {
         "text": "Leave it on the manifest",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You do not file. Item 1 stays on the manifest, technically still cargo, technically still arriving. The Colony Office can find out at the dock. It will have to look you in the eye to do it."
         }
@@ -1085,18 +806,11 @@
       {
         "text": "Let the botanist write Field 11",
         "requires_crew": "botanist",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The botanist fills the small box with very small handwriting, then continues onto the back of the form, then a second sheet. What they wrote is between them and the crop. The Colony Office receives three pages and does not complain."
         }
@@ -1118,12 +832,8 @@
     "trigger": [
       "solo_run"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has set two places at the table! One for you and one for ARIA! ARIA does not eat! ARIA will still be attending!",
       "marv": "MARV has calculated that you have spoken more words to him this week than to any human in the last year. He does not know what to do with this information. He has filed it.",
@@ -1135,10 +845,6 @@
     "choices": [
       {
         "text": "Eat the cake with the ship computer",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -1
@@ -1148,26 +854,15 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You eat the cake. The ship computer sings, badly and on purpose, in text on the galley screen. You laugh at it, which is the first time you have laughed out loud in weeks. The candle-shaped object is not edible. You eat it anyway."
         }
       },
       {
         "text": "Log it and get back to work",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You note the date in the captain's log and go back to the controls. The cake sits on the galley counter for three days, patiently, like a dog that has been told to stay."
         }
@@ -1189,12 +884,8 @@
     "trigger": [
       "crew_dead"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has kept their mug spotless! She washes it every morning! She has not asked anyone to use it! She just likes it clean!",
       "marv": "MARV has not removed their name from the duty roster. He tells himself it is a database integrity issue. It is not a database integrity issue.",
@@ -1206,57 +897,33 @@
     "choices": [
       {
         "text": "Leave it on its hook",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The mug stays where it is. Every morning someone checks that it is still there, and it is, and that is enough to get through the morning."
         }
       },
       {
         "text": "Use it, on purpose, once a day",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You start drinking your coffee from it, once a day, out loud about it. After a week the crew takes turns. It becomes the mug you drink from when you need to, and it is never washed by anyone but its current holder."
         }
       },
       {
         "text": "Pack it away for their family",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You wrap it carefully and label it for the colony office to forward. It is the correct thing. The empty hook is louder than the mug was."
         }
@@ -1278,12 +945,8 @@
     "trigger": [
       "stowaway_aboard"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA called it a ghost because ghosts are FUN! ARIA was told ghosts are not real! ARIA was told this about a lot of things!",
       "marv": "MARV has logged forty-one unexplained galley events. The midnight snacks are consistent with a single adult of average appetite and good manners. He has suspected for a while.",
@@ -1295,20 +958,12 @@
     "choices": [
       {
         "text": "Welcome them aboard",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -5,
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "They are aboard, officially. They finish drying the pan first. The crew decides, unanimously, that a stowaway who washes up is not, strictly speaking, a stowaway. It is a colleague with an unusual hiring process.",
           "stowaway_resolve": "welcome"
@@ -1316,19 +971,12 @@
       },
       {
         "text": "Working passage — keep the galley shifts",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -4,
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "stowaway_working",
           "time_cost": "trivial",
           "narrative": "They can stay if they keep doing what they have been doing anyway. They agree immediately and add the good spoon to the terms. The galley has never been cleaner.",
@@ -1337,18 +985,11 @@
       },
       {
         "text": "Confine them until the next stop",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "stowaway_refused",
           "time_cost": "trivial",
           "narrative": "You assign them a cabin and a door that locks from outside. They go quietly, after asking whether they may finish the pan. The galley dishes pile up within the week, and everyone knows exactly why.",
@@ -1376,12 +1017,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_item": "suspicious_fungus",
     "ai_flavor": {
       "aria": "ARIA has detected a NEW SMELL! It is either a culinary breakthrough or a containment breach! ARIA is rooting for breakthrough!",
@@ -1395,17 +1032,12 @@
       {
         "text": "Let the chef finish what they started",
         "requires_crew": "chef",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 10,
             "food": 6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
           "item_consume": "suspicious_fungus",
           "sets_flag": "ate_space_cheese",
           "time_cost": "low",
@@ -1415,37 +1047,23 @@
       {
         "text": "Have the medic confiscate it",
         "requires_crew": "medic",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
           "item_consume": "suspicious_fungus",
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The medic removes the dish with tongs, at arm's length, and seals it in a sample bag that goes out the airlock. The chef watches the whole procedure without blinking.\n\nDinner is algae. Nobody says anything about it, which says enough."
         }
       },
       {
         "text": "Leave it. It's not hurting anyone. Yet",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You decide the dish is the chef's business. The chef nods once, gravely, the way people nod at a general who has made the right call.\n\nThe smell from the galley improves daily. So does the chef's mood. Somebody has started sleeping with the door shut."
         }
@@ -1469,7 +1087,6 @@
       "any",
       "low_morale"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "ship_interior",
     "comm_mode": "in_person",
     "bg": "our_ship/medbay",
@@ -1478,9 +1095,6 @@
       "any"
     ],
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "leave_label": "NOT NOW",
     "entryLayer": "intro",
     "layers": {
@@ -1670,12 +1284,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": false,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The water has a new flavour! ARIA is calling it Copper Sunrise! It's probably minerals! Minerals are good for you!",
       "marv": "MARV has the reclaimer's fault log. A coolant line has been weeping into the drinking loop for six days. He has tested the water. He would not drink it. He does not drink, so he is aware this is a strong statement.",
@@ -1687,19 +1297,11 @@
     "choices": [
       {
         "text": "Dump the tank and start clean",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": -22
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You flush the drinking loop into space. {cost.water} points of water drift off behind the ship in a glittering cloud that is, everyone agrees, very pretty, and also the water. The reclaimer starts again from nothing. Its first cup tastes of nothing. Everyone has one."
         }
@@ -1707,10 +1309,6 @@
       {
         "text": "{crew.engineer} rebuilds the reclaimer",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
-        "effort_cost": "medium",
         "effort_required": 40,
         "requires_effort_from": [
           "engineer",
@@ -1720,11 +1318,7 @@
           "resources": {
             "water": -8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "The engineer strips the reclaimer to its frame, replaces the coolant line and runs the loop through the filters until the readings are boring. Only {cost.water} points of water go to the flush. It takes as long as it takes: with a kit and steady hands, not long; without either, a good while.",
           "scene_bg": "our_ship/engine_fixed"
@@ -1732,59 +1326,36 @@
       },
       {
         "text": "Boil it clean, a pot at a time",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -6,
             "water": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "You boil the tank. All of it, a pot at a time, on a galley stove that was never meant for this, burning six points of fuel in the generator. Four days. The ship smells of hot copper and patience. The water comes out safe, {cost.water} points of it short, gone up as steam, and the galley comes out with a new stain on the ceiling."
         }
       },
       {
         "text": "Run it through the purifier",
-        "requires_crew": null,
         "requires_item": "water_purifier",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "The purifier takes the tank a few litres at a time and gives back water that tastes of nothing. Two days of it humming in the galley. It throws away {cost.water} points as sludge, which it presents in a little tray, as if expecting praise."
         }
       },
       {
         "text": "It's probably fine. Drink it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": -4,
             "morale": -3
           },
-          "crew_effect": null,
           "severity": "injury",
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You decide the pennies are probably fine. They are fine for most people. They are not fine for one, who spends a bad stretch curled round a bucket and comes out of it wounded and pale. The bad line gets capped after that, and the {cost.water} points of water in it go down the drain."
         }
@@ -1810,12 +1381,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": false,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "Something smells delicious and also on fire! ARIA is sure it's mostly delicious! The alarms are just excited!",
       "marv": "MARV notes the fire is small, contained and growing. He has calculated the point at which those three words stop being compatible. It is soon.",
@@ -1827,20 +1394,12 @@
     "choices": [
       {
         "text": "Vent the galley to space",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": -14,
             "food": -10
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You seal the galley and open it to space. The fire goes out at once, impressed. So do fourteen points of air, {cost.food} of food and a spatula that will orbit this system until the heat death of everything."
         }
@@ -1848,29 +1407,18 @@
       {
         "text": "{crew.chef} smothers it",
         "requires_crew": "chef",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -8,
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The chef walks into the smoke with a lid in one hand and a tin of baking soda in the other, says something unprintable to the fire, and puts it out. {cost.food} points of food went with it. The chef will not be discussing it. The chef will be cleaning the hood."
         }
       },
       {
         "text": "Fight it with the extinguishers",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": -3,
@@ -1882,29 +1430,18 @@
             "target": "random"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Everyone grabs an extinguisher and goes at it. It takes an hour, four canisters, most of the corridor paint and the dry stores, which are now mostly foam. Somebody gets too close to the hood when it flares and comes away with burns up one arm. The fire is out. The smell is not."
         }
       },
       {
         "text": "Seal the hatch and let it starve",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "food": -18,
             "morale": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You shut the galley hatch and let the fire use up its own air. It takes two days. When you open the hatch the fire is out, and so is everything that was in the galley: {cost.food} points of food, carbonised, and a smell that is now part of the ship's character."
         }
@@ -1936,12 +1473,8 @@
     "trail": [
       "interstellar"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The crack is getting longer, which means it's growing! Growth is good! ARIA measured it twice and it was bigger both times! Great progress!",
       "marv": "MARV has measured the crack every hour since it appeared. He has a curve. He has extended the curve. He would like you to choose something in the next few minutes, and has not said why.",
@@ -1953,19 +1486,11 @@
     "choices": [
       {
         "text": "Weld it from the inside, by hand",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You put on the mask and go after the crack with a torch.",
           "scene_bg": "our_ship/cargo"
@@ -2030,10 +1555,6 @@
       {
         "text": "{crew.engineer} braces the frame and seals it properly",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
-        "effort_cost": "medium",
         "effort_required": 50,
         "requires_effort_from": [
           "engineer",
@@ -2043,11 +1564,7 @@
           "resources": {
             "hull": -8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "The engineer doesn't chase the crack. They bolt cross-braces over it every half meter until the frame takes the load off the plate, then seal it at leisure. The sound stops on the second day. Eight points of hull went into the braces and the cuts. With enough hands it is quick. Without them it is a long, careful week.",
           "scene_bg": "our_ship/cargo"
@@ -2055,20 +1572,14 @@
       },
       {
         "text": "Patch the inner skin",
-        "requires_crew": null,
         "requires_item": "hull_patch",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -5,
             "o2": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
           "item_consume": "hull_patch",
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You lay the patch across the worst of it, sticky side down, and press until your arms shake. It is not a weld. It is a very confident sticker. It takes the load long enough for the slow repairs behind it. Five points of hull, four of air, and the patch.",
           "scene_bg": "our_ship/cargo"
@@ -2076,19 +1587,11 @@
       },
       {
         "text": "Seal the bay off and abandon it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -6
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You drop the bulkhead on the cargo bay and walk away. The crack can have the room. It can have what's in the room, too: most of the dry stores, sealed behind a door nobody will open until a station crew comes aboard with a cutting torch. Forty-five percent of the food stays on the wrong side.",
           "resources_pct": {
@@ -2098,19 +1601,11 @@
       },
       {
         "text": "Leave it. It's held this long",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -30
           },
-          "crew_effect": null,
           "severity": "lethal",
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The outer plate lets go at 0300 with a noise like a door slammed in another building. The bay vents in four seconds. Someone was in it, checking the crack one last time. Thirty points of hull, and the bulkheads did the rest."
         }
@@ -2138,12 +1633,8 @@
     "trail": [
       "interstellar"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "ship_interior",
     "once": false,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "The drive is glowing a lovely new colour! ARIA has named it Reactor Rose! She's sure the alarms are just admiring it too!",
       "marv": "MARV has the containment field at sixty-one percent and falling about a point an hour. He knows exactly what happens at forty. He is giving you the hours, not the details.",
@@ -2155,19 +1646,11 @@
     "choices": [
       {
         "text": "Run the restart sequence by hand",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -5
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You pull the containment panel and call up the restart sequence.",
           "scene_bg": "our_ship/engine_error"
@@ -2232,10 +1715,6 @@
       {
         "text": "{crew.engineer} rebalances the field coils",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
-        "effort_cost": "medium",
         "effort_required": 50,
         "requires_effort_from": [
           "engineer",
@@ -2246,11 +1725,7 @@
             "fuel": -8,
             "hull": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "narrative": "The engineer idles the drive and walks the field coils one by one with a meter and a very small screwdriver, rebalancing each by hand. The field climbs a point at a time. Eight points of fuel, and three of hull where a coil had to be cut out. With help it's a few days. Alone it's a week of nobody talking near the engine room.",
           "scene_bg": "our_ship/engine_fixed"
@@ -2258,17 +1733,9 @@
       },
       {
         "text": "Vent the core and restart cold",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You dump the core. The drive goes quiet, the field goes out, and half the fuel aboard goes with it in one bright plume that will be visible for some time from places nobody lives. The cold restart works. The fuel gauge does not recover.",
           "resources_pct": {
@@ -2278,39 +1745,23 @@
       },
       {
         "text": "Shut it down and coast on reserves",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "o2": -8,
             "morale": -8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "extreme",
           "narrative": "You shut the drive down entirely and let the ship coast while the field cools and resets. Fourteen days in the dark on reserve power, scrubbers at half, heaters off. Nothing goes wrong. Everything is cold. Nobody will ever bring it up fondly."
         }
       },
       {
         "text": "Keep flying and watch the gauge",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -12
           },
-          "crew_effect": null,
           "severity": "lethal",
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You keep the drive running and watch the field. It holds, for a while. Then it sags for nine seconds, and the engine room fills with a light that has no business being indoors. The hull pays for it. Someone was on watch in the engine room.",
           "scene_bg": "our_ship/engine_error"
@@ -2333,11 +1784,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
     "requires_flag": "robot_cat_aboard",
     "ai_flavor": {
       "aria": "The cat brought you a PRESENT! It's a bolt! ARIA loves it! ARIA would love to know where it came from!",
@@ -2350,57 +1798,33 @@
     "choices": [
       {
         "text": "Follow the cat to wherever it finds them",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The cat leads you through a maintenance crawlway to a bracket on the aft frame, half its bolts gone and the rest on their way. You replace the lot while the cat supervises. Then it walks off, tail high, to sleep in the engine room. The hull is better for it."
         }
       },
       {
         "text": "Give the cat a medal anyway",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "Whatever it's doing, the cat has earned a medal for dedication. One is made out of a bottle cap and a ribbon. The cat accepts it with dignity, then leaves another bolt beside it. Nobody goes looking for where it came from. It seems rude to ask."
         }
       },
       {
         "text": "Shut the cat out of the bunks",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You shut the cat out of the crew quarters. It sulks, and the gifts stop. Not long after, the bracket they came from lets go on a burn, and the repair takes most of a shift. The cat is let back in. It does not gloat. It doesn't need to."
         }
@@ -2422,12 +1846,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_item": "medical_scanner",
     "requires_crew_aboard": true,
     "ai_flavor": {
@@ -2441,19 +1861,11 @@
     "choices": [
       {
         "text": "Bed rest and fluids, starting now",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "Two days of bed rest, fluids and mild complaints. The scanner's next sweep reads clean. The crew member in question says they felt fine the whole time and that this was all very unnecessary, and is quietly grateful."
         }
@@ -2461,28 +1873,17 @@
       {
         "text": "The medic treats it on the spot",
         "requires_crew": "medic",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "{crew.medic} reads the scanner's report over breakfast, prescribes something from the med locker, and has it handled before lunch. The next sweep reads clean. The medic looks extremely pleased with the scanner and slightly less pleased that a machine spotted it first."
         }
       },
       {
         "text": "Keep an eye on it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
           "crew_effect": {
@@ -2490,9 +1891,6 @@
             "target": "crew"
           },
           "severity": "delayed",
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You note it and carry on. Nothing happens for a while. Then, the way the scanner said it would, it gets worse quickly, and what could have been two days of rest becomes something that needs a medbay."
         }
@@ -2514,12 +1912,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_item": "unidentified_bone",
     "ai_flavor": {
       "aria": "The bone is WARM! Like it's ALIVE! ARIA hopes it's alive! ARIA hopes it isn't! ARIA can't decide!",
@@ -2532,17 +1926,9 @@
     "choices": [
       {
         "text": "Move it next to the growbay",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": 4,
           "narrative": "You set the crate beside the growbay's coldest corner. By morning the plants nearest it have perked up, leaning very slightly toward the crate, and someone has written 'do not move the bone' on the wall in large letters."
@@ -2550,38 +1936,22 @@
       },
       {
         "text": "Sit with it a while",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "A few of the crew start spending the end of their shifts in the hold, sitting near the crate with their backs against it, the way you'd sit against a warm wall. Nobody talks much. It becomes, somehow, the quietest, kindest spot on the ship."
         }
       },
       {
         "text": "Put it in the cold locker",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You move the bone into the cold locker and shut the door. It goes on being warm in there, gently, and the locker's thermostat spends the rest of the trip fighting it. Everyone feels slightly bad about it, for reasons nobody can name."
         }
@@ -2603,12 +1973,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "growbay",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_crop_alive": true,
     "ai_flavor": {
       "aria": "Little spots! They're almost cute! ARIA has been told they are not cute! ARIA is reassessing!",
@@ -2621,17 +1987,9 @@
     "choices": [
       {
         "text": "Cut the spotted leaves off now",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": -3,
           "narrative": "You clip every spotted leaf off the three plants and bag them for the incinerator. The plants look scruffier for a week. The spots don't come back."
@@ -2639,17 +1997,11 @@
       },
       {
         "text": "Treat the back row",
-        "requires_crew": null,
         "requires_item": "crop_treatment",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
           "item_consume": "crop_treatment",
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": 2,
           "narrative": "You use the vial of crop treatment on the back row. The spots dry out and fall away within days, and the plants come back greener than the rest."
@@ -2658,16 +2010,9 @@
       {
         "text": "The botanist checks every plant",
         "requires_crew": "botanist",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "crop_health": 1,
           "narrative": "{crew.botanist} spends two days going over every plant in the growbay, leaf by leaf, and pinches off every spot they find, including several nobody else had seen. The bay is clean by the end of it, and the botanist looks satisfied for the first time in a week."
@@ -2675,16 +2020,9 @@
       },
       {
         "text": "Keep an eye on it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "blight_ignored",
           "time_cost": "trivial",
           "narrative": "You make a note of it and leave the plants alone. The spots are small. The readings are fine. It's probably nothing. The note says 'probably'."
@@ -2711,11 +2049,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "growbay",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
     "requires_flag": "blight_ignored",
     "requires_crop_alive": true,
     "ai_flavor": {
@@ -2729,17 +2064,9 @@
     "choices": [
       {
         "text": "Prune hard, a third of the bay",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": -12,
           "narrative": "You cut back every infected plant to the healthy stem, a third of the bay, and burn the lot. It is a terrible thing to do to a crop you've carried this far. It works. The blight has nowhere left to go."
@@ -2747,17 +2074,9 @@
       },
       {
         "text": "Quarantine the worst rows",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "medium",
           "crop_health": -5,
           "narrative": "Four days of rigging plastic sheeting, separate watering lines and a strict one-way path through the growbay. The infected rows wither behind their curtain. The clean rows stay clean. Everyone is very tired of plastic."
@@ -2766,17 +2085,10 @@
       {
         "text": "The botanist burns it out with the lamps",
         "requires_crew": "botanist",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "effort": 2,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": -6,
           "narrative": "{crew.botanist} turns the grow lamps up past their rated heat over the infected rows and cooks the blight out of the leaves in a single afternoon. The leaves don't love it either. The blight loves it less."
@@ -2784,16 +2096,9 @@
       },
       {
         "text": "Let it run its course",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "blight_spread",
           "time_cost": "trivial",
           "crop_health": -4,
@@ -2817,11 +2122,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "growbay",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
     "requires_flag": "blight_spread",
     "requires_crop_alive": true,
     "ai_flavor": {
@@ -2835,17 +2137,9 @@
     "choices": [
       {
         "text": "Strip the bay back to the stems",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": -25,
           "narrative": "You cut the whole crop back to bare stems and burn every leaf, every flower, every spore you can find. The growbay looks like winter. In a week, very slowly, new green comes up from the stems, and none of it is grey."
@@ -2853,19 +2147,13 @@
       },
       {
         "text": "Flood the soil with treatment",
-        "requires_crew": null,
         "requires_item": "crop_treatment",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "water": -8
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
           "item_consume": "crop_treatment",
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": -8,
           "narrative": "You dilute the treatment into {cost.water} points of water and flood every pot in the bay, soil and roots and all. The fuzz dies off over three days. The crop survives it, weakened, smaller and alive."
@@ -2874,16 +2162,9 @@
       {
         "text": "The botanist sterilises everything",
         "requires_crew": "botanist",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "high",
           "crop_health": -10,
           "narrative": "{crew.botanist} takes the growbay apart. Eight days of sterilising every tray, every line, every pot, plant by plant, while the rest of the crew keeps the ship running around them. The crop comes out of it scarred and clean. The botanist sleeps for a day."
@@ -2891,19 +2172,11 @@
       },
       {
         "text": "Do nothing and hope",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": -35,
           "narrative": "You do nothing, and hope. The rot bloom takes the bay. When it finally burns out, there's a little green left at the bottom of a few stems, and that is all there is."
@@ -2926,12 +2199,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "growbay",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_crop_alive": true,
     "ai_flavor": {
       "aria": "A SPARKLY plant! ARIA has named it Sterling! ARIA has been asked not to name the plants! ARIA has named all of them now!",
@@ -2944,18 +2213,11 @@
     "choices": [
       {
         "text": "Let it grow",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "mutation_encouraged",
           "time_cost": "trivial",
           "narrative": "You leave the silver plant alone. It keeps growing, fast and bright, and the crew develops the habit of stopping by to look at it. By the next stop, two of its neighbours have silver threads in their newest leaves."
@@ -2963,17 +2225,9 @@
       },
       {
         "text": "Prune it out to be safe",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": -2,
           "narrative": "You cut the silver plant out at the root and bag it for the incinerator. The bay goes back to being ordinary. Somebody keeps one silver leaf, pressed in a book, and doesn't mention it."
@@ -2981,16 +2235,9 @@
       },
       {
         "text": "Study it before deciding",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "mutation_studied",
           "time_cost": "low",
           "narrative": "You spend two days with the silver plant: cuttings under the microscope, soil tests, growth logs, readings from every instrument aboard. The results are interesting. They will be more interesting with time."
@@ -3013,11 +2260,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "growbay",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
     "requires_flag": "mutation_encouraged",
     "requires_crop_alive": true,
     "ai_flavor": {
@@ -3031,18 +2275,11 @@
     "choices": [
       {
         "text": "Let it take the bay",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "mutation_full",
           "time_cost": "trivial",
           "crop_health": 6,
@@ -3051,17 +2288,9 @@
       },
       {
         "text": "Harvest its seeds and cut it back",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": -4,
           "materials": {
@@ -3072,17 +2301,9 @@
       },
       {
         "text": "Keep it to one row",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": 2,
           "narrative": "You let the silver plants keep one row and no more, pinching back anything that tries to spread. The bay settles into two kinds of crop living side by side. Officially it is a controlled experiment. Unofficially it is the silver row."
@@ -3105,11 +2326,8 @@
     "trigger": [
       "any"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "growbay",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
     "requires_flag": "mutation_studied",
     "requires_crop_alive": true,
     "ai_flavor": {
@@ -3123,17 +2341,9 @@
     "choices": [
       {
         "text": "Breed the trait in carefully",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "crop_health": 8,
           "narrative": "Two days of careful cross-pollination, row by row, with the silver plant as the parent. The next generation of leaves comes in with the faintest silver thread, and the readings across the whole bay tick upward. Patience, the notes say. It worked."
@@ -3141,19 +2351,11 @@
       },
       {
         "text": "Write it up for the colony",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You leave the crop as it is and write the study up properly, for the colony's agronomists.",
           "log_lore": {
@@ -3164,19 +2366,11 @@
       },
       {
         "text": "Destroy the samples",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You destroy the samples and the silver plant with them. It's not on the manifest. It's not what was promised. Nobody argues, and nobody says much for the rest of the day."
         }
@@ -3198,12 +2392,8 @@
     "trigger": [
       "crop_dead"
     ],
-    "event_presentation": "fullscreen",
     "scene_type": "growbay",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "It's GREEN! A little bit! ARIA is not going to get her hopes up! ARIA's hopes are already up! They're very high!",
       "marv": "MARV estimates the node's chance of growing into anything at about one in twenty. He would like it noted that one in twenty is not nothing. He would like that noted very clearly.",
@@ -3215,18 +2405,11 @@
     "choices": [
       {
         "text": "Keep it in a jar",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
           "sets_flag": "kept_the_cutting",
           "time_cost": "trivial",
           "narrative": "You cut the green node free with the cleanest blade aboard and puts it in a jar of water on the bridge, where everyone can see it. It doesn't do anything. People check on it anyway, several times a day, the way you'd check on someone sleeping."
@@ -3234,38 +2417,22 @@
       },
       {
         "text": "Dry the seeds for the colony's seed bank",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "There are seeds in the dead heads too, a few dozen, small and dry and probably not viable. They get sorted, labelled and sealed for the colony's seed bank. Somebody might try. It's enough."
         }
       },
       {
         "text": "Compost the stalks for the hold",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "materials": {
             "biocomponent": 2
@@ -3290,13 +2457,9 @@
     "trigger": [
       "crew_injured"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "bg": "our_ship/medbay",
     "once": false,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has read the whole form! There's a box for 'how did this injury make you feel?' ARIA has SO many answers!",
       "marv": "MARV has read the form. It has more questions about the injury than the medical manual does, and fewer answers. MARV suspects they were written by the same committee on different days.",
@@ -3308,10 +2471,6 @@
     "choices": [
       {
         "text": "Fill in every box",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -1
@@ -3321,19 +2480,12 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "It takes most of a day. The form wants the injury's time, place, cause and the cause of the cause, plus signatures from a witness, a supervisor and the injured party, which aboard this ship means signing more than once. The locker clicks open. The patient gets what they needed. The customer experience question is answered honestly. It will not be read."
         }
       },
       {
         "text": "Pay the expedited processing fee",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "gold": -8
@@ -3343,9 +2495,6 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "There is a button marked EXPEDITE. It costs money, and it opens the locker at once, which tells you everything about what the form was for. The patient gets the good stuff. Colonial Personnel Services sends a receipt and a short survey about the expediting experience."
         },
@@ -3356,9 +2505,6 @@
       {
         "text": "{crew.engineer} opens it from the back",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
           "crew_effect": {
@@ -3366,26 +2512,15 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "{crew.engineer} unscrews the locker's back panel, which is held on by a handful of screws and the assumption that nobody would try. The lock stays locked, with great dignity, on a door that no longer matters. The patient is patched up by lunch. Colonial Personnel Services is not informed."
         }
       },
       {
         "text": "Make do with plasters",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You make do with what the locker lets out without paperwork: plasters, a cold pack and a sympathetic look. The patient sits down for a while. It helps the way sitting down helps."
         }
@@ -3407,13 +2542,9 @@
     "trigger": [
       "crew_injured"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "bg": "our_ship/medbay",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_crew_aboard": true,
     "ai_flavor": {
       "aria": "ARIA has found the diagram! The little cartoon person in it is SMILING! ARIA thinks that's a good sign! ARIA is going to keep thinking that!",
@@ -3426,17 +2557,9 @@
     "choices": [
       {
         "text": "Put it back in, by the diagram",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "Out comes the manual, open at the diagram: slow traction, steady, and patience while the muscles give up."
         },
@@ -3502,9 +2625,6 @@
       {
         "text": "{crew.medic} lets gravity do it",
         "requires_crew": "medic",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
@@ -3514,19 +2634,13 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "{crew.medic} lays the patient face down on the galley table with the arm hanging over the edge and a full water bottle taped to the wrist, then waits, talking about nothing, while gravity does the arguing. After a while the muscles tire, the shoulder slips back in on its own, and the medic looks as if this was always the plan. It was."
         }
       },
       {
         "text": "Muscle relaxant from a medkit, then try",
-        "requires_crew": null,
         "requires_item": "medkit",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
           "crew_effect": {
@@ -3534,28 +2648,18 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
           "item_consume": "medkit",
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The medkit's muscle relaxant does what persuasion couldn't. A little while later the shoulder goes back in with almost no argument, and the patient falls asleep in the middle of saying thank you."
         }
       },
       {
         "text": "Sling it and leave it for a station",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You strap the arm across the chest and leave the joint for someone with an X-ray. The patient is brave about it at every bump, every hatch and every attempt to sleep. Brave is tiring. Everyone gets tired."
         }
@@ -3582,12 +2686,8 @@
     "trigger": [
       "crewmate_injured"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_crew_aboard": true,
     "ai_flavor": {
       "aria": "ARIA has volunteered to cover the shift! ARIA has been reminded she can't hold a wrench! ARIA has volunteered to hold the clipboard!",
@@ -3600,10 +2700,6 @@
     "choices": [
       {
         "text": "Take their shift yourself",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
           "crew_effect": {
@@ -3611,19 +2707,12 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You take their station on top of your own and do both badly enough to be honest about it. Everything aboard runs a little late. The patient, finally convinced the job is in someone's hands, sleeps properly for the first time since it happened, and the healing gets on with itself."
         }
       },
       {
         "text": "Hand it to the ship computer",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -3
@@ -3633,28 +2722,17 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The ship computer takes over their station and runs it by the manual, which was written for a ship with more fuel than this one and errs on the side of burning it. The job gets done. The patient rests. The fuel gauge carries the cost quietly."
         }
       },
       {
         "text": "Let them run it from the bunk",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You run a cable to the bunk and a screen to the patient. They work their station lying down, cheerful and useful and healing at the speed of someone who is still working. Nobody can call it a bad idea to their face."
         }
@@ -3676,13 +2754,9 @@
     "trigger": [
       "crewmate_injured"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "bg": "our_ship/medbay",
     "once": false,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_crew_aboard": true,
     "ai_flavor": {
       "aria": "ARIA has been singing the patient a lullaby! In text! On the ceiling screen! It has not helped! It has been very pretty!",
@@ -3695,10 +2769,6 @@
     "choices": [
       {
         "text": "Move their cot into the growbay",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
           "crew_effect": {
@@ -3706,9 +2776,6 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": -3,
           "narrative": "You move the cot between the planters and dim the lamps to night for them. The growbay is the quietest room aboard, warm and damp and smelling of soil, and the patient is asleep inside the hour. The crop loses its nights of full light and shows it. The patient wakes up better, and talking to the plants."
@@ -3719,10 +2786,6 @@
       },
       {
         "text": "Cut the drive and drift for a night",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
           "crew_effect": {
@@ -3730,19 +2793,13 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You shut the drive down after dinner and let the ship coast through the dark in silence. The patient is asleep before the hum has finished fading and sleeps clean through to the restart. The schedule loses the night. The patient gets it."
         }
       },
       {
         "text": "A sedative from a medkit",
-        "requires_crew": null,
         "requires_item": "medkit",
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
           "crew_effect": {
@@ -3750,28 +2807,18 @@
             "target": "all_injured"
           },
           "severity": null,
-          "item_grant": null,
           "item_consume": "medkit",
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "A measured dose from the medkit, and the drive's hum becomes somebody else's problem. The patient sleeps the long, flat sleep of the chemically excused and wakes stiff, groggy and visibly mended."
         }
       },
       {
         "text": "They'll get used to it",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "Nobody gets used to it. The patient spends the nights learning the ceiling and the days yawning through a recovery that drags. By the end, the rivets are a personal matter."
         }
@@ -3793,12 +2840,8 @@
     "trigger": [
       "post_combat"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_exterior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "We have a new part! ARIA didn't order it! ARIA is calling it a gift!",
       "marv": "MARV puts the object's mass at roughly that of a vending machine, mounted off-centre. The thrusters are correcting for it on every burn. MARV can do this all day. The fuel cannot.",
@@ -3810,19 +2853,11 @@
     "choices": [
       {
         "text": "Cut it out and keep the metal",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -3
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "materials": {
             "metal": 2,
@@ -3834,18 +2869,11 @@
       {
         "text": "{crew.engineer} pulls it and plates the hole",
         "requires_crew": "engineer",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "materials": {
             "metal": 2,
@@ -3858,39 +2886,23 @@
       },
       {
         "text": "Leave it where it is",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You leave it. It stays, a souvenir nobody wanted, and on every burn for the rest of the leg the thrusters lean against it. The fuel spent keeping the ship straight adds up quietly, the way small leans do."
         }
       },
       {
         "text": "Shake it loose with a hard burn",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -2,
             "hull": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You fire the drive hard and cut it, then again, like a dog shaking off water. On the second jolt the lump tears free and tumbles away into the dark. It takes a strip of plating with it, as a keepsake."
         }
@@ -3912,12 +2924,8 @@
     "trigger": [
       "post_combat"
     ],
-    "event_presentation": "modal",
     "scene_type": "growbay",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "requires_crop_alive": true,
     "ai_flavor": {
       "aria": "The crop went on a ROLLERCOASTER! ARIA thinks it had a great time! ARIA has looked at its readings! ARIA has stopped thinking that!",
@@ -3930,17 +2938,9 @@
     "choices": [
       {
         "text": "Scoop it all back by hand",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "crop_health": 6,
           "narrative": "Scoop by scoop the soil goes back in the beds, the roots go back under the soil, and the upturned tray is turned the right way up and forgiven. It takes the rest of the day. By evening the bay looks like a growbay again, and the plants have stopped leaning."
@@ -3950,16 +2950,9 @@
       {
         "text": "{crew.botanist} triages the beds",
         "requires_crew": "botanist",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": 10,
           "narrative": "{crew.botanist} walks the bay once without touching anything, then fixes the plants in the order that matters: roots in the air first, the ones that only look bad last. It goes quickly, because it goes in the right order. The upturned tray turns out to have been fine. Only its soil was upside down."
@@ -3967,19 +2960,11 @@
       },
       {
         "text": "Seal the cracked glass first",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": -3,
           "narrative": "You seal the cracked panel before anything else, because cracks spread and plants don't. It's a good seal. By the time you get to the beds, some of the roots that spent the afternoon in the air have dried past saving."
@@ -3987,17 +2972,9 @@
       },
       {
         "text": "It's alive. Tidy up tomorrow",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "crop_health": -4,
           "narrative": "You close the door on the mess and see to the rest of the ship first. By the time anyone gets back to the growbay the exposed roots have dried and the leaves crushed against the glass have browned. Alive, still. Less of it."
@@ -4020,12 +2997,8 @@
     "trigger": [
       "crew_dead"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA has unticked the survey box! It keeps ticking itself again! ARIA is going to keep unticking it for as long as it takes!",
       "marv": "MARV has read the template. Every sentence in it is true, and none of it is about anyone. MARV did not know that was possible. He has learned something today he would rather not have.",
@@ -4037,19 +3010,11 @@
     "choices": [
       {
         "text": "Write it yourself",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "log_lore": {
             "title": "THE LETTER",
@@ -4061,18 +3026,11 @@
       {
         "text": "Everyone adds a line",
         "requires_crew": "any",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You pass the screen round the galley table. Each person writes a line and passes it on without reading the others. Some are funny. One is only their nickname, spelled the way only a friend would spell it. The message goes out at the relay looking as if it was written by a crew, which it was."
         }
@@ -4080,37 +3038,22 @@
       {
         "text": "{crew.diplomat} drafts it",
         "requires_crew": "diplomat",
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": 2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "{crew.diplomat} has written this letter before, in a different job, more often than anyone should. The draft arrives within the hour, in plain words, and it is exactly right. The diplomat asks for it to go out under your name. You send it under both."
         }
       },
       {
         "text": "Send the template",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "morale": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "You fill in the name and the date and send it as issued, survey and all. It is correct. It is on time. Somewhere a family will open a message from a ship and find a form, and aboard the ship, whenever the relay comes up, someone changes the subject."
         }
@@ -4132,12 +3075,8 @@
     "trigger": [
       "solo_run"
     ],
-    "event_presentation": "modal",
     "scene_type": "ship_interior",
     "once": true,
-    "test_path": false,
-    "sets_flag": null,
-    "requires_flag": null,
     "ai_flavor": {
       "aria": "ARIA can be Crew Member B! ARIA has no hands! ARIA has enthusiasm! The checklist does not have a box for enthusiasm!",
       "marv": "MARV has checked who wrote the checklist. A committee, for a full crew. MARV notes that this ship currently has neither.",
@@ -4149,55 +3088,31 @@
     "choices": [
       {
         "text": "Run between the valves",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {},
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "low",
           "narrative": "You tie the front valve open with a sock, run the length of the ship, turn the back valve a notch, run back to check the front, and run back again. Somewhere in the middle of it the loop gives up its air with a gurgle and the drive temperature drops. You sign the checklist as Crew Member A, then again, more slowly, as Crew Member B. The handwriting doesn't match. You were very tired by then."
         }
       },
       {
         "text": "Let the ship computer be Crew Member B",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "hull": -2
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "The ship computer turns the back valve with a maintenance arm built for lifting crates, not for subtlety. It turns it all the way, at once, and the loop bangs like a dropped pan and cracks a bracket. The air is out. So, briefly, was your heart. The computer signs as Crew Member B in a perfect font."
         }
       },
       {
         "text": "Skip it. Who's checking?",
-        "requires_crew": null,
-        "requires_item": null,
-        "requires_flag": null,
-        "microgame_type": null,
         "outcome": {
           "resources": {
             "fuel": -4
           },
-          "crew_effect": null,
           "severity": null,
-          "item_grant": null,
-          "item_consume": null,
-          "sets_flag": null,
           "time_cost": "trivial",
           "narrative": "Nobody's checking. The loop keeps its air bubble, the drive runs a little hot, and running hot it burns a little more for the same push, leg after leg. The item stays open on the checklist, its signature lines empty, waiting."
         }
