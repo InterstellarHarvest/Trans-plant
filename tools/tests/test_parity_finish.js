@@ -184,7 +184,7 @@ const NOTE = /\b(Stackable|Craftable|Fabricated|Pure trade good|Info-only|Gate i
       const read = () => [a, b].map(n => {
         const el = document.querySelector('#ovmap-nodes .map-node[data-node="' + n.id + '"]');
         const bf = el && el.querySelector('.map-branch-flavor'); const cs = bf && getComputedStyle(bf);
-        return bf && { text: bf.textContent, color: cs.color, border: cs.borderTopColor, bw: cs.borderTopWidth, bs: cs.borderTopStyle, radius: cs.borderTopLeftRadius, bg: cs.backgroundColor, pad: cs.paddingTop + ' ' + cs.paddingLeft, font: cs.fontFamily };
+        return bf && { text: bf.textContent.replace(/^(PORT|STARBOARD) · /, ''), lane: (bf.textContent.match(/^(PORT|STARBOARD)/) || [])[0], color: cs.color, border: cs.borderTopColor, bw: cs.borderTopWidth, bs: cs.borderTopStyle, radius: cs.borderTopLeftRadius, bg: cs.backgroundColor, pad: cs.paddingTop + ' ' + cs.paddingLeft, font: cs.fontFamily };
       });
       const out = {};
       // before the fork
@@ -216,6 +216,7 @@ const NOTE = /\b(Stackable|Craftable|Fabricated|Pure trade good|Info-only|Gate i
     if (r.noFork) ok(false, 'no fork on the map');
     else {
       const grey = 'rgb(122, 136, 152)';
+      ok(r.before.every(x => x && x.lane), 'each lane pill names its lane, PORT / STARBOARD (as the fork events say)');
       ok(r.before.every(x => x && x.text === '???' && x.color === grey), `before the fork both labels are dim grey ??? (${r.before.map(x => x && x.text + ' ' + x.color).join(' | ')})`);
       ok(r.after[0].text === 'LUCRATIVE' && r.after[0].color === 'rgb(255, 172, 0)', `after: lucrative reads LUCRATIVE in amber (${r.after[0].text} ${r.after[0].color})`);
       ok(r.after[1].text === '???' && r.after[1].color === 'rgb(211, 196, 140)', `after: the uncharted branch reads cream ??? in its red frame — owner ruling 47a (${r.after[1].text} ${r.after[1].color})`);

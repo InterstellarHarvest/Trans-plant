@@ -110,7 +110,7 @@ async function defeat(page, setup, rnd, before) {
     ok(/Ines Vahl/.test(r.body) && !/Reeves/.test(r.body), 'the outcome names Ines Vahl, not the roster pilot (' + r.body.slice(0, 120) + ')');
     ok(r.tok === 'Ines Vahl/Ines Vahl', '{patient.name} and {crew.pilot} read the dead pilot as who they were (' + r.tok + ')');
     const after = await page.evaluate(() => { returnToHub(); return interpolateStowawayTokens('{crew.pilot}'); });
-    ok(after === 'Reeves', 'back at the hub the remembered name is dropped (' + after + ')');
+    ok(after === 'A pilot', 'back at the hub the remembered name is dropped: nobody holds the role, so it reads "A pilot" (' + after + ')');
     const spk = await page.evaluate(() => {
       STATE.crewIdentity = { engineer: { id: 'x', name: 'Bastian Oke', story: 's', origin: 'stowaway', joinedDay: 1 } };
       STATE.eventSpeaker = 'engineer';

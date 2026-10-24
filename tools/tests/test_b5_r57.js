@@ -196,7 +196,7 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
     });
     ok(r.prev.includes('ENGINEER −25 · MEDIC −12 MORALE'), 'named injury previews ENGINEER −25 · MEDIC −12: ' + r.prev.join(', '));
     ok(r.inj.engineer === 35 && r.inj.medic === 48, 'injury: engineer −25, medic −12 (' + JSON.stringify(r.inj) + ')');
-    ok(r.rnd.includes('HURT −25 · MEDIC −12 MORALE') && r.injure.includes('HURT −25 · MEDIC −12 MORALE'), 'random target: "HURT −25 · MEDIC −12" (' + r.rnd.join(', ') + ' / ' + r.injure.join(', ') + ')');
+    ok(r.rnd.includes('INJURED −25 · MEDIC −12 MORALE') && r.injure.includes('INJURED −25 · MEDIC −12 MORALE'), 'random target: "INJURED −25 · MEDIC −12" (' + r.rnd.join(', ') + ' / ' + r.injure.join(', ') + ')');
     ok(r.kprev.includes('IF LOST, MEDIC −25 MORALE') && r.death === 35 && /loss weighs on the medic/.test(r.why), 'a death: MEDIC −25 (previewed "' + r.kprev.join(', ') + '"; why "' + r.why + '")');
     await page.close();
   }
@@ -250,7 +250,7 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
   {
     const page = await boot({ crew: ['engineer', 'diplomat'] });
     const cost = await page.evaluate(() => choiceCostLines({ triggerCombat: true }));
-    ok(cost.includes('Any fight: DIPLOMAT −20 MORALE'), 'the fight choice hover: ' + cost.join(' / '));
+    ok(cost.some(l => /^Any fight: DIPLOMAT −20 MORALE( · ENGINEER minds every hull hit)?$/.test(l)), 'the fight choice hover: ' + cost.join(' / '));
     await page.clock.install();
     await page.evaluate(() => {
       setCrewMorale(60);
@@ -426,8 +426,8 @@ const logText = page => page.evaluate(() => (STATE.shipLog || []).map(e => (e &&
       return out;
     });
     ok(r.prev.includes('ENGINEER −4 MORALE') && r.eng === 56, 'alone: −20 hull previews and lands ENGINEER −4 (' + r.prev.join(', ') + '; now ' + r.eng + ')');
-    ok(r.hurt.includes('HURT −12.5 MORALE'), 'alone: a wound previews HURT −12.5 (' + r.hurt.join(', ') + ')');
-    ok(r.duo.includes('ENGINEER −8 MORALE') && r.fight.includes('Any fight: DIPLOMAT −20 MORALE'), 'two aboard: full again (' + r.duo.join(', ') + ' / ' + r.fight.join(' / ') + ')');
+    ok(r.hurt.includes('INJURED −12.5 MORALE'), 'alone: a wound previews INJURED −12.5 (' + r.hurt.join(', ') + ')');
+    ok(r.duo.includes('ENGINEER −8 MORALE') && r.fight.some(l => /^Any fight: DIPLOMAT −20 MORALE/.test(l)), 'two aboard: full again (' + r.duo.join(', ') + ' / ' + r.fight.join(' / ') + ')');
     await page.close();
   }
   {

@@ -3173,7 +3173,7 @@ function rationsConcern(rationsId) { return orderConcernPerDay('chef', 'short_ra
 function outcomeConcerns(o) {
   const out = [];
   if (!o || !STATE.crew.length) return out;
-  const add = (role, v, maybe) => { v = concernAmount(v); if (v && (role === 'HURT' || STATE.crew.includes(role))) out.push({ label: role.toUpperCase(), v, maybe: !!maybe }); };
+  const add = (role, v, maybe) => { v = concernAmount(v); if (v && (role === 'INJURED' || STATE.crew.includes(role))) out.push({ label: role.toUpperCase(), v, maybe: !!maybe }); };
   const res = o.resources || {};
   // Hull lost as it will land (an armed emergency patch takes the hit).
   if (Number.isFinite(res.hull) && res.hull < 0 && (o.combat_net || !STATE.flags.has('emergency_patch_armed'))) add('engineer', hullConcern(-effectiveResDelta('hull', res.hull)));

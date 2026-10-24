@@ -340,7 +340,7 @@ const box = async (page, sel) => page.evaluate(sel => { const r = document.query
     await enter(page, 'event_encounter_trader_001', { nodeType: 'void', species: 'robot', layer: 'pitch' });
     await snap(page);
     const sub = await page.evaluate(() => { const b = [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => /beacon/i.test(b.textContent)); return b.querySelector('.ch-sub').textContent; });
-    ok(sub === 'Need: 60g', 'rendered: ' + sub + ' (b4 B6: plain grey under the padlock badge)');
+    ok(sub === 'Need: 135g', 'rendered: ' + sub + ' (b4 B6: plain grey under the padlock badge)');
     await page.close();
   }
 

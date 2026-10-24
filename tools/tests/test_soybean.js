@@ -242,6 +242,9 @@ const SOY = () => MOD.crops.crops.find(c => c.id === 'crop_soybean').strengths.n
         if (card && !document.querySelector('#setup-right .sel-card.selected')) card.click();
         document.getElementById('btn-next').click();
         await new Promise(r => setTimeout(r, 50));
+        // an incomplete crew asks first (the game's own dialog)
+        const yes = document.querySelector('.tp-confirm-overlay [data-act="yes"]');
+        if (yes) { yes.click(); await new Promise(r => setTimeout(r, 50)); }
       }
       const cards = [...document.querySelectorAll('#setup-right .sel-card')].map(c => c.textContent);
       // Event preview: PESTS CLEARED only when there is an outbreak to clear.

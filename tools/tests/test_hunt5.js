@@ -239,11 +239,11 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       STATE.crewHP.engineer = 50; STATE.crewHP.pilot = 60; STATE.goldAmount = 100;
       (await verbAt('station', 'MEDBAY')).click();
       out.medbay = STATE.crewHP.engineer === 100 && STATE.crewHP.pilot === 100;
-      // TRADE: browsing the wares then walking away costs a day
+      // TRADE: buying from the wares then walking away costs a day (just looking doesn't)
       document.body.classList.remove('stop-active');
       const ev = EVENTS.event_encounter_trader_001; enterEvent(STATE.byId[STATE.currentId], ev);
       const browse = ev.layers[ev.entryLayer].choices.find(c => c.open_market) || Object.values(ev.layers).flatMap(l => l.choices).find(c => c.open_market);
-      handleChoiceClick(browse); MarketModal.close();
+      handleChoiceClick(browse); STATE.goldAmount -= 5; STATE.items.push('fuel_cell'); MarketModal.close(); // a purchase: only a real deal costs the haggling day
       await new Promise(r => setTimeout(r, 80));
       d0 = STATE.daysElapsed;
       // The leave row (per-event label since the encounter parity pass: NO THANKS here).

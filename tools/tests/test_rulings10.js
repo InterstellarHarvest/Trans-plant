@@ -155,7 +155,7 @@ const close = (a, b) => Math.abs(a - b) < 1e-9;
     ok(!/[{}]/.test(all), 'no unfilled {token} on the AI or captain cards');
     ok(stats.ai.some(s => s.includes('Station prices -15%')), 'CHIP card: "Station prices -15%"');
     ok(stats.ai.some(s => s.includes('Morale +1 per leg')), 'ARIA card: "Morale +1 per leg"');
-    for (const want of ['Crop water -7% · Crop +5', 'Fab wear -10% · Hull 105', '25% lethal→injury', 'Fuel -5% · Fuel 105', 'Food -7% · Food 105', 'Credits +15', 'Prices -10% · Credits +30'])
+    for (const want of ['Crop water -7% · Crop +5', 'Fab wear -10% · Hull 105', '25% lethal→injury', 'Fuel -5% · Fuel 105', 'Food -7% · Food 105', 'Gold +15', 'Prices -10% · Gold +30'])
       ok(stats.captain.some(s => s.includes(want)), 'captain card: "' + want + '"');
     await page.close();
   }

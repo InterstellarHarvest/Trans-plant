@@ -120,8 +120,8 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
             // The effort tax (the tooltip's "Effort n/5 · −m morale"): every member pays it on click.
             const tax = ch.effort ? effortTax(ch.effort) * STATE.crew.length : 0;
             const cons = outcomeConcerns(op);
-            const fixed = cons.filter(c => !c.maybe && c.label !== 'HURT').reduce((a, c) => a + c.v, 0);
-            const hurt = cons.filter(c => !c.maybe && c.label === 'HURT').reduce((a, c) => a + c.v, 0);
+            const fixed = cons.filter(c => !c.maybe && c.label !== 'INJURED').reduce((a, c) => a + c.v, 0);
+            const hurt = cons.filter(c => !c.maybe && c.label === 'INJURED').reduce((a, c) => a + c.v, 0);
             const maybe = cons.filter(c => c.maybe).reduce((a, c) => a + c.v, 0);
             const moraleWants = [...new Set([0, hurt, maybe, hurt + maybe].map(x => Math.round((shared - tax + fixed + x) * 100) / 100))];
             const tipDays = (tip.match(/Takes (\d+) day/) || [])[1];

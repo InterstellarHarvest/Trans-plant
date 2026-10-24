@@ -222,7 +222,7 @@ const snap = page => page.evaluate(() => ({
     await click(page, 'NEGOTIATE');
     const b = await scene(page, 'our_ship/bridge');
     ok(b.layer === 'talk' && b.main === 'our_ship/bridge.png' && b.base && /^space\/deep\//.test(b.base), `COMMS OPEN: the bridge with space through the window (${b.main} + ${b.base})`);
-    ok(!b.dialogHidden && /Fuel\. Food\. Your medic\./.test(b.line) && b.dialogName === 'INTRUDER', `the intruder speaks: ${b.line}`);
+    ok(!b.dialogHidden && /Fuel\. Food\. And anyone aboard who knows medicine\./.test(b.line) && b.dialogName === 'INTRUDER', `the intruder speaks: ${b.line}`);
     ch = await choiceInfo(page);
     const who = ch.find(c => c.text === '"Who is sick?"');
     ok(who && who.locked && /Need: Medic/.test(who.sub), `"Who is sick?" locked without a medic (${who && who.sub})`);
@@ -283,11 +283,11 @@ const snap = page => page.evaluate(() => ({
     await page.close();
   }
   {
-    // FIGHT / SEAL / "Not the medic." apply what they say.
+    // FIGHT / SEAL / "Nobody goes with you." apply what they say.
     for (const [label, crew, nav, expect] of [
       ['FIGHT', ['pilot', 'chef'], null, { hull: -6, injury: true, tax: 4 }],
       ['SEAL THE DECK', ['engineer', 'chef'], null, { food: -8, morale: 3, tax: 2 }],
-      ['"Not the medic."', ['diplomat', 'chef'], 'NEGOTIATE', { hull: -10, morale: -4, injury: true }],
+      ['"Nobody goes with you."', ['diplomat', 'chef'], 'NEGOTIATE', { hull: -10, morale: -4, injury: true }],
     ]) {
       const page = await boot({ crew, ai: 'rex' });
       await enter(page, 'event_encounter_boarding_002', 'derelict');

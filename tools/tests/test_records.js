@@ -47,10 +47,10 @@ const end = (page, r) => page.evaluate(new Function('r', 'return (' + END.toStri
     const a = await end(page, { trail: 'lunar', score: 112.7, days: 80, report: true });
     const e = a.recs.runs[0];
     ok(a.recs.runs.length === 1 && e.kind === 'arrival' && e.trail === 'lunar' && e.tone === 'good' && e.title === 'MOSTLY MADE IT' && e.score === 112, `entry: arrival, lunar, good, MOSTLY MADE IT, score 112 (${JSON.stringify({ k: e.kind, t: e.tone, s: e.score })})`);
-    ok(e.ship === 'Test Ship' && e.crop === 'wheat' && e.captain === 'veteran' && e.days === 80 && e.crew === 2 && e.startCrew === 2 && e.id === a.seed, 'entry carries ship, crop, captain, days, crew and the run id');
+    ok(e.ship === 'Test Ship' && e.crop === 'wheat' && e.captain === 'veteran' && e.days === 80 && e.crew === 2 && e.startCrew === 2 && String(e.id).startsWith(a.seed + ':'), 'entry carries ship, crop, captain, days, crew and the run (finish id = run seed + day + result)');
     ok(/SCORE 112/.test(a.day) && /NEW BEST/.test(a.day), `report: "${a.day.trim()}"`);
-    ok(a.recs.best.lunar && a.recs.best.lunar.id === a.seed, 'first lunar arrival is the lunar best');
-    const again = await page.evaluate(() => { showEndReport(); window.renderEndScreen({ kind: 'ending', module: MOD.endings[0] }); showEndReport(); return loadRecords(); });
+    ok(a.recs.best.lunar && String(a.recs.best.lunar.id).startsWith(a.seed + ':'), 'first lunar arrival is the lunar best');
+    const again = await page.evaluate(() => { const rv = window.scoreValue; window.scoreValue = () => 112.7; showEndReport(); window.renderEndScreen({ kind: 'ending', module: MOD.endings[0] }); showEndReport(); window.scoreValue = rv; return loadRecords(); });
     ok(again.runs.length === 1, 'the same run rendered again stays one entry');
     // Rounding down keeps the number under its tier's line.
     const edge = await end(page, { trail: 'mars', score: 124.9, report: true });
@@ -66,13 +66,13 @@ const end = (page, r) => page.evaluate(new Function('r', 'return (' + END.toStri
     const page = await open();
     const a = await end(page, { trail: 'mars', score: 100, days: 90, report: true });
     const lower = await end(page, { trail: 'mars', score: 90, days: 60, report: true });
-    ok(lower.recs.best.mars.id === a.seed && !/NEW BEST/.test(lower.day) && /SCORE 90/.test(lower.day), 'a lower score: best kept, no NEW BEST');
+    ok(String(lower.recs.best.mars.id).startsWith(a.seed + ':') && !/NEW BEST/.test(lower.day) && /SCORE 90/.test(lower.day), 'a lower score: best kept, no NEW BEST');
     const tieSlow = await end(page, { trail: 'mars', score: 100, days: 120, report: true });
-    ok(tieSlow.recs.best.mars.id === a.seed, 'a tie, but slower: best kept');
+    ok(String(tieSlow.recs.best.mars.id).startsWith(a.seed + ':'), 'a tie, but slower: best kept');
     const tieFast = await end(page, { trail: 'mars', score: 100, days: 70, report: true });
-    ok(tieFast.recs.best.mars.id === tieFast.seed && /NEW BEST/.test(tieFast.day), 'a tie, and faster: the new best');
+    ok(String(tieFast.recs.best.mars.id).startsWith(tieFast.seed + ':') && /NEW BEST/.test(tieFast.day), 'a tie, and faster: the new best');
     const higher = await end(page, { trail: 'mars', score: 140, days: 100, report: true });
-    ok(higher.recs.best.mars.id === higher.seed && higher.recs.best.mars.score === 140 && /NEW BEST/.test(higher.day), 'a higher score: NEW BEST');
+    ok(String(higher.recs.best.mars.id).startsWith(higher.seed + ':') && higher.recs.best.mars.score === 140 && /NEW BEST/.test(higher.day), 'a higher score: NEW BEST');
     const hollow = await end(page, { trail: 'interstellar', score: 150, health: 0, report: true });
     ok(hollow.recs.runs[0].tone === 'hollow' && hollow.recs.runs[0].score === 150 && !hollow.recs.best.interstellar && !/NEW BEST/.test(hollow.day),
       'a dead-crop arrival is in the history with its score, never a best');

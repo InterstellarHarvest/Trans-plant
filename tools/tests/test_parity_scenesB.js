@@ -269,7 +269,7 @@ const settleSubject = page => page.waitForFunction(() => {
     const sv = await choiceInfo(page, 'SURVEY');
     ok(sv.locked && /Need: Gas Analyzer/.test(sv.sub), 'SURVEY needs the analyzer');
     const ap = await choiceInfo(page, 'APPROACH CAREFULLY');
-    ok(ap.risky && /●●○○○/.test(ap.sub), 'APPROACH CAREFULLY: risky, effort ●●○○○');
+    ok(/●●○○○/.test(ap.sub), 'APPROACH CAREFULLY: effort ●●○○○ (its own watch-from-cover outcome since the 2026-10-23 hunt)');
     await shot(page, 'lifeform_intro');
     await click(page, 'WAVE');
     await settleSubject(page);
@@ -303,7 +303,7 @@ const settleSubject = page => page.waitForFunction(() => {
     await standAt(page, 'planet');
     await page.evaluate(() => { STATE.resources.fuel = 40; });
     await enter(page, 'event_planet_006');
-    await click(page, 'APPROACH CAREFULLY');
+    await click(page, 'WAVE'); // the contact layer (APPROACH CAREFULLY has its own outcome now)
     await click(page, 'OFFER A TRADE');
     ok(await page.evaluate(() => STATE.currentOutcomeId === 'planet_trade' && STATE.resources.fuel === 50), 'A TRADE (diplomat): the warm thing is a power source, +10 fuel');
     await page.close();
@@ -484,7 +484,7 @@ const settleSubject = page => page.waitForFunction(() => {
       return { crisis, push: { ev: STATE.currentEvent, charged: STATE.crewSkillCharges.engineer } };
     });
     ok(r.crisis.trig && r.crisis.trig.includes('delayed_crisis') && r.crisis.charged === 1, 'a delayed crisis still takes the arrival directly (no approach), skills recharged on arrival');
-    ok(r.push.ev === null && r.push.charged === 1, 'Push Engines skips the approach too, skills recharged on arrival');
+    ok(r.push.ev === null && r.push.charged === 0, 'Push Engines blows past: no approach, no berth, no recharge (services closed)');
     await page.close();
   }
   {

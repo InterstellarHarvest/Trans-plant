@@ -363,7 +363,7 @@ const openDossier = async (page, role) => {
       for (let i = 0; i < 4; i++) { seq.push(document.getElementById('cd-role-banner').textContent); document.getElementById('cd-nav-next').click(); }
       return seq;
     });
-    ok(order.join(',') === 'BOTANIST,ENGINEER,CAPTAIN,BOTANIST', 'cycle order: crew in order, captain last (' + order.join(',') + ')');
+    ok(order.join(',') === 'BOTANIST,ENGINEER,VETERAN,BOTANIST', 'cycle order: crew in order, captain last — its banner names the background (' + order.join(',') + ')');
     const chev = await page.evaluate(() => [getComputedStyle(document.getElementById('cd-nav-prev')).display, getComputedStyle(document.getElementById('cd-nav-next')).opacity]);
     ok(chev[0] !== 'none' && Number(chev[1]) > 0.2, 'chevrons shown (demo)');
     await shot(page, 'b4_crew_dossier');
@@ -382,7 +382,7 @@ const openDossier = async (page, role) => {
     ok(r.crew === 0 && !r.ended && !r.fail && !r.allDead && r.ep.length > 5, 'last jettison: epitaph shows, no crew_gone, run goes on (' + JSON.stringify(r).slice(0, 120) + ')');
     await shot(page, 'b4_last_jettison_epitaph');
     await page.keyboard.press('Enter');
-    await page.waitForFunction(() => document.getElementById('cd-role-banner').textContent === 'CAPTAIN', null, { timeout: 3000 });
+    await page.waitForFunction(() => document.getElementById('cd-name-banner').textContent.toUpperCase() === 'CAPTAIN', null, { timeout: 3000 }); // the role banner names the background now
     const solo = await page.evaluate(() => ({ chevDisabled: document.getElementById('cd-nav-next').disabled, chevShown: getComputedStyle(document.getElementById('cd-nav-next')).display !== 'none', mo: crewMoraleAvg() }));
     ok(solo.chevDisabled && solo.chevShown && solo.mo === null, 'solo captain dossier: chevrons in place but inert; no morale');
     await page.close();
@@ -520,7 +520,7 @@ const openDossier = async (page, role) => {
     });
     ok(r.dep < 100, 'a day at 0 food costs the captain HP too (' + r.dep + ')');
     ok(r.pick === 'captain', 'a random "someone aboard" hit can land on the captain');
-    ok(r.thirst.rate === 6 && r.thirst.cap === 0 && r.thirst.eng < 0, 'the crew-water HP tier hits the crew only (captain ' + r.thirst.cap + ', engineer ' + r.thirst.eng + ')');
+    ok(r.thirst.rate === 6 && r.thirst.cap < 0 && r.thirst.eng < 0, 'the crew-water HP tier hits everyone who drinks from the crew share, the captain too (2026-10-23 hunt) (captain ' + r.thirst.cap + ', engineer ' + r.thirst.eng + ')');
     await page.close();
   }
   {

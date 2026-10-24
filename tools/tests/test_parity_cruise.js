@@ -104,11 +104,11 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
     ok(!/TIME PAUSED/.test(st1.header), 'stopped: no TIME PAUSED in the header (STOPPED in the ticker is the signal)');
     ok(st1.bob === 'paused', 'stopped: ship-bob halted');
     ok(st1.btn === 'stop-pulse' && st1.label === 'Resume', 'stopped: Resume button pulses (stop-pulse)');
-    // AI quip while stopped → the ticker, voiced, amber; still logged.
+    // AI quip while stopped → the speech bubble over the ship (ruling 91); still logged.
     await page.evaluate(() => pushCruiseLog('◆ Test quip about the ferns.', { ai: true }));
-    await page.waitForTimeout(650);
-    t = await ticker(page);
-    ok(t && t.text === 'MARV: Test quip about the ferns.' && /event-info/.test(t.cls), 'stopped: AI quip goes up as "MARV: …" (' + (t && t.text) + ')');
+    await page.waitForTimeout(400);
+    const bub = await page.evaluate(() => ({ show: document.getElementById('ai-bubble').classList.contains('show'), text: document.getElementById('ai-bubble').textContent }));
+    ok(bub.show && /Test quip about the ferns\./.test(bub.text) && /MARV/.test(bub.text), 'stopped: an AI quip goes up in the bubble, voiced (' + bub.text.replace(/\s+/g, ' ').trim() + ')');
     ok(await page.evaluate(() => /MARV: Test quip about the ferns\./.test(document.getElementById('ai-log').textContent)), '…and still lands in the log');
     // Leaving the stopped state restores that state's own line.
     await page.evaluate(() => { document.body.classList.remove('stop-active'); renderCruise(); });
@@ -479,7 +479,7 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
       return { flash: f.querySelector('.wait-flash-label').textContent, cls: f.className, forced: STATE.forcedEvent };
     }).catch(() => ({ flash: null, cls: '', forced: null }));
     ok(fl.flash === 'PIRATE INBOUND' && /event-danger/.test(fl.cls), 'a pirate interrupts the rest: PIRATE INBOUND (red)');
-    ok(fl.forced && fl.forced.ev === 'event_encounter_pirate_001', 'the forced event is a real engine event (' + (fl.forced && fl.forced.ev) + ')');
+    ok(fl.forced && /^(event_encounter_pirate_00\d|event_general_003)$/.test(fl.forced.ev), 'the forced event is a real engine event of the pirate family (' + (fl.forced && fl.forced.ev) + ')');
     if (!fl.forced) console.log('    (diag) ' + JSON.stringify(await page.evaluate(() => ({ wait: cruiseWaitState(), node: STATE.byId[STATE.currentId].node_type, held: [PauseBus.paused, [...document.querySelectorAll('.overlay.active')].map(o => o.id)], pick: cruiseWaitEventPick() }))));
     await shot(page, '10_pirate_inbound');
     // During the flash: red ticker + red Stop pulse, no resolve-verb menu.
@@ -499,7 +499,7 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
     ok(!rb.pre || (!rb.moved && !rb.ev && rb.shaking && rb.tick === 'CANNOT RESUME — HANDLE EVENT FIRST'), 'Resume during the flash: shakes, CANNOT RESUME, ship stays');
     // …then the encounter opens by itself.
     const ev = await waitFor(page, () => STATE.currentEvent && { ev: STATE.currentEvent.id, forced: STATE.forcedEvent, cls: document.body.classList.contains('event-active'), scr: document.querySelector('.screen.active').id });
-    ok(ev.ev === 'event_encounter_pirate_001' && !ev.forced && !ev.cls && ev.scr === 'screen-encounter', 'after the flash the pirate encounter opens straight away; the forced state clears');
+    ok(/^(event_encounter_pirate_00\d|event_general_003)$/.test(ev.ev) && !ev.forced && !ev.cls && ev.scr === 'screen-encounter', 'after the flash the pirate encounter opens straight away; the forced state clears');
     await shot(page, '11_forced_event_opened');
     // Saved mid-flash: a reload opens the event straight away too.
     const sl = await page.evaluate(() => {

@@ -153,7 +153,7 @@ const FIRE = `(id) => {
     return { nT: traders.length, nP: pirates.length, sumT: sum(traders), sumP: sum(pirates), stable, faces: faces.size,
       famGap, otherGap, oldSave, key: repeatKey(t2) };
   });
-  ok(fam.nT === 4 && fam.nP === 3 && Math.abs(fam.sumT - 1) < 0.02 && Math.abs(fam.sumP - 1) < 0.02, `4 traders and 3 pirates, each family's odds sum to one event's (${fam.sumT} / ${fam.sumP})`);
+  ok(fam.nT === 4 && fam.nP === 4 && /* general_003 joined the pirates (2026-10-23 hunt) */ Math.abs(fam.sumT - 1) < 0.02 && Math.abs(fam.sumP - 1) < 0.02, `4 traders and 4 pirates, each family's odds sum to one event's (${fam.sumT} / ${fam.sumP})`);
   ok(fam.stable && fam.faces === 4, `TRADE's trader is fixed per stop and every face turns up across stops and runs (${fam.faces} of 4)`);
   ok(fam.key === 'family:trader' && fam.famGap.every(g => g === 0) && fam.otherGap === Infinity, 'one trader drawn cools down the whole family, not the pirates');
   ok(fam.oldSave === 0, 'an old save keyed by the trader id still holds its cooldown');
