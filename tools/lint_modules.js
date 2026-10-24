@@ -377,6 +377,8 @@ for (const m of (readJSON('modules/materials/materials.json').materials || [])) 
   if ('flavor' in m && (typeof m.flavor !== 'string' || !m.flavor.trim())) err(`materials.json ${m.id}: flavor must be a non-empty string`);
   if (typeof m.flavor === 'string' && /\d\s*(g|cr|gold|credits?)\b|=\s*\d/i.test(m.flavor)) err(`materials.json ${m.id}: flavor states a price ("${m.flavor}") — the price is value × station_sell_multiplier`);
   if ('notes' in m) err(`materials.json ${m.id}: "notes" is retired — player-facing text goes in flavor (no prices)`);
+  // sources: the fabricator's where-to-get-it hover (fabricator.js), shown as written.
+  if (typeof m.sources !== 'string' || !m.sources.trim()) err(`materials.json ${m.id}: sources must be a non-empty string (the fabricator's where-to-get-it hover)`);
   if (!(Number.isFinite(m.value) && m.value > 0)) err(`materials.json ${m.id}: value must be a number > 0 (the trader pays value × station_sell_multiplier)`);
 }
 // The one material price knob (market.js materialPrice). At 5 minerals
@@ -1547,6 +1549,14 @@ const hardChoiceCost = (() => {
       const v = k.split('.').reduce((o, p) => o && o[p], c.passive_effect);
       if (!Number.isFinite(v)) err(`captains.json ${c.id}: passive_effect.${k} must be a number (the engine reads it)`);
     }
+  }
+  // The growbay's numbers (growbay.js CROP_META reads them here).
+  for (const c of readJSON('modules/crops/crops.json').crops || []) {
+    const at = `crops.json ${c.id}`, t = c.ideal_temp;
+    if (!(Number.isFinite(c.maturity_days) && c.maturity_days > 0)) err(`${at}: maturity_days must be a number > 0 (the growbay reads it)`);
+    if (!(Number.isFinite(c.water_need) && c.water_need >= 0 && c.water_need <= 100)) err(`${at}: water_need must be a number 0–100 (the plant share of the water split)`);
+    if (!(Array.isArray(t) && t.length === 2 && t.every(Number.isFinite) && t[0] < t[1])) err(`${at}: ideal_temp must be [low, high] in °C`);
+    if (!(Number.isFinite(c.yield_amount) && c.yield_amount >= 0)) err(`${at}: yield_amount must be a number ≥ 0 (what a harvest gives)`);
   }
   const ais = readJSON('modules/ai/ai_companions.json');
   for (const [id, type] of [['ai_aria', 'morale_bonus'], ['ai_chip', 'price_reduction']]) {
