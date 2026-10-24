@@ -743,7 +743,6 @@ const eventOnTrail = (ev, trail) => {
     const at = `${file} ${ev.id}`;
     regCheck(at, 'scene_type', 'scene_type', ev.scene_type);
     regCheck(at, 'comm_mode', 'comm_mode', ev.comm_mode);
-    regCheck(at, 'event_presentation', 'event_presentation', ev.event_presentation);
     npcCheck(at, ev.npc, ev);
     for (const [lk, l] of Object.entries(ev.layers || {})) {
       regCheck(at + '/' + lk, 'comm_mode', 'comm_mode', l.comm_mode);
@@ -764,7 +763,6 @@ const eventOnTrail = (ev, trail) => {
   for (const c of (crops.crops || [])) regCheck(`crops.json ${c.id}`, 'crop id', 'crop_type', String(c.id).replace(/^crop_/, ''));
   for (const e of readJSON('modules/endings/endings.json').filter(e => !e._section)) {
     regCheck(`endings.json ${e.id}`, 'ending_score', 'ending_score', e.ending_score);
-    regCheck(`endings.json ${e.id}`, 'event_presentation', 'event_presentation', e.event_presentation);
   }
 }
 
