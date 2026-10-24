@@ -35,7 +35,8 @@ const LEG_BUDGET = 300;
 // Probe-by-error art loading misses on purpose: 404 over http,
 // ERR_FILE_NOT_FOUND on a file:// (double-click) launch.
 const isProbeMiss = e => e.includes('404') || e.includes('ERR_FILE_NOT_FOUND');
-const BASE_URL = process.env.FUZZ_URL || 'http://localhost:8177/index.html?debug=fixed_path';
+// ?debug= boots the real title screen but saves and records nothing.
+const BASE_URL = process.env.FUZZ_URL || 'http://localhost:8177/index.html?debug=fuzz';
 
 const TRAILS = ['lunar', 'mars', 'interstellar'];
 const CROPS = ['wheat', 'tomato', 'sweet_potato', 'soybean', 'zinnia'];
@@ -195,7 +196,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
       crew: [...new Set([pick(CREWPOOL), pick(CREWPOOL)])], crop: pick(CROPS), ship: 'Fuzz ' + run,
     };
     await page.goto(BASE_URL);
-    await page.waitForTimeout(350);
+    await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.map_rules && document.getElementById('screen-title').classList.contains('active'));
     await installHarness();
     await page.evaluate((c) => applySetupToState(c), cfg);
     await page.waitForTimeout(200);

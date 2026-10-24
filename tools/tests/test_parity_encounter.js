@@ -282,7 +282,7 @@ const box = async (page, sel) => page.evaluate(sel => { const r = document.query
     const t2 = await leave();
     ok(t1.text === 'NO THANKS' && t2.text === 'BACK TO YOUR SHIP', 'trader: NO THANKS on the hail, BACK TO YOUR SHIP in their hold');
     await shot(page, 'parity_trader_hold');
-    // Hidden layer + no_leave.
+    // Hidden layer.
     await enter(page, 'event_station_010', { species: 'insect', layer: 'pry' });
     await snap(page);
     ok(!(await page.evaluate(() => !!document.querySelector('#enc-choices .enc-choice.leave'))), 'leaveHidden layer (handoff pry) has no leave row');

@@ -484,18 +484,22 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
     const page = await boot();
     const r = await page.evaluate(async () => {
       const w = ms => new Promise(r => setTimeout(r, ms));
-      const label = async ctx => {
+      // The bg is a random pick from the mode's pool: narrow the pool to one.
+      const label = async (ctx, bg) => {
+        const pool = FORAGE_BG_REGISTRY[ctx.mode];
+        FORAGE_BG_REGISTRY[ctx.mode] = pool.filter(b => b.id === bg);
         openMinigame('forage', ctx, () => {}); await w(60);
         document.getElementById('rstart').click(); await w(120);
+        FORAGE_BG_REGISTRY[ctx.mode] = pool;
         const t = (document.querySelector('.for-region') || {}).textContent;
         document.getElementById('mclose').click(); await w(50);
         return t;
       };
       const out = {};
-      out.ast = await label({ mode: 'HUNT', regionLabel: 'ASTEROID FIELD', bg_id: 'asteroid' });
-      out.desert = await label({ mode: 'HUNT', regionLabel: 'ASTEROID FIELD', bg_id: 'desert' });
-      out.ice = await label({ mode: 'HUNT', regionLabel: 'ASTEROID FIELD', bg_id: 'ice' });
-      out.planet = await label({ mode: 'GATHER', regionLabel: 'PLANET ORBIT', bg_id: 'forest' });
+      out.ast = await label({ mode: 'HUNT', regionLabel: 'ASTEROID FIELD' }, 'asteroid');
+      out.desert = await label({ mode: 'HUNT', regionLabel: 'ASTEROID FIELD' }, 'desert');
+      out.ice = await label({ mode: 'HUNT', regionLabel: 'ASTEROID FIELD' }, 'ice');
+      out.planet = await label({ mode: 'GATHER', regionLabel: 'PLANET ORBIT' }, 'forest');
       // cruise passes the real stop's label
       const node = STATE.nodes.find(n => n.node_type === 'asteroid_field') || STATE.nodes[1];
       node.node_type = 'asteroid_field'; STATE.currentId = node.id;
@@ -617,12 +621,12 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
   console.log('— tooltips (.ui-tip)');
   {
     const page = await boot(null, { width: 1440, height: 960 });
-    // The dot HUD left the cruise hub (ruling 16): probe it on the map.
-    await page.evaluate(() => { showScreen('screen-map'); renderMap(); renderHUD(); });
+    // The dot HUD left the cruise hub (ruling 16): probe it on the encounter screen.
+    await page.evaluate(() => { showScreen('screen-encounter'); renderHUD(); });
     await wait(page, 200);
     const early = await page.evaluate(async () => {
       const w = ms => new Promise(r => setTimeout(r, ms));
-      const el = document.querySelector('#hud-map .hud-r.food');
+      const el = document.querySelector('#hud-enc .hud-r.food');
       el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
       await w(15);
       const p = document.querySelector('#ui-tip-root .ui-tip');
@@ -630,12 +634,12 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
       el.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }));
       return at15;
     });
-    const hud = await page.$('#hud-map .hud-r.fuel');
+    const hud = await page.$('#hud-enc .hud-r.fuel');
     await hud.hover();
     await wait(page, 150);
     const t = await page.evaluate(() => {
       const p = document.querySelector('#ui-tip-root .ui-tip'), g = document.getElementById('game');
-      const pr = p.getBoundingClientRect(), gr = g.getBoundingClientRect(), hr = document.querySelector('#hud-map .hud-r.fuel').getBoundingClientRect();
+      const pr = p.getBoundingClientRect(), gr = g.getBoundingClientRect(), hr = document.querySelector('#hud-enc .hud-r.fuel').getBoundingClientRect();
       return { vis: p.classList.contains('visible'), tone: p.className, title: (p.querySelector('.ui-tip-title') || {}).textContent, desc: (p.querySelector('.ui-tip-desc') || {}).textContent, rows: p.querySelector('.ui-tip-rows') && p.querySelector('.ui-tip-rows').textContent,
         fade: getComputedStyle(p).transitionDuration, inGame: pr.left >= gr.left && pr.right <= gr.right && pr.top >= gr.top && pr.bottom <= gr.bottom, below: pr.top >= hr.bottom, centred: Math.abs((pr.left + pr.right) / 2 - (hr.left + hr.right) / 2) < 2 || pr.left - gr.left < 12 * (gr.width / 960) };
     });

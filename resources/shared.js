@@ -8,6 +8,11 @@
    wireCustomScroll, etc).
    ============================================================ */
 
+// HTML-escape a value for innerHTML (null/undefined → '').
+function escapeHTML(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 // ── Crew sprite atlas ────────────────────────────────────────
 // Per-crew sheet packs 9 talk frames + 1 portrait + 1 icon at
 // fixed coords. Coords come from sprites/crew_sprites/spritesheet_<id>.json
@@ -707,27 +712,10 @@ if (document.readyState === 'loading') {
 
 
 /* ============================================================
-   Asset pool / random pick
+   Asteroid sprite pool
    ------------------------------------------------------------
-   Engine-wide primitives for "pick N sprites from a pool with
-   sticky-after-first-roll caching." Used for:
-   - asteroid scatter on any space-context surface (viewscreen,
-     encounter bg layer, salvage debris field)
-   - bg variant rolls (salvage_bg_planet, _planet2, …)
-   - any future "decoration pool" need (junk piles, bushes,
-     equipment racks, NPC clusters)
-
-   Layers, smallest → largest:
-     probeImage(path)            async image load probe
-     pickFromList(key, list, n)  sticky random pick (1 or N)
-     pickAsteroids(key, n)       alias over the 81-sprite grid
-     scatterLayout(n, opts)      sync non-overlap scatter (generic)
-     resetPickCache(prefix?)     clear cached picks on scene change
-
-   Encounter (demo-encounter.html) has its own local copies of
-   probeImage / pickFromList / _bgPicked that pre-date this section.
-   Lexical scope means its IIFE locals win — no conflict, no breakage.
-   Migrating encounter onto these globals is a separate cleanup pass.
+   The shared 81-sprite asteroid grid, for any space-context
+   surface (viewscreen, encounter bg layer, salvage debris field).
    ============================================================ */
 
 const ASTEROIDS_DIR = 'sprites/asteroids/';
@@ -739,66 +727,20 @@ const ASTEROID_FILES = (() => {
   return out;
 })();
 
-// cacheKey → chosen string (n=1) | string[] (n>1).
-// Sticky: same key returns same pick until resetPickCache() clears it.
-const _pickCache = new Map();
-
-function probeImage(path) {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload  = () => resolve(path);
-    img.onerror = () => resolve(null);
-    img.src = path;
-  });
-}
-
-// Sticky random pick from a candidate list.
-//   n === 1 → returns string | null            (encounter signature)
-//   n  >  1 → returns string[] (sample w/o replacement, capped at list.length)
-// Same cacheKey returns the same selection on every subsequent call
-// until resetPickCache() clears it. Lets re-renders be stable without
-// the caller threading "did I already pick?" state.
-function pickFromList(cacheKey, list, n = 1) {
-  const empty = n === 1 ? null : [];
-  if (!list || !list.length) return empty;
-  if (_pickCache.has(cacheKey)) return _pickCache.get(cacheKey);
-  let chosen;
-  if (n === 1) {
-    chosen = list[Math.floor(Math.random() * list.length)];
-  } else {
-    const pool = list.slice();
-    const k = Math.min(n, pool.length);
-    chosen = [];
-    for (let i = 0; i < k; i++) {
-      const j = Math.floor(Math.random() * pool.length);
-      chosen.push(pool.splice(j, 1)[0]);
-    }
+// N unique asteroid sprites from the grid (sampled without
+// replacement). The first argument is the demos' call label; picks
+// are not cached.
+//   pickAsteroids('salvage-debris', 12)    → 12 unique paths
+function pickAsteroids(label, n) {
+  const pool = ASTEROID_FILES.slice();
+  const chosen = [];
+  for (let i = 0, k = Math.min(n, pool.length); i < k; i++) {
+    chosen.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   }
-  _pickCache.set(cacheKey, chosen);
   return chosen;
 }
 
-// Convenience: pick N unique asteroid sprites from the shared 81-grid.
-// cacheKey scopes the pick — different scenes pass different keys so
-// they get independent (and stable) selections.
-//   pickAsteroids('viewscreen', 1)         → ['sprites/asteroids/r3_c5.png']
-//   pickAsteroids('salvage-debris', 12)    → 12 unique paths
-function pickAsteroids(cacheKey, n) {
-  const r = pickFromList(cacheKey, ASTEROID_FILES, n);
-  return Array.isArray(r) ? r : (r ? [r] : []);
-}
-
-// Clear sticky picks. No arg → clear all. With prefix → clear only
-// keys that start with it (e.g. resetPickCache('salvage-') wipes
-// salvage scene state without disturbing encounter's picks).
-function resetPickCache(prefix) {
-  if (!prefix) { _pickCache.clear(); return; }
-  for (const k of [..._pickCache.keys()]) {
-    if (k.indexOf(prefix) === 0) _pickCache.delete(k);
-  }
-}
-
-// Loot pools by scene context. Weighted random draws via rollCratePool() below.
+// Loot pools by scene context, drawn by weight.
 // r = resource/material id matching materials.json. w = relative weight.
 const CRATE_POOLS = {
   asteroid: [{r:'minerals',w:6},{r:'scrap',w:6},{r:'metal',w:3},{r:'exotic',w:1},{r:'biocomponent',w:1}],
@@ -806,54 +748,6 @@ const CRATE_POOLS = {
   space:     [{r:'metal',w:5},{r:'exotic',w:3},{r:'scrap',w:2},{r:'biocomponent',w:1}],
   planet:    [{r:'biocomponent',w:6},{r:'minerals',w:3},{r:'metal',w:2},{r:'scrap',w:2}],
 };
-
-// Tiny seedable LCG. Same seed → same sequence. Lets scatterLayout
-// produce reproducible placements (QA, screenshots, stable scene
-// composition across re-renders without re-rolling).
-function _seededRng(seed) {
-  let s = (seed | 0) || 1;
-  return () => {
-    s = (s * 1664525 + 1013904223) | 0;
-    return ((s >>> 0) % 1000000) / 1000000;
-  };
-}
-
-// ENGINE-LAYER ONLY — not called by any demo.
-// Reserved for Phase 2 procedural placement: asteroid fields, NPC cluster
-// seeding, item scatter on salvage surfaces. Do not delete; do not call
-// from demos. See GAME_BIBLE.md §9 (Map Generation) for intended use.
-function scatterLayout(n, opts) {
-  opts = opts || {};
-  const bounds      = opts.bounds     || { x:0, y:0, w:1, h:1 };
-  const minSpacing  = opts.minSpacing || 0;
-  const sizeRange   = opts.sizeRange  || [1, 1];
-  const rotRange    = opts.rotRange   || [0, 0];
-  const seed        = opts.seed != null ? opts.seed : (Date.now() & 0x7fffffff);
-  const maxAttempts = opts.maxAttempts != null ? opts.maxAttempts : n * 30;
-
-  const rng = _seededRng(seed);
-  const placed = [];
-  const minSq = minSpacing * minSpacing;
-  let attempts = 0;
-  while (placed.length < n && attempts < maxAttempts) {
-    attempts++;
-    const x = bounds.x + rng() * bounds.w;
-    const y = bounds.y + rng() * bounds.h;
-    if (minSpacing > 0) {
-      let ok = true;
-      for (let i = 0; i < placed.length; i++) {
-        const dx = x - placed[i].x, dy = y - placed[i].y;
-        if (dx * dx + dy * dy < minSq) { ok = false; break; }
-      }
-      if (!ok) continue;
-    }
-    const scale = sizeRange[0] + rng() * (sizeRange[1] - sizeRange[0]);
-    const rot   = rotRange[0]  + rng() * (rotRange[1]  - rotRange[0]);
-    placed.push({ x: x, y: y, scale: scale, rot: rot });
-  }
-  return placed;
-}
-
 
 /* ============================================================
    Pause system — PauseBus + auto-mounted Bridge Terminal overlay
@@ -1052,7 +946,7 @@ const PauseMenu = (() => {
       b.innerHTML =
         '<span class="pause-arrow">▶</span>' +
         (sec.icon ? '<span class="pause-item-icon" style="--icon:url(\'' + pauseIconUrl(sec.icon) + '\')"></span>' : '') +
-        '<span class="pause-label">' + sec.label + '</span>';
+        '<span>' + sec.label + '</span>';
       b.addEventListener('mouseenter', () => select(sec.id, false));
       b.addEventListener('click', () => activate(sec.id));
       sidebar.appendChild(b);
@@ -1089,11 +983,6 @@ const PauseMenu = (() => {
     overlay.hidden = true;
     document.body.classList.remove('pause-open');
     PauseBus.resume();
-  }
-
-  function toggle() {
-    if (isOpen()) close();
-    else if (!document.body.classList.contains('modal-open')) open();
   }
 
   function select(id, render) {
@@ -1147,7 +1036,6 @@ const PauseMenu = (() => {
   function welcomeStatus() {
     const S = (typeof STATE !== 'undefined' && STATE && STATE.resources) ? STATE : null;
     if (!S || !S.crop) return '[ SYSTEMS NOMINAL ]\n\n';
-    const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
     const lost = S.flags && S.flags.has && S.flags.has('crew_lost');
     const n = (S.crew || []).length;
     const cg = S.cropGrowth;
@@ -1155,7 +1043,7 @@ const PauseMenu = (() => {
     const nLog = (S.shipLog || []).length;
     return '[ SHIP STATUS ]\n' +
       '> CREW         · ' + (n ? n + ' aboard' : 'captain alone') + (lost ? ', losses logged' : ', all hands accounted for') + '\n' +
-      '> CROP         · ' + esc(String(S.crop).replace(/_/g, ' ')) + ', ' + crop + '\n' +
+      '> CROP         · ' + escapeHTML(String(S.crop).replace(/_/g, ' ')) + ', ' + crop + '\n' +
       '> TRAIL        · day ' + Math.round(S.daysElapsed || 0) + (S.baseDays ? ' of ~' + S.baseDays : '') + '\n' +
       '> SHIP\'S LOG   · ' + nLog + (nLog === 1 ? ' entry' : ' entries') + '\n\n';
   }
@@ -1440,14 +1328,16 @@ const PauseMenu = (() => {
     init();
   }
 
-  return { open, close, toggle, isOpen, PauseBus };
+  return { open, close, isOpen };
 })();
 
 /* ─────────────────────────────────────────────────────────────────
    MarketModal — generic vendor buy/sell/trade overlay
    ─────────────────────────────────────────────────────────────────
    Mounts a modal authored by `.enc-market` markup somewhere in the
-   host demo's DOM. Host provides:
+   host demo's DOM (#enc-market, its #market-gold-readout,
+   #market-buy-list / #market-sell-list and #market-close-btn).
+   Host provides:
      - vendor:    { name, greeting, farewell, wares: [...], buyPrices: {id: g}, flavor: { buy/sell/deny/no_buyback: [...] } }
      - getGold/setGold  callbacks
      - getCargo:  () => Array<{ id, name, icon }>
@@ -1472,10 +1362,6 @@ const PauseMenu = (() => {
                     which calls proceed() on yes; false lets it through)
      - logEl:     element to receive .market-log-line children (the running log)
      - hostEl:    element that receives .market-mode class (drives reflow)
-     - rootId:    DOM id of the .enc-market element (default 'enc-market')
-     - readouts:  { goldId } DOM ids for the gold readout (default 'market-gold-readout')
-     - listIds:   { buy, sell } DOM ids for the two side-pane <ul>s (defaults market-buy-list / market-sell-list)
-     - closeBtnId: DOM id of the STEP BACK button (default 'market-close-btn')
      - subjectNameEl: optional element to overwrite with vendor.name on mount
      - onClose:   () => void  fires after farewell logged + DOM cleanup
    Cost shapes (per ware):
@@ -1494,13 +1380,8 @@ const MarketModal = (function() {
 
   function mount(opts) {
     if (_state) close();   // safety — never double-mount
-    const rootId   = opts.rootId   || 'enc-market';
-    const closeBtn = opts.closeBtnId || 'market-close-btn';
-    const buyId    = (opts.listIds && opts.listIds.buy)  || 'market-buy-list';
-    const sellId   = (opts.listIds && opts.listIds.sell) || 'market-sell-list';
-    const goldId   = (opts.readouts && opts.readouts.goldId) || 'market-gold-readout';
     _state = {
-      opts: Object.assign({}, opts, { rootId, closeBtn, buyId, sellId, goldId }),
+      opts: Object.assign({}, opts, { rootId: 'enc-market', closeBtn: 'market-close-btn', buyId: 'market-buy-list', sellId: 'market-sell-list', goldId: 'market-gold-readout' }),
       consumedWares:      new Set(),
       soldCargoIdxs:      new Set(),   // fence-mode: index-based deferred removal
       soldCargoById:      new Map(),   // normal-mode: row key (id unless the entry has its own) → count sold this session
@@ -1514,7 +1395,7 @@ const MarketModal = (function() {
     // scenario UI and reshape the dialog strip into a log column.
     if (opts.hostEl) opts.hostEl.classList.add('market-mode');
     // Mount the modal element.
-    const root = $$(rootId);
+    const root = $$('enc-market');
     if (root) root.classList.remove('hidden');
     // Initial log: greeting, then fence notice if vendor uses wantedTags
     // and the player is carrying something they'd want.
@@ -1538,7 +1419,7 @@ const MarketModal = (function() {
       }
     }
     // Bind close button.
-    const btn = $$(closeBtn);
+    const btn = $$('market-close-btn');
     if (btn) {
       btn._marketBound && btn.removeEventListener('click', btn._marketBound);
       btn._marketBound = () => close();
@@ -1926,7 +1807,7 @@ const MarketModal = (function() {
     renderLists();
   }
 
-  return { mount, close, isOpen, appendLog };
+  return { mount, close, isOpen };
 })();
 
 
@@ -2014,25 +1895,22 @@ window.Tooltip = (() => {
     return base;
   }
 
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
 
   function render(def) {
     const p = ensurePanel();
     const wasVisible = p.classList.contains('visible');
     p.className = 'ui-tip tone-' + def.tone + (wasVisible ? ' visible' : '');
     let html = '';
-    if (def.title) html += '<div class="ui-tip-title">' + esc(def.title) + '</div>';
-    if (def.description) html += '<div class="ui-tip-desc">' + esc(def.description) + '</div>';
+    if (def.title) html += '<div class="ui-tip-title">' + escapeHTML(def.title) + '</div>';
+    if (def.description) html += '<div class="ui-tip-desc">' + escapeHTML(def.description) + '</div>';
     if (def.rows && def.rows.length) {
       html += '<div class="ui-tip-rows">';
-      for (const r of def.rows) html += '<span class="lbl">' + esc(r.label || '') + '</span><span class="val">' + esc(r.value == null ? '' : r.value) + '</span>';
+      for (const r of def.rows) html += '<span class="lbl">' + escapeHTML(r.label || '') + '</span><span class="val">' + escapeHTML(r.value == null ? '' : r.value) + '</span>';
       html += '</div>';
     }
     if (def.list && def.list.length) {
       html += '<ul class="ui-tip-list">';
-      for (const it of def.list) html += '<li class="' + (it.current ? 'current' : '') + '"><span class="mk">▸</span><span>' + esc(it.text || '') + '</span></li>';
+      for (const it of def.list) html += '<li class="' + (it.current ? 'current' : '') + '"><span class="mk">▸</span><span>' + escapeHTML(it.text || '') + '</span></li>';
       html += '</ul>';
     }
     p.innerHTML = html;
@@ -2075,7 +1953,6 @@ window.Tooltip = (() => {
     if (y + ph > f.h - EDGE) y = f.h - EDGE - ph;
     panel.style.left = Math.round(x) + 'px';
     panel.style.top = Math.round(y) + 'px';
-    panel.dataset.flip = (def.anchor !== 'cursor' && y > ((el.getBoundingClientRect().top - f.y0) / f.s)) ? 'below' : 'above';
   }
 
   function show(el, overrideDef) {
@@ -2118,7 +1995,6 @@ window.Tooltip = (() => {
     const m = /^([^\n]{1,40})\n\n([\s\S]+)$/.exec(t.trim());
     if (m) { el.dataset.tipTitle = m[1].trim(); el.dataset.tipDescription = m[2].trim(); }
     else { delete el.dataset.tipTitle; el.dataset.tipDescription = t.trim(); }
-    el.dataset.tipAuto = '1';
     if (!el.hasAttribute('aria-label') && !el.textContent.trim()) el.setAttribute('aria-label', (m ? m[1] : t).trim().split('\n')[0]);
     if (el === currentTarget) show(el);
   }

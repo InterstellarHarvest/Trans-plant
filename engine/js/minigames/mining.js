@@ -22,33 +22,22 @@
   //   z=2: our_ship/bridge (full-bleed PNG with transparent viewport)
   //   z=11: .mining-stage paints minigames/mining/bg.jpg in the cutout
   const BG_ROOT = 'sprites/backgrounds/';
-  function probeImage(path, cb) {
-    const img = new Image();
-    img.onload  = () => cb(path);
-    img.onerror = () => cb(null);
-    img.src = path;
-  }
-  function probeFolder(folder, exts, n, cb) {
+  function probeFolder(folder, exts, n) {
     const tries = [];
     for (let i = 1; i <= n; i++) {
-      for (const ext of exts) tries.push(BG_ROOT + folder + '/' + i + '.' + ext);
+      for (const ext of exts) tries.push(probeImage(BG_ROOT + folder + '/' + i + '.' + ext));
     }
-    const found = [];
-    let pending = tries.length;
-    tries.forEach(p => probeImage(p, r => { if (r) found.push(r); if (--pending === 0) cb(found); }));
+    return Promise.all(tries).then(found => found.filter(Boolean));
   }
-  // Bridge — tries flat .png/.jpg first, then numbered folder.
+  // Bridge — tries flat .png, then .jpg.
   function loadBridge() {
-    probeImage(BG_ROOT + 'our_ship/bridge.png', p1 => {
-      if (p1) { $('mining-backdrop').style.backgroundImage = "url('" + p1 + "')"; return; }
-      probeImage(BG_ROOT + 'our_ship/bridge.jpg', p2 => {
-        if (p2) $('mining-backdrop').style.backgroundImage = "url('" + p2 + "')";
-      });
-    });
+    probeImage(BG_ROOT + 'our_ship/bridge.png')
+      .then(p => p || probeImage(BG_ROOT + 'our_ship/bridge.jpg'))
+      .then(p => { if (p) $('mining-backdrop').style.backgroundImage = "url('" + p + "')"; });
   }
   // Deep space base — folder of numbered jpgs.
   function loadDeepSpace() {
-    probeFolder('space/deep', ['jpg','png'], 6, found => {
+    probeFolder('space/deep', ['jpg','png'], 6).then(found => {
       if (!found.length) return;
       const pick = found[Math.floor(Math.random() * found.length)];
       $('mining-backdrop-base').style.backgroundImage = "url('" + pick + "')";
@@ -384,7 +373,6 @@
     rocks: 0,            // every crack including hollows
     hollowsHit: 0,
     inventory: {},       // material key → count
-    runStart: 0,
     timeCapSec: 18,
     asteroids: [],       // {el, fx, fy, vx, vy, rot, vrot, tier, sz, parent}
     particles: [],
@@ -418,7 +406,6 @@
     totalCracks: 0,
     totalMaterials: 0,
     totalHollows: 0,
-    totalFragmentsLost: 0,
     bestChainEver: 0,
     bestTier: null,  // 'perfect' / 'adequate' / 'insufficient', highest reached
   };
@@ -429,7 +416,7 @@
   // haul card's SESSION row reads SESSION (demo wording);
   // LIFE closes the cruise log line (miningSummary).
   function lifeStats() {
-    if (!STATE.miningLifetime) STATE.miningLifetime = { runs: 0, totalCracks: 0, totalMaterials: 0, totalHollows: 0, totalFragmentsLost: 0, bestChainEver: 0, bestTier: null };
+    if (!STATE.miningLifetime) STATE.miningLifetime = { runs: 0, totalMaterials: 0 };
     return STATE.miningLifetime;
   }
   let sessionInventory = {}; // material -> count, accumulated across MINE AGAIN loops within one openMining() visit
@@ -467,7 +454,7 @@
     // full hold says so plainly first: everything MINE yields is cargo,
     // so at most the stacks aboard top up, else nothing can be kept (the
     // grant's own rule, minigames.js cargoHoldRoom).
-    const hold = typeof window.cargoHoldRoom === 'function' ? window.cargoHoldRoom() : null;
+    const hold = window.cargoHoldRoom();
     const roomLeft = hold ? window.cargoRoomText(hold.room) : '';
     $('mining-ai-name').textContent = 'MINING';
     $('mining-ai-text').textContent = !hold ? 'TRACTOR BEAM READY · STANDBY' : roomLeft ? 'CARGO HOLD FULL · ROOM FOR ' + roomLeft.toUpperCase() : 'CARGO HOLD FULL · NOTHING CAN BE KEPT';
@@ -521,10 +508,7 @@
         const chip = document.createElement('button');
         chip.className = 'crew-chip';
         chip.dataset.crew = id;
-        // Portrait via shared crewIconCss if available; falls back to a
-        // blank inset (crew may not have a spritesheet in this demo).
-        const portraitCss = (typeof crewIconCss === 'function')
-          ? crewIconCss(id, '28px') : '';
+        const portraitCss = crewIconCss(id, '28px');
         chip.innerHTML = `
           <div class="portrait" style="${portraitCss}"></div>
           <div class="meta">
@@ -631,7 +615,6 @@
     if (MSTATE.mining) return;
     MSTATE.mining = true;
     window.onJobBegun(SESSION.runs + 1); // a reload mid-run costs the runs' days
-    MSTATE.runStart = performance.now();
     MSTATE.lastClickAt = performance.now();
 
     // Push fresh status into the top AI bar (counters start at 0).
@@ -812,9 +795,7 @@
       else                 { fx = 0.1 + Math.random()*0.8; fy = 1.06;  vy = -sp; vx = (Math.random()-0.5)*sp*0.4; }
     }
 
-    // Pick a sprite — unique-key trick to defeat pickAsteroids' sticky cache.
-    const [src] = pickAsteroids('mining-rock-' + (Date.now() ^ (Math.random()*1e9 | 0)), 1);
-    if (!src) return;
+    const src = pickRandom(ASTEROID_FILES);
 
     const el = document.createElement('img');
     el.className = 'mine-asteroid';
@@ -1253,24 +1234,18 @@
     const tier = tierOf();
 
     // Roll the just-finished run into SESSION before painting the card.
-    const _s = MSTATE.stats || { bestChain: 0, fragmentsLost: 0 };
+    const _s = MSTATE.stats || { bestChain: 0 };
     SESSION.runs++;
     SESSION.totalCracks       += MSTATE.rocks;
     SESSION.totalMaterials    += MSTATE.materials;
     SESSION.totalHollows      += MSTATE.hollowsHit;
-    SESSION.totalFragmentsLost += _s.fragmentsLost;
     if (_s.bestChain > SESSION.bestChainEver) SESSION.bestChainEver = _s.bestChain;
     if (SESSION.bestTier == null || TIER_RANK[tier] > TIER_RANK[SESSION.bestTier]) {
       SESSION.bestTier = tier;
     }
     const LIFE = lifeStats();
     LIFE.runs++;
-    LIFE.totalCracks        += MSTATE.rocks;
-    LIFE.totalMaterials     += MSTATE.materials;
-    LIFE.totalHollows       += MSTATE.hollowsHit;
-    LIFE.totalFragmentsLost += _s.fragmentsLost;
-    if (_s.bestChain > LIFE.bestChainEver) LIFE.bestChainEver = _s.bestChain;
-    if (LIFE.bestTier == null || TIER_RANK[tier] > TIER_RANK[LIFE.bestTier]) LIFE.bestTier = tier;
+    LIFE.totalMaterials += MSTATE.materials;
     SESSION.lastTier = tier;
     if (MSTATE.crewAssist) SESSION.crewUsed = MSTATE.crewAssist;
 
@@ -1419,7 +1394,7 @@
   function visitSideGain() {
     const mined = Object.values(sessionInventory).reduce((a, b) => a + (b || 0), 0);
     const side = Math.min(SIDE_GAIN_CAP, Math.round(mined / 2));
-    const region = typeof window.cruiseRegionKey === 'function' ? window.cruiseRegionKey() : null;
+    const region = window.cruiseRegionKey();
     const res = region === 'asteroid_field' ? 'water' : region === 'nebula' ? 'fuel' : null;
     if (!res || side <= 0) return null;
     const max = res === 'water' ? 100 : resMax('fuel');
@@ -1433,11 +1408,9 @@
     if (g && g.res === 'water') lines.push({ text: g.got > 0 ? 'Ice melts down: +' + g.got + ' water' + many : 'Ice too, but the water tanks are full', warn: !(g.got > 0) });
     if (g && g.res === 'fuel') lines.push({ text: g.got > 0 ? 'Gas scooped: +' + g.got + ' fuel' + many : 'Gas too, but the fuel tank is full', warn: !(g.got > 0) });
     // The hold's own rule (materialLandings): what can't come aboard.
-    if (typeof materialLandings === 'function') {
-      const land = materialLandings(sessionInventory);
-      const left = Object.entries(sessionInventory).filter(([k, n]) => n > (land[k] || 0)).map(([k, n]) => (n - (land[k] || 0)) + ' ' + (MAT_LABELS[k] || k).toLowerCase());
-      if (left.length) lines.push({ text: 'Hold full: ' + left.join(', ') + ' stays behind', warn: true });
-    }
+    const land = materialLandings(sessionInventory);
+    const left = Object.entries(sessionInventory).filter(([k, n]) => n > (land[k] || 0)).map(([k, n]) => (n - (land[k] || 0)) + ' ' + (MAT_LABELS[k] || k).toLowerCase());
+    if (left.length) lines.push({ text: 'Hold full: ' + left.join(', ') + ' stays behind', warn: true });
     return lines;
   }
 
@@ -1504,7 +1477,7 @@
   function openMining(onDone) {
     onMiningDone = onDone;
     sessionInventory = {};
-    Object.assign(SESSION, { runs: 0, totalCracks: 0, totalMaterials: 0, totalHollows: 0, totalFragmentsLost: 0, bestChainEver: 0, bestTier: null, lastTier: null, crewUsed: null });
+    Object.assign(SESSION, { runs: 0, totalCracks: 0, totalMaterials: 0, totalHollows: 0, bestChainEver: 0, bestTier: null, lastTier: null, crewUsed: null });
     showOverlay('overlay-mining');
     renderArmed();
   }

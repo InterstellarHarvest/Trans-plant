@@ -25,7 +25,7 @@ async function boot(trail = 'lunar') {
 const toPenultimate = page => page.evaluate(() => {
   const last = STATE.nodes.find(n => connectionsOf(n).length === 0);
   const prev = STATE.nodes.find(n => connectionsOf(n).some(c => (c.id || c) === last.id) || (Array.isArray(n.connects_to) && n.connects_to.includes(last.id)));
-  STATE.currentId = prev.id; STATE.byId[prev.id].event_id = null;
+  STATE.currentId = prev.id;
   return { last: last.id, prev: prev.id };
 });
 const resume = async page => { await page.evaluate(() => { const n = [...nextAvailableNodes()][0]; travelTo(n, { skipEvent: true }); }); await page.waitForTimeout(400); };

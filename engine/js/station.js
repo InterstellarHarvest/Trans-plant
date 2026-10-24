@@ -37,7 +37,7 @@
   const MARKET_ID = 'event_station_013';
   const ROOM_BY_JOB = { bartender: 'cantina', medic: 'clinic', security: 'office', janitor: 'promenade', botanist: 'promenade', captain: 'dockmaster', engineer: 'dockmaster' };
 
-  const approachEv = () => (typeof EVENTS !== 'undefined' && EVENTS[APPROACH_ID]) || null;
+  const approachEv = () => EVENTS[APPROACH_ID] || null;
   const here = () => STATE.byId && STATE.byId[STATE.currentId];
   function visit() {
     const v = STATE.stationVisit;
@@ -46,10 +46,9 @@
   const log = t => { window.pushCruiseLog(t); };
 
   /* Which dock room an event is (null: not a room). An in-person layered
-     station event with a station NPC; `station_room` may name it. */
+     station event with a station NPC. */
   function roomOf(ev) {
     if (!ev || !ev.layers) return null;
-    if (ev.station_room) return ev.station_room;
     if ((ev.comm_mode || 'in_person') !== 'in_person') return null;
     const n = ev.npc;
     if (!n) return null;
@@ -171,7 +170,6 @@
     for (const [k, l] of Object.entries(ev.layers)) { w.layers[k] = Object.assign({}, l); delete w.layers[k].leave_label; }
     w.leave_label = 'BACK TO DOCK';
     w.leave_sub = roomDef(myKey).back;
-    w.no_leave = false;
     if (others.length) {
       const entry = ev.entryLayer || Object.keys(ev.layers)[0];
       const t = (a && a.elsewhere) || {};
@@ -184,7 +182,6 @@
                    { text: 'BACK', sub: 'Return to the ' + roomDef(myKey).label.toLowerCase(), back: true }]),
       };
     }
-    w._stationRoom = myKey;
     return w;
   }
 

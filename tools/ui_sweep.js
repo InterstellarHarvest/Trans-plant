@@ -51,7 +51,10 @@ const INERT_OK = new Set([]);
     const goldRoll = (document.getElementById('inv-gold-readout') || { innerText: '' }).innerText;
     const text = document.body.innerText.replace(logText, '').replace(goldRoll, '');
     let h = 0; for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) | 0;
-    return (active ? active.id : '') + '#' + overlays + '#' + modal + '#' + st + '#' + h;
+    // Faded-out panels (the AI bubble's ×) keep their text in innerText:
+    // count what is shown as well.
+    const shown = document.querySelectorAll('.show').length;
+    return (active ? active.id : '') + '#' + overlays + '#' + modal + '#' + st + '#' + shown + '#' + h;
   });
   // A disabled-looking control that "acted" may only have coincided with
   // the screen changing by itself (a timer, an animation's text). Wait the
@@ -86,6 +89,12 @@ const INERT_OK = new Set([]);
   await page.waitForFunction(() => document.getElementById('title-buttons').classList.contains('visible'), null, { timeout: 15000 });
   await page.click('#btn-new');
   await page.waitForTimeout(500);
+  // The wizard's confirms (FLY SOLO? / INCOMPLETE CREW / ABANDON THE SAVED
+  // VOYAGE?) sit over #btn-next: answer one if it opened.
+  const answerConfirm = async act => {
+    const btn = await page.$('.tp-confirm-overlay [data-act="' + act + '"]');
+    if (btn) { await btn.click(); await page.waitForTimeout(250); }
+  };
   let steps = 0;
   for (let i = 0; i < 8; i++) {
     const label = await page.evaluate(() => document.getElementById('setup-step-label').textContent);
@@ -96,6 +105,7 @@ const INERT_OK = new Set([]);
       const before = await sig();
       await page.click('#btn-next');
       await page.waitForTimeout(250);
+      await answerConfirm('no'); // stay on the step: the cards get picked below
       // Multi-select (crew) is deliberately skippable via a solo-run
       // confirm; single-select steps must refuse with nothing picked.
       if (!isMulti && (await sig()) !== before && (await page.evaluate(() => document.getElementById('setup-step-label').textContent)) !== label) {
@@ -111,11 +121,19 @@ const INERT_OK = new Set([]);
     const isLast = await page.evaluate(() => /launch/i.test(document.getElementById('btn-next').textContent));
     await page.click('#btn-next');
     await page.waitForTimeout(500);
+    await answerConfirm('yes');
     steps++;
     if (isLast) break;
   }
+  // Launch plays the departure first (ruling 92): play it through with
+  // real clicks — the last unlocked row, the walk-away/Continue one.
+  for (let i = 0; i < 12; i++) {
+    if (!(await page.evaluate(() => document.getElementById('screen-encounter').classList.contains('active')))) break;
+    await page.evaluate(() => { const bs = document.querySelectorAll('#enc-choices .enc-choice:not(.locked)'); if (bs.length) bs[bs.length - 1].click(); });
+    await page.waitForTimeout(800);
+  }
   const onCruise = await page.evaluate(() => document.getElementById('screen-cruise').classList.contains('active'));
-  say(onCruise, 'wizard → cruise via clicks', steps + ' steps');
+  say(onCruise, 'wizard → departure → cruise via clicks', steps + ' steps');
   if (!onCruise) { flag('never reached cruise'); }
 
   // ── 2+3. Dead-control sweep on cruise ─────────────────────────
@@ -160,6 +178,16 @@ const INERT_OK = new Set([]);
       await page.evaluate(id => { document.getElementById(id).classList.remove('active'); document.body.classList.remove('modal-open'); }, top);
     }
     return true;
+  };
+  // A hub control that opened an event (TRADE at a station: Market Row):
+  // walk out of it — the last unlocked row, the walk-away one.
+  const leaveEncounter = async () => {
+    for (let k = 0; k < 12; k++) {
+      if (!(await page.evaluate(() => document.getElementById('screen-encounter').classList.contains('active')))) return;
+      await page.evaluate(() => { const bs = document.querySelectorAll('#enc-choices .enc-choice:not(.locked)'); if (bs.length) bs[bs.length - 1].click(); });
+      await page.waitForTimeout(600);
+      await closeAnyOverlay();
+    }
   };
   const buttons = await page.evaluate(() =>
     [...document.querySelectorAll('#screen-cruise button, #screen-cruise [role=button], #screen-cruise .readout-cell, #screen-cruise .crew-slot, #screen-cruise #crop-card-mini')]
@@ -210,6 +238,7 @@ const INERT_OK = new Set([]);
       if (n) say(true, 'swept ' + ovId + ' interior', n + ' controls');
     }
     await closeAnyOverlay();
+    await leaveEncounter();
   }
   say(true, 'swept cruise controls', swept + ' clicked: ' + buttons.map(b => b.label).join(' | '));
 

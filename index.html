@@ -40,8 +40,8 @@ if (location.protocol === 'file:') document.write('<script src="engine/js/portab
    SHARED HELPERS
    The one copy of each small table and helper that both the engine
    modules and the main script below need. Loaded before every engine
-   script, so a module may read these at load time too. shared.js keeps
-   its own escapers: the demos load it without the engine.
+   script, so a module may read these at load time too. (escapeHTML
+   lives in shared.js, which the demos load without the engine.)
    ──────────────────────────────────────────────────────────────── */
 // Crew role ↔ roster crew id (the sprite folders and talking-head
 // sheets are keyed by crew id).
@@ -49,10 +49,46 @@ const CREWID_OF_ROLE = { botanist: 'osei', engineer: 'kazuki', medic: 'vasquez',
 const ROLE_OF_CREWID = Object.fromEntries(Object.entries(CREWID_OF_ROLE).map(([role, id]) => [id, role]));
 // The ship AIs' display names, by id.
 const AI_NAMES = { aria: 'ARIA', marv: 'MARV', rex: 'REX', chip: 'CHIP', ajoy: 'AJOY' };
-function escapeHTML(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
 function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+// A water-split track (the growbay's mini slider, the Orders modal):
+// pointer drag between the demo's 15/85 floor and ceiling. onDrag(pct)
+// on press and on every move; onEnd(commit) on release (true) or on a
+// cancel (false). Returns { dragging(), cancel() }.
+function wireWaterTrack(track, onDrag, onEnd) {
+  const MIN = 15, MAX = 85;
+  let dragging = false;
+  function pctFromEvent(e) {
+    const rect = track.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const p = Math.round(Math.max(0, Math.min(1, x)) * 100);
+    return Math.max(MIN, Math.min(MAX, p));
+  }
+  function end(e, commit) {
+    if (!dragging) return;
+    dragging = false;
+    if (e.pointerId !== undefined && track.hasPointerCapture(e.pointerId)) track.releasePointerCapture(e.pointerId);
+    if (onEnd) onEnd(commit);
+  }
+  track.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    dragging = true;
+    track.setPointerCapture(e.pointerId);
+    onDrag(pctFromEvent(e));
+  });
+  track.addEventListener('pointermove', e => { if (dragging) onDrag(pctFromEvent(e)); });
+  track.addEventListener('pointerup', e => end(e, true));
+  track.addEventListener('pointercancel', e => end(e, false));
+  return { dragging: () => dragging, cancel: () => end({ pointerId: -1 }, false) };
+}
+// Resolves to the path when the image loads, null when it doesn't.
+function probeImage(path) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(path);
+    img.onerror = () => resolve(null);
+    img.src = path;
+  });
+}
 </script>
 <style>
 :root {
@@ -1741,7 +1777,6 @@ const CROP_MATURITY_DEFAULT = 90;
    ──────────────────────────────────────────────────────────────── */
 const MODULE_PATHS = {
   map_rules:     'modules/maps/map_rules.json',
-  test_path:     'modules/locations/lunar_test_path.json',
   ai_companions: 'modules/ai/ai_companions.json',
   ships:         'modules/ships/ships.json',
   crew_roster:   'modules/crew/crew_roster.json',
@@ -1824,8 +1859,8 @@ async function loadAllModules() {
 
 /* ────────────────────────────────────────────────────────────────
    GAME STATE
-   Initialised from map_rules.lunar starting_resources + the fixed
-   lunar_test_path. Single mutable STATE object — every screen
+   Initialised by applySetupToState() from the setup wizard (or by
+   loadRun() from a save). Single mutable STATE object — every screen
    reads from it; every choice resolution writes to it.
    ──────────────────────────────────────────────────────────────── */
 const STATE = {
@@ -1878,7 +1913,6 @@ const STATE = {
   plaidLegs:    0,          // drive heat: PLAID legs, cooled one per slower leg (engine_strain, ruling 83)
   engineStrain: false,      // a strain roll came up: the next stop draws an engine_strain event (ruling 83)
   crafted:      {},         // item id → copies aboard that the fabricator printed (ruling 79: a station pays their materials' value)
-  hubScreen:    'screen-cruise', // which screen travelTo()/advanceAfterEvent() return to between nodes — 'screen-map' under ?debug=fixed_path
 };
 
 /* ────────────────────────────────────────────────────────────────
@@ -2033,8 +2067,7 @@ function loadRun(key) {
   // Saves from before the "planted" announcement existed: the crop was
   // planted long ago — don't announce it on resume.
   if (STATE.cropGrowth) STATE.flags.add('ai_noted_crop_planted');
-  STATE.hubScreen = 'screen-cruise';
-  if (window.SceneArt) SceneArt.clearRunCaches();
+  SceneArt.clearRunCaches();
   // The hub log belongs to the run being replaced — show this run's
   // recent log instead (pause → LOAD used to keep the old timeline's).
   window.rebuildCruiseLog(8); // cruise.js: day markers + voice/▶ prefixes
@@ -2079,7 +2112,7 @@ function loadRun(key) {
       if (checkFailure()) return true;
       // A station's arrival event leads on to the approach, as ✕ QUIT's
       // Continue does (StationVisit.afterEvent).
-      if (window.StationVisit && StationVisit.afterQuit(qev.id)) return true;
+      if (StationVisit.afterQuit(qev.id)) return true;
       saveRun();
       return true;
     }
@@ -2104,7 +2137,7 @@ function loadRun(key) {
     }
     renderHUD(); renderCruise();
     if (checkFailure()) return true;
-    if (window.StationVisit && StationVisit.afterQuit(pc.ev)) return true;
+    if (StationVisit.afterQuit(pc.ev)) return true;
     saveRun();
     return true;
   }
@@ -2116,61 +2149,10 @@ function loadRun(key) {
   // Saved on an outcome inside a station visit (the arrival event, a room):
   // carry the visit on as Continue does — the approach, or back to the dock
   // (never the hub with the station skipped).
-  else if (window.StationVisit && STATE.stationVisit && STATE.stationVisit.node === STATE.currentId && STATE.stationVisit.phase !== 'left') {
+  else if (STATE.stationVisit && STATE.stationVisit.node === STATE.currentId && STATE.stationVisit.phase !== 'left') {
     if (!StationVisit.afterQuit()) renderCruise();
   }
   return true;
-}
-
-function initState() {
-  const rules = MOD.map_rules.trails[MOD.test_path.trail];
-  STATE.trail       = MOD.test_path.trail;
-  STATE.mapName     = MOD.test_path.map_name;
-  STATE.destination = MOD.test_path.destination;
-  STATE.baseDays    = MOD.test_path.base_days || rules.base_days;
-  STATE.resources = {
-    fuel:   rules.starting_resources.fuel,
-    food:   rules.starting_resources.food,
-    water:  rules.starting_resources.water,
-    o2:     rules.starting_resources.o2,
-    hull:   rules.starting_resources.hull,
-  };
-  // Captain-dependent credits: ship-only build, default 50 gold.
-  STATE.goldAmount = 50;
-
-  // Default crew loadout: engineer + medic + botanist. Captain + 2 crew
-  // selection screens come in a later pass — for this first build the
-  // gated choices need *some* roles aboard so the loop isn't sterile.
-  // Captain + 2 crew is the cap everywhere (crewJoinRole); the fixed
-  // path's crew-gated choices (event_planet_001 / event_derelict_001)
-  // want the botanist, the engineer covers the repair jobs.
-  STATE.crew = ['engineer', 'botanist'];
-
-  // Starting items — same reasoning as crew. A couple so item-gated
-  // choices unlock and the player sees that gating works.
-  STATE.items = ['soil_sampler', 'gas_analyzer', 'repair_kit'];
-  STATE.itemValues = {};
-  STATE.itemPickups = {}; STATE.itemSeq = 0; STATE.materialPickups = {};
-  syncItemPickups(ITEM_PICKUP_OLD);
-  STATE.materials = {};
-
-  // Active AI — pick MARV by default. Real ship/AI select screen is
-  // a later pass.
-  STATE.activeAI = 'marv';
-
-  STATE.nodes = MOD.test_path.nodes;
-  STATE.byId  = {};
-  for (const n of STATE.nodes) STATE.byId[n.id] = n;
-  STATE.currentId = STATE.nodes[0].id;
-  STATE.visited = new Set();
-  STATE.flags   = new Set();
-  initCrewHP();
-  initCrewMorale(rules.starting_resources.morale); // per crew member (owner ruling 15)
-  initCrewSkillCharges();
-  STATE.orders = { pace: 'ridiculous', rations: 'standard', waterSplit: 50 };
-  STATE.stowaway = null; // debug loop skips the stowaway roll — deterministic testing
-  STATE.artSeed = rollArtSeed();
-  STATE.hubScreen = 'screen-map'; // legacy debug loop hub — screen-cruise is the real game's hub
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -2225,9 +2207,8 @@ function applySetupToState(sel) {
   const namePool = shipNamePool();
   STATE.shipName  = (sel.ship && String(sel.ship).trim()) || (namePool.length ? namePool[Math.floor(Math.random() * namePool.length)] : 'The Ship');
 
-  // Starting items — no items step in the setup wizard yet; keep the
-  // same placeholder loadout initState() used, so item-gated choices
-  // still unlock somewhere in the loop.
+  // Starting items — no items step in the setup wizard yet: a placeholder
+  // loadout, so item-gated choices still unlock somewhere in the loop.
   STATE.items = ['soil_sampler', 'repair_kit']; // the gas analyzer is the Academic captain's starting bonus
   STATE.itemValues = {};
   STATE.materials = { metal: 4, scrap: 2 }; // ship stores: two hull patches' worth (REPAIR costs 2 metal + 1 scrap)
@@ -2270,9 +2251,8 @@ function applySetupToState(sel) {
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
   window.abortFabricator();
   STATE.artSeed = rollArtSeed(); // this run's scene + NPC-face variants (saved: stable across reloads)
-  if (window.SceneArt) SceneArt.clearRunCaches(); // re-roll scenes + NPC variants per run
+  SceneArt.clearRunCaches(); // re-roll scenes + NPC variants per run
 
-  STATE.hubScreen = 'screen-cruise';
   generateMap(sel.trail); // sets STATE.nodes/byId/currentId/mapName/destination
 
   renderHUD();
@@ -2315,6 +2295,21 @@ function itemDef(shortId) {
     }
   }
   return STATE._itemDefs[shortId] || null;
+}
+// An item's name (items.json), else its id, capitalised.
+function itemNameOf(id) {
+  const d = itemDef(id);
+  if (d && d.name) return d.name;
+  const p = prettyItem(id);
+  return p.charAt(0).toUpperCase() + p.slice(1);
+}
+// materials.json entry for a material id, and its name (else the id, capitalised).
+function materialDefOf(id) {
+  return MOD.materials.materials.find(m => m.id === id) || null;
+}
+function materialNameOf(id) {
+  const m = materialDefOf(id);
+  return (m && m.name) || (id.charAt(0).toUpperCase() + id.slice(1));
 }
 
 function cargoCapacity() { const p = cargoCapacityParts(); return p.base + p.bonus; }
@@ -2359,7 +2354,7 @@ function canRemoveItem(id) {
    Everything else authors a flat cargo_slots. Unknown ids cost 1. */
 // A material's slot rate per 10 units (materials.json, default 1), or null for a non-material id.
 function materialPer10(id) {
-  const m = ((MOD.materials && MOD.materials.materials) || []).find(x => x.id === id);
+  const m = materialDefOf(id);
   if (!m) return null;
   return Number.isFinite(m.cargo_slots_per_10) && m.cargo_slots_per_10 >= 0 ? m.cargo_slots_per_10 : 1;
 }
@@ -2764,7 +2759,7 @@ function killCrew(role) {
   // reads who they were); pushed below, after the bookkeeping.
   const pool = MOD.flavor && MOD.flavor.crew_epitaphs;
   const epitaph = pool && pool.length ? pool[Math.floor(Math.random() * pool.length)].replaceAll('[Name]', name) : '';
-  const memorial = window.ShipLog ? ShipLog.deathEntry(role, epitaph) : null;
+  const memorial = ShipLog.deathEntry(role, epitaph);
   releaseCrewRole(role);
   STATE.flags.add('crew_lost');
   { const m = concernDef('medic', 'death'); if (m) applyConcern('medic', m.morale, 'death'); } // a dead medic minds nothing (released above)
@@ -2967,12 +2962,10 @@ function crewMoraleWatch() {
     const zero = crewMoraleOf(r) <= 0;
     if (zero && !w[r]) {
       w[r] = true;
-      if (window.ShipLog) ShipLog.moraleZero(r);
-      else window.pushCruiseLog('◆ ' + crewNameOf(r) + '’s morale is at zero. At the next station they walk.');
+      ShipLog.moraleZero(r);
     } else if (w[r] && crewMoraleOf(r) >= MORALE_CRISIS) {
       delete w[r];
-      if (window.ShipLog) ShipLog.moraleBack(r);
-      else window.pushCruiseLog('◆ ' + crewNameOf(r) + ' is back to ' + MORALE_CRISIS + '. Nobody is leaving.');
+      ShipLog.moraleBack(r);
     }
   }
 }
@@ -2985,7 +2978,7 @@ function crewDesertions(node) {
   const gone = STATE.crew.filter(r => w[r] && crewMoraleOf(r) < MORALE_CRISIS);
   for (const role of gone) {
     // The log entry reads who they were — composed before they go.
-    const entry = window.ShipLog ? ShipLog.desertionEntry(role, node) : null;
+    const entry = ShipLog.desertionEntry(role, node);
     const name = crewNameOf(role);
     releaseCrewRole(role); // HP, charges, pending, identity, morale, armed skills
     window.pushCruiseLog(entry || ('◆ ' + name + ' walked off at ' + ((node && node.name) || 'the station') + '.'), entry ? { ai: true, instant: true } : undefined);
@@ -3442,7 +3435,7 @@ function weightedDraw(candidates, weightFn) {
   return candidates[candidates.length - 1];
 }
 
-/* Replaces the flat node.event_id lookup. Filters EVENTS by node_type
+/* A stop's event draw. Filters EVENTS by node_type
    + active trigger match + once/seen + active:true, weights by
    difficulty (map_rules.json's event_difficulty_weights, shifted
    toward hard over the second half by late_difficulty, reweighted
@@ -3515,7 +3508,7 @@ function familyEvent(family, node) {
   const slots = [];
   for (const e of list) for (let i = 0; i < Math.max(1, Math.round((e.draw_weight || 1) * 100)); i++) slots.push(e);
   const key = 'family:' + family + ':' + (node ? node.id : '?');
-  return (window.SceneArt && SceneArt.stablePick) ? SceneArt.stablePick(key, slots) : slots[0];
+  return SceneArt.stablePick(key, slots);
 }
 /* gap(ev): how many stops lie between `stop` and the nearest stop `ev`
    was drawn for (Infinity: never). A SCAN lock-in at a stop ahead
@@ -3647,7 +3640,7 @@ function eventEligible(ev, node, triggers) {
     // Planet biome gate: the event's copy describes one kind of
     // world — it only fires on a planet whose biome (scene_art biomeFor,
     // the same pick its approach + surface art show) is listed.
-    if (ev.biome && !(node.node_type === 'planet' && window.SceneArt && ev.biome.includes(SceneArt.biomeFor(null, node)))) return false;
+    if (ev.biome && !(node.node_type === 'planet' && ev.biome.includes(SceneArt.biomeFor(null, node)))) return false;
     // A crew member has to be aboard to say it (crew_speaker).
     if (ev.crew_speaker && !crewSpeakerFor(ev)) return false;
     // Copy that needs the crew in the scene (the crew visit the patient)
@@ -3791,7 +3784,7 @@ function hudRowsHTML() {
   // Shown values: rounded, but anything above zero reads at least 1 — a
   // tank at 0.4 used to read 0 while it still had something in it.
   const sh = v => v > 0 ? Math.max(1, Math.round(v)) : 0;
-  const row = (cls, tip, v) => `<div class="hud-r ${cls}${crit[cls] ? ' crit' : ''}" data-tip="${tip}"><span class="dot"></span><span class="hud-v">${v}</span></div>`;
+  const row = (cls, tip, v) => `<div class="hud-r ${cls}${crit[cls] ? ' crit' : ''}" data-tip="${tip}"><span class="dot"></span><span>${v}</span></div>`;
   return row('fuel', 'resource_fuel', sh(r.fuel))
        + row('food', 'resource_food', sh(r.food))
        + row('o2',   'resource_o2',   sh(r.o2))
@@ -3803,7 +3796,7 @@ function renderHUD() {
   // An upgrade sold/jettisoned/lost takes its headroom with it.
   for (const k of ['fuel', 'hull', 'food']) if (r[k] > resMax(k)) r[k] = resMax(k);
   const html = hudRowsHTML();
-  for (const id of ['hud-map', 'hud-enc', 'hud-mining']) {
+  for (const id of ['hud-enc', 'hud-mining']) {
     const el = document.getElementById(id);
     if (el) el.innerHTML = html;
   }
@@ -3853,7 +3846,7 @@ window.addEventListener('resize', fitGameToViewport);
    [data-esc-close] handler; only stops the event when it consumed it. */
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (typeof PauseMenu !== 'undefined' && PauseMenu.isOpen()) return;
+  if (PauseMenu.isOpen()) return;
   if (document.getElementById('overlay-shipslog').classList.contains('active') && shipsLogExpandOpen()) {
     closeShipsLogExpand(); e.preventDefault(); e.stopImmediatePropagation(); return;
   }
@@ -3864,21 +3857,12 @@ document.addEventListener('keydown', e => {
 }, true);
 
 /* ────────────────────────────────────────────────────────────────
-   MAP RENDERER
-   Lays out the lunar_test_path on a left-to-right axis. Fork
-   branches stack vertically so alpha sits above beta. Lines
-   connect each node to everything in its connects_to list.
+   MAP RENDERER (the hub's look-only map overlay)
+   Lays out the run's map on a left-to-right axis. Fork branches
+   stack vertically so alpha sits above beta. Lines connect each
+   node to everything in its connects_to list.
    ──────────────────────────────────────────────────────────────── */
-/* Default ids target the legacy full-screen map (screen-map, still
-   reachable via ?debug=fixed_path). renderMapOverlay() below reuses
-   this same layout/render logic targeting the overlay-map ids instead
-   — one node-graph renderer, two mount points. */
-const MAP_IDS_DEFAULT = {
-  header: 'map-header', viewport: 'map-viewport', connections: 'map-connections',
-  nodes: 'map-nodes', footer: 'map-footer', info: 'map-info', advanceBtn: 'btn-advance',
-};
-
-function nodePositions(viewportId) {
+function nodePositions() {
   // One column per distinct route position (map.js gives a fork's branch
   // nodes fractional positions between the fork and the merge). Using
   // column RANK, not the raw position, gives every branch node a full
@@ -3889,7 +3873,7 @@ function nodePositions(viewportId) {
   for (const n of STATE.nodes) (byPos[n.position] = byPos[n.position] || []).push(n);
   const positions = Object.keys(byPos).map(Number).sort((a, b) => a - b);
   const pos = {};
-  const vp = document.getElementById(viewportId || MAP_IDS_DEFAULT.viewport);
+  const vp = document.getElementById('ovmap-viewport');
   const W = vp.clientWidth, H = vp.clientHeight;
   const ROW = Math.min(110, H * 0.28);
   // Spine/fork columns carry the long labels ("Asteroid Field 7") —
@@ -3920,19 +3904,16 @@ function branchFlavorDisplay(n) {
   return { text: String(n.branch_flavor).replace(/_/g, ' ').toUpperCase(), state: 'revealed' };
 }
 
-function renderMap(ids) {
-  ids = ids || MAP_IDS_DEFAULT;
-  const readOnly = !ids.advanceBtn; // overlay-map is look-only — no click-to-travel
-
-  const header = document.getElementById(ids.header);
+function renderMapOverlay() {
+  const header = document.getElementById('ovmap-header');
   header.innerHTML = `${STATE.mapName}<div class="sub">${STATE.trail.toUpperCase()} TRAIL — Destination: ${STATE.destination}</div>`;
 
-  const pos = nodePositions(ids.viewport);
-  const nodesEl = document.getElementById(ids.nodes);
-  const svg = document.getElementById(ids.connections);
+  const pos = nodePositions();
+  const nodesEl = document.getElementById('ovmap-nodes');
+  const svg = document.getElementById('ovmap-connections');
   nodesEl.innerHTML = '';
   svg.innerHTML = '';
-  const vp = document.getElementById(ids.viewport);
+  const vp = document.getElementById('ovmap-viewport');
   svg.setAttribute('viewBox', `0 0 ${vp.clientWidth} ${vp.clientHeight}`);
   svg.setAttribute('width', vp.clientWidth);
   svg.setAttribute('height', vp.clientHeight);
@@ -4022,9 +4003,6 @@ function renderMap(ids) {
       el.appendChild(tag);
       el.title = n.name + ' — scanned: ' + (ev ? (ev.title || 'contact') + ' [' + diff + ']' : 'quiet');
     }
-    if (!readOnly && available.has(n.id)) {
-      el.addEventListener('click', () => travelTo(n.id));
-    }
     nodesEl.appendChild(el);
   }
 
@@ -4038,33 +4016,11 @@ function renderMap(ids) {
       if (L.width && L.left < H.right - 1 && H.left < L.right - 1 && L.top < H.bottom - 1 && H.top < L.bottom - 1) lab.classList.add('under-here');
     }
   }
-  // Footer: current node info + (legacy screen-map only) Advance button.
+  // Footer: the current node's info.
   const cur = STATE.byId[STATE.currentId];
-  const nextIds = [...available];
-  const info = document.getElementById(ids.info);
+  const info = document.getElementById('ovmap-info');
   info.innerHTML = `<b>${escapeHTML(cur.name)}</b>${cur.short && cur.short !== cur.name ? ' <span class="sub">(' + escapeHTML(cur.short) + ')</span>' : ''} — ${cur.description}`;
-  if (readOnly) return;
-  const btn = document.getElementById(ids.advanceBtn);
-  if (nextIds.length === 1) {
-    btn.disabled = false;
-    btn.textContent = `Advance to ${STATE.byId[nextIds[0]].name} →`;
-    btn.onclick = () => travelTo(nextIds[0]);
-  } else if (nextIds.length > 1) {
-    btn.disabled = true;
-    btn.textContent = 'Pick a route from the map';
-    btn.onclick = null;
-  } else {
-    btn.disabled = true;
-    btn.textContent = 'End of line';
-    btn.onclick = null;
-  }
 }
-
-const OVMAP_IDS = {
-  header: 'ovmap-header', viewport: 'ovmap-viewport', connections: 'ovmap-connections',
-  nodes: 'ovmap-nodes', footer: 'ovmap-footer', info: 'ovmap-info', advanceBtn: null,
-};
-function renderMapOverlay() { renderMap(OVMAP_IDS); }
 
 /* connections_to may be an array (normal node) or an object keyed by
    branch name (fork node). Flatten to an array of node ids. */
@@ -4104,17 +4060,16 @@ function nextAvailableNodes() {
    TRAVEL & EVENT ENTRY
    ──────────────────────────────────────────────────────────────── */
 
-/* Shows whichever screen is the current run's hub (screen-cruise for
-   a real game, screen-map for ?debug=fixed_path) and re-renders it.
-   Called whenever travel/event-resolution has nothing further to do
-   and control returns to the player outside an encounter. */
+/* Shows the hub (screen-cruise) and re-renders it. Called whenever
+   travel/event-resolution has nothing further to do and control
+   returns to the player outside an encounter. */
 function returnToHub() {
   // Back at the hub, no event is in progress. Uncleared, these make
   // saveRun() (which refuses mid-event) silently stop autosaving after
   // the first encounter of every run.
   STATE.currentEvent = null; STATE.currentNode = null;
   STATE.layerStack = null; STATE.currentOutcomeId = null; STATE.outcomeMode = false;
-  if (window.ShipLog) ShipLog.eventEnd();
+  ShipLog.eventEnd();
   STATE.npcCtx = null;
   STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.effortScale = 1; STATE.effortCon = null;
   STATE.goneNames = null;
@@ -4123,15 +4078,12 @@ function returnToHub() {
   STATE._shoppedThisEvent = false;
   STATE.scanIntelEvent = null;
   renderHUD();
-  showScreen(STATE.hubScreen);
-  if (STATE.hubScreen === 'screen-map') renderMap();
-  else {
-    renderCruise();
-    // Owner ruling 2026-10-10: after an event the ship is stopped — the
-    // Stop menu is already open and Resume travels in one click (not
-    // Stop → Resume, two clicks a leg).
-    if (!STATE.ended) window.openStopMenu();
-  }
+  showScreen('screen-cruise');
+  renderCruise();
+  // Owner ruling 2026-10-10: after an event the ship is stopped — the
+  // Stop menu is already open and Resume travels in one click (not
+  // Stop → Resume, two clicks a leg).
+  if (!STATE.ended) window.openStopMenu();
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -4238,10 +4190,9 @@ function cropWaterNeedBase() {
   return (m && m.water_need) || CROP_WATER_NEED_DEFAULT;
 }
 function cropWaterNeed() {
-  const m = (STATE.crop) ? cropMetaOf(STATE.crop) : null;
   // Botanist passive "crop water consumption reduced 15%" (captain 7%);
   // the water purifier's passive −10%.
-  return ((m && m.water_need) || CROP_WATER_NEED_DEFAULT)
+  return cropWaterNeedBase()
     * (1 - roleAmount('botanist', 'crop_water_modifier', 'crop_water_modifier', 0.85, true))
     * (STATE.items.includes('water_purifier') ? PURIFIER_CROP_WATER_MULT : 1);
 }
@@ -4626,8 +4577,7 @@ function cropWaterShareSaved() {
 function deadlineNotice() {
   if (STATE.flags.has('deadline_passed')) return;
   STATE.flags.add('deadline_passed');
-  if (typeof window.pushCruiseLog === 'function')
-    window.pushCruiseLog('The deadline has passed. The colony will still take us, late — and every day from here comes off the arrival.', { ai: true });
+  window.pushCruiseLog('The deadline has passed. The colony will still take us, late — and every day from here comes off the arrival.', { ai: true });
 }
 function passDays(days, opts) {
   days = Math.max(0, Math.round(days));
@@ -4725,7 +4675,7 @@ function travelTo(nodeId, opts) {
   // (Restoration item 5). Paid on every leg — including the final hop
   // to the arrival node, and Push Engines' skipEvent legs. Running the
   // tank (or the clock) dry mid-leg ends the run right here.
-  const legLog = window.ShipLog && ShipLog.begin({ fresh: true }); // Ship's Log: the arrival entry states the leg's real cost
+  const legLog = ShipLog.begin({ fresh: true }); // Ship's Log: the arrival entry states the leg's real cost
   {
     const leg = legTravelCost();
     // Fractional days carry leg to leg (rounding each leg distorted the
@@ -4815,21 +4765,18 @@ function arriveAtNode(node, opts) {
     return;
   }
 
-  // Fixed test-path nodes may still hardcode event_id (?debug=fixed_path);
-  // procedurally generated nodes have none, so this always falls through
-  // to the real pool-draw.
   const scoutRec = STATE.scouted && STATE.scouted[node.id];
   const scouted = scoutedEventFor(node);
   if (STATE.scouted) delete STATE.scouted[node.id];
-  const ev = crisis || (node.event_id && EVENTS[node.event_id]) || (scouted !== undefined ? scouted : selectEvent(node));
+  const ev = crisis || (scouted !== undefined ? scouted : selectEvent(node));
   if (ev !== crisis) noteEventDrawn(ev); // the repeat cooldown counts from here (a delayed crisis is never pool-drawn)
   STATE.scanIntelEvent = (ev && scouted === ev && scoutRec && scoutRec.intel) ? ev.id : null;
   // Station stop (owner ruling 2026-10-11, demo station_approach): every
   // stop opens on the bridge with the approach — HAIL / DOCK / the wave-off
   // warning — and the stop's one drawn event plays before it, on DOCK, or
-  // as a room in the dock (engine/js/station.js). A delayed crisis and a
-  // fixed-path event keep the old direct entry (and recharge on arrival).
-  if (node.node_type === 'station' && !crisis && !node.event_id && window.StationVisit && StationVisit.available()) {
+  // as a room in the dock (engine/js/station.js). A delayed crisis keeps
+  // the old direct entry (and recharges on arrival).
+  if (node.node_type === 'station' && !crisis && StationVisit.available()) {
     StationVisit.arrive(node, ev);
   } else if (ev) {
     if (node.node_type === 'station') stationRecharge();
@@ -4867,11 +4814,11 @@ function enterEvent(node, ev, opts) {
   // (an undo for any bad outcome). Written below, once the NPC and variant
   // are rolled (a reload must not re-roll the pirate's species, which sets
   // its hull and whether it surrenders).
-  if (window.SceneArt && SceneArt.beginEvent) SceneArt.beginEvent();
+  SceneArt.beginEvent();
   // A dock room (station approach): the room's event gains GO ELSEWHERE
   // and a BACK TO DOCK leave row (engine/js/station.js wraps a copy).
-  if (window.StationVisit) ev = StationVisit.wrap(ev, node);
-  if (window.ShipLog) ShipLog.eventStart(); // Ship's Log: the event's real effects are measured from here
+  ev = StationVisit.wrap(ev, node);
+  ShipLog.eventStart(); // Ship's Log: the event's real effects are measured from here
   STATE.currentEvent     = ev;
   STATE.currentNode      = node;
   STATE.outcomeMode      = false;
@@ -4958,7 +4905,7 @@ function nextBodyPick(ev) {
   const k = STATE.eventDraws[ev.id] || 0;
   STATE.eventDraws[ev.id] = k + 1;
   const picks = Array.from({ length: n }, (_, i) => i);
-  const start = (window.SceneArt && SceneArt.stablePick) ? SceneArt.stablePick('body:' + ev.id, picks) : 0;
+  const start = SceneArt.stablePick('body:' + ev.id, picks);
   return (start + k) % n;
 }
 function openingBody(ev, layerId, body) {
@@ -5149,7 +5096,7 @@ const TYPE_MS = { ai: 14, narrator: 18, spoken: 22 };
 const TEXT_SPEED_MULT = { slow: 1.8, normal: 1, fast: 0.35 };
 function textSpeedMult() {
   let speed = 'normal';
-  try { speed = (typeof tpLoadSettings === 'function' && tpLoadSettings().textSpeed) || 'normal'; } catch (e) {}
+  try { speed = tpLoadSettings().textSpeed || 'normal'; } catch (e) {}
   return TEXT_SPEED_MULT[speed] || 1;
 }
 /* Paints `text` into el invisibly, in place — the reservation the
@@ -5221,7 +5168,7 @@ function typeInto(el, text, ms, onDone) {
   const perTick = 1;
   if (!text.length) { finish(false); return finish; }
   timer = setInterval(() => {
-    if (window.PauseBus && PauseBus.paused) return;
+    if (PauseBus.paused) return;
     if (typed.parentNode !== el) { finish(true, true); return; }
     i += perTick;
     typed.textContent = text.slice(0, i);
@@ -5377,7 +5324,7 @@ function renderEncounterState(opts) {
   if (revisited) layer = Object.assign({}, layer, layer.revisit);
   // Station approach: the layer as this visit has it (dockmaster on the
   // comms or not, the parking fee, the dock's rooms) — station.js.
-  if (layer && ev.station_approach && window.StationVisit) layer = StationVisit.approachLayer(layerId, layer);
+  if (layer && ev.station_approach) layer = StationVisit.approachLayer(layerId, layer);
   if (layerId && STATE._layerVisits) STATE._layerVisits[layerId] = true;
   // Layer-level speaker override (demo's presentNpc machinery).
   // crew_id (layer or event) puts one of our OWN crew in the frame
@@ -5475,8 +5422,8 @@ function renderEncounterState(opts) {
     // Dialog types slower than narration (spoken cadence); the talk loop
     // runs while this beat types and settles on idle when it lands.
     beats.push({ el: document.getElementById('enc-dialog-line'), text: quoteLine(lineText), ms: TYPE_MS.spoken,
-                 onStart: () => { if (window.SceneArt && SceneArt.talk) SceneArt.talk(lineText); },
-                 onStop: () => { if (window.SceneArt) SceneArt.stopTalking(); } });
+                 onStart: () => { SceneArt.talk(lineText); },
+                 onStop: () => { SceneArt.stopTalking(); } });
     dialogEl.classList.remove('hidden');
   } else {
     dialogEl.classList.add('hidden');
@@ -5486,10 +5433,8 @@ function renderEncounterState(opts) {
 
   // Scene art: backdrop layers + NPC subject frame (engine/js/scene_art.js).
   // The talk loop waits for the line's own beat (deferTalk).
-  if (window.SceneArt) {
-    SceneArt.render(ev, node, layer, STATE.npcCtx, lineText,
-                    { subjectCtx: layerNpcCtx, pose: layer && layer.pose, deferTalk: true });
-  }
+  SceneArt.render(ev, node, layer, STATE.npcCtx, lineText,
+                  { subjectCtx: layerNpcCtx, pose: layer && layer.pose, deferTalk: true });
   // Layer-change flash on the narrative + subject (demo canon).
   flashEncPanels();
 
@@ -5508,7 +5453,7 @@ function renderEncounterState(opts) {
    TYPE_LABELS: "ASTEROID FIELD", never the raw "ASTEROID_FIELD"). */
 function nodeTypeLabel(t) {
   if (!t) return '';
-  const lbl = (typeof TYPE_LABELS !== 'undefined' && TYPE_LABELS[t]) || String(t).replace(/_/g, ' ');
+  const lbl = TYPE_LABELS[t] || String(t).replace(/_/g, ' ');
   return lbl.toUpperCase();
 }
 function paintEncMeta(node) {
@@ -5597,8 +5542,8 @@ function renderOutcomeView(outcome, src) {
     document.getElementById('enc-dialog-name').textContent = who ? who.displayName : '';
     lineText = interpolateCostTokens(interpolateStowawayTokens(interpolateNpcTokens(outcome.line, who)), src || outcome);
     beats.push({ el: document.getElementById('enc-dialog-line'), text: quoteLine(lineText), ms: TYPE_MS.spoken,
-                 onStart: () => { if (window.SceneArt && SceneArt.talk) SceneArt.talk(lineText); },
-                 onStop: () => { if (window.SceneArt) SceneArt.stopTalking(); } });
+                 onStart: () => { SceneArt.talk(lineText); },
+                 onStop: () => { SceneArt.stopTalking(); } });
     dialogEl.classList.remove('hidden');
   } else {
     dialogEl.classList.add('hidden');
@@ -5606,7 +5551,7 @@ function renderOutcomeView(outcome, src) {
   const delivery = prepareDelivery(beats);
   if (outcome.line) fitEncDialog();
 
-  if (window.SceneArt) SceneArt.renderOutcome(outcome, (outcome.line && STATE.lastSpeaker) || STATE.npcCtx, { deferTalk: true });
+  SceneArt.renderOutcome(outcome, (outcome.line && STATE.lastSpeaker) || STATE.npcCtx, { deferTalk: true });
   flashEncPanels();
 
   const col = document.getElementById('enc-choices');
@@ -5720,15 +5665,14 @@ function renderChoices(choices) {
 function renderChoicesInner(choices) {
   const col = document.getElementById('enc-choices');
   col.innerHTML = '';
-  // Flag-based visibility (demo machinery): showFlag hides until the
-  // flag is set; hideFlag hides once it is (collapse-after-unlock).
-  // A choice's requires_flag is a showFlag too (ruling 36, demo showFlag
-  // :4987-4991): story-gated choices don't show, locked, before the story
-  // opens them — "Need: Diplomat" on a choice the diplomat alone could
-  // never unlock would be a false promise.
+  // Flag-based visibility (demo machinery): a choice's requires_flag
+  // hides it until the flag is set (ruling 36, demo showFlag
+  // :4987-4991); hideFlag hides it once it is (collapse-after-unlock).
+  // Story-gated choices don't show, locked, before the story opens
+  // them — "Need: Diplomat" on a choice the diplomat alone could never
+  // unlock would be a false promise.
   // The A8 softlock guard MUST judge the visible list, not the raw one.
   const visible = choices.filter(ch =>
-    !(ch.showFlag && !STATE.flags.has(ch.showFlag)) &&
     !(ch.requires_flag && !STATE.flags.has(ch.requires_flag)) &&
     !(ch.hideFlag && STATE.flags.has(ch.hideFlag)));
   const anyUnlocked = visible.some(ch => !lockReason(ch));
@@ -5738,7 +5682,7 @@ function renderChoicesInner(choices) {
   // a layer the player can afford nothing on keeps its locked rows and the
   // leave row, instead of collapsing to a lone CONTINUE that ends the event.
   const evNow = STATE.currentEvent, layerNow = currentLayer();
-  const hasLeave = !!(evNow && evNow.layers && !evNow.no_leave && !evNow.leave_disabled && !(layerNow && layerNow.leaveHidden));
+  const hasLeave = !!(evNow && evNow.layers && !evNow.leave_disabled && !(layerNow && layerNow.leaveHidden));
   const leaveIsTheWayOut = evNow && (evNow.station_approach || hasLeave) && visible.length;
   if ((!visible.length || !anyUnlocked) && !leaveIsTheWayOut) {
     col.appendChild(makeAdvanceButton('Continue'));
@@ -5890,8 +5834,7 @@ function renderChoicesInner(choices) {
 /* The leave row (demo leaveLabel / leaveDisabled; Bible §18): a red row
    with a uniform 3px border, last in the column, on every layer of a
    layered event — `leave_label` per event (a layer's own `leave_label`
-   wins, e.g. once you're aboard their ship), hidden by `no_leave` (the
-   event's authored exits are the only way out) or a layer's
+   wins, e.g. once you're aboard their ship), hidden by a layer's
    `leaveHidden`. A forced event (`leave_disabled`, layered or flat) shows
    it locked: "CAN'T LEAVE (HULL BREACH)". Leaving ends the event with no
    outcome — after shopping it costs the day the haggling took. */
@@ -5901,7 +5844,7 @@ function renderLeaveRow(col) {
   const layer = currentLayer();
   const forced = !!ev.leave_disabled;
   if (layer && layer.leaveHidden) return;
-  if (!forced && (!ev.layers || ev.no_leave)) return;
+  if (!forced && !ev.layers) return;
   const leave = document.createElement('button');
   leave.className = 'enc-choice leave' + (forced ? ' locked' : '');
   const label = document.createElement('div');
@@ -5946,7 +5889,7 @@ function renderLeaveRow(col) {
     leave.appendChild(sub);
   }
   if (!forced) bindEncButton(leave, () => {
-    const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: "we chose LEAVE" + what the visit really cost
+    const slog = ShipLog.begin(); // Ship's Log: "we chose LEAVE" + what the visit really cost
     const shopped = STATE._shoppedThisEvent;
     if (shopped) {
       STATE._shoppedThisEvent = false;
@@ -6308,11 +6251,10 @@ function lockReason(choice) {
   // diplomat then found the gold short too.
   const need = [];
   const role = r => r === 'any' ? 'Crew' : r.charAt(0).toUpperCase() + r.slice(1);
-  const itemName = id => { const d = itemDef(id); return (d && d.name) || role(prettyItem(id)); };
   const crewReqs = [choice.requires_crew, choice.gate && choice.gate.crew].filter(Boolean);
   for (const r of new Set(crewReqs)) if (!hasRoleFor(r)) need.push(role(r));
   const itemReqs = [choice.requires_item, choice.gate && choice.gate.item].filter(Boolean);
-  for (const it of new Set(itemReqs)) if (!STATE.items.includes(it)) need.push(itemName(it));
+  for (const it of new Set(itemReqs)) if (!STATE.items.includes(it)) need.push(itemNameOf(it));
   if (choice.gate && choice.gate.gold && STATE.goldAmount < eventGold(choice.gate.gold)) need.push(eventGold(choice.gate.gold) + 'g');
   if (need.length) return 'Need: ' + need.join(' + ');
   // Requirements met on paper but not usable right now.
@@ -6581,7 +6523,7 @@ function interpolateNpcTokens(text, npc) {
    CHOICE RESOLUTION
    ──────────────────────────────────────────────────────────────── */
 
-/* Layered-schema navigation: next/back/outcome/scenario are mutually
+/* Layered-schema navigation: next/back/outcome are mutually
    exclusive per the schema (see CLAUDE.md's layered Event Module
    section). Flat-schema choices (no ev.layers) fall through to the
    original resolveChoice() path. */
@@ -6648,7 +6590,7 @@ function handleChoiceClick(choice) {
   // and the talk-to-it habit change here, before the layer navigation.
   if (choice.crop_advice) applyCropAdvice();
   // Station approach actions (HAIL / DOCK / a dock room / BACK TO DOCK) — station.js.
-  if (choice.station && window.StationVisit && StationVisit.act(choice)) return;
+  if (choice.station && StationVisit.act(choice)) return;
 
   // Combat hijack fields — checked BEFORE the flat-schema early-return
   // so BOTH schemas can enter combat (after the flat return they would
@@ -6656,7 +6598,7 @@ function handleChoiceClick(choice) {
   // combat_trigger field is honored here as an alias).
   if ((choice.triggerCombat || choice.combat_trigger)) {
     if (choice.setFlag) STATE.flags.add(choice.setFlag);
-    if (window.ShipLog) ShipLog.fightStart(choice); // the fight's log entry names the choice that started it
+    ShipLog.fightStart(choice); // the fight's log entry names the choice that started it
     window.triggerCombat(choice);
     return;
   }
@@ -6693,11 +6635,6 @@ function handleChoiceClick(choice) {
 
   if (choice.setFlag) STATE.flags.add(choice.setFlag);
 
-  if (choice.scenario) {
-    const targetEv = EVENTS[choice.scenario];
-    if (targetEv) enterEvent(STATE.currentNode, targetEv);
-    return;
-  }
   if (choice.back) {
     if (STATE.layerStack.length > 1) STATE.layerStack.pop();
     saveEventProgress();
@@ -6712,7 +6649,7 @@ function handleChoiceClick(choice) {
   }
   if (outcomeId) {
     const outcome = ev.outcomes[outcomeId];
-    const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: choice + outcome + real effects
+    const slog = ShipLog.begin(); // Ship's Log: choice + outcome + real effects
     applyOutcomeEffects(outcome);
     if (slog) ShipLog.resolved(slog, ev, choice, outcome, { line: outcome && (outcome.body || outcome.narrative) });
     renderHUD();
@@ -6858,16 +6795,16 @@ function applyOutcomeEffects(o) {
       // then and step off there (disembarkPassengers).
       const pid = 'crew_' + gone;
       STATE.passengers = (STATE.passengers || []).filter(p => p.id !== pid);
-      STATE.passengers.push({ id: pid, name: goneName, reward: null, farewell: null, boardedDay: STATE.daysElapsed || 0 });
+      STATE.passengers.push({ id: pid, name: goneName, reward: null, farewell: null });
       window.pushCruiseLog('◆ ' + goneName + ' steps down from the crew today and rides as a passenger to the next stop. Nobody discusses it at dinner.');
     }
     if (resolve === 'welcome' || resolve === 'welcome_replace') {
       const joined = joinAsCrew(idn, 100);
       const name = idn.name || 'The stowaway';
-      if (joined) { if (window.ShipLog) ShipLog.stowaway(name, joined); }
+      if (joined) ShipLog.stowaway(name, joined);
       else {
         STATE.flags.add('stowaway_passenger');
-        if (window.ShipLog) ShipLog.stowaway(name, null);
+        ShipLog.stowaway(name, null);
       }
       // The outcome card says which it was (the choice's sub said it first).
       STATE.joinNote = joined ? name + ' joins the crew as ' + joined + '.' : name + ' rides along as a passenger.';
@@ -6889,7 +6826,7 @@ function applyOutcomeEffects(o) {
     } else {
       const pas = cj.passenger || {};
       STATE.passengers = (STATE.passengers || []).filter(p => p.id !== cj.id);
-      STATE.passengers.push({ id: cj.id, name: cj.name, reward: pas.reward || null, farewell: pas.farewell || null, boardedDay: STATE.daysElapsed || 0 });
+      STATE.passengers.push({ id: cj.id, name: cj.name, reward: pas.reward || null, farewell: pas.farewell || null });
       STATE.joinNote = cj.name + ' rides along as a passenger to the next station.';
     }
     window.pushCruiseLog('◆ ' + STATE.joinNote);
@@ -6933,7 +6870,7 @@ function applyOutcomeEffects(o) {
 
   // waves_off (owner ruling 2026-10-11): skipping the station closes its
   // TRADE / MEDBAY / DRYDOCK / FAB SERVICE for this stop (station.js).
-  if (o.waves_off && window.StationVisit) StationVisit.waveOff();
+  if (o.waves_off) StationVisit.waveOff();
   if (o.sets_flag) { STATE.flags.add(o.sets_flag); rememberFlagNpc(o.sets_flag); }
   if (o.clears_flag) STATE.flags.delete(o.clears_flag); // one-shot armed flags (e.g. negotiation_prepared) spend here
 
@@ -6980,11 +6917,11 @@ function applyOutcomeEffects(o) {
   // time_cost "none": no day passes (a wave-off costs no time — owner ruling).
   concernScaleHold = null;
   if (tier === 'none' && !STATE.effortCon) return;
-  if (window.ShipLog) ShipLog.timeStart(); // Ship's Log: the ship's own daily draw isn't the outcome's effect
+  ShipLog.timeStart(); // Ship's Log: the ship's own daily draw isn't the outcome's effect
   const receipt = concernReceipt; concernReceipt = null; // …nor are the days' own concerns (short rations)
   passDays(Math.max(1, Math.round(base * scale)) + (STATE.effortCon ? (STATE.effortCon.days || 2) : 0));
   concernReceipt = receipt;
-  if (window.ShipLog) ShipLog.timeEnd();
+  ShipLog.timeEnd();
 }
 
 /* Effort a repair choice can draw on (GAME_BIBLE §The Effort System):
@@ -7105,7 +7042,8 @@ function eventMinigameQuit(choice, harm) {
   return quit;
 }
 // A reload after BEGIN settles the game as a quit, never a return to the
-// event's entry with the minigame there to replay.
+// event's entry with the minigame there to replay. Called again each time
+// harm lands in play (cruise.js onJobHarm), so a reload keeps it too.
 let eventMinigameChoice = null, eventMinigamePatient = null;
 function eventMinigameBegun(harm) {
   const ev = STATE.currentEvent, ch = eventMinigameChoice;
@@ -7114,9 +7052,6 @@ function eventMinigameBegun(harm) {
   if (harm) q.harm = Object.assign({ patient: eventMinigamePatient }, harm);
   writeSnapshot(SAVE_KEY, { pendingEventQuit: q });
 }
-// …and again each time harm lands in play (cruise.js onJobHarm), so a
-// reload keeps it too.
-function eventMinigameHarm(harm) { eventMinigameBegun(harm); }
 /* A minigame tier's outcome: the base outcome with the tier's own fields
    on top (tier resources replace the base's per key). medical's 'fedup'
    (the patient walked out) scores as poor unless authored. */
@@ -7168,7 +7103,7 @@ function resolveChoice(choice) {
       eventMinigameChoice = null; eventMinigamePatient = null;
       const base = choice.outcome || {};
       if (tier === 'abandoned') {
-        const slogQ = window.ShipLog && ShipLog.begin();
+        const slogQ = ShipLog.begin();
         const harm = mgPayload && mgPayload.harm;
         const quit = eventMinigameQuit(choice, harm && Object.assign({ patient }, harm));
         if (slogQ) ShipLog.resolved(slogQ, STATE.currentEvent, choice, Object.assign({ tone: 'danger' }, quit));
@@ -7181,7 +7116,7 @@ function resolveChoice(choice) {
       // poor unless authored — it used to fall back to the base outcome,
       // which beat poor.
       const merged = mergedTierOutcome(choice, tier);
-      const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: closed below, once the patient's HP has landed too
+      const slog = ShipLog.begin(); // Ship's Log: closed below, once the patient's HP has landed too
       applyOutcomeEffects(merged);
       if (patient && peopleAboard().includes(patient)) {
         const before = hpOf(patient);
@@ -7204,7 +7139,7 @@ function resolveChoice(choice) {
     return;
   }
   const o = choice.outcome || {};
-  const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: choice + outcome + real effects
+  const slog = ShipLog.begin(); // Ship's Log: choice + outcome + real effects
   applyOutcomeEffects(o);
   if (slog) ShipLog.resolved(slog, STATE.currentEvent, choice, o);
   renderHUD();
@@ -7262,7 +7197,7 @@ function advanceAfterEvent() {
   // Forks are unchanged in effect: the branch flag the fork event set
   // makes Resume's single next node the chosen branch.
   // A station visit routes on: arrival event → approach, room → dock (station.js).
-  if (window.StationVisit && StationVisit.afterEvent()) return;
+  if (StationVisit.afterEvent()) return;
   STATE.visited.add(STATE.currentId);
   returnToHub();
 }
@@ -7319,21 +7254,9 @@ function checkFailure(opts) {
    ──────────────────────────────────────────────────────────────── */
 function triggerArrival(node) {
   window.tickCropGrowth(); // score the crop as of today
-  // Fixed test-path arrival node hardcodes event_id for reproducible
-  // debugging (?debug=fixed_path) — honor it deterministically.
-  // Procedurally generated maps never set event_id on any node
-  // (engine/js/map.js), so every real playthrough falls through to a
-  // genuine bracket+tone random draw among matching endings (closes
-  // the "always lands on the test_path-flagged ending" gap Phase 3
-  // flagged — endings.json had nothing real to test bracket-filtering
-  // against until now; still only 2 entries, both ending_score:"any",
-  // so today this is a coin flip between them, ready for more content).
-  const id = node.event_id;
-  let ending = id && MOD.endings.find(e => e.id === id);
-  if (!ending) {
-    const bracket = scoreBracket();
-    ending = filterThenRandomDraw(MOD.endings, e => e.ending_score === 'any' || e.ending_score === bracket) || MOD.endings[0];
-  }
+  // A bracket+tone random draw among the matching endings.
+  const bracket = scoreBracket();
+  const ending = filterThenRandomDraw(MOD.endings, e => e.ending_score === 'any' || e.ending_score === bracket) || MOD.endings[0];
   endRun({ kind: 'ending', module: ending });
 }
 
@@ -7455,17 +7378,6 @@ document.addEventListener('keydown', e => {
   document.getElementById('slog-x').addEventListener('click', () => hideOverlay('overlay-shipslog'));
   ['inv-grid-host', 'inv-detail-host', 'slog-rows-host', 'slog-expand-host'].forEach(id => wireCustomScroll(document.getElementById(id)));
   document.getElementById('slog-expand-close').addEventListener('click', closeShipsLogExpand);
-
-  // ?debug=fixed_path skips title/setup and boots straight into the
-  // old hardcoded lunar_test_path loop — kept for regression-testing
-  // the map/encounter/end screens while Phase 2+ replace initState().
-  if (new URLSearchParams(location.search).get('debug') === 'fixed_path') {
-    initState();
-    renderHUD();
-    showScreen('screen-map');
-    renderMap();
-    return;
-  }
 
   showScreen('screen-title');
 })();

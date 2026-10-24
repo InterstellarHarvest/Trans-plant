@@ -21,7 +21,7 @@
      Wounded / Pending crisis / deprivation statuses are the captain's own.
 
    Charges: STATE.crewSkillCharges {role: usesRemaining} — seeded in
-   applySetupToState/initState, lazily via ensureCrewSkillCharges()
+   applySetupToState, lazily via ensureCrewSkillCharges()
    for legacy saves, decremented here on USE, restored by travelTo()
    on station arrival per each skill's authored recharges_at.
 
@@ -122,7 +122,7 @@
   // DEPRIVATION), shown with the numbers that table applies.
   // (read at render: DEPRIVATION is declared by index.html after this file loads)
   const dep = (res, verb) => {
-    const d = (typeof DEPRIVATION !== 'undefined' && DEPRIVATION[res]) || { hp: 0, morale: 0, failAfter: 0 };
+    const d = DEPRIVATION[res];
     return '−' + d.hp + ' HP & −' + d.morale + ' morale a day · ' + d.failAfter + ' days = ' + verb;
   };
   const MONITORED_STATUSES = [
@@ -165,7 +165,7 @@
   let departing = false;      // animation in flight — block interaction
 
   function rosterOf(role) {
-    return ((typeof MOD !== 'undefined' && MOD.crew_roster) || []).find(c => c.role === role) || null;
+    return (MOD.crew_roster || []).find(c => c.role === role) || null;
   }
   /* Sentence split for the epitaph card (one sentence per line, dry OT
      rhythm). A terminator only ends a sentence when whitespace and a new
@@ -386,7 +386,7 @@
     // encounter choice that needs/spends that item — the consequence is
     // revealed before the player commits.
     xenobiologist() {
-      const defs = (typeof MOD !== 'undefined' && MOD.items) || [];
+      const defs = MOD.items || [];
       let hit = null, sid = null;
       for (const id of STATE.items) {
         const d = defs.find(x => { const s = x.id && x.id.replace(/^item_/, '').replace(/_\d+$/, ''); return s === id; });
@@ -755,7 +755,7 @@
     const name = crewNameOf(role);
     // Ship's Log: an airlock death gets the memorial page (read before
     // the identity goes; shipslog.js).
-    const memo = jettisoned && window.ShipLog ? ShipLog.deathEntry(role, '', { cause: 'out the airlock' }) : null;
+    const memo = jettisoned ? ShipLog.deathEntry(role, '', { cause: 'out the airlock' }) : null;
     // HP, charges, pending, identity, morale and any armed active skill
     // go with them — index.html releaseCrewRole, one place.
     releaseCrewRole(role);
@@ -768,8 +768,8 @@
       // The airlock's own epitaphs (demo-crew canon, flavor_pools
       // airlock_epitaphs) — subjectless; the card puts the name above.
       // The general death pool (crew_epitaphs) is the fallback.
-      const air = (typeof MOD !== 'undefined' && MOD.flavor && MOD.flavor.airlock_epitaphs) || [];
-      const pool = (typeof MOD !== 'undefined' && MOD.flavor && MOD.flavor.crew_epitaphs) || [];
+      const air = (MOD.flavor && MOD.flavor.airlock_epitaphs) || [];
+      const pool = (MOD.flavor && MOD.flavor.crew_epitaphs) || [];
       if (air.length) {
         line = air[Math.floor(Math.random() * air.length)].replaceAll('[Name]', name);
         logLine = name + ', jettisoned. ' + line;

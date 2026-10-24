@@ -164,7 +164,7 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
     await page.waitForTimeout(250);
     s = await page.evaluate(() => cruiseStarState());
     ok(s.running && s.mul > 0, 'Resume (cruising again): spools back up (×' + s.mul.toFixed(1) + ')');
-    await page.evaluate(() => showScreen('screen-map'));
+    await page.evaluate(() => showScreen('screen-title'));
     await page.waitForTimeout(200);
     ok(!(await page.evaluate(() => cruiseStarState().running)), 'hidden screen: the loop idles');
     await page.evaluate(() => { showScreen('screen-cruise'); PauseBus.pause(); });

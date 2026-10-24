@@ -316,14 +316,14 @@
   async function advance() {
     if (step < STEPS.length - 1) { saveScroll(); step++; render(); return; }
     // LAUNCH over a saved voyage replaces it: ask first.
-    if (typeof hasSave === 'function' && hasSave() &&
+    if (hasSave() &&
         !(await tpConfirm({ title: 'ABANDON THE SAVED VOYAGE?', message: 'Launching starts a new voyage. The one saved for Continue will be lost.', yes: 'LAUNCH', danger: true }))) return;
     // A failure the saved voyage left pending is final once it's replaced.
-    if (typeof recordSavedFailure === 'function') recordSavedFailure();
+    recordSavedFailure();
     applySetupToState(sel);
     // Ruling 92: the departure plays at the station on day 0, then the hub
     // opens stopped there.
-    if (typeof playDeparture === 'function') playDeparture();
+    playDeparture();
   }
   function prevStep() {
     if (step > 0) { saveScroll(); step--; render(); }

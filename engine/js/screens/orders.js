@@ -154,9 +154,7 @@
     return (STATE.crop) ? cropMetaOf(STATE.crop) : null;
   }
   function waterNeed() {
-    if (STATE.crop) return cropWaterNeed(); // botanist / purifier aware
-    const m = cropMeta();
-    return (m && m.water_need) || CROP_WATER_NEED_DEFAULT;
+    return STATE.crop ? cropWaterNeed() : CROP_WATER_NEED_DEFAULT; // botanist / purifier aware
   }
 
   // ── Projection model — engine-real inputs, demo-shaped outputs ─
@@ -489,36 +487,7 @@
   (function wireWaterDrag() {
     const track = $('od-water-track');
     if (!track) return;
-    const MIN_WATER = 15, MAX_WATER = 85;
-    let dragging = false;
-
-    function pctFromEvent(e) {
-      const rect = track.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const pct = Math.round(Math.max(0, Math.min(1, x)) * 100);
-      return Math.max(MIN_WATER, Math.min(MAX_WATER, pct));
-    }
-    track.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      dragging = true;
-      track.setPointerCapture(e.pointerId);
-      preview.water = pctFromEvent(e);
-      renderAll();
-    });
-    track.addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      preview.water = pctFromEvent(e);
-      renderAll();
-    });
-    const end = (e) => {
-      if (!dragging) return;
-      dragging = false;
-      if (track.hasPointerCapture && e.pointerId !== undefined && track.hasPointerCapture(e.pointerId)) {
-        track.releasePointerCapture(e.pointerId);
-      }
-    };
-    track.addEventListener('pointerup', end);
-    track.addEventListener('pointercancel', end);
+    wireWaterTrack(track, pct => { preview.water = pct; renderAll(); });
   })();
 
   // ── Open / close ──────────────────────────────────────────────

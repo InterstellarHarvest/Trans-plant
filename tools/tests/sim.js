@@ -90,7 +90,7 @@ function installHarness(policy) {
   }
   const realChoices = renderChoicesInner;
   renderChoicesInner = function (choices) {
-    const visible = choices.filter(ch => !(ch.showFlag && !STATE.flags.has(ch.showFlag)) && !(ch.requires_flag && !STATE.flags.has(ch.requires_flag)) && !(ch.hideFlag && STATE.flags.has(ch.hideFlag))); // requires_flag hides too (b4 ruling 36)
+    const visible = choices.filter(ch => !(ch.requires_flag && !STATE.flags.has(ch.requires_flag)) && !(ch.hideFlag && STATE.flags.has(ch.hideFlag))); // requires_flag hides too (b4 ruling 36)
     window.__choices = visible.filter(ch => !lockReason(ch));
     window.__lockedGold = visible.filter(ch => lockReason(ch) && ch.gate && ch.gate.gold).length;
     return realChoices(choices);
@@ -268,7 +268,6 @@ function step() {
           else if (c.open_market) s = -2;
           else if (c.next) s = 1 - 4 * ((STATE._layerVisits || {})[c.next] ? 1 : 0);
           else if (c.back) s = -3;
-          else if (c.scenario) s = 0;
           else s = 0;
           s += Math.random() * 0.5;
           if (s > best) { best = s; ch = c; }

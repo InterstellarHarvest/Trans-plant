@@ -193,7 +193,7 @@ const end = (page, r) => page.evaluate(new Function('r', 'return (' + END.toStri
 
   console.log('— ?debug= records nothing');
   {
-    const page = await open(URL.replace(/index\.html.*$/, 'index.html?debug=fixed_path'));
+    const page = await open(URL.replace(/index\.html.*$/, 'index.html?debug=test'));
     const r = await end(page, { trail: 'lunar', score: 120, report: true });
     ok(r.recs.runs.length === 0 && !/NEW BEST/.test(r.day) && /SCORE 120/.test(r.day), 'debug run: the score shows, nothing is recorded');
     await page.close();

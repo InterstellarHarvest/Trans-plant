@@ -1,5 +1,5 @@
-// Hunt A fixes (2026-10-12): captain HP, healing, per-crew morale.
-// HUNT_A_CAPTAIN_MORALE.md A1–A15, A17. Asserts real engine state: the
+// Hunt A fixes (2026-10-12): captain HP, healing, per-crew morale,
+// items A1–A15 and A17. Asserts real engine state: the
 // OLD FRIENDS wave-through checks for failure, a combat save says who
 // saved whom, outcome text names the dead as they were, "someone has to
 // go" only when it means something, crew_injured counts the captain,

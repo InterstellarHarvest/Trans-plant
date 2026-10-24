@@ -114,7 +114,7 @@ const stationAhead = page => page.evaluate(() => {
       setCrewMorale(20, 'engineer'); setCrewMorale(36, 'medic');
       renderHUD();
       out.avg = crewMoraleAvg();
-      out.hud = document.querySelector('#hud-map [data-tip="resource_morale"]').textContent;
+      out.hud = document.querySelector('#hud-enc [data-tip="resource_morale"]').textContent;
       out.low = activeTriggers().has('low_morale');
       setCrewMorale(25, 'engineer'); setCrewMorale(40, 'medic');
       out.avg2 = crewMoraleAvg(); out.low2 = activeTriggers().has('low_morale');
@@ -250,7 +250,7 @@ const stationAhead = page => page.evaluate(() => {
       const out = {};
       renderHUD();
       out.avg = crewMoraleAvg(); out.raw = crewMoraleRaw();
-      out.hud = document.querySelector('#hud-map [data-tip="resource_morale"]').textContent.trim();
+      out.hud = document.querySelector('#hud-enc [data-tip="resource_morale"]').textContent.trim();
       out.low = activeTriggers().has('low_morale');
       out.fail = checkFailure();
       out.tax = payEffortTax(3); out.taxLabel = effortTax(3);
@@ -359,14 +359,6 @@ const stationAhead = page => page.evaluate(() => {
     const css = await page.evaluate(() => [...document.styleSheets].some(s => { try { return [...s.cssRules].some(r => /crowded/.test(r.selectorText || '')); } catch (_) { return false; } }));
     ok(!css, 'the vestigial #crew-strip.crowded CSS is gone');
     await shot(page, 'morale_04_empty_slots');
-    await page.close();
-  }
-
-  console.log('— the debug fixed path respects the cap');
-  {
-    const page = await open(URL + '?debug=fixed_path');
-    const n = await page.evaluate(() => ({ crew: STATE.crew.slice(), mo: Object.keys(STATE.crewMorale || {}) }));
-    ok(n.crew.length === 2 && n.mo.length === 2, 'initState seeds 2 crew (' + n.crew.join(', ') + ') with their morale');
     await page.close();
   }
 

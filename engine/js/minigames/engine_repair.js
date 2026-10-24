@@ -107,7 +107,7 @@
     aiChip($('er-ai-name'), n, t);
     $('er-ai-text').textContent = t;
   }
-  function paused() { return typeof PauseBus !== 'undefined' && PauseBus.paused; }
+  function paused() { return PauseBus.paused; }
 
   // ── markup (injected once into the static #engrepair-root shell) ──
   function mount() {
@@ -644,7 +644,7 @@
     // Resource HUD mirrors live STATE (the demo hardcodes these values):
     // the engine's shared five-dot rows (ruling 16 — crew-average morale,
     // crit pulse, tooltips).
-    if (typeof STATE !== 'undefined' && STATE.resources) $('er-resources').innerHTML = hudRowsHTML();
+    $('er-resources').innerHTML = hudRowsHTML();
     showOverlay('overlay-engrepair');
     running = true;
     lastBurstTime = -1000;
