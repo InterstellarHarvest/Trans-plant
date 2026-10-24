@@ -21,7 +21,7 @@
      Wounded / Pending crisis / deprivation statuses are the captain's own.
 
    Charges: STATE.crewSkillCharges {role: usesRemaining} — seeded in
-   applySetupToState/initState, lazily via ensureCrewSkillCharges()
+   applySetupToState, lazily via ensureCrewSkillCharges()
    for legacy saves, decremented here on USE, restored by travelTo()
    on station arrival per each skill's authored recharges_at.
 

@@ -118,12 +118,7 @@ const DEMO_TITLES = ['FUEL', 'FOOD', 'OXYGEN', 'HULL', 'MORALE'];
     ok(crit.food.color !== 'rgb(255, 136, 120)' && crit.food.anim === 'none', 'food 48 stays calm');
     await shot(page, 'hud_encounter_crit');
 
-    // map
-    await page.evaluate(() => { Object.assign(STATE.resources, { fuel: 62, hull: 55 }); showScreen('screen-map'); renderMap(); renderHUD(); });
-    const map = await readHud(page, 'hud-map');
-    ok(map && map.rows.length === 5 && map.rows.map(x => x.dotBg).join() === DEMO_DOTS.join() && map.rows.every(x => /^(\d+|—)$/.test(x.text)), 'map: the same five, numbers only (' + (map && map.rows.map(x => x.text).join(' ')) + ')');
-    ok(map.vis === 'visible' && map.size === '13px', 'map HUD visible, 13px');
-    await shot(page, 'hud_map');
+    await page.evaluate(() => { Object.assign(STATE.resources, { fuel: 62, hull: 55 }); renderHUD(); });
 
     // mining
     await page.evaluate(() => { openMining(() => {}); renderHUD(); });

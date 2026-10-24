@@ -1789,7 +1789,6 @@ const CROP_MATURITY_DEFAULT = 90;
    ──────────────────────────────────────────────────────────────── */
 const MODULE_PATHS = {
   map_rules:     'modules/maps/map_rules.json',
-  test_path:     'modules/locations/lunar_test_path.json',
   ai_companions: 'modules/ai/ai_companions.json',
   ships:         'modules/ships/ships.json',
   crew_roster:   'modules/crew/crew_roster.json',
@@ -1872,8 +1871,8 @@ async function loadAllModules() {
 
 /* ────────────────────────────────────────────────────────────────
    GAME STATE
-   Initialised from map_rules.lunar starting_resources + the fixed
-   lunar_test_path. Single mutable STATE object — every screen
+   Initialised by applySetupToState() from the setup wizard (or by
+   loadRun() from a save). Single mutable STATE object — every screen
    reads from it; every choice resolution writes to it.
    ──────────────────────────────────────────────────────────────── */
 const STATE = {
@@ -1926,7 +1925,6 @@ const STATE = {
   plaidLegs:    0,          // drive heat: PLAID legs, cooled one per slower leg (engine_strain, ruling 83)
   engineStrain: false,      // a strain roll came up: the next stop draws an engine_strain event (ruling 83)
   crafted:      {},         // item id → copies aboard that the fabricator printed (ruling 79: a station pays their materials' value)
-  hubScreen:    'screen-cruise', // which screen travelTo()/advanceAfterEvent() return to between nodes — 'screen-map' under ?debug=fixed_path
 };
 
 /* ────────────────────────────────────────────────────────────────
@@ -2081,7 +2079,6 @@ function loadRun(key) {
   // Saves from before the "planted" announcement existed: the crop was
   // planted long ago — don't announce it on resume.
   if (STATE.cropGrowth) STATE.flags.add('ai_noted_crop_planted');
-  STATE.hubScreen = 'screen-cruise';
   SceneArt.clearRunCaches();
   // The hub log belongs to the run being replaced — show this run's
   // recent log instead (pause → LOAD used to keep the old timeline's).
@@ -2170,57 +2167,6 @@ function loadRun(key) {
   return true;
 }
 
-function initState() {
-  const rules = MOD.map_rules.trails[MOD.test_path.trail];
-  STATE.trail       = MOD.test_path.trail;
-  STATE.mapName     = MOD.test_path.map_name;
-  STATE.destination = MOD.test_path.destination;
-  STATE.baseDays    = MOD.test_path.base_days || rules.base_days;
-  STATE.resources = {
-    fuel:   rules.starting_resources.fuel,
-    food:   rules.starting_resources.food,
-    water:  rules.starting_resources.water,
-    o2:     rules.starting_resources.o2,
-    hull:   rules.starting_resources.hull,
-  };
-  // Captain-dependent credits: ship-only build, default 50 gold.
-  STATE.goldAmount = 50;
-
-  // Default crew loadout: engineer + medic + botanist. Captain + 2 crew
-  // selection screens come in a later pass — for this first build the
-  // gated choices need *some* roles aboard so the loop isn't sterile.
-  // Captain + 2 crew is the cap everywhere (crewJoinRole); the fixed
-  // path's crew-gated choices (event_planet_001 / event_derelict_001)
-  // want the botanist, the engineer covers the repair jobs.
-  STATE.crew = ['engineer', 'botanist'];
-
-  // Starting items — same reasoning as crew. A couple so item-gated
-  // choices unlock and the player sees that gating works.
-  STATE.items = ['soil_sampler', 'gas_analyzer', 'repair_kit'];
-  STATE.itemValues = {};
-  STATE.itemPickups = {}; STATE.itemSeq = 0; STATE.materialPickups = {};
-  syncItemPickups(ITEM_PICKUP_OLD);
-  STATE.materials = {};
-
-  // Active AI — pick MARV by default. Real ship/AI select screen is
-  // a later pass.
-  STATE.activeAI = 'marv';
-
-  STATE.nodes = MOD.test_path.nodes;
-  STATE.byId  = {};
-  for (const n of STATE.nodes) STATE.byId[n.id] = n;
-  STATE.currentId = STATE.nodes[0].id;
-  STATE.visited = new Set();
-  STATE.flags   = new Set();
-  initCrewHP();
-  initCrewMorale(rules.starting_resources.morale); // per crew member (owner ruling 15)
-  initCrewSkillCharges();
-  STATE.orders = { pace: 'ridiculous', rations: 'standard', waterSplit: 50 };
-  STATE.stowaway = null; // debug loop skips the stowaway roll — deterministic testing
-  STATE.artSeed = rollArtSeed();
-  STATE.hubScreen = 'screen-map'; // legacy debug loop hub — screen-cruise is the real game's hub
-}
-
 /* ────────────────────────────────────────────────────────────────
    TITLE → SETUP → CRUISE handoff
    ──────────────────────────────────────────────────────────────── */
@@ -2273,9 +2219,8 @@ function applySetupToState(sel) {
   const namePool = shipNamePool();
   STATE.shipName  = (sel.ship && String(sel.ship).trim()) || (namePool.length ? namePool[Math.floor(Math.random() * namePool.length)] : 'The Ship');
 
-  // Starting items — no items step in the setup wizard yet; keep the
-  // same placeholder loadout initState() used, so item-gated choices
-  // still unlock somewhere in the loop.
+  // Starting items — no items step in the setup wizard yet: a placeholder
+  // loadout, so item-gated choices still unlock somewhere in the loop.
   STATE.items = ['soil_sampler', 'repair_kit']; // the gas analyzer is the Academic captain's starting bonus
   STATE.itemValues = {};
   STATE.materials = { metal: 4, scrap: 2 }; // ship stores: two hull patches' worth (REPAIR costs 2 metal + 1 scrap)
@@ -2320,7 +2265,6 @@ function applySetupToState(sel) {
   STATE.artSeed = rollArtSeed(); // this run's scene + NPC-face variants (saved: stable across reloads)
   SceneArt.clearRunCaches(); // re-roll scenes + NPC variants per run
 
-  STATE.hubScreen = 'screen-cruise';
   generateMap(sel.trail); // sets STATE.nodes/byId/currentId/mapName/destination
 
   renderHUD();
@@ -3503,7 +3447,7 @@ function weightedDraw(candidates, weightFn) {
   return candidates[candidates.length - 1];
 }
 
-/* Replaces the flat node.event_id lookup. Filters EVENTS by node_type
+/* A stop's event draw. Filters EVENTS by node_type
    + active trigger match + once/seen + active:true, weights by
    difficulty (map_rules.json's event_difficulty_weights, shifted
    toward hard over the second half by late_difficulty, reweighted
@@ -3864,7 +3808,7 @@ function renderHUD() {
   // An upgrade sold/jettisoned/lost takes its headroom with it.
   for (const k of ['fuel', 'hull', 'food']) if (r[k] > resMax(k)) r[k] = resMax(k);
   const html = hudRowsHTML();
-  for (const id of ['hud-map', 'hud-enc', 'hud-mining']) {
+  for (const id of ['hud-enc', 'hud-mining']) {
     const el = document.getElementById(id);
     if (el) el.innerHTML = html;
   }
@@ -3925,21 +3869,12 @@ document.addEventListener('keydown', e => {
 }, true);
 
 /* ────────────────────────────────────────────────────────────────
-   MAP RENDERER
-   Lays out the lunar_test_path on a left-to-right axis. Fork
-   branches stack vertically so alpha sits above beta. Lines
-   connect each node to everything in its connects_to list.
+   MAP RENDERER (the hub's look-only map overlay)
+   Lays out the run's map on a left-to-right axis. Fork branches
+   stack vertically so alpha sits above beta. Lines connect each
+   node to everything in its connects_to list.
    ──────────────────────────────────────────────────────────────── */
-/* Default ids target the legacy full-screen map (screen-map, still
-   reachable via ?debug=fixed_path). renderMapOverlay() below reuses
-   this same layout/render logic targeting the overlay-map ids instead
-   — one node-graph renderer, two mount points. */
-const MAP_IDS_DEFAULT = {
-  header: 'map-header', viewport: 'map-viewport', connections: 'map-connections',
-  nodes: 'map-nodes', footer: 'map-footer', info: 'map-info', advanceBtn: 'btn-advance',
-};
-
-function nodePositions(viewportId) {
+function nodePositions() {
   // One column per distinct route position (map.js gives a fork's branch
   // nodes fractional positions between the fork and the merge). Using
   // column RANK, not the raw position, gives every branch node a full
@@ -3950,7 +3885,7 @@ function nodePositions(viewportId) {
   for (const n of STATE.nodes) (byPos[n.position] = byPos[n.position] || []).push(n);
   const positions = Object.keys(byPos).map(Number).sort((a, b) => a - b);
   const pos = {};
-  const vp = document.getElementById(viewportId || MAP_IDS_DEFAULT.viewport);
+  const vp = document.getElementById('ovmap-viewport');
   const W = vp.clientWidth, H = vp.clientHeight;
   const ROW = Math.min(110, H * 0.28);
   // Spine/fork columns carry the long labels ("Asteroid Field 7") —
@@ -3981,19 +3916,16 @@ function branchFlavorDisplay(n) {
   return { text: String(n.branch_flavor).replace(/_/g, ' ').toUpperCase(), state: 'revealed' };
 }
 
-function renderMap(ids) {
-  ids = ids || MAP_IDS_DEFAULT;
-  const readOnly = !ids.advanceBtn; // overlay-map is look-only — no click-to-travel
-
-  const header = document.getElementById(ids.header);
+function renderMapOverlay() {
+  const header = document.getElementById('ovmap-header');
   header.innerHTML = `${STATE.mapName}<div class="sub">${STATE.trail.toUpperCase()} TRAIL — Destination: ${STATE.destination}</div>`;
 
-  const pos = nodePositions(ids.viewport);
-  const nodesEl = document.getElementById(ids.nodes);
-  const svg = document.getElementById(ids.connections);
+  const pos = nodePositions();
+  const nodesEl = document.getElementById('ovmap-nodes');
+  const svg = document.getElementById('ovmap-connections');
   nodesEl.innerHTML = '';
   svg.innerHTML = '';
-  const vp = document.getElementById(ids.viewport);
+  const vp = document.getElementById('ovmap-viewport');
   svg.setAttribute('viewBox', `0 0 ${vp.clientWidth} ${vp.clientHeight}`);
   svg.setAttribute('width', vp.clientWidth);
   svg.setAttribute('height', vp.clientHeight);
@@ -4083,9 +4015,6 @@ function renderMap(ids) {
       el.appendChild(tag);
       el.title = n.name + ' — scanned: ' + (ev ? (ev.title || 'contact') + ' [' + diff + ']' : 'quiet');
     }
-    if (!readOnly && available.has(n.id)) {
-      el.addEventListener('click', () => travelTo(n.id));
-    }
     nodesEl.appendChild(el);
   }
 
@@ -4099,33 +4028,11 @@ function renderMap(ids) {
       if (L.width && L.left < H.right - 1 && H.left < L.right - 1 && L.top < H.bottom - 1 && H.top < L.bottom - 1) lab.classList.add('under-here');
     }
   }
-  // Footer: current node info + (legacy screen-map only) Advance button.
+  // Footer: the current node's info.
   const cur = STATE.byId[STATE.currentId];
-  const nextIds = [...available];
-  const info = document.getElementById(ids.info);
+  const info = document.getElementById('ovmap-info');
   info.innerHTML = `<b>${escapeHTML(cur.name)}</b>${cur.short && cur.short !== cur.name ? ' <span class="sub">(' + escapeHTML(cur.short) + ')</span>' : ''} — ${cur.description}`;
-  if (readOnly) return;
-  const btn = document.getElementById(ids.advanceBtn);
-  if (nextIds.length === 1) {
-    btn.disabled = false;
-    btn.textContent = `Advance to ${STATE.byId[nextIds[0]].name} →`;
-    btn.onclick = () => travelTo(nextIds[0]);
-  } else if (nextIds.length > 1) {
-    btn.disabled = true;
-    btn.textContent = 'Pick a route from the map';
-    btn.onclick = null;
-  } else {
-    btn.disabled = true;
-    btn.textContent = 'End of line';
-    btn.onclick = null;
-  }
 }
-
-const OVMAP_IDS = {
-  header: 'ovmap-header', viewport: 'ovmap-viewport', connections: 'ovmap-connections',
-  nodes: 'ovmap-nodes', footer: 'ovmap-footer', info: 'ovmap-info', advanceBtn: null,
-};
-function renderMapOverlay() { renderMap(OVMAP_IDS); }
 
 /* connections_to may be an array (normal node) or an object keyed by
    branch name (fork node). Flatten to an array of node ids. */
@@ -4165,10 +4072,9 @@ function nextAvailableNodes() {
    TRAVEL & EVENT ENTRY
    ──────────────────────────────────────────────────────────────── */
 
-/* Shows whichever screen is the current run's hub (screen-cruise for
-   a real game, screen-map for ?debug=fixed_path) and re-renders it.
-   Called whenever travel/event-resolution has nothing further to do
-   and control returns to the player outside an encounter. */
+/* Shows the hub (screen-cruise) and re-renders it. Called whenever
+   travel/event-resolution has nothing further to do and control
+   returns to the player outside an encounter. */
 function returnToHub() {
   // Back at the hub, no event is in progress. Uncleared, these make
   // saveRun() (which refuses mid-event) silently stop autosaving after
@@ -4184,15 +4090,12 @@ function returnToHub() {
   STATE._shoppedThisEvent = false;
   STATE.scanIntelEvent = null;
   renderHUD();
-  showScreen(STATE.hubScreen);
-  if (STATE.hubScreen === 'screen-map') renderMap();
-  else {
-    renderCruise();
-    // Owner ruling 2026-10-10: after an event the ship is stopped — the
-    // Stop menu is already open and Resume travels in one click (not
-    // Stop → Resume, two clicks a leg).
-    if (!STATE.ended) window.openStopMenu();
-  }
+  showScreen('screen-cruise');
+  renderCruise();
+  // Owner ruling 2026-10-10: after an event the ship is stopped — the
+  // Stop menu is already open and Resume travels in one click (not
+  // Stop → Resume, two clicks a leg).
+  if (!STATE.ended) window.openStopMenu();
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -4874,21 +4777,18 @@ function arriveAtNode(node, opts) {
     return;
   }
 
-  // Fixed test-path nodes may still hardcode event_id (?debug=fixed_path);
-  // procedurally generated nodes have none, so this always falls through
-  // to the real pool-draw.
   const scoutRec = STATE.scouted && STATE.scouted[node.id];
   const scouted = scoutedEventFor(node);
   if (STATE.scouted) delete STATE.scouted[node.id];
-  const ev = crisis || (node.event_id && EVENTS[node.event_id]) || (scouted !== undefined ? scouted : selectEvent(node));
+  const ev = crisis || (scouted !== undefined ? scouted : selectEvent(node));
   if (ev !== crisis) noteEventDrawn(ev); // the repeat cooldown counts from here (a delayed crisis is never pool-drawn)
   STATE.scanIntelEvent = (ev && scouted === ev && scoutRec && scoutRec.intel) ? ev.id : null;
   // Station stop (owner ruling 2026-10-11, demo station_approach): every
   // stop opens on the bridge with the approach — HAIL / DOCK / the wave-off
   // warning — and the stop's one drawn event plays before it, on DOCK, or
-  // as a room in the dock (engine/js/station.js). A delayed crisis and a
-  // fixed-path event keep the old direct entry (and recharge on arrival).
-  if (node.node_type === 'station' && !crisis && !node.event_id && StationVisit.available()) {
+  // as a room in the dock (engine/js/station.js). A delayed crisis keeps
+  // the old direct entry (and recharges on arrival).
+  if (node.node_type === 'station' && !crisis && StationVisit.available()) {
     StationVisit.arrive(node, ev);
   } else if (ev) {
     if (node.node_type === 'station') stationRecharge();
@@ -7366,21 +7266,9 @@ function checkFailure(opts) {
    ──────────────────────────────────────────────────────────────── */
 function triggerArrival(node) {
   window.tickCropGrowth(); // score the crop as of today
-  // Fixed test-path arrival node hardcodes event_id for reproducible
-  // debugging (?debug=fixed_path) — honor it deterministically.
-  // Procedurally generated maps never set event_id on any node
-  // (engine/js/map.js), so every real playthrough falls through to a
-  // genuine bracket+tone random draw among matching endings (closes
-  // the "always lands on the test_path-flagged ending" gap Phase 3
-  // flagged — endings.json had nothing real to test bracket-filtering
-  // against until now; still only 2 entries, both ending_score:"any",
-  // so today this is a coin flip between them, ready for more content).
-  const id = node.event_id;
-  let ending = id && MOD.endings.find(e => e.id === id);
-  if (!ending) {
-    const bracket = scoreBracket();
-    ending = filterThenRandomDraw(MOD.endings, e => e.ending_score === 'any' || e.ending_score === bracket) || MOD.endings[0];
-  }
+  // A bracket+tone random draw among the matching endings.
+  const bracket = scoreBracket();
+  const ending = filterThenRandomDraw(MOD.endings, e => e.ending_score === 'any' || e.ending_score === bracket) || MOD.endings[0];
   endRun({ kind: 'ending', module: ending });
 }
 
@@ -7502,17 +7390,6 @@ document.addEventListener('keydown', e => {
   document.getElementById('slog-x').addEventListener('click', () => hideOverlay('overlay-shipslog'));
   ['inv-grid-host', 'inv-detail-host', 'slog-rows-host', 'slog-expand-host'].forEach(id => wireCustomScroll(document.getElementById(id)));
   document.getElementById('slog-expand-close').addEventListener('click', closeShipsLogExpand);
-
-  // ?debug=fixed_path skips title/setup and boots straight into the
-  // old hardcoded lunar_test_path loop — kept for regression-testing
-  // the map/encounter/end screens while Phase 2+ replace initState().
-  if (new URLSearchParams(location.search).get('debug') === 'fixed_path') {
-    initState();
-    renderHUD();
-    showScreen('screen-map');
-    renderMap();
-    return;
-  }
 
   showScreen('screen-title');
 })();

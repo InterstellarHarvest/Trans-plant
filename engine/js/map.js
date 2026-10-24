@@ -4,11 +4,11 @@
    generateTrail() (weighted spine + fork placement per GAME_BIBLE
    §9), reshaped to write STATE.nodes/byId directly in the engine's
    own node shape ({id, name, description, node_type, position,
-   connects_to, event_id}) instead of demo-map's internal shape.
+   connects_to}) instead of demo-map's internal shape.
 
    Note: this does NOT port demo-map.html's fog-of-war/scanner visual
    system — the "overlay-map" view reuses the engine's own existing
-   renderMap()/nodePositions()/connectionsOf() renderer (already
+   renderMapOverlay()/nodePositions()/connectionsOf() renderer (already
    built and verified against this exact node shape), so there's no
    second parallel rendering system to maintain.
    ──────────────────────────────────────────────────────────────── */
@@ -166,7 +166,7 @@ function generateMap(trailKey) {
       name: nodeName(type, i, rules),
       short: i === 0 ? 'Departure' : i === spineLen - 1 ? null : mapLabel(type) + ' ' + i, // the full names are long for a map label
       description: TYPE_DESCS[type] || '',
-      node_type: type, position: i, connects_to: [], event_id: null,
+      node_type: type, position: i, connects_to: [],
     }));
   }
 
@@ -205,7 +205,7 @@ function generateMap(trailKey) {
     const forkId = 'node_fork_' + branchNum;
     const forkNode = add({
       id: forkId, name: 'Route Decision', short: 'Fork', description: 'The path splits here.',
-      node_type: 'fork', position: gap + 0.5, connects_to: { alpha: [], beta: [] }, event_id: null,
+      node_type: 'fork', position: gap + 0.5, connects_to: { alpha: [], beta: [] },
     });
     before.connects_to = [forkId];
 
@@ -235,7 +235,7 @@ function generateMap(trailKey) {
           // (0.5 position units). The old fixed 0.1 step packed a
           // 2-node branch into ~9px of screen — nodes and labels
           // overlapped illegibly (Phase 7's map-overlay nit).
-          node_type: type, position: gap + 0.5 + (j + 1) * (0.5 / (branchLen + 1)), connects_to: [], event_id: null,
+          node_type: type, position: gap + 0.5 + (j + 1) * (0.5 / (branchLen + 1)), connects_to: [],
           branch_flavor: j === 0 ? flavor : undefined,
           branch_hidden: (j === 0 && hiddenKey === key) || undefined,
           branch: flavor, // every stop on the branch: weights its event pool

@@ -32,9 +32,9 @@ done
 cd "$ROOT"
 $NVM/bin/node tools/lint_modules.js 2>&1 | tail -1
 $NVM/bin/node tools/lint_code.js 2>&1 | tail -4
-FUZZ_URL="${URL%index.html}index.html?debug=fixed_path" $NVM/bin/node tools/fuzz_playthrough.js 2>&1 | tail -2
+FUZZ_URL="${URL%index.html}index.html?debug=fuzz" $NVM/bin/node tools/fuzz_playthrough.js 2>&1 | tail -2
 if [ -z "$SMOKE" ]; then
-  FUZZ_URL="$FILE?debug=fixed_path" $NVM/bin/node tools/fuzz_playthrough.js 2>&1 | tail -2
+  FUZZ_URL="$FILE?debug=fuzz" $NVM/bin/node tools/fuzz_playthrough.js 2>&1 | tail -2
   SWEEP_URL="$URL" $NVM/bin/node tools/ui_sweep.js 2>&1 | sed -n '/^FLAGS:/,$p'
 fi
 # From FLAGS: on, whole: a flag list spans lines (tail -2 once showed a bare "]").
