@@ -5882,7 +5882,11 @@ function renderChoicesInner(choices) {
       if (effort && effort.kit) tip.push('Uses up one ' + prettyItem(effort.kit) + ' — it counts toward the effort.');
       if (welcomes && idn.join_note) tip.push(idn.join_note);
       if (cj && cj.name) tip.push(crewJoinRole(cj) ? cj.name + ' joins the crew as ' + cj.join_role + (cj.join_note ? ' — ' + cj.join_note : '') : 'No room in the crew: ' + cj.name + ' rides to the next station as a passenger and eats with everyone' + ((cj.passenger && cj.passenger.reward && cj.passenger.reward.gold) ? '; their family pays ' + cj.passenger.reward.gold + ' gold there' : '') + '.');
-      if (effort && effort.check) { const con = Object.entries(effort.check.con).filter(([k]) => k !== 'morale' || STATE.crew.length).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).concat(STATE.crew.includes('engineer') && hullConcern(-(effort.check.con.hull || 0)) ? [concernText([{ label: 'ENGINEER', v: concernAmount(hullConcern(-effort.check.con.hull)) }]) + ' MORALE'] : []).join(', '); tip.push('Short of effort: half the resource gains, ' + (effort.authored ? 'a day more' : 'two more days') + (con ? ', ' + con : '') + '. Crew and tools raise the odds.'); } // no crew aboard: a morale setback lands on nobody
+      // An authored sub-label displaces the odds: the tooltip says them.
+      const odds = effort && effort.check && !/% clean/.test(subText || '') ? Math.round(effort.chance * 100) + '% clean. ' : '';
+      const failO = effort && effort.check && failOutcomeOf(ch);
+      if (failO) { const f = outcomeFacts(withPctPreview(failO)).map(x => x.text); tip.push(odds + 'Short of effort: ' + ((failO.title || 'it goes worse') + (f.length ? ' — ' + f.join(', ') : '')) + '. Crew and tools raise the odds.'); }
+      else if (effort && effort.check) { const con = Object.entries(effort.check.con).filter(([k]) => k !== 'morale' || STATE.crew.length).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).concat(STATE.crew.includes('engineer') && hullConcern(-(effort.check.con.hull || 0)) ? [concernText([{ label: 'ENGINEER', v: concernAmount(hullConcern(-effort.check.con.hull)) }]) + ' MORALE'] : []).join(', '); tip.push(odds + 'Short of effort: half the resource gains, ' + (effort.authored ? 'a day more' : 'two more days') + (con ? ', ' + con : '') + '. Crew and tools raise the odds.'); } // no crew aboard: a morale setback lands on nobody
       if (tip.length) btn.title = tip.join('\n');
     }
     // Held until the text lands, then the cascade (prepareDelivery /
@@ -6621,6 +6625,10 @@ function handleChoiceClick(choice) {
   // Short of effort: the job's setback, and the extra days (one when the
   // job already scales its time by effort, two otherwise).
   STATE.effortCon = (eff && eff.check && Math.random() >= eff.chance) ? Object.assign({}, eff.check, { days: eff.authored ? 1 : 2 }) : null;
+  // An authored failure (fail_outcome) replaces the generic one whole: its
+  // own text and effects, no halving, no extra days, no setback line.
+  let outcomeId = choice.outcome;
+  if (STATE.effortCon && failOutcomeOf(choice)) { outcomeId = choice.fail_outcome; STATE.effortCon = null; }
   if (eff && eff.kit) {
     const i = STATE.items.indexOf(eff.kit);
     if (i >= 0) { STATE.items.splice(i, 1); window.pushCruiseLog('◆ A ' + prettyItem(eff.kit) + ' went into the job.'); }
@@ -6712,14 +6720,14 @@ function handleChoiceClick(choice) {
     renderEncounterState();
     return;
   }
-  if (choice.outcome) {
-    const outcome = ev.outcomes[choice.outcome];
+  if (outcomeId) {
+    const outcome = ev.outcomes[outcomeId];
     const slog = window.ShipLog && ShipLog.begin(); // Ship's Log: choice + outcome + real effects
     applyOutcomeEffects(outcome);
     if (slog) ShipLog.resolved(slog, ev, choice, outcome, { line: outcome && (outcome.body || outcome.narrative) });
     renderHUD();
     if (checkFailure()) return;
-    STATE.currentOutcomeId = choice.outcome;
+    STATE.currentOutcomeId = outcomeId;
     renderEncounterState();
     return;
   }
@@ -7014,6 +7022,12 @@ const EFFORT_CHECKS = {
   calibration:        { required: 30, from: ['pilot'],                       con: { fuel: -3 },   line: 'The calibration drifts. You correct it, then correct the correction. It costs fuel.' },
   navigation:         { required: 30, from: ['pilot'],                       con: { fuel: -3 },   line: 'The line through drifts wide twice before it holds. It costs fuel and days.' },
 };
+// A hands-on job's authored failure: an outcome id in the event's outcomes
+// map, played instead of the generic short-of-effort version.
+function failOutcomeOf(choice) {
+  const ev = STATE.currentEvent;
+  return (choice && typeof choice.fail_outcome === 'string' && effortCheckOf(choice) && ev && ev.outcomes && ev.outcomes[choice.fail_outcome]) || null;
+}
 function effortCheckOf(choice) {
   const t = choice && (choice.microgame_type || choice.minigame_type);
   return (t && EFFORT_CHECKS[t]) ? Object.assign({ type: t }, EFFORT_CHECKS[t]) : null;

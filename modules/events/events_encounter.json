@@ -1952,6 +1952,7 @@
             },
             "microgame_type": "negotiation_wobble",
             "outcome": "hag_fuel_haggled",
+            "fail_outcome": "hag_fuel_wobbled",
             "detail": "Needs 20 gold on hand: a wobble costs extra."
           },
           {
@@ -2069,6 +2070,20 @@
         "sets_flag": null,
         "time_cost": "trivial",
         "narrative": "Haggled for a fuel cell. Whether the price was fair depends on who is telling it."
+      },
+      "hag_fuel_wobbled": {
+        "title": "TALKED UP",
+        "tone": "danger",
+        "body": "You counter, and your voice catches halfway through the number. The trader hears it. Every counter after that goes their way, and the cell comes across at the full asking price.",
+        "line": "Nerves are extra. Everybody knows that.",
+        "resources": {
+          "gold": -20,
+          "morale": -2
+        },
+        "item_grant": "fuel_cell",
+        "sets_flag": null,
+        "time_cost": "trivial",
+        "narrative": "Tried to haggle for a fuel cell and paid the full price for the attempt. The crew has stopped bringing it up, mostly."
       },
       "hag_declined": {
         "title": "NO SALE",

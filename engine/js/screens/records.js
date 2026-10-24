@@ -46,29 +46,31 @@
   // the bracket it earned (124.6 is MOSTLY MADE IT, not 125).
   function runScore() { return Math.max(0, Math.floor(scoreValue())); }
 
-  /* One finished run, from the end view endings.js built. */
-  function entryFor(view) {
+  /* One finished run, from the end view endings.js built. `run` is STATE,
+     or a save snapshot (the same fields) for a failure left pending. */
+  function entryFor(view, run) {
+    run = run || STATE;
     const arrival = view.category === 'arrival';
-    const crop = STATE.crop || null;
+    const crop = run.crop || null;
     // One id per finish, not per run: a save slot replays the same run
     // (same art seed), and each finish is its own entry.
     // The same ending rendered twice (identical day and result) is one.
     return {
-      id: [STATE.artSeed || 0, STATE.daysElapsed, view.toneId, arrival ? runScore() : 'x'].join(':'),
+      id: [run.artSeed || 0, run.daysElapsed, view.toneId, arrival ? runScore() : 'x'].join(':'),
       ts: Date.now(),
-      ship: STATE.shipName || 'The Ship',
-      trail: STATE.trail,
+      ship: run.shipName || 'The Ship',
+      trail: run.trail,
       crop,
-      cropAlive: !!(crop && STATE.cropGrowth && STATE.cropGrowth.health > 0),
-      captain: STATE.captain || null,
+      cropAlive: !!(crop && run.cropGrowth && run.cropGrowth.health > 0),
+      captain: run.captain || null,
       kind: arrival ? 'arrival' : 'failure',
       tone: view.toneId,                       // bracket, or failure_type
       title: arrival ? TIER_LABEL[view.toneId] || view.toneId : String(view.title || '').toUpperCase(),
       score: arrival ? runScore() : null,
-      days: STATE.daysElapsed,
-      baseDays: STATE.baseDays,
-      crew: STATE.crew.length,
-      startCrew: STATE.startCrew != null ? STATE.startCrew : STATE.crew.length,
+      days: run.daysElapsed,
+      baseDays: run.baseDays,
+      crew: (run.crew || []).length,
+      startCrew: run.startCrew != null ? run.startCrew : (run.crew || []).length,
     };
   }
   const countsForBest = e => e.kind === 'arrival' && e.cropAlive;
@@ -78,8 +80,10 @@
      its destination's best), or null when nothing was recorded. */
   function recordRun(view) {
     if (!view || recordingOff() || !STATE.trail) return null;
+    return addEntry(entryFor(view));
+  }
+  function addEntry(e) {
     const r = loadRecords();
-    const e = entryFor(view);
     r.runs = [e].concat(r.runs.filter(x => x.id !== e.id)).slice(0, RECORDS_KEEP);
     let newBest = false;
     if (countsForBest(e)) {
@@ -88,6 +92,20 @@
     }
     saveRecords(r);
     return { entry: e, newBest };
+  }
+
+  /* The saved voyage is about to be replaced (LAUNCH over it): a failure
+     it left pending (Keep flying / the beacon, never taken) is final now,
+     so it goes in the records as that failure. Its id matches the one the
+     end screen would have recorded, so a run already recorded stays one. */
+  function recordSavedFailure() {
+    if (recordingOff()) return null;
+    let snap = null;
+    try { snap = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (_) {}
+    const f = snap && snap.pendingFailure && snap.trail && (MOD.failures || []).find(x => x.id === snap.pendingFailure);
+    if (!f) return null;
+    const e = entryFor({ category: 'failure', toneId: f.failure_type, title: f.title }, snap);
+    return loadRecords().runs.some(x => x.id === e.id) ? null : addEntry(e);
   }
 
   function clearRecords() { try { localStorage.removeItem(RECORDS_KEY); } catch (_) {} }
@@ -173,7 +191,7 @@
 
   Object.assign(window, {
     // engine API (endings.js)
-    recordRun, runScore,
+    recordRun, recordSavedFailure, runScore,
     // test hook: tools/tests/test_records.js reads the stored records
     loadRecords,
   });

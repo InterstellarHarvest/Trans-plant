@@ -966,6 +966,13 @@ const eventOnTrail = (ev, trail) => {
             if (src.startsWith('item:') ? !itemIds.has(src.slice(5)) : !crewRoles.has(src)) err(`${at}: choice "${label}" requires_effort_from "${src}" is not a crew role or item:<items.json id>`);
           }
         }
+        // fail_outcome: a hands-on job's authored failure — needs an
+        // EFFORT_CHECKS job to roll it and a layered outcome to play.
+        if (ch.fail_outcome != null) {
+          if (!(job && EFFORT_CHECKS.has(job))) err(`${at}: choice "${label}" has fail_outcome but no EFFORT_CHECKS microgame_type/minigame_type — nothing rolls a failure`);
+          if (typeof ch.fail_outcome !== 'string' || !(ev.outcomes && ev.outcomes[ch.fail_outcome])) err(`${at}: choice "${label}" fail_outcome "${ch.fail_outcome}" is not an id in this event's outcomes`);
+          if (typeof ch.outcome !== 'string') err(`${at}: choice "${label}" has fail_outcome but no outcome id for the clean result`);
+        }
         if ((ch.triggerCombat || ch.combat_trigger) && 'outcome' in ch) {
           err(`${at}: choice "${label}" is a combat hijack (${ch.triggerCombat ? 'triggerCombat' : 'combat_trigger'}) but carries an outcome — combat resolves its own outcome, this one never applies`);
         }

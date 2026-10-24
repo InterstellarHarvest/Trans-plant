@@ -318,6 +318,8 @@
     // LAUNCH over a saved voyage replaces it: ask first.
     if (typeof hasSave === 'function' && hasSave() &&
         !(await tpConfirm({ title: 'ABANDON THE SAVED VOYAGE?', message: 'Launching starts a new voyage. The one saved for Continue will be lost.', yes: 'LAUNCH', danger: true }))) return;
+    // A failure the saved voyage left pending is final once it's replaced.
+    if (typeof recordSavedFailure === 'function') recordSavedFailure();
     applySetupToState(sel);
     // Ruling 92: the departure plays at the station on day 0, then the hub
     // opens stopped there.

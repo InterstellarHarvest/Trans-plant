@@ -984,9 +984,32 @@
     const label = (FORAGE_LABEL_BY_REGION[regionKey] || mode);
     // regionLabel: the forage HUD names the real stop (parity-shell); minigames.js appends ' · MODE'.
     const hudPlace = alien ? 'ALIEN WORLD' : (REGIONS[regionKey] || REGIONS.deep_space).label.split(' · ')[0];
-    openMinigame('forage', { mode, return_to: 'cruise', origin_node: STATE.currentId, regionLabel: hudPlace }, (tier, payload) => {
+    // The side rolls (alien poisoning, the fungus) are made once, when the
+    // result card shows them, and the close applies the same rolls. A good
+    // forage on alien ground can turn up the suspicious fungus (the chef's
+    // Secret Project — event_shipboard_016); its items.json find_odds.forage
+    // is the chance.
+    let side = null;
+    const rollSide = tier => side || (side = {
+      poison: alien && Math.random() < ALIEN_POISON_CHANCE,
+      fungus: tier !== 'poor' && (regionKey === 'anomaly' || regionKey === 'planet_orbit_habitable' || alien) &&
+        !STATE.items.includes('suspicious_fungus') && Math.random() < itemFindOdds('suspicious_fungus', 'forage'),
+    });
+    // The fungus is granted before the rare finds, so the card's room check is the real one.
+    const fungusFits = () => { STATE.items.push('suspicious_fungus'); const fits = cargoSlotsUsed() <= cargoCapacity(); STATE.items.pop(); return fits; };
+    const resultLines = tier => {
+      if (tier === 'abandoned') return [];
+      const r = rollSide(tier), out = [];
+      // Anyone aboard — the captain included (owner ruling 29).
+      if (r.poison && peopleAboard().length) out.push({ text: 'POISONING · someone aboard · alien ground', tone: 'red' });
+      if (r.fungus) out.push(fungusFits() ? 'FIND · a fungus nobody can name' : { text: 'FIND · a fungus nobody can name · CARGO FULL, LEFT BEHIND', tone: 'orange' });
+      return out;
+    };
+    openMinigame('forage', { mode, return_to: 'cruise', origin_node: STATE.currentId, regionLabel: hudPlace, resultLines }, (tier, payload) => {
       if (tier === 'abandoned') return settleAbandoned(label, payload && payload.harm);
       payload = payload || {};
+      const r = rollSide(tier);
+      const fungus = r.fungus && grantItem('suspicious_fungus');
       let foodGot = 0; // what actually lands (the tank caps)
       if (typeof payload.food === 'number' && payload.food > 0) {
         const f0 = STATE.resources.food;
@@ -1020,18 +1043,11 @@
       // Alien world (the red risky strip, Bible "FORAGE — clicker w/
       // poison-roll"): one roll in four, something in the haul poisons a
       // crew member — the minigame's medium sickness (anyone aboard, the captain too).
-      if (alien && Math.random() < ALIEN_POISON_CHANCE) {
-        // Anyone aboard — the captain included (owner ruling 29).
+      if (r.poison) {
         const line = poisonLine(ALIEN_POISON_HP);
         if (line) gained += ' ' + line;
       }
-      // A good forage on alien ground can turn up the suspicious fungus
-      // (the chef's Secret Project — event_shipboard_016); its items.json
-      // find_odds.forage is the chance.
-      if (tier !== 'poor' && (regionKey === 'anomaly' || regionKey === 'planet_orbit_habitable' || alien) &&
-          !STATE.items.includes('suspicious_fungus') && Math.random() < itemFindOdds('suspicious_fungus', 'forage') && grantItem('suspicious_fungus')) {
-        gained += ' Also: a fungus nobody can name. The chef has asked to keep it.';
-      }
+      if (fungus) gained += ' Also: a fungus nobody can name. The chef has asked to keep it.';
       settleMinigame('◆ ' + label + ' — ' + gained);
     });
   }

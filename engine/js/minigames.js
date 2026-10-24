@@ -477,8 +477,8 @@ function showReady(id, onStart, opts){
      briefing    the AI's situation line, in place of the generic one.
      quips       { perfect|good|poor|fedup: text } (or one text): the
                  result card's line, in place of the generic one.
-     resultLines (tier, payload) → [text]: side gains the caller lands
-                 too (shown on the result card). `onDone(tier,
+     resultLines (tier, payload) → [text | {text, tone}]: side results
+                 the caller lands too (shown on the result card). `onDone(tier,
    payload)` fires once the player closes the result screen, so the
    caller (Stop Menu verb handlers in cruise.js) can apply real STATE
    effects. activeAi/engineerAboard are read from live STATE at open
@@ -595,7 +595,11 @@ function showResult(tier, payload){
   if(typeof opts.resultLines === 'function'){
     let extra = [];
     try { extra = opts.resultLines(tier, payload) || []; } catch(e){ extra = []; }
-    for(const t of extra) if(t) lines.push(`<span class="rh-line gold">${escHtml(t)}</span>`);
+    // A line is text (gold, a gain) or {text, tone} (red / orange).
+    for(const t of extra){
+      const text = t && typeof t === 'object' ? t.text : t, tone = (t && t.tone) || 'gold';
+      if(text) lines.push(`<span class="rh-line ${escHtml(tone)}">${escHtml(text)}</span>`);
+    }
   }
   if(lines.length){
     const haul = document.createElement('div');
@@ -4302,6 +4306,6 @@ function initSalvage(container, onResult, opts){
     // engine API
     openMinigame, abortMinigame,
     // test hooks: tools/tests drive and read these through page.evaluate
-    SALVAGE_DERELICT,
+    SALVAGE_DERELICT, showResult,
   });
 })();
