@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 'use strict';
-/* Standalone authoring-safety lint for modules/*.json (no build
- * pipeline to hook this into automatically — run manually before a
- * content push). Per POOL_READINESS_AUDIT_HANDOFF.md item A8.
+/* Authoring-safety lint for modules/*.json against the engine and
+ * registry/tag_registry.json; it also fails on a stale portable bundle,
+ * registry or registry/flags.md. tools/tests/run_all.sh runs it; run it
+ * after any content change.
  *
  * Usage: node tools/lint_modules.js   (run from the Trans-plant root)
  */
