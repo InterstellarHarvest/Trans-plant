@@ -1747,8 +1747,7 @@
     }
   };
 
-  // Builds Inspect content into `container`. Same content for both
-  // shells (swap-in body and popup) — caller picks the container.
+  // Builds Inspect content into `container` (the swap-in body).
   function renderInspectInto(container) {
     const crop = CROP_META[GSTATE.cropId];
     const { active } = displayModifiers(); // a dead crop: one row, no decorative modifiers
@@ -1858,14 +1857,9 @@
     container.innerHTML = ariaHTML + vitalsHTML + speciesHTML + lifecycleHTML + threatsHTML;
   }
 
-  // Mode = which shell to use. Dev-panel select drives this.
-  let inspectMode = 'swap';   // 'swap' | 'popup'
   function openInspect() {
-    const isSwap = inspectMode === 'swap';
-    document.body.classList.toggle('ins-mode-swap', isSwap);
-    document.body.classList.toggle('ins-mode-popup', !isSwap);
     document.body.classList.add('ins-open');
-    renderInspectInto($(isSwap ? 'ins-content-swap' : 'ins-content-popup'));
+    renderInspectInto($('ins-content-swap'));
   }
   function closeInspect() {
     document.body.classList.remove('ins-open');
