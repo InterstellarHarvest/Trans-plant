@@ -124,7 +124,6 @@ const computedIs = s => s.computed.includes(s.main.split('/').map(encodeURICompo
         STATE.stowaway = null;
         const st = STATE.nodes.filter(n => n.node_type === 'station')[i % 2];
         STATE.currentId = st.id;
-        if (typeof clearNpcSlot === 'function') clearNpcSlot();
         STATE.npcCtx = null;
         window.__tradeHere && window.__tradeHere();
       }, i);

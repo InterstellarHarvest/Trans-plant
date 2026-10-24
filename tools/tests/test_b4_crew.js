@@ -577,7 +577,7 @@ const openDossier = async (page, role) => {
       return /peopleAboard\(\)\.length/.test(src) && /aboardNow\[Math\.floor/.test(src);
     });
     ok(ok1, 'combat defeat casualties draw from everyone aboard (captain included)');
-    const f = await page.evaluate(() => ({ mod: MOD.failures.find(x => x.failure_type === 'captain_lost'), reg: !!(MOD.tag_registry || {}).failure_type }));
+    const f = await page.evaluate(() => ({ mod: MOD.failures.find(x => x.failure_type === 'captain_lost') }));
     ok(f.mod && f.mod.active !== false && f.mod.title && f.mod.body && f.mod.epitaph, 'failures.json carries the captain_lost module (title, body, epitaph)');
     await page.close();
   }

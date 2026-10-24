@@ -1,3 +1,6 @@
+# Per-verb deltas from sim.js's verb sampler (stats.vd): score, days, resources,
+# gold and materials each cruise verb moved, per trail.
+#   python3 tools/tests/analyze_verbs.py /tmp/balance.json   (sim_batch.sh output)
 import json, sys, statistics as st, collections
 R = []
 for f in sys.argv[1:]: R += json.load(open(f))['results']

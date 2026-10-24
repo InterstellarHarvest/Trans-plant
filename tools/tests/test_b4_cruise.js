@@ -185,7 +185,7 @@ const overlaps = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
   {
     const page = await boot();
     await page.evaluate(() => { const n = STATE.nodes.find(x => x.node_type === 'station'); STATE.currentId = n.id; document.body.classList.remove('stop-active'); renderCruise(); });
-    await page.evaluate(() => { STATE.resources.hull = resMax('hull'); STATE.fabricator = { wear: 0, broken: false }; if (typeof setCrewHP === 'function') STATE.crew.forEach(r => setCrewHP(r, 100)); });
+    await page.evaluate(() => { STATE.resources.hull = resMax('hull'); STATE.fabricator = { wear: 0, broken: false }; STATE.crew.forEach(r => setHP(r, 100)); });
     await openStop(page);
     let v = await verbRows(page);
     const labels = v.map(x => x.label);
@@ -323,7 +323,7 @@ const overlaps = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
       child.branch_hidden = true;
       STATE.visited.add(fork.id);
       const d = branchFlavorDisplay(child);
-      if (typeof openMap === 'function') openMap(); else document.getElementById('btn-map').click();
+      document.getElementById('btn-map').click();
       const pill = [...document.querySelectorAll('.map-branch-flavor.uncharted')][0];
       const cs = pill && getComputedStyle(pill);
       return { d, n: !!pill, color: cs && cs.color, border: cs && cs.borderTopColor, text: pill && pill.textContent };

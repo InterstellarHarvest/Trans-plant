@@ -567,7 +567,7 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
     const page = await boot({ crew: ['engineer', 'pilot'] });
     const r = await page.evaluate(async () => {
       const w = ms => new Promise(r => setTimeout(r, ms));
-      const ev = (MOD.events || []).find(e => e.id === 'event_crisis_015') || Object.values(MOD).flat().find(e => e && e.id === 'event_crisis_015');
+      const ev = EVENTS.event_crisis_015;
       const choice = ev.choices.find(c => c.launch_minigame === 'medical');
       const real = window.openMinigame;
       const run = async (tier, payloadFn) => {

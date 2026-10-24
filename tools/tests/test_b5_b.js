@@ -1,5 +1,5 @@
-// Batch 5 fixes, hunter B (resources/HUNT_B_FAB_SELL.md): fabricator
-// per-day crafting + Cargo Hold / Market Row SELL.
+// Batch 5 fixes, hunter B: fabricator per-day crafting + Cargo Hold /
+// Market Row SELL.
 //   B1 a job whose days are all spent completes and never charges another
 //      day: a resumable failure on its last day (Keep flying), a reload,
 //      reopening, and a finished job at the deadline (no PAST DEADLINE hold).
