@@ -23,11 +23,19 @@ if [ "$PW_BROWSER" = "firefox" ]; then export NODE_OPTIONS="--require \"$(pwd)/p
 FILE="file://$(echo "$ROOT" | sed 's/ /%20/g')/index.html"
 if [ -n "$SMOKE" ]; then export SMOKE; TESTS=$(grep -v '^#' smoke.txt | grep -v '^$'); echo "smoke: $(echo $TESTS | wc -w | tr -d ' ') batteries"; else TESTS=$(ls test_*.js); fi
 T0=$SECONDS
+# A battery is judged by its exit status and its closing "N passed, M
+# failed" line (test_multigrant: "errors:"). A check line that happens to
+# say "passed" is not a summary: no summary means it CRASHED.
 for t in $TESTS; do
   s=$SECONDS
-  r=$($NVM/bin/node "$t" 2>&1)
-  echo "$t: $(echo "$r" | grep -E 'passed|failed|errors:' | tail -1) ($((SECONDS - s))s)"
+  r=$($NVM/bin/node "$t" 2>&1); st=$?
+  sum=$(echo "$r" | grep -E '[0-9]+ passed, [0-9]+ failed' | tail -1)
+  [ -z "$sum" ] && sum=$(echo "$r" | grep -E '^errors:' | tail -1)
+  if [ -z "$sum" ]; then sum="CRASHED (exit $st, no summary)"
+  elif [ $st -ne 0 ] || echo "$sum" | grep -qE '[1-9][0-9]* failed|^errors: [^n]'; then sum="FAILED — $sum (exit $st)"; fi
+  echo "$t: $sum ($((SECONDS - s))s)"
   echo "$r" | grep -E -A3 '✗|Error' | head -12 # a failure's detail lines follow it
+  case "$sum" in CRASHED*) echo "$r" | tail -4;; esac
 done
 cd "$ROOT"
 # The fuzz and the sweep end on a summary (VIOLATIONS: / FLAGS:, kept whole
