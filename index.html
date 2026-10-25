@@ -130,9 +130,9 @@ body {
   font-family: 'VT323', monospace;
   background: #0e1118;
   color: #d1d5db;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: safe center; justify-content: safe center;
   min-height: 100vh;
-  overflow: hidden;
+  overflow: hidden; /* fitGameToViewport opens scrolling for a window smaller than the frame */
 }
 
 #game {
@@ -140,9 +140,10 @@ body {
   flex: 0 0 auto;
   position: relative; overflow: hidden;
   background: #000;
-  /* The frame line is drawn outside the box, so the interior every
-     screen, overlay and 960x640 canvas fills is the full 960x640. */
-  box-shadow: 0 0 0 1px #2a3040;
+  /* The frame line is an outline drawn over the interior's outer pixel,
+     so every screen, overlay and 960x640 canvas fills the full 960x640
+     and the line stays visible when the scaled frame fills the window. */
+  outline: 1px solid #2a3040; outline-offset: -1px;
   transform-origin: center center;
 }
 /* CRT scanlines per screen, as each demo tunes them: title 10%,
@@ -3794,12 +3795,15 @@ function hideOverlay(id) {
 /* Keep the canonical 960×640 coordinate system used by every demo and
    canvas, and scale the finished cabinet as one unit to fill the window
    (largest fit, letterboxed) — the demos' "Actual Size" mode. Up on big
-   screens, down on small ones. Pointer coordinates continue to
-   map through the CSS transform (every mapping divides by the rendered
-   rect, so any scale works). */
+   screens, never below 1× (ruling 102): a window smaller than the frame
+   scrolls instead, so the smallest labels stay readable. Pointer
+   coordinates map through the CSS transform (every mapping divides by
+   the rendered rect, so any scale works). */
 function fitGameToViewport() {
-  const scale = Math.min(window.innerWidth / 960, window.innerHeight / 640);
+  const w = window.innerWidth, h = window.innerHeight;
+  const scale = Math.max(1, Math.min(w / 960, h / 640));
   document.getElementById('game').style.transform = `scale(${scale})`;
+  document.body.style.overflow = (w < 960 || h < 640) ? 'auto' : '';
 }
 fitGameToViewport();
 window.addEventListener('resize', fitGameToViewport);
@@ -4501,7 +4505,7 @@ function refundEffortTax(receipt) {
 const DEPRIVATION = {
   food:  { hp: 4,  morale: 2, failAfter: 10, fail: 'starvation',  onset: 'FOOD GONE — the crew is starving. Every day without food costs health and nerve.', onsetSolo: 'FOOD GONE — you are starving. Every day without food costs health.' },
   water: { hp: 6,  morale: 3, failAfter: 5,  fail: 'dehydration', onset: 'WATER GONE — the crew is going without. Every dry day costs health and nerve.', onsetSolo: 'WATER GONE — you are going without. Every dry day costs health.' },
-  o2:    { hp: 12, morale: 5, failAfter: 3,  fail: 'suffocation', onset: 'O2 EXHAUSTED — the air is running out. This cannot last more than a few days.' },
+  o2:    { hp: 12, morale: 5, failAfter: 3,  fail: 'suffocation', onset: 'O2 GONE — the air is running out. This cannot last more than a few days.' },
 };
 
 // The deprivation failure due now (starvation / dehydration /
