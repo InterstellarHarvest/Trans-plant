@@ -27,7 +27,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     STATE.fabricator.wear = 0;
     window.fabSetDayMs(60000);
     openFabricator();
-    const row = [...document.querySelectorAll('.fb-recipe-row')].find(x => x.textContent.includes('Field Repair Kit'));
+    const row = [...document.querySelectorAll('.fb-recipe-row')].find(x => x.textContent.includes('Repair Kit'));
     row.click();
     const time = (document.querySelector('#fb-detail') || document.body).innerText.match(/TIME\s*(\d+)d/);
     craftSelected();

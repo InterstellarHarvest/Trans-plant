@@ -178,7 +178,7 @@ const tipText = t => t ? [t.title, t.description, ...(t.rows || []).map(r => r.l
       STATE.fabricator.wear = 0;
       window.fabSetDayMs(150);
       openFabricator();
-      const r = [...document.querySelectorAll('.fb-recipe-row')].find(x => x.textContent.includes('Field Repair Kit')); r.click();
+      const r = [...document.querySelectorAll('.fb-recipe-row')].find(x => x.textContent.includes('Repair Kit')); r.click();
       craftSelected();
       return { crafted: Object.assign({}, STATE.crafted || {}), price: craftedPrice('repair_kit'), patch: craftedPrice('hull_patch'), found: stationBuyPrice('repair_kit') };
     });

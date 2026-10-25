@@ -40,11 +40,11 @@
 (function () {
 
   const AI_FALLBACK = {
-    aria: 'Everything is going wonderfully.',
+    aria: 'Everything is going wonderfully!',
     marv: "I've calculated the odds. Please don't ask.",
     rex:  'Weapons on standby. Just in case.',
     chip: 'Before proceeding, have you considered our premium support tier?',
-    ajoy: 'There\'s an option you haven\'t considered. I have.'
+    ajoy: 'Evasive maneuvers cut the next hit. I\'d have used them by now. Just saying.'
   };
 
   /* Gameplay timers for this fight only: a load or abort bumps

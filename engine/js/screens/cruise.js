@@ -1085,7 +1085,7 @@
         // Derelict hold: fuel cells and ration cans arrive as units of
         // fuel / food (the haul card's numbers); the tanks cap.
         else if (key === 'fuel' || key === 'food') { const b = STATE.resources[key]; STATE.resources[key] = clamp(b + qty, 0, resMax(key)); const d = Math.round(STATE.resources[key] - b); got.push(d > 0 ? '+' + d + ' ' + key : key + ', but the tank is full'); }
-        else if (key in TANK_O2) { const o0 = STATE.resources.o2; STATE.resources.o2 = clamp(STATE.resources.o2 + TANK_O2[key] * qty, 0, 100); const d = Math.round(STATE.resources.o2 - o0); got.push(d > 0 ? '+' + d + ' O₂' : 'O₂ tanks, but the air is full'); }
+        else if (key in TANK_O2) { const o0 = STATE.resources.o2; STATE.resources.o2 = clamp(STATE.resources.o2 + TANK_O2[key] * qty, 0, 100); const d = Math.round(STATE.resources.o2 - o0); got.push(d > 0 ? '+' + d + ' O2' : 'O2 tanks, but the air is full'); }
         else if (key === 'gold') { STATE.goldAmount += 5 * qty; got.push(5 * qty + 'g'); }
         else if (key !== 'useless_scrap') { let n = 0; for (let i = 0; i < qty; i++) if (grantItem(key) !== false) n++; if (n) got.push(key.replace(/_/g, ' ')); }
       }

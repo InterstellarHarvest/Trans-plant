@@ -54,7 +54,7 @@ const pickRecipe = (page, name) => page.evaluate(n => { const r = [...document.q
       openFabricator();
       return { d: STATE.daysElapsed, food: STATE.resources.food, mo: crewMoraleOf('pilot'), metal: STATE.materials.metal };
     });
-    await pickRecipe(page, 'Field Repair Kit');
+    await pickRecipe(page, 'Repair Kit');
     const s1 = await page.evaluate(() => {
       craftSelected();
       const c = window.fabCraftState();
