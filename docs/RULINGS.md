@@ -113,6 +113,9 @@ Rulings 1–25 date from 2026-10-11 and 26–56 from 2026-10-12.
 107. Recipes are named for what they make (owner 2026-10-24): the fabricator's recipe labels match their items (Repair Kit, Crop Treatment, Fuel Cell, Ration Brick); no item is renamed. This overrides demo-fabricator's longer labels.
 108. Behind schedule means projected late (owner 2026-10-24 follow-on to ruling 99): with the trimmed deadlines the 90% projection fired in nearly every run; the warning and its events now trigger when the run is projected to arrive late.
 109. Stop-menu jobs show their effort as pips only (owner 2026-10-25): the row no longer adds "−n MO" after the pips; the tooltip states the morale cost ("Effort n/5 · costs n morale"). This restores demo-cruise's job rows, which never showed the number, and matches the event choices.
+110. Demo copy corrected for accuracy (owner 2026-10-25, recording the 2026-10-24 text pass): lines copied from the demos may be corrected when they are wrong about the game, and each such change is listed here. Arrival lines name the crop the player grows ("sweet potato", not "potato"; the Interstellar sweet-potato line is reworded to fit the end card), so ruling 88's first entries are the demo copy as corrected; MARV's mining line states the real tractor-beam figure (demo-mining said 24% at a fixed 20%); the derelict survivor's "41 days" becomes 21 days to match her three-week story (demo-encounter); CHIP's setup line reads "Prices −15%" because the discount applies at every market (demo-setup said "Station prices"); the trail cards give the current lengths (three, six and ten months) under ruling 99; ARIA lines that admitted things were bad (combat, fallback) are upbeat again under her register, with ruling 105's exceptions; the station botanist's "Back!" drops the "!" (only ARIA and CHIP use it). Spelling (ruling 100), gold (ruling 104), AJOY (ruling 95) and narrated times (ruling 101) are covered by their own rulings.
+111. Pixel-art canvases stay crisp when the frame scales (owner 2026-10-25, recording the 2026-10-24 fix): the scan radar, salvage beam, combat effects and crosshair, and the starfields draw with nearest-neighbour scaling, like every sprite; the demos left them smoothed. Painted backdrops keep the demos' smooth scaling.
+112. The tooltip's unused "quote" tone is not carried in the game (owner 2026-10-25, recording the 2026-10-24 cleanup): ruling 9 ported demo-tooltip's system verbatim, but nothing in the game ever used the AI-quote tone, so its styles were removed as dead code; demo-tooltip keeps its own copy. Restore it if an AI-quote tooltip is ever wanted.
 
 ## Changes from the demos
 
@@ -138,4 +141,7 @@ Rulings that change, drop or add to something a demo shows (the demo files are k
 | 103 | demo-endings | Every failure card (BREACH and AUTOPILOT too) shows its epitaph and Ship's Record line. |
 | 107 | demo-fabricator | Recipe labels match the items they make. |
 | 109 | demo-cruise | (Restores the demo) Stop-menu job rows show pips only. |
+| 110 | demo-endings, demo-mining, demo-encounter, demo-setup, demo-combat | Copy corrected where it was wrong about the game (crop names, figures, CHIP's discount, trail lengths, voice rules). |
+| 111 | demo-minigames, demo-combat, demo-cruise, demo-title, demo-setup | Pixel-art canvases scale crisp, not smoothed. |
+| 112 | demo-tooltip | The unused AI "quote" tooltip tone is not in the game. |
 
