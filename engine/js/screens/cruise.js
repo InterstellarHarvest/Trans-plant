@@ -1715,8 +1715,8 @@
       if (lockReason) {
         parts.push(span('lock-need', '\u{1F512} ' + lockReason));
       } else {
-        // The pips cost morale (Bible effort tax); the number says how much.
-        parts.push(span('effort', effortPips(verb.effort) + (effortTax(verb.effort) ? ' −' + effortTax(verb.effort) + ' MO' : '')));
+        // The pips cost morale (Bible effort tax); the row shows pips only, the tooltip names the cost.
+        parts.push(span('effort', effortPips(verb.effort)));
         if (verb.time) parts.push(span('verb-time', verb.time));
       }
       const subText = lockReason ? null : (typeof verb.sub === 'function' ? verb.sub(regionKey) : verb.sub);

@@ -272,6 +272,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       setCrewMorale(80);
       const mine = [...document.querySelectorAll('#stop-choices .stop-choice')].find(x => /MINE/.test(x.textContent));
       out.mineLabel = mine.querySelector('.effort').textContent;
+      out.mineText = mine.textContent; out.mineTip = mine.dataset.tipDescription || mine.title; // title= is upgraded to the game tooltip
       mine.click();
       out.mineTax = 80 - crewMoraleRaw();
       // returning from an event lands stopped: the Stop menu open, Resume travels
@@ -285,7 +286,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       out.drama = (STATE.cropGrowth.health !== h0 || crewMoraleRaw() !== m0) && (STATE.shipLog || []).length > l0;
       return out;
     });
-    ok(r.mineTax === 4 && /−4 MO/.test(r.mineLabel), `MINE ●●● costs 4 morale, and says so (${r.mineLabel}, −${r.mineTax})`);
+    ok(r.mineTax === 4 && r.mineLabel === '●●●○○' && !/\bMO\b/.test(r.mineText), `MINE ●●● costs 4 morale; the row shows pips only (${r.mineLabel}, −${r.mineTax})`);
+    ok(/costs 4 morale/.test(r.mineTip), `the MINE row's tooltip names the morale cost ("${r.mineTip}")`);
     ok(r.stopped, 'after an event the ship lands stopped: Stop menu open, button reads Resume');
     ok(r.drama, 'tomato drama: a growbay incident with a real swing');
     await page.close();
