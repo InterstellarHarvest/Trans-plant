@@ -844,6 +844,9 @@
     // Exactly what each crew member paid comes back (refundEffortTax).
     if (pendingVerbTax) { refundEffortTax(pendingVerbTax); pendingVerbTax = 0; renderHUD(); }
   }
+  // An event choice that opens a minigame holds its pips' tax the same way
+  // (ruling 98): closing the briefing gives it back.
+  function holdVerbTax(receipt) { pendingVerbTax = receipt || 0; }
   function onJobBegun(days) {
     pendingVerbTax = 0;
     if (STATE.currentEvent) { window.eventMinigameBegun(); return; }
@@ -2068,7 +2071,7 @@
 
   Object.assign(window, {
     // engine API
-    rebuildCruiseLog, paintCruiseBars, refundVerbTax, onJobBegun, onJobHarm,
+    rebuildCruiseLog, paintCruiseBars, refundVerbTax, holdVerbTax, onJobBegun, onJobHarm,
     applyAbandonHarm, abortCruiseWait, openStopMenu, renderCruise, clearAiBubble,
     refreshStopMenu, pushCruiseLog: pushLogEntry,
     // test hooks: tools/tests drive and read these through page.evaluate

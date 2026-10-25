@@ -6564,7 +6564,12 @@ function handleChoiceClick(choice) {
   // Effort tax (Bible): the choice's pips cost morale the moment it's taken.
   // BROWSE THE WARES pays its effort once an encounter, however often the
   // wares are opened (it charged every open).
-  if (choice.effort && !(choice.open_market && STATE._marketTaxPaid)) payEffortTax(choice.effort);
+  // A minigame's briefing can still be closed for free: the tax is held
+  // until BEGIN, and a closed briefing refunds it (cruise.js holdVerbTax).
+  if (choice.effort && !(choice.open_market && STATE._marketTaxPaid)) {
+    const receipt = {};
+    if (payEffortTax(choice.effort, receipt) && choice.launch_minigame && window.holdVerbTax) window.holdVerbTax(receipt);
+  }
   if (choice.open_market) STATE._marketTaxPaid = true;
   if (choice.consume) {
     STATE.consumedActions = STATE.consumedActions || {};

@@ -83,20 +83,22 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   await boot();
   await page.evaluate(() => { STATE.resources.hull = 20; STATE.resources.o2 = 60; setCrewMorale(60); enterEvent(STATE.byId[STATE.currentId], EVENTS.event_crisis_017); });
   await page.waitForTimeout(500);
-  a = await page.evaluate(() => ({ hull: STATE.resources.hull, o2: STATE.resources.o2, mo: crewMoraleRaw(), day: STATE.daysElapsed }));
+  a = await page.evaluate(() => ({ hull: STATE.resources.hull, o2: STATE.resources.o2, mo: crewMoraleRaw(), day: STATE.daysElapsed, o2pd: dailyDraw().o2 }));
   await page.evaluate(() => [...document.querySelectorAll('#enc-choices .enc-choice:not(.locked)')][0].click());
   await page.waitForTimeout(500);
   await page.click('#mclose'); await page.waitForTimeout(250);
-  const cancel = await page.evaluate(() => ({ outcome: STATE.outcomeMode, ev: STATE.currentEvent && STATE.currentEvent.id }));
+  const cancel = await page.evaluate(() => ({ outcome: STATE.outcomeMode, ev: STATE.currentEvent && STATE.currentEvent.id, mo: crewMoraleRaw() }));
   ok(!cancel.outcome && cancel.ev === 'event_crisis_017', 'briefing close in an event = back to the choices');
   await page.evaluate(() => [...document.querySelectorAll('#enc-choices .enc-choice:not(.locked)')][0].click());
   await page.waitForTimeout(500);
   await page.click('#rstart'); await page.waitForTimeout(700);
   await page.click('#mclose'); await page.waitForTimeout(400);
   b = await page.evaluate(() => ({ hull: STATE.resources.hull, o2: STATE.resources.o2, mo: crewMoraleRaw(), day: STATE.daysElapsed, outcome: STATE.outcomeMode,
-    title: document.getElementById('enc-narr-title').textContent }));
+    title: document.getElementById('enc-narr-title').textContent, tax: effortTax(EVENTS.event_crisis_017.choices[0].effort || 0) }));
   ok(b.outcome && b.title === 'ABANDONED', 'quit resolves the choice as ABANDONED');
-  ok(b.hull === a.hull && Math.abs(b.o2 - (a.o2 - 8)) <= 0.2 * (b.day - a.day) + 0.01 && b.mo === a.mo - 4 && b.day > a.day, `poor-tier losses only, no gains (hull ${a.hull}→${b.hull}, o2 ${a.o2}→${b.o2}, morale ${a.mo}→${b.mo})`);
+  // Ruling 98: the briefing closed first refunded its pips; the played-and-quit run pays them once.
+  ok(cancel.mo === a.mo, `the closed briefing refunds the effort tax (morale ${a.mo} → ${cancel.mo})`);
+  ok(b.hull === a.hull && Math.abs(b.o2 - (a.o2 - 8)) <= a.o2pd * (b.day - a.day) + 0.01 && b.mo === a.mo - 4 - b.tax && b.day > a.day, `poor-tier losses only, no gains (hull ${a.hull}→${b.hull}, o2 ${a.o2}→${b.o2}, morale ${a.mo}→${b.mo})`);
 
   ok(!errors.length, 'no page errors' + (errors.length ? ': ' + errors.join(' | ') : ''));
   console.log(`\nquit rule: ${pass} passed, ${fail} failed`);
