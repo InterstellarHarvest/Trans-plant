@@ -82,7 +82,7 @@
         { id: 'aria', icon: '☀',    sprite: 'sprites/interface/AI/aria.png', name: 'ARIA', desc: 'Relentlessly positive. Factually questionable.', stat: 'Passive: Morale +{ai:morale_bonus} per leg', flavor: 'ARIA believes in you. ARIA believes in everything.' },
         { id: 'marv', icon: '\u{1F311}', sprite: 'sprites/interface/AI/marv.png', name: 'MARV', desc: 'Clinically depressed. 400% smarter than everyone.', stat: 'Passive: Reveals hidden details', flavor: 'MARV has already calculated your odds.' },
         { id: 'rex',  icon: '⚔',    sprite: 'sprites/interface/AI/rex.png',  name: 'REX', desc: 'Retired military. Everything is a threat.', stat: 'Passive: Combat bonus', flavor: 'REX was decommissioned for "excessive initiative."' },
-        { id: 'chip', icon: '\u{1F4B0}', sprite: 'sprites/interface/AI/chip.png', name: 'CHIP', desc: 'Corporate-issued. Full of Terms of Service.', stat: 'Passive: Station prices -{aicut:price_reduction}%', flavor: 'CHIP was free with purchase of the ship.' },
+        { id: 'chip', icon: '\u{1F4B0}', sprite: 'sprites/interface/AI/chip.png', name: 'CHIP', desc: 'Corporate-issued. Full of Terms of Service.', stat: 'Passive: Prices -{aicut:price_reduction}%', flavor: 'CHIP was free with purchase of the ship.' },
         { id: 'ajoy', icon: '\u{1F60F}', sprite: 'sprites/interface/AI/ajoy.png', name: 'AJOY', desc: 'Passive-aggressive. Backseat driver. A joy.', stat: 'Passive: Shows what you missed', flavor: 'AJOY will help you make better decisions. AJOY will make sure you know about it.' }
       ]
     },

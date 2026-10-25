@@ -212,7 +212,7 @@
     // Negotiation (diplomat active skill, crew.js): the armed flag buys
     // 15% off this station market's wares, then it's spent — the skill's
     // authored "talk stations into better deals" line, made mechanical.
-    // Standing discounts (setup screen): CHIP "Station prices -15%"
+    // Standing discounts (setup screen): CHIP "Prices -15%"
     // (ai_companions price_reduction), Merchant captain "Prices -10%".
     const standing = stationPriceMult();
     if (standing < 1) {
