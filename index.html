@@ -4555,7 +4555,7 @@ function dailyDraw() {
     o2: (trailNumber('o2_per_day') ?? ORDERS_BASE.o2PerDay) * (STATE.items.includes('o2_recycler') ? RECYCLER_O2_DRAW_MULT : 1) * (cropBreathes ? CROP_O2_DRAW_MULT : 1),
     // The crop's share drinks less with a botanist / purifier (their
     // "crop water consumption reduced"): the tank feels the saving.
-    water: ORDERS_BASE.waterPerDay * (1 - cropWaterShareSaved()),
+    water: (trailNumber('water_per_day') ?? ORDERS_BASE.waterPerDay) * (1 - cropWaterShareSaved()),
   };
 }
 function cropWaterShareSaved() {

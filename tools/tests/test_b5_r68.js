@@ -3,16 +3,16 @@
 // engine (eventSupplyCost via effectiveResDelta).
 //   1. The multiplier is read per trail, and an unauthored one is 1.
 //   2. A flat cost event: the tooltip, the SCAN sub-label and the outcome
-//      all show the scaled figure on Mars and Lunar, the authored one on
-//      Interstellar.
+//      all show the scaled figure on every trail (ruling 96 gave
+//      Interstellar a bite too, lighter than Mars).
 //   3. A layered outcome run as the leave row (leave_as): tooltip = outcome.
 //   4. Minigame tier outcomes are scaled, and so is a quit (the poor tier's
 //      losses).
 //   5. Gains, a fight's own tally (combat_net), a resources_pct share and
 //      the daily draw are not scaled.
 //   6. Narratives write the real figure ({cost.water} / {cost.food},
-//      ruling 70): the scaled one on Mars, the authored one on
-//      Interstellar, in words, capitalised opening a sentence.
+//      ruling 70): the scaled one, in words, capitalised opening a
+//      sentence.
 //   7. Mars starts short of water and food (ruling 69), and the setup
 //      card's "Food N" says what a Chef captain really starts with.
 const { chromium, firefox } = require('playwright');
@@ -77,7 +77,7 @@ const TRAILS = ['lunar', 'mars', 'interstellar'];
     console.log(`  ${t}: ×${r.authored.water} water, ×${r.authored.food} food → −10 water = ${r.water}, −7 food = ${r.food}`);
   }
   ok(m.mars.authored.water > 1 && m.lunar.authored.water > 1, 'Mars and Lunar bite harder than as authored');
-  ok(m.interstellar.authored.water === 1 && m.interstellar.authored.food === 1, 'Interstellar stays ×1');
+  ok(m.interstellar.authored.water > 1 && m.interstellar.authored.water < m.mars.authored.water && m.interstellar.authored.food < m.mars.authored.food, 'Interstellar bites too, less than Mars (ruling 96)');
   ok(m.mars.authored.water >= m.lunar.authored.water && m.mars.authored.food >= m.lunar.authored.food, 'Mars bites at least as hard as Lunar');
   ok(m.unauthored === -10, `an unauthored trail is ×1 (${m.unauthored})`);
 
@@ -111,8 +111,7 @@ const TRAILS = ['lunar', 'mars', 'interstellar'];
       ok(r.got[k] === want, `${at}: outcome ${k} ${r.got[k]}, want ${want}`);
       ok(r.tip.includes('Costs: ') && r.tip.includes(label), `${at}: tooltip shows "${label}" (${r.tip.replace(/\n/g, ' | ')})`);
       ok(r.sub.includes(label), `${at}: SCAN sub-label shows "${label}" (${r.sub})`);
-      if (trail === 'interstellar') ok(want === v, `${at}: Interstellar shows the authored ${v}`);
-      if (trail === 'mars') ok(want < v, `${at}: Mars shows more than the authored ${v} (${want})`);
+      if (trail !== 'lunar') ok(want < v, `${at}: ${trail} shows more than the authored ${v} (${want})`);
     }
   }
 
@@ -211,17 +210,26 @@ const TRAILS = ['lunar', 'mars', 'interstellar'];
     for (const trail of ['mars', 'interstellar']) {
       localStorage.removeItem('transplant_save_v1');
       applySetupToState({ trail, ai: 'aria', captain: 'veteran', crew: ['medic', 'chef'], crop: 'wheat', ship: 'B' });
-      out[trail] = dailyDraw();
+      const t = MOD.map_rules.trails[trail];
+      // The trail's own draw (rulings 96, 97: o2_per_day, water_per_day), a healthy crop's quarter off the air.
+      out[trail] = { draw: dailyDraw(), water: t.water_per_day || ORDERS_BASE.waterPerDay, o2: (t.o2_per_day || ORDERS_BASE.o2PerDay) * CROP_O2_DRAW_MULT };
     }
     return out;
   });
-  ok(JSON.stringify(dd.mars) === JSON.stringify(dd.interstellar), `the daily draw is the same on Mars and Interstellar (${JSON.stringify(dd)})`);
+  const near = (a, b) => Math.abs(a - b) < 1e-9;
+  ok(near(dd.mars.draw.food, dd.interstellar.draw.food) && ['mars', 'interstellar'].every(t => near(dd[t].draw.water, dd[t].water) && near(dd[t].draw.o2, dd[t].o2)),
+    `the daily draw is the trail's own, never the supply bite (${JSON.stringify(dd)})`);
 
   console.log('— 6. narratives write the real figure ({cost.*})');
   const words = await page.evaluate(() => [numberWords(0), numberWords(6), numberWords(22), numberWords(66), numberWords(110), interpolateCostTokens('{cost.water} gone. Then {cost.water} more, {cost.food.num} food.', { resources: { water: -4, food: -10 } })]);
   ok(JSON.stringify(words.slice(0, 5)) === JSON.stringify(['no', 'six', 'twenty-two', 'sixty-six', 'a hundred and ten']), `numberWords ${JSON.stringify(words.slice(0, 5))}`);
-  const interWant = await page.evaluate(() => { __r68.setup('interstellar'); return interpolateCostTokens('{cost.water} gone. Then {cost.water} more, {cost.food.num} food.', { resources: { water: -4, food: -10 } }); });
-  ok(interWant === 'Four gone. Then four more, 10 food.', `interstellar tokens: "${interWant}"`);
+  const inter = await page.evaluate(() => {
+    __r68.setup('interstellar');
+    const w = numberWords(-__r68.scaled('interstellar', 'water', -4));
+    return { got: interpolateCostTokens('{cost.water} gone. Then {cost.water} more, {cost.food.num} food.', { resources: { water: -4, food: -10 } }),
+      want: w.charAt(0).toUpperCase() + w.slice(1) + ' gone. Then ' + w + ' more, ' + -__r68.scaled('interstellar', 'food', -10) + ' food.' };
+  });
+  ok(inter.got === inter.want && inter.want !== 'Four gone. Then four more, 10 food.', `interstellar tokens: "${inter.got}" (want "${inter.want}")`);
   // [event, choice index, crew, tier|null, resource, the sentence with {n} for the figure]
   const CASES = [
     ['event_shipboard_018', 3, ['medic', 'chef'], null, 'water', 'It throws away {n} points as sludge'],
@@ -257,8 +265,7 @@ const TRAILS = ['lunar', 'mars', 'interstellar'];
       const want = sentence.replace('{n}', w).replace('{N}', w.charAt(0).toUpperCase() + w.slice(1));
       ok(r.body.includes(want), `${at}: narrative says "${want}" (${r.body.slice(0, 160)}…)`);
       ok(!/\{cost\./.test(r.body) && !/\{cost\./.test(r.log), `${at}: no raw {cost.*} token in the narrative or the log`);
-      if (trail === 'interstellar') ok(fig === -r.authored[k], `${at}: Interstellar states the authored ${-r.authored[k]}`);
-      if (trail === 'mars') ok(fig > -r.authored[k], `${at}: Mars states more than the authored ${-r.authored[k]} (${fig})`);
+      if (trail !== 'lunar') ok(fig > -r.authored[k], `${at}: ${trail} states more than the authored ${-r.authored[k]} (${fig})`);
     }
   }
 
@@ -288,7 +295,7 @@ const TRAILS = ['lunar', 'mars', 'interstellar'];
     ok(st.rules.mars[k] < st.rules.lunar[k] && st.rules.mars[k] < st.rules.interstellar[k], `Mars starts with less ${k} (${st.rules.mars[k]} vs ${st.rules.lunar[k]}/${st.rules.interstellar[k]})`);
     ok(st.state.mars[k] === st.rules.mars[k] + (k === 'food' ? 5 : 0), `Mars run starts at ${st.state.mars[k]} ${k} (map_rules ${st.rules.mars[k]}, + the Chef's 5 food)`);
   }
-  ok(st.state.lunar.food === 105 && st.state.interstellar.food === 105, `Lunar/Interstellar Chef food 105 (${st.state.lunar.food}/${st.state.interstellar.food})`);
+  ok(st.state.lunar.food === st.rules.lunar.food + 5 && st.state.interstellar.food === st.rules.interstellar.food + 5, `Lunar/Interstellar Chef food = the trail's start + 5 (${st.state.lunar.food}/${st.state.interstellar.food})`);
   ok(st.state.mars.foodMax === 105, `the tank is still 100 (+5 Chef): ${st.state.mars.foodMax}`);
   const chefWant = 'Food ' + (st.rules.mars.food + 5);
   ok(st.marsCards.some(s => s.includes(chefWant)), `Mars setup: Chef card says "${chefWant}" (${st.marsCards.filter(s => /Food/.test(s)).join(' | ')})`);

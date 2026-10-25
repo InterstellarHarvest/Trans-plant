@@ -68,7 +68,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       };
     }));
     for (const t of r) {
-      ok(t.has && t.from >= 0.4 && t.from <= 0.6, `${t.trail}: late_difficulty starts near the midpoint (from_progress ${t.from})`);
+      ok(t.has && t.from >= 0.3 && t.from <= 0.6, `${t.trail}: late_difficulty starts around the midpoint (from_progress ${t.from}; ruling 96 brought Mars and Interstellar earlier)`);
       ok(t.early && t.atFrom, `${t.trail}: the first half draws on event_difficulty_weights unchanged`);
       ok(t.arrive && t.mid && t.past, `${t.trail}: a straight line to weights_at_arrival at the destination (and no further)`);
       ok(t.shares[0] < t.shares[1] && t.shares[1] < t.shares[2], `${t.trail}: hard share ${t.shares.join('% → ')}% (start → 3/4 → arrival)`);

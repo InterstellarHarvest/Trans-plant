@@ -12,7 +12,7 @@
    • SHIP RESOURCES — fuel / food / H2O tiles with the 10-segment gauge
      and LEVEL / USE / EMPTY from the real burn (legTravelCost for fuel:
      pace × fuelBurnMult; food: rations × foodBurnMult × mouthsMult;
-     water: ORDERS_BASE.waterPerDay). Click → detail with IN CARGO and an
+     water: dailyDraw().water). Click → detail with IN CARGO and an
      AI line (flavor_pools ai_universal.cargo_hold.resource, 5 voices).
    • GEAR / MATERIALS / UPGRADES tabs (1/2/3 keys), SORT (Recent / A–Z /
      Slot cost / Sell price), GEAR sections, NEW badges + Recent order

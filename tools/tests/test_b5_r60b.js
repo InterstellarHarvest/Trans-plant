@@ -204,7 +204,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       const R = window.__r60, out = {};
       for (const trail of ['lunar', 'mars', 'interstellar']) {
         R.setup(trail);
-        for (const [label, frac] of [['early', 0.25], ['mid', 0.5], ['late', 0.95]]) {
+        for (const [label, frac] of [['early', 0.25], ['mid', MOD.map_rules.trails.interstellar.late_difficulty.from_progress], ['late', 0.95]]) {
           R.at(frac);
           for (const type of ['asteroid_field', 'nebula', 'station', 'void', 'planet']) {
             R.seed(6001);
@@ -222,7 +222,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     }
     for (const label of ['early', 'mid']) {
       const n = ['asteroid_field', 'nebula', 'station', 'void', 'planet'].reduce((s, t) => s + r[`interstellar/${label}/${t}`].n, 0);
-      ok(n === 0, `interstellar ${label} (${label === 'early' ? 25 : 50}% of the path): 0 ultra draws`);
+      ok(n === 0, `interstellar ${label} (${label === 'early' ? 'a quarter of the path' : 'up to late_difficulty.from_progress'}): 0 ultra draws`);
     }
     for (const [type, id] of [['asteroid_field', 'event_asteroid_007'], ['nebula', 'event_nebula_007'], ['station', 'event_shipboard_020'], ['void', 'event_shipboard_021'], ['planet', 'event_shipboard_021']]) {
       const d = r[`interstellar/late/${type}`];
@@ -247,8 +247,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       return { armed, pc, w, reliefUltra, arrival: rules.late_difficulty.weights_at_arrival.ultra, early: rules.event_difficulty_weights.ultra };
     });
     ok(r.armed.relief === r.pc.relief_duration && r.armed.streak === 0, `an ultra draw counts toward the pity counter (${JSON.stringify(r.armed)})`);
-    // Ruling 85 raised the arrival weight from 15 to 30.
-    ok(r.early === 0 && r.arrival === 30, `interstellar ultra weight 0 for the first half → ${r.arrival} at arrival (${r.w.ultra.toFixed(1)} at 95%)`);
+    // Ruling 85 raised the arrival weight from 15 to 30, ruling 96 to 40.
+    ok(r.early === 0 && r.arrival === 40, `interstellar ultra weight 0 until the late legs → ${r.arrival} at arrival (${r.w.ultra.toFixed(1)} at 95%)`);
     ok(r.reliefUltra === 0, 'pity relief draws no ultra');
   }
 

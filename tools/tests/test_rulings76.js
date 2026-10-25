@@ -143,7 +143,7 @@ const tipText = t => t ? [t.title, t.description, ...(t.rows || []).map(r => r.l
       out.fieldFacts = outcomeFacts(field.outcome).map(f => f.text);
       b.click(); await wait(400);
       out.field = { eng: crewMoraleOf('engineer'), med: crewMoraleOf('medic'), tax: effortTax(3), why: STATE.moraleWhy.engineer };
-      // The restart: perfect and good lift, poor does not.
+      // The restart: perfect and good lift, poor does not (its effort pips' tax, ruling 98, counts with the shared change).
       for (const tier of ['perfect', 'good', 'poor']) {
         setup();
         window.openMinigame = (mg, o, cb) => setTimeout(() => cb(tier, {}), 10);
@@ -154,7 +154,7 @@ const tipText = t => t ? [t.title, t.description, ...(t.rows || []).map(r => r.l
         const merged = Object.assign({}, sim.outcome, to, { resources: Object.assign({}, sim.outcome.resources || {}, to.resources || {}) });
         const facts = outcomeFacts(merged).map(f => f.text);
         b.click(); await wait(500);
-        out[tier] = { facts, eng: crewMoraleOf('engineer'), med: crewMoraleOf('medic'), shared: (to.resources || {}).morale || 0, why: STATE.moraleWhy.engineer && STATE.moraleWhy.engineer.id };
+        out[tier] = { facts, eng: crewMoraleOf('engineer'), med: crewMoraleOf('medic'), shared: ((to.resources || {}).morale || 0) - effortTax(sim.effort || 0), why: STATE.moraleWhy.engineer && STATE.moraleWhy.engineer.id };
       }
       return out;
     });

@@ -209,7 +209,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
         const want = {}, got = {};
         for (const [k, v] of Object.entries((o && o.resources) || {})) {
           if (!(v < 0)) continue;
-          if (k === 'gold') { want.gold = -eventGold(-v); got.gold = STATE.goldAmount - before.gold; } else if (k !== 'morale') { want[k] = v; got[k] = d(k); }
+          if (k === 'gold') { want.gold = -eventGold(-v); got.gold = STATE.goldAmount - before.gold; } else if (k !== 'morale') { want[k] = eventSupplyCost(k, v, o); got[k] = d(k); } // the trail's supply bite (ruling 68), as the preview shows it
         }
         for (const [k, pct] of Object.entries((o && o.resources_pct) || {})) { want[k] = Math.round(before.res[k] * pct / 100); got[k] = d(k); }
         if (o && Number.isFinite(o.crop_health)) { want.crop = o.crop_health; got.crop = STATE.cropGrowth.health - before.crop; }

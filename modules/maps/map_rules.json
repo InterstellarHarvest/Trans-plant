@@ -3,7 +3,7 @@
     "description": "Map generation rules per trail difficulty. Single starting point, branches and reconnections, single destination. All paths lead to the final node. Harder branches offer better rewards but more risk. FTL/StS-style galactic map — visually distinct per trail.",
     "visual_note": "Lunar maps are blue-gray and close, rocky. Mars maps are warm amber, dusty. Interstellar maps are deep indigo to black with distant stars. The visual should tell you the difficulty before you read a label.",
     "repeat_cooldown_note": "Ruling 65: trails.*.repeat_cooldown_stops — a repeatable event (once: false) drawn at one stop stays out of that trail's pool for the next N stops. A stop where every eligible event is cooling down still draws: the least recently drawn. An event SCAN already locked in still fires.",
-    "supply_cost_note": "Ruling 68: trails.*.event_supply_cost_mult — {water, food} multipliers on what an event outcome costs in water and food (negative deltas only; gains, the daily draw, purchases, a fight's own tally and a resources_pct share are untouched). Applied once in the engine (eventSupplyCost via effectiveResDelta), so every preview shows the scaled number. 1 = as authored. Ruling 69: Mars also starts short of water and food (starting_resources 70, the tanks still hold 100).",
+    "supply_cost_note": "Ruling 68: trails.*.event_supply_cost_mult — {water, food} multipliers on what an event outcome costs in water and food (negative deltas only; gains, the daily draw, purchases, a fight's own tally and a resources_pct share are untouched). Applied once in the engine (eventSupplyCost via effectiveResDelta), so every preview shows the scaled number. 1 = as authored. Ruling 69: Mars also starts short of water and food (starting_resources 70, the tanks still hold 100). Ruling 96 retuned them toward ~90% careful wins on Mars and ~80% on Interstellar (Mars ×4 with a heavier water draw, water_per_day; Interstellar ×2.6).",
     "travel_note": "Rulings 97 and 99: trails.*.travel_days is the days the path takes at RIDICULOUS (the legs share it), set apart from base_days, the deadline, so a slow or unlucky run can arrive late (ruling 94: late never ends the run). travel_fuel_budget is the fuel the path burns at RIDICULOUS; o2_per_day is the crew's daily breathing before the healthy crop's and the recycler's share.",
     "score_note": "Ruling 99: trails.*.score_brackets are the arrival score floors for legendary / good / rough (below rough: pyrrhic; a dead crop is hollow whatever the score), calibrated per trail on careful sims so careful arrivals spread across the tiers: about a fifth legendary, most good, a real rough share."
   },
@@ -85,6 +85,7 @@
       "travel_days": 144,
       "travel_fuel_budget": 65,
       "o2_per_day": 0.6,
+      "water_per_day": 0.5,
       "starting_resources": {
         "fuel": 100,
         "food": 70,
@@ -122,19 +123,19 @@
         "ultra": 0
       },
       "late_difficulty": {
-        "from_progress": 0.5,
+        "from_progress": 0.35,
         "weights_at_arrival": {
-          "easy": 10,
-          "medium": 35,
-          "hard": 55,
+          "easy": 5,
+          "medium": 15,
+          "hard": 80,
           "ultra": 0
         },
         "notes": "Ruling 58: past from_progress (legs flown over the path's legs) the difficulty weights move in a straight line from event_difficulty_weights to weights_at_arrival at the destination. Re-weights eligible events only; pity relief suspends it. ultra stays 0 here: the ultra tier is interstellar's late legs only."
       },
       "repeat_cooldown_stops": 4,
       "event_supply_cost_mult": {
-        "water": 3,
-        "food": 3
+        "water": 4,
+        "food": 4
       },
       "score_brackets": {
         "legendary": 106,
@@ -154,8 +155,8 @@
       "o2_per_day": 0.35,
       "starting_resources": {
         "fuel": 100,
-        "food": 100,
-        "water": 100,
+        "food": 85,
+        "water": 85,
         "o2": 100,
         "hull": 100,
         "morale": 60,
@@ -189,19 +190,19 @@
         "ultra": 0
       },
       "late_difficulty": {
-        "from_progress": 0.5,
+        "from_progress": 0.4,
         "weights_at_arrival": {
           "easy": 5,
-          "medium": 25,
+          "medium": 20,
           "hard": 70,
-          "ultra": 30
+          "ultra": 40
         },
-        "notes": "Ruling 58: past from_progress (legs flown over the path's legs) the difficulty weights move in a straight line from event_difficulty_weights to weights_at_arrival at the destination. Re-weights eligible events only; pity relief suspends it. Ruling 60: ultra is 0 for the first half and climbs to 30 at arrival (ruling 85; 15 before), so the ultra events (trail-gated to interstellar) only turn up on the late legs."
+        "notes": "Ruling 58: past from_progress (legs flown over the path's legs) the difficulty weights move in a straight line from event_difficulty_weights to weights_at_arrival at the destination. Re-weights eligible events only; pity relief suspends it. Ruling 60: ultra is 0 until from_progress and climbs to 40 at arrival (ruling 96; 30 by ruling 85, 15 before), so the ultra events (trail-gated to interstellar) only turn up on the late legs."
       },
       "repeat_cooldown_stops": 4,
       "event_supply_cost_mult": {
-        "water": 1,
-        "food": 1
+        "water": 2.6,
+        "food": 2.6
       },
       "score_brackets": {
         "legendary": 102,
