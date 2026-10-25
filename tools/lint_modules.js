@@ -985,6 +985,8 @@ const eventOnTrail = (ev, trail) => {
 // Job types must be EFFORT_CHECKS keys (index.html) or launch_minigame
 // ids; anything else is silently a plain choice. Combat hijacks resolve
 // their own outcome, so an `outcome` on them never applies.
+const TALK_MAX_PIPS = 2;
+const TALK_CHOICE = /\b(haggl\w*|negotiat\w*|question\w*|ask\w*|bluff\w*|talks?|argues?|transmit\w*|hail\w*|approach the)\b|^\s*"/i;
 {
   for (const [type, from] of EFFORT_CHECKS) {
     for (const src of from) {
@@ -996,6 +998,12 @@ const eventOnTrail = (ev, trail) => {
       for (const ch of choices) {
         const at = atOf(file, ev.id, layer), label = ch.text || ch.label;
         const job = ch.microgame_type || ch.minigame_type;
+        // Talking (haggle, negotiate, question, ask, bluff, a transmitted
+        // answer, an argument) is never more than 2 pips, even in a hard
+        // event: the pips weigh what a choice asks of the crew's bodies.
+        if ((ch.effort | 0) > TALK_MAX_PIPS && (ch.dialog || TALK_CHOICE.test(label || ''))) {
+          err(`${at}: choice "${label}" is talking at ${ch.effort} pips — talking choices cap at ${TALK_MAX_PIPS}`);
+        }
         if (ch.effort_required != null && !Array.isArray(ch.requires_effort_from) && !(job && EFFORT_CHECKS.has(job))) {
           err(`${at}: choice "${label}" has effort_required ${ch.effort_required} but no requires_effort_from array and no EFFORT_CHECKS microgame_type/minigame_type — choiceEffort() never reads it`);
         }
@@ -1301,6 +1309,7 @@ const hardChoiceCost = (() => {
 // crew_paragraphs[full|partial|solo]; score_paragraphs is keyed by
 // bracket. scoreBracket() (index.html) returns 'hollow' whenever the crop
 // is dead, so a numeric-bracket ending's crop_paragraphs.dead never shows.
+const CLAIMS_ON_TIME = /\bahead of schedule\b|\bon time\b|\bon schedule\b|\bdays? early\b/i; // endings.js
 {
   const brackets = new Set(Object.keys((registry.ending_score || {}).values || {}));
   const CROP_KEYS = new Set(['thriving', 'sick', 'dead']), CREW_KEYS = new Set(['full', 'partial', 'solo']);
@@ -1314,6 +1323,20 @@ const hardChoiceCost = (() => {
     }
     for (const k of Object.keys(e.crew_paragraphs || {})) if (!CREW_KEYS.has(k)) err(`${at}: crew_paragraphs key "${k}" is not full/partial/solo`);
     for (const k of Object.keys(e.score_paragraphs || {})) if (!brackets.has(k)) err(`${at}: score_paragraphs key "${k}" is not a registered ending_score bracket`);
+    // A late arrival keeps its bracket (ruling 94) and endings.js leaves a
+    // paragraph claiming punctuality out of it (CLAIMS_ON_TIME, same
+    // pattern): such a paragraph needs its late_score_paragraphs stand-in.
+    for (const [k, t] of Object.entries(e.score_paragraphs || {})) {
+      if (CLAIMS_ON_TIME.test(t) && !(e.late_score_paragraphs || {})[k]) err(`${at}: score_paragraphs.${k} says the ship was on time but there is no late_score_paragraphs.${k} for a late arrival`);
+    }
+    for (const [k, t] of Object.entries(e.late_score_paragraphs || {})) {
+      if (!brackets.has(k)) err(`${at}: late_score_paragraphs key "${k}" is not a registered ending_score bracket`);
+      if (CLAIMS_ON_TIME.test(t)) err(`${at}: late_score_paragraphs.${k} says the ship was on time`);
+    }
+  }
+  const lines = readJSON('modules/endings/endings.json').find(e => e._section === 'arrival_lines') || {};
+  for (const [k, list] of Object.entries(lines.tier_quotes || {})) {
+    if (!(Array.isArray(list) ? list : [list]).some(q => !CLAIMS_ON_TIME.test(q))) err(`endings.json tier_quotes.${k}: every quote says the ship was on time — a late arrival has none to show`);
   }
 }
 

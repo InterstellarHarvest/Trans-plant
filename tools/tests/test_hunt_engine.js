@@ -92,12 +92,29 @@ const clickContinue = page => page.evaluate(() => {
       // catch-up days would kill it, and a dead crop is a failure).
       if (STATE.cropGrowth) STATE.cropGrowth.lastTickDay = STATE.daysElapsed;
       const f = checkFailure();
-      const lines = (STATE.shipLog || []).filter(e => /deadline has passed/.test(e.text)).length;
+      const lines = (STATE.shipLog || []).filter(e => /deadline/i.test(e.text)).length;
       checkFailure();
-      return { f, ended: STATE.ended, lines, again: (STATE.shipLog || []).filter(e => /deadline has passed/.test(e.text)).length };
+      return { f, ended: STATE.ended, lines, again: (STATE.shipLog || []).filter(e => /deadline/i.test(e.text)).length };
     });
     ok(!r.f && !r.ended, 'past the deadline: no failure');
     ok(r.lines === 1 && r.again === 1, 'the AI says the deadline passed, once');
+    // In each AI's own voice (ai_companions sample_lines.deadline_passed):
+    // the numbers filled in, and only ARIA and CHIP exclaim.
+    for (const ai of ['aria', 'marv', 'rex', 'chip', 'ajoy']) {
+      const v = await page.evaluate(ai => {
+        localStorage.removeItem('transplant_save_v1');
+        applySetupToState({ trail: 'mars', ai, captain: 'veteran', crew: ['engineer', 'medic'], crop: 'wheat', ship: 'Test' });
+        STATE.stowaway = null; STATE.daysElapsed = STATE.baseDays + 3;
+        if (STATE.cropGrowth) STATE.cropGrowth.lastTickDay = STATE.daysElapsed;
+        checkFailure();
+        const e = (STATE.shipLog || []).filter(x => /deadline/i.test(x.text));
+        const own = ((MOD.ai_companions.find(a => a.id === 'ai_' + ai) || {}).sample_lines || {}).deadline_passed || '';
+        return { n: e.length, text: e.length ? e[0].text : '', own };
+      }, ai);
+      const head = v.own.split(/[.!]/)[0];
+      ok(v.n === 1 && head && v.text.includes(head) && !/[{}]/.test(v.text) && /!/.test(v.text) === (ai === 'aria' || ai === 'chip'),
+        `${ai.toUpperCase()} says it in its own voice: "${v.text}"`);
+    }
     // A late run still fails like any other: the crop dying past the
     // deadline raises EMPTY GROWBAY (the notice used to cut the chain).
     const c = await page.evaluate(() => {

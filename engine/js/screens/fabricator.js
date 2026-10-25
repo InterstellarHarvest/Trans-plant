@@ -665,8 +665,8 @@
   function renderHeader() {
     // Day counter mirrors cruise: `DAY 47 · 153 LEFT`.
     $('fb-trip-day').textContent  = FSTATE.tripDay;
-    const left = Math.max(0, FSTATE.arrivalDay - FSTATE.tripDay);
-    $('fb-days-left').textContent = left + ' LEFT';
+    const left = FSTATE.arrivalDay - FSTATE.tripDay; // past the deadline: days late (ruling 94)
+    $('fb-days-left').textContent = left >= 0 ? left + ' LEFT' : -left + ' LATE';
   }
 
   // ═════ Craft flow ═══════════════════════════════════════════

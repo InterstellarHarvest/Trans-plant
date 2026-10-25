@@ -87,7 +87,12 @@ async function boot(ai) {
       enterEvent(STATE.byId[STATE.currentId], EVENTS.event_derelict_004);
       const shown = document.querySelector('.screen.active').id;
       const btns = [...document.querySelectorAll('#enc-choices .enc-choice')];
-      const named = btns.some(b => b.textContent.includes('DRIVE COIL + SEALED VINYL'));
+      // MARV reads the costliest choice: the salvage's effort tax is the only
+      // cost on the table, so his line takes it (costs only) and the
+      // academic's research moves on — the grant is still one named fact.
+      const salvage = EVENTS.event_derelict_004.choices[1];
+      const named = btns.some(b => b.textContent.includes('DRIVE COIL + SEALED VINYL'))
+        || (STATE.activeAI === 'marv' && btns.some(b => /MARV · −2 MORALE/.test(b.textContent)) && outcomeFacts(choiceOutcome(salvage)).some(f => f.text === '+DRIVE COIL + SEALED VINYL'));
       const open = btns.filter(b => !b.classList.contains('locked'));
       if (open[0]) open[0].click();
       return { shown, choices: btns.length, named };

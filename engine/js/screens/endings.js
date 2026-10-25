@@ -72,6 +72,12 @@
     interstellar: { x: 365, y: 530 },
   };
   const FAILURE_CENTRE = { x: 480, y: 320 };
+
+  // A late arrival keeps its tier (ruling 94: late costs score, never
+  // more), but its report never says the ship was on time: a quote or a
+  // report paragraph that claims punctuality is left out of a late run
+  // (an ending authors late_score_paragraphs for the brackets it needs).
+  const CLAIMS_ON_TIME = /\bahead of schedule\b|\bon time\b|\bon schedule\b|\bdays? early\b/i;
   const FAILURE_TITLE_SIZE = 36;
 
   // Tier-reactive cinematic titles — see header note. 'hollow' is the
@@ -204,7 +210,10 @@
     const bracket = scoreBracket();
     const cropInfo = resolveCropStatus();
     let body = m.body_template || m.body || '';
-    const scorePara = (m.score_paragraphs && (m.score_paragraphs[bracket] || m.score_paragraphs.any)) || '';
+    const late = STATE.daysElapsed > STATE.baseDays;
+    const punctualOk = t => !(late && t && CLAIMS_ON_TIME.test(t));
+    let scorePara = (m.score_paragraphs && (m.score_paragraphs[bracket] || m.score_paragraphs.any)) || '';
+    if (!punctualOk(scorePara)) scorePara = (m.late_score_paragraphs && m.late_score_paragraphs[bracket]) || '';
     const cropPara = (m.crop_paragraphs && m.crop_paragraphs[cropInfo.status]) || '';
     const crewPara = (m.crew_paragraphs && m.crew_paragraphs[crewKeyFor(stats.crew)]) || '';
     const reportNum = 1000 + Math.floor(Math.random() * 9000);
@@ -229,8 +238,9 @@
     const cropKey = cropInfo.status === 'dead' || !STATE.crop ? 'noplant' : STATE.crop;
     // Each is a list (ruling 88); one per run, seeded on STATE.artSeed so
     // a reload shows the same line. A plain string still reads as one.
-    const onePerRun = (key, v) => !Array.isArray(v) ? v
-      : SceneArt.stablePick(key, v);
+    // A late run draws only from the lines that don't claim it was on time.
+    const onePerRun = (key, v) => !Array.isArray(v) ? (punctualOk(v) ? v : null)
+      : SceneArt.stablePick(key, v.filter(punctualOk));
     const arrival = onePerRun('arrival:' + STATE.trail + ':' + cropKey, ((lines.arrival_lines || {})[STATE.trail] || {})[cropKey]) || '';
 
     return {

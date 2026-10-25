@@ -205,6 +205,12 @@ const DEMO_TITLES = ['FUEL', 'FOOD', 'OXYGEN', 'HULL', 'MORALE'];
     // gold follows the purse (renderHUD keeps it current — market, rewards…)
     const g2 = await page.evaluate(() => { STATE.goldAmount += 37; renderHUD(); return document.getElementById('cruise-gold').textContent === STATE.goldAmount + 'g'; });
     ok(g2, tag + ' gold updates with the purse');
+    // Past the deadline the count turns to days late (ruling 94), never "0 LEFT".
+    const late = await page.evaluate(() => { const d = STATE.daysElapsed, out = {};
+      STATE.daysElapsed = STATE.baseDays; renderCruise(); out.on = document.getElementById('day-counter').textContent;
+      STATE.daysElapsed = STATE.baseDays + 4; renderCruise(); out.late = document.getElementById('day-counter').textContent;
+      STATE.daysElapsed = d; renderCruise(); return Object.assign(out, { base: STATE.baseDays }); });
+    ok(late.on === 'DAY ' + late.base + ' · 0 LEFT' && late.late === 'DAY ' + (late.base + 4) + ' · 4 LATE', tag + ' day counter at / past the deadline: ' + late.on + ' / ' + late.late);
     const gt = await page.evaluate(() => { const t = Tooltip.resolve(document.getElementById('cruise-gold')); return t && t.title; });
     ok(gt === 'GOLD', tag + ' gold tooltip (GOLD)');
     if (vp.width === 1280) await shot(page, 'cruise_header_stopped');

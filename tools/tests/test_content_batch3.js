@@ -189,14 +189,28 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
       STATE.daysElapsed = Math.round(STATE.baseDays * frac);
     };
     const P = () => pathLegs();
-    // Each setup builds a new map: the legs and the days come from that map (frac = visited ÷ pathLegs, as activeTriggers reads them).
-    const on = (projected) => { setup(1, 0); const P = pathLegs(); const legs = Math.round(P / 2); STATE.visited = new Set(STATE.nodes.map(n => n.id).slice(0, legs));
-      const frac = STATE.visited.size / pathLegs(); STATE.daysElapsed = Math.round(STATE.baseDays * frac * projected); return { hit: activeTriggers().has('behind_schedule'), proj: (STATE.daysElapsed / STATE.baseDays) / frac }; };
-    out.ahead = on(0.35).hit;    // the pace projects 35% of the deadline
-    out.behind = on(1.04).hit;   // projects 104%: late (ruling 108)
-    out.nearly = on(0.95).hit;   // projects 95%: tight, but on time
+    // Each setup builds a new map. Half the trail flown (the path walked from
+    // the start, the ship at its node), the days set so Orders' ARRIVAL
+    // (projectedArrivalDay, the legs left at the pace in force) lands at
+    // the given day relative to the deadline.
+    const halfway = () => { setup(1, 0); const path = [STATE.nodes[0].id]; let n = STATE.nodes[0];
+      for (let g = 0; g < 200; g++) { const c = connectionsOf(n); if (!c.length) break; path.push(c[0]); n = STATE.byId[c[0]]; }
+      const legs = Math.round(pathLegs() / 2); STATE.visited = new Set(path.slice(0, legs + 1)); STATE.currentId = path[legs]; STATE.daysElapsed = 0; };
+    const on = (offset) => { halfway(); STATE.daysElapsed = STATE.baseDays + offset - projectedArrivalDay(); return { hit: activeTriggers().has('behind_schedule'), arr: projectedArrivalDay() - STATE.baseDays }; };
+    out.ahead = on(-40).hit;     // projected 40 days early
+    out.behind = on(1).hit;      // projected one day late (ruling 108)
+    out.ontime = on(0).hit;      // projected to arrive on the deadline day itself
+    // The pace in force moves the projection: PLAID pulls a late projection back in time.
+    out.plaid = (() => { const r = on(1); STATE.orders.pace = 'plaid'; return { before: r.hit, after: activeTriggers().has('behind_schedule'), arr: projectedArrivalDay() <= STATE.baseDays }; })();
     setup(1, 0); STATE.daysElapsed = Math.round(STATE.baseDays * 0.9); out.early = activeTriggers().has('behind_schedule'); // leg 1: never, however slow
-    out.share = SCHEDULE_PROJECTED_SHARE; out.from = SCHEDULE_CHECK_FROM;
+    out.from = SCHEDULE_CHECK_FROM;
+    // Orders shows that same projection: DAY X OF N, warned once X > N.
+    on(5); openOrders(); out.ordersLate = (() => { const el = [...document.querySelectorAll('#od-engines-preview .od-preview-stat')].find(e => /^ARRIVAL/.test(e.textContent));
+      return { text: el && el.querySelector('strong').textContent, warn: !!(el && el.classList.contains('warn')), want: 'DAY ' + projectedArrivalDay() + ' OF ' + STATE.baseDays }; })();
+    closeOrders('cancel');
+    on(-10); openOrders(); out.ordersOk = (() => { const el = [...document.querySelectorAll('#od-engines-preview .od-preview-stat')].find(e => /^ARRIVAL/.test(e.textContent));
+      return { text: el && el.querySelector('strong').textContent, warn: !!(el && el.classList.contains('warn')), want: 'DAY ' + projectedArrivalDay() + ' OF ' + STATE.baseDays }; })();
+    closeOrders('cancel');
     // engine_strain (ruling 83): the chance doubles with heat, capped at 95%; a slower leg cools a step, LIGHT fully.
     out.curve = [1, 2, 3, 4, 5, 6, 7].map(h => Math.round(1000 * engineStrainChance(h)) / 1000);
     setup(1, 0); const rnd = Math.random;
@@ -232,8 +246,11 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
     out.total = Object.values(EVENTS).filter(e => e.active !== false).length;
     return out;
   });
-  ok(k.share === 1 && k.from === 0.25, `behind_schedule thresholds: projects ${k.share} of the deadline, from ${k.from} of the trail`);
-  ok(!k.ahead && k.behind && !k.nearly && !k.early, `behind_schedule: off when the pace projects 35% (${k.ahead}), on at 104% (${k.behind}), off at 95% (${k.nearly}), off on leg 1 (${k.early})`);
+  ok(k.from === 0.25, `behind_schedule checks from ${k.from} of the trail`);
+  ok(!k.ahead && k.behind && !k.ontime && !k.early, `behind_schedule = Orders' ARRIVAL past the deadline: off 40 days early (${k.ahead}), on a day late (${k.behind}), off on the day (${k.ontime}), off on leg 1 (${k.early})`);
+  ok(k.plaid.before && k.plaid.after === !k.plaid.arr, `the pace in force moves it: a day late at RIDICULOUS fires (${k.plaid.before}); at PLAID the projection is ${k.plaid.arr ? 'on time and it stops' : 'still late and it holds'} (${k.plaid.after})`);
+  ok(k.ordersLate.text === k.ordersLate.want && k.ordersLate.warn, `Orders ARRIVAL reads "${k.ordersLate.text}" (want "${k.ordersLate.want}"), warned when late (${k.ordersLate.warn})`);
+  ok(k.ordersOk.text === k.ordersOk.want && !k.ordersOk.warn, `Orders ARRIVAL on time reads "${k.ordersOk.text}", no warning (${k.ordersOk.warn})`);
   ok(JSON.stringify(k.curve) === '[0.055,0.11,0.22,0.44,0.88,0.95,0.95]', `engine strain chance by heat: ${k.curve.join(', ')} (doubling, capped at 95%)`);
   ok(k.heat5 === 5 && k.cooled === 4 && k.rested === 0, `heat builds per PLAID leg (5), a LUDICROUS leg cools one step (${k.cooled}), LIGHT SPEED rests it (${k.rested})`);
   ok(k.roll4 === false && k.roll5 === true, `at a 0.5 roll: heat 4 (44%) holds, heat 5 (88%) strains (${k.roll4}, ${k.roll5})`);

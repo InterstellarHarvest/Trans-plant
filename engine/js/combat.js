@@ -2052,7 +2052,7 @@
     // inline max-heights sized for the previous layer; combat has its
     // own fixed homes for the log, the HP banner and the actions.
     const wrap = document.getElementById('enc-choices');
-    wrap.style.maxHeight = '';
+    wrap.style.maxHeight = ''; wrap.style.bottom = ''; wrap.classList.remove('tight');
     document.getElementById('enc-narrative').style.maxHeight = '';
     // Choices → actions cross-dissolve (demo D:5111-5119): the old
     // choices fade out over 200ms — inert from this moment (clones carry

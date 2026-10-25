@@ -324,6 +324,10 @@
 }
 #screen-encounter .enc-choice.has-gate .ch-text,
 #screen-encounter .enc-choice.has-gate .ch-sub { grid-column: 2; }
+/* A column with more rows than its room packs them tighter
+   (index.html fitEncounterColumns), so the last one shows whole. */
+#screen-encounter .enc-choices.tight { gap: 6px; }
+#screen-encounter .enc-choices.tight .enc-choice { padding-top: 6px; padding-bottom: 6px; }
 /* dialog: true choices are spoken words — mixed case, cream (demo
    .enc-choice-body.dialog). */
 #screen-encounter .enc-choice .ch-text.dialog {
@@ -340,7 +344,14 @@
   line-height: 1.1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* The text span ends in "…" inside the flex row (a flex item only
+   ellipsizes itself); the pips never shrink. */
+#screen-encounter .enc-choice .ch-sub .ch-sub-text {
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 #screen-encounter .enc-choice .ch-sub .effort {
+  flex: none;
   color: var(--gold, #c8a85a);
   font-size: 11px; letter-spacing: 1px; line-height: 1;
 }

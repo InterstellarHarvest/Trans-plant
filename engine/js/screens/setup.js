@@ -70,9 +70,9 @@
       key: 'trail', label: 'Choose Your Trail', cat: 'Destination',
       desc: 'How far are you willing to go? Shorter trails are safer. Longer trails have more opportunities — and more things that can go wrong.',
       options: [
-        { id: 'lunar',        icon: '\u{1F319}', sprite: 'sprites/interface/trails/moon.png',         name: 'Lunar Trail',        desc: 'Four months. Established corridors. You\'ll be fine. Probably.',        stat: '~12 stops · 1 fork · Easy',   flavor: 'The sensible choice. You will not tell stories about this trip.' },
-        { id: 'mars',         icon: '\u{1F534}', sprite: 'sprites/interface/trails/mars.png',         name: 'Mars Trail',         desc: 'Eight months. Some charted territory. Some not. You leave short on water and food.', stat: '~19 stops · 2 forks · Medium', flavor: 'The map has helpful annotations like “here be problems.”' },
-        { id: 'interstellar', icon: '✦',    sprite: 'sprites/interface/trails/interstellar.png', name: 'Interstellar Trail', desc: 'Thirteen months. Charts stop being useful around month six.',            stat: '~23 stops · 3 forks · Hard',   flavor: 'The destination is called Far Garden. It was named by an optimist.' }
+        { id: 'lunar',        icon: '\u{1F319}', sprite: 'sprites/interface/trails/moon.png',         name: 'Lunar Trail',        desc: 'Three months. Established corridors. You\'ll be fine. Probably.',        stat: '~12 stops · 1 fork · Easy',   flavor: 'The sensible choice. You will not tell stories about this trip.' },
+        { id: 'mars',         icon: '\u{1F534}', sprite: 'sprites/interface/trails/mars.png',         name: 'Mars Trail',         desc: 'Six months. Some charted territory. Some not. You leave short on water and food.', stat: '~19 stops · 2 forks · Medium', flavor: 'The map has helpful annotations like “here be problems.”' },
+        { id: 'interstellar', icon: '✦',    sprite: 'sprites/interface/trails/interstellar.png', name: 'Interstellar Trail', desc: 'Ten months. Charts stop being useful around month six.',            stat: '~24 stops · 3 forks · Hard',   flavor: 'The destination is called Far Garden. It was named by an optimist.' }
       ]
     },
     {

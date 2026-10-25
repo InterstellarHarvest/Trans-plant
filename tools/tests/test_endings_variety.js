@@ -148,6 +148,48 @@ const READ = async ({ seed, trail, crop, bracket, dead }) => {
     await page.close();
   }
 
+  console.log('— a late arrival keeps its tier but never reads as on time (ruling 94)');
+  {
+    const page = await boot({ trail: 'mars', crop: 'wheat' });
+    const r = await page.evaluate(() => {
+      const CLAIM = /\bahead of schedule\b|\bon time\b|\bon schedule\b|\bdays? early\b/i;
+      const brackets = ['legendary', 'good', 'rough', 'pyrrhic', 'hollow'];
+      const out = { lateClaims: [], lateNoQuote: [], onTimeSeen: false, lateLegendPara: false, tones: new Set() };
+      const real = window.scoreBracket;
+      const text = () => ['end-report-title', 'end-report-arrival', 'end-report-quote', 'end-report-full'].map(id => document.getElementById(id).textContent).join(' | ');
+      try {
+        for (const m of MOD.endings.filter(e => !e._section && e.active !== false)) {
+          for (const b of (m.ending_score === 'any' ? brackets : [m.ending_score])) {
+            for (let s = 1; s <= 24; s++) {
+              for (const late of [true, false]) {
+                STATE.artSeed = s * 7919; STATE.ended = false;
+                STATE.cropGrowth.health = b === 'hollow' ? 0 : 90;
+                STATE.daysElapsed = late ? STATE.baseDays + 6 : STATE.baseDays - 20;
+                window.scoreBracket = () => b;
+                window.renderEndScreen({ kind: 'ending', module: m }); window.showEndReport();
+                const t = text(), q = document.getElementById('end-report-quote').textContent;
+                if (late) {
+                  if (CLAIM.test(t)) out.lateClaims.push(m.id + '/' + b + ': ' + t.match(CLAIM)[0]);
+                  if (!q.trim()) out.lateNoQuote.push(m.id + '/' + b);
+                  if (m.id === 'ending_colonyfiled_001' && b === 'legendary' && /Behind schedule/.test(t)) out.lateLegendPara = true;
+                  out.tones.add(document.getElementById('end-report-title').textContent.trim() ? b : '');
+                } else if (CLAIM.test(t)) out.onTimeSeen = true;
+              }
+            }
+          }
+        }
+      } finally { window.scoreBracket = real; }
+      out.tones = [...out.tones];
+      return out;
+    });
+    ok(!r.lateClaims.length, `no late arrival says it was on time or early (${r.lateClaims.length}: ${r.lateClaims.slice(0, 3).join(' ; ')})`);
+    ok(!r.lateNoQuote.length, `a late arrival still gets a quote in every bracket (${r.lateNoQuote.slice(0, 3).join(', ')})`);
+    ok(r.lateLegendPara, "a late legendary colony report reads its late paragraph ('Behind schedule')");
+    ok(r.onTimeSeen, 'an on-time arrival still reads the punctual lines');
+    ok(['legendary', 'good', 'rough', 'pyrrhic', 'hollow'].every(b => r.tones.includes(b)), `late runs keep every tier (${r.tones.join(', ')})`);
+    await page.close();
+  }
+
   ok(!errors.length, 'page errors: ' + errors.slice(0, 3).join(' | '));
   console.log(`\nendings_variety: ${pass} passed, ${fail} failed`);
   await browser.close();

@@ -100,6 +100,13 @@ const end = (page, r) => page.evaluate(new Function('r', 'return (' + END.toStri
     ok(a.recs.runs.length === 2 && a.recs.runs.some(e => e.id === 'old:1'), 'the old entry is still listed in the history');
     const after = await panel();
     ok(/MARS100/.test(after), `the best row shows the current-scale arrival (${after.slice(0, 80)})`);
+    // The history marks the old-scale row, only that one; the footnote says why.
+    const marks = await page.evaluate(() => { document.getElementById('btn-records').click();
+      const rows = [...document.querySelectorAll('#rec-runs .rec-run')].map(r => ({ old: !!r.querySelector('.rec-old'), ship: r.textContent }));
+      const note = document.querySelector('#rec-card .rec-note').textContent; document.getElementById('rec-x').click(); return { rows, note }; });
+    ok(marks.rows.filter(r => r.old).length === 1 && marks.rows.find(r => r.old).ship.includes('Old Ship') && /OLD SCALE/.test(marks.rows.find(r => r.old).ship),
+      `the old-scale arrival is tagged OLD SCALE in the history, the current one isn't (${marks.rows.map(r => r.old).join(',')})`);
+    ok(/current-scale/.test(marks.note), `the footnote says a best counts current-scale runs only ("${marks.note}")`);
     const lower = await end(page, { trail: 'mars', score: 90, days: 150, report: true });
     ok(!/NEW BEST/.test(lower.day) && lower.recs.best.mars.score === 100, 'then the usual rule: a lower current-scale score is no NEW BEST');
     await page.close();

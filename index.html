@@ -557,7 +557,8 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
   z-index: 20;
 }
 .enc-narr-title {
-  font-family: 'Press Start 2P', cursive; line-height: 1;
+  /* 1.3: a title long enough to wrap keeps its two lines apart */
+  font-family: 'Press Start 2P', cursive; line-height: 1.3;
   font-size: 14px; letter-spacing: 2px; color: var(--gold);
   text-shadow: 0 0 6px rgba(200,168,90,0.3);
   text-transform: uppercase; /* the demo's titles are all caps; ~110 authored titles are mixed-case */
@@ -1048,7 +1049,7 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
       <div class="rec-section-title" id="rec-runs-title">LAST 10 VOYAGES</div>
       <div id="rec-runs"></div>
       <footer class="rec-footer">
-        <span class="rec-note">Best arrivals count only runs whose crop arrived alive.</span>
+        <span class="rec-note">Best arrivals count only current-scale runs whose crop arrived alive.</span>
         <button class="rec-btn" id="rec-clear">Clear Records</button>
         <span id="rec-confirm" style="display:none;">Clear every record? <button class="rec-btn danger" id="rec-yes">Yes, clear</button> <button class="rec-btn" id="rec-no">Keep</button></span>
       </footer>
@@ -1645,13 +1646,9 @@ const RES_CRITICAL = 12;
 // possible). Below MORALE_CRISIS a crew member's own card shows a morale
 // crisis (demo-crew).
 const MORALE_LOW = 30;
-// behind_schedule trigger (ruling 82): the pace so far, carried to the end,
-// would use this share of the deadline (days used ÷ trail flown), checked
-// once SCHEDULE_CHECK_FROM of the trail is flown. A straight days-vs-trail
-// gap never fired: every run keeps about a quarter of the deadline in hand.
-// Ruling 108: 1.0, projected late (90% fired in nearly every run once
-// ruling 99 trimmed the deadlines).
-const SCHEDULE_PROJECTED_SHARE = 1.0;
+// behind_schedule trigger (rulings 82, 108): the run is projected to arrive
+// late — Orders' ARRIVAL (projectedArrivalDay) past the deadline — checked
+// once SCHEDULE_CHECK_FROM of the trail is flown (early stops swing it).
 const SCHEDULE_CHECK_FROM = 0.25;
 // engine_strain trigger (ruling 83): each leg flown at PLAID rolls for strain,
 // the chance doubling with the drive's heat (STATE.plaidLegs): about 5.5%,
@@ -2689,7 +2686,7 @@ function killPerson(who) { if (who === 'captain') killCaptain(); else killCrew(w
 
 /* modules/ai/ai_companions.json sample_lines — each AI's signature line
    for a handful of moments (hull_breach, crew_death, crop_sick, low_fuel,
-   fabricator_misfire). Loaded since day one, read by nothing until now. */
+   fabricator_misfire, deadline_passed). */
 function aiSampleLine(moment) {
   const a = (MOD.ai_companions || []).find(x => x.id === 'ai_' + STATE.activeAI);
   return (a && a.sample_lines && a.sample_lines[moment]) || null;
@@ -3338,10 +3335,10 @@ function activeTriggers() {
   if (frac <= 0.15 || legs <= 1) active.add('journey_start');
   if (frac >= 0.85 || P - legs <= 2) active.add('journey_end');
   if (frac >= 0.35 && frac <= 0.65) active.add('journey_mid');
-  // Behind schedule (ruling 82): at the pace so far, the trip would use
-  // SCHEDULE_PROJECTED_SHARE of the deadline or more (days used ÷ trail
-  // flown). Only once a quarter of the trail is flown: early stops swing it.
-  if (frac >= SCHEDULE_CHECK_FROM && STATE.baseDays > 0 && (STATE.daysElapsed / STATE.baseDays) / frac >= SCHEDULE_PROJECTED_SHARE) active.add('behind_schedule');
+  // Behind schedule (rulings 82, 108): Orders' own ARRIVAL projection
+  // (projectedArrivalDay: the legs left at the pace in force) lands past
+  // the deadline. Only once a quarter of the trail is flown.
+  if (frac >= SCHEDULE_CHECK_FROM && STATE.baseDays > 0 && projectedArrivalDay() > STATE.baseDays) active.add('behind_schedule');
   // Engine strain (ruling 83): a PLAID leg's strain roll came up.
   if (STATE.engineStrain) active.add('engine_strain');
   // Crop state — thresholds from the selected crop's own crops.json
@@ -4488,6 +4485,38 @@ function legTravelCost() {
   };
 }
 
+/* The one arrival projection: Orders' ARRIVAL and the behind_schedule
+   trigger both read it, so the warning fires exactly when Orders shows a
+   day past the deadline. Days so far, plus the legs still to fly (the
+   shortest route from here) at the pace given (default: the pace in
+   force), each leg its travel days plus a typical stop's time. */
+const AVG_STOP_DAYS = 2; // estimation only; the mechanics never use it
+function remainingLegs() {
+  if (!STATE.byId || !STATE.currentId) return 1;
+  const seen = new Set([STATE.currentId]);
+  let frontier = [STATE.currentId], depth = 0;
+  for (; frontier.length && depth < 99; depth++) {
+    const next = [];
+    for (const id of frontier) {
+      const n = STATE.byId[id];
+      if (!n) continue;
+      const conns = connectionsOf(n).filter(c => typeof c === 'string');
+      if (!conns.length) return Math.max(1, depth); // the arrival node
+      for (const cid of conns) if (!seen.has(cid)) { seen.add(cid); next.push(cid); }
+    }
+    frontier = next;
+  }
+  return Math.max(1, depth);
+}
+function projectedLegDays(paceIdx) {
+  const pace = ORDERS_PACE[paceIdx] || ordersPace();
+  return Math.max(1, travelDayBudget() / pathLegs()) * pace.etaMult + AVG_STOP_DAYS;
+}
+function projectedArrivalDay(paceIdx) {
+  if (paceIdx == null) paceIdx = ORDERS_PACE.indexOf(ordersPace());
+  return STATE.daysElapsed + Math.max(1, Math.round(remainingLegs() * projectedLegDays(paceIdx)));
+}
+
 /* THE one day-advancement helper — every site that passes days routes
    through here (event time_cost, travel legs, minigame/verb/growbay/
    fabricator day costs) so rations + water pressure apply uniformly.
@@ -4569,7 +4598,10 @@ function cropWaterShareSaved() {
 function deadlineNotice() {
   if (STATE.flags.has('deadline_passed')) return;
   STATE.flags.add('deadline_passed');
-  window.pushCruiseLog('The deadline has passed. The colony will still take us, late — and every day from here comes off the arrival.', { ai: true });
+  const late = STATE.daysElapsed - STATE.baseDays;
+  const line = aiSampleLine('deadline_passed') || 'The deadline has passed. The colony will still take us, late — and every day from here comes off the arrival.';
+  window.pushCruiseLog(line.replaceAll('{day}', STATE.daysElapsed).replaceAll('{deadline}', STATE.baseDays)
+    .replaceAll('{late}', late + (late === 1 ? ' day' : ' days')), { ai: true });
 }
 function passDays(days, opts) {
   days = Math.max(0, Math.round(days));
@@ -5570,7 +5602,7 @@ function showHindsight() {
   const alt = shown.filter(ch => ch !== picked && choiceOutcome(ch));
   if (!alt.length) return null;
   const ch = alt[Math.floor(Math.random() * alt.length)];
-  const facts = outcomeFacts(choiceOutcome(ch));
+  const facts = outcomeFacts(choiceOutcome(ch), choiceTax(ch));
   const top = facts[0];
   const result = !top ? 'changed nothing you could measure'
     : top.good ? 'got you ' + top.text.replace(/^\+/, '').toLowerCase()
@@ -5622,7 +5654,7 @@ function fitEncounterColumns() {
   // Rendered before showScreen(): while hidden everything measures 0 —
   // retry on the next frame, once the screen is laid out.
   if (!narr.offsetParent) { requestAnimationFrame(() => { if (narr.offsetParent) fitEncounterColumns(); }); return; }
-  narr.style.maxHeight = ''; ch.style.maxHeight = '';
+  narr.style.maxHeight = ''; ch.style.maxHeight = ''; ch.style.bottom = ''; ch.classList.remove('tight');
   const narrBottom = narr.offsetTop + narr.offsetHeight;
   // The panel keeps what its own (reserved, full-length) text needs, up to
   // 190px (it scrolls past that), so a two-line body never holds 200px
@@ -5630,7 +5662,13 @@ function fitEncounterColumns() {
   // below a scroll; 190 leaves six gated choices room at the demo's 8px
   // gap.
   const MIN_NARR = Math.max(130, Math.min(190, narr.offsetHeight)), GAP = 8;
-  ch.style.maxHeight = Math.max(80, narrBottom - MIN_NARR - GAP - ch.offsetTop) + 'px';
+  const room = Math.max(80, narrBottom - MIN_NARR - GAP - ch.offsetTop);
+  // The column sizes to its rows, up to that room (its CSS bottom would
+  // stop it short of the panel); rows that still don't fit pack tighter,
+  // so the last row (the leave row) is never cut through.
+  ch.style.bottom = 'auto';
+  if (ch.scrollHeight > room) ch.classList.add('tight');
+  ch.style.maxHeight = room + 'px';
   // The panel grows up to the LAST BUTTON, not to the column's box (the box
   // always reaches its CSS bottom, so the panel never grew and 3 in 4
   // openings hid their end behind a scroll).
@@ -5782,7 +5820,7 @@ function renderChoicesInner(choices) {
       if (subText) {
         // Locked: the plain grey "Need: …" under the padlock (demo); risky: red.
         const txt = document.createElement('span');
-        if (!locked && ch.risky) txt.className = 'risky';
+        txt.className = 'ch-sub-text' + (!locked && ch.risky ? ' risky' : '');
         txt.textContent = subText;
         sub.appendChild(txt);
       }
@@ -5796,7 +5834,12 @@ function renderChoicesInner(choices) {
       // The whole preview, every extra included: the sub-label is one line
       // and may end in "…" (standing rule: detail goes to the tooltip).
       if (preview) tip.push(preview);
-      if (ch.effort) tip.push('Effort ' + ch.effort + '/5' + (effortTax(ch.effort) ? ' · −' + effortTax(ch.effort) + ' morale' : '')); // no crew aboard: no morale to tax
+      // The tax is said once: in the MORALE figure of the Costs line or
+      // the preview when one shows it (outcomeFacts folds it in), else here.
+      const tax = choiceTax(ch), co = tax && choiceCostOutcome(ch);
+      const tf = co ? outcomeFacts(withPctPreview(co), tax).find(f => f.taxed) : null;
+      const taxShown = !!tf && (!tf.good || (!!preview && preview.includes(tf.text.split(' · ')[0])));
+      if (ch.effort) tip.push('Effort ' + ch.effort + '/5' + (tax && !taxShown ? ' · −' + tax + ' morale' : '')); // no crew aboard: no morale to tax
       if (ch.gold_cost) tip.push('-' + eventGold(ch.gold_cost) + ' gold');
       // Time + resource costs, for everyone (ruling 34, demo composeTooltip
       // :4122-4153) — the same numbers the outcome applies.
@@ -5819,6 +5862,8 @@ function renderChoicesInner(choices) {
     }
     // Held until the text lands, then the cascade (prepareDelivery /
     // revealChoices); the click pulse + 180ms beat live in bindEncButton.
+    // A locked row's "Need: …" can run past one line: hover reads it whole.
+    if (locked) btn.title = pricedText(interpolateStowawayTokens(ch.text || ch.label), ch) + '\n' + locked;
     if (!locked) bindEncButton(btn, () => handleChoiceClick(ch));
     col.appendChild(btn);
   }
@@ -5991,15 +6036,22 @@ function withPctResources(o) {
   // _pctShare: how much of each figure is the share (eventSupplyCost).
   return Object.assign({}, o, { resources: res, resources_pct: null, _pctShare: share });
 }
-function outcomeFacts(o) {
+// tax: a choice's effort tax (effortTax of its pips, choiceTax), paid with
+// the outcome, so a preview's crew MORALE is the one total the crew loses
+// (owner rule: previews equal outcomes) — folded into the morale fact, or
+// a fact of its own when the outcome moves no crew-wide morale.
+function outcomeFacts(o, tax) {
   const facts = [];
+  let taxed = !(tax > 0) || !STATE.crew.length;
   for (const [k, pct] of Object.entries((o && o.resources_pct) || {})) {
     if (!Number.isFinite(pct) || !pct || !RES_LABEL[k]) continue;
     facts.push({ text: (pct > 0 ? '+' : '−') + Math.abs(pct) + '% ' + RES_LABEL[k], weight: Math.abs(pct) / (k === 'gold' ? 5 : 1), good: pct > 0 });
   }
   for (const [k, v0] of Object.entries(o.resources || {})) {
     if (!Number.isFinite(v0) || !v0 || !RES_LABEL[k]) continue;
-    const v = k === 'gold' ? (v0 < 0 ? -eventGold(-v0) : v0) : effectiveResDelta(k, v0, o);
+    let v = k === 'gold' ? (v0 < 0 ? -eventGold(-v0) : v0) : effectiveResDelta(k, v0, o);
+    const taxHere = k === 'morale' && !taxed && !o.morale_to;
+    if (taxHere) { v -= tax; taxed = true; }
     if (!v) continue;
     // An armed Emergency Patch takes the whole hit (applyOutcomeEffects).
     if (k === 'hull' && v < 0 && !o.combat_net && STATE.flags.has('emergency_patch_armed')) { facts.push({ text: 'PATCH STOPS −' + Math.abs(v) + ' HULL', weight: 4, good: true }); continue; }
@@ -6010,8 +6062,10 @@ function outcomeFacts(o) {
       if (!STATE.crew.length) continue;
       if (o.morale_to) { const who = moraleTargetRole(o.morale_to); if (!who) continue; label = crewNameOf(who).toUpperCase() + ' MORALE'; }
     }
-    facts.push({ text: (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + label, weight: Math.abs(v) / (k === 'gold' ? 5 : 1), good: v > 0, morale: k === 'morale' });
+    // (the tax never reorders the facts: the weight is the outcome's own)
+    facts.push({ text: (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + label, weight: Math.abs(taxHere ? v + tax : v) / (k === 'gold' ? 5 : 1), good: v > 0, morale: k === 'morale', taxed: taxHere });
   }
+  if (!taxed) facts.push({ text: '−' + tax + ' MORALE', weight: 0, good: false, morale: true, taxed: true });
   // Role concerns (ruling 57) ride on the morale fact, so no preview
   // shows the crew's MORALE without the extra a role takes on top:
   // "−3 MORALE · ENGINEER −4"; alone, "ENGINEER −4 MORALE".
@@ -6057,7 +6111,10 @@ function outcomeFacts(o) {
   if (Number.isFinite(o.fab_wear) && o.fab_wear > 0) facts.push({ text: '+' + o.fab_wear + '% FAB WEAR', weight: Math.max(6, o.fab_wear * 1.5), good: false });
   return facts.sort((a, b) => b.weight - a.weight);
 }
-function costWeight(o) { return outcomeFacts(o).filter(f => !f.good).reduce((s, f) => s + f.weight, 0); }
+function costWeight(o, tax) { return outcomeFacts(o, tax).filter(f => !f.good).reduce((s, f) => s + f.weight, 0); }
+// The morale a choice's effort pips cost on top of its outcome (index.html
+// payEffortTax at the click; the market's tax is paid once a visit).
+function choiceTax(ch) { return ch && ch.effort && !(ch.open_market && STATE._marketTaxPaid) ? effortTax(ch.effort) : 0; }
 // Map choice → preview line for this render. MARV: the costliest
 // choice's costs ("the cost of accuracy is knowing how bad it is").
 // Academic captain: one full outcome per station leg (kept for re-renders
@@ -6087,20 +6144,20 @@ function choicePreviews(choices) {
   // (the price is in its text). MARV's cost read takes the others.
   for (const ch of cands) {
     if (!ch.preview) continue;
-    const facts = outcomeFacts(choiceOutcome(ch)).filter(f => !/ GOLD$/.test(f.text)).slice(0, 3).map(f => f.text);
+    const facts = outcomeFacts(choiceOutcome(ch), choiceTax(ch)).filter(f => !/ GOLD$/.test(f.text)).slice(0, 3).map(f => f.text);
     if (facts.length) out.set(ch, fitPreview('', facts));
   }
   const unposted = cands.filter(ch => !out.has(ch));
   if (STATE.activeAI === 'marv' && unposted.length) {
-    const worst = unposted.slice().sort((a, b) => costWeight(choiceOutcome(b)) - costWeight(choiceOutcome(a)))[0];
-    const costs = outcomeFacts(choiceOutcome(worst)).filter(f => !f.good).slice(0, 2).map(f => f.text);
+    const worst = unposted.slice().sort((a, b) => costWeight(choiceOutcome(b), choiceTax(b)) - costWeight(choiceOutcome(a), choiceTax(a)))[0];
+    const costs = outcomeFacts(choiceOutcome(worst), choiceTax(worst)).filter(f => !f.good).slice(0, 2).map(f => f.text);
     if (costs.length) out.set(worst, fitPreview('MARV', costs));
   }
   // A perfect SCAN's intel: every choice of the scouted event shows its outcome.
   if (STATE.scanIntelEvent && STATE.currentEvent && STATE.scanIntelEvent === STATE.currentEvent.id) {
     for (const ch of cands) {
       if (out.has(ch)) continue;
-      const facts = outcomeFacts(choiceOutcome(ch)).slice(0, 2).map(f => f.text);
+      const facts = outcomeFacts(choiceOutcome(ch), choiceTax(ch)).slice(0, 2).map(f => f.text);
       out.set(ch, facts.length ? fitPreview('SCAN', facts) : 'SCAN · NO EFFECT');
     }
   }
@@ -6109,7 +6166,7 @@ function choicePreviews(choices) {
   if (STATE.items.includes('medical_scanner') && STATE.currentEvent && (STATE.currentEvent.trigger || []).includes('delayed_crisis')) {
     for (const ch of cands) {
       if (out.has(ch)) continue;
-      const facts = outcomeFacts(choiceOutcome(ch)).slice(0, 2).map(f => f.text);
+      const facts = outcomeFacts(choiceOutcome(ch), choiceTax(ch)).slice(0, 2).map(f => f.text);
       if (facts.length) out.set(ch, fitPreview('SCANNER', facts));
     }
   }
@@ -6127,10 +6184,10 @@ function choicePreviews(choices) {
   if (STATE.captain === 'academic' && STATE.currentEvent) {
     const key = STATE.currentEvent.id + '|' + (STATE.layerStack || []).join('>');
     if (STATE.researchReady || STATE.researchKey === key) {
-      const pick = cands.find(ch => !out.has(ch) && outcomeFacts(choiceOutcome(ch)).length);
+      const pick = cands.find(ch => !out.has(ch) && outcomeFacts(choiceOutcome(ch), choiceTax(ch)).length);
       if (pick) {
         STATE.researchReady = false; STATE.researchKey = key;
-        out.set(pick, 'RESEARCH · ' + outcomeFacts(choiceOutcome(pick)).slice(0, 3).map(f => f.text).join(' · '));
+        out.set(pick, 'RESEARCH · ' + outcomeFacts(choiceOutcome(pick), choiceTax(pick)).slice(0, 3).map(f => f.text).join(' · '));
       }
     }
   }
@@ -6199,7 +6256,9 @@ function choiceCostLines(ch) {
     const eff = choiceEffort(ch);
     const days = outcomeDays(o, eff ? eff.ratio : 1);
     lines.push(days ? 'Takes ' + days + (days === 1 ? ' day' : ' days') : 'Takes no time');
-    const costs = outcomeFacts(withPctPreview(o)).filter(f => !f.good).map(f => f.text);
+    // The effort tax rides in the MORALE figure (one total; the tooltip's
+    // Effort line then leaves it out).
+    const costs = outcomeFacts(withPctPreview(o), choiceTax(ch)).filter(f => !f.good).map(f => f.text);
     if (costs.length) lines.push('Costs: ' + costs.join(' · '));
     if (ch.triggerRamResolve) {
       const fail = Math.round(((window.RAM_FAIL_CHANCE != null) ? window.RAM_FAIL_CHANCE : 0.3) * 100);

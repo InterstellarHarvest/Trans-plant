@@ -144,8 +144,12 @@
       `<span class="rec-dest">${DEST_LABEL[e.trail] || escapeHTML(e.trail)}</span>` +
       `<span class="rec-tone" style="${toneStyle(e)}">${escapeHTML(e.title)}</span>` +
       `<span class="rec-score">${e.score == null ? '—' : e.score}</span>` +
-      `<span class="rec-sub">${escapeHTML(e.ship)} · ${escapeHTML(cropName(e.crop))} · day ${e.days}</span></div>`;
+      `<span class="rec-sub">${oldScale(e) ? '<span class="rec-old" title="Scored before the current scale: it never counts as a best">OLD SCALE</span> ' : ''}` +
+      `${escapeHTML(e.ship)} · ${escapeHTML(cropName(e.crop))} · day ${e.days}</span></div>`;
   }
+  // An arrival scored on the old scale (no scoreVersion: before ruling
+  // 99's rescore) stays in the history, marked; it can't be a best.
+  function oldScale(e) { return e.kind === 'arrival' && e.score != null && !currentScale(e); }
 
   function paintRecords() {
     const r = loadRecords();

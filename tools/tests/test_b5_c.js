@@ -117,8 +117,8 @@ const arriveWith = (page, evId) => page.evaluate(async id => {
       return { perfect, lines: ev.choices.map(c => choiceCostLines(c).join(' / ')), eng: ev.choices[1], limp: ev.choices[2] };
     });
     ok(!/crew/i.test(d.perfect) && !/coil, injector, valve, relay/i.test(d.perfect) && !/in order on the first pass/.test(d.perfect), 'the perfect tier names no crew and no fixed order');
-    ok(d.eng.effort === 3 && d.eng.outcome.time_days === 6 && d.lines[1] === 'Takes 6 days', `FIELD REPAIR: effort 3, 6 days (tooltip "${d.lines[1]}")`);
-    ok(d.limp.effort === 1 && d.limp.outcome.time_cost === 'low' && d.limp.outcome.resources.fuel === -2 && d.lines[2] === 'Takes 2 days / Costs: −2 FUEL', `LIMP MODE: effort 1, 2 days, −2 fuel (tooltip "${d.lines[2]}")`);
+    ok(d.eng.effort === 3 && d.eng.outcome.time_days === 6 && d.lines[1] === 'Takes 6 days / Costs: −4 MORALE · ENGINEER +3', `FIELD REPAIR (the effort tax in the MORALE figure, the repair lift beside it): effort 3, 6 days (tooltip "${d.lines[1]}")`);
+    ok(d.limp.effort === 1 && d.limp.outcome.time_cost === 'low' && d.limp.outcome.resources.fuel === -2 && d.lines[2] === 'Takes 2 days / Costs: −2 FUEL · −1 MORALE', `LIMP MODE (with its effort tax): effort 1, 2 days, −2 fuel (tooltip "${d.lines[2]}")`);
     for (const [i, days, fuel, tax] of [[1, 6, 0, 3], [2, 2, -2, 1]]) {
       const r = await page.evaluate(async ([i, tax]) => {
         setCrewMorale(60); STATE.resources.fuel = 80; STATE.seenEventIds.delete('event_crisis_025');

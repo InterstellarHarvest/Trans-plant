@@ -297,9 +297,11 @@
       ((isStopped() || !!STATE.forcedEvent) && !activeWait);
     scr.classList.toggle('time-paused', !!paused);
   }
+  // Past the deadline the ship flies on (ruling 94): the count turns to
+  // the days late instead of sitting at 0 LEFT.
   function dayText() {
-    const daysLeft = Math.max(0, STATE.baseDays - STATE.daysElapsed);
-    return 'DAY ' + STATE.daysElapsed + ' · ' + daysLeft + ' LEFT';
+    const left = STATE.baseDays - STATE.daysElapsed;
+    return 'DAY ' + STATE.daysElapsed + ' · ' + (left >= 0 ? left + ' LEFT' : -left + ' LATE');
   }
 
   // ── Scene alert + Stop pulse (demo showSceneAlert) ─────────────

@@ -25,12 +25,6 @@
 (function () {
   const $ = id => document.getElementById(id);
 
-  // Typical event time-cost days per node — folded into the arrival /
-  // fuel-runway projections so "days per leg" reflects what a leg
-  // really costs (travel days + the stop's event). Estimation only;
-  // the mechanics never use this.
-  const AVG_EVENT_DAYS = 2;
-
   const AI_SPRITE = { aria: 'sprites/interface/AI/aria.png', marv: 'sprites/interface/AI/marv.png', rex: 'sprites/interface/AI/rex.png', chip: 'sprites/interface/AI/chip.png', ajoy: 'sprites/interface/AI/ajoy.png' };
 
   // ── Plain-language tier descriptions (demo verbatim) ──────────
@@ -158,52 +152,14 @@
   }
 
   // ── Projection model — engine-real inputs, demo-shaped outputs ─
-  // Everything is a day number the player already cares about.
-  function remainingLegs() {
-    // BFS from the current node to the arrival node (no outgoing
-    // connections). Forks explore both branches (map.js authors their
-    // connects_to as {alpha:[ids], beta:[ids]} — arrays of arrays once
-    // Object.values()d, hence the flatten); shortest route wins.
-    if (!STATE.byId || !STATE.currentId) return 1;
-    const seen = new Set([STATE.currentId]);
-    let frontier = [STATE.currentId];
-    let depth = 0;
-    for (; frontier.length && depth < 99; depth++) {
-      const next = [];
-      for (const id of frontier) {
-        const n = STATE.byId[id];
-        if (!n) continue;
-        const raw = Array.isArray(n.connects_to) ? n.connects_to : Object.values(n.connects_to || {});
-        const conns = [];
-        for (const c of raw) {
-          if (typeof c === 'string') conns.push(c);
-          else if (Array.isArray(c)) for (const cc of c) { if (typeof cc === 'string') conns.push(cc); }
-        }
-        if (!conns.length) return Math.max(1, depth); // arrival node reached
-        for (const cid of conns) {
-          if (!seen.has(cid)) { seen.add(cid); next.push(cid); }
-        }
-      }
-      frontier = next;
-    }
-    return Math.max(1, depth);
-  }
-  function baseLegDays() {
-    // Same leg count travel uses (index.html pathLegs: legs actually flown;
-    // STATE.nodes counts both fork branches, which made ETAs ~20% early).
-    return Math.max(1, travelDayBudget() / pathLegs());
-  }
-  function perLegDays(paceIdx) {
-    return baseLegDays() * ORDERS_PACE[paceIdx].etaMult + AVG_EVENT_DAYS;
-  }
-  function projectedArrivalDay(paceIdx) {
-    return STATE.daysElapsed + Math.max(1, Math.round(remainingLegs() * perLegDays(paceIdx)));
-  }
+  // Everything is a day number the player already cares about. ARRIVAL
+  // is index.html projectedArrivalDay, the same projection the
+  // behind_schedule trigger reads.
   function fuelEmptyDay(paceIdx) {
     const perLegFuel = fuelPerLegBase() * ORDERS_PACE[paceIdx].fuelMult
       * fuelBurnMult(); // pilot / drive coil
     const legsOfFuel = STATE.resources.fuel / perLegFuel;
-    return STATE.daysElapsed + Math.floor(legsOfFuel * perLegDays(paceIdx));
+    return STATE.daysElapsed + Math.floor(legsOfFuel * projectedLegDays(paceIdx));
   }
   function foodEmptyDay(rationsIdx) {
     const perDay = ORDERS_BASE.foodPerDay * ORDERS_RATIONS[rationsIdx].foodMult
@@ -320,9 +276,12 @@
     }
 
     const fuelWarn = fuelEmpty < arrival;
+    // Past the deadline the ship still arrives, late (ruling 94): the
+    // day the behind_schedule warning reads, against the deadline.
+    const lateWarn = STATE.baseDays > 0 && arrival > STATE.baseDays;
 
     $('od-engines-preview').innerHTML =
-      statLine('ARRIVAL',    'DAY ' + arrival,   arrDelta.text,  arrDelta.cls,  false) +
+      statLine('ARRIVAL',    'DAY ' + arrival + (STATE.baseDays > 0 ? ' OF ' + STATE.baseDays : ''), arrDelta.text, arrDelta.cls, lateWarn) +
       statLine('FUEL EMPTY', 'DAY ' + fuelEmpty, fuelDelta.text, fuelDelta.cls, fuelWarn) +
       statLine('MORALE',     crewLabel,          crewDeltaText,  crewDeltaCls,  false) +
       driveHeatLine(p.id);
