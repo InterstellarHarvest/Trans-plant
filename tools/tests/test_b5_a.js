@@ -107,7 +107,7 @@ async function defeat(page, setup, rnd, before) {
       return { crew: STATE.crew.slice(), body: document.getElementById('enc-narr-body').textContent, tok: interpolateStowawayTokens('{patient.name}/{crew.pilot}') };
     });
     ok(!r.crew.includes('pilot'), 'the patient died');
-    ok(/Ines Vahl/.test(r.body) && !/Reeves/.test(r.body), 'the outcome names Ines Vahl, not the roster pilot (' + r.body.slice(0, 120) + ')');
+    ok(/Ines Vahl/.test(r.body) && !/Lindqvist/.test(r.body), 'the outcome names Ines Vahl, not the roster pilot (' + r.body.slice(0, 120) + ')');
     ok(r.tok === 'Ines Vahl/Ines Vahl', '{patient.name} and {crew.pilot} read the dead pilot as who they were (' + r.tok + ')');
     const after = await page.evaluate(() => { returnToHub(); return interpolateStowawayTokens('{crew.pilot}'); });
     ok(after === 'A pilot', 'back at the hub the remembered name is dropped: nobody holds the role, so it reads "A pilot" (' + after + ')');
@@ -211,7 +211,7 @@ async function defeat(page, setup, rnd, before) {
       const who = STATE.crew.includes('pilot') && STATE.crewHP.pilot < hp0.pilot ? 'pilot' : 'captain';
       return { clicked: !!b, lost: who === 'pilot' ? hp0.pilot - STATE.crewHP.pilot : hp0.captain - STATE.captainHP, who, log: (STATE.shipLog || []).slice(-3).map(e => e.text || e).join(' | ') };
     }, crew.length ? 0.99 : 0);
-    const name = r.who === 'captain' ? 'you' : 'Reeves';
+    const name = r.who === 'captain' ? 'you' : 'Lindqvist';
     ok(r.clicked && r.lost > 0 && new RegExp('HUNT — .*disagreed with ' + name + ' \\(−' + r.lost + ' HP\\)').test(r.log), (crew.length ? 'crew' : 'solo captain') + ': the log names ' + name + ' and the real HP lost (' + r.log + ')');
     await page.close();
   }

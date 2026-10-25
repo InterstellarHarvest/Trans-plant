@@ -829,7 +829,7 @@
     COMBAT.state = 'PLAYER_TURN';
     fxScreen().classList.remove('combat-targeting');
     document.getElementById('enc-subject').classList.remove('combat-locking');
-    setAiCombat('Targeting cancelled.');
+    setAiCombat('Targeting canceled.');
     renderCombatActions();
   }
 

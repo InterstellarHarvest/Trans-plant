@@ -875,7 +875,7 @@
     stopCraftClock();
     FSTATE.craft = null; STATE.fabricator.owedOutput = null;
     const got = Object.entries(back).map(([m, q]) => q + ' ' + ((MATERIALS[m] && MATERIALS[m].name) || m).toLowerCase()).join(', ');
-    fabLog('FABRICATOR — ' + (r ? r.name : 'print') + ' cancelled' + (free ? ' before it started. Nothing spent.'
+    fabLog('FABRICATOR — ' + (r ? r.name : 'print') + ' canceled' + (free ? ' before it started. Nothing spent.'
       : ' after ' + dWord(c.daysDone) + '. ' + (got ? 'Half the materials are back in the hold (' + got + ')' : 'None of the materials came back') + '; the days are gone.'));
     // Portrait back to idle; kill anim.
     const slot = $('fb-slot');

@@ -256,7 +256,7 @@
     return {
       name: 'OUTPOST TRADER',
       greeting: negotiated
-        ? "Your diplomat already talked my ear off. Fine. Up to fifteen percent, and not a credit under what I pay for it. Don't tell the other captains."
+        ? "Your diplomat already talked my ear off. Fine. Up to fifteen percent, and not a coin under what I pay for it. Don't tell the other captains."
         : "Welcome, welcome. What do you need today — or what are you selling?",
       farewell: "Come back when you've got more to spend.",
       wares,
