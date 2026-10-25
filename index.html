@@ -140,7 +140,9 @@ body {
   flex: 0 0 auto;
   position: relative; overflow: hidden;
   background: #000;
-  border: 1px solid #2a3040;
+  /* The frame line is drawn outside the box, so the interior every
+     screen, overlay and 960x640 canvas fills is the full 960x640. */
+  box-shadow: 0 0 0 1px #2a3040;
   transform-origin: center center;
 }
 /* CRT scanlines per screen, as each demo tunes them: title 10%,
