@@ -266,13 +266,18 @@
 
     const pips = $('end-crew-pips');
     pips.innerHTML = '';
-    const launched = Math.max(STATE.startCrew != null ? STATE.startCrew : stats.crew, stats.crew);
+    // The count shows everyone aboard at launch, the captain included (the
+    // demo's "captain + crew"; a solo arrival is 1 / 1). The score's crew
+    // term (index.html scoreValue) still measures the crew alone.
+    const captainAlive = typeof captainHPOf === 'function' ? captainHPOf() > 0 : true;
+    const launched = 1 + Math.max(STATE.startCrew != null ? STATE.startCrew : stats.crew, stats.crew);
+    const aboard = stats.crew + (captainAlive ? 1 : 0);
     for (let i = 0; i < launched; i++) {
       const p = document.createElement('div');
-      p.className = 'crew-pip ' + (i < stats.crew ? 'filled' : 'empty');
+      p.className = 'crew-pip ' + (i < aboard ? 'filled' : 'empty');
       pips.appendChild(p);
     }
-    $('end-crew-val').textContent = stats.crew + ' / ' + launched;
+    $('end-crew-val').textContent = aboard + ' / ' + launched;
 
     const bars = $('end-res-bars');
     bars.innerHTML = '';

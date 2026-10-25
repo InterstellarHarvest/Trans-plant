@@ -1975,6 +1975,7 @@ function teardownLiveUI() {
   document.body.classList.remove('stop-active', 'modal-open', 'ins-open');
   const sb = document.getElementById('stop-btn');
   if (sb) sb.textContent = 'Stop';
+  if (typeof window.clearAiBubble === 'function') window.clearAiBubble(); // its lines were the replaced voyage's AI's
 }
 
 function loadRun(key) {
@@ -1997,6 +1998,13 @@ function loadRun(key) {
   STATE.layerStack = null; STATE.currentOutcomeId = null;
   STATE.npcCtx = null; STATE.outcomeMode = false; STATE.ended = false;
   STATE._itemDefs = null; STATE._evSave = null; STATE._shoppedThisEvent = false;
+  // …and nothing per-encounter or per-ending from the replaced voyage (as a
+  // fresh page has it): a paid BROWSE, AJOY's hindsight, a pending setback.
+  STATE._marketTaxPaid = false; STATE._resumableEnd = false;
+  STATE.lastPick = null; STATE._shownChoices = null; STATE.halfEffect = false; STATE.lethalSaved = null;
+  STATE.effortScale = 1; STATE.effortCon = null; STATE.goneNames = null;
+  STATE.eventSpeaker = null; STATE.joinNote = null; STATE.lastSpeaker = null;
+  STATE._layerVisits = {}; STATE._lastDraw = null; STATE.variantIndex = 0; STATE.bodyPick = 0;
   ensureOrders(); // pre-orders saves get the defaults (seeded from cropGrowth.waterPlant)
   syncItemValues(); // pre-trade-value saves: the goods aboard are valued now, once, and saved with it
   syncItemPickups(ITEM_PICKUP_OLD); // pre-mark saves: what's aboard is not NEW
@@ -2200,7 +2208,14 @@ function applySetupToState(sel) {
   STATE.flagFirstSeen = {}; STATE.calledBack = []; STATE.lastCallbackLeg = null;
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
   STATE.currentOutcomeId = null; STATE.npcCtx = null;
+  STATE._marketTaxPaid = false; STATE._resumableEnd = false; STATE._shownChoices = null; STATE._lastDraw = null;
+  STATE.effortScale = 1; STATE.effortCon = null; STATE.lastSpeaker = null; STATE._layerVisits = {}; STATE.bodyPick = 0;
+  STATE._evSave = null; STATE._shoppedThisEvent = false; STATE._itemDefs = null;
   window.abortFabricator();
+  // The hub's log and the AI's bubble start with this voyage (an in-page
+  // restart used to show the last one's).
+  window.clearAiBubble();
+  window.rebuildCruiseLog(8);
   STATE.artSeed = rollArtSeed(); // this run's scene + NPC-face variants (saved: stable across reloads)
   SceneArt.clearRunCaches(); // re-roll scenes + NPC variants per run
 
@@ -5290,8 +5305,10 @@ function renderEncounterState(opts) {
     layerNpcCtx = { crewId, displayName: (rosterEntry && rosterEntry.name || crewId).toUpperCase(), species: null, disposition: 'crew', quirk: '' };
   }
   // crew_speaker: whichever of our crew the entry picked — their
-  // talking-head sheet (a joined stowaway / rescue: the role's emoji).
-  if (ev.crew_speaker && STATE.eventSpeaker && !layerNpcCtx) {
+  // talking-head sheet (a joined stowaway / rescue: the role's emoji). An
+  // event with its own npc keeps that npc in the frame: there the crew
+  // speaker is who the npc talks about ({speaker.name}), not who talks.
+  if (ev.crew_speaker && STATE.eventSpeaker && !layerNpcCtx && !ev.npc) {
     const r = STATE.eventSpeaker;
     layerNpcCtx = { crewId: crewSpriteIdOf(r), displayName: crewNameOf(r).toUpperCase(), species: null, disposition: 'crew', job: r, quirk: '' };
   }

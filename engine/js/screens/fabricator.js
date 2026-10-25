@@ -609,10 +609,14 @@
 
   let runAnimTimer = null;
   let runAnimIdx = 0;
+  // The loop only plays while the fabricator is open: a held job shows its
+  // first run frame (closeFabricator / abortFabricator stop the loop and
+  // openFabricator starts it again).
   function startRunAnim() {
     if (runAnimTimer) return;   // already running
     runAnimIdx = 0;
     setFabFrame(FAB_RUN_LOOP[0]);
+    if (!overlayOpen()) return;
     runAnimTimer = setInterval(() => {
       runAnimIdx = (runAnimIdx + 1) % FAB_RUN_LOOP.length;
       setFabFrame(FAB_RUN_LOOP[runAnimIdx]);
@@ -1151,6 +1155,7 @@
   // ═════ Modal open/close ═════════════════════════════════
   function closeFabricator() {
     clearFabNotice();
+    stopRunAnim();
     document.body.classList.remove('modal-open');
     hideOverlay('overlay-fabricator');
     // A job on the bed holds while the fabricator is closed (ruling 27:
@@ -1212,6 +1217,7 @@
   // finished print (owedOutput) comes back on open.
   function abortFabricator() {
     stopCraftClock(); clockAcc = 0;
+    stopRunAnim();
     FSTATE.pendingOutput = null;
     const prog = document.getElementById('fb-progress'); if (prog) prog.classList.remove('active', 'held');
     const slot = document.getElementById('fb-output-slot'); if (slot) slot.classList.remove('ready');
@@ -1232,6 +1238,7 @@
     renderAll();
     showOverlay('overlay-fabricator');
     document.body.classList.add('modal-open');
+    renderWear(); // open now: a running job's loop starts
     // A job whose days are all spent (an older save) comes out now, no
     // further day; a held job picks up where it stopped (its part-day included).
     if (FSTATE.craft && FSTATE.craft.daysDone >= FSTATE.craft.daysTotal) completeCraft();

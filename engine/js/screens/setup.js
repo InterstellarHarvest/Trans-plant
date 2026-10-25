@@ -321,9 +321,20 @@
     // A failure the saved voyage left pending is final once it's replaced.
     recordSavedFailure();
     applySetupToState(sel);
+    resetWizard();
     // Ruling 92: the departure plays at the station on day 0, then the hub
     // opens stopped there.
     playDeparture();
+  }
+  // After LAUNCH the wizard starts over (an in-page restart opens it on its
+  // first step with nothing picked, as a fresh page does).
+  function resetWizard() {
+    step = 0;
+    Object.assign(sel, { trail: null, ai: null, captain: null, crew: [], crop: null, ship: '', shipRolled: false });
+    for (const k of Object.keys(scrollMemory)) delete scrollMemory[k];
+    twTimers.forEach(clearTimeout); twTimers = [];
+    typedStep = -1;
+    render();
   }
   function prevStep() {
     if (step > 0) { saveScroll(); step--; render(); }

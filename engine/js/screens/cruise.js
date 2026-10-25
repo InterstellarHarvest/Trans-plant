@@ -1768,7 +1768,12 @@
     }
     syncAiBubble();
   }
-  function clearAiBubble() { aiBubbleLines = []; syncAiBubble(); }
+  function clearAiBubble() {
+    aiBubbleLines = [];
+    const lines = $('ai-bubble') && $('ai-bubble').querySelector('.ai-bubble-lines');
+    if (lines) lines.innerHTML = '';
+    syncAiBubble();
+  }
   function syncAiBubble() {
     const el = $('ai-bubble');
     if (!el) return;
@@ -2064,7 +2069,7 @@
   Object.assign(window, {
     // engine API
     rebuildCruiseLog, paintCruiseBars, refundVerbTax, onJobBegun, onJobHarm,
-    applyAbandonHarm, abortCruiseWait, openStopMenu, renderCruise,
+    applyAbandonHarm, abortCruiseWait, openStopMenu, renderCruise, clearAiBubble,
     refreshStopMenu, pushCruiseLog: pushLogEntry,
     // test hooks: tools/tests drive and read these through page.evaluate
     cruiseStarState, cruiseSceneAlert: showSceneAlert,

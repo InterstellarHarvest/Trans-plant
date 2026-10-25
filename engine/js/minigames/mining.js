@@ -381,6 +381,7 @@
     spawnIv: null,
     patterIv: null,
     timeIv: null,
+    haulTo: null,        // the haul card after a natural end's flash
     lastClickAt: 0,
     pendingTrigger: null,   // 'large_split' / 'rich_crack' / 'hollow_hit' / 'fragment_lost' / 'low_energy'
     energyWarned: false,
@@ -1183,8 +1184,9 @@
   }
 
   // ── End-of-run ───────────────────────────────────────────────
-  function endRun(reason) {
-    if (!MSTATE.mining) return;
+  // Stops a live run: the tick loop, spawner, patter and stage clicks, and
+  // clears the field. endRun() goes on to the haul card; abortMining() not.
+  function stopRun() {
     MSTATE.mining = false;
     cancelAnimationFrame(MSTATE.rafId);
     clearInterval(MSTATE.spawnIv);
@@ -1199,6 +1201,10 @@
     MSTATE.particles.forEach(p => p.el.remove());
     MSTATE.floaters.forEach(f => f.el.remove());
     MSTATE.asteroids = []; MSTATE.particles = []; MSTATE.floaters = [];
+  }
+  function endRun(reason) {
+    if (!MSTATE.mining) return;
+    stopRun();
 
     // Brief flash for the natural-cap end (energy depleted / time up).
     if (reason === 'depleted' || reason === 'time') {
@@ -1209,7 +1215,7 @@
         : "TIME'S UP";
       $('mining-root').appendChild(flash);
       setTimeout(() => flash.remove(), 1400);
-      setTimeout(() => showHaul(), 1100);
+      MSTATE.haulTo = setTimeout(() => { MSTATE.haulTo = null; showHaul(); }, 1100);
     } else {
       showHaul();
     }
@@ -1465,16 +1471,27 @@
   // view. MINING_DEMO_SPEC §2/§11's asteroid_mining encounter wrapper was
   // never built and isn't planned.
   let onMiningDone = null;
-  // Load-time teardown (index.html teardownLiveUI): drop the visit
-  // without banking or calling back into the run being replaced.
-  function abortMining() {
-    onMiningDone = null;
+  // The haul card, and one a natural end's flash is about to show.
+  function clearHaulCard() {
+    clearTimeout(MSTATE.haulTo); MSTATE.haulTo = null;
     const ho = document.getElementById('haul-overlay');
     if (ho) { ho.classList.remove('visible'); ho.innerHTML = ''; }
+    document.querySelectorAll('#mining-root .mine-flash').forEach(f => f.remove());
+  }
+  // Load-time teardown (index.html teardownLiveUI): drop the visit
+  // without banking or calling back into the run being replaced. A run
+  // under way stops here without its haul card (which would count toward
+  // the loaded voyage's mining record and stay up over its next MINE).
+  function abortMining() {
+    onMiningDone = null;
+    if (MSTATE.mining) stopRun();
+    clearHaulCard();
     hideOverlay('overlay-mining');
   }
 
   function openMining(onDone) {
+    if (MSTATE.mining) stopRun();
+    clearHaulCard(); // a card left over from an earlier visit never covers this one
     onMiningDone = onDone;
     sessionInventory = {};
     Object.assign(SESSION, { runs: 0, totalCracks: 0, totalMaterials: 0, totalHollows: 0, bestChainEver: 0, bestTier: null, lastTier: null, crewUsed: null });

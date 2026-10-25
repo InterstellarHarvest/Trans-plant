@@ -146,7 +146,7 @@ const nodeOfType = (page, t) => page.evaluate(t => { const n = STATE.nodes.find(
       return { body: document.getElementById('end-report-body').textContent, crewVal: document.getElementById('end-crew-val').textContent, pips: document.querySelectorAll('#end-crew-pips .crew-pip').length };
     });
     ok(!/empty spaces where people used to stand/.test(r.body), 'intact 2-person crew does not read as losses');
-    ok(r.crewVal === '2 / 2' && r.pips === 2, `crew panel ${r.crewVal}, ${r.pips} pips`);
+    ok(r.crewVal === '3 / 3' && r.pips === 3, `crew panel (captain + crew) ${r.crewVal}, ${r.pips} pips`);
     ok(/always the point/.test(r.body) || /zinnias/i.test(r.body), 'living zinnias add their paragraph');
     await page.close();
   }
