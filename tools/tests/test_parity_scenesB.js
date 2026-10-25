@@ -597,17 +597,17 @@ const settleSubject = page => page.waitForFunction(() => {
     await page.close();
   }
   {
-    // Wave-off: the warning, NEVERMIND, CONFIRM — no time, the services close, no recharge.
+    // Wave-off: the warning, NEVER MIND, CONFIRM — no time, the services close, no recharge.
     const page = await boot({ crew: ['engineer', 'pilot'], ai: 'marv' });
     await page.evaluate(() => { STATE.crewSkillCharges.engineer = 0; });
     await arriveAt(page, 'event_station_007', { hailedFirst: false, fee: null });
     await clickLeave(page);
     let v = await view(page);
     ok(v.layer === 'waveoff_warn' && v.title === 'WAVE OFF?' && v.noSubject && /Probability of regret/.test(v.ai), 'LEAVE STATION → WAVE OFF? (the AI pleads; nobody on comms)');
-    ok(!(await leaveRow(page)) && JSON.stringify(v.choices) === '["CONFIRM · WAVE OFF","NEVERMIND"]', 'CONFIRM · WAVE OFF / NEVERMIND');
+    ok(!(await leaveRow(page)) && JSON.stringify(v.choices) === '["CONFIRM · WAVE OFF","NEVER MIND"]', 'CONFIRM · WAVE OFF / NEVER MIND');
     await shot(page, 'station_waveoff_warn');
-    await click(page, 'NEVERMIND');
-    ok((await view(page)).layer === 'intro', 'NEVERMIND → back to the approach');
+    await click(page, 'NEVER MIND');
+    ok((await view(page)).layer === 'intro', 'NEVER MIND → back to the approach');
     await clickLeave(page);
     const d0 = await page.evaluate(() => STATE.daysElapsed);
     await click(page, 'CONFIRM · WAVE OFF');
