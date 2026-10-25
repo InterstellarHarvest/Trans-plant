@@ -513,7 +513,7 @@ if (require.main === module) (async () => {
       end: window.__end || null, days: STATE.daysElapsed, baseDays: STATE.baseDays, res: Object.assign({}, STATE.resources), gold: STATE.goldAmount,
       crew: STATE.crew.length, crewHP: Object.assign({}, STATE.crewHP), captainHP: captainHPOf(), mats: Object.values(STATE.materials).reduce((a, b) => a + b, 0), items: STATE.items.slice(),
       crop: STATE.cropGrowth ? { g: Math.round(STATE.cropGrowth.growth), h: Math.round(STATE.cropGrowth.health) } : null,
-      nodes: STATE.nodes.length, visited: STATE.visited.size, stats: window.__stats,
+      nodes: STATE.nodes.length, visited: STATE.visited.size, stats: window.__stats, morale: crewMoraleRaw(), startCrew: STATE.startCrew, surveys: STATE.soilSurveys || 0,
     }));
     res.policy = policy; res.trail = trail; res.cfg = cfg; res.steps = steps;
     results.push(res);

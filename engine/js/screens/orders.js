@@ -191,7 +191,7 @@
   function baseLegDays() {
     // Same leg count travel uses (index.html pathLegs: legs actually flown;
     // STATE.nodes counts both fork branches, which made ETAs ~20% early).
-    return Math.max(1, (STATE.baseDays * ORDERS_BASE.legDaysFrac) / pathLegs());
+    return Math.max(1, travelDayBudget() / pathLegs());
   }
   function perLegDays(paceIdx) {
     return baseLegDays() * ORDERS_PACE[paceIdx].etaMult + AVG_EVENT_DAYS;

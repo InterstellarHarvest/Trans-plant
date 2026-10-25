@@ -109,7 +109,7 @@ async function boot(setup) {
     const page = await boot({ trail: 'interstellar' });
     const r = await page.evaluate(() => {
       const legs = pathLegs();
-      // walk the path at RIDICULOUS with no events: total travel days ≈ 60% of baseDays
+      // walk the path at RIDICULOUS with no events: total travel days ≈ travel_days
       let days = 0, guard = 0;
       while (connectionsOf(STATE.byId[STATE.currentId]).length && guard++ < 80) {
         STATE.resources.fuel = 100; STATE.resources.food = 100; STATE.resources.water = 100; STATE.resources.o2 = 100; STATE.resources.hull = 100; setCrewMorale(100); STATE.cropGrowth.health = 90; STATE.cropGrowth.pest = false; STATE.flags.add('crop_death_accepted');
@@ -120,21 +120,27 @@ async function boot(setup) {
         days += STATE.daysElapsed - d0;
         if (STATE.ended) break;
       }
-      return { legs, days, base: STATE.baseDays, ended: STATE.ended };
+      return { legs, days, base: STATE.baseDays, travel: MOD.map_rules.trails.interstellar.travel_days, ended: STATE.ended };
     });
-    ok(Math.abs(r.days / r.base - 0.60) < 0.05, `path travel ≈ 60% of the deadline (${r.days}/${r.base} over ${r.legs} legs)`);
+    // Ruling 99: the path takes the trail's travel_days; the deadline is set apart from it.
+    ok(Math.abs(r.days / r.travel - 1) < 0.05 && r.travel < r.base, `path travel ≈ the trail's travel_days (${r.days}/${r.travel} over ${r.legs} legs; deadline ${r.base})`);
     await page.close();
     const p2 = await boot();
     const sc = await p2.evaluate(() => {
+      // Ruling 99: the deadline sits close to a careful run's length (Mars
+      // brackets from map_rules score_brackets).
       Object.assign(STATE.resources, { fuel: 60, food: 60, water: 60, o2: 60, hull: 60 }); setCrewMorale(60);
-      STATE.daysElapsed = Math.round(STATE.baseDays * 0.7);
+      STATE.daysElapsed = Math.round(STATE.baseDays * 0.96);
       const mid = { v: scoreValue(), b: scoreBracket() };
       Object.assign(STATE.resources, { fuel: 95, food: 95, water: 95, o2: 95, hull: 95 }); setCrewMorale(95);
-      STATE.daysElapsed = Math.round(STATE.baseDays * 0.4);
+      STATE.daysElapsed = Math.round(STATE.baseDays * 0.85);
       const top = { v: scoreValue(), b: scoreBracket() };
-      return { mid, top };
+      Object.assign(STATE.resources, { fuel: 30, food: 30, water: 30, o2: 30, hull: 50 }); setCrewMorale(30);
+      STATE.daysElapsed = Math.round(STATE.baseDays * 1.06);
+      const late = { v: scoreValue(), b: scoreBracket() };
+      return { mid, top, late, brackets: MOD.map_rules.trails.mars.score_brackets };
     });
-    ok(sc.mid.b === 'good' && sc.top.b === 'legendary', `brackets: middling run "good" (${sc.mid.v.toFixed(0)}), excellent run "legendary" (${sc.top.v.toFixed(0)})`);
+    ok(sc.mid.b === 'good' && sc.top.b === 'legendary' && sc.late.b === 'rough', `brackets ${JSON.stringify(sc.brackets)}: middling run "good" (${sc.mid.v.toFixed(0)}), excellent run "legendary" (${sc.top.v.toFixed(0)}), a worn late arrival "rough" (${sc.late.v.toFixed(0)})`);
     const h = await p2.evaluate(() => {
       STATE.resources.food = 95; STATE.items = [];
       STATE.cropGrowth.growth = 100; STATE.cropGrowth.health = 80; STATE.cropGrowth.pest = false; STATE.cropGrowth.lastTickDay = STATE.daysElapsed;

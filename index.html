@@ -4477,7 +4477,7 @@ function fuelBurnMult() {
 }
 function legTravelCost() {
   const pace = ordersPace();
-  const baseLegDays = (STATE.baseDays * ORDERS_BASE.legDaysFrac) / pathLegs();
+  const baseLegDays = travelDayBudget() / pathLegs();
   const exact = baseLegDays * pace.etaMult;
   return {
     days: Math.max(1, Math.round(exact)), // projection; travelTo carries the fraction
@@ -7252,10 +7252,17 @@ function triggerArrival(node) {
   endRun({ kind: 'ending', module: ending });
 }
 
+// Score weight of the deadline share left at arrival (ruling 99: with the
+// deadline close to a careful run's length, time in hand is worth more,
+// and every day late takes as much off).
+const SCORE_TIME_WEIGHT = 100;
+// The bracket floors (ruling 99): a trail's map_rules score_brackets, or
+// these. Each trail's are calibrated on its careful sims, so a careful run
+// lands legendary, good or rough by how well it went on that trail.
+const SCORE_BRACKETS = { legendary: 106, good: 92, rough: 45 };
 function scoreValue() {
   // Score (balance pass 2026-10-10; was the demo's crew*33.3 + resAvg*0.6
-  // + dayDelta*0.5): 0.6·crew% + 0.4·resources(no O2) + 50·time-share.
-  // Thresholds: 125 legendary / 85 good / 45 rough / else pyrrhic (calibrated on a 120-run sim).
+  // + dayDelta*0.5): 0.6·crew% + 0.4·resources(no O2) + SCORE_TIME_WEIGHT·time-share.
   // 'hollow' overrides the numeric brackets entirely: the crew arrived but
   // the crop — the mission — did not. Both original endings authored
   // score_paragraphs.hollow for exactly this case; it was unreachable
@@ -7274,7 +7281,7 @@ function scoreValue() {
   // there is none, and the average is of the four ship resources.
   const mo = crewMoraleRaw();
   const resNoO2 = mo == null ? (r.fuel + r.food + r.water + r.hull) / 4 : (r.fuel + r.food + r.water + r.hull + mo) / 5;
-  let score = 0.6 * crewTerm + 0.4 * resNoO2 + 50 * (STATE.baseDays - STATE.daysElapsed) / Math.max(1, STATE.baseDays);
+  let score = 0.6 * crewTerm + 0.4 * resNoO2 + SCORE_TIME_WEIGHT * (STATE.baseDays - STATE.daysElapsed) / Math.max(1, STATE.baseDays);
   score += (STATE.soilSurveys || 0) * 2; // soil sampler surveys (items.json "affects ending score")
   // crops.json arrival_bonus: the crop's colony value (wheat +10%, tomato
   // +15% if health > 50, soybean +12%…).
@@ -7288,9 +7295,11 @@ function scoreBracket() {
   // (the mission) did not.
   if (STATE.crop && STATE.cropGrowth && STATE.cropGrowth.health <= 0) return 'hollow';
   const score = scoreValue();
-  if (score >= 125) return 'legendary'; // sim-calibrated: competent runs ~115-122 (good), excellent 125+
-  if (score >=  85) return 'good';
-  if (score >=  45) return 'rough';
+  const t = MOD.map_rules && MOD.map_rules.trails && MOD.map_rules.trails[STATE.trail];
+  const b = Object.assign({}, SCORE_BRACKETS, (t && t.score_brackets) || {});
+  if (score >= b.legendary) return 'legendary';
+  if (score >= b.good) return 'good';
+  if (score >= b.rough) return 'rough';
   return 'pyrrhic';
 }
 
