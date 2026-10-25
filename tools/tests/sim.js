@@ -102,6 +102,12 @@ function installHarness(policy) {
     window.__end = { kind: end.kind, type: end.module && end.module.failure_type, id: end.module && end.module.id, bracket: end.kind === 'ending' ? scoreBracket() : null, score: end.kind === 'ending' && typeof scoreValue === 'function' ? Math.round(scoreValue()) : null };
     return realEnd(end);
   };
+  // The effort tax (ruling 98): the morale every crew member paid for
+  // pips, on event choices and on Stop-menu jobs.
+  S.effortTax = { event: 0, verb: 0 };
+  const realTax = payEffortTax;
+  payEffortTax = function (pips, receipt) { const t = realTax(pips, receipt); S.effortTax[window.__ctx === 'verb' ? 'verb' : 'event'] += t; return t; };
+  window.payEffortTax = payEffortTax;
   const realPass = window.passDays;
   // passDays is called bare by inline code; wrap the global binding.
   window.__ctx = 'other';
@@ -315,6 +321,8 @@ function step() {
           else if (c.next) s = 1 - 4 * ((STATE._layerVisits || {})[c.next] ? 1 : 0);
           else if (c.back) s = -3;
           else s = 0;
+          // The pips' morale tax, as the tooltip states it.
+          if (c.effort) s -= effortTax(c.effort) * w('morale');
           s += Math.random() * 0.5;
           if (s > best) { best = s; ch = c; }
         }
