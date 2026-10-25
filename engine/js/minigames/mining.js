@@ -131,7 +131,7 @@
     },
     low_energy: {
       aria: "Energy low! But also, we're DOING it! So! Choices!",
-      marv: "Tractor beam is at 24%. Below 20% I am required to mention it again.",
+      marv: "Tractor beam is at 20%. That is four more shots. I counted, since someone should.",
       rex:  "Energy low. Make the next shot count.",
       chip: "Low reserves! ScrapRight™ Power Cells available at all major stations.",
       ajoy: "Energy's low. Maybe aim before firing, this time."

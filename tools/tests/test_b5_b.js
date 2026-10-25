@@ -114,7 +114,7 @@ const MATS = { metal: 20, scrap: 20, minerals: 10, biocomponent: 10, exotic: 2 }
     await page.waitForFunction(() => !window.fabCraftState(), null, { timeout: 5000 });
     const crew = await page.evaluate(() => STATE.crew.slice());
     await page.evaluate(() => claimOutput(false));
-    await pickRecipe(page, 'Field Repair Kit');
+    await pickRecipe(page, 'Repair Kit');
     const pre = await page.evaluate(() => document.getElementById('fb-meta').innerText.replace(/\s+/g, ' '));
     const c = await page.evaluate(() => { craftSelected(); return window.fabCraftState(); });
     ok(!crew.includes('engineer'), `the engineer died on the craft day (crew ${crew.join(',')})`);
@@ -296,7 +296,7 @@ const MATS = { metal: 20, scrap: 20, minerals: 10, biocomponent: 10, exotic: 2 }
   {
     const page = await boot();
     await page.evaluate(() => { STATE.materials = { metal: 20, scrap: 20 }; STATE.materialPickups = {}; STATE.fabricator.wear = 0; window.fabSetDayMs(150); openFabricator(); });
-    await pickRecipe(page, 'Field Repair Kit'); // 5 metal + 3 scrap, 3 days solo
+    await pickRecipe(page, 'Repair Kit'); // 5 metal + 3 scrap, 3 days solo
     const r = await page.evaluate(async () => {
       const w = ms => new Promise(res => setTimeout(res, ms));
       craftSelected();
@@ -324,7 +324,7 @@ const MATS = { metal: 20, scrap: 20, minerals: 10, biocomponent: 10, exotic: 2 }
     // scrap (not for the full 5 + 3) lets the cancel through.
     const page = await boot();
     await page.evaluate(() => { STATE.materials = { metal: 13, scrap: 4 }; STATE.fabricator.wear = 0; window.fabSetDayMs(150); openFabricator(); });
-    await pickRecipe(page, 'Field Repair Kit');
+    await pickRecipe(page, 'Repair Kit');
     const r = await page.evaluate(async () => {
       const w = ms => new Promise(res => setTimeout(res, ms));
       craftSelected(); // metal 8, scrap 1: one slot each
@@ -340,7 +340,7 @@ const MATS = { metal: 20, scrap: 20, minerals: 10, biocomponent: 10, exotic: 2 }
     ok(!r.half.craft && r.half.metal === 10 && r.half.scrap === 2 && !/HOLD FULL/.test(r.half.notice), `the half fits, so the cancel goes through (metal ${r.half.metal}, scrap ${r.half.scrap})`);
     // …and a half that doesn't fit is refused, nothing lost.
     await page.evaluate(m => { STATE.items = STATE.items.filter(x => x !== 'gas_analyzer'); STATE.materials = { metal: 10, scrap: 10 }; window.fabSetDayMs(150); }, null);
-    await pickRecipe(page, 'Field Repair Kit');
+    await pickRecipe(page, 'Repair Kit');
     const f = await page.evaluate(async () => {
       const w = ms => new Promise(res => setTimeout(res, ms));
       craftSelected(); // metal 5, scrap 7
