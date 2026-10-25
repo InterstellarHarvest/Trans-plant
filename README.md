@@ -59,7 +59,7 @@ engineer, veteran, merchant, or an academic whose grant funding was cut.
 
 **Hire up to two crew** from a roster of specialists. Dr. Osei has opinions
 about every plant. Kazuki fixes anything and eats twice as much. Dr.
-Vasquez is chronically anxious and excellent at the job. Reeves the pilot
+Vasquez is chronically anxious and excellent at the job. Lindqvist the pilot
 is correct 78% of the time. Each of them has a skill that will save the
 mission exactly once, if you remember to use it.
 

@@ -463,7 +463,7 @@
 
     // Bottom narrative carries the AI quip (ambient pre-commit line) — or,
     // with the hold full, the plain warning.
-    if (hold) setNarrPlain('CARGO HOLD FULL', (roomLeft ? 'Only ' + roomLeft + ' more can be kept (topping up the stacks aboard); nothing else' : 'Nothing you mine can be kept') + ' until cargo space is freed: jettison or sell something (INV) first. A run still costs its day.');
+    if (hold) setNarrPlain('CARGO HOLD FULL', (roomLeft ? 'Only ' + roomLeft + ' more can be kept (topping up the stacks aboard); nothing else' : 'Nothing you mine can be kept') + ' until cargo space is freed: jettison or sell something from the hold (the crate icon) first. A run still costs its day.');
     else setAiQuip(MSTATE.activeAi, PRECOMMIT_AI[MSTATE.activeAi]);
 
     // Stage visible (shows bg) even pre-BEGIN. Apply now if probes are

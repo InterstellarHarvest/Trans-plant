@@ -139,7 +139,7 @@ const pickRecipe = (page, name) => page.evaluate(n => { const r = [...document.q
     ok(!r.one.craft && !r.one.owed && !r.one.strip && r.one.metal === r.before.metal - 3 && r.one.scrap === r.before.scrap - 2, `after a day: half the materials back (metal ${r.one.metal}, scrap ${r.one.scrap}), no output, strip idle`);
     ok(r.one.d === r.before.d + 1 && r.dAfter === r.one.d, `…the day spent stays spent, the 2 unspent days stay yours (day ${r.before.d} → ${r.one.d}, still ${r.dAfter} later)`);
     ok(r.one.mo === r.mid.mo - 0 || r.one.mo <= r.mid.mo, `…the effort tax stays paid (morale ${r.mid.mo} → ${r.one.mo}) and so does the wear (${r.one.wear}% = ${r.mid.wear}%)`);
-    ok(r.one.wear === r.mid.wear && /cancelled after 1 day/.test(r.one.log), `logged: "${r.one.log.slice(0, 90)}"`);
+    ok(r.one.wear === r.mid.wear && /canceled after 1 day/.test(r.one.log), `logged: "${r.one.log.slice(0, 90)}"`);
     await page.close();
   }
 

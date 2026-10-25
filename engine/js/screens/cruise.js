@@ -913,7 +913,7 @@
       if (tier === 'poor') return settleMinigame('◆ SCAN — Signal lost in the static. Nothing useful recovered.');
       const perfect = tier === 'perfect';
       const report = scoutAhead(perfect ? 2 : 1, perfect);
-      const head = perfect ? 'Clean lock. Long-range picture, outcomes modelled.' : 'Partial read — the next stop, at least.';
+      const head = perfect ? 'Clean lock. Long-range picture, outcomes modeled.' : 'Partial read — the next stop, at least.';
       settleMinigame('◆ SCAN — ' + head + (report.length ? ' ' + report.join(' · ') : ' Nothing ahead but the destination.'));
       // A long-range hit is news: up on the ticker (amber while stopped).
       const news = normalTickerLine();
@@ -1581,7 +1581,7 @@
       : '▶ Wait called off after ' + dd + '. No trader, and the days are gone.');
     const banner = $('action-banner');
     banner.classList.add('cancelled');
-    $('action-banner-label').textContent = n ? 'WASTED ' + n + ' ' + (n === 1 ? 'DAY' : 'DAYS') + '!' : (a.verbId === 'rest' ? 'REST CANCELLED' : 'WAIT CANCELLED');
+    $('action-banner-label').textContent = n ? 'WASTED ' + n + ' ' + (n === 1 ? 'DAY' : 'DAYS') + '!' : (a.verbId === 'rest' ? 'REST CANCELED' : 'WAIT CANCELED');
     $('action-banner-counter').textContent = '';
     hideWaitFlash();
     if (isStopped()) renderStopMenu();

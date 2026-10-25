@@ -98,7 +98,7 @@ function invCropTreatGain() {
   return cg ? Math.round(Math.min(100, cg.health + INV_CROP_TREAT) - cg.health) : 0;
 }
 const ITEM_USE = {
-  ration_brick:   invRefill('food', 10, 'FOOD', 'ration brick', 'Food stores are full', g => 'Ration brick unwrapped. +' + g + ' food. Nobody describes the flavour.'),
+  ration_brick:   invRefill('food', 10, 'FOOD', 'ration brick', 'Food stores are full', g => 'Ration brick unwrapped. +' + g + ' food. Nobody describes the flavor.'),
   water_canister: invRefill('water', 10, 'H2O', 'water canister', 'Water tanks are full', g => 'Water canister emptied into the tanks. +' + g + ' water.'),
   fuel_cell:      invRefill('fuel', 15, 'FUEL', 'fuel cell', 'Fuel tank is full', g => 'Fuel cell slotted in. +' + g + ' fuel.'),
   repair_kit:     invRefill('hull', 10, 'HULL', 'repair kit', 'Hull is intact', g => 'Repair kit spent on the worst seams. +' + g + ' hull.'),

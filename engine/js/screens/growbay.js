@@ -61,7 +61,7 @@
         { max: 25,  name: 'SPROUTING',  tip: 'Seedlings emerge. Cold is lethal — keep warm.' },
         { max: 50,  name: 'VEGETATIVE', tip: 'Vines sprawl in every direction at once, like the crew\'s opinions.' },
         { max: 75,  name: 'FLOWERING',  tip: 'Blossoms set. A heat wave now aborts fruit entirely.' },
-        { max: 100, name: 'MATURING',   tip: 'Fruit swells and colors. Everyone has a favourite. Nobody admits it.' }
+        { max: 100, name: 'MATURING',   tip: 'Fruit swells and colors. Everyone has a favorite. Nobody admits it.' }
       ]
     },
     sweet_potato: {
@@ -97,7 +97,7 @@
       sprite: 'sprites/interface/crops/zinnia.png',
       fallback_icon: '🌼',
       stages: [
-        { max: 25,  name: 'SPROUTING',  tip: 'First true leaves. Small, green, and already somebody\'s favourite.' },
+        { max: 25,  name: 'SPROUTING',  tip: 'First true leaves. Small, green, and already somebody\'s favorite.' },
         { max: 50,  name: 'VEGETATIVE', tip: 'Bushy growth. A good tender makes the difference now.' },
         { max: 75,  name: 'FLOWERING',  tip: 'Blooms open. Orange, pink, and entirely unreasonable.' },
         { max: 100, name: 'MATURING',   tip: 'Peak bloom. The crew will argue about which ones to pick.' }
@@ -1540,7 +1540,7 @@
   const GROWBAY_INSPECT_QUIPS = Object.assign({ aria: ARIA_INSPECT_QUIPS }, {
     "marv": {
       "cold": [
-        "Metabolic rate is down 31 percent. The plant is saving energy for a future I have modelled. It should not bother.",
+        "Metabolic rate is down 31 percent. The plant is saving energy for a future I have modeled. It should not bother.",
         "Enzyme activity is sluggish. The plant is doing less, more slowly. I recognize the strategy."
       ],
       "heat": [
@@ -1678,13 +1678,13 @@
     },
     marv: {
       water_dry: ['The ship has no water. The plant has worked this out faster than the crew. It is losing tissue by the hour.', 'Tanks empty. Root pressure zero. The plant is now an experiment in how long a plant can be patient.'],
-      dark: ['Light is below what the leaves need. Growth has slowed to a rate I would describe as theoretical.', 'Dim region. The chloroplasts are idling. I recognise the posture.'],
-      dead: ['No metabolic activity. The crop has stopped. I have stopped modelling it. One of us had to.', 'Dead. The readings are very stable now. It is the most stable thing aboard.']
+      dark: ['Light is below what the leaves need. Growth has slowed to a rate I would describe as theoretical.', 'Dim region. The chloroplasts are idling. I recognize the posture.'],
+      dead: ['No metabolic activity. The crop has stopped. I have stopped modeling it. One of us had to.', 'Dead. The readings are very stable now. It is the most stable thing aboard.']
     },
     rex: {
       water_dry: ['Water supply severed. The root network is cut off from all support. The crop is taking casualties.', 'Tanks dry. The plant is fighting on reserves. Reserves are finite. Resupply is the only objective.'],
       dark: ['Light supply interdicted by the region. The crop is holding but cannot advance.', 'Low-light zone. Growth operations at minimum tempo. Recommend we move through quickly.'],
-      dead: ['No signs of life in the bay. The crop is down. It did not retreat.', 'Crop lost. Cause: sustained conditions. Logged with honours.']
+      dead: ['No signs of life in the bay. The crop is down. It did not retreat.', 'Crop lost. Cause: sustained conditions. Logged with honors.']
     },
     chip: {
       water_dry: ['Your ship is out of water! Your plant is out of water! You are out of options! Please refill!', 'Water supply: zero! The plant has entered Drought Mode™! This mode cannot be exited for free!'],

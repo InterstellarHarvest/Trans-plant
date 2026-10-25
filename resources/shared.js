@@ -2115,7 +2115,7 @@ window.Tooltip = (() => {
         rows.push({ label: 'Lowest', value: name + ' ' + Math.round(crewMoraleOf(low)) });
       }
     }
-    return { title: 'MORALE', description: 'Crew spirit, the crew average. Each member has their own: effort actions tax it, mutiny when the average hits zero, and anyone at zero walks off at the next station.', rows };
+    return { title: 'MORALE', description: 'Crew spirit, the crew average. Each member has their own: effort actions tax it, the crew mutinies when the average hits zero, and anyone at zero walks off at the next station.', rows };
   });
   Tooltip.register('resource_gold', () => {
     const s = st();

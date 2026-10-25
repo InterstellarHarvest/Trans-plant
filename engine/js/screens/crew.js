@@ -50,7 +50,7 @@
     pilot:         { name: 'Pilot',         stat: 'Fuel -{cut:fuel_burn_modifier}%',  desc: 'You can fly. Slightly better than expected.', flavor: 'You are statistically correct 68% of the time.' },
     chef:          { name: 'Chef',          stat: 'Food -{cut:food_consumption_modifier}%',  desc: 'You can make algae taste like something other than regret.', flavor: 'You know 47 ways to prepare algae. Forty-six are bad.' },
     xenobiologist: { name: 'Xenobiologist', stat: 'Anomaly safer',       desc: 'You studied aliens. You have never met one.', flavor: 'Your thesis was theoretical. Everything is about to become very applied.' },
-    diplomat:      { name: 'Diplomat',      stat: 'Credits +{sb:credits}',  desc: 'Very good at making people feel heard while doing nothing.', flavor: 'Your crew does not find this reassuring.' },
+    diplomat:      { name: 'Diplomat',      stat: 'Gold +{sb:credits}',  desc: 'Very good at making people feel heard while doing nothing.', flavor: 'Your crew does not find this reassuring.' },
     merchant:      { name: 'Merchant',      stat: 'Prices -{cut:station_price_modifier}%',  desc: 'You ran a business.', flavor: 'You are going to run this mission like a business.' },
     academic:      { name: 'Academic',      stat: 'Research options',    desc: 'You have a PhD. In what is not immediately relevant.', flavor: 'Your grant funding was cut. You are in space. These events are related.' },
     veteran:       { name: 'Veteran',       stat: 'Combat edge', desc: 'You served. Where is classified.', flavor: 'You don\'t talk about it.' },
@@ -68,7 +68,7 @@
       'Dr. Vasquez is calm in emergencies. I find this upsetting, in a good way.',
       'Their hands do not shake. Everything else does.'],
     pilot: [
-      'Reeves is confident. Reeves is, on balance, correct.',
+      'Lindqvist is confident. Lindqvist is, on balance, correct.',
       'He has a story about this. Please do not encourage it.'],
     chef: [
       'Reyes cooked. The crew is civil again.',
@@ -101,9 +101,9 @@
     xenobiologist: 'Argues with {botanist} about whether the new thing is a plant.',
     engineer:      'Talks to the reactor in a low voice. The reactor seems to listen.',
     medic:         'Counts the medkits twice a day. Has never once been reassured.',
-    pilot:         'Names every manoeuvre after himself. Most of them work.',
+    pilot:         'Names every maneuver after himself. Most of them work.',
     chef:          'Keeps a spice rack nobody is allowed to alphabetize.',
-    diplomat:      'Has a toast ready for every species in the catalogue. Has given none of them.',
+    diplomat:      'Has a toast ready for every species in the catalog. Has given none of them.',
     captain:       'Signs every form put in front of them. Reads most of them.',
   };
   function hintLine(key) {
@@ -395,7 +395,7 @@
         if (STATE.flags.has('analyzed_' + id)) continue;
         hit = d; sid = id; break;
       }
-      if (!hit) return { ok: false, refusal: 'Nothing unanalysed and biological in the hold. Dr. Tanaka is visibly disappointed.' };
+      if (!hit) return { ok: false, refusal: 'Nothing unanalyzed and biological in the hold. Dr. Tanaka is visibly disappointed.' };
       STATE.flags.add('analyzed_' + sid);
       return { ok: true, log: 'FIELD ANALYSIS — Dr. Tanaka examines the ' + hit.name + ': ' + hit.analysis + ' (Finding filed in cargo; relevant choices now show it.)' };
     },
