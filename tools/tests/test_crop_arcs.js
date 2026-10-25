@@ -213,7 +213,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
   ok(!k.deadBlight && !k.deadRival && k.aliveBlight, `a dead crop stops the living-crop arcs (blight ${k.deadBlight}, rival ${k.deadRival}; alive again ${k.aliveBlight})`);
   ok(!k.nodeNoTrig && k.nodeDead, `the green node needs crop_dead (${k.nodeNoTrig} → ${k.nodeDead})`);
   ok(!k.inspMid && k.inspEnd && !k.inspNoFlag && k.jarEnd, `arrival payoffs need the flag and the journey's end (inspectors mid ${k.inspMid}, end ${k.inspEnd}, no flag ${k.inspNoFlag}; jar ${k.jarEnd})`);
-  ok(k.ultra === 30, `Interstellar's arrival ultra weight is ${k.ultra}`);
+  ok(k.ultra === 40, `Interstellar's arrival ultra weight is ${k.ultra} (ruling 85: 30; ruling 96: 40)`);
   ok(k.total >= 223, `the game has ${k.total} events (223+)`);
 
   ok(!errors.length, 'page errors: ' + errors.join(' | '));

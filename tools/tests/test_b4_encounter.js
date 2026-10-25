@@ -275,10 +275,10 @@ const near = (a, b, tol) => Math.abs(a - b) <= (tol == null ? 1 : tol);
       const locked = by('Negotiate');
       const lsub = locked.querySelector('.ch-sub');
       return {
-        subSize: getComputedStyle(sub).fontSize, subColor: getComputedStyle(by('Negotiate').querySelector('.ch-sub span') || sub).color,
+        subSize: getComputedStyle(sub).fontSize, subColor: getComputedStyle(by('Negotiate').querySelector('.ch-sub span:not(.effort)') || sub).color,
         subMargin: getComputedStyle(sub).marginTop, riskyColor: risky && getComputedStyle(risky).color,
-        locked: locked.classList.contains('locked'), lockedFilter: getComputedStyle(locked).filter, lockedSub: lsub.textContent,
-        lockedSubColor: getComputedStyle(lsub.querySelector('span')).color, padlock: (locked.querySelector('.enc-choice-gate') || {}).style ? locked.querySelector('.enc-choice-gate').style.backgroundImage : '',
+        locked: locked.classList.contains('locked'), lockedFilter: getComputedStyle(locked).filter, lockedSub: lsub.querySelector('span:not(.effort)').textContent,
+        lockedSubColor: getComputedStyle(lsub.querySelector('span:not(.effort)')).color, padlock: (locked.querySelector('.enc-choice-gate') || {}).style ? locked.querySelector('.enc-choice-gate').style.backgroundImage : '',
         gap: getComputedStyle(document.getElementById('enc-choices')).rowGap,
       };
     });
@@ -304,7 +304,8 @@ const near = (a, b, tol) => Math.abs(a - b) <= (tol == null ? 1 : tol);
       const btns = [...document.querySelectorAll('#enc-choices .enc-choice')];
       return {
         pose: document.getElementById('enc-subject').className,
-        rows: btns.map(b => ({ t: b.querySelector('.ch-text').textContent, sub: (b.querySelector('.ch-sub') || {}).textContent || '', risky: b.classList.contains('risky'),
+        rows: btns.map(b => ({ t: b.querySelector('.ch-text').textContent, sub: [...(b.querySelector('.ch-sub') || { children: [] }).children].filter(e => !e.classList.contains('effort')).map(e => e.textContent).join(''),
+          pips: ((b.querySelector('.ch-sub .effort') || {}).textContent || '').replace(/○/g, '').length, risky: b.classList.contains('risky'),
           oneLine: !b.querySelector('.ch-sub') || b.querySelector('.ch-sub').scrollWidth <= b.querySelector('.ch-sub').clientWidth + 1,
           gate: b.querySelector('.enc-choice-gate') ? [b.querySelector('.enc-choice-gate').style.backgroundImage, getComputedStyle(b.querySelector('.enc-choice-gate')).backgroundSize] : null })),
       };
@@ -314,6 +315,9 @@ const near = (a, b, tol) => Math.abs(a - b) <= (tol == null ? 1 : tol);
     ok(row('Open Fire').risky && row('Open Fire').sub === 'Begin ship-to-ship combat', 'OPEN FIRE: risky, "Begin ship-to-ship combat"');
     ok(row('Flee').risky && row('Flee').sub === 'Burn fuel, leave them behind', 'FLEE: risky, "Burn fuel, leave them behind"');
     ok(row('Ram').risky && row('Ram').sub === 'Mostly escape · risk combat', 'RAM: risky, "Mostly escape · risk combat"');
+    // Ruling 98: the demo's effort pips (demo-combat :1904-1906).
+    ok(row('Open Fire').pips === 3 && row('Flee').pips === 1 && row('Ram').pips === 4 && row('Pay 20 gold for safe passage').pips === 0,
+      `effort pips as the demo: OPEN FIRE ${row('Open Fire').pips}, FLEE ${row('Flee').pips}, RAM ${row('Ram').pips}, PAY ${row('Pay 20 gold for safe passage').pips}`);
     ok(intro.rows.map(r => r.t).join('|').indexOf('Negotiate|Pay 20 gold for safe passage|Open Fire|Flee|Ram') === 0, 'demo order: NEGOTIATE, PAY, OPEN FIRE, FLEE, RAM (' + intro.rows.map(r => r.t).join(' / ') + ')');
     ok(intro.rows.every(r => r.oneLine), 'every sub-label fits one line');
     const ramGate = row('Ram').gate, negGate = row('Negotiate').gate, payGate = row('Pay 20 gold for safe passage').gate;
@@ -327,7 +331,7 @@ const near = (a, b, tol) => Math.abs(a - b) <= (tol == null ? 1 : tol);
     const neg = await page.evaluate(() => ({
       pose: document.getElementById('enc-subject').className,
       dialog: [...document.querySelectorAll('#enc-choices .enc-choice .ch-text.dialog')].map(e => e.textContent),
-      subs: [...document.querySelectorAll('#enc-choices .enc-choice')].map(b => (b.querySelector('.ch-sub') || {}).textContent || ''),
+      subs: [...document.querySelectorAll('#enc-choices .enc-choice')].map(b => [...(b.querySelector('.ch-sub') || { children: [] }).children].filter(e => !e.classList.contains('effort')).map(e => e.textContent).join('')),
     }));
     ok(/pose-listening/.test(neg.pose), 'negotiate: listening pose');
     ok(neg.dialog.length === 3 && neg.dialog.every(t => /^".+"$/.test(t)), 'all three negotiation lines are spoken dialog choices: ' + neg.dialog.join(' / '));

@@ -57,13 +57,15 @@ const lastLog = page => page.evaluate(() => (STATE.shipLog || []).map(e => (type
       try { if (btn) btn.click(); await new Promise(r => setTimeout(r, 600)); } finally { Math.random = keep; }
       const body = document.getElementById('enc-narr-body') ? document.getElementById('enc-narr-body').textContent : '';
       return { found: !!btn, tip, sub, id: STATE.currentOutcomeId, gold: g0 - STATE.goldAmount, days: STATE.daysElapsed - d0, cell: STATE.items.includes('fuel_cell'),
-        morale: Object.keys(m0).map(k => STATE.crewMorale[k] - m0[k]), body, con: STATE.effortCon };
+        morale: Object.keys(m0).map(k => STATE.crewMorale[k] - m0[k]), body, con: STATE.effortCon,
+        tax: effortTax((EVENTS.event_encounter_trader_003.layers.prices.choices.find(c => /Haggle for the fuel cell/.test(c.text)) || {}).effort || 0) };
     }, [roll]);
     ok(r.found && /Bargain · it can go wrong/.test(r.sub) && /\d+% clean\. Short of effort/.test(r.tip), `the authored sub-label stays; the tooltip gives the odds (${r.sub})`);
     if (want === 'hag_fuel_wobbled') {
       ok(/Short of effort: TALKED UP — .*−20 GOLD/.test(r.tip) && !/half the resource gains/.test(r.tip), 'the tooltip names the authored failure and its cost: ' + (r.tip.split('\n').find(l => /Short of effort/.test(l)) || r.tip));
       ok(r.id === 'hag_fuel_wobbled' && r.gold === 20 && r.cell && r.days === 1, `a failed haggle: TALKED UP, the full 20 gold, the cell, its own day, no extra (${r.id}, −${r.gold}g, ${r.days}d)`);
-      ok(r.morale.every(v => v === -2) && r.con === null, `its own −2 morale, no generic setback on top (${r.morale.join(',')})`);
+      // Its −2 and the choice's effort-pip tax (ruling 98), nothing more.
+      ok(r.morale.every(v => v === -2 - r.tax) && r.con === null, `its own −2 morale (+${r.tax} effort tax), no generic setback on top (${r.morale.join(',')})`);
       ok(!/The pitch wobbles at the worst moment/.test(r.body), 'no generic short-of-effort line under it');
     } else {
       ok(r.id === 'hag_fuel_haggled' && r.gold === 10 && r.cell && r.days === 1, `a clean haggle: A PRICE, EVENTUALLY at 10 gold (${r.id}, −${r.gold}g)`);

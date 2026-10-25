@@ -467,10 +467,12 @@ const snap = page => page.evaluate(() => ({
     ok(ch.find(c => c.leave).text === 'IGNORE', 'leave row: IGNORE');
     await shot(page, 'scenesA_unknown_intro');
     const s0 = await snap(page);
+    const taxOf = t => page.evaluate(t => effortTax((EVENTS.event_encounter_unknown_001.layers.intro.choices.find(c => c.text === t) || {}).effort || 0), t); // ruling 98's pips
+    const respondTax = await taxOf('RESPOND WITH ONE PULSE');
     await click(page, 'RESPOND WITH ONE PULSE');
     const o = await scene(page, 'our_ship/bridge');
     const s1 = await snap(page);
-    ok(o.outcome === 'unknown_yes' && /long warm chord/.test(o.line) && s1.flags.includes('answered_the_pulses') && s1.res.morale === Math.min(100, s0.res.morale + 8), 'CONTACT: the chord, the flag, +8 morale');
+    ok(o.outcome === 'unknown_yes' && /long warm chord/.test(o.line) && s1.flags.includes('answered_the_pulses') && s1.res.morale === Math.min(100, s0.res.morale + 8) - respondTax, `CONTACT: the chord, the flag, +8 morale (less the ${respondTax} effort tax)`);
     await page.close();
   }
   {
@@ -489,9 +491,10 @@ const snap = page => page.evaluate(() => ({
     await enter(page, 'event_encounter_unknown_001', 'asteroid_field');
     await scene(page, 'our_ship/bridge');
     const s0 = await snap(page);
+    const tax = await page.evaluate(() => effortTax((EVENTS.event_encounter_unknown_001.layers.intro.choices.find(c => c.text === 'WEAPONS HOT') || {}).effort || 0)); // ruling 98's pips
     await click(page, 'WEAPONS HOT');
     const s1 = await snap(page);
-    ok(s1.res.hull === s0.res.hull - 12 && s1.res.morale === s0.res.morale - 3, 'WEAPONS HOT: −12 hull, −3 morale');
+    ok(s1.res.hull === s0.res.hull - 12 && s1.res.morale === s0.res.morale - 3 - tax, `WEAPONS HOT: −12 hull, −3 morale (and the ${tax} effort tax)`);
     await page.close();
   }
   {

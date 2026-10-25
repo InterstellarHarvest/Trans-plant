@@ -442,7 +442,9 @@ const toPlainStop = page => page.evaluate(() => {
     await page.evaluate(() => document.getElementById('rbquit').click());
     await page.waitForTimeout(250);
     const p = await page.evaluate(() => ({ day: STATE.daysElapsed, morale: crewMoraleRaw(), fuel: STATE.resources.fuel, hull: STATE.resources.hull, body: (document.getElementById('enc-body') || document.body).textContent }));
-    ok(p.morale === 53 && p.fuel === 60 && p.hull === 70, `perfect: +3 morale to every crew member via addCrewMorale (${p.morale}), nothing lost`);
+    // The restart's effort pips (ruling 98) are paid on the click, whatever the tier.
+    const taxR = await page.evaluate(() => effortTax((EVENTS.event_crisis_025.choices.find(c => c.launch_minigame === 'engine') || {}).effort || 0));
+    ok(p.morale === 53 - taxR && p.fuel === 60 && p.hull === 70, `perfect: +3 morale to every crew member via addCrewMorale, less the ${taxR} effort tax (${p.morale}), nothing lost`);
     ok(p.day - e0.day === 2, `perfect: the low time cost (${p.day - e0.day} days)`);
 
     // Poor: three wrong clicks → limp mode.
@@ -457,7 +459,7 @@ const toPlainStop = page => page.evaluate(() => {
     await page.evaluate(() => document.getElementById('rbquit').click());
     await page.waitForTimeout(250);
     const q = await page.evaluate(() => ({ day: STATE.daysElapsed, morale: crewMoraleRaw(), fuel: STATE.resources.fuel, hull: STATE.resources.hull }));
-    ok(t1 === 'INSUFFICIENT' && q.fuel === 54 && q.hull === 66 && q.morale === 47, `three wrong clicks → limp mode: fuel −6, hull −4, morale −3 (${t1}; ${q.fuel}/${q.hull}/${q.morale})`);
+    ok(t1 === 'INSUFFICIENT' && q.fuel === 54 && q.hull === 66 && q.morale === 47 - taxR, `three wrong clicks → limp mode: fuel −6, hull −4, morale −3 and the effort tax (${t1}; ${q.fuel}/${q.hull}/${q.morale})`);
     ok(q.day - e1.day === 4, `poor: limp mode costs the medium time (${q.day - e1.day} days)`);
 
     // Quit mid-game: gains nothing — the poor tier's losses AND its time.
@@ -469,7 +471,7 @@ const toPlainStop = page => page.evaluate(() => {
     await page.evaluate(() => document.getElementById('mclose').click());
     await page.waitForTimeout(300);
     const z = await page.evaluate(() => ({ day: STATE.daysElapsed, morale: crewMoraleRaw(), fuel: STATE.resources.fuel, hull: STATE.resources.hull, title: (document.querySelector('#enc-title') || {}).textContent }));
-    ok(z.fuel === 54 && z.hull === 66 && z.morale === 47 && z.day - e2.day === 4, `✕ QUIT = the poor outcome, never better: fuel ${z.fuel}, hull ${z.hull}, morale ${z.morale}, +${z.day - e2.day} days`);
+    ok(z.fuel === 54 && z.hull === 66 && z.morale === 47 - taxR && z.day - e2.day === 4, `✕ QUIT = the poor outcome, never better: fuel ${z.fuel}, hull ${z.hull}, morale ${z.morale}, +${z.day - e2.day} days`);
 
     // Limp mode outright (owner ruling 56, the demo verb): effort 1, 2 days,
     // −2 fuel — cheaper than failing the sequence.

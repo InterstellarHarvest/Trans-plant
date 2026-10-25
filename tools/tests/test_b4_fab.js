@@ -390,7 +390,8 @@ const pickRecipe = (page, name) => page.evaluate(n => { const r = [...document.q
       invSetTab('upgrades'); out.bay = rows('insulated_cargo_bay');
       const h2o = [...document.querySelectorAll('#inv-res-tiles .res-tile')].find(t => t.dataset.res === 'water');
       const stat = k => [...h2o.querySelectorAll('.res-tile-stat')].find(s => s.firstChild.textContent === k).lastChild.textContent;
-      out.h2o = { use: stat('USE'), empty: stat('EMPTY'), want: 'DAY ' + (STATE.daysElapsed + Math.floor(STATE.resources.water / ORDERS_BASE.waterPerDay)) };
+      // The trail's own water draw (map_rules water_per_day, ruling 96).
+      out.h2o = { use: stat('USE'), empty: stat('EMPTY'), perDay: dailyDraw().water, want: 'DAY ' + (STATE.daysElapsed + Math.floor(STATE.resources.water / dailyDraw().water)) };
       return out;
     });
     ok(r.sealed_vinyl[2] === 'SELL PRICE17g · fence 25g' && r.alien_seed_pod[2] === 'SELL PRICE30g · fence 45g' && r.fab_surplus[2] === 'SELL PRICE8g · fence 12g',
@@ -398,7 +399,8 @@ const pickRecipe = (page, name) => page.evaluate(n => { const r = [...document.q
     ok(r.unidentified_bone[2] === 'SELL PRICE20g · fence 30g', `a rolled copy: its value, fence × 1.5 (${r.unidentified_bone[2]})`);
     ok(r.pressure_suit[1] === 'SLOT COST1 2 total' && r.fuel_cell[1] === 'SLOT COST0.3 per unit 1 total' && r.bay[1] === 'SLOT COST0 (+5 cap)',
       `SLOT COST is per item, plus the stack total: ${r.pressure_suit[1]} | ${r.fuel_cell[1]} | ${r.bay[1]}`);
-    ok(r.h2o.use === '~0.35 / DAY' && r.h2o.empty === r.h2o.want, `H2O tile: USE ${r.h2o.use} agrees with EMPTY ${r.h2o.empty}`);
+    const rate = v => { const r1 = Math.round(v * 10) / 10; return Math.abs(r1 - v) < 1e-9 ? r1.toFixed(1) : (Math.round(v * 100) / 100).toFixed(2); }; // inventory.js invRate
+    ok(r.h2o.use === '~' + rate(r.h2o.perDay) + ' / DAY' && r.h2o.empty === r.h2o.want, `H2O tile: USE ${r.h2o.use} agrees with EMPTY ${r.h2o.empty}`);
     // The black market (fence) pays the same figures the hold shows.
     const fence = await page.evaluate(async () => {
       openMarket({ sinister: true }); await new Promise(r => setTimeout(r, 100));
