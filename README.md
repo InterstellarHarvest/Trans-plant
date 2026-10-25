@@ -8,6 +8,10 @@
 
 No install, no account, no download. One click and you're in orbit.
 
+### 📖 [Read the manual](https://interstellarharvest.github.io/Trans-plant/docs/manual/) · [PDF version](https://interstellarharvest.github.io/Trans-plant/docs/manual/Trans-plant-Manual.pdf)
+
+How to play, every screen explained, and — behind a spoiler fence — how the whole engine fits together.
+
 ![The Trans-plant title screen](docs/readme/title.png)
 
 ---
@@ -36,8 +40,8 @@ funnier than a trip this doomed has any right to be.
 | Trail | Length | The brochure says |
 |---|---|---|
 | 🌙 **Lunar** | ~3 months | *"Established corridors. You'll be fine. Probably."* |
-| 🔴 **Mars** | ~8 months | *"Some charted territory. Some not."* |
-| ✦ **Interstellar** | ~14 months | *"Charts stop being useful around month six."* The destination is called Far Garden. It was named by an optimist. |
+| 🔴 **Mars** | ~6 months | *"Some charted territory. Some not."* |
+| ✦ **Interstellar** | ~10 months | *"Charts stop being useful around month six."* The destination is called Far Garden. It was named by an optimist. |
 
 Each trail is a freshly generated map of stations, planets, derelicts,
 asteroid fields, nebulae, anomalies and the void. Forks in the route are

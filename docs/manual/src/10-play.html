@@ -1,5 +1,556 @@
 <section class="play">
-<div class="part-title"><h1 id="play">PART 1 · HOW TO PLAY</h1><p>Placeholder.</p></div>
-<h2 id="first-run">Your first run</h2>
-<p>Placeholder.</p>
+<style>.play .shots { margin: 22px 0; }</style>
+<div class="part-title"><h1 id="play">PART 1 · HOW TO PLAY</h1><p>Everything a captain needs to know, with nothing spoiled that the trail should surprise you with.</p></div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="play-idea">The idea</h2>
+
+<p>Earth is dying. You have a ship, a crop, and a plan. The plan is not good.</p>
+
+<p>You are the captain of a colony ship carrying one living crop to a new world. Your job is to get that plant across a freshly generated star map and into new soil, alive. The crop <em>is</em> the mission: you can arrive with a full crew, a shiny hull and a pile of gold, but if the plant in the growbay is dead, the colony has nothing to grow.</p>
+
+<p>Between you and the destination are stations, planets, asteroid fields, nebulae, derelict ships, anomalies and a great deal of nothing. Every stop brings an event and a choice. Every choice costs something: days, supplies, morale, hull, gold. Your supplies drain as you fly, your crew gets tired and hurt, and the colony would like you to arrive before the deadline.</p>
+
+<p>There are three trails, and you pick one at the start of every run:</p>
+
+<table>
+<tr><th>Trail</th><th>Length</th><th>What it is like</th></tr>
+<tr><td><strong>Lunar</strong></td><td>About three months, around a dozen stops, one fork</td><td>The gentle one. Established corridors and plenty of stations. A good first run.</td></tr>
+<tr><td><strong>Mars</strong></td><td>About six months, around nineteen stops, two forks</td><td>You leave short on water and food, and the trail makes you work for every drop.</td></tr>
+<tr><td><strong>Interstellar</strong></td><td>About ten months, around two dozen stops, three forks</td><td>The long haul to Far Garden. Stranger places, long empty stretches, and the hardest trouble saved for the end.</td></tr>
+</table>
+
+<p>A run is a roguelike voyage: one life, no going back along the route, and a new map, new events and a new ending each time.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  T["Title screen"] --> S["Setup wizard"]
+  S --> D["Departure event, day 0"]
+  D --> H["Hub, stopped at a stop"]
+  H -->|"Stop menu"| J["Jobs: mine, scan, rest, trade..."]
+  J --> H
+  H -->|"RESUME"| L["Fly a leg: days pass, supplies drain"]
+  L --> A["Arrive at the next stop"]
+  A --> E["The stop's event"]
+  E --> H
+  A -->|"destination"| R["Arrival: score and report"]
+</pre><figcaption>A run at a glance. Most of your time is spent in the loop between the hub, the next leg and the next event. A run can also end early, if something vital runs out.</figcaption></figure>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="play-first-run">Your first run</h2>
+
+<p>This walkthrough follows a real Lunar run from the title screen to the colony. Your run will meet different events, but every run follows the same shape.</p>
+
+<h3>1 · The title screen</h3>
+
+<p>Press any key (or click) to skip the opening lines. <strong>NEW GAME</strong> starts the setup wizard. <strong>CONTINUE</strong> picks up your autosaved voyage, if you have one. <strong>RECORDS</strong> lights up once you have finished a run and shows your past voyages and best scores.</p>
+
+<figure><img src="img/play/w-title.png" alt="The title menu: the three taglines above NEW GAME, CONTINUE and RECORDS buttons on a starfield"><figcaption>The title menu. CONTINUE is dimmed when there is no saved voyage.</figcaption></figure>
+
+<h3>2 · The setup wizard</h3>
+
+<p>Six quick steps, shown as pips across the top. Pick a card on the right and its flavor line appears on the left. <strong>NEXT</strong> (or <kbd>Enter</kbd>) moves on, <strong>BACK</strong> goes back, and on the first step <strong>MENU</strong> returns to the title. Each card states what it does in its green stat line, and those numbers are the game's real ones.</p>
+
+<div class="shots">
+<figure><img src="img/play/w-wiz-trail.png" alt="Setup step 1, Choose Your Trail: Lunar, Mars and Interstellar cards with their stop counts and difficulty"><figcaption>Trail: how long, how many forks, how hard.</figcaption></figure>
+<figure><img src="img/play/w-wiz-ai.png" alt="Setup step 2, Choose Your AI: ARIA, MARV, REX, CHIP and AJOY with their passive effects"><figcaption>AI: your narrator, with one passive perk.</figcaption></figure>
+<figure><img src="img/play/w-wiz-crew.png" alt="Setup step 4, Choose Your Crew: seven crew cards with Kazuki and Dr. Vasquez selected, 2/2 selected"><figcaption>Crew: up to two specialists, or none.</figcaption></figure>
+</div>
+
+<ul>
+<li><strong>Trail.</strong> Lunar, Mars or Interstellar (see <a href="#play-idea">The idea</a>). Longer trails mean more stops, more forks, tighter supplies and harder events.</li>
+<li><strong>AI.</strong> The ship computer narrates the whole voyage, comments on everything you do, and gives one passive perk. See <a href="#play-ais">The five AIs</a>.</li>
+<li><strong>Captain.</strong> That is you. Your background is what you studied, and it gives you a half-strength version of one specialist's skill, sometimes with a starting item or extra gold. See <a href="#play-captains">Captains</a>.</li>
+<li><strong>Crew.</strong> Pick up to two of seven specialists. Each one has an always-on passive skill, an active skill you trigger yourself, and choices in events that only they can unlock. Picking fewer than two asks you to confirm; picking none means flying solo. See <a href="#play-crew">Crew roles</a>.</li>
+<li><strong>Crop.</strong> What you are keeping alive: wheat, tomatoes, sweet potatoes, soybeans or zinnias. They differ in how fast they grow, how thirsty they are, what they resist and what a harvest gives. See <a href="#play-crops">Crops</a>.</li>
+<li><strong>Ship name.</strong> The ship arrives with a name from the colony registry. <strong>RE-ROLL</strong> draws another, or type your own. Then <strong>LAUNCH</strong>.</li>
+</ul>
+
+<div class="tip"><p><strong>A good first run:</strong> the Lunar trail, any AI that amuses you, and a botanist or an engineer in the crew. Sweet potatoes or wheat forgive mistakes. Tomatoes and zinnias are for when you want drama.</p></div>
+
+<h3>3 · Departure, at the station</h3>
+
+<p>After LAUNCH the voyage starts on day 0 at Earth Orbital Station, and something happens before you have even left: the <strong>departure event</strong>. Events are the heart of the game. A scene and a story panel fill the screen, the text types itself out, and once it has landed your choices appear on the right. Click anywhere on the story to make the text finish at once.</p>
+
+<figure><img src="img/play/w-departure.png" alt="The departure event, The Sponsor, set in a station corridor: three choices on the right, one of them locked with a padlock and the note Need: Diplomat"><figcaption>The departure in this run. The third choice is locked (it needs a diplomat in the crew), and its two filled pips show the effort it would take.</figcaption></figure>
+
+<p>The five dots at the top right are a compact gauge you see during events: fuel, food, oxygen, hull and the crew's average morale. The line at the top left is your AI's running commentary. We will make this choice in step 6.</p>
+
+<h3>4 · The cruise hub</h3>
+
+<p>When the departure is over, you land on the <strong>cruise hub</strong>, the screen you come back to between every stop. The ship is still parked at the station, so the hub opens <em>stopped</em>: the <strong>Stop menu</strong> sits in the right-hand column, and the AI says its piece in a speech bubble over the ship.</p>
+
+<figure><img src="img/play/w-hub.png" alt="The cruise hub stopped at Earth Orbital Station: ARIA's speech bubble over the ship, the Stop menu with TRADE, REST and FABRICATOR, the crew strip, crop card and resource bars along the bottom, and a green RESUME button"><figcaption>Day 1, stopped at the station. The bottom row is your ship at a glance: crew, crop, supplies, and the STOP/RESUME button.</figcaption></figure>
+
+<p>Everything on this screen is explained in <a href="#play-screens">The screens, one by one</a>. For now, the key parts are:</p>
+<ul>
+<li>the <strong>header</strong>: ship name, a news ticker, your gold, the cargo hold and map buttons, and the day counter with the days left before the deadline;</li>
+<li>the <strong>standing orders</strong> strip under the ship (engines, rations, water) which opens ORDERS;</li>
+<li>the <strong>crew strip</strong>, the <strong>crop card</strong> and the five <strong>supply bars</strong> along the bottom;</li>
+<li>the big <strong>STOP / RESUME</strong> button in the bottom right corner.</li>
+</ul>
+
+<p>Your AI also gives first-run tips like the one in the bubble, one per stop, the first time each topic comes up. You can switch them off in the pause menu's SETTINGS.</p>
+
+<h3>5 · Stopping: the Stop menu</h3>
+
+<p>Every time you arrive somewhere and finish its event, the ship is stopped there and the Stop menu opens. Its jobs depend on the kind of place: at a habitable planet you can GATHER food, SCAN ahead, TRADE if a trader is in range, REST the crew or run the FABRICATOR.</p>
+
+<figure><img src="img/play/w-stop.png" alt="The hub stopped at a habitable planet: the Stop menu lists GATHER, TRADE, SCAN, REST and FABRICATOR, each with effort pips, a morale cost and a time label"><figcaption>Stopped at a planet with a trader in range. Each job shows its effort pips, its morale cost (−2 MO) and how long it takes.</figcaption></figure>
+
+<p>Every job costs time, and most cost a little morale (the effort tax, see <a href="#play-events">Events and choices</a>). You can do as many jobs as you like at a stop, one after another. When you are done, press <strong>RESUME</strong> to fly on. Doing nothing is also a choice: the deadline is always ticking.</p>
+
+<h3>6 · An event, and making a choice</h3>
+
+<p>Back to that departure. Hover over a choice to see what it really costs: the days it takes and any supplies it spends. Here, signing up a breakfast-cereal sponsor takes a day and costs a little morale.</p>
+
+<div class="shots">
+<figure><img src="img/play/w-choice.png" alt="The Sponsor event with the mouse over the first choice: a tooltip reads Takes 1 day, Costs −2 MORALE"><figcaption>Hovering a choice shows its time and resource costs.</figcaption></figure>
+<figure><img src="img/play/w-outcome.png" alt="The outcome of the choice: the story panel describes signing the contract, and a single CONTINUE button"><figcaption>The outcome. CONTINUE takes you back to the hub.</figcaption></figure>
+</div>
+
+<p>Click a choice (or press its number key, <kbd>1</kbd> to <kbd>9</kbd>) and the outcome plays. What it did to the ship is summed up in the AI log and the Ship's Log: in this run, "+12 GOLD, −2 MORALE, 1 DAY". Some choices lead to a second set of choices before the outcome; some start a hands-on minigame or a ship-to-ship fight.</p>
+
+<h3>7 · Traveling on, and forks</h3>
+
+<p>Press <strong>RESUME</strong>. The ship flies the leg to the next stop: the stars streak past at the speed your ENGINES order sets, the days of the leg pass, and fuel, food, water and oxygen are drawn down. You arrive, the stop's event plays, and you are stopped again. That is the rhythm of the whole voyage.</p>
+
+<p>The route is a line of stops with a few <strong>forks</strong>. At a fork, an event asks you to pick a lane, and you cannot come back for the other one. The <strong>map</strong> button in the header shows the whole route; lanes you have not chosen yet are marked with question marks.</p>
+
+<figure><img src="img/play/w-map.png" alt="The route map for a Lunar trail: a line of stops from Departure to Shackleton Colony, YOU ARE HERE over Planet 1, and a fork near the end splitting into PORT ??? and STARBOARD ??? lanes"><figcaption>The route map early in a Lunar run. Click any stop for a one-line description.</figcaption></figure>
+
+<div class="tip"><p>A good SCAN just before a fork reports what waits at the first stop down each lane.</p></div>
+
+<h3>8 · A station visit</h3>
+
+<p>Stations are where you shop, heal, repair and recharge. Arriving at one opens the <strong>approach</strong> on the bridge with the station in the window. Sometimes the dockmaster calls first; otherwise <strong>HAIL</strong> opens comms. Then <strong>DOCK</strong>. Some stations charge a small parking fee, and DOCK says so.</p>
+
+<div class="shots">
+<figure><img src="img/play/w-approach.png" alt="Station approach: the station seen through the bridge window, with HAIL and LEAVE STATION choices"><figcaption>The approach. LEAVE STATION here means waving off: no berth this time.</figcaption></figure>
+<figure><img src="img/play/w-docked.png" alt="Docked: a hangar scene with MARKET and LEAVE STATION choices"><figcaption>Docked. MARKET walks to Market Row; LEAVE STATION goes back to the bridge.</figcaption></figure>
+</div>
+
+<p>Once docked, your crew's active skills recharge. Market Row is always there; sometimes there is also someone in another room (a cantina, a clinic, an office) with something to say. Each room plays once per visit. When you <strong>LEAVE STATION</strong> you are back on the hub, stopped at the station, and the Stop menu now includes the <strong>station services</strong> you can pay for: MEDBAY, DRYDOCK and FAB SERVICE (each only shown when you need it), plus TRADE to go back to the market.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  A["Station approach"] -->|"HAIL, or they call you"| C["Station control"]
+  C --> K["DOCK, sometimes a small fee"]
+  A -->|"LEAVE STATION"| W["Wave off?"]
+  W -->|"NEVER MIND"| A
+  W -->|"CONFIRM"| X["Hub: no market or services this stop"]
+  K --> P["Docked: crew skills recharge"]
+  P --> M["Market Row and any other room"]
+  M --> P
+  P -->|"LEAVE STATION"| H["Hub, stopped: TRADE, MEDBAY, DRYDOCK, FAB SERVICE"]
+</pre><figcaption>How a station stop flows. Waving off costs no time, but closes the station's market and services for this stop.</figcaption></figure>
+
+<h3>9 · Arriving</h3>
+
+<p>Reach the last stop and the voyage is over. The arrival screen shows the colony with your crop, under a title that tells you how well it went. <strong>VIEW REPORT</strong> opens the report card.</p>
+
+<div class="shots">
+<figure class="photo"><img src="img/play/w-arrival.jpg" alt="The arrival cinematic: a lunar colony with domes, the tomato crop in a glass growth chamber, and the title MADE IT"><figcaption>The arrival. The scene shows your destination and your crop as it arrived.</figcaption></figure>
+<figure><img src="img/play/w-report.png" alt="The report card: MADE IT, an arrival line and a quote, then the Run Report with crew 3/3, resource bars, DAY 86 OF 100, 14 DAYS EARLY, SCORE 123, NEW BEST, soil surveys and a crop bonus"><figcaption>The report card for this run: everyone home, fourteen days early, and a new best for the trail.</figcaption></figure>
+</div>
+
+<p>The report card shows:</p>
+<ul>
+<li>the <strong>tier title</strong>, an arrival line about your crop at its new home, and a closing quote;</li>
+<li>the <strong>Run Report</strong>: how many of the people who launched are still aboard, how full your fuel, food, water, hull and morale were, the day you arrived against the deadline (days early, on time, or days late), and your <strong>score</strong>, with <strong>NEW BEST</strong> when it beats your record for that destination;</li>
+<li>score extras, when you earned them (soil surveys, a crop bonus);</li>
+<li><strong>READ THE COLONY REPORT</strong>, which unfolds the full ending text and the <strong>Ship's Record</strong>, the most notable things you did on the way;</li>
+<li><strong>NEW RUN</strong>, and back to the title.</li>
+</ul>
+
+<p>A run that ends early (see <a href="#play-endings">How a run can end</a>) gets its own screen with an epitaph and the Ship's Record instead.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="play-screens">The screens, one by one</h2>
+
+<h3>The cruise hub and its HUD</h3>
+
+<figure><img src="img/play/s-hub.png" alt="The cruise hub while flying: header with ship name, the ticker COMING UP ON HD 40307G, gold, cargo and map buttons and DAY 1 · 99 LEFT; the ship in the middle; ARIA's log in the right column; standing orders strip; crew strip, crop card and resource bars; a STOP button"><figcaption>The hub while flying. With the ship moving, the right-hand column is the AI log; when you stop, the Stop menu takes its place.</figcaption></figure>
+
+<table>
+<tr><th>Part</th><th>What it shows and does</th></tr>
+<tr><td><strong>Ship name</strong> (top left)</td><td>The name you gave her. The AI will use it, a lot.</td></tr>
+<tr><td><strong>Ticker</strong> (top middle)</td><td>What is happening right now: <code>COMING UP ON …</code> while flying, <code>STOPPED</code> at a stop, <code>TRADER IN RANGE</code> when one is nearby, and the news from a good SCAN.</td></tr>
+<tr><td><strong>Gold, cargo, map</strong></td><td>Your purse, then the crate button for the <a href="#play-screen-cargo">cargo hold</a> and the chart button for the <a href="#play-screen-map">route map</a>.</td></tr>
+<tr><td><strong>Day counter</strong> (top right)</td><td><code>DAY 1 · 99 LEFT</code>: today, and the days left before the deadline. Past the deadline it counts the days late instead.</td></tr>
+<tr><td><strong>Ship view</strong></td><td>Your ship, the starfield (faster engines, faster stars), the place you are stopped at, and alert labels when something needs attention.</td></tr>
+<tr><td><strong>Standing orders strip</strong></td><td>ENGINES, RATIONS and the WATER split between plant and crew. Click it to open <a href="#play-screen-orders">ORDERS</a>.</td></tr>
+<tr><td><strong>AI log</strong> (right column)</td><td>Everything that happens, in your AI's voice, under day dividers. Lines with a link icon carry a real-science reference.</td></tr>
+<tr><td><strong>Crew strip</strong></td><td>Three same-size slots: the captain and up to two crew. HP (health) and MO (morale) bars; hover a bar for the exact number and, for morale, why it moved. The captain has no morale bar. Click a card for the <a href="#play-screen-crew">crew dossier</a>. An empty slot reads "vacant".</td></tr>
+<tr><td><strong>Crop card</strong></td><td>Your crop: its stage, its day against its days to maturity, growth and health bars, and an alert light. Problems show in amber (<code>THIRSTY</code>, <code>SICK</code>, <code>PESTS: TREAT IT</code>). When it is ready a HARVEST button appears. Click the card for the <a href="#play-screen-growbay">growbay</a>.</td></tr>
+<tr><td><strong>Supply bars</strong></td><td><span class="res food">FOOD</span> <span class="res water">H2O</span> <span class="res o2">O2</span> on the left, <span class="res fuel">FUEL</span> <span class="res hull">HULL</span> on the right. Hover for the exact level.</td></tr>
+<tr><td><strong>STOP / RESUME</strong></td><td>STOP while flying opens the Stop menu; RESUME while stopped flies on to the next stop.</td></tr>
+</table>
+
+<h4>The AI's speech bubble</h4>
+<p>While you are stopped the Stop menu covers the log column, so your AI talks to you in a <strong>speech bubble</strong> over the ship instead: its portrait and its newest three lines for this stop (tips, comments, warnings, memories of earlier choices). Click the bubble or its <strong>×</strong> to dismiss it; RESUME clears it too. Every line is also kept in the log and the Ship's Log, so nothing is lost. You can see the bubble in the <a href="#play-first-run">walkthrough</a>'s hub screenshot.</p>
+
+<h3>The Stop menu</h3>
+
+<p>The Stop menu lists the jobs this place allows. Its header names the kind of place (DEEP SPACE, ASTEROID FIELD, NEBULA, STATION APPROACH…) with a line of mood, and a <strong>LOG</strong> button that opens the Ship's Log. Each job row shows its effort pips, the morale it will cost each crew member (<code>−2 MO</code>), how long it takes, and a one-line description. Hover for the details. A locked job says what it needs. Jobs with nothing to work on (REPAIR with a full hull, MEDBAY with nobody hurt) are not listed at all.</p>
+
+<div class="shots">
+<figure><img src="img/play/s-stop-services.png" alt="Stop menu at a station: TRADE, MEDBAY at 27 gold and no days, DRYDOCK +28 hull for 25 gold, FAB SERVICE wear to zero for 36 gold, and REPAIR"><figcaption>At a station with a hurt crew member, a dented hull and a worn fabricator: the paid station services appear.</figcaption></figure>
+<figure><img src="img/play/s-stop-rest.png" alt="Stop menu with REST expanded into a HOW MANY DAYS? picker with buttons 1 to 7"><figcaption>REST and WAIT FOR TRADER ask how many days, one to seven.</figcaption></figure>
+</div>
+
+<table>
+<tr><th>Job</th><th>Where</th><th>Time</th><th>What it is for</th></tr>
+<tr><td><strong>MINE</strong></td><td>Asteroid fields, nebulae, derelicts</td><td>1 day per run</td><td>The <a href="#play-minigames">mining minigame</a>: crack rocks for materials. In an asteroid field some ice melts into water; in a nebula you scoop fuel. After a run you can MINE AGAIN for another day.</td></tr>
+<tr><td><strong>SALVAGE</strong></td><td>Derelicts</td><td>1 day</td><td>The salvage minigame: tractor-beam loot into your hold. A derelict still in one piece is boarded (fuel cells, ration cans, medkits, parts); a broken one is swept from outside.</td></tr>
+<tr><td><strong>FORAGE</strong><br><small>(GATHER, HUNT, SCAVENGE)</small></td><td>Planets, asteroid fields, derelicts, anomalies</td><td>1 day</td><td>The forage minigame: find food. The label changes with the place. On an <em>alien</em> world it is FORAGE in a red risky row: someone aboard may be poisoned.</td></tr>
+<tr><td><strong>TRADE</strong></td><td>Stations; elsewhere only when a trader is in range</td><td>0–2 days</td><td>Opens the market. Browsing is free; leaving after you bought or sold costs a day of haggling.</td></tr>
+<tr><td><strong>WAIT FOR TRADER</strong></td><td>Most places, when no trader is in range</td><td>1–7 days</td><td>Park and hope a trader turns up. Each day might bring one, and other things can hear you waiting too. STOP WAITING calls it off (days spent stay spent).</td></tr>
+<tr><td><strong>SCAN</strong></td><td>Deep space, planets, nebulae, anomalies</td><td>1 day</td><td>The scan minigame. A decent result reports what waits at the next stop (and down every lane of a fork); a clean lock looks two stops ahead and shows what each choice there will do.</td></tr>
+<tr><td><strong>REPAIR</strong></td><td>Anywhere, when the hull is damaged</td><td>1 day</td><td>The engine-room repair minigame. Costs 2 metal and 1 scrap; patches some hull (more with an engineer).</td></tr>
+<tr><td><strong>REST</strong></td><td>Anywhere, with crew aboard</td><td>1–7 days</td><td>Lifts every crew member's morale each day. Locked when everyone is already in good spirits. WAKE UP ends it early.</td></tr>
+<tr><td><strong>CONDENSE</strong></td><td>Nebulae, with an Atmospheric Condenser</td><td>1 day</td><td>Wring water out of the gas.</td></tr>
+<tr><td><strong>MEDBAY</strong></td><td>Stations, when someone is hurt</td><td>No days</td><td>Treats everyone aboard who is hurt, for gold.</td></tr>
+<tr><td><strong>DRYDOCK</strong></td><td>Stations, when the hull is damaged</td><td>No days</td><td>Station crews patch the hull, for gold (less when there is less to fix).</td></tr>
+<tr><td><strong>FAB SERVICE</strong></td><td>Stations, when the fabricator is worn</td><td>No days</td><td>Resets the fabricator's wear to zero (and fixes it if broken), for gold.</td></tr>
+<tr><td><strong>FABRICATOR</strong></td><td>Anywhere</td><td>Per recipe</td><td>Opens the <a href="#play-screen-fabricator">fabricator</a>.</td></tr>
+</table>
+
+<div class="note"><p><strong>Starting a job and backing out.</strong> Minigames open on a briefing. Closing the briefing before you press BEGIN is free, and the morale tax comes back. Quitting <em>after</em> BEGIN keeps nothing you found, and the day is still spent.</p></div>
+
+<h3 id="play-events">Events and choices</h3>
+
+<p>Every stop has one event. Some are quick decisions, some have several rounds of choices, some put you face to face with someone on a screen or in a corridor, and some turn into minigames or fights. The choices column is where the decisions are made, and it tells you a lot if you know how to read it.</p>
+
+<div class="shots">
+<figure><img src="img/play/s-choices-effort.png" alt="A choices column: a locked choice with a padlock and Need: Hull Patch; FABRICATE A HULL PATCH with two pips and Effort 45 / 30 · 90% clean; ATTEMPT MANUAL REPAIR with two pips and Effort 65 / 40 · 2 days · 90% clean; IGNORE IT AND HOPE"><figcaption>Hands-on jobs: pips, the effort sub-label and the clean odds.</figcaption></figure>
+<figure><img src="img/play/s-choices-gates.png" alt="A choices column in a pirate encounter: a tribute choice with a gold icon, a locked choice needing a diplomat, a choice with MARV's warning −15% FUEL, OPEN FIRE and FLEE with red risky sub-labels, and a red BREAK OFF row"><figcaption>Gates, a locked choice, an AI preview, risky choices and the leave row.</figcaption></figure>
+</div>
+
+<ul>
+<li><strong>The sub-label</strong> is the small line under a choice. It is always one line, and the full story is in the tooltip. It may say what the choice needs, preview what it does, or describe the job.</li>
+<li><strong>Effort pips</strong> <span class="pips">●●○○○</span> show how much work a choice is, from one to five. <strong>Every pip costs morale</strong>: each crew member pays the effort tax when you pick it, and more pips cost more morale, climbing faster than the pips do. The Stop menu prints the cost (<code>−4 MO</code>); for event choices it is in the tooltip. With no crew aboard there is nobody to tax.</li>
+<li><strong>Effort checks.</strong> Hands-on jobs show <code>Effort 65 / 40 · 2 days · 90% clean</code>: the effort you can bring against the effort the job needs, the time it takes, and the chance it goes cleanly. Your own hands, every crew member, the right specialist and the right tool all add effort. A one-use tool (a repair kit, say) is spent when it counts. Short of effort, the job still gets done, just worse: the tooltip spells out exactly what "worse" costs. Even a well-equipped crew is never certain.</li>
+<li><strong>Locked choices</strong> show a padlock and <code>Need: …</code>: a crew role, an item, an amount of gold, or several at once. A crew member who is too badly hurt cannot help, and the lock says so. Some choices stay hidden entirely until something earlier in the voyage opens them.</li>
+<li><strong>Gate icons.</strong> An unlocked choice that uses something you have shows its icon: the crew member's portrait, the item, the gold.</li>
+<li><strong>Previews.</strong> Some choices show what they will do before you pick them. Your AI might (MARV flags the most expensive option), a clean SCAN does, some items do, and an Academic captain gets one research preview per station leg.</li>
+<li><strong>Risky choices</strong> have red sub-labels: they can go badly.</li>
+<li><strong>Tooltips.</strong> Hover any choice for the full picture: the days it takes, everything it costs, the effort and its morale tax, the odds, and what happens if you fall short.</li>
+<li><strong>Leaving.</strong> Many layered events have a red leave row at the bottom (LEAVE, NOT NOW, BACK TO DOCK…). It ends the scene with no outcome, unless its own sub-label or tooltip says otherwise: some leave rows are an exit with a price (backing off from a fight is never free). A few emergencies cannot be left, and their leave row is locked.</li>
+</ul>
+
+<p>Many choices also take time. A quick decision is a day; real work can be several days; a few big undertakings take a couple of weeks. The tooltip always says.</p>
+
+<h3 id="play-screen-orders">ORDERS</h3>
+
+<p>Your standing orders apply every day until you change them. Click the orders strip under the ship (or a readout in it) to open ORDERS. Each row shows a projection that updates as you try options; <strong>APPLY</strong> keeps the change, <strong>CANCEL</strong> throws it away.</p>
+
+<figure><img src="img/play/s-orders.png" alt="The ORDERS modal: ENGINES with LIGHT SPEED, RIDICULOUS, LUDICROUS and PLAID, the arrival projection ARRIVAL · DAY 93 OF 100; RATIONS with VENDING MACHINE, STANDARD and PIG OUT; the WATER ALLOCATION slider between PLANT 50% and CREW 50%; ARIA's comment; CANCEL and APPLY"><figcaption>ORDERS. Every option comes with its own projection and an AI comment.</figcaption></figure>
+
+<ul>
+<li><strong>ENGINES</strong> sets the pace. <strong>LIGHT SPEED</strong>: crawl, burn little, the crew rests. <strong>RIDICULOUS</strong>: the default. <strong>LUDICROUS</strong>: faster, burns harder, the crew tires. <strong>PLAID</strong>: fastest, bleeds fuel and crew, and running at Plaid leg after leg heats the drive. The row projects your <strong>ARRIVAL</strong> day against the deadline, the day the fuel would run out, and the morale trend.</li>
+<li><strong>RATIONS</strong>: <strong>VENDING MACHINE</strong> (half rations: food lasts, morale sinks), <strong>STANDARD</strong> (morale holds), <strong>PIG OUT</strong> (extra: morale lifts, food empties fast). The row shows food per day and the day the food runs out.</li>
+<li><strong>WATER ALLOCATION</strong> splits the ship's water between the plant and the crew. Drag the slider. The marker shows what the crop needs; below it the crop is thirsty and slows, too far above it risks root rot, and starving the crew's side hurts morale and eventually health. The row projects when the plant matures and how the crew is doing.</li>
+</ul>
+
+<div class="tip"><p>The ARRIVAL projection is the same one the game uses to decide you are behind schedule. If it shows a ⚠ and a day past the deadline, you are on course to arrive late.</p></div>
+
+<h3 id="play-screen-cargo">The cargo hold</h3>
+
+<p>The crate button in the header opens the hold. The top shows your fuel, food and water tanks with their level, daily use and the day each would run empty. Below are three tabs: <strong>GEAR</strong> (instruments, consumables, trade goods), <strong>MATERIALS</strong> and <strong>UPGRADES</strong>, with a SORT menu. The header counts slots used against capacity.</p>
+
+<figure><img src="img/play/s-cargo.png" alt="The cargo hold: 4 / 8 slots and 62 gold, three resource tiles, the GEAR tab with a soil sampler and a repair kit, and the repair kit's detail panel with count, slot cost, sell price, USED FOR, USE and JETTISON"><figcaption>Click any tile for its detail: what it is, what it costs in slots, what a trader would pay, and which situations it helps in.</figcaption></figure>
+
+<p>From the detail panel you can <strong>USE</strong> a consumable (a fuel cell, a ration brick, a crop treatment…), <strong>SELL</strong> it to the market while you are docked (no day spent), or <strong>JETTISON</strong> it to free a slot. Upgrades work just by being aboard.</p>
+
+<h3 id="play-screen-crew">The crew dossier</h3>
+
+<p>Click a crew card for their dossier: portrait, health and morale, a short bio, any status effects (wounded, morale crisis, deserting, going hungry or thirsty…), their <strong>PASSIVE</strong> skill (always on) and their <strong>ACTIVE</strong> skill with its uses and a <strong>USE</strong> button. Active skills recharge when you dock at a station. Arrows flip between crew members, and the captain has a shorter dossier of their own.</p>
+
+<figure><img src="img/play/s-crew.png" alt="The crew dossier for Kazuki, Engineer: health 100, morale 79, bio, status effects, passive skill Mechanical Instinct, active skill Emergency Patch with 1/1 uses and a USE button, and a DISMISS CREW button"><figcaption>The dossier. DISMISS CREW lets someone go for good.</figcaption></figure>
+
+<h3 id="play-screen-growbay">The growbay</h3>
+
+<p>Click the crop card to visit your crop. The growbay shows growth and health bars, the plant itself at its current stage, the stage name, the day the harvest will be ready, who is tending the plant, and every growth modifier in play. Under MONITORED are the threats that are not happening right now.</p>
+
+<div class="shots">
+<figure><img src="img/play/s-growbay.png" alt="The growbay: a tomato seedling at the sprouting stage, growth 9%, health 84%, the captain tending it, HARVEST, TREAT and INSPECT buttons, growth modifiers and a water slider"><figcaption>The growbay. The water slider here is the same one as in ORDERS.</figcaption></figure>
+<figure><img src="img/play/s-inspect.png" alt="The INSPECT view: the AI's read, vital signs, species notes, the four lifecycle stages, and active threats with their cause and fix"><figcaption>INSPECT: the full read on your crop, with every active threat's cause and fix.</figcaption></figure>
+</div>
+
+<ul>
+<li><strong>Water.</strong> Set the plant's share of the water. The plant's need is marked on the track.</li>
+<li><strong>Tender.</strong> Who looks after the plant. A botanist tends by default and is by far the best at it; anyone else helps a little. Click the tender card to change.</li>
+<li><strong>TREAT</strong> clears a pest outbreak. It takes a day of work unless a botanist handles it; the button's tooltip says which.</li>
+<li><strong>INSPECT</strong> opens the full read: vital signs, growth rate, species notes, the four stages and what can go wrong in each, and every active threat with its cause and fix.</li>
+<li><strong>HARVEST</strong> unlocks when growth reaches 100%. It gives food (zinnias give morale instead) and the plant starts a fresh cycle. Food that will not fit in the stores is pressed into ration bricks if the hold has room.</li>
+</ul>
+
+<h3 id="play-screen-fabricator">The fabricator</h3>
+
+<p>The fabricator turns materials into useful things. Open it from the Stop menu. Pick a recipe on the left to see what it makes, what it needs (with what you have), how many days it takes, how much wear it adds, the chance of a misfire and its morale cost. <strong>CRAFT</strong> starts the job.</p>
+
+<figure><img src="img/play/s-fab.png" alt="The fabricator: a recipe list (Hull Patch, Ration Brick, Crop Treatment, Repair Kit, and two locked recipes needing a Field Repair Fabricator), the fabricator machine, and Hull Patch's details: 4/3 metal, 2/2 scrap, time 1 day, wear +0.8%, misfire 0%, morale −1 each, CRAFT"><figcaption>The fabricator. Two recipes stay locked until you find the right upgrade.</figcaption></figure>
+
+<ul>
+<li><strong>Crafting takes real days</strong>, one at a time, while the fabricator is open, and the ship's usual daily drain applies. Close it and the job is held until you come back.</li>
+<li><strong>CANCEL</strong> before the first day finishes gives everything back; after that you get half the materials back.</li>
+<li><strong>Wear</strong> builds with every print and makes misfires more likely. At full wear the fabricator breaks. An engineer reduces wear, and a station's FAB SERVICE resets it.</li>
+</ul>
+
+<h3 id="play-screen-market">The market and Market Row</h3>
+
+<p>At a station, TRADE (or the MARKET room when docked) takes you to <strong>Market Row</strong>, where a vendor runs a stall; out on the trail, TRADE hails a passing trader ship. <strong>BROWSE THE WARES</strong> opens the market.</p>
+
+<figure><img src="img/play/s-market.png" alt="The market: the trader's portrait on the left, VENDOR WARES with TRADE rows that barter goods and BUY rows with gold prices, YOUR CARGO with SELL buttons, the purse, and STEP BACK"><figcaption>The market. Left column: what they sell. Right column: what you can sell them.</figcaption></figure>
+
+<ul>
+<li><strong>BUY</strong> rows sell an item for gold. Station markets stock a wide catalog, including ship upgrades; a trader ship carries a smaller hold.</li>
+<li><strong>TRADE</strong> rows are barter: they take one of your goods instead of gold.</li>
+<li><strong>SELL</strong> pays gold for your items and materials. Trade goods each have their own value; a spectrometer aboard tells you exactly what it is before you sell.</li>
+<li>Discounts (CHIP, a Merchant captain) apply to what you buy, never to what you sell.</li>
+<li><strong>STEP BACK</strong> closes the market. Browsing is free; leaving after you bought or sold costs a day.</li>
+</ul>
+
+<h3 id="play-screen-map">The route map</h3>
+
+<p>The map button in the header shows the whole route: every stop, colored by type, from Departure to your destination, with <strong>YOU ARE HERE</strong> over the ship. Stops you have passed are marked visited. Click a stop to read what it is. Forks split into named lanes; until you pick, the lanes beyond them read <code>???</code>. The map is for looking only: you choose lanes in the fork's event.</p>
+
+<figure><img src="img/play/s-map.png" alt="The route map after a fork: the chosen PORT · SAFE lane leads to a station marked YOU ARE HERE, the untaken STARBOARD · HOSTILE lane is dimmed, and the destination waits at the right"><figcaption>The same map after the fork. The lane not taken stays dimmed.</figcaption></figure>
+
+<h3 id="play-screen-log">The Ship's Log</h3>
+
+<p>The <strong>LOG</strong> button in the Stop menu (or SHIP'S LOG in the pause terminal) opens the voyage's journal, written by your AI. It records every event you met and what you chose, what it really did to the ship, every arrival and what the leg cost, crop milestones, fights, and people joining or leaving. Entries with a link icon point to the real science behind a joke. Anyone lost on the voyage gets a memorial page.</p>
+
+<figure><img src="img/play/s-log.png" alt="The Ship's Log: a parchment journal titled with the ship's name and trail, entries under day dividers, a link icon on one entry, and VOICED BY ARIA at the foot"><figcaption>The Ship's Log, voiced by whichever AI you chose.</figcaption></figure>
+
+<h3>The pause terminal</h3>
+
+<p>Press <kbd>Esc</kbd> any time for the <strong>Bridge Terminal</strong>. Time stops while it is open. It opens on a short ship status report.</p>
+
+<div class="shots">
+<figure><img src="img/play/s-pause-settings.png" alt="The Bridge Terminal's SETTINGS page: cursor color swatches, cursor outline ON, show tips ON, text speed slow, normal or fast"><figcaption>SETTINGS.</figcaption></figure>
+<figure><img src="img/play/s-pause-help.png" alt="The Bridge Terminal's HELP page: mouse and keyboard controls"><figcaption>HELP: the controls in one place.</figcaption></figure>
+</div>
+
+<ul>
+<li><strong>RESUME</strong> closes the terminal.</li>
+<li><strong>SETTINGS</strong>: cursor color and outline, <strong>SHOW TIPS</strong> (the AI's first-run tips), and <strong>TEXT SPEED</strong> for the typewriter text.</li>
+<li><strong>SAVE</strong> and <strong>LOAD</strong>: three local save slots. You can save between encounters (not in the middle of an event or a job), and a loaded game returns to the hub. The game also <strong>autosaves</strong> as you play; CONTINUE on the title screen resumes it.</li>
+<li><strong>SHIP'S LOG</strong> opens the journal.</li>
+<li><strong>HELP</strong> lists the controls: click to act, hover to preview, drag sliders, <kbd>Esc</kbd> for this terminal or to close a window, <kbd>1</kbd>–<kbd>9</kbd> to pick a choice or a Stop-menu job, <kbd>Tab</kbd> and <kbd>Enter</kbd> to move between buttons and press one.</li>
+<li><strong>QUIT</strong> returns to the title screen after a confirmation. Anything since the last save or autosave is lost.</li>
+</ul>
+
+<div class="note"><p>Your saves live in your browser, on this computer. Clearing the browser's site data clears them too.</p></div>
+
+<h3>Records</h3>
+
+<p>RECORDS on the title screen lists your <strong>best arrival per destination</strong> (score, tier, ship, crop, captain, day and crew) and your <strong>last 10 voyages</strong>, newest first: arrivals with their tier and score, and runs that ended early with how they ended. Only arrivals whose crop made it alive count as a best. <strong>CLEAR RECORDS</strong> wipes them, after asking.</p>
+
+<figure><img src="img/play/s-records.png" alt="The RECORDS window: best arrival per destination with LUNAR 123 MADE IT, MARS and FAR GARDEN with no arrival yet, and the last voyage listed underneath"><figcaption>Records after one finished Lunar run.</figcaption></figure>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="play-meaning">What everything means</h2>
+
+<h3 id="play-resources">The seven resources</h3>
+
+<p>Fuel, food, water, oxygen and hull are ship supplies, each out of 100 (two upgrades raise the fuel and hull caps). Morale belongs to each crew member. Gold is money. The supply bars turn to warning colors when a supply runs low, and your AI will mention it.</p>
+
+<table>
+<tr><th>Resource</th><th>What runs it down</th><th>What brings it back</th><th>If it hits zero</th></tr>
+<tr><td><span class="res fuel">FUEL</span></td><td>Every leg you fly. Faster engines burn much more. Some choices and escapes.</td><td>Fuel cells, MINE in a nebula, salvage, traders, events. A pilot, a pilot captain or a drive coil make each leg cheaper.</td><td>You are adrift and the run ends, unless something aboard can call for help.</td></tr>
+<tr><td><span class="res food">FOOD</span></td><td>Every day, by your rations and the number of mouths (the engineer eats twice as much; passengers eat too). Some events.</td><td>Harvests, FORAGE, ration bricks, salvage, the market. A chef makes food last longer.</td><td>Everyone starves: health and morale fall each day, and too many days without food ends the run.</td></tr>
+<tr><td><span class="res water">H2O</span></td><td>Every day, shared by plant and crew. Some events (on Mars, events ask a lot more of it).</td><td>Water canisters, ice from MINE in an asteroid field, CONDENSE, a water purifier at planets, events, traders.</td><td>Everyone goes thirsty and the crop dries out. Too many dry days ends the run.</td></tr>
+<tr><td><span class="res o2">O2</span></td><td>The crew breathes it, slowly. Some accidents vent it.</td><td>O2 canisters and events. A healthy crop makes some of your air, so the draw is lower while the plant thrives.</td><td>The fastest way to die: only a few days.</td></tr>
+<tr><td><span class="res hull">HULL</span></td><td>Accidents, impacts, storms, fights.</td><td>REPAIR (metal and scrap), DRYDOCK (gold), hull patches, some events. An engineer gets more out of every repair.</td><td>The ship breaks apart and the run ends.</td></tr>
+<tr><td><span class="res morale">MORALE</span></td><td>Effort pips, short rations, hard pace, bad news, wounds, losses, and things each specialist personally minds.</td><td>REST, good rations, good news, harvests (especially zinnias), a chef's cooking, ARIA.</td><td>A crew member at zero may desert; the whole crew at zero mutinies (see below).</td></tr>
+<tr><td><span class="res gold">GOLD</span></td><td>The market, station services, parking fees, tributes, bribes, and some choices.</td><td>Selling items and materials (salvage is the steady earner), event rewards, loot from fights.</td><td>Nothing, except that you cannot pay for things.</td></tr>
+</table>
+
+<p>Every run starts with 50 gold (more for some captains), a repair kit, a soil sampler, and a little metal and scrap. Mars starts short on food and water; Interstellar starts a little short on both, with a crew already less cheerful about the trip.</p>
+
+<h3 id="play-crew">Crew roles</h3>
+
+<p>Each specialist brings a passive skill (always on), an active skill (one use, recharged when you dock at a station), extra effort for jobs in their line, and choices in events that only they can unlock. Anyone aboard adds a pair of hands to hard work.</p>
+
+<table>
+<tr><th>Crew member</th><th>Good at</th><th>Active skill</th></tr>
+<tr><td><strong>Dr. Osei</strong>, Botanist</td><td>Crop care. The crop drinks less, grows and yields more with Osei tending, and TREAT takes no day.</td><td><strong>Greenhouse Protocol</strong>: restores crop health.</td></tr>
+<tr><td><strong>Kazuki</strong>, Engineer</td><td>Repairs: event repairs go further, REPAIR patches more, less fabricator wear, a hull patch in combat. Eats twice as much.</td><td><strong>Emergency Patch</strong>: stops one hull-damage hit.</td></tr>
+<tr><td><strong>Dr. Vasquez</strong>, Medic</td><td>Keeping people alive: deadly outcomes more often become injuries, and the hurt heal faster.</td><td><strong>Treatment</strong>: heals one injured person.</td></tr>
+<tr><td><strong>Lindqvist</strong>, Pilot</td><td>Fuel: every leg burns less.</td><td><strong>Push Engines</strong>: skip the next stop entirely, at double fuel.</td></tr>
+<tr><td><strong>Reyes</strong>, Chef</td><td>Food: it lasts longer, and real meals lift morale a little every leg.</td><td><strong>Special Meal</strong>: a morale boost, paid for in food.</td></tr>
+<tr><td><strong>Dr. Tanaka</strong>, Xenobiologist</td><td>The strange: extra, safer options at anomalies and around alien life; delighted by alien finds.</td><td><strong>Field Analysis</strong>: learn what an unknown biological item really is before you commit.</td></tr>
+<tr><td><strong>Hargrove</strong>, Diplomat</td><td>The one specific situation: blunts the first enemy volley, and pirates give up sooner.</td><td><strong>Negotiation</strong>: opens a peaceful way out of hostile encounters.</td></tr>
+</table>
+
+<h4>HP, wounds and morale</h4>
+<ul>
+<li><strong>Health (HP)</strong> runs from 100 down. Below 40 a person is <strong>wounded</strong>: their skills work at half strength and their HP bar turns amber. At 25 or below it turns red, and they are too hurt to help with choices that need them. At zero they die. The captain has real health too.</li>
+<li><strong>Healing:</strong> everyone recovers a little each leg (faster with a medic aboard). The medic's Treatment, a medkit, and MEDBAY at a station heal properly.</li>
+<li><strong>Morale is per person.</strong> Changes to "the crew" hit everyone, but each specialist also reacts to their own concern: the botanist to the crop's health, the engineer to hull damage (and cheers up at a finished repair), the chef to short rations, the medic to injuries and deaths, the pilot to the pace, the xenobiologist to alien finds, the diplomat to fighting, and everyone to their own wounds. Hover a morale bar to see why it moved. With only one crew member aboard, those personal concerns count half.</li>
+<li><strong>Desertion.</strong> When someone's morale hits zero you are warned, and they will walk off at the next station unless their morale is back up to 25 by then. The morale bar and dossier say so.</li>
+<li><strong>Mutiny.</strong> If the crew's <em>average</em> morale reaches zero, they take the ship, and the run ends.</li>
+<li><strong>The captain has no morale.</strong> Flying solo (no crew at all) means no morale to manage and no effort tax, but also no specialists and fewer hands.</li>
+<li>A vacant crew slot can sometimes be filled on the way, by someone you take aboard. The ship never carries more than captain plus two crew; anyone extra rides along as a passenger.</li>
+</ul>
+
+<h3 id="play-captains">Captains</h3>
+
+<p>You are the captain, and your background is what you studied before this. It stands in for a missing specialist at <strong>half strength</strong>: half their passive effect and half their effort contribution. If you also hire that specialist, the better of the two applies; they do not stack. Some backgrounds also bring an item or extra gold.</p>
+
+<table>
+<tr><th>Background</th><th>What it gives you (as the setup card says)</th></tr>
+<tr><td>Botanist</td><td>Crop water −7% · Crop +5 health at the start · tends the growbay itself</td></tr>
+<tr><td>Engineer</td><td>Fabricator wear −10% · Hull starts at 105</td></tr>
+<tr><td>Medic</td><td>25% of deadly outcomes become injuries · starts with a medkit</td></tr>
+<tr><td>Pilot</td><td>Fuel −5% · Fuel starts at 105</td></tr>
+<tr><td>Chef</td><td>Food −7% · Food starts 5 higher</td></tr>
+<tr><td>Xenobiologist</td><td>Anomalies safer (stands in for a xenobiologist's choices, at half the gains) · starts with a spectrometer</td></tr>
+<tr><td>Diplomat</td><td>Gold +15</td></tr>
+<tr><td>Merchant</td><td>Station prices −10% · Gold +30</td></tr>
+<tr><td>Academic</td><td>Research: one choice previewed per station leg · starts with a gas analyzer</td></tr>
+<tr><td>Veteran</td><td>An edge in combat · starts with a pressure suit</td></tr>
+</table>
+
+<p>The captain also brings their own pair of hands to every job, and has real health: if the captain dies, the run is over.</p>
+
+<h3 id="play-ais">The five AIs</h3>
+
+<p>Your AI is the voice of the whole game: the log, the bubble, the minigame briefings, the Ship's Log. Each has a personality and one passive perk.</p>
+
+<table>
+<tr><th>AI</th><th>Personality</th><th>Perk</th></tr>
+<tr><td><strong>ARIA</strong></td><td>Relentlessly positive, factually questionable. Every disaster is a growth opportunity.</td><td>Every crew member gains a little morale each leg.</td></tr>
+<tr><td><strong>MARV</strong></td><td>Clinically depressed, 400% smarter than everyone, very tired of being right.</td><td><strong>Reveals hidden details</strong>: in events, MARV flags the costliest choice with what it will cost you.</td></tr>
+<tr><td><strong>REX</strong></td><td>Retired military. Everything is a threat, including the snack dispenser.</td><td><strong>Combat bonus</strong>: the first enemy hit of every fight is stopped by point-defense.</td></tr>
+<tr><td><strong>CHIP</strong></td><td>Corporate-issued, peppy, full of Terms of Service. Every crisis is a sponsored message.</td><td><strong>Station prices −15%</strong>: the market, station services and gold spent in station events.</td></tr>
+<tr><td><strong>AJOY</strong></td><td>A passive-aggressive backseat driver. Technically helpful, in the most grating way possible.</td><td><strong>Shows what you missed</strong>: after you choose, AJOY tells you what one of the other options would have done.</td></tr>
+</table>
+
+<h3 id="play-crops">Crops and how they grow</h3>
+
+<p>Your crop grows from 0% to 100% through four stages: <strong>Sprouting</strong>, <strong>Vegetative</strong>, <strong>Flowering</strong> and <strong>Maturing</strong>. At 100% you can harvest it, and it starts again from a fresh planting. Its <strong>health</strong> is what matters for the mission: it must be above zero when you arrive.</p>
+
+<ul>
+<li><strong>Growth</strong> is fastest when the plant gets the water it needs and someone good tends it. Being thirsty, pests, and the wrong surroundings slow it down.</li>
+<li><strong>Health</strong> slowly recovers with good watering and falls with thirst, pests and stress. Ordinary imperfect care mostly stalls it; real neglect kills.</li>
+<li><strong>Surroundings matter.</strong> Deep void runs cold, anomalies run hot, nebulae and the void are dim. The growbay shows these as modifiers while you are there; they pass when you move on.</li>
+<li><strong>Pests</strong> turn up now and then once the plant is established. TREAT them in the growbay or use a crop treatment.</li>
+<li>A <strong>healthy crop helps the air</strong>: it makes some of the oxygen the crew breathes.</li>
+</ul>
+
+<table>
+<tr><th>Crop</th><th>Character</th></tr>
+<tr><td><strong>Wheat</strong></td><td>Reliable and predictable, with a good food yield. Recovers faster once it is thriving, but pests hit it twice as hard.</td></tr>
+<tr><td><strong>Tomatoes</strong></td><td>The fastest food crop and a joint-best harvest, and a healthy tomato bed lifts the crew's morale a little every leg. Thirsty, hit harder by thirst, and prone to drama.</td></tr>
+<tr><td><strong>Sweet Potatoes</strong></td><td>The hardiest: highest starting health, widest comfort zone, lowest water need of the food crops. Slow to grow and slow to bounce back from damage.</td></tr>
+<tr><td><strong>Soybeans</strong></td><td>Pest-resistant, and recovers twice as fast for ten days after a pest outbreak is cleared. Needs steady light.</td></tr>
+<tr><td><strong>Zinnias</strong></td><td>No food at all. Healthy zinnias lift morale every leg, a harvest gives a big morale boost instead of food, and they have the fastest cycle. Fragile, and sick zinnias make the crew miserable: hard mode.</td></tr>
+</table>
+
+<p>Some crops also add a bonus to your arrival score if they arrive healthy; the report card shows it as CROP BONUS.</p>
+
+<h3>Items and materials</h3>
+
+<ul>
+<li><strong>Items</strong> are things: instruments (a gas analyzer, a geiger counter, a portable drill…), consumables (fuel cells, ration bricks, water and O2 canisters, medkits, hull patches, crop treatments), trade goods worth gold, curiosities, and <strong>upgrades</strong> (a bigger fuel tank, hull plating, a shield module…). Gear takes a cargo slot each; small consumables stack several to a slot; upgrades take no slot and work as long as they are aboard. Many items open choices in events; the hold's detail panel lists where an item is used.</li>
+<li><strong>Materials</strong> are raw stock: metal, scrap, minerals, exotic matter and biocomponents. They come from mining, salvage, fights and events, and go into REPAIR and the fabricator, or get sold. Every 10 of a material takes one cargo slot.</li>
+<li><strong>The hold has limits.</strong> Capacity depends on the trail (and one upgrade adds more). A full hold means new finds stay behind: briefings warn you before you spend the time.</li>
+</ul>
+
+<h3 id="play-minigames">The minigames</h3>
+
+<p>Hands-on jobs open as minigames. Each starts on a briefing with your AI's take and the rules, then <strong>BEGIN</strong>. The result is graded <strong>EXCELLENT</strong>, <strong>ADEQUATE</strong> or <strong>INSUFFICIENT</strong>, and a better grade means a better reward. When an event launches a minigame, the briefing lists exactly what each grade earns.</p>
+
+<div class="shots">
+<figure><img src="img/play/mg-scan.png" alt="SCAN minigame: a green radar sweep with a wandering blip and a lock bar"><figcaption><strong>Scan.</strong> Keep the cursor on the wandering blip until the lock bar fills.</figcaption></figure>
+<figure><img src="img/play/mg-engine.png" alt="ENGINE REPAIR minigame: five components (coil, injector, valve, relay, conduit) lighting up in a sequence, with an error counter"><figcaption><strong>Engine restart.</strong> Watch the sequence, then click the parts in the same order. Too many wrong clicks and the drive limps.</figcaption></figure>
+<figure><img src="img/play/mg-brace.png" alt="SOLAR BRACE minigame: a round BRACE button to hold, with a shield integrity bar and a brace heat bar"><figcaption><strong>Solar brace.</strong> Hold to brace, release to vent heat; let go when the screen flashes orange before a surge.</figcaption></figure>
+<figure><img src="img/play/mg-medical.png" alt="MEDICAL TRIAGE minigame: a patient silhouette with wound markers, a health bar and a scanner tool"><figcaption><strong>Medical triage.</strong> Scan, reveal each wound, then match the treatment to its color, in the bracketed order.</figcaption></figure>
+<figure><img src="img/play/mg-forage.png" alt="FORAGE minigame: an alien valley with purple pods and a small creature, a FOOD counter and a DEPART · KEEP HAUL button"><figcaption><strong>Forage.</strong> Click creatures fast, pick plants at their gold glow, and never click a decoy.</figcaption></figure>
+<figure><img src="img/play/mg-breach.png" alt="HULL BREACH minigame: a corridor wall with black holes, a tray of patches, an oxygen bar and a sealed counter"><figcaption><strong>Hull breach.</strong> Drag a patch onto a hole, then click it to weld. Against a real clock.</figcaption></figure>
+<figure><img src="img/play/mg-salvage.png" alt="SALVAGE minigame: debris drifting in space above the ship's cargo bay, with energy and cargo counters"><figcaption><strong>Salvage.</strong> Hold on a drifting item to tractor it and drag it into the bay. Long drags burn energy.</figcaption></figure>
+<figure><img src="img/play/mg-engine-room.jpg" alt="The engine room: four highlighted faults labelled power relay, ignition array, coolant valve and fuel manifold, with RETURN TO BRIDGE in the corner"><figcaption><strong>Engine-room repair</strong> (the REPAIR job). Find and fix four faults, then kill the lights.</figcaption></figure>
+<figure><img src="img/play/mg-mining.png" alt="Mining: asteroids drifting across the bridge window, an ENERGY bar at 85%, rocks and materials counted at the top, and EXIT MINING"><figcaption><strong>Mining.</strong> Click rocks to crack them. Every click costs beam energy.</figcaption></figure>
+<figure><img src="img/play/mg-combat.png" alt="Combat on the bridge: the pirate captain on screen, their ship in the window, YOUR TURN, actions OFFER HARVEST, FIRE LASER, EVASIVE MANEUVERS, HULL PATCH, BOOST SHIELDS and ATTEMPT ESCAPE, hull and enemy bars, and the combat log"><figcaption><strong>Combat.</strong> Turn-based: pick an action, then they shoot back.</figcaption></figure>
+</div>
+
+<table>
+<tr><th>Minigame</th><th>Where it comes from</th><th>How to play</th></tr>
+<tr><td><strong>Scan</strong></td><td>The SCAN job; some events</td><td>Move the cursor onto the blinking blip on the radar and hold it there until the lock bar fills. The blip wanders: stay with it. Harder on longer trails.</td></tr>
+<tr><td><strong>Engine repair</strong></td><td>The REPAIR job (the engine room); engine-fault events (the restart sequence)</td><td><em>Engine room:</em> click each of the four highlighted faults and fix it: reset the four tripped breakers; flip the ignition switches to match the laminated reference card; hold the bleed valve until the gauge needle sits in the green (overshoot, and you must release and try again); reconnect the three fuel lines. Then turn off the lights to unlock the bridge. RETURN TO BRIDGE before the end abandons the repair. <em>Restart sequence:</em> the components light up in order; click them back in the same order from memory. A few wrong clicks and the drive goes to limp mode.</td></tr>
+<tr><td><strong>Medical</strong></td><td>Injury events</td><td>Turn on the scanner, then click each unknown wound to see what it needs. Apply the treatment that matches its color, in the order the brackets mark. The wrong treatment hurts the patient, and the patient will not wait forever.</td></tr>
+<tr><td><strong>Forage</strong></td><td>The FORAGE / GATHER / HUNT / SCAVENGE job</td><td>Targets pop out of cover at fixed spots. Animals vanish in about a second: click fast. Plants ripen: wait for the gold glow for the best yield, but past it they spoil (poor food and a morale hit). Decoys are eye-marked or oddly tinted, and clicking one poisons someone aboard. DEPART keeps your haul early; decoys get more common as the timer runs down.</td></tr>
+<tr><td><strong>Brace</strong></td><td>Solar-storm events</td><td>Hold the mouse button to brace: the shield holds, but heat builds. Release to vent. If heat hits 100% the brace fries. The screen flares orange about a second before a surge: release during the strike or take the hit. Shield remaining at the end is your score.</td></tr>
+<tr><td><strong>Breach</strong></td><td>Hull-breach events</td><td>Drag a patch from the tray onto a hole until it snaps in, then click it to weld (it glows orange when it holds). Drop a patch outside a hole and it falls; pick it up off the floor. One patch at a time. The countdown runs on a real clock; an engineer buys you a little more time per breach.</td></tr>
+<tr><td><strong>Salvage</strong></td><td>The SALVAGE job; some events</td><td>Click and hold on a drifting item to grab it with the tractor beam, drag it into the glowing cargo bay (or the hatch, inside a derelict) and release. The beam drains energy while on, so short drags are cheaper. Items that drift away are gone. Crates open on the results screen; sparking junk is worthless.</td></tr>
+<tr><td><strong>Mining</strong></td><td>The MINE job; some events</td><td>With crew aboard, first pick one to assist (each tilts the haul toward a different material), then BEGIN MINING. Click asteroids to crack them for materials; every click, hit or miss, drains the beam's energy. Big and rich rocks give more, hollow ones give nothing, and hits in a row build a chain. The run ends when energy or time runs out, or when you EXIT MINING. Then MINE AGAIN (another day) or RETURN TO SHIP.</td></tr>
+<tr><td><strong>Combat</strong></td><td>Hostile encounters, when a choice starts a fight</td><td>On your turn: <strong>FIRE LASER</strong> and click their ship to aim (or FIRE AT CENTER); <strong>EVASIVE MANEUVERS</strong> to halve the next hit; <strong>HULL PATCH</strong> once, with an engineer, when the hull is below half; <strong>BOOST SHIELDS</strong> once, with a Shield Module, to block the next hit; <strong>ATTEMPT ESCAPE</strong> to charge the FTL drive for a few turns while they keep shooting, then jump away for some fuel. A botanist or chef can offer a tribute on the first turn. If they surrender you can accept (less loot, better for morale) or finish them (full loot, and it is remembered). Win and you collect loot from their wreck.</td></tr>
+</table>
+
+<div class="warn"><p><strong>Quitting a minigame</strong> once it has begun keeps nothing and still spends the time. In an emergency, quitting means the worst result lands. Closing on the briefing, before BEGIN, is always free.</p></div>
+
+<h3 id="play-deadline">Deadlines and arriving late</h3>
+
+<p>Each trail has a deadline: the day the colony expects you. The day counter shows the days left, and ORDERS projects your arrival day at the pace you have set. If that projection drifts past the deadline, you are behind schedule, and the trail may let you know.</p>
+
+<p><strong>Being late never ends a run.</strong> When the deadline passes, your AI says so once and the ship flies on. You still arrive and still get your ending; the day counter switches to counting the days late, the report says how many, and every late day comes off your score. Arriving early adds to it.</p>
+
+<h3 id="play-endings">How a run can end</h3>
+
+<p><strong>Arrival.</strong> Reach the destination and the run is scored. The score weighs how much of your crew made it, how well-stocked the ship is (fuel, food, water, hull and morale), and how early or late you are, plus any extras such as soil surveys and a crop bonus. The score sorts the arrival into one of four tiers, from a triumphant <strong>MADE IT</strong> down to an arrival nobody is quite sure about, each with its own endings to discover. Each trail has its own scale, so a good Interstellar arrival is judged against the Interstellar trail. And if the crop is dead when you arrive, none of that matters: the crew made it, the mission did not, and the game will let you sit with that.</p>
+
+<p><strong>Ending early.</strong> A run can also end on the way:</p>
+<ul>
+<li>the <strong>fuel</strong> runs out and the ship is adrift;</li>
+<li>the <strong>hull</strong> fails;</li>
+<li>the <strong>captain</strong> dies (whether or not anyone else is left aboard);</li>
+<li>the crew's average <strong>morale</strong> hits zero and they mutiny;</li>
+<li>too many days with no <strong>food</strong>, no <strong>water</strong> or no <strong>oxygen</strong>;</li>
+<li>the <strong>crop</strong> dies.</li>
+</ul>
+<p>Some of these leave a door open. When the crop dies you can choose to keep flying, though your arrival can then only be the hollow kind. And a certain item can give a stranded ship one last chance. If the whole crew is lost but the captain lives, the captain flies on alone.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="play-tips">Tips for surviving</h2>
+
+<h3>Every trail</h3>
+<ul>
+<li><strong>The crop comes first.</strong> Check the crop card every stop. Keep its water share at or just above what it needs, TREAT pests promptly, and harvest when it is ready: the food (or the morale) is yours, and the plant starts again.</li>
+<li><strong>Read the tooltips.</strong> Every cost the game knows about is on a tooltip before you commit: days, supplies, morale, odds, and what happens if you fall short.</li>
+<li><strong>Mind the pips.</strong> Heavy jobs tax every crew member's morale. A few big jobs in a row can leave the crew miserable even when everything went well.</li>
+<li><strong>Dock at stations.</strong> Docking recharges active skills, stations have the biggest market, and only stations will heal your crew or patch your hull for gold. Waving off is free in time but expensive in options.</li>
+<li><strong>Salvage pays.</strong> Derelicts and wreckage are where steady gold and materials come from, and gold buys medbays, drydocks and upgrades.</li>
+<li><strong>Use your specialists' active skills.</strong> They recharge at the next station, so an unused one is wasted.</li>
+<li><strong>Watch the ORDERS projection.</strong> It tells you the day you will arrive and the day each supply runs out at your current settings.</li>
+<li><strong>SCAN before a fork</strong> when you can spare the day.</li>
+<li><strong>Do not burn Plaid forever.</strong> Fast is tempting; the engines, the fuel and the crew all pay for it.</li>
+</ul>
+
+<h3>Lunar: the gentle trail</h3>
+<ul>
+<li>Lunar forgives a lot. Use it to learn the screens, try the minigames and get to know a crew.</li>
+<li>Stations are plentiful, so spend gold freely on repairs and healing.</li>
+<li>With a short trail, every lost day is a bigger share of the deadline: do not rest more than you need to.</li>
+</ul>
+
+<h3>Mars: the thirsty trail</h3>
+<ul>
+<li>You leave short on water and food, and events here ask much more of both. Water is the supply most likely to bite.</li>
+<li>Do not over-water the crop "to be safe": give it what it needs and keep the rest for the crew. Ice from mining asteroids and water canisters are worth the time.</li>
+<li>A chef, sensible rations and regular harvests keep the larder going; a food crop pays for itself here.</li>
+<li>Trouble gets worse as the trail goes on. Reach the back half of the trip with supplies in hand, not scraping by.</li>
+</ul>
+
+<h3>Interstellar: the long trail</h3>
+<ul>
+<li>It is a long way through stranger places: voids, anomalies, long stretches between stations. Plan for long gaps between resupplies.</li>
+<li>The crew starts less cheerful. Keep morale healthy early; it is much harder to rebuild later.</li>
+<li>The hardest events wait for the final stretch. Bank fuel, hull and spare consumables for the end.</li>
+<li>The fabricator earns its keep here: keep some materials and service it at stations.</li>
+<li>Fuel matters over this distance. A pilot, sensible engine settings and a stock of fuel cells keep you from drifting.</li>
+</ul>
+
 </section>

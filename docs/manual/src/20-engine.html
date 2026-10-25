@@ -1,11 +1,783 @@
 <section class="curtain">
-<div class="part-title"><h1 id="engine">PART 2 · BEHIND THE CURTAIN</h1><p>Placeholder.</p></div>
-<div class="curtain-warning">Spoilers below.</div>
-<h2 id="lifecycle">The run lifecycle</h2>
+<style>
+  /* Part 2 diagrams: let each Mermaid chart use the full column (the shared
+     inline-block rule shrank every chart to its 60% min-width). */
+  .curtain .diagram .mermaid { display: block; min-width: 0; }
+  .curtain .diagram .mermaid svg { margin: 0 auto; }
+</style>
+<div class="part-title"><h1 id="engine">PART 2 · BEHIND THE CURTAIN</h1><p>How the game works underneath: the moving parts, how they talk to each other, and why the ship does what it does.</p></div>
+<div class="curtain-warning"><strong>Spoilers past this point.</strong> Part 2 opens the hood: how events are picked, how the score is worked out, what the crew is quietly keeping track of. If you'd rather discover all that the hard way (the traditional way, in space), close this part now and come back after a few voyages. Nothing here is required to play. It is, however, extremely satisfying to read after a run went sideways.</div>
+
+<p>This part describes concepts, not code. It explains each system in plain words and draws the connections between them. Where an exact number matters to understanding something, it gets a mention. Otherwise you'll read "a little", "a lot" and "much more likely", which is how the ship's crew would describe it too.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="eng-big-picture">The big picture</h2>
+
+<p>Trans-plant is one long-running story about one ship. Everything the game knows about that story lives in a single place, <strong>the run's state</strong>. Every other part either reads it, changes it, or both.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  Lib["Content library"]
+  MapGen["Map generator"]
+  State["The run's state"]
+  Screens["Screens"]
+  Events["Event system"]
+  Clock["Ship's daily clock"]
+  Games["Minigames and jobs"]
+  Fight["Combat"]
+  Check["Failure check"]
+  Ends["Endings"]
+  Rec["Records"]
+  Save["Saving"]
+  AI["The AI companion"]
+  Lib --> Events
+  Lib --> MapGen
+  MapGen --> State
+  Screens -->|"your choices"| State
+  State -->|"what to show"| Screens
+  Events -->|"outcomes"| State
+  Events --> Games
+  Events --> Fight
+  Games --> State
+  Fight --> State
+  Clock -->|"every day that passes"| State
+  State --> Check
+  Check -->|"a failure"| Ends
+  State -->|"reach the destination"| Ends
+  Ends --> Rec
+  State --> Save
+  Save -->|"Continue or Load"| State
+  AI -->|"its voice everywhere"| Screens
+</pre><figcaption>The game's moving parts. The run's state sits in the middle; almost every arrow goes into it or comes out of it.</figcaption></figure>
+
+<ul>
+  <li><strong>The content library</strong> is the game's data: trails, events, crew, captains, AI companions, crops, items, materials, recipes, endings, failures and a great many flavor lines. It is loaded once when the game starts and never changes during a run.</li>
+  <li><strong>The map generator</strong> builds a fresh route for the chosen trail at launch, so no two voyages share a map.</li>
+  <li><strong>The run's state</strong> is the voyage itself: supplies, crew, crop, cargo, the map and where you are on it, the day, earlier choices, and the log.</li>
+  <li><strong>Screens</strong> show the state and turn your clicks into changes: the cruise hub and Stop menu, encounters, Orders, the growbay, the crew dossier, the cargo hold, the market, the fabricator, the map.</li>
+  <li><strong>The event system</strong> decides what happens at each stop, runs the encounter you play through, and applies its outcome.</li>
+  <li><strong>The ship's daily clock</strong> charges each day that passes: food, water and air drawn, morale drifting, the crop growing, the deadline getting closer.</li>
+  <li><strong>Minigames and jobs</strong> are the hands-on work: scanning, mining, salvaging, foraging, repairs, medical emergencies and so on. Their result decides what lands.</li>
+  <li><strong>Combat</strong> is the ship-to-ship fight some events can start. It keeps its own little scoreboard during the fight, then hands the net result back.</li>
+  <li><strong>The failure check</strong> runs after anything changes, and ends the voyage the moment one of the ways to lose comes true.</li>
+  <li><strong>Endings</strong> write up the voyage: an arrival tier and score, or a failure card.</li>
+  <li><strong>Records</strong> remember finished voyages and each destination's best, separately from any save.</li>
+  <li><strong>Saving</strong> snapshots the state at safe moments, so Continue and Load can bring the voyage back.</li>
+  <li><strong>The AI companion</strong> you picked gives the whole thing a voice: event lines, the log, tips, warnings and a few real perks.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="eng-run-lifecycle">A run from start to finish</h2>
+
+<p>A voyage moves through a small number of states. Most of the time you are either <em>stopped at a stop</em> (the Stop menu open) or <em>in an encounter</em>. Flying a leg is instant: pressing RESUME pays the leg's cost and lands you at the next stop.</p>
+
+<figure class="diagram"><pre class="mermaid">
+stateDiagram-v2
+  direction TB
+  state "Title screen" as Title
+  state "Setup wizard" as Setup
+  state "Departure event at Earth Orbital Station, day 0" as Dep
+  state "Stopped at a stop, Stop menu open" as Hub
+  state "Flying a leg" as Leg
+  state "Arriving at the next stop" as Arr
+  state "The stop's event" as Ev
+  state "Station approach and dock" as Sta
+  state "Failure screen" as Fail
+  state "Arrival ending" as Ending
+  state "Records" as Rec
+  [*] --> Title
+  Title --> Setup : New voyage
+  Title --> Hub : Continue or Load
+  Setup --> Dep : LAUNCH
+  Dep --> Hub : Continue
+  Hub --> Leg : RESUME
+  Leg --> Arr
+  Arr --> Ev : an ordinary stop
+  Arr --> Sta : a station
+  Arr --> Ending : the destination
+  Ev --> Hub : Continue
+  Sta --> Hub : LEAVE STATION
+  Leg --> Fail : the leg itself fails you
+  Ev --> Fail : an outcome fails you
+  Hub --> Fail : a job or a wait fails you
+  Fail --> Arr : Keep flying or the beacon
+  Fail --> Rec : the voyage ends
+  Ending --> Rec
+  Rec --> [*]
+</pre><figcaption>The lifecycle of a voyage. Accepting a failure that offers a way on carries on from where it struck: a stop it interrupted on the way in still plays; otherwise you are back at the hub.</figcaption></figure>
+
+<h3>Setup and the departure</h3>
+<p>The setup wizard collects the trail, the AI, the captain's background, up to two crew, the crop and the ship's name (left blank, the ship draws one). LAUNCH turns those choices into a fresh state: the trail's starting supplies, everyone at full health, each crew member at the trail's starting morale, the captain's starting bonus, a small default loadout, and a freshly generated map. About a third of voyages also quietly load a <strong>stowaway</strong>, who stays hidden for now.</p>
+<p>Then the departure plays: one launch event at Earth Orbital Station on day 0. Its Continue opens the hub, stopped at the station, with the Stop menu up, exactly like every later stop.</p>
+
+<h3>The loop: stop, resume, arrive</h3>
+<p>After every event the ship is <em>stopped</em>, and the Stop menu is already open. RESUME is what flies. Before it travels, it checks a few things:</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  R["RESUME"] --> F{{"A during-wait event is waiting?"}}
+  F -->|yes| Shake["Refused: handle the event first"]
+  F -->|no| W{{"A REST or WAIT running?"}}
+  W -->|yes| Cancel["Call it off, the days stay spent"]
+  W -->|no| N{{"How many routes forward?"}}
+  Cancel --> N
+  N -->|one| Fly["Fly the leg"]
+  N -->|"none, at an undecided fork"| Fork["Play a fork event to pick the branch"]
+  N -->|"none or several"| Msg["A log line explains, nothing moves"]
+</pre><figcaption>What the RESUME button actually does. At a fork, the fork's own event decides the branch; after that, RESUME has exactly one place to go.</figcaption></figure>
+
+<p>A <strong>fork</strong> is a stop of its own. Arriving there plays a route-decision event, and the choice you make in it sets which branch you're on. From then on the map shows one way forward and RESUME takes it.</p>
+
+<h3>The end</h3>
+<p>Reaching the destination ends the voyage at once with an arrival ending. Anything that empties the ship of a way to keep going ends it with a failure. Two failures offer a way on: a <strong>dead crop</strong> (Keep flying) and an <strong>empty fuel tank</strong> when you carry an emergency beacon. Choosing either un-ends the voyage and plays the stop that the failure interrupted on the way in, so it can't be skipped for free.</p>
+
+<h3>Saving, Continue and Load</h3>
+<p>The game keeps one <strong>autosave</strong> (what Continue resumes) plus three manual slots in the pause menu (SAVE and LOAD). The autosave is written:</p>
+<ul>
+  <li>every time the hub is redrawn, which is every safe moment between actions;</li>
+  <li>when you enter an event, and at every step deeper into its layers;</li>
+  <li>the moment an outcome lands (so a reload can't offer the same choice again);</li>
+  <li>with a special marker the moment a job begins, a fight changes, or a failure that offers a way on appears.</li>
+</ul>
+<p>A manual SAVE is refused in the middle of an encounter or a job; the pause menu says why. A voyage that ended for good clears the autosave. A finished voyage can't be resurrected.</p>
+
 <figure class="diagram"><pre class="mermaid">
 flowchart LR
-  A[Title] --> B[Setup] --> C[Departure] --> D{Leg}
-  D --> E[Stop] --> D
-  D --> F[Arrival]
-</pre><figcaption>Placeholder diagram.</figcaption></figure>
+  L["Continue or Load"] --> Q{{"Where was the save made?"}}
+  Q -->|"at the hub"| H["Back at the hub, stopped"]
+  Q -->|"inside an event"| E["The same event, layer, NPC and opening"]
+  Q -->|"after a job began"| J["The job counts as quit, nothing kept, time spent"]
+  Q -->|"mid-fight"| C["Settled as an escape attempt played out"]
+  Q -->|"during REST or WAIT"| W["Called off, the days are spent"]
+  Q -->|"on a failure with a way on"| P["Back on that failure screen"]
+  Q -->|"during a fabricator print"| Fab["The print carries on where it was"]
+</pre><figcaption>What a reload brings back. The rule behind all of it: a reload is never an undo button.</figcaption></figure>
+
+<p>A reload mid-fight is generous only if the fight was already decided. If you had already won (a kill, a surrender, their retreat, your jump), that result lands. If you were in the defeat beat, the defeat lands. Otherwise the game plays out ATTEMPT ESCAPE for you, with the enemy firing at the drive the whole way, which is never better than playing on.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="eng-run-state">What the game remembers</h2>
+
+<p>Here is the run's state in plain terms. Everything below is saved with the voyage.</p>
+
+<table>
+  <tr><th>PART</th><th>WHAT IT HOLDS</th></tr>
+  <tr><td>Supplies</td><td><span class="res fuel">FUEL</span> <span class="res food">FOOD</span> <span class="res water">H2O</span> <span class="res o2">O2</span> <span class="res hull">HULL</span>, each 0 to its ceiling (some upgrades and captain bonuses raise a ceiling), plus <span class="res gold">GOLD</span>.</td></tr>
+  <tr><td>Crew</td><td>Who is aboard and in which role, each person's HP (the captain's too), each crew member's own morale and the reason it last moved, who has been warned at zero morale, open wounds waiting for treatment, active-skill charges, joined stowaways' identities, passengers.</td></tr>
+  <tr><td>Crop</td><td>Which crop, its growth and health, pests, who tends it, days since planting, whether the crew talks to it.</td></tr>
+  <tr><td>Cargo</td><td>Items (each trade good with its own value), materials, which are new, and the hold's capacity.</td></tr>
+  <tr><td>Flags</td><td>Facts about choices you made and things that happened: "chose the beta branch", "executed a surrendered pirate", "met the anomaly", and well over a hundred more.</td></tr>
+  <tr><td>Map and position</td><td>Every stop and its connections, where you are, where you've been, and any events a SCAN locked in ahead.</td></tr>
+  <tr><td>Day and deadline</td><td>Days elapsed, the trail's deadline, and the fraction of a day carried from leg to leg.</td></tr>
+  <tr><td>Standing orders</td><td>Pace, rations and the water split between crop and crew.</td></tr>
+  <tr><td>Ship systems</td><td>Fabricator wear (and a print in progress), drive heat from PLAID burns.</td></tr>
+  <tr><td>Event memory</td><td>Which one-time events have happened, when each repeatable event last fired, the hard-event streak, the post-combat window, which NPC each event rolled.</td></tr>
+  <tr><td>The log</td><td>The Ship's Log journal, plus what the AI has already said (tips, callbacks, warnings) so it doesn't repeat itself.</td></tr>
+</table>
+
+<p>Every screen reads the state. The diagram shows which screens <em>change</em> which parts.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart LR
+  Enc["Encounters and combat: supplies, gold, crew, crop, cargo, flags, orders, days"]
+  Stop["Stop menu jobs: supplies, gold, crew, cargo, days, the scan ahead"]
+  Ord["Orders: pace, rations, water split"]
+  Grow["Growbay: the crop, the water split, a day to treat"]
+  Dos["Crew dossier: HP, morale, crop, fuel, skipping a stop"]
+  Hold["Cargo hold, market, fabricator: cargo, gold, supplies, print days"]
+  State[("The run's state")]
+  Clock["Daily clock"]
+  Enc --> State
+  Stop --> State
+  Ord --> State
+  Grow --> State
+  Dos --> State
+  Hold --> State
+  Enc & Stop & Grow & Hold -->|"days spent"| Clock
+  Clock --> State
+  State -.->|"every screen reads it"| Read["What you see"]
+</pre><figcaption>Who writes what. Encounters can touch almost anything; Orders only ever changes the orders. Days never move on their own: every screen that spends time hands it to the daily clock.</figcaption></figure>
+
+<p>A few notes on the arrows. The Stop menu changes <em>position</em> through SCAN, which locks in what waits ahead. The crew dossier changes it through the pilot's Push Engines, which flies past the next stop. The growbay changes the orders because its water slider and the one in Orders are the same setting.</p>
+
+<h3>What isn't saved</h3>
+<p>Only the moment-to-moment bits are left out: text halfway through typing, the AI's speech bubble, a minigame or fight in progress (replaced by the markers described above), a wait in progress (a reload calls it off), and settings such as text speed and tips, which belong to you rather than to the voyage. The art seed <em>is</em> saved, so a reload shows the same backdrops and the same faces.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="eng-events">How an event happens</h2>
+
+<p>Every stop gets at most one event of its own. What it is depends on where you are, how the voyage is going, and what you did earlier.</p>
+
+<h3>What plays when you arrive</h3>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  A["Arrive at a stop"] --> D{{"The destination?"}}
+  D -->|yes| End1["Arrival ending"]
+  D -->|no| W{{"A station, with an untreated wound aboard?"}}
+  W -->|yes| Cr["A wound crisis takes the event's place"]
+  W -->|no| P{{"Pilot pushed the engines past it?"}}
+  P -->|yes| Hub1["Straight back to the hub, no event"]
+  P -->|no| S{{"A SCAN locked in an event here?"}}
+  S -->|"yes, and it can still happen"| Use["Use that event"]
+  S -->|"no, or it can't any more"| Draw["Draw one from the pool"]
+  Use --> T{{"A station?"}}
+  Draw --> T
+  T -->|yes| App["Station approach, the event plays inside the visit"]
+  T -->|no| Ev["Play the event"]
+  Draw -->|"nothing fits"| Quiet["A quiet stop, back to the hub"]
+</pre><figcaption>The arrival sequence. A wound crisis even beats Push Engines: you can't outrun an infection.</figcaption></figure>
+
+<h3>Stations</h3>
+<p>A station stop is a little visit rather than a single scene. On arrival, any passengers step off (and the rescued ones' families pay up), and anyone who was warned at zero morale and hasn't recovered walks off, before anything else happens. Then:</p>
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  A["Arrive at a station"] --> K{{"Is the drawn event a station scene?"}}
+  K -->|"no, a shipboard or open-space one"| E1["It plays first"]
+  K -->|yes| App["The approach: HAIL, DOCK, or wave off"]
+  E1 --> App
+  App -->|"wave off"| Off["Services closed for this stop, no time spent"]
+  App -->|"DOCK, maybe a parking fee"| Dock["Crew skills recharge"]
+  Dock -->|"a docking scene"| Dk["It plays as you dock"]
+  Dock -->|"an in-person scene, or none"| D2["The dock: a room for the scene, and Market Row"]
+  Dk --> D2
+  D2 -->|"LEAVE STATION"| Hub["The hub: station services open if you docked"]
+  Off --> Hub
+</pre><figcaption>A station visit. Sometimes the dockmaster hails you before you can, and sometimes docking costs a small fee. A room you've finished stays finished for the visit.</figcaption></figure>
+
+<h3>The pool: which events can appear</h3>
+<p>An event is <em>eligible</em> at a stop only if every one of its conditions holds right now:</p>
+<ul>
+  <li><strong>Stop type.</strong> Events are written for planets, stations, asteroid fields, derelicts, nebulae, the void, anomalies, or anywhere. Forks are special: only route-decision events can appear there, because the fork's event has to pick a branch.</li>
+  <li><strong>Trail.</strong> Some events belong to one or two trails only, which gives each trail its own texture.</li>
+  <li><strong>Planet biome.</strong> A scene written for one kind of world only fires on a planet of that kind (the same biome its art shows).</li>
+  <li><strong>Situations.</strong> Many events need a situation to be true: low on a supply, low crew morale, the start, middle or end of the journey, running behind schedule, a strained drive, a sick or pest-ridden crop, a dead crop you kept flying with, someone injured, a death earlier in the voyage, flying solo, the few stops after a fight, a worn or broken fabricator, a full or empty hold, a hidden stowaway past the early part of the trip.</li>
+  <li><strong>Story flags.</strong> A follow-up only joins the pool once the earlier choice that sets it up has happened.</li>
+  <li><strong>What you carry.</strong> A delivery or payoff event only fires while the story object is still in your hold. Jettison it and the payoff never comes.</li>
+  <li><strong>Who is aboard.</strong> A scene where a crew member speaks needs someone who can say it; a scene about a particular role needs that role aboard as crew; a crop story needs a living crop.</li>
+  <li><strong>Once only.</strong> Some events happen once per voyage. The departure and the halfway moment are one-of-a-kind too.</li>
+</ul>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  All["Every event in the library"] --> E["Keep the eligible ones"]
+  E --> Cool["Set aside anything that fired recently"]
+  Cool --> Wt["Weigh each candidate"]
+  Wt --> Pick["Random pick by weight"]
+  Pick --> St["Update the hard streak"]
+  W1["Difficulty table for this point in the trail"] -.-> Wt
+  W2["Branch label lean"] -.-> Wt
+  W3["Situation boost"] -.-> Wt
+  W4["Author's own weight"] -.-> Wt
+</pre><figcaption>Drawing from the pool. Everything eligible stays possible; the weights only make some far more likely than others.</figcaption></figure>
+
+<h3>Difficulty shifts later in a trail</h3>
+<p>Every event is tagged easy, medium, hard or ultra. Each trail has a difficulty table for its early stops. Past a point in the journey, the table slides steadily toward a harsher one by the time you reach the destination. The shift only changes the odds; it never adds or removes events. On the Interstellar trail, the ultra tier shows up only on the late legs.</p>
+
+<h3>Repeat cooldown and families</h3>
+<p>An event that can repeat sits out for the next few stops after it fires. Some events belong to a <strong>family</strong>, such as the traders or the pirates. A family cools down as one, so meeting one pirate crew keeps all the pirates away for a while. Within a family, which face you meet at a stop is fixed for that stop, so TRADE and a WAIT at the same stop bring the same trader. If every eligible event is cooling down, the stop still gets one, the one drawn longest ago, rather than going empty. Events locked in by a SCAN count as drawn for this purpose, so a scan can't line up the same scene twice in a row.</p>
+
+<h3>The hard-streak relief</h3>
+<p>The game counts hard (and ultra) events in a row. After a run of several, it eases off: the next couple of draws lean heavily toward easy and medium, and the late-trail shift is suspended for them. It is a pity timer for death spirals. A SCAN's look ahead doesn't count toward the streak.</p>
+
+<h3>Situation events</h3>
+<p>When a situation is active (low water, a sick crop, an injury), the events written for it get a large boost. They become likely, not guaranteed, so ordinary content still turns up during a crisis. A situation's events share one boost between them, so a well-stocked situation gives you <em>variety</em>, not more crisis scenes. The positional situations (start and end of the journey) only get a mild bump. Branch labels add their own lean on top: a hostile branch favors fights, a scientific one favors science, a safe one favors easy and peaceful scenes. More on labels in <a href="#eng-map">The map</a>.</p>
+
+<h3>Inside an event</h3>
+<p>Simple events are one screen: a body of text and a few choices, each leading to an outcome. Bigger ones are built from <strong>layers</strong>, like rooms you walk between. Each layer has its own narration, a line from your AI, maybe a line from the person you're talking to, and its own choices. Choices can lead deeper, go back, or end the event with an outcome.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  In["Enter the event"] --> Lay["A layer: AI line, narration, the other party's line, choices"]
+  Lay --> Ch{{"The choice you click"}}
+  Ch -->|"go deeper"| Lay
+  Ch -->|back| Lay
+  Ch -->|"an outcome"| Out["Outcome card"]
+  Ch -->|"a minigame"| MG["Play it, the result picks the outcome"]
+  Ch -->|"open fire, ram or flee"| Cbt["Combat or a quick resolve"]
+  Ch -->|"browse the wares"| Mkt["Market, then back to the same layer"]
+  Ch -->|"a station action"| Stn["Hail, dock, a dock room"]
+  MG --> Out
+  Cbt --> Out
+  Out --> Cont["Continue: the hub, or on through the station visit"]
+</pre><figcaption>The shape of an event. Revisiting a layer can show different text; an action used up at a stop stays used up there.</figcaption></figure>
+
+<p>The person across from you is rolled when the event starts (species, quirks, a name) and remembered, so revisits and reloads meet the same face. Many events also have alternate openings, rotated through the voyage, so a repeat reads differently.</p>
+
+<h3>Gates and locks</h3>
+<p>A choice can need a crew role, an item, gold, an earlier story flag, a living (or ailing) crop, a working fabricator, or room in the hold for what it grants. A locked choice stays visible and lists everything you're missing ("Need: Diplomat + 20g"). Story-gated choices just say so. A role you have can still be unable to help: someone hurt too badly can't answer a crew-gated choice, and the patient in a wound crisis can't treat themselves.</p>
+<p>The one stand-in: a captain trained as a xenobiologist can take a xenobiologist's choice when there isn't one aboard, at half the gains.</p>
+
+<h3>Previews</h3>
+<p>Every choice's tooltip tells everyone how long it takes and what it costs. Beyond that, some choices show a one-line preview of what they'll do:</p>
+<ul>
+  <li><strong>Posted terms.</strong> Some choices simply say what they do, such as a station botanist's advice.</li>
+  <li><strong>MARV's read.</strong> With MARV aboard, the costliest choice on screen shows its costs. ("The cost of accuracy is knowing how bad it is.")</li>
+  <li><strong>A perfect SCAN.</strong> At a stop you scanned perfectly, every choice shows its outcome.</li>
+  <li><strong>Instruments.</strong> A medical scanner shows every choice's outcome in a wound crisis; a Geiger counter flags every choice that can hurt the crew.</li>
+  <li><strong>The Academic captain's research.</strong> One choice's full outcome, once per station leg.</li>
+</ul>
+<p>Previews are worked out by the same rules the outcome uses, so a preview never promises a number the ship would change (an engineer's better repairs, a recycler's saved air, the trail's supply bite).</p>
+
+<h3>Effort checks and pips</h3>
+<p>Many choices carry <strong>effort pips</strong> (<span class="pips">●●●○○</span>). Each pip level costs every crew member some morale the moment you commit, and the cost climbs steeply as the pips go up. With no crew aboard, there is no morale to tax.</p>
+<p>Hands-on jobs (a wrench job, a calibration, a negotiation that might wobble) also have an <strong>effort check</strong>. The effort you bring is the captain's own hands, plus each listed specialist at their full value (half if wounded, half for a captain of that background), plus general help from everyone else, plus the right tool from the hold. The button shows the odds. Short of effort, you get a costlier version: thinner gains, extra days, and the job's own setback (or, for some jobs, a different outcome written for the botched attempt). Even a perfect crew keeps a little risk. Some repair jobs also scale their <em>time</em> by effort: a crew that can't contribute much takes up to twice as long, and a strong one finishes faster. A one-use kit is spent only when it actually changes the result.</p>
+
+<h3>What an outcome can change</h3>
+<p>An outcome can move any supply or gold (as a fixed amount or a share of what you have), morale (for the whole crew or one person), crop health, items and materials (as far as the hold has room), fabricator wear or repair, pests, standing orders, flags, and people: an injury, a bad wound, a death risk, healing, someone joining, a stowaway's fate. It also takes time, from no time at all up to a couple of weeks, and that time passes through the daily clock like any other day.</p>
+
+<figure class="diagram"><pre class="mermaid">
+sequenceDiagram
+  participant You
+  participant Enc as Encounter
+  participant Ship as Run's state
+  participant Clock as Daily clock
+  participant Chk as Failure check
+  You->>Enc: click a choice
+  Enc->>Enc: roll the effort check, if any
+  Enc->>Ship: pay the pips' morale, spend a kit, pay gold up front
+  Enc->>Ship: apply the outcome's effects
+  Ship->>Ship: role concerns react to what landed
+  Enc->>Clock: pass the outcome's days
+  Clock->>Ship: daily draws for each day
+  Enc->>Chk: anything fatal?
+  Chk-->>Enc: no
+  Enc->>You: outcome card, then Continue
+</pre><figcaption>Resolving a choice, in order. If the failure check says yes, the end screen replaces the outcome card.</figcaption></figure>
+
+<h3>Severity: injury, bad wound, death risk</h3>
+<p>Harm to people comes in three grades. An <strong>injury</strong> drops someone below the wound line. A <strong>bad wound</strong> does the same and stays open: unless it's treated before the next station, a wound crisis fires there. A <strong>death risk</strong> kills, unless a medic's training turns it into a bad injury (a crew medic often, a medic captain less often, neither can save themselves), or, failing that, a carried medkit sometimes does, and is used up.</p>
+
+<h3>Flags that come back</h3>
+<p>Choices leave flags behind, and flags echo. The diagram shows the four ways one decision can return.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart LR
+  C["A choice you make"] --> F["A flag is set"]
+  F --> G["Later events join the pool"]
+  F --> L["Later choices unlock"]
+  F --> B["The AI brings it up, a few legs later"]
+  F --> R["The Ship's Record at the end"]
+</pre><figcaption>One choice, four echoes. Callbacks wait at least two legs, and come at most every other stop.</figcaption></figure>
+
+<p>The AI's <strong>callbacks</strong> pick the weightiest memory that's waiting, at most one every other stop, and one is guaranteed after a few quiet legs. At the end, the <strong>Ship's Record</strong> lists up to five of the voyage's most notable choices as epilogue lines, in the order they happened.</p>
+
+<h3>Minigames from events</h3>
+<p>Some choices launch a minigame: a medical emergency, bracing against a solar surge, sealing a hull breach, a scan, an engine sequence, salvage or foraging. The event writes its own reward for each result (excellent, adequate, insufficient), and that is exactly what lands; the minigame's briefing and result card show those rewards, not a free-play haul. A medical emergency plays on a real patient (the worst hurt, the captain included) at their real HP, and the result lands on them. See <a href="#eng-minigames">Minigames and the Stop menu</a> for how quitting works.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="eng-daily-clock">The ship's daily clock</h2>
+
+<p>Time only moves when something spends it, and every way of spending it goes through the same daily clock: a leg's flight, an outcome's time cost, a Stop-menu job, each day of REST or WAIT, treating the crop, each day of a fabricator print. So the same rules apply whether a day is spent flying or fixing.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  D["A day passes"] --> Draw["Food, air and water drawn from the stores"]
+  Draw --> Mo["Morale drifts: rations, a hard burn on flying days, a thirsty crew"]
+  Mo --> Dry{{"Food, water or air at zero?"}}
+  Dry -->|yes| Dep["Everyone aboard hurt, morale falls, the days-at-zero count grows"]
+  Dry -->|no| Reset["The count resets"]
+  Dep --> Con["Role concerns: the pilot minds the pace, the chef the rations"]
+  Reset --> Con
+  Con --> Chk["Failure check"]
+  D -.-> Crop["The crop grows, heals or suffers, pests may appear"]
+</pre><figcaption>One day aboard. The crop's day is worked out the next time anything looks at it, using the same day-by-day rules.</figcaption></figure>
+
+<h3>Food, water and air</h3>
+<ul>
+  <li><strong>Food</strong> depends on rations (VENDING MACHINE eats half, PIG OUT half again as much), on mouths to feed (the captain, each crew member, any passengers; the engineer eats for two), and is trimmed by a chef aboard and an insulated cargo bay.</li>
+  <li><strong>Air</strong> is a slow draw set by the trail. An O2 recycler halves it, and a healthy crop makes some of the air itself.</li>
+  <li><strong>Water</strong> is one tank that both crop and crew drink from, at the trail's rate. The <strong>water split</strong> in Orders decides how it's shared. A botanist or a water purifier saves some of the crop's share, and the tank feels that saving.</li>
+</ul>
+
+<h3>The water split, both sides</h3>
+<p>The split is one value shown in two places (Orders and the growbay). The <em>crop's</em> side feeds the crop model: well under the crop's need slows growth, far under it hurts health, far over it rots the roots. The <em>crew's</em> side compares the crew's share with what the crop's need leaves them: the further short, the more morale it costs each day, and at the driest end people also lose a little HP each day. The split can't be pushed all the way to either side.</p>
+
+<h3>Morale drift</h3>
+<p>Every crew member's morale moves together with the group changes: rations (short rations sag, a pig-out lifts), a hard burn on flying days (LUDICROUS and PLAID tire people; LIGHT SPEED rests them), and the crew's water share. Once per leg, ARIA adds a little cheer, a chef who has food to cook adds a little more, and a healthy tomato or zinnia crop lifts spirits (sick zinnias drag them down). Then the role concerns add personal reactions on top (see <a href="#eng-crew">The crew</a>).</p>
+
+<h3>A leg</h3>
+<p>Flying a leg does a few things that a plain day doesn't:</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  R["RESUME"] --> Heal["Everyone heals a little, more with a medic"]
+  Heal --> Fuel["Fuel for the leg: the trail's budget per leg x pace x pilot and drive coil"]
+  Fuel --> Days["The leg's days pass, a fraction carried to the next leg"]
+  Days --> Strain["At PLAID the drive heats up and may strain"]
+  Strain --> Per["Per-leg perks: ARIA, the chef, solar array, purifier, soil sampler, crop mood"]
+  Per --> Chk{{"Failure check"}}
+  Chk -->|"a failure"| Fail["Failure screen, the stop waits"]
+  Chk -->|"all fine"| Arr["Arrive at the stop"]
+</pre><figcaption>What one RESUME costs. The final hop into the destination can't fail you for an empty tank: you made it.</figcaption></figure>
+
+<p>Each trail has a travel-day budget and a fuel budget, spread evenly over the legs you'll actually fly (a fork's detour included). Pace scales both: faster means fewer days and more fuel. PLAID also builds up <strong>drive heat</strong>: each PLAID leg in a row makes a strain more likely (the chance doubles each time), a slower leg cools it a step, and LIGHT SPEED rests it fully. A strain means the next stop draws an engine-strain event.</p>
+
+<h3>Wear</h3>
+<p>The hull doesn't wear out on its own; it only loses points to events, fights and the odd drive-coil misfire. The fabricator wears with every print and breaks at full wear (it misfires more as it wears).</p>
+
+<h3>When something runs out</h3>
+<p>A day at zero food, water or air hurts everyone aboard, the captain included, and drains morale. Each resource keeps a count of days in a row at zero, and enough of them in a row is a failure of its own: starvation, dehydration or suffocation. Air runs out fastest, food slowest. There's a grace rule: the span in which a resource first runs dry can never by itself reach the failure, so you always get at least one stop to react. The count resets the moment the resource is above zero again.</p>
+
+<h3>The deadline and the behind-schedule warning</h3>
+<p>Each trail has a deadline, a little longer than a careful run takes. Passing it never ends a voyage: the AI says so once, the ship keeps flying, and the score pays for every day late.</p>
+<p>The game keeps <strong>one arrival projection</strong>: days so far, plus the legs still to fly by the shortest route, each at the current pace plus an allowance for a typical stop. Orders shows it as ARRIVAL. Once a quarter of the trail is behind you, if that projection lands past the deadline, the behind-schedule situation turns on and its events can fire. Because both read the same projection, the warning fires exactly when Orders shows a late arrival.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart LR
+  Now["Days so far"] --> Proj["Projected arrival day"]
+  Legs["Legs left, shortest route"] --> Proj
+  Pace["Pace in force"] --> Proj
+  Proj --> Ord["Orders: ARRIVAL"]
+  Proj --> Late{{"Past the deadline, a quarter of the trail flown?"}}
+  Late -->|yes| Sit["Behind-schedule events can fire"]
+</pre><figcaption>One projection, two readers. Changing pace in Orders changes both at once.</figcaption></figure>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="eng-crew">The crew</h2>
+
+<p>The ship carries the captain and at most two crew. Each crew member holds a <strong>role</strong> (botanist, engineer, medic, pilot, chef, xenobiologist, diplomat) with a passive skill that is always on and an active skill used from the dossier, which recharges when you dock at a station.</p>
+
+<h3>Health</h3>
+<p>Everyone aboard has HP, the captain included. Below the <strong>wound line</strong> someone is <em>wounded</em>: their active skill is offline and their passive works at half strength (a wounded captain's own hands count half on hands-on jobs). Further down they're <em>too hurt to help</em> with crew-gated choices. At zero they die. Everyone heals a little each leg, more with a medic aboard and more again for the wounded with a medical scanner. The medic's Treatment, MEDBAY at a station, medkits and healing outcomes do the rest. A medic aboard also softens the direct damage people take, from poisoning, thirst, going without, or a fight.</p>
+
+<figure class="diagram"><pre class="mermaid">
+stateDiagram-v2
+  direction TB
+  state "Healthy" as H
+  state "Wounded, skill offline, passive halved" as W
+  state "Too hurt to help" as T
+  state "Bad wound, open" as O
+  state "Wound crisis at a station" as X
+  state "Dead" as D
+  H --> W : an injury
+  H --> O : a bad wound
+  O --> W : treated before the next station
+  O --> X : still open at the next station
+  X --> W : it goes well
+  X --> T : it goes badly
+  W --> T : more harm
+  T --> D : HP reaches zero
+  W --> H : healing
+  T --> W : healing
+  H --> D : a death risk nobody saves
+</pre><figcaption>A person's health. A death risk can be turned into a bad injury by a medic's training or a medkit.</figcaption></figure>
+
+<h3>Specialists and the captain</h3>
+<p>The captain has a background that matches one of the roles (or merchant, academic, veteran). It brings a starting bonus and that role's passive at <strong>half strength</strong>. A captain and a crew member of the same role don't stack: the better of the two counts. The captain can't stand in for a missing crew member on crew-gated choices, with the xenobiologist exception mentioned earlier.</p>
+
+<h3>Morale</h3>
+<p>Morale is <strong>per crew member</strong>; the captain has none. Group changes (outcomes, REST, rations, pace, water, deprivation, the effort tax, fights) hit everyone. A few outcomes name one person: the speaker, a role, or whoever is lowest.</p>
+<p>On top of that, each role <strong>minds its own part of the ship</strong>, and only the person in that role feels it:</p>
+<ul>
+  <li>the botanist: the crop losing or regaining health, and a harvest;</li>
+  <li>the engineer: hull damage, and a finished repair;</li>
+  <li>the medic: anyone hurt, and anyone lost;</li>
+  <li>the pilot: days at a crawl (and enjoys a fast burn);</li>
+  <li>the chef: short rations, and an empty galley;</li>
+  <li>the diplomat: any fight at all;</li>
+  <li>the xenobiologist: alien finds;</li>
+  <li>everyone: being wounded themselves.</li>
+</ul>
+<p>This is what lets one person drift away from the group. A lone crew member's concerns count half, so the whole crew's mood doesn't swing on one person's worries. The crew strip's MO bar tooltip says what last moved them.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  G["Group changes, everyone"] --> M["Each crew member's own morale"]
+  Rc["Role concerns, one person"] --> M
+  M --> Avg["The crew average"]
+  Avg -->|"below the low line"| Low["Low-morale events, warnings, shaky aim in fights"]
+  Avg -->|"zero"| Mut["Mutiny: the voyage ends"]
+  M -->|"one person at zero"| Warn["Warned at the hub"]
+  Warn -->|"still low at the next station"| Walk["Walks off there"]
+  Warn -->|"back up to the crisis line first"| Stay["Stays, the warning clears"]
+</pre><figcaption>Morale, from the individual up. A small passive lift isn't enough to cancel a warning; it takes REST, a good outcome or better rations.</figcaption></figure>
+
+<h3>Effort</h3>
+<p>Crew are also hands. On an effort check, a listed specialist contributes their full skill (half if wounded), everyone else adds general help, and the captain's own hands always count. That's why a two-person crew with the right roles finishes jobs a solo captain struggles with.</p>
+
+<h3>Deaths and leaving</h3>
+<p>Whatever road a crew member leaves by (death, the airlock, a dismissal, desertion, stepping down for a stowaway), they take everything that was theirs: the role, HP, skill charges, an open wound, morale, and any skill they had armed but not spent. A death is written into the Ship's Log as a memorial and sets a lasting flag. The voyage goes on as long as the captain lives. If the captain dies, it ends: <em>captain lost</em> with anyone else still aboard, or the autopilot ending if nobody is.</p>
+
+<h3>Stowaways and passengers</h3>
+<p>A hidden stowaway is revealed by an event once the trip is past its early part. You can welcome them (they join as crew in their own role if there's room and nobody holds it, otherwise they ride as a passenger), make room by having someone step down to ride as a passenger to the next station, or refuse. Rescued survivors work the same way: crew if there's room, otherwise a passenger who steps off at the next station, where their family pays a reward. A joined stowaway or survivor keeps their own name. Passengers eat like anyone else.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="eng-crop">The crop</h2>
+
+<p>The crop is the mission. It lives in the growbay (not in cargo) and has two numbers: <strong>growth</strong> and <strong>health</strong>.</p>
+
+<figure class="diagram"><pre class="mermaid">
+stateDiagram-v2
+  direction LR
+  state "Sprouting" as S1
+  state "Vegetative" as S2
+  state "Flowering" as S3
+  state "Maturing" as S4
+  state "Ready to harvest" as R
+  state "Dead" as D
+  [*] --> S1 : planted
+  S1 --> S2
+  S2 --> S3
+  S3 --> S4
+  S4 --> R : full growth
+  R --> S1 : HARVEST, then replant
+  S1 --> D : health hits zero
+  S4 --> D : health hits zero
+  D --> [*]
+</pre><figcaption>Growth stages. Death can come at any stage; only two are drawn here to keep it readable.</figcaption></figure>
+
+<h3>Growth and health, day by day</h3>
+<p>Each day the crop grows toward maturity at a rate set by its own maturity time, multiplied by its health and by every active modifier. Health moves by the sum of the modifiers' health effects. Every modifier the growbay lists is real and carries the numbers the day uses:</p>
+<ul>
+  <li><strong>Water</strong>: matched to the crop's need it slowly heals; under it growth stalls and, badly under, health falls; far over it rots the roots; a dry tank hurts it most.</li>
+  <li><strong>Temperature</strong>: the stop's environment (the void runs cold, anomalies hot) against the crop's ideal band.</li>
+  <li><strong>Light</strong>: nebulae and the void are dim, which slows light-hungry crops.</li>
+  <li><strong>Tending</strong>: whoever tends the bay adds growth (a botanist most, and a bonus to the yield).</li>
+  <li><strong>Talking to it</strong>: after a station botanist's advice, a small lasting growth bonus.</li>
+  <li><strong>Pests</strong>: slow growth and steadily eat health until treated.</li>
+</ul>
+<p>Each crop has its own weaknesses and strengths that scale these (fragile zinnias, water-sensitive tomatoes, slow-recovering sweet potatoes, wheat's vulnerability to blight, soybeans that recover faster after pests). Tomatoes are also drama-prone: now and then a leg brings a small growbay incident that nudges their health or the crew's mood either way.</p>
+
+<h3>Sickness, pests and treatment</h3>
+<p>Below its sick line, a crop is <em>sick</em>: the AI says so, crop-sickness events join the pool, and the botanist frets. Pests arrive by a small daily chance once the plant is established. They can be cleared by TREAT in the growbay (a day of work, which a botanist spares you), a crop treatment from the hold, or an event outcome. The botanist's Greenhouse Protocol restores some health directly, and a botanist makes crop recovery from events go further.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart LR
+  H["Healthy"] -->|"neglect, pests, cold, thirst"| S["Sick"]
+  S -->|"care: water matched, treated"| H
+  S -->|"health reaches zero"| D["Dead"]
+  H -->|"daily chance"| P["Pests"]
+  P -->|"TREAT, an item or an event"| H
+  D --> F["Crop-dead failure"]
+  F -->|"Keep flying"| K["A hollow voyage"]
+</pre><figcaption>The crop's health. A healthy crop also helps the air supply and, for tomatoes and zinnias, morale.</figcaption></figure>
+
+<h3>Harvest</h3>
+<p>At full growth the crop is ready. Harvest (from the growbay or the crop card) pays its yield: food for most crops (anything past a full store is packed into ration bricks, if there's room), morale for zinnias. The bay replants at once and starts a new cycle.</p>
+
+<h3>The crop dying</h3>
+<p>If health reaches zero, the crop-dead failure appears. It offers <strong>Keep flying</strong>. Accepting turns on a lasting "crop dead" situation, so a few aftermath events can appear, and the arrival will be <em>hollow</em> no matter how well the rest went.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="eng-map">The map</h2>
+
+<p>Each trail has a fixed length, a number of forks, and tables saying which kinds of stops are likely early on and later. At launch the route is generated fresh.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  A["Main route: Earth Orbital Station first, the destination last"] --> B["Each stop's type drawn, the trail's early odds sliding to its later odds"]
+  B --> C["Placement rules: no two alike in a row, no void early, no anomaly in the first legs"]
+  C --> D["Stations: the stop before the destination, and one in the first third"]
+  D --> F["Forks placed between stops, away from the ends, never back to back"]
+  F --> G["Each fork: two labeled branches of one to three stops"]
+  G --> H["The label leans its stop types and guarantees a signature stop"]
+  H --> I["Branches rejoin, every stop is named"]
+</pre><figcaption>How a route is built. Every rule is about keeping the trip readable and fair; the dice do the rest.</figcaption></figure>
+
+<h3>Forks and branch labels</h3>
+<p>Each fork has two branches, and each branch gets a label: hostile, lucrative, safe, corporate, derelict-heavy, scientific or agricultural. About a third of forks hide one branch's label ("???"); a hidden label still shapes its branch. Labels are real in two ways:</p>
+<ul>
+  <li>They <strong>lean the branch's stop types</strong> (a derelict-heavy lane fills with derelicts, a corporate one with stations, an agricultural one with planets), and every labeled branch is guaranteed at least one of its signature stops, so a label never lies.</li>
+  <li>They <strong>lean the events</strong> on every stop of the branch: hostile toward fights and hard scenes, lucrative toward rewards, safe toward easy and peaceful ones, scientific toward science, agricultural toward crop and food, corporate toward stations and traders.</li>
+</ul>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart LR
+  E0["Earth Orbital Station"] --> P1["Planet"] --> FK{{"Fork"}}
+  FK -->|"alpha: scientific"| A1["Anomaly"] --> A2["Nebula"]
+  FK -->|"beta: ???"| B1["Derelict"]
+  A2 --> M["Asteroid field"]
+  B1 --> M
+  M --> S["Station"] --> Dest["Destination"]
+</pre><figcaption>A small example route with one fork. Real trails are longer and the Interstellar trail has several forks.</figcaption></figure>
+
+<h3>Scanning ahead</h3>
+<p>SCAN draws the events waiting at the stops ahead <em>now</em> and locks them in, so what the scan reports is what you meet. A good scan reads the next stop (every branch of a fork); a perfect one reads two stops deep and also turns on outcome previews for every choice at those stops; a poor one reads only static. The report names each event and how hard it is. A locked-in event is checked again on arrival: if it can no longer happen (you sold the thing it needed, say), the stop draws afresh. The ship also announces some stop types as you approach (good mining ahead, a derelict, an unidentified signal).</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="eng-minigames">Minigames and the Stop menu</h2>
+
+<p>The Stop menu offers <strong>verbs</strong> that depend on the kind of stop: MINE in asteroid fields, SALVAGE at wrecks, FORAGE (or GATHER, HUNT, SCAVENGE) on planets and rocks, CONDENSE in nebulae with the right upgrade, SCAN, REPAIR, REST, the FABRICATOR, and the station services. TRADE appears when a trader is in range (every station has one; elsewhere each stop rolls once whether one is around, likelier near civilization); otherwise WAIT FOR TRADER takes its place. A verb with nothing to work on, like REPAIR on an intact hull, isn't offered at all.</p>
+
+<h3>How a job works</h3>
+
+<figure class="diagram"><pre class="mermaid">
+stateDiagram-v2
+  direction TB
+  state "Click the verb, the pips' morale is taken and held" as Click
+  state "Briefing" as Brief
+  state "Playing" as Play
+  state "Result card" as Res
+  state "Effects land, the job's days pass" as Land
+  state "Quit, nothing kept, the days pass anyway" as Quit
+  [*] --> Click
+  Click --> Brief
+  Brief --> [*] : close, the morale is refunded
+  Brief --> Play : BEGIN
+  Play --> Res : finished
+  Play --> Quit : QUIT or a reload
+  Res --> Land : close
+  Land --> [*]
+  Quit --> [*]
+</pre><figcaption>A Stop-menu job. Backing out before BEGIN costs nothing; after BEGIN, the only way out is through the time it costs.</figcaption></figure>
+
+<ul>
+  <li><strong>The effort tax</strong> is taken when you click, but held: closing the briefing (or leaving the mining field before your first run, or walking out of the engine room untouched) hands it back.</li>
+  <li><strong>BEGIN</strong> is the point of no return. The game marks the save, so a reload from here is a quit.</li>
+  <li><strong>Quitting</strong> keeps nothing, not even what was already in hand, and still spends the time. Harm already taken (a poisoning while foraging) stays taken.</li>
+  <li><strong>The result card</strong> grades the run (excellent, adequate or insufficient) and lists what lands, as it will really land: a full food store or hold is shown as left behind.</li>
+</ul>
+<p>Most jobs take a day. MINE takes a day per run. REST and WAIT pick a number of days and tick through them one at a time, with the full daily clock each day; waiting outside a station isn't safe: each day can bring a pirate, a distress call or an anomaly, which ends the wait and opens that event (a broken rest keeps the morale for the days it got). Station services (MEDBAY, DRYDOCK, FAB SERVICE) cost gold, not days. The fabricator charges per print and runs its days only while you watch it; closing it holds the job.</p>
+
+<h3>Minigames launched from events</h3>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart TD
+  C["An event choice launches a minigame"] --> B["Briefing lists the event's reward for each result"]
+  B -->|"close"| Back["Back to the event, morale refunded"]
+  B -->|"BEGIN"| P["Play"]
+  P -->|"a result"| T["The event's outcome for that result lands"]
+  P -->|"QUIT or reload"| Q["The worst result's losses and time land"]
+  T --> O["Outcome card"]
+  Q --> O
+</pre><figcaption>Event minigames differ in one way that matters: quitting can't beat playing badly, because a quit takes the poor result's losses.</figcaption></figure>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="eng-combat">Combat</h2>
+
+<p>A fight starts from an event choice that opens fire, or from a ram that doesn't get through (ramming works most of the time; when it doesn't, you take a knock and the fight starts anyway). Fleeing resolves straight to its own outcome. Every fight is fought from the bridge: their ship in the window, their captain on the feed. The fight tracks its own hull and crew-morale numbers, then hands the net result back to the ship.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart LR
+  You{{"Your turn"}} -->|"fire, evade"| Them{{"Their turn"}}
+  You -->|"attempt escape"| FTL["Drive spooling, they keep firing"]
+  FTL -->|"abort the jump"| You
+  Them -->|"they fire"| You
+  Them -->|"morale gone"| Mut["Mutiny"]
+  Mut -->|"wait"| Them
+  You -->|"tribute taken"| Trib["Tribute: they leave"]
+  You -->|"their ship destroyed"| Win["Salvage the wreck, or leave it"]
+  Them -->|"beaten and willing"| Sur["Surrender: accept, or finish them"]
+  Them -->|"they jump away"| Fled["They fled"]
+  Them -->|"our hull gives out"| Def["Defeated: limp away"]
+  FTL -->|"jump completes"| Esc["Escaped"]
+  Mut -->|"stand down"| Toll["Stood down: pay a toll"]
+</pre><figcaption>A ship-to-ship fight. Free actions (hull patch, boost shields) don't end your turn. A tribute that's taken ends the fight on the spot.</figcaption></figure>
+
+<h3>Your options</h3>
+<ul>
+  <li><strong>Fire</strong>: click their ship to aim. A shaky crew can miss; a keen one lands more critical hits; a xenobiologist who identifies the enemy adds damage.</li>
+  <li><strong>Evasive maneuvers</strong>: soften the next hit (less so with a frightened crew); a pilot adds a chance to dodge it entirely.</li>
+  <li><strong>Hull patch</strong> (engineer, once per fight, below half hull) and <strong>boost shields</strong> (with a shield module, once per fight, blocks the next hit) are free actions.</li>
+  <li><strong>Offer a tribute</strong> on the opening turn: the botanist's harvest or the chef's cookies, each a gamble costing food either way. Pirates who took the cookies remember them, and let you pass if you meet them again before the next station.</li>
+  <li><strong>Attempt escape</strong>: the drive spools for a few turns (fewer with a pilot) while they keep firing, though the spool makes you harder to hit. It costs fuel when it jumps.</li>
+</ul>
+
+<h3>Their side</h3>
+<p>Pirate ships vary by species: some are tougher, and some never surrender. On longer trails they hit harder and take more punishment. The diplomat softens their opening shot. A badly damaged pirate of a surrendering species usually offers terms, or sometimes just flees. If the crew's morale collapses mid-fight, they stop firing, and the only order left is to stand down. With REX aboard, the first hit of every fight lands on point-defense instead of the hull.</p>
+
+<h3>How fights end</h3>
+<ul>
+  <li><strong>Destroyed</strong>: salvage the wreck (full loot and a bonus roll, more days) or leave it (partial loot, back sooner).</li>
+  <li><strong>Surrender accepted</strong>: part of the loot, a morale lift. <strong>Finished them</strong>: the full loot, a morale hit, and a flag the galaxy remembers.</li>
+  <li><strong>Tribute taken</strong>, <strong>escaped</strong>, or <strong>they fled</strong>: no loot, the fight's costs only.</li>
+  <li><strong>Stood down</strong>: they take a toll of fuel and gold (a species that won't accept a yield treats it as a defeat).</li>
+  <li><strong>Defeated</strong>: the ship limps away with hull barely holding, a share of the cargo is taken, and people may be hurt or, rarely, killed (a medic and high morale make that rarer).</li>
+</ul>
+<p>Whatever happened, the diplomat minds the fight, the engineer minds each hull hit, and the few stops afterward count as a post-combat window for aftermath events.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="eng-scoring">How a run is scored and ended</h2>
+
+<p>Reaching the destination ends the voyage with an <strong>arrival</strong>. Its tier comes from a score worked out at that moment, from the crew who made it, what's left aboard, and the time.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart LR
+  Crop{{"Is the crop alive?"}} -->|no| Hol["Hollow: made it, it didn't"]
+  Crop -->|yes| Sc["The score"]
+  C1["Share of the launch crew still aboard"] --> Sc
+  C2["Average of fuel, food, water, hull and crew morale"] --> Sc
+  C3["Time left before the deadline, negative when late"] --> Sc
+  C4["Soil surveys logged"] --> Sc
+  C5["The crop's colony value"] --> Sc
+  Sc --> Br{{"The trail's bracket lines"}}
+  Br --> T1["Made it"]
+  Br --> T2["Mostly made it"]
+  Br --> T3["Barely made it"]
+  Br --> T4["Nobody's sure"]
+</pre><figcaption>The arrival score. Crew and supplies make the base; time is a big swing either way. Air isn't part of the average.</figcaption></figure>
+
+<ul>
+  <li><strong>The crop</strong> is the gate: a dead crop makes the arrival hollow whatever the numbers say. A living crop multiplies the score by its colony value (tomatoes only count if they arrive in decent health); living zinnias add nothing to the score but change the ending's final paragraph. The crop's condition (thriving or sick) also changes the ending's text.</li>
+  <li><strong>Crew</strong> is the share of the crew you launched with who are still aboard (a captain who chose to fly solo gets half credit).</li>
+  <li><strong>Supplies</strong> are the average of what's left, crew morale included.</li>
+  <li><strong>Time</strong> is the share of the deadline left in hand. It is weighted heavily, and the same rate runs backward once you're late, so every late day costs as much as an early day earns. Late arrivals also get endings that don't claim you were on time.</li>
+</ul>
+<p>Each trail draws its own bracket lines, calibrated so careful runs spread across the tiers by how well they went on <em>that</em> trail. The ending text is then assembled from the tier, the crop's condition, how the crew fared, the destination, and the Ship's Record of your notable choices.</p>
+
+<h3>Failures</h3>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart LR
+  Chk["After every change"] --> F1["Fuel empty, not on the last hop"]
+  Chk --> F2["Hull at zero"]
+  Chk --> F3["Captain dead"]
+  Chk --> F4["Crew morale averages zero: mutiny"]
+  Chk --> F5["Too many days without food, water or air"]
+  Chk --> F6["Crop dead"]
+  F1 -->|"carrying a beacon"| Way["A way on"]
+  F6 -->|"Keep flying"| Way
+  F2 --> Over["The voyage ends"]
+  F3 --> Over
+  F4 --> Over
+  F5 --> Over
+</pre><figcaption>The ways to lose. Only two offer a way on.</figcaption></figure>
+
+<p>The <strong>emergency beacon</strong> is one use: someone answers, and who it is is a roll. A friendly hauler refuels you for nothing, a corporate tug refuels you and sends an invoice, and the wrong people refuel you and then help themselves to your gold and a crate. <strong>Keep flying</strong> after a dead crop carries on toward a hollow arrival. Either way, the stop the failure interrupted still plays.</p>
+
+<h3>Records and bests</h3>
+<p>A voyage goes into the records once its ending is final: at once for an arrival or a terminal failure, or, for a failure that offers a way on, when you accept it (by reading the report, or by launching a new voyage over its save). The records keep the last ten voyages, newest first, and each destination's <strong>best</strong> arrival. Only arrivals with a living crop count for a best, a higher score wins, and on a tie the faster voyage does. Beating the best shows NEW BEST on the report. Records live apart from saves, so starting over never clears them.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="eng-ai">The AI companions</h2>
+
+<p>The AI you pick at setup is the voice of the whole voyage. Almost every line the ship says passes through it.</p>
+
+<figure class="diagram"><pre class="mermaid">
+flowchart LR
+  AI["Your AI companion"] --> E["Event lines, one per layer"]
+  AI --> L["The Ship's Log, written in its voice"]
+  AI --> T["First-run tips, one per stop"]
+  AI --> W["Supply and morale warnings"]
+  AI --> Cb["Callbacks to your past choices"]
+  AI --> Cr["Crop milestones and growbay remarks"]
+  AI --> G["Minigame briefings and verdicts"]
+  AI --> F["The combat log"]
+  AI --> Am["Ambient remarks at each stop"]
+  T --> B["The speech bubble at a stop"]
+  W --> B
+  Cb --> B
+  Am --> B
+</pre><figcaption>Where the AI's voice turns up. At a stop, its lines also show in a bubble over the ship: the newest three, with a first-run tip outlasting the chatter. RESUME clears the bubble; the lines stay in the log.</figcaption></figure>
+
+<ul>
+  <li><strong>Events</strong> carry a line written for each AI, so the same scene reads five ways.</li>
+  <li><strong>The Ship's Log</strong> records choices, outcomes, arrivals, fights and deaths in the AI's own register.</li>
+  <li><strong>Tips</strong> come one per new stop, the most urgent first (pests, a wound, low supplies, low morale), then an introduction to one system at a time. Each topic is said once per voyage, and the pause menu can switch them off.</li>
+  <li><strong>Warnings</strong> fire when a supply or the crew's morale crosses its low line going down, and again at a critical line. Recovering and dipping again warns again.</li>
+  <li><strong>The deadline</strong> passing is announced once, in the AI's voice.</li>
+</ul>
+
+<h3>What each AI's perk does</h3>
+<table>
+  <tr><th>AI</th><th>PERK, IN PRACTICE</th></tr>
+  <tr><td>ARIA</td><td>A little morale for every crew member on every leg. Small, steady, relentlessly upbeat.</td></tr>
+  <tr><td>MARV</td><td>Shows the costs of the costliest choice in every encounter before you pick.</td></tr>
+  <tr><td>REX</td><td>The first enemy hit of every fight is blocked, and the arcade minigames start with an extra life: one more mistake forgiven in the engine sequence, the first surge absorbed when bracing, more time on a breach, a slower drain on the salvage tractor.</td></tr>
+  <tr><td>CHIP</td><td>Cheaper stations: market wares, MEDBAY, DRYDOCK, FAB SERVICE, parking fees and gold spent inside station events.</td></tr>
+  <tr><td>AJOY</td><td>Hindsight: after an outcome, names a choice you didn't take and what it would have done.</td></tr>
+</table>
+<p>Perks never change which events appear. They change what you know (MARV, AJOY), what things cost (CHIP), or how hard the ship is to hurt and how cheerful it is (REX, ARIA).</p>
+
 </section>
