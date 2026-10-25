@@ -372,7 +372,8 @@ const overlaps = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
     ok(r.cs.tone !== 'good' && !r.cs.title, 'an ailing crop is not called healthy');
     // Per day decreases when the draw does (no decorative number): O2 recycler halves O2.
     const o2r = await page.evaluate(() => { const a = Tooltip.get('resource_o2')().rows.find(x => x.label === 'Per day').value; STATE.items.push('o2_recycler'); const b = Tooltip.get('resource_o2')().rows.find(x => x.label === 'Per day').value; const r0 = STATE.resources.o2; passDays(1); return { a, b, spent: Math.round((r0 - STATE.resources.o2) * 100) / 100 }; });
-    ok(Number(o2r.b) === Number(o2r.a) / 2 && Math.abs(o2r.spent - Number(o2r.b)) < 0.011, `O2 recycler: Per day ${o2r.a} → ${o2r.b}; a day really spends ${o2r.spent}`);
+    // (the row shows two decimals: 0.55 halves to 0.275, shown 0.28)
+    ok(Math.abs(Number(o2r.b) - Number(o2r.a) / 2) <= 0.0051 && Math.abs(o2r.spent - Number(o2r.a) / 2) < 0.011, `O2 recycler: Per day ${o2r.a} → ${o2r.b}; a day really spends ${o2r.spent}`);
     // AI quip while stopped: the speech bubble over the ship (ruling 91), voiced.
     await page.evaluate(() => { openStopMenu(); });
     const q = await page.evaluate(() => { pushCruiseLog('Test quip about the ferns.', { ai: true }); const b = document.getElementById('ai-bubble');

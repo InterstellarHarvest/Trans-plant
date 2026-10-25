@@ -135,7 +135,9 @@ const COSTED = `Object.values(EVENTS).find(e => !e.layers && e.active !== false 
         const btn = [...document.querySelectorAll('#enc-choices .enc-choice')].find(b => b.textContent.includes((ch.text || '').slice(0, 20)));
         const sub = btn.innerText; const locked = btn.classList.contains('locked');
         if (!locked) btn.click();
-        return { ev: ev.id, k, authored: ch.outcome.resources[k], after: k === 'gold' ? STATE.goldAmount : k === 'morale' ? crewMoraleRaw() : STATE.resources[k], locked, sub };
+        // The choice's effort pips cost morale up front (ruling 98): not part of the gain.
+        const tax = k === 'morale' && ch.effort ? effortTax(ch.effort) : 0;
+        return { ev: ev.id, k, tax, authored: ch.outcome.resources[k], after: k === 'gold' ? STATE.goldAmount : k === 'morale' ? crewMoraleRaw() : STATE.resources[k], locked, sub };
       }, find);
       await page.close(); return r;
     };
@@ -144,7 +146,7 @@ const COSTED = `Object.values(EVENTS).find(e => !e.layers && e.active !== false 
     const crew = await run({ captain: 'veteran', crew: ['xenobiologist', 'pilot'] });
     ok(none.locked, `no xeno at all: locked (${none.ev})`);
     ok(!cap.locked && /Captain stands in/.test(cap.sub), 'xeno captain unlocks it, marked as a stand-in');
-    ok(cap.after - 10 === Math.floor(cap.authored / 2) && crew.after - 10 === crew.authored, `half the gains (${cap.k}: captain +${cap.after - 10}, crew +${crew.after - 10}, authored +${cap.authored})`);
+    ok(cap.after - 10 + cap.tax === Math.floor(cap.authored / 2) && crew.after - 10 + crew.tax === crew.authored, `half the gains (${cap.k}: captain +${cap.after - 10 + cap.tax}, crew +${crew.after - 10 + crew.tax}, authored +${cap.authored}, effort tax ${cap.tax})`);
   }
 
   console.log('— Inventory USE');
