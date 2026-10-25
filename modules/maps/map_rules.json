@@ -3,7 +3,7 @@
     "description": "Map generation rules per trail difficulty. Single starting point, branches and reconnections, single destination. All paths lead to the final node. Harder branches offer better rewards but more risk. FTL/StS-style galactic map — visually distinct per trail.",
     "visual_note": "Lunar maps are blue-gray and close, rocky. Mars maps are warm amber, dusty. Interstellar maps are deep indigo to black with distant stars. The visual should tell you the difficulty before you read a label.",
     "repeat_cooldown_note": "Ruling 65: trails.*.repeat_cooldown_stops — a repeatable event (once: false) drawn at one stop stays out of that trail's pool for the next N stops. A stop where every eligible event is cooling down still draws: the least recently drawn. An event SCAN already locked in still fires.",
-    "supply_cost_note": "Ruling 68: trails.*.event_supply_cost_mult — {water, food} multipliers on what an event outcome costs in water and food (negative deltas only; gains, the daily draw, purchases, a fight's own tally and a resources_pct share are untouched). Applied once in the engine (eventSupplyCost via effectiveResDelta), so every preview shows the scaled number. 1 = as authored. Ruling 69: Mars also starts short of water and food (starting_resources 70, the tanks still hold 100). Ruling 96 retuned them toward ~90% careful wins on Mars and ~80% on Interstellar (Mars ×4 with a heavier water draw, water_per_day; Interstellar ×2.4).",
+    "supply_cost_note": "Ruling 68: trails.*.event_supply_cost_mult — {water, food} multipliers on what an event outcome costs in water and food (negative deltas only; gains, the daily draw, purchases, a fight's own tally and a resources_pct share are untouched). Applied once in the engine (eventSupplyCost via effectiveResDelta), so every preview shows the scaled number. 1 = as authored. Ruling 69: Mars also starts short of water and food (starting_resources 70, the tanks still hold 100). Ruling 96 retuned them toward ~90% careful wins on Mars and ~80% on Interstellar (Mars ×4 with a heavier water draw, water_per_day; Interstellar ×2.3).",
     "travel_note": "Rulings 97 and 99: trails.*.travel_days is the days the path takes at RIDICULOUS (the legs share it), set apart from base_days, the deadline, so a slow or unlucky run can arrive late (ruling 94: late never ends the run). travel_fuel_budget is the fuel the path burns at RIDICULOUS; o2_per_day is the crew's daily breathing before the healthy crop's and the recycler's share.",
     "score_note": "Ruling 99: trails.*.score_brackets are the arrival score floors for legendary / good / rough (below rough: pyrrhic; a dead crop is hollow whatever the score), calibrated per trail on careful sims so careful arrivals spread across the tiers: about a fifth legendary, most good, a real rough share."
   },
@@ -83,7 +83,7 @@
       "forks": 2,
       "base_days": 184,
       "travel_days": 144,
-      "travel_fuel_budget": 65,
+      "travel_fuel_budget": 72,
       "o2_per_day": 0.55,
       "water_per_day": 0.42,
       "starting_resources": {
@@ -201,8 +201,8 @@
       },
       "repeat_cooldown_stops": 4,
       "event_supply_cost_mult": {
-        "water": 2.4,
-        "food": 2.4
+        "water": 2.3,
+        "food": 2.3
       },
       "score_brackets": {
         "legendary": 101,
