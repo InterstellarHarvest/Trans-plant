@@ -1,5 +1,6 @@
-// Window-fill check: cabinet fills the window (letterboxed) at large and
-// small sizes; real clicks at scaled coordinates still land.
+// Window-fill check: cabinet fills the window (letterboxed) at large sizes
+// and stays 1× in a window smaller than the frame, which scrolls instead
+// (ruling 102); real clicks at scaled coordinates still land.
 const { chromium } = require('playwright');
 const URL = process.env.URL || 'http://localhost:8177/index.html';
 let pass = 0, fail = 0;
@@ -15,10 +16,16 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     await page.evaluate(() => { applySetupToState({ trail: 'mars', ai: 'marv', captain: 'veteran', crew: ['engineer', 'pilot'], crop: 'wheat', ship: 'Fill' }); STATE.stowaway = null; });
     await page.waitForTimeout(300);
     const r = await page.evaluate(() => { const b = document.getElementById('game').getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height, sw: document.documentElement.scrollWidth, sh: document.documentElement.scrollHeight }; });
-    const s = Math.min(w / 960, h / 640);
+    const s = Math.max(1, Math.min(w / 960, h / 640));
+    const small = w < 960 || h < 640;
     ok(Math.abs(r.w - 960 * s) < 1 && Math.abs(r.h - 640 * s) < 1, `${w}×${h}: cabinet ${Math.round(r.w)}×${Math.round(r.h)} (scale ${s.toFixed(2)})`);
-    ok(r.x >= -0.5 && r.y >= -0.5 && r.x + r.w <= w + 0.5 && r.y + r.h <= h + 0.5, `${w}×${h}: fully on screen, centred (left ${Math.round(r.x)}, top ${Math.round(r.y)})`);
-    ok(r.sw <= w && r.sh <= h, `${w}×${h}: no scrollbars`);
+    if (small) {
+      ok(Math.abs(r.x) < 0.5 && Math.abs(r.y) < 0.5, `${w}×${h}: anchored top-left, never cut off (left ${Math.round(r.x)}, top ${Math.round(r.y)})`);
+      ok(r.sw >= 960 && r.sh >= 640, `${w}×${h}: the page scrolls to the whole frame (${r.sw}×${r.sh})`);
+    } else {
+      ok(r.x >= -0.5 && r.y >= -0.5 && r.x + r.w <= w + 0.5 && r.y + r.h <= h + 0.5, `${w}×${h}: fully on screen, centred (left ${Math.round(r.x)}, top ${Math.round(r.y)})`);
+      ok(r.sw <= w && r.sh <= h, `${w}×${h}: no scrollbars`);
+    }
     // Real mouse click at the scaled position of a crew slot → dossier opens.
     const slot = await page.$$('.crew-slot');
     await slot[1].click();

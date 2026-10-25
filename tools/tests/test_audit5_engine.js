@@ -323,8 +323,9 @@ const bubble = page => page.evaluate(() => {
     };
     for (const [vw, vh] of [[1280, 800], [800, 600]]) {
       await page.setViewportSize({ width: vw, height: vh }); await sleep(400);
-      // Far from the corner, where a 960-over-958 scale drifted ~2 px.
-      const { target, cc } = await crosshairAt(0.95, 0.9);
+      // Far from the corner, where a 960-over-958 scale drifted ~2 px (a
+      // window smaller than the frame scrolls — stay inside the view).
+      const { target, cc } = vw < 960 ? await crosshairAt(0.78, 0.85) : await crosshairAt(0.95, 0.9);
       const err = cc ? Math.max(Math.abs(cc.x - target.x), Math.abs(cc.y - target.y)) / cc.s : 99; // in game pixels
       ok(err <= 0.75, `${vw}×${vh}: the crosshair is drawn under the pointer (off by ${err.toFixed(2)} game px; pointer ${target.x.toFixed(1)},${target.y.toFixed(1)}, drawn ${cc && cc.x.toFixed(1)},${cc && cc.y.toFixed(1)})`);
     }
