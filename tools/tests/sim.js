@@ -5,6 +5,12 @@
 // (policy suffix :N), a per-cause resource ledger, and a verb sampler policy.
 // :salvage salvages once at every stop that offers it; :farm mines once at
 // every asteroid field, nebula and derelict.
+// Every policy but random provisions: with water or food under 40 it buys
+// water canisters / ration bricks back up to 60 at a station (no selling),
+// seeks a lane trader for them, and takes its market's shelf; it also
+// takes crop_dead's "Keep flying". :shop is the full market visit on top
+// of that: at every station it sells spare materials and trade goods and
+// tops fuel, food and water up to its targets whatever they stand at.
 // usage: node sim.js <runsPerCell> <policies,comma> <trails,comma> [outfile]
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -59,7 +65,38 @@ function installHarness(policy) {
     for (let r = 0; r < runs; r++) { const n = Math.max(3, Math.round(13 + (Math.random() + Math.random() + Math.random() - 1.5) * 6)); for (let i = 0; i < n; i++) { const x = Math.random() * 17; const m = x < 6 ? 'minerals' : x < 12 ? 'scrap' : x < 15 ? 'metal' : x < 16 ? 'exotic' : 'biocomponent'; inv[m] = (inv[m] || 0) + 1; } tot += n; }
     S.matsGained += tot; S.mineVisits = (S.mineVisits || 0) + 1; onDone({ inventory: inv, runs }); };
   window.openEngineRepair = (onDone) => { const ok = Math.random() < 0.75; onDone({ fixedCount: ok ? 4 : 2, allFixed: ok }); };
-  window.openMarket = (opts, onClose) => { if (onClose) onClose(); };
+  // One supply bought at the shelf price (items.json base_price × the
+  // standing discount: what a station's and a lane trader's market both
+  // charge), at most 8 per call, while want() holds and the hold has room.
+  window.__buySupply = (id, base, want) => {
+    const price = stationPrice(base); let n = 0;
+    while (want() && STATE.goldAmount >= price && n < 8) {
+      if (!grantItem(id)) break;
+      window.__ctxTag = 'shopBuy:' + id; STATE.goldAmount -= price; window.__ctxTag = ''; n++;
+      S.shopBuys = S.shopBuys || {}; S.shopBuys[id] = (S.shopBuys[id] || 0) + 1;
+    }
+    return n;
+  };
+  // Low on water or food (under 40, counting what's in the hold): buy it
+  // back up to 60. Returns whether anything was short.
+  window.__provision = () => {
+    const R = STATE.resources, cnt = id => STATE.items.filter(x => x === id).length;
+    const base = id => (itemDef(id) || {}).base_price;
+    const low = (k, id) => R[k] + 10 * cnt(id) < 40;
+    const short = low('water', 'water_canister') || low('food', 'ration_brick');
+    if (low('water', 'water_canister')) window.__buySupply('water_canister', base('water_canister'), () => R.water + 10 * cnt('water_canister') < 60);
+    if (low('food', 'ration_brick')) window.__buySupply('ration_brick', base('ration_brick'), () => R.food + 10 * cnt('ration_brick') < 60);
+    if (short) S.provisions = (S.provisions || 0) + 1;
+    return short;
+  };
+  // The market modal closes at once; a provisioning policy first takes
+  // what it is short of off a station's or a lane trader's shelf (both
+  // stock canisters and bricks; the black market and surplus bin don't).
+  window.openMarket = (opts, onClose) => {
+    opts = opts || {};
+    if (window.__pol !== 'random' && !opts.sinister && opts.vendor !== 'surplus') window.__provision();
+    if (onClose) onClose();
+  };
   const realEnd = window.endRun;
   window.endRun = function (end) {
     window.__end = { kind: end.kind, type: end.module && end.module.failure_type, id: end.module && end.module.id, bracket: end.kind === 'ending' ? scoreBracket() : null, score: end.kind === 'ending' && typeof scoreValue === 'function' ? Math.round(scoreValue()) : null };
@@ -169,11 +206,16 @@ function step() {
   }
   { const su = cargoSlotsUsed(), sc = cargoCapacity(); S.slotPeak = Math.max(S.slotPeak || 0, su / sc); if (su >= sc) S.fullSteps = (S.fullSteps || 0) + 1; S.steps = (S.steps || 0) + 1; }
   if (STATE.cropGrowth && STATE.cropGrowth.health <= 0 && S.cropDeadAt == null) S.cropDeadAt = STATE.daysElapsed;
+  const greedy = P !== 'random';
+  // crop_dead offers "Keep flying" (failures.json continue_option): a
+  // careful player presses on to arrive without the crop.
+  if (greedy && STATE.ended && window.__end && window.__end.type === 'crop_dead' && typeof endContinueRun === 'function') {
+    S.keptFlying = STATE.daysElapsed; window.__end = null; endContinueRun(); return { wait: 300 };
+  }
   if (STATE.ended || scr === 'screen-end') return { done: true };
   for (const ov of document.querySelectorAll('.overlay.active')) { if (ov.id !== 'overlay-market') ov.classList.remove('active'); }
   document.body.classList.remove('modal-open');
 
-  const greedy = P !== 'random';
   // ---------- ENCOUNTER ----------
   if (scr === 'screen-encounter') {
     const enc = document.getElementById('screen-encounter');
@@ -225,12 +267,16 @@ function step() {
       if (ev && (ev.id === 'event_encounter_trader_001' || ev.family === 'trader') && window.__wantBuy) {
         const fuelRe = /fuel cell/i, foodRe = /rations|ration crate/i;
         const leadsTo = (c, re) => !!(c.next && ev.layers && ev.layers[c.next] && (ev.layers[c.next].choices || []).some(x => re.test(x.text || '')));
+        // Water is only on the trader's shelf (BROWSE THE WARES: the
+        // openMarket stub buys it); food is in the menus and on the shelf.
+        const shelf = c => c.open_market && !c.gate;
         const want = chs.find(c => fuelRe.test(c.text || '') && STATE.resources.fuel < 75)
           || chs.find(c => foodRe.test(c.text || '') && STATE.resources.food < 40)
           || chs.find(c => STATE.resources.fuel < 75 && leadsTo(c, fuelRe))
           || chs.find(c => STATE.resources.food < 40 && leadsTo(c, foodRe))
+          || chs.find(c => (STATE.resources.water < 40 || STATE.resources.food < 40) && shelf(c))
           || (ev.id === 'event_encounter_trader_001' ? chs.find(c => /pitch/i.test(c.text || '')) : null);
-        if (want) { if (/fuel cell/i.test(want.text)) { S.traderBuys++; S.fuelBought++; } else if (/rations/i.test(want.text)) S.traderBuys++; ch = want; }
+        if (want) { if (/fuel cell/i.test(want.text)) { S.traderBuys++; S.fuelBought++; } else if (/rations/i.test(want.text) || shelf(want)) S.traderBuys++; ch = want; }
         if (!want) window.__wantBuy = false;
       }
       if (!ch) {
@@ -343,13 +389,15 @@ function step() {
             S.goodsSold = (S.goodsSold || 0) + 1; S.goodsGold = (S.goodsGold || 0) + r.paid; S.fenceWouldPay = (S.fenceWouldPay || 0) + (f || r.paid);
           }
         }
-        const buy = (id, base, want) => { let n = 0; while (want() && STATE.goldAmount >= stationPrice(base) && n < 8) { if (!grantItem(id)) break; window.__ctxTag = 'shopBuy:' + id; STATE.goldAmount -= stationPrice(base); window.__ctxTag = ''; n++; S.shopBuys = S.shopBuys || {}; S.shopBuys[id] = (S.shopBuys[id] || 0) + 1; } };
+        const buy = window.__buySupply;
         const cnt = id => STATE.items.filter(x => x === id).length;
         const fuelNeed = (P === 'fast' || P === 'plaid') ? 90 : P === 'ludi' ? 70 : 50;
         buy('fuel_cell', (window.__prices || {}).fuel_cell || 12, () => R.fuel + 15 * cnt('fuel_cell') < fuelNeed + 30);
         buy('ration_brick', 6, () => R.food + 10 * cnt('ration_brick') < 70);
         buy('water_canister', 8, () => R.water + 10 * cnt('water_canister') < 70);
       }
+      // Without :shop, a station is still where a short ship restocks.
+      if (!window.__shop && node.node_type === 'station' && !acts.provisioned) { acts.provisioned = true; window.__provision(); }
       if (typeof cropWaterNeed === 'function') setWaterSplit(cropWaterNeed());
       // consumables
       const useIt = (id, cond) => {
@@ -385,7 +433,8 @@ function step() {
         if (node.node_type === 'station' && peopleAboard().some(r => hpOf(r) < 60) && STATE.goldAmount >= 30 && !acts.did.medbay) { S.medbay++; if (doVerb(/MEDBAY/, 'medbay')) return { wait: 50 }; }
         if (R.hull < (P === 'stopper' ? 85 : 60) && (acts.did.repair || 0) < 2 && doVerb(/^REPAIR/, 'repair')) return { wait: 50 };
         if (crewMoraleRaw() != null && crewMoraleRaw() < (P === 'stopper' ? 80 : 40) && (acts.did.rest || 0) < 2 && doVerb(/^REST/, 'rest')) return { wait: 50 };
-        if (R.fuel < (P === 'stopper' ? 80 : 55) && STATE.goldAmount >= 12 && !acts.did.trade) { window.__wantBuy = true; if (doVerb(/^TRADE$/, 'trade')) return { wait: 50 };
+        const needSupply = R.fuel < (P === 'stopper' ? 80 : 55) || R.water < 40 || R.food < 40;
+        if (needSupply && STATE.goldAmount >= 8 && !acts.did.trade) { window.__wantBuy = true; if (doVerb(/^TRADE$/, 'trade')) return { wait: 50 };
           // No trader in range (presence roll): wait for one, once per stop.
           if (!acts.did.wait_for_trader && doVerb(/^WAIT FOR TRADER$/, 'wait_for_trader')) return { wait: 50 }; }
         if (P === 'stopper') {
