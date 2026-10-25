@@ -1,6 +1,6 @@
 # Owner rulings
 
-The owner's design rulings, numbered as in `resources/PARITY_AUDIT.md` Tier C. Where a ruling and a demo disagree, the ruling wins. Code comments cite them as "ruling N" (46a/46b and 47a/47b are the two halves of 46 and 47; "owner ruling 2026-10-11 #12" is ruling 12). `tools/lint_code.js` checks that every cited number is listed here. New rulings take the next number.
+The owner's design rulings, numbered as in `resources/PARITY_AUDIT.md` Tier C. Where a ruling and a demo disagree, the ruling wins. The demos are canon but can be improved on (owner 2026-10-25): every change from a demo is recorded as a ruling that names the demo, and is listed under "Changes from the demos" below. The demo files themselves are never edited. Code comments cite them as "ruling N" (46a/46b and 47a/47b are the two halves of 46 and 47; "owner ruling 2026-10-11 #12" is ruling 12). `tools/lint_code.js` checks that every cited number is listed here. New rulings take the next number.
 
 Rulings 1–25 date from 2026-10-11 and 26–56 from 2026-10-12.
 
@@ -112,3 +112,30 @@ Rulings 1–25 date from 2026-10-11 and 26–56 from 2026-10-12.
 106. The pilot is Lindqvist (owner 2026-10-24): Reeves read too close to Reyes the chef. The sprite id stays.
 107. Recipes are named for what they make (owner 2026-10-24): the fabricator's recipe labels match their items (Repair Kit, Crop Treatment, Fuel Cell, Ration Brick); no item is renamed. This overrides demo-fabricator's longer labels.
 108. Behind schedule means projected late (owner 2026-10-24 follow-on to ruling 99): with the trimmed deadlines the 90% projection fired in nearly every run; the warning and its events now trigger when the run is projected to arrive late.
+109. Stop-menu jobs show their effort as pips only (owner 2026-10-25): the row no longer adds "−n MO" after the pips; the tooltip states the morale cost ("Effort n/5 · costs n morale"). This restores demo-cruise's job rows, which never showed the number, and matches the event choices.
+
+## Changes from the demos
+
+Rulings that change, drop or add to something a demo shows (the demo files are kept as they are):
+
+| Ruling | Demo | Change |
+|---|---|---|
+| 8 | demo-cruise | The HUD pill stays: an addition, the only place O2/hull/morale show on the cruise. |
+| 13 | demo-inventory | The merchant appraisal line is deleted. |
+| 14 | demo-inventory | Item provenance ("ACQUIRED DAY n · place") is dropped. |
+| 16 | demo-cruise | No dot HUD on the cruise (the encounter demo's dots elsewhere). |
+| 17 | demo-cruise | TIME PAUSED does not replace the day counter; gold moves into the header. |
+| 18 | demo-cruise | Bottom right is 2 × 3 wide labelled bars, per the owner's mockup. |
+| 23 | demo-cruise | The crew strip always shows three slots, an empty one as a dashed card; a third joiner rides as a passenger. |
+| 24 | all demos | O2 is pale ice #b8e6ee, never the water blue the demos shared. |
+| 46 | demo-cruise, demo-mining | A forced stop skips the one-verb menu; mining's overlay is its own route, no encounter wrapper. |
+| 86 | demo-cruise | The crop card's stage line names the crop's worst problem; the demo's alert LED stays. |
+| 89 | demo-title | A fourth title button, RECORDS, under the demo's three (the block keeps the demo's centre). |
+| 91 | demo-cruise | The AI speaks at a stop in a speech bubble over the ship. |
+| 92 | demo-setup, demo-cruise | The departure plays at the station on day 0, then the hub opens stopped there. |
+| 95 | minigames, mining, engine repair, encounter, combat demos | AJOY's lines are rewritten to her passive-aggressive definition. |
+| 102 | all demos | The frame never scales below 1×; a small window scrolls. |
+| 103 | demo-endings | Every failure card (BREACH and AUTOPILOT too) shows its epitaph and Ship's Record line. |
+| 107 | demo-fabricator | Recipe labels match the items they make. |
+| 109 | demo-cruise | (Restores the demo) Stop-menu job rows show pips only. |
+
