@@ -4088,6 +4088,8 @@ const ORDERS_BASE = {
   // Balance pass 2026-10-10 (audit sim: every resource sat near full,
   // ~95% of arrivals were legendary): travel is spread over the legs
   // actually flown (pathLegs), and consumption bites.
+  // Defaults for a trail that authors no travel_days / travel_fuel_budget /
+  // o2_per_day (map_rules.json; see trailNumber).
   legDaysFrac:      0.60, // travel-day budget ≈ 60% of baseDays at RIDICULOUS along the path
   travelFuelBudget: 55,   // RIDICULOUS fuel along the whole path (PLAID needs fuel cells) — at 45 fuel never pressed, even at PLAID
                           // (a flat 3/leg starved the 15-node trail — two independent Interstellar runs ended fuel-dry)
@@ -4274,8 +4276,21 @@ function pathLegs() {
   STATE._pathLegs = Math.max(1, legs); STATE._pathLegsFor = STATE.nodes;
   return STATE._pathLegs;
 }
+/* A trail's own travel and supply numbers (map_rules.json): travel_days,
+   the days its path takes at RIDICULOUS (ruling 99 sets the deadline,
+   base_days, apart from it so a slow run can arrive late);
+   travel_fuel_budget, the fuel that path burns; o2_per_day, the air the
+   crew breathe (ruling 97); water_per_day, the ship's water draw (ruling
+   96). null when the trail doesn't author it. */
+function trailNumber(k) {
+  const t = MOD.map_rules && MOD.map_rules.trails && MOD.map_rules.trails[STATE.trail];
+  return t && Number.isFinite(t[k]) && t[k] > 0 ? t[k] : null;
+}
+function travelDayBudget() {
+  return trailNumber('travel_days') ?? STATE.baseDays * ORDERS_BASE.legDaysFrac;
+}
 function fuelPerLegBase() {
-  return ORDERS_BASE.travelFuelBudget / pathLegs();
+  return (trailNumber('travel_fuel_budget') ?? ORDERS_BASE.travelFuelBudget) / pathLegs();
 }
 /* Resource ceilings: 100, raised while the upgrade is in cargo. The
    numbers are items.json gameplay_effect prose ("Fuel max increased from
@@ -4521,20 +4536,23 @@ function deprivationFailure() {
 // effectiveResDelta.
 const RECYCLER_O2_DRAW_MULT = 0.5;
 const RECYCLER_O2_LOSS_MULT = 0.75;
+// A healthy crop makes some of the air (ruling 97: halving the draw kept
+// O2 full on every trail).
+const CROP_O2_DRAW_MULT = 0.75;
 /* The ship's own daily draw as things stand — passDays spends exactly
    this, and the resource tooltips' "Per day" rows show it (shared.js),
    so the hover is the real number. */
 function dailyDraw() {
   const ra = ordersRations();
-  // O2 (owner ruling 2026-10-10): the crew breathe — a slow daily draw,
-  // halved by the O2 recycler. Events, tanks and canisters refill it.
-  // A healthy crop makes air (the growbay is the ship's lung — the AI's
-  // own warning lines say so): it halves the draw too.
+  // O2 (owner ruling 2026-10-10): the crew breathe — a slow daily draw
+  // (the trail's o2_per_day), halved by the O2 recycler. Events, tanks
+  // and canisters refill it. A healthy crop makes some of the air (the
+  // growbay is the ship's lung — the AI's own warning lines say so).
   const cropMeta = (MOD.crops && MOD.crops.crops || []).find(c => c.id === 'crop_' + STATE.crop);
   const cropBreathes = STATE.cropGrowth && cropMeta && STATE.cropGrowth.health >= (cropMeta.healthy_threshold || CROP_HEALTHY_DEFAULT);
   return {
     food: ORDERS_BASE.foodPerDay * ra.foodMult * foodBurnMult() * mouthsMult(),
-    o2: ORDERS_BASE.o2PerDay * (STATE.items.includes('o2_recycler') ? RECYCLER_O2_DRAW_MULT : 1) * (cropBreathes ? 0.5 : 1),
+    o2: (trailNumber('o2_per_day') ?? ORDERS_BASE.o2PerDay) * (STATE.items.includes('o2_recycler') ? RECYCLER_O2_DRAW_MULT : 1) * (cropBreathes ? CROP_O2_DRAW_MULT : 1),
     // The crop's share drinks less with a botanist / purifier (their
     // "crop water consumption reduced"): the tank feels the saving.
     water: ORDERS_BASE.waterPerDay * (1 - cropWaterShareSaved()),

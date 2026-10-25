@@ -5,8 +5,8 @@
 // (policy suffix :N), a per-cause resource ledger, and a verb sampler policy.
 // :salvage salvages once at every stop that offers it; :farm mines once at
 // every asteroid field, nebula and derelict.
-// Every policy but random provisions: with water or food under 40 it buys
-// water canisters / ration bricks back up to 60 at a station (no selling),
+// Every policy but random provisions: with water, food or O2 under 40 it
+// buys canisters / ration bricks back up to 60 at a station (no selling),
 // seeks a lane trader for them, and takes its market's shelf; it also
 // takes crop_dead's "Keep flying". :shop is the full market visit on top
 // of that: at every station it sells spare materials and trade goods and
@@ -82,10 +82,12 @@ function installHarness(policy) {
   window.__provision = () => {
     const R = STATE.resources, cnt = id => STATE.items.filter(x => x === id).length;
     const base = id => (itemDef(id) || {}).base_price;
-    const low = (k, id) => R[k] + 10 * cnt(id) < 40;
-    const short = low('water', 'water_canister') || low('food', 'ration_brick');
-    if (low('water', 'water_canister')) window.__buySupply('water_canister', base('water_canister'), () => R.water + 10 * cnt('water_canister') < 60);
-    if (low('food', 'ration_brick')) window.__buySupply('ration_brick', base('ration_brick'), () => R.food + 10 * cnt('ration_brick') < 60);
+    const per = { water_canister: 10, ration_brick: 10, o2_canister: 14 };
+    const low = (k, id) => R[k] + per[id] * cnt(id) < 40;
+    const short = low('water', 'water_canister') || low('food', 'ration_brick') || low('o2', 'o2_canister');
+    for (const [k, id] of [['water', 'water_canister'], ['food', 'ration_brick'], ['o2', 'o2_canister']]) {
+      if (low(k, id)) window.__buySupply(id, base(id), () => R[k] + per[id] * cnt(id) < 60);
+    }
     if (short) S.provisions = (S.provisions || 0) + 1;
     return short;
   };
@@ -375,6 +377,9 @@ function step() {
       else if (P === 'plaid') { STATE.orders.pace = 'plaid'; }
       else if (P === 'ludi') { STATE.orders.pace = 'ludicrous'; }
       else if (P === 'frugal') { STATE.orders.pace = 'light'; STATE.orders.rations = 'vending'; }
+      // A careful crew eases off a fast pace an event ordered (behind
+      // schedule) once fuel runs low.
+      else if (R.fuel < 50 && ['ludicrous', 'plaid'].includes(STATE.orders.pace)) { STATE.orders.pace = 'ridiculous'; S.paceEased = (S.paceEased || 0) + 1; }
       // station shopping (emulates the market modal at real prices)
       if (window.__shop && node.node_type === 'station' && !acts.shopped) {
         acts.shopped = true;

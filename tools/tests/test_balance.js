@@ -35,11 +35,13 @@ async function boot(setup) {
       STATE.items.push('o2_recycler'); STATE.resources.o2 = 100; passDays(10);
       const o2rec = STATE.resources.o2;
       STATE.items = STATE.items.filter(i => i !== 'o2_recycler'); STATE.cropGrowth.health = 90; STATE.resources.o2 = 100; passDays(10);
-      return { o2, food, o2rec, o2crop: STATE.resources.o2, mouths: mouthsMult() };
+      return { o2, food, o2rec, o2crop: STATE.resources.o2, mouths: mouthsMult(), perDay: MOD.map_rules.trails.mars.o2_per_day, cropMult: CROP_O2_DRAW_MULT };
     });
-    ok(r.o2 === 98, `O2 drains 0.2/day (${r.o2})`);
-    ok(r.o2rec === 99, `recycler halves it (${r.o2rec})`);
-    ok(r.o2crop === 99, `a healthy crop makes air — halves it too (${r.o2crop})`);
+    // Ruling 97: the trail's o2_per_day (Mars 0.4); a healthy crop takes a quarter off.
+    const near = (a, b) => Math.abs(a - b) < 0.011;
+    ok(near(r.o2, 100 - 10 * r.perDay), `O2 drains the trail's ${r.perDay}/day (${r.o2})`);
+    ok(near(r.o2rec, 100 - 5 * r.perDay), `recycler halves it (${r.o2rec})`);
+    ok(r.cropMult === 0.75 && near(r.o2crop, 100 - 10 * r.perDay * r.cropMult), `a healthy crop makes some of the air — a quarter off (${r.o2crop})`);
     ok(Math.abs(r.mouths - 1) < 1e-9 && r.food === 95, `captain + 2 crew = reference burn (×${r.mouths}, food ${r.food})`);
     await page.close();
     const solo = await boot({ crew: [] });
