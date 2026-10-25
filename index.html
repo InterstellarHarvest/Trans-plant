@@ -1649,7 +1649,9 @@ const MORALE_LOW = 30;
 // would use this share of the deadline (days used ÷ trail flown), checked
 // once SCHEDULE_CHECK_FROM of the trail is flown. A straight days-vs-trail
 // gap never fired: every run keeps about a quarter of the deadline in hand.
-const SCHEDULE_PROJECTED_SHARE = 0.90;
+// Ruling 108: 1.0, projected late (90% fired in nearly every run once
+// ruling 99 trimmed the deadlines).
+const SCHEDULE_PROJECTED_SHARE = 1.0;
 const SCHEDULE_CHECK_FROM = 0.25;
 // engine_strain trigger (ruling 83): each leg flown at PLAID rolls for strain,
 // the chance doubling with the drive's heat (STATE.plaidLegs): about 5.5%,

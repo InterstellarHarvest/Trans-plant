@@ -88,8 +88,11 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
     window.__drawnAt = {}; window.__scoutedAt = {}; window.__repeatLast = {};
     const realSelect = window.selectEvent;
     window.selectEvent = function (node, stop) {
+      // The triggers the draw saw: drawing an engine_strain event spends the
+      // strain (noteEventDrawn) before the event is entered.
+      const triggers = [...activeTriggers()];
       const ev = realSelect(node, stop);
-      if (ev) window.__drawnAt[node.id] = { ev: ev.id, fallback: !!(STATE._lastDraw && STATE._lastDraw.fallback) };
+      if (ev) window.__drawnAt[node.id] = { ev: ev.id, fallback: !!(STATE._lastDraw && STATE._lastDraw.fallback), triggers };
       return ev;
     };
     const realScouted = window.scoutedEventFor;
@@ -104,7 +107,10 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
       if (ev.requires_flag && !STATE.flags.has(ev.requires_flag)) {
         v.push(`${ev.id} fired WITHOUT its requires_flag "${ev.requires_flag}"`);
       }
-      const trig = activeTriggers();
+      // A pool-drawn event is checked against the triggers live when it was
+      // drawn; anything else against the triggers live now.
+      const drawn = window.__drawnAt[node.id];
+      const trig = drawn && drawn.ev === ev.id && drawn.triggers ? new Set(drawn.triggers) : activeTriggers();
       const evTrig = ev.trigger || ['any'];
       // Engine-forced exemption: delayed_crisis events are never
       // pool-drawn — travelTo() fires one on station arrival for an

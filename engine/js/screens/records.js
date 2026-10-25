@@ -16,7 +16,10 @@
    or starting a new run. Each finish is its own entry (id: art seed, day,
    result), so a save slot replayed to a different end adds one rather than
    overwriting the first; the same ending rendered twice stays one entry.
-   NEW BEST only when the score beats the stored best.
+   NEW BEST only when the score beats the stored best. Arrivals carry the
+   score scale they were scored on (SCORE_VERSION): only entries on the
+   current scale count for a destination's best (ruling 99 rescored the
+   arrivals); older ones stay in the history.
    ?debug= URLs record nothing, as they save nothing.
 
    Load-order note: loads before index.html's inline script; reads MOD /
@@ -25,6 +28,10 @@
 (function () {
   const RECORDS_KEY = 'transplant_records_v1';
   const RECORDS_KEEP = 10;
+  // The score scale an arrival was scored on: 2 since ruling 99 (the
+  // trimmed deadlines, time in hand worth 100, per-trail brackets).
+  // Entries without it were scored on the old scale.
+  const SCORE_VERSION = 2;
   const DEST_LABEL = { lunar: 'LUNAR', mars: 'MARS', interstellar: 'FAR GARDEN' };
   const TIER_LABEL = { legendary: 'MADE IT', good: 'MOSTLY MADE IT', rough: 'BARELY MADE IT', pyrrhic: "NOBODY'S SURE", hollow: "MADE IT. IT DIDN'T" };
   const $ = id => document.getElementById(id);
@@ -67,13 +74,15 @@
       tone: view.toneId,                       // bracket, or failure_type
       title: arrival ? TIER_LABEL[view.toneId] || view.toneId : String(view.title || '').toUpperCase(),
       score: arrival ? runScore() : null,
+      scoreVersion: arrival ? SCORE_VERSION : null,
       days: run.daysElapsed,
       baseDays: run.baseDays,
       crew: (run.crew || []).length,
       startCrew: run.startCrew != null ? run.startCrew : (run.crew || []).length,
     };
   }
-  const countsForBest = e => e.kind === 'arrival' && e.cropAlive;
+  const currentScale = e => !!e && e.scoreVersion === SCORE_VERSION;
+  const countsForBest = e => e.kind === 'arrival' && e.cropAlive && currentScale(e);
   const beats = (a, b) => !b || a.score > b.score || (a.score === b.score && a.days < b.days);
 
   /* Records a finished run. Returns { entry, newBest } (newBest: it is now
@@ -87,7 +96,7 @@
     r.runs = [e].concat(r.runs.filter(x => x.id !== e.id)).slice(0, RECORDS_KEEP);
     let newBest = false;
     if (countsForBest(e)) {
-      const cur = r.best[e.trail];
+      const cur = currentScale(r.best[e.trail]) ? r.best[e.trail] : null; // an old-scale best is replaced
       if (!(cur && cur.id === e.id) && beats(e, cur)) { r.best[e.trail] = e; newBest = true; }
     }
     saveRecords(r);
@@ -140,7 +149,7 @@
 
   function paintRecords() {
     const r = loadRecords();
-    $('rec-best').innerHTML = ['lunar', 'mars', 'interstellar'].map(t => bestRow(t, r.best[t])).join('');
+    $('rec-best').innerHTML = ['lunar', 'mars', 'interstellar'].map(t => bestRow(t, currentScale(r.best[t]) ? r.best[t] : null)).join('');
     $('rec-runs').innerHTML = r.runs.length ? r.runs.map(runRow).join('') : '<div class="rec-none">No voyages finished yet.</div>';
     $('rec-runs-title').textContent = 'LAST ' + RECORDS_KEEP + ' VOYAGES';
     const clear = $('rec-clear');
@@ -192,6 +201,6 @@
     // engine API (endings.js)
     recordRun, recordSavedFailure, runScore,
     // test hook: tools/tests/test_records.js reads the stored records
-    loadRecords,
+    loadRecords, SCORE_VERSION,
   });
 })();

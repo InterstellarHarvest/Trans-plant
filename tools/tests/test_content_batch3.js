@@ -193,8 +193,8 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
     const on = (projected) => { setup(1, 0); const P = pathLegs(); const legs = Math.round(P / 2); STATE.visited = new Set(STATE.nodes.map(n => n.id).slice(0, legs));
       const frac = STATE.visited.size / pathLegs(); STATE.daysElapsed = Math.round(STATE.baseDays * frac * projected); return { hit: activeTriggers().has('behind_schedule'), proj: (STATE.daysElapsed / STATE.baseDays) / frac }; };
     out.ahead = on(0.35).hit;    // the pace projects 35% of the deadline
-    out.behind = on(0.93).hit;   // projects 93%
-    out.nearly = on(0.86).hit;   // projects 86%
+    out.behind = on(1.04).hit;   // projects 104%: late (ruling 108)
+    out.nearly = on(0.95).hit;   // projects 95%: tight, but on time
     setup(1, 0); STATE.daysElapsed = Math.round(STATE.baseDays * 0.9); out.early = activeTriggers().has('behind_schedule'); // leg 1: never, however slow
     out.share = SCHEDULE_PROJECTED_SHARE; out.from = SCHEDULE_CHECK_FROM;
     // engine_strain (ruling 83): the chance doubles with heat, capped at 95%; a slower leg cools a step, LIGHT fully.
@@ -232,8 +232,8 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
     out.total = Object.values(EVENTS).filter(e => e.active !== false).length;
     return out;
   });
-  ok(k.share === 0.9 && k.from === 0.25, `behind_schedule thresholds: projects ${k.share} of the deadline, from ${k.from} of the trail`);
-  ok(!k.ahead && k.behind && !k.nearly && !k.early, `behind_schedule: off when the pace projects 35% (${k.ahead}), on at 93% (${k.behind}), off at 86% (${k.nearly}), off on leg 1 (${k.early})`);
+  ok(k.share === 1 && k.from === 0.25, `behind_schedule thresholds: projects ${k.share} of the deadline, from ${k.from} of the trail`);
+  ok(!k.ahead && k.behind && !k.nearly && !k.early, `behind_schedule: off when the pace projects 35% (${k.ahead}), on at 104% (${k.behind}), off at 95% (${k.nearly}), off on leg 1 (${k.early})`);
   ok(JSON.stringify(k.curve) === '[0.055,0.11,0.22,0.44,0.88,0.95,0.95]', `engine strain chance by heat: ${k.curve.join(', ')} (doubling, capped at 95%)`);
   ok(k.heat5 === 5 && k.cooled === 4 && k.rested === 0, `heat builds per PLAID leg (5), a LUDICROUS leg cools one step (${k.cooled}), LIGHT SPEED rests it (${k.rested})`);
   ok(k.roll4 === false && k.roll5 === true, `at a 0.5 roll: heat 4 (44%) holds, heat 5 (88%) strains (${k.roll4}, ${k.roll5})`);

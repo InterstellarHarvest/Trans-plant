@@ -33,7 +33,8 @@ const END = async (r) => {
     else window.renderEndScreen({ kind: 'ending', module: MOD.endings[0] });
     if (r.report) window.showEndReport();
   } finally { window.scoreValue = realV; }
-  return { seed: STATE.artSeed, bracket: r.fail ? null : (r.score != null ? (r.health === 0 ? 'hollow' : (r.score >= 125 ? 'legendary' : r.score >= 85 ? 'good' : r.score >= 45 ? 'rough' : 'pyrrhic')) : scoreBracket()),
+  const B = MOD.map_rules.trails[r.trail].score_brackets; // the trail's floors (ruling 99)
+  return { seed: STATE.artSeed, bracket: r.fail ? null : (r.score != null ? (r.health === 0 ? 'hollow' : (r.score >= B.legendary ? 'legendary' : r.score >= B.good ? 'good' : r.score >= B.rough ? 'rough' : 'pyrrhic')) : scoreBracket()),
     day: document.getElementById('end-day-line').textContent, recs: loadRecords() };
 };
 const end = (page, r) => page.evaluate(new Function('r', 'return (' + END.toString() + ')(r)'), r);
@@ -53,11 +54,12 @@ const end = (page, r) => page.evaluate(new Function('r', 'return (' + END.toStri
     const again = await page.evaluate(() => { const rv = window.scoreValue; window.scoreValue = () => 112.7; showEndReport(); window.renderEndScreen({ kind: 'ending', module: MOD.endings[0] }); showEndReport(); window.scoreValue = rv; return loadRecords(); });
     ok(again.runs.length === 1, 'the same run rendered again stays one entry');
     // Rounding down keeps the number under its tier's line.
-    const edge = await end(page, { trail: 'mars', score: 124.9, report: true });
-    ok(edge.bracket === 'good' && edge.recs.runs[0].score === 124, `124.9 shows 124 (MOSTLY MADE IT), never 125 (${edge.recs.runs[0].score})`);
+    const floor = await page.evaluate(() => MOD.map_rules.trails.mars.score_brackets.legendary);
+    const edge = await end(page, { trail: 'mars', score: floor - 0.1, report: true });
+    ok(edge.bracket === 'good' && edge.recs.runs[0].tone === 'good' && edge.recs.runs[0].score === floor - 1, `${floor - 0.1} shows ${floor - 1} (MOSTLY MADE IT), never ${floor} (${edge.recs.runs[0].score})`);
     const real = await page.evaluate(() => { applySetupToState({ trail: 'mars', ai: 'marv', captain: 'veteran', crew: ['engineer'], crop: 'tomato', ship: 'X' }); STATE.cropGrowth.health = 70; STATE.daysElapsed = 50;
-      return { v: scoreValue(), shown: runScore(), b: scoreBracket() }; });
-    ok(real.shown === Math.floor(real.v) && (real.shown >= 125) === (real.b === 'legendary'), `the real score: ${real.v.toFixed(2)} → ${real.shown} (${real.b})`);
+      return { v: scoreValue(), shown: runScore(), b: scoreBracket(), floor: MOD.map_rules.trails.mars.score_brackets.legendary }; });
+    ok(real.shown === Math.floor(real.v) && (real.shown >= real.floor) === (real.b === 'legendary'), `the real score: ${real.v.toFixed(2)} → ${real.shown} (${real.b})`);
     await page.close();
   }
 
@@ -77,6 +79,29 @@ const end = (page, r) => page.evaluate(new Function('r', 'return (' + END.toStri
     ok(hollow.recs.runs[0].tone === 'hollow' && hollow.recs.runs[0].score === 150 && !hollow.recs.best.interstellar && !/NEW BEST/.test(hollow.day),
       'a dead-crop arrival is in the history with its score, never a best');
     ok(Object.keys(higher.recs.best).length === 1, 'bests are per destination');
+    await page.close();
+  }
+
+  console.log('— the score scale: only current-scale arrivals count for a best');
+  {
+    const page = await open();
+    // A record from before ruling 99's rescore: no scoreVersion, a high old-scale score.
+    await page.evaluate(() => {
+      const old = { id: 'old:1', ts: Date.now() - 1e6, ship: 'Old Ship', trail: 'mars', crop: 'wheat', cropAlive: true, captain: 'veteran', kind: 'arrival',
+        tone: 'legendary', title: 'MADE IT', score: 140, days: 170, baseDays: 240, crew: 2, startCrew: 2 };
+      localStorage.setItem('transplant_records_v1', JSON.stringify({ runs: [old], best: { mars: old } }));
+    });
+    const panel = () => page.evaluate(() => { document.getElementById('btn-records').click(); const t = document.getElementById('rec-best').textContent + ' | ' + document.getElementById('rec-runs').textContent; document.getElementById('rec-x').click(); return t; });
+    const before = await panel();
+    ok(/MARSNo arrival yet/.test(before) && /Old Ship/.test(before), `an old-scale best is not shown as the best, but stays in the history (${before.slice(0, 120)})`);
+    const a = await end(page, { trail: 'mars', score: 100, days: 160, report: true });
+    ok(/NEW BEST/.test(a.day) && String(a.recs.best.mars.id).startsWith(a.seed + ':') && a.recs.best.mars.scoreVersion === await page.evaluate(() => SCORE_VERSION),
+      `a current-scale arrival under the old 140 is the new best (${a.day.trim()})`);
+    ok(a.recs.runs.length === 2 && a.recs.runs.some(e => e.id === 'old:1'), 'the old entry is still listed in the history');
+    const after = await panel();
+    ok(/MARS100/.test(after), `the best row shows the current-scale arrival (${after.slice(0, 80)})`);
+    const lower = await end(page, { trail: 'mars', score: 90, days: 150, report: true });
+    ok(!/NEW BEST/.test(lower.day) && lower.recs.best.mars.score === 100, 'then the usual rule: a lower current-scale score is no NEW BEST');
     await page.close();
   }
 
