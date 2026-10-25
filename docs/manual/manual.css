@@ -1,0 +1,176 @@
+/* Trans-plant manual — the game's palette and pixel headings, readable body text. */
+:root {
+  --bg: #0e1118;
+  --panel: #151b26;
+  --panel-2: #1b2230;
+  --line: #2a3040;
+  --text: #d1d5db;
+  --muted: #8898a8;
+  --gold: #e8d8a0;
+  --gold-dim: #c8a85a;
+  --teal: #8cc890;
+  --orange: #e88830;
+  --red: #cc3333;
+  --res-fuel: #e88830;
+  --res-food: #8cc890;
+  --res-water: #5fa8d0;
+  --res-o2: #b8e6ee;
+  --res-hull: #b4b091;
+  --res-mor: #5e9ec7;
+  --res-gold: #c8a85a;
+  --curtain: #2a1830;
+  --curtain-line: #6a3a6e;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.wrap { max-width: 920px; margin: 0 auto; padding: 0 20px 80px; }
+
+/* ── Headings: the game's pixel font ───────────────────────────── */
+h1, h2, h3, .pixel {
+  font-family: 'Press Start 2P', monospace;
+  font-weight: normal;
+  letter-spacing: 1px;
+  line-height: 1.5;
+  color: var(--gold);
+}
+h1 { font-size: 26px; margin: 0 0 12px; }
+h2 { font-size: 17px; margin: 56px 0 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+h3 { font-size: 12px; margin: 34px 0 10px; color: var(--teal); }
+h4 { font-size: 16px; margin: 22px 0 6px; color: var(--gold); }
+.vt { font-family: 'VT323', monospace; font-size: 22px; }
+
+p { margin: 0 0 14px; }
+a { color: var(--res-water); }
+code, kbd {
+  font-family: 'VT323', ui-monospace, monospace;
+  font-size: 19px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0 5px;
+  color: var(--gold);
+}
+ul, ol { margin: 0 0 14px; padding-left: 24px; }
+li { margin: 4px 0; }
+strong { color: #fff; }
+
+/* ── Cover ─────────────────────────────────────────────────────── */
+.cover {
+  text-align: center;
+  padding: 64px 0 36px;
+  border-bottom: 1px solid var(--line);
+}
+.cover img { max-width: 100%; border: 1px solid var(--line); image-rendering: auto; }
+.cover .sub { font-family: 'VT323', monospace; font-size: 26px; color: var(--muted); margin-top: 8px; }
+.cover .links { margin-top: 18px; font-size: 15px; }
+.cover .links a { margin: 0 10px; }
+
+/* ── Table of contents ─────────────────────────────────────────── */
+nav.toc {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 18px 22px;
+  margin: 32px 0;
+}
+nav.toc .pixel { font-size: 11px; margin-bottom: 10px; }
+nav.toc ol { margin: 0; }
+nav.toc li { margin: 2px 0; }
+nav.toc ol ol { font-size: 15px; }
+nav.toc a { color: var(--text); text-decoration: none; }
+nav.toc a:hover { color: var(--gold); }
+
+/* ── Parts ─────────────────────────────────────────────────────── */
+.part-title {
+  margin: 72px 0 8px;
+  padding: 22px 24px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--teal);
+  border-radius: 6px;
+}
+.part-title h1 { font-size: 20px; margin: 0 0 6px; }
+.part-title p { margin: 0; color: var(--muted); }
+.curtain .part-title { border-left-color: var(--curtain-line); background: var(--curtain); }
+
+/* The spoiler fence: everything in Part 2 sits in .curtain. */
+.curtain-warning {
+  margin: 18px 0 28px;
+  padding: 14px 18px;
+  border: 1px dashed var(--curtain-line);
+  border-radius: 6px;
+  color: #d9b8de;
+  background: rgba(42, 24, 48, 0.5);
+}
+
+/* ── Figures and screenshots ───────────────────────────────────── */
+figure { margin: 22px 0; }
+figure img {
+  display: block;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+figure.photo img { image-rendering: auto; }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+.shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.shots figure { margin: 0; }
+
+/* ── Callouts ──────────────────────────────────────────────────── */
+.note, .tip, .warn {
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 18px 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.tip { border-left: 4px solid var(--teal); }
+.note { border-left: 4px solid var(--res-water); }
+.warn { border-left: 4px solid var(--orange); }
+.tip > :last-child, .note > :last-child, .warn > :last-child { margin-bottom: 0; }
+
+/* ── Tables ────────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; margin: 16px 0 22px; font-size: 15px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: 'Press Start 2P', monospace; font-size: 9px; letter-spacing: 1px; color: var(--muted); font-weight: normal; }
+tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+
+/* Resource chips: <span class="res fuel">FUEL</span> */
+.res { font-family: 'VT323', monospace; font-size: 19px; padding: 0 6px; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap; }
+.res.fuel { color: var(--res-fuel); } .res.food { color: var(--res-food); } .res.water { color: var(--res-water); }
+.res.o2 { color: var(--res-o2); } .res.hull { color: var(--res-hull); } .res.morale { color: var(--res-mor); } .res.gold { color: var(--res-gold); }
+.pips { font-family: monospace; letter-spacing: 1px; color: var(--gold); }
+
+/* ── Diagrams (Mermaid, rendered in the page) ──────────────────── */
+.diagram {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 16px;
+  margin: 20px 0;
+  overflow-x: auto;
+  text-align: center;
+}
+.diagram .mermaid { display: inline-block; min-width: 60%; }
+.diagram + figcaption, .diagram figcaption { text-align: left; }
+
+/* ── Print / PDF ───────────────────────────────────────────────── */
+@media print {
+  body { font-size: 12.5px; }
+  .wrap { max-width: none; padding: 0; }
+  h2 { break-before: page; border-top: none; margin-top: 0; }
+  .part-title { break-before: page; }
+  figure, .diagram, table, .tip, .note, .warn { break-inside: avoid; }
+  nav.toc { break-after: page; }
+  a { color: var(--res-water); text-decoration: none; }
+  .cover .links { display: none; }
+}
+@page { size: A4; margin: 14mm 12mm; background: #0e1118; }
