@@ -490,7 +490,8 @@
     beginBtn.innerHTML = `
       <div class="enc-choice-body">BEGIN MINING</div>
       <div class="enc-choice-sub" id="begin-sub">Click rocks to break them</div>`;
-    beginBtn.addEventListener('click', startMining);
+    // Disabled (no assist picked yet) is a real gate, not just a look.
+    beginBtn.addEventListener('click', () => { if (!beginBtn.classList.contains('disabled')) startMining(); });
 
     // Helper: swap sub-label between the gate prompt and the actual hint.
     function setBeginSub(text) {
