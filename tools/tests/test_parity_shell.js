@@ -153,17 +153,18 @@ const isUrlCursor = c => /^url\(/.test(String(c || ''));
     await page.evaluate(() => showScreen('screen-title'));
     await page.click('#screen-title');
     await wait(page, 800);
+    // Ruling 113: the observation-deck menu replaces demo-title's starfield
+    // and centred buttons; the demo's poster (and its vignette) stays.
     const r = await page.evaluate(() => {
-      const c = document.getElementById('title-stars-far'), n = document.getElementById('title-stars-near');
-      const lit = cv => { const d = cv.getContext('2d').getImageData(0, 0, 960, 640).data; let s = 0; for (let i = 3; i < d.length; i += 4) s += d[i]; return s; };
-      const ts = document.getElementById('screen-title');
-      return { pos: getComputedStyle(c).position, posN: getComputedStyle(n).position, far: lit(c), near: lit(n), gap: getComputedStyle(document.getElementById('title-content')).rowGap,
+      const img = document.getElementById('title-paint'), ts = document.getElementById('screen-title');
+      return { pos: getComputedStyle(img).position, w: img.getBoundingClientRect().width / (document.getElementById('game').getBoundingClientRect().width / 960), loaded: img.complete && img.naturalWidth === 1536,
+        gap: getComputedStyle(document.getElementById('title-buttons')).rowGap, lights: document.querySelectorAll('#title-navlights .title-navlight').length,
         vig: getComputedStyle(ts).getPropertyValue('--vignette').trim(), rad: getComputedStyle(document.getElementById('btn-new')).borderTopLeftRadius };
     });
-    ok(r.pos === 'absolute' && r.posN === 'absolute' && r.far > 0 && r.near > 0, `starfield canvases positioned + drawing (far ${r.far}, near ${r.near} alpha)`);
-    ok(r.gap === '18px', 'title content gap 18px (demo)');
+    ok(r.pos === 'absolute' && Math.round(r.w) === 960 && r.loaded, 'the observation-deck painting fills the frame (ruling 113)');
+    ok(r.gap === '10px' && r.lights === 3, 'menu buttons 10px apart, three station lights (ruling 113)');
     ok(r.vig === '0.30', 'poster vignette 0.30 (demo)');
-    ok(r.rad === '8px', 'title buttons keep DESIGN_SYSTEM 8px radius (demo 25px — ruling: DESIGN_SYSTEM)');
+    ok(r.rad === '7px', 'title buttons 7px radius (ruling 113)');
     await page.close();
   }
 

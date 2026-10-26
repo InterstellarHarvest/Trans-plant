@@ -40,7 +40,9 @@ async function reloadContinue(page) {
     await page.waitForTimeout(250);
   }
   await page.waitForSelector('#title-buttons.visible', { timeout: 20000 });
+  await page.waitForTimeout(500); // the menu arms a beat after it appears (ruling 113)
   await page.click('#btn-continue');
+  await page.keyboard.press('x'); // a key skips the departure (ruling 113)
   await page.waitForFunction(() => !document.getElementById('screen-title').classList.contains('active'));
   await page.waitForTimeout(700);
 }
@@ -306,13 +308,15 @@ async function secondReload(page, label, b) {
       await page.waitForTimeout(250);
     }
     await page.waitForSelector('#title-buttons.visible', { timeout: 20000 });
+    await page.waitForTimeout(500); // the menu arms a beat after it appears (ruling 113)
     // Role concerns the settle sets off (ruling 57: the engineer's hull, the
     // wounded) are tapped: window.__conc, as the crew average.
     await page.evaluate(() => {
       window.__conc = 0;
       const real = applyConcern;
       applyConcern = function (role) { const b = crewMoraleOf(role); const r = real.apply(this, arguments); window.__conc += (crewMoraleOf(role) - b) / STATE.crew.length; return r; };
-      const R = Math.random; Math.random = () => 0.5; try { document.getElementById('btn-continue').click(); } finally { Math.random = R; }
+      // CONTINUE, then a click that skips the departure: loadRun() runs inside the fixed dice (ruling 113).
+      const R = Math.random; Math.random = () => 0.5; try { document.getElementById('btn-continue').click(); document.getElementById('screen-title').click(); } finally { Math.random = R; }
     });
     await page.waitForTimeout(700);
   }

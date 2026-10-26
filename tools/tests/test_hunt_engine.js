@@ -345,7 +345,8 @@ const clickContinue = page => page.evaluate(() => {
     await page.evaluate(() => { showScreen('screen-title'); STATE.trail = null; });
     await page.keyboard.press('Escape'); // the first ESC on the title dismisses the poster
     await page.waitForTimeout(400);
-    if (!(await page.evaluate(() => document.body.classList.contains('pause-open')))) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
+    // ESC skips the intro (ruling 113: it doesn't open the terminal there); on the menu it opens it.
+    for (let i = 0; i < 4 && !(await page.evaluate(() => document.body.classList.contains('pause-open'))); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(700); }
     const pz = await page.evaluate(() => [...document.querySelectorAll('.pause-item')].filter(b => !b.hidden).map(b => b.dataset.section));
     ok(pz.length && !pz.includes('save') && !pz.includes('log') && !pz.includes('quit'), `the title's terminal offers ${pz.join('/')}`);
     await page.close();

@@ -1,155 +1,317 @@
 /* ============================================================
-   screen-title — migrated from demo-title.html (dev-controls
-   panel and scale-root harness stripped; everything scoped under
-   #screen-title so it can't leak into other screens).
+   screen-title — the observation-deck title menu (ruling 113).
+   One locked painting (resources/sprites/interface/menu/
+   scene_master_leafclear_v1_1536x1024.png), drawn unchanged and never
+   moved; the menu is live HTML laid onto its two painted terminal
+   displays by a measured perspective mapping (engine/js/screens/title.js).
+   Stages on #screen-title[data-stage]: poster → intro → menu →
+   departing → departed. Everything is scoped under #screen-title.
    ============================================================ */
 
-/* Scoped to the screen. --vignette is the demo's
-   tuned default 0.30 (its 0.55 CSS literal is overridden by apply()). */
-#screen-title {
-  --prompt-y: 380px;
-  --pulse-speed: 2s;
-  --vignette: 0.30;
+/* Self-hosted (SIL OFL 1.1, licences beside the files), so the menu
+   reads the same offline and opened from disk. The latin subset, as
+   the font service serves it; anything outside falls back as before. */
+@font-face {
+  font-family: 'Barlow Semi Condensed'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('fonts/barlow-semi-condensed-latin-700.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('fonts/ibm-plex-mono-latin-500.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('fonts/ibm-plex-mono-latin-600.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('fonts/ibm-plex-mono-latin-700.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-#screen-title { cursor: var(--cursor-hand, pointer); }
+#screen-title {
+  overflow: hidden; background: #020408; outline: none;
+  --vignette: 0.30;   /* poster edge shade */
+  --dim: 0.30;        /* the intro's dim over the room */
+  --gx: 6px;          /* buttons/intro: optical centre on the upper glass (plane px, + = left) */
+  --tx: 0px;          /* title: already centred */
+  --caret-x: -15px;   /* focus caret, clear of the bezel */
+  --scan: 0.14;       /* display-glass lines */
+  --glow: 0.080;      /* display-glass phosphor glow */
+}
+#screen-title .title-layer { position: absolute; pointer-events: none; }
+#screen-title #title-scene { position: absolute; inset: 0; }
 
-/* ── Poster layer (shown before click) ──────────────────────────── */
+/* The painting: 1536×1024 shown at 960×640 (1.6×), smooth scaling. It is
+   the only image in the scene and nothing ever transforms it. */
+#screen-title #title-paint { left: 0; top: 0; width: 960px; height: 640px; }
+
+/* The intro dims the room evenly (a veil, not a re-light); 0 in the menu,
+   so the menu frame is the painting itself. */
+#screen-title #title-dim { inset: 0; background: #020408; opacity: var(--dim); transition: opacity 1.4s ease; }
+#screen-title[data-stage="menu"] #title-dim, #screen-title[data-stage="departing"] #title-dim { opacity: 0; }
+/* Departure: the displays power down, then the frame fades to black. */
+#screen-title #title-fade { inset: 0; background: #020408; opacity: 0; }
+/* After the power-down (0.55–1.45 s of the 2.4 s departure) the frame fades
+   out, linear, from 1.32 s to 2.28 s; under reduced motion a short fade. */
+#screen-title[data-stage="departing"] #title-fade { opacity: 1; transition: opacity 0.96s linear 1.32s; }
+#screen-title.rm[data-stage="departing"] #title-fade { transition: opacity 0.4s ease; }
+#screen-title[data-stage="departed"] #title-fade { opacity: 1; }
+
+/* ── Station navigation lights ─────────────────────────────────────
+   Three pinpoints on painted station structure (stage px = source px
+   / 1.6): a red blink on the antenna tip, a cool double strobe on the
+   docking-arm end, an amber pulse on the lower spire tip. Opacity only:
+   the station and the sky never move. Under the dim, so the intro dims
+   them with the room; absent under reduced motion. */
+#screen-title #title-navlights { position: absolute; inset: 0; pointer-events: none; }
+#screen-title.rm #title-navlights { display: none; }
+#screen-title .title-navlight {
+  position: absolute; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%;
+  opacity: 0; mix-blend-mode: screen;
+  background: radial-gradient(circle closest-side, rgba(255,255,255,0.95) 0, rgba(var(--rgb),0.9) 22%, rgba(var(--rgb),0.3) 55%, rgba(var(--rgb),0) 100%);
+}
+#screen-title #navlight-antenna { left: 424.69px; top: 123.44px; --rgb: 255,72,56;   animation: title-nav-blink 5.2s linear -1.3s infinite; }
+#screen-title #navlight-arm     { left: 517.81px; top: 196.56px; --rgb: 214,232,255; animation: title-nav-strobe 7.7s linear -4.1s infinite; }
+#screen-title #navlight-spire   { left: 421.56px; top: 259.06px; --rgb: 255,182,92;  animation: title-nav-pulse 9.4s ease-in-out -2.2s infinite; }
+@keyframes title-nav-blink  { 0%, 84% { opacity: 0; } 87% { opacity: 0.85; } 93% { opacity: 0.425; } 98%, 100% { opacity: 0; } }
+@keyframes title-nav-strobe { 0%, 90% { opacity: 0; } 90.5% { opacity: 0.85; } 91.5% { opacity: 0; } 92.6% { opacity: 0.85; } 93.6%, 100% { opacity: 0; } } /* two ~80 ms flashes */
+@keyframes title-nav-pulse  { 0%, 55%, 100% { opacity: 0; } 72% { opacity: 0.595; } }
+
+/* ── Interface layer (live HTML on the painted displays) ─────────── */
+#screen-title #title-ui { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
+#screen-title[data-stage="poster"] #title-ui { visibility: hidden; }
+
+/* A display plane: a flat box mapped onto one painted screen by
+   matrix3d (homography from the measured corners). Every child — text,
+   buttons, focus ring, caret, glass glow — inherits the mapping, and
+   hit-testing follows the transform. */
+#screen-title .title-disp { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+#screen-title .title-disp .inner, #screen-title .title-disp .glass { position: absolute; inset: 0; transform-origin: 50% 50%; }
+
+/* Glass: the display's own light — a faint phosphor bloom and fine
+   scanlines, kept off the painted bezel. */
+#screen-title .title-disp .glass {
+  inset: 6px; border-radius: 9px; pointer-events: none;
+  opacity: 0; transition: opacity 0.9s ease;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,var(--scan)) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse 70% 60% at 42% 42%, rgba(132,214,170,var(--glow)) 0%, rgba(132,214,170,0) 100%);
+  -webkit-mask-image: radial-gradient(ellipse 58% 56% at 50% 50%, #000 70%, transparent 100%);
+  mask-image: radial-gradient(ellipse 58% 56% at 50% 50%, #000 70%, transparent 100%);
+}
+#screen-title .title-disp .glass::after { /* slow phosphor breathing */
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: radial-gradient(ellipse 60% 50% at 45% 45%, rgba(170,230,190,0.05), transparent 100%);
+  animation: title-glass-breathe 7s ease-in-out infinite;
+}
+@keyframes title-glass-breathe { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+#screen-title:not([data-stage="poster"]) .title-disp .glass { opacity: 1; }
+
+/* Power-on (after the poster's 0.6 s fade) and power-down (departure):
+   a CRT collapse inside each plane, so it follows the terminal's
+   perspective. */
+#screen-title[data-stage="intro"].power-on .title-disp .inner,
+#screen-title[data-stage="intro"].power-on .title-disp .glass { animation: title-crt-on 0.55s cubic-bezier(.2,.7,.2,1) 0.6s both; }
+#screen-title[data-stage="intro"].power-on #title-disp-lower .inner,
+#screen-title[data-stage="intro"].power-on #title-disp-lower .glass { animation-delay: 0.72s; }
+@keyframes title-crt-on {
+  0%   { transform: scale(0.7, 0.012); filter: brightness(3); opacity: 0; }
+  35%  { transform: scale(1, 0.012); filter: brightness(2.4); opacity: 1; }
+  100% { transform: scale(1, 1); filter: brightness(1); opacity: 1; }
+}
+#screen-title[data-stage="departing"] #title-disp-upper .inner,
+#screen-title[data-stage="departing"] #title-disp-upper .glass { animation: title-crt-off 0.5s ease-in 0.55s both; }
+#screen-title[data-stage="departing"] #title-disp-lower .inner,
+#screen-title[data-stage="departing"] #title-disp-lower .glass { animation: title-crt-off 0.5s ease-in 0.95s both; }
+@keyframes title-crt-off {
+  0%   { transform: scale(1, 1); filter: brightness(1); opacity: 1; }
+  55%  { transform: scale(1, 0.012); filter: brightness(2.6); opacity: 1; }
+  100% { transform: scale(0, 0.012); filter: brightness(3); opacity: 0; }
+}
+
+/* ── Upper display: title, botanical divider, intro, buttons ─────── */
+#screen-title #title-logo {
+  position: absolute; left: calc(8px - var(--tx)); right: calc(8px + var(--tx)); top: 13px;
+  font-family: 'Barlow Semi Condensed', 'Arial Narrow', sans-serif; font-weight: 700;
+  font-size: 30px; line-height: 1; letter-spacing: 0.6px; text-align: center; white-space: nowrap;
+  color: #f0e4bf;
+  text-shadow: 0 0 9px rgba(240,228,191,0.32), 0 0 2px rgba(240,228,191,0.35), 0 1px 0 rgba(0,0,0,0.75);
+  opacity: 0; transition: opacity 0.8s ease;
+}
+/* Two thin sage rules and a code-drawn sprout. */
+#screen-title #title-divider {
+  display: flex; align-items: center; gap: 6px;
+  position: absolute; left: calc(22px - var(--tx)); right: calc(22px + var(--tx)); top: 49px; height: 16px;
+  color: #6fdaa6; opacity: 0; transition: opacity 0.8s ease 0.15s;
+}
+#screen-title #title-divider .rule { flex: 1; height: 1.5px; border-radius: 1px; box-shadow: 0 0 4px rgba(111,218,166,0.45); }
+#screen-title #title-divider .rule:first-child { background: linear-gradient(90deg, rgba(111,218,166,0), #6fdaa6 35%); }
+#screen-title #title-divider .rule:last-child { background: linear-gradient(90deg, #6fdaa6 65%, rgba(111,218,166,0)); }
+#screen-title #title-divider svg { flex: none; filter: drop-shadow(0 0 3px rgba(111,218,166,0.55)); }
+#screen-title[data-stage="menu"] #title-logo, #screen-title[data-stage="menu"] #title-divider { opacity: 1; }
+
+/* Intro: three typed lines on the upper display. */
+#screen-title #title-intro { position: absolute; left: calc(22px - var(--gx)); right: calc(12px + var(--gx)); top: 22px; transition: opacity 0.6s ease; }
+#screen-title #title-intro .tag {
+  font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 14px; line-height: 1.3;
+  min-height: 1.12em; margin-bottom: 0.55em;
+  color: #b8d8c0;
+  text-shadow: 0 0 6px rgba(120,220,160,0.25), 0 1px 2px rgba(0,0,0,0.9);
+}
+#screen-title #title-intro #title-tagline-3 { color: #8fae98; }
+#screen-title #title-intro .tw-cursor { display: inline-block; width: 0.5em; height: 0.85em; margin-left: 2px; vertical-align: -0.1em; background: currentColor; animation: blink-cursor 1s step-end infinite; }
+#screen-title[data-stage="menu"] #title-intro, #screen-title[data-stage="departing"] #title-intro { opacity: 0; }
+
+/* Buttons: real <button>s laid on the plane, so they take the screen's
+   perspective. They come up one after another when the menu appears and
+   take clicks once .visible (title.js: the menu is up). */
+#screen-title #title-buttons {
+  position: absolute; left: calc(26px - var(--gx)); right: calc(12px + var(--gx)); top: 78px;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+#screen-title #title-buttons.visible { pointer-events: auto; }
+/* Off-screen buttons can't take Tab focus (hidden once they've faded). */
+#screen-title:not([data-stage="menu"]) #title-buttons { visibility: hidden; transition: visibility 0s linear 0.35s; }
+
+/* Indicator lamp at the left; the label centred in the space right of
+   it. Lit = available (New Game always; Continue with a valid save;
+   Records with records on file); dark = not. */
+#screen-title .title-btn {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  height: 45px; padding: 0 9px 0 31px;
+  font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 17px; line-height: 1;
+  letter-spacing: 1.2px; text-transform: uppercase; text-align: center; white-space: nowrap;
+  border-radius: 7px; border: 1.5px solid #5c4a2c;
+  color: #24201a;
+  background: linear-gradient(180deg, #f6edd2 0%, #e9dab0 52%, #d6c393 100%);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.75), inset 0 -2px 0 rgba(110,84,40,0.32), 0 0 0 1px rgba(0,0,0,0.45), 0 3px 4px rgba(0,0,0,0.55);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.45);
+  opacity: 0;
+  transition: opacity 0.35s ease, filter 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+}
+#screen-title[data-stage="menu"] .title-btn { opacity: 1; transition-delay: calc(var(--i, 0) * 90ms), 0s, 0s, 0s; }
+#screen-title[data-stage="departing"] .title-btn { opacity: 0; transition-duration: 0.3s; }
+#screen-title .title-btn .lbl { pointer-events: none; }
+#screen-title .title-btn.accent {
+  color: #08261a; border-color: #b9ffdc;
+  background: linear-gradient(180deg, #8af3c2 0%, #4fd89a 48%, #2fb47e 100%);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.6), inset 0 -2px 0 rgba(0,70,40,0.35), 0 0 0 1px rgba(0,0,0,0.45), 0 0 12px rgba(80,232,160,0.45), 0 3px 4px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+}
+#screen-title .title-btn .btn-led {
+  position: absolute; left: 11px; top: 50%; width: 12px; height: 12px; margin: -6px 0 0;
+  border-radius: 50%; border: 1px solid rgba(0,0,0,0.55);
+  background: radial-gradient(circle at 38% 34%, #8f8f86 0%, #55554e 45%, #33332e 100%);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.35);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+#screen-title .title-btn.accent .btn-led {
+  background: radial-gradient(circle at 40% 36%, #ffffff 0%, #d8ffe9 38%, #7cf0b4 100%);
+  box-shadow: 0 0 6px 1px rgba(200,255,225,0.85), 0 0 12px rgba(120,240,180,0.6);
+}
+#screen-title .title-btn[aria-disabled="false"]:not(#btn-new) .btn-led {
+  background: radial-gradient(circle at 40% 36%, #fff6d6 0%, #ffc860 40%, #e8901c 100%);
+  box-shadow: 0 0 5px 1px rgba(255,190,80,0.75), 0 0 10px rgba(255,160,40,0.45);
+}
+/* hover = brighter + glow · focus = cream ring + ▸ caret · active = pressed
+   in · disabled = an unlit panel (dark, flat, lamp off; still focusable:
+   the status display says why) */
+#screen-title .title-btn:hover { filter: brightness(1.07); box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.8), inset 0 -2px 0 rgba(110,84,40,0.3), 0 0 0 1px rgba(0,0,0,0.45), 0 0 13px rgba(255,226,160,0.42), 0 3px 4px rgba(0,0,0,0.55); }
+#screen-title .title-btn.accent:hover { filter: brightness(1.08); box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.65), inset 0 -2px 0 rgba(0,70,40,0.32), 0 0 0 1px rgba(0,0,0,0.45), 0 0 18px rgba(90,240,170,0.7), 0 3px 4px rgba(0,0,0,0.5); }
+#screen-title .title-btn:focus { outline: none; }
+#screen-title .title-btn:focus-visible { outline: 2px solid #f5ecd0; outline-offset: 3px; }
+#screen-title .title-btn:focus-visible::after {
+  content: '▸'; position: absolute; left: var(--caret-x); top: 50%; transform: translateY(-50%);
+  color: #f5ecd0; font-size: 16px; text-shadow: 0 0 6px rgba(232,216,160,0.6);
+  animation: blink-cursor 1s step-end infinite;
+}
+#screen-title .title-btn:active { transform: translateY(2px); filter: brightness(0.88); box-shadow: inset 0 3px 7px rgba(60,40,10,0.55), inset 0 -1px 0 rgba(255,255,255,0.25), 0 0 0 1px rgba(0,0,0,0.5), 0 1px 0 rgba(0,0,0,0.5); }
+#screen-title .title-btn.accent:active { box-shadow: inset 0 3px 7px rgba(0,50,25,0.6), inset 0 -1px 0 rgba(255,255,255,0.2), 0 0 0 1px rgba(0,0,0,0.5), 0 0 8px rgba(80,232,160,0.35); }
+#screen-title .title-btn[aria-disabled="true"],
+#screen-title .title-btn[aria-disabled="true"]:hover,
+#screen-title .title-btn[aria-disabled="true"]:active {
+  transform: none; filter: none; cursor: var(--cursor-denied, not-allowed);
+  color: #8e9a90; border-color: #4c5650; text-shadow: none;
+  background: linear-gradient(180deg, #34403b 0%, #2a3430 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.45), 0 2px 3px rgba(0,0,0,0.45);
+}
+#screen-title .title-btn[aria-disabled="true"]:focus-visible { outline-color: #9aa89e; }
+
+/* ── Lower display: SHIP STATUS + the skip prompt ─────────────────
+   A heading with its own lamp, then up to two message lines; a long line
+   steps the size down to fit (title.js), the copy is never cut. */
+#screen-title #title-status { position: absolute; left: 13px; right: 9px; top: 6px; opacity: 0; transition: opacity 0.8s ease 0.3s; }
+#screen-title[data-stage="menu"] #title-status, #screen-title[data-stage="departing"] #title-status { opacity: 1; }
+#screen-title #title-status .st-title {
+  display: flex; align-items: center; text-transform: uppercase;
+  font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 12.5px; letter-spacing: 1.6px;
+  color: #ece3c2; text-shadow: 0 0 6px rgba(236,227,194,0.25);
+}
+#screen-title #title-status .st-led {
+  width: 7px; height: 7px; border-radius: 50%; margin-right: 8px;
+  background: radial-gradient(circle at 40% 36%, #f2fff6, #6dfaa0 55%, #2fbf6a); box-shadow: 0 0 5px 1px rgba(110,250,160,0.7);
+}
+#screen-title[data-stage="departing"] #title-status .st-led {
+  background: radial-gradient(circle at 40% 36%, #fff3d8, #ffb84a 55%, #e88a1c); box-shadow: 0 0 6px 1px rgba(255,180,70,0.75);
+  animation: title-led-blink 0.4s step-end infinite;
+}
+#screen-title #title-status .st-msg {
+  margin-top: 6px; font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: var(--msg-size, 12.5px); line-height: 1.24;
+  color: #bfe8cc; text-shadow: 0 0 6px rgba(120,230,160,0.22);
+}
+#screen-title #title-status .st-msg.hint { padding-left: 1.2em; text-indent: -1.2em; color: #f0e4bf; text-shadow: 0 0 6px rgba(240,228,191,0.2); }
+#screen-title #title-skip {
+  position: absolute; left: 13px; right: 9px; top: 9px;
+  font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 12.5px; letter-spacing: 0.4px; line-height: 1.3; color: #b4d6bc;
+  opacity: 0; transition: opacity 0.3s ease;
+}
+#screen-title #title-skip .sk-led {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 8px; vertical-align: 0;
+  background: radial-gradient(circle at 40% 36%, #fff3d8, #ffb84a 55%, #e88a1c); box-shadow: 0 0 5px 1px rgba(255,180,70,0.7);
+  animation: title-led-blink 1.2s step-end infinite;
+}
+#screen-title[data-stage="intro"] #title-skip { opacity: 1; transition: opacity 0.6s ease 1.2s; }
+@keyframes title-led-blink { 50% { opacity: 0.2; } }
+
+/* ── Poster (shown first; any key or click dismisses it) ──────────── */
 #screen-title #poster {
-  position: absolute; inset: 0;
-  background-image: url('sprites/interface/poster-title.jpg');
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  z-index: 20;
+  position: absolute; inset: 0; z-index: 60;
+  background: url('sprites/interface/poster-title.jpg') center / cover no-repeat;
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
 #screen-title #poster-vignette {
-  position: absolute; inset: 0; pointer-events: none; z-index: 21;
+  position: absolute; inset: 0; pointer-events: none; z-index: 61;
   background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,var(--vignette)) 100%);
   transition: opacity 0.6s ease;
 }
-
-#screen-title #prompt-wrap {
-  position: absolute;
-  left: 0; right: 0; top: var(--prompt-y);
-  text-align: center;
-  z-index: 60;
-  transition: opacity 0.4s ease, transform 0.4s ease;
-}
+#screen-title #prompt-wrap { position: absolute; left: 0; right: 0; top: 380px; text-align: center; z-index: 62; transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none; }
 #screen-title #prompt {
-  display: inline-block;
-  font-family: 'Press Start 2P', cursive; line-height: 1;
-  font-size: 11px;
-  letter-spacing: 3px;
-  color: #e8d8a0;
-  text-shadow:
-    0 0 8px rgba(200,168,90,0.5),
-    0 2px 4px rgba(0,0,0,0.9),
-    1px 1px 0 #000;
-  animation: title-prompt-pulse var(--pulse-speed) infinite ease-in-out;
+  display: inline-block; font-family: 'Press Start 2P', cursive; line-height: 1;
+  font-size: 11px; letter-spacing: 3px; color: #e8d8a0;
+  text-shadow: 0 0 8px rgba(200,168,90,0.5), 0 2px 4px rgba(0,0,0,0.9), 1px 1px 0 #000;
+  animation: title-prompt-pulse 2s infinite ease-in-out;
 }
-@keyframes title-prompt-pulse {
-  0%, 100% { opacity: 0.25; }
-  50%      { opacity: 1;    }
-}
+@keyframes title-prompt-pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+#screen-title:not([data-stage="poster"]) #poster { opacity: 0; transform: scale(1.04); pointer-events: none; }
+#screen-title:not([data-stage="poster"]) #poster-vignette { opacity: 0; }
+#screen-title:not([data-stage="poster"]) #prompt-wrap { opacity: 0; transform: translateY(8px); }
+#screen-title:not([data-stage="poster"]) #prompt { animation: none; }
+#screen-title[data-stage="poster"] { cursor: var(--cursor-hand, pointer); }
 
-/* Clicked-through state: poster fades out, revealing the title content. */
-#screen-title.poster-dismissed #poster { opacity: 0; transform: scale(1.04); pointer-events: none; }
-#screen-title.poster-dismissed #poster-vignette { opacity: 0; }
-#screen-title.poster-dismissed #prompt-wrap { opacity: 0; transform: translateY(8px); pointer-events: none; }
+/* CSS motion idles while the title isn't on screen (another screen, a
+   hidden tab, the pause terminal) and is off entirely under reduced
+   motion. */
+#screen-title:not(.live) *, #screen-title:not(.live) *::before, #screen-title:not(.live) *::after { animation-play-state: paused !important; }
+#screen-title.rm *, #screen-title.rm *::before, #screen-title.rm *::after { animation: none !important; }
+#screen-title.rm #title-dim, #screen-title.rm #title-logo, #screen-title.rm .title-btn, #screen-title.rm #title-status, #screen-title.rm #title-intro,
+#screen-title.rm #title-skip, #screen-title.rm .glass, #screen-title.rm #poster, #screen-title.rm #poster-vignette,
+#screen-title.rm #prompt-wrap { transition-duration: 0.2s !important; transition-delay: 0s !important; }
+#screen-title.rm #poster { transform: none !important; }
 
-/* ── Background layers ──────────────────────────────────────────── */
-#screen-title #bg-void {
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, #020408 0%, #0e1520 100%);
-}
-/* The canvases are #title-stars-far/-near, not the demo's
-   #stars-far/#stars-near: without this rule they sit in normal flow under
-   #bg-void and the starfield never shows. */
-#screen-title #title-stars-far, #screen-title #title-stars-near { position: absolute; inset: 0; pointer-events: none; image-rendering: pixelated; image-rendering: crisp-edges; }
-
-/* ── Title content ──────────────────────────────────────────────── */
-#screen-title #title-content {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 18px; /* demo apply(): c-gap 18 */
-  /* RECORDS (ruling 89) is a fourth button under the demo's three: pad by
-     its height + gap so the block keeps the demo's centre and RECORDS
-     extends downward. */
-  padding-top: 62px;
-  z-index: 10;
-}
-
-#screen-title #title-tagline, #screen-title #title-tagline-2, #screen-title #title-tagline-3 {
-  font-family: 'VT323', monospace;
-  text-align: center;
-  z-index: 1;
-  max-width: 620px;
-  line-height: 1.3;
-  min-height: 1.3em;
-}
-
-/* ── Buttons — warm retro style ──────────────────────────────────── */
-#screen-title .title-buttons {
-  display: flex; flex-direction: column;
-  gap: 14px; align-items: stretch; /* one width for all: the widest (RECORDS, ruling 89, is a letter short) */
-  z-index: 1; margin-top: 14px;
-  opacity: 0; transition: opacity 0.6s ease;
-  pointer-events: none; /* invisible during the intro: clicks used to hit New Game */
-}
-#screen-title .title-buttons.visible { opacity: 1; pointer-events: auto; }
-
-#screen-title .retro-btn {
-  font-family: 'VT323', monospace;
-  font-size: 22px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  cursor: var(--cursor-hand, pointer);
-  padding: 10px 32px;
-  transition: all 0.12s;
-  position: relative;
-  background: linear-gradient(180deg, #e8d8a0 0%, #d8c888 100%);
-  color: #2a3040;
-  border: 3px solid #c8a85a;
-  border-radius: 8px;
-  box-shadow: inset 0 0 0 2px rgba(200,168,90,0.3), 0 2px 4px rgba(0,0,0,0.4);
-  text-shadow: none;
-}
-#screen-title .retro-btn:hover {
-  filter: brightness(1.12);
-  box-shadow: inset 0 0 0 2px rgba(200,168,90,0.4), 0 2px 10px rgba(200,168,90,0.25);
-}
-#screen-title .retro-btn:active {
-  transform: translate(1px, 1px);
-  filter: brightness(0.95);
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-}
-#screen-title .retro-btn.accent {
-  background: linear-gradient(180deg, #8cc890 0%, #70b898 100%);
-  border-color: #c8a85a;
-  color: #1a2030;
-  box-shadow: inset 0 0 0 2px rgba(140,200,144,0.3), 0 2px 4px rgba(0,0,0,0.4);
-}
-#screen-title .retro-btn.accent:hover {
-  box-shadow: inset 0 0 0 2px rgba(140,200,144,0.4), 0 2px 10px rgba(140,200,144,0.25);
-}
-#screen-title .retro-btn.accent::before {
-  content: '';
-  position: absolute;
-  left: 8px; right: 8px; top: 4px; bottom: 4px;
-  background: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.08) 3px, rgba(255,255,255,0.08) 4px);
-  border-radius: 4px;
-  pointer-events: none;
-}
-#screen-title .retro-btn.disabled { opacity: 0.3; cursor: var(--cursor-denied, not-allowed); } /* Continue's click checks hasSave() */
-
-#screen-title .retro-btn .btn-led {
-  display: inline-block;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  margin-right: 8px;
-  vertical-align: middle;
-  box-shadow: 0 0 4px currentColor;
-}
+#screen-title.init, #screen-title.init * { transition: none !important; }

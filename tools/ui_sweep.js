@@ -87,7 +87,9 @@ const INERT_OK = new Set([]);
   console.log('1. Setup wizard (real clicks)');
   await page.keyboard.press('Space');
   await page.waitForFunction(() => document.getElementById('title-buttons').classList.contains('visible'), null, { timeout: 15000 });
+  await page.waitForTimeout(500); // the menu arms a beat after it appears (ruling 113)
   await page.click('#btn-new');
+  await page.keyboard.press('x'); // a key skips the departure (ruling 113)
   await page.waitForTimeout(500);
   // The wizard's confirms (FLY SOLO? / INCOMPLETE CREW / ABANDON THE SAVED
   // VOYAGE?) sit over #btn-next: answer one if it opened.

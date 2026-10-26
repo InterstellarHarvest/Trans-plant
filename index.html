@@ -147,7 +147,7 @@ body {
   outline: 1px solid #2a3040; outline-offset: -1px;
   transform-origin: center center;
 }
-/* CRT scanlines per screen, as each demo tunes them: title 10%,
+/* CRT scanlines per screen, as each demo tunes them: title none (ruling 113),
    encounter/combat 6%, everything else (cruise, setup…) the
    DESIGN_SYSTEM 5%. showScreen() mirrors the active screen onto
    #game[data-screen]. */
@@ -157,7 +157,7 @@ body {
   background: repeating-linear-gradient(0deg,
     rgba(0,0,0,var(--crt-a)), rgba(0,0,0,var(--crt-a)) 1px, transparent 1px, transparent 2px);
 }
-#game[data-screen="screen-title"] #crt-overlay { --crt-a: 0.10; }
+#game[data-screen="screen-title"] #crt-overlay { --crt-a: 0; } /* ruling 113: the painting is never textured; the displays carry their own lines */
 #game[data-screen="screen-encounter"] #crt-overlay { --crt-a: 0.06; }
 /* The mining overlay sits over the cruise screen (5%); demo-mining tunes 6%. */
 #game:has(#overlay-mining.active) #crt-overlay { --crt-a: 0.06; }
@@ -682,21 +682,42 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
     <pre id="load-error"></pre>
   </div>
 
-  <!-- TITLE -->
-  <div id="screen-title" class="screen" tabindex="0">
-    <div id="bg-void"></div>
-    <canvas id="title-stars-far" width="960" height="640"></canvas>
-    <canvas id="title-stars-near" width="960" height="640"></canvas>
-
-    <div id="title-content">
-      <div id="title-tagline"></div>
-      <div id="title-tagline-2"></div>
-      <div id="title-tagline-3"></div>
-      <div class="title-buttons" id="title-buttons">
-        <button class="retro-btn accent" id="btn-new"><span class="btn-led" style="background:#2a3040"></span>New Game</button>
-        <button class="retro-btn disabled" id="btn-continue"><span class="btn-led" style="background:#333"></span>Continue</button>
-        <button class="retro-btn disabled" id="btn-records"><span class="btn-led" style="background:#333"></span>Records</button><!-- ruling 89: engine/js/screens/records.js -->
+  <!-- TITLE — the observation-deck menu (ruling 113). Styles
+       resources/screen-title.css, logic engine/js/screens/title.js. -->
+  <div id="screen-title" class="screen init" tabindex="0" data-stage="poster">
+    <div id="title-scene">
+      <img class="title-layer" id="title-paint" src="resources/sprites/interface/menu/scene_master_leafclear_v1_1536x1024.png" width="1536" height="1024" alt="">
+      <div id="title-navlights" aria-hidden="true">
+        <span class="title-navlight" id="navlight-antenna"></span>
+        <span class="title-navlight" id="navlight-arm"></span>
+        <span class="title-navlight" id="navlight-spire"></span>
       </div>
+      <div class="title-layer" id="title-dim"></div>
+      <div class="title-layer" id="title-fade"></div>
+    </div>
+
+    <div id="title-ui">
+      <div class="title-disp" id="title-disp-upper"><div class="glass"></div><div class="inner">
+        <div id="title-logo">TRANS-PLANT</div>
+        <div id="title-divider" aria-hidden="true"><span class="rule"></span><svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 15.2V7.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M7.6 8.6C7.4 5.2 5 3 1.4 3.1 1.5 6.6 3.9 8.7 7.6 8.6Z" fill="currentColor"/><path d="M8.4 7.4C8.6 4 11 1.8 14.6 1.9 14.5 5.4 12.1 7.5 8.4 7.4Z" fill="currentColor"/></svg><span class="rule"></span></div>
+        <div id="title-intro" aria-live="polite">
+          <div class="tag" id="title-tagline"></div>
+          <div class="tag" id="title-tagline-2"></div>
+          <div class="tag" id="title-tagline-3"></div>
+        </div>
+        <nav class="title-buttons" id="title-buttons" aria-label="Main menu">
+          <button type="button" class="title-btn accent" id="btn-new" style="--i:0" aria-describedby="title-st-msg" data-hint="Begin a new voyage: a trail, a crop, a crew."><span class="btn-led"></span><span class="lbl">New Game</span></button>
+          <button type="button" class="title-btn disabled" id="btn-continue" style="--i:1" aria-describedby="title-st-msg" aria-disabled="true"><span class="btn-led"></span><span class="lbl">Continue</span></button>
+          <button type="button" class="title-btn disabled" id="btn-records" style="--i:2" aria-describedby="title-st-msg" aria-disabled="true"><span class="btn-led"></span><span class="lbl">Records</span></button><!-- ruling 89: engine/js/screens/records.js -->
+        </nav>
+      </div></div>
+      <div class="title-disp" id="title-disp-lower"><div class="glass"></div><div class="inner">
+        <section id="title-status" aria-label="Ship status">
+          <div class="st-title"><span class="st-led"></span>Ship status</div>
+          <div class="st-msg" id="title-st-msg" aria-live="polite"></div>
+        </section>
+        <div id="title-skip"><span class="sk-led"></span>Click or press any key to skip</div>
+      </div></div>
     </div>
 
     <div id="poster"></div>

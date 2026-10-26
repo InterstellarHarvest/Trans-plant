@@ -31,7 +31,9 @@ async function reloadContinue(page) {
     if (i % 10 === 0) await page.keyboard.press('Space');
     await page.waitForTimeout(250);
   }
+  await page.waitForTimeout(500); // the menu arms a beat after it appears (ruling 113)
   await page.click('#btn-continue');
+  await page.keyboard.press('x'); // a key skips the departure (ruling 113)
   await page.waitForTimeout(900);
 }
 const where = page => page.evaluate(() => ({ scr: document.querySelector('.screen.active').id, ev: STATE.currentEvent && STATE.currentEvent.id, phase: STATE.stationVisit && STATE.stationVisit.phase, day: STATE.daysElapsed }));

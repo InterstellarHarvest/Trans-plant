@@ -119,7 +119,9 @@ function diff(a, b, path = '', out = []) {
       // The player's path: a key dismisses the poster, Continue lights.
       await page.keyboard.press('Space');
       for (let i = 0; i < 40 && !(await page.evaluate(() => document.getElementById('title-buttons').classList.contains('visible'))); i++) await page.clock.runFor(500);
+      await page.clock.runFor(500); // the menu arms a beat after it appears (ruling 113)
       await page.click('#btn-continue');
+      await page.keyboard.press('x'); // a key skips the departure (ruling 113)
       await page.clock.runFor(600);
       await page.evaluate(installHarness, policy);
       await page.clock.runFor(300);

@@ -38,7 +38,9 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
     for (let i = 0; i < 40 && !(await page.evaluate(() => document.getElementById('title-buttons').classList.contains('visible'))); i++) await page.clock.runFor(500);
     const lit = await page.evaluate(() => hasSave() && !document.getElementById('btn-continue').classList.contains('disabled'));
     ok(lit, `${f}: Continue offered`);
+    await page.clock.runFor(500); // the menu arms a beat after it appears (ruling 113)
     await page.evaluate(() => { const b = document.getElementById('btn-continue'); b.classList.remove('disabled'); b.click(); });
+    await page.keyboard.press('x'); // a key skips the departure (ruling 113)
     await page.clock.runFor(800);
     const st = await page.evaluate(() => {
       const R = STATE.resources;

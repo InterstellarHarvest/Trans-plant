@@ -8,7 +8,8 @@
    runs are kept, newest first; each destination's best arrival (highest
    score, crop alive — the crop is the mission) is kept for good.
    The title screen's RECORDS button opens the panel; CLEAR RECORDS
-   (confirmed) empties it.
+   (confirmed) empties it. Tab stays inside the open panel; closing it
+   (×, ESC, the backdrop) returns focus to RECORDS.
 
    A run is recorded once, when its ending is final: at once for an
    arrival or a terminal failure, and when the player accepts a failure
@@ -118,6 +119,7 @@
   }
 
   function clearRecords() { try { localStorage.removeItem(RECORDS_KEY); } catch (_) {} }
+  const trailLabel = trail => DEST_LABEL[trail] || '';
   function hasRecords() { const r = loadRecords(); return r.runs.length > 0 || Object.keys(r.best).length > 0; }
 
   /* ── Panel ─────────────────────────────────────────────────── */
@@ -172,15 +174,27 @@
   function closeRecords() {
     hideOverlay('overlay-records');
     refreshRecordsButton();
+    const btn = $('btn-records'), title = $('screen-title');
+    if (btn && title && title.classList.contains('active')) btn.focus({ preventScroll: true });
   }
+  // The title menu shows the hint on its SHIP STATUS display (a tooltip
+  // would sit flat over the perspective-mapped screen); its lamp is CSS.
   function refreshRecordsButton() {
     const btn = $('btn-records');
     if (!btn) return;
     const has = hasRecords();
     btn.classList.toggle('disabled', !has);
-    btn.title = has ? 'Your voyages and best arrivals' : 'Finish a voyage to start your records';
-    const led = btn.querySelector('.btn-led');
-    if (led) led.style.background = has ? '#c8a85a' : '#333';
+    btn.setAttribute('aria-disabled', String(!has));
+    btn.dataset.hint = has ? 'Your voyages and best arrivals.' : 'Finish a voyage to start your records.';
+  }
+  // Tab and Shift+Tab cycle through the panel's own visible controls.
+  function trapTab(e) {
+    if (e.key !== 'Tab') return;
+    const list = [...$('rec-card').querySelectorAll('button')].filter(b => !b.disabled && b.offsetParent !== null);
+    if (!list.length) return;
+    e.preventDefault();
+    const i = list.indexOf(document.activeElement);
+    list[(i + (e.shiftKey ? -1 : 1) + list.length) % list.length].focus();
   }
 
   function wire() {
@@ -190,9 +204,11 @@
     btn.addEventListener('click', () => { if (hasRecords()) openRecords(); });
     $('rec-x').addEventListener('click', closeRecords);
     $('overlay-records').addEventListener('click', e => { if (e.target.id === 'overlay-records') closeRecords(); });
-    $('rec-clear').addEventListener('click', () => setConfirm(true));
-    $('rec-no').addEventListener('click', () => setConfirm(false));
-    $('rec-yes').addEventListener('click', () => { clearRecords(); paintRecords(); refreshRecordsButton(); });
+    $('overlay-records').addEventListener('keydown', trapTab);
+    // Focus follows the confirm (the pressed button hides under it).
+    $('rec-clear').addEventListener('click', () => { setConfirm(true); $('rec-no').focus(); });
+    $('rec-no').addEventListener('click', () => { setConfirm(false); $('rec-clear').focus(); });
+    $('rec-yes').addEventListener('click', () => { clearRecords(); paintRecords(); refreshRecordsButton(); $('rec-x').focus(); });
     // Same refresh rhythm as Continue: whenever the title buttons appear.
     const buttons = $('title-buttons');
     if (buttons) new MutationObserver(() => { if (buttons.classList.contains('visible')) refreshRecordsButton(); })
@@ -204,6 +220,8 @@
   Object.assign(window, {
     // engine API (endings.js)
     recordRun, recordSavedFailure, runScore,
+    // the title menu (title.js): RECORDS' state, the save's destination
+    hasRecords, refreshRecordsButton, trailLabel,
     // test hook: tools/tests/test_records.js reads the stored records
     loadRecords, SCORE_VERSION,
   });

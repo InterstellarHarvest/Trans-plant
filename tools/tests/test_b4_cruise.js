@@ -175,7 +175,7 @@ const overlaps = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
       showScreen('screen-cruise');
       return { title, setup, enc };
     });
-    ok(/rgba\(0, 0, 0, 0\.1\)/.test(crt.title), 'title CRT scanlines 10%');
+    ok(/rgba\(0, 0, 0, 0\)/.test(crt.title), 'title: no whole-frame CRT lines (ruling 113: the painting is never textured)');
     ok(/rgba\(0, 0, 0, 0\.05\)/.test(crt.setup), 'setup CRT scanlines 5%');
     ok(/rgba\(0, 0, 0, 0\.06\)/.test(crt.enc), 'encounter keeps its demo 6%');
     await page.close();

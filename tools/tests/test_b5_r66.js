@@ -38,7 +38,9 @@ async function reloadContinue(page) {
     await page.waitForTimeout(250);
   }
   await page.waitForSelector('#title-buttons.visible', { timeout: 20000 });
+  await page.waitForTimeout(500); // the menu arms a beat after it appears (ruling 113)
   await page.click('#btn-continue');
+  await page.keyboard.press('x'); // a key skips the departure (ruling 113)
   await page.waitForFunction(() => !document.getElementById('screen-title').classList.contains('active'));
   await page.waitForTimeout(700);
 }

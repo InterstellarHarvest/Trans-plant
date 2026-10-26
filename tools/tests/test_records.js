@@ -157,7 +157,7 @@ const end = (page, r) => page.evaluate(new Function('r', 'return (' + END.toStri
     await page.waitForTimeout(700);
     const empty = await page.evaluate(() => { const b = document.getElementById('btn-records'); b.click();
       return { dis: b.classList.contains('disabled'), open: document.getElementById('overlay-records').classList.contains('active'),
-        w: ['btn-new', 'btn-continue', 'btn-records'].map(id => Math.round(document.getElementById(id).getBoundingClientRect().width)) }; });
+        w: ['btn-new', 'btn-continue', 'btn-records'].map(id => document.getElementById(id).offsetWidth) }; }); // layout width: the display's perspective draws them 1 px apart (ruling 113)
     ok(empty.dis && !empty.open, 'no records: RECORDS is dimmed and opens nothing');
     ok(new Set(empty.w).size === 1, `the three title buttons share one width (${empty.w.join('/')})`);
     // Seed through real endings, then back to the title.

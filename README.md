@@ -12,7 +12,7 @@ No install, no account, no download. One click and you're in orbit.
 
 How to play, every screen explained, and — behind a spoiler fence — how the whole engine fits together.
 
-![The Trans-plant title screen](docs/readme/title.png)
+![The Trans-plant title menu on the observation deck](docs/readme/title.png)
 
 ---
 
