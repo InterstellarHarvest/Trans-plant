@@ -1,0 +1,31 @@
+/* ============================================================
+   background-effects.css — the title's background layers and the
+   effects that belong to a background (MENU-002C).
+   Shown only with the background they are registered to
+   (background-views.js sets #title-navlights hidden for any other).
+   The station lights are the released ruling-113 rules, unchanged.
+   ============================================================ */
+
+/* MENU-002C prototype (?arch=layers): a view's background, under the
+   painting's <img> showing the universal room overlay, in the same box. */
+#screen-title #title-bg { left: 0; top: 0; width: 960px; height: 640px; }
+
+/* ── Station navigation lights ─────────────────────────────────────
+   Three pinpoints on painted station structure (stage px = source px
+   / 1.6): a red blink on the antenna tip, a cool double strobe on the
+   docking-arm end, an amber pulse on the lower spire tip. Opacity only:
+   the station and the sky never move. Under the dim, so the intro dims
+   them with the room; absent under reduced motion. */
+#screen-title #title-navlights { position: absolute; inset: 0; pointer-events: none; }
+#screen-title.rm #title-navlights { display: none; }
+#screen-title .title-navlight {
+  position: absolute; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%;
+  opacity: 0; mix-blend-mode: screen;
+  background: radial-gradient(circle closest-side, rgba(255,255,255,0.95) 0, rgba(var(--rgb),0.9) 22%, rgba(var(--rgb),0.3) 55%, rgba(var(--rgb),0) 100%);
+}
+#screen-title #navlight-antenna { left: 424.69px; top: 123.44px; --rgb: 255,72,56;   animation: title-nav-blink 5.2s linear -1.3s infinite; }
+#screen-title #navlight-arm     { left: 517.81px; top: 196.56px; --rgb: 214,232,255; animation: title-nav-strobe 7.7s linear -4.1s infinite; }
+#screen-title #navlight-spire   { left: 421.56px; top: 259.06px; --rgb: 255,182,92;  animation: title-nav-pulse 9.4s ease-in-out -2.2s infinite; }
+@keyframes title-nav-blink  { 0%, 84% { opacity: 0; } 87% { opacity: 0.85; } 93% { opacity: 0.425; } 98%, 100% { opacity: 0; } }
+@keyframes title-nav-strobe { 0%, 90% { opacity: 0; } 90.5% { opacity: 0.85; } 91.5% { opacity: 0; } 92.6% { opacity: 0.85; } 93.6%, 100% { opacity: 0; } } /* two ~80 ms flashes */
+@keyframes title-nav-pulse  { 0%, 55%, 100% { opacity: 0; } 72% { opacity: 0.595; } }

@@ -14,13 +14,17 @@
  *             every station approach sheet (frame rects + meta.size)
  *   images  — data: URIs for the few images file:// would break: ones the
  *             engine reads pixels back from (a disk image taints the
- *             canvas) and CSS mask-image sources (CORS fetch)
+ *             canvas) and CSS mask-image sources (CORS fetch). The title
+ *             menu's universal overlay and its rotation backgrounds are
+ *             here for the first reason: the menu composites them once in
+ *             a canvas and exports the result (background-views.js)
  *
  * Usage (from the Trans-plant root):
  *   node tools/build_portable.js           write the bundle
  *   node tools/build_portable.js --check   exit 1 if it is stale
  * lint_modules.js runs the --check, so a stale bundle fails lint.
- * REBUILD AFTER ANY modules/, NPC OR STATION-APPROACH spritesheet.json CHANGE.
+ * REBUILD AFTER ANY modules/, NPC OR STATION-APPROACH spritesheet.json CHANGE,
+ * AND AFTER ANY CHANGE TO THE MENU OVERLAY OR A ROTATION BACKGROUND.
  */
 const fs = require('fs');
 const path = require('path');
@@ -36,6 +40,14 @@ const IMAGES = [
   // Pause-menu sidebar icons — also CSS masks (shared.js PauseMenu), so
   // they rendered blank on a double-click launch.
   ...['resume', 'settings', 'save', 'load', 'log', 'help', 'quit'].map(n => 'sprites/interface/pause/' + n + '.png'),
+  // Title menu (MENU-002C1): the one room overlay and every background in
+  // the rotation (an approved background joins this list when it joins the
+  // rotation). Keyed as background-views.js requests them.
+  'resources/sprites/interface/menu/menu_overlay.png',
+  'resources/sprites/interface/menu/backgrounds/earth.png',
+  'resources/sprites/interface/menu/backgrounds/mars.png',   // Mars V3 (MENU-002D)
+  'resources/sprites/interface/menu/backgrounds/ringed.png', // Ringed V2-B (MENU-002H)
+  'resources/sprites/interface/menu/backgrounds/nebula.png', // Nebula V1 (MENU-002H)
 ];
 
 function walk(rel, test, out = []) {

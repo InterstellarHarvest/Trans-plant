@@ -5,6 +5,8 @@
 // station navigation lights; pause / hidden tab; direct-file and offline
 // opening; locked art and display registration. Real game data throughout:
 // saves and records are written by the game's own functions.
+// Pinned to the Earth view (?view=earth): the lights and the master parity
+// are Earth's. The rotation, and the menu over Mars, are test_title_overlay.js's.
 const { chromium } = require('playwright');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -12,6 +14,7 @@ const path = require('path');
 const URL = process.env.URL || 'http://localhost:8177/index.html';
 const ROOT = path.resolve(__dirname, '../..');
 const FILE_URL = require('url').pathToFileURL(path.join(ROOT, 'index.html')).href;
+const EARTH = '?view=earth';
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } };
 const errors = [];
@@ -33,8 +36,9 @@ async function open(opts = {}) {
   const ctx = await browser.newContext({ viewport: { width: opts.w || 960, height: opts.h || 640 }, reducedMotion: opts.rm ? 'reduce' : 'no-preference' });
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push(e.message));
+  if (opts.onRequest) page.on('request', r => opts.onRequest(r.url()));
   page.ctx = ctx;
-  await page.goto(opts.url || URL);
+  await page.goto(opts.url || URL + EARTH);
   await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.endings && MOD.failures && window.recordRun && window.TITLE_MENU && document.getElementById('screen-title').classList.contains('active'), null, { timeout: 30000 });
   return page;
 }
@@ -55,6 +59,7 @@ async function seed(page, { save, records, invalid, far }) {
   }, { save, records, invalid: invalid || null, far: !!far });
   await page.reload();
   await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.endings && window.TITLE_MENU && document.getElementById('screen-title').classList.contains('active'), null, { timeout: 30000 });
+  await page.evaluate(() => window.TITLE_VIEW && TITLE_VIEW.ready); // the poster's key waits for the composited room
 }
 const stage = page => page.evaluate(() => TITLE_MENU.stage);
 // The player's quick path to an armed menu: a key on the poster, a key to
@@ -84,13 +89,17 @@ async function mapped(page, id, fx = 0.5, fy = 0.5) {
   {
     for (const [f, h] of Object.entries(ART)) ok(sha(fs.readFileSync(path.join(ROOT, MENU_DIR, f))) === h, `${f} sha256 ${h.slice(0, 12)}…`);
     ok(sha(fs.readFileSync(path.join(ROOT, 'resources/sprites/interface/poster-title.jpg'))) === POSTER_SHA, 'poster-title.jpg is the owner poster ea87e1c0…');
-    const page = await open();
+    // MENU-002C1: the painting is the universal overlay over the Earth
+    // background, composited once (test_title_overlay.js has the detail).
+    const reqs = [];
+    const page = await open({ onRequest: u => reqs.push(u) });
     const served = await page.evaluate(async () => {
-      const h = async u => [...new Uint8Array(await crypto.subtle.digest('SHA-256', await (await fetch(u)).arrayBuffer()))].map(x => x.toString(16).padStart(2, '0')).join('');
+      await TITLE_VIEW.ready;
       const img = document.getElementById('title-paint');
-      return { paint: await h(img.getAttribute('src')), nw: img.naturalWidth, nh: img.naturalHeight, src: img.getAttribute('src') };
+      return { arch: TITLE_VIEW.arch, shown: TITLE_VIEW.shown, nw: img.naturalWidth, nh: img.naturalHeight, src: img.getAttribute('src') };
     });
-    ok(served.paint === ART['scene_master_leafclear_v1_1536x1024.png'] && served.nw === 1536 && served.nh === 1024, `the title paints the leaf-clear master, as served (${served.src})`);
+    ok(served.arch === 'composite' && served.shown === 'earth' && /^blob:/.test(served.src) && served.nw === 1536 && served.nh === 1024 && !reqs.some(u => /scene_master/.test(u)),
+      `the title paints Earth through the universal overlay, one 1536×1024 composite (${served.src.slice(0, 22)}…); the master is never requested`);
     await page.ctx.close();
   }
 
@@ -116,11 +125,12 @@ async function mapped(page, id, fx = 0.5, fy = 0.5) {
       return { tf: cs.transform, filter: cs.filter, anims: document.getElementById('title-paint').getAnimations().length, box: [r.left - g.left, r.top - g.top, r.width, r.height] }; });
     ok(paint.tf === 'none' && paint.filter === 'none' && paint.anims === 0 && JSON.stringify(paint.box) === '[0,0,960,640]', 'the painting fills the frame and never transforms, filters or animates');
     // At DPR 1.6 the frame is in source pixels: outside the displays and the
-    // three light halos it must be the master exactly (the leaf area too).
+    // three light halos it must be the master (the leaf area too): exactly,
+    // but for the composite's ±1-2 on pixels at a window's edge.
     await page.ctx.close();
     const ctx = await browser.newContext({ viewport: { width: 960, height: 640 }, deviceScaleFactor: 1.6 });
     const p2 = await ctx.newPage(); p2.on('pageerror', e => errors.push(e.message));
-    await p2.goto(URL); await p2.waitForFunction(() => window.TITLE_MENU && document.getElementById('screen-title').classList.contains('active'), null, { timeout: 30000 });
+    await p2.goto(URL + EARTH); await p2.waitForFunction(() => window.TITLE_MENU && document.getElementById('screen-title').classList.contains('active'), null, { timeout: 30000 });
     await toMenu(p2); await p2.mouse.move(959, 639); await p2.evaluate(() => document.activeElement.blur());
     await p2.waitForFunction(() => getComputedStyle(document.getElementById('title-dim')).opacity === '0'); await p2.waitForTimeout(300);
     await p2.evaluate(() => document.getAnimations().filter(a => /^title-nav/.test(a.animationName)).forEach(a => { a.pause(); a.currentTime = a.effect.getTiming().duration + a.effect.getTiming().delay; }));
@@ -135,13 +145,17 @@ m = np.asarray(Image.open(sys.argv[2]).convert('RGB')).astype(int)
 mask = Image.new('L', (1536, 1024), 0); d = ImageDraw.Draw(mask)
 for q in ([(84.48, 96.95), (296.31, 144.90), (295.07, 368.47), (80.98, 357.34)], [(82.64, 368.60), (292.42, 378.12), (291.49, 447.61), (81.49, 447.98)]):
     d.polygon([(x * 1.6, y * 1.6) for x, y in q], fill=255, outline=255, width=7)
-diff = np.abs(a - m).max(2) > 0
+dd = np.abs(a - m).max(2)
+diff = dd > 0
 ui = np.asarray(mask) > 0
+win = np.asarray(Image.open(sys.argv[3]))[..., 3] < 255
+edge = win.copy()
+for _ in range(3): edge[1:] |= edge[:-1].copy(); edge[:-1] |= edge[1:].copy(); edge[:, 1:] |= edge[:, :-1].copy(); edge[:, :-1] |= edge[:, 1:].copy()
 leaf = np.zeros_like(diff); leaf[667:733, 126:203] = True
-print(json.dumps({'size': list(a.shape), 'outside': int((diff & ~ui).sum()), 'leaf_outside_ui': int((diff & leaf & ~ui).sum()), 'inside': int((diff & ui).sum())}))
-`, shotPath, path.join(ROOT, MENU_DIR, 'scene_master_leafclear_v1_1536x1024.png')]).toString();
+print(json.dumps({'size': list(a.shape), 'outside': int((diff & ~ui).sum()), 'far': int((diff & ~ui & ~edge).sum()), 'max': int(dd[~ui].max()), 'leaf_outside_ui': int((diff & leaf & ~ui).sum()), 'inside': int((diff & ui).sum())}))
+`, shotPath, path.join(ROOT, MENU_DIR, 'scene_master_leafclear_v1_1536x1024.png'), path.join(ROOT, MENU_DIR, 'menu_overlay.png')]).toString();
       const r = JSON.parse(out);
-      ok(r.size[0] === 1024 && r.size[1] === 1536 && r.outside === 0, `DPR 1.6 menu frame = the leaf-clear master outside the two displays (${r.outside} px differ; UI inside: ${r.inside} px)`);
+      ok(r.size[0] === 1024 && r.size[1] === 1536 && r.far === 0 && r.max <= 2, `DPR 1.6 menu frame = the leaf-clear master outside the two displays, but for ±${r.max} on ${r.outside} px at window edges (none farther than 3 px; UI inside: ${r.inside} px)`);
       ok(r.leaf_outside_ui === 0, 'the corrected leaf area matches the master');
     } else console.log('  · painting pixel check skipped (set PY to a python with numpy + Pillow)');
     try { fs.unlinkSync(shotPath); } catch (_) {}
@@ -438,19 +452,20 @@ print(json.dumps({'size': list(a.shape), 'outside': int((diff & ~ui).sum()), 'le
   {
     const ctx = await browser.newContext({ viewport: { width: 960, height: 640 } });
     const net = [];
-    await ctx.route('**/*', r => { const u = r.request().url(); if (u.startsWith('file:') || u.startsWith('data:')) return r.continue(); net.push(u); return r.abort(); });
+    await ctx.route('**/*', r => { const u = r.request().url(); if (u.startsWith('file:') || u.startsWith('data:') || u.startsWith('blob:')) return r.continue(); net.push(u); return r.abort(); });
     const page = await ctx.newPage(); page.on('pageerror', e => errors.push('file: ' + e.message));
-    await page.goto(FILE_URL);
+    await page.goto(FILE_URL + EARTH);
     await page.waitForFunction(() => typeof MOD !== 'undefined' && MOD.endings && window.TITLE_MENU && document.getElementById('screen-title').classList.contains('active'), null, { timeout: 30000 });
     const r = await page.evaluate(async () => {
+      await TITLE_VIEW.ready;
       await document.fonts.ready;
       const want = ["700 30px 'Barlow Semi Condensed'", "500 14px 'IBM Plex Mono'", "600 12.5px 'IBM Plex Mono'", "700 17px 'IBM Plex Mono'"];
       await Promise.all(want.map(f => document.fonts.load(f)));
       const img = document.getElementById('title-paint');
       // FontFace.family: Firefox keeps the quotes.
-      return { portable: !!window.TP_PORTABLE, fonts: want.map(f => document.fonts.check(f) && [...document.fonts].some(ff => f.includes(ff.family.replace(/["']/g, '')) && ff.status === 'loaded')), img: img.complete && img.naturalWidth === 1536 };
+      return { portable: !!window.TP_PORTABLE, fonts: want.map(f => document.fonts.check(f) && [...document.fonts].some(ff => f.includes(ff.family.replace(/["']/g, '')) && ff.status === 'loaded')), img: img.complete && img.naturalWidth === 1536, arch: TITLE_VIEW.arch };
     });
-    ok(r.portable && r.img && r.fonts.every(Boolean), `file:// with the network blocked: portable data, the painting and the menu fonts all load from disk (${r.fonts.join('/')})`);
+    ok(r.portable && r.img && r.arch === 'composite' && r.fonts.every(Boolean), `file:// with the network blocked: portable data, the painting (composited from the bundled images: ${r.arch}) and the menu fonts all load from disk (${r.fonts.join('/')})`);
     await toMenu(page);
     await page.click('#btn-new'); await page.waitForFunction(() => document.getElementById('screen-setup').classList.contains('active'), null, { timeout: 5000 });
     ok(true, 'file://: NEW GAME reaches setup');

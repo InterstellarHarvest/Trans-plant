@@ -1,9 +1,10 @@
 /* ============================================================
-   screen-title — the observation-deck title menu (ruling 113).
-   One locked painting (resources/sprites/interface/menu/
-   scene_master_leafclear_v1_1536x1024.png), drawn unchanged and never
-   moved; the menu is live HTML laid onto its two painted terminal
-   displays by a measured perspective mapping (engine/js/screens/title.js).
+   menu.css — the observation-deck title menu (ruling 113).
+   The room (the approved painting, or MENU-002C's universal overlay over
+   a background: background-views.js) is drawn unchanged and never moved;
+   the menu is live HTML laid onto its two painted terminal displays by a
+   measured perspective mapping (menu.js). Background layers and their
+   effects (the station lights): background-effects.css.
    Stages on #screen-title[data-stage]: poster → intro → menu →
    departing → departed. Everything is scoped under #screen-title.
    ============================================================ */
@@ -13,22 +14,22 @@
    the font service serves it; anything outside falls back as before. */
 @font-face {
   font-family: 'Barlow Semi Condensed'; font-style: normal; font-weight: 700; font-display: swap;
-  src: url('fonts/barlow-semi-condensed-latin-700.woff2') format('woff2');
+  src: url('../../../../fonts/barlow-semi-condensed-latin-700.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 500; font-display: swap;
-  src: url('fonts/ibm-plex-mono-latin-500.woff2') format('woff2');
+  src: url('../../../../fonts/ibm-plex-mono-latin-500.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap;
-  src: url('fonts/ibm-plex-mono-latin-600.woff2') format('woff2');
+  src: url('../../../../fonts/ibm-plex-mono-latin-600.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 700; font-display: swap;
-  src: url('fonts/ibm-plex-mono-latin-700.woff2') format('woff2');
+  src: url('../../../../fonts/ibm-plex-mono-latin-700.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -60,26 +61,6 @@
 #screen-title[data-stage="departing"] #title-fade { opacity: 1; transition: opacity 0.96s linear 1.32s; }
 #screen-title.rm[data-stage="departing"] #title-fade { transition: opacity 0.4s ease; }
 #screen-title[data-stage="departed"] #title-fade { opacity: 1; }
-
-/* ── Station navigation lights ─────────────────────────────────────
-   Three pinpoints on painted station structure (stage px = source px
-   / 1.6): a red blink on the antenna tip, a cool double strobe on the
-   docking-arm end, an amber pulse on the lower spire tip. Opacity only:
-   the station and the sky never move. Under the dim, so the intro dims
-   them with the room; absent under reduced motion. */
-#screen-title #title-navlights { position: absolute; inset: 0; pointer-events: none; }
-#screen-title.rm #title-navlights { display: none; }
-#screen-title .title-navlight {
-  position: absolute; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%;
-  opacity: 0; mix-blend-mode: screen;
-  background: radial-gradient(circle closest-side, rgba(255,255,255,0.95) 0, rgba(var(--rgb),0.9) 22%, rgba(var(--rgb),0.3) 55%, rgba(var(--rgb),0) 100%);
-}
-#screen-title #navlight-antenna { left: 424.69px; top: 123.44px; --rgb: 255,72,56;   animation: title-nav-blink 5.2s linear -1.3s infinite; }
-#screen-title #navlight-arm     { left: 517.81px; top: 196.56px; --rgb: 214,232,255; animation: title-nav-strobe 7.7s linear -4.1s infinite; }
-#screen-title #navlight-spire   { left: 421.56px; top: 259.06px; --rgb: 255,182,92;  animation: title-nav-pulse 9.4s ease-in-out -2.2s infinite; }
-@keyframes title-nav-blink  { 0%, 84% { opacity: 0; } 87% { opacity: 0.85; } 93% { opacity: 0.425; } 98%, 100% { opacity: 0; } }
-@keyframes title-nav-strobe { 0%, 90% { opacity: 0; } 90.5% { opacity: 0.85; } 91.5% { opacity: 0; } 92.6% { opacity: 0.85; } 93.6%, 100% { opacity: 0; } } /* two ~80 ms flashes */
-@keyframes title-nav-pulse  { 0%, 55%, 100% { opacity: 0; } 72% { opacity: 0.595; } }
 
 /* ── Interface layer (live HTML on the painted displays) ─────────── */
 #screen-title #title-ui { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
@@ -282,7 +263,7 @@
 /* ── Poster (shown first; any key or click dismisses it) ──────────── */
 #screen-title #poster {
   position: absolute; inset: 0; z-index: 60;
-  background: url('sprites/interface/poster-title.jpg') center / cover no-repeat;
+  background: url('../../poster-title.jpg') center / cover no-repeat;
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
 #screen-title #poster-vignette {

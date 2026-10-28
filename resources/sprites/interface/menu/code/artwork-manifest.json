@@ -1,0 +1,275 @@
+{
+ "project": "TRANS-PLANT title menu (ruling 113; MENU-002C1 universal-overlay renderer, APPROVED AND LOCKED; MENU-002H four-background rotation release: Earth, Mars V3, Ringed V2-B and Nebula V1, all APPROVED AND LOCKED; APPROVED FOR RELEASE by the PMO and released to production by MENU-002I, see ../RELEASE_RECORD.txt)",
+ "registration": {
+  "source_px": [
+   1536,
+   1024
+  ],
+  "shown_at_stage_px": [
+   960,
+   640
+  ],
+  "scale": 0.625
+ },
+ "rotation": {
+  "overlays": 1,
+  "active_backgrounds": [
+   "earth",
+   "mars",
+   "ringed",
+   "nebula"
+  ],
+  "selection": "one equal-probability draw per fresh page load (Math.floor(Math.random() * 4) over the four, in registry order: each an equal quarter), kept for the page session (setup BACK and RECORDS keep it; nothing is redrawn or reloaded); no storage; no player-facing selector; ?view=earth|mars|ringed|nebula forces one, ?view=random draws from the rotation only",
+  "excluded": "mars-v1 and ringed-v1 (REJECTED) are QA-only forced views, never drawn, not bundled; source/ringed_v2.png and source/nebula_v1.png (the supplied originals) are not registered and never loaded",
+  "portable_bundle": "all four active backgrounds and the overlay (tools/build_portable.js), so every active view composites from disk (file://) in Chrome and Firefox with no network and no two-layer fallback",
+  "station_effects": "earth only: the three station navigation lights and NEW GAME's 'Departure authorised. Mind the station.'; mars, ringed and nebula: no lights, 'Departure authorised. Safe travels.'"
+ },
+ "overlay": {
+  "file": "menu_overlay.png",
+  "sha256": "358819f27b854f44989ed11d6c1b212d5b22d612f86184c2aa024087d0563616",
+  "format": "RGBA PNG 1536x1024",
+  "what": "the ONE universal room layer for every background: the approved TIGHT leaf-clear foreground with the MENU-002A alpha-only fix, losslessly optimised (MENU-002C1 A): RGB set to 0 under the 455,967 fully transparent pixels; alpha identical everywhere, RGB identical (= the approved master) wherever alpha > 0",
+  "derived_from": {
+   "foreground_TIGHT_leafclear_v1_1536x1024.png": "a369451fa2562a07f4fb53d0d08c1dd1720c04742fbbf9273bfc088b7511114f",
+   "footprint": "source/provenance/alphafix_footprint.json (written by source/tools/alpha_variant.py, which rebuilds source/menu_overlay_alphafix002a_original.png byte for byte from the archived TIGHT foreground and master)",
+   "optimiser": "source/tools/optimize_sources.py (proofs: source/provenance/optimisation_002c1_overlay_earth.json)"
+  },
+  "status": "APPROVED AND LOCKED universal overlay (PMO MENU-002C1); the one room layer for every background",
+  "bytes": 2074269,
+  "source": {
+   "file": "source/menu_overlay_alphafix002a_original.png",
+   "sha256": "75cbedaadd5062ac3cd78ccf1c18cc517233cf4ceeaad95923f07333a6f0b7ca",
+   "bytes": 2965495
+  },
+  "portable_bundle": true
+ },
+ "backgrounds": {
+  "earth": {
+   "file": "backgrounds/earth.png",
+   "sha256": "aa9a9472271ed9f3d9ae34cefa154d4f968360f005c23b5fbd980365ea071b41",
+   "what": "the approved master scene_master_leafclear_v1_1536x1024.png, losslessly optimised (MENU-002C1 B): the 1,037,845 pixels under fully opaque room and more than 8 source px from any pixel the overlay lets through set to 0; every visible pixel, and an 8 px band of real Earth around each window edge, is the master's. The overlay over it equals the master on every pixel.",
+   "station": true,
+   "rotation": true,
+   "status": "APPROVED AND LOCKED (the released Earth); rotation enabled",
+   "bytes": 1019604,
+   "source": {
+    "file": "scene_master_leafclear_v1_1536x1024.png",
+    "sha256": "129557686e9273e1dda84e1e9462ddb4ab01989adee945c15f12a0cd36b4e914",
+    "bytes": 2630750
+   },
+   "portable_bundle": true
+  },
+  "mars": {
+   "file": "backgrounds/mars.png",
+   "sha256": "8f4363a1fc8c92fb93cf1ce9718ac1b5ec4392ff18292dc2b085fa886c5acded",
+   "what": "approved Mars V3 (source/mars_v3.png), losslessly optimised (MENU-002E, the same rule as Earth's MENU-002C1 B): the 1,037,845 pixels under fully opaque room and more than 8 source px from any pixel the overlay lets through set to 0 (1,037,829 actually changed); every visible pixel, and an 8 px band of real Mars around each window edge, is V3's. The overlay over it equals the overlay over V3 on every pixel.",
+   "station": false,
+   "rotation": true,
+   "status": "APPROVED AND LOCKED (PMO ruling on MENU-002C2); rotation enabled (MENU-002D)",
+   "bytes": 1029356,
+   "optimiser": "source/tools/optimize_mars.py (proofs: source/provenance/optimisation_002e_mars.json)",
+   "source": {
+    "file": "source/mars_v3.png",
+    "sha256": "25d9496d2b9d32ff55f5da9b12b525f5a40314c98ab39f2d51df5ab0814e01a7",
+    "bytes": 2908381,
+    "what": "Mars V3 (MENU-002C2): Mars V2 with its skylight defect repaired. V2's registration mirrored the 24 rows above the placed painting (rows 0..23, x >= 480) about row 24, which bent the sun's radial rays into a chevron through the upper skylights and mirrored the stars. V3 rebuilds only those rows from the real painting below them: rays continued straight along their own direction from the sun, the nebula pane's glow carried upward, stars transplanted from sky the room hides (no star group on screen twice). Rows 24..1023 and x < 480 are V2 byte for byte; planet, terrain, colours, lighting and sunrise unchanged.",
+    "status": "Mars V3 as APPROVED AND LOCKED (PMO, MENU-002C2); preserved as the source of the runtime file; never loaded",
+    "changed_from_v2": {
+     "rows": [
+      0,
+      23
+     ],
+     "x": [
+      480,
+      1535
+     ],
+     "changed_px": 25288,
+     "visible_px": 7636
+    },
+    "repair": "source/tools/make_mars_v3.py (+ find_donors.py; build record source/provenance/mars_v3_build.json); the unregistered painting it also reads (dddfe849..., only for the hidden x 480..529 blend zone) is source/paintings/wide_cinematic_space_scene_atmospheric_sci_fi_rea.png",
+    "source": {
+     "file": "source/mars_v2.png",
+     "sha256": "72aecea6722e5cb5d33660de35d7796a67aaaef9ec177afd77c7b04919a7d1f5",
+     "bytes": 2912304,
+     "what": "Mars V2 as supplied, PMO kit TRANSPLANT_MENU002_MARS_V2_ART_AND_HANDOFF.zip: MENU002_MARS_V2_EXTERIOR_REGISTERED_1536x1024.png (generated illustration, fitted to the Earth limb circle c=(1561,964) r=930). Never approved (MENU-002C1: the mirrored top 24 rows make a chevron through the skylights). Preserved as the historical source of V3; not loaded at runtime.",
+     "intake": "source/provenance/MENU002_MARS_V2_HANDOFF.txt, MENU002_MARS_V2_MANIFEST.json and build_menu002c_mars_revised.py; the painting it was registered from is source/paintings/wide_cinematic_space_scene_atmospheric_sci_fi_rea.png (dddfe849...)"
+    }
+   },
+   "portable_bundle": true
+  },
+  "ringed": {
+   "file": "backgrounds/ringed.png",
+   "sha256": "b0bfa56f4675d02d83ae520e4292e54032794af0755d14a979ac38e3e1c12542",
+   "what": "approved Ringed Planet V2-B (source/ringed_v2_skyfix_b.png), losslessly optimised (MENU-002H, the same rule as Earth's MENU-002C1 B and Mars' MENU-002E): the 1,037,845 pixels under fully opaque room and more than 8 source px from any pixel the overlay lets through set to 0 (1,036,939 actually changed); every visible pixel, and an 8 px band of real exterior around each window edge, is V2-B's. The overlay over it equals the overlay over V2-B on every pixel.",
+   "station": false,
+   "rotation": true,
+   "status": "APPROVED AND LOCKED (PMO MENU-002H: Ringed Planet V2-B); rotation enabled (MENU-002H)",
+   "bytes": 952110,
+   "optimiser": "source/tools/optimize_backgrounds.py (proofs: source/provenance/optimisation_002h_ringed_nebula.json)",
+   "source": {
+    "file": "source/ringed_v2_skyfix_b.png",
+    "sha256": "75c0aea0a88e72cd1ed8e5c324e3943f0953b260420033861cb953853bd0279c",
+    "bytes": 2658853,
+    "what": "Ringed V2-B: Ringed V2 as supplied with the PMO-selected sky-only fix B (MENU-002F2 section 11, selected in the MENU-002G1 brief). Only the 1x-original copies of the two duplicated stars on dark sky ((1119,78) and (876,69)) are removed: 434 px in x 872..1128, y 63..88 (359 of them visible), each filled with the local median sky plus donor grain; every other pixel is V2's. Rings, planet, sunlight and stars otherwise untouched. Regenerated for MENU-002H by source/tools/skyfix_ab.py source/provenance/ringed_v2_measurements.json (numpy 2.5.4, scipy 1.18.1, pillow 13.0.0) and verified against the expected sha256 75c0aea0a88e72cd1ed8e5c324e3943f0953b260420033861cb953853bd0279c.",
+    "status": "Ringed V2-B as APPROVED AND LOCKED (PMO MENU-002H); preserved as the source of the runtime file; never loaded",
+    "source": {
+     "file": "source/ringed_v2.png",
+     "sha256": "35022bee643b89d7010a5d642910cb3a32e90c900f1644bd0c416fb38e76a678",
+     "bytes": 2658973,
+     "what": "ringed-planet exterior candidate V2, PMO kit TRANSPLANT_MENU002_RINGED_V2_ART_INTAKE.zip (sha256 d25e63f4...): MENU002_RINGED_V2_REGISTERED_CANDIDATE_1536x1024.png as supplied, byte for byte. PMO-fitted: the unmodified generated illustration wide_cinematic_space_scene_high_detail_sci_fi_ast.png (785a7100...) kept at 1x over the whole canvas, with a 0.70x Lanczos copy of it at +330,+57 feathered over it (make_ringed_v2_fit.py). Opaque RGB 1536x1024, no metadata. Registered at 0,0 with no transform; not optimised.",
+     "status": "Ringed V2 as supplied, ARTISTICALLY ACCEPTED (PMO MENU-002F2 revised ruling, 2026-10-27); preserved byte for byte as the historical source of V2-B; not registered, never loaded at runtime",
+     "intake": "source/provenance/MENU002_RINGED_V2_INTAKE_README.txt, MENU002_RINGED_V2_MANIFEST.json and make_ringed_v2_fit.py; the original illustration it was registered from is source/paintings/wide_cinematic_space_scene_high_detail_sci_fi_ast.png (785a7100...)"
+    }
+   },
+   "portable_bundle": true
+  },
+  "nebula": {
+   "file": "backgrounds/nebula.png",
+   "sha256": "c43fd3f904c9b4e61943cb4bb2eaf58942ce252019463c491a02df7801b0fc35",
+   "what": "approved Nebula V1 (source/nebula_v1.png), losslessly optimised (MENU-002H, the same rule as Earth and Mars): the 1,037,845 pixels under fully opaque room and more than 8 source px from any pixel the overlay lets through set to 0 (1,037,784 actually changed); every visible pixel, and an 8 px band of real exterior around each window edge, is V1's. The overlay over it equals the overlay over V1 on every pixel. No recolouring, exposure or artistic change. The optimised file is re-encoded and does not carry the original's C2PA chunk; the original keeps it.",
+   "station": false,
+   "rotation": true,
+   "status": "APPROVED AND LOCKED (PMO MENU-002H: Nebula V1); rotation enabled (MENU-002H)",
+   "bytes": 1010468,
+   "optimiser": "source/tools/optimize_backgrounds.py (proofs: source/provenance/optimisation_002h_ringed_nebula.json)",
+   "source": {
+    "file": "source/nebula_v1.png",
+    "sha256": "e4d037ebae8850d24d3a05ca117dbdaf745af24f8d11798a2f3e40fe54c4841a",
+    "bytes": 2889357,
+    "what": "deep-space nebula exterior candidate V1, PMO kit TRANSPLANT_MENU002G_NEBULA_V1_ART_INTAKE.zip (sha256 028b8d04...): MENU002G_NEBULA_V1_EXTERIOR_1536x1024.png as supplied, byte for byte; the generated original wide_cinematic_deep_space_nebula_scene_high_deta.png is the same file. Generated natively at 1536x1024: no scaling, cropping, outpainting, mirroring or compositing. Opaque RGB 1536x1024; carries the generator's signed C2PA provenance chunk (caBX, 21,881 B), kept as supplied. Registered at 0,0 with no transform; not optimised.",
+    "status": "Nebula V1 as supplied, APPROVED AND LOCKED (PMO MENU-002H); preserved byte for byte as the original artwork and the source of the runtime file; not registered, never loaded at runtime",
+    "intake": "source/provenance/MENU002G_NEBULA_V1_INTAKE_README.txt and MENU002G_NEBULA_V1_MANIFEST.json"
+   },
+   "portable_bundle": true
+  },
+  "mars-v1": {
+   "file": "backgrounds/mars_v1.png",
+   "sha256": "70697f46d8358d013c49e0a323a6130d3b94fb67efc3592152b0c77e1ba3f31c",
+   "what": "Mars V1, PMO kit TRANSPLANT_MENU002B_MARS_CANDIDATE_KIT.zip: MENU002B_MARS_EXTERIOR_CANDIDATE_1536x1024.png as supplied (procedural render)",
+   "station": false,
+   "rotation": false,
+   "status": "REJECTED (PMO MENU-002C1). Kept for comparison as the QA-only forced view ?view=mars-v1; never in the rotation or in ?view=random, not bundled.",
+   "intake": "source/provenance/MENU002B_HANDOFF_README.txt, MENU002B_MARS_EXTERIOR_MANIFEST.json and build_mars_exterior.py (the procedural render)"
+  },
+  "ringed-v1": {
+   "file": "backgrounds/ringed_v1.png",
+   "sha256": "e083ce250eb83768c6063dc8a11486a2516ec4d6b9a26ea80bb2037e4d9a2077",
+   "bytes": 2826746,
+   "what": "ringed-planet exterior candidate 1, PMO kit TRANSPLANT_MENU002F_RINGED_PLANET_CANDIDATE_KIT.zip (sha256 8155fc41...): MENU002F_RINGED_PLANET_CANDIDATE_1536x1024.png as supplied, byte for byte (generated illustration; the kit's generation original a_wide_cinematic_space_scene_a_detailed_high_re.png is the same file, same sha256). Opaque RGB 1536x1024, no metadata. Registered at 0,0 with no transform; not optimised.",
+   "station": false,
+   "rotation": false,
+   "status": "REJECTED AS FINAL ART (PMO MENU-002F1 closeout: technical QA pass, artistic QA fail). A rejected reference asset, kept for comparison as the QA-only forced view ?view=ringed-v1; never in the rotation or ?view=random, not bundled, no background CSS. The D2 reframe of it is a diagnostic comparison only, NOT approved. Superseded by Ringed V2-B (backgrounds/ringed.png).",
+   "intake": "source/provenance/MENU002F_RINGED_PLANET_INTAKE_README.txt and MENU002F_RINGED_PLANET_MANIFEST.json (the MENU-002F1 review is summarised in ../RELEASE_RECORD.txt)"
+  }
+ },
+ "archived_menu_001_art": {
+  "scene_master_leafclear_v1_1536x1024.png": "129557686e9273e1dda84e1e9462ddb4ab01989adee945c15f12a0cd36b4e914",
+  "foreground_TIGHT_leafclear_v1_1536x1024.png": "a369451fa2562a07f4fb53d0d08c1dd1720c04742fbbf9273bfc088b7511114f",
+  "foreground_CONSERVATIVE_leafclear_v1_1536x1024.png": "e01f99b94b943040781411e0088034e573e4ff177d250552d7ac8309aede79d5",
+  "window_matte_tight_1536x1024.png": "84a8f2f7f555b1537c20f3b0c7ef875bfec97d9e90f9507a4c7007fd0a7c6299",
+  "window_matte_conservative_1536x1024.png": "bb72b0cd9054504ab9cd19c7748f56b9c3ac150146e0ce94e210305baa102dc3",
+  "note": "kept byte for byte; the master is the source of backgrounds/earth.png and is never loaded at runtime; see menu_leafclear_v1_manifest.json"
+ },
+ "station_lights": {
+  "css": "code/background-effects.css (the released ruling-113 rules, unchanged)",
+  "registered_to": "earth",
+  "stage_px": {
+   "antenna": [
+    424.69,
+    123.44
+   ],
+   "arm": [
+    517.81,
+    196.56
+   ],
+   "spire": [
+    421.56,
+    259.06
+   ]
+  }
+ },
+ "source_originals": {
+  "source/paintings/wide_cinematic_space_scene_atmospheric_sci_fi_rea.png": {
+   "sha256": "dddfe84912726fbad26300b9697c5257fa529312083b25f9b474e603b4fa29d7",
+   "bytes": 3069546,
+   "what": "the generated painting Mars V2 was registered from (PMO kit TRANSPLANT_MENU002_MARS_V2_ART_AND_HANDOFF.zip, as supplied); make_mars_v3.py reads it for the hidden x 480..529 blend zone of Mars V3. Not regenerable. (The MENU-002C2 review branch had kept a re-encoded copy, 0bfe600b..., with identical pixels; this is the supplied file.)",
+   "loaded": false
+  },
+  "source/paintings/wide_cinematic_space_scene_high_detail_sci_fi_ast.png": {
+   "sha256": "785a71007f2246250d8073a843f61263b1bc8d6652094de6d67caddee5c77c32",
+   "bytes": 2724972,
+   "what": "the generated illustration Ringed V2 was registered from (PMO kit TRANSPLANT_MENU002_RINGED_V2_ART_INTAKE.zip, as supplied; fitted by provenance/make_ringed_v2_fit.py). Not regenerable.",
+   "loaded": false
+  }
+ },
+ "maintenance": {
+  "run_from": "the Trans-plant root, Python 3 with numpy, scipy and pillow (verified with numpy 2.5.4, scipy 1.18.1, pillow 13.0.0); every script is resources/sprites/interface/menu/source/tools/<name>",
+  "chain": [
+   "alpha_variant.py OUT (+ mask_edges.py, views_common.py): archived TIGHT foreground + master -> source/menu_overlay_alphafix002a_original.png (75cbedaa..., rebuilt byte for byte)",
+   "optimize_sources.py OUT.json [--check]: -> menu_overlay.png and backgrounds/earth.png (proofs pass)",
+   "make_mars_v3.py source/mars_v2.png source/paintings/wide_cinematic_space_scene_atmospheric_sci_fi_rea.png menu_overlay.png OUT.png REPORT.json (+ find_donors.py): -> source/mars_v3.png (25d9496d..., rebuilt byte for byte)",
+   "optimize_mars.py OUT.json [--check]: -> backgrounds/mars.png (proofs pass)",
+   "skyfix_ab.py source/provenance/ringed_v2_measurements.json OUT.png: source/ringed_v2.png -> source/ringed_v2_skyfix_b.png (75c0aea0..., rebuilt byte for byte)",
+   "optimize_backgrounds.py OUT.json [--check]: -> backgrounds/ringed.png and backgrounds/nebula.png (proofs pass)",
+   "node tools/build_portable.js: -> engine/js/portable_data.js (rebuild after any change to the overlay or a rotation background)"
+  ],
+  "verified": "MENU-002I, 2026-10-28: every step above reproduced the committed file, or passed --check, from these paths"
+ },
+ "release_candidate_menu_002h": {
+  "starting_point": "agent/transplant-menu-002g1-nebula-review c637edd8d9d3d7d15550e074ce1c32a5e08ec976",
+  "download_per_load_bytes": {
+   "overlay": 2074269,
+   "earth": 1019604,
+   "mars": 1029356,
+   "ringed": 952110,
+   "nebula": 1010468
+  },
+  "portable_bundle_bytes": {
+   "before_002h_at_c637edd": 7105468,
+   "after": 9722406,
+   "menu_images": [
+    "menu_overlay.png",
+    "backgrounds/earth.png",
+    "backgrounds/mars.png",
+    "backgrounds/ringed.png",
+    "backgrounds/nebula.png"
+   ]
+  },
+  "optimisation_saving_bytes": {
+   "ringed": 1706743,
+   "nebula": 1878889
+  },
+  "painting_ready_ms_median_of_5": {
+   "chrome_http": {
+    "released_production": 251,
+    "earth": 472,
+    "mars": 477,
+    "ringed": 439,
+    "nebula": 419
+   },
+   "chrome_file": {
+    "released_production": 259,
+    "earth": 529,
+    "mars": 535,
+    "ringed": 530,
+    "nebula": 610
+   },
+   "firefox_http": {
+    "released_production": 250,
+    "earth": 497,
+    "mars": 490,
+    "ringed": 501,
+    "nebula": 481
+   },
+   "firefox_file": {
+    "released_production": 352,
+    "earth": 641,
+    "mars": 729,
+    "ringed": 672,
+    "nebula": 667
+   }
+  },
+  "composite_cost_ms": "draw 2-4 + PNG export 106-159, once per load, behind the poster",
+  "measured_by": "tools/tests/test_title_overlay.js (performance section); summarised in ../RELEASE_RECORD.txt"
+ }
+}

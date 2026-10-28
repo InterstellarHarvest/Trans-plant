@@ -1,0 +1,181 @@
+TRANS-PLANT TITLE MENU: RELEASE RECORD (MENU-001 and MENU-002)
+=============================================================
+The permanent record of the title menu's development and release. The
+review branches named here were deleted after the release (owner
+authorisation, MENU-002I); this file, code/README.txt and
+code/artwork-manifest.json keep what they held that still matters.
+Rulings: docs/RULINGS.md 113 (the menu) and 114 (the four exteriors).
+
+
+1. HISTORY
+----------
+MENU-001 (2026-10-25..26): the observation-deck title menu.
+  001A   layout prototype; Layout B painterly, no human figures
+  001B2  registration: perspective-mapped displays (matrix3d), window matte
+  001B3  static menu; 001B3R centring, labels and intro dim fixed
+  001B4A transparent foregrounds of the locked master (TIGHT/CONSERVATIVE)
+  001B4B exterior parallax proof; CANCELLED by the PMO (no parallax)
+  001B4C illustrated terminal interface restyle
+  leaf-clear v1  owner-revised leaf-free master + matching foregrounds
+  001B4D leaf-clear art + CRT timing; 001B4E poster provenance (the owner's
+         figure-free poster kept) + shot validation; 001B4F ambient: three
+         station lights IN, chamber light OUT, ship omitted
+  001B5A production integration, ruling 113. RELEASED: main 5977981,
+         GitHub Pages run 40374313750 (2026-10-26). MENU-001 CLOSED.
+MENU-002 (2026-10-26..28): interchangeable window views.
+  002A   window views: alpha-only fix of the TIGHT foreground (002A
+         alphafix, the overlay's source), mask-edge findings, intake kit
+  002B   Mars V1 candidate: technical pass, artistic FAIL (rejected)
+  002C   ONE universal overlay + backgrounds/ + code/ reorganisation;
+         architecture B (one composite) chosen over A (two layers)
+  002C1  production renderer B: canvas composite exported as PNG into the
+         painting's <img>; file:// via bundled data: URLs; lossless PNG
+         optimisations. Renderer APPROVED AND LOCKED
+  002C2  Mars V3 = V2 with its skylight chevron repaired. APPROVED, LOCKED
+  002D   two-view rotation, Earth + Mars V3. Approved (not released)
+  002E   Mars lossless optimisation (-64.6%); ringed-planet + nebula kits
+  002F1  Ringed V1: technical pass, artistic FAIL (rejected)
+  002F2  Ringed V2 accepted (revised ruling); sky-only fix A/B, PMO chose B
+  002G1  Nebula V1: technical pass, accepted
+  002H   four-view release candidate (Earth, Mars V3, Ringed V2-B,
+         Nebula V1). APPROVED FOR RELEASE by the PMO (2026-10-28)
+  002I   clean production integration (this record), release, cleanup
+
+2. WHAT SHIPS
+-------------
+Four active backgrounds, all APPROVED AND LOCKED, equal-chance rotation:
+  earth   backgrounds/earth.png   Earth (the MENU-001 master's exterior)
+  mars    backgrounds/mars.png    Mars V3
+  ringed  backgrounds/ringed.png  Ringed Planet V2-B (V2 + skyfix B)
+  nebula  backgrounds/nebula.png  Nebula V1
+One universal overlay, menu_overlay.png (RGBA; window openings
+transparent): the same room over every background. No per-background
+room images exist.
+Rejected art kept only as QA forced views (never drawn, not bundled):
+backgrounds/mars_v1.png (?view=mars-v1), backgrounds/ringed_v1.png
+(?view=ringed-v1). Removing them would mean changing the approved renderer
+and tests, so they stay.
+
+3. FINAL ARTWORK HASHES (sha256, bytes)
+---------------------------------------
+Runtime
+  menu_overlay.png          358819f27b854f44989ed11d6c1b212d5b22d612f86184c2aa024087d0563616 2,074,269
+  backgrounds/earth.png     aa9a9472271ed9f3d9ae34cefa154d4f968360f005c23b5fbd980365ea071b41 1,019,604
+  backgrounds/mars.png      8f4363a1fc8c92fb93cf1ce9718ac1b5ec4392ff18292dc2b085fa886c5acded 1,029,356
+  backgrounds/ringed.png    b0bfa56f4675d02d83ae520e4292e54032794af0755d14a979ac38e3e1c12542   952,110
+  backgrounds/nebula.png    c43fd3f904c9b4e61943cb4bb2eaf58942ce252019463c491a02df7801b0fc35 1,010,468
+  backgrounds/mars_v1.png   70697f46d8358d013c49e0a323a6130d3b94fb67efc3592152b0c77e1ba3f31c   891,631 (rejected)
+  backgrounds/ringed_v1.png e083ce250eb83768c6063dc8a11486a2516ec4d6b9a26ea80bb2037e4d9a2077 2,826,746 (rejected)
+Approved sources (source/, never loaded)
+  menu_overlay_alphafix002a_original.png 75cbedaadd5062ac3cd78ccf1c18cc517233cf4ceeaad95923f07333a6f0b7ca
+  scene_master_leafclear_v1_1536x1024.png (menu/, MENU-001 master, Earth's source)
+                                         129557686e9273e1dda84e1e9462ddb4ab01989adee945c15f12a0cd36b4e914
+  mars_v2.png             72aecea6722e5cb5d33660de35d7796a67aaaef9ec177afd77c7b04919a7d1f5 (as supplied)
+  mars_v3.png             25d9496d2b9d32ff55f5da9b12b525f5a40314c98ab39f2d51df5ab0814e01a7 (approved)
+  ringed_v2.png           35022bee643b89d7010a5d642910cb3a32e90c900f1644bd0c416fb38e76a678 (as supplied)
+  ringed_v2_skyfix_b.png  75c0aea0a88e72cd1ed8e5c324e3943f0953b260420033861cb953853bd0279c (approved V2-B)
+  nebula_v1.png           e4d037ebae8850d24d3a05ca117dbdaf745af24f8d11798a2f3e40fe54c4841a (as supplied
+                          and approved, byte for byte with its C2PA chunk)
+  paintings/wide_cinematic_space_scene_atmospheric_sci_fi_rea.png
+                          dddfe84912726fbad26300b9697c5257fa529312083b25f9b474e603b4fa29d7
+                          (the painting Mars V2 was registered from)
+  paintings/wide_cinematic_space_scene_high_detail_sci_fi_ast.png
+                          785a71007f2246250d8073a843f61263b1bc8d6652094de6d67caddee5c77c32
+                          (the illustration Ringed V2 was registered from)
+Each runtime background is a lossless optimisation of its approved source:
+pixels under fully opaque room more than 8 px from any visible pixel set to
+0; the overlay over it equals the overlay over the source on every pixel at
+1536x1024. Savings: Mars -64.6%, Ringed -64.2%, Nebula -65.0%.
+
+4. PROVENANCE AND MAINTENANCE
+-----------------------------
+All five supplied backgrounds are PMO-supplied generated illustrations (not
+NASA imagery); their intake READMEs, manifests and fit scripts are in
+source/provenance/. Ringed V2-B differs from V2 in 434 px only (x 872..1128,
+y 63..88): the 1x copies of two duplicated stars on dark sky; rings, planet,
+sunlight and the other stars untouched. Mars V3 changes V2's rows 0..23
+only (the mirrored skylight chevron).
+Every step from source to runtime file reruns from source/tools/ and was
+verified by MENU-002I to reproduce the committed file byte for byte or pass
+its --check (artwork-manifest.json "maintenance" lists the commands):
+alpha_variant.py (-> overlay source), optimize_sources.py (overlay, Earth),
+make_mars_v3.py (+ find_donors.py), optimize_mars.py, skyfix_ab.py,
+optimize_backgrounds.py (Ringed, Nebula); then node tools/build_portable.js.
+Note: the MENU-002C2 review branch kept a re-encoded copy (0bfe600b...) of
+the Mars painting; the supplied file (dddfe849..., identical pixels) was
+recovered from local intake scratch and is the one kept.
+The two paintings live in source/paintings/, not originals/: the project
+.gitignore keeps every **/originals/ folder off git, and these must ship.
+
+5. ARCHITECTURE
+---------------
+background-views.js makes ONE draw per fresh page load,
+Math.floor(Math.random() * 4) over earth, mars, ringed, nebula (registry
+order), and keeps it for the page session: setup's BACK, RECORDS and idling
+never redraw or reload; nothing is stored; no player-facing selector. QA:
+?view=earth|mars|ringed|nebula|random, ?view=mars-v1|ringed-v1, ?arch=layers.
+Renderer (MENU-002C1 B): the background and the overlay are drawn once into
+an off-DOM 1536x1024 canvas, exported as PNG (toBlob) and shown in
+#title-paint; the canvas is freed. The poster waits for it (at most 4 s).
+Recovery only: two aligned <img> layers if the export fails; a background
+that will not load falls back to Earth.
+Background-specific effects: Earth only has the station, so only Earth has
+the three navigation lights (code/background-effects.css, the ruling-113
+rules unchanged) and "Departure authorised. Mind the station."; Mars,
+Ringed and Nebula have no lights and "Departure authorised. Safe travels."
+Poster, CRT power-on, intro, controls, departure and terminal are the same
+on every view.
+Offline: from file://, disk images taint the canvas, so the overlay and all
+four rotation backgrounds come from engine/js/portable_data.js as data:
+URLs (tools/build_portable.js; lint_modules fails if it is stale). All four
+composite from disk in Chrome and Firefox with the network off; none falls
+back to two layers. Over http the bundle is never loaded.
+Size and speed: per load overlay 2,074,269 B + one background
+952,110..1,029,356 B. Bundle 9,722,406 B (was 7,105,468 B with two views).
+Painting ready (median of 5, 960x640): Chrome http 419..477 ms (released
+single-painting menu 251), Firefox http 481..501 (250); composite cost
+draw 2..4 ms + PNG export 106..159 ms, behind the poster.
+
+6. QA (MENU-002H candidate 9d07963 = this release's runtime, byte for byte)
+--------------------------------------------------------------------------
+test_title_overlay 137/137 and test_title_menu 82/82, Chrome and Firefox.
+Rotation with real randomness, 400 loads per browser: Chrome
+102/107/101/90 (chi-square 1.54), Firefox 98/90/101/111 (2.26); the 5%
+critical value is 7.815; exactly one draw on every load.
+Full run_all: Chrome 97/97 batteries (17,659 checks), lints clean, fuzz and
+UI sweep (http + file://) clean. Firefox 96/97: test_parity_log 69/72, see
+below; everything else clean.
+Earth composite vs the released single painting: within +-1 (Chrome) / +-2
+(Firefox), window edges only; #title-ui identical to production on all
+four views.
+
+7. KNOWN ISSUES (pre-existing, not menu regressions)
+----------------------------------------------------
+- test_parity_log, Firefox, occasional: a long generated destination name
+  (flavor pool "The Promising One (Updated: The Disappointing One)",
+  modules/flavor/flavor_pools.json) is shortened in the 120-character
+  arrival line and the check expects it whole. Reproduced identically on
+  production main 5977981; solo reruns pass (72/72 x5). Gameplay untouched.
+- Legacy Google Fonts dependency: index.html still loads VT323 and Press
+  Start 2P from fonts.googleapis.com / fonts.gstatic.com (the menu's own
+  fonts are self-hosted in resources/fonts/). Where DNS for those hosts
+  fails, pages wait on the request and log font console errors in any
+  build; this hit local QA intermittently on 2026-10-28.
+
+8. BRANCHES AND REVIEW SHAS (all retired by MENU-002I)
+------------------------------------------------------
+  001a-prototype 5c6f84edff9c   001b2-registration 7e25027aeabd
+  001b3-static cf10dad8ffe3     001b4a-artwork fb7a7dfd6791 (= 001b4b-exterior)
+  001b4c-ui-restyle ed8c50d1db99   001b4d-review 247a32fb4f60
+  001b4e-final-visual c2611a569a51 001b4f-ambient 1b357b3966e0
+  001b5a-production-integration aba7b77f67bb (released impl 5977981)
+  leaf-clear-v1 ab929d27dbed
+  002a-window-views 3715e9266951   002b-mars-review fa08ee3eee2f
+  002c-universal-overlay 59e1477d6a6e   002c1-renderer ad2eab5124fd
+  002c2-mars-v3-art edffc417231c   002d-two-view-rotation 9cb524fd6ba8
+  002e-art-prep b59420d92a27       002f1-ringed-art-review 2c3788b781f9
+  002f1-ringed-review 93c992dafca3 002f2-ringed-v2-review 2cde38fc1f4d
+  002g1-nebula-review c637edd8d9d3
+  002h-release-candidate 9d07963a24fc (approved; implementation a855bfd)
+(all named agent/transplant-menu-<name>). Their review/menu-* evidence
+trees (screenshots, diagnostics, ~360 MB) were deliberately not imported.

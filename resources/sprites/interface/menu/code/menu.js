@@ -1,10 +1,11 @@
 'use strict';
 /* ────────────────────────────────────────────────────────────────
-   TITLE — the observation-deck menu (ruling 113). Styles:
-   resources/screen-title.css.
+   TITLE — the observation-deck menu (ruling 113). Styles: menu.css
+   beside this file; the view behind the room: background-views.js.
 
    poster → intro → menu → departing → departed
-   A key or click dismisses the poster; once it has faded the two painted
+   A key or click dismisses the poster (once the view behind it is ready:
+   background-views.js composites it behind the poster); once it has faded the two painted
    terminal displays power on and the intro types (a key or click shows it
    whole). The menu is three real buttons on the upper display — NEW GAME,
    CONTINUE, RECORDS (ruling 89) — and SHIP STATUS on the lower one. NEW
@@ -30,6 +31,7 @@
   const TAGLINES = ['Earth is dying.', 'You have a ship, a crop, and a plan.', 'The plan is not good.'];
   const TYPE_SPEED_MS = 50, LINE_PAUSE_MS = 800;
   const POSTER_FADE_MS = 600;  // input can't skip the intro until the poster is gone
+  const VIEW_WAIT_MS = 4000;   // the poster waits this long at most for the view behind it
   // The displays power on at 0.60–1.15 s (upper) and 0.72–1.27 s (lower);
   // the first letter follows the lower one by a beat (≈1.30 s).
   const AFTER_POWER_ON_MS = 30;
@@ -113,7 +115,18 @@
   /* ── Poster → intro ──────────────────────────────────────────── */
   let introStarting = false;
   let stopPowerOnWait = null;
+  let viewWait = null, viewWaited = false;
   function dismissPoster() {
+    // The room is composited once behind the poster: a key pressed before it
+    // is ready lifts the poster as soon as it is (or after VIEW_WAIT_MS).
+    const view = window.TITLE_VIEW;
+    if (view && view.ready && !view.settled && !viewWaited) {
+      if (!viewWait) viewWait = Promise.race([view.ready, new Promise(r => setTimeout(r, VIEW_WAIT_MS))]).then(() => {
+        viewWaited = true;
+        if (stage === 'poster' && onScreen()) dismissPoster();
+      });
+      return;
+    }
     introStarting = true;
     scr.classList.add('power-on');
     setStage('intro');
@@ -258,7 +271,7 @@
     scr.focus({ preventScroll: true });
     const msg = $('title-st-msg');
     msg.classList.remove('hint');
-    msg.textContent = kind === 'continue' ? 'Resuming voyage.' : 'Departure authorised. Mind the station.';
+    msg.textContent = kind === 'continue' ? 'Resuming voyage.' : window.TITLE_VIEW && !TITLE_VIEW.station ? 'Departure authorised. Safe travels.' : 'Departure authorised. Mind the station.';
     fitStatus();
     departKind = kind;
     setStage('departing');

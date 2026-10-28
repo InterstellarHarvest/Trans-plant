@@ -7,7 +7,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
 <link href="resources/shared.css" rel="stylesheet">
-<link href="resources/screen-title.css" rel="stylesheet">
+<link href="resources/sprites/interface/menu/code/menu.css" rel="stylesheet">
+<link href="resources/sprites/interface/menu/code/background-effects.css" rel="stylesheet">
 <link href="resources/screen-setup.css" rel="stylesheet">
 <link href="resources/screen-cruise.css" rel="stylesheet">
 <link href="resources/screen-minigames.css" rel="stylesheet">
@@ -682,11 +683,11 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
     <pre id="load-error"></pre>
   </div>
 
-  <!-- TITLE — the observation-deck menu (ruling 113). Styles
-       resources/screen-title.css, logic engine/js/screens/title.js. -->
+  <!-- TITLE — the observation-deck menu (ruling 113). Everything menu-specific
+       lives in resources/sprites/interface/menu/ (code/README.txt). -->
   <div id="screen-title" class="screen init" tabindex="0" data-stage="poster">
     <div id="title-scene">
-      <img class="title-layer" id="title-paint" src="resources/sprites/interface/menu/scene_master_leafclear_v1_1536x1024.png" width="1536" height="1024" alt="">
+      <img class="title-layer" id="title-paint" width="1536" height="1024" alt=""><!-- background-views.js shows the composited view here -->
       <div id="title-navlights" aria-hidden="true">
         <span class="title-navlight" id="navlight-antenna"></span>
         <span class="title-navlight" id="navlight-arm"></span>
@@ -1722,7 +1723,8 @@ const CROP_WATER_NEED_DEFAULT = 50; // the demo's CROP_WATER_NEED
 const CROP_MATURITY_DEFAULT = 90;
 </script>
 <script src="engine/js/map.js"></script>
-<script src="engine/js/screens/title.js"></script>
+<script src="resources/sprites/interface/menu/code/menu.js"></script>
+<script src="resources/sprites/interface/menu/code/background-views.js"></script><!-- MENU-002C1 window views: one room overlay over separate backgrounds, composited once (Earth only in the rotation) -->
 <script src="engine/js/screens/setup.js"></script>
 <script src="engine/js/screens/cruise.js"></script>
 <script src="engine/js/minigames.js"></script>

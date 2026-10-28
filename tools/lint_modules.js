@@ -636,7 +636,8 @@ function trailCoverage() {
   const pay = (readJSON('modules/flavor/flavor_pools.json').flag_payoffs) || {};
   const engineSrc = ['index.html', 'engine/js/combat.js', 'engine/js/minigames.js', 'engine/js/map.js',
     ...fs.readdirSync(path.join(ROOT, 'engine/js/screens')).map(f => 'engine/js/screens/' + f),
-    ...fs.readdirSync(path.join(ROOT, 'engine/js/minigames')).map(f => 'engine/js/minigames/' + f)]
+    ...fs.readdirSync(path.join(ROOT, 'engine/js/minigames')).map(f => 'engine/js/minigames/' + f),
+    ...fs.readdirSync(path.join(ROOT, 'resources/sprites/interface/menu/code')).filter(f => f.endsWith('.js')).map(f => 'resources/sprites/interface/menu/code/' + f)]
     .map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
   const AIS = ['aria', 'marv', 'rex', 'chip', 'ajoy'];
   // Event-level setters and the other flag readers (hideFlag / gate.flag)

@@ -40,6 +40,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const ROOT = path.join(__dirname, '..');
+// Everything menu-specific (title menu code + its CSS) lives with its art.
+const MENU_CODE = 'resources/sprites/interface/menu/code';
 const TESTS = path.join(ROOT, 'tools', 'tests');
 const errors = [], warnings = [];
 const err = m => errors.push(m);
@@ -152,9 +154,11 @@ const indexScan = scanHtml(INDEX);
 const ENGINE_JS = [...new Set([
   ...[...INDEX.matchAll(/<script\s+src="([^"]+)"/g)].map(m => m[1]),
   ...walkJs('engine/js'),
+  ...walkJs(MENU_CODE),
 ])].filter(f => !f.endsWith('portable_data.js') && fs.existsSync(path.join(ROOT, f)));
 const jsScans = ENGINE_JS.map(f => ({ file: f, src: read(f), ...scanJs(read(f)) }));
-const SCREEN_CSS = fs.readdirSync(path.join(ROOT, 'resources')).filter(f => /^screen-.*\.css$/.test(f)).sort().map(f => 'resources/' + f);
+const SCREEN_CSS = [...fs.readdirSync(path.join(ROOT, 'resources')).filter(f => /^screen-.*\.css$/.test(f)).sort().map(f => 'resources/' + f),
+  ...fs.readdirSync(path.join(ROOT, MENU_CODE)).filter(f => f.endsWith('.css')).sort().map(f => MENU_CODE + '/' + f)];
 const cssScans = ['resources/shared.css', ...SCREEN_CSS].map(f => ({ file: f, src: read(f), ...scanCss(read(f)) }));
 
 // ── CSS: no unused class/id selectors ───────────────────────────────
@@ -328,6 +332,7 @@ const ENGINE = [{ rel: 'index.html', raw: fs.readFileSync(path.join(ROOT, 'index
     else if (f.endsWith('.js') && f !== 'portable_data.js') ENGINE.push({ rel, raw: fs.readFileSync(path.join(ROOT, rel), 'utf8') });
   }
 })('engine/js');
+for (const f of fs.readdirSync(path.join(ROOT, MENU_CODE)).filter(f => f.endsWith('.js')).sort()) ENGINE.push({ rel: MENU_CODE + '/' + f, raw: fs.readFileSync(path.join(ROOT, MENU_CODE, f), 'utf8') });
 for (const e of ENGINE) {
   e.code = codeOnly(e.rel === 'index.html' ? inlineScripts(e.raw) : e.raw).split('\n');
   e.lines = e.raw.split('\n');
@@ -463,7 +468,7 @@ if (T) {
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 const walk = d => fs.readdirSync(path.join(ROOT, d), { withFileTypes: true })
   .flatMap(e => e.isDirectory() ? walk(d + '/' + e.name) : [d + '/' + e.name]);
-const ENGINE = walk('engine/js').filter(f => f.endsWith('.js') && !f.endsWith('portable_data.js'));
+const ENGINE = [...walk('engine/js'), ...walk(MENU_CODE)].filter(f => f.endsWith('.js') && !f.endsWith('portable_data.js'));
 const lineOf = (src, i) => src.slice(0, i).split('\n').length;
 // index.html's inline classic scripts (no src), with their offsets.
 const INDEX = read('index.html');
