@@ -179,3 +179,30 @@ four views.
   002h-release-candidate 9d07963a24fc (approved; implementation a855bfd)
 (all named agent/transplant-menu-<name>). Their review/menu-* evidence
 trees (screenshots, diagnostics, ~360 MB) were deliberately not imported.
+
+9. PRODUCTION RELEASE (MENU-002I, 2026-10-28)
+---------------------------------------------
+Release commit 042f07684c7a4014732277e904158f3cbcd77ff4 (fast-forward of
+5977981, no force). Runtime byte-identical to the approved candidate
+9d07963; only archival paths, maintenance files and docs differ.
+Integration QA on that exact tree: lint_modules, lint_code and the bundle
+--check clean; test_title_overlay 139/139 and test_title_menu 82/82 in
+Chrome and Firefox; smoke (11 batteries + fuzz + file:// UI sweep) clean in
+both. The 002H full run_all stands for the byte-identical runtime.
+GitHub Pages run 40687993458: success (2026-10-28 12:28 UTC).
+Live https://interstellarharvest.github.io/Trans-plant/ :
+- 132 runtime files (index.html, engine/, modules/, fonts, every menu file,
+  everything the release changed) byte-identical to the commit; the
+  removed title.js / screen-title.css and review/ are 404.
+- Chrome and Firefox: test_title_menu 82/82 on the live URL;
+  test_title_overlay 139/139 on the live bytes (served at / by a caching
+  local proxy, because the battery reads art by root path); four views
+  captured at 960x640, 1920x1080 and DPR 2 through the composite, station
+  lights on Earth only, no console errors; real-random live rotation
+  Chrome 34/32/28/26 of 120 (chi-square 1.33), Firefox 12/11/15/22 of 60
+  (4.93), one draw on every load.
+- Offline: test_title_overlay's file:// section (network blocked) passed
+  in both browsers on the release tree.
+- Only failed requests: the game's known optional sprite probes (404), and
+  HTTP 429 rate limiting from Pages during heavy test traffic
+  (environmental; reruns at lower volume were clean).
