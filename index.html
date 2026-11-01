@@ -1781,6 +1781,7 @@ const MODULE_PATHS = {
   ev_crisis:     'modules/events/events_crisis.json',
   ev_encounter:  'modules/events/events_encounter.json',
   ev_species:    'modules/events/events_species.json',
+  ev_voyage:     'modules/events/events_voyage.json',
   crops:         'modules/crops/crops.json',
   materials:     'modules/materials/materials.json',
   recipes:       'modules/recipes/recipes.json',
@@ -3687,6 +3688,7 @@ function speciesPresent(ev, node) {
   if (!sp || !STATE.voyageSpecies) return true;
   if (sp !== 'human' && speciesZone(node, MOD.map_rules.trails[STATE.trail]) === 'human') return false;
   const lives = node.node_type === 'station' && node.residents;
+  if (ev.species_home && lives !== sp) return false; // written for the whole station being theirs
   return !lives || lives === 'mixed' || lives === sp;
 }
 

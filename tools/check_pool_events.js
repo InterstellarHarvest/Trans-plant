@@ -118,7 +118,7 @@ function checkChoice(id, where, ch, ev, flags) {
 }
 function checkEvent(ev, flags) {
   const id = ev.id;
-  if (!/^event_species_(insect|rock|water|reptile|robot|unknown|human|fortune)_\d{3}$/.test(id)) err(id, 'id must be event_species_<lane>_NNN');
+  if (!/^event_(species_(insect|rock|water|reptile|robot|unknown|human|fortune)|voyage_(crew|time|office|ruins|ship|fork))_\d{3}$/.test(id)) err(id, 'id must be event_species_<lane>_NNN or event_voyage_<lane>_NNN');
   for (const k of ['active', 'title', 'difficulty', 'tone', 'node_type', 'trigger', 'scene_type']) if (ev[k] == null) err(id, `missing ${k}`);
   if (typeof ev.once !== 'boolean') err(id, 'once must be true or false');
   if (!TIERS.includes(ev.difficulty)) err(id, `difficulty ${ev.difficulty}`);
@@ -134,11 +134,13 @@ function checkEvent(ev, flags) {
   if ((ev.node_type || []).includes('station') && ['hard', 'ultra'].includes(ev.difficulty) && (ev.layers || ev.npc)) err(id, 'hard/ultra station events play as the docking: flat, no in-person npc');
 
   const lane = (/^event_species_([a-z]+)_/.exec(id) || [])[1];
-  if (lane !== 'fortune' && ev.species_lane !== lane) err(id, `species_lane must be "${lane}" (it places the event by species, ruling 119)`);
+  if (lane && lane !== 'fortune' && ev.species_lane !== lane) err(id, `species_lane must be "${lane}" (it places the event by species, ruling 119)`);
+  if (ev.species_home && !(lane && (ev.node_type || []).join() === 'station')) err(id, 'species_home is for a species lane event at a station');
   // The NPC: the species has to be real and have a face.
   const npcs = [ev.npc, ...Object.values(ev.layers || {}).map(l => l.npc)].filter(Boolean);
   for (const n of npcs) {
     if (!vals('npc_disposition').includes(n.disposition)) err(id, `unregistered disposition ${n.disposition}`);
+    if (id.startsWith('event_voyage_') && n.species == null) continue; // rolled: it has to read true for anyone
     if (!SPECIES.includes(n.species)) err(id, `npc.species must be pinned (got ${n.species})`);
     else if (!faceExists(n)) err(id, `no face for ${n.disposition}/${n.job || ''}/${n.species}`);
   }

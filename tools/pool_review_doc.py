@@ -4,7 +4,7 @@ usage: python3 -I tools/pool_review_doc.py b1 resources/NEW_EVENTS_POOL500_B1.md
 import json, sys, collections
 
 batch, out = sys.argv[1], sys.argv[2]
-evs = json.load(open('modules/events/events_species.json', encoding='utf8'))
+evs = [e for f in ('species', 'voyage') for e in json.load(open(f'modules/events/events_{f}.json', encoding='utf8'))]
 notes = json.load(open('resources/pool500/notes.json', encoding='utf8'))
 sel = [e for e in evs if notes.get(e['id'], {}).get('batch') == batch]
 AIS = ['aria', 'marv', 'rex', 'chip', 'ajoy']
