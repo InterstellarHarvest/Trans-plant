@@ -28,7 +28,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 function installHarness(policy) {
   /* eslint-disable no-undef */
   const P = policy.split(':')[0];
-  window.__pol = P; window.__mineRuns = +(policy.split(':')[1] || 1); window.__shop = policy.includes(':shop'); window.__farm = policy.includes(':farm'); window.__salvage = policy.includes(':salvage');
+  window.__pol = P; window.__mineRuns = +(policy.split(':')[1] || 1); window.__shop = policy.includes(':shop'); window.__arcs = policy.includes(':arcs'); window.__farm = policy.includes(':farm'); window.__salvage = policy.includes(':salvage');
   const T = () => { const r = Math.random(); return r < 0.3 ? 'perfect' : r < 0.7 ? 'good' : r < 0.95 ? 'poor' : 'abandoned'; };
   const S = window.__stats = {
     forageFood: 0, harvests: 0, harvestFood: 0, harvestMorale: 0, verbs: {}, events: 0, eventDays: 0, verbDays: 0, travelDays: 0,
@@ -305,6 +305,11 @@ function step() {
           else if (o.crew_effect && o.crew_effect.type === 'injure') s -= 20;
           if (o.crew_effect && o.crew_effect.type === 'heal') s += 10;
           if (o.item_grant) s += 4;
+          // :arcs — a player following the species stories takes what opens the next beat.
+          if (window.__arcs) {
+            const wanted = window.__arcWants || (window.__arcWants = new Set(Object.values(EVENTS).flatMap(e => [e.requires_flag, e.requires_item]).filter(Boolean)));
+            if ([].concat(o.item_grant || [], o.sets_flag || []).some(x => wanted.has(x))) s += 15;
+          }
           if (o.materials) s += 2;
           if (o.item_consume) s -= 3;
           // The crop is the run: a careful player weighs its health too.
@@ -513,7 +518,7 @@ if (require.main === module) (async () => {
       end: window.__end || null, days: STATE.daysElapsed, baseDays: STATE.baseDays, res: Object.assign({}, STATE.resources), gold: STATE.goldAmount,
       crew: STATE.crew.length, crewHP: Object.assign({}, STATE.crewHP), captainHP: captainHPOf(), mats: Object.values(STATE.materials).reduce((a, b) => a + b, 0), items: STATE.items.slice(),
       crop: STATE.cropGrowth ? { g: Math.round(STATE.cropGrowth.growth), h: Math.round(STATE.cropGrowth.health) } : null,
-      nodes: STATE.nodes.length, visited: STATE.visited.size, stats: window.__stats, morale: crewMoraleRaw(), startCrew: STATE.startCrew, surveys: STATE.soilSurveys || 0,
+      nodes: STATE.nodes.length, visited: STATE.visited.size, stats: window.__stats, morale: crewMoraleRaw(), startCrew: STATE.startCrew, surveys: STATE.soilSurveys || 0, voyage: STATE.voyageSpecies,
     }));
     res.policy = policy; res.trail = trail; res.cfg = cfg; res.steps = steps;
     results.push(res);

@@ -1938,6 +1938,7 @@ const SAVED_FIELDS = [
   'itemPickups', 'itemSeq', // inventory: each copy's NEW flag + pickup order (Recent sort), and the counter
   'materialPickups', // inventory: each material stack's NEW flag + last pickup (Recent sort) — same counter
   'eventDraws', // ruling 90: firings per event with alt_bodies (which opening comes next)
+  'voyageSpecies', // ruling 119: the alien species whose space this run crosses
   'artSeed', // scene_art.js picks backdrop + NPC-face variants from it: a reload shows the same images
   'passengers', // rescued survivors riding to the next station
   'stationVisit', // station approach: this stop's rolls (hail-first, fee), drawn event, docked / waved off
@@ -2252,6 +2253,7 @@ function applySetupToState(sel) {
   STATE.artSeed = rollArtSeed(); // this run's scene + NPC-face variants (saved: stable across reloads)
   SceneArt.clearRunCaches(); // re-roll scenes + NPC variants per run
 
+  STATE.voyageSpecies = NPC_ALIENS[Math.floor(Math.random() * NPC_ALIENS.length)];
   generateMap(sel.trail); // sets STATE.nodes/byId/currentId/mapName/destination
 
   renderHUD();
@@ -2268,6 +2270,8 @@ function playDeparture() {
   const node = STATE.byId && STATE.byId[STATE.currentId];
   if (!node || STATE.flags.has('departed')) return;
   const triggers = activeTriggers();
+  const voyage = MOD.flavor.voyage_species && MOD.flavor.voyage_species[STATE.voyageSpecies];
+  if (voyage) window.pushCruiseLog('◆ ' + voyage.ai[STATE.activeAI]); // whose space this is
   const pool = Object.values(EVENTS).filter(ev => /^event_launch_/.test(ev.id) && eventEligible(ev, node, triggers));
   if (!pool.length) { returnToHub(); return; }
   const ev = pool[Math.floor(Math.random() * pool.length)];
@@ -3633,6 +3637,8 @@ function eventEligible(ev, node, triggers) {
     // …and the halfway moment happens once (ruling 90): one ungated
     // journey_mid scene marks it; a story follow-up (requires_flag) still can.
     if (!ev.requires_flag && (ev.trigger || []).includes('journey_mid') && STATE.flags.has('midpoint_marked')) return false;
+    // A species' event happens where that species is (ruling 119).
+    if (!speciesPresent(ev, node)) return false;
     // Trail targeting (registry dim 4.29 `trail`, previously unused by
     // any content or engine path): an event listing trails only enters
     // the pool on those trails. Gives each difficulty its own exclusive
@@ -3669,8 +3675,24 @@ function eventEligible(ev, node, triggers) {
     return evTriggers.some(t => triggers.has(t));
 }
 
+/* The species an event belongs to: its lane, else its pinned face. The
+   bar's bartender is every station's, not the robots'. */
+function eventSpecies(ev) {
+  if (ev.species_lane) return ev.species_lane;
+  const n = ev.npc;
+  return n && n.species && n.job !== 'bartender' ? n.species : null;
+}
+function speciesPresent(ev, node) {
+  const sp = eventSpecies(ev);
+  if (!sp || !STATE.voyageSpecies) return true;
+  if (sp !== 'human' && speciesZone(node, MOD.map_rules.trails[STATE.trail]) === 'human') return false;
+  const lives = node.node_type === 'station' && node.residents;
+  return !lives || lives === 'mixed' || lives === sp;
+}
+
 const CRISIS_POOL_CAP = 3;
 const PAYOFF_PULL = 4;
+const VOYAGE_PULL = 3;
 // Conditions a run can sit in for many stops: a mild pull, never the crisis
 // multiplier. The positional two, and the good-fortune triggers (a healthy
 // run must not spend every stop being congratulated).
@@ -3695,6 +3717,8 @@ function drawWeightedEvent(candidates, triggers, baseWeights, branch) {
     // A consequence the run has earned should arrive: an event gated on a
     // flag or an item it holds is not one more face in a growing pool.
     if (ev.requires_flag || ev.requires_item) w *= PAYOFF_PULL;
+    // The run crosses this species' space: its stories keep turning up.
+    if (STATE.voyageSpecies && eventSpecies(ev) === STATE.voyageSpecies) w *= VOYAGE_PULL;
     const evTriggers = ev.trigger || ['any'];
     // Positional triggers (journey_start/journey_end) exist for
     // reachability, not urgency — they get a mild bump so they surface
@@ -5030,7 +5054,7 @@ function resolveLayerNpc(spec, evId, layerId) {
   if (STATE.npcCache[key]) return STATE.npcCache[key];
   const twin = !spec.species && !spec.displayName && stationCrewHere(spec.disposition, spec.job);
   if (twin) { STATE.npcCache[key] = twin; return twin; }
-  const species = spec.species || rollNpcSpecies();
+  const species = spec.species || rollNpcSpecies(spec.disposition);
   const jobNames = { captain: 'STATION CAPTAIN', medic: 'STATION MEDIC', engineer: 'STATION ENGINEER', botanist: 'STATION BOTANIST', janitor: 'JANITOR', security: 'STATION SECURITY', bartender: 'BARTENDER' };
   const ctx = {
     species, disposition: spec.disposition, job: spec.job || null,
@@ -6407,6 +6431,9 @@ function prettyItem(id) {
    exists yet; per plan, degrades gracefully until sprites land).
    ──────────────────────────────────────────────────────────────── */
 const NPC_SPECIES_POOL = ['human', 'insect', 'rock', 'water', 'reptile', 'robot', 'unknown'];
+const NPC_ALIENS = NPC_SPECIES_POOL.filter(sp => sp !== 'human');
+const HUMAN_SHARE_NEAR = 0.7, HUMAN_SHARE_FAR = 0.1; // the Bible's civilized-space and deep-space biases
+const VOYAGE_NPC_LEAN = 3;
 const NPC_QUIRKS = {
   human: 'They check a wrist device that means nothing to you.',
   insect: 'Their mandibles click in a rhythm that might be speech, or might be digestion.',
@@ -6458,13 +6485,23 @@ function bartenderName() {
 /* No two NPCs at one stop share a species (demo usedSpecies, a station
    visit's lifetime): rolls skip every species already met here. A pinned
    species (the robot bartender) always stands. */
-function rollNpcSpecies() {
+function rollNpcSpecies(disposition) {
   const here = String(STATE.currentId);
+  const node = STATE.byId && STATE.byId[here];
+  // A station that belongs to one species staffs and stocks itself
+  // (ruling 119); the bar's pinned bartender and passing pirates still differ.
+  const lives = node && node.residents;
+  if (lives && lives !== 'mixed' && (disposition === 'station_crew' || disposition === 'trader')) return lives;
   const used = new Set();
   for (const [k, c] of Object.entries(STATE.npcCache || {})) if (c && c.species && npcCacheNode(k) === here) used.add(c.species);
   const fresh = NPC_SPECIES_POOL.filter(sp => !used.has(sp));
   const pool = fresh.length ? fresh : NPC_SPECIES_POOL;
-  return pool[Math.floor(Math.random() * pool.length)];
+  if (!STATE.voyageSpecies) return pool[Math.floor(Math.random() * pool.length)]; // a save from before ruling 119
+  // Bible §NPC species bias: mostly human near home, mostly alien far out.
+  const rules = MOD.map_rules.trails[STATE.trail];
+  const human = HUMAN_SHARE_NEAR + (HUMAN_SHARE_FAR - HUMAN_SHARE_NEAR) * (node ? routeFrac(node, rules) : 0);
+  return weightedDraw(pool, sp => sp === 'human' ? human * (NPC_ALIENS.length + VOYAGE_NPC_LEAN - 1)
+    : (1 - human) * (sp === STATE.voyageSpecies ? VOYAGE_NPC_LEAN : 1));
 }
 function resolveNpc(ev) {
   STATE.npcCache = STATE.npcCache || {};
@@ -6480,7 +6517,7 @@ function resolveNpc(ev) {
   // One crew member per station job per stop (station approach): the dockmaster who hailed you is the one at the desk.
   const twin = !ev.npc.species && !ev.npc.displayName && !met && stationCrewHere(ev.npc.disposition, ev.npc.job);
   if (twin) { STATE.npcCache[npcKey] = twin; return twin; }
-  const species = ev.npc.species || (met && met.species) || rollNpcSpecies();
+  const species = ev.npc.species || (met && met.species) || rollNpcSpecies(ev.npc.disposition);
   const disposition = ev.npc.disposition;
   const coloring = MOD.flavor && MOD.flavor.npc_species_coloring && MOD.flavor.npc_species_coloring[species];
   const quirkPool = coloring && Array.isArray(coloring.quirks) && coloring.quirks.length ? coloring.quirks : null;

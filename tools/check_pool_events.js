@@ -133,6 +133,8 @@ function checkEvent(ev, flags) {
   if (isFork && (ev.node_type.length > 1 || ev.layers)) err(id, 'a fork event is flat and fork-only');
   if ((ev.node_type || []).includes('station') && ['hard', 'ultra'].includes(ev.difficulty) && (ev.layers || ev.npc)) err(id, 'hard/ultra station events play as the docking: flat, no in-person npc');
 
+  const lane = (/^event_species_([a-z]+)_/.exec(id) || [])[1];
+  if (lane !== 'fortune' && ev.species_lane !== lane) err(id, `species_lane must be "${lane}" (it places the event by species, ruling 119)`);
   // The NPC: the species has to be real and have a face.
   const npcs = [ev.npc, ...Object.values(ev.layers || {}).map(l => l.npc)].filter(Boolean);
   for (const n of npcs) {

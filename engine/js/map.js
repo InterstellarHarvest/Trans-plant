@@ -133,6 +133,44 @@ function flavorName(type) {
   return _namesLeft[key].pop() || null;
 }
 
+const MIXED_FAR_SHARE = 0.4; // a far station that stays mixed
+/* Who lives where (ruling 119). The route's species_zones (map_rules.json):
+   human stations first, then mixed ones, then, far out, stations that belong
+   to one species. A species gets one station a run; the voyage species
+   gets two, and the last stop before the destination is always one of
+   them, because every path passes it. */
+const routeFrac = (node, rules) => node.position / (rules.total_nodes - 1);
+function speciesZone(node, rules) {
+  const z = rules && rules.species_zones;
+  if (!z) return null;
+  const f = routeFrac(node, rules);
+  return f < z.human_until ? 'human' : f < z.mixed_until ? 'mixed' : 'far';
+}
+function assignResidents(nodes, lastStop, rules) {
+  const voyage = STATE.voyageSpecies;
+  const stations = nodes.filter(n => n.node_type === 'station');
+  for (const n of stations) n.residents = speciesZone(n, rules) === 'human' ? 'human' : 'mixed';
+  if (!voyage) return;
+  const claim = (n, sp) => {
+    n.residents = sp;
+    n.short = sp.charAt(0).toUpperCase() + sp.slice(1) + ' ' + n.short;
+    const c = MOD.flavor && MOD.flavor.voyage_species && MOD.flavor.voyage_species[sp];
+    if (c && c.station) n.description = c.station;
+  };
+  const far = stations.filter(n => speciesZone(n, rules) === 'far' && n.connects_to.length);
+  if (!far.includes(lastStop)) return;
+  claim(lastStop, voyage);
+  const taken = { [voyage]: 1 };
+  for (const n of shuffle(far.filter(x => x !== lastStop))) {
+    if (Math.random() < MIXED_FAR_SHARE) continue;
+    const open = NPC_ALIENS.filter(sp => sp === voyage ? taken[sp] < 2 : !taken[sp]);
+    if (!open.length) break;
+    const sp = open[Math.floor(Math.random() * open.length)];
+    taken[sp] = (taken[sp] || 0) + 1;
+    claim(n, sp);
+  }
+}
+
 /* Generates STATE.nodes/byId/currentId for `trailKey` from
    MOD.map_rules.trails[trailKey]. Forks are detours added on top of
    a fixed-length spine (matching map_rules.json's total_nodes/forks
@@ -253,6 +291,8 @@ function generateMap(trailKey) {
     spine[i].connects_to = [spine[i + 1].id];
   }
   spine[spineLen - 1].connects_to = []; // arrival node — triggerArrival() fires on empty connects_to
+
+  assignResidents(nodes, spine[spineLen - 2], rules);
 
   STATE.trail       = trailKey;
   const mapNames = ((MOD.flavor && MOD.flavor.map_names) || {})[trailKey];
