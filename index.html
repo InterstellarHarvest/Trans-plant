@@ -1677,6 +1677,12 @@ const SCHEDULE_CHECK_FROM = 0.25;
 // the chance doubling with the drive's heat (STATE.plaidLegs): about 5.5%,
 // 11%, 22%, 44%, 88%, then capped at ENGINE_STRAIN_MAX. A slower leg cools
 // the drive one step; LIGHT SPEED rests it fully.
+// Good-fortune triggers (pool-500): the run is doing well, which draws its own
+// attention. crop_thriving: a healthy crop past the early stages.
+// well_funded: gold worth somebody's trouble.
+const CROP_THRIVING_HEALTH = 85;
+const CROP_THRIVING_GROWTH = 40;
+const WELL_FUNDED_GOLD = 200;
 const ENGINE_STRAIN_BASE = 0.055;
 const ENGINE_STRAIN_MAX = 0.95;
 const MORALE_CRISIS = 25;
@@ -1774,6 +1780,7 @@ const MODULE_PATHS = {
   ev_void:       'modules/events/events_void.json',
   ev_crisis:     'modules/events/events_crisis.json',
   ev_encounter:  'modules/events/events_encounter.json',
+  ev_species:    'modules/events/events_species.json',
   crops:         'modules/crops/crops.json',
   materials:     'modules/materials/materials.json',
   recipes:       'modules/recipes/recipes.json',
@@ -3376,10 +3383,12 @@ function activeTriggers() {
     if (h > 0 && h < sickAt) active.add('crop_sick');
     if (h > 0 && STATE.cropGrowth.pest) active.add('crop_pest'); // a real infestation (growbay pest roll)
     if (h <= 0 && STATE.flags.has('crop_death_accepted')) active.add('crop_dead');
+    if (h >= CROP_THRIVING_HEALTH && STATE.cropGrowth.growth >= CROP_THRIVING_GROWTH && !STATE.cropGrowth.pest) active.add('crop_thriving');
   }
   // Crew state — solo_run is a standing condition; crew_dead activates
   // permanently once anyone has been lost this run (flag set by
   // applyOutcomeEffects' kill branch, incl. combat defeats).
+  if (STATE.goldAmount >= WELL_FUNDED_GOLD) active.add('well_funded');
   if (STATE.crew.length === 0) active.add('solo_run');
   if (STATE.flags.has('crew_lost')) active.add('crew_dead');
   // Aftermath window — combat.js sets postCombatLegs = 2 on combat end;
@@ -3661,10 +3670,14 @@ function eventEligible(ev, node, triggers) {
 }
 
 const CRISIS_POOL_CAP = 3;
+// Conditions a run can sit in for many stops: a mild pull, never the crisis
+// multiplier. The positional two, and the good-fortune triggers (a healthy
+// run must not spend every stop being congratulated).
+const MILD_TRIGGERS = Object.freeze(['journey_start', 'journey_end', 'crop_thriving', 'well_funded']);
 function crisisShare(ev, triggers, candidates) {
   let best = 0;
   for (const t of ev.trigger || []) {
-    if (t === 'any' || t === 'journey_start' || t === 'journey_end' || !triggers.has(t)) continue;
+    if (t === 'any' || MILD_TRIGGERS.includes(t) || !triggers.has(t)) continue;
     const n = candidates.filter(c => (c.trigger || []).includes(t)).length;
     best = Math.max(best, Math.min(1, CRISIS_POOL_CAP / Math.max(1, n)));
   }
@@ -3684,8 +3697,8 @@ function drawWeightedEvent(candidates, triggers, baseWeights, branch) {
     // during their window, NOT the crisis multiplier. With ×15 they
     // crowded out all node-specific content for the first ~15% of every
     // run (found during the pool-content verification pass).
-    const isCrisis = evTriggers.some(t => t !== 'any' && t !== 'journey_start' && t !== 'journey_end' && triggers.has(t));
-    const isPositional = !isCrisis && evTriggers.some(t => (t === 'journey_start' || t === 'journey_end') && triggers.has(t));
+    const isCrisis = evTriggers.some(t => t !== 'any' && !MILD_TRIGGERS.includes(t) && triggers.has(t));
+    const isPositional = !isCrisis && evTriggers.some(t => MILD_TRIGGERS.includes(t) && triggers.has(t));
     // likely, not guaranteed — normal content can still surface. Ruling 90:
     // a situation's events share one pull (CRISIS_POOL_CAP events' worth),
     // so a fuller pool brings variety, not more crisis scenes.
