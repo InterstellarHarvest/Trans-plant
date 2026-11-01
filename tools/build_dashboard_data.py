@@ -49,7 +49,10 @@ def choices(e):
 
 def species(e):
     n = [e.get('npc')] + [l.get('npc') for l in (e.get('layers') or {}).values()]
-    return sorted({x['species'] for x in n if isinstance(x, dict) and x.get('species')})
+    out = {x['species'] for x in n if isinstance(x, dict) and x.get('species')}
+    m = re.match(r'event_species_([a-z]+)_', e['id'])  # a species' hazards and forks have no face
+    if m and m.group(1) != 'fortune': out.add(m.group(1))
+    return sorted(out)
 
 def role(e):
     n = e.get('npc') or next((l.get('npc') for l in (e.get('layers') or {}).values() if l.get('npc')), None)
@@ -136,7 +139,7 @@ for tk, tl in TRAIL.items():
                    'draws_per_run': per, 'sim_runs': len(runs)})
 json.dump(tt, open(os.path.join(out, 'trail_tiers.json'), 'w'), ensure_ascii=False)
 # Species: every event that pins one, by who you meet.
-ROLES = ['Pirates', 'Traders', 'Drifters', 'Station crew', 'Other']
+ROLES = ['Pirates', 'Traders', 'Drifters', 'Station crew', 'Other']  # Other: hazards, forks, payoffs
 sp = []
 for k in ['insect', 'rock', 'water', 'reptile', 'robot', 'unknown', 'human']:
     sel = [e for e in evs if k in species(e)]
