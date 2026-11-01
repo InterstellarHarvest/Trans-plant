@@ -3670,6 +3670,7 @@ function eventEligible(ev, node, triggers) {
 }
 
 const CRISIS_POOL_CAP = 3;
+const PAYOFF_PULL = 4;
 // Conditions a run can sit in for many stops: a mild pull, never the crisis
 // multiplier. The positional two, and the good-fortune triggers (a healthy
 // run must not spend every stop being congratulated).
@@ -3691,6 +3692,9 @@ function drawWeightedEvent(candidates, triggers, baseWeights, branch) {
     // type (event_planet_006 — habitable planets only, ~1 in 6) is scaled
     // back up so it still turns up; 1 when unauthored.
     if (Number.isFinite(ev.draw_weight) && ev.draw_weight > 0) w *= ev.draw_weight;
+    // A consequence the run has earned should arrive: an event gated on a
+    // flag or an item it holds is not one more face in a growing pool.
+    if (ev.requires_flag || ev.requires_item) w *= PAYOFF_PULL;
     const evTriggers = ev.trigger || ['any'];
     // Positional triggers (journey_start/journey_end) exist for
     // reachability, not urgency — they get a mild bump so they surface
