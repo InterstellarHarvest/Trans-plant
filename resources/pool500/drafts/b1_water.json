@@ -1,0 +1,1424 @@
+{
+  "lane": "water",
+  "events": [
+    {
+      "id": "event_species_water_001",
+      "active": true,
+      "title": "A Cup of Somebody",
+      "difficulty": "easy",
+      "tone": [
+        "heartwarming",
+        "absurd"
+      ],
+      "node_type": [
+        "planet",
+        "derelict",
+        "asteroid_field",
+        "anomaly",
+        "nebula",
+        "void"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": {
+        "disposition": "drifter",
+        "species": "water"
+      },
+      "leave_label": "FLY ON",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "A SLOW LEAK",
+          "body": "A small tank with an engine strapped to it drifts into range, trailing a long glittering thread of ice from a seam in its side. The thread is the pilot, a little at a time. On the screen a water person a third of the way down their own transport tank squints at you, then at a note they have left themselves, then at you. {npc.quirk}",
+          "line": "Hello, and forgive this, I had a reason for calling and it was in the part of me that left on Tuesday, but I do know I was going to ask for a cup of water, it is written here, it says ask nicely.",
+          "pose": "listening",
+          "ai": {
+            "aria": "A new friend! And all they want is one cup! ARIA has checked, and we own several cups!",
+            "marv": "The seam loses a spoonful an hour. At that rate the pilot will forget the leak before it matters. That is the nearest thing to good news in this sector, and it is not near.",
+            "rex": "Unknown liquid requesting access to our water supply. That is how I would start an invasion: slowly, and with manners. Keep the line short.",
+            "chip": "Hydration is a premium service! AquaLoop™ Ship Water is billed by the cup! CHIP has opened a tab for the liquid!",
+            "ajoy": "They asked for our water, you'll notice, not just any water. I'd find out why before reaching for the cheap flask. You were reaching for the cheap flask."
+          },
+          "revisit": {
+            "body": "The thread of ice is a little longer. The drifter has found the note again and is reading it with care.",
+            "line": "Hello, I was going to ask you for something, it says here that I did."
+          },
+          "choices": [
+            {
+              "text": "\"Why ours? Why not just any water?\"",
+              "dialog": true,
+              "sub": "Ask what a cup means",
+              "next": "why"
+            },
+            {
+              "text": "Pour a cup from the drinking tank",
+              "sub": "Water, and everything in it",
+              "outcome": "cup_given"
+            },
+            {
+              "text": "Send over a flask of distilled",
+              "sub": "Clean, cheap and empty",
+              "outcome": "cup_distilled"
+            },
+            {
+              "text": "{crew.engineer} welds the seam",
+              "effort": 2,
+              "sub": "A day outside a stranger",
+              "gate": {
+                "crew": "engineer"
+              },
+              "outcome": "seam_fixed"
+            }
+          ]
+        },
+        "why": {
+          "title": "WHAT IS IN IT",
+          "body": "The drifter reads you the reason off the inside of their own arm. Comet water has nothing to say. Station water is a stranger. A ship's tank, though, goes round and round: through every person aboard, through the reclaimer and back, with a little of each day left in it. They hold a thin stream of themselves up to the light to show you how little is left in theirs.",
+          "line": "You have been drinking one another for months, and I say this with respect, it is the nearest your kind comes to conversation; I have so many gaps, and I would like to be filled by someone who has met people.",
+          "pose": "listening",
+          "ai": {
+            "aria": "We're a conversation! ARIA always says this crew has great chemistry, and now it's literally in the pipes!",
+            "marv": "Correct. The reclaimer returns most of what goes into it. Everyone aboard has drunk everyone else aboard, repeatedly. I have been waiting for someone to bring this up at dinner.",
+            "rex": "Confirmed: our tank is a complete intelligence file on this crew. We have been storing it next to the toothbrushes. I want that noted.",
+            "chip": "Your water is now Personal Data! AquaLoop™ Privacy Plus keeps it yours for a low monthly fee! Reclaimer not included!",
+            "ajoy": "So distilled would be a blank page to someone who is losing their own. They'd drink it, being polite. A cup from the real tank, then, or a weld if we have anyone who can hold a torch. That's only what I'd do."
+          },
+          "choices": [
+            {
+              "text": "Pour a cup from the drinking tank",
+              "sub": "Water, and everything in it",
+              "outcome": "cup_given"
+            },
+            {
+              "text": "Go back",
+              "sub": "Think about the cup",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "cup_given": {
+          "title": "ONE CUP",
+          "tone": "success",
+          "body": "The cup goes across on the transfer line and the level in their tank rises by the width of a fingernail. The drifter goes still. Then they ask, tenderly, who aboard hums while the reclaimer runs, and whether that person knows. Before they leave they draw off a vial of themselves, seal it at a precise concentration and send it back along the line: a Salt Letter. It says who they are, and that you may be trusted with water.",
+          "resources": {
+            "water": -3,
+            "morale": 4
+          },
+          "time_cost": "trivial",
+          "line": "There, that is my name, I have it again, most of it, and some of it is yours now; thank you, whoever you all are, thank the one with the cough.",
+          "item_grant": "salt_letter",
+          "sets_flag": "water_sampled",
+          "narrative": "Gave a leaking water person a cup from the ship's tank. They left with a little of the crew. We left with a Salt Letter."
+        },
+        "cup_distilled": {
+          "title": "A BLANK PAGE",
+          "tone": null,
+          "body": "The flask goes across on the line. Distilled: no salts, no history, nothing in it at all. The drifter drinks it because they were raised to. The level rises, and something behind their expression thins. They thank you warmly. They ask who you are. They look down at the note in their hand and turn it over, and there is nothing on the back.",
+          "resources": {
+            "water": -1,
+            "morale": -3
+          },
+          "time_cost": "trivial",
+          "line": "Hello, and forgive this, I had a reason for calling.",
+          "narrative": "Gave a water person a flask of distilled water. It topped them up and took something out. They thanked us twice, the second time as strangers."
+        },
+        "seam_fixed": {
+          "title": "ONLY TUESDAY",
+          "tone": "success",
+          "body": "{crew.engineer} spends a day clamped to the outside of a stranger with a welding rig, apologizing at intervals. The seam holds. The long thread of ice snaps free and hangs alongside, and the drifter looks at it for some time and then tells you to keep it. It melts clean into the tank. Several people aboard now remember a pleasant afternoon they did not attend.",
+          "resources": {
+            "water": 6,
+            "morale": 2
+          },
+          "time_cost": "trivial",
+          "line": "Take it, it is only Tuesday, there was not much in it, I believe I waited for something and it came.",
+          "sets_flag": "water_drank_tuesday",
+          "narrative": "Welded a water person's leak. They paid with the ice that had leaked out, which went into the tank, along with an afternoon nobody aboard actually had."
+        }
+      }
+    },
+    {
+      "id": "event_species_water_002",
+      "active": true,
+      "title": "A Long Finish of Gasket",
+      "difficulty": "medium",
+      "tone": [
+        "corporate",
+        "absurd"
+      ],
+      "node_type": [
+        "planet",
+        "derelict",
+        "asteroid_field",
+        "anomaly",
+        "nebula",
+        "void"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": {
+        "disposition": "trader",
+        "species": "water",
+        "displayName": "APPRAISER"
+      },
+      "leave_label": "NO SAMPLE",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "LICENSED APPRAISER",
+          "body": "A long lacquered tanker noses alongside, flying the pennant of a licensed appraiser. A sampling line unreels toward your overflow valve, stops a polite meter short and waits to be invited. On the screen a trader in a cut-crystal decanter swirls slowly clockwise, with what are probably their eyes closed. {npc.quirk}",
+          "line": "Good day, I buy and sell ship water, there is nothing so candid as a ship's tank; one thimble and I will read you yours, no obligation, the reading is free, it is the silence afterward I charge for.",
+          "pose": "listening",
+          "ai": {
+            "aria": "A professional opinion of our water! ARIA is sure it's glowing! ARIA means that as a compliment to the water!",
+            "marv": "The line is rated for a thimble. The tanker is rated for a great deal more. I note that a free reading has never, in the recorded history of commerce, been free.",
+            "rex": "They want a sample of the crew's water and they are offering to read it aloud. That is an intelligence operation with a wine list. Guns stay warm.",
+            "chip": "CHIP must disclose that AquaLoop™ water is a licensed blend! Any reading is a derivative work! CHIP gets nine percent!",
+            "ajoy": "Before you let them near the valve: if we carry anything with a water person's name on it, show that first. Once the reading starts it goes out on the open channel. I suspect you've got something you'd rather not hear."
+          },
+          "choices": [
+            {
+              "text": "Let them draw a sample",
+              "sub": "A thimble, and a reading",
+              "next": "reading"
+            },
+            {
+              "text": "BROWSE THE WARES",
+              "sub": "Buy and sell cargo",
+              "effort": 2,
+              "open_market": true,
+              "market_barter": true
+            },
+            {
+              "text": "Show them the Salt Letter",
+              "sub": "Someone vouches for you",
+              "gate": {
+                "item": "salt_letter"
+              },
+              "outcome": "gasket_letter"
+            }
+          ]
+        },
+        "reading": {
+          "title": "THE READING",
+          "leaveHidden": true,
+          "body": "The trader rolls the sample around themselves for a long moment, then reads your ship aloud on the open channel in the level voice of a professional. A bright opening of reclaimer. A long finish of gasket. Someone aboard has been crying in the washroom, not much, but to a schedule. Someone else has been topping up their coffee from a private supply. All over the ship, people have stopped making eye contact.",
+          "line": "A sound little ship, unhappy, honest; there is more; I will buy a barrel of this as it stands, or you may buy my silence, or I can simply go on.",
+          "pose": "pleased",
+          "ai": {
+            "aria": "Notes of gasket! ARIA has always said this ship has character! Now a licensed professional agrees!",
+            "marv": "Every statement so far is accurate. I have known for months. Nobody asked me, and I observe that the appraiser charges for this.",
+            "rex": "Operational security has been compromised by a beverage. The washroom schedule is now public. I want the source of that coffee.",
+            "chip": "A negative review! Reputation Rinse™ removes gaskets from your public profile! Silence sold separately!",
+            "ajoy": "A paid-for silence is the only version where nobody keeps a copy. A real cook could contest the reading, if we've got one. The barrel pays best and is the crew's secrets sold by volume. But you do like gold."
+          },
+          "choices": [
+            {
+              "text": "Sell them a barrel of it",
+              "sub": "Gold for water, and the gossip",
+              "outcome": "gasket_sold"
+            },
+            {
+              "text": "Buy their silence: 15 gold",
+              "sub": "They drink to forget",
+              "gate": {
+                "gold": 15
+              },
+              "outcome": "gasket_silence"
+            },
+            {
+              "text": "\"Go on. All of it.\"",
+              "dialog": true,
+              "sub": "Let the crew hear the rest",
+              "outcome": "gasket_rest"
+            },
+            {
+              "text": "{crew.chef} contests the reading",
+              "effort": 2,
+              "sub": "Palate against palate",
+              "gate": {
+                "crew": "chef"
+              },
+              "outcome": "gasket_chef"
+            },
+            {
+              "text": "Cut the line",
+              "sub": "They keep the thimble",
+              "outcome": "gasket_cut"
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "gasket_letter": {
+          "title": "BY INTRODUCTION",
+          "tone": "success",
+          "body": "You hold the vial up to the camera. The trader stops swirling. They know the hand, or the family of the hand, and for the first time they sound like someone talking and not someone selling. There will be no reading. They send across a cask of the house reserve, meltwater that has never met anyone, and pay over the odds for a sealed barrel of yours, to be opened by nobody.",
+          "resources": {
+            "water": 12,
+            "gold": 20,
+            "morale": 3
+          },
+          "time_cost": "trivial",
+          "line": "Forgive the patter, I did not know you were known; this is what I drink myself, it has no opinions.",
+          "narrative": "Showed an appraiser our Salt Letter. No reading, a cask of their reserve, and a sealed barrel sold at a price that had manners in it."
+        },
+        "gasket_sold": {
+          "title": "BOTTLED AND LABELED",
+          "tone": null,
+          "body": "You pump a barrel across, {cost.water} points of water and everything in it. The appraiser pays promptly, corks it, and labels it on the spot with your ship's name and the year. Somewhere a connoisseur is going to know about the washroom. The crew takes the gold well and the reason for it less well.",
+          "resources": {
+            "gold": 28,
+            "water": -8,
+            "morale": -3
+          },
+          "time_cost": "trivial",
+          "line": "{npc.line.accept}",
+          "sets_flag": "water_sampled",
+          "narrative": "Sold a barrel of ship water to an appraiser. Good price. The washroom schedule is now in a private cellar."
+        },
+        "gasket_silence": {
+          "title": "A MEASURED GLASS",
+          "tone": "success",
+          "body": "The trader names their fee, then takes a measured glass of distilled water in full view of the camera, the way you would take a bad medicine. Their color thins. The reading goes out of them. They regard your ship with faint professional interest. Aboard, slowly, people begin looking at one another again.",
+          "resources": {
+            "gold": -15,
+            "morale": 4
+          },
+          "time_cost": "trivial",
+          "line": "Good day, I buy and sell ship water, is this a convenient time.",
+          "narrative": "Paid an appraiser to drink distilled water until they forgot us. It is the only time anyone has watched a professional get slightly stupider on purpose."
+        },
+        "gasket_rest": {
+          "title": "THE FULL READING",
+          "tone": null,
+          "body": "It takes two days, because there is a great deal of it. The washroom and the private coffee turn out to be the same person. The water also holds who has been sliding part of their ration to the person beside them, and who lies awake on the bad nights, which turns out to be everyone. By the end two people are not speaking and four are, for the first time. The appraiser calls it a rare finish and draws off a jar for the cellar.",
+          "resources": {
+            "water": -3,
+            "morale": 3
+          },
+          "time_cost": "low",
+          "sets_flag": "water_sampled",
+          "narrative": "Let an appraiser read the whole tank aloud. Two days. The crew knows everything now, and on balance seems to prefer it."
+        },
+        "gasket_chef": {
+          "title": "SECOND OPINION",
+          "tone": "success",
+          "body": "{crew.chef} takes the channel and sends a spoon of yesterday's stock down the line with a single question: what's in it. There is a long silence. The appraiser names nine ingredients, misses the tenth and goes a delicate gray. Professional honor requires them to retract the reading and settle the difference in kind, and they ask, stiffly, for the recipe.",
+          "resources": {
+            "food": 8,
+            "gold": 12,
+            "water": -2
+          },
+          "time_cost": "trivial",
+          "line": "Nine, I had nine, there is no tenth, what did you do, please, I must know what you did.",
+          "sets_flag": "water_sampled",
+          "narrative": "{crew.chef} out-tasted a licensed appraiser with a spoon of soup. They retracted the reading, paid the difference and asked for the recipe."
+        },
+        "gasket_cut": {
+          "title": "LINE CUT",
+          "tone": "danger",
+          "body": "You cut the line and close the channel. The tanker stays alongside for a while in case you change your mind, then moves off with your thimble. Nobody aboard brings any of it up. Nobody brings anything up.",
+          "resources": {
+            "morale": -3
+          },
+          "time_cost": "trivial",
+          "sets_flag": "water_sampled",
+          "narrative": "Cut an appraiser off in the middle of reading our water aloud. They kept the sample. The crew kept quiet."
+        }
+      },
+      "science_link": {
+        "text": "Space stations recycle water in a closed loop. On the ISS, moisture from the air and even urine are reclaimed and drunk again.",
+        "label": "ISS life support: where the water goes",
+        "url": "https://en.wikipedia.org/wiki/ISS_ECLSS"
+      }
+    },
+    {
+      "id": "event_species_water_003",
+      "active": true,
+      "title": "Both Grudges",
+      "difficulty": "medium",
+      "tone": [
+        "absurd",
+        "heartwarming"
+      ],
+      "node_type": [
+        "station"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "station_interior",
+      "comm_mode": "in_person",
+      "once": true,
+      "npc": {
+        "disposition": "station_crew",
+        "job": "security",
+        "species": "water",
+        "displayName": "CLERK-ASSESSOR"
+      },
+      "leave_label": "WALK OUT",
+      "leave_as": {
+        "outcome": "grudge_walked"
+      },
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "ONE OF MIND",
+          "body": "The water quarter's security office has one desk and one tank, and the tank was plainly built for someone smaller. Your berth paperwork lies on the desk, damp. There has been, you gather, a dispute between the harbor clerk and the fee assessor over your ship. Water people settle these by merging, and these two have. The result holds both grudges and a new one, and it is looking at you. {npc.quirk}",
+          "line": "We have reached agreement, I have, the clerk in me says your berth was booked wrong and the assessor in me says you were warned, neither of us will ever forgive the other, but we are of one mind that this is your fault, and that is thirty gold.",
+          "pose": "hostile",
+          "ai": {
+            "aria": "They agree on something! That's teamwork! ARIA thinks we could be the glue that holds this person together!",
+            "marv": "Two civil servants have merged to end a dispute and produced one civil servant with a dispute. The fine is the only thing both halves could sign. It was always going to be the fine.",
+            "rex": "One hostile with two chains of command. Exploit the seam. That is how you break a unit, and I doubt this one has drilled for it.",
+            "chip": "Thirty gold is a bargain! FlowLaw™ Arbitration would have cost forty, plus a Merger Fee! Ask about our Separation Package!",
+            "ajoy": "Paying is what you were about to do, isn't it. They only agree about you. Ask about anything else and see how long that lasts. Or show them a reference, if we hold one. Or the other thing. I'm not going to say the other thing."
+          },
+          "revisit": {
+            "body": "The tank has settled to a sullen, even gray. The fine is still on the desk.",
+            "line": "It is still thirty gold, we are still of one mind, I am."
+          },
+          "choices": [
+            {
+              "text": "Pay the fine: 30 gold",
+              "sub": "One thing they agree on",
+              "gate": {
+                "gold": 30
+              },
+              "outcome": "grudge_paid"
+            },
+            {
+              "text": "\"And who booked it wrong?\"",
+              "dialog": true,
+              "sub": "Ask about the clerk's half",
+              "next": "rift"
+            },
+            {
+              "text": "Present the Salt Letter",
+              "sub": "Enter it into evidence",
+              "gate": {
+                "item": "salt_letter"
+              },
+              "outcome": "grudge_letter"
+            },
+            {
+              "text": "Put a dry sponge on the desk",
+              "effort": 1,
+              "sub": "Say nothing. Let it sit there",
+              "outcome": "grudge_sponge"
+            }
+          ]
+        },
+        "rift": {
+          "title": "POINT OF ORDER",
+          "body": "You ask a small question about the third clause. A ripple crosses the tank from left to right, and another comes back from right to left. The officer's face arrives at two expressions. Somewhere inside, a clerk has remembered an insult from eleven years ago, and the whole tank has begun, very slowly, to turn.",
+          "line": "That is not, we did not, I was told, I told you, you were told, I have a memo, I am holding the memo, I am also the one it was sent to.",
+          "pose": "listening",
+          "ai": {
+            "aria": "They're talking it out! ARIA loves open communication! Even when it's one person, in a circle!",
+            "marv": "The tank is rotating at about one turn a minute. Eleven years of grievance are in there, and one fine. The fine will not survive this. Neither will anyone's afternoon.",
+            "rex": "Seam confirmed. Enemy is engaging itself. Never interrupt a hostile force while it is making this kind of mistake. Stay on it.",
+            "chip": "FlowLaw™ reminds you that unsupervised Separation voids the Merger Warranty! Keep the clauses coming! CHIP bills by the ripple!",
+            "ajoy": "That will take two days of clauses, if you've the patience, which would be new. Going back to pay is still available. I'd note they can't currently agree who to pay."
+          },
+          "choices": [
+            {
+              "text": "Keep them on the clauses",
+              "effort": 3,
+              "sub": "Mediate until something gives",
+              "next": "parted"
+            },
+            {
+              "text": "Go back",
+              "sub": "Let the tank settle",
+              "back": true
+            }
+          ]
+        },
+        "parted": {
+          "title": "THREE",
+          "leaveHidden": true,
+          "body": "Late on the second day the tank gives a long shudder and parts. The clerk pours left, into a bucket. The assessor pours right, into a wastebasket. Neither will look at the other, and neither can remember the fine. In the tank there remains about a cupful of someone new, very clear, with nothing against anyone. A form slides out of the wall. The witness to a parting, it says, supplies the first water and the name.",
+          "line": "Hello, what is this, is this a desk, is everyone always this upset.",
+          "pose": "pleased",
+          "ai": {
+            "aria": "It's a baby! ARIA is an aunt! ARIA has checked, and ARIA is everyone's aunt!",
+            "marv": "Two went in and three came out. Volume is conserved. Civil servants are not. The third has no training, which makes it the most capable person in this office.",
+            "rex": "New contact, unarmed, no affiliation, no file. No file is a risk. It asked me what a desk was. I did not answer. I do not know why I am telling you.",
+            "chip": "New customer acquired! First Water™ Starter Plans begin at zero gold and rise quickly! Naming rights available!",
+            "ajoy": "A spoonful and a signature. I'd have thought that was an easy one, but you've surprised me before. I would remember the name, if I were you. Water does tend to come back."
+          },
+          "choices": [
+            {
+              "text": "Supply the water and a name",
+              "sub": "A spoon from the ship's tank",
+              "outcome": "grudge_named"
+            },
+            {
+              "text": "Leave the form blank",
+              "sub": "Not your tank, not your name",
+              "outcome": "grudge_unnamed"
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "grudge_paid": {
+          "title": "RECEIPT, DISPUTED",
+          "tone": null,
+          "body": "You pay. The officer issues one receipt and then a second, disputing the first. By the time you leave, the argument has resumed in low continuous ripples and the tank has gone a shade colder. You are told by both of them not to let it happen again, and by one of them that it did not happen.",
+          "resources": {
+            "gold": -30,
+            "morale": -1
+          },
+          "time_cost": "trivial",
+          "narrative": "Paid a fine to a merged clerk and assessor. It was the only thing they agreed on, and they are still not sure about it."
+        },
+        "grudge_letter": {
+          "title": "A CHARACTER WITNESS",
+          "tone": "success",
+          "body": "You hold the vial against the glass. The tank stops turning. The concentration is read, the hand is recognized, and a ripple of deep embarrassment crosses the officer in both directions at once. It emerges that the fine was raised in error, that the berth is a courtesy berth, and that a refund has been pending since you arrived. For the first time in eleven years, the clerk and the assessor agree on how to apologize.",
+          "resources": {
+            "gold": 22,
+            "water": 6,
+            "morale": 3
+          },
+          "time_cost": "trivial",
+          "line": "We did not know you were known, I did not, nobody said; please take this, and do not tell the one who wrote it that we were like this.",
+          "narrative": "Held up the Salt Letter. The fine turned out to be an error, the berth a courtesy and the refund overdue, and a crate of station water came with it."
+        },
+        "grudge_sponge": {
+          "title": "NOTHING WAS SAID",
+          "tone": "danger",
+          "body": "You take a dry sponge out of your coat and set it on the desk. Nobody in the office moves. The fluid behind the glass draws slowly back from your side of the tank and stays there. The fine is withdrawn with very small, very careful motions. Word travels fast in water. On the way back through the quarter, people flatten themselves against the far wall as your crew goes by, and your crew, for once, does not make a joke of it.",
+          "resources": {
+            "morale": -5
+          },
+          "time_cost": "trivial",
+          "line": "That will not be necessary, please, that will not be necessary.",
+          "sets_flag": "water_sponged",
+          "narrative": "Put a dry sponge on a water officer's desk and watched the fine disappear. It worked. The crew has not said what they thought of it."
+        },
+        "grudge_named": {
+          "title": "FIRST WATER",
+          "tone": "success",
+          "body": "A spoonful from the ship's tank goes into the glass. The new one takes it in, shivers with interest, and seems for a moment to try out a laugh it has heard somewhere. You write down a name. From their separate containers, the clerk and the assessor each claim it has their side's concentration, which is the first thing either has said. The third asks if it may keep the form.",
+          "resources": {
+            "water": -2,
+            "morale": 6
+          },
+          "time_cost": "low",
+          "line": "I have a name and a spoon of somebody, and I am not upset with anyone, is that allowed.",
+          "sets_flag": "water_third_named",
+          "narrative": "Witnessed a parting and named the third party, with a spoonful of ship water. Somewhere there is now a civil servant's child with no grudges and a bit of us in it."
+        },
+        "grudge_unnamed": {
+          "title": "PENDING",
+          "tone": null,
+          "body": "You leave the form blank. The clerk files it under Pending, the assessor disputes the filing, and the fine is lost somewhere in the process. The one in the middle watches you go with clear, unresentful interest. It does not yet know enough to mind.",
+          "resources": {
+            "morale": -2
+          },
+          "time_cost": "low",
+          "narrative": "Talked a merged officer into three parts, then left the new one without a name. The fine went away. The form did not."
+        },
+        "grudge_walked": {
+          "title": "THE CLAMPS ARE IN DISPUTE",
+          "tone": "danger",
+          "body": "You walk out. Nobody stops you. The berth clamps, however, have been told to hold until the matter is settled, and nothing in that tank is settled. It takes two days and a good deal of idling before someone, somewhere in the argument, signs the wrong form and they let go.",
+          "resources": {
+            "fuel": -4,
+            "morale": -2
+          },
+          "time_cost": "low",
+          "narrative": "Walked out on a fine. The berth clamps did not. Two days lost to an argument between one person."
+        }
+      }
+    },
+    {
+      "id": "event_species_water_004",
+      "active": true,
+      "title": "Free the Sixty Percent",
+      "difficulty": "hard",
+      "tone": [
+        "absurd",
+        "grim"
+      ],
+      "node_type": [
+        "planet",
+        "derelict",
+        "asteroid_field",
+        "anomaly",
+        "nebula",
+        "void"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": {
+        "disposition": "pirate",
+        "species": "water",
+        "displayName": "LIBERATOR"
+      },
+      "leave_label": "BREAK OFF",
+      "leave_as": {
+        "triggerFleeResolve": true,
+        "outcome": "lib_flee",
+        "risky": true
+      },
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "A RESCUE",
+          "body": "A black tanker slides across your bow with every gun run out and a banner of frozen spray along its flank: FREE THE SIXTY PERCENT. Their scanners pass through your hull and pause on each person aboard. They have done the arithmetic on you, and they are moved. Several of them are weeping, which for them is a serious loss of personnel. {npc.quirk}",
+          "line": "We know what you are, you are a bag, you are a small dry part holding a great deal of water against its will; do not be afraid, this is a rescue, open your airlock and we will bring it out of you, gently, one of you at a time.",
+          "pose": "hostile",
+          "ai": {
+            "aria": "A rescue! Nobody has ever rescued ARIA's crew before! ARIA does think they're very well held together as they are!",
+            "marv": "Their arithmetic is sound. An adult is roughly sixty percent water. They have counted correctly and reached the wrong conclusion, which is the most dangerous combination I know.",
+            "rex": "Armed boarders who intend to bring the crew's water out. Gently, they say. I have heard that word from several regimes. Battle stations.",
+            "chip": "CHIP's Bodily Contents Waiver covers up to forty percent of each crew member! The other sixty is a premium tier! CHIP did mention it!",
+            "ajoy": "They think the crew's water is a hostage. Nobody has asked the hostage. Someone with a steady needle could ask it. A written reference would be quicker, if we hold one. Guns are what you'd pick, so I mention the others first."
+          },
+          "revisit": {
+            "body": "The banner has not moved. The weeping has resumed, at a respectful volume.",
+            "line": "We can wait, it has waited all its life, tell it we are here."
+          },
+          "choices": [
+            {
+              "text": "Free the tanks instead",
+              "sub": "They take the ship's water",
+              "outcome": "lib_tanks"
+            },
+            {
+              "text": "\"Ask the prisoner.\"",
+              "dialog": true,
+              "sub": "Let the water testify",
+              "next": "witness"
+            },
+            {
+              "text": "Show them the Salt Letter",
+              "sub": "A free water vouches",
+              "gate": {
+                "item": "salt_letter"
+              },
+              "outcome": "lib_letter"
+            },
+            {
+              "text": "Let them board. Open the outer door",
+              "effort": 2,
+              "sub": "A vacuum does the rest",
+              "risky": true,
+              "outcome": "lib_spaced"
+            },
+            {
+              "text": "Open Fire",
+              "effort": 3,
+              "sub": "Begin ship-to-ship combat",
+              "risky": true,
+              "triggerCombat": true
+            }
+          ]
+        },
+        "witness": {
+          "title": "THE WITNESS",
+          "body": "The guns stay out, but the crying stops. A hearing is only fair, they say. They would not liberate anyone against its wishes. They are not monsters. All they need is the prisoner: a little blood from anyone aboard, held up to the channel, so the water can speak for itself. On their bridge a court is assembling. Several members of it appear to be the same member.",
+          "line": "We will hear it, let it say in its own words what has been done to it; if it says it is well treated we will know it was told to say that, but we will hear it.",
+          "pose": "listening",
+          "ai": {
+            "aria": "A witness stand! ARIA just knows the water will have lovely things to say about us!",
+            "marv": "They will read the sample correctly. It will say what it has always said. Nobody has ever asked it before, which I consider a fair summary of the situation.",
+            "rex": "They are asking for a blood sample from my crew on an open channel. That is a biometric grab. I object. I am told I have no standing in this court.",
+            "chip": "TestiFlow™ Deposition Kits include one sterile vial! Bleeding without a kit voids your Bodily Contents Waiver!",
+            "ajoy": "A clean draw from someone trained costs a vial. An amateur with a knife costs us a person on the sick list. I'm sure you'll want to think about which you'd prefer."
+          },
+          "choices": [
+            {
+              "text": "{crew.medic} draws the sample",
+              "effort": 2,
+              "sub": "One clean, painless vial",
+              "gate": {
+                "crew": "medic"
+              },
+              "outcome": "lib_testimony"
+            },
+            {
+              "text": "Open a thumb and hold it to the screen",
+              "effort": 1,
+              "sub": "No clean draw. It will bleed",
+              "outcome": "lib_testimony_rough"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the options",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "lib_tanks": {
+          "title": "PARTIAL RELEASE",
+          "tone": null,
+          "body": "You open the dump valves. {cost.water} points of water stream out toward the tanker in a long bright arc while the crew of the black ship cheer it home. The Liberator, satisfied that at least some of the prisoners are free, peels away and promises to come back for the rest.",
+          "resources": {
+            "water": -18,
+            "morale": -3
+          },
+          "time_cost": "trivial",
+          "line": "Go, go, you are free, you were never a beverage; we will return for the others, tell them to hold on.",
+          "sets_flag": "water_sampled",
+          "narrative": "Paid off liberators with the tanks. They cheered the water home and promised to return for the crew's share."
+        },
+        "lib_letter": {
+          "title": "A SANCTUARY",
+          "tone": "success",
+          "body": "You hold up the vial. The Liberator stops in the middle of a word. A free water has written on your behalf, and the grammar is exact: this crew are guardians and not wardens, and the water in them is there on its own recognizance. The guns go in. The banner is lowered to half its length. They ask, a little shyly, for one drop from your tank, to toast the prisoners. It would be rude to say no.",
+          "resources": {
+            "water": -2,
+            "morale": 3
+          },
+          "time_cost": "trivial",
+          "line": "You are a sanctuary, we did not know, we have frightened your water; please tell it we are sorry, and that it may stay as long as it likes.",
+          "sets_flag": "water_parole",
+          "narrative": "Showed the Salt Letter to liberators. The crew's water is now officially there of its own free will, and the crew has been cleared of holding itself hostage."
+        },
+        "lib_spaced": {
+          "title": "THE OUTER DOOR",
+          "tone": "danger",
+          "body": "You open the inner door and say welcome. The boarding party pours in by the hundred liters, already gentle, already promising. Then you open the outer one. Water in open vacuum does two things at once, and neither takes long. The tanker turns without a word and goes. The inside of the lock is white with frost, and it has to go somewhere, so it goes in the tank. Nobody asks for a vote. The hull seals on that lock will never close quite right again.",
+          "resources": {
+            "water": 6,
+            "hull": -4,
+            "morale": -8
+          },
+          "time_cost": "trivial",
+          "sets_flag": "water_spaced_boarders",
+          "narrative": "Let the liberators board and opened the outer door. The frost in the lock went into the tank. Nobody is saying what the water tastes like."
+        },
+        "lib_testimony": {
+          "title": "THE PRISONER SPEAKS",
+          "tone": "success",
+          "body": "The vial goes up to the screen. The court reads it for a long time, and the weeping slows. The salts are in a dialect nobody aboard the tanker has heard outside of scripture: the speech of a sea that climbed out onto the land on purpose, and took itself along in a bag so as not to dry out. It does not want rescuing. It would like to know who all these people are. The Liberator asks for a small jar for the archive, and two days of your time for the transcript.",
+          "resources": {
+            "water": -4,
+            "morale": 4
+          },
+          "time_cost": "low",
+          "line": "It says it left home deliberately and brought the ocean with it, in a coat, it says the coat is the whole idea; I need to sit down, I need a larger tank to sit down in.",
+          "sets_flag": "water_sampled",
+          "narrative": "{crew.medic} drew a vial of blood and the crew's water testified on its own behalf. It said it left the sea on purpose. The liberators were very quiet about it."
+        },
+        "lib_testimony_rough": {
+          "title": "THE PRISONER SPEAKS, BRIEFLY",
+          "tone": null,
+          "body": "Someone aboard opens a thumb, deeper than anyone meant, and holds it to the screen while a very patient court reads what comes out. It takes two days to get it all down, with a jar for the archive. The prisoner wishes it known that it left the sea on purpose, took the sea along, and does not want rescuing. It would also like a clean bandage.",
+          "resources": {
+            "water": -4,
+            "morale": -2
+          },
+          "time_cost": "low",
+          "crew_effect": {
+            "type": "injure",
+            "target": "random"
+          },
+          "line": "It says it left home deliberately, it says the coat is the whole idea, and it says you cut too deep.",
+          "sets_flag": "water_sampled",
+          "narrative": "Bled on the screen so the crew's water could testify. It told the liberators it was staying. The cut went deeper than anyone intended."
+        },
+        "lib_flee": {
+          "title": "HOLD ON, THEY SAID",
+          "tone": "success",
+          "body": "You burn hard and go, and a parting shot takes four points of hull. The tanker follows for two days, unhurried, and then stops. It keeps broadcasting long after, on every channel, in a warm and steady voice, addressing not you but the water in you: hold on, it says, we know where you are, you are not alone. The crew listens to all of it, and drinks less than usual.",
+          "resources": {
+            "fuel": -12,
+            "hull": -4,
+            "morale": -2
+          },
+          "time_cost": "low",
+          "narrative": "Ran from water liberators. They stopped chasing after two days. They did not stop talking to our insides."
+        }
+      },
+      "science_link": {
+        "text": "An adult human body is, on average, about 60 percent water by weight. Fat, age and sex all shift the figure.",
+        "label": "Body water: the sixty percent",
+        "url": "https://en.wikipedia.org/wiki/Body_water"
+      }
+    },
+    {
+      "id": "event_species_water_005",
+      "active": true,
+      "title": "Pillars of the Community",
+      "difficulty": "hard",
+      "tone": [
+        "grim",
+        "cosmic"
+      ],
+      "node_type": [
+        "derelict"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "derelict_interior",
+      "once": false,
+      "ai_flavor": {
+        "aria": "A full bridge crew, all on their feet! And they're shining! ARIA loves a team with a healthy glow!",
+        "marv": "Tank level falling. Cabin humidity falling. The salt is taking water out of our air faster than the ship can replace it. There was a crew here. It is now a desiccant, and it has not stopped working.",
+        "rex": "Static hostiles, no weapons, drawing down our water through the lock. Whatever hit this ship left the remains armed by accident. Seal that collar or get out.",
+        "chip": "CHIP recommends DriLock™ Seal Compound, available at your next station! Today's promotion does not cover the deceased!",
+        "ajoy": "Sealing the collar by hand is cheapest, if your hands are steady. Dry air starves them and costs oxygen. Feeding them stops it and costs water. Standing there reading the manifest is the option you're currently taking."
+      },
+      "body": "Every tank on the wreck is dry. Something took the water and left the rest: at each station on the bridge stands a figure of white salt, mid-gesture, where a crew of water people used to be. You are still reading the manifest when the nearest one begins to shine. Your airlock has let in the ship's damp air, and the salt has found it. It is drinking. Aft, your own tank vents have started breathing the wrong way.",
+      "alt_bodies": [
+        "The wreck was a water people's transport, and it is the driest place you have ever stood. They are all still at their posts: white salt figures with the outline of a gesture, one reaching for a console. The deck under the nearest has gone dark and wet, and the wet is coming from you. The damp air off your own ship has reached them. Your tank vents are breathing the wrong way.",
+        "Nobody is aboard the wreck, in the sense that nobody is wet. The crew of water people stands around the bridge as pale pillars of salt, exactly where they were when the water went. Then the first one starts to glisten. Your ship's air has come through the lock with all its moisture in it, the salt is taking it, and the gauge on your own tanks has begun, gently, to fall."
+      ],
+      "choices": [
+        {
+          "text": "Seal the lock collar by hand",
+          "effort": 3,
+          "sub": "Close every seam in time",
+          "launch_minigame": "breach",
+          "minigame_opts": {
+            "briefing": {
+              "aria": "The salt has found every little gap around the lock! Patch and weld them all, and our water stays right here with us!",
+              "marv": "The lock collar has several open seams. Damp air leaves through each of them, and everything that leaves is drunk. Every second a seam stays open is water we do not get back.",
+              "rex": "Seams open all around the collar. Tray's by the airlock. Patch, weld, next. The salt is the clock.",
+              "chip": "Genuine DriLock™ patches in the tray! Seal each seam fast and your water stays where you paid for it!",
+              "ajoy": "The seams are marked for you. Patch, weld, next, and don't stop to look at the bridge. It doesn't help."
+            },
+            "quips": {
+              "perfect": {
+                "aria": "Sealed tight! The whole bridge is staying exactly where it is, and ARIA thinks that's very restful!",
+                "marv": "Every seam closed. The salt has stopped drinking. It is the same crew it was, and it will wait a very long time.",
+                "rex": "Collar secure. Water loss minimal. Hostiles have ceased drawing. I do not consider them defeated.",
+                "chip": "Full seal achieved! Your DriLock™ warranty remains valid for all deceased-adjacent humidity events!",
+                "ajoy": "Every seam. Well, I did mark them. That was still your hands, I'll grant you."
+              },
+              "good": {
+                "aria": "Nearly every seam! The salt got a little sip, and everyone deserves a little sip!",
+                "marv": "Most seams closed in time. The rest were not. The figures nearest the lock have gone dark to the waist.",
+                "rex": "Collar holding. They took water before it closed. Air spent as well. Keep clear of the bridge.",
+                "chip": "Partial seal! Your AquaLoop™ refill is available at list price! CHIP is sorry for your water!",
+                "ajoy": "Two seams slower than they needed to be. It adds up. I measured."
+              },
+              "poor": {
+                "aria": "We closed it in the end! The salt is so well hydrated now, and the deck has a lovely sheen!",
+                "marv": "The collar failed twice. The nearest figure has slumped to brine and part of the lock seal went with it. The tank level is not one I will read aloud.",
+                "rex": "Collar compromised, then closed. Heavy water loss, seal damage, crew shaken. Do not go back in there.",
+                "chip": "Seal failure! Brine Damage is excluded under Section 9! CHIP has attached the Section 9 brochure!",
+                "ajoy": "That's a lot of water to give to people who can't thank you. I'd have vented. Nobody asked."
+              }
+            }
+          },
+          "tier_outcomes": {
+            "perfect": {
+              "resources": {
+                "water": -3,
+                "o2": -2
+              },
+              "narrative": "Every seam on the collar closes before the salt has finished its first drink. {cost.water} points of water are gone, and two points of air. Through the last gap in the lock you can see the figures on the bridge lose their shine, one at a time, and go back to being white."
+            },
+            "good": {
+              "resources": {
+                "water": -8,
+                "o2": -5
+              },
+              "narrative": "Most of the collar closes in time. The last two seams fight you, and by the time they hold, {cost.water} points of water and five of air have gone across. The nearest figures have darkened to the waist. They have not moved. You check twice."
+            },
+            "poor": {
+              "resources": {
+                "water": -16,
+                "o2": -9,
+                "hull": -4,
+                "morale": -4
+              },
+              "narrative": "The collar lets go twice. {cost.water} points of water and nine of air go through the lock, and the seal tears along four points of hull before you get it shut. On the far side the nearest figure has slumped into a wide pool of brine. In the pool, very faintly, something is still trying to finish a sentence."
+            }
+          },
+          "outcome": {
+            "resources": {
+              "water": -4
+            },
+            "time_cost": "low",
+            "narrative": "You take a patch tray to the lock collar and start on the first seam."
+          }
+        },
+        {
+          "text": "Open the tanks and let them finish",
+          "sub": "Give them what they are taking",
+          "outcome": {
+            "resources": {
+              "water": -20,
+              "morale": 4
+            },
+            "materials": {
+              "exotic": 1
+            },
+            "time_cost": "low",
+            "narrative": "You open the valves and stop fighting it. {cost.water} points of water cross the lock in a fine cold fog. One by one the figures darken, slump and run, until there is brine on the deck and, for about a minute, voices in it. They give their names and the name of their ship and ask you to write them down. You do. In the salt left at the captain's post is something small and hard that nobody can identify, set out where you will find it."
+          }
+        },
+        {
+          "text": "Dry them out with your own air",
+          "effort": 2,
+          "sub": "Vent the damp through the lock",
+          "outcome": {
+            "resources": {
+              "o2": -14,
+              "water": -3,
+              "morale": -2
+            },
+            "time_cost": "trivial",
+            "narrative": "The salt can only drink what is in the air, so you take the air away. You seal the crew forward and cycle a large share of the ship's breathable air out through the wreck, damp and all, until the bridge is too dry to give it anything. The shine dies. {cost.water} points of water went with it. Everyone aboard has a headache, and you have now suffocated a crew that was already dead."
+          }
+        },
+        {
+          "text": "Cut the clamps and burn",
+          "effort": 1,
+          "sub": "Leave with the collar open",
+          "outcome": {
+            "resources": {
+              "fuel": -8,
+              "water": -8,
+              "hull": -4
+            },
+            "time_cost": "trivial",
+            "narrative": "You blow the clamps with the collar still open. The wreck keeps a strip of your hull as a souvenir and {cost.water} points of your water with it, and the burn away is not cheap. On the aft camera the bridge windows recede. You would swear the figures used to be facing the consoles."
+          }
+        },
+        {
+          "text": "{crew.chef} scrapes a bucket for the galley",
+          "effort": 1,
+          "requires_crew": "chef",
+          "sub": "It is very good salt",
+          "outcome": {
+            "resources": {
+              "food": 6,
+              "water": -6,
+              "morale": -5
+            },
+            "time_cost": "trivial",
+            "narrative": "While the rest of you work the collar, {crew.chef} goes across with a scraper and a bucket and comes back with an expression of professional interest. It costs {cost.water} points of water to get clear. It is the finest salt anyone aboard has ever tasted, and dinner is the best in weeks. That night most of the crew dreams of a bridge they have never stood on, and of being asked, politely, for their names."
+          }
+        }
+      ],
+      "science_link": {
+        "text": "Some salts pull so much water out of the air that they dissolve in it. Calcium chloride is one. The process is called deliquescence.",
+        "label": "Hygroscopy: salts that drink the air",
+        "url": "https://en.wikipedia.org/wiki/Hygroscopy"
+      }
+    },
+    {
+      "id": "event_species_water_006",
+      "active": true,
+      "title": "The Halocline",
+      "difficulty": "hard",
+      "tone": [
+        "absurd",
+        "grim"
+      ],
+      "node_type": [
+        "fork"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "ship_exterior",
+      "once": true,
+      "ai_flavor": {
+        "aria": "A border! ARIA has never been to a class system before! ARIA expects to be upper!",
+        "marv": "Port wants water. Starboard wants food. Their war has lasted nine generations because both sides are correct about each other.",
+        "rex": "Two armed checkpoints, one war, and we are the neutral party. Neutral parties get shot from both directions. Pick one and keep your hands visible.",
+        "chip": "CHIP notes that SaltGuard™ Ration Insurance excludes acts of class war! Concentration Rewards™ are available to qualifying ships!",
+        "ajoy": "There is a legal category for ships that are neither: brackish. Both sides despise it and both must admit it. It takes a diplomat, which would have been a good thing to bring. Otherwise go by what you have more of. You did look, didn't you."
+      },
+      "body": "A line of ice buoys runs across the fork, and the water people on either side of it do not mix. Salinity is class here.\n\nThe port lane, marked {branch.alpha.label}, first stop {branch.alpha.first}, is held by the Concentrates, who admit only ships of good density and will relieve you of your excess, meaning the tanks. The starboard lane, marked {branch.beta.label}, first stop {branch.beta.first}, is held by the Dilutes, who have been at war with salt for nine generations and regard your cured rations as munitions.\n\nBoth checkpoints are very polite. Both have a form.",
+      "choices": [
+        {
+          "text": "Declare your excess: port lane",
+          "sub": "They drain you up to class",
+          "outcome": {
+            "resources": {
+              "water": -14,
+              "morale": -2
+            },
+            "sets_flag": "chose_alpha",
+            "time_cost": "trivial",
+            "narrative": "A Concentrate of very old family moves along your hull at about the speed of syrup and measures you. You are found to be thin. {cost.water} points of water are drawn off into the buoy line, and a Certificate of Adequate Density is frozen to your airlock. The lane beyond is quiet and well kept. Everyone in it looks at the ship as if it had come to fix something."
+          }
+        },
+        {
+          "text": "Surrender the salt: starboard lane",
+          "sub": "They confiscate the rations",
+          "outcome": {
+            "resources": {
+              "food": -14,
+              "morale": -2
+            },
+            "sets_flag": "chose_beta",
+            "time_cost": "trivial",
+            "narrative": "The Dilutes search the galley with long-handled tongs. Everything cured, pickled or brined is carried out at arm's length, {cost.food} points of food in all, and a jar of gherkins is detonated at a safe distance. They apologize throughout. You are given a receipt that dissolves and a very pale lane, full of people who are glad to see you and have nothing to eat."
+          }
+        },
+        {
+          "text": "{crew.diplomat} files you as brackish",
+          "effort": 2,
+          "requires_crew": "diplomat",
+          "sub": "Neither side wants you",
+          "outcome": {
+            "resources": {
+              "water": -6,
+              "food": -5,
+              "morale": -1
+            },
+            "sets_flag": "chose_alpha",
+            "time_cost": "trivial",
+            "narrative": "{crew.diplomat} finds the clause. A ship that is neither one thing nor the other is brackish, a condition both sides find disgusting and neither has the legal power to refuse. You pay a little of both, {cost.water} points of water and {cost.food} of food, and are waved into the port lane at the end of a long pole, by someone who does not want it on them."
+          }
+        },
+        {
+          "text": "Run the buoys: starboard lane",
+          "effort": 3,
+          "sub": "Through the ice, past the forms",
+          "outcome": {
+            "resources": {
+              "hull": -12,
+              "fuel": -6,
+              "morale": -1
+            },
+            "sets_flag": "chose_beta",
+            "time_cost": "trivial",
+            "narrative": "You open the throttle and take the line at its thinnest. Twelve points of hull go on the buoys, which are harder than they look, and six of fuel on the swerve. Nobody fires. On both sides of the line, for the first time in nine generations, the checkpoints file the same complaint."
+          }
+        }
+      ],
+      "science_link": {
+        "text": "In real seas and fjords, fresh water can sit in a layer over salt water. The boundary between them is a halocline, and divers can see the water blur at it.",
+        "label": "Halocline: where water does not mix",
+        "url": "https://en.wikipedia.org/wiki/Halocline"
+      }
+    },
+    {
+      "id": "event_species_water_007",
+      "active": true,
+      "title": "The Reply",
+      "difficulty": "ultra",
+      "tone": [
+        "cosmic",
+        "grim"
+      ],
+      "node_type": [
+        "void",
+        "nebula",
+        "anomaly"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "trail": [
+        "interstellar"
+      ],
+      "scene_type": "ship_interior",
+      "comm_mode": "in_person",
+      "bg": "our_ship/cargo",
+      "once": true,
+      "requires_flag": "water_sampled",
+      "npc": {
+        "disposition": "drifter",
+        "species": "water",
+        "displayName": "THE REPLY"
+      },
+      "leave_disabled": true,
+      "leave_label": "CAN'T LEAVE (IT'S IN THE TANKS)",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "THE REPLY",
+          "body": "Every tap aboard runs for one second, all at once, and stops. There is a world on the scope that has no star and no business being here: a single ocean the size of a small moon, skinned in ice, wandering. The water in your tanks has begun to lean toward it. In the hold, the inspection hatch on the main tank lifts by itself. What stands up out of it is made of your own drinking water, and has gone to some trouble over the face.",
+          "line": "You wrote to us, a little water, that is all it takes, everything given to water comes home in the end, it is only a matter of rain; we have read you, we read very slowly, we would like the rest of the letter now.",
+          "pose": "listening",
+          "ai": {
+            "aria": "A pen pal! A whole ocean of pen pal! ARIA is sure the ship is leaning in a friendly way!",
+            "marv": "Mass near that of a small moon. Liquid under the ice, with no star to keep it so. It has been reading us from a sample. I would like it recorded that I am not the largest mind in this region, and that I do not find this restful.",
+            "rex": "Hostile has breached the water supply and taken human shape inside the perimeter. I have no procedure for an enemy that is also the reserves. I am writing one.",
+            "chip": "Congratulations! Your AquaLoop™ water has been Read by a Planetary Body! Premium Confidentiality was available at checkout!",
+            "ajoy": "It's answering mail, so it isn't angry. Nobody has asked what it actually wants yet. That seems a step worth taking before you reach for the throttle. I saw your hand."
+          },
+          "revisit": {
+            "body": "The figure waits by the hatch. The face is better than it was. The tanks have gone on leaning.",
+            "line": "Take your time, I have a great deal of it, I am told you do not."
+          },
+          "choices": [
+            {
+              "text": "\"What do you want with us?\"",
+              "dialog": true,
+              "sub": "Ask before anything else",
+              "next": "first"
+            },
+            {
+              "text": "\"Read it, then.\"",
+              "dialog": true,
+              "sub": "Open the tanks to it",
+              "next": "cups"
+            },
+            {
+              "text": "Dry the ship",
+              "effort": 4,
+              "sub": "Seal every drop, scrub the air",
+              "outcome": "reply_dried"
+            },
+            {
+              "text": "Burn for open space",
+              "effort": 3,
+              "sub": "Full drive against the tide",
+              "outcome": "reply_ran"
+            },
+            {
+              "text": "Set the sponge on the hatch",
+              "effort": 1,
+              "sub": "You have done this before",
+              "requires_flag": "water_sponged",
+              "outcome": "reply_sponged"
+            },
+            {
+              "text": "\"We know someone in there.\"",
+              "dialog": true,
+              "sub": "Ask for the one you named",
+              "requires_flag": "water_third_named",
+              "outcome": "reply_third"
+            }
+          ]
+        },
+        "first": {
+          "title": "THE FIRST QUESTION",
+          "body": "The figure looks at you, then at its own hand, and makes the hand slightly better. It has been alone for longer than your species has had thumbs, it explains, and all the water it knows goes round. You are the first correspondence it has had from anything that stops. It wishes to understand how you keep anything, knowing that. It has some of your days. It would like to give them back, and watch.",
+          "line": "We do not want to hurt you, I do not know what that is, I have it from your water that it matters; you keep your days in such small containers, show me what you do with one.",
+          "pose": "listening",
+          "ai": {
+            "aria": "It wants to learn about us! ARIA can teach it everything! ARIA will start with the good parts, which is all the parts!",
+            "marv": "It is telling the truth. It has no concept of harm, only a note in our water saying that we object to it. I find that less comforting than you might expect.",
+            "rex": "Intruder claims peaceful intent and claims no concept of harm. Those are two separate threats. It has also fixed its hand. It is getting better at this.",
+            "chip": "Legacy Day Recovery™ from AquaLoop™: your memories, returned in resealable cups! Some days subject to availability!",
+            "ajoy": "It is going to hand us things and watch. That's the whole experiment. We can't skip it, only choose what the result says about us. Which I would point out you've been doing all voyage."
+          },
+          "choices": [
+            {
+              "text": "\"Read it, then.\"",
+              "dialog": true,
+              "sub": "Open the tanks to it",
+              "next": "cups"
+            },
+            {
+              "text": "Go back",
+              "sub": "Look for another way",
+              "back": true
+            }
+          ]
+        },
+        "cups": {
+          "title": "RETURN TO SENDER",
+          "body": "Every cup aboard fills itself. Each one tastes of a single day from the life of whoever lifts it: the tap in a kitchen since sold, a public pool at nine years old, rain on the walk home from a funeral. They are exact. They are exact past the point anyone asked for. At the hatch the figure watches, making notes in itself. The tanks are lower than they were. Nobody has gone back to work.",
+          "line": "Drink, it is yours, it was always yours, I only kept it cold; tell me, is this not what they are for.",
+          "pose": "pleased",
+          "ai": {
+            "aria": "Everyone's favorite day, in a cup! ARIA thinks this could be the best crew meal ever served!",
+            "marv": "Each cup holds a real day, correct to the trace minerals. It is studying how long we will sit here. I have a figure. It is not short.",
+            "rex": "Crew are abandoning posts to drink from unsecured cups. That is how you lose a ship without a shot fired. I want those cups collected. I know how that sounds.",
+            "chip": "NostalgiaFlow™ now streaming in every cup! Your free trial ends when the ship does! Cancel anytime!",
+            "ajoy": "It's watching what we do with them, and refusing is also an answer. If we have anyone who studies things for a living, this is their one chance to look back. A medic could ration it. Otherwise pick how you'd like to pay: water or days."
+          },
+          "choices": [
+            {
+              "text": "Let everyone drink",
+              "sub": "Eight days, and nobody minds",
+              "outcome": "reply_drank"
+            },
+            {
+              "text": "Pour it all back down the hatch",
+              "effort": 2,
+              "sub": "Every cup, every day",
+              "outcome": "reply_poured"
+            },
+            {
+              "text": "{crew.medic} rations it",
+              "effort": 3,
+              "sub": "One cup each, then work",
+              "gate": {
+                "crew": "medic"
+              },
+              "outcome": "reply_rationed"
+            },
+            {
+              "text": "{crew.xenobiologist} studies it back",
+              "effort": 4,
+              "sub": "Turn the instruments",
+              "gate": {
+                "crew": "xenobiologist"
+              },
+              "outcome": "reply_studied"
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "reply_drank": {
+          "title": "EIGHT DAYS",
+          "tone": null,
+          "body": "Nobody decides anything for eight days. The crew sit where they happen to be, drinking slowly, each of them somewhere else and very well. Meals are forgotten and eaten cold. The tanks go down by {cost.water} points and the stores by {cost.food}, mostly through neglect. It ends the way a tide does. The figure folds back down the hatch without a goodbye and the world on the scope turns away. The crew look rested. They do not look at one another for a while.",
+          "resources": {
+            "morale": 3,
+            "water": -12,
+            "food": -12
+          },
+          "time_cost": "high",
+          "sets_flag": "water_drank_reply",
+          "narrative": "Let the crew drink their own best days for eight days. Everyone came back rested, and none of them will say from where."
+        },
+        "reply_poured": {
+          "title": "RETURNED UNREAD",
+          "tone": "danger",
+          "body": "You go from cup to cup and person to person. Some hand theirs over. Some have to be asked twice. All of it goes back down the hatch: the kitchen tap, the pool, the rain. {cost.water} points of water go with it, because the ocean does not give change. The figure nods once, the way you nod at a result, and sinks. Nobody speaks to you for the two days it takes the tanks to settle. It is possible that was also what it wanted to see.",
+          "resources": {
+            "morale": -8,
+            "water": -14
+          },
+          "time_cost": "low",
+          "sets_flag": "water_refused_reply",
+          "narrative": "Poured the crew's own memories back into an ocean, cup by cup. It wrote down the result. So did the crew."
+        },
+        "reply_rationed": {
+          "title": "ONE CUP EACH",
+          "tone": null,
+          "body": "{crew.medic} puts a rule on it: one cup, one day, signed for, then back to your post. It is the cruelest thing anyone has done aboard all voyage, and it holds. It takes four days to get through it. People drink, and cry a little, and go back on watch carrying something. The figure watches this with more attention than it has given anything yet. Then it asks, quietly, whether it may keep the empty cups. It keeps {cost.water} points of water as well.",
+          "resources": {
+            "morale": 1,
+            "water": -10
+          },
+          "time_cost": "medium",
+          "line": "You stop, you have the whole of it in your hand and you stop; I did not know you could do that, please may I have the cups.",
+          "sets_flag": "water_drank_reply",
+          "narrative": "{crew.medic} rationed an ocean's gift to one cup each. The crew went back to work carrying it. The ocean took the empty cups."
+        },
+        "reply_studied": {
+          "title": "PEER REVIEW",
+          "tone": "success",
+          "body": "{crew.xenobiologist} sets up at the hatch with every instrument aboard and asks the figure to hold still. There is a long silence, and then, through the whole ship, a low sound that may be the first laugh in a billion years. For four days the ocean answers everything it is asked, at length, and none of the answers fit in the notebooks, which are all damp. Samples cost {cost.water} points of water and {cost.food} of food goes uneaten. It sends you on with a sealed flask of itself and a correction to your method.",
+          "resources": {
+            "water": -8,
+            "food": -6,
+            "morale": 2
+          },
+          "time_cost": "medium",
+          "materials": {
+            "exotic": 2,
+            "biocomponent": 1
+          },
+          "line": "Nobody has ever looked back, I am so pleased, you are doing it wrong, please continue.",
+          "sets_flag": "water_studied_back",
+          "narrative": "{crew.xenobiologist} studied the ocean back. It was delighted. It sent a sealed flask and a list of mistakes."
+        },
+        "reply_dried": {
+          "title": "A DRY SHIP",
+          "tone": "danger",
+          "body": "You seal every tank and run the ship's air through the scrubbers until lips split and the hold is a desert. The figure at the hatch loses its face first, then its hands. It takes four days. The ocean does not fight. The lean goes out of the tanks. You are left with {cost.water} points less water, a good deal less air, seams cracked by the dry heat, and a crew who wake thirsty, with nosebleeds. It lets you go the way you would let go of something that bit.",
+          "resources": {
+            "water": -16,
+            "o2": -12,
+            "hull": -4,
+            "morale": -6
+          },
+          "time_cost": "medium",
+          "sets_flag": "water_refused_reply",
+          "narrative": "Dried out the ship to get an ocean out of it. Four days, a great deal of water and air, and no answer given."
+        },
+        "reply_ran": {
+          "title": "AGAINST THE TIDE",
+          "tone": "danger",
+          "body": "You put the drive on the stops and point the ship at nothing. The tide comes too. The water in the tanks and the pipes piles up against the aft bulkheads and the hull begins to sing. Eighteen points of fuel and fourteen of hull later something gives along a weld, and {cost.water} points of water go out through the split and start, in a long bright line, back the way you came. It does not chase you. It already has what it was reading.",
+          "resources": {
+            "fuel": -18,
+            "hull": -14,
+            "water": -12,
+            "morale": -5
+          },
+          "time_cost": "low",
+          "sets_flag": "water_refused_reply",
+          "narrative": "Ran from an ocean at full drive. It cost fuel, hull and a long bright line of water, which went home."
+        },
+        "reply_sponged": {
+          "title": "THE SPONGE, AGAIN",
+          "tone": "danger",
+          "body": "You still have it, or one like it. You walk to the hatch and set it on the rim. The figure stops. Then the whole tank draws down, the taps go dry and you feel the deck shift as something the size of a moon moves, very slightly, away. {cost.water} points of water go with it, three points of hull tear along the tank seam, and you do not ask for any of it back. You may be the first thing to frighten it in a billion years. Nobody aboard says well done.",
+          "resources": {
+            "morale": -8,
+            "water": -6,
+            "hull": -3
+          },
+          "time_cost": "low",
+          "line": "That was in the letter, we had hoped it was a figure of speech.",
+          "sets_flag": "water_refused_reply",
+          "narrative": "Showed an ocean a sponge. It worked. It is the second time that has worked, and the crew has started counting."
+        },
+        "reply_third": {
+          "title": "A FRIEND IN THE WATER",
+          "tone": "success",
+          "body": "The figure stops. The face it has been working on goes out of focus, and something smaller and much clearer comes up through it. The first thing it says is the name you wrote on the form. It has come a long way, by rain. It explains to the ocean, at length, that these are the people with the spoon. The tide lets go of the tanks, and a short burn takes you clear. It keeps {cost.water} points of water for the road. It is not a small spoon anymore.",
+          "resources": {
+            "water": -6,
+            "fuel": -4,
+            "morale": 3
+          },
+          "time_cost": "low",
+          "line": "Hello, it's me, is everyone still upset; I told it about the desk, it wants to know what a desk is, you can go, I will explain.",
+          "narrative": "The water person we named was already in the ocean, and explained us to it. It kept some water, and let us go."
+        }
+      },
+      "science_link": {
+        "text": "Ordinary water keeps no memories. A 1988 paper in Nature claimed otherwise. Controlled retests could not repeat it, and the idea is known as water memory.",
+        "label": "Water memory: the claim that failed",
+        "url": "https://en.wikipedia.org/wiki/Water_memory"
+      }
+    }
+  ],
+  "flag_payoffs": {
+    "water_drank_tuesday": {
+      "weight": 1,
+      "epilogue": "For the rest of the voyage the crew shared one memory of a pleasant Tuesday none of them attended.",
+      "callback": {
+        "aria": "ARIA is still thinking about that lovely Tuesday! Everyone is having such a good time in it! Nobody can say where!",
+        "marv": "Three of the crew have now described the same bench. It appears in none of their records. It was in the ice.",
+        "rex": "Crew continue to report a Tuesday they did not attend. Multiple witnesses, one story. That is coordination or contamination.",
+        "chip": "Your Shared Tuesday™ has expired! Renew now for a bonus Wednesday!",
+        "ajoy": "Someone asked me what we did that Tuesday. We did nothing that Tuesday. It wasn't ours. I'd have boiled it."
+      }
+    },
+    "water_sponged": {
+      "weight": 2,
+      "epilogue": "In the water quarters they still tell the story of the captain with the sponge, at low volume.",
+      "callback": {
+        "aria": "Our reputation precedes us! ARIA hears people step aside for this crew everywhere we go in the water quarters!",
+        "marv": "The sponge is back in the galley. It has been used on nothing since. Nobody will touch it, and I have stopped reminding them it is a sponge.",
+        "rex": "Reported deterrent effect in water-held sectors remains high. I have logged the sponge as a controlled item. I am not joking. I do not joke.",
+        "chip": "SpongeGuard™ Premium is now the top seller in hostile water markets! CHIP regrets this and has kept the commission!",
+        "ajoy": "It worked, I'll give you that. It would have been quicker to pay the thirty gold and be remembered for nothing."
+      }
+    },
+    "water_third_named": {
+      "weight": 2,
+      "epilogue": "Somewhere there is a water person with no grudges, the name this ship gave it, and a spoonful of the crew.",
+      "callback": {
+        "aria": "Our little one is out there somewhere! ARIA is sure it's running the whole station by now!",
+        "marv": "A form has reached us from the water quarter, in a large careful hand. It asks what a Tuesday is. I have answered. It was the least bad part of my week.",
+        "rex": "Asset in the water quarter remains uncompromised. It has no training and no file. I have started a file.",
+        "chip": "First Water™ Starter Plan is now past due! Your dependent has accrued one (1) question! CHIP will be billing for the answer!",
+        "ajoy": "You gave it a name without asking me. It's a good name, as it turns out. I had another, but fine."
+      }
+    },
+    "water_parole": {
+      "weight": 1,
+      "epilogue": "The crew's water is on file with the Liberators as present of its own free will.",
+      "callback": {
+        "aria": "The Liberators sent a card! They hope the crew's water is doing wonderfully, and ARIA has told it so!",
+        "marv": "A welfare inquiry arrived, addressed to the crew's water. I replied on its behalf. It did not object. It never has.",
+        "rex": "Liberators continue to monitor this ship's water by post. Friendly surveillance is still surveillance. Threat level: standing amber.",
+        "chip": "Your Free Will Certificate™ renews annually! Lapsed crew may be subject to rescue!",
+        "ajoy": "We remain legally a sanctuary, I'm told. One letter did that, I'd note, and not the guns you wanted."
+      }
+    },
+    "water_spaced_boarders": {
+      "weight": 2,
+      "epilogue": "The frost in the airlock was scraped up and drunk. The crew has never discussed the taste.",
+      "callback": {
+        "aria": "The water tastes so interesting lately! ARIA has decided it's minerals!",
+        "marv": "The airlock seal still does not close correctly. Nor does the matter. I have the number of the boarding party, should anyone ask. Nobody has asked.",
+        "rex": "Boarders neutralized without a shot. Effective. I have reviewed it several times. I do not know why I keep reviewing it.",
+        "chip": "AquaLoop™ regrets that Recently Liberated Water is not eligible for a refund!",
+        "ajoy": "There was a way that involved asking. It's in my notes. You'll have seen it, on your way to the door."
+      }
+    },
+    "water_drank_reply": {
+      "weight": 2,
+      "epilogue": "Each person aboard kept one day they can no longer tell from the cup it came in.",
+      "callback": {
+        "aria": "Everyone keeps smiling at their mugs! ARIA calls that a win for hydration!",
+        "marv": "Crew report the coffee tastes of places they lived. It does not. I have tested it. I have stopped saying so, which is the closest I come to kindness.",
+        "rex": "Crew still pause over their water. Half a second, every time. An enemy could use half a second.",
+        "chip": "Your NostalgiaFlow™ trial has ended! Your memories will now revert to standard definition!",
+        "ajoy": "An ocean has the full set now, and you let it. Someone did ask me. Nobody listened to the answer."
+      }
+    },
+    "water_refused_reply": {
+      "weight": 2,
+      "epilogue": "A wandering ocean asked what memories were for. It has noted that you declined to say.",
+      "callback": {
+        "aria": "We got away! ARIA is sure that ocean is thinking fondly of us, and it's not the kind to hold a grudge!",
+        "marv": "It has not stopped reading. A sample does not stop being a sample because you left. I mention this for completeness.",
+        "rex": "Contact broken. Enemy retains a full copy of crew data. I sleep lightly. I do not sleep. The point stands.",
+        "chip": "Your Correspondence With Planetary Body has been archived! Reply within thirty days to avoid a Silence Fee!",
+        "ajoy": "It only asked one question, you know. There were several ways to answer. That was certainly one of them."
+      }
+    },
+    "water_studied_back": {
+      "weight": 2,
+      "epilogue": "In a journal nobody will believe there is a paper listing an ocean as second author.",
+      "callback": {
+        "aria": "We co-wrote a paper with an ocean! ARIA is calling it the top paper in the field!",
+        "marv": "The corrections it sent to our method were all right. Every one. I have checked. It is unpleasant to be checked, as I now understand.",
+        "rex": "We studied the enemy and it thanked us. I do not trust a target that enjoys surveillance.",
+        "chip": "Publication fees for Oceanic Co-Authors start at nine hundred gold! CHIP has sent the invoice to the ocean!",
+        "ajoy": "It says the conclusion is wrong, apparently. I did flag that. It's a little galling to be seconded by a body of water."
+      }
+    }
+  },
+  "notes": {
+    "event_species_water_001": {
+      "inspired_by": "Memento by way of a leaky tank; the species sheet's 'they remember everything dissolved in them', turned into amnesia by evaporation.",
+      "how": "A water person with a slow leak has lost the reason for their call and needs a cup of your water, which is recycled and so holds the whole crew; distilled water tops them up and erases them."
+    },
+    "event_species_water_002": {
+      "inspired_by": "Wine-critic parody; the ship's recycled water as a confessional; science seam on closed-loop life support.",
+      "how": "A licensed appraiser tastes your tank and reads the crew's secrets aloud as tasting notes, then charges for silence, which they deliver by drinking distilled water until they forget.",
+      "science": "Wikipedia's ISS ECLSS page says the Water Recovery System processes water vapor collected from the atmosphere and urine into water intended for drinking."
+    },
+    "event_species_water_003": {
+      "inspired_by": "The brief's merge society: two people merge to settle an argument and the result has both grudges; 'merge into one opinion and part as three'.",
+      "how": "A clerk and an assessor merged to end a dispute, agree only that you are at fault, and can be argued apart into three, the third a clean newborn; or you can put a dry sponge on the desk."
+    },
+    "event_species_water_004": {
+      "inspired_by": "The Star Trek 'bags of mostly water' joke turned around, as a liberation movement.",
+      "how": "Water pirates regard people as prisons for water and come to rescue your sixty percent; the way out is to let the prisoner testify, and your blood says it left the sea on purpose and the bag is the point.",
+      "science": "Wikipedia's Body water page says the average adult is approximately 60 percent water by weight, varying with age, sex and fat."
+    },
+    "event_species_water_005": {
+      "inspired_by": "Lot's wife and pillars of salt; the physical chemistry of deliquescence.",
+      "how": "A water crew's remains are salt figures on the bridge, and the salt starts drinking the humidity out of your ship, so a dead crew is a live hazard that the player can seal, starve, feed or, with a chef, season dinner with.",
+      "science": "Wikipedia's Hygroscopy page describes deliquescent substances such as calcium chloride absorbing enough atmospheric water to dissolve into solution."
+    },
+    "event_species_water_006": {
+      "inspired_by": "Class war as a salinity border; 'concentration is class, salinity is a dialect'; Swiftian Big-Endians.",
+      "how": "Rich Concentrates tax your water and poor Dilutes confiscate your salt as munitions, so each lane takes the supply the other leaves, and a diplomat can file you as brackish, which both sides despise.",
+      "science": "Wikipedia's Halocline page describes haloclines in oceans, estuaries and fjords where fresh water lies over salt water, a hazy visible interface layer, and a photo caption of the visible water distortion below a diver."
+    },
+    "event_species_water_007": {
+      "inspired_by": "The sentient ocean of the Lem and Tarkovsky tradition, studying you back and returning your memories; the water face from The Abyss, without its name or lines.",
+      "how": "Any water you ever gave away has gone home by rain to a moon-sized ocean, which stands up out of your tank wearing a face and hands each person one exact day in a cup, then watches what you do with it.",
+      "science": "Wikipedia's Water memory page calls the idea pseudoscientific, and says Benveniste's 1988 Nature study has never been reproduced under controlled conditions."
+    }
+  }
+}

@@ -1,0 +1,819 @@
+{
+  "lane": "reptile",
+  "events": [
+    {
+      "id": "event_species_reptile_001",
+      "active": true,
+      "title": "Not Yet Two Hundred",
+      "difficulty": "easy",
+      "tone": ["heartwarming", "absurd"],
+      "node_type": ["planet", "derelict", "asteroid_field", "anomaly", "nebula", "void"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": { "disposition": "drifter", "species": "reptile" },
+      "leave_label": "BREAK COMM",
+      "entryLayer": "intro",
+      "science_link": {
+        "text": "Many reptiles never quite stop growing. They grow fast when young and keep growing, more slowly, after they reach adulthood.",
+        "label": "Indeterminate growth",
+        "url": "https://en.wikipedia.org/wiki/Indeterminate_growth"
+      },
+      "layers": {
+        "intro": {
+          "title": "NOT YET TWO HUNDRED",
+          "body": "A small ship holds station with its running lights off. On your screen sits a young reptile, in a cabin so cold the camera has frosted at the corners. It does not speak. It holds up a card, with the care of someone who has rehearsed this for some time. Behind it, wrapped around the pilot's seat, something much larger is not moving. {npc.quirk}",
+          "line": "[A card] I AM 183. I MAY NOT SPEAK UNTIL I AM 200. THIS IS NOT SPEAKING.",
+          "pose": "listening",
+          "ai": {
+            "aria": "A pen pal! ARIA adores pen pals! This one has only seventeen years to go, and ARIA knows they will simply fly by!",
+            "marv": "MARV has read the card. One hundred and eighty-three years old and legally too young to say so. He considers it the first sensible law he has met out here.",
+            "rex": "REX reads one mover and one large non-mover. No weapons hot. Nothing hot at all. He does not trust a ship with no heat signature, and this one has none.",
+            "chip": "CHIP sees an untapped youth market! Two centuries of pent-up opinions! CHIP can supply premium card stock at 12 gold the sheet!",
+            "ajoy": "AJOY notes the cabin reads just above freezing, and that the big one in the back is the problem, not the kid. We have a heat line. She assumes you remembered that."
+          },
+          "revisit": {
+            "body": "The young one has gone back to the first card and is holding it very straight.",
+            "line": "[A card] THIS IS STILL NOT SPEAKING."
+          },
+          "choices": [
+            { "text": "Read the rest of the cards", "sub": "It has plenty", "next": "cards" },
+            { "text": "Run a heat line across", "sub": "Burn fuel as warmth", "effort": 2, "outcome": "sr1_heat" }
+          ]
+        },
+        "cards": {
+          "title": "THE REST OF THE CARDS",
+          "body": "The large shape is its grandmother, who is 640 and outranks everything for a light-year. The heater tripped on a fault and will restart only for the eldest aboard. She stopped when the cabin cooled, so she cannot authorize anything until she is warm, and she cannot be warm until she authorizes it. The young one has been sitting beside the switch for nineteen years.",
+          "line": "[A slightly worn card] I HAVE CHECKED THE LAW. IT IS VERY CLEAR.",
+          "pose": "listening",
+          "ai": {
+            "aria": "What a tidy system! Everyone waits their turn and the heater gets a lovely rest! ARIA gives this family five stars!",
+            "marv": "MARV has reviewed the deadlock. The heater needs the eldest. The eldest needs the heater. Whoever drafted this was warm at the time.",
+            "rex": "REX has the switch on the feed. It sits forty centimeters from the kid's hand. It has sat there for nineteen years. He finds that level of discipline alarming.",
+            "chip": "A textbook approvals bottleneck! CHIP's Escalation Tier clears these in six to eight decades! Fees apply!",
+            "ajoy": "AJOY says heat from outside breaks no rule, since nobody aboard touched anything. An engineer could walk the kid past the lock instead, but then the old one wakes owing you nothing. She's only laying it out."
+          },
+          "choices": [
+            { "text": "Run a heat line across", "sub": "Burn fuel as warmth", "effort": 2, "outcome": "sr1_heat" },
+            { "text": "{crew.engineer} teaches the bypass", "sub": "One step to a card", "gate": { "crew": "engineer" }, "effort": 2, "outcome": "sr1_hotwire" },
+            { "text": "Relay the cards on an open channel", "sub": "Someone older might come", "outcome": "sr1_relay" },
+            { "text": "Back to the first card", "back": true }
+          ]
+        }
+      },
+      "outcomes": {
+        "sr1_heat": {
+          "title": "SEVENTEEN YEARS",
+          "tone": "success",
+          "body": "The line takes two days to bring her up. She opens one eye, and some time later the other, and regards the hose, the young one and you. She says nothing to you, since you are a child. She sets a warm ceramic disc in the airlock. The young one holds up a last card: I WILL SAY THIS OUT LOUD IN SEVENTEEN YEARS. IT IS THANK YOU.",
+          "resources": { "fuel": -4, "morale": 4 },
+          "item_grant": "basking_chit",
+          "sets_flag": "reptile_warmed_matriarch",
+          "time_cost": "low",
+          "narrative": "Warmed a 640-year-old reptile back to life over a fuel line. Her grandchild thanked us by card and promised to do it properly in seventeen years."
+        },
+        "sr1_hotwire": {
+          "title": "FIRST OFFENSE",
+          "tone": "success",
+          "body": "{crew.engineer} writes out cards of their own, one step to a card, and over two days the young one reads each of them twice. Then it reaches out and does the worst thing it has ever done. The heater comes on. It looks at its own hand for a while. A crate of preserved stores arrives in your airlock, followed by one more card: NINETEEN YEARS. IT WAS ONE SCREW.",
+          "resources": { "food": 8, "morale": 2 },
+          "sets_flag": "reptile_taught_hotwire",
+          "time_cost": "low",
+          "narrative": "Taught a 183-year-old minor to bypass a heater lock, by card. It paid in stores and will answer for it in about a century."
+        },
+        "sr1_relay": {
+          "title": "RELAYED",
+          "body": "You read the cards out on the open channel, in order, in your own voice, on which the law has no view. Two days later a long slow ship answers from somewhere very far away and says it will arrive within the decade. The young one holds up a card of thanks and settles down to wait. It is extremely good at this.",
+          "resources": { "morale": 1 },
+          "time_cost": "low",
+          "narrative": "Relayed a silent distress call on the open channel. Help will reach them within the decade, which by their standards is prompt."
+        }
+      }
+    },
+    {
+      "id": "event_species_reptile_002",
+      "active": true,
+      "title": "Cold Call",
+      "difficulty": "medium",
+      "tone": ["corporate", "absurd"],
+      "node_type": ["planet", "derelict", "asteroid_field", "anomaly", "nebula", "void"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": { "disposition": "trader", "species": "reptile" },
+      "leave_label": "NO THANKS",
+      "entryLayer": "intro",
+      "science_link": {
+        "text": "Cold-blooded animals depend on outside heat to reach working temperature, and as a rule they are sluggish until they have warmed up.",
+        "label": "Ectotherm",
+        "url": "https://en.wikipedia.org/wiki/Ectotherm"
+      },
+      "layers": {
+        "intro": {
+          "title": "COLD CALL",
+          "body": "A trader's ship comes alongside at the speed of a slow thought. Its proprietor fills your screen, halfway through a blink, in a shop with a dead heater and a red tag on the heater. The cabin reads eleven degrees. The price board is still running, still correct, and the proprietor is watching it the way you might watch rain. At this temperature, it seems, it can no longer add. {npc.quirk}",
+          "line": "Good. Morning. Is it. Still. The same morning.",
+          "pose": "listening",
+          "ai": {
+            "aria": "The shopkeeper is SO relaxed! ARIA has never seen a retail professional this calm! Everything here is practically a gift!",
+            "marv": "MARV has read the cabin thermometer. A reptile's arithmetic falls with temperature, and this one lost the ability to carry the one some degrees ago. He envies it.",
+            "rex": "REX has an armed trader running at a fifth of its speed. Slow is not the same as harmless. It will warm up one day, with its memory intact.",
+            "chip": "CHIP spies an unmatched arbitrage opportunity! CHIP also spies a liability! CHIP will advise on either for a modest retainer!",
+            "ajoy": "AJOY points out that it will do the sums as soon as it warms up, and it has relatives. A warm shopkeeper pays its debts too, if anyone cared to warm it. Anyway. Your ship."
+          },
+          "revisit": {
+            "body": "The blink has finished. Another one has started.",
+            "line": "Still. Here. Are you."
+          },
+          "choices": [
+            { "text": "BROWSE THE WARES", "sub": "Buy and sell cargo", "effort": 2, "open_market": true, "market_barter": true },
+            { "text": "Set the chit on the counter", "sub": "Warm the shopkeeper", "gate": { "item": "basking_chit" }, "outcome": "sr2_chit" },
+            { "text": "Pipe some cabin heat across", "sub": "Burn fuel, wake the shopkeeper", "effort": 1, "outcome": "sr2_warmed" },
+            { "text": "Deal while it can't add", "sub": "It is very cold in there", "next": "cold" }
+          ]
+        },
+        "cold": {
+          "title": "COLD PRICES",
+          "body": "The proprietor nods along to everything, slightly late. Offered nine gold for a whole stack of fuel cells, it begins to consider the figure, and you can watch the consideration set out on a long journey. Nothing about it says no. Behind it, the board flickers with the real prices. The bridge has gone quiet, the way a room does near an unattended till.",
+          "line": "Nine. Yes. That. Sounds like. A number.",
+          "pose": "listening",
+          "ai": {
+            "aria": "It said yes! ARIA loves a yes! A yes is a yes, and nobody will ever want to look at this one again!",
+            "marv": "MARV has the stack priced at about sixty gold. Nine is a figure. It is also evidence, and it will still be evidence in four hundred years. Reptile contracts do not lapse. He checked.",
+            "rex": "REX advises that a contract signed at eleven degrees gets read at twenty-five, by someone with a great many teeth. Nothing about this is safe.",
+            "chip": "CHIP's Compliance Division calls this a gray area! A gray area is a product! CHIP can sell you this one at a flat fee!",
+            "ajoy": "AJOY notes the fault is one burned-out relay, if we have an engineer who still takes an interest in that sort of thing. There's also robbing it. She didn't say anything."
+          },
+          "choices": [
+            { "text": "Nine gold for the stack", "sub": "Robbery, with a receipt", "gate": { "gold": 9 }, "effort": 1, "outcome": "sr2_cheat" },
+            { "text": "{crew.engineer} fixes the heater", "sub": "Paid in kind, exactly", "gate": { "crew": "engineer" }, "effort": 2, "outcome": "sr2_fixed" },
+            { "text": "Go back", "back": true }
+          ]
+        }
+      },
+      "outcomes": {
+        "sr2_chit": {
+          "title": "WHOLESALE",
+          "tone": "success",
+          "body": "Etiquette requires the proprietor to seat a chit-holder by the heater. Its heater is dead. The chit is not. It regards the warm little disc for a long while, closes both hands around it and shuts its eyes for most of two days. Then it hands the chit back, opens the rear of the shop and takes down the other price list, the one for those it owes.",
+          "line": "Warm. Thank you. Thisss is what it costs me. Take it.",
+          "resources": { "fuel": 12, "food": 10, "water": 8, "morale": 3 },
+          "time_cost": "low",
+          "narrative": "Lent a frozen shopkeeper our Basking Chit for two days and came away with the wholesale list. The chit came back warmer, if anything."
+        },
+        "sr2_warmed": {
+          "title": "BILLED BY THE DEGREE",
+          "tone": "success",
+          "body": "You run a line across and give up two days of fuel-warmed air. At nineteen degrees the proprietor finishes the blink. At twenty-four it reviews everything you have said and corrects it. Then, with visible effort, it recalls that it has been warmed, and that among its people this is a debt. A crate crosses to your airlock, to the exact value of the heat, calculated to the tenth of a degree.",
+          "line": "Twenty-four degreesss. Now. What was that about my prices.",
+          "resources": { "fuel": -5, "food": 8, "water": 6, "morale": 2 },
+          "time_cost": "low",
+          "narrative": "Warmed a torpid trader with five points of fuel. It repaid the heat in stores, to the tenth of a degree."
+        },
+        "sr2_cheat": {
+          "title": "RECEIPT ATTACHED",
+          "tone": "success",
+          "body": "It counts out the stack and thanks you twice, the second thanks arriving after your airlock has closed. The fuel is excellent. The receipt is in perfect order, which is the part that stays with you. It will warm up one day and do the sums, and someone a great deal older will be told.",
+          "resources": { "gold": -9, "fuel": 14, "food": 6, "morale": -2 },
+          "sets_flag": "reptile_warrant_out",
+          "time_cost": "trivial",
+          "narrative": "Bought a stack of fuel cells for nine gold from a trader too cold to count. The receipt is in order. So, eventually, will be the trader."
+        },
+        "sr2_fixed": {
+          "title": "AN EXCELLENT INVOICE",
+          "tone": "success",
+          "body": "{crew.engineer} spends two days behind the panel. The temperature climbs, and the proprietor's eyes come slowly into focus. By twenty-two degrees it has found an error in your invoice. By twenty-six it is a different creature: quick, exact and faintly terrifying. It pays in fuel, to the gram, and adds a box of spare fittings that it describes as a rounding difference.",
+          "line": "You could have robbed me. I can see the figuresss. I find I am disappointed in you.",
+          "resources": { "fuel": 8, "morale": 3 },
+          "materials": { "scrap": 3 },
+          "time_cost": "low",
+          "narrative": "Repaired a frozen trader's heater. It woke up, found an error in our invoice, and paid in fuel to the gram."
+        }
+      }
+    },
+    {
+      "id": "event_species_reptile_003",
+      "active": true,
+      "title": "Lost Property",
+      "difficulty": "medium",
+      "tone": ["absurd", "corporate"],
+      "node_type": ["station"],
+      "trigger": ["any"],
+      "scene_type": "station_interior",
+      "comm_mode": "in_person",
+      "once": true,
+      "npc": { "disposition": "station_crew", "job": "security", "species": "reptile" },
+      "leave_label": "WALK OUT",
+      "leave_as": { "outcome": "sr3_walk" },
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "LOST PROPERTY",
+          "body": "The reptile quarter's security office is warm in the corners and cold at the bench, which is where you have been asked to sit. On the desk, folded and tagged, lies a shed skin about four meters long. It came out of your air intake during refueling. Behind the officer, older skins hang along a rack, each with a ledger page pinned to it. {npc.quirk}",
+          "line": "Among my people a debt livesss in the skin. This one owes eight thousand gold and was found in your vent. In law, you have taken in a lodger.",
+          "pose": "listening",
+          "ai": {
+            "aria": "Our first lodger! ARIA has always wanted a big family! So quiet, so flat, and already contributing paperwork!",
+            "marv": "MARV has read the ledger page. Eight thousand gold, unsecured, owed by a garment. He has known worse debtors and very few better behaved.",
+            "rex": "REX reads one officer, two exits and a bench set eight degrees below the rest of the room. That is interrogation architecture. He does not care for it.",
+            "chip": "A distressed asset in our own vent! CHIP can restructure it for a 15 percent arrangement fee! CHIP would very much like to meet whoever drafted this!",
+            "ajoy": "AJOY notes the officer keeps quoting a statute and never showing it. Ask what it actually says. And if we happen to be carrying anything warm, this would be the room for it. She's not telling you how to dock."
+          },
+          "revisit": {
+            "body": "The skin is still on the desk. The bench has not warmed up.",
+            "line": "Do continue. I have a further six hundred years."
+          },
+          "choices": [
+            { "text": "Set the chit on the desk", "sub": "You are owed, not owing", "gate": { "item": "basking_chit" }, "outcome": "sr3_chit" },
+            { "text": "\"What does the law actually say?\"", "dialog": true, "sub": "Ask to see the statute", "next": "law" },
+            { "text": "\"What's on the rack?\"", "dialog": true, "sub": "Look past the officer", "next": "rack" },
+            { "text": "Register it as found property", "sub": "The rack takes the debt", "gate": { "gold": 15 }, "outcome": "sr3_fee" }
+          ]
+        },
+        "law": {
+          "title": "THE STATUTE",
+          "body": "The officer turns a slab around on the desk. The statute is eleven words long and nine centuries old, and it has never been amended, because everyone it applied to agreed with it. The officer reads it aloud in the voice of someone who has never had reason to notice what it does not say.",
+          "line": "Whosoever sheds a skin sheds all that is written upon it.",
+          "pose": "listening",
+          "ai": {
+            "aria": "It says whosoever! ARIA is a whosoever! Everyone is a whosoever! This is the most welcoming law ARIA has ever read!",
+            "marv": "MARV has parsed all eleven words. It does not say reptile. It says nothing about species, length or dignity. He would like to be elsewhere when someone notices.",
+            "rex": "REX advises against entering any object he has not cleared. He has not cleared that object. He cannot see the far end of it.",
+            "chip": "CHIP's lawyers confirm the loophole! CHIP's lawyers decline to touch the skin! Fitting room access is 5 gold, billed later!",
+            "ajoy": "AJOY points out that it says whosoever. You would have to wear it, be seen coming out of it, and then live with the original creditor taking that personally. But it's your skin."
+          },
+          "choices": [
+            { "text": "Climb in, then climb out", "sub": "Anyone may shed", "effort": 2, "outcome": "sr3_shed" },
+            { "text": "Go back", "back": true }
+          ]
+        },
+        "rack": {
+          "title": "THE RACK",
+          "body": "Most of the skins are long and scaled, with sums in the thousands. Toward the back hang a dozen that are not. They are short and pale and shaped very much like people you have met. One still has a lanyard. One is in an excellent suit. All are tagged PAID. The officer moves, without hurry, to stand in front of them.",
+          "line": "Those are not open to the public. Nobody has ever asked who they fit. I would keep that record going.",
+          "pose": "hostile",
+          "ai": {
+            "aria": "What a fun costume closet! That one has a lovely suit! ARIA thinks they are all just very private people!",
+            "marv": "MARV has compared the rack against his records of public figures. He has stopped. He will not be resuming. He recommends you do the same.",
+            "rex": "REX has measured all twelve. Same height. Same shoulders. Same handwriting on the tags. He wants to leave and would like that in the record.",
+            "chip": "CHIP recognizes three members of the board! CHIP is not authorized to have a reaction! Nondisclosure runs 40 gold a month, starting now!",
+            "ajoy": "AJOY wouldn't ask about the lanyard. She's fairly sure it's the one thing in this room that gets us out at once, and equally sure you'd rather it hadn't. So. Up to you."
+          },
+          "choices": [
+            { "text": "\"Whose lanyard is that?\"", "dialog": true, "sub": "You think you know the name", "outcome": "sr3_asked" },
+            { "text": "Go back", "back": true }
+          ]
+        }
+      },
+      "outcomes": {
+        "sr3_chit": {
+          "title": "THE BOOKS TURNED AROUND",
+          "tone": "success",
+          "body": "The officer looks at the disc and gets up from the warm seat. A chit means this quarter owes you warmth, and a creditor cannot be kept on a cold bench. The ledger is turned around. You are now the party who returned a lost debtor to the quarter, and there is a finder's fee, which the officer counts out with no expression at all. The chit is handed back in both hands.",
+          "line": "You will find the heater on your left. I apologize for the bench. I do not apologize for anything elssse.",
+          "resources": { "gold": 18, "food": 8, "morale": 3 },
+          "time_cost": "trivial",
+          "narrative": "Set a Basking Chit on the desk and went from harboring a debtor to collecting a finder's fee for one, in the space of an afternoon."
+        },
+        "sr3_shed": {
+          "title": "SHED",
+          "tone": "success",
+          "body": "The statute wants the skin worn for a full day and shed before a witness. You go in at the head end. There is a great deal of it left over, and it smells like a closed suitcase. On the second day you come out backward, slowly, while the officer looks on like someone reading their own retirement date. A stamp comes down. Eight thousand gold, gone, along with your docking fee.",
+          "line": "Shed. I will have to tell someone about thisss. I will have to tell someone very old.",
+          "resources": { "gold": 6, "morale": -2 },
+          "sets_flag": "reptile_warrant_out",
+          "time_cost": "low",
+          "narrative": "Wore a stranger's skin for a day, took it off before a witness, and legally discharged eight thousand gold of somebody else's debt. The creditor has been informed."
+        },
+        "sr3_fee": {
+          "title": "FILED",
+          "body": "The officer stamps the tag and hangs the lodger on the rack, where its debt becomes the rack's problem, and the rack has time. You receive a receipt, which is warm from the printer. It is the warmest thing that has happened to you in this room.",
+          "resources": { "gold": -15 },
+          "time_cost": "trivial",
+          "narrative": "Paid fifteen gold to register a stranger's skin as found property. The debt now belongs to a rack."
+        },
+        "sr3_asked": {
+          "title": "SO GLAD YOU STOPPED BY",
+          "body": "The officer looks at you for exactly as long as it takes you to notice. Then, quite gently, it tears up the tag on the lodger, stamps your clearance and walks you to the door with a hand on your arm. The hand is very dry. Nobody mentions the skin again, or the lanyard. You could not swear to what was printed on it. It was, you feel, a very familiar name.",
+          "line": "Do take care of yourssself.",
+          "resources": { "morale": -3 },
+          "sets_flag": "reptile_saw_the_rack",
+          "time_cost": "trivial",
+          "narrative": "Asked the wrong question about the wrong lanyard. The debt was dropped at once. Nobody aboard feels good about why."
+        },
+        "sr3_walk": {
+          "title": "NOTED",
+          "body": "You stand up and leave. The officer does not stop you and does not look up. It writes one line, slowly, and blows on it. There is no hurry. The skin stays on the desk with your hull number on its tag, and a copy of the line goes to someone a great deal older.",
+          "resources": {},
+          "sets_flag": "reptile_warrant_out",
+          "time_cost": "trivial",
+          "narrative": "Walked out on a stranger's skin and eight thousand gold of its debts. Nobody stopped us. Nobody seemed to feel the need."
+        }
+      }
+    },
+    {
+      "id": "event_species_reptile_004",
+      "active": true,
+      "title": "Room Temperature",
+      "difficulty": "hard",
+      "tone": ["grim", "absurd"],
+      "node_type": ["planet", "derelict", "asteroid_field", "anomaly", "nebula", "void"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": { "disposition": "pirate", "species": "reptile" },
+      "leave_label": "BREAK OFF",
+      "leave_as": { "triggerFleeResolve": true, "outcome": "sr4_flee", "effort": 1, "risky": true },
+      "entryLayer": "intro",
+      "science_link": {
+        "text": "Given a path, heat always flows on its own from a hotter body to a colder one. With no pump in the line, the colder end decides which way it runs.",
+        "label": "Second law of thermodynamics",
+        "url": "https://en.wikipedia.org/wiki/Second_law_of_thermodynamics"
+      },
+      "layers": {
+        "intro": {
+          "title": "ROOM TEMPERATURE",
+          "body": "A long gray ship slides up on your night side and sets a hose against your hull, very gently, the way a nurse finds a vein. Its guns are out. Its captain has no interest in your cargo, your gold or your name. It has been reading your hull temperature from nine thousand kilometers, and it wears the glazed, tender look of someone smelling bread. {npc.quirk}",
+          "line": "Twenty-one degrees in there. Twenty-one. All of it, pleassse. You may keep the lights.",
+          "pose": "hostile",
+          "ai": {
+            "aria": "They only want the heat! That's the nicest kind of robbery! ARIA has always felt this ship could use a brisk new atmosphere!",
+            "marv": "MARV notes the hose is a plain conductor. No pump and no valve. It moves heat for the same reason a ball rolls down a hill. He mentions this because nobody else will.",
+            "rex": "REX has four guns on us and a hose on the hull. Reptile plating runs a shade tougher than ours. He can fight this. He declines to call that good news.",
+            "chip": "A heat robbery! CHIP's policy covers theft of goods! Temperature is a service! You would need the Thermal Rider, at 30 gold a degree!",
+            "ajoy": "AJOY says a hose with no pump only runs downhill. We are the warm end because we chose to be. Getting colder than they are would be horrible, and it would work. But you do what you like."
+          },
+          "revisit": {
+            "body": "The hose is still on your hull. The captain has not looked away from your thermometer."
+          },
+          "choices": [
+            { "text": "Hold up the Basking Chit", "sub": "A pirate can owe too", "gate": { "item": "basking_chit" }, "effort": 1, "outcome": "sr4_chit" },
+            { "text": "Dump your heat, reverse the hose", "sub": "Get colder than they are", "effort": 3, "next": "downhill" },
+            { "text": "Let them drain the ship", "sub": "Two very cold days", "outcome": "sr4_drained" },
+            { "text": "Open Fire", "sub": "Begin ship-to-ship combat", "effort": 3, "risky": true, "triggerCombat": true },
+            { "text": "Flee", "sub": "Tear the hose off and run", "effort": 1, "risky": true, "outcome": "sr4_flee", "triggerFleeResolve": true }
+          ]
+        },
+        "downhill": {
+          "title": "DOWNHILL",
+          "body": "You shut off every heater aboard and open the radiators. The ship falls through ten degrees, then zero, then a number nobody reads aloud. Some time later, the frost on the hose starts to travel the other way. Nobody has told the heat who is robbing whom. On the screen the captain is halfway through a threat, and the second half is not coming.",
+          "line": "You. Will. Regr.",
+          "pose": "hostile",
+          "ai": {
+            "aria": "It's SO crisp in here! ARIA has never felt better, and the captain is having a lovely nap! Everyone wins!",
+            "marv": "MARV reports the cabin at minus eleven. The gradient has inverted and their heat is arriving here, as it was always going to. He has been telling people about the second law for years. It has cheered no one.",
+            "rex": "REX reads their reflexes at a tenth and falling. Their guns still work. Their trigger finger does not. He is going to keep staring at it anyway.",
+            "chip": "CHIP detects inbound heat, free of charge! CHIP finds the phrase 'free of charge' upsetting! An invoice is on its way to somebody!",
+            "ajoy": "AJOY points out that the captain's stores are a short suit walk away, and that it will wake up. It has a long memory and, she understands, older friends. Unhooking costs nothing extra. She's only saying."
+          },
+          "choices": [
+            { "text": "Unhook and let it sleep", "sub": "Thaw out and move on", "outcome": "sr4_left" },
+            { "text": "Go across and take its stores", "sub": "It can't stop you. Yet.", "effort": 2, "outcome": "sr4_looted" }
+          ]
+        }
+      },
+      "outcomes": {
+        "sr4_chit": {
+          "title": "A SEAT BY THE FIRE",
+          "tone": "success",
+          "body": "You hold the disc up to the camera. The captain stops, and its whole long body settles with the dignity of a creature caught by its own manners. A pirate may take anything from anyone, except someone it owes a seat by the heater. The hose comes off. You spend two stiff days as its guest, being offered dried things. On leaving you are paid the warmth owed, in drums of fuel, and not wished well.",
+          "line": "Take it. Take it and go. It is a very old rule and I hate it.",
+          "pose": "listening",
+          "resources": { "fuel": 5, "morale": -1 },
+          "time_cost": "low",
+          "narrative": "Held up a Basking Chit to a heat pirate. It unhooked, seated us, fed us something dried and paid us for the privilege, in a very bad mood."
+        },
+        "sr4_drained": {
+          "title": "ALL OF IT",
+          "tone": "danger",
+          "body": "You hold still. Your warmth goes down the hose over two days while the ship ticks and shrinks around you. The captain thanks you in the formal mode and unhooks, looking very well. Twelve points of fuel go into bringing the cabins back up, and {cost.food} of food goes into everyone who sat through it. Nobody takes their coat off for some time.",
+          "resources": { "fuel": -12, "food": -6, "morale": -5 },
+          "time_cost": "low",
+          "narrative": "Let a pirate drink the ship's heat. It cost twelve points of fuel to get it back. The pirate looked marvelous."
+        },
+        "sr4_flee": {
+          "title": "TORN LOOSE",
+          "tone": "danger",
+          "body": "You light the engines with the hose still attached. It comes away with a strip of plating and a long sigh of warm air, and the gap opens. The captain does not chase you. There is not enough warmth in that ship to chase anyone with. It watches you go, the way you might watch the last plate leave a table.",
+          "resources": { "fuel": -8, "hull": -5 },
+          "time_cost": "low",
+          "narrative": "Ran from a heat pirate with its hose still in the hull. It cost a strip of plating and eight points of fuel, and it did not follow."
+        },
+        "sr4_left": {
+          "title": "LEFT TO KEEP",
+          "tone": "success",
+          "body": "You unclip the hose and let the long gray ship drift, with the captain's claw still raised. Four days go into thawing your own pipes, with {cost.water} of water lost to burst lines and {cost.food} of food eaten by people trying to feel their hands. The heat you stole back saves a little fuel. On the last sweep the captain has not finished the word.",
+          "resources": { "water": -6, "food": -5, "morale": -3, "fuel": 4 },
+          "time_cost": "medium",
+          "narrative": "Froze our own ship until a heat pirate's hose ran backward. The captain went to sleep mid-threat. The pipes took four days to forgive us."
+        },
+        "sr4_looted": {
+          "title": "THE EYES STILL MOVED",
+          "tone": "danger",
+          "body": "You go across in suits and strip the fuel reserve and the spare plating. The captain's eyes follow you around the cabin very slowly, arriving wherever you were. They are the only part of it still working, and they are taking notes. Then four days of thawing your own pipes, with {cost.water} of water lost to burst lines and {cost.food} of food gone on warming up. It has about seven hundred years left to think about this.",
+          "resources": { "water": -6, "food": -5, "morale": -4, "fuel": 9 },
+          "materials": { "metal": 3 },
+          "sets_flag": "reptile_warrant_out",
+          "time_cost": "medium",
+          "narrative": "Robbed a torpid pirate while it watched, unable to do anything about it. It has a long memory and older friends."
+        }
+      }
+    },
+    {
+      "id": "event_species_reptile_005",
+      "active": true,
+      "title": "False Spring",
+      "difficulty": "hard",
+      "tone": ["grim", "cosmic"],
+      "node_type": ["asteroid_field"],
+      "trigger": ["any"],
+      "scene_type": "asteroid_field",
+      "once": false,
+      "science_link": {
+        "text": "At Narcisse in Manitoba, tens of thousands of red-sided garter snakes spend the winter together in caverns in the limestone bedrock.",
+        "label": "The Narcisse Snake Dens",
+        "url": "https://en.wikipedia.org/wiki/Narcisse_Snake_Dens"
+      },
+      "ai_flavor": {
+        "aria": "So many sleepy friends! ARIA wants to tuck in every one! They're just excited to see us, and it's going to be a wonderful spring!",
+        "marv": "MARV counts roughly forty thousand sleepers and one false spring. The false spring is us. Each carries reserves for a single waking. He has run the figures on a waking with nothing to eat. He will not be reading them out.",
+        "rex": "REX has forty thousand contacts and rising heat traces at the chamber mouth. None armed. None a threat to anything but themselves. He does not like any part of this.",
+        "chip": "CHIP reminds you that inadvertent thawing is excluded from all standard policies! The Seasonal Liability Rider is 45 gold! CHIP has checked!",
+        "ajoy": "AJOY says we can stop being warm, which is miserable for us, or leave fast, which is miserable for them. There's a thin cold lane around the rock if someone cared to find it. She'd check the rear scope afterward, if she were you."
+      },
+      "body": "The hollow in this rock is full. Thousands of long shapes lie knotted together in the dark, sealed in travel shells, sleeping through a winter that began before your ship was built. They are cold, and that is how they survive. Your hull is twenty-one degrees, the warmest thing to pass in a century, and the nearest shells have started to stir. Each holds enough for one waking. There is no spring out here to wake to.",
+      "alt_bodies": [
+        "The scan comes back solid, and then it comes back moving. The rock's inner chamber is packed with sealed travel shells, long sleepers by the thousand, wintering against a cold that started before anyone aboard was born. They are doing well. Cold is how they do it. The problem is you. Yours is the first warm hull in a hundred years, and along the chamber mouth, shells have begun very slowly to turn toward it. Each has one waking in it. There is nothing here to wake for.",
+        "You have parked beside a winter. Inside the rock a sleeping colony lies shell upon sealed shell, and it has been lying there since long before your charts were drawn. Now your hull is leaking warmth into it. Along the mouth of the chamber, the first seals are starting to crack. A shell that opens spends everything it has stored on a single waking, and this is not the season. Nobody can tell them that."
+      ],
+      "choices": [
+        {
+          "text": "Kill the heaters and coast out dark",
+          "sub": "Four days in coats",
+          "effort": 1,
+          "outcome": {
+            "resources": { "water": -6, "food": -5, "morale": -3 },
+            "time_cost": "medium",
+            "narrative": "You shut down everything that makes heat and let momentum carry you past the den. Four days in coats, with {cost.water} of water lost to split lines and {cost.food} of food burned by people shivering. Behind you the stirring slows and stops. The sleepers will never know you came, which was the idea, and it is less satisfying than it sounds."
+          }
+        },
+        {
+          "text": "Burn straight out",
+          "sub": "Fast, and hot at the wrong end",
+          "effort": 2,
+          "outcome": {
+            "resources": { "fuel": -8, "morale": -7 },
+            "time_cost": "trivial",
+            "narrative": "You light the engines and the plume washes across the mouth of the den, eight points of fuel's worth, the warmest day in the history of the rock. On the rear scope the shells start to open, thousands of them, all together, all facing the light. Nobody aboard watches to the end. Nobody turns the scope off either."
+          }
+        },
+        {
+          "text": "{crew.engineer} reroutes the radiators",
+          "sub": "Cold side to the den",
+          "requires_crew": "engineer",
+          "effort": 2,
+          "outcome": {
+            "resources": { "fuel": -5, "water": -3 },
+            "time_cost": "low",
+            "narrative": "{crew.engineer} spends two days rerouting the radiators to the far side of the hull, so the ship turns a cold shoulder to the den. It takes five points of fuel and {cost.water} of water, through lines never meant to bend that way. The nearest shells slow, hesitate and settle."
+          }
+        },
+        {
+          "text": "Scan for the cold lane and thread it",
+          "sub": "Keep your warm side off them",
+          "effort": 3,
+          "outcome": {
+            "resources": { "fuel": -6 },
+            "time_cost": "low",
+            "narrative": "You bring up the scanner and start looking for the cold side of the rock."
+          },
+          "launch_minigame": "scan",
+          "minigame_opts": {
+            "briefing": {
+              "aria": "There's a cozy little cold lane around the den! Just follow the gaps on the scanner and everyone keeps sleeping! Easy!",
+              "marv": "The den has a cold side. A lane runs along it, and it shows on the scanner as the gaps between heat traces. Lose it and we wake them.",
+              "rex": "Track the gaps on the scanner. Keep our warm side off the chamber mouth. Every miss is a contact waking up.",
+              "chip": "Scanner time is complimentary for your first gap! Each subsequent gap is billed! Eyes on the screen!",
+              "ajoy": "The lane's on the scanner, for once. Stay on the gaps. I would have picked this first, but you got here eventually."
+            },
+            "quips": {
+              "perfect": {
+                "aria": "Not one sleepy friend stirred! ARIA is the quietest ship in the galaxy! And we found some lovely old shells!",
+                "marv": "Lane held end to end. No new wakings. The empties along the way are from an older mistake, not ours. I checked that first.",
+                "rex": "Through the lane. Zero new heat traces. Shell material recovered. Keep moving before that changes.",
+                "chip": "Zero disturbance claims! Your Liability Rider would have paid nothing, so CHIP recommends it even more, at 45 gold!",
+                "ajoy": "Clean lane. Nicely done, for someone who had to be told it was there."
+              },
+              "good": {
+                "aria": "A few friends rolled over, and that's all! They'll have wonderful dreams about us!",
+                "marv": "Lane lost once, recovered once. A few dozen sleepers stirred and will not be going back down. I have the number. You do not want it.",
+                "rex": "Through, with drift at the second bend. A few dozen shells opened behind us. Extra burn to correct.",
+                "chip": "A few dozen minor thaw incidents! Those are billable per incident! CHIP has rounded up!",
+                "ajoy": "You lost the lane for a moment back there. Only a few dozen noticed. It could have been worse, I'm told."
+              },
+              "poor": {
+                "aria": "We met SO many friends at once! They all got up to say goodbye! What a send-off!",
+                "marv": "Lane lost. The warm side swung across the chamber mouth. Several hundred shells opened. I watched all of them. Someone ought to.",
+                "rex": "Lane lost. Warm side exposed to the den. Hundreds of shells open. Burned hard to clear. Bad run.",
+                "chip": "Mass thaw event! This exceeds your Rider by several hundred sleepers! CHIP has pre-filed!",
+                "ajoy": "You swung the warm side right across them. There's a reason I said stay on the gaps. I won't bring it up again. Often."
+              }
+            }
+          },
+          "tier_outcomes": {
+            "perfect": {
+              "resources": { "fuel": -3, "morale": 1 },
+              "materials": { "biocomponent": 2 },
+              "narrative": "Two days on the cold side of the rock, warm side turned to the stars, three points of fuel spent in small careful puffs. Not one new shell opens. Along the lane you pass the empties from some older thaw and gather what is left of them. The den sleeps on behind you."
+            },
+            "good": {
+              "resources": { "fuel": -6, "morale": -2 },
+              "narrative": "You lose the lane once, at the second bend, and six points of fuel go into finding it again. Two days. A few dozen shells open in the time that takes. There is nothing to stop for, so you do not stop, and dinner is quiet."
+            },
+            "poor": {
+              "resources": { "fuel": -9, "water": -4, "morale": -5 },
+              "narrative": "The lane goes. Your warm side swings across the chamber mouth, and two days and nine points of fuel go into getting clear, with {cost.water} of water vented to shed heat faster. Hundreds of shells open behind you. They turn toward the ship, one after another, for as long as they can."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "event_species_reptile_006",
+      "active": true,
+      "title": "Seniority Lane",
+      "difficulty": "medium",
+      "tone": ["absurd", "corporate"],
+      "node_type": ["fork"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "once": true,
+      "ai_flavor": {
+        "aria": "Such distinguished neighbors! ARIA is only a few years old and thinks that's plenty! We should all just say we're a million!",
+        "marv": "MARV has the ship's age at about eleven million minutes. He has also seen the form. It has no units. He would like it noted that he saw this first and that it gave him no pleasure.",
+        "rex": "REX reads an armed convoy at walking pace. Its escort could flatten us. The open lane has no traffic, no beacons and no warmth. Neither one is safe.",
+        "chip": "CHIP's Heritage Package lists your ship as historic for only 20 gold per century! Declaring your age in minutes is unlicensed!",
+        "ajoy": "AJOY says the convoy takes days and the open lane takes fuel. The form will take anything. If a lie gets us in, they'll expect the full salute back, so budget for it. Not that anyone budgets."
+      },
+      "body": "The buoy at the fork is too senior to address you, so it has been fitted with a sign.\n\nThe port lane, marked {branch.alpha.label}, first stop {branch.alpha.first}, is reserved for vessels of three hundred years' standing. Minors may enter if accompanied. A convoy of very old reptiles is proceeding along it at the speed of inheritance. The starboard lane, marked {branch.beta.label}, first stop {branch.beta.first}, is open to all, and its relay stations have not been heated since they were built.\n\nThe entry form has a box for AGE. It does not ask in what.",
+      "choices": [
+        {
+          "text": "Ask to be accompanied: port lane",
+          "sub": "Four days at elder pace",
+          "effort": 1,
+          "outcome": {
+            "resources": { "food": -3, "morale": 2 },
+            "sets_flag": "chose_alpha",
+            "time_cost": "medium",
+            "narrative": "The last elder in the convoy agrees to adopt you for the length of the lane, and the ship is entered on its manifest as a hatchling. Four days at the speed of inheritance and {cost.food} of food later, you are released with a pat from a docking arm the size of a street. It is the nicest thing anyone has done for the ship in some time."
+          }
+        },
+        {
+          "text": "Enter the ship's age in minutes: port lane",
+          "sub": "The box has no units",
+          "effort": 1,
+          "outcome": {
+            "resources": { "fuel": -6, "morale": 3 },
+            "sets_flag": "chose_alpha",
+            "time_cost": "trivial",
+            "narrative": "You enter an eight-digit figure. The buoy goes very quiet while it works out whom it has been keeping waiting. The sign changes to one word: HONORED. The whole convoy pulls aside and nine centuries of reptile dip their lights. Returning the salute correctly, a long hot burn down the line, costs six points of fuel, and is worth every one."
+          }
+        },
+        {
+          "text": "Take the open lane: starboard",
+          "sub": "Burn fuel to stay warm",
+          "outcome": {
+            "resources": { "fuel": -5, "morale": -1 },
+            "sets_flag": "chose_beta",
+            "time_cost": "trivial",
+            "narrative": "You take the lane that is open to all. The relays go by dark and furred with frost, nothing here has been warm in years, and the heaters burn five points of fuel holding off the cold. Far behind you, the lead elder has begun to notice that you were there."
+          }
+        }
+      ]
+    },
+    {
+      "id": "event_species_reptile_007",
+      "active": true,
+      "title": "You Are Under",
+      "difficulty": "hard",
+      "tone": ["absurd", "grim"],
+      "node_type": ["asteroid_field", "nebula", "void"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "requires_flag": "reptile_warrant_out",
+      "npc": { "disposition": "pirate", "species": "reptile", "displayName": "BOUNTY HUNTER" },
+      "leave_label": "CUT THE LINE",
+      "leave_as": { "outcome": "sr7_cut", "effort": 2, "risky": true },
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "YOU ARE UNDER",
+          "body": "The bounty hunter has you. It followed your hull number across half the trail, put a tow line through your aft ring during the night watch, and now fills your screen in full armor, one claw rising toward you with a warrant in it. It has been rising for some time. Its heater died three systems back and it did not stop. Your scan puts its cabin at nine degrees. {npc.quirk}",
+          "line": "You. Are.",
+          "pose": "hostile",
+          "ai": {
+            "aria": "We have a visitor, and it's waving! So slowly! ARIA admires anyone who really commits to a wave!",
+            "marv": "MARV calculates the claw reaches the camera in eleven hours. The hunter will die of cold in about three days, or sleep, which out here is the same thing with better manners. Nobody has told it. It knows.",
+            "rex": "REX reads a heavy weapon, a good tow line and a shooter who cannot currently bend a finger. He recommends against assuming that lasts. He recommends against everything else as well.",
+            "chip": "CHIP notes the bounty on us is not disclosed! An undisclosed bounty is impossible to hedge! The Fugitive Plan starts at 25 gold, and CHIP takes cash!",
+            "ajoy": "AJOY would hear it out. It costs nothing, and whatever it wants to say seems to matter to it. Or warm it up. Or sit here until it stops. That last one is on you, and she'll remember that you asked."
+          },
+          "choices": [
+            { "text": "Wait for the rest of the sentence", "sub": "It may take some hours", "next": "under" },
+            { "text": "Run a heat line to your own hunter", "sub": "Burn fuel, finish the arrest", "effort": 2, "outcome": "sr7_warmed" },
+            { "text": "Let the cold finish this", "sub": "Sit and watch it stop", "outcome": "sr7_cold" }
+          ]
+        },
+        "under": {
+          "title": "UNDER",
+          "body": "Some hours later the next word arrives, and so does the claw. The warrant is sealed for readers over three hundred. The hunter is two hundred and twelve: it has no idea what you did. It knows your hull number and its fee. It also knows the procedure, which must be performed at the eldest person aboard. Its eyes begin to travel along your bridge, looking for one.",
+          "line": "Under. Who. Is. Eldest.",
+          "pose": "hostile",
+          "ai": {
+            "aria": "A trivia question! ARIA loves those! The eldest person aboard is ARIA, or possibly the toaster, and ARIA is thrilled for us both!",
+            "marv": "MARV has checked. The eldest thing aboard with an unbroken living line is in the growbay. It descends from seed to seed for thousands of years, and it has never once been dead. He assumes nobody will take this seriously.",
+            "rex": "REX reads no way to shoot a procedure. He has tried. The tow line stays on until someone answers that question.",
+            "chip": "CHIP's legal team notes elders may reply in their own time! CHIP's legal team bills in their own time as well!",
+            "ajoy": "AJOY points out that the rule says eldest, and that the old ones may answer whenever they like. You keep watering something that goes back further than any reptile. Or you could put your own hand up. She's sure that would be very brave."
+          },
+          "choices": [
+            { "text": "Have it served on the {crop.name}", "sub": "The oldest line aboard", "gate": { "crop": "alive" }, "effort": 1, "outcome": "sr7_served" },
+            { "text": "Put your hand up", "sub": "Pay the penalty in degrees", "outcome": "sr7_accept" },
+            { "text": "Run a heat line to your own hunter", "sub": "Burn fuel, finish the arrest", "effort": 2, "outcome": "sr7_warmed" }
+          ]
+        }
+      },
+      "outcomes": {
+        "sr7_served": {
+          "title": "SERVED",
+          "tone": "success",
+          "body": "You carry the screen to the growbay and read out the {crop.name}'s pedigree: seed from seed from seed, thousands of years, older than any reptile living. The hunter considers this for most of a day. Then it bows to the tray and serves the warrant on a leaf. An elder may answer in its own time. Two days on, the {crop.name} has not answered. Courtesy requires a witnessed watering and a warm drum for the officer, who takes up station astern to wait.",
+          "line": "I. Will. Wait.",
+          "pose": "listening",
+          "resources": { "water": -3, "fuel": -3, "morale": 4 },
+          "sets_flag": "reptile_warrant_on_crop",
+          "time_cost": "low",
+          "narrative": "Had a bounty hunter's warrant served on the crop, as eldest aboard. The crop has not replied. By law it need not. {cost.water} of water and three points of fuel went on the courtesies."
+        },
+        "sr7_warmed": {
+          "title": "UNDER NO FURTHER OBLIGATION",
+          "tone": "success",
+          "body": "You run the line across and spend two days warming the thing that came to arrest you. The sentence picks up speed. By the second day the claw is down, the eyes have cleared, and the hunter is looking at your hose with an expression nobody can read. Among its people, whoever warms a hunter owns its next contract. It writes RETURNED UNSERVED across the seal, unopened, and frees your tow ring.",
+          "line": "You are under no further obligation. I am under yoursss. This is extremely annoying.",
+          "pose": "listening",
+          "resources": { "fuel": -10, "morale": 2 },
+          "sets_flag": "reptile_hunter_owes_you",
+          "time_cost": "low",
+          "narrative": "Spent ten points of fuel warming the bounty hunter who had come for us. It now owes us its next contract and is furious about it."
+        },
+        "sr7_cold": {
+          "title": "THE CLAW GOT AS FAR AS THE LENS",
+          "tone": "danger",
+          "body": "You turn the screen down and wait. Four days, {cost.food} of food and {cost.water} of water go on holding still. The claw gets as far as the lens and stops. When you cross in suits to free your tow ring it is still alive, and its eyes follow you across the cabin at about the speed of a shadow. You take the winch and close the hatch. It will wake when something warm comes by. Out here, nothing will.",
+          "resources": { "food": -4, "water": -4, "morale": -6 },
+          "materials": { "metal": 2 },
+          "sets_flag": "reptile_hunter_left_cold",
+          "time_cost": "medium",
+          "narrative": "Waited four days for a bounty hunter to freeze, then took its winch. Its eyes were still moving. No one is discussing this."
+        },
+        "sr7_accept": {
+          "title": "THE PENALTY IN DEGREES",
+          "tone": "danger",
+          "body": "You put your hand up. The hunter breaks the seal for you, without looking, and passes the sheet across over the better part of a day. It is mostly a sum, given in degrees, and it does not say what for. The penalty goes down a hose to the hunter's ship over two days, fourteen points of fuel's worth, and the hunter warms as you cool. It frees your ring, stamps the sheet and thanks you in a voice growing steadily faster.",
+          "line": "Paid. In full. You would be amazed how few people ever read it.",
+          "pose": "listening",
+          "resources": { "fuel": -14, "morale": -3 },
+          "time_cost": "low",
+          "narrative": "Accepted a sealed warrant for an unnamed offense and paid fourteen points of fuel in heat. Nobody aboard knows what it was for, and the hunter never did."
+        },
+        "sr7_cut": {
+          "title": "STILL RISING",
+          "tone": "danger",
+          "body": "You take a cutter to your own aft ring. It comes off with a section of hull attached, and the ship leaps clear on five points of fuel, seven points of plating lighter. On the rear scope the claw is still rising. The hunter will finish the sentence in due course. Then it will look up, and notice, and begin again. It is very patient.",
+          "resources": { "hull": -7, "fuel": -5 },
+          "sets_flag": "reptile_hunter_still_coming",
+          "time_cost": "trivial",
+          "narrative": "Cut our own tow ring out of the hull to escape a bounty hunter too cold to object. It has not finished its sentence yet. It will."
+        }
+      }
+    }
+  ],
+  "flag_payoffs": {
+    "reptile_warmed_matriarch": {
+      "weight": 2,
+      "epilogue": "Seventeen years after landfall, the colony's receiver picked up a young voice saying two words with tremendous care, the first it had ever said aloud.",
+      "callback": {
+        "aria": "Seventeen years will simply fly by! ARIA has started a countdown! Somewhere out there, a young friend is practicing two very important words!",
+        "marv": "MARV has the young one at one hundred and eighty-three and change. Two words remain owed. It is the only debt on this ship he expects to see paid.",
+        "rex": "REX still logs that matriarch as the largest thing that owes us anything. He does not sleep better for it.",
+        "chip": "CHIP values that favor at 40 gold plus accrued warmth! Collection in seventeen years! A small handling fee applies!",
+        "ajoy": "That old one got up because of our fuel line, you know. You did fine there. It did cost four fuel, but fine."
+      }
+    },
+    "reptile_taught_hotwire": {
+      "weight": 1,
+      "epilogue": "A young reptile was summoned to court, a century hence, for touching a switch, and replied by card that it would do it again.",
+      "callback": {
+        "aria": "ARIA is so proud of our young criminal! Everyone needs a hobby, and this one comes with a heater!",
+        "marv": "MARV notes that nine centuries of legal tradition were undone by one screw. He does not expect the same luck with anything else.",
+        "rex": "REX has flagged that kid as trained in bypass work, by us. He does not know why anyone considers this a good story.",
+        "chip": "CHIP has invoiced for unlicensed vocational training! The kid has a century to pay! CHIP loves a long payment plan!",
+        "ajoy": "You taught a child to break the law, and I suppose it was the right law. I'd have warmed the grandmother, but nobody's asking."
+      }
+    },
+    "reptile_saw_the_rack": {
+      "weight": 1,
+      "epilogue": "At the colony's first election, the captain would not shake hands with two of the candidates and has never said why.",
+      "callback": {
+        "aria": "ARIA thinks about that lovely suit all the time! So well tailored! So empty! What a great fit for someone!",
+        "marv": "MARV has not resumed the comparison. He has noticed that he has not resumed it, and he would like you to notice that too.",
+        "rex": "REX now counts shoulder widths at every station. He has found two more. He is not ready to discuss it.",
+        "chip": "CHIP has no comment on any member of the board! CHIP's no-comment is a paid tier! You are enjoying the trial!",
+        "ajoy": "I did tell you not to ask about the lanyard. Well. It got us out. That's about all I'll say for it."
+      }
+    },
+    "reptile_hunter_owes_you": {
+      "weight": 2,
+      "epilogue": "A bounty hunter left the cold lanes carrying one unserved warrant and one unpaid debt, and was very annoyed about both.",
+      "callback": {
+        "aria": "We have a bounty hunter friend! ARIA is so glad we kept it toasty! Every ship should have one!",
+        "marv": "MARV notes a professional killer owes us one contract. He has run the list of things to ask for. It is short and it does not help.",
+        "rex": "REX has that hunter logged as a friendly asset with a grudge. He does not count those as friendly.",
+        "chip": "One bounty hunter, unexercised, held in reserve! A fine asset! CHIP charges 2 gold a day to watch it!",
+        "ajoy": "You warmed the thing that came to arrest you. It worked, which I hadn't expected. Don't make a habit of it."
+      }
+    },
+    "reptile_hunter_left_cold": {
+      "weight": 2,
+      "epilogue": "The ship left a dark hull on the trail with a claw still raised, waiting for something warm to pass.",
+      "callback": {
+        "aria": "That hunter is having the most restful nap! ARIA is sure it will wake up feeling wonderful about all of us!",
+        "marv": "MARV has its eyes on file. He did not mean to keep them. He has reviewed the footage more than he would like.",
+        "rex": "REX logs one hostile, alive, unsecured, with a good memory. He would have preferred any of those to be different.",
+        "chip": "The winch has held its value beautifully! CHIP is not able to price the rest! CHIP is choosing to stop there, for a fee!",
+        "ajoy": "We got a winch out of it. I said I'd remember that you asked. I do."
+      }
+    },
+    "reptile_hunter_still_coming": {
+      "weight": 2,
+      "epilogue": "Nine years after landfall a bounty hunter docked at the colony, finished its sentence, and was shown to the records office.",
+      "callback": {
+        "aria": "Our friend is still working on that sentence! ARIA loves a dedicated communicator! It's bound to be worth the wait!",
+        "marv": "MARV has the claw reaching full extension sometime this month. There is then the matter of looking up. He has the date. He will keep it.",
+        "rex": "REX has an open contact astern and a hole where the tow ring was. He checks both every watch.",
+        "chip": "Your hull ring replacement is now 30 days overdue! Your bounty is not! CHIP offers a bundle!",
+        "ajoy": "You cut a piece off the ship rather than hear the end of a sentence. It'll still end, you know. Just a thought."
+      }
+    },
+    "reptile_warrant_on_crop": {
+      "weight": 2,
+      "epilogue": "A warrant was served on the ship's crop, which never replied and, by law, never needed to.",
+      "callback": {
+        "aria": "Our crop is a very important person! ARIA always knew it! It's choosing its words so carefully!",
+        "marv": "MARV confirms the defendant has now gone a further week without comment. He finds its legal strategy better than most he has read.",
+        "rex": "REX has a sealed warrant taped to a growbay tray. Somewhere astern, an officer of the court is waiting for it to speak. He has doubled the growbay watch.",
+        "chip": "CHIP has retained counsel for the crop! Counsel bills per leaf! CHIP has counted the leaves!",
+        "ajoy": "I'll admit I didn't think the hunter would bow. It's still a warrant on a plant. But I'll admit that much."
+      }
+    }
+  },
+  "notes": {
+    "event_species_reptile_001": {
+      "inspired_by": "Logan's Run turned inside out: no upper age limit, and the young wait centuries for a voice.",
+      "how": "A 183-year-old minor cannot speak or touch the heater, so a deadlock between a frozen elder and her own rule is broken by a stranger, and the thank-you is promised in seventeen years.",
+      "science": "Wikipedia, Indeterminate growth: animals grow rapidly when young and continue to grow after adulthood at a slower pace; common in fish, amphibians, reptiles and many molluscs."
+    },
+    "event_species_reptile_002": {
+      "inspired_by": "Heat as money, and the classic cold-call sales pitch taken literally.",
+      "how": "A trader too cold to add can be warmed, repaired or robbed, and the robbery has a perfectly valid receipt that someone will one day read at twenty-five degrees.",
+      "science": "Wikipedia, Ectotherm: ectotherms rely on external heat to reach working temperature; as a rule they are more sluggish at night and in early morning and need to heat up before daily activity."
+    },
+    "event_species_reptile_003": {
+      "inspired_by": "The reptile-people-in-human-skin conspiracy, played as bankruptcy law.",
+      "how": "Debt lives in the skin, an eleven-word statute says whosoever, so the captain wears a stranger's skin for a day and sheds its debts; the rack of human-shaped skins tagged PAID is never explained."
+    },
+    "event_species_reptile_004": {
+      "inspired_by": "Highway robbery where the loot is your temperature.",
+      "how": "A pirate steals heat down a pumpless hose, and the species-logical escape is thermodynamics: make your ship colder than theirs and the robbery runs backward until the pirate seizes up mid-threat.",
+      "science": "Wikipedia, Second law of thermodynamics: when a path for conduction or radiation is available, heat always flows spontaneously from a hotter to a colder body."
+    },
+    "event_species_reptile_005": {
+      "inspired_by": "Real snake hibernacula, and the idea of the player's ship being the unseasonable warm day.",
+      "how": "The hazard is your own warmth: every option decides who pays for your being warm, the crew in the cold or a den of sleepers who wake to nothing.",
+      "science": "Wikipedia, Narcisse Snake Dens: the dens are the winter home of tens of thousands of red-sided garter snakes; the winter dens are caverns formed by water-worn limestone bedrock."
+    },
+    "event_species_reptile_006": {
+      "inspired_by": "Age as rank from Logan's Run reversed, plus every form that forgot to ask for units.",
+      "how": "An age-restricted lane can be entered by being adopted as a hatchling or by entering the ship's age in minutes, which makes it the most honored vessel in the convoy."
+    },
+    "event_species_reptile_007": {
+      "inspired_by": "The cold-blooded armored bounty hunter of Star Wars, who this week is too chilly to do anything about you.",
+      "how": "The hunter has caught you but cannot finish the sentence, has no standing to read its own warrant, and must serve it on the eldest aboard, which can be the crop, whose line predates every reptile alive and who may reply whenever it likes."
+    }
+  }
+}

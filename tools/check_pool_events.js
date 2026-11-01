@@ -30,7 +30,7 @@ const BANNED = ['zaphod', 'beeblebrox', 'arthur dent', 'ford prefect', 'trillian
   'sam lowry', 'tuttle', 'buttle', 'harry tuttle', 'jack lint', '27b', 'ministry of information',
   'spock', 'kirk', 'picard', 'klingon', 'vulcan', 'romulan', 'ferengi', 'borg', 'tribble', 'starfleet', 'tricorder', 'phaser', 'redshirt', 'red shirt',
   'beam me', 'prime directive', 'live long', 'resistance is futile', 'kobayashi', 'horta', 'dilithium', 'warp core',
-  'jedi', 'sith', 'wookiee', 'wookie', 'skywalker', 'vader', 'chewbacca', 'yoda', 'millennium falcon', 'death star', 'lightsaber', 'droids you', 'tatooine', 'mos eisley', 'kessel', 'x-wing', ,
+  'jedi', 'sith', 'wookiee', 'wookie', 'skywalker', 'vader', 'chewbacca', 'yoda', 'millennium falcon', 'death star', 'lightsaber', 'droids you', 'tatooine', 'mos eisley', 'kessel', 'x-wing', 'han solo', 'uss enterprise',
   "logan's run", 'lastday', 'carrousel', 'sandman',
   'zardoz', 'the gun is good', 'eternals',
   'delorean', 'flux capacitor', 'mcfly', 'doc brown', 'biff', 'hoverboard', '1.21', 'gigawatts', 'great scott', 'almanac sports',
@@ -164,14 +164,17 @@ function checkEvent(ev, flags) {
       if (!(l.choices || []).length) err(id, `layer ${k}: no choices`);
       if (npcs.length && l.line && (l.choices || []).some(c => /^hail/i.test(c.text || ''))) err(id, `layer ${k}: HAIL with a character already speaking`);
       (l.choices || []).forEach((c, i) => {
+        if (c.launch_minigame) err(id, `layer ${k} choice ${i}: minigames only run on flat events (a layered launch_minigame does nothing)`);
         checkChoice(id, `layer ${k} choice ${i}`, c, ev, flags);
         if (c.next && !ev.layers[c.next]) err(id, `layer ${k}: next → missing layer ${c.next}`);
         if (c.next && (ev.layers[c.next].choices || []).some(x => x.back)) returned.add(k);
       });
     }
     for (const k of returned) if (!(ev.layers[k].revisit && ev.layers[k].revisit.body)) err(id, `layer ${k} is returned to: it needs revisit.body (and revisit.line if it speaks)`);
+    // A combat_intro is a line shown as the fight starts, with no effects of its own.
+    const intros = new Set(Object.values(ev.layers).flatMap(l => (l.choices || []).map(c => c.combat_intro)).filter(Boolean));
     for (const [k, o] of Object.entries(ev.outcomes || {})) {
-      checkOutcome(id, `outcome ${k}`, o, { flags, goldGated: true });
+      checkOutcome(id, `outcome ${k}`, o, { flags, goldGated: true, terminal: !intros.has(k) });
       if (!o.title) err(id, `outcome ${k}: no title`);
     }
   } else {

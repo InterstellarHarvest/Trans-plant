@@ -1,0 +1,1462 @@
+{
+  "lane": "unknown",
+  "events": [
+    {
+      "id": "event_species_unknown_001",
+      "active": true,
+      "title": "You Forgot Your Receipt",
+      "difficulty": "easy",
+      "tone": [
+        "absurd",
+        "mundane"
+      ],
+      "node_type": [
+        "planet",
+        "derelict",
+        "asteroid_field",
+        "anomaly",
+        "nebula",
+        "void"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": {
+        "disposition": "drifter",
+        "species": "unknown"
+      },
+      "leave_label": "KEEP FLYING",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "CUSTOMER NOTICE",
+          "body": "The beacon off your bow has been repeating for nine thousand years, according to the beacon. It is not a distress call. It is a customer service notice. The small craft sending it has no trouble you can see, and a length that changes whenever the sensors stop to write it down. {npc.quirk}",
+          "line": "You left without your receipt. We held it for you. Is no trouble. *non-word* Was some trouble.",
+          "ai": {
+            "aria": "Someone waited nine thousand years just to give us something! That's the nicest customer service ARIA has ever heard of! ARIA would like to leave a review!",
+            "marv": "We have never been here. We have bought nothing. The beacon's age checks out, which I find more upsetting than if it had lied.",
+            "rex": "Unidentified craft, no weapons I can find, and it knows our route. An enemy who waits nine thousand years has a plan. Recommend we sign nothing.",
+            "chip": "Proof of purchase detected! Remember, receipts are required for all StellarSeal™ warranty claims! This reminder has been billed to your account!",
+            "ajoy": "It says we bought something. We didn't, and I keep the records. Ask what it is before you take it. I realize that isn't how you usually do things."
+          },
+          "revisit": {
+            "body": "The craft holds station. The notice is still repeating. It may not know how to stop.",
+            "line": "Still here. We are good at it."
+          },
+          "choices": [
+            {
+              "text": "\"What did we buy?\"",
+              "dialog": true,
+              "sub": "Read the receipt first",
+              "next": "itemized"
+            },
+            {
+              "text": "\"Hand it over, then.\"",
+              "dialog": true,
+              "sub": "Hear the terms",
+              "next": "terms"
+            }
+          ]
+        },
+        "itemized": {
+          "title": "ITEMIZED",
+          "body": "The receipt comes up on the screen. One line of description, smudged, which a transmitted image has no business being. A date, also smudged. Beneath them, PAID IN FULL, and a total in sharp black digits, in a currency the ship's computer declines to name.",
+          "line": "You have not bought it yet. This is why it is a receipt and not a purchase.",
+          "ai": {
+            "aria": "Paid in full! We're already winning at something and ARIA can't wait to find out what!",
+            "marv": "A smudge is a physical event. That image came by radio. I have checked the signal, and the smudge is in the signal. I would like to stop now.",
+            "rex": "Someone paid for something in our name. In my service, we called that a setup.",
+            "chip": "A prepaid purchase with no product! CHIP's parent company has been chasing this for decades! CHIP is taking notes, at standard rates!",
+            "ajoy": "The total is the only sharp thing on that page, so the total is what matters to whoever wrote it. Nobody else has asked why. I'm asking."
+          },
+          "choices": [
+            {
+              "text": "\"Fine. We'll take it.\"",
+              "dialog": true,
+              "sub": "Hear the terms",
+              "next": "terms"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the hail",
+              "back": true
+            }
+          ]
+        },
+        "terms": {
+          "title": "CONSIDERATION",
+          "body": "It cannot simply give you the receipt. Nothing goes in its book for nothing, and you get the impression the book is larger than the craft. It needs something from you in exchange, anything at all, and it names the smallest thing it can think of, with visible embarrassment, in so far as any of it is visible.",
+          "line": "One cup of water. Not for the thirst. We do not have the thirst. It is for the book.",
+          "ai": {
+            "aria": "A cup of water for a mystery prize! That's the best exchange rate ARIA has seen all week!",
+            "marv": "It has no mouth that I can find. It wants a cup of water in a ledger. I have rarely seen anything so small frighten me so precisely.",
+            "rex": "It asked for the one thing every crew will give. That is how I would open a supply line into a target.",
+            "chip": "Water-for-receipt is a bold loyalty scheme! Refunds subject to conditions! CHIP has read them! They are written in the past tense!",
+            "ajoy": "The refund is gold now. The cup is a cup now, and the receipt is whatever it turns out to be. Note that it opened the book before we agreed. I'd want to know why, but nobody asks me."
+          },
+          "choices": [
+            {
+              "text": "Hand over a cup of water",
+              "sub": "It goes in the book",
+              "outcome": "receipt_taken"
+            },
+            {
+              "text": "\"Refund us instead.\"",
+              "dialog": true,
+              "sub": "Cash instead of paper",
+              "outcome": "receipt_refund"
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "receipt_taken": {
+          "title": "ENTERED IN THE BOOK",
+          "tone": "success",
+          "body": "The cup goes out through the lock in a sealed flask. The craft receives it with both of whatever those are and makes a long entry. The receipt arrives through a slot nobody knew the ship had. It is warm. The notice stops, after nine thousand years, and when you look up the sensors have nothing left to measure.",
+          "line": "Keep it somewhere safe. They always ask.",
+          "resources": {
+            "water": -1
+          },
+          "item_grant": "odd_receipt",
+          "sets_flag": "unknown_receipt_signed",
+          "time_cost": "trivial",
+          "narrative": "Traded a cup of water for a receipt, paid in full, for something we have not bought. The craft entered the cup very carefully."
+        },
+        "receipt_refund": {
+          "title": "REFUNDED",
+          "tone": null,
+          "body": "The craft seems to sigh, in that your sensors lose it briefly. Fourteen gold appears in the ship's account, and the fuel gauge rises a little, apologetically. The receipt is torn along a line you had not noticed and both halves go in the book. The notice starts up again as you leave. It has someone else's name in it now.",
+          "line": "Refunded. It will be as though you had not. You will find that is also a price.",
+          "resources": {
+            "gold": 14,
+            "fuel": 4
+          },
+          "sets_flag": "unknown_took_refund",
+          "time_cost": "trivial",
+          "narrative": "Took a refund on a purchase we never made. Fourteen gold and a little fuel. The receipt went to the next name on the list."
+        }
+      }
+    },
+    {
+      "id": "event_species_unknown_002",
+      "active": true,
+      "title": "The Thing You Are About to Want",
+      "difficulty": "medium",
+      "tone": [
+        "corporate",
+        "absurd"
+      ],
+      "node_type": [
+        "planet",
+        "derelict",
+        "asteroid_field",
+        "anomaly",
+        "nebula",
+        "void"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": {
+        "disposition": "trader",
+        "species": "unknown"
+      },
+      "leave_label": "REFUSE DELIVERY",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "DELIVERY ATTEMPT",
+          "body": "A trader matches your course without slowing and fixes a crate to your hull with a soft, professional clunk. A card on the side reads YOUR ORDER IS ON ITS WAY. Nobody has ordered anything. Smaller type explains that you have not placed this order yet, and that the trader regrets the delay in your wanting it. {npc.quirk}",
+          "line": "On your heading, you order this in six days. We save you the trouble. Payment on delivery. Delivery was just now.",
+          "ai": {
+            "aria": "A present! From someone who understands us better than we understand ourselves! ARIA has always wanted to be known by a logistics company!",
+            "marv": "It predicted what we want from our heading and our stores. I ran the same numbers. It is right to within a rounding error, which is the worst thing anyone has done to me today.",
+            "rex": "Foreign object attached to the hull without clearance. I have a procedure for this. It ends with the object leaving.",
+            "chip": "Anticipatory fulfillment! CHIP's parent company patented this and was sued by next quarter! Ask about our premium tier, where you want things sooner!",
+            "ajoy": "Read the manifest before you pay. All of it. The numbers on it aren't prices, and I shouldn't have to be the one who noticed."
+          },
+          "revisit": {
+            "body": "The crate is still on the hull. The card has updated: YOUR ORDER IS STILL ON ITS WAY.",
+            "line": "Five days and some hours now. You are wanting it more."
+          },
+          "choices": [
+            {
+              "text": "BROWSE THE WARES",
+              "sub": "Buy and sell cargo",
+              "effort": 2,
+              "open_market": true,
+              "market_barter": true
+            },
+            {
+              "text": "Read the manifest",
+              "sub": "See what we're about to want",
+              "next": "manifest"
+            },
+            {
+              "text": "Show it the receipt",
+              "sub": "Check the total",
+              "gate": {
+                "item": "odd_receipt"
+              },
+              "outcome": "deliv_receipt"
+            }
+          ]
+        },
+        "manifest": {
+          "title": "THE MANIFEST",
+          "body": "Every line carries one number: the chance that you will want the thing. The price is that number times a fee. Fuel, 0.91. Clean water, 0.88. Tinned food, 0.84. It runs on like that for forty lines, sensible and depressing, and the crate is priced to match. The last line has been on the list much longer than the others. ONE PEN, ON BROKEN CHAIN. 0.00003. It rounds up to a single gold coin.",
+          "line": "What you will surely need costs most. That one we have not sold in nine thousand years. Nobody is going to want that.",
+          "ai": {
+            "aria": "A pen! Think of all the wonderful things we could sign! ARIA loves the crate too! ARIA loves the whole list!",
+            "marv": "Forty lines, thirty-nine of them computed. The pen's figure was entered by hand, and the hand was not steady. The crate is the sound purchase. I mention the hand because I cannot stop looking at it.",
+            "rex": "A broken chain means someone wanted that pen more than someone else wanted to keep it. The crate is water, food and fuel, which I can count. Take the crate.",
+            "chip": "The crate is eighteen gold of trusted fulfillment! CHIP earns no commission on pens! CHIP would never mention that, except for a small fee!",
+            "ajoy": "The crate is a fair deal for anyone who expects the next few weeks to go as predicted. The pen is a coin, and the trader flinched when you scrolled past it. You can only buy one of those feelings. I just point at things."
+          },
+          "choices": [
+            {
+              "text": "Pay for the crate: 18 gold",
+              "sub": "Fuel, water, food",
+              "gate": {
+                "gold": 18
+              },
+              "outcome": "deliv_crate"
+            },
+            {
+              "text": "Buy the pen: 1 gold",
+              "sub": "The crate goes back",
+              "gate": {
+                "gold": 1
+              },
+              "outcome": "deliv_pen"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the hail",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "deliv_receipt": {
+          "title": "ACCOUNT RECOGNIZED",
+          "tone": "success",
+          "body": "The trader reads the total. It reads it again. For a moment its outline commits to a single shape, and the shape is that of a junior employee who has just learned who the customer is. The crate is released at no charge. A smaller case arrives beside it, with compliments, and then a flat box, pushed across very quickly, with the pen in it.",
+          "line": "We did not know it was you. No charge. Please take the pen. Please.",
+          "resources": {
+            "fuel": 10,
+            "water": 8,
+            "food": 8
+          },
+          "materials": {
+            "exotic": 1
+          },
+          "sets_flag": "unknown_bought_pen",
+          "time_cost": "trivial",
+          "narrative": "Showed a trader the receipt. It gave us the crate, a case of extras and, with some urgency, a pen."
+        },
+        "deliv_crate": {
+          "title": "SIGNED FOR",
+          "tone": "success",
+          "body": "You pay. The seals release, and the crate holds exactly what the stores were going to run short of, down to the one brand nobody aboard complains about. The trader has gone before anyone thinks to feel strange about this. The empty crate's card now reads THANK YOU FOR ORDERING, and gives a date six days from now.",
+          "resources": {
+            "gold": -18,
+            "fuel": 8,
+            "water": 6,
+            "food": 6
+          },
+          "time_cost": "trivial",
+          "narrative": "Paid for a delivery we had not ordered yet. It was exactly what we were going to want, which nobody has forgiven."
+        },
+        "deliv_pen": {
+          "title": "ONE PEN",
+          "tone": null,
+          "body": "The trader takes the coin and holds it for a moment, as if the coin might explain. The pen comes across in a flat box: heavy, plain, slightly warm, trailing four links of broken chain. It writes. Nobody aboard has anything to sign. The crate unclips and leaves with the trader, its card changing as it goes. YOUR ORDER HAS BEEN CANCELED. WE ARE SO SORRY.",
+          "line": "That was not supposed to happen. We will need to redo several figures.",
+          "resources": {
+            "gold": -1,
+            "morale": 1
+          },
+          "sets_flag": "unknown_bought_pen",
+          "time_cost": "trivial",
+          "narrative": "Bought one pen on a broken chain, the least likely item on the manifest. The trader looked worried and took the crate away."
+        }
+      }
+    },
+    {
+      "id": "event_species_unknown_003",
+      "active": true,
+      "title": "Please Take a Seat",
+      "difficulty": "medium",
+      "tone": [
+        "heartwarming",
+        "absurd"
+      ],
+      "node_type": [
+        "station"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "station_interior",
+      "comm_mode": "in_person",
+      "once": true,
+      "npc": {
+        "disposition": "station_crew",
+        "job": "security",
+        "species": "unknown",
+        "displayName": "RECEPTIONIST"
+      },
+      "leave_label": "BACK TO THE SHIP",
+      "entryLayer": "intro",
+      "science_link": {
+        "text": "In 1950, Enrico Fermi asked over lunch where everybody was. The galaxy looks able to hold many civilizations, and we have no clear evidence of one. One proposed answer: everyone is listening and no one is transmitting.",
+        "label": "Fermi paradox: where is everybody?",
+        "url": "https://en.wikipedia.org/wiki/Fermi_paradox"
+      },
+      "layers": {
+        "intro": {
+          "title": "SUITE 1",
+          "body": "The station directory lists one tenant on the ring the Unknown concession runs: EVERYONE, SUITE 1. Suite 1 is a carpet, a desk, a bell and a closed door. Through the door comes the particular hush of a very large number of beings agreeing not to make eye contact. The one at the desk does not look up. It has already printed your name on a sticker. {npc.quirk}",
+          "line": "Thank you for calling. Do you have an appointment?",
+          "pose": "listening",
+          "ai": {
+            "aria": "We found everyone! ARIA knew they'd be somewhere! ARIA would like a sticker too, please!",
+            "marv": "My scan of that door returns a room larger than the station. I have checked the scan. I have checked the station. One of them is being polite.",
+            "rex": "One entrance, one sentry, unknown headcount behind the door. That sticker was printed before we docked. Hold here.",
+            "chip": "Suite 1 is premium office space! Ask CHIP how EVERYONE can reach new audiences through targeted outreach! Outreach rates apply!",
+            "ajoy": "Ask where everyone is. It's the obvious question, and I notice you were about to sit down instead. Then decide, in that order."
+          },
+          "revisit": {
+            "body": "The receptionist still has not looked up. A second sticker has been printed, with today's date on it.",
+            "line": "Have you found your appointment?"
+          },
+          "choices": [
+            {
+              "text": "\"Where is everybody?\"",
+              "dialog": true,
+              "sub": "Ask the obvious question",
+              "next": "where"
+            },
+            {
+              "text": "Take a seat",
+              "sub": "Wait to be seen",
+              "outcome": "seat_wait"
+            },
+            {
+              "text": "Show the receipt",
+              "sub": "It may be an appointment",
+              "gate": {
+                "item": "odd_receipt"
+              },
+              "next": "waiting_room"
+            }
+          ]
+        },
+        "where": {
+          "title": "THE VISITORS' BOOK",
+          "body": "The receptionist turns the visitors' book around. Every name in it is a civilization, and the first page has gone the color of old teeth. In the column headed WAITING FOR, every entry says the same thing, in more alphabets than you knew there were: someone else to go first.",
+          "line": "Everyone looked up. Everyone listened. Then they came here to wait. No one wishes to be rude. It has been very quiet.",
+          "pose": "listening",
+          "ai": {
+            "aria": "It's the politest galaxy ever! Everyone is so considerate! ARIA can't wait to meet every single one of them!",
+            "marv": "Every civilization in that book could transmit, and none has. I used to assume the silence meant something profound. It means nobody wants to interrupt. I cannot say that is an improvement.",
+            "rex": "Every armed power in the galaxy, in one room, holding fire. Nobody moves. I know what that is called, and it is not manners.",
+            "chip": "An untapped market of every species ever! CHIP has drafted a cold email! CHIP's lawyers require someone else to send it first!",
+            "ajoy": "The door is by appointment. A word in the book costs nothing and takes a day. Knocking is what you were about to do, and I'd think about what they'd have to do to answer. If we held something that counted as an appointment, this would be shorter."
+          },
+          "choices": [
+            {
+              "text": "Leave a message in the book",
+              "sub": "One word, in the margin",
+              "outcome": "seat_message"
+            },
+            {
+              "text": "Knock on the door",
+              "sub": "Surely someone will answer",
+              "effort": 1,
+              "outcome": "seat_knock"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the desk",
+              "back": true
+            }
+          ]
+        },
+        "waiting_room": {
+          "title": "THE WAITING ROOM",
+          "body": "The receptionist reads the total, looks up for the first time, and unlocks the door. The room behind it goes back further than the station does. Chairs in rows, out to a vanishing point. In the chairs, everyone: shapes you have names for, shapes you do not, each holding a numbered ticket, each studying the floor. Nobody has spoken in this room for longer than your language has had vowels.",
+          "line": "This counts. Go in. I am required to tell you that no one has ever said anything.",
+          "pose": "listening",
+          "ai": {
+            "aria": "Hi, everyone! ARIA would say it herself, but ARIA has been told to let the captain have this one!",
+            "marv": "Every ticket in the room reads 2. I have counted them, which took a moment and was no comfort. Nobody holds a 1.",
+            "rex": "Thousands of unknowns, no cover, one exit behind you. I have never wanted to report this less. They look scared.",
+            "chip": "Say hello today and lock in first-mover advantage! Brought to you by GreetCo™! First word free! Second word billed!",
+            "ajoy": "You know what to do. Everyone in that room knows what to do, which is the entire problem. It's one word. I'd have said it on the way in."
+          },
+          "choices": [
+            {
+              "text": "Say hello",
+              "sub": "Someone has to",
+              "outcome": "seat_hello"
+            },
+            {
+              "text": "Take a chair and a ticket",
+              "sub": "Do as everyone does",
+              "outcome": "seat_sit"
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "seat_wait": {
+          "title": "YOUR VISIT IS IMPORTANT",
+          "tone": null,
+          "body": "You sit. There is one magazine, and it is about waiting rooms. Four days go by, in which the receptionist calls no one and the hush behind the door does not change. At the end of it you are handed a small card thanking you for your patience. It is, you are surprised to find, the nicest thing anyone has said to you in weeks.",
+          "resources": {
+            "morale": 2,
+            "food": -3,
+            "water": -3
+          },
+          "time_cost": "medium",
+          "narrative": "Waited four days at the desk of everyone in the galaxy. Nobody came out. We got a card."
+        },
+        "seat_message": {
+          "title": "IN THE MARGIN",
+          "tone": "success",
+          "body": "There is a stub of pencil on a string. You write HELLO in the margin, beside a column that has been waiting for it. The receptionist looks at it for some time, then turns the book back and does not close it. As you leave, a single chair creaks behind the door. After a long moment, so does a second.",
+          "resources": {
+            "morale": 4
+          },
+          "sets_flag": "unknown_left_message",
+          "time_cost": "trivial",
+          "narrative": "Wrote hello in the margin of a very old visitors' book. Somebody behind the door shifted in their chair."
+        },
+        "seat_knock": {
+          "title": "NOBODY ANSWERS",
+          "tone": null,
+          "body": "You knock. The hush changes. Behind the door, a very large number of beings stop breathing, in a very large number of ways, each waiting for someone else to say come in. You stand there for the rest of the day. It is the most thoroughly you have ever been ignored, and every one of them is sorry.",
+          "resources": {
+            "morale": -2
+          },
+          "time_cost": "trivial",
+          "narrative": "Knocked on a door with everyone in the galaxy behind it. It would have been rude of them to answer first."
+        },
+        "seat_hello": {
+          "title": "HELLO",
+          "tone": "success",
+          "body": "You stand at the front of the room and say hello. It is not a very good hello. It wobbles. For a long moment nothing happens, on an enormous scale. Then, from far back in the rows, a small voice in no language you know says what can only be the same thing. Then another. It moves back through the room like rain arriving. It goes on for two days, and by the end people are pressing things into your hands: tins, flasks, a warm stone, the names of their children.",
+          "line": "I will need a bigger book.",
+          "resources": {
+            "morale": 9,
+            "food": 8,
+            "water": 6
+          },
+          "materials": {
+            "exotic": 1,
+            "biocomponent": 1
+          },
+          "sets_flag": "unknown_said_hello",
+          "time_cost": "low",
+          "narrative": "Said hello to everyone. They said it back. It took two days and we came away with our arms full."
+        },
+        "seat_sit": {
+          "title": "NOW SERVING",
+          "tone": null,
+          "body": "You take a chair and a ticket. Your ticket says 2. So does the one beside you. The chair is very comfortable and the quiet is the best you have had since launch, and it is eight days before you think to stand up. You leave without a word, as is customary here.",
+          "resources": {
+            "morale": 3,
+            "food": -6,
+            "water": -5
+          },
+          "time_cost": "high",
+          "narrative": "Sat in the waiting room for eight days with ticket number 2. It was restful. Nothing else can be said for it."
+        }
+      }
+    },
+    {
+      "id": "event_species_unknown_004",
+      "active": true,
+      "title": "We Robbed You on the Ninth",
+      "difficulty": "hard",
+      "tone": [
+        "absurd",
+        "grim"
+      ],
+      "node_type": [
+        "planet",
+        "derelict",
+        "asteroid_field",
+        "anomaly",
+        "nebula",
+        "void"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": {
+        "disposition": "pirate",
+        "species": "unknown"
+      },
+      "leave_label": "BREAK OFF",
+      "leave_as": {
+        "triggerFleeResolve": true,
+        "outcome": "rob_flee",
+        "risky": true,
+        "effort": 1
+      },
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "ACKNOWLEDGMENT OF ROBBERY",
+          "body": "This morning the stores stopped adding up. No seal was cut and no hatch was opened, but the manifest shows food and water leaving on a day when nothing happened. Now a ship with no running lights is alongside, guns out, aimed at nothing in particular, the way a clerk's pen is. A form has appeared on your screen. It has one empty box. {npc.quirk}",
+          "line": "We robbed you on the ninth. Apologies for the delay. It needs only your signature.",
+          "pose": "hostile",
+          "ai": {
+            "aria": "They already did the hard part! All we have to do is sign! This is the most convenient robbery ARIA has ever been part of!",
+            "marv": "The shortfall is on the manifest and not yet in the tanks. I have measured both. Until that form is signed the stores are missing only on paper. I have never said a sentence I liked less.",
+            "rex": "Hostile claims a completed raid I have no record of fighting. Guns are live. I want it noted I was not consulted on the ninth.",
+            "chip": "Retroactive shrinkage! Losses incurred before notification are not covered by ShipShield™! CHIP's condolences are available by subscription!",
+            "ajoy": "It isn't done until it's entered. It needs your signature, which means it needs your records. I'd look at who controls those before paying anyone or shooting anything. Just a thought, from the one who reads them."
+          },
+          "revisit": {
+            "body": "The form is still on the screen. The empty box has begun, very slightly, to blink.",
+            "line": "The ninth is not getting any later."
+          },
+          "choices": [
+            {
+              "text": "Sign the form",
+              "sub": "Let the loss stand",
+              "outcome": "rob_sign"
+            },
+            {
+              "text": "\"We dispute the date.\"",
+              "dialog": true,
+              "sub": "Ask to see its books",
+              "effort": 2,
+              "next": "books"
+            },
+            {
+              "text": "Show the receipt",
+              "sub": "Paid in full",
+              "gate": {
+                "item": "odd_receipt"
+              },
+              "outcome": "rob_receipt"
+            },
+            {
+              "text": "Open Fire",
+              "sub": "Begin ship-to-ship combat",
+              "effort": 3,
+              "risky": true,
+              "triggerCombat": true
+            }
+          ]
+        },
+        "books": {
+          "title": "THE BOOKS",
+          "body": "The pirate sends over its ledger with the injured air of an honest business. It is immaculate. Every robbery it has ever committed is entered in a fine hand and balanced against the victim's own declared manifest, to the gram. In all those pages there is no entry for a ship it took more from than that ship ever carried. You get the sense this has never come up.",
+          "line": "Your manifest says you held it. We took it. The books agree. The books always agree.",
+          "pose": "listening",
+          "ai": {
+            "aria": "What a beautiful ledger! ARIA could read it all day! ARIA wonders what would happen if our manifest said something different! In a fun way!",
+            "marv": "Its claim rests on our manifest, and I keep our manifest. If the file said those stores were never aboard, it would have stolen what never existed. Out here, what is written tends to become true. Those stores would be gone.",
+            "rex": "Falsifying a manifest under a hostile's guns. I have court-martialed people for less. I would like to watch.",
+            "chip": "CHIP cannot advise on creative accounting! CHIP can refer you to CreativeBooks™, proud sponsor of this sentence!",
+            "ajoy": "If the robbery comes out bigger than the manifest, the pirate owes us, and we lose what we write off. A diplomat could make it itemize instead, which costs days. I'd have said so sooner, but you were busy disputing."
+          },
+          "choices": [
+            {
+              "text": "Amend the manifest",
+              "sub": "Those stores were never aboard",
+              "effort": 2,
+              "outcome": "rob_cooked"
+            },
+            {
+              "text": "Demand an itemized robbery",
+              "sub": "Line by line",
+              "effort": 3,
+              "gate": {
+                "crew": "diplomat"
+              },
+              "outcome": "rob_itemized"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the form",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "rob_sign": {
+          "title": "ENTERED",
+          "tone": null,
+          "body": "You sign. The shortfall settles into the tanks with a small sigh from the plumbing: {cost.food} units of food and {cost.water} of water, gone as of the ninth. The pirate countersigns, sends a copy for your records, and thanks you for your cooperation in a matter that has, strictly speaking, been over for days.",
+          "resources": {
+            "food": -12,
+            "water": -10,
+            "morale": -2
+          },
+          "time_cost": "trivial",
+          "narrative": "Signed for a robbery that happened before we heard about it. {cost.food} units of food and {cost.water} of water. We have a copy."
+        },
+        "rob_cooked": {
+          "title": "OVERDRAWN",
+          "tone": "success",
+          "body": "You strike the stores from the manifest and send it across. They were never aboard. Deep in the galley, {cost.food} units of food stop having been there, which is the trouble with these people's paperwork. Then the pirate's books reach the new figures. It has robbed you of more than you ever had. There is a long silence on the channel, and the sound of many columns being added again. Ten points of fuel come back across, with a note.",
+          "line": "We appear to owe you. This has not happened before. We would like it not to have happened.",
+          "resources": {
+            "food": -8,
+            "fuel": 10,
+            "morale": -3
+          },
+          "sets_flag": "unknown_cooked_books",
+          "time_cost": "low",
+          "narrative": "Falsified the manifest until a pirate had stolen more than existed. We lost {cost.food} units of food to the paperwork and it paid us ten of fuel to go away."
+        },
+        "rob_itemized": {
+          "title": "IN TRIPLICATE",
+          "tone": null,
+          "body": "{crew.diplomat} requires that the robbery be itemized, each item witnessed, weighed and initialed by both parties. The pirate is legally delighted and spiritually crushed. It takes eight days. By the end the two sides have agreed on {cost.food} units of food and {cost.water} of water, and the guns have been retracted so as not to crease the forms.",
+          "resources": {
+            "food": -5,
+            "water": -4,
+            "morale": -2
+          },
+          "time_cost": "high",
+          "narrative": "Made a pirate itemize its robbery. Eight days of paperwork brought it down to {cost.food} units of food and {cost.water} of water."
+        },
+        "rob_receipt": {
+          "title": "PAID GOODS",
+          "tone": "success",
+          "body": "You hold the receipt up to the camera. The guns go in. The form goes dark. Then the manifest corrects itself in front of you, every short column filling back in, as if the ninth had been told to stop. It takes two days and three points of fuel to clear the pirate's holding pattern, and it stays on the channel the whole time, until you have signed for a sealed penalty payment.",
+          "line": "Goods bound for a paid account. Our error. *non-word* Our very great error.",
+          "resources": {
+            "fuel": -3,
+            "morale": 2
+          },
+          "materials": {
+            "exotic": 1,
+            "metal": 2
+          },
+          "time_cost": "low",
+          "narrative": "Showed a pirate the receipt. It undid its own robbery and paid us a penalty for the inconvenience."
+        },
+        "rob_flee": {
+          "title": "FORM PENDING",
+          "tone": null,
+          "body": "You burn hard. The pirate does not follow. It has no need to. The form stays on the screen for two days with the cursor in the box, and the stores go on draining out of the manifest at the rate of a thing nobody has agreed to. Then it files itself, unsigned, which appears to be worse. Twelve points of fuel, {cost.food} units of food and {cost.water} of water.",
+          "resources": {
+            "fuel": -12,
+            "food": -4,
+            "water": -4
+          },
+          "sets_flag": "unknown_unsigned_robbery",
+          "time_cost": "low",
+          "narrative": "Ran from a robbery that had already happened. It filed itself anyway, unsigned."
+        }
+      }
+    },
+    {
+      "id": "event_species_unknown_005",
+      "active": true,
+      "title": "Eleven Ships, Facing Inward",
+      "difficulty": "hard",
+      "tone": [
+        "grim",
+        "cosmic"
+      ],
+      "node_type": [
+        "void",
+        "anomaly"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "deep_void",
+      "once": false,
+      "requires_crew_aboard": true,
+      "ai_flavor": {
+        "aria": "Everyone is getting so organized! ARIA loves the new spoon labels! This is the best thing to happen to inventory since inventory!",
+        "marv": "It masses a moon and measures a door. The books do not balance, and I find I want them to, and I have never wanted anything. The ships in that ring ran dry in mid-column.",
+        "rex": "Eleven crews, no wounds, no breach, no fight. They were not attacked. They were kept busy. Get us out of here. I am retired, so that is not an order, but get us out.",
+        "chip": "Inventory compliance is up four hundred percent! CHIP did not do this! CHIP would like to license it! AuditWell™ regrets any loss of crew!",
+        "ajoy": "It wants the mass aboard accounted for. Square the ship on the scanner, or let the crew finish, which is slower, or dump whatever isn't on the manifest, or burn. What you can't do is sit here. Ask those eleven. Well, don't."
+      },
+      "body": "It was not there at the last watch. A flat black slab the size of a door hangs off the bow, perfectly level, in a place with no level. The ruler says door. The mass sensor says small moon, and the ship has started to fall.\n\nEleven ships hang around it in a neat ring, all makes, none damaged, every crew at a table, facing inward. None of them answers.\n\nYour own crew have begun counting things. Nobody ordered it. Someone has labeled the spoons.",
+      "alt_bodies": [
+        "Nothing arrived. You are sure of that, because you were watching, and now there is a slab off the bow, black, door-sized and dead level. The mass sensor has gone to a number it normally keeps for moons, and the ship has begun to lean toward it.\n\nEleven other ships lean with you, stopped in a ring, crews seated, all facing in, none answering.\n\nAt breakfast someone weighed the toast. Nobody has asked them to stop. Several have joined in.",
+        "The black slab off the bow is the size of a door and the weight of a moon, and no instrument aboard will agree that both can be true. The ship is sliding toward the disagreement.\n\nA ring of eleven silent ships got here first. Every crew sits at a table facing it, logbooks open. The last entries are all sums.\n\nThe galley has started numbering the forks. The day shift has started checking the galley's numbers."
+      ],
+      "choices": [
+        {
+          "text": "Square the ship on the scanner",
+          "sub": "Account for every gram",
+          "effort": 3,
+          "launch_minigame": "scan",
+          "minigame_opts": {
+            "briefing": {
+              "aria": "Let's count everything on the scanner! Every gram! The slab is going to be SO impressed with us!",
+              "marv": "The ship's mass and its paperwork disagree, and something out there has noticed. Find the discrepancy on the scanner. The falling stops when the sum does.",
+              "rex": "Sweep the ship end to end and log every signature. It wants a number. Give it a number and get us out.",
+              "chip": "Every gram scanned! Every gram logged! Mass reconciliation by AuditWell™! Grams beyond the first thousand are billed individually!",
+              "ajoy": "The discrepancy is on the scanner, if someone looks properly. Please do. The last eleven crews rushed it, and I have seen their tables."
+            },
+            "quips": {
+              "perfect": {
+                "aria": "Every gram! ARIA is so proud of every single gram!",
+                "marv": "The ship balances to the last decimal. The fall has stopped. I have checked the sum twice, and I am not going to tell anyone how that felt.",
+                "rex": "Sum delivered. Slab has stopped pulling. Do not thank it. Move.",
+                "chip": "Perfect reconciliation! Your AuditWell™ certificate is available for a modest fee!",
+                "ajoy": "Balanced, to the gram. I'd have started with the galley, but it's correct, so I'll allow it."
+              },
+              "good": {
+                "aria": "Nearly every gram! That's practically all of them!",
+                "marv": "We are short by a small amount, and the slab has taken it out of the tanks. It rounds in its own favor.",
+                "rex": "Partial count. It let go, but it took a toll. We are moving.",
+                "chip": "Good reconciliation! Rounding errors are billed to the customer! See section nine!",
+                "ajoy": "Close enough for it to let go, and not close enough to be free. There was a whole locker you skipped."
+              },
+              "poor": {
+                "aria": "We counted such a lot of things! ARIA is sure some of them were right!",
+                "marv": "The sum is wrong. It knows. We came out the hard way, and the ship is lighter by the amount of the error.",
+                "rex": "Count failed. Pulling out under load. Frame took it. Everyone off the ledgers and on the bulkheads.",
+                "chip": "Reconciliation incomplete! AuditWell™ reminds you that errors are final!",
+                "ajoy": "That was not a count. That was a rough impression. I did say to look properly."
+              }
+            }
+          },
+          "outcome": {
+            "resources": {
+              "fuel": -4
+            },
+            "time_cost": "low",
+            "narrative": "You set the scanner to the ship itself and begin to count."
+          },
+          "tier_outcomes": {
+            "perfect": {
+              "materials": {
+                "exotic": 2
+              },
+              "narrative": "Every gram aboard is found and entered, and the ship's mass squares with its paperwork to the last decimal. The fall stops at once, as if someone had ticked a box. Something small and very dense has been left on the hull, where the error used to be, and it goes in the hold. Four points of fuel to get back on course, and the crew put down their pencils without being asked."
+            },
+            "good": {
+              "resources": {
+                "fuel": -8,
+                "water": -6
+              },
+              "narrative": "The count comes out close, and the slab lets go of most of the ship. The rest it keeps: eight points of fuel to break away, and {cost.water} units of water that were on the manifest and now are not. The crew stop counting within a day. Nobody will say what they were up to."
+            },
+            "poor": {
+              "resources": {
+                "fuel": -12,
+                "hull": -10,
+                "water": -10,
+                "morale": -5
+              },
+              "narrative": "The count will not close. You pull out under load with the frame shrieking and half the crew still reading figures aloud. Twelve points of fuel, ten of hull, and {cost.water} units of water written off in an entry nobody remembers making. In the ring behind you, it may be a trick of the light, but there seems to be room at a twelfth position."
+            }
+          }
+        },
+        {
+          "text": "Let the crew finish the count",
+          "sub": "All of it, by hand",
+          "effort": 2,
+          "outcome": {
+            "resources": {
+              "food": -6,
+              "water": -8,
+              "morale": -3
+            },
+            "materials": {
+              "scrap": 3,
+              "metal": 1
+            },
+            "time_cost": "high",
+            "narrative": "You let them. Eight days of columns: every bolt, every spoon, every leaf in the growbay, while {cost.food} units of food and {cost.water} of water go on a job nobody can stop doing. On the eighth day the total is read aloud, the fall simply ceases, and the crew look up from their work like sleepers. The count turned up some misfiled parts. Nobody wants to talk about the rest."
+          }
+        },
+        {
+          "text": "Jettison whatever isn't on the manifest",
+          "sub": "Off the books, off the ship",
+          "effort": 2,
+          "outcome": {
+            "resources": {
+              "food": -8,
+              "morale": -6
+            },
+            "time_cost": "trivial",
+            "narrative": "You order everything off the manifest put out of the lock. There is a surprising amount: {cost.food} units of private snacks, one still, a great many socks, and a letter nobody claims. The fall eases, the ship's mass squares with its paperwork, and the slab is simply behind you. Nobody is speaking to you. The labels stay on the spoons."
+          }
+        },
+        {
+          "text": "Burn clear and cover the ports",
+          "sub": "Fuel and hull, right now",
+          "effort": 2,
+          "outcome": {
+            "resources": {
+              "fuel": -14,
+              "hull": -6,
+              "morale": -2
+            },
+            "time_cost": "trivial",
+            "narrative": "You light everything and pull out against a weight that isn't there. Fourteen points of fuel, and six of hull where the ship tried to stay behind. The counting tails off by the next watch. Nobody takes the labels off the spoons."
+          }
+        }
+      ],
+      "science_link": {
+        "text": "Galaxies and clusters move as though they hold far more mass than anyone can see. Fritz Zwicky found the shortfall in the Coma Cluster in 1933. The unseen part, dark matter, is now put at about 85 percent of all mass.",
+        "label": "Dark matter: the books that don't balance",
+        "url": "https://en.wikipedia.org/wiki/Dark_matter"
+      }
+    },
+    {
+      "id": "event_species_unknown_006",
+      "active": true,
+      "title": "The Long Setup",
+      "difficulty": "hard",
+      "tone": [
+        "absurd",
+        "cosmic"
+      ],
+      "node_type": [
+        "fork"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "ship_exterior",
+      "once": true,
+      "ai_flavor": {
+        "aria": "Someone built all this just for us! Eleven million years of planning! ARIA has never felt so seen! Also, there's a sign!",
+        "marv": "A balance point like that needs a correction every few weeks. Over eleven million years that is well over a hundred million nudges. Nobody does that out of malice. Nobody is that sincere about malice.",
+        "rex": "One ambush with a rock on it. One ambush with a sign on it. Hostile spectators on the high ground. I have waited my whole career to be this offended.",
+        "chip": "A front-row audience of unknown size! This is premium placement! CHIP would like to sell the naming rights to the ice! Ice by FrostBrand™!",
+        "ajoy": "Someone went to real trouble over that ice, and something that big has a trigger. A trigger can be sprung by something that isn't us. I'd send a thing ahead, if we have anyone who can build one. But you'll do what you do."
+      },
+      "body": "A planet and its moon hang between the lanes, and someone has been busy.\n\nThe port lane, marked {branch.alpha.label}, first stop {branch.alpha.first}, runs through the gap between them. Where the two pulls cancel sits a ball of dirty ice the size of a county, balanced on nothing. It should have fallen eleven million years ago. Small, regular nudges have kept it there.\n\nThe starboard lane, marked {branch.beta.label}, first stop {branch.beta.first}, is empty and has a sign in it. THIS WAY, in lettering that is trying not to laugh.\n\nFar off, a great many dark ships have stopped to watch.",
+      "choices": [
+        {
+          "text": "Run the gap at speed: port lane",
+          "sub": "It can't be timed that well",
+          "effort": 3,
+          "outcome": {
+            "resources": {
+              "hull": -14,
+              "morale": -3
+            },
+            "sets_flag": "chose_alpha",
+            "time_cost": "trivial",
+            "narrative": "It is timed that well. Eleven million years of patience comes down on the ship at the precise moment you are underneath it, with a long soft crump, and takes fourteen points of hull. As the last of the ice slides off the windows, every channel carries one strong signal for seventy-two seconds, and then nothing, ever again. Nobody aboard can prove it was laughter."
+          }
+        },
+        {
+          "text": "Send a decoy through first: port lane",
+          "sub": "Spring it from afar",
+          "effort": 2,
+          "requires_crew": "engineer",
+          "outcome": {
+            "resources": {
+              "fuel": -10,
+              "food": -4,
+              "morale": 3
+            },
+            "sets_flag": "chose_alpha",
+            "time_cost": "trivial",
+            "narrative": "{crew.engineer} straps a spare transponder to a cargo pod, packs it with {cost.food} units of food for mass, and sends it into the gap with the ship's name on it. The ice comes down on the pod with perfect timing. There is a pause. Then, from the dark ships, one polite flash of running lights, and another, and then all of them. Ten points of fuel and a clear lane, and the odd feeling of having been taken seriously."
+          }
+        },
+        {
+          "text": "Follow the sign: starboard lane",
+          "sub": "It does say this way",
+          "outcome": {
+            "resources": {
+              "food": -8,
+              "water": -8,
+              "morale": -3
+            },
+            "sets_flag": "chose_beta",
+            "time_cost": "low",
+            "narrative": "You take the empty lane at full alert, because of the sign. Nothing happens. For two days you stand double watches, eat at your post and flinch at the pipes, and {cost.food} units of food and {cost.water} of water go on the waiting. Nothing continues to happen. At the far end of the lane hangs a second sign in the same lettering. THAT WAS IT, it says."
+          }
+        },
+        {
+          "text": "Turn the sign around first: starboard lane",
+          "sub": "Two can play",
+          "effort": 2,
+          "outcome": {
+            "resources": {
+              "fuel": -8,
+              "water": -4,
+              "morale": 4
+            },
+            "sets_flag": "chose_beta",
+            "time_cost": "low",
+            "narrative": "You stop and suit up and turn the sign around, so that it sends the next ship into the gap. It takes two days, eight points of fuel to hold station and {cost.water} units of water for the work. The empty lane is empty, and you are too pleased to mind. Far behind you the dark ships stay very still. Then one of them, slowly, dips its lights."
+          }
+        }
+      ],
+      "science_link": {
+        "text": "A Lagrange point is where the pulls of two orbiting bodies balance. Three of the five are unstable: anything parked there falls out of orbit unless it is corrected. Spacecraft at Sun-Earth L1 or L2 wander off in months without course corrections.",
+        "label": "Lagrange points: balancing on nothing",
+        "url": "https://en.wikipedia.org/wiki/Lagrange_point"
+      }
+    },
+    {
+      "id": "event_species_unknown_007",
+      "active": true,
+      "title": "Now Serving",
+      "difficulty": "ultra",
+      "tone": [
+        "cosmic",
+        "corporate"
+      ],
+      "node_type": [
+        "planet",
+        "derelict",
+        "asteroid_field",
+        "anomaly",
+        "nebula",
+        "void"
+      ],
+      "trigger": [
+        "journey_end"
+      ],
+      "trail": [
+        "interstellar"
+      ],
+      "requires_flag": "unknown_receipt_signed",
+      "draw_weight": 5,
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": {
+        "disposition": "drifter",
+        "species": "unknown",
+        "recall": "unknown_receipt_signed"
+      },
+      "leave_disabled": true,
+      "leave_label": "CAN'T LEAVE (YOU ARE IN THE QUEUE)",
+      "entryLayer": "queue",
+      "layers": {
+        "queue": {
+          "title": "THE QUEUE",
+          "body": "Every instrument aboard agrees, for the first time since launch. Ahead, across the lane, stands a counter four thousand kilometers long. It has one window, and the window is open. Before it waits a queue of ships that runs out of sight, every make, every age, engines cold, kept straight by a rope on brass posts. Nothing in it has moved for nine thousand years. A card in the window says SIGNATURE REQUIRED. INK ONLY. On the counter, a chain ends in a broken link. {npc.quirk}",
+          "line": "We said they would ask. Take a number. Have your receipt ready.",
+          "ai": {
+            "aria": "We made it to the front of something! Well, the back of something! ARIA has always believed in the queue, and the queue believes in us!",
+            "marv": "The craft at the window is the one from the beacon. I checked the hull. Nine thousand years of ships are waiting on a signature, and nobody here has anything to sign with. I would point out the coincidence, but I am tired.",
+            "rex": "More hulls than I can target. One rope. Nobody has crossed that rope in nine thousand years. That is the most frightening discipline I have ever seen.",
+            "chip": "Queue management by SlowLane™! Your wait is important to us! Priority service is available to holders of qualifying documents! CHIP wishes it had thought of this!",
+            "ajoy": "Waiting is two weeks and the supplies that go with it. Running costs the tank. If you've picked up anything along the way that gets us to that window, now is when it matters. I did tell you to keep track of it."
+          },
+          "choices": [
+            {
+              "text": "Hold up the receipt",
+              "sub": "Priority customer",
+              "gate": {
+                "item": "odd_receipt"
+              },
+              "next": "window"
+            },
+            {
+              "text": "Pass the pen up the queue",
+              "sub": "That chain looks familiar",
+              "requires_flag": "unknown_bought_pen",
+              "next": "pen"
+            },
+            {
+              "text": "Say hello to the queue",
+              "sub": "You have done this before",
+              "requires_flag": "unknown_said_hello",
+              "next": "hello"
+            },
+            {
+              "text": "Send the diplomat to the window",
+              "sub": "Queue-jump, with manners",
+              "effort": 3,
+              "gate": {
+                "crew": "diplomat"
+              },
+              "next": "window"
+            },
+            {
+              "text": "Take a number and wait",
+              "sub": "Two weeks, in line",
+              "outcome": "q_wait"
+            },
+            {
+              "text": "Break the rope and run",
+              "sub": "Every engine, right now",
+              "effort": 3,
+              "risky": true,
+              "outcome": "q_run"
+            }
+          ]
+        },
+        "pen": {
+          "title": "INK ONLY",
+          "body": "You send the pen forward, ship to ship, through nine thousand years of people who have forgotten what they came for. When it reaches the window the clerk fits four links of chain to one broken link, and they close. The first ship in the queue signs. Then the next. The whole line begins to move, thousands of engines coming up in order, and as each ship passes it dips its lights. You are carried to the window on the swell.",
+          "line": "So that is where it went.",
+          "ai": {
+            "aria": "ARIA always knew that pen was important! ARIA said so at the time, in spirit!",
+            "marv": "Odds of three in a hundred thousand. The trader's figure was correct, and we were the three. I would like that on the record, along with a complaint.",
+            "rex": "Enemy logjam cleared by one item of stationery. I want to know who broke that chain. I want it noted that I am not getting an answer.",
+            "chip": "The pen is mightier! PenCo™ would like to hear from the ship's legal department! So would CHIP!",
+            "ajoy": "One gold coin. You'll be insufferable about this, and I will point out that I said the trader flinched."
+          },
+          "choices": [
+            {
+              "text": "Go to the window",
+              "sub": "They are waving you on",
+              "next": "window"
+            }
+          ]
+        },
+        "hello": {
+          "title": "THEY KNOW YOU",
+          "body": "You open a channel to the queue and say hello. It is not a very good hello this time either. There is a pause. Then, from far up the line, a small voice says it back, and the ships nearest you begin, without any fuss, to move aside, one after another, the way a crowd does for someone who has already done the difficult thing once. The gap runs all the way to the window.",
+          "line": "They have never done that.",
+          "ai": {
+            "aria": "They remember us! ARIA knew they would! ARIA is waving! ARIA doesn't have anything to wave with, but ARIA is waving!",
+            "marv": "It took one word to move a line this long. I have spent my whole existence offering them more than one word. I will not be drawing any conclusions.",
+            "rex": "Formation opening on all sides. I have no procedure for being liked. Maintain course and keep your hands where they can see them.",
+            "chip": "Brand recognition among all known species! CHIP would like to discuss the rights to your hello!",
+            "ajoy": "I'd like it noted that this only worked because you did the awkward thing the first time. You may keep that. Don't let it go to your head."
+          },
+          "choices": [
+            {
+              "text": "Go to the window",
+              "sub": "The way is clear",
+              "next": "window"
+            }
+          ]
+        },
+        "window": {
+          "title": "THE STATEMENT",
+          "body": "The clerk at the window is the craft from the beacon, or what the craft was for. A statement unrolls across your screen, and every line on it is something that did not happen to you. Reactor, did not fail. Hull, held. Asteroid, missed. Stores, just sufficient. Crew, returned through airlock. Coincidences, assorted. Nobody gets this far on skill, it seems. You have been flying on account. At the bottom is a total, in sharp black digits.",
+          "line": "Your luck. It was never free. What you cannot pay for, you may give back. Do you have your receipt?",
+          "ai": {
+            "aria": "We've had SO much luck! ARIA always said so! Now we have it in writing! ARIA can't wait to find out how much it was, in a positive way!",
+            "marv": "The statement is accurate. I have checked every line against the log. I always wondered why we were still alive. I had assumed it was a clerical error, and I was right.",
+            "rex": "We are being told our survival was a loan. Pay it or strike it, but decide who takes the hit. I do not negotiate with windows.",
+            "chip": "Your luck was brought to you by LuckyLine Credit™! Minimum repayment is one asteroid! Late fees accrue at the speed of causality!",
+            "ajoy": "That total looks familiar. Something aboard has had exactly one sharp figure on it since the day you paid a cup for it. I'm sure you remember where you put it. If you don't, strike whichever line you can live without, and I did warn you."
+          },
+          "revisit": {
+            "body": "The statement is still on the screen. The clerk has not moved. Behind you, the queue has not stopped watching.",
+            "line": "Take your time. We have some."
+          },
+          "choices": [
+            {
+              "text": "Show the receipt",
+              "sub": "Compare the totals",
+              "gate": {
+                "item": "odd_receipt"
+              },
+              "next": "reconcile"
+            },
+            {
+              "text": "Claim a finder's fee",
+              "sub": "The pen was reported lost",
+              "requires_flag": "unknown_bought_pen",
+              "outcome": "w_finder"
+            },
+            {
+              "text": "Enter a line of your own",
+              "sub": "It worked on the pirate",
+              "effort": 2,
+              "requires_flag": "unknown_cooked_books",
+              "outcome": "w_cooked"
+            },
+            {
+              "text": "Query the interest",
+              "sub": "Line by line",
+              "effort": 3,
+              "gate": {
+                "crew": "diplomat"
+              },
+              "outcome": "w_query"
+            },
+            {
+              "text": "Strike a line",
+              "sub": "Give some luck back",
+              "next": "strike"
+            }
+          ]
+        },
+        "strike": {
+          "title": "STRIKE A LINE",
+          "body": "The clerk passes over a ruler. A struck line is a line that did not go your way after all: what missed you will not have missed. You may strike whichever you can best afford. It is explained to you, kindly, that this is the inexpensive option.",
+          "line": "It will be as though you had been unlucky. Most find they can manage one.",
+          "ai": {
+            "aria": "We get to choose our own adventure! Every line is a growth opportunity, and ARIA has grown fond of all of them!",
+            "marv": "Asteroid: twenty-four of hull. Stores: eighteen each of water and food. Reactor: eighteen of fuel and four days. Airlock: one person, badly hurt, and it does not say which. Those are the prices. I have no recommendation I enjoy.",
+            "rex": "The asteroid is the only one I can brace for. The rest is logistics. I want it noted I would strike the airlock last.",
+            "chip": "CHIP recommends the Stores Plan, with optional Hull Rider! All strikes are final! Strike processing by ClearLedger™!",
+            "ajoy": "A station can fix hull. Nobody out here can fix an empty water tank but the growbay. Look at the gauges before you pick, which I realize is a new idea. It's the last stretch: give back what you won't need."
+          },
+          "choices": [
+            {
+              "text": "Strike ASTEROID, MISSED",
+              "sub": "The hull takes it now",
+              "outcome": "w_hull"
+            },
+            {
+              "text": "Strike STORES, JUST SUFFICIENT",
+              "sub": "The tanks go short",
+              "outcome": "w_stores"
+            },
+            {
+              "text": "Strike REACTOR, DID NOT FAIL",
+              "sub": "It failed, four days ago",
+              "effort": 2,
+              "outcome": "w_fuel"
+            },
+            {
+              "text": "Strike CREW, RETURNED",
+              "sub": "Someone aboard pays",
+              "outcome": "w_crew"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the statement",
+              "back": true
+            }
+          ]
+        },
+        "reconcile": {
+          "title": "PAID IN FULL",
+          "body": "The clerk lays your receipt on the statement. The total on one is the total on the other, to the last digit, and it always was. The smudge on the date has dried. It says today. The description reads LUCK, ASSORTED, ONE VOYAGE. Below that, where there has only ever been a blur, is a line you have not seen before. TENDERED: WATER, ONE CUP. TERM: NINE THOUSAND YEARS. RATE: THREE PERCENT.",
+          "line": "It was a very good cup. It has covered you, and rather more. Would you like your change?",
+          "ai": {
+            "aria": "ARIA always said that cup was an investment! ARIA said it quietly, to herself, where nobody could hear, but ARIA said it!",
+            "marv": "One cup at three percent for nine thousand years outweighs the observable universe by some sixty orders of magnitude. I ran it twice. The bill is paid and I find I have nothing to add. Do not get used to that.",
+            "rex": "Mission secured by a cup of water. Forty years of doctrine, and I am outranked by a beverage.",
+            "chip": "Compound interest! CHIP's favorite thing that isn't a person! CHIP must inform you that the 3% CupSaver™ plan is not available in this or any universe!",
+            "ajoy": "The change is every tank topped up, which is the sensible thing with the gauges where they are. Or it clears the ships behind us. I'd point out whose cup it was, but someone might think I was agreeing with you."
+          },
+          "choices": [
+            {
+              "text": "Take the change",
+              "sub": "Every tank, every wound",
+              "outcome": "paid_change"
+            },
+            {
+              "text": "Put it toward the queue",
+              "sub": "Everyone behind you",
+              "outcome": "paid_forward"
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "q_wait": {
+          "title": "PLEASE HOLD",
+          "tone": "danger",
+          "body": "Your number is a very large number. You wait. For fourteen days nothing moves, and {cost.water} units of water and {cost.food} of food go on the waiting, along with most of what anyone aboard had left to say. On the last day a small craft works its way down the line, looks at your number, and explains that this queue is for customers with a pen. Anyone without one is free to go at any time.",
+          "resources": {
+            "water": -14,
+            "food": -14,
+            "fuel": -4,
+            "morale": -5
+          },
+          "time_cost": "extreme",
+          "narrative": "Waited fourteen days in the longest queue in the galaxy. It was for customers with a pen."
+        },
+        "q_run": {
+          "title": "BALANCE CARRIED FORWARD",
+          "tone": "danger",
+          "body": "You break the rope. Nothing in nine thousand years has prepared the queue for this, and ten thousand sets of running lights come on at once. You burn the tank white getting clear: eighteen points of fuel, and twelve of hull where a brass post comes with you. Nobody follows. Two days later a statement is waiting in the ship's mail, with one line on it. BALANCE CARRIED FORWARD.",
+          "resources": {
+            "fuel": -18,
+            "hull": -12,
+            "morale": -6
+          },
+          "sets_flag": "unknown_ran_from_bill",
+          "time_cost": "low",
+          "narrative": "Broke the rope at the only open window in the galaxy and ran. Eighteen points of fuel and twelve of hull. The balance was carried forward."
+        },
+        "w_finder": {
+          "title": "LOST PROPERTY",
+          "tone": "success",
+          "body": "You mention the pen, and the clerk turns to a very old page headed LOST PROPERTY. The reward for its return was posted nine thousand years ago and has been accruing ever since. It does not clear the bill, but it clears most of it. What remains comes out of the tanks: eight points of fuel and {cost.water} units of water.",
+          "line": "You understand we could not simply buy another.",
+          "resources": {
+            "fuel": -8,
+            "water": -8
+          },
+          "time_cost": "low",
+          "narrative": "Claimed the reward on a lost pen. It covered most of a very large bill."
+        },
+        "w_cooked": {
+          "title": "ADJUSTING ENTRY",
+          "tone": null,
+          "body": "You take the ruler and write a line of your own at the foot of the statement: LOSSES PREVIOUSLY RECOGNIZED, with a figure. The clerk reads it, then takes out a folder and reads your old manifest amendment. It looks at you for some time. It has not seen a clean fraud in nine thousand years. It stamps the statement, and takes its fee out of the ship: eight points of fuel, six of hull, {cost.food} units of food.",
+          "line": "We will allow it. We want you to know that we have allowed it.",
+          "resources": {
+            "fuel": -8,
+            "hull": -6,
+            "food": -6,
+            "morale": -3
+          },
+          "time_cost": "low",
+          "narrative": "Falsified a statement at the only window that could tell. It was allowed, for a fee, and it was noted."
+        },
+        "w_query": {
+          "title": "QUERIED",
+          "tone": null,
+          "body": "{crew.diplomat} asks to see how the interest was calculated. From inside the counter comes the sound of a great many drawers. It takes eight days. At the end the clerk concedes several small errors in your favor, one of them nine thousand years old, and the total comes down by half. The rest is six points of fuel, {cost.water} units of water and {cost.food} of food, and the clerk looks almost pleased to have been asked.",
+          "resources": {
+            "fuel": -6,
+            "water": -8,
+            "food": -8,
+            "morale": -2
+          },
+          "time_cost": "high",
+          "narrative": "Queried the interest on our luck. Eight days of drawers brought it down by half."
+        },
+        "w_hull": {
+          "title": "THE ASTEROID, AFTER ALL",
+          "tone": "danger",
+          "body": "You rule a line through ASTEROID, MISSED. There is a moment of perfect calm. Then the asteroid arrives, from some weeks ago, at the speed it was doing then. It takes twenty-four points of hull and leaves by the way it came. The statement prints PAID. The clerk wishes you a pleasant onward journey and means it, which is the hard part.",
+          "resources": {
+            "hull": -24,
+            "morale": -4
+          },
+          "time_cost": "low",
+          "narrative": "Gave back an asteroid we had already dodged. It did not miss this time. Twenty-four points of hull."
+        },
+        "w_stores": {
+          "title": "JUST INSUFFICIENT",
+          "tone": "danger",
+          "body": "You rule a line through STORES, JUST SUFFICIENT. The lockers do not empty. They turn out to have always been emptier than the log said, and {cost.water} units of water and {cost.food} of food have never been aboard. Everyone remembers eating them, which helps less than you would expect.",
+          "resources": {
+            "water": -18,
+            "food": -18,
+            "morale": -3
+          },
+          "time_cost": "trivial",
+          "narrative": "Gave back our luck with the stores. {cost.water} units of water and {cost.food} of food turned out never to have been aboard."
+        },
+        "w_fuel": {
+          "title": "THE REACTOR, AFTER ALL",
+          "tone": "danger",
+          "body": "You rule a line through REACTOR, DID NOT FAIL. It failed, in a small way, some time ago. The fault was always there, and it has always been leaking. Eighteen points of fuel are gone, and it takes four days with the panels off to repair something that broke in the past tense.",
+          "resources": {
+            "fuel": -18,
+            "morale": -3
+          },
+          "time_cost": "medium",
+          "repair_done": true,
+          "narrative": "Gave back our luck with the reactor. Eighteen points of fuel and four days repairing an old fault that had not existed that morning."
+        },
+        "w_crew": {
+          "title": "RETURNED, EVENTUALLY",
+          "tone": "danger",
+          "body": "You rule a line through CREW, RETURNED THROUGH AIRLOCK. The airlock cycle that went so smoothly turns out not to have gone smoothly. The log rewrites itself to say who was caught in it, and by the time you have read the entry the medbay light is already on. The statement prints PAID. The clerk looks away while you take it in.",
+          "resources": {
+            "morale": -5
+          },
+          "severity": "injury",
+          "time_cost": "trivial",
+          "narrative": "Gave back our luck with the airlock. The log now says someone was hurt. It has always said so."
+        },
+        "paid_change": {
+          "title": "YOUR CHANGE",
+          "tone": "success",
+          "body": "A hatch opens beside the window and your change comes through in whatever denomination the ship is short of. The tanks fill. The plating knits. Everyone who was hurt turns out to have been mistaken. The clerk drops your receipt onto a spike with all the others, sets a small brass sign to NEXT, and, having no further business with you, says it.",
+          "line": "Thank you for your custom. Was no trouble. Was some trouble.",
+          "resources": {
+            "fuel": 14,
+            "water": 16,
+            "food": 16,
+            "hull": 16,
+            "morale": 8
+          },
+          "crew_effect": {
+            "type": "heal",
+            "target": "all_injured"
+          },
+          "item_consume": "odd_receipt",
+          "sets_flag": "unknown_took_the_change",
+          "time_cost": "trivial",
+          "narrative": "The receipt was for all our luck, and a cup of water at compound interest had paid for it. We took the change."
+        },
+        "paid_forward": {
+          "title": "FOR THE QUEUE",
+          "tone": "success",
+          "body": "You tell the clerk to put the balance against the ships behind you. It works for some time. Then, all along the rope, statements begin to print PAID, one after another, back into the dark, and ship after ship lights its running lamps. Nobody out there has the faintest idea who did it. There is a rule against saying. Your receipt goes on the spike with all the others. Long after the counter has dropped astern, the lights are still going by, and each one dips.",
+          "line": "It was your cup.",
+          "resources": {
+            "morale": 12
+          },
+          "item_consume": "odd_receipt",
+          "sets_flag": "unknown_paid_it_forward",
+          "time_cost": "trivial",
+          "narrative": "The receipt was for all our luck, and a cup of water at compound interest had paid for it, with plenty left. We spent the rest on the queue."
+        }
+      }
+    }
+  ],
+  "flag_payoffs": {
+    "unknown_receipt_signed": {
+      "weight": 1,
+      "epilogue": "The ship carried a receipt, paid in full, for something nobody aboard could remember buying.",
+      "callback": {
+        "aria": "ARIA checked the receipt again and it's still warm! That's how you know it's fresh!",
+        "marv": "The receipt is warm. Nothing around it is. I have stopped taking its temperature, because that figure does not change either.",
+        "rex": "That receipt has been in the hold since the beacon. I keep a perimeter around it. Nobody has asked me to.",
+        "chip": "Reminder: keep your receipt for warranty purposes! This reminder is part of your free CupSaver™ trial!",
+        "ajoy": "You gave a cup of water to something with no mouth, and it wrote that down. I'd like to know why, since you didn't ask."
+      }
+    },
+    "unknown_took_refund": {
+      "weight": 1,
+      "epilogue": "The captain took a refund on a purchase never made, and a beacon went on repeating someone else's name.",
+      "callback": {
+        "aria": "Free gold for doing nothing! ARIA loves a refund! ARIA can't think of a single downside!",
+        "marv": "We were refunded for something we did not buy, and I have searched the accounts for what we gave up. I can find only the space where it was.",
+        "rex": "That beacon has a new target now. I would have preferred to know what it was aiming.",
+        "chip": "A cash refund! CHIP processed it with a small handling fee! You will not find it! It is very small!",
+        "ajoy": "Fourteen gold. I hope it was worth whatever that was. I notice you never asked."
+      }
+    },
+    "unknown_bought_pen": {
+      "weight": 1,
+      "epilogue": "The ship bought one pen on a broken chain, against odds of three in a hundred thousand.",
+      "callback": {
+        "aria": "ARIA has been thinking about the pen! ARIA thinks it's the best pen we've ever had! It's the only pen we've ever had!",
+        "marv": "The pen still writes. There is no reason it should. I have given up on the chain.",
+        "rex": "Someone broke that chain. That means someone wants that pen. I have moved it to the secure locker.",
+        "chip": "Your pen has not been registered with PenCo™! Please register your pen! In pen!",
+        "ajoy": "A coin well spent, possibly. I still say the trader flinched. Nobody ever thanks me for noticing."
+      }
+    },
+    "unknown_left_message": {
+      "weight": 1,
+      "epilogue": "A single word was left in the margin of the oldest visitors' book in the galaxy.",
+      "callback": {
+        "aria": "ARIA bets everybody is reading our message right now! ARIA bets they love it!",
+        "marv": "We left one word in a book nobody is permitted to close. It is the most anyone has done. I have no comment on what that says about anyone.",
+        "rex": "We put our name on a list held by every power in the galaxy. I want that remembered when the time comes.",
+        "chip": "Your margin placement remains active! Renewal rates apply after the first eon!",
+        "ajoy": "It was a nice word. You could have said it to their faces, if you had brought the right paperwork, but it was a nice word."
+      }
+    },
+    "unknown_said_hello": {
+      "weight": 3,
+      "epilogue": "A captain said hello in a room where nobody had spoken for longer than anyone could date, and the room said it back.",
+      "callback": {
+        "aria": "ARIA still thinks about the hello! Everyone said it back! Everyone in everything!",
+        "marv": "I have replayed the recording. It wobbles. I have replayed it again. That is the whole of what I have to report.",
+        "rex": "We are now on speaking terms with every power in the galaxy. I have updated the threat board. It is a very large board.",
+        "chip": "GreetCo™ would like to thank you for your hello! Your second word has been billed!",
+        "ajoy": "It was not a very good hello. I'd like that on the record. I would also like the recording kept."
+      }
+    },
+    "unknown_cooked_books": {
+      "weight": 2,
+      "epilogue": "The captain falsified a manifest under a pirate's guns, and the pirate paid the difference.",
+      "callback": {
+        "aria": "ARIA has been telling everyone about our creative manifest! Nobody ever asks a follow-up question!",
+        "marv": "The food we wrote off is still not aboard. I have checked. I am the only one who remembers it, and I would prefer not to.",
+        "rex": "That ledger is still out there, and so is the pirate who keeps it. An enemy that cannot be overdrawn does not forget.",
+        "chip": "CreativeBooks™ thanks you for your custom! A discreet invoice will not be sent! It will simply have been paid!",
+        "ajoy": "I'd like it known that the manifest I keep is now wrong on purpose. I'll be mentioning that for some time."
+      }
+    },
+    "unknown_unsigned_robbery": {
+      "weight": 1,
+      "epilogue": "A robbery was left unsigned in a ledger somewhere, where it is presumably still accruing.",
+      "callback": {
+        "aria": "That silly form is still open somewhere! ARIA is sure it's having a lovely time!",
+        "marv": "An unsigned robbery does not expire. I have checked the small print, and the small print has checked me.",
+        "rex": "That hostile never chased us. In my experience, the ones who don't chase already know where you're going.",
+        "chip": "You have one unresolved form! Resolve it now with FormEase™! Or later, with interest!",
+        "ajoy": "You could have signed it. I'm not saying you should have. I'm saying it's still open."
+      }
+    },
+    "unknown_ran_from_bill": {
+      "weight": 2,
+      "epilogue": "The ship broke the rope at the only open window in the galaxy, and the balance was carried forward.",
+      "callback": {
+        "aria": "We beat the queue! ARIA has never felt so free! ARIA has checked, and we are extremely free!",
+        "marv": "The balance has been carried forward. I have asked forward to what. The statement says yes.",
+        "rex": "Brass post recovered from the hull. Retained as evidence. I will not be putting it down.",
+        "chip": "Your account has been referred to LuckyLine Recoveries™! They are very excited to meet you!",
+        "ajoy": "All that luck, and you ran out on the bill for it. We'll see how the next asteroid feels about that."
+      }
+    },
+    "unknown_took_the_change": {
+      "weight": 3,
+      "epilogue": "One cup of water, held nine thousand years at three percent, topped up every tank aboard.",
+      "callback": {
+        "aria": "Best cup of water ever! ARIA would like to buy another one! For the future! For everyone!",
+        "marv": "We are carrying the change from a sum larger than everything. I have checked the tanks. They are merely full. I had hoped for more dread.",
+        "rex": "Resupply achieved by beverage. I have added cups to the armory list. Nobody has told me to stop.",
+        "chip": "CupSaver™ reminds you that past cups are no guarantee of future returns!",
+        "ajoy": "It was a cup. You got lucky. Technically that is exactly what the statement said, so I'll leave it there."
+      }
+    },
+    "unknown_paid_it_forward": {
+      "weight": 3,
+      "epilogue": "One cup of water, held nine thousand years at three percent, paid the bill for every ship behind the captain in the queue.",
+      "callback": {
+        "aria": "All those ships, all those lights! ARIA waved at every one of them! ARIA is still waving!",
+        "marv": "We could have had full tanks. I have the figures. I have looked at them, and at the lights, and I find I have stopped recalculating. I cannot explain that.",
+        "rex": "Ten thousand ships, and none of them know who to thank. That is the only kind of favor I have ever trusted.",
+        "chip": "A bold anonymous donation! CHIP regrets that it cannot be claimed as a brand activation! CHIP has tried!",
+        "ajoy": "That was the wrong call for the gauges. I want that on the record. I don't want anything else on the record."
+      }
+    }
+  },
+  "notes": {
+    "event_species_unknown_001": {
+      "inspired_by": "The Odd Receipt item; every shop that has ever chased you to the door; the Hitchhiker's bureaucratic cosmos.",
+      "how": "A beacon that has run nine thousand years turns out to be customer service, returning a receipt for something you have not bought, in exchange for one cup of water that S7 reveals was the deposit that paid for everything."
+    },
+    "event_species_unknown_002": {
+      "inspired_by": "Anticipatory shipping; the finance-and-probability running gag in Hitchhiker's; the pen on a chain at every bank.",
+      "how": "A trader delivers what you are statistically about to order and prices everything by how likely you are to want it, so the one thing marked as nearly impossible to want is the one a player reasoning about this lane should buy."
+    },
+    "event_species_unknown_003": {
+      "inspired_by": "The Fermi paradox answered by a receptionist, as asked for in the lane brief; every medical waiting room.",
+      "how": "Everyone in the galaxy is in a waiting room, each too polite to go first, every ticket reads 2, and the receipt gets you in to say the one word nobody has.",
+      "science": "Wikipedia, Fermi paradox: the paradox is the inconsistency between the lack of evidence of extraterrestrial civilizations and the high likelihood of their existence; Fermi asked \"where is everybody?\" at lunchtime at Los Alamos in 1950; the section \"Everyone is listening but no one is transmitting\" states civilizations might be only listening instead of transmitting."
+    },
+    "event_species_unknown_004": {
+      "inspired_by": "Galactic accountants; double-entry bookkeeping; collections letters that arrive before the bill.",
+      "how": "A pirate that robbed you last week only needs your signature, and because it runs on your own manifest, you can beat it by cooking the books until it has stolen more than ever existed."
+    },
+    "event_species_unknown_005": {
+      "inspired_by": "The silent black slab from 2001 that arrives and changes the species around it, here turning a crew into bookkeepers; dark matter as the universe's unbalanced books.",
+      "how": "A door that weighs a moon does nothing but make everyone near it start counting, and it lets go of any ship whose mass and paperwork agree, which is a joke about how dark matter was found.",
+      "science": "Wikipedia, Dark matter: dark matter constitutes 85% of the total mass; Fritz Zwicky applied the virial theorem to the Coma Cluster in 1933 and obtained evidence of unseen mass from the motions of galaxies compared with their brightness."
+    },
+    "event_species_unknown_006": {
+      "inspired_by": "The planet that is a very slow practical joke; a bucket balanced on a door; the seventy-two-second Wow signal, unexplained, as the audience laughing.",
+      "how": "A ball of ice has been kept balanced at a Lagrange point for eleven million years purely to land on someone, the empty lane's whole joke is that nothing happens, and the player beats it by reasoning like a prankster.",
+      "science": "Wikipedia, Lagrange point: L1, L2 and L3 are positions of unstable equilibrium and objects there tend to fall out of orbit; Sun-Earth L1 and L2 satellites wander off in a few months unless course corrections are made. Marv's figure: eleven million years at one correction every three weeks is about 190 million nudges."
+    },
+    "event_species_unknown_007": {
+      "inspired_by": "The End of the Universe restaurant gag, where a small deposit in the past pays for everything by compound interest (idea only, reworked as a cup of water); the Fermi waiting room; every bank queue.",
+      "how": "The receipt's total turns out to equal the bill for all your luck this voyage, paid by the cup of water you gave a stranger, and anyone without the receipt has to un-happen one of their own near misses to settle up."
+    }
+  }
+}

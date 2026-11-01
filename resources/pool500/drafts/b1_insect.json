@@ -1,0 +1,916 @@
+{
+  "lane": "insect",
+  "events": [
+    {
+      "id": "event_species_insect_001",
+      "active": true,
+      "title": "Quorum of One",
+      "difficulty": "easy",
+      "tone": ["heartwarming", "absurd"],
+      "node_type": ["planet", "derelict", "asteroid_field", "anomaly", "nebula", "void"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": { "disposition": "drifter", "species": "insect", "displayName": "WORKER, 1 OF 1" },
+      "leave_label": "ABSTAIN",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "QUORUM OF ONE",
+          "body": "A pod the size of a garden shed hangs off your bow with its beacon running. The beacon is not asking for help. It is asking whether it may ask for help, and has been for nineteen years. Inside is a single hive worker, the far end of a foraging trail whose other end has gone. {npc.quirk}",
+          "line": "Motion: that this worker is lost. Needs a quorum. Present: one. Can you be more than that?",
+          "pose": "listening",
+          "ai": {
+            "aria": "A tiny new friend AND a meeting! ARIA has already voted yes on everything, including things nobody has proposed yet!",
+            "marv": "One worker. One beacon, unanswered for nineteen years. It cannot ask for rescue, because asking is a group decision and it is not a group. I have read worse constitutions. Not many.",
+            "rex": "Single occupant, no weapons, beacon on a loop. That is how ambushes open. Keep the guns warm while we vote.",
+            "chip": "Motion Seconding is a premium service! The free trial ran for the first nineteen years! CHIP is told that window has closed!",
+            "ajoy": "That beacon is worth some scrap to anyone with a wrench, and it couldn't stop you. It also can't accept help until it's allowed to, so hear it out first. I saw you looking at the wrench."
+          },
+          "revisit": {
+            "body": "The worker waits at its window. The beacon goes on asking whether it may ask.",
+            "line": "Motion stands. Present: still one."
+          },
+          "choices": [
+            {
+              "text": "\"Seconded.\"",
+              "dialog": true,
+              "sub": "Ask how a quorum works",
+              "next": "floor"
+            },
+            {
+              "text": "Strip the beacon for parts",
+              "effort": 1,
+              "sub": "It has no way to object",
+              "outcome": "q_beacon"
+            }
+          ]
+        },
+        "floor": {
+          "title": "THE FLOOR",
+          "body": "A quorum, the worker explains, is not counted. It is bumped into. A scout knows a matter is settled when it keeps meeting others who think so, and then it stops needing to ask. It has met no one in nineteen years. It wonders, with great formality, whether someone might come to the lock and bump into it.",
+          "line": "A vote is only talk. Come and be encountered. Often.",
+          "pose": "listening",
+          "ai": {
+            "aria": "It's a hug with procedure! ARIA has no arms, so ARIA is bumping the ship's registry in solidarity!",
+            "marv": "It needs its encounter rate over a threshold. Two days of someone in a suit walking into it should do. I have worked out how many bumps that is. I would rather not say it aloud.",
+            "rex": "A suit, an unknown lock, repeated physical contact with an alien. I want it logged as the worst order of my retirement.",
+            "chip": "Suit hours are billable! So is the oxygen! But a thank-you from a hive is an endorsement CHIP could license for years!",
+            "ajoy": "An aye over the radio won't count. It just told you that. Doing it right costs two days and a little oxygen, and it may have something to give afterward. I'd go. You'll say it was your idea."
+          },
+          "choices": [
+            {
+              "text": "Go to the lock and bump into it",
+              "effort": 1,
+              "sub": "Two days, a little oxygen",
+              "outcome": "q_bump"
+            },
+            {
+              "text": "\"Aye,\" over the radio",
+              "dialog": true,
+              "sub": "Cheap, and only talk",
+              "outcome": "q_radio"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the hail",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "q_bump": {
+          "title": "MOTION CARRIED",
+          "tone": "success",
+          "body": "It takes two days of someone in a suit walking slowly into a very small insect and apologizing. Partway through the second day the worker stops counting. The motion carries, nineteen years late: it is lost. Being officially lost entitles it to turn around. It passes a lump of amber through the lock, the only thing it has left, and sets off back along the trail at a walking pace.",
+          "line": "Thank you for the meeting.",
+          "resources": { "o2": -3, "morale": 6 },
+          "item_grant": "hive_lozenge",
+          "time_cost": "low",
+          "narrative": "Spent two days bumping into a lost worker until it reached a quorum. It is now officially lost, and very relieved. It left us a lump of amber that smells of authority."
+        },
+        "q_radio": {
+          "title": "HEARSAY",
+          "tone": null,
+          "body": "You say aye on an open channel. The worker thanks you for the hearsay and enters it in the minutes. It keeps the minutes in its head, and mentions that space is limited. Nothing else changes. The beacon is still asking when it drops off your scope.",
+          "resources": { "morale": -1 },
+          "time_cost": "trivial",
+          "narrative": "Voted aye over the radio. A lost worker recorded it as hearsay. Its beacon is still asking."
+        },
+        "q_beacon": {
+          "title": "NO OBJECTIONS",
+          "tone": null,
+          "body": "The worker watches you unbolt the beacon. It raises no objection, because an objection needs a quorum. It does ask that the removal be noted, then notes it, then begins to second its own note and stops, because that would be out of order. Nobody says much at dinner.",
+          "line": "Noted.",
+          "resources": { "morale": -4 },
+          "materials": { "scrap": 2, "metal": 1 },
+          "sets_flag": "insect_took_beacon",
+          "time_cost": "trivial",
+          "narrative": "Stripped a lost worker's beacon for parts. It could not object. The crew could have, and didn't, and has been quiet since."
+        }
+      },
+      "science_link": {
+        "text": "Some ants choose a new nest without any one ant comparing every option. Scouts sense a quorum when the rate at which they meet other ants passes a threshold, and then the colony moves.",
+        "label": "Quorum sensing",
+        "url": "https://en.wikipedia.org/wiki/Quorum_sensing"
+      }
+    },
+    {
+      "id": "event_species_insect_002",
+      "active": true,
+      "title": "Congratulations on Your Acquisition",
+      "difficulty": "medium",
+      "tone": ["corporate", "absurd"],
+      "node_type": ["planet", "derelict", "asteroid_field", "anomaly", "nebula", "void"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": { "disposition": "trader", "species": "insect", "displayName": "INTEGRATION" },
+      "leave_label": "REMAIN A SHIP",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "YOU HAVE BEEN ACQUIRED",
+          "body": "A long pale trading hull slides alongside and sends over an organizational chart. Your ship is on it, in a small box near the bottom, reporting to a department that appears to be one wing. Nobody aboard has agreed to anything. The chart is already in its third revision, and you have been reassigned twice. {npc.quirk}",
+          "line": "Congratulations. We have acquired you. You may continue to feel like a ship during the transition.",
+          "pose": "pleased",
+          "ai": {
+            "aria": "We got promoted! ARIA has never been a department before! ARIA would love a lanyard!",
+            "marv": "The chart lists 6.2 million staff and one dotted line to us. I looked for the signature that makes this binding. It is a smell. It is on the hull. It got there during the approach.",
+            "rex": "A takeover with no shots fired is still a takeover. They tagged the hull on approach. I have reclassified every box on that chart as a target.",
+            "chip": "CHIP's legal team would like a word about non-compete clauses! CHIP's legal team is CHIP! CHIP bills by the quarter hour, including this one!",
+            "ajoy": "Nothing here is for sale, because nothing here is anyone's. They do move goods between departments for a charge, and that charge is a price. Read the terms before you touch the basket. I said before."
+          },
+          "revisit": {
+            "body": "The chart has reached its fifth revision. You are still on it, in a slightly different box.",
+            "line": "Transition proceeding. Your feelings remain supported."
+          },
+          "choices": [
+            {
+              "text": "BROWSE THE WARES",
+              "effort": 2,
+              "sub": "Internal transfers, at a charge",
+              "open_market": true,
+              "market_barter": true
+            },
+            {
+              "text": "Read the terms",
+              "sub": "One page, supplied as a smell",
+              "next": "terms"
+            },
+            {
+              "text": "Lay the Hive Lozenge on the scanner",
+              "sub": "You outrank the chart",
+              "gate": { "item": "hive_lozenge" },
+              "outcome": "m_reverse"
+            }
+          ]
+        },
+        "terms": {
+          "title": "TERMS OF INTEGRATION",
+          "body": "The terms arrive through the vents, and the translator reads them out with evident reluctance. All assets are shared. All liabilities are shared, and the hive's are larger. Integration proceeds on a date to be set by quorum. An integration team is included. Waiting at your lock, in a large crate, is a welcome basket.",
+          "line": "Nobody decided this. It was merely agreed. Take the basket. It is yours, in the sense that everything is.",
+          "pose": "pleased",
+          "ai": {
+            "aria": "A welcome basket! ARIA reads 'integration team' as 'new friends who bring snacks'!",
+            "marv": "The food in the basket is real and worth having. The clause to reread is the one about the team. It says included. It does not say where. The crate is rather large for its contents.",
+            "rex": "That crate has a false bottom or I'm a toaster. Scan it. Scan it again. Then don't open it.",
+            "chip": "Contractors keep their ship AND invoice by the hour! CHIP's Contractor Starter Kit is sold separately, and CHIP is what it is sold by!",
+            "ajoy": "The basket is free food now and someone else's plan for your ship later. Contractor status needs a diplomat. Asking who's in charge costs four days and nothing else. You'd have taken the basket, wouldn't you."
+          },
+          "choices": [
+            {
+              "text": "Accept the welcome basket",
+              "sub": "Food, water, a box on the chart",
+              "outcome": "m_basket"
+            },
+            {
+              "text": "{crew.diplomat} asks for contractor status",
+              "effort": 2,
+              "sub": "Merely consulting",
+              "gate": { "crew": "diplomat" },
+              "outcome": "m_contract"
+            },
+            {
+              "text": "\"Who decided this?\"",
+              "dialog": true,
+              "effort": 1,
+              "sub": "Send the question up the chart",
+              "outcome": "m_incharge"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the chart",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "m_basket": {
+          "title": "WELCOME TO THE TEAM",
+          "tone": "success",
+          "body": "The basket holds dried meal, sealed water and a small card that smells of congratulations. It weighs more than its contents can account for, and once it has been emptied nobody can quite find the bottom of it. The chart updates. Your ship now has a cost center.",
+          "line": "Onboarding complete. Integration will find you.",
+          "resources": { "food": 10, "water": 8, "morale": 1 },
+          "sets_flag": "insect_merged",
+          "time_cost": "trivial",
+          "narrative": "Accepted a hive's welcome basket and, with it, a small box on its organizational chart. The food was good. The crate was heavier than it should have been."
+        },
+        "m_contract": {
+          "title": "INDEPENDENT CONTRACTOR",
+          "tone": "success",
+          "body": "{crew.diplomat} spends two days establishing that a ship cannot be merged if it is merely consulting. The hive has no word for this and is fascinated. Your box moves to a dotted line off the side of the chart, and a fee for the consultation arrives, which nobody over there feels they personally paid.",
+          "resources": { "gold": 22, "morale": 2 },
+          "time_cost": "low",
+          "narrative": "Talked our way out of a merger and into a consulting fee. We are now a dotted line, and proud of it."
+        },
+        "m_incharge": {
+          "title": "ESCALATED",
+          "tone": null,
+          "body": "The question goes up the chart. The chart has no top. Four days later it comes back down the other side, addressed to you, with a note that the decision appears to have been yours and asking whether you wish to rescind it. You do, having eaten into the stores the whole time you were on hold. The chart loses one small box, and six million staff return to whatever they were doing.",
+          "line": "Rescinded. Thank you for your leadership.",
+          "resources": { "food": -4, "morale": 3 },
+          "time_cost": "medium",
+          "narrative": "Asked a hive who was in charge. Four days later the answer came back: we were. We canceled the merger."
+        },
+        "m_reverse": {
+          "title": "REVERSE TAKEOVER",
+          "tone": "success",
+          "body": "The scanner reads the Lozenge and the chart stops updating. Then it redraws, slowly, with your ship in the box at the top. For one afternoon the trading hull reports to you. Its stores move to your hold as an internal transfer, and no one objects, because there is no one. By evening the chart has gone back, apart from a note that you were a very fair manager.",
+          "line": "Understood. It is all yours, in the sense that everything is.",
+          "resources": { "food": 8, "water": 10, "fuel": 8, "morale": 4 },
+          "materials": { "exotic": 1 },
+          "time_cost": "trivial",
+          "narrative": "Showed a merger the Hive Lozenge and ran the whole trading hull for an afternoon. Its stores are in our hold now. We got a good review."
+        }
+      }
+    },
+    {
+      "id": "event_species_insect_003",
+      "active": true,
+      "title": "The Late Captain",
+      "difficulty": "medium",
+      "tone": ["absurd", "mundane"],
+      "node_type": ["station"],
+      "trigger": ["any"],
+      "scene_type": "station_interior",
+      "comm_mode": "in_person",
+      "once": true,
+      "npc": { "disposition": "station_crew", "job": "security", "species": "insect", "displayName": "CLERK OF PASSAGE" },
+      "leave_label": "GO QUIETLY",
+      "leave_as": { "outcome": "lc_carried" },
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "CUSTOMS",
+          "body": "The insect concession runs its own customs, and customs is a rack of small bottles. Papers here are worn: a clerk dabs your wrist and you have been processed. This clerk reaches past the entry permit and dabs you with something that smells of old frying oil. In the corridor, two workers stop, turn around and lift you gently by the elbows. {npc.quirk}",
+          "line": "Condolences. You are dead. Two days, by the smell. Please do not struggle. It upsets the bearers.",
+          "pose": "listening",
+          "ai": {
+            "aria": "You look so relaxed! Being carried is a wonderful way to see the station!",
+            "marv": "Oleic acid. It is what this hive reads on a corpse, and it is now reading it on you. You are talking, which is not admissible. You are also breathing, which is not admissible either.",
+            "rex": "Captain is being removed by two hostiles with excellent grip. I can't engage: it's been filed. Who else has access to those bottles? What is in the others?",
+            "chip": "CHIP offers its condolences! Also the Afterlife Continuity Plan, which keeps your subscriptions active through any change in status!",
+            "ajoy": "Arguing won't work; they read smell, not speech. Washing works and costs water. They're taking you to the midden, where everything this quarter throws out ends up, machinery included. Not that you asked."
+          },
+          "revisit": {
+            "body": "The bearers have set you down and are waiting, without impatience, for the formalities to end.",
+            "line": "Still deceased. Next of kin may apply."
+          },
+          "choices": [
+            {
+              "text": "\"I am clearly alive.\"",
+              "dialog": true,
+              "effort": 1,
+              "sub": "Lodge an appeal",
+              "next": "appeal"
+            },
+            {
+              "text": "Scrub it off in the washroom",
+              "effort": 1,
+              "sub": "Water, and no scent at all",
+              "outcome": "lc_wash"
+            },
+            {
+              "text": "Set the Hive Lozenge on the desk",
+              "sub": "A stronger document",
+              "gate": { "item": "hive_lozenge" },
+              "outcome": "lc_lozenge"
+            }
+          ]
+        },
+        "appeal": {
+          "title": "APPEAL",
+          "body": "The clerk hears your appeal with every courtesy and writes nothing down, since nothing you have said smells of anything. A death may be contested only by next of kin, and you have no hive. There is a lesser status available, in a separate bottle. There is also a form of words under which your ship can declare itself your estate.",
+          "line": "Two remedies. Deceased, Ambulatory, for a fee. Or your executor may settle you. Speech is only weather.",
+          "pose": "listening",
+          "ai": {
+            "aria": "Deceased, Ambulatory is a fantastic new job title! ARIA is updating your bio right now!",
+            "marv": "The fee buys the right to walk around dead. It is the most accurate description of this voyage I have yet seen in an official document.",
+            "rex": "You'd be paying the people who killed you on paper. And nobody has ever said 'executor' near me and had it end quietly. Send someone armed.",
+            "chip": "An estate is a growth opportunity! CHIP has drafted your will, in which CHIP is mentioned warmly and at length, for a modest fee!",
+            "ajoy": "The estate route needs a diplomat, and it pays out, because a dead captain's fees die too. The bottle always works, which is the most I'll say for it. Neither requires you to keep arguing, if that was the plan."
+          },
+          "choices": [
+            {
+              "text": "{crew.diplomat} files as your executor",
+              "effort": 2,
+              "sub": "Settle the estate",
+              "gate": { "crew": "diplomat" },
+              "outcome": "lc_estate"
+            },
+            {
+              "text": "Pay for Deceased, Ambulatory: 15 gold",
+              "sub": "A paper you can walk in",
+              "gate": { "gold": 15 },
+              "outcome": "lc_ambulatory"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the clerk",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "lc_carried": {
+          "title": "THE MIDDEN",
+          "tone": null,
+          "body": "The bearers carry you the length of the concession, past a great many polite antennae, and set you down on the midden with everything else this quarter has finished with. You walk back. They carry you out again. It takes two days and four trips for the oil to wear off, and by the last one you know where the good scrap is.",
+          "resources": { "morale": -3 },
+          "materials": { "scrap": 2, "metal": 1, "biocomponent": 1 },
+          "sets_flag": "insect_late_captain",
+          "time_cost": "low",
+          "narrative": "Was carried to a hive's midden four times over two days, on the grounds of being dead. Came back with salvage. The crew has been asked to stop calling it the funeral."
+        },
+        "lc_wash": {
+          "title": "BELOW NOTICE",
+          "tone": null,
+          "body": "It takes a stiff brush and {cost.water} points of water hauled over from the ship. The smell of death goes, and so does every other smell you had. The bearers walk straight through the place where you are standing. For the rest of the stop nobody in the concession so much as turns an antenna toward you, which you find you mind more than you expected.",
+          "resources": { "water": -6, "morale": -1 },
+          "time_cost": "trivial",
+          "narrative": "Washed off a death certificate with ship's water. This also removed every other document, and in that quarter we are now nobody."
+        },
+        "lc_estate": {
+          "title": "ESTATE SETTLED",
+          "tone": "success",
+          "body": "{crew.diplomat} files as executor and spends two days settling you. A dead captain owes no berth fees, and the hive, finding itself with a corpse that holds an open account, pays out the balance. The record stays as it is. In this quarter your ship is now operated by your estate, and the clerk asks that it pass on condolences.",
+          "line": "The estate is thanked. The deceased may collect the deceased's belongings.",
+          "resources": { "gold": 18, "morale": 2 },
+          "sets_flag": "insect_late_captain",
+          "time_cost": "low",
+          "narrative": "Our diplomat settled the captain's estate while the captain watched. It paid out. The record still says dead."
+        },
+        "lc_ambulatory": {
+          "title": "DECEASED, AMBULATORY",
+          "tone": "success",
+          "body": "The clerk selects a new bottle, which smells of old oil and, faintly, of shoes. The bearers sniff your wrist, confer, and put you down. You are still dead, but you are now permitted to walk, and the workers in the corridor step aside for you with the respect due to anyone getting on with things under difficult circumstances.",
+          "line": "Do not linger. It is bad for morale.",
+          "resources": { "gold": -15, "morale": 2 },
+          "sets_flag": "insect_late_captain",
+          "time_cost": "trivial",
+          "narrative": "Paid to be reclassified as Deceased, Ambulatory. The captain has asked that this appear on the next set of business cards."
+        },
+        "lc_lozenge": {
+          "title": "DEATH BENEFIT",
+          "tone": "success",
+          "body": "The clerk reads the Lozenge and stands very straight. It outranks the bottle, but nothing outranks a record, so the two are reconciled in the only way the hive permits: you remain dead, and are entitled to a senior's death benefit, payable to you in person, with the bearers' apologies and a crate of funeral provisions.",
+          "line": "Deceased with distinction. Please sign with your wrist.",
+          "resources": { "gold": 30, "food": 8, "morale": 4 },
+          "sets_flag": "insect_late_captain",
+          "time_cost": "trivial",
+          "narrative": "Showed a customs clerk the Hive Lozenge and collected the captain's own death benefit, in person. Funeral catering was included and was very good."
+        }
+      },
+      "science_link": {
+        "text": "Ants can tell a dead nestmate by its chemical signature. In some cases the signal is oleic and linoleic acid, produced as fats break down, which can take about two days.",
+        "label": "Necrophoresis",
+        "url": "https://en.wikipedia.org/wiki/Necrophoresis"
+      }
+    },
+    {
+      "id": "event_species_insect_004",
+      "active": true,
+      "title": "Attendance Is Mandatory",
+      "difficulty": "hard",
+      "tone": ["absurd", "grim"],
+      "node_type": ["planet", "derelict", "asteroid_field", "anomaly", "nebula", "void"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": { "disposition": "pirate", "species": "insect" },
+      "leave_label": "WALK OUT",
+      "leave_as": { "triggerFleeResolve": true, "outcome": "rc_walkout", "risky": true, "effort": 1 },
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "THE RECITAL",
+          "body": "Forty ships arrive in formation and do not open fire. They open a program. It lists one work, in nine thousand figures, with no intermission, and a line of small type: attendance is mandatory and notes will be collected. Every screen on your bridge shows the same lit stage, where a single dancer raises its abdomen and begins to shake. {npc.quirk}",
+          "line": "Sit. Watch. Nobody leaves during a first performance. *bzzt* There is no second.",
+          "pose": "hostile",
+          "ai": {
+            "aria": "A free show! ARIA adores the arts! ARIA gives this nine thousand stars out of nine thousand, and it has only just started!",
+            "marv": "Forty ships, and more of them turn to the dancer on every run. That is the problem. The dance has a plot. I will tell you what it is about if you look closely. You will not enjoy it.",
+            "rex": "Forty hulls, thin armor, no command ship. They will never strike their colors, because nobody has the authority. A fight ends when they're gone and not before.",
+            "chip": "CHIP has secured you premium seating! Premium seating is your seat! Refunds are available to anyone who leaves alive, less a handling fee!",
+            "ajoy": "Don't sit down yet. Study the choreography first; it costs nothing and it isn't really dance. And if you still have that lump of amber, this hive takes rank seriously, and recitals have judges. Try to look like you thought of it."
+          },
+          "revisit": {
+            "body": "The dancer has reached figure four hundred. The stage has not dimmed. Nobody appears to have blinked, and nobody out there can.",
+            "line": "Eyes front. Notes are still required."
+          },
+          "choices": [
+            {
+              "text": "Sit through the recital",
+              "sub": "Four days, and then the plot",
+              "outcome": "rc_sat"
+            },
+            {
+              "text": "Study the choreography",
+              "sub": "It is saying something",
+              "next": "reading"
+            },
+            {
+              "text": "Take the judges' table",
+              "sub": "Recitals have judges",
+              "gate": { "item": "hive_lozenge" },
+              "outcome": "rc_judge"
+            },
+            {
+              "text": "Open Fire",
+              "effort": 3,
+              "sub": "They will not surrender",
+              "risky": true,
+              "triggerCombat": true
+            }
+          ]
+        },
+        "reading": {
+          "title": "THE CHOREOGRAPHY",
+          "body": "Slowed down, it is not art. Each run's angle from the vertical is a bearing off the local star. The length of the shake is a distance. Over and over, the dancer is telling forty ships the way to your water tank. It cannot be stopped. It can be upstaged: a swarm goes where the last convincing dance told it to, and your ship has a nose it can shake.",
+          "line": "You are looking at the floor. Eyes on the stage.",
+          "pose": "hostile",
+          "ai": {
+            "aria": "We get to DANCE! ARIA has been preparing for this! ARIA has been preparing for everything!",
+            "marv": "A figure eight with a shaking run, pitched forty degrees wrong, tells them your water is behind that large dry rock. It wants a steady pilot. It is the only choreography I have ever found useful.",
+            "rex": "A dance routine in front of forty hostiles. Thirty years of service. Do it tight, do it once, and nobody ever hears that I called the turns.",
+            "chip": "Choreography rights are reserved! CHIP has licensed the figure eight! You owe CHIP for the eight!",
+            "ajoy": "A pilot can sell the false bearing for some fuel. Without one you'll fool about half of them. A diplomat could give a note instead, since any change needs a quorum. I'd have started with the pilot. I'd have started earlier."
+          },
+          "choices": [
+            {
+              "text": "{crew.pilot} dances a false bearing",
+              "effort": 3,
+              "sub": "Fuel and a steady hand",
+              "gate": { "crew": "pilot" },
+              "outcome": "rc_counter"
+            },
+            {
+              "text": "Fly the false bearing by hand",
+              "effort": 4,
+              "sub": "Half a dance, half a swarm",
+              "risky": true,
+              "outcome": "rc_clumsy"
+            },
+            {
+              "text": "\"A note on the fourth figure.\"",
+              "dialog": true,
+              "effort": 2,
+              "sub": "Any change needs a vote",
+              "gate": { "crew": "diplomat" },
+              "outcome": "rc_note"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the recital",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "rc_sat": {
+          "title": "FINAL CURTAIN",
+          "tone": "danger",
+          "body": "The recital runs four days. It is, you have to admit, rather good. In the last hour the audience rises as one and comes across in perfect order, because the piece was about your water tank and everyone has now seen it. They take {cost.water} points of water and {cost.food} of food. Someone collects your notes on the way out.",
+          "line": "Thank you for attending.",
+          "resources": { "water": -16, "food": -8, "morale": -4 },
+          "time_cost": "medium",
+          "narrative": "Sat through a four-day recital by a pirate hive. The dance turned out to be directions to our water."
+        },
+        "rc_walkout": {
+          "title": "OUT DURING THE PERFORMANCE",
+          "tone": "danger",
+          "body": "You burn for open space with the dancer in mid-figure. Nobody chases you at first, since nobody can decide to. Then the dance changes, one bearing to the next, and thirty ships come after you as a single thought. You outrun most of it over two days. The rest leaves marks.",
+          "resources": { "fuel": -12, "hull": -6, "morale": -2 },
+          "time_cost": "low",
+          "narrative": "Walked out of a pirate hive's recital. They updated the choreography and came after us, and the hull has the reviews."
+        },
+        "rc_judge": {
+          "title": "THIRD PLACE",
+          "tone": "success",
+          "body": "You set the Lozenge before the camera and the dancer stops in mid-figure. Forty ships wait. It has been a long time since one of their recitals had a judge. You take two days over the decision, and award third place. There are no other entrants. The hive receives this in a silence you can feel through the hull, pays the adjudicator's customary fee out of its stores and withdraws to rehearse.",
+          "line": "Third. Understood. We will begin again. From the beginning. All of us.",
+          "resources": { "food": 8, "water": 6, "morale": 5 },
+          "materials": { "exotic": 1 },
+          "sets_flag": "insect_adjudicated",
+          "time_cost": "low",
+          "narrative": "Judged a pirate hive's recital and awarded third place in a field of one. They paid the fee and went away to rehearse."
+        },
+        "rc_counter": {
+          "title": "A SHORT WORK FOR ONE SHIP",
+          "tone": "success",
+          "body": "{crew.pilot} takes the ship across the front of the stage in a tight figure eight, thrusters shaking on every run, pitched forty degrees wrong. It takes two days and a lot of fuel to get right. Nobody in a hive is in charge of doubting. One ship swings to the new bearing, then ten, then all of them, at speed and in excellent formation, toward a large and waterless rock.",
+          "resources": { "fuel": -9, "morale": 4 },
+          "sets_flag": "insect_false_bearing",
+          "time_cost": "low",
+          "narrative": "Our pilot danced a false bearing at a forty-ship pirate hive, and the hive believed it. There is a rock out there having a very strange week."
+        },
+        "rc_clumsy": {
+          "title": "MIXED NOTICES",
+          "tone": "danger",
+          "body": "You fly the figure by hand for two days and it shows. The bearing wobbles and the runs come out uneven. About half the audience heads for the rock. The other half reads the rest of the performance as a confirmation, and comes for the tank. They get {cost.water} points of water and some paint before the first half comes back asking questions.",
+          "resources": { "fuel": -12, "water": -8, "hull": -4, "morale": -2 },
+          "time_cost": "low",
+          "narrative": "Tried to out-dance a pirate hive by hand. Half of them went for the rock. The other half had notes."
+        },
+        "rc_note": {
+          "title": "NOTES",
+          "tone": "success",
+          "body": "{crew.diplomat} opens a channel and observes, with respect, that the fourth figure runs seven degrees flat. The dancer stops. A change to a work requires a quorum of those who saw it, so forty ships must now settle what seven degrees means. Nobody is watching the stage when you ease away two days later on a quiet burn, with the coolant venting {cost.water} points of water to keep your heat off their scopes.",
+          "resources": { "fuel": -6, "water": -3, "morale": 1 },
+          "time_cost": "low",
+          "narrative": "Our diplomat gave a pirate hive a note on its choreography. As far as anyone knows, they are still discussing it."
+        }
+      },
+      "science_link": {
+        "text": "A honeybee's waggle dance gives a direction by its angle and a distance by how long the run lasts. When dancers compete, they may even disrupt each other's dances.",
+        "label": "Waggle dance",
+        "url": "https://en.wikipedia.org/wiki/Waggle_dance"
+      }
+    },
+    {
+      "id": "event_species_insect_005",
+      "active": true,
+      "title": "Follow the Ship in Front",
+      "difficulty": "hard",
+      "tone": ["grim", "cosmic"],
+      "node_type": ["nebula", "void"],
+      "trigger": ["any"],
+      "scene_type": "deep_void",
+      "once": false,
+      "ai_flavor": {
+        "aria": "We've joined a convoy! Four hundred and twelve new neighbors, and not one of them has complained about the noise!",
+        "marv": "Each tender follows the scent of the one ahead. None of them chose this, because none of them could. At this pace we reach the floor of the fuel gauge before we reach anything else. It is a perfect system. It has one output.",
+        "rex": "Four hundred twelve hulls, zero answering. That's no convoy. That's a graveyard in formation. Get us out before something back there decides we're staff.",
+        "chip": "Congratulations on your FrequentTrail status! Every lap earns points! Points may be redeemed upon exiting the ring! Exiting the ring is a premium feature!",
+        "ajoy": "The wake thins out somewhere in the ring, and a turn will take there. Use the scanner. Or pull the breaker and coast, if you have eight days to waste. A xenobiologist could mix a stronger trail. You were about to say that, I'm sure."
+      },
+      "body": "The autopilot has found a lane. The chart shows no lane here. What the hull sniffer shows is a scent wake, strong and very old, and the ship laying it is a hive tender, following the tender ahead of that. You count four hundred and twelve, nose to tail, in a ring around nothing. None answers. The helm declines to leave a marked trail. Your ship is number four hundred and thirteen. The autopilot reports excellent progress.",
+      "alt_bodies": [
+        "Nobody steered into this. The autopilot picked up a scent wake in the dark and took it for a lane, as it is licensed to do. Ahead, a hive tender running without lights sits nose to the tail of another, and that one nose to the tail of the next. Four hundred and twelve hulls in a ring around nothing, for what the wake's age says is sixty years. A tender has closed up behind you. The autopilot calls this good traffic.",
+        "The hull sniffer wakes everyone with a reading it has filed under ROAD. It is a scent wake, thick as paint, curving gently away in both directions. The autopilot has already joined it, in the gap between two silent hive tenders, and will not be told otherwise. Each tender follows the one in front. There are four hundred and twelve, and the one in front of the first is the last."
+      ],
+      "choices": [
+        {
+          "text": "Find the thin place in the wake",
+          "effort": 2,
+          "sub": "On the scanner, by hand",
+          "launch_minigame": "scan",
+          "minigame_opts": {
+            "briefing": {
+              "aria": "It's a treasure hunt! Somewhere the trail goes thin! Find it and we get to leave, which ARIA hears is lovely this time of year!",
+              "marv": "The wake thins where one tender dropped out long ago. Hold the scanner on it and turn there. Miss it and we take another lap, and laps are paid in fuel.",
+              "rex": "Eyes on the scope. Find the weak point in the formation and break out through it. Do not touch the tenders.",
+              "chip": "ScanRight™ finds thin spots in trails, budgets and warranties! Today's scan is complimentary, with a small complimentary fee!",
+              "ajoy": "It's there. Watch where the reading dips, not where you're looking now. Turn when you have it, not after."
+            },
+            "quips": {
+              "perfect": {
+                "aria": "You found the exit on the very first lap! The ring is going to miss us so much!",
+                "marv": "Clean turn at the thinnest point, for five points of fuel. The ring has closed behind us. It has no idea we were here.",
+                "rex": "Broke contact without a scratch. Hull secure. Keep the rear sensors on it anyway.",
+                "chip": "A flawless exit! Your FrequentTrail points have expired! Renewal is available at participating rings!",
+                "ajoy": "That was the spot. Nice turn. I was pointing at it the whole time, but nice turn."
+              },
+              "good": {
+                "aria": "We're out, and the scrape along the side is a lovely souvenir!",
+                "marv": "A lap late, and we clipped a tender on the way out. Eight points of fuel, three of hull. It did not notice.",
+                "rex": "Out of the ring. Minor contact with a hostile hull. It didn't return fire. I still don't like it.",
+                "chip": "You're out! Scrape coverage is not included in your plan! CHIP has several plans!",
+                "ajoy": "You turned one lap late, and that was the scrape. It'll do. I'd have gone a lap sooner."
+              },
+              "poor": {
+                "aria": "Several extra laps of quality time with our neighbors, and we still got out! Winning!",
+                "marv": "Several extra laps, two collisions and a bad seal. Fourteen points of fuel, eight of hull, six of oxygen. We left the ring. It did not remark on it.",
+                "rex": "We forced it. Hull damage, oxygen loss, two collisions. We are clear. Stay at stations.",
+                "chip": "Your exit has been processed, with penalty laps! CHIP accepts fuel, oxygen and hull as forms of payment!",
+                "ajoy": "You missed the thin place twice, and the third time you found it with the hull. We're out. I'd keep that quiet."
+              }
+            }
+          },
+          "outcome": {
+            "resources": { "fuel": -6 },
+            "time_cost": "low",
+            "narrative": "You take the scanner and look for the place where the wake runs thin."
+          },
+          "tier_outcomes": {
+            "perfect": {
+              "resources": { "fuel": -5, "morale": 2 },
+              "materials": { "scrap": 1 },
+              "narrative": "You find the place where the wake runs thin and turn there, and the helm comes back with a small cough. Two days, five points of fuel, and a loose strip of plate from the last tender on the way past. Behind you the ring closes over the gap as if nobody had ever been in it."
+            },
+            "good": {
+              "resources": { "fuel": -8, "hull": -3 },
+              "narrative": "You find the thin place one lap later than you should have and turn hard, leaving three points of hull on the flank of the next tender in line. It does not break formation. Two days and eight points of fuel, and the helm is yours again."
+            },
+            "poor": {
+              "resources": { "fuel": -14, "hull": -8, "o2": -6 },
+              "narrative": "You lose the wake, find it and lose it again, and in the end you take the turn by force, through a tender. Fourteen points of fuel, eight of hull and six of oxygen through a sprung seal. Two days later the ring is behind you, one ship shorter, and still perfectly in step."
+            }
+          }
+        },
+        {
+          "text": "Pull the autopilot's breaker and coast",
+          "effort": 1,
+          "sub": "Eight days of drifting out",
+          "outcome": {
+            "resources": { "o2": -8, "water": -6, "morale": -5 },
+            "time_cost": "high",
+            "narrative": "You pull the breaker and let the ship fall out of the ring under nothing at all. It takes eight days, and with the breaker out the reclaimer loses {cost.water} points of water. For the first two, the tenders go past the ports at walking speed and you can see into the nearest ones. Everyone aboard is at their station, facing forward, following. For some time afterward nobody on your ship sits facing forward."
+          }
+        },
+        {
+          "text": "{crew.xenobiologist} lays a stronger trail",
+          "effort": 3,
+          "sub": "A false wake, in fuel",
+          "requires_crew": "xenobiologist",
+          "outcome": {
+            "resources": { "fuel": -14, "morale": 3 },
+            "materials": { "scrap": 2, "exotic": 1 },
+            "time_cost": "low",
+            "narrative": "{crew.xenobiologist} cuts the fuel with whatever the sniffer says a wake is made of, and you burn a line straight out of the ring. The tender behind you swings onto it. So does the one behind that. Two days later you have four hundred and twelve dead ships following you toward the nearest large rock, and you step aside. It is the first decision anyone has made for them in sixty years. You collect what comes off."
+          }
+        }
+      ],
+      "science_link": {
+        "text": "Army ants that lose the main trail can lock into a circle, each following the ant in front, and may die of exhaustion. The first mill described, in 1921, was 370 meters around, and one lap took two and a half hours.",
+        "label": "Ant mill",
+        "url": "https://en.wikipedia.org/wiki/Ant_mill"
+      }
+    },
+    {
+      "id": "event_species_insect_006",
+      "active": true,
+      "title": "The Line of Succession",
+      "difficulty": "hard",
+      "tone": ["absurd", "mundane"],
+      "node_type": ["fork"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "once": true,
+      "ai_flavor": {
+        "aria": "We could be HEAD OF STATE! ARIA has drafted an inaugural address! It is mostly about snacks!",
+        "marv": "The port lane takes four days at its present rate, and supplies go with them. The starboard pickets carry no orders, so they cannot be given new ones. I have run the numbers. The numbers decline to recommend.",
+        "rex": "Soldier caste, no command net, no surrender. Best-drilled picket I ever saw and nobody drilled it. Starboard means hull damage. Port means standing in line with your back to all of it.",
+        "chip": "Head of State is a fantastic résumé line! CHIP offers Inaugural Packages from four days of your life! Treason is also available, at a higher deductible!",
+        "ajoy": "Port costs four days plus food and water. Starboard costs hull and fuel. A diplomat can shorten the queue, and a pilot can spare the hull. Use one. I'd have thought that went without saying, and yet."
+      },
+      "body": "Port, the lane marked {branch.alpha.label}, first stop {branch.alpha.first}, is full of ships, nose to tail, as far as the scope can reach. It is a queue. It is also the government of the hive that runs it: whichever ship reaches the front is head of state until it leaves. Starboard, the lane marked {branch.beta.label}, first stop {branch.beta.first}, is empty, because going around the government is treason, and the soldiers posted along it have never needed to be told that.",
+      "choices": [
+        {
+          "text": "Join the queue: port lane",
+          "sub": "Four days, nose to tail",
+          "outcome": {
+            "resources": { "food": -8, "water": -8 },
+            "sets_flag": "chose_alpha",
+            "time_cost": "medium",
+            "narrative": "Four days nose to tail, moving up one ship at a time, at a cost of {cost.food} points of food and {cost.water} of water. At the front you are head of state for eleven minutes. An aide asks whether you have a policy. You say you would like to leave. This is enacted, with applause, and the lane opens."
+          }
+        },
+        {
+          "text": "{crew.diplomat} finds you a place near the front",
+          "effort": 2,
+          "sub": "A family connection",
+          "requires_crew": "diplomat",
+          "outcome": {
+            "resources": { "food": -3, "water": -3 },
+            "sets_flag": "chose_alpha",
+            "time_cost": "low",
+            "narrative": "Politeness here means going in the right order, and the right order can be inherited. {crew.diplomat} establishes that your ship is the adopted offspring of a hauler near the front. The queue accepts this without comment. Two days later you pass through the office of head of state as a minor royal, and a hauler you have never met wishes you well."
+          }
+        },
+        {
+          "text": "Run the pickets: starboard lane",
+          "effort": 3,
+          "sub": "Treason, at full burn",
+          "risky": true,
+          "outcome": {
+            "resources": { "hull": -12, "fuel": -6, "morale": -2 },
+            "sets_flag": "chose_beta",
+            "time_cost": "trivial",
+            "narrative": "You burn down the empty lane and the soldiers close from both sides, without a word or a signal. They make no attempt to stop you, since stopping you is nobody's job. Each one simply does a little damage as you pass, in turn, in order, and then the lane behind you is empty again."
+          }
+        },
+        {
+          "text": "{crew.pilot} threads the pickets",
+          "effort": 3,
+          "sub": "Less hull, more fuel",
+          "requires_crew": "pilot",
+          "outcome": {
+            "resources": { "hull": -6, "fuel": -10 },
+            "sets_flag": "chose_beta",
+            "time_cost": "trivial",
+            "narrative": "{crew.pilot} takes the lane in long, expensive curves, keeping to the gaps between one soldier's duty and the next. Each picket lands only one blow. There are not many people who can say they committed treason this tidily, and {crew.pilot} intends to be one of them at every meal."
+          }
+        }
+      ]
+    },
+    {
+      "id": "event_species_insect_007",
+      "active": true,
+      "title": "Open Plan",
+      "difficulty": "hard",
+      "tone": ["horror", "corporate"],
+      "node_type": ["planet", "derelict", "asteroid_field", "anomaly", "nebula", "void"],
+      "trigger": ["any"],
+      "scene_type": "ship_interior",
+      "once": true,
+      "requires_flag": "insect_merged",
+      "ai_flavor": {
+        "aria": "So much natural light! ARIA always said this ship had too many walls! Everyone is so close together now!",
+        "marv": "Four walls are gone so far. Two of them were holding something up. The integration plan is very thorough. It does not mention air.",
+        "rex": "Hostile sappers inside the pressure hull since the basket. I said scan it. I said it twice. Seal what seals and treat every colleague as a target.",
+        "chip": "CHIP is thrilled to announce exciting changes to your living space! Walls are now a premium tier! Doors are the tier above that!",
+        "ajoy": "They go where the chart says, so change the chart. A diplomat can start a rumor about who owns the ship, and the Lozenge outranks the whole team. Failing that, the engineer. I did mention the crate."
+      },
+      "body": "You wake to more light than usual. Overnight, someone has taken out the wall between the bunks and the galley. A card on the remaining door frame gives off a smell the translator renders as a friendly typeface: WE ARE EXCITED TO ANNOUNCE A MORE OPEN WAY OF WORKING. Small pale workers are filing through the gap with the galley door. They came aboard in the welcome basket. They have been in the walls ever since, and there is now one desk.",
+      "choices": [
+        {
+          "text": "Work around it",
+          "sub": "Live with the new layout",
+          "outcome": {
+            "resources": { "morale": -6, "hull": -6, "food": -10 },
+            "sets_flag": "insect_open_plan",
+            "time_cost": "trivial",
+            "narrative": "You tell everyone to carry on. By the next morning the workers have finished, taken the door off the head as a final improvement, and reclassified the pantry as a shared resource, at a cost of {cost.food} points of food. They file back into the ducts to await feedback. Nobody aboard has been alone since."
+          }
+        },
+        {
+          "text": "Vent the ship, section by section",
+          "effort": 3,
+          "sub": "Hard on the air, harder on staff",
+          "risky": true,
+          "outcome": {
+            "resources": { "o2": -16, "water": -8, "hull": -4, "morale": -4 },
+            "time_cost": "low",
+            "narrative": "You seal what will still seal and open the rest to space, one section at a time, for two days, and {cost.water} points of water go with it through the open lines. The workers go without fuss, in single file, in order of seniority. The last of them stops at the lock and waits, because nobody has told it that it may go first. You hold the hatch until it has been told."
+          }
+        },
+        {
+          "text": "{crew.engineer} rebuilds the bulkheads",
+          "effort": 3,
+          "sub": "Four days of welding",
+          "requires_crew": "engineer",
+          "outcome": {
+            "resources": { "hull": -3, "morale": -2 },
+            "repair_done": true,
+            "time_cost": "medium",
+            "narrative": "{crew.engineer} puts the walls back faster than they can be proposed for removal. Each new wall is a change to the plan, and a change to the plan needs a quorum, so the workers stand in the corridors for four days waiting for one while the welding goes on around them. When the last seam cools they are gone, and the new walls are not quite as good as the old ones. Nobody has checked the ducts."
+          }
+        },
+        {
+          "text": "Start a rumor about who owns the ship",
+          "effort": 2,
+          "sub": "Property is only a rumor",
+          "requires_crew": "diplomat",
+          "outcome": {
+            "resources": { "hull": -3, "morale": -2 },
+            "time_cost": "trivial",
+            "narrative": "{crew.diplomat} mentions in a duct, to nobody, that this ship was sold at the last quorum to a rival wing, and that all improvements are now that wing's liability. It reaches the last worker by evening. The galley door comes back, hung upside down. The team files out through the vents, and the chart grows smaller by one box."
+          }
+        },
+        {
+          "text": "Hold up the Hive Lozenge",
+          "sub": "Authorize a spin-off",
+          "requires_item": "hive_lozenge",
+          "outcome": {
+            "resources": { "hull": 6, "morale": 3 },
+            "materials": { "metal": 2, "scrap": 2 },
+            "clears_flag": "insect_merged",
+            "time_cost": "trivial",
+            "narrative": "You hold up the Lozenge and the column stops. The smell of it goes down the line from worker to worker, and by the next morning your ship has been spun off as an independent concern. They rehang the doors, rebuild the walls rather better than they found them, and leave the spare plate in a neat stack. The last card reads: WE WISH YOU EVERY SUCCESS IN YOUR FUTURE ENDEAVORS."
+          }
+        }
+      ]
+    }
+  ],
+  "flag_payoffs": {
+    "insect_took_beacon": {
+      "weight": 1,
+      "epilogue": "The ship stripped a lost worker's beacon for parts, and the worker's objection stayed pending for the rest of the voyage.",
+      "callback": {
+        "aria": "Those beacon parts have been so useful! ARIA is sure that little worker has found a lovely new way to be lost!",
+        "marv": "The parts from that beacon are still in service. It is presumably still out there, unable to object. I have not been asked to do the arithmetic on that.",
+        "rex": "That beacon was a legitimate salvage target. I have said so several times now. Nobody asked me to.",
+        "chip": "Reclaimed beacon components carry no warranty! Neither does the worker! CHIP offers a Regret Protection Plan, renewable monthly!",
+        "ajoy": "We still have that beacon in the spares. I'd have heard it out first. I did say so."
+      }
+    },
+    "insect_merged": {
+      "weight": 2,
+      "epilogue": "The ship spent part of its voyage as a small box on a hive's organizational chart, and nobody aboard ever signed anything.",
+      "callback": {
+        "aria": "ARIA got an all-staff memo from six million colleagues! We're doing so well as a department!",
+        "marv": "Our cost center has been charged for something. I cannot find what. The food in that basket was very good. I mention this for balance, which I do not otherwise have.",
+        "rex": "We are still on that chart. I've checked the crate twice since. Something has been chewing the inside of the third duct, and I want that noted.",
+        "chip": "As a valued subsidiary you qualify for Group Rates on everything you already own! Sign up today!",
+        "ajoy": "Your box on the chart moved again. I still think someone should look behind the panels. It won't be me, obviously."
+      }
+    },
+    "insect_open_plan": {
+      "weight": 2,
+      "epilogue": "The ship finished the voyage with most of its interior walls gone and a crew who reported a great deal of collaboration.",
+      "callback": {
+        "aria": "ARIA loves how close everyone is now! You can hear every single thought anyone has out loud!",
+        "marv": "There is a draft in the galley. It is coming from the bunks. There used to be a door about that, and I miss it, and I do not miss things.",
+        "rex": "No cover. No fallback line. One desk. If we're boarded, I can't hold this ship. It's a corridor with opinions.",
+        "chip": "Soundproofing is now available as an in-ship purchase! So are feelings of privacy, while supplies last!",
+        "ajoy": "Someone has labeled the shared cup. There's one cup. I told you to deal with this while they were still on the walls."
+      }
+    },
+    "insect_late_captain": {
+      "weight": 1,
+      "epilogue": "The captain was declared dead by one hive's customs, and the record was never corrected.",
+      "callback": {
+        "aria": "ARIA thinks you look wonderful for someone in your position!",
+        "marv": "A condolence notice has arrived from the concession, addressed to you. I have filed it under correspondence, then under irony, then given up.",
+        "rex": "Dead on paper is good cover. I've kept the record as is. Don't tell the hive you're moving.",
+        "chip": "Your Afterlife Continuity Plan renews next month! Please confirm you are still deceased to keep your rate!",
+        "ajoy": "The smell comes back when you sweat. Just so you know. I'd stand further from that air vent."
+      }
+    },
+    "insect_false_bearing": {
+      "weight": 2,
+      "epilogue": "A forty-ship pirate hive flew to a dry rock because the ship danced at it.",
+      "callback": {
+        "aria": "ARIA has been asked about our dancing! We have FANS! Forty ships of them!",
+        "marv": "By now the hive has reached the rock and found no water tank. It will be very thorough about it. Nobody in it is in charge of giving up.",
+        "rex": "Best maneuver of the voyage and I'm not allowed to log it under the word 'maneuver.' Keep the rear scope on.",
+        "chip": "CHIP is pleased to announce that your figure-eight license is overdue! Please remit!",
+        "ajoy": "That turn at the end of the third run was a little wide. It worked. I'm only saying it was wide."
+      }
+    },
+    "insect_adjudicated": {
+      "weight": 1,
+      "epilogue": "The ship awarded a pirate hive third place in a field of one, and the hive went away to rehearse.",
+      "callback": {
+        "aria": "ARIA has every confidence they'll get second place next year! There's so much room to grow!",
+        "marv": "Somewhere the recital has reached figure nine thousand and gone back to figure one. Third place in a field of one is the cruelest thing I have seen this ship do, and I have seen the galley.",
+        "rex": "That hive will spend a generation on a grudge against a score. I respect that. Keep the rear scope on.",
+        "chip": "Adjudication fees are taxable! CHIP's Judges' Bundle covers receipts, gavels and one set of cards numbered one to three!",
+        "ajoy": "You could have given them second. It would have cost nothing. I'm only saying that it was a choice."
+      }
+    }
+  },
+  "notes": {
+    "event_species_insect_001": {
+      "inspired_by": "Quorum sensing in Temnothorax ants; the Parliamentary farce of Yes Minister-style procedure applied to one lonely creature.",
+      "how": "A lost worker cannot ask for help because asking takes a quorum, and the only way to count as one is to go to its lock and physically bump into it for two days.",
+      "science": "Wikipedia, Quorum sensing, section Social insects > Ants: Temnothorax albipennis workers sense that the rate at which they encounter other ants has exceeded a threshold, indicating the quorum has been reached, and then the colony moves; no single worker needs to have compared the options."
+    },
+    "event_species_insect_002": {
+      "inspired_by": "A Star Trek collective played as an office merger.",
+      "how": "A hive trader has already acquired you and put you on its org chart; the welcome basket is food now and an integration team later, and the Lozenge flips it into a reverse takeover for one afternoon."
+    },
+    "event_species_insect_003": {
+      "inspired_by": "Brazil: a clerical error nobody can undo, where the paper outranks the person. Wilson's 1958 oleic acid work on dead ants.",
+      "how": "Hive papers are worn as scent, a clerk dabs you with the wrong bottle, and you are politely carried to the midden while still arguing, because in this quarter being dead is a smell.",
+      "science": "Wikipedia, Necrophoresis, Identification of disease and death: dead and living insects are told apart by chemical signature, and experiments found in some cases ants identify corpses by the presence of oleic and linoleic acid, produced by the breakdown of fats, which can take about two days. The page does not describe the live-ant-carried-off experiment, so the link text does not claim it."
+    },
+    "event_species_insect_004": {
+      "inspired_by": "The mandatory poetry recital from Hitchhiker's Guide, done as a compulsory dance recital.",
+      "how": "Pirates force you to watch a dance that turns out to be directions to your water tank; you beat it by flying a false waggle dance with the ship, or by using the Lozenge to judge it and award third place in a field of one.",
+      "science": "Wikipedia, Waggle dance: the angle of the run to the vertical codes direction relative to the sun, the duration of the waggle run codes distance, and competing bees may even disrupt other bees' dances."
+    },
+    "event_species_insect_005": {
+      "inspired_by": "The ant mill, the real death spiral; Sargasso Sea ghost-ship stories.",
+      "how": "The autopilot takes a sixty-year-old scent wake for a lane and joins a ring of 412 dead hive tenders, each following the one in front.",
+      "science": "Wikipedia, Ant mill: ants that lose the pheromone track follow one another in a continuously rotating circle and might eventually die of exhaustion; first described in 1921 by William Beebe, a mill 370 meters (1,210 ft) in circumference with each ant taking two and a half hours per revolution."
+    },
+    "event_species_insect_006": {
+      "inspired_by": "Brazil: a queue that is also a government.",
+      "how": "One lane is a queue whose front ship is head of state for as long as it takes to leave, the other is empty because going around the government is treason. This is the lane's only queue event."
+    },
+    "event_species_insect_007": {
+      "inspired_by": "Termites in the walls; the office-merger Star Trek collective from S2, one consequence later; every open-plan office announcement ever sent.",
+      "how": "The integration team that came aboard in the welcome basket spends the night removing the ship's bulkheads to create a more open way of working."
+    }
+  }
+}

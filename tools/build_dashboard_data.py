@@ -1,6 +1,7 @@
 """Rebuild the event dashboard's data from a Trans-plant checkout.
 usage: python3 -I tools/build_dashboard_data.py <repo> <outdir> [sim.json]
-Writes events.json, pool_by_stop.json, triggered.json, trail_tiers.json —
+Writes events.json, pool_by_stop.json, triggered.json, trail_tiers.json,
+species.json, flavor_pools.json —
 the dashboard artifact's attached datasets (upload them after content
 changes). sim.json: tools/tests/sim_batch.sh output (greedy runs), for the
 trail draw shares; without it trail_tiers.json has no draw numbers.
@@ -20,7 +21,7 @@ TRIG = {'journey_end': 'Arrival', 'journey_start': 'Departure', 'journey_mid': '
         'post_combat': 'After a fight', 'full_cargo': 'Hold full', 'empty_cargo': 'Hold empty',
         'behind_schedule': 'Behind schedule', 'solo_run': 'Flying solo', 'crew_dead': 'Crew member died',
         'stowaway_aboard': 'Stowaway', 'crew_injured': 'Crew injured', 'crewmate_injured': 'Crewmate injured',
-        'station_arrival': 'Station arrival'}
+        'station_arrival': 'Station arrival', 'crop_thriving': 'Crop thriving', 'well_funded': 'Rich in gold'}
 TRAIL = {'lunar': 'Lunar', 'mars': 'Mars', 'interstellar': 'Interstellar'}
 
 items = {}
@@ -46,6 +47,21 @@ def choices(e):
         out += v.get('choices') or []
     return out
 
+def species(e):
+    n = [e.get('npc')] + [l.get('npc') for l in (e.get('layers') or {}).values()]
+    return sorted({x['species'] for x in n if isinstance(x, dict) and x.get('species')})
+
+def role(e):
+    n = e.get('npc') or next((l.get('npc') for l in (e.get('layers') or {}).values() if l.get('npc')), None)
+    if isinstance(n, dict) and n.get('disposition'):
+        return {'pirate': 'Pirates', 'trader': 'Traders', 'drifter': 'Drifters', 'station_crew': 'Station crew'}.get(n['disposition'], n['disposition'])
+    return 'Other'
+
+base_p = os.path.join(repo, 'tools/pool_baseline_ids.json')
+BASE = set(json.load(open(base_p))) if os.path.exists(base_p) else set()
+notes_p = os.path.join(repo, 'resources/pool500/notes.json')
+NOTES = json.load(open(notes_p)) if os.path.exists(notes_p) else {}
+
 def tier(e):
     t = e.get('difficulty')
     return t[0] if isinstance(t, list) else (t or 'medium')
@@ -68,6 +84,8 @@ for e in evs:
         'trails': ', '.join(TRAIL.get(t, t) for t in e['trail']) if e.get('trail') else 'All',
         'needs': '; '.join(needs), 'science': 'Yes' if e.get('science_link') else '',
         'minigame': 'Yes' if any(c.get('launch_minigame') for c in choices(e)) else '',
+        'species': ', '.join(x.capitalize() for x in species(e)),
+        'added': (NOTES.get(e['id'], {}).get('batch', 'new') if e['id'] not in BASE else 'Original') if BASE else 'Original',
     })
 json.dump(rows, open(os.path.join(out, 'events.json'), 'w'), ensure_ascii=False)
 
@@ -117,4 +135,23 @@ for tk, tl in TRAIL.items():
                    'draw_share_pct': round(100 * allD.count(t) / len(allD), 1) if allD else None,
                    'draws_per_run': per, 'sim_runs': len(runs)})
 json.dump(tt, open(os.path.join(out, 'trail_tiers.json'), 'w'), ensure_ascii=False)
+# Species: every event that pins one, by who you meet.
+ROLES = ['Pirates', 'Traders', 'Drifters', 'Station crew', 'Other']
+sp = []
+for k in ['insect', 'rock', 'water', 'reptile', 'robot', 'unknown', 'human']:
+    sel = [e for e in evs if k in species(e)]
+    sp.append({'species': k.capitalize(), 'events': len(sel), **{r: sum(1 for e in sel if role(e) == r) for r in ROLES},
+               **{t: sum(1 for e in sel if tier(e) == t) for t in TIERS}})
+json.dump(sp, open(os.path.join(out, 'species.json'), 'w'), ensure_ascii=False)
+
+# The other random pools: every string in each flavor pool.
+def leaves(x):
+    if isinstance(x, str): return 1
+    if isinstance(x, list): return sum(leaves(i) for i in x)
+    if isinstance(x, dict): return sum(leaves(v) for v in x.values())
+    return 0
+fl = json.load(open(os.path.join(repo, 'modules/flavor/flavor_pools.json')))
+fp = [{'pool': k.replace('_', ' '), 'strings': leaves(v)} for k, v in fl.items() if not k.startswith('_')]
+fp.sort(key=lambda r: -r['strings'])
+json.dump(fp, open(os.path.join(out, 'flavor_pools.json'), 'w'), ensure_ascii=False)
 print(len(rows), 'events;', len(pool), 'pool rows;', len(trows), 'triggers;', len(tt), 'trail rows')

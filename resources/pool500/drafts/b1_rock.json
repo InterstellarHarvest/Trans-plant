@@ -1,0 +1,851 @@
+{
+  "lane": "rock",
+  "events": [
+    {
+      "id": "event_species_rock_001",
+      "active": true,
+      "title": "Running Late",
+      "difficulty": "easy",
+      "tone": ["heartwarming", "absurd"],
+      "node_type": ["planet", "derelict", "asteroid_field", "anomaly", "nebula", "void"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": { "disposition": "drifter", "species": "rock", "displayName": "THE SUITOR" },
+      "leave_label": "LEAVE HIM TO IT",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "A MESSAGE HOLDING",
+          "body": "The ship computer has been filing this one as hull noise for nine days. Played back at a speed people can stand, it is a hail from the slab of cut stone drifting off your bow, engine cold, one figure at the helm. It is also a recording, four centuries old, with branches, left for whoever came by. {npc.quirk}",
+          "line": "Greetings, small fast ship. Have prepared for your questions. Am expected somewhere. Am running late. Someone should tell her.",
+          "pose": "listening",
+          "ai": {
+            "aria": "A love story! ARIA can tell, because he's late and still going! ARIA has already picked out an outfit! ARIA has no body! It's a lovely outfit!",
+            "marv": "The hail was recorded four hundred and six years ago and it has anticipated us. The tree runs to six thousand replies. I have read them. Every answer you are considering is on it.",
+            "rex": "A stationary object predicted our arrival four centuries out. In REX's service that was called an ambush. He would like it called an ambush.",
+            "chip": "Prerecorded customer engagement with branching paths! CHIP's parent company would pay millions! This moment is sponsored by TalkTree™ Automated Patience!",
+            "ajoy": "No engine, no weapons, and whatever he wants carried fits in one cargo slot. I'd hear the whole recording before you decide it's a rock problem, but you'll do what you do."
+          },
+          "revisit": {
+            "body": "The recording holds at the branch, patient as a doorstop.",
+            "line": "Have allowed for you to hesitate. Take your time. Have plenty."
+          },
+          "choices": [
+            { "text": "\"Who is she?\"", "dialog": true, "sub": "Follow the branch", "next": "her" },
+            { "text": "\"What's it worth to us?\"", "dialog": true, "sub": "He has allowed for this one", "outcome": "paid_off" },
+            { "text": "Say something not on the tree", "sub": "Send it at his speed", "effort": 1, "outcome": "the_gap" }
+          ]
+        },
+        "her": {
+          "title": "THE BRANCH MARKED HER",
+          "body": "The next branch begins with the sound of a quarry clearing its throat. He promised to reach her by the end of an age the translator renders as the Ordovician, with an apology. He left in good time. He is now nine thousand years from her door and feels confident. A hatch on his slab has opened, on a timer set in advance.",
+          "line": "Two stones meet. Press. Along line of touching, both become new stone, and cannot be parted. Is all we want. She is far down your road. Is very large. Will not miss her. Nobody does.",
+          "pose": "listening",
+          "ai": {
+            "aria": "Four hundred million years and he's STILL excited! ARIA wants someone to feel that way about ARIA! ARIA would wait! ARIA has been waiting four seconds already!",
+            "marv": "He is more than four hundred million years late and estimates nine thousand more. I have checked his arithmetic. It is sound. It is the only part of this I can say that about.",
+            "rex": "A sealed stone object, loaded on the word of a recording. REX wants his objection logged. He has scanned it. It is a rock. That is what worries him.",
+            "chip": "Last-mile delivery for a premium heirloom client! Add LoveLine™ Courier Insurance, void after nine thousand years! CHIP is tearing up! Tears sold separately!",
+            "ajoy": "The slab takes one cargo slot and rock people honor it wherever you meet them. I'd take it, for what that's worth. A sample flake pays less and opens no doors, but you do like an interesting option."
+          },
+          "choices": [
+            { "text": "TAKE THE WRIT", "sub": "One slab, one cargo slot", "outcome": "writ_taken" },
+            { "text": "{crew.xenobiologist} reads his hull", "sub": "Zircons keep time", "effort": 2, "requires_crew": "xenobiologist", "outcome": "dated" },
+            { "text": "Go back", "sub": "Return to the recording", "back": true }
+          ]
+        }
+      },
+      "outcomes": {
+        "writ_taken": {
+          "title": "IN TRANSIT",
+          "tone": "success",
+          "body": "Inside the hatch is a slab of schist cut with one promise: he will arrive within nine thousand years, and this time he means it. Rock people honor a writ in transit. It is the only law they have about hurrying. You carry it aboard, and it is heavier than it looks.",
+          "line": "Say I am running late. She will understand. She has always understood. Mostly.",
+          "resources": { "morale": 2 },
+          "item_grant": "slow_writ",
+          "sets_flag": "rock_carried_word",
+          "time_cost": "trivial",
+          "narrative": "Took on a slab of schist for a rock suitor more than four hundred million years behind schedule. The message is that he is running late."
+        },
+        "paid_off": {
+          "title": "ALLOWED FOR",
+          "tone": null,
+          "body": "The branch for this question is the longest on the tree. A locker on his hull slides open and offers a fee in good cut ore, set out four centuries ago for a ship exactly like yours, and you take it. There is no errand attached. He has been refused by better, says the note, and he understands.",
+          "line": "Is no trouble. Next ship comes in ninety years.",
+          "resources": { "morale": -1 },
+          "materials": { "minerals": 2 },
+          "time_cost": "trivial",
+          "narrative": "Took a rock drifter's fee in cut ore and left his errand for the next ship, due in ninety years."
+        },
+        "the_gap": {
+          "title": "THE GAP AT THE END",
+          "tone": "success",
+          "body": "You say two words into the microphone: good luck. Slowing them down takes two days, and at his speed they will need sixty years to finish arriving. Checking the end of the recording, the ship computer finds a stretch of silence left there on purpose, with a label in his own hand. The label reads: FOR WHATEVER THEY SAY.",
+          "resources": { "morale": 3 },
+          "time_cost": "low",
+          "narrative": "Sent a rock drifter two words at his own speed. He had left a gap for them, four hundred years ago."
+        },
+        "dated": {
+          "title": "OLDER THAN THE REST",
+          "tone": "success",
+          "body": "The recording gave permission in advance. {crew.xenobiologist} takes a flake from his hull and spends two days counting the uranium in its zircons. Parts of him crystallized four billion years ago. The flake goes in a sample jar and the figure goes on the galley wall, where it makes everyone's problems look briefly smaller.",
+          "resources": { "morale": 1 },
+          "materials": { "exotic": 1 },
+          "time_cost": "low",
+          "narrative": "Dated a flake from a rock drifter's hull at four billion years. He had agreed to it before anyone aboard was born."
+        }
+      },
+      "science_link": {
+        "text": "The ship computer files a note: where hot rock pushes into cooler rock, the stone along the contact is changed for good. Geologists call the zone an aureole.",
+        "label": "Contact metamorphism",
+        "url": "https://en.wikipedia.org/wiki/Contact_metamorphism"
+      }
+    },
+    {
+      "id": "event_species_rock_002",
+      "active": true,
+      "title": "The Long Position",
+      "difficulty": "medium",
+      "tone": ["corporate", "absurd"],
+      "node_type": ["planet", "derelict", "asteroid_field", "anomaly", "nebula", "void"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": { "disposition": "trader", "species": "rock", "displayName": "SPECULATOR" },
+      "leave_label": "NO SALE",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "CARBON FUTURES",
+          "body": "A freighter of cut stone pulls alongside with its hold doors open, each wide enough to admit your ship. The placard on the hull reads CARBON FUTURES and, below that, ALL ORGANICS CONSIDERED. The trader on your screen has not blinked since the link came up, and you suspect the link is not at fault. {npc.quirk}",
+          "line": "Good day. Am buying sewage. Also galley scraps, dead leaves, old socks. Anything once alive, buried three hundred million years, is coal. Am long on coal.",
+          "ai": {
+            "aria": "Someone WANTS our sewage! ARIA always said it had value! ARIA has never said that, but ARIA feels it now!",
+            "marv": "Her model is correct. In three hundred million years our sludge will be a thin, poor seam. I have run the compound return. I would like to stop having run it.",
+            "rex": "A ship with doors big enough to swallow us is offering to take our waste. REX has seen this tactic. He hasn't, but he is assuming it exists.",
+            "chip": "Waste-to-asset conversion! CHIP's parent company calls this a Circular Legacy Solution™! Sell low, wait, die! Terms apply!",
+            "ajoy": "The recycler turns that sludge back into water and food, so selling it costs you both. If you kept the slab from that drifter, she might take a note instead. I'd have checked the hold by now."
+          },
+          "revisit": {
+            "body": "The hold doors are still open. They do not appear to get tired.",
+            "line": "Offer stands. Offer has stood since before your species had thumbs."
+          },
+          "choices": [
+            { "text": "BROWSE THE STOCK", "sub": "Buy and sell cargo", "effort": 2, "open_market": true, "market_barter": true },
+            { "text": "Read the prospectus", "sub": "The dates have commas in them", "next": "prospectus" },
+            { "text": "Sell her the sludge tank", "sub": "Gold now, thirstier later", "effort": 1, "outcome": "sold_sludge" },
+            { "text": "Sell her the crop's trimmings", "sub": "The crop goes without", "effort": 1, "gate": { "crop": "alive" }, "outcome": "sold_trimmings" },
+            { "text": "Sign a note against the writ", "sub": "Due in 9,000 years", "gate": { "item": "slow_writ" }, "outcome": "on_the_note" }
+          ]
+        },
+        "prospectus": {
+          "title": "THE PROSPECTUS",
+          "body": "One slab, both sides. Projected returns run to fourteen decimal places. Under RISKS she has cut three lines: plate tectonics, the local star, and MAMMALS, AGAIN. The space for signatures is clean. Earlier signatories, it notes, are unavailable for comment.",
+          "line": "Last position was whole Carboniferous. Best vintage on record. Small warm things dug it up, burned it in two centuries. Did not even read terms. This time, deeper vault.",
+          "ai": {
+            "aria": "She's investing in the future! The very far future! ARIA has heard it's lovely there, and a bit compressed!",
+            "marv": "Nine tenths of the coal beds were laid down in two periods and burned in an eyeblink. She is still in litigation. I find I am on her side, which is new and unwelcome.",
+            "rex": "A being that plans three hundred million years out has listed mammals as a known risk. REX would like to see the rest of that list. Now.",
+            "chip": "Twelve gold buys a stake in Deep Time™! Past performance was dug up and set on fire! Future performance not guaranteed, but very, very future!",
+            "ajoy": "Twelve gold for a paper you'll never cash. The first dividend is paid in kind, though, and rare ore isn't nothing. You'll want to read the line about signatories. I did."
+          },
+          "choices": [
+            { "text": "Buy in: 12 gold", "sub": "Pays out eventually", "gate": { "gold": 12 }, "outcome": "shares" },
+            { "text": "Go back", "sub": "Return to the trader", "back": true }
+          ]
+        }
+      },
+      "outcomes": {
+        "sold_sludge": {
+          "title": "SOLD AT THE BOTTOM",
+          "tone": null,
+          "body": "A hose as thick as a person mates to your waste port and takes the lot for twenty-five gold, a price set before the recycler was invented. The recycler had plans for that sludge. It spends two days sulking, and you come up {cost.water} points short of water and {cost.food} of food.",
+          "line": "Pleasure. See you at maturity.",
+          "resources": { "gold": 25, "water": -6, "food": -4 },
+          "time_cost": "low",
+          "narrative": "Sold the sludge tank to a rock speculator for twenty-five gold. The recycler has not forgiven anyone."
+        },
+        "sold_trimmings": {
+          "title": "BY THE GRAM",
+          "tone": null,
+          "body": "She pays by the gram and weighs to a precision that makes your scales look rude. The {crop.name} loses a fair amount of leaf it was still using. Fifteen gold changes hands, and the trimmings go into a vault with a date cut on the door.",
+          "resources": { "gold": 15 },
+          "crop_health": -5,
+          "time_cost": "trivial",
+          "narrative": "Sold crop trimmings to a rock speculator for fifteen gold. They are now a very small part of a future coal seam."
+        },
+        "on_the_note": {
+          "title": "ON THE LONG NOTE",
+          "tone": "success",
+          "body": "She reads the writ and reverses the hose. She has no use for water, and holds tanks of it, wrung from forty years of other ships' sludge, along with stores she bought as feedstock and has yet to bury. She fills you up against a note on the writ's own term, nine thousand years. There is no interest. Interest, she says, is for people who expect to die.",
+          "line": "Will collect in person. Be home.",
+          "resources": { "water": 12, "food": 10, "fuel": 6 },
+          "sets_flag": "rock_long_note",
+          "time_cost": "trivial",
+          "narrative": "Took on water, food and fuel from a rock speculator against a note due in nine thousand years. Nobody aboard wants to ask where the water came from."
+        },
+        "shares": {
+          "title": "LIMITED PARTNER",
+          "tone": null,
+          "body": "You sign. She cuts the ship's name into the slab, which takes two days, then pays the first dividend in advance: a dense black lump of the old vintage and a sliver of something it was pressed around. Your twelve gold matures in three hundred million years. The slab says so, with a comma.",
+          "line": "Welcome to long term.",
+          "resources": { "gold": -12 },
+          "materials": { "minerals": 1, "exotic": 1 },
+          "sets_flag": "rock_coal_shares",
+          "time_cost": "low",
+          "narrative": "Bought twelve gold of carbon futures from a rock speculator. The first dividend was paid in ore. The second is some way off."
+        }
+      },
+      "science_link": {
+        "text": "The ship computer files a note: 90% of Earth's coal beds were laid down in the Carboniferous and Permian. Coal forms when plants decay into peat and deep burial presses it for millions of years.",
+        "label": "Coal",
+        "url": "https://en.wikipedia.org/wiki/Coal"
+      }
+    },
+    {
+      "id": "event_species_rock_003",
+      "active": true,
+      "title": "Called to Serve",
+      "difficulty": "medium",
+      "tone": ["absurd", "corporate"],
+      "node_type": ["station"],
+      "trigger": ["any"],
+      "scene_type": "station_interior",
+      "comm_mode": "in_person",
+      "once": true,
+      "npc": { "disposition": "station_crew", "job": "security", "species": "rock", "displayName": "BAILIFF" },
+      "leave_label": "WALK OUT",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "THE SUMMONS",
+          "body": "The office is in the rock concession on the ring's low side: a stone desk, a stone bench, and a bailiff who may be either. The summons on the desk predates the station. They built the ring around it. It calls the master of the next vessel to dock to sit on a jury, in a dispute over the title to a moon. The moon has since broken up. The dispute has not. {npc.quirk}",
+          "line": "Court is in session. Has been for six thousand years. Opening statements go well. You are juror. Sit.",
+          "pose": "listening",
+          "ai": {
+            "aria": "Jury duty! We're part of history! A very long part! ARIA has a feeling the moon did nothing wrong!",
+            "marv": "Six thousand years in, the court has reached the plaintiff's first word. At that rate the verdict falls after this star goes out. I have been asked to keep the figure to myself. By me.",
+            "rex": "One hostile with legal authority, one exit, and it's behind us. Do not sit down. That is how they get you. REX has no evidence. Do not sit down.",
+            "chip": "Civic duty, brought to you by JurorPlus™ Lumbar Supports! CHIP has read the whole summons! CHIP cannot find a refund clause! CHIP is impressed!",
+            "ajoy": "Four days for a bag of gravel, or fifteen gold. Or ask about the rules, which nobody ever does. The writ from that drifter would end this on the spot, if you kept it. I would have."
+          },
+          "revisit": {
+            "body": "The bailiff has not moved. The summons has not moved. It is possible that the bench has moved slightly toward you.",
+            "line": "Sit."
+          },
+          "choices": [
+            { "text": "Sit for one session", "sub": "Four days on a stone bench", "effort": 2, "outcome": "served" },
+            { "text": "\"I will be dead before the verdict.\"", "dialog": true, "sub": "Plead mortality", "next": "excuse" },
+            { "text": "Pay the default fine: 15 gold", "sub": "Never once adjusted", "gate": { "gold": 15 }, "outcome": "fined" },
+            { "text": "Lay the writ on the desk", "sub": "A writ may not be held", "gate": { "item": "slow_writ" }, "outcome": "excused" }
+          ]
+        },
+        "excuse": {
+          "title": "GROUNDS FOR EXCUSAL",
+          "body": "The bailiff opens a ledger, in the sense that a landslide opens a valley. Forty thousand jurors have made this plea before you. Every one is marked ABSENT WITHOUT LEAVE, in a column that runs for several pages, and bench warrants are outstanding for them all.",
+          "line": "All jurors say this. All jurors were correct. Court does not accept it. Rule says juror must stay for whole trial. Rule does not say juror must be warm.",
+          "pose": "listening",
+          "ai": {
+            "aria": "So many jurors! That's so many friends who just stepped out for a moment! ARIA thinks the ledger is beautiful!",
+            "marv": "Every one of those pleas was accurate. The court has recorded forty thousand true statements as contempt. It is the most honest institution I have encountered.",
+            "rex": "The bailiff just pointed out a hole in the rule. Nobody hands you a hole by accident. REX advises caution. He also notes that a plate of hull is our hull.",
+            "chip": "A juror need only be present! Ask about Substitute Attendance™! This plate would qualify! Four hull points, plus handling!",
+            "ajoy": "The bailiff has all but drawn you a map. It says present, not alive. A plate off the outer skin costs four hull and two days. I'd cut it from somewhere less visible, but you'll see."
+          },
+          "choices": [
+            { "text": "Swear in a plate of the hull", "sub": "It will see the verdict", "effort": 2, "outcome": "hull_juror" },
+            { "text": "Go back", "sub": "Return to the summons", "back": true }
+          ]
+        }
+      },
+      "outcomes": {
+        "served": {
+          "title": "WHEREAS",
+          "tone": null,
+          "body": "Four days on the bench. Counsel for the plaintiff rises, which takes most of the first, and delivers the opening syllable of the word 'whereas'. The gallery is moved. You are thanked, released until the second syllable, and paid the per diem fixed at the court's founding: a bag of gravel, of some quality.",
+          "resources": { "morale": -2 },
+          "materials": { "minerals": 2 },
+          "time_cost": "medium",
+          "narrative": "Served one session on a rock jury. Heard one syllable in four days. Was paid in gravel."
+        },
+        "fined": {
+          "title": "IN DEFAULT",
+          "tone": null,
+          "body": "The fine has not been adjusted in six thousand years, so it is fifteen gold. You are handed a receipt cut from a single block, about the weight of a person. The bailiff notes that keeping it is optional, and that leaving it on the dock is littering, which would be a separate suit.",
+          "resources": { "gold": -15 },
+          "time_cost": "trivial",
+          "narrative": "Paid fifteen gold to get out of rock jury duty. The receipt is still on the dock, and the suit over it has been filed."
+        },
+        "hull_juror": {
+          "title": "JUROR FORTY THOUSAND AND ONE",
+          "tone": "success",
+          "body": "You spend two days cutting a plate from the outer hull, four points' worth, and carry it to the bench. The bailiff swears it in. It takes the oath without fidgeting, and the court records its composure with approval. Looking back from the door, you see the bailiff asking it whether it can be impartial. It appears to be giving the question real thought.",
+          "resources": { "hull": -4, "morale": 3 },
+          "sets_flag": "rock_hull_juror",
+          "time_cost": "low",
+          "narrative": "Swore in a plate of the ship's hull as a juror in a six-thousand-year trial. It is expected to serve with distinction."
+        },
+        "excused": {
+          "title": "STAY OF SERVICE",
+          "tone": "success",
+          "body": "The bailiff reads the writ and rises, for the first time since the ring was built. A writ in transit may not be held. You are excused with the court's apologies, and a clerk brings out what the office keeps for such occasions: a bagged sample of the disputed moon, entered in evidence and long forgotten.",
+          "line": "Is it true he is late? Court has followed this matter for some time. Tell her court sends regards.",
+          "resources": { "morale": 3 },
+          "materials": { "minerals": 2, "exotic": 1 },
+          "time_cost": "trivial",
+          "narrative": "Excused from a rock jury on the strength of a slab of schist. The bailiff stood up, and the court sent its regards to the lady."
+        }
+      }
+    },
+    {
+      "id": "event_species_rock_004",
+      "active": true,
+      "title": "Warning Shot",
+      "difficulty": "hard",
+      "tone": ["absurd", "grim"],
+      "node_type": ["planet", "derelict", "asteroid_field", "anomaly", "nebula", "void"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": { "disposition": "pirate", "species": "rock" },
+      "leave_label": "BREAK OFF",
+      "leave_as": { "triggerFleeResolve": true, "outcome": "flee", "risky": true, "effort": 1 },
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "WARNING SHOT",
+          "body": "Dead ahead, a ship cut from one block sits across the lane with its guns run out and dust on the barrels. Long-range has found a second contact: a boulder the size of a chapel, four days out, coming straight down the lane. The ship computer has traced it back to the lead gun. It was fired three hundred and twelve years ago. {npc.quirk}",
+          "line": "This is warning shot. Fired before your grandmothers were born. Arrives in four days. Give us your water. Second warning shot left two hundred years ago.",
+          "pose": "hostile",
+          "ai": {
+            "aria": "They sent us something three hundred years ago! That's the most thoughtful thing anyone has ever done! It's even big! ARIA can't wait to receive it!",
+            "marv": "The shot left the barrel three hundred and twelve years ago and has not strayed by a meter. I admire the gunnery, which is rare. The target is us, which is not.",
+            "rex": "A firing solution older than the ship. One hostile, one round inbound, a second in the pipe. Finest ambush REX has ever seen. He recommends we not be in it.",
+            "chip": "Your shipment is out for delivery! ETA four days! ImpactTrack™ alerts are free for the first boulder! Water is non-refundable once imbibed!",
+            "ajoy": "They want water because it gets in their cracks and they enjoy it. They won't chase, but the lane behind that boulder is full of old shots. They also have endless patience, which I'd put to use, if it were me sitting there."
+          },
+          "revisit": {
+            "body": "The guns have not moved. The boulder has.",
+            "line": "Water."
+          },
+          "choices": [
+            { "text": "\"We'll get back to you.\"", "dialog": true, "sub": "They are in no hurry", "effort": 1, "next": "thinking" },
+            { "text": "Pass a hose across", "sub": "Water is their liquor", "effort": 1, "outcome": "paid" },
+            { "text": "Show them the writ", "sub": "No one hinders a writ", "gate": { "item": "slow_writ" }, "outcome": "writ_stands" },
+            { "text": "Open Fire", "sub": "Begin ship-to-ship combat", "effort": 3, "risky": true, "triggerCombat": true },
+            { "text": "Flee", "sub": "Run the lane, into the spread", "effort": 1, "risky": true, "outcome": "flee", "triggerFleeResolve": true }
+          ]
+        },
+        "thinking": {
+          "title": "UNDER CONSIDERATION",
+          "body": "The captain finds this reasonable. A demand stands until it is answered, and nobody has ever hurried an answer. The gun crews settle. The captain turns to face you and stops, in the manner of someone prepared to stop for as long as it takes. The boulder was fired under a previous captain and cannot be recalled. It is still coming.",
+          "line": "Take your time. We will be here.",
+          "pose": "listening",
+          "leaveHidden": true,
+          "ai": {
+            "aria": "They said to take our time! What lovely pirates! ARIA is sure the boulder is a gift!",
+            "marv": "They will wait. I have modeled how long. The model ends before they do. The boulder is simpler arithmetic and arrives in four days.",
+            "rex": "Hostiles stood down on the strength of a stall. REX has never seen that work. He has also never been less comfortable. Move. That round is still live.",
+            "chip": "Free ore inbound at no shipping cost! StoneClaim™ Legal confirms a warning shot, once received, is yours to keep! Salvage rights sold separately!",
+            "ajoy": "Crawling clear costs four days and supplies. Cutting the thing up is quicker and pays in ore, if you have an engineer, and it costs hull. I'd do the second. But naturally you'll want to think about it."
+          },
+          "choices": [
+            { "text": "Crawl out of the lane", "sub": "Slowly, so as not to wake them", "effort": 1, "outcome": "crawl" },
+            { "text": "{crew.engineer} takes the shot apart", "sub": "Free ore, at speed", "effort": 3, "requires_crew": "engineer", "outcome": "mined" }
+          ]
+        }
+      },
+      "outcomes": {
+        "paid": {
+          "title": "ONE FOR THE ROAD",
+          "tone": null,
+          "body": "A hose goes across. The water works into every hairline crack aboard that ship, and the crew softens by degrees, which for them is the point. Rock people have been getting drunk this way since there were oceans. It costs {cost.water} points of water and two days, and the gunner, now very relaxed, tells you exactly where to stand when the boulder goes by.",
+          "line": "Good year. Go on, then.",
+          "resources": { "water": -12, "morale": -2 },
+          "time_cost": "low",
+          "narrative": "Paid rock pirates in water, which is what they drink. They were still singing as the boulder went past, at the rate of about a note a year."
+        },
+        "flee": {
+          "title": "INTO THE SPREAD",
+          "tone": "danger",
+          "body": "You burn out of the lane the fast way. Rock pirates do not chase, because they do not need to. They have been firing down this lane for three centuries, and the dark beyond the boulder is full of older warnings. Two days, ten of fuel and nine of hull later, you are clear of the last of them.",
+          "resources": { "fuel": -10, "hull": -9 },
+          "time_cost": "low",
+          "narrative": "Ran from rock pirates, straight through three centuries of warning shots. They did not chase. They had already fired."
+        },
+        "writ_stands": {
+          "title": "OUR MISTAKE",
+          "tone": "success",
+          "body": "The captain reads the writ for two days without moving. Then the guns go in, one at a time, with a sound of old doors. A writ in transit may not be hindered, and the crew is mortified. The boulder cannot be called back, so they hand across the firing tables, every shot ever fired down this lane. You step aside by a comfortable margin, for three of fuel.",
+          "line": "Give her our regards. Crew had money on Ordovician.",
+          "resources": { "fuel": -3 },
+          "materials": { "minerals": 1 },
+          "item_grant": "star_chart_fragment",
+          "time_cost": "low",
+          "narrative": "Showed a slab of schist to rock pirates. They apologized, withdrew their guns and handed over three centuries of firing tables."
+        },
+        "crawl": {
+          "title": "STILL THINKING",
+          "tone": null,
+          "body": "It takes four days to crawl clear of the boulder's line: six of fuel, and {cost.food} points of food and {cost.water} of water used up going nowhere much. The warning shot passes at a ship's length, in total silence, after three hundred and twelve years of effort. On the rear scope the captain is still facing you, still waiting, with every appearance of good faith.",
+          "resources": { "fuel": -6, "food": -5, "water": -4, "morale": -1 },
+          "sets_flag": "rock_pirates_waiting",
+          "time_cost": "medium",
+          "narrative": "Told rock pirates we would get back to them. They are waiting. The boulder was not, and cost us four days."
+        },
+        "mined": {
+          "title": "RECEIVED WITH THANKS",
+          "tone": null,
+          "body": "{crew.engineer} matches the boulder's speed and spends two days taking three centuries of malice apart with a cutting torch. It is good ore. Seven of hull goes to the pieces that do not cooperate, and four of fuel to keeping pace. The captain, still awaiting your answer, gives no sign of having noticed.",
+          "resources": { "hull": -7, "fuel": -4 },
+          "materials": { "minerals": 2, "metal": 1 },
+          "sets_flag": "rock_pirates_waiting",
+          "time_cost": "low",
+          "narrative": "Told rock pirates we would get back to them, then cut up their warning shot and kept it. They are still waiting."
+        }
+      }
+    },
+    {
+      "id": "event_species_rock_005",
+      "active": true,
+      "title": "High Grade",
+      "difficulty": "hard",
+      "tone": ["grim"],
+      "node_type": ["asteroid_field"],
+      "trigger": ["any"],
+      "scene_type": "asteroid_field",
+      "once": false,
+      "ai_flavor": {
+        "aria": "So many pretty round stones! They're warm! That means they're happy! ARIA thinks the rig is just being hugged, very, very slowly!",
+        "marv": "Hollow stones at body heat, in a regular clutch, around one fracture. The advance is a hand's width a year and has not varied in eighty. I know what this is. So did the rig, around year thirty.",
+        "rex": "A slow envelopment, no visible enemy. Eighty years, no shots fired, one objective taken. REX has served under generals who could not do that. Touch nothing.",
+        "chip": "Premium geodes, just as the log says! StoneSafe™ Mineral Rights Waivers cover everything but maternal liability! That's a separate rider!",
+        "ajoy": "The hollow ones are eggs, in case that needed saying. The scanner can tell hollow from solid, so you could mine the dead rock safely. It would have been nice if the rig had asked. Do try to do better."
+      },
+      "body": "The rig's last entry is eighty years old: GEODES, THOUSANDS, HIGH GRADE. Nobody aboard had asked what geodes were for. The one they drilled lies open beside the wreck, crystal side up, and the rock of the field has been closing over the rig ever since, a hand's width a year. It is buried to the windows. Your ship has stopped among the same round stones, and the nearest of them are warm.",
+      "alt_bodies": [
+        "Eighty years ago a mining rig found a field of round, hollow stones and logged them as high grade. It drilled one. The split shell still lies beside the wreck with its crystals showing. Something as wide as the field has been folding over the rig ever since, a hand's width a year, and has reached the windows. You have parked in the same clutch. The stones around the ship run warm.",
+        "The company never answered the rig's last message, so the beacon is still sending it, eighty years on: GEODES, THOUSANDS, HIGH GRADE, REQUEST EXTENSION. One stone lies split beside the wreck. The field has been closing over the rig ever since, unhurried, a hand's width a year, and the windows are going under. The round stones around your own hull are warm to the sensors."
+      ],
+      "choices": [
+        {
+          "text": "Sound the stones, cut only solid rock",
+          "sub": "Hollow means leave it",
+          "effort": 3,
+          "launch_minigame": "scan",
+          "minigame_opts": {
+            "briefing": {
+              "aria": "Let's listen to every stone and only take the ones that don't sing! Everybody wins, especially the stones!",
+              "marv": "Ping a stone, hold the return, read the ring. Hollow is an egg. Solid is ore. The stones look alike. The consequences do not.",
+              "rex": "Hold lock on the return. Solid, we cut. Hollow, we leave it. One bad cut and this field has a reason.",
+              "chip": "Every solid stone is profit! Every hollow stone is a liability event! SonicSort™ wand not included, so use the scanner!",
+              "ajoy": "Stay on the signal until the ring settles. The rig's crew didn't bother, and you've seen how that's going for them."
+            },
+            "quips": {
+              "perfect": {
+                "aria": "Every stone listened to and not one egg touched! The field must be so proud of us!",
+                "marv": "Every return clean. Dead rock cut, eggs intact. It is more care than this field has been shown in eighty years, which is not a high bar.",
+                "rex": "Clean sweep. Ore secured, nothing disturbed. That is how you cross a minefield.",
+                "chip": "A flawless mineral extraction! Zero liability events! Your StoneSafe™ premium stays exactly as high as it was!",
+                "ajoy": "Every one of them. I'd have worked left to right, but no eggs, so I'll allow it."
+              },
+              "good": {
+                "aria": "We got most of it and the hull only got a little scratched! The stones are just a bit shy!",
+                "marv": "One stone was solid around something. The cutter skated. Six points of hull, for not knowing what we were looking at. We are in distinguished company.",
+                "rex": "Cutter deflected off a false return. Hull damage, minor. No egg breached. Acceptable, barely.",
+                "chip": "Minor self-inflicted cutter contact! CHIP files this under Operator Enthusiasm™! Excess applies!",
+                "ajoy": "You rushed one. The cutter told you so, on the hull. It could have been worse, and the rig would know."
+              }
+              ,
+              "poor": {
+                "aria": "One of the stones opened up! It's full of sparkles! ARIA is sure that's what it wanted!",
+                "marv": "We cut one. It rang solid because the thing inside had filled it. I will not be giving the crew the size.",
+                "rex": "Egg breached. We are now in the same position as the rig. Leave. Leave now.",
+                "chip": "A maternal liability event has occurred! CHIP is required to inform you the rider was not purchased! StoneSafe™ condolences are billed at the standard rate!",
+                "ajoy": "I said stay on the signal until the ring settled. Fourteen hull and a coolant line say you didn't."
+              }
+            }
+          },
+          "outcome": {
+            "resources": { "fuel": -4 },
+            "time_cost": "low",
+            "narrative": "You ping the stones one by one and listen to how they ring."
+          },
+          "tier_outcomes": {
+            "perfect": {
+              "materials": { "minerals": 3, "exotic": 1 },
+              "narrative": "Every hollow stone rings true and you leave it be. Over two days the cutters take only the dead rock between them, for three loads of ore, a seam of something rarer, and four of fuel. The field does nothing. It may take some time to find out what it thinks."
+            },
+            "good": {
+              "resources": { "hull": -6 },
+              "materials": { "minerals": 2 },
+              "narrative": "Most of the stones ring clear. One you took for solid turns the cutter aside and into your own plating: six of hull, and four of fuel across two days of careful work. You come away with two loads of ore and no wish to go back for a third."
+            },
+            "poor": {
+              "resources": { "hull": -14, "morale": -5, "water": -5 },
+              "narrative": "The readings smear, and the cutter goes through a stone that rang solid. It opens onto crystal and something that had been about to happen. The split shell takes out a coolant line: fourteen of hull, {cost.water} points of water, four of fuel. There is no ore. Nobody aboard says anything for some time. The field will answer on its own schedule."
+            }
+          }
+        },
+        {
+          "text": "Back out along your own wake",
+          "sub": "Touch nothing, lose days",
+          "effort": 1,
+          "outcome": {
+            "resources": { "fuel": -5, "food": -4, "morale": -1 },
+            "time_cost": "medium",
+            "narrative": "You reverse out along your own wake at a speed that would not wake a cat. It takes four days, five of fuel, and {cost.food} points of food eaten going backward. Nothing stirs, on any schedule you could measure."
+          }
+        },
+        {
+          "text": "Strip the rig's stores",
+          "sub": "They packed for forty years",
+          "effort": 2,
+          "outcome": {
+            "resources": { "food": 8, "water": 4, "hull": -7, "morale": -4 },
+            "time_cost": "low",
+            "narrative": "The galley is still stocked, and the logs explain why. They could have left at any time in the first thirty years. The contract had a completion clause, so they filed extensions until the airlock would no longer open. You take what you can reach in two days. Seven of hull goes on walls that have moved since the rig's own plans were drawn."
+          }
+        },
+        {
+          "text": "Put the broken piece back",
+          "sub": "No reward, four days",
+          "effort": 2,
+          "requires_crew": "xenobiologist",
+          "outcome": {
+            "resources": { "water": -4, "food": -3, "morale": 6 },
+            "time_cost": "medium",
+            "narrative": "The rig's ore bin still holds the shards. {crew.xenobiologist} spends four days fitting crystal to crystal and closing the shell with ship's resin, while the crew gets through {cost.water} points of water and {cost.food} of food. Nothing happens. Nothing would. A marker left on the wreck will show, in about sixty years, whether the rock has stopped."
+          }
+        }
+      ],
+      "science_link": {
+        "text": "The ship computer files a note: geodes are hollow, roughly round rocks. Mineral-rich water slowly deposits the crystals that line them.",
+        "label": "Geodes",
+        "url": "https://en.wikipedia.org/wiki/Geode"
+      }
+    },
+    {
+      "id": "event_species_rock_006",
+      "active": true,
+      "title": "Hot Pursuit",
+      "difficulty": "medium",
+      "tone": ["absurd", "mundane"],
+      "node_type": ["fork"],
+      "trigger": ["any"],
+      "scene_type": "ship_exterior",
+      "once": true,
+      "ai_flavor": {
+        "aria": "A chase! At last, some excitement! ARIA thinks someone just moved! ARIA is on the edge of ARIA's seat!",
+        "marv": "Closing speed, ten centimeters a century. The arrest falls in about four hundred thousand years. The reward has not been adjusted since the theft. I checked, for something to do.",
+        "rex": "Fleeing suspect, pursuing officer, no backup for either. REX has never seen a cleaner pursuit. Nobody is to interfere. He says that knowing someone will.",
+        "chip": "SpeedWatch™ Dashcams capture every thrilling millimeter! Getaway driving is excluded from your coverage! So is arrest driving!",
+        "ajoy": "The suspect's lane pays in hot ore, the constable's in a small reward, and either way you ruin a perfectly good chase. A diplomat might ask what they actually want, if you hired one."
+      },
+      "body": "There is a police chase on the rubble reef where the lanes split. The suspect is on the side marked {branch.alpha.label}, first stop {branch.alpha.first}, carrying a stolen boulder, and has been since the last ice age. The constable is on the side marked {branch.beta.label}, first stop {branch.beta.first}, gaining. Both are moving about as fast as fingernails grow.\n\nYou could pick up either of them and be on your way by evening.",
+      "choices": [
+        {
+          "text": "Give the suspect a lift",
+          "sub": "{branch.alpha.label} lane",
+          "effort": 1,
+          "outcome": {
+            "resources": { "morale": -1 },
+            "materials": { "minerals": 2, "exotic": 1 },
+            "sets_flag": "chose_alpha",
+            "time_cost": "trivial",
+            "narrative": "He comes aboard with the boulder under one arm and says nothing all afternoon. You set him down at the first buoy past the reef, four hundred thousand years ahead of schedule. He has no plan for this. He looks at the empty lane for a while, then hands you the boulder, which he says is hot and which he never much liked."
+          }
+        },
+        {
+          "text": "Give the constable a lift",
+          "sub": "{branch.beta.label} lane",
+          "effort": 1,
+          "outcome": {
+            "resources": { "gold": 18, "morale": 1 },
+            "sets_flag": "chose_beta",
+            "time_cost": "trivial",
+            "narrative": "The constable boards, thanks you, and asks to be set down directly in front of him. The arrest, thirty thousand years in the making, will take four decades to read aloud, so you collect the reward and go: eighteen gold, at the rate set in the last ice age. Neither of them looks any happier."
+          }
+        },
+        {
+          "text": "{crew.diplomat} asks if they want it over",
+          "sub": "{branch.beta.label} lane",
+          "effort": 2,
+          "requires_crew": "diplomat",
+          "outcome": {
+            "resources": { "morale": 5 },
+            "sets_flag": "chose_beta",
+            "time_cost": "low",
+            "narrative": "{crew.diplomat} spends two days on the reef and puts the question to each of them in private. The suspect could have dropped the boulder at any point in the last twenty thousand years. The constable knows of several shortcuts. Each asks that the other not be told. You leave them to it."
+          }
+        },
+        {
+          "text": "Stay out of it",
+          "sub": "{branch.alpha.label} lane",
+          "outcome": {
+            "resources": {},
+            "sets_flag": "chose_alpha",
+            "time_cost": "trivial",
+            "narrative": "You go round the reef at a respectful distance. Neither party looks up. The ship computer logs a sighting, and, a day later, updates the constable's position by nothing it can measure."
+          }
+        }
+      ],
+      "science_link": {
+        "text": "The ship computer files a note: tectonic plates creep along at 10 to 160 millimeters a year. The slow ones move about as fast as fingernails grow.",
+        "label": "Plate tectonics",
+        "url": "https://en.wikipedia.org/wiki/Plate_tectonics"
+      }
+    },
+    {
+      "id": "event_species_rock_007",
+      "active": true,
+      "title": "The Pronouncement",
+      "timed": true,
+      "difficulty": "ultra",
+      "tone": ["cosmic", "absurd"],
+      "node_type": ["void", "anomaly"],
+      "trigger": ["any"],
+      "trail": ["interstellar"],
+      "scene_type": "deep_void",
+      "once": true,
+      "requires_flag": "rock_carried_word",
+      "ai_flavor": {
+        "aria": "It's HER! She's so big! She looks so well! ARIA thinks we should mention how great she looks before we mention how late he is!",
+        "marv": "Eleven years, one sentence. The seminary reads prophecy. I read someone waiting for a man who said the Ordovician. One of us is correct, and it is always me. The last word is due within days.",
+        "rex": "Four thousand vessels, no discipline, and a moon-sized contact in mid-broadcast. REX does not know what the last word is. He knows that tone. Everyone does. Recommend distance.",
+        "chip": "Eleven years of build-up and one word to go! ProphecyPlus™ live rights are sold out! Seat cushions are extra! CHIP has a little gold on 'smite', hypothetically!",
+        "ajoy": "The last word comes in surges, so up close you brace on the peaks and ease between. The slab would go more gently, if you held on to it. Running costs fourteen fuel and you'll feel worse. Nobody asked me, but you did promise."
+      },
+      "body": "You were told you could not miss her.\n\nA stone head the size of a small moon hangs across the lane, eyes shut, jaw open. It has been saying one sentence for eleven years, since before your ship was built. Four thousand pilgrim ships ride at anchor around it, with scribes, a seminary and a betting exchange. One word remains, due this week.\n\nThe official transcript reads: HE SAID BY THE ORDOVICIAN AND THIS IS NOT THE ORDOVICIAN AND THAT IS\n\nThe seminary calls it prophecy. You have a fair idea who he is.",
+      "choices": [
+        {
+          "text": "Fly in under the jaw and tell her",
+          "sub": "Ride out the last word",
+          "effort": 3,
+          "launch_minigame": "brace",
+          "minigame_opts": {
+            "briefing": {
+              "aria": "We get to deliver the message AND hear the big word up close! Hold tight on the big bits and relax in between! ARIA is so happy for them both!",
+              "marv": "One syllable to her. Several rising surges to us. Hold the brace through each and vent between, or the frame cooks. I have also calculated how this conversation ends. I will not be sharing that.",
+              "rex": "Hull to the jaw. Brace on every surge, vent between. There is no cover. That is the largest thing REX has ever stood next to and it is not pleased.",
+              "chip": "Front-row seats to the end of a sentence! BraceWell™ Inertial Harness sold separately, and you didn't buy it! Hold on the surges, release between!",
+              "ajoy": "Hold on each surge and let go between, or the heat builds and you lose the shield. I'd have parked farther off, but it's your message."
+            },
+            "quips": {
+              "perfect": {
+                "aria": "She heard us, and she said she's FINE! ARIA is so relieved! Everything is wonderful and FINE!",
+                "marv": "Every surge held. Five points of hull. She said it was fine. I have analyzed the waveform. It is not.",
+                "rex": "Position held through the whole transmission. Message delivered. REX has heard that word used that way once before. He does not discuss it.",
+                "chip": "Delivered! Signed for on SwiftSign™! Customer satisfaction logged as 'fine'! CHIP is told to treat that as five stars!",
+                "ajoy": "You held it. Well done. She said it was fine, and I'd keep clear of her for a few million years, but well done."
+              }
+              ,
+              "good": {
+                "aria": "She said FINE! The hull got a little excited, but FINE is such a good word!",
+                "marv": "Held through most of it. One surge came in on bare hull. The word was fine, and that is the worst thing it could have been.",
+                "rex": "One surge through the brace. Hull damage, air loss. Message delivered. The fleet is breaking formation. Recommend we do the same.",
+                "chip": "Delivered with minor transit damage! FINE print applies! FastFreight™ regrets nothing!",
+                "ajoy": "You dropped the brace on one surge. You'd have heard it better from farther away. Everyone did."
+              },
+              "poor": {
+                "aria": "We came off her jaw and went round and round! That's how you can tell she's really listening!",
+                "marv": "The brace failed on the third surge. The hull is at the figure the hull is at. She has been told. The tone confirms it.",
+                "rex": "Brace lost. Ship thrown. Air venting. Direct hit from the end of a sentence. REX has no doctrine for this.",
+                "chip": "Delivery complete, with extensive sender-side damage! CHIP regrets that 'Fine' voids your MoonGuard™ warranty! CHIP has checked twice!",
+                "ajoy": "Third surge, and you let go. You told her, I'll give you that. I'd have held on, but I'm not the one she's upset with."
+              }
+            }
+          },
+          "outcome": {
+            "resources": { "fuel": -6, "o2": -5 },
+            "sets_flag": "rock_word_delivered",
+            "time_cost": "low",
+            "narrative": "You set the ship against her jaw and knock the message into the stone."
+          },
+          "tier_outcomes": {
+            "perfect": {
+              "resources": { "hull": -5 },
+              "narrative": "You set the ship against her jaw and knock it into the stone with the hull: HE IS RUNNING LATE. Then the last word comes, and you hold through every surge of it. Six of fuel, five of oxygen, five of hull. The word is FINE. Her mouth closes for the first time in eleven years. Four thousand ships hold very still, and anyone aboard them who has ever been married starts looking for the exit."
+            },
+            "good": {
+              "resources": { "hull": -14, "o2": -8 },
+              "narrative": "The message goes in and the word comes out. It is FINE, and it arrives as a run of surges, one of which you miss: fourteen of hull, six of fuel, eight of oxygen through a seam it opens. Around you the seminary has begun to argue over whether a fine is a blessing or a penalty. The exchange is paying out on both."
+            },
+            "poor": {
+              "resources": { "hull": -26, "o2": -14, "morale": -7 },
+              "narrative": "The brace fails on the third surge and the ship comes off her jaw end over end. Twenty-six of hull, fourteen of oxygen, six of fuel. You got the message in first. You know because of how she says it. FINE. It rolls out across four thousand ships, and nobody on yours will ever use that word to anyone again."
+            }
+          }
+        },
+        {
+          "text": "Hold the writ up to her eye",
+          "sub": "It is binding, after all",
+          "effort": 2,
+          "requires_item": "slow_writ",
+          "outcome": {
+            "resources": { "fuel": -4, "o2": -4, "hull": -3, "morale": 3 },
+            "sets_flag": "rock_word_delivered",
+            "time_cost": "medium",
+            "narrative": "It takes four days to bring the ship level with an eye the size of a county and hold the slab against it. The eye opens. Nobody in the fleet has ever seen it open. It reads nine thousand years, and reads it again. The last word arrives so gently that it costs three of hull: FINE. The scribes log the tone as unprecedented. When you bring the writ back aboard, a new line runs under his, hair-thin: NINE THOUSAND. NOT TEN."
+          }
+        },
+        {
+          "text": "Tell the fleet what it says",
+          "sub": "On the open pilgrim band",
+          "effort": 2,
+          "outcome": {
+            "resources": { "hull": -10, "fuel": -7, "o2": -5, "morale": -4 },
+            "sets_flag": "rock_schism",
+            "time_cost": "low",
+            "narrative": "You read the transcript out on the pilgrim band, with context. The seminary calls it blasphemy. The junior scribes call it the first thing that has ever made sense. By the second day there are two seminaries, ramming each other, and getting out from between them costs ten of hull, seven of fuel and five of oxygen. Her last word arrives as you clear the fleet: FINE. Both sides claim it."
+          }
+        },
+        {
+          "text": "Slip out before the last word",
+          "sub": "Burn hard, say nothing",
+          "effort": 1,
+          "outcome": {
+            "resources": { "fuel": -14, "o2": -6, "morale": -6 },
+            "sets_flag": "rock_left_her_waiting",
+            "time_cost": "low",
+            "narrative": "You burn for open dark with the message undelivered: fourteen of fuel, six of oxygen. Two days later the last word catches you, thinned by distance to a tremor in the deck plates. The translator offers it with a footnote: FINE. There are nine thousand years still to go. Someone will have to tell her. It will not be you."
+          }
+        }
+      ],
+      "science_link": {
+        "text": "The ship computer files a note: the Ordovician ran from about 487 to 443 million years ago. Anyone who promised to arrive by the end of it is now rather late.",
+        "label": "The Ordovician",
+        "url": "https://en.wikipedia.org/wiki/Ordovician"
+      }
+    }
+  ],
+  "flag_payoffs": {
+    "rock_carried_word": {
+      "weight": 1,
+      "epilogue": "The ship took on a slab of schist for a suitor who was running more than four hundred million years late.",
+      "callback": {
+        "aria": "We're on a love errand for our friend in the stone ship! He's only a tiny bit late! ARIA thinks that's so romantic!",
+        "marv": "He is still nine thousand years from her door. I checked again. Nothing has changed, and nothing will, for a very long time.",
+        "rex": "REX has reviewed the stone message matter. He still does not trust it. He has put a guard on the memory of it.",
+        "chip": "Your LoveLine™ delivery remains in transit! Please allow up to nine thousand years! Lateness already incurred is not covered!",
+        "ajoy": "We did agree to tell someone he's running late. I only mention it because it's the one thing on this ship that's further behind than you are."
+      }
+    },
+    "rock_long_note": {
+      "weight": 1,
+      "epilogue": "The ship took on stores against a note due in nine thousand years, and the lender said she would collect in person.",
+      "callback": {
+        "aria": "A loan with no interest for nine thousand years! ARIA is calling that free water! ARIA calls most things free water!",
+        "marv": "Nine thousand years, no interest. She expects to be there. I have reviewed the alternatives and she is correct.",
+        "rex": "A creditor who will outlive the ship, the colony and the language. REX wants a watch posted on the due date. He'll take first shift.",
+        "chip": "Thanks for choosing LongNote™ Credit! Your first and only payment falls due in 9,000 years! Autopay unavailable in this geological era!",
+        "ajoy": "You signed that rather quickly. It'll be fine, you'll be dead. I only wonder who she collects from, since she did say in person."
+      }
+    },
+    "rock_coal_shares": {
+      "weight": 1,
+      "epilogue": "The ship bought twelve gold of carbon futures, maturing in three hundred million years.",
+      "callback": {
+        "aria": "Our investment is doing great! ARIA checked! It hasn't done anything yet, and that's how you know it's safe!",
+        "marv": "Our carbon position is up by nothing. It will be up by nothing for the next two hundred and ninety-nine million years. After that it will be coal.",
+        "rex": "REX has reviewed the portfolio. The principal risk is listed as mammals. He would like to know which side we are on.",
+        "chip": "Your quarterly Deep Time™ statement is enclosed! It's the same as last quarter! Paperless statements cost extra!",
+        "ajoy": "Twelve gold, three hundred million years. I'd have read past the first line, but you did get a nice rock out of it."
+      }
+    },
+    "rock_hull_juror": {
+      "weight": 2,
+      "epilogue": "A plate of the ship's hull went on to serve on a rock jury, and by all accounts took it seriously.",
+      "callback": {
+        "aria": "Our plate is doing its civic duty! ARIA knows it's the best juror they have! ARIA is so proud of that part of the ship!",
+        "marv": "The plate has now heard more of the case than anyone alive. It is the only member of this crew to have held a position of responsibility.",
+        "rex": "REX still notes four hull points unaccounted for in the wrong jurisdiction. Should it be questioned, it knows our plating schedule.",
+        "chip": "JurorPlus™ congratulates your plate on another day of service! Its per diem has been applied to your outstanding balance!",
+        "ajoy": "There's still a draft where that plate used to be. I did say to cut it from somewhere less visible. I'm told it's very impartial, unlike some."
+      }
+    },
+    "rock_pirates_waiting": {
+      "weight": 2,
+      "epilogue": "A rock pirate crew stayed in the lane, guns run out, waiting for the ship's answer.",
+      "callback": {
+        "aria": "Those nice pirates are still waiting to hear from us! ARIA thinks we should send a card! In a few centuries!",
+        "marv": "They are still waiting. I have recalculated. They will still be waiting when this ship is a stain on a planet. It is the best deal anyone has ever got from them, and it will end.",
+        "rex": "REX has that crew flagged as an open contact. An enemy who is waiting for you is still an enemy. He has them on the board.",
+        "chip": "Reminder! You have one unanswered inquiry from a valued pirate! ResponseTime™ guarantees a reply within nine hundred years!",
+        "ajoy": "You never did get back to them. I'm sure they understand. They've got a gun pointed at where you were, but I'm sure they understand."
+      }
+    },
+    "rock_word_delivered": {
+      "weight": 3,
+      "epilogue": "The ship told her he was running late, and after eleven years she said it was fine.",
+      "callback": {
+        "aria": "We told her and she said FINE! That's the best possible word! ARIA doesn't know why nobody will look at ARIA when ARIA says that!",
+        "marv": "She said it was fine. I have reviewed the recording many times. I do not recommend it. He has nine thousand years to think about what he will say.",
+        "rex": "REX has reread the transcript of the last word. He has been in three wars. He would take any of them over being that man.",
+        "chip": "Your delivery has been marked FINE! SupportDesk™ advises that this is not a closed ticket! Further charges may apply!",
+        "ajoy": "You told her. I'd have softened it, but you told her. The seminary is still arguing over what she meant. Anyone who's been in a relationship isn't."
+      }
+    },
+    "rock_left_her_waiting": {
+      "weight": 2,
+      "epilogue": "The ship flew past her with the message undelivered, and heard the last word from a safe distance.",
+      "callback": {
+        "aria": "We left before the big word so we wouldn't be in the way! That was very polite of us! ARIA is sure she didn't notice!",
+        "marv": "She is still waiting, and now so is the word we did not give her. I have added it to the things I think about at night, of which there are several million.",
+        "rex": "REX will say this once. A tactical withdrawal is sound. He has never felt worse about one.",
+        "chip": "Your undelivered item is held at the RedeliverPlus™ depot! Redelivery is available for the next nine thousand years! Fees apply!",
+        "ajoy": "It was one sentence. You flew all that way and it was one sentence. I'm sure there's a good reason, and I'm sure you'll think of it."
+      }
+    },
+    "rock_schism": {
+      "weight": 2,
+      "epilogue": "The ship read the Pronouncement aloud with context, and the seminary has been two seminaries ever since.",
+      "callback": {
+        "aria": "We helped everyone understand scripture! Now there are two of them, so that's twice the understanding!",
+        "marv": "Two seminaries, both of which now believe the universe ends in a domestic dispute. It is the first doctrine I have ever agreed with.",
+        "rex": "REX has reports of a religious war in our wake. He has had worse exits. He is not sure when.",
+        "chip": "Both seminaries have asked for your details! DataShare™ has sold them to each at a very fair price!",
+        "ajoy": "I'd have told her first and the fleet second, but you've started a holy war now, so at least it's a decision."
+      }
+    }
+  },
+  "notes": {
+    "event_species_rock_001": {
+      "inspired_by": "The long-distance love of geological bodies, and every automated phone tree; a touch of the Hitchhiker's habit of treating enormous spans of time as a scheduling matter.",
+      "how": "A rock suitor more than four hundred million years overdue has recorded a branching phone tree, four centuries ago, to ask whoever passes to tell her he is running late; the writ is his renewed promise, and rock courtship is contact metamorphism.",
+      "science": "Wikipedia 'Metamorphism' (redirect target of Contact_metamorphism): contact metamorphism occurs from the intrusion of magma into cooler country rock, and the affected surrounding zone is called the metamorphic aureole. Checked with curl 2026-11-01."
+    },
+    "event_species_rock_002": {
+      "inspired_by": "Commodities trading and long-dated bonds, played through deep time; the owner's 'slow means something for trade' lane note.",
+      "how": "A rock speculator buys sewage now as coal in three hundred million years, lists MAMMALS, AGAIN as a risk because we burned her last position, and says interest is for people who expect to die.",
+      "science": "Wikipedia 'Coal': formed when plants decay into peat converted by the heat and pressure of deep burial over millions of years; 90% of all coal beds were deposited in the Carboniferous and Permian periods. Checked with curl 2026-11-01."
+    },
+    "event_species_rock_003": {
+      "inspired_by": "A court case that outlasts civilizations, in the Hitchhiker's spirit of enormous time as an administrative detail, with a nod to Brazil's paperwork.",
+      "how": "Rock jury duty: six thousand years in, counsel has reached the first syllable of 'whereas', mortality is not a valid excuse, and the rules let you swear in a plate of your own hull because they never say a juror must be warm."
+    },
+    "event_species_rock_004": {
+      "inspired_by": "Pirates who ambush by waiting for centuries, and the old naval warning shot taken to its logical end.",
+      "how": "The warning shot was fired three hundred and twelve years ago and lands on Thursday; you can stall them forever by saying you'll get back to them, but the boulder is under a previous captain's orders and still arrives."
+    },
+    "event_species_rock_005": {
+      "inspired_by": "The silicon mother guarding her eggs in Star Trek, and the miners who never asked; the response here is a hand's width a year.",
+      "how": "A mining company logged a clutch of eggs as high-grade geodes; the mother's answer to one broken shell has been closing over the rig for eighty years while the crew filed extensions, and the scanner tells egg from ore by how it rings.",
+      "science": "Wikipedia 'Geode': geodes are hollow, vaguely spherical rocks; mineral-rich water slowly deposits crystals within the cavity. The solid-versus-hollow distinction (nodule or thunderegg when solid) is on the page too. Checked with curl 2026-11-01."
+    },
+    "event_species_rock_006": {
+      "inspired_by": "Televised low-speed police chases, and caper films; the owner's 'slow means something for theft' lane note.",
+      "how": "A rock thief and a rock constable are in a thirty-thousand-year chase at fingernail speed, so you can end either career in an afternoon, or find out that neither of them wants it to end.",
+      "science": "Wikipedia 'Plate tectonics': plate motions range from 10 to 40 mm a year at the Mid-Atlantic Ridge (about as fast as fingernails grow) to about 160 mm a year for the Nazca plate. Checked with curl 2026-11-01."
+    },
+    "event_species_rock_007": {
+      "inspired_by": "Zardoz's enormous floating stone head handing down pronouncements, and its false-god reveal; here a rock elder's single sentence that takes eleven years.",
+      "how": "The payoff to S1: the moon-sized head whose eleven-year sentence a whole seminary reads as prophecy turns out to be the suitor's fiancee complaining that he said the Ordovician, and the verb everyone has been waiting for is FINE.",
+      "science": "Wikipedia 'Ordovician': spans from the end of the Cambrian 486.85 million years ago to the start of the Silurian 443.1 million years ago. Checked with curl 2026-11-01."
+    }
+  }
+}

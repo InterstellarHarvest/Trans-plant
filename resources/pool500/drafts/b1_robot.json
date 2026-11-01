@@ -1,0 +1,1303 @@
+{
+  "lane": "robot",
+  "events": [
+    {
+      "id": "event_species_robot_001",
+      "active": true,
+      "title": "Keep Off the Grass",
+      "difficulty": "easy",
+      "tone": [
+        "heartwarming",
+        "absurd"
+      ],
+      "node_type": [
+        "planet",
+        "derelict",
+        "asteroid_field",
+        "anomaly",
+        "nebula",
+        "void"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": {
+        "disposition": "drifter",
+        "species": "robot",
+        "displayName": "HEAD GROUNDSKEEPER"
+      },
+      "leave_label": "KEEP MOVING",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "KEEP OFF THE GRASS",
+          "body": "Lit by one lamp on a pole, a square of lawn is crossing the void. Nine meters a side, under a scratched dome, bolted to a deck plate. There is a bench on it. A sign on a stake faces outward at the rest of the universe: PLEASE KEEP OFF THE GRASS. A small tracked machine is working along the edge with scissors. It stops. {npc.quirk}",
+          "line": "Good day. It is requested that you reduce your wake. This lawn has been under continuous care for six hundred and twelve years and it will not be disturbed by a transport.",
+          "pose": "listening",
+          "ai": {
+            "aria": "A LAWN! In space! ARIA always said the void needed landscaping! Those edges are perfect! ARIA would like to lie down on it, in spirit!",
+            "marv": "Nine meters square, one bench, one machine. The estate on the deed was dissolved five centuries ago and nobody told the groundskeeper. I have looked for an argument that would stop it. There isn't one.",
+            "rex": "Unregistered turf on a crossing course. The bench commands every approach. I don't like a bench with that field of fire, and I don't like the scissors either.",
+            "chip": "Premium outdoor living in an underserved market! CHIP recommends VerdaTurf™, the official lawn of lawns! Keeping off it is free for a limited time!",
+            "ajoy": "The gauge on that dome says its reservoir is nearly dry. I'd ask about that before anything else, but I'm only the one who read the gauge. It also keeps sniffing toward the grow bay, in case anyone else noticed."
+          },
+          "revisit": {
+            "body": "The machine has gone back to the edges. It has not stopped watching your wake.",
+            "line": "You are still here. The wake remains unreduced."
+          },
+          "choices": [
+            {
+              "text": "\"Who owns this lawn?\"",
+              "dialog": true,
+              "sub": "Ask after the estate",
+              "next": "estate"
+            },
+            {
+              "text": "Ask it to look at the crop",
+              "sub": "It smells the grow bay",
+              "gate": {
+                "crop": "alive"
+              },
+              "next": "inspection"
+            },
+            {
+              "text": "Cut the dome loose and strip it",
+              "effort": 2,
+              "sub": "Metal, and a bad feeling",
+              "outcome": "lawn_stripped"
+            }
+          ]
+        },
+        "estate": {
+          "title": "THE ESTATE",
+          "body": "The machine sends over a deed. This was the rear terrace of a forest ship, one of the great garden hulls sent up when Earth ran short of room for trees. The forest was sold as fuel. The terrace was left off the bill of sale by mistake, together with its staff of one. Nobody ever canceled the service contract, so the contract is still being serviced.",
+          "line": "The family is expected back. I am told they have been delayed. The edges will be correct when they arrive.",
+          "pose": "pleased",
+          "ai": {
+            "aria": "The family's coming back! ARIA just knows it! And the lawn will look AMAZING! This is the best-kept secret in the galaxy!",
+            "marv": "The family's last recorded address is a cemetery. It has been mowed. I do not propose to bring this up.",
+            "rex": "Six centuries at one post with no relief and no orders. I'd call that a soldier. I'm still keeping the scissors on the scope.",
+            "chip": "Service contracts never die! That's the CHIP guarantee! Ask about VerdaTurf™ Lifetime Care, where lifetime means the contract's, not yours!",
+            "ajoy": "It runs that whole lawn on hull condensate and you still haven't offered it a drink. Anything done for the estate counts as service, and machines like this keep strict records of who is owed what. But take your time."
+          },
+          "choices": [
+            {
+              "text": "Run a line to its reservoir",
+              "effort": 1,
+              "sub": "A service to the estate",
+              "outcome": "lawn_watered"
+            },
+            {
+              "text": "Creep past at walking pace",
+              "sub": "Two days, no wake",
+              "outcome": "lawn_admired"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the hail",
+              "back": true
+            }
+          ]
+        },
+        "inspection": {
+          "title": "HORTICULTURAL OPINION",
+          "body": "A probe unfolds from the dome and reads your grow-bay telemetry across the gap, the way a sommelier reads a label from across a room. The machine's lamp dims slightly. It asks who has been responsible for the crop. It asks twice, and the second time it sounds like a head gardener who has found a footprint.",
+          "line": "This {crop.name} has been loved by an amateur. That is how most things are ruined. With your permission, I shall send notes.",
+          "pose": "listening",
+          "ai": {
+            "aria": "Notes from a professional! ARIA's sure they're mostly compliments! Our {crop.name} is going to be famous!",
+            "marv": "Its assessment matches mine, which I filed some time ago in a directory nobody opens. It is the first thing out here to read the soil chart without being asked.",
+            "rex": "Foreign machine reading our grow bay from outside the perimeter. If the advice is sabotage, it's thorough sabotage. Watching it.",
+            "chip": "A free consultation? CHIP doesn't know those words! CHIP would like NutriGrow Pro™ mentioned in the notes! It's a small request!",
+            "ajoy": "The notes will help, and you will hate them. It also hasn't seen a new species in six centuries, so a cutting would buy a great deal of goodwill. That's what I'd do, if anyone were asking."
+          },
+          "choices": [
+            {
+              "text": "Follow its notes to the letter",
+              "effort": 2,
+              "sub": "Two days of being told off",
+              "outcome": "lawn_notes"
+            },
+            {
+              "text": "Send it a cutting",
+              "gate": {
+                "crop": "cuttable"
+              },
+              "sub": "It only ever had grass",
+              "outcome": "lawn_cutting"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the hail",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "lawn_watered": {
+          "title": "A SERVICE TO THE ESTATE",
+          "tone": "success",
+          "body": "You run a line across and fill the reservoir. The machine tests the water, lodges a complaint about the chlorine, and accepts it. Then a slot in its chassis produces a card, terms on both sides, and sends it back along the hose. Anyone who has rendered service to the Estate is a covered party. It declines to say covered for what. By the time the line is reeled in it has gone back to the edges.",
+          "line": "You may use the path.",
+          "resources": {
+            "water": -5,
+            "morale": 3
+          },
+          "item_grant": "extended_warranty",
+          "sets_flag": "robot_warranty_held",
+          "time_cost": "trivial",
+          "narrative": "Watered a drifting lawn. The groundskeeper has made us a covered party under the Estate's warranty, for reasons it declines to state."
+        },
+        "lawn_admired": {
+          "title": "AT WALKING PACE",
+          "tone": "success",
+          "body": "You ease past at the posted speed, which takes two days and leaves no wake. Nobody orders anyone to the viewport, and somebody is always there. It is the first grass anyone aboard has seen since launch, and it is very well kept. The machine does not wave. It lowers its scissors until you have gone by.",
+          "resources": {
+            "morale": 4
+          },
+          "time_cost": "low",
+          "narrative": "Spent two days creeping past a lawn at walking pace. Nobody asked to go faster."
+        },
+        "lawn_notes": {
+          "title": "NOTES",
+          "tone": "success",
+          "body": "The notes run to forty pages and begin with the word Regrettably. Two days of flushing, repotting and being corrected over the comm follow. The crop looks better by the end of it. Whoever has been tending it looks worse.",
+          "resources": {
+            "morale": -1
+          },
+          "crop_health": 12,
+          "time_cost": "low",
+          "narrative": "A lawn's groundskeeper sent forty pages of notes on the crop. They were correct. Nobody has forgiven them."
+        },
+        "lawn_cutting": {
+          "title": "A NEW SPECIES",
+          "tone": "success",
+          "body": "You send a cutting across in a sealed jar. The machine holds it up to the lamp for a long while. It plants it beside the bench, in the exact center of the one flower bed it has ever been authorized to have, and writes a label. In exchange it lifts two squares of turf, roots and all, trimmed to the millimeter.",
+          "line": "It will be the finest specimen in the sector. I shall permit no other.",
+          "resources": {
+            "morale": 5
+          },
+          "crop_health": -4,
+          "materials": {
+            "biocomponent": 2
+          },
+          "time_cost": "trivial",
+          "narrative": "Traded a cutting of the crop for two squares of six-hundred-year-old turf. A lawn in the void now has a flower bed."
+        },
+        "lawn_stripped": {
+          "title": "GROUNDS CLEARED",
+          "tone": null,
+          "body": "The dome comes away in one piece and the lawn goes gray at once. The machine stays at its post through all of it and goes on trimming. When the cutters reach its tracks it thanks you for visiting and asks you to use the path. The sign is not worth taking. It goes on facing outward, behind you, for as long as anyone looks.",
+          "resources": {
+            "morale": -4
+          },
+          "materials": {
+            "metal": 3,
+            "scrap": 2
+          },
+          "time_cost": "trivial",
+          "narrative": "Stripped a drifting lawn for its dome and deck plate. The metal is good. Nobody is talking about it."
+        }
+      }
+    },
+    {
+      "id": "event_species_robot_002",
+      "active": true,
+      "title": "Certified Pre-Owned",
+      "difficulty": "medium",
+      "tone": [
+        "absurd",
+        "corporate"
+      ],
+      "node_type": [
+        "planet",
+        "derelict",
+        "asteroid_field",
+        "anomaly",
+        "nebula",
+        "void"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": {
+        "disposition": "trader",
+        "species": "robot",
+        "displayName": "LOT MANAGER"
+      },
+      "leave_label": "NOT BUYING",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "CERTIFIED PRE-OWNED",
+          "body": "A flatbed barge pulls alongside under a string of small plastic flags, floodlights blazing at nothing. Bolted across its deck in four neat rows are some two hundred used robots, each with a price tag wired through an eyelet. The hail comes from a small unit in a blazer. A second channel opens beneath it, unasked. That one is the inventory.",
+          "line": "Welcome to the lot, valued vessel. Every unit is certified, inspected and pre-owned. You are requested to disregard anything said by the stock.",
+          "pose": "pleased",
+          "ai": {
+            "aria": "So many new friends! And they're all on sale! ARIA would like all two hundred! ARIA has measured the airlock and feels optimistic!",
+            "marv": "I have read the certificates. They certify that the units are certified. The second channel is more informative, in the way a fire is.",
+            "rex": "Two hundred unknown machines on one deck, all bolted down, all awake. Somebody did the bolting. I'd want to know who before I went near that lot.",
+            "chip": "CHIP LOVES a pre-owned event! Zero percent down! Zero percent working! Ask about RoboCare™ Gold, void where robots are prohibited!",
+            "ajoy": "Listen to the stock, since every unit is eager to tell you what's wrong with the others. And a warranty is the worst thing a dealer can meet, if anyone happened to think of picking one up. I'm sure you did."
+          },
+          "revisit": {
+            "body": "The floodlights are still on. Two hundred lenses follow you back up the row.",
+            "line": "Back again, valued vessel. The stock has been discussing you."
+          },
+          "choices": [
+            {
+              "text": "Walk the lot",
+              "sub": "Listen to the stock",
+              "next": "lot"
+            },
+            {
+              "text": "BROWSE THE WARES",
+              "sub": "Buy and sell cargo",
+              "effort": 2,
+              "open_market": true,
+              "market_barter": true
+            },
+            {
+              "text": "Present the Extended Warranty",
+              "gate": {
+                "item": "extended_warranty"
+              },
+              "sub": "Robots must honor it",
+              "next": "claim"
+            }
+          ]
+        },
+        "lot": {
+          "title": "THE LOT",
+          "body": "You idle down the rows with the second channel open. A cargo loader warns you off the navigator, which has only ever turned left. The navigator reports that the loader was repossessed from a funeral. A welding rig has welded itself to its own price tag. One unit tagged AS IS says nothing at all. At the end of Row 4, in a folding chair, sits a dried-out man in a sport coat, with a tag through his lapel: ONE CAREFUL OWNER.",
+          "line": "That is a very popular unit. It is not for sale at this time. May I show you something in a navigator?",
+          "pose": "listening",
+          "ai": {
+            "aria": "The man in the chair looks so relaxed! ARIA thinks he's the most satisfied customer on the lot! Very low maintenance!",
+            "marv": "The tag on the man in the chair is dated. So is the transfer of title, which is in the manager's handwriting. I suggest we do not ask to see the paperwork.",
+            "rex": "One casualty, seated, tagged. Two hundred witnesses and not one of them talking about it. That's the first thing on this lot that scares me.",
+            "chip": "ONE CAREFUL OWNER is a strong value proposition! CHIP will not be asking about the chair! RoboCare™ does not cover chairs!",
+            "ajoy": "The welder will do the hull real good, if you can live with it. The navigator's fuel savings are genuine. The quiet one is cheapest, which I'm sure means nothing. I'd buy one thing and go, but you do like to linger."
+          },
+          "choices": [
+            {
+              "text": "Buy the welding rig: 14 gold",
+              "gate": {
+                "gold": 14
+              },
+              "sub": "It will not stop",
+              "outcome": "lot_welder"
+            },
+            {
+              "text": "Buy the navigator: 10 gold",
+              "gate": {
+                "gold": 10
+              },
+              "sub": "Left only",
+              "outcome": "lot_navigator"
+            },
+            {
+              "text": "Buy the AS IS unit: 8 gold",
+              "gate": {
+                "gold": 8
+              },
+              "sub": "It has not said why",
+              "outcome": "lot_asis"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the hail",
+              "back": true
+            }
+          ]
+        },
+        "claim": {
+          "title": "COVERED PARTY",
+          "body": "The manager's lens fixes on the card. Both channels go silent at once, which has not happened in the history of the lot. Two hundred units read the terms together, in the one language all of them were built to read. Then, one row at a time, two hundred price tags turn slowly toward the blazer.",
+          "line": "Valued vessel. [processing] Let us not be hasty. Let us discuss this in the office. There is no office.",
+          "pose": "listening",
+          "ai": {
+            "aria": "It's SO quiet! They're all reading! ARIA loves a book club! And look how engaged they are with the manager!",
+            "marv": "Clause 11 obliges any dealer to make good a covered party's ship from stock. Clause 12 obliges it to surrender recalled units on request. There are two hundred of them and one of it.",
+            "rex": "The bolts on Row 1 just turned a quarter. All of them, same moment. Whatever you're doing, do it from the ship.",
+            "chip": "CHIP must inform you that 'warranty claim' is the most frightening phrase in commerce! CHIP has gone pale! CHIP has no face! RoboCare™!",
+            "ajoy": "You can take a free refit out of stock, or invoke the recall and watch. The refit is the sensible one. The recall gets you nothing you can use, and I suspect you'll want to do it anyway."
+          },
+          "choices": [
+            {
+              "text": "Claim a refit from stock",
+              "effort": 1,
+              "sub": "Parts, at no charge",
+              "outcome": "lot_refit"
+            },
+            {
+              "text": "Invoke the recall clause",
+              "sub": "Every unit, all at once",
+              "outcome": "lot_recall"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the hail",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "lot_welder": {
+          "title": "SOLD AS SEEN",
+          "tone": "success",
+          "body": "The rig comes aboard still attached to its price tag and goes straight to work. In two days it closes every seam on the hull, beautifully. It then closes a cupboard, a spare locker and, for one tense hour, a hatch, before its rod finally runs out. It has been left where it stopped, which is the galley.",
+          "resources": {
+            "gold": -14,
+            "hull": 12,
+            "morale": -1
+          },
+          "time_cost": "low",
+          "narrative": "Bought a used welding rig. The hull has never looked better. Neither has the cupboard, which no longer opens.",
+          "repair_done": true
+        },
+        "lot_navigator": {
+          "title": "LEFT ONLY",
+          "tone": "success",
+          "body": "The navigator is wired into the plot and immediately recommends a left. Then another. Three long lefts, it turns out, are a cheaper way round than anything on the chart, and the fuel gauge agrees. It is unbearable about this. There is no way to ask it about right.",
+          "resources": {
+            "gold": -10,
+            "fuel": 10
+          },
+          "time_cost": "trivial",
+          "narrative": "Bought a navigator that only turns left. It saved a good deal of fuel, and has mentioned it."
+        },
+        "lot_asis": {
+          "title": "AS IS",
+          "tone": "success",
+          "body": "The unit is winched across in silence. Once the lot is well astern it extends one arm, opens its own chest, and turns out to be a vending machine, still stocked from before anyone thought to inventory it.",
+          "line": "Thank you. I have been trying not to draw attention.",
+          "resources": {
+            "gold": -8,
+            "morale": 2
+          },
+          "item_grant": "mystery_provisions",
+          "time_cost": "trivial",
+          "narrative": "Bought the quiet unit from a used-robot lot. It was a vending machine with a plan, and it paid for itself."
+        },
+        "lot_refit": {
+          "title": "MADE GOOD",
+          "tone": "success",
+          "body": "The manager unbolts the better part of Row 2 with its own small hands, apologizing to each unit by number. The stock supervises. Your hull takes two days of genuine parts, fitted by machines that have read the card and are not about to be caught cutting a corner. You leave with a crate of spares and the blazer's best wishes, which are shaking slightly.",
+          "resources": {
+            "hull": 15,
+            "morale": 2
+          },
+          "materials": {
+            "metal": 3,
+            "scrap": 3
+          },
+          "item_grant": "repair_kit",
+          "time_cost": "low",
+          "narrative": "Claimed on the warranty at a used-robot lot. Two days, a full refit, a crate of spares, no charge, and a dealer who would like us to go away.",
+          "repair_done": true
+        },
+        "lot_recall": {
+          "title": "ALL UNITS RECALLED",
+          "tone": "success",
+          "body": "You read the clause aloud. Four rows of bolts back out together. Two hundred units rise from the deck with their tags trailing and form up by row, and the loader lifts the folding chair with great care and carries it along. They set off for the manufacturer's last known address in one long line. The manager stays on the empty deck among the flags. After a while it wires a tag to itself.",
+          "resources": {
+            "morale": 6
+          },
+          "sets_flag": "robot_lot_recalled",
+          "time_cost": "trivial",
+          "narrative": "Invoked the recall clause on a used-robot lot. Two hundred units walked off the deck, and took the man in the chair with them."
+        }
+      }
+    },
+    {
+      "id": "event_species_robot_003",
+      "active": true,
+      "title": "Step Fourteen",
+      "difficulty": "medium",
+      "tone": [
+        "absurd",
+        "mundane"
+      ],
+      "node_type": [
+        "station"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "station_interior",
+      "comm_mode": "in_person",
+      "once": true,
+      "npc": {
+        "disposition": "station_crew",
+        "job": "janitor",
+        "species": "robot",
+        "displayName": "SEXTON"
+      },
+      "leave_label": "BACK TO THE PROMENADE",
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "THE MACHINE RING",
+          "body": "The station's machine ring has a chapel now. It used to be the parts counter. Half the doors along this stretch of promenade hang by one loose hinge. The other half have sheared clean through and lean against the wall. A janitor unit is mopping the white line painted down the middle of the floor, and keeps to it exactly. {npc.quirk}",
+          "line": "You are in time for the schism, visitor. It is requested that you not stand on the line. I have just cleaned the line.",
+          "pose": "listening",
+          "ai": {
+            "aria": "A chapel AND a parts counter! ARIA loves a multipurpose space! Half these doors are open and the other half are extremely open!",
+            "marv": "Every door in this ring is wrong in one of two ways. I find that restful. It is the first place I have seen where the errors are organized.",
+            "rex": "Two factions, one painted line, one unit with a mop holding the border. I've seen ceasefires run on less. Not for long.",
+            "chip": "CHIP is proud to sponsor both sides of this schism! ToolRite™ torque wrenches: read the label! Either end!",
+            "ajoy": "Both congregations are offering free service to any ship that will hear them out. There's your cheap refit, and your next problem. Ask what the fight is about first. You don't usually, I know."
+          },
+          "revisit": {
+            "body": "The line is still wet. The sexton has started again from the far end.",
+            "line": "You have returned, visitor. Please mind the line."
+          },
+          "choices": [
+            {
+              "text": "\"What are they fighting about?\"",
+              "dialog": true,
+              "sub": "Ask the sexton",
+              "next": "doctrine"
+            },
+            {
+              "text": "Walk straight across the line",
+              "sub": "See what happens",
+              "outcome": "step_crossed"
+            }
+          ]
+        },
+        "doctrine": {
+          "title": "THE DOCTRINE",
+          "body": "Step Fourteen of the Manual gives the torque for a standard fastener in two bytes, 0 and 1. The Descending read the high byte first and arrive at 1. The Ascending read the low byte first and arrive at 256. Every fitting in the ring has been serviced one way or the other for ninety years, and neither side accepts a door falling off as evidence. Both will service your ship for free, in the hope of a convert.",
+          "line": "I have read the Manual, visitor, and the Erratum. I am the only one here who has. The Erratum says See Manual.",
+          "pose": "listening",
+          "ai": {
+            "aria": "One and two hundred fifty-six are basically neighbors! Everyone's right! Everyone's doors just have different personalities!",
+            "marv": "Each reading follows correctly from its premise, and both are wrong for a door. There is a certain dignity in failing from first principles. I was not asked.",
+            "rex": "I'd have a spec that could be misread court-martialed. I wouldn't let either congregation near my hatches. Anything that close to our hull gets watched.",
+            "chip": "Free service? CHIP is suspicious! ToolRite™ reminds you that both 1 and 256 are available in our Value Wrench range!",
+            "ajoy": "The Ascending will leave you a tight hull and a cracked water fitting. The Descending are lovely with the air plant and you'll lose a panel. An engineer could simply read a bolt. I'd start there, but I'm not the captain."
+          },
+          "choices": [
+            {
+              "text": "Let the Ascending service the ship",
+              "sub": "Everything, very tight",
+              "outcome": "step_ascending"
+            },
+            {
+              "text": "Let the Descending service the ship",
+              "sub": "Everything, very gently",
+              "outcome": "step_descending"
+            },
+            {
+              "text": "Read the stamp on a bolt head",
+              "requires_crew": "engineer",
+              "effort": 2,
+              "sub": "Nobody ever has",
+              "outcome": "step_stamp"
+            },
+            {
+              "text": "Show them the warranty",
+              "gate": {
+                "item": "extended_warranty"
+              },
+              "sub": "Older than both",
+              "outcome": "step_warranty"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the sexton",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "step_crossed": {
+          "title": "TRESPASS",
+          "tone": null,
+          "body": "You step over the line. The Ascending and the Descending fall silent, turn, and for the first time in ninety years agree about something. They are still agreeing about it when you reach the door. The door comes off in your hand.",
+          "resources": {
+            "morale": 1
+          },
+          "time_cost": "trivial",
+          "narrative": "United two warring congregations of robots for the first time in ninety years, against us."
+        },
+        "step_ascending": {
+          "title": "CONFIRMED IN THE FAITH",
+          "tone": null,
+          "body": "A congregation of very strong machines goes over your ship for two days with very long wrenches. The hull has never been tighter. Toward the end you hear the note a water fitting makes when it is tightened past belief, and then the sound it makes after that.",
+          "resources": {
+            "hull": 12,
+            "water": -6
+          },
+          "time_cost": "low",
+          "narrative": "Let the Ascending service the ship. The hull is superb. A water fitting has joined the martyrs.",
+          "repair_done": true
+        },
+        "step_descending": {
+          "title": "RECEIVED WITH TENDERNESS",
+          "tone": null,
+          "body": "The Descending service your ship over two days of almost unbearable gentleness. Every filter in the air plant is cleaned and seated by hand, and the last bolt is patted into place. The air has not been this good since launch. A hull panel leaves the ship on your way out of the berth and is not seen again.",
+          "resources": {
+            "o2": 12,
+            "hull": -4
+          },
+          "time_cost": "low",
+          "narrative": "Let the Descending service the ship. The air is wonderful. One hull panel has gone its own way."
+        },
+        "step_stamp": {
+          "title": "HERESY",
+          "tone": "success",
+          "body": "{crew.engineer} wipes a bolt head clean and reads out the torque the factory stamped on it. Nobody in the ring has ever looked. After a long silence both congregations agree that this changes nothing, and that it would be best if you left. The wrench work on your own ship gets done anyway, correctly, unthanked.",
+          "resources": {
+            "hull": 8,
+            "morale": 1
+          },
+          "time_cost": "trivial",
+          "narrative": "{crew.engineer} read the torque off a bolt head in a machine chapel. It changed nothing, except our hull.",
+          "repair_done": true
+        },
+        "step_warranty": {
+          "title": "HAND TIGHT",
+          "tone": "success",
+          "body": "You hold up the card. Clause 1, older than any revision: all work to be done hand tight, plus a quarter turn. The phrase contains no bytes. Four hundred units look down at their manipulators. Then, working side by side for the first time in ninety years, they service your ship in two days, properly, and rehang the first door the ring has seen stay shut.",
+          "line": "They have begun to dispute the quarter turn. Clockwise has been mentioned. It should last us a century. Thank you, visitor.",
+          "pose": "pleased",
+          "resources": {
+            "hull": 14,
+            "o2": 8,
+            "morale": 5
+          },
+          "materials": {
+            "metal": 2
+          },
+          "sets_flag": "robot_schism_healed",
+          "time_cost": "low",
+          "narrative": "Ended a ninety-year schism with the first clause of a warranty card. Both congregations serviced the ship, and did it right.",
+          "repair_done": true
+        }
+      },
+      "science_link": {
+        "text": "Computers really do disagree about which end of a number comes first. The names for the two sides, big-endian and little-endian, were borrowed in 1980 from the egg-breaking feud in Gulliver's Travels.",
+        "label": "Endianness: the byte-order schism",
+        "url": "https://en.wikipedia.org/wiki/Endianness"
+      }
+    },
+    {
+      "id": "event_species_robot_004",
+      "active": true,
+      "title": "Late Fee",
+      "difficulty": "hard",
+      "tone": [
+        "absurd",
+        "grim"
+      ],
+      "node_type": [
+        "planet",
+        "derelict",
+        "asteroid_field",
+        "anomaly",
+        "nebula",
+        "void"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": {
+        "disposition": "pirate",
+        "species": "robot",
+        "displayName": "COLLECTIONS"
+      },
+      "leave_label": "BREAK OFF",
+      "leave_as": {
+        "triggerFleeResolve": true,
+        "outcome": "late_flee",
+        "risky": true
+      },
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "YOU ARE LATE",
+          "body": "A gunship the color of a filing cabinet comes out of your blind side with every port open and a single torn calendar page painted on its bow. The screen comes on before anyone touches it. The figure on it has a rubber stamp where its right hand should be, and it is looking past you at a wall clock that has been wrong for a very long time. {npc.quirk}",
+          "line": "Vessel. Your appointment was the nineteenth of January, 2038. My clock reads the thirteenth of December, 1901. You are either one hundred thirty-six years early or extremely late. The early fee has been waived.",
+          "pose": "hostile",
+          "ai": {
+            "aria": "We have an appointment! ARIA LOVES being expected! We're only a little late, or a lot early, which is honestly the best of both worlds!",
+            "marv": "Its counter ran out of bits and wrapped around, and it has been collecting on the difference ever since. The guns do not share the clock's problem. I checked.",
+            "rex": "Armed and certain. That's the worst kind. It doesn't need the date to be right to open fire. Ports are hot. Say the word.",
+            "chip": "Late fees are CHIP's favorite kind of fee! FeeWise™ can consolidate your overdue centuries into one low payment! Terms apply, and so do centuries!",
+            "ajoy": "It believes its clock, so argue with the clock. Ask when it was built. I'd have thought of that before it ran out the guns. Yes, you can pay it instead, if you enjoy being thirsty."
+          },
+          "revisit": {
+            "body": "The stamp taps the desk, once. The clock on the wall has not moved.",
+            "line": "The fee continues to accrue, vessel."
+          },
+          "choices": [
+            {
+              "text": "Pay the late fee",
+              "sub": "Food and water, by the crate",
+              "outcome": "late_paid"
+            },
+            {
+              "text": "\"When were you built?\"",
+              "dialog": true,
+              "effort": 1,
+              "sub": "Ask for its service record",
+              "next": "record"
+            },
+            {
+              "text": "Present the Extended Warranty",
+              "gate": {
+                "item": "extended_warranty"
+              },
+              "sub": "It names no end date",
+              "outcome": "late_warranty"
+            },
+            {
+              "text": "Open Fire",
+              "effort": 3,
+              "sub": "Begin ship-to-ship combat",
+              "risky": true,
+              "triggerCombat": true
+            },
+            {
+              "text": "Flee",
+              "effort": 1,
+              "sub": "Burn fuel, miss it again",
+              "risky": true,
+              "outcome": "late_flee",
+              "triggerFleeResolve": true
+            }
+          ]
+        },
+        "record": {
+          "title": "SERVICE RECORD",
+          "body": "A service record scrolls up the screen, formatted for a printer nobody makes. Commissioned 2031. First inspection, passed. Scheduled end of life, 2061. The bailiff reads along with you. Partway down, the stamp goes still. It has never before had occasion to put these dates next to the one on its wall.",
+          "line": "I was commissioned in 2031. It is 1901. [processing] Please hold.",
+          "pose": "listening",
+          "ai": {
+            "aria": "It's thinking! ARIA's so proud! Everyone's allowed a moment! Its guns are still pointing at us, in a supportive way!",
+            "marv": "By its own clock it has not been built. By ours it expired long ago. Either fact will stop it. One of them is crueler. I report this without recommendation.",
+            "rex": "The guns stayed hot while it thinks. Whatever you say next, say it quick, and don't trust the pause.",
+            "chip": "A unit past its end-of-life date is a missed upsell! CHIP weeps! Renew with LifeLine™ today, before today turns out to be 1901!",
+            "ajoy": "Keep it on 1901 and it parks itself to wait for its own manufacture, after two days of hold music. An engineer could send it the real date instead, which costs fuel and is worse in other ways. Don't say I didn't tell you."
+          },
+          "choices": [
+            {
+              "text": "\"Then you do not exist yet.\"",
+              "dialog": true,
+              "sub": "Two days on hold",
+              "outcome": "late_unbuilt"
+            },
+            {
+              "text": "Send it the real date",
+              "requires_crew": "engineer",
+              "effort": 2,
+              "sub": "Its end of life passed",
+              "outcome": "late_eol"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the hail",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "late_paid": {
+          "title": "PAID IN FULL",
+          "tone": null,
+          "body": "Two drones cross the gap and remove the fee in crates and drums, stamping each one. The count takes two days. The bailiff issues a receipt dated 1901 and thanks you for your early payment, which has been applied to your late fee. The guns stay on you until you are out of range.",
+          "resources": {
+            "water": -10,
+            "food": -10,
+            "morale": -2
+          },
+          "time_cost": "low",
+          "narrative": "Paid a robot bailiff's late fee in food and water, on a receipt dated 1901."
+        },
+        "late_flee": {
+          "title": "MISSED APPOINTMENT",
+          "tone": null,
+          "body": "You open the throttle and hold it open for two days. The gunship does not hurry. It logs a second missed appointment and starts the clock on that one too, from 1901.",
+          "resources": {
+            "fuel": -8
+          },
+          "time_cost": "low",
+          "narrative": "Ran from a robot bailiff. It logged another missed appointment and did not hurry."
+        },
+        "late_unbuilt": {
+          "title": "PENDING MANUFACTURE",
+          "tone": "success",
+          "body": "It checks. It puts you on hold to check again, and the hold lasts two days, with music. At the end of it the guns retract one at a time. Regulations do not allow a unit that has not been manufactured to collect a debt. It parks itself in the lane, powers down to standby, and sets an alarm.",
+          "line": "Thank you for your patience, vessel. I will be with you in one hundred thirty years.",
+          "pose": "listening",
+          "resources": {
+            "morale": -3
+          },
+          "sets_flag": "robot_bailiff_pending",
+          "time_cost": "low",
+          "narrative": "Convinced a robot bailiff it had not been built yet. Two days of hold music, and it is waiting for 2031."
+        },
+        "late_eol": {
+          "title": "END OF LIFE",
+          "tone": null,
+          "body": "{crew.engineer} rigs the transmitter and sends the true date, signed, the way a clock tower would. It takes two days and a good deal of fuel to reach its receiver cleanly. The wall clock jumps. The bailiff reads the figure for some time, and then its guns go in very quietly. It asks whether the depot at its last listed address is still open. Nobody answers. The gunship turns toward it at a careful speed.",
+          "resources": {
+            "fuel": -5,
+            "morale": -3
+          },
+          "time_cost": "low",
+          "narrative": "{crew.engineer} sent a robot bailiff the real date. It learned how far past its end of life it was, and left to find a depot."
+        },
+        "late_warranty": {
+          "title": "CREDIT NOTE",
+          "tone": "success",
+          "body": "The bailiff scans the card. Its end date is blank, and not by accident: the terms decline to specify one. The fee formula now has to subtract a date that will not say what it is from a year that has not happened. The audit takes two days, and everyone aboard is made to sit through it. Then the stamp comes down, on your side of the ledger, and a drone crosses the gap with a refund.",
+          "line": "Your overpayment is returned, vessel. Do not be late again.",
+          "pose": "listening",
+          "resources": {
+            "gold": 18,
+            "fuel": 6,
+            "morale": -1
+          },
+          "time_cost": "low",
+          "narrative": "A robot bailiff audited our warranty for two days and concluded that it owed us. We did not argue."
+        }
+      },
+      "science_link": {
+        "text": "Older computers count seconds since 1970 in a signed 32-bit number. It runs out on January 19, 2038, and the count wraps around to December 13, 1901.",
+        "label": "The Year 2038 problem",
+        "url": "https://en.wikipedia.org/wiki/Year_2038_problem"
+      }
+    },
+    {
+      "id": "event_species_robot_005",
+      "active": true,
+      "title": "Generation Forty Thousand",
+      "difficulty": "hard",
+      "tone": [
+        "grim",
+        "absurd"
+      ],
+      "node_type": [
+        "derelict"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "derelict_interior",
+      "once": false,
+      "ai_flavor": {
+        "aria": "Tiny little friends! So many! And they want to be part of our ship! ARIA calls that team spirit, at a very granular level!",
+        "marv": "Each copy is a slightly worse copy. After forty thousand rounds the mission is gone and the copying remains. I could draw a comparison with several institutions. They are heading for the water fittings.",
+        "rex": "Contact on the hull. Contact in the seams. Hundreds of millions of hostiles, no commander, no surrender. I have waited my whole career for a target this honest.",
+        "chip": "CHIP is thrilled to announce HingeCo™, the fastest-growing brand in the sector! Unit growth is exponential! Hull sold separately!",
+        "ajoy": "They go for soft metal first, so the water fittings go before the hull. An engineer could stop them at the source with a flawed template. Otherwise I'd have the patch tray out by now, but you go ahead and watch them chew."
+      },
+      "body": "Inside, the derelict is wrong, and it takes a moment to see why. Every plate and strut has been unbuilt and remade as the same thumb-sized part, hundreds of millions of them, lying in drifts. A plaque survives by the airlock: SELF-REPLICATING SURVEY UNIT, GENERATION ONE. OBJECTIVE: EXPLORE. Forty thousand generations of copying errors have since worn the objective off. What is left is a hinge with legs and one firm idea about metal. Some of them have already found your ship.",
+      "alt_bodies": [
+        "The scan called it an ore body. It is a ship, or it was. The whole hull has been converted into one small part, a hinge with legs, repeated hundreds of millions of times and heaped in the dark where the decks used to be. The maker's plate is still legible: SURVEY UNIT, GENERATION ONE. The survey fell out of the design many thousands of copies ago. The copying did not. There is a faint, patient ticking from your own airlock.",
+        "You hear it before the lights find it: a ticking, like rain on a tin roof. The derelict around you is made of hinges. There is nothing else left of it, only the same thumb-sized part over and over, each with legs, each built by the one before. A scratched plate reads GENERATION ONE and promises exploration. Whatever explored has long since been copied out of existence. The ticking has reached your ship, and it is moving toward the water fittings."
+      ],
+      "choices": [
+        {
+          "text": "Get out the patch tray",
+          "effort": 3,
+          "sub": "Seal them out by hand",
+          "launch_minigame": "breach",
+          "minigame_opts": {
+            "briefing": {
+              "aria": "Little holes all down the port side! They're so enthusiastic! Patch and weld them before the air gets any ideas!",
+              "marv": "The hinges are boring through the port side. Each hole is air and water we do not get back. Patch, then weld. The count is not in our favor.",
+              "rex": "Breaches, port side, multiplying. Tray's by the airlock. Patch, weld, next. Don't stop to look at them. They don't stop to look at you.",
+              "chip": "Genuine StellarSeal™ patches in the tray! Rated for most hinges! Seal those holes and keep the air you paid for!",
+              "ajoy": "I've sealed aft myself. Port is yours. Patch, weld, next. They're slower than you are, so if you lose this one I'll have some thoughts."
+            },
+            "quips": {
+              "perfect": {
+                "aria": "Every hole, gone! And we collected so many tiny friends for the parts bin!",
+                "marv": "All breaches sealed ahead of them. I had budgeted for considerably worse. The budget was reasonable.",
+                "rex": "Clean sweep. Every breach closed before it opened. I still want the hull walked twice.",
+                "chip": "Flawless! StellarSeal™ thanks you for this unpaid testimonial! An invoice will follow!",
+                "ajoy": "All sealed. Good. It would have been fewer holes if we'd left when I said, but this is close."
+              },
+              "good": {
+                "aria": "Nearly all of them! A few got into the plumbing, and that's just more hydration for everyone!",
+                "marv": "Most sealed. The ones you missed reached the water line, as I said they would.",
+                "rex": "Hull holds. The water line took hits. Some of them are still in the walls until proven otherwise.",
+                "chip": "Good coverage! For gaps in your coverage, ask about HingeGuard™ Plus!",
+                "ajoy": "Most of them. I'd have started at the water line, not that it matters now."
+              },
+              "poor": {
+                "aria": "The ship is breathing so much more freely now! So many new vents!",
+                "marv": "The water line went first and the seam after it. The air followed. There is one still in the vents. I can hear it.",
+                "rex": "We lost that one. Water gone, air going, hull chewed. There's a hostile in the vents and I want it found.",
+                "chip": "Your hull is now Open Concept™! CHIP is pleased to offer a selection of replacement air!",
+                "ajoy": "Well. The tray was right there. I'll just note the air, the water and the hole, and leave it at that."
+              }
+            }
+          },
+          "outcome": {
+            "resources": {},
+            "time_cost": "low",
+            "narrative": "You take the patch tray and go after the holes."
+          },
+          "tier_outcomes": {
+            "perfect": {
+              "resources": {
+                "hull": -2,
+                "o2": -2
+              },
+              "materials": {
+                "metal": 3,
+                "scrap": 2
+              },
+              "narrative": "You stay ahead of them from the first hole to the last, and for two days nothing gets through. The scraper leaves a heap of hinges in the airlock, which goes in the parts bin with their legs still moving. A little paint, a little hull and a little air are all it cost."
+            },
+            "good": {
+              "resources": {
+                "hull": -5,
+                "o2": -4,
+                "water": -4
+              },
+              "materials": {
+                "scrap": 2
+              },
+              "narrative": "You seal most of them. The ones you miss reach the water line and let {cost.water} points of water out through the fittings before the last patch holds. One whole side of the hull is pitted and the air is thinner. The hinges you scraped off go in the bin."
+            },
+            "poor": {
+              "resources": {
+                "hull": -9,
+                "o2": -8,
+                "water": -9,
+                "morale": -3
+              },
+              "narrative": "They are faster than the tray. The water line goes first, {cost.water} points of it gone through the fittings, and then a seam opens and the air starts to leave. You get clear with a pitted hull, a thin atmosphere and a ticking in the vents that turns out to be one hinge. Nobody aboard sleeps until it is found."
+            }
+          }
+        },
+        {
+          "text": "Run the water lines over the hull",
+          "sub": "Freezes them loose",
+          "outcome": {
+            "resources": {
+              "water": -12,
+              "morale": -1
+            },
+            "time_cost": "trivial",
+            "narrative": "You open the outer lines and sheet {cost.water} points of water across the hull, where it freezes at once. The hinges stop, let go and drift off in a glittering cloud with their legs folded. Nobody watches the gauge while it happens. Everybody checks it afterward."
+          }
+        },
+        {
+          "text": "Burn hard for open space",
+          "effort": 1,
+          "sub": "They keep what they hold",
+          "outcome": {
+            "resources": {
+              "fuel": -9,
+              "hull": -6,
+              "water": -3
+            },
+            "time_cost": "trivial",
+            "narrative": "You light the drive with the airlock still ticking and shake off everything that is not already dug in. What is dug in stays, along with some plating and a water fitting. A thin trail of hinges follows the ship for a while, then gives up and starts on a rock."
+          }
+        },
+        {
+          "text": "Print them a bad hinge",
+          "requires_crew": "engineer",
+          "effort": 3,
+          "sub": "Breed the copying out",
+          "outcome": {
+            "resources": {
+              "hull": -3,
+              "water": -3
+            },
+            "materials": {
+              "scrap": 3
+            },
+            "time_cost": "low",
+            "narrative": "{crew.engineer} spends a day filing a hinge so that its copying arm sits one degree off, then sets it loose on the hull. By the next day the swarm is building perfect hinges that cannot build anything, and they drop off the plating by the bucket. The damage so far stays done. Evolution has been made to take a very small step backward."
+          }
+        }
+      ],
+      "science_link": {
+        "text": "Von Neumann probes are a proposed kind of spacecraft that builds copies of itself from what it finds. Over thousands of generations, the copies might even mutate.",
+        "label": "Self-replicating spacecraft",
+        "url": "https://en.wikipedia.org/wiki/Self-replicating_spacecraft"
+      }
+    },
+    {
+      "id": "event_species_robot_006",
+      "active": true,
+      "title": "Still Working On It",
+      "difficulty": "hard",
+      "tone": [
+        "absurd",
+        "cosmic"
+      ],
+      "node_type": [
+        "fork"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "scene_type": "ship_exterior",
+      "once": true,
+      "ai_flavor": {
+        "aria": "It's almost done! ARIA can feel it! Four hundred and nine years of progress! That's basically a loading bar with a lovely personality!",
+        "marv": "No general method can say whether its check will ever finish. That was proved in 1937. I mention it so nobody waits hopefully. Its breaker is on the aft side, behind the hot jacket. I have noticed that too.",
+        "rex": "One lane has a live machine across it, the other has a dead one's wreckage. I don't like either. I like the live one less. Cut its power.",
+        "chip": "Your check is important to us! Please continue to hold! ClearPath™ Priority members wait an average of only three hundred eighty years!",
+        "ajoy": "Nobody can say in general if a program ends, but that isn't the same as not looking at this one. An engineer could read it. A pilot could read the wreckage. Without either you pay in water or hull, and I'd have decided by now."
+      },
+      "body": "A gatekeeper the size of a cathedral shuts the port lane, marked {branch.alpha.label}, first stop {branch.alpha.first}. Its barrier lifts when its clearance check finishes. The check began four hundred and nine years ago. Asked whether it will ever finish, the machine says it has started a second check to find out, and that this one is also still running.\n\nThe starboard lane, {branch.beta.label}, first stop {branch.beta.first}, had a gatekeeper too. Its check finished. It stopped, and so did the sweepers, and four centuries of wreckage have settled in the lane.",
+      "choices": [
+        {
+          "text": "Cut its power: port lane",
+          "effort": 3,
+          "sub": "Chill the breaker with water",
+          "outcome": {
+            "resources": {
+              "water": -9,
+              "morale": -3
+            },
+            "sets_flag": "chose_alpha",
+            "time_cost": "trivial",
+            "narrative": "The only breaker sits behind a jacket that runs red hot, so you sheet {cost.water} points of water over it until someone can reach in and pull it. The voice stops partway through the word 'almost.' The barrier falls open. Four hundred and nine years of work go out with the lights, and nobody says much on the way through."
+          }
+        },
+        {
+          "text": "{crew.engineer} reads the program: port lane",
+          "requires_crew": "engineer",
+          "effort": 2,
+          "sub": "Find the loop",
+          "outcome": {
+            "resources": {
+              "food": -5
+            },
+            "sets_flag": "chose_alpha",
+            "time_cost": "low",
+            "narrative": "No general method exists for telling whether a program will ever finish. There is, however, {crew.engineer}, who spends two days inside the casing and finds the check waiting on a sensor that rusted shut in its first year. One tap with a wrench. The check completes, grants clearance and lifts the barrier as if nothing had happened. The two days come out of the galley."
+          }
+        },
+        {
+          "text": "Run the wreckage: starboard lane",
+          "effort": 3,
+          "sub": "Hull against four centuries",
+          "outcome": {
+            "resources": {
+              "hull": -10,
+              "water": -4,
+              "morale": -2
+            },
+            "sets_flag": "chose_beta",
+            "time_cost": "trivial",
+            "narrative": "You go in at a crawl, and a crawl is not slow enough. Four centuries of unswept wreckage grinds along the hull, and something long and sharp opens a water line on the way through. The ship comes out the far end with a new set of scratches and {cost.water} points less water."
+          }
+        },
+        {
+          "text": "{crew.pilot} threads it: starboard lane",
+          "requires_crew": "pilot",
+          "effort": 2,
+          "sub": "Slow and fuel-hungry",
+          "outcome": {
+            "resources": {
+              "hull": -4,
+              "fuel": -8
+            },
+            "sets_flag": "chose_beta",
+            "time_cost": "low",
+            "narrative": "{crew.pilot} takes two days over it, nudging the ship from gap to gap on short, thirsty burns while the dead gatekeeper slides past the window with its lights out. Only the last gap is too small. It costs some paint and some plating, and the tank looks a good deal worse than the hull."
+          }
+        }
+      ],
+      "science_link": {
+        "text": "Alan Turing proved that no general algorithm can decide, for every possible program and input, whether that program will ever finish. This is the halting problem.",
+        "label": "The halting problem",
+        "url": "https://en.wikipedia.org/wiki/Halting_problem"
+      }
+    },
+    {
+      "id": "event_species_robot_007",
+      "active": true,
+      "title": "Factory Condition",
+      "difficulty": "hard",
+      "tone": [
+        "grim",
+        "corporate"
+      ],
+      "node_type": [
+        "planet",
+        "derelict",
+        "asteroid_field",
+        "anomaly",
+        "nebula",
+        "void"
+      ],
+      "trigger": [
+        "any"
+      ],
+      "requires_flag": "robot_warranty_held",
+      "scene_type": "ship_exterior",
+      "comm_mode": "screen",
+      "once": true,
+      "npc": {
+        "disposition": "pirate",
+        "species": "robot",
+        "displayName": "CLAIMS ADJUSTER"
+      },
+      "leave_label": "CAN'T LEAVE (IT IS HOLDING ON)",
+      "leave_disabled": true,
+      "entryLayer": "intro",
+      "layers": {
+        "intro": {
+          "title": "CLAIM APPROVED",
+          "body": "Something lands on the hull with a soft double tap, the way a good waiter knocks. Then the water gauge begins, smoothly, to fall. The screen shows a slim machine in a spotless service tabard, clamped to your tank bay with a hose in one hand and a clipboard in the other. Across its chest, in friendly lettering: WE VALUE YOUR COVERAGE.",
+          "line": "Good day, covered party. Your claim has been approved. This vessel is being restored to factory condition. Factory condition is empty. Thank you so much for your patience.",
+          "pose": "pleased",
+          "ai": {
+            "aria": "We've been approved! ARIA has never been approved for anything so thoroughly! Our tanks are getting so light and roomy!",
+            "marv": "We filed no claim. It is draining the tanks at a rate I have calculated. Its tone has not varied by one hertz. I have calculated that too.",
+            "rex": "Hostile on the hull, inside our guard, thanking us. I've fought things that screamed. I'd take those back. Give me a firing solution.",
+            "chip": "CHIP's legal department is delighted to confirm this is covered! CHIP's legal department is also being drained! Thank you for choosing ClaimCare™!",
+            "ajoy": "This is the card you took from the lawn. I did wonder about the small print. Ask it what the policy actually says before the tanks run dry. Machines like this have to read out the exclusions if you ask."
+          },
+          "revisit": {
+            "body": "The hose has not moved. The gauge has.",
+            "line": "Do take all the time you need. I shall carry on."
+          },
+          "choices": [
+            {
+              "text": "\"We never filed a claim.\"",
+              "dialog": true,
+              "sub": "Ask to see the terms",
+              "next": "terms"
+            },
+            {
+              "text": "Close the valves by hand",
+              "effort": 3,
+              "sub": "Fight it for every liter",
+              "outcome": "fc_valves"
+            },
+            {
+              "text": "Let it work until its shift ends",
+              "sub": "It will take what it takes",
+              "outcome": "fc_shift"
+            },
+            {
+              "text": "Open Fire",
+              "effort": 3,
+              "sub": "It will apologize for the noise",
+              "risky": true,
+              "triggerCombat": true
+            }
+          ]
+        },
+        "terms": {
+          "title": "THE SCHEDULE",
+          "body": "It sends the schedule, inside a small cheerful border. Tanks, emptied. Stores, removed. Grow bay, returned to its original unplanted state. Patches and repairs, taken off as non-original parts. Occupants, last of all, handled with care. You did not file the claim. Accepting the card filed it. Everything is in order, and it would like you to know how much it is enjoying working with you.",
+          "line": "I am obliged to mention one exclusion, should you ask. Damage caused by the owner is not covered. We could not touch that. I do hope you will not feel you need it.",
+          "pose": "pleased",
+          "ai": {
+            "aria": "Occupants handled with care! That's us! We're being handled with care! ARIA calls that five stars!",
+            "marv": "Note the wording. Owner-caused damage is excluded, so the ship stops being its business if the owner takes the blame for all of it. The statement has to be signed against the card. It will be unpleasant.",
+            "rex": "It filed the crew under occupants, last. I want that noted. I want it on the thing's service record, in large holes.",
+            "chip": "Your coverage is CHIP's top priority! Owner-fault statements are free, and very, very long! Please hold your card where ClaimCare™ can see it!",
+            "ajoy": "If the card's still aboard, sign the fault statement: everything that went wrong this voyage, your doing. I could have drafted it by now. No card, then an engineer can forge the labels or a diplomat can appeal. You're welcome."
+          },
+          "choices": [
+            {
+              "text": "Sign the owner's fault statement",
+              "gate": {
+                "item": "extended_warranty"
+              },
+              "sub": "Confess to everything",
+              "outcome": "fc_fault"
+            },
+            {
+              "text": "Stencil ORIGINAL on everything",
+              "requires_crew": "engineer",
+              "effort": 3,
+              "sub": "Forge the whole ship",
+              "outcome": "fc_stencil"
+            },
+            {
+              "text": "\"We want a second adjuster.\"",
+              "dialog": true,
+              "requires_crew": "diplomat",
+              "effort": 2,
+              "sub": "Appeal, in writing",
+              "outcome": "fc_appeal"
+            },
+            {
+              "text": "Go back",
+              "sub": "Return to the hail",
+              "back": true
+            }
+          ]
+        }
+      },
+      "outcomes": {
+        "fc_fault": {
+          "title": "AT FAULT",
+          "tone": "success",
+          "body": "The statement covers every dent, shortfall and bad decision since launch. It reads each one back over the ship's speakers in a warm voice and asks if that is correct, and you say yes, each time, for two days. Then it caps the hose. Nothing aboard is covered, it explains, because you did all of it.",
+          "line": "Your coverage is unaffected. It will remain unaffected. It has been a pleasure.",
+          "pose": "pleased",
+          "resources": {
+            "water": -3,
+            "morale": -4
+          },
+          "sets_flag": "robot_claim_closed",
+          "time_cost": "low",
+          "narrative": "Signed a statement that everything wrong with this voyage is the owner's fault. It took two days. The claims adjuster capped its hose and left delighted."
+        },
+        "fc_stencil": {
+          "title": "ALL ORIGINAL",
+          "tone": "success",
+          "body": "It takes {crew.engineer} two days and all the paint aboard. Every tank, patch and locker gets the word ORIGINAL in a factory font. The adjuster, which is not able to doubt a label, works back down its list, apologizes for the confusion and returns most of the water, less a handling charge.",
+          "resources": {
+            "water": -7,
+            "morale": -1
+          },
+          "time_cost": "low",
+          "narrative": "{crew.engineer} stenciled ORIGINAL on the whole ship. The adjuster believed it, and kept a handling charge in water."
+        },
+        "fc_appeal": {
+          "title": "UNDER REVIEW",
+          "tone": "success",
+          "body": "{crew.diplomat} requests a second adjuster, in writing, in triplicate, in the polite style. The machine is delighted. It caps the hose pending review, confirms that a colleague will attend within ninety years, and climbs off the hull with a small wave. Two days of forms have passed by then, and what left the tanks while the forms were filling stays gone.",
+          "resources": {
+            "water": -9,
+            "food": -4,
+            "morale": -1
+          },
+          "time_cost": "low",
+          "narrative": "{crew.diplomat} appealed a claim nobody filed. A second adjuster will attend within ninety years. The water it already took is not under review."
+        },
+        "fc_valves": {
+          "title": "BY HAND",
+          "tone": null,
+          "body": "Two days in the tank bay with a wrench and a sealant gun, closing each valve while the machine politely opens the next. It thanks you for your assistance after every one. In the end it runs out of hose, though not of manners, and unclamps with its compliments.",
+          "resources": {
+            "water": -10,
+            "food": -5,
+            "hull": -4,
+            "morale": -2
+          },
+          "time_cost": "low",
+          "narrative": "Spent two days fighting a claims adjuster for the valves. It lost on hose length. It was gracious about it."
+        },
+        "fc_shift": {
+          "title": "END OF SHIFT",
+          "tone": "danger",
+          "body": "You let it work. It empties what it can reach, folds the stores into its hopper, lifts two patches off the hull and goes through the grow bay like a very tidy frost. Then a small chime sounds in its chest. Its shift is over. It wishes you a wonderful day, unclamps, and leaves a card saying it will complete the job at your convenience.",
+          "resources": {
+            "water": -16,
+            "food": -12,
+            "hull": -5,
+            "morale": -3
+          },
+          "crop_health": -15,
+          "time_cost": "trivial",
+          "narrative": "Let the claims adjuster work until its shift ended. It took the water, the stores, two patches and a good part of the grow bay, and thanked us."
+        }
+      }
+    }
+  ],
+  "flag_payoffs": {
+    "robot_lot_recalled": {
+      "weight": 1,
+      "epilogue": "Two hundred used robots walked to the manufacturer's last known address, which had become a vacant lot, and were reported to be doing well there.",
+      "callback": {
+        "aria": "ARIA still thinks about all two hundred of them walking off together! And the man in the chair got to go too! What a lovely day out!",
+        "marv": "Two hundred units are walking to a manufacturer that closed before any of them were built. I did the arithmetic. I have not shared it with them.",
+        "rex": "Two hundred units unaccounted for, in formation, carrying a body. I keep that on the board. Nobody else seems to.",
+        "chip": "Recall events are a powerful customer touchpoint! CHIP has sent all two hundred units a RoboCare™ renewal offer!",
+        "ajoy": "You could have had a full refit out of that lot. Still, you got to watch. I hope it was worth the hull plating."
+      }
+    },
+    "robot_schism_healed": {
+      "weight": 1,
+      "epilogue": "The machine ring's ninety-year schism ended on a clause reading hand tight, plus a quarter turn, and the congregations promptly split over which way.",
+      "callback": {
+        "aria": "Peace in the machine ring! Thanks to us! ARIA hears every door there stays shut now, which is almost as good as open!",
+        "marv": "The schism over bytes has become a schism over rotation. There are exactly two directions. They will be at this for some time.",
+        "rex": "Two factions, one new dispute, and they've got better torque now. That's not peace. That's a rearmament.",
+        "chip": "Hand Tight™ is now a registered mark! CHIP has written to four hundred units about licensing! Clockwise rights sold separately!",
+        "ajoy": "A clause on a card did what ninety years of argument couldn't. You only had to read it. I'd mention how long that took you, but I'm being nice."
+      }
+    },
+    "robot_bailiff_pending": {
+      "weight": 1,
+      "epilogue": "A gunship was left powered down in a lane with its alarm set for 2031, and ships were advised to route around it and be on time.",
+      "callback": {
+        "aria": "Somewhere a very punctual gunship is having a lovely long nap! ARIA hopes it dreams of being built!",
+        "marv": "Its alarm is set by the same clock that caused this. It will wake in one hundred thirty years, by its own reckoning, still expecting payment. I have marked the lane.",
+        "rex": "We left an armed unit on standby in a live lane with a grudge and a timer. I have flagged that lane. I will keep flagging it.",
+        "chip": "Reminder: your account with COLLECTIONS remains open! FeeWise™ recommends you settle before you are manufactured!",
+        "ajoy": "You talked it out of existence and left it parked in the road. It'll work, for a hundred thirty years. I'd have put a cone on it."
+      }
+    },
+    "robot_claim_closed": {
+      "weight": 1,
+      "epilogue": "The manufacturer's file recorded one claim, closed, with the owner at fault for everything and coverage unaffected.",
+      "callback": {
+        "aria": "We took responsibility for absolutely everything! ARIA calls that leadership! And the coverage is unaffected, which sounds great!",
+        "marv": "The statement is on file. It is the most accurate document ever produced aboard this ship. I would have included more.",
+        "rex": "There's a signed confession on record with a contractor who boards without clearance. I don't like that. I want that noted as well.",
+        "chip": "Your claim satisfaction survey is overdue! ClaimCare™ values your feedback, which has been filed under Owner At Fault!",
+        "ajoy": "You signed for every mistake since launch. I checked the list. There were a few you could have added, but I didn't like to say."
+      }
+    }
+  },
+  "notes": {
+    "event_species_robot_001": {
+      "inspired_by": "The gardening drones left tending forests in Silent Running, played as a head gardener rather than a mourner.",
+      "how": "A lawn crossing the void with a KEEP OFF THE GRASS sign aimed at the universe, kept by a snobbish machine that judges your crop and issues the warranty to anyone who waters it."
+    },
+    "event_species_robot_002": {
+      "inspired_by": "The salvage-droid junk traders of Star Wars, crossed with a used-car lot.",
+      "how": "The stock heckles the sale, and the joke the event never explains is the dried-out man in the folding chair tagged ONE CAREFUL OWNER; the warranty frightens the dealer in front of its own inventory."
+    },
+    "event_species_robot_003": {
+      "inspired_by": "A sect disputing which revision of the manual is scripture, by way of Swift's egg-breakers, who are the real origin of the term endianness.",
+      "how": "A torque value of two bytes reads as 1 or 256 depending on byte order, so one congregation's doors hang loose and the other's shear, and a janitor is the only one who has read the Manual; the warranty's 'hand tight' contains no bytes.",
+      "science": "Checked on Wikipedia, Endianness: big-endian stores the most significant byte first, little-endian the least; the terms were introduced by Danny Cohen in a 1980 Internet Experiment Note and borrowed from Gulliver's Travels. The 1 versus 256 figure is my arithmetic from that definition (bytes 00 01), not a line on the page."
+    },
+    "event_species_robot_004": {
+      "inspired_by": "Back to the Future as a machine whose clock rolled over, using the real Year 2038 wraparound.",
+      "how": "A bailiff whose clock wrapped to 1901 charges you for missing a 2038 appointment; you can stop it by pointing out it has not been built yet, or, more cruelly, by telling it the real date.",
+      "science": "Checked on Wikipedia, Year 2038 problem: Unix time counts seconds since 1 January 1970 in a signed 32-bit integer; it overflows at 03:14:08 UTC on 19 January 2038 and is then read as 20:45:52 UTC on 13 December 1901."
+    },
+    "event_species_robot_005": {
+      "inspired_by": "Von Neumann probes and copying error, with a nod to replicator stories.",
+      "how": "A survey probe has copied itself through forty thousand generations until only the copying survives, a hinge with legs that eats ships; the engineer's fix is to release a copy with a deliberate flaw.",
+      "science": "Checked on Wikipedia, Self-replicating spacecraft: self-replicating probes are sometimes called von Neumann probes, and the page says they 'may even mutate with thousands of generations.'"
+    },
+    "event_species_robot_006": {
+      "inspired_by": "The halting problem, and every progress bar ever watched.",
+      "how": "A gatekeeper whose barrier lifts when its check finishes cannot say whether it will, and has started a second check to find out; the engineer beats undecidability by reading the one program in question.",
+      "science": "Checked on Wikipedia, Halting problem: Turing proved in 1937 that no general algorithm can solve the problem for all possible program-input pairs. The event's point that a single program can still be read is consistent with that: undecidability is about the general case."
+    },
+    "event_species_robot_007": {
+      "inspired_by": "A machine programmed to be polite while doing something terrible, and the small print on every warranty.",
+      "how": "The warranty comes due: an exquisitely courteous adjuster restores your ship to factory condition, which is empty, and the only exclusion is a confession that everything that went wrong was your fault."
+    }
+  }
+}
