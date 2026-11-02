@@ -5162,8 +5162,8 @@ function interpolateCostTokens(text, o) {
   const fig = k => { const v = o && o.resources && o.resources[k]; return Number.isFinite(v) && v < 0 ? -effectiveResDelta(k, v, o) : 0; };
   const word = k => numberWords(fig(k));
   return text
-    .replace(/(^|[.!?…]["\u201d')]*\s+|\n\s*)\{cost\.(water|food)\}/g, (m, pre, k) => pre + word(k).charAt(0).toUpperCase() + word(k).slice(1))
-    .replace(/\{cost\.(water|food)(\.num)?\}/g, (m, k, num) => num ? String(fig(k)) : word(k));
+    .replace(/(^|[.!?…]["\u201d')]*\s+|\n\s*)\{cost\.(water|food|o2)\}/g, (m, pre, k) => pre + word(k).charAt(0).toUpperCase() + word(k).slice(1))
+    .replace(/\{cost\.(water|food|o2)(\.num)?\}/g, (m, k, num) => num ? String(fig(k)) : word(k));
 }
 // 0–999 in words, the way the narratives write figures: "twenty-two",
 // "a hundred and ten"; 0 is "no".

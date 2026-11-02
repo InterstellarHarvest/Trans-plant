@@ -47,6 +47,11 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     out.unlessHeld = vis([{ unless_item: 'locked_case' }, {}]);
     STATE.items = ['borrowed_charm'];
     out.unlessGone = vis([{ unless_item: 'locked_case' }, {}]);
+    STATE.items = [];
+    out.airPlain = interpolateCostTokens('{cost.o2}', { resources: { o2: -10 } });
+    STATE.items = ['o2_recycler'];
+    out.airRecycled = interpolateCostTokens('{cost.o2}', { resources: { o2: -10 } });
+    STATE.items = [];
     STATE.trail = 'mars';
     out.costBig = effectiveResDelta('water', -30, {});
     out.costSmall = effectiveResDelta('water', -2, {});
@@ -71,6 +76,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   ok(r.items.every(x => x[0] === 'STORY' && /^sprites\/cargo\/items\/.+\.png$/.test(x[2])), 'ten new items, filed under Story, with their art');
   ok(r.cursed, 'the Borrowed Charm cannot be jettisoned');
   ok(r.unlessHeld === 1 && r.unlessGone === 2, 'an unless_item row shows only while the item is gone');
+  ok(r.airPlain === 'ten' && r.airRecycled !== 'ten', '{cost.o2} states the air an outcome really costs, recycler included: ' + r.airPlain + ' / ' + r.airRecycled);
   ok(r.costBig === -60, 'one event never costs more than the cap: ' + r.costBig);
   ok(r.costSmall === -13, 'the trail multiplier still applies below it: ' + r.costSmall);
   ok(errors.length === 0, 'no page errors ' + errors.join(' | '));

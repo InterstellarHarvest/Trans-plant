@@ -155,7 +155,7 @@ function checkEvent(ev, flags) {
     if (re.test(low)) err(id, `names something from an inspiration: "${b}"`);
   }
   for (const t of blob.match(/\{[^}]*\}/g) || []) {
-    if (!/^\{(npc\.(quirk|species|disposition|name|line\.[a-z]+)|crew\.[a-z_]+|cost\.(water|food)(\.num)?|branch\.(alpha|beta)\.(label|first)|crop\.(name|advice|diagnosis|verdict)|speaker\.(name|role)|patient\.(name|role)|stowaway\.[a-z_]+|wreck\.(ship|captain|crop|fate|days))\}$/.test(t)) err(id, `unknown token ${t}`);
+    if (!/^\{(npc\.(quirk|species|disposition|name|line\.[a-z]+)|crew\.[a-z_]+|cost\.(water|food|o2)(\.num)?|branch\.(alpha|beta)\.(label|first)|crop\.(name|advice|diagnosis|verdict)|speaker\.(name|role)|patient\.(name|role)|stowaway\.[a-z_]+|wreck\.(ship|captain|crop|fate|days))\}$/.test(t)) err(id, `unknown token ${t}`);
   }
 
   if (ev.layers) {
