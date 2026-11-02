@@ -119,7 +119,7 @@ function checkChoice(id, where, ch, ev, flags) {
 }
 function checkEvent(ev, flags) {
   const id = ev.id;
-  if (!/^event_(species_(insect|rock|water|reptile|robot|unknown|human|fortune)|voyage_(crew|time|office|ruins|ship|fork|quest|identity|landmark|pair|format|oddity|thin))_\d{3}$/.test(id)) err(id, 'id must be event_species_<lane>_NNN or event_voyage_<lane>_NNN');
+  if (!/^event_(species_(insect|rock|water|reptile|robot|unknown|human|fortune)|voyage_(crew|time|office|ruins|ship|fork|quest|identity|landmark|pair|format|oddity|thin|trigger|edge|station|trail))_\d{3}$/.test(id)) err(id, 'id must be event_species_<lane>_NNN or event_voyage_<lane>_NNN');
   for (const k of ['active', 'title', 'difficulty', 'tone', 'node_type', 'trigger', 'scene_type']) if (ev[k] == null) err(id, `missing ${k}`);
   if (typeof ev.once !== 'boolean') err(id, 'once must be true or false');
   if (!TIERS.includes(ev.difficulty)) err(id, `difficulty ${ev.difficulty}`);
