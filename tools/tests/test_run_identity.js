@@ -51,7 +51,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   ok(r.ownSkipped === null, 'an arrival is not a wreck');
   ok(r.fallback === 'the wreck never arrived', 'wreck tokens never show raw text with no history');
   ok(r.fab.length === 2 && r.fab.every(x => x[1] && x[2]), 'two blueprint recipes, each with its item and output');
-  ok(r.items.every(x => x[0] === 'STORY' && x[1] && x[2] === null), 'ten new items, filed under Story, emoji until art lands');
+  ok(r.items.every(x => x[0] === 'STORY' && /^sprites\/cargo\/items\/.+\.png$/.test(x[2])), 'ten new items, filed under Story, with their art');
   ok(errors.length === 0, 'no page errors ' + errors.join(' | '));
   await browser.close();
   console.log(`\nrun identity: ${pass} passed, ${fail} failed`);
