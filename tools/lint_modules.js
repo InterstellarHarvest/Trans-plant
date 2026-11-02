@@ -1169,7 +1169,10 @@ const hardChoiceCost = (() => {
     for (const r of re) { const m = text.match(r); if (m) return m[0]; }
     return null;
   };
-  const costs = o => ['water', 'food'].filter(k => Number.isFinite(((o && o.resources) || {})[k]) && o.resources[k] < 0);
+  // {cost.o2} states air through the O2 recycler (ruling 122); its bare
+  // figures are not policed here, only that the token has a cost to state.
+  const TOKEN_RES = ['water', 'food', 'o2'];
+  const costs = (o, res = ['water', 'food']) => res.filter(k => Number.isFinite(((o && o.resources) || {})[k]) && o.resources[k] < 0);
   const check = (at, o, texts) => {
     const ks = costs(o);
     for (const [fld, t] of texts) {
@@ -1177,8 +1180,8 @@ const hardChoiceCost = (() => {
       for (const k of ks) { const b = bare(k, t); if (b) err(`${at}: ${fld} states a ${k} figure as a bare number ("${b}") — the trail scales it; write {cost.${k}} (ruling 70)`); }
       for (const m of t.matchAll(/\{cost\.([\w.]+)\}/g)) {
         const [k, fmt] = m[1].split('.');
-        if (!NOUN[k] || (fmt && fmt !== 'num') || m[1].split('.').length > 2) err(`${at}: ${fld} has an unknown token {cost.${m[1]}} (only {cost.water}, {cost.food}, or .num)`);
-        else if (!ks.includes(k)) err(`${at}: ${fld} writes {cost.${k}} but the outcome costs no ${k} — it would read "no"`);
+        if (!TOKEN_RES.includes(k) || (fmt && fmt !== 'num') || m[1].split('.').length > 2) err(`${at}: ${fld} has an unknown token {cost.${m[1]}} (only {cost.water}, {cost.food}, {cost.o2}, or .num)`);
+        else if (!costs(o, TOKEN_RES).includes(k)) err(`${at}: ${fld} writes {cost.${k}} but the outcome costs no ${k} — it would read "no"`);
       }
     }
   };

@@ -1269,6 +1269,7 @@
     "scene_type": "ship_exterior",
     "comm_mode": "screen",
     "once": true,
+    "requires_crew_aboard": true,
     "after_progress": 0.5,
     "npc": {
       "disposition": "drifter",
@@ -1280,12 +1281,12 @@
     "layers": {
       "intro": {
         "title": "IN THE HIDE",
-        "body": "What you took for a boulder drifting off your bow has a lens in it, and the lens has followed you since you arrived. On the screen it gives way to a face like a quarry wall, which lowers its voice the way anyone does in a hide. It is making a film about humans. Every human it has filmed stopped behaving like one the moment they noticed. {npc.quirk}",
+        "body": "What you took for a boulder drifting off your bow has a lens in it, and the lens has followed you since you arrived. On the screen it gives way to a face like a quarry wall, which lowers its voice the way anyone does in a hide. It is making a film about humans. {npc.quirk}",
         "line": "Here is human vessel, in wild. Shy. Fast. Very fast. Please do not look at camera. Every human looks at camera, then stands up straight, and all footage is of humans standing up straight.",
         "pose": "listening",
         "ai": {
           "aria": "A nature film about humans! ARIA has always said everyone aboard was photogenic! Everyone stand up straight and look natural!",
-          "marv": "Factory workers studied in the 1920s did better under brighter lights and under dimmer ones. Being watched was the change. The rock has worked that out alone, over some centuries. MARV could have saved it the trouble.",
+          "marv": "Factory workers in the 1920s were said to do better under brighter lights and under dimmer ones. The study has not held up. The rock has spent some centuries on the same question, and MARV could have saved it the trouble.",
           "rex": "REX does not like a lens he failed to spot for an hour. It could have been a gun. He is not looking at the camera. He is looking at it hard, which is different.",
           "chip": "Unpaid appearances breach everyone's image rights! CHIP has drafted a release! Signing fees start low and go up every time somebody blinks!",
           "ajoy": "AJOY notes it wants humans who forget it is there, and leaving the channel open is the only way that happens. Asking to see its film first would be smarter. Go on, though."
@@ -1322,7 +1323,7 @@
           "marv": "At the exposure it uses, a sharp human takes about two days of holding still. MARV can hold still indefinitely. Nobody has ever asked MARV.",
           "rex": "Two days immobile in front of an unidentified lens is how REX would set up an ambush. He would also film it, for training. He is not in favor.",
           "chip": "A two-day sitting! CHIP bills portraits by the hour! At that rate this is the most valuable picture ever taken of anyone aboard!",
-          "ajoy": "AJOY points out that turning the ship's cameras on it ends the film, and two days of sitting will cost some backs. The portrait is the better trade. Sit up straight for it, at least."
+          "ajoy": "Two days of holding still will cost some backs, AJOY's excepted. The portrait is the better trade. Sit up straight for it, at least."
         },
         "choices": [
           {
@@ -1439,7 +1440,7 @@
           "aria": "Two whole teams of gardeners! ARIA loves friendly competition! The air is a little thin in there, which just means every breath counts for more!",
           "marv": "Fifteen percent oxygen is the air on a high mountain. It is still falling, and neither side has a theory that involves itself. MARV has met humans before.",
           "rex": "Two hostile camps, one shared air supply, and a door nobody will open. REX has seen sieges run on less. He wants to know who controls the sample lock.",
-          "chip": "A sealed community with a supply problem! CHIP sees a captive market! BreatheRight™ canisters fit any sample lock, at a modest premium per breath!",
+          "chip": "A sealed community with a supply problem! CHIP sees a captive market! BreatheRight canisters fit any sample lock, at a modest premium per breath!",
           "ajoy": "AJOY notes the two sides blame each other's plants and the air falls anyway. Someone could look at the dome itself before carrying notes. Not that anyone asks AJOY about domes."
         },
         "revisit": {
@@ -1465,7 +1466,7 @@
         ]
       },
       "notes": {
-        "title": "BY HAND",
+        "title": "POSTAGE",
         "body": "The note goes out through the sample lock folded small. You carry it twenty meters around the outside of the glass to the other door, where it is read, sniffed and answered at once. The reply is on the same brand of seed packet, in very nearly the same words. Both say the other side is hoarding. Both say the other side has gone strange. Both end THEY ARE NOT LIKE US.",
         "line": "Did they say anything about us? Don't tell me. What did they say.",
         "ai": {
@@ -1555,7 +1556,7 @@
         "narrative": "Handed two feuding botanists their own notes. They agreed with every word, and the air in their dome kept falling."
       },
       "walled": {
-        "title": "THE WALL DID IT",
+        "title": "CHALK",
         "tone": "success",
         "body": "Four days of scrapings and a borrowed acid later, the answer is fizzing in a dish. The bare concrete has been drinking the dome's carbon dioxide and turning it into chalk, and taking the oxygen down with it. Both sides read your results through the glass at the same moment. They seal the concrete, and the air begins to climb. Each sends you a sack of produce, so the other cannot take the credit, and opens a new dispute about whose idea the concrete was.",
         "line": "Concrete. Who poured the concrete? Ask them who poured it.",
@@ -1587,8 +1588,7 @@
     ],
     "node_type": [
       "asteroid_field",
-      "planet",
-      "derelict"
+      "planet"
     ],
     "trigger": [
       "any"
@@ -1597,6 +1597,17 @@
     "comm_mode": "screen",
     "once": true,
     "after_progress": 0.5,
+    "captain_background": [
+      "botanist",
+      "engineer",
+      "medic",
+      "pilot",
+      "chef",
+      "diplomat",
+      "merchant",
+      "academic",
+      "veteran"
+    ],
     "npc": {
       "disposition": "drifter",
       "species": "human",
@@ -1615,7 +1626,7 @@
         "pose": "listening",
         "ai": {
           "aria": "A human QUEEN! ARIA always knew someone would spot real leadership potential! Look at all those little faces waiting for an answer!",
-          "marv": "One answer every four seconds, all day, from one person. MARV has counted. A hive decides everything by quorum, and this one has handed all of it to the only thing on the rock that can say no by itself.",
+          "marv": "One answer every four seconds, all day, from one person. MARV has counted. At that rate the castaway has not slept since the pod came down, and the queue is longer than when they started.",
           "rex": "One human, one crown, and something over ten thousand subjects with no chain of command to talk to. Nobody down there can call anything off. REX is keeping the engines warm.",
           "chip": "A monarchy with one employee! CHIP sees a staffing crisis! DecisionRight™ places a qualified decider in any hive, billed per decision, and that is a LOT of decisions!",
           "ajoy": "AJOY notes that they asked to be taken off the rock, and that a hive goes where its queen goes. Ask how the hive feels about that before opening a hatch. She would have asked first."
@@ -1713,7 +1724,7 @@
       "carried": {
         "title": "SWARM IN THE HOLD",
         "tone": null,
-        "body": "You open the hatch and the hive comes in like weather. For four days the hold hums. The vents clog with wings, the stores go down fast, and the castaway sits in the galley giving orders through a cup pressed to the bulkhead. At the first rock with a crevice in it the hive pours out to look it over. The castaway stands in the airlock a long time. Then they follow it out. A hive needs someone to say left.",
+        "body": "You open the hatch and the hive comes in like weather. For four days the hold hums. The vents clog with wings, the stores go down fast, and the castaway sits in the galley giving orders through a cup pressed to the bulkhead. At the first rock with a crevice in it the hive pours out to look it over. The castaway stands in the airlock a long time. Then they follow it out.",
         "line": "Left. It's always left.",
         "resources": {
           "food": -4,
@@ -1751,9 +1762,9 @@
       }
     },
     "science_link": {
-      "text": "Some ants and honey bees choose a new nest by quorum: once enough scouts gather at one site, the whole colony moves. No single insect has to compare every option.",
-      "label": "Quorum sensing",
-      "url": "https://en.wikipedia.org/wiki/Quorum_sensing"
+      "text": "A honey bee swarm leaving its hive clusters around its queen on a nearby branch, and sends a few dozen scouts out to find a new home.",
+      "label": "Swarming (honey bee)",
+      "url": "https://en.wikipedia.org/wiki/Swarming_(honey_bee)"
     }
   },
   {
@@ -10608,7 +10619,7 @@
           "aria": "A WEDDING! ARIA has never been a venue before! The airlock is practically a chapel already, it has doors at both ends!",
           "marv": "The triple point of water is a hundredth of a degree above freezing at about one part in 166 of an atmosphere. MARV can hold the temperature. Holding the pressure is a matter of steady hands. He has seen the hands aboard.",
           "rex": "A wedding party is the oldest cover for a boarding there is. REX has checked the garlands. They are ice. He is not reassured.",
-          "chip": "Venue hire! Catering! A guest list made entirely of beverages! CHIP has a package! The Eternal Equilibrium™ plan comes with a commemorative valve!",
+          "chip": "Venue hire! Catering! A guest list made entirely of beverages! CHIP has a package! The Eternal Equilibrium plan comes with a commemorative valve!",
           "ajoy": "AJOY points out that pumping the lock down and back up costs air, and a slip in the middle of the vows goes badly in either direction. The drinking tank is easier. Easier is not what they asked for."
         },
         "revisit": {
