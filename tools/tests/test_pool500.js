@@ -55,7 +55,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
             if (kind !== want) return;
             out.push({ layer: k, i, path: P[k] || null, text: ch.text });
           });
-          if (ev.leave_as && want === 'outcome') out.push({ layer: entry, i: -1, path: [], text: ev.leave_label, leave: true });
+          if (ev.leave_as && want === 'outcome' && !ev.layers[entry].leaveHidden) out.push({ layer: entry, i: -1, path: [], text: ev.leave_label, leave: true });
           return out;
         },
         choiceOf(ev, p) { return p.leave ? ev.leave_as : (p.layer ? ev.layers[p.layer].choices : ev.choices)[p.i]; },
@@ -77,6 +77,11 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
           }
           for (const f of [ch && ch.requires_flag, ...vias.map(v => v.requires_flag), ev.requires_flag].filter(Boolean)) STATE.flags.add(f);
           if (ev.requires_item && !STATE.items.includes(ev.requires_item)) grantItem(ev.requires_item);
+          // The shortest path to a layer may set the flag that hides this row;
+          // the row is reached down another branch. Keep that one flag unset.
+          const hide = new Set([ch, ...vias].map(c => c && c.hideFlag).filter(Boolean));
+          const add = STATE.flags.add.bind(STATE.flags);
+          STATE.flags.add = f => (hide.has(f) ? STATE.flags : add(f));
           if (STATE.cropGrowth) { STATE.cropGrowth.health = 80; STATE.cropGrowth.growth = 60; }
           const want = (ev.node_type || [])[0] || 'any';
           const node = STATE.nodes.find(n => n.node_type === want) || STATE.byId[STATE.currentId];

@@ -3368,7 +3368,7 @@ function activeTriggers() {
   // balance pass flew only 60% of baseDays: journey_end never fired.)
   const legs = STATE.visited ? STATE.visited.size : 0, P = pathLegs();
   const frac = legs / P;
-  if (frac <= 0.15 || legs <= 1) active.add('journey_start');
+  if (frac <= 0.15 || legs <= 2) active.add('journey_start');
   if (frac >= 0.85 || P - legs <= 2) active.add('journey_end');
   if (frac >= 0.35 && frac <= 0.65) active.add('journey_mid');
   // Behind schedule (rulings 82, 108): Orders' own ARRIVAL projection
@@ -3712,7 +3712,7 @@ function speciesPresent(ev, node) {
 const CRISIS_POOL_CAP = 3;
 const PAYOFF_PULL = 4;
 const VOYAGE_PULL = 3;
-const QUEST_PULL = 12; // a quest's next step arrives once it is due: it must not be skipped
+const QUEST_PULL = 48; // a quest's next step arrives once it is due: it must not be skipped
 const HOME_PULL = 6; // reaching a species' own station is the voyage's arrival: its event should usually be there
 // Conditions a run can sit in for many stops: a mild pull, never the crisis
 // multiplier. The positional two, and the good-fortune triggers (a healthy
