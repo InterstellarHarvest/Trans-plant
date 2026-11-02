@@ -96,6 +96,9 @@ const ALIENS = ['insect', 'rock', 'water', 'reptile', 'robot', 'unknown'];
       humanAtHuman: P('event_species_human_002', mk('station', 1, 'human')),
       bartender: eventSpecies(EVENTS.event_station_009),
       faceless: eventSpecies(EVENTS.event_species_insect_005),
+      home: speciesPresent(EVENTS.event_species_insect_008, mk('station', 13, 'insect')),
+      homeMixed: speciesPresent(EVENTS.event_species_insect_008, mk('station', 13, 'mixed')),
+      homeOther: speciesPresent(EVENTS.event_species_insect_008, mk('station', 13, 'rock')),
       unlanded: Object.values(EVENTS).filter(e => /^event_species_(?!fortune)/.test(e.id) && !e.species_lane).length,
     };
   });
@@ -103,6 +106,7 @@ const ALIENS = ['insect', 'rock', 'water', 'reptile', 'robot', 'unknown'];
   ok(gate.lateAlien === true, 'further out, alien events fire in open space');
   ok(gate.ownStation && gate.mixedStation && !gate.otherStation, 'a species event fires at its own or a mixed station, not at another species');
   ok(!gate.humanAtAlien && gate.humanAtHuman, 'a human event stays off an alien station');
+  ok(gate.home && !gate.homeMixed && !gate.homeOther, 'a species_home event fires only on a station wholly that species');
   ok(gate.bartender === null, 'the bartender belongs to no species for the draw');
   ok(gate.faceless === 'insect' && gate.unlanded === 0, "a species' hazards and forks carry their lane");
 

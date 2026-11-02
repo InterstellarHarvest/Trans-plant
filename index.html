@@ -3695,6 +3695,7 @@ function speciesPresent(ev, node) {
 const CRISIS_POOL_CAP = 3;
 const PAYOFF_PULL = 4;
 const VOYAGE_PULL = 3;
+const HOME_PULL = 6; // reaching a species' own station is the voyage's arrival: its event should usually be there
 // Conditions a run can sit in for many stops: a mild pull, never the crisis
 // multiplier. The positional two, and the good-fortune triggers (a healthy
 // run must not spend every stop being congratulated).
@@ -3721,6 +3722,7 @@ function drawWeightedEvent(candidates, triggers, baseWeights, branch) {
     if (ev.requires_flag || ev.requires_item) w *= PAYOFF_PULL;
     // The run crosses this species' space: its stories keep turning up.
     if (STATE.voyageSpecies && eventSpecies(ev) === STATE.voyageSpecies) w *= VOYAGE_PULL;
+    if (ev.species_home) w *= HOME_PULL;
     const evTriggers = ev.trigger || ['any'];
     // Positional triggers (journey_start/journey_end) exist for
     // reachability, not urgency — they get a mild bump so they surface
