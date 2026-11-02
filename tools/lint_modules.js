@@ -798,7 +798,8 @@ const eventOnTrail = (ev, trail) => {
     for (const [field, dim] of [['captain_background', 'captain_background'], ['crop_type', 'crop_type'], ['requires_ai', 'requires_ai']]) {
       for (const v of ev[field] == null ? [] : [].concat(ev[field])) if (!(registry[dim].values || {})[v]) err(`${at}: ${field} "${v}" is not registered`);
     }
-    const narrowRun = ev.captain_background || ev.crop_type || ev.requires_ai || ev.requires_past_run || ev.requires_role;
+    const narrowRun = ev.captain_background || ev.crop_type || ev.requires_ai || ev.requires_past_run || ev.requires_role
+      || ev.requires_flag || ev.requires_item || ev.trail || ev.after_progress || ev.species_lane;
     if (ev.draw_weight > 1 && !ev.biome && !ev.family && !ev.species_home && !narrowRun) warn(`${at}: draw_weight above 1 without a biome gate — only narrow gates should need it`);
     if (ev.crew_speaker != null) {
       const list = Array.isArray(ev.crew_speaker) ? ev.crew_speaker : [ev.crew_speaker];
