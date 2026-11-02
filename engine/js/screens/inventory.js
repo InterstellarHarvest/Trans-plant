@@ -681,7 +681,8 @@ function invOpenJettison() {
   const id = _invSelected;
   const isMat = materialPer10(id) != null; // a materials stack (STATE.materials), not an item
   const name = invNameOf(id, isMat);
-  const blocked = !isMat && STATE.items.includes(id) && !canRemoveItem(id);
+  const cursed = !isMat && itemDef(id) && itemDef(id).no_jettison; // ruling 122: some things will not go
+  const blocked = !isMat && STATE.items.includes(id) && (!!cursed || !canRemoveItem(id));
   const copyTile = !isMat && _invSelectedCopy != null && sellRangeOf(id);
   _invJettisonPending = blocked ? null : id;
   _invJettisonCopy = isMat ? null : _invSelectedCopy;
@@ -690,7 +691,7 @@ function invOpenJettison() {
   _invSellPending = false;
   document.querySelector('#inv-jett-panel .jettison-title').textContent = '⚠ JETTISON?';
   _invJettisonText = blocked
-    ? 'The ' + name + ' is holding cargo. Clear some space first.'
+    ? (cursed || 'The ' + name + ' is holding cargo. Clear some space first.')
     : (_invJettisonMax > 1 ? 'Drop some of your ' + name + ' (×' + _invJettisonMax + ') into space?' : 'Drop your ' + name + ' into space?') + ' The airlock does not do refunds.';
   _invJettisonCapItem = blocked || isMat ? null : id;
   document.getElementById('inv-confirm-text').textContent = _invJettisonText;

@@ -5795,7 +5795,8 @@ function renderChoicesInner(choices) {
   // The A8 softlock guard MUST judge the visible list, not the raw one.
   const visible = choices.filter(ch =>
     !(ch.requires_flag && !STATE.flags.has(ch.requires_flag)) &&
-    !(ch.hideFlag && STATE.flags.has(ch.hideFlag)));
+    !(ch.hideFlag && STATE.flags.has(ch.hideFlag)) &&
+    !(ch.unless_item && STATE.items.includes(ch.unless_item))); // ruling 122: a row for when it is gone
   const anyUnlocked = visible.some(ch => !lockReason(ch));
   // The station approach always has a way out (its leave row → the
   // wave-off warning): a DOCK the fee locks stays on screen, locked.

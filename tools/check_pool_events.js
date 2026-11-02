@@ -93,6 +93,7 @@ function checkChoice(id, where, ch, ev, flags) {
   const item = ch.requires_item || (ch.gate && ch.gate.item);
   if (item && !ITEM_IDS.has(item)) err(id, `${where}: unknown item ${item}`);
   if (ch.requires_item && ch.gate && ch.gate.item) err(id, `${where}: use one of requires_item / gate.item`);
+  if (ch.unless_item && !ITEM_IDS.has(ch.unless_item)) err(id, `${where}: unless_item ${ch.unless_item} is not an item`);
   if (ch.launch_minigame) {
     if (!MINIGAMES.includes(ch.launch_minigame)) err(id, `${where}: unknown minigame ${ch.launch_minigame}`);
     if (ch.launch_minigame === 'forage') err(id, `${where}: an event never launches forage (its food haul would not apply)`);
