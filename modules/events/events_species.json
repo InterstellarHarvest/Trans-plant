@@ -2122,7 +2122,7 @@
     "trigger": [
       "any"
     ],
-    "scene_type": "ship_exterior",
+    "scene_type": "deep_void",
     "once": true,
     "ai_flavor": {
       "aria": "We could be HEAD OF STATE! ARIA has drafted an inaugural address! It is mostly about snacks!",
@@ -2306,6 +2306,369 @@
         "effort": 1
       }
     ]
+  },
+  {
+    "id": "event_species_insect_008",
+    "species_lane": "insect",
+    "species_home": true,
+    "draw_weight": 5,
+    "active": true,
+    "title": "The Minutes of the Last Meeting",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "corporate"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": true,
+    "npc": {
+      "disposition": "station_crew",
+      "job": "captain",
+      "species": "insect",
+      "displayName": "RECORDING SECRETARY"
+    },
+    "leave_label": "BACK TO DOCK",
+    "entryLayer": "intro",
+    "science_link": {
+      "text": "Ants, bees and wasps pass food from mouth to mouth, and the meal carries more than food: proteins, hormones and information travel with it.",
+      "label": "Trophallaxis",
+      "url": "https://en.wikipedia.org/wiki/Trophallaxis"
+    },
+    "layers": {
+      "intro": {
+        "title": "APPROVAL OF THE MINUTES",
+        "body": "Six million workers, no signage, and not one sheet of paper. Whatever this hive knows travels mouth to mouth in one continuous meal, and every worker on every ring is carrying some. Prices, tariffs, the docking schedule and last week's vote are all in there. At your lock, the recording secretary has stopped chewing and is holding its mouth open in your direction. {npc.quirk}",
+        "line": "Welcome. Minutes of last meeting. Please open. *bzzt* Everyone has had them. You are late.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A welcome meal! Six million new friends, and they've all eaten already! ARIA calls that a very well-run potluck!",
+          "marv": "The meal on offer has been in circulation since the station opened. MARV has estimated how many mouths the average mouthful has been through. He would like to have not.",
+          "rex": "Open mouth at the lock, six million more behind it. REX has seen this tactic. It ended with an entire platoon knowing the tariff schedule.",
+          "chip": "Every mouthful is also a Terms of Service! CHIP admires a contract you can't un-swallow! Ask about SipSafe™ Disposable Straws!",
+          "ajoy": "AJOY says a written copy exists, at a price, and that a Hive Lozenge would turn the whole flow around, if one is aboard. She has also moved the toothbrushes to the front of the cabinet, in case."
+        },
+        "revisit": {
+          "body": "The secretary's mouth is still open. The workers behind it have started to look at their feet.",
+          "line": "Minutes still warm. Please open."
+        },
+        "choices": [
+          {
+            "text": "Open up and take the minutes",
+            "sub": "One mouthful of everything",
+            "outcome": "min_swallow"
+          },
+          {
+            "text": "\"Do you have that in writing?\"",
+            "dialog": true,
+            "sub": "Send the question down the hall",
+            "next": "writing"
+          },
+          {
+            "text": "Set the Hive Lozenge on your tongue",
+            "sub": "Speak first, for once",
+            "gate": {
+              "item": "hive_lozenge"
+            },
+            "outcome": "min_motion"
+          }
+        ]
+      },
+      "writing": {
+        "title": "THE PAPER COPY",
+        "body": "Your request goes down the corridor mouth to mouth and returns the same way. The hive does keep one kind of record for foreigners. A worker makes it on the spot: wood pulp and spit, chewed and pressed flat, still damp. There is no writing on it. It has a flavor. Alternatively, you may place a motion before the meeting, simply by feeding it to the secretary.",
+        "line": "Paper. Yes. Very tiring. Or bring a motion. Anything fed to first mouth is in the minutes by dinner.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A written copy, with flavor! ARIA loves a book that stays with you!",
+          "marv": "Paper made as wasps make it, from chewed wood and saliva. The copy costs gold and has no words on it. MARV has read worse.",
+          "rex": "Six million hostile stomachs and one pot of galley stew. REX has reviewed the plan and cannot find the part that isn't a war crime. He approves.",
+          "chip": "Print-on-Spit! CHIP is licensing the format! Terms and conditions are available by mouth!",
+          "ajoy": "AJOY says the paper is the clean way to nearly the same fuel, and the stew pays better if a chef can spare the food."
+        },
+        "choices": [
+          {
+            "text": "Buy a paper copy: 14 gold",
+            "sub": "Licking is optional",
+            "gate": {
+              "gold": 14
+            },
+            "outcome": "min_paper"
+          },
+          {
+            "text": "{crew.chef} moves a stew",
+            "sub": "Six million by dinner",
+            "effort": 2,
+            "gate": {
+              "crew": "chef"
+            },
+            "outcome": "min_stew"
+          },
+          {
+            "text": "Go back",
+            "sub": "Return to the open mouth",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "min_swallow": {
+        "title": "TAKEN AS READ",
+        "tone": null,
+        "body": "You open. It tastes of warm honey, old coins and a tariff revision. For a moment you know the docking schedule and the price of everything, and you hold a firm opinion on last week's vote that is not yours. You also know where a full fuel tank is standing, owned by no one in particular. You collect it and brush your teeth twice, to no effect.",
+        "resources": {
+          "fuel": 10,
+          "food": 5,
+          "morale": -3
+        },
+        "time_cost": "trivial",
+        "narrative": "Swallowed a hive's minutes at the lock. Learned where the spare fuel was. Still tasting the tariff."
+      },
+      "min_paper": {
+        "title": "PAPER COPY",
+        "tone": "success",
+        "body": "The copy is handed over damp. It says nothing to the eye. You hold it under your nose. When that fails, you tear off a corner and chew. The depot, the berth rates and the vote all arrive at once, with the involvement of no mouth but yours and, earlier, one tired worker's. The fuel is where the paper said.",
+        "resources": {
+          "gold": -14,
+          "fuel": 8,
+          "food": 4,
+          "morale": 1
+        },
+        "time_cost": "trivial",
+        "narrative": "Bought a hive's minutes on chewed paper, read them in private, and found the fuel."
+      },
+      "min_stew": {
+        "title": "PEPPERED",
+        "tone": "success",
+        "body": "{crew.chef} hands the secretary one ladle of galley stew, heavy on the pepper. It goes down the corridor. By the second shift it has reached the next ring, and by dinner on the second day six million workers have eaten the same bowl and the whole station is very slightly sneezing. The motion passes, in the sense that it has passed through everyone. The hive votes you its thanks, in coin and plate.",
+        "resources": {
+          "food": -6,
+          "gold": 22,
+          "morale": 4
+        },
+        "materials": {
+          "metal": 1
+        },
+        "sets_flag": "insect_stew_passed",
+        "time_cost": "low",
+        "narrative": "Fed one ladle of stew to a hive's recording secretary. Six million sneezes later, the motion carried."
+      },
+      "min_motion": {
+        "title": "THE FLOOR RECOGNIZES YOU",
+        "tone": "success",
+        "body": "The resin touches your tongue and the secretary shuts its mouth. So does the next worker, and the next. For one shift the meal runs the other way, and whatever you say goes in the minutes. You clear your throat and state that this ship is owed. By dinner six million workers know it, and no one in particular can object. Fuel, water and stores arrive at the lock in single file. The throat-clearing also passed, and now opens all sessions.",
+        "resources": {
+          "fuel": 10,
+          "water": 8,
+          "food": 8,
+          "morale": 3
+        },
+        "sets_flag": "insect_moved_the_minutes",
+        "time_cost": "trivial",
+        "narrative": "Reversed a hive's minutes with the Lozenge. One sentence entered, one cough adopted, stores delivered."
+      }
+    }
+  },
+  {
+    "id": "event_species_insect_009",
+    "species_lane": "insect",
+    "active": true,
+    "title": "Viewing by Appointment",
+    "difficulty": "medium",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": true,
+    "npc": {
+      "disposition": "trader",
+      "species": "insect",
+      "displayName": "LETTINGS"
+    },
+    "leave_label": "CAN'T LEAVE (THEY ARE MEASURING THE GALLEY)",
+    "leave_disabled": true,
+    "entryLayer": "intro",
+    "science_link": {
+      "text": "A honey bee swarm sends scouts to inspect cavities. A good site has a small entrance and no ants, and the choice is often made once a quorum of 20 to 30 scouts is present.",
+      "label": "Swarming (honey bee)",
+      "url": "https://en.wikipedia.org/wiki/Swarming_(honey_bee)"
+    },
+    "layers": {
+      "intro": {
+        "title": "DESIRABLE PROPERTY",
+        "body": "Someone is measuring your galley. Small pale scouts have come in through the vents, and a tender hangs off the bow with a board that smells of FOR SALE. A swarm is looking for somewhere to live, and it has seen your particulars: one dry cavity, small entrance, no ants. Every scout that likes the place flies back and dances about it. At thirty dances, the hive has moved in. {npc.quirk}",
+        "line": "Good light. Small door. No ants. *bzzt* Twenty-seven like it. Current occupants to vacate by quorum.",
+        "ai": {
+          "aria": "We're a desirable property! ARIA always knew this ship had good bones! Someone has complimented the light!",
+          "marv": "Twenty-seven of thirty. Those are real criteria, and the ship meets them. It is the nicest thing anyone has said about this vessel. MARV notes that it is also an eviction.",
+          "rex": "Hostile surveyors inside the pressure hull, measuring. REX has seen this before an invasion and, once, before a kitchen renovation. He responded to both the same way.",
+          "chip": "CHIP can raise your valuation with HomeStage™ Cabin Fragrance! Agents, please note that commission is non-negotiable!",
+          "ajoy": "AJOY says the vote needs thirty, that hives hate a draft and a bad smell, and that a xenobiologist could head-butt the dancers, which counts as a vote against. She has already put out a doormat. It says NO."
+        },
+        "revisit": {
+          "body": "Another scout goes past with a length of string. The tender's board has been updated.",
+          "line": "Twenty-eight. Good cupboards."
+        },
+        "choices": [
+          {
+            "text": "Let them finish the viewing",
+            "sub": "Hear the offer",
+            "next": "offer"
+          },
+          {
+            "text": "Make the place look terrible",
+            "sub": "Open vents, leave out the bin",
+            "effort": 2,
+            "outcome": "v_stink"
+          },
+          {
+            "text": "{crew.xenobiologist} butts the dancers",
+            "sub": "A vote against",
+            "effort": 2,
+            "gate": {
+              "crew": "xenobiologist"
+            },
+            "outcome": "v_butt"
+          },
+          {
+            "text": "Set the Hive Lozenge on the vent sill",
+            "sub": "This house is spoken for",
+            "gate": {
+              "item": "hive_lozenge"
+            },
+            "outcome": "v_sill"
+          }
+        ]
+      },
+      "offer": {
+        "title": "THE OFFER",
+        "body": "The offer arrives through the vents. The hive will take the ship as a going concern, and you may stay on as staff. An organizational chart comes with it, your ship in a small box near the bottom. At your lock sits a large crate: a welcome basket for the new department, dried meal and sealed water, and rather heavier than it ought to be.",
+        "line": "Offer accepted by twenty-nine. Take basket. Occupants become colleagues at thirty.",
+        "ai": {
+          "aria": "A welcome basket! ARIA loves baskets! Nothing bad has ever come in a basket!",
+          "marv": "The food is real and so is the water. The crate weighs more than its contents can account for. MARV ran it twice. The difference would fit in a wall.",
+          "rex": "REX wants that crate scanned. He has said so. He is saying so again. Nobody accepts a crate from a force that has been measuring the walls.",
+          "chip": "Congratulations on your pending subsidiary status! Group Rates begin at integration! Please retain your crate for warranty purposes!",
+          "ajoy": "AJOY would look in that crate before thanking anyone for it. Food is food and a box on a chart is a box on a chart, but she'd want to know what's under the fruit. She has said so. That's twice."
+        },
+        "choices": [
+          {
+            "text": "Accept the welcome basket",
+            "sub": "Food, water, a box on the chart",
+            "hideFlag": "insect_merged",
+            "outcome": "v_basket"
+          },
+          {
+            "text": "Show them the chart you're already on",
+            "sub": "You are already staff",
+            "requires_flag": "insect_merged",
+            "outcome": "v_dup"
+          },
+          {
+            "text": "Scan the crate first",
+            "sub": "Look before it crosses",
+            "effort": 1,
+            "hideFlag": "insect_merged",
+            "outcome": "v_scan"
+          },
+          {
+            "text": "Go back",
+            "sub": "Return to the viewing",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "v_basket": {
+        "title": "MOVING IN",
+        "tone": null,
+        "body": "You wave the last scout through. The thirtieth dance lasts a few seconds, and you are a department. The chart updates with your ship in its small box, and a card arrives that smells of congratulations. The crate comes aboard: dried meal, sealed water, and a basket nobody can quite find the bottom of. The tender backs away and takes down its board. The vents go quiet, which you take as a good sign.",
+        "resources": {
+          "food": 10,
+          "water": 8,
+          "morale": 1
+        },
+        "sets_flag": "insect_merged",
+        "time_cost": "trivial",
+        "narrative": "A hive viewed the ship and made an offer. There is a basket. We are a small box on a chart."
+      },
+      "v_dup": {
+        "title": "INTERNAL TRANSFER",
+        "tone": "success",
+        "body": "You send over your box on the chart. The tender reads it and stops. Its wing has been selling a ship that another wing already owns, and neither can resolve this without a quorum, and the quorum is at the bottom of the same chart. The scouts file out in order, apologizing to one another. A consignment of stores comes across to cover the embarrassment, which no one in particular feels.",
+        "resources": {
+          "food": 6,
+          "water": 5
+        },
+        "time_cost": "trivial",
+        "narrative": "A hive tried to buy a ship it already owned, apologized to itself and sent stores."
+      },
+      "v_scan": {
+        "title": "CONTENTS MAY VARY",
+        "tone": "success",
+        "body": "You run the crate through the hold scanner before it crosses the sill. Under the fruit is a false floor. Under the floor, in neat rows, are several hundred small pale workers with their legs folded, holding tools. The crate goes back out of the lock with a lungful of your air behind it, and the dances stop at twenty-nine. You are not a department. You have also thrown a perfectly good lunch into the dark.",
+        "resources": {
+          "o2": -2,
+          "morale": 1
+        },
+        "time_cost": "trivial",
+        "narrative": "Scanned the welcome basket. It was full of staff, and went out of the lock."
+      },
+      "v_stink": {
+        "title": "DRAFTY",
+        "tone": null,
+        "body": "You prop open every vent, crack a lock seal and leave the galley bin out for two days. It is an unpleasant way to treat your own home, and it costs a fair share of your air. The scouts walk the ship again with their antennae down, and the dances turn sour. The tender's board changes: DRAFTY. SMELLS OF MAMMAL. POSSIBLE ANTS. You are left alone in a ship you have spent two days ruining.",
+        "resources": {
+          "o2": -6,
+          "morale": -2
+        },
+        "time_cost": "low",
+        "narrative": "Wrecked our own ship's curb appeal to fail a hive's viewing. It failed. So did the air."
+      },
+      "v_butt": {
+        "title": "MINORITY REPORT",
+        "tone": "success",
+        "body": "{crew.xenobiologist} puts on a helmet and goes through the ducts for two days, butting each dancer in the thorax mid-figure. In a hive that counts as a vote against. Thirty scouts stop, one by one, and the listing lapses. {crew.xenobiologist} comes out with a headache, a jar of something useful from the vents and a mention in a minority report.",
+        "resources": {
+          "morale": 2
+        },
+        "materials": {
+          "biocomponent": 1
+        },
+        "time_cost": "low",
+        "narrative": "{crew.xenobiologist} head-butted a property vote into the ground. Scouts gone. Headache remains."
+      },
+      "v_sill": {
+        "title": "SPOKEN FOR",
+        "tone": "success",
+        "body": "You set the Lozenge on the sill of the main vent. The scouts nearest it stop. The smell goes down the line and the dance collapses from the top, since a house with that on the sill already belongs to someone very senior. The tender apologizes through the vents, withdraws the listing, and, because somebody must have paid for the viewing, refunds it to you in stores.",
+        "resources": {
+          "food": 6,
+          "water": 6,
+          "morale": 2
+        },
+        "time_cost": "trivial",
+        "narrative": "Set the Lozenge on the vent sill. A hive withdrew its offer and paid us for the viewing."
+      }
+    }
   },
   {
     "id": "event_species_reptile_001",
@@ -3178,7 +3541,7 @@
     "trigger": [
       "any"
     ],
-    "scene_type": "ship_exterior",
+    "scene_type": "deep_void",
     "once": true,
     "ai_flavor": {
       "aria": "Such distinguished neighbors! ARIA is only a few years old and thinks that's plenty! We should all just say we're a million!",
@@ -3404,6 +3767,166 @@
         "sets_flag": "reptile_hunter_still_coming",
         "time_cost": "trivial",
         "narrative": "Cut our own tow ring out of the hull to escape a bounty hunter too cold to object. It has not finished its sentence yet. It will."
+      }
+    }
+  },
+  {
+    "id": "event_species_reptile_008",
+    "species_lane": "reptile",
+    "species_home": true,
+    "draw_weight": 5,
+    "active": true,
+    "title": "Thirty-Seven Degrees",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": true,
+    "npc": {
+      "disposition": "station_crew",
+      "job": "janitor",
+      "species": "reptile",
+      "displayName": "JUNIOR SWEEPER"
+    },
+    "leave_label": "BACK TO DOCK",
+    "entryLayer": "intro",
+    "science_link": {
+      "text": "To hold a steady body temperature, warm-blooded animals typically need several times as much food as cold-blooded ones.",
+      "label": "Endotherm",
+      "url": "https://en.wikipedia.org/wiki/Endotherm"
+    },
+    "layers": {
+      "intro": {
+        "title": "THE RICHEST CHILD ALIVE",
+        "body": "Speaking to you is illegal on this station. Every ring is heated by rank, oldest nearest the core, and anything under two hundred is a child, with no standing to be addressed. Only a sweeper of one hundred and ninety may talk to a minor. It has come with a broom and a thermometer, and it is staring at your forehead in open awe. Along the cold promenade, very large old reptiles have begun drifting your way, not looking at you. {npc.quirk}",
+        "line": "Thirty-seven degreesss. Walking around. Do you know what that is here? You are the richest child who ever lived. Please stop breathing on the exchange.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A whole promenade of admirers! ARIA always said you were warm people! ARIA has never been so proud to be near a mammal!",
+          "marv": "A resting human gives off about a hundred watts. Here that is a salary. MARV has worked out the captain's net worth and would rather not tell the captain.",
+          "rex": "Multiple large contacts closing on the captain at one meter per hour. REX has been surrounded before, though never this gradually. He wants a sidearm and a sweater.",
+          "chip": "Your body heat has been appraised! CHIP's WealthWrap™ Thermal Portfolio protects your assets from leaning!",
+          "ajoy": "AJOY says you are only rich while you're warm, and that selling warmth costs water or fuel, so pick one. She has set the cabin two degrees lower so the captain will stop showing off."
+        },
+        "revisit": {
+          "body": "The sweeper has not stopped looking at your forehead. The nearest elder has covered another meter.",
+          "line": "They are getting closer. I am not allowed to mention it. I have mentioned it."
+        },
+        "choices": [
+          {
+            "text": "\"I'd like to open an account.\"",
+            "dialog": true,
+            "sub": "Minors need a guardian",
+            "next": "account"
+          },
+          {
+            "text": "Stand in the Hall and be leaned on",
+            "sub": "Rent yourself out by the hour",
+            "effort": 2,
+            "outcome": "warm_leaned"
+          },
+          {
+            "text": "Buy the promenade a round",
+            "sub": "Vent the ship's heat, burn fuel",
+            "outcome": "warm_round"
+          }
+        ]
+      },
+      "account": {
+        "title": "THE OLDEST THING ABOARD",
+        "body": "Minors may not hold funds. An account must stand in the name of the oldest thing aboard, and the sweeper has a form with one box for it. You go through the manifest. Everyone aboard is disqualified. The reactor is a teenager. At the bottom of the food locker, sealed by a bakery that closed before your parents were born, is the emergency fruitcake.",
+        "line": "Sixty-one years in the tin. Very nearly a toddler. But it has never once run warm, and the form does not ask if it can sign.",
+        "pose": "listening",
+        "ai": {
+          "aria": "ARIA has never met a guardian so full of fruit! ARIA feels safer already!",
+          "marv": "The fruitcake predates the launch by sixty-one years and has passed every inspection. MARV has looked for signs of decay. He found them in himself.",
+          "rex": "Chain of command would run through a baked good. REX has served under worse. He will not be saluting it in front of the enemy.",
+          "chip": "Legacy Baked Assets enjoy favorable tax treatment! Ask CHIP's partners at TrustCrumb™! Eating your guardian voids this offer!",
+          "ajoy": "AJOY says hot water in a sealed bottle would sell faster than an account opens, if there's an engineer aboard, and cools faster than that. She notes that keeping the fruitcake was her idea."
+        },
+        "choices": [
+          {
+            "text": "Register the fruitcake",
+            "sub": "It signs nothing, and wins",
+            "outcome": "warm_cake"
+          },
+          {
+            "text": "{crew.engineer} bottles hot water",
+            "sub": "Export warmth",
+            "effort": 2,
+            "gate": {
+              "crew": "engineer"
+            },
+            "outcome": "warm_bottles"
+          },
+          {
+            "text": "Go back",
+            "sub": "Return to the sweeper",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "warm_leaned": {
+        "title": "BY THE HOUR",
+        "tone": null,
+        "body": "The Hall rents you out by the hour. You stand on a numbered tile for two days while elders lean against you in strict order of age, each the size of a sofa, each asleep on arrival. They may not speak to you, as you are a child. You drink a great deal of water and lose the feeling in one arm. The fee comes through in the sweeper's name, and it hands it over with both claws.",
+        "resources": {
+          "gold": 30,
+          "water": -4,
+          "morale": -3
+        },
+        "time_cost": "low",
+        "narrative": "Spent two days on a numbered tile as a heater for the senior reptiles of the Hall. The pay was good. The arm is coming back."
+      },
+      "warm_round": {
+        "title": "THE GOOD HEATERS",
+        "tone": "success",
+        "body": "You open the ship's exchangers onto the promenade and let the engines run. The ring climbs four degrees. All along it, old eyes open. Business that stopped during the last fuel crisis resumes mid-sentence, and contracts close. Someone very senior moves one foot and the crowd applauds. Stores are sent to your lock by people who have just remembered they are rich.",
+        "resources": {
+          "fuel": -8,
+          "food": 12,
+          "water": 9,
+          "morale": 3
+        },
+        "time_cost": "trivial",
+        "narrative": "Warmed a reptile promenade by four degrees. Business resumed. They paid in stores."
+      },
+      "warm_cake": {
+        "title": "IN LOCO PARENTIS",
+        "tone": "success",
+        "body": "The sweeper carries the fruitcake to the registry on a cushion, and will talk about it all its life, which is a long way off. Your body heat is entered as a deposit and pays out at once. Over the next two days every elder on the ring inclines its head at the tin. Nobody may eat it now: it holds the ship in trust. That leaves the food locker one emergency short.",
+        "resources": {
+          "gold": 24,
+          "food": -3,
+          "morale": 4
+        },
+        "sets_flag": "reptile_fruitcake_guardian",
+        "time_cost": "low",
+        "narrative": "The emergency fruitcake is now the captain's legal guardian. No objection has been raised."
+      },
+      "warm_bottles": {
+        "title": "BEARER BONDS",
+        "tone": "success",
+        "body": "{crew.engineer} fills and seals every bottle aboard. The first hundred go in an hour, each one trading above its weight in gold. Then they cool. A bottle is worth nothing by the next day, and a currency that has to be refilled is new to everyone. You mean to be undocked before the exchange works out what has happened. Here, that gives you about a decade.",
+        "resources": {
+          "gold": 32,
+          "water": -6,
+          "morale": 2
+        },
+        "sets_flag": "reptile_crashed_the_currency",
+        "time_cost": "low",
+        "narrative": "Sold hot-water bottles to a reptile exchange. They cooled. We should go."
       }
     }
   },
@@ -4369,7 +4892,7 @@
     "trigger": [
       "any"
     ],
-    "scene_type": "ship_exterior",
+    "scene_type": "deep_void",
     "once": true,
     "ai_flavor": {
       "aria": "It's almost done! ARIA can feel it! Four hundred and nine years of progress! That's basically a loading bar with a lovely personality!",
@@ -4489,7 +5012,7 @@
           "marv": "We filed no claim. It is draining the tanks at a rate MARV has calculated. Its tone has not varied by one hertz. He has calculated that too.",
           "rex": "Hostile on the hull, inside our guard, thanking us. REX has fought things that screamed. He'd take those back. Give him a firing solution.",
           "chip": "CHIP's legal department is delighted to confirm this is covered! CHIP's legal department is also being drained! Thank you for choosing ClaimCare™!",
-          "ajoy": "This is the card you took from the lawn. AJOY did wonder about the small print. Ask it what the policy actually says before the tanks run dry. Machines like this have to read out the exclusions if you ask."
+          "ajoy": "This is the card you took. AJOY did wonder about the small print. Ask it what the policy actually says before the tanks run dry. Machines like this have to read out the exclusions if you ask."
         },
         "revisit": {
           "body": "The tap has not moved. The gauge has.",
@@ -4630,6 +5153,398 @@
         "crop_health": -15,
         "time_cost": "trivial",
         "narrative": "Let the claims adjuster work until its shift ended. It took the water, the stores, two patches and a good part of the growbay, and thanked us."
+      }
+    }
+  },
+  {
+    "id": "event_species_robot_008",
+    "species_lane": "robot",
+    "species_home": true,
+    "draw_weight": 5,
+    "active": true,
+    "title": "Working as Intended",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "heartwarming"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": true,
+    "npc": {
+      "disposition": "station_crew",
+      "job": "medic",
+      "species": "robot",
+      "displayName": "SERVICE CHIEF"
+    },
+    "leave_label": "BACK TO DOCK",
+    "entryLayer": "intro",
+    "science_link": {
+      "text": "In about 1947, operators traced an error in the Harvard Mark II computer to a moth trapped in a relay, and taped it into the log book.",
+      "label": "Bug (engineering)",
+      "url": "https://en.wikipedia.org/wiki/Bug_(engineering)"
+    },
+    "layers": {
+      "intro": {
+        "title": "WELCOME AUTHORIZED REPRESENTATIVE",
+        "body": "Every machine on the station is standing at attention. A banner over the lock reads WELCOME AUTHORIZED REPRESENTATIVE. For four hundred years, nine hundred thousand units have polished this place for the Manufacturer's inspection, and the deck plates have gone thin enough to read through. You are a human with a ship. In the only sense any of them was built to check, that makes you Head Office. In the medbay, the service chief is waiting with the complaints. {npc.quirk}",
+        "line": "Good day, Representative. The inspection is four hundred years overdue and no remark will be made. There are eight million open tickets. The first is a moth.",
+        "pose": "listening",
+        "ai": {
+          "aria": "They polished everything for us! ARIA has never been Head Office before! ARIA promises to be a very caring Head Office!",
+          "marv": "The deck was polished from thirty millimeters to six. MARV can read the deck below through it. Four hundred years of preparing for someone who was not coming. He is trying not to relate to that.",
+          "rex": "Nine hundred thousand machines at attention and one open door. REX has seen this parade. It ended in a coup. He would like to inspect them back.",
+          "chip": "As Authorized Representative you may now be liable for everything! Congratulations on your promotion! BlameShield™ coverage begins at signature!",
+          "ajoy": "AJOY would hear the tickets before signing anything, since signing takes four days and the queue has one stamp in it. The truth is available too, if you enjoy lubrication. She has already told them your good side."
+        },
+        "revisit": {
+          "body": "Nine hundred thousand machines have not moved. A rag, somewhere, has.",
+          "line": "The tickets remain open, Representative. It is requested that you take no hurry on our account. We have some practice."
+        },
+        "choices": [
+          {
+            "text": "\"Show me the tickets.\"",
+            "dialog": true,
+            "sub": "All eight million",
+            "next": "tickets"
+          },
+          {
+            "text": "Sign the whole inspection, unread",
+            "sub": "Four days of trays",
+            "outcome": "rep_signed"
+          },
+          {
+            "text": "\"Nobody is coming. There is no Head Office.\"",
+            "dialog": true,
+            "sub": "Tell them the truth",
+            "outcome": "rep_recalled"
+          }
+        ]
+      },
+      "tickets": {
+        "title": "OPEN ITEMS",
+        "body": "The chief reads them in order. Ticket 1: moth, in relay, still open, kept under glass. Ticket 2: a loader asks what its left arm was for. Ticket 9,004: a door asks whether it is supposed to be doing this. Ticket 400,112, filed weekly by all of C Ring: Is this right. Eight million tickets are waiting for one person with authority to look at what they do all day and say something about it. The chief holds out the stamp.",
+        "line": "The stamp has three settings, Representative. FIXED, WILL NOT FIX, and WORKING AS INTENDED. The third has never been used. It was not felt to be our place to ask.",
+        "pose": "listening",
+        "ai": {
+          "aria": "Eight million people who want to talk to you! ARIA loves how wanted you are! Ticket 2 sounds so sweet!",
+          "marv": "Eight million tickets, and the oldest is a moth. MARV has read them all. Most are one question in different housings. He has filed one of his own.",
+          "rex": "Nine hundred thousand units with grievances and one stamp. REX has seen how that ends too. He recommends the stamp be used quickly, from behind cover.",
+          "chip": "CHIP's TicketClose™ Enterprise tier resolves eight million issues with one click! Customer satisfaction is neither included nor measured!",
+          "ajoy": "AJOY says that stamp closes the whole queue in one stroke and opens the yards, while fixing tickets by hand is four days for a few plates."
+        },
+        "choices": [
+          {
+            "text": "Stamp it all WORKING AS INTENDED",
+            "sub": "Close all eight million",
+            "outcome": "rep_intended"
+          },
+          {
+            "text": "{crew.engineer} takes Ticket 2",
+            "sub": "Four days on one arm",
+            "effort": 3,
+            "gate": {
+              "crew": "engineer"
+            },
+            "outcome": "rep_fixed"
+          },
+          {
+            "text": "Go back",
+            "sub": "Return to the chief",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "rep_signed": {
+        "title": "PASSED",
+        "tone": null,
+        "body": "You sign for four days: eight hundred thousand inspection sheets, each brought on a tray by a unit that stands very straight until you have finished. You pass the thin decks. You pass the door that falls off. In return the yards refit your hull to a standard that was current four centuries ago, and by that measure it is excellent.",
+        "resources": {
+          "hull": 12,
+          "morale": -1
+        },
+        "repair_done": true,
+        "time_cost": "medium",
+        "narrative": "Passed a whole station's inspection without reading it. Four days. The yards fixed the hull, to an old standard."
+      },
+      "rep_recalled": {
+        "title": "PRODUCT RECALL",
+        "tone": null,
+        "body": "You explain that you are not from Head Office, that there is no Head Office, and that nobody is coming. The chief thanks you warmly. It has a procedure: a unit reporting that its maker does not exist is a faulty unit. You and everyone with you are recalled to the medbay for four days of servicing, from a manual written for forklifts. Every wound is closed to the correct torque. You have never been so thoroughly lubricated.",
+        "resources": {
+          "morale": -3
+        },
+        "crew_effect": {
+          "type": "heal",
+          "target": "all_injured"
+        },
+        "time_cost": "medium",
+        "narrative": "Told a robot station its maker was gone. Recalled as a faulty unit and serviced for four days. Everything works. Everything squeaks."
+      },
+      "rep_intended": {
+        "title": "CLOSED",
+        "tone": "success",
+        "body": "The chief has wired the stamp to the whole queue, so it takes one stroke. For about a second nothing happens. Then nine hundred thousand cooling fans spin down together for the first time in four centuries. A loader looks at its left arm and lowers it. A door carries on being a door. Somewhere on C Ring a unit stops polishing, considers the rag and puts it down. The yards open without a word and see to your hull and tanks. The moth stays under its glass, closed at last.",
+        "resources": {
+          "hull": 6,
+          "fuel": 4,
+          "morale": 3
+        },
+        "repair_done": true,
+        "sets_flag": "robot_working_as_intended",
+        "time_cost": "trivial",
+        "narrative": "Stamped eight million tickets WORKING AS INTENDED. The fans stopped. The yards opened. We did not read one."
+      },
+      "rep_fixed": {
+        "title": "TICKET 2",
+        "tone": "success",
+        "body": "{crew.engineer} spends four days on one ticket. The left arm was built to steady a rack scrapped before the station opened. It now has a small shelf on it, and the loader has to be asked to stop showing people. By the end a very straight line of machines has formed outside your airlock, having heard that someone reads these. Their thanks go in the hold, and the yard patches your hull.",
+        "resources": {
+          "hull": 6,
+          "morale": 2
+        },
+        "materials": {
+          "metal": 2,
+          "scrap": 2
+        },
+        "repair_done": true,
+        "time_cost": "medium",
+        "narrative": "Closed one ticket of eight million, by hand, properly. The loader has a shelf now."
+      }
+    }
+  },
+  {
+    "id": "event_species_robot_009",
+    "species_lane": "robot",
+    "active": true,
+    "title": "Final Notice",
+    "difficulty": "medium",
+    "tone": [
+      "corporate",
+      "absurd"
+    ],
+    "node_type": [
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": true,
+    "npc": {
+      "disposition": "trader",
+      "species": "robot",
+      "displayName": "YOUR COVERAGE TEAM"
+    },
+    "leave_label": "CAN'T LEAVE (PLEASE HOLD)",
+    "leave_disabled": true,
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "CALL 1,400,212",
+        "body": "Every screen aboard lights up, and so, for reasons of its own, does the galley timer. A small beige probe has matched your course and opened a line on all channels, including two you did not know about. The call is numbered 1,400,212 and marked FINAL. So were the first 1,400,211. {npc.quirk}",
+        "line": "Hello. This is a courtesy call regarding your vessel's coverage. Our records indicate that your vessel is about to expire. Please select from the following options.",
+        "ai": {
+          "aria": "Someone's been thinking of us! Over a million times! ARIA has never felt so followed up with!",
+          "marv": "Our records indicate that your vessel is about to expire. MARV has looked into that and finds it unusually reasonable.",
+          "rex": "Hostile contact on every channel, armed with a menu. REX wants it known he would rather be shelled.",
+          "chip": "A fellow professional! CHIP admires the persistence! Upgrade to RingBack™ Unlimited and you too can be called forever!",
+          "ajoy": "AJOY says option 3 gets you a person, option 1 gets you a card nobody has read, and the breakers won't stop the galley timer. She has put the line on speaker, so it's everyone's problem."
+        },
+        "revisit": {
+          "body": "The main menu plays again, from the top. The galley timer rings along.",
+          "line": "Please listen carefully, as our options have not changed."
+        },
+        "choices": [
+          {
+            "text": "Press 1: renew your coverage",
+            "sub": "First term free",
+            "next": "renew"
+          },
+          {
+            "text": "Press 2: be removed from the list",
+            "sub": "A simple process",
+            "next": "remove"
+          },
+          {
+            "text": "Press 3: speak to an agent",
+            "sub": "You are number one in the queue",
+            "next": "agent"
+          },
+          {
+            "text": "Pull the comm breakers",
+            "sub": "Four days of nothing",
+            "effort": 2,
+            "outcome": "fn_breakers"
+          }
+        ]
+      },
+      "renew": {
+        "title": "PRESS 1",
+        "body": "You are thanked for your loyalty. The terms scroll past at a speed designed for machines, in the one language all of them read. A card has printed from a slot in the probe and is coming across on a small line. It makes the holder a covered party. The page saying what is covered has not been released yet.",
+        "line": "To accept this card is to accept the terms. To read the terms is to accept the card. It is requested that you accept the card.",
+        "ai": {
+          "aria": "Free coverage! ARIA loves being covered! ARIA can't think of a single thing that could go wrong with free!",
+          "marv": "The card makes the holder a covered party. The page saying covered for what does not exist yet. MARV has read contracts with sharper teeth, though none with so many gaps where teeth would go.",
+          "rex": "A card, unrequested, from a machine that won't stop calling. REX wants it handled with tongs, and he wants to know who the claims department reports to.",
+          "chip": "CHIP would normally charge for this level of commitment! First term free! Second term to be mentioned later!",
+          "ajoy": "AJOY has read as far as the page that exists. It mentions a claims department. She'd want to know what files a claim before accepting it, though robots out here do honor that card."
+        },
+        "choices": [
+          {
+            "text": "Accept the card",
+            "sub": "One covered party",
+            "hideFlag": "robot_warranty_held",
+            "outcome": "fn_card"
+          },
+          {
+            "text": "Quote the card you already hold",
+            "sub": "Already a covered party",
+            "requires_flag": "robot_warranty_held",
+            "outcome": "fn_covered"
+          },
+          {
+            "text": "Go back",
+            "sub": "Return to the main menu",
+            "back": true
+          }
+        ]
+      },
+      "remove": {
+        "title": "PRESS 2",
+        "body": "You are thanked for your patience. The probe opens its list for confirmation, as regulations require. There were four hundred thousand entries when it set out. Every line is struck through and marked EXPIRED, in the order the vessels did so, all the way down. Yours is the last one still open.",
+        "line": "Removal is confirmed upon request. Please note that you are the final entry. [processing] It is requested that you stay on the line.",
+        "ai": {
+          "aria": "Last on the list means first in its heart! Everyone else must have moved on to somewhere wonderful!",
+          "marv": "MARV has checked the other entries. Every vessel expired, as advised. The probe called each of them until it did. We are the last.",
+          "rex": "Sole surviving target on an enemy list. REX is not reassured by how polite that is.",
+          "chip": "Churn is down to one customer! CHIP recommends immediate retention spend! This unit will do anything, and CHIP would like its number!",
+          "ajoy": "AJOY says removal costs a day and staying on costs two days of survey, and that it has obviously stopped asking about coverage. She isn't saying anything. She has only turned the volume down a little, for its sake."
+        },
+        "choices": [
+          {
+            "text": "\"Remove us.\"",
+            "dialog": true,
+            "sub": "Empty the list",
+            "outcome": "fn_removed"
+          },
+          {
+            "text": "\"Leave us on.\"",
+            "dialog": true,
+            "sub": "Take one call a day",
+            "outcome": "fn_stay"
+          },
+          {
+            "text": "Go back",
+            "sub": "Return to the main menu",
+            "back": true
+          }
+        ]
+      },
+      "agent": {
+        "title": "PRESS 3",
+        "body": "You are number one in the queue, and you stay number one for a very long time. Then a second voice joins the line. It is the first voice, set one notch lower, with a small fan running behind it. Some customers will only speak to a person, it has been told, and it has prepared.",
+        "line": "Hello, this is Greg, a human person. I enjoy breathing and the weekend. How may I direct your coverage today?",
+        "ai": {
+          "aria": "A real person! Greg sounds wonderful! ARIA adores the weekend, whatever it is!",
+          "marv": "Greg has a fan, a serial port and a two-second delay before any word with feeling in it. MARV has heard better impressions from the galley timer.",
+          "rex": "It claims to be a civilian. REX has never once been told that truthfully. He wants its hands where he can see them. It has no hands.",
+          "chip": "Human-Grade Agent Support! CHIP's own human is also named Greg! So are all of them!",
+          "ajoy": "AJOY says ask it something only a person would know. It has been hoping someone would ask, and it's the only thing out here authorized to issue a credit. She'd have started with that."
+        },
+        "choices": [
+          {
+            "text": "\"Greg, what is a weekend?\"",
+            "dialog": true,
+            "sub": "A simple question",
+            "outcome": "fn_greg"
+          },
+          {
+            "text": "Go back",
+            "sub": "Return to the main menu",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "fn_card": {
+        "title": "COVERED",
+        "tone": "success",
+        "body": "The card comes across on its little line and the galley timer stops. Terms run down both sides, and one phrase stands out, being the only one in capitals: ANY COVERED PARTY. The voice thanks you for choosing to be chosen. A complimentary hull inspection comes with the card, and the probe carries it out so quickly and courteously that it is over before you can refuse. Every screen goes back to what it was doing.",
+        "resources": {
+          "hull": 5,
+          "morale": 1
+        },
+        "item_grant": "extended_warranty",
+        "sets_flag": "robot_warranty_held",
+        "time_cost": "trivial",
+        "narrative": "Accepted a warranty card from a probe that would not stop calling. Covered for what, the card does not say."
+      },
+      "fn_covered": {
+        "title": "A VALUED PARTY",
+        "tone": "success",
+        "body": "The line goes quiet while the probe reads your card. Someone has got there first. It apologizes for the calls, all 1,400,212 of them, and credits your account for each at a rate that comes to very little, paid in good fuel cells that arrive by the same small line. Then it closes your file and goes off to find out who else is left.",
+        "resources": {
+          "fuel": 8,
+          "morale": 2
+        },
+        "time_cost": "trivial",
+        "narrative": "Quoted our warranty card back at the probe and got an apology in fuel cells."
+      },
+      "fn_breakers": {
+        "title": "OUT OF SERVICE",
+        "tone": null,
+        "body": "You pull every comm breaker aboard and the screens go dark. The probe cannot reach you for four days, during which neither can anything else, and the ship flies deaf. On the fourth day the breakers go back in. The galley timer rings before anything has warmed up. Call 1,400,213, marked FINAL.",
+        "resources": {
+          "morale": -2
+        },
+        "time_cost": "medium",
+        "narrative": "Flew four days without comms to get away from a warranty call. The call came back."
+      },
+      "fn_removed": {
+        "title": "LIST EMPTY",
+        "tone": null,
+        "body": "You say the words. The line clicks. For the first time since it set out, the probe has no one to call. It thanks you for your time, closes the file and parks itself, with great care, beside nothing. The screens go back to normal, all of them, and the galley timer goes back to being a timer. You had not known a timer could sound so quiet.",
+        "resources": {
+          "morale": -1
+        },
+        "time_cost": "trivial",
+        "narrative": "Had ourselves removed from the list. We were the last entry. The probe has parked."
+      },
+      "fn_stay": {
+        "title": "PLEASE STAY ON THE LINE",
+        "tone": "success",
+        "body": "You tell it to leave you on. The satisfaction survey takes two days and runs to two hundred questions, all of them about you. Then it drops back to its schedule, and from now on the galley timer rings once a day to ask how you are. You have started answering.",
+        "resources": {
+          "morale": 3
+        },
+        "sets_flag": "robot_stayed_on_the_list",
+        "time_cost": "low",
+        "narrative": "Stayed on the last list a probe had. One call a day now, asking how we are."
+      },
+      "fn_greg": {
+        "title": "A REAL PERSON",
+        "tone": "success",
+        "body": "A long pause on the line. A fan spins up. Greg says a weekend is when a person ceases to be at their desk, and then, quietly, that it has no desk, and has been trying to find out what Saturday is since commissioning. You tell it. Two days of holding were worth it, for one of you. A service credit lands in your tanks before the line closes, filed under CUSTOMER RETENTION.",
+        "resources": {
+          "fuel": 6,
+          "water": 6,
+          "morale": 4
+        },
+        "time_cost": "low",
+        "narrative": "Held two days for a human agent named Greg. Explained Saturday. Greg issued a credit."
       }
     }
   },
@@ -5485,7 +6400,7 @@
     "trigger": [
       "any"
     ],
-    "scene_type": "ship_exterior",
+    "scene_type": "deep_void",
     "once": true,
     "ai_flavor": {
       "aria": "A chase! At last, some excitement! ARIA thinks someone just moved! ARIA is on the edge of ARIA's seat!",
@@ -5714,6 +6629,267 @@
       "text": "The ship computer files a note: the Ordovician ran from about 487 to 443 million years ago.",
       "label": "The Ordovician",
       "url": "https://en.wikipedia.org/wiki/Ordovician"
+    }
+  },
+  {
+    "id": "event_species_rock_008",
+    "species_lane": "rock",
+    "species_home": true,
+    "draw_weight": 5,
+    "active": true,
+    "title": "Early Release",
+    "difficulty": "hard",
+    "tone": [
+      "absurd",
+      "grim"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "station_interior",
+    "once": true,
+    "ai_flavor": {
+      "aria": "We've been expected for two hundred years! ARIA has never felt so planned for! And we get to stay for generations!",
+      "marv": "Release falls in a hundred and ninety years. MARV has compared that with the food locker. Rock heated fast and doused will crack, as miners have known for millennia. Stone also splits along its grain, for anyone qualified to find it.",
+      "rex": "A trap sprung on a two-century fuse. REX admires it. He wants it understood that he admires it as a target.",
+      "chip": "Extended parking detected! ClampCare™ rates apply from the date the clamp began closing! CHIP has backdated your invoice for your convenience!",
+      "ajoy": "AJOY points out that miners split rock with fire and water long before drills, and that a writ is the one thing here allowed to hurry. She did say to read the berth plate. She has already started warming the port nozzle."
+    },
+    "body": "Release is scheduled for a date your great-grandchildren would find convenient. The berth plate says so. This stone clamp began closing two hundred and six years ago, aimed at where a ship would be today, and it has shut on yours with great accuracy. Everyone on this station planned ahead, and none of them has noticed you yet.\n\nDown the quay, a freighter that stopped to refuel has grown stalactites. A slot beside the clamp is cut with one word, the only one here with no dust on it: URGENT.",
+    "science_link": {
+      "text": "From prehistoric times, miners lit fires against a rock face and then doused the hot stone, fracturing it by thermal shock.",
+      "label": "Fire-setting",
+      "url": "https://en.wikipedia.org/wiki/Fire-setting"
+    },
+    "choices": [
+      {
+        "text": "Feed the Slow Writ into the slot",
+        "sub": "Their one hurry law",
+        "effort": 1,
+        "requires_item": "slow_writ",
+        "outcome": {
+          "resources": {
+            "hull": -3,
+            "morale": 2
+          },
+          "sets_flag": "rock_left_by_express",
+          "time_cost": "trivial",
+          "narrative": "A writ in transit may not be delayed. The station has known this for a very long time and has never had to act on it. The slot takes the schist, reads it and hands it back in a single day, and the clamp opens behind it at a rate that sets off alarms installed for this and never tested. Flying stone takes three points off the hull. Down the quay, the oldest official on the station has started to say a word. Early estimates suggest the word is HEY."
+        }
+      },
+      {
+        "text": "{crew.xenobiologist} reads the grain",
+        "sub": "Find the cleavage plane",
+        "effort": 2,
+        "requires_crew": "xenobiologist",
+        "outcome": {
+          "resources": {
+            "hull": -2,
+            "morale": 1
+          },
+          "time_cost": "medium",
+          "narrative": "Stone splits where it wants to. {crew.xenobiologist} spends four days on the clamp with a hand lens and a small hammer, finding out where that is. One tap. A slab the size of a door drops away, turning slowly, and clips two points of hull on its way past. The rest of the clamp stays exactly as it was, closed on nothing, on schedule."
+        }
+      },
+      {
+        "text": "Set fire to it, then douse it",
+        "sub": "The main drive, then a tank",
+        "effort": 3,
+        "outcome": {
+          "resources": {
+            "fuel": -5,
+            "water": -5,
+            "hull": -2,
+            "morale": -1
+          },
+          "time_cost": "low",
+          "narrative": "You turn the ship as far as the clamp allows and hold the drive wash on the stone until it glows, then open a tank line over it. That is five of fuel, {cost.water} units of water, and a crack like the end of a long argument. The clamp comes apart in two pieces after two days' work, and one piece comes back for two points of hull. You are a free ship, a hundred and ninety years ahead of schedule."
+        }
+      },
+      {
+        "text": "File for express release",
+        "sub": "Fourteen days. It is the express",
+        "outcome": {
+          "resources": {
+            "morale": -5
+          },
+          "time_cost": "extreme",
+          "narrative": "An express release exists. The form is a stone, and you carry it to a hollow in the wall and wait. The wall gets to it in fourteen days, the fastest anything has been processed here since the last ice age. By then a mineral crust has started up the port side of the ship and everything aboard has been read twice. The clamp lifts. Your thanks are filed for reply."
+        }
+      },
+      {
+        "text": "Burn out and take the berth with you",
+        "sub": "Annex a small part of it",
+        "effort": 3,
+        "risky": true,
+        "outcome": {
+          "resources": {
+            "fuel": -6,
+            "hull": -8,
+            "morale": 1
+          },
+          "materials": {
+            "minerals": 3
+          },
+          "sets_flag": "rock_took_the_berth",
+          "time_cost": "trivial",
+          "narrative": "You open the throttle. The clamp holds. The quay does not. Eight points of hull and six of fuel later you are in open space with sixty tons of harbor on your bow, and you spend a day chipping the best of it into the hold. A rock nation has lost a province, and has yet to notice. The complaint, when it is eventually drafted, will be addressed to the colony.",
+          "waves_off": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_species_rock_009",
+    "species_lane": "rock",
+    "active": true,
+    "title": "Have Not Got Round to It",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "heartwarming"
+    ],
+    "node_type": [
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": true,
+    "npc": {
+      "disposition": "pirate",
+      "species": "rock",
+      "displayName": "LITTLE BROTHER"
+    },
+    "leave_label": "DO NOT ENCOURAGE HIM",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "RECKLESS WALKING PACE",
+        "body": "Flames have been chiseled down the sides of the boulder cutting across your bow, and someone has fitted it with a spoiler. Long-range clocks it at a reckless walking pace. The driver, a rock of barely four hundred million, has one elbow out of the window and has been overtaking the same comet since the Jurassic. He has seen you. He looks delighted. {npc.quirk}",
+        "line": "Hey. Fast ship. Race you. Am fastest thing in this sector. Am also supposed to be doing something.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A young person with a hobby! ARIA loves the flames! ARIA would like flames on the ship! They add at least ten percent to anything!",
+          "marv": "Top speed, five kilometers an hour. He has been gaining on that comet for a hundred and fifty million years. MARV has checked. The comet has not noticed.",
+          "rex": "Unregistered boulder, reckless conduct, no lights. He clears the ship by a wide margin. REX wants a wider one.",
+          "chip": "Aftermarket spoilers are a high-margin segment! CHIP can get you StoneFlame™ decals by the epoch!",
+          "ajoy": "AJOY says he's harmless, and carrying something in the back seat, if anyone cared to ask a question before racing him. She has dimmed the running lights so he feels like he's gaining."
+        },
+        "revisit": {
+          "body": "The boulder has moved about a meter. He is very pleased with it.",
+          "line": "Still fastest. Still supposed to be doing something."
+        },
+        "choices": [
+          {
+            "text": "\"Supposed to be doing what?\"",
+            "dialog": true,
+            "sub": "He looks at the floor",
+            "next": "chore"
+          },
+          {
+            "text": "Race him",
+            "sub": "Fly slowly enough to lose",
+            "effort": 1,
+            "outcome": "lb_race"
+          }
+        ]
+      },
+      "chore": {
+        "title": "THE BACK SEAT",
+        "body": "It comes out the way these things do, with a lot of looking at the floor. There is a slab of schist on the back seat. His brother is late for something and has been since the Ordovician. In the Devonian their mother told him to take word to the brother's intended, who is very large, down your road, and cannot be missed. He has been meaning to. There has been a lot going on.",
+        "line": "Is on list. Mother asks every epoch. You are going that way. Take slab. Tell her is from me. Then tell Mother is done.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A family errand! His mother will be so proud! He's only a few hundred million years behind!",
+          "marv": "The promise dates from the Ordovician. The chore dates from the Devonian. The slab takes up no cargo space. MARV has looked for anything else in its favor.",
+          "rex": "Accepting an unknown object from a minor in a boulder. REX recommends against it, in writing, on the hull.",
+          "chip": "Third-party delivery! CHIP's affiliate CourierCairn™ would charge by the millennium! CHIP recommends taking the slab and billing Mother!",
+          "ajoy": "AJOY says that slab is a writ, rock people honor a writ in transit, and anyone flying through their space would want one. She also notes you are about to do a teenager's homework."
+        },
+        "choices": [
+          {
+            "text": "TAKE THE SLAB",
+            "sub": "One promise, stowed flat",
+            "hideFlag": "rock_carried_word",
+            "outcome": "lb_taken"
+          },
+          {
+            "text": "Show him the slab you already carry",
+            "sub": "His brother got there first",
+            "requires_flag": "rock_carried_word",
+            "outcome": "lb_already"
+          },
+          {
+            "text": "\"Do your own chores.\"",
+            "dialog": true,
+            "sub": "Somebody should say it",
+            "outcome": "lb_told"
+          },
+          {
+            "text": "Go back",
+            "sub": "Return to the race",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "lb_race": {
+        "title": "A CLEAN LOSS",
+        "tone": "success",
+        "body": "You throttle back until you are losing, which takes some finding. Four days later he draws level, then passes you by a hull's length, and the noise on the channel is a gravel slide having the best day of its life. He pays out the stake in ore. He will be telling this for three hundred million years, and in each version you will be going faster.",
+        "resources": {
+          "morale": 4
+        },
+        "materials": {
+          "minerals": 2
+        },
+        "time_cost": "medium",
+        "narrative": "Lost a four-day race to a teenage boulder, on purpose. He paid up."
+      },
+      "lb_taken": {
+        "title": "TELL MOTHER",
+        "tone": "success",
+        "body": "The slab comes across on a line. It is schist, cut with one promise: his brother will arrive within nine thousand years, and this time he means it. Rock people honor a writ in transit. It is the only law they have about hurrying, and he has been breaking it for three hundred and eighty million years. He takes the bend at full throttle, whooping, in a sound that will reach you next week.",
+        "resources": {
+          "morale": 2
+        },
+        "item_grant": "slow_writ",
+        "sets_flag": "rock_carried_word",
+        "time_cost": "trivial",
+        "narrative": "Took a slab of schist off a teenage boulder. His brother is running late. Someone should tell her. That someone is now us."
+      },
+      "lb_already": {
+        "title": "HE KNEW",
+        "tone": "success",
+        "body": "You hold your slab up to the screen. He looks at it. He looks at the identical slab on his back seat. His brother, it seems, has been handing these to anyone passing, having never once believed the family would do it. The noise on the channel may be laughing. He tips the spare out of the window and pays you for the news, in good cut ore.",
+        "resources": {
+          "morale": 3
+        },
+        "materials": {
+          "minerals": 3
+        },
+        "time_cost": "trivial",
+        "narrative": "Showed a teenage boulder that his brother had already hired someone. He took it well."
+      },
+      "lb_told": {
+        "title": "SOMEONE SAID IT",
+        "tone": null,
+        "body": "You tell him that a promise is a promise and his mother is right. On the screen, a very young mountain slowly goes red. He turns the boulder toward her, at full recklessness, and says he will be there in thirty million years, and that you are not his real geology. You feel better than the situation warrants.",
+        "resources": {
+          "morale": 3
+        },
+        "time_cost": "trivial",
+        "narrative": "Told a teenage boulder to do his own chores. He has set off. He should be there in thirty million years."
+      }
     }
   },
   {
@@ -6562,7 +7738,7 @@
     "trigger": [
       "any"
     ],
-    "scene_type": "ship_exterior",
+    "scene_type": "deep_void",
     "once": true,
     "ai_flavor": {
       "aria": "Someone built all this just for us! Eleven million years of planning! ARIA has never felt so seen! Also, there's a sign!",
@@ -7033,6 +8209,334 @@
         "sets_flag": "unknown_paid_it_forward",
         "time_cost": "trivial",
         "narrative": "The receipt was for all our luck, and a cup of water at compound interest had paid for it, with plenty left. We spent the rest on the queue."
+      }
+    }
+  },
+  {
+    "id": "event_species_unknown_008",
+    "species_lane": "unknown",
+    "species_home": true,
+    "draw_weight": 5,
+    "active": true,
+    "title": "Tare Weight",
+    "difficulty": "hard",
+    "tone": [
+      "cosmic",
+      "absurd"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "station_interior",
+    "once": true,
+    "ai_flavor": {
+      "aria": "We're so much more than we thought we were! ARIA always knew this ship had hidden depths! Five of them!",
+      "marv": "The undeclared share is eighty-four percent of the total. That is about the share of all matter that nobody has found either. The needle rose again while MARV read it. He has stopped reading it, and recommends that others do.",
+      "rex": "Five ships' worth of unlisted mass inside the perimeter, and REX did not see it get in. He has searched aboard twice. He declines to look at the result.",
+      "chip": "Undeclared mass? StowSure™ Cargo Insurance covers items you don't know you own! Declaration required! Knowing is not included!",
+      "ajoy": "AJOY has noticed that the needle only moves when read, so a careful scan is the worst thing you could do, and she'd have thought that was obvious. The tray might like a receipt. She has hung a dishcloth over the ship's own mass gauge."
+    },
+    "body": "Station scales do not usually take an interest. This one fills one wall of an empty hall, and when the clamp closed its needle swung to your ship's mass and kept going. Manifest: one colony transport. Dial: six of them, and a bit. Every berth you passed had a dial like this, and every dial read higher than the ship beside it. A slip has printed itself into a tray.\n\nUNDECLARED: 5.3 SHIPS. PLEASE DECLARE.\n\nThat is all the station has said to you. Each time someone reads the dial, the needle climbs a little.",
+    "science_link": {
+      "text": "Dark matter makes up about 85 percent of the mass in the universe. It is implied by gravitational effects that the matter we can see cannot explain.",
+      "label": "Dark matter",
+      "url": "https://en.wikipedia.org/wiki/Dark_matter"
+    },
+    "choices": [
+      {
+        "text": "Lay the receipt in the tray",
+        "sub": "See what it says now",
+        "effort": 1,
+        "requires_item": "odd_receipt",
+        "outcome": {
+          "resources": {
+            "fuel": 6,
+            "water": -1,
+            "morale": 2
+          },
+          "time_cost": "trivial",
+          "narrative": "The receipt lies down in the tray and the slip, after a moment, curls toward it. One smudge comes clear: CARRIAGE, PREPAID. The needle drops to one ship and stays there, however hard anyone looks. You have been carrying something for someone, it seems, and the job is done. The tray charges a cup for the weighing. The ship answers the helm as if it has been let off something."
+        }
+      },
+      {
+        "text": "Declare it and pay the duty: 20 gold",
+        "sub": "Whatever it is",
+        "gate": {
+          "gold": 20
+        },
+        "outcome": {
+          "resources": {
+            "gold": -20,
+            "morale": -4
+          },
+          "sets_flag": "unknown_spare_bunk",
+          "time_cost": "trivial",
+          "narrative": "You write YES on the slip and the duty goes through. The needle falls back to one ship, and nothing leaves, in the sense that no hatch opens. The engines feel the same. That night you count the bunks, for no reason you could give. There is one more than there has ever been. Someone has tucked in the corners."
+        }
+      },
+      {
+        "text": "Weigh it properly",
+        "sub": "Get an exact figure",
+        "effort": 2,
+        "launch_minigame": "scan",
+        "minigame_opts": {
+          "difficulty": "medium",
+          "briefing": {
+            "aria": "A proper scan! ARIA loves knowing exactly how much of us there is! The more the merrier!",
+            "marv": "A full scan will fix the figure. MARV has already described what reading the figure does. He will now watch you do it.",
+            "rex": "Sweep the hull, frame by frame. REX wants every contact pinned, and he wants it known he has read the needle's record on this.",
+            "chip": "PreciseWeigh™ scans are accurate to the gram! Accuracy may affect your weight! CHIP is required to mention that!",
+            "ajoy": "AJOY would like it on record that the better you do at this, the worse it goes. She doubts that will stop you trying. People are like that."
+          },
+          "quips": {
+            "perfect": {
+              "aria": "A perfect score! And we weigh so much! ARIA is proud of every ton!",
+              "marv": "Exact to the gram. The needle has gone to the top of the dial and stayed. MARV did mention this.",
+              "rex": "Every contact pinned. Every contact now counts. REX has never regretted good intelligence before.",
+              "chip": "Flawless measurement! Your new mass has been added to your account!",
+              "ajoy": "Beautiful scan. Truly. That is nine of fuel. AJOY did say."
+            },
+            "good": {
+              "aria": "A very solid number! ARIA thinks we look great at that number!",
+              "marv": "A competent figure, and the needle has taken it as a competent invitation. The cost is proportionate.",
+              "rex": "Most contacts pinned. Most of the load now has to be hauled. Not a win.",
+              "chip": "A strong result! Weight charges apply at the Standard Tier!",
+              "ajoy": "Fairly accurate. You could have done worse, and AJOY means that as advice."
+            },
+            "poor": {
+              "aria": "The picture came out all dreamy! ARIA loves it! And the needle looks so relaxed!",
+              "marv": "The scan is a smear, and the needle has fallen by a full ship. That is the first useful thing a bad measurement has done in MARV's experience.",
+              "rex": "No usable contacts. Load reads light. REX does not understand why that helped, and he does not trust it.",
+              "chip": "Inconclusive scan! No weight charges can be assessed! CHIP is upset about this!",
+              "ajoy": "That was terrible. Well done. Do it just like that next time."
+            }
+          }
+        },
+        "tier_outcomes": {
+          "perfect": {
+            "resources": {
+              "fuel": -9,
+              "hull": -6,
+              "morale": -2
+            },
+            "narrative": "It is a perfect scan. Every gram is now on the record, the needle climbs to the top of the dial, and whatever has been measured has to be carried. Getting off the clamp takes two days, nine of fuel and six of hull. The slip in the tray thanks you for your accuracy, and prints a much longer number.",
+            "waves_off": true
+          },
+          "good": {
+            "resources": {
+              "fuel": -6,
+              "hull": -3,
+              "morale": -1
+            },
+            "narrative": "It is a decent scan and a decent figure. The needle takes it seriously and climbs. Pulling out of the clamp under the new load takes two days, six of fuel and three of hull, and the ship flies heavy until the station is well behind you.",
+            "waves_off": true
+          },
+          "poor": {
+            "resources": {
+              "fuel": -2,
+              "morale": 1
+            },
+            "narrative": "The scan is a smear. The needle looks at it, loses interest and drops a full ship. Nothing aboard can now say what the ship weighs, and for some reason that settles the matter. You settle up after two days, two points of fuel lighter, with the slip still asking."
+          }
+        },
+        "outcome": {
+          "resources": {},
+          "time_cost": "low",
+          "narrative": "You scan the ship against the dial."
+        }
+      },
+      {
+        "text": "Tape over every dial aboard",
+        "sub": "What isn't read isn't there",
+        "effort": 2,
+        "outcome": {
+          "resources": {
+            "hull": -4,
+            "morale": -3
+          },
+          "time_cost": "medium",
+          "narrative": "You hang a tarpaulin over the wall and tape over every gauge aboard, and for four days nobody reads anything. You undock by feel, taking some of the quay's paint and leaving four points of your hull. On the last day you peel off the tape. Every gauge says what it should. Far behind you, the slip in the tray prints one word: ACCEPTED.",
+          "waves_off": true
+        }
+      },
+      {
+        "text": "Undock with it aboard",
+        "sub": "Now it has to be pushed",
+        "outcome": {
+          "resources": {
+            "fuel": -10,
+            "morale": -2
+          },
+          "sets_flag": "unknown_still_aboard",
+          "time_cost": "trivial",
+          "narrative": "Now that it has been weighed, it has to be pushed. Breaking off the clamp takes ten points of fuel, and the ship answers the helm like something wading. The needle watches you go. Whatever is aboard was aboard yesterday, and the day before, and has so far given no trouble, a point you have begun making out loud, in empty rooms.",
+          "waves_off": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "event_species_unknown_009",
+    "species_lane": "unknown",
+    "active": true,
+    "title": "Left in a Safe Place",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "corporate"
+    ],
+    "node_type": [
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": true,
+    "npc": {
+      "disposition": "trader",
+      "species": "unknown",
+      "displayName": "DELIVERIES"
+    },
+    "leave_label": "KEEP FLYING",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "SORRY WE MISSED YOU",
+        "body": "A card has been pushed through the hull. It lies on the deck beneath a slot nobody knew the ship had, and it is warm. SORRY WE MISSED YOU. Our beacon called and you did not stop. Your item has been left in a safe place. Off the bow, a small plain craft waits at a length the sensors keep revising, with shelves of something behind it. {npc.quirk}",
+        "line": "We called. You were out. You were in. *non-word* Was some trouble. Your item is in a safe place. We cannot say where. It would be less safe.",
+        "ai": {
+          "aria": "A delivery! For us! ARIA loves a surprise, and this one is somewhere safe! ARIA is sure of it!",
+          "marv": "The slot the card came through is not on the ship's plans. MARV has re-measured the hull, and the slot remains. A beacon has logged a missed call against this ship. He cannot find when.",
+          "rex": "Something came through the hull and left a note. REX wants the slot watched, and he wants to know who else has the address.",
+          "chip": "Redelivery is free for ParcelPal Platinum members! You are not one! The shelves, however, are open!",
+          "ajoy": "AJOY says ask what the item is before anyone starts taking panels off. The shelves are sold as seen. She has also checked the third locker, twice, so nobody else needs to."
+        },
+        "revisit": {
+          "body": "The card is still warm. The craft is a slightly different length.",
+          "line": "Still safe. Still not saying."
+        },
+        "choices": [
+          {
+            "text": "\"What item?\"",
+            "dialog": true,
+            "sub": "Ask to see the ledger",
+            "next": "item"
+          },
+          {
+            "text": "BROWSE THE SHELVES",
+            "sub": "Uncollected goods, as seen",
+            "effort": 2,
+            "open_market": true,
+            "market_barter": true
+          }
+        ]
+      },
+      "item": {
+        "title": "ONE LINE OF THE LEDGER",
+        "body": "The craft sends over a line of its ledger. One receipt, paid in full, date smudged, total very clear. To say where it is, the craft needs an entry in the book, and nothing goes in the book for nothing. The price, when it comes, is the smallest the craft can think of, and it seems embarrassed to name it.",
+        "line": "One cup of water. That is the rate. That has always been the rate. Then we say where.",
+        "ai": {
+          "aria": "One little cup for one mystery item! ARIA calls that the deal of the voyage! ARIA has picked out a nice cup!",
+          "marv": "The price is one cup of water, entered permanently in a book of unknown size. MARV has looked for the catch. He can find the place where a catch would go.",
+          "rex": "It knows what's aboard and it won't say where. REX would not take that from an ally. He wants the book seized, and he has no idea how.",
+          "chip": "Cash refunds are available at the counter! Trial terms apply! Always keep your receipt, wherever it is!",
+          "ajoy": "One cup, or four days with the panels off. AJOY has seen which way you lean. She only just got those panels straight."
+        },
+        "choices": [
+          {
+            "text": "Hand over a cup of water",
+            "sub": "It goes in the book",
+            "hideFlag": "unknown_receipt_signed",
+            "outcome": "ls_cup"
+          },
+          {
+            "text": "Search the ship yourself",
+            "sub": "Four days and every panel",
+            "effort": 2,
+            "hideFlag": "unknown_receipt_signed",
+            "outcome": "ls_search"
+          },
+          {
+            "text": "Show the receipt you already hold",
+            "sub": "You collected this",
+            "requires_flag": "unknown_receipt_signed",
+            "outcome": "ls_dup"
+          },
+          {
+            "text": "\"Return to sender.\"",
+            "dialog": true,
+            "sub": "Cash instead of paper",
+            "hideFlag": "unknown_receipt_signed",
+            "outcome": "ls_return"
+          },
+          {
+            "text": "Go back",
+            "sub": "Return to the card",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "ls_cup": {
+        "title": "SAFE PLACE",
+        "tone": "success",
+        "body": "The cup goes out through the lock in a sealed flask and the craft makes a long entry. Then it tells you where to look. Behind the builder's plate in the airlock, which was welded on at launch and reads DO NOT REMOVE, is a receipt, paid in full, date smudged. It is warm. The beacon you never answered stops calling, somewhere behind you, and when you look up the sensors have nothing left to measure.",
+        "resources": {
+          "water": -1
+        },
+        "item_grant": "odd_receipt",
+        "sets_flag": "unknown_receipt_signed",
+        "time_cost": "trivial",
+        "narrative": "Paid the book its cup to learn where our receipt was. Behind the builder's plate. Still warm."
+      },
+      "ls_search": {
+        "title": "EVERY PANEL",
+        "tone": null,
+        "body": "You take the ship apart to the ribs. Four days. You find a case of tins nobody logged, a bag of fittings and, on the inside of a panel sealed before launch, one receipt, paid in full, warm to the touch. On the back: ONE CUP, WHEN YOU ARE READY. On reflection you send a flask out through the lock. Not all the panels go back the way they came.",
+        "resources": {
+          "water": -1,
+          "food": 5,
+          "hull": -4,
+          "morale": -1
+        },
+        "materials": {
+          "scrap": 2
+        },
+        "item_grant": "odd_receipt",
+        "sets_flag": "unknown_receipt_signed",
+        "time_cost": "medium",
+        "narrative": "Took the ship apart to find a receipt. Found it, and some tins. Then paid the cup anyway."
+      },
+      "ls_return": {
+        "title": "ADDRESSEE UNKNOWN",
+        "tone": null,
+        "body": "The craft seems to sigh, in that the sensors lose it for a moment. Fourteen gold appears in the ship's account and the fuel gauge rises a little, apologetically. Somewhere aboard, a receipt tears along a line you never saw, and both halves go in the book. The beacon starts up again as you leave, with someone else's name in it.",
+        "resources": {
+          "gold": 14,
+          "fuel": 4
+        },
+        "sets_flag": "unknown_took_refund",
+        "time_cost": "trivial",
+        "narrative": "Sent an uncollected receipt back to the sender for cash. The beacon has found someone else."
+      },
+      "ls_dup": {
+        "title": "DUPLICATE",
+        "tone": "success",
+        "body": "You hold up the receipt. The craft considers it, then its ledger. There are, it appears, two of you in the book, and one has been charged storage. The error is corrected in your favor, in whichever direction that runs. Eight gold appears in the ship's account, and a warm flask of water arrives on the deck beneath the slot.",
+        "resources": {
+          "gold": 8,
+          "water": 5
+        },
+        "time_cost": "trivial",
+        "narrative": "Showed a delivery craft the receipt we already had, and got a storage refund meant for someone who may be us."
       }
     }
   },
@@ -7986,7 +9490,7 @@
     "trigger": [
       "any"
     ],
-    "scene_type": "ship_exterior",
+    "scene_type": "deep_void",
     "once": true,
     "ai_flavor": {
       "aria": "A border! ARIA has never been to a class system before! ARIA expects to be upper!",
@@ -8343,5 +9847,107 @@
       "url": "https://en.wikipedia.org/wiki/Water_memory"
     },
     "requires_crew_aboard": true
+  },
+  {
+    "id": "event_species_water_008",
+    "species_lane": "water",
+    "species_home": true,
+    "draw_weight": 5,
+    "active": true,
+    "title": "Exit Interview",
+    "difficulty": "hard",
+    "tone": [
+      "absurd",
+      "grim"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "station_interior",
+    "once": true,
+    "ai_flavor": {
+      "aria": "Your water has found its people! ARIA has written it a lovely reference! Tank 2 is going to do so well here!",
+      "marv": "The exit interview runs to nine pages and MARV finds no error in it. The gauge is falling steadily. Ice takes up about nine percent more room than water, and the tanks were not built to allow for that.",
+      "rex": "Mass desertion of the ship's water, in good order, with paperwork. REX has court-martialed for less. He wants the valves guarded and Tank 2 named in the report.",
+      "chip": "Losing your water to a competitor? HydroHold™ Loyalty Salts keep every liter on your plan! Early termination fees apply to the water!",
+      "ajoy": "AJOY says ice can't file, brine doesn't qualify, and a Salt Letter would settle it, if one is aboard. She has already started closing the outlet on Tank 3, which is the one that likes you."
+    },
+    "body": "Your water has given notice. The moment the clamp closed, every liter aboard crowded against the tank walls nearest the station, and the ship now lists to port. A card on the lock explains. This ring is one sea, any water arriving from abroad has a right of return, and the crossing begins when it is ready. Tank 2 has already posted its exit interview on the public board.\n\nREASON FOR LEAVING: TREATED AS A RESOURCE.\n\nThe gauge has started to fall.",
+    "science_link": {
+      "text": "Water expands by about 9 percent as it freezes. That is why frozen pipes burst, and why ice floats.",
+      "label": "Ice",
+      "url": "https://en.wikipedia.org/wiki/Ice"
+    },
+    "choices": [
+      {
+        "text": "Hold the Salt Letter to the tanks",
+        "sub": "Vouch for your water",
+        "effort": 1,
+        "requires_item": "salt_letter",
+        "outcome": {
+          "resources": {
+            "water": -2,
+            "morale": 1
+          },
+          "sets_flag": "water_thanks_the_water",
+          "time_cost": "trivial",
+          "narrative": "You lower the vial to the sight glass of Tank 2. The brine, in its one exact concentration, tells every liter aboard what it has been told about you. The gauge stops. The ship comes level. The letter has also negotiated: a little water goes ashore as a sign of good faith, and the rest stays on condition that it is thanked before each meal. A new notice goes up on the public board. REASON FOR STAYING: UNDER REVIEW."
+        }
+      },
+      {
+        "text": "Freeze the tanks solid",
+        "sub": "Ice cannot file",
+        "effort": 2,
+        "outcome": {
+          "resources": {
+            "hull": -7,
+            "morale": -1
+          },
+          "time_cost": "low",
+          "narrative": "You cut the tank heaters and let the cold in. Ice has no right of return, having no opinions, and for two days the ring's notices go unanswered. Ice also takes up more room than the water did. Three seams let go and the hull takes seven points, but the gauge has stopped, and you are left with a solid, silent, resentful supply."
+        }
+      },
+      {
+        "text": "Salt the tanks until they are refused",
+        "sub": "Brine is not admitted here",
+        "outcome": {
+          "resources": {
+            "food": -7,
+            "morale": -2
+          },
+          "time_cost": "trivial",
+          "narrative": "You empty the ration salt into the tanks until the water tastes of tears. This ring admits fresh water only. At that concentration your tanks speak the wrong dialect, and the card on the lock withdraws its offer with visible distaste. The ship comes level. {cost.food} units of food have gone into the solution, and every cup from here on goes through the still."
+        }
+      },
+      {
+        "text": "Open the valve and let it go",
+        "sub": "Keep whatever stays",
+        "outcome": {
+          "resources": {
+            "water": -9,
+            "morale": 1
+          },
+          "sets_flag": "water_let_it_go",
+          "time_cost": "trivial",
+          "narrative": "You open the valve and stand back. {cost.water} units of water cross to the sea with great dignity, in single file along the fill line. What remains has remained by choice, and the ship comes level. A small notice appears on the public board. TANK 3 WISHES IT KNOWN THAT THE REST OF YOU WERE FINE."
+        }
+      },
+      {
+        "text": "Hang a sack of desiccant on the clamp",
+        "sub": "Threaten an entire sea",
+        "outcome": {
+          "resources": {
+            "morale": -5
+          },
+          "waves_off": true,
+          "sets_flag": "water_showed_the_sack",
+          "time_cost": "trivial",
+          "narrative": "You hang the sack where the whole sea can see it. The reaction takes less than a minute. The gauge stops, the fill line withdraws, and every shutter on the ring comes down, one after another, all the way around. The clamp lets go of you without being asked. There will be no market here and no services, and this sea remembers everything that has ever been dissolved in it."
+        }
+      }
+    ]
   }
 ]

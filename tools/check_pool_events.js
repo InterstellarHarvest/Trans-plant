@@ -55,7 +55,7 @@ function faceExists(n) {
 function strings(x, out = []) {
   if (typeof x === 'string') out.push(x);
   else if (Array.isArray(x)) x.forEach(v => strings(v, out));
-  else if (x && typeof x === 'object') for (const [k, v] of Object.entries(x)) { if (k !== 'url' && k !== 'id' && k !== 'bg' && k !== 'design_note') strings(v, out); }
+  else if (x && typeof x === 'object') for (const [k, v] of Object.entries(x)) { if (k !== 'url' && k !== 'id' && k !== 'bg' && k !== 'scene_bg' && k !== 'design_note') strings(v, out); }
   return out;
 }
 function voices(id, where, set, maxLen = AI_MAX) {
@@ -154,7 +154,7 @@ function checkEvent(ev, flags) {
     if (re.test(low)) err(id, `names something from an inspiration: "${b}"`);
   }
   for (const t of blob.match(/\{[^}]*\}/g) || []) {
-    if (!/^\{(npc\.(quirk|species|disposition|name|line\.[a-z]+)|crew\.[a-z_]+|cost\.(water|food)(\.num)?|branch\.(alpha|beta)\.(label|first)|crop\.(name|advice|diagnosis|verdict)|speaker\.(name|role)|patient\.(name|role))\}$/.test(t)) err(id, `unknown token ${t}`);
+    if (!/^\{(npc\.(quirk|species|disposition|name|line\.[a-z]+)|crew\.[a-z_]+|cost\.(water|food)(\.num)?|branch\.(alpha|beta)\.(label|first)|crop\.(name|advice|diagnosis|verdict)|speaker\.(name|role)|patient\.(name|role)|stowaway\.[a-z_]+)\}$/.test(t)) err(id, `unknown token ${t}`);
   }
 
   if (ev.layers) {
@@ -164,7 +164,7 @@ function checkEvent(ev, flags) {
     for (const [k, l] of Object.entries(ev.layers)) {
       if (!l.body) err(id, `layer ${k}: no body`);
       voices(id, `layer ${k}`, l.ai);
-      if (l.line && !npcs.length) err(id, `layer ${k}: a line with no npc`);
+      if (l.line && !npcs.length && !ev.crew_speaker) err(id, `layer ${k}: a line with no npc`);
       if (!(l.choices || []).length) err(id, `layer ${k}: no choices`);
       if (npcs.length && l.line && (l.choices || []).some(c => /^hail/i.test(c.text || ''))) err(id, `layer ${k}: HAIL with a character already speaking`);
       (l.choices || []).forEach((c, i) => {
