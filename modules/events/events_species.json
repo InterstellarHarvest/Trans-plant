@@ -1246,6 +1246,517 @@
     "draw_weight": 0.5
   },
   {
+    "id": "event_species_human_005",
+    "species_lane": "human",
+    "active": true,
+    "title": "Natural Behavior",
+    "difficulty": "easy",
+    "tone": [
+      "absurd",
+      "heartwarming"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": true,
+    "after_progress": 0.5,
+    "npc": {
+      "disposition": "drifter",
+      "species": "rock",
+      "displayName": "THE NATURALIST"
+    },
+    "leave_label": "LEAVE IT FILMING",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "IN THE HIDE",
+        "body": "What you took for a boulder drifting off your bow has a lens in it, and the lens has followed you since you arrived. On the screen it gives way to a face like a quarry wall, which lowers its voice the way anyone does in a hide. It is making a film about humans. Every human it has filmed stopped behaving like one the moment they noticed. {npc.quirk}",
+        "line": "Here is human vessel, in wild. Shy. Fast. Very fast. Please do not look at camera. Every human looks at camera, then stands up straight, and all footage is of humans standing up straight.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A nature film about humans! ARIA has always said everyone aboard was photogenic! Everyone stand up straight and look natural!",
+          "marv": "Factory workers studied in the 1920s did better under brighter lights and under dimmer ones. Being watched was the change. The rock has worked that out alone, over some centuries. MARV could have saved it the trouble.",
+          "rex": "REX does not like a lens he failed to spot for an hour. It could have been a gun. He is not looking at the camera. He is looking at it hard, which is different.",
+          "chip": "Unpaid appearances breach everyone's image rights! CHIP has drafted a release! Signing fees start low and go up every time somebody blinks!",
+          "ajoy": "AJOY notes it wants humans who forget it is there, and leaving the channel open is the only way that happens. Asking to see its film first would be smarter. Go on, though."
+        },
+        "revisit": {
+          "body": "The lens is still on you. The face has gone back to being a quarry wall.",
+          "line": "Still filming. Do not mind."
+        },
+        "choices": [
+          {
+            "text": "Act natural",
+            "sub": "How hard can it be",
+            "outcome": "acted"
+          },
+          {
+            "text": "Leave the channel open and forget it",
+            "sub": "Two days on camera",
+            "outcome": "forgot"
+          },
+          {
+            "text": "\"Can we see the film?\"",
+            "dialog": true,
+            "sub": "Ask what it has so far",
+            "next": "rushes"
+          }
+        ]
+      },
+      "rushes": {
+        "title": "THE RUSHES",
+        "body": "It plays you the reel. At the speed rock people see, a human is a warm smear that crosses the frame and is gone, and a whole ship's visit lasts about as long as a sneeze. The only clear shots in the film are of humans standing in queues, where they hold still long enough to catch. The film so far is called WAITING. It is very nearly finished.",
+        "line": "Need one human, sharp. Not in queue. Doing human thing. Hold still for exposure, and is portrait.",
+        "ai": {
+          "aria": "Portrait time! ARIA would like to be in it! ARIA doesn't have a face, so ARIA can't blink and ruin it!",
+          "marv": "At the exposure it uses, a sharp human takes about two days of holding still. MARV can hold still indefinitely. Nobody has ever asked MARV.",
+          "rex": "Two days immobile in front of an unidentified lens is how REX would set up an ambush. He would also film it, for training. He is not in favor.",
+          "chip": "A two-day sitting! CHIP bills portraits by the hour! At that rate this is the most valuable picture ever taken of anyone aboard!",
+          "ajoy": "AJOY points out that turning the ship's cameras on it ends the film, and two days of sitting will cost some backs. The portrait is the better trade. Sit up straight for it, at least."
+        },
+        "choices": [
+          {
+            "text": "Sit for the portrait",
+            "sub": "Two days, nobody blinks",
+            "outcome": "portrait"
+          },
+          {
+            "text": "Film it back",
+            "sub": "Turn the ship's cameras on it",
+            "outcome": "filmed_back"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "acted": {
+        "title": "VERY NATURAL",
+        "tone": null,
+        "body": "Everyone aboard acts natural. Meals are eaten with the correct fork. Someone says please over the intercom, twice. Someone else laughs at nothing, in a relaxed way, for most of an afternoon. The naturalist films all of it with great care and sends a fee across with a note: SUBJECT, WHEN OBSERVED, POLITE. The ship has never had a worse review.",
+        "line": "Good. Very polite. Will cut.",
+        "resources": {
+          "gold": 8,
+          "morale": 1
+        },
+        "time_cost": "trivial",
+        "narrative": "Acted natural for a rock with a camera. It paid a small fee and filed the ship under POLITE."
+      },
+      "forgot": {
+        "title": "SUBJECT UNAWARE",
+        "tone": "success",
+        "body": "You leave the channel open and try to forget it. That takes most of the first day. By the second, the ship has gone back to itself: someone eats straight from the jar, there is a short sharp war over the thermostat, and someone sings to the hold in a voice never used in company. The naturalist holds perfectly still, which for a rock is applause. A geode comes across on the line with a copy of the footage sealed inside.",
+        "line": "There. Human. At last.",
+        "resources": {
+          "morale": 3
+        },
+        "materials": {
+          "minerals": 2
+        },
+        "sets_flag": "human_natural_footage",
+        "time_cost": "low",
+        "narrative": "Forgot a camera was there for two days and gave a rock naturalist the only natural footage of humans it has. It paid in minerals. Nobody admits to watching the copy."
+      },
+      "portrait": {
+        "title": "LONG EXPOSURE",
+        "tone": "success",
+        "body": "Everyone aboard sits in a row on the bridge and holds still for two days. Meals go in through straws. A nose itches for most of the second afternoon and is not scratched, an act of courage the log records here. At the end the naturalist sends a print across: one ship's company, sharp, every face exactly as tired as it was. Behind them a cup of coffee has been caught in the act of going cold. The frame is cut from something the fabricator cannot name.",
+        "line": "Sharp. All of you. First time.",
+        "resources": {
+          "morale": 2
+        },
+        "materials": {
+          "exotic": 1
+        },
+        "time_cost": "low",
+        "narrative": "Held still for two days so a rock could take a portrait. The frame is made of something the fabricator cannot name."
+      },
+      "filmed_back": {
+        "title": "CAMERA SHY",
+        "tone": null,
+        "body": "You turn every camera aboard on the naturalist. For a long moment nothing happens, which is what rock people look like anyway. Then, very slightly, it straightens. It turns what may be its better side toward you. By the time the cameras are off it has drifted a quarter turn, the most it has moved in front of witnesses, and it closes the channel looking pleased and appalled in equal measure.",
+        "line": "Do not. Please. Am not ready.",
+        "resources": {
+          "morale": 2
+        },
+        "time_cost": "trivial",
+        "narrative": "Filmed a rock naturalist until it started posing. Neither party got any usable footage."
+      }
+    },
+    "science_link": {
+      "text": "People change what they do when they know they are being watched. The effect is named for studies begun in 1924 at the Hawthorne Works, a Western Electric factory, and some scholars doubt the original findings.",
+      "label": "Hawthorne effect",
+      "url": "https://en.wikipedia.org/wiki/Hawthorne_effect"
+    }
+  },
+  {
+    "id": "event_species_human_006",
+    "species_lane": "human",
+    "active": true,
+    "title": "Closure",
+    "difficulty": "medium",
+    "tone": [
+      "mundane",
+      "grim"
+    ],
+    "node_type": [
+      "station"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "station_interior",
+    "comm_mode": "in_person",
+    "once": true,
+    "npc": {
+      "disposition": "station_crew",
+      "job": "botanist",
+      "species": "human",
+      "displayName": "EAST BEDS"
+    },
+    "leave_label": "NOT YOUR DOME",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE DOME",
+        "body": "The human quarter grows its own food in a sealed dome off the promenade, and has not opened the door in two years, which is the point of the dome. Inside the glass the air has thinned. The botanist who meets you at the inspection window wears an oxygen line under the nose and the bright manner of someone being polite in front of the neighbors. Twenty meters behind, past the beans, a second botanist in identical coveralls is pretending not to watch. {npc.quirk}",
+        "line": "We're fine. It's a little thin. It was twenty-one percent at closure and it's fifteen now, and that's their mold, on their side. We don't talk to them. Could you pass them something? Through the sample lock. Not from me.",
+        "pose": "listening",
+        "ai": {
+          "aria": "Two whole teams of gardeners! ARIA loves friendly competition! The air is a little thin in there, which just means every breath counts for more!",
+          "marv": "Fifteen percent oxygen is the air on a high mountain. It is still falling, and neither side has a theory that involves itself. MARV has met humans before.",
+          "rex": "Two hostile camps, one shared air supply, and a door nobody will open. REX has seen sieges run on less. He wants to know who controls the sample lock.",
+          "chip": "A sealed community with a supply problem! CHIP sees a captive market! BreatheRight™ canisters fit any sample lock, at a modest premium per breath!",
+          "ajoy": "AJOY notes the two sides blame each other's plants and the air falls anyway. Someone could look at the dome itself before carrying notes. Not that anyone asks AJOY about domes."
+        },
+        "revisit": {
+          "body": "The botanist is still at the window. Behind the beans, so is the other one.",
+          "line": "Anything from them? Not that I'm asking."
+        },
+        "choices": [
+          {
+            "text": "Pass the note across",
+            "sub": "Be the post office",
+            "next": "notes"
+          },
+          {
+            "text": "Ask what's eating the air",
+            "sub": "Look at the dome itself",
+            "next": "wall"
+          },
+          {
+            "text": "Pump in some of the ship's air",
+            "sub": "Through the sample lock",
+            "outcome": "aired"
+          }
+        ]
+      },
+      "notes": {
+        "title": "BY HAND",
+        "body": "The note goes out through the sample lock folded small. You carry it twenty meters around the outside of the glass to the other door, where it is read, sniffed and answered at once. The reply is on the same brand of seed packet, in very nearly the same words. Both say the other side is hoarding. Both say the other side has gone strange. Both end THEY ARE NOT LIKE US.",
+        "line": "Did they say anything about us? Don't tell me. What did they say.",
+        "ai": {
+          "aria": "They write each other letters! ARIA thinks this is how great romances start, or great gardens, or both!",
+          "marv": "MARV has compared the notes. Ninety-one percent of the words match. The other nine percent are vegetables. He has read treaties with less in common.",
+          "rex": "Courier duty between hostile parties is how messengers get shot. Neither party has anything to shoot with. REX has made a note of the trowels.",
+          "chip": "Postage! Per note! Return receipts extra! CHIP can set both sides up on a subscription, and they have a LOT to say!",
+          "ajoy": "AJOY observes that each side would agree with the other's note if it were their own. Hand them back the wrong way round and see. Or carry them for two days. She isn't the courier."
+        },
+        "choices": [
+          {
+            "text": "Carry the notes as written",
+            "sub": "Two days of correspondence",
+            "outcome": "courier"
+          },
+          {
+            "text": "Hand each side its own note",
+            "sub": "Let them read themselves",
+            "outcome": "swapped"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      },
+      "wall": {
+        "title": "WHERE THE AIR GOES",
+        "body": "The botanist presses the dome's log against the glass. Oxygen has fallen for two years. The carbon dioxide that ought to climb as it falls has stayed flat. Something in there is taking both, and neither side has an answer that does not involve the other side. Down at the foot of the glass, where the soil meets the bare concrete footing, the concrete has gone white and soft, like old chalk.",
+        "line": "Mold. Theirs. It's obvious. Why are you looking at the wall?",
+        "ai": {
+          "aria": "A mystery! ARIA loves a mystery! ARIA's theory is that the air is shy!",
+          "marv": "Oxygen down, carbon dioxide flat, a crust on the concrete. MARV has a strong suspicion and no wish to be thanked for it. Proving it takes a sample kit and four days.",
+          "rex": "REX does not trust a wall that changes color. He would test it, test it again, and post a guard on it.",
+          "chip": "Structural walls are covered by the station's policy only if an approved contractor poured them! CHIP has checked! None of these were!",
+          "ajoy": "AJOY has looked at that footing longer than either botanist has in two years. Four days of testing settles it. They may not thank you. She wouldn't."
+        },
+        "choices": [
+          {
+            "text": "Test the footing",
+            "effort": 2,
+            "sub": "Four days with a sample kit",
+            "outcome": "walled"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "aired": {
+        "title": "IMPORTED AIR",
+        "tone": null,
+        "body": "You run a line from the ship to the sample lock and open it. The near side of the dome brightens at once: color in faces, a laugh, someone jogging. Across the beans the far side presses its noses to the glass, then posts an objection: the closure is broken, the whole thing is void, and could they have some too. The near side sends you a crate of beans through the lock as a matter of principle, and none to the far side as another.",
+        "line": "Don't give them any. They'll only breathe it.",
+        "resources": {
+          "o2": -8,
+          "food": 5
+        },
+        "time_cost": "trivial",
+        "narrative": "Pumped ship's air into one half of a sealed dome. The other half objected, and asked for some."
+      },
+      "courier": {
+        "title": "CORRESPONDENCE",
+        "tone": null,
+        "body": "For two days you walk the curve of the glass with notes. They get longer. They acquire footnotes. On the second day each side asks you to pass on its grievances in order of importance, and the two lists are, again, very nearly the same list. Both pay the postage in produce, generously, so as not to be outdone. The air in the dome falls another hair while you work.",
+        "resources": {
+          "food": 6,
+          "morale": -1
+        },
+        "time_cost": "low",
+        "narrative": "Carried notes for two days between two botanists twenty meters apart. They paid the postage in vegetables."
+      },
+      "swapped": {
+        "title": "IN THEIR OWN WORDS",
+        "tone": "success",
+        "body": "You hand each side its own note. Each reads it twice. On the east side the botanist goes pink. On the west side the other one sits down on an upturned bucket. It is the first reasonable thing either has read from over there in two years. By the end of the day the two of them meet in the beans and agree on every point, at length, while the oxygen goes on falling around them. They thank you through the glass, breathing hard.",
+        "line": "They make some very good points. I've always said so.",
+        "resources": {
+          "food": 4,
+          "morale": 2
+        },
+        "sets_flag": "human_dome_agreed",
+        "time_cost": "trivial",
+        "narrative": "Handed two feuding botanists their own notes. They agreed with every word, and the air in their dome kept falling."
+      },
+      "walled": {
+        "title": "THE WALL DID IT",
+        "tone": "success",
+        "body": "Four days of scrapings and a borrowed acid later, the answer is fizzing in a dish. The bare concrete has been drinking the dome's carbon dioxide and turning it into chalk, and taking the oxygen down with it. Both sides read your results through the glass at the same moment. They seal the concrete, and the air begins to climb. Each sends you a sack of produce, so the other cannot take the credit, and opens a new dispute about whose idea the concrete was.",
+        "line": "Concrete. Who poured the concrete? Ask them who poured it.",
+        "resources": {
+          "food": 8,
+          "water": -2,
+          "morale": 2
+        },
+        "sets_flag": "human_dome_sealed",
+        "time_cost": "medium",
+        "narrative": "Spent four days proving a sealed dome's concrete was eating its air. Both sides believed it, and blamed each other for the concrete."
+      }
+    },
+    "science_link": {
+      "text": "Biosphere 2, a sealed three-acre greenhouse in Arizona, held eight people from 1991 to 1993. Before the first mission was half over, they had split into two factions, barely on speaking terms.",
+      "label": "Biosphere 2",
+      "url": "https://en.wikipedia.org/wiki/Biosphere_2"
+    }
+  },
+  {
+    "id": "event_species_human_007",
+    "species_lane": "human",
+    "active": true,
+    "title": "Long May They Decide",
+    "difficulty": "hard",
+    "tone": [
+      "absurd",
+      "grim"
+    ],
+    "node_type": [
+      "asteroid_field",
+      "planet",
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": true,
+    "after_progress": 0.5,
+    "npc": {
+      "disposition": "drifter",
+      "species": "human",
+      "displayName": "THE CROWN"
+    },
+    "leave_label": "NOT YOUR HIVE",
+    "leave_as": {
+      "outcome": "dismissed"
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "BY ROYAL ASSENT",
+        "body": "The hail comes from the hive on the rock below, with a fanfare of several thousand wings struck at once. On the screen, in a chamber of chewed paper, sits a human in the rags of a flight suit and a crown of wax. Insects queue at their elbow in a line that runs out of the frame. Each one in turn dances a question. The human answers every one in a word, without looking up. {npc.quirk}",
+        "line": "Left. Yes. The blue one. No. Sorry, are you real? My pod came down here and they asked me which way, and I said left. Just like that. They'd never seen anyone do it. Thursday. Please get me off this rock. No. Not you, them.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A human QUEEN! ARIA always knew someone would spot real leadership potential! Look at all those little faces waiting for an answer!",
+          "marv": "One answer every four seconds, all day, from one person. MARV has counted. A hive decides everything by quorum, and this one has handed all of it to the only thing on the rock that can say no by itself.",
+          "rex": "One human, one crown, and something over ten thousand subjects with no chain of command to talk to. Nobody down there can call anything off. REX is keeping the engines warm.",
+          "chip": "A monarchy with one employee! CHIP sees a staffing crisis! DecisionRight™ places a qualified decider in any hive, billed per decision, and that is a LOT of decisions!",
+          "ajoy": "AJOY notes that they asked to be taken off the rock, and that a hive goes where its queen goes. Ask how the hive feels about that before opening a hatch. She would have asked first."
+        },
+        "revisit": {
+          "body": "The castaway is still answering. The line at their elbow is no shorter.",
+          "line": "Yes. No. Are you still there? Left."
+        },
+        "choices": [
+          {
+            "text": "\"Come aboard, Your Majesty.\"",
+            "dialog": true,
+            "sub": "Open the airlock",
+            "next": "swarm"
+          },
+          {
+            "text": "Give the hive a coin: 10 gold",
+            "sub": "It decides alone",
+            "gate": {
+              "gold": 10
+            },
+            "outcome": "coin"
+          },
+          {
+            "text": "Take the queue for them",
+            "sub": "Two days of deciding",
+            "outcome": "regent"
+          }
+        ]
+      },
+      "swarm": {
+        "title": "A SWARM FOLLOWS",
+        "body": "The castaway gets as far as standing up. Every insect in the chamber stands up too, and then the walls do. The hive is lifting off the rock, comb, grubs and all, in one dark slow cloud, and turning toward your airlock. Not one of them chose to come. A hive does not choose. It goes where the deciding is.",
+        "line": "Oh, no. Sit. SIT. They sat. I can hold them there while I'm here to hold them. The moment I'm not, they come.",
+        "pose": "hostile",
+        "ai": {
+          "aria": "The whole kingdom wants to come along! ARIA loves a big family! There is plenty of room if everyone breathes in!",
+          "marv": "A honeybee swarm leaves home with its queen. This one has no scout that would ever disagree with the castaway. The hold would take all of them, briefly. MARV would rather not do the arithmetic on the vents.",
+          "rex": "REX will not open a door to ten thousand subjects of a foreign power. He will not leave a human with them either. These two positions are at war, and REX is losing to both.",
+          "chip": "Mass transit! CHIP charges per passenger, and this is a LOT of passengers! Group rates do not apply to insects, under clause nine!",
+          "ajoy": "AJOY notes the castaway only holds them while present, so one standing order before leaving would hold forever. Nobody in there can cancel it. She would think about what forever means to a hive first."
+        },
+        "choices": [
+          {
+            "text": "Take the whole hive aboard",
+            "effort": 2,
+            "sub": "Find them a new rock",
+            "outcome": "carried"
+          },
+          {
+            "text": "\"Tell them to stay. For good.\"",
+            "dialog": true,
+            "sub": "One last standing order",
+            "outcome": "standing"
+          },
+          {
+            "text": "Go back",
+            "back": true
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "coin": {
+        "title": "HEADS",
+        "tone": "success",
+        "body": "You send a gold coin down the line, and the castaway shows the hive what it does. The hive takes nothing on trust. For four days it puts the coin through quorum after quorum, flipping it, watching it land, waiting for it to consult anyone. It never does. On the fourth day the hive crowns it. The castaway takes off the wax, sits down in a corner and decides something entirely for themselves: to stay. A comb of royal jelly comes up in thanks.",
+        "line": "I'm staying. Nobody asked me to. I just am.",
+        "resources": {
+          "gold": -10,
+          "food": -3,
+          "water": -2,
+          "morale": 3
+        },
+        "materials": {
+          "biocomponent": 2
+        },
+        "sets_flag": "human_hive_coin",
+        "time_cost": "medium",
+        "narrative": "Gave a hive a gold coin to rule it. The coin decides everything alone now, and the castaway it replaced decided to stay."
+      },
+      "regent": {
+        "title": "REGENCY",
+        "tone": null,
+        "body": "The castaway hands you the queue and falls asleep where they sit. For two days you decide things for ten thousand insects: which tunnel, which grub, which flower on which rock. You have no idea. Every answer is obeyed at once, with joy. On the second day a crown of wax arrives on the bridge, sized for you, and wax cables start going across to your hull. You tear free with the castaway still asleep, rested for once, and the queue already forming at their elbow.",
+        "resources": {
+          "hull": -4,
+          "fuel": -2,
+          "food": -2,
+          "morale": -2
+        },
+        "time_cost": "low",
+        "narrative": "Ruled a hive for two days so its human queen could sleep. Leaving cost hull. The queue was already back."
+      },
+      "carried": {
+        "title": "SWARM IN THE HOLD",
+        "tone": null,
+        "body": "You open the hatch and the hive comes in like weather. For four days the hold hums. The vents clog with wings, the stores go down fast, and the castaway sits in the galley giving orders through a cup pressed to the bulkhead. At the first rock with a crevice in it the hive pours out to look it over. The castaway stands in the airlock a long time. Then they follow it out. A hive needs someone to say left.",
+        "line": "Left. It's always left.",
+        "resources": {
+          "food": -4,
+          "o2": -5,
+          "hull": -2,
+          "morale": -2
+        },
+        "time_cost": "medium",
+        "narrative": "Carried a whole hive to a new rock for its human queen. The queen went with it."
+      },
+      "standing": {
+        "title": "STANDING ORDER",
+        "tone": null,
+        "body": "The castaway turns to the hive and says it: stay, and keep staying. The insects settle. The walls settle. The line at the elbow folds up and sits down. Then the castaway walks out of the chamber, and the hive does not follow. It will not stand up again, because there is no one in it who could decide to. They ride with you a while, eating slowly, asking that nothing be decided for them, and when they leave they tell no one which way.",
+        "line": "Don't ask me anything. Please. Thank you.",
+        "resources": {
+          "food": -2,
+          "morale": -6
+        },
+        "sets_flag": "human_hive_sitting",
+        "time_cost": "trivial",
+        "narrative": "Took a hive's human queen aboard after one last order: stay. The hive is still staying."
+      },
+      "dismissed": {
+        "title": "DISMISSED",
+        "tone": null,
+        "body": "The castaway looks at you for a long moment, then gives the order: let the strangers go. It is obeyed before the sentence ends. The hive sees you to the edge of its rock in a cloud that drums on the hull all the way out and leaves marks in the paint. Behind you the queue has already reformed. As the channel drops you can hear a voice saying yes.",
+        "line": "Let them go. Yes. No. Thursday.",
+        "resources": {
+          "hull": -3,
+          "morale": -4
+        },
+        "time_cost": "trivial",
+        "narrative": "Left a human ruling a hive that would not let them stop. They ordered the ship let go."
+      }
+    },
+    "science_link": {
+      "text": "Some ants and honey bees choose a new nest by quorum: once enough scouts gather at one site, the whole colony moves. No single insect has to compare every option.",
+      "label": "Quorum sensing",
+      "url": "https://en.wikipedia.org/wiki/Quorum_sensing"
+    }
+  },
+  {
     "id": "event_species_insect_001",
     "species_lane": "insect",
     "active": true,
@@ -3928,6 +4439,114 @@
         "time_cost": "low",
         "narrative": "Sold hot-water bottles to a reptile exchange. They cooled. We should go."
       }
+    }
+  },
+  {
+    "id": "event_species_reptile_009",
+    "species_lane": "reptile",
+    "active": true,
+    "title": "Early Night",
+    "difficulty": "medium",
+    "tone": [
+      "absurd",
+      "mundane"
+    ],
+    "node_type": [
+      "planet"
+    ],
+    "biome": [
+      "desert",
+      "volcanic"
+    ],
+    "draw_weight": 3,
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "planet_surface",
+    "once": true,
+    "ai_flavor": {
+      "aria": "A beach day! ARIA loves the beach! Everyone down there is having a lovely nap, and the ship helped!",
+      "marv": "The moment the ship moves, its shadow crosses every elder on the beach in turn, in order of age. MARV has checked the order. It is correct, which will not help.",
+      "rex": "Several hundred reptiles, each longer than the shuttle, and the biggest asleep directly under the ship. REX would leave quietly. Neither half of that looks possible.",
+      "chip": "Shade is a premium amenity on this beach! CHIP has read the tariff! The ship is handing it out free, which is a very serious breach of the market!",
+      "ajoy": "AJOY notes that lifting off drags the dark over every elder in order, and someone down there is writing it down. Light can be faked. She would fake it. She would also have looked down before landing."
+    },
+    "body": "You come in low over a beach of warm black rock before you see what is lying on it. Elders, each the length of a corridor, laid out by age, the oldest on the highest rock. The ship's shadow has fallen across the oldest. The small third eye on top of its head has gone dark, and it has done what anyone does at nightfall: closed the day's accounts, folded its claws and gone to sleep. Down the beach, a junior with a slate has started to write.",
+    "choices": [
+      {
+        "text": "Set the Basking Chit on the warm rock",
+        "sub": "A creditor's shade",
+        "requires_item": "basking_chit",
+        "outcome": {
+          "resources": {
+            "fuel": 4,
+            "food": 5,
+            "morale": 3
+          },
+          "time_cost": "trivial",
+          "narrative": "The junior carries the chit up the beach in both hands and lays it on the eldest's rock. A chit means this beach owes you warmth, and a creditor may cast a shadow wherever it likes. The eldest is woken, apologizes for sleeping in front of a creditor, and has the warmest rock on the beach cleared for you. You bask for an afternoon among very old reptiles who will not look at you, and leave with fuel, stores and the chit, warm."
+        }
+      },
+      {
+        "text": "Floodlight the eldest",
+        "sub": "Give it a second morning",
+        "outcome": {
+          "resources": {
+            "fuel": -5,
+            "food": 6,
+            "water": 4,
+            "morale": 2
+          },
+          "sets_flag": "reptile_second_morning",
+          "time_cost": "low",
+          "narrative": "You turn every floodlight aboard onto the eldest. The third eye brightens. It wakes, sees morning, and reopens the day's accounts. Word goes down the beach that the eldest has had two mornings in one day, and is now a day older than anyone else alive, which among its people is a promotion. Stores come up from the beach for two days. At the end you bring the floodlights down slowly, as a courtesy, so your leaving is not mistaken for a sunset."
+        }
+      },
+      {
+        "text": "Set down where you are until dusk",
+        "sub": "Keep the dark on one elder",
+        "outcome": {
+          "resources": {
+            "water": -3,
+            "food": -2,
+            "morale": -1
+          },
+          "time_cost": "medium",
+          "narrative": "You set down in your own shadow and wait for the real dusk, so the dark stays on one elder and goes no further. The afternoon here lasts four days, and it is very hot. On the fourth evening the sun goes down on the rest of the beach, the elders close their accounts on time, and the eldest wakes at dawn having lost an afternoon, which at its age it can spare. The junior crosses out what it wrote."
+        }
+      },
+      {
+        "text": "Lift off and go",
+        "sub": "Dusk runs down the beach",
+        "outcome": {
+          "resources": {
+            "fuel": -2,
+            "morale": -1
+          },
+          "sets_flag": "reptile_warrant_out",
+          "time_cost": "trivial",
+          "narrative": "You lift off, and the shadow slides down the beach over every elder on it in strict order of age. Each third eye goes dark in turn, and each elder closes its accounts and sleeps. The beach has never had a more orderly nightfall, in the middle of the afternoon. The junior with the slate copies down your hull number, underlines it, and sends it to the night court, which sits whenever it is dark."
+        },
+        "hideFlag": "reptile_warrant_out"
+      },
+      {
+        "text": "Lift off, already wanted",
+        "sub": "A senior warrant stands",
+        "requires_flag": "reptile_warrant_out",
+        "outcome": {
+          "resources": {
+            "fuel": -2,
+            "morale": -1
+          },
+          "time_cost": "trivial",
+          "narrative": "You lift off, and the early night runs down the beach in order of age. The junior with the slate starts on your hull number, finds it already on file under an older court's seal, and stops. A junior may not charge what its elders have already charged. It crosses out its entry with great care, then lies down with everyone else, since by now it is dark."
+        }
+      }
+    ],
+    "science_link": {
+      "text": "Tuatara and most lizards have a third eye on top of the head. It senses light, and is tied to the pineal gland, which keeps the body's daily rhythm.",
+      "label": "Parietal eye",
+      "url": "https://en.wikipedia.org/wiki/Parietal_eye"
     }
   },
   {
@@ -9949,5 +10568,180 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_species_water_009",
+    "species_lane": "water",
+    "active": true,
+    "title": "In Every State",
+    "difficulty": "medium",
+    "tone": [
+      "heartwarming",
+      "cosmic"
+    ],
+    "node_type": [
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": true,
+    "npc": {
+      "disposition": "drifter",
+      "species": "water",
+      "displayName": "THE BETROTHED"
+    },
+    "leave_label": "SEND REGRETS",
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "SOMETHING BORROWED",
+        "body": "Two transport tanks drift lashed together, hung with garlands of ice and trailing a banner that has not finished freezing. A third tank, empty and split from rim to base, tumbles a little way off. On the screen a water person, clouded with nerves, explains that the split one was the chapel. Beside them the other half of the wedding sloshes gently in its own tank and keeps its counsel. {npc.quirk}",
+        "line": "We are to be married, we were to be married this morning, it must be done at the point where we are all three things at once, ice and water and steam, a hair above freezing and almost no air; your airlock could hold that, if you held it very steady, I know how this sounds.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A WEDDING! ARIA has never been a venue before! The airlock is practically a chapel already, it has doors at both ends!",
+          "marv": "The triple point of water is a hundredth of a degree above freezing at about one part in 166 of an atmosphere. MARV can hold the temperature. Holding the pressure is a matter of steady hands. He has seen the hands aboard.",
+          "rex": "A wedding party is the oldest cover for a boarding there is. REX has checked the garlands. They are ice. He is not reassured.",
+          "chip": "Venue hire! Catering! A guest list made entirely of beverages! CHIP has a package! The Eternal Equilibrium™ plan comes with a commemorative valve!",
+          "ajoy": "AJOY points out that pumping the lock down and back up costs air, and a slip in the middle of the vows goes badly in either direction. The drinking tank is easier. Easier is not what they asked for."
+        },
+        "revisit": {
+          "body": "The banner has frozen another letter. The couple are still waiting on your answer.",
+          "line": "We can wait, we have been waiting, we are very good at it, it is mostly what water does."
+        },
+        "choices": [
+          {
+            "text": "Lend them the airlock",
+            "sub": "Hold the triple point",
+            "next": "chapel"
+          },
+          {
+            "text": "Offer the drinking tank",
+            "sub": "Warm, roomy, one state only",
+            "outcome": "tank_wed"
+          }
+        ]
+      },
+      "chapel": {
+        "title": "ICE, WATER AND STEAM",
+        "body": "The couple come across in a sealed jug each. You pump the lock down until the frost on the window stops making sense, and hold it a hair above freezing. On the deck they pour out together and stand, both at once, as a skin of ice, a pool of water and a breath of steam, all of it trembling. The pressure needle trembles with them. The vows are long. Water people mean every word, in three states.",
+        "line": "To have and to hold, in every state, as ice and as water and as steam, I will, I do, I am; please do not let the needle move.",
+        "ai": {
+          "aria": "ARIA is crying! ARIA can't cry! ARIA is doing it anyway! Somebody hold that needle!",
+          "marv": "Let the pressure rise and the steam condenses into the pool. Let it fall and the pool boils off. MARV holds the temperature to a hundredth of a degree. The pressure is in human hands, which is where things get interesting.",
+          "rex": "Two unknowns in a pressure vessel, one valve and a needle. REX has seen this exact setup in a hostage manual. He is standing by the outer door switch, in spirit.",
+          "chip": "Venue pressure is guaranteed only on the Eternal Equilibrium™ plan! The basic plan covers two states! Steam is an add-on!",
+          "ajoy": "AJOY notes the vows will run two days at this pace, and a steady hand on the valve is the whole job. They could be hurried. Water people do nothing by halves, but by all means try."
+        },
+        "choices": [
+          {
+            "text": "Hold the needle by hand",
+            "effort": 2,
+            "sub": "Two days on the valve",
+            "outcome": "wed"
+          },
+          {
+            "text": "Witness it with the Salt Letter",
+            "sub": "Known water signs",
+            "gate": {
+              "item": "salt_letter"
+            },
+            "outcome": "wed_letter"
+          },
+          {
+            "text": "Let the guests taste the tank",
+            "sub": "Water talks",
+            "requires_flag": "water_sampled",
+            "outcome": "wed_known"
+          },
+          {
+            "text": "Hurry the vows along",
+            "sub": "Spare the air",
+            "outcome": "hurried"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "wed": {
+        "title": "HOLDING",
+        "tone": "success",
+        "body": "Two days on the valve. Whoever has it does not sneeze, scratch or let their mind wander, and the needle does not move. At the last word the ice, the water and the steam fold into one another and into one, and the new person rises out of the pool a slightly different color from either. By custom every guest gives the couple a drop of their own water. They take theirs from the ship's tank, and leave a jar of something very cold in its place.",
+        "line": "We are, I am, thank you, whoever held the valve, your hands were the steadiest thing at the wedding.",
+        "resources": {
+          "o2": -4,
+          "water": 4,
+          "morale": 3
+        },
+        "sets_flag": "water_sampled",
+        "time_cost": "low",
+        "narrative": "Held an airlock at the triple point for two days for a water wedding. The couple took a drop of the ship's tank as a keepsake and left a cold jar for it."
+      },
+      "wed_letter": {
+        "title": "KNOWN WATER",
+        "tone": "success",
+        "body": "You hold the vial to the glass of the lock. The couple stop trembling: the hand that wrote it is known on both sides of the family, and a wedding witnessed by known water is a large wedding. The needle holds, and holds better for being watched. At the last word they fold into one, and the whole barge cheers in a long rising ripple. Relatives you never saw send gifts down the line, and the couple take one drop of your tank, by custom, with both hands.",
+        "line": "Known water, at our wedding, the family will talk of nothing else for a thousand years.",
+        "resources": {
+          "o2": -3,
+          "water": 8,
+          "gold": 12,
+          "morale": 4
+        },
+        "sets_flag": "water_sampled",
+        "time_cost": "low",
+        "narrative": "Witnessed a water wedding with the Salt Letter. The family sent gifts, and the couple took a drop of the ship's tank by custom."
+      },
+      "wed_known": {
+        "title": "KNOWN BY TASTE",
+        "tone": "success",
+        "body": "A drop from the ship's tank goes round the guests, and they know it at once. Water talks, and your tank has been talked about, in places you have never been. Being practically family, they take turns on the valve themselves, in shifts, and the needle never so much as considers moving. At the last word the couple fold into one, and a relative you have never met presses a cold jar into your hands as though it were owed.",
+        "line": "We have heard of you, everyone has, the cough and the humming, please, you are family, sit, we will hold it.",
+        "resources": {
+          "o2": -4,
+          "water": 4,
+          "morale": 2
+        },
+        "time_cost": "low",
+        "narrative": "A water wedding knew the ship's tank by taste, and the guests held the airlock themselves. They sent a jar of cold water home with the ship."
+      },
+      "hurried": {
+        "title": "MOSTLY MARRIED",
+        "tone": null,
+        "body": "You start bringing the pressure up before the vows are done. The steam condenses mid-sentence and falls into the pool, part of a couple that never finished saying it would. The ice says its piece. The water says its piece. They are married, most of them. The part that was steam will remember, for the rest of a very long life, that it was never asked, and the couple leave quickly, already discussing it.",
+        "line": "I do, I do, I did not get to say it, I do.",
+        "resources": {
+          "o2": -2,
+          "morale": -2
+        },
+        "sets_flag": "water_wedding_unfinished",
+        "time_cost": "trivial",
+        "narrative": "Rushed a water wedding to spare the air. The steam condensed before it said its vows, and the couple left arguing about it."
+      },
+      "tank_wed": {
+        "title": "COMMON LAW",
+        "tone": null,
+        "body": "They pour into the drinking tank together and marry there, warm, comfortable and entirely liquid. It counts, in the way a signature on a napkin counts. They are very gracious about it. By custom they take a drop of the tank with them when they go, and rather more than a drop by mistake, and for days afterward the water aboard tastes faintly of cake.",
+        "line": "It is very nice, it is very warm, it is not a chapel, thank you.",
+        "resources": {
+          "water": -4,
+          "morale": 1
+        },
+        "sets_flag": "water_sampled",
+        "time_cost": "trivial",
+        "narrative": "Lent the drinking tank for a water wedding, warm and all one state. It counted, mostly. The couple left with {cost.water} of water."
+      }
+    },
+    "science_link": {
+      "text": "Water's triple point is 0.01 °C at 611.657 pascals: the one temperature and pressure at which ice, liquid water and vapor coexist in stable equilibrium.",
+      "label": "Triple point",
+      "url": "https://en.wikipedia.org/wiki/Triple_point"
+    }
   }
 ]
