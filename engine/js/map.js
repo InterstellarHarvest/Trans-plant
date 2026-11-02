@@ -153,7 +153,9 @@ function assignResidents(nodes, lastStop, rules) {
   if (!voyage) return;
   const claim = (n, sp) => {
     n.residents = sp;
-    n.short = sp.charAt(0).toUpperCase() + sp.slice(1) + ' ' + n.short;
+    // On the map the species stands in for "Station" (the shape says station):
+    // "Reptile Station 11" ran into its neighbours, as "Asteroid Field" did.
+    n.short = n.short.replace(mapLabel('station'), sp.charAt(0).toUpperCase() + sp.slice(1));
     const c = MOD.flavor && MOD.flavor.voyage_species && MOD.flavor.voyage_species[sp];
     if (c && c.station) n.description = c.station;
   };

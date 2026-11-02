@@ -250,7 +250,7 @@ const bubble = page => page.evaluate(() => {
   {
     // Every other crew_speaker event (no npc) still puts the crew member in the frame.
     const page = await boot({ crew: ['engineer', 'medic'] });
-    const r = await page.evaluate(() => Object.values(EVENTS).filter(e => e.crew_speaker && !e.npc).map(ev => {
+    const r = await page.evaluate(() => Object.values(EVENTS).filter(e => e.crew_speaker && !e.npc && [].concat(e.requires_role || []).every(r => STATE.crew.includes(r))).map(ev => {
       enterEvent(STATE.byId[STATE.currentId], ev);
       const out = { id: ev.id, name: document.getElementById('enc-subject-name').textContent.trim(), crew: STATE.eventSpeaker ? crewNameOf(STATE.eventSpeaker).toUpperCase() : null };
       returnToHub();

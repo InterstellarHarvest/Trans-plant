@@ -97,7 +97,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   await ev(id => travelTo(id), station);
   await page.waitForTimeout(400);
   const crisisId = await ev(() => STATE.currentEvent && STATE.currentEvent.id);
-  ok(['event_crisis_021', 'event_crisis_022', 'event_crisis_058'].includes(crisisId), 'station arrival fires delayed_crisis (' + crisisId + ')');
+  ok(['event_crisis_021', 'event_crisis_022', 'event_crisis_058', 'event_voyage_trigger_005'].includes(crisisId), 'station arrival fires delayed_crisis (' + crisisId + ')');
   ok(await ev(() => STATE.crisisPatient === 'engineer' && !STATE.crewPending.engineer), 'patient = engineer, pending consumed');
   await page.waitForTimeout(1500);
   const body = await ev(() => { finishAllTyping && finishAllTyping(); return document.getElementById('enc-narr-body').textContent; });
@@ -106,7 +106,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   await page.waitForTimeout(300);
   ok(await ev(() => STATE.crewHP.engineer === 100), 'paid treatment heals the patient to full');
   // the first paid option: the clinic (40 / 35 gold) or, at the concourse booth (crisis_058, ruling 90), the booth's 20
-  ok(await ev(() => STATE.goldAmount === 60 || STATE.goldAmount === 65 || (STATE.goldAmount === 80 && STATE.currentEvent && STATE.currentEvent.id === 'event_crisis_058')), 'clinic fee charged (' + await ev(() => STATE.goldAmount) + ')');
+  // …or the pharmacy's drug course (event_voyage_trigger_005, pool 500): 30
+  ok(await ev(() => STATE.goldAmount === 60 || STATE.goldAmount === 65 || (STATE.goldAmount === 80 && STATE.currentEvent && STATE.currentEvent.id === 'event_crisis_058') || (STATE.goldAmount === 70 && STATE.currentEvent && STATE.currentEvent.id === 'event_voyage_trigger_005')), 'clinic fee charged (' + await ev(() => STATE.goldAmount) + ')');
 
   console.log('— crisis lethal targets the patient');
   await boot(['engineer', 'pilot']);

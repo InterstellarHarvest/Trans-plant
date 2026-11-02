@@ -205,7 +205,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
   });
   ok(!k.noMedic && k.medic, `crisis_014 needs a medic in the crew (without ${k.noMedic}, with ${k.medic})`);
   ok(!k.noChef && k.chef, `shipboard_016 needs a chef in the crew (without ${k.noChef}, with ${k.chef})`);
-  ok(k.roles.length === 2, `requires_role events: ${k.roles.join(', ')}`);
+  ok(k.roles.includes('event_shipboard_016:chef') && k.roles.includes('event_crisis_014:medic'), `requires_role events keep chef and medic (${k.roles.length} in the pool)`);
   for (const id of ['event_crisis_027', 'event_crisis_028']) ok(k[id].fact && !k[id].after, `${id}: the die-off clears the outbreak, as previewed (${JSON.stringify(k[id])})`);
   ok(k.pirates.length === 4 && k.pirates.includes('event_general_003') && k.pSum === 1, `pirate family: ${k.pirates.join(', ')} sum ${k.pSum}`);
 

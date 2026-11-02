@@ -136,7 +136,9 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
         }
         if (ev.leave_as) {
           const node = __r60.setup(null, ev);
-          enterEvent(node, ev);
+          // An opening layer may hide the row (answer the hail first): read it where it shows.
+          const shown = ev.layers && ev.layers[entry] && ev.layers[entry].leaveHidden ? Object.keys(ev.layers).find(k => !ev.layers[k].leaveHidden) : null;
+          enterEvent(node, ev, shown ? { layerStack: [entry, shown] } : undefined);
           finishAllTyping();
           const tip = tipOf(document.querySelector('#enc-choices .enc-choice.leave'));
           n++;

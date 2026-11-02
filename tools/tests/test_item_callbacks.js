@@ -189,6 +189,8 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
     const need = { event_derelict_014: ['geiger_counter', 'derelict'], event_shipboard_023: ['medical_scanner', 'planet'], event_shipboard_024: ['unidentified_bone', 'planet'],
       event_station_027: ['unidentified_bone', 'station'], event_station_028: ['pre_collapse_artifact', 'station'], event_station_029: ['corporate_memorabilia', 'station'] };
     out.gates = {};
+    // A quest-gated stop (after_event) is tested once its quest step is behind us.
+    for (const id of Object.keys(need)) if (EVENTS[id].after_event) STATE.seenEventIds.add(EVENTS[id].after_event);
     for (const [id, [item, t]] of Object.entries(need)) { const without = elig(id, t); grantItem(item); const withIt = elig(id, t); STATE.items = STATE.items.filter(i => i !== item); out.gates[id] = [without, withIt]; }
     const endTrig = new Set(['any', 'journey_end']);
     STATE.flags.delete('carried_letters'); const lNo = elig('event_general_051', 'planet', endTrig);

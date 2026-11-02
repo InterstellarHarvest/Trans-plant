@@ -21,7 +21,9 @@ const EDITED = ['event_anomaly_003', 'event_asteroid_005', 'event_asteroid_006',
 const POOL_BEFORE = { lunar: { water: 83, food: 80 }, mars: { water: 83, food: 80 } };
 // Re-recorded 2026-10-14 (ruling 81): the hard station dockings and the hard forks add water/food costs.
 // Re-recorded 2026-10-14 (ruling 85): Rot Bloom's treatment option adds 8 water.
-const POOL_AFTER = { lunar: { water: 199, food: 204 }, mars: { water: 199, food: 215 } }; // re-recorded after the 2026-10-23 hunt (station_024 coffee costs food)
+// Re-recorded 2026-10-23 hunt (station_024 coffee costs food).
+// Re-recorded 2026-11-02 (pool 500): 500 events, the hard pool more than doubled.
+const POOL_AFTER = { lunar: { water: 506, food: 496 }, mars: { water: 529, food: 521 } };
 const RES = ['fuel', 'food', 'water', 'o2', 'hull'];
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + m); } };
