@@ -6109,7 +6109,8 @@ function eventSupplyCost(k, v, o) {
   if (!(Number.isFinite(m) && m > 0)) return v;
   const share = (o && o._pctShare && o._pctShare[k]) || 0;
   const flat = v - share;
-  return flat < 0 ? share - Math.round(-flat * m) : v; // half a point rounds toward the bigger cost
+  const cap = MOD.map_rules.event_supply_cost_cap || Infinity; // no one scene empties a tank (ruling 121)
+  return flat < 0 ? share - Math.min(Math.round(-flat * m), cap) : v; // half a point rounds toward the bigger cost
 }
 /* resources_pct (outcome field): a share of what's aboard — "thirty
    percent fuel" — resolved against the current stock. */

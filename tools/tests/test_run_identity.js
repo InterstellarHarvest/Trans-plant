@@ -41,6 +41,9 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     STATE.artSeed = seed + 1; out.ownSkipped = window.pastWreck();
     localStorage.removeItem('transplant_records_v1');
     out.fallback = interpolateStowawayTokens('{wreck.ship} {wreck.fate}');
+    STATE.trail = 'mars';
+    out.costBig = effectiveResDelta('water', -30, {});
+    out.costSmall = effectiveResDelta('water', -2, {});
     const fab = (MOD.recipes.recipes || []).filter(x => x.requires_item && x.requires_item.startsWith('blueprint_')).map(x => [x.id, !!itemDef(x.requires_item), !!itemDef(x.output.item_id)]);
     out.fab = fab;
     out.items = ['talking_crate', 'borrowed_charm', 'hold_sprout', 'urgent_parcel', 'blueprint_still', 'blueprint_poultice', 'landing_deed', 'locked_case', 'heirloom_packet', 'overdue_book'].map(i => [invItemCategory(i), invEmojiOf(i) !== '📦', itemSpritePath(i)]);
@@ -60,6 +63,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   ok(r.fallback === 'the wreck never arrived', 'wreck tokens never show raw text with no history');
   ok(r.fab.length === 2 && r.fab.every(x => x[1] && x[2]), 'two blueprint recipes, each with its item and output');
   ok(r.items.every(x => x[0] === 'STORY' && /^sprites\/cargo\/items\/.+\.png$/.test(x[2])), 'ten new items, filed under Story, with their art');
+  ok(r.costBig === -60, 'one event never costs more than the cap: ' + r.costBig);
+  ok(r.costSmall === -13, 'the trail multiplier still applies below it: ' + r.costSmall);
   ok(errors.length === 0, 'no page errors ' + errors.join(' | '));
   await browser.close();
   console.log(`\nrun identity: ${pass} passed, ${fail} failed`);
