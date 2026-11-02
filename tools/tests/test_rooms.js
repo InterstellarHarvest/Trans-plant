@@ -122,7 +122,10 @@ const computedIs = s => s.computed.includes(s.main.split('/').map(encodeURICompo
         // A fresh run each time: NPC species (and the art seed) are fixed per stop within a run.
         applySetupToState({ trail: 'mars', ai: 'marv', captain: 'veteran', crew: ['diplomat', 'pilot'], crop: 'wheat', ship: 'D' });
         STATE.stowaway = null;
-        const st = STATE.nodes.filter(n => n.node_type === 'station')[i % 2];
+        // Near home every vendor is human (ruling 119): alternate the first
+        // station with the last, the voyage species' own.
+        const sts = STATE.nodes.filter(n => n.node_type === 'station');
+        const st = i % 2 ? sts[sts.length - 1] : sts[0];
         STATE.currentId = st.id;
         STATE.npcCtx = null;
         window.__tradeHere && window.__tradeHere();

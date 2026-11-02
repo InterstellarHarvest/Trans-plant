@@ -597,7 +597,8 @@ const ticker = page => page.evaluate(() => { const els = [...document.querySelec
     const all = await page.evaluate(() => MOD.flavor.crew_epitaphs.map(l => crewEpitaphSentences(l.replaceAll('[Name]', 'Dr. Osei'))));
     ok(all.every(ss => ss.every(s => !/\bDr\.$/.test(s))), 'no crew epitaph line ever ends on "Dr."');
     const air = await page.evaluate(() => MOD.flavor.airlock_epitaphs);
-    ok(Array.isArray(air) && air.length === 7 && air.includes('The vacuum accepts the donation without comment.'), 'flavor_pools.airlock_epitaphs: the demo\'s 7 lines');
+    const DEMO_AIR = ['The vacuum accepts the donation without comment.', 'Last seen drifting. Still drifting, one assumes.', 'Ejected. The universe absorbed this development calmly.', 'Removed from the manifest. And from most other things.', 'The ship is now slightly lighter. This is the only accurate statement.', 'At final report, no longer employed by anyone.', 'Has joined the long line of things that used to be indoors.'];
+    ok(Array.isArray(air) && DEMO_AIR.every(l => air.includes(l)), 'flavor_pools.airlock_epitaphs: the demo\'s 7 lines are all there (' + (Array.isArray(air) ? air.length : 0) + ' in the pool)');
     // Jettison the botanist out in the asteroids (no safe dropoff).
     await parkAt(page, 'asteroid_field');
     await page.evaluate(() => { MOD.flavor.airlock_epitaphs = ['Last seen drifting. Dr. Vasquez waved. Still drifting, one assumes.']; openCrewDetail('botanist'); });

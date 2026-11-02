@@ -135,7 +135,8 @@ const NOTE = /\b(Stackable|Craftable|Fabricated|Pure trade good|Info-only|Gate i
     ok(d.filter(x => x.note).length >= 20, `the notes moved to design_note (${d.filter(x => x.note).length} items)`);
     const fab = await page.evaluate(async () => {
       const w = ms => new Promise(r => setTimeout(r, ms));
-      STATE.items.push('repair_fabricator');
+      // A blueprint recipe's row is inert until its blueprint is aboard.
+      STATE.items.push('repair_fabricator', ...MOD.recipes.recipes.map(r => r.requires_item).filter(Boolean));
       openFabricator(); await w(300);
       const out = [];
       for (const rec of MOD.recipes.recipes) {
