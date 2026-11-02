@@ -118,7 +118,7 @@ function checkChoice(id, where, ch, ev, flags) {
 }
 function checkEvent(ev, flags) {
   const id = ev.id;
-  if (!/^event_(species_(insect|rock|water|reptile|robot|unknown|human|fortune)|voyage_(crew|time|office|ruins|ship|fork))_\d{3}$/.test(id)) err(id, 'id must be event_species_<lane>_NNN or event_voyage_<lane>_NNN');
+  if (!/^event_(species_(insect|rock|water|reptile|robot|unknown|human|fortune)|voyage_(crew|time|office|ruins|ship|fork|quest|identity|landmark|pair|format|oddity|thin))_\d{3}$/.test(id)) err(id, 'id must be event_species_<lane>_NNN or event_voyage_<lane>_NNN');
   for (const k of ['active', 'title', 'difficulty', 'tone', 'node_type', 'trigger', 'scene_type']) if (ev[k] == null) err(id, `missing ${k}`);
   if (typeof ev.once !== 'boolean') err(id, 'once must be true or false');
   if (!TIERS.includes(ev.difficulty)) err(id, `difficulty ${ev.difficulty}`);
@@ -154,7 +154,7 @@ function checkEvent(ev, flags) {
     if (re.test(low)) err(id, `names something from an inspiration: "${b}"`);
   }
   for (const t of blob.match(/\{[^}]*\}/g) || []) {
-    if (!/^\{(npc\.(quirk|species|disposition|name|line\.[a-z]+)|crew\.[a-z_]+|cost\.(water|food)(\.num)?|branch\.(alpha|beta)\.(label|first)|crop\.(name|advice|diagnosis|verdict)|speaker\.(name|role)|patient\.(name|role)|stowaway\.[a-z_]+)\}$/.test(t)) err(id, `unknown token ${t}`);
+    if (!/^\{(npc\.(quirk|species|disposition|name|line\.[a-z]+)|crew\.[a-z_]+|cost\.(water|food)(\.num)?|branch\.(alpha|beta)\.(label|first)|crop\.(name|advice|diagnosis|verdict)|speaker\.(name|role)|patient\.(name|role)|stowaway\.[a-z_]+|wreck\.(ship|captain|crop|fate|days))\}$/.test(t)) err(id, `unknown token ${t}`);
   }
 
   if (ev.layers) {

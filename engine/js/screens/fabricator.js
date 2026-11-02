@@ -75,6 +75,8 @@
     recipe_ration_brick:   { icon: '🧱', sprite: 'sprites/cargo/items/ration_brick.png' },
     recipe_o2_canister:    { icon: '🫧', sprite: 'sprites/cargo/items/o2_canister.png' },
     recipe_fuel_cell:      { icon: '🔋', sprite: 'sprites/cargo/items/fuel_cell.png' },
+    recipe_water_canister: { icon: '💧', sprite: 'sprites/cargo/items/water_canister.png' },
+    recipe_medkit:         { icon: '💊', sprite: 'sprites/cargo/items/medkit.png' },
   };
   // items.json gameplay_effect is player-facing text only (authoring
   // notes live in design_note) — shown as written.

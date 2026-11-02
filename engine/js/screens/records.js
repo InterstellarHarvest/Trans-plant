@@ -82,6 +82,25 @@
       startCrew: run.startCrew != null ? run.startCrew : (run.crew || []).length,
     };
   }
+  /* A lost ship from an earlier run, for the wreck events (ruling 120): one
+     failure from the history, the same one all run, never this run's own. */
+  const WRECK_FATE = { no_fuel: 'ran out of fuel', hull_zero: 'broke apart', crew_gone: 'lost its whole crew', captain_lost: 'lost its captain',
+    mutiny: 'ended in a mutiny', crop_dead: 'lost its crop', starvation: 'starved', dehydration: 'ran out of water', suffocation: 'ran out of air' };
+  function pastWreck() {
+    const seed = STATE.artSeed || 0;
+    const lost = loadRecords().runs.filter(e => e.kind === 'failure' && !String(e.id).startsWith(seed + ':'));
+    return lost.length ? lost[seed % lost.length] : null;
+  }
+  function wreckField(key) {
+    const w = pastWreck();
+    if (key === 'ship') return (w && w.ship) || 'the wreck';
+    if (key === 'captain') return w && w.captain ? captainLabel(w.captain) : 'captain';
+    if (key === 'crop') return (w && w.crop && wreckCrop(w.crop)) || 'crop';
+    if (key === 'days') return String((w && w.days) || 0);
+    return (w && WRECK_FATE[w.tone]) || 'never arrived';
+  }
+  const captainLabel = id => id.replace(/_/g, ' ');
+  const wreckCrop = id => { const c = ((MOD.crops && MOD.crops.crops) || []).find(x => x.id === 'crop_' + id); return c ? c.name.toLowerCase() : id; };
   const currentScale = e => !!e && e.scoreVersion === SCORE_VERSION;
   const countsForBest = e => e.kind === 'arrival' && e.cropAlive && currentScale(e);
   const beats = (a, b) => !b || a.score > b.score || (a.score === b.score && a.days < b.days);
@@ -224,5 +243,7 @@
     hasRecords, refreshRecordsButton, trailLabel,
     // test hook: tools/tests/test_records.js reads the stored records
     loadRecords, SCORE_VERSION,
+    // the wreck events (index.html)
+    pastWreck, wreckField,
   });
 })();

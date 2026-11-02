@@ -3638,6 +3638,8 @@ function eventEligible(ev, node, triggers) {
     // …and the halfway moment happens once (ruling 90): one ungated
     // journey_mid scene marks it; a story follow-up (requires_flag) still can.
     if (!ev.requires_flag && (ev.trigger || []).includes('journey_mid') && STATE.flags.has('midpoint_marked')) return false;
+    // This run's captain, crop, AI and place on the route (ruling 120).
+    if (!fitsThisRun(ev)) return false;
     // A species' event happens where that species is (ruling 119).
     if (!speciesPresent(ev, node)) return false;
     // Trail targeting (registry dim 4.29 `trail`, previously unused by
@@ -3674,6 +3676,17 @@ function eventEligible(ev, node, triggers) {
     } else if (!nodeTypes.includes('any') && !nodeTypes.includes(node.node_type)) return false;
     const evTriggers = ev.trigger || ['any'];
     return evTriggers.some(t => triggers.has(t));
+}
+
+/* Events about who this run is (ruling 120): captain_background, crop_type
+   and requires_ai take one value or a list; after_progress holds an event
+   back until that share of the route is flown, so a quest's beats land
+   mid-run or near arrival; requires_past_run needs a lost ship on record. */
+function fitsThisRun(ev) {
+  const one = (want, have) => want == null || [].concat(want).includes(have);
+  if (!one(ev.captain_background, STATE.captain) || !one(ev.crop_type, STATE.crop) || !one(ev.requires_ai, STATE.activeAI)) return false;
+  if (ev.after_progress && journeyFrac() < ev.after_progress) return false;
+  return !ev.requires_past_run || !!window.pastWreck();
 }
 
 /* The species an event belongs to: its lane, else its pinned face. The
@@ -5078,6 +5091,7 @@ function resolveLayerNpc(spec, evId, layerId) {
    No stowaway rolled → tokens drop cleanly (events using them are
    gated behind the stowaway_aboard trigger anyway). */
 function interpolateStowawayTokens(text) {
+  if (text && String(text).includes('{wreck.')) text = String(text).replace(/\{wreck\.(\w+)\}/g, (_, k) => window.wreckField(k));
   // Run-identity tokens: {stowaway.*} (the hidden passenger) and
   // {patient.*} (a delayed_crisis event's wounded crew member).
   // {crew.<role>}: whoever holds that role now (a stowaway who joined as
