@@ -22,6 +22,12 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     };
     STATE.visited = new Set(STATE.nodes.slice(0, Math.ceil(pathLegs() * 0.6) + 1).map(n => n.id));
     out.late = F({ after_progress: 0.5 });
+    out.stepEarly = F({ after_event: 'event_voyage_quest_001' });
+    STATE.seenEventIds.add('event_voyage_quest_001');
+    out.stepDue = F({ after_event: 'event_voyage_quest_001' });
+    STATE.flags.add('case_on');
+    out.openerBlocked = F({ unless_flag: ['case_on', 'book_on'] });
+    out.openerFree = F({ unless_flag: ['book_on'] });
     // A lost run of this same art seed is this run's own save: never its own wreck.
     const seed = STATE.artSeed;
     localStorage.setItem('transplant_records_v1', JSON.stringify({ best: {}, runs: [{ id: seed + ':9:mutiny:x', kind: 'failure', ship: 'Own Ship', tone: 'mutiny', days: 9 }] }));
@@ -44,6 +50,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   ok(r.crop && !r.cropNo, 'crop_type gates on the run\'s crop');
   ok(r.ai && !r.aiNo, 'requires_ai gates on the run\'s AI');
   ok(!r.early && r.late, 'after_progress holds an event back until that share of the route');
+  ok(!r.stepEarly && r.stepDue, 'a quest step waits for the step before it');
+  ok(!r.openerBlocked && r.openerFree, 'an opener stands aside for a quest under way');
   ok(!r.wreckNone, 'no history: a wreck event stays out');
   ok(!r.ownOnly, 'a run is never its own wreck');
   ok(r.wreck && r.same, 'a lost ship on record: the wreck event can fire, and it is the same ship all run');
