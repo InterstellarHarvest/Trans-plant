@@ -104,7 +104,7 @@ function installHarness(policy) {
     if (window.__pol !== 'random' && !opts.sinister && opts.vendor !== 'surplus') window.__provision();
     if (window.__pol !== 'random' && opts.sinister) {
       // First the gray good on this shelf it is short of (keeping 30 gold back), then an upgrade.
-      const g = window.grayShelf(opts).find(id => window.__grayNeed()[id] && STATE.goldAmount >= (itemDef(id).base_price || 0) + 30);
+      const g = (window.grayShelf ? window.grayShelf(opts) : []).find(id => window.__grayNeed()[id] && STATE.goldAmount >= (itemDef(id).base_price || 0) + 30);
       if (g) { STATE.goldAmount -= itemDef(g).base_price; grantItem(g); S.blackMarket = (S.blackMarket || []).concat(g); }
       const buy = BLACK_MARKET.find(([id, gold]) => !STATE.items.includes(id) && STATE.goldAmount >= gold);
       if (buy) { STATE.goldAmount -= buy[1]; grantItem(buy[0]); S.blackMarket = (S.blackMarket || []).concat(buy[0]); }
@@ -534,6 +534,7 @@ if (require.main === module) (async () => {
       crew: STATE.crew.length, crewHP: Object.assign({}, STATE.crewHP), captainHP: captainHPOf(), mats: Object.values(STATE.materials).reduce((a, b) => a + b, 0), items: STATE.items.slice(),
       crop: STATE.cropGrowth ? { g: Math.round(STATE.cropGrowth.growth), h: Math.round(STATE.cropGrowth.health) } : null,
       nodes: STATE.nodes.length, visited: STATE.visited.size, stats: window.__stats, morale: crewMoraleRaw(), startCrew: STATE.startCrew, surveys: STATE.soilSurveys || 0, voyage: STATE.voyageSpecies,
+      stow: STATE.stowaway ? (STATE.stowaway.revealed ? 'revealed' : 'hidden') : null, joined: Object.values(STATE.crewIdentity || {}).map(i => i.origin || 'stowaway'), passengersSeen: (STATE.flags.has('stowaway_passenger') ? 1 : 0),
     }));
     res.policy = policy; res.trail = trail; res.cfg = cfg; res.steps = steps;
     results.push(res);

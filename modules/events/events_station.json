@@ -971,6 +971,12 @@
             "next": "engineer_berth"
           },
           {
+            "text": "Offer them a berth",
+            "sub": "They look ready to leave",
+            "hideFlag": "hired_dock_engineer",
+            "outcome": "bar_hire"
+          },
+          {
             "text": "BACK TO THE BAR",
             "sub": "Wave thanks",
             "outcome": "engineer_goodwill"
@@ -1059,6 +1065,31 @@
           "morale": 3
         },
         "time_cost": "low"
+      },
+      "bar_hire": {
+        "title": "SIGNED ON",
+        "tone": "success",
+        "body": "You mention that your ship is short-handed. The engineer looks at the ceiling, at the cranes they will never be allowed to recalibrate, and then at you. They finish the beer in one go. Their kit is in a locker by the airlock, and it has been packed for some time.",
+        "line": "Don't dock at berth seven. I mean it. Let's go.",
+        "resources": {},
+        "crew_join": {
+          "id": "dock_engineer_tal",
+          "name": "Tal Okafor",
+          "story": "Six years as a dock engineer under cargo cranes calibrated by someone who retired in 2089. Nobody else would fix the drift, so Tal compensated for it, every shift, until the day a captain bought them a drink.",
+          "join_role": "engineer",
+          "join_note": "Six years compensating for a crane drift nobody else would fix.",
+          "hp": 100,
+          "passenger": {
+            "reward": {
+              "gold": 10,
+              "morale": 3
+            },
+            "farewell": "{name} steps off at {station} and is offered a crane job before reaching the end of the dock. They ask, first, who calibrated the cranes."
+          }
+        },
+        "sets_flag": "hired_dock_engineer",
+        "time_cost": "trivial",
+        "narrative": "Signed on a dock engineer at a station bar, on the strength of one beer and a grudge against the cranes."
       }
     }
   },

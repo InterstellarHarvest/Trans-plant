@@ -3713,7 +3713,21 @@ const CRISIS_POOL_CAP = 3;
 const PAYOFF_PULL = 4;
 const VOYAGE_PULL = 3;
 const QUEST_PULL = 48; // a quest's next step arrives once it is due: it must not be skipped
-const HOME_PULL = 6; // reaching a species' own station is the voyage's arrival: its event should usually be there
+const HOME_PULL = 6;
+// Ruling 125: an event that can bring a person aboard (an outcome with
+// crew_join) draws ×2, and ×4 once the crew has lost someone. A captain
+// who set out alone is not short of anyone.
+const RESCUE_PULL_STANDING = 2;
+const RESCUE_PULL = 4;
+// Ruling 125: once a hidden stowaway's reveal window is open, the events
+// that find them draw this much more often (Lunar runs are short; at 500
+// events a quarter of its stowaways were never found).
+const STOWAWAY_PULL = 3;
+const _bringsSomeone = new WeakMap();
+function bringsSomeoneAboard(ev) {
+  if (!_bringsSomeone.has(ev)) _bringsSomeone.set(ev, JSON.stringify(ev).includes('"crew_join"'));
+  return _bringsSomeone.get(ev);
+} // reaching a species' own station is the voyage's arrival: its event should usually be there
 // Minigames are the run's hands-on moments; pool 500 diluted them (1.30 → 1.02 a run).
 // An event any of whose choices launches one draws this much more often.
 const MINIGAME_PULL = 1.5;
@@ -3754,6 +3768,8 @@ function drawWeightedEvent(candidates, triggers, baseWeights, branch) {
     if (ev.species_home) w *= HOME_PULL;
     if (ev.after_event) w *= QUEST_PULL;
     if (launchesMinigame(ev)) w *= MINIGAME_PULL;
+    if (bringsSomeoneAboard(ev)) w *= STATE.crew.length < (STATE.startCrew || 0) ? RESCUE_PULL : RESCUE_PULL_STANDING;
+    if (triggers.has('stowaway_aboard') && ((ev.trigger || []).includes('stowaway_aboard') || ev.stowaway_variant)) w *= STOWAWAY_PULL;
     const evTriggers = ev.trigger || ['any'];
     // Positional triggers (journey_start/journey_end) exist for
     // reachability, not urgency — they get a mild bump so they surface
