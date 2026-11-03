@@ -390,14 +390,17 @@ const toPlainStop = page => page.evaluate(() => {
     const freq = await page.evaluate(() => {
       const nodes = STATE.nodes.filter(n => n.node_type !== 'fork' && n.node_type !== 'station');
       let hits = 0, n = 0;
-      for (let i = 0; i < 3000; i++) {
+      for (let i = 0; i < 6000; i++) {
         const node = nodes[i % nodes.length];
         STATE.seenEventIds = new Set(); STATE.flags.add('departed'); STATE.hardStreak = 0; STATE.pityRelief = 0;
         const ev = selectEvent(node); n++; if (ev && ev.id === 'event_crisis_025') hits++;
       }
-      return { p: hits / n, stops: nodes.length };
+      return { p: hits / n, stops: nodes.length, pulled: launchesMinigame(EVENTS.event_crisis_025) && MINIGAME_PULL > 1 };
     });
-    ok(freq.p > 0.01, `the pool draws it at ordinary stops (${(freq.p * 100).toFixed(1)}% a stop; ≈${(1 - Math.pow(1 - freq.p, freq.stops)).toFixed(2)} chance a run over ${freq.stops} stops)`);
+    // Pool 500 thinned every older event; the minigame pull (×MINIGAME_PULL)
+    // gives minigame events back their share. About 1% a stop, from 2.6% at 276 events.
+    ok(freq.pulled, 'Engine Fault draws with the minigame pull');
+    ok(freq.p > 0.0075, `the pool draws it at ordinary stops (${(freq.p * 100).toFixed(1)}% a stop; ≈${(1 - Math.pow(1 - freq.p, freq.stops)).toFixed(2)} chance a run over ${freq.stops} stops)`);
 
     // Play it: watch the sequence, repeat it → perfect.
     const enter = () => page.evaluate(async () => {
