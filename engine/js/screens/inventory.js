@@ -97,6 +97,23 @@ function invCropTreatGain() {
   const cg = STATE.cropGrowth;
   return cg ? Math.round(Math.min(100, cg.health + INV_CROP_TREAT) - cg.health) : 0;
 }
+// Black-market goods (ruling 124): a bigger refill that sometimes backfires —
+// `odds` of landing only `bad`, plus the backfire's own harm. The tooltip
+// says it can go wrong, never the odds.
+const GRAY_BACKFIRE = { bulk_o2_tank: 0.25, hot_fuel_cell: 0.2, gray_medkit: 0.2, hull_foam: 0.25, unlabeled_rations: 0.2 };
+function grayRefill(id, k, n, bad, tag, item, full, goodLine, badLine, harm) {
+  const base = invRefill(k, n, tag, item, full, goodLine);
+  return {
+    label: base.label,
+    tip: () => base.tip() + ' Black-market goods: it may not all go in.',
+    can: base.can,
+    use: () => {
+      if (Math.random() >= GRAY_BACKFIRE[id]) return base.use();
+      const g = invAddRes(k, bad);
+      return badLine(g, harm ? harm() : '');
+    },
+  };
+}
 const ITEM_USE = {
   ration_brick:   invRefill('food', 10, 'FOOD', 'ration brick', 'Food stores are full', g => 'Ration brick unwrapped. +' + g + ' food. Nobody describes the flavor.'),
   water_canister: invRefill('water', 10, 'H2O', 'water canister', 'Water tanks are full', g => 'Water canister emptied into the tanks. +' + g + ' water.'),
@@ -104,11 +121,30 @@ const ITEM_USE = {
   repair_kit:     invRefill('hull', 10, 'HULL', 'repair kit', 'Hull is intact', g => 'Repair kit spent on the worst seams. +' + g + ' hull.'),
   hull_patch:     invRefill('hull', 15, 'HULL', 'hull patch', 'Hull is intact', g => 'Hull patch applied. +' + g + ' hull. It holds. Probably.'),
   o2_canister:    invRefill('o2', 14, 'O2', 'O2 canister', 'O2 is full', g => 'O2 canister vented into the air supply. +' + g + ' O2.'),
+  bulk_o2_tank:   grayRefill('bulk_o2_tank', 'o2', 35, 8, 'O2', 'bulk O2 tank', 'O2 is full', g => 'Bulk O2 tank bled into the air supply. +' + g + ' O2.',
+                    g => 'The bulk tank\'s valve gave out halfway through the first turn. +' + g + ' O2, and a lot of hissing.'),
+  hot_fuel_cell:  grayRefill('hot_fuel_cell', 'fuel', 35, 10, 'FUEL', 'hot fuel cell', 'Fuel tank is full', g => 'Hot fuel cell slotted in. It runs warm. +' + g + ' fuel.',
+                    (g, h) => 'The hot fuel cell cooked off in the housing. +' + g + ' fuel' + h + '.', () => { const h = -invAddRes('hull', -6); renderHUD && renderHUD(); return h ? ', and −' + h + ' hull' : ''; }),
+  hull_foam:      grayRefill('hull_foam', 'hull', 30, 10, 'HULL', 'can of hull foam', 'Hull is intact', g => 'Hull foam sprayed into the worst seams and set hard. +' + g + ' hull.',
+                    g => 'The hull foam set in the nozzle before it reached the seam. +' + g + ' hull from what got through.'),
+  unlabeled_rations: grayRefill('unlabeled_rations', 'food', 25, 5, 'FOOD', 'unlabeled ration crate', 'Food stores are full', g => 'Unlabeled ration crate opened. The bricks are fine. +' + g + ' food.',
+                    (g, h) => 'The unlabeled crate had turned. +' + g + ' food from the bricks at the top' + h + '.', () => { addCrewMorale(-3); return ', and the crew loses 3 morale'; }),
   medkit: {
     label: () => 'HEAL',
     tip: () => { const r = worstHurtCrew(); return r ? 'Restores ' + PersonName(r) + ' (the worst hurt aboard) to full health.' : 'Restores the worst hurt aboard to full health.'; },
     can: () => worstHurtCrew() ? null : 'Nobody is hurt',
     use: () => { const r = worstHurtCrew(); setHP(r, 100); delete crewPendingOf()[r]; return 'Medkit opened. ' + PersonName(r) + ' is patched up and back on their feet.'; },
+  },
+  gray_medkit: {
+    label: () => 'HEAL',
+    tip: () => { const r = worstHurtCrew(); return (r ? 'Restores ' + PersonName(r) + ' (the worst hurt aboard) to full health.' : 'Restores the worst hurt aboard to full health.') + ' Black-market goods: the dose may be wrong.'; },
+    can: () => worstHurtCrew() ? null : 'Nobody is hurt',
+    use: () => {
+      const r = worstHurtCrew();
+      if (Math.random() >= GRAY_BACKFIRE.gray_medkit) { setHP(r, 100); delete crewPendingOf()[r]; return 'Gray-market medkit opened. ' + PersonName(r) + ' is patched up and back on their feet.'; }
+      setHP(r, Math.min(100, hpOf(r) + Math.ceil((100 - hpOf(r)) / 2))); addCrewMorale(-3);
+      return 'The gray-market medkit\'s dose was wrong. ' + PersonName(r) + ' is half mended, and the crew loses 3 morale watching.';
+    },
   },
   crop_treatment: {
     label: () => { const g = invCropTreatGain(), pest = STATE.cropGrowth && STATE.cropGrowth.pest; return g > 0 ? '+' + g + ' CROP' + (pest ? ' · PESTS' : '') : 'CLEAR PESTS'; },

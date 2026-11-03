@@ -160,7 +160,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
       const entry = ev.layers ? (ev.entryLayer || Object.keys(ev.layers)[0]) : null;
       for (const { layer, choices } of __r60.sets(ev)) {
         choices.forEach((ch, i) => {
-          if (ch.back || ch.next) return;
+          if (ch.back || ch.next || ch.open_market) return; // a market door resolves nothing (test_black_market)
           // A deeper layer is reached by clicking the choice that opens it.
           const via = layer && layer !== entry ? ev.layers[entry].choices.findIndex(c => c.next === layer) : -1;
           out.push({ layer, i, via, text: ch.text, combat: !!ch.triggerCombat });

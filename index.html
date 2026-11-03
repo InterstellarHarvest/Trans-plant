@@ -6800,7 +6800,7 @@ function handleChoiceClick(choice) {
     const before = holdNow();
     // Back on the same layer → paint it whole; the sinister close walks
     // you back to the entry layer, which is new text again.
-    window.openMarket({ sinister: !!choice.market_sinister, vendor: choice.market_vendor || null, barter: !!choice.market_barter },
+    window.openMarket({ sinister: !!choice.market_sinister, vendor: choice.market_vendor || null, barter: !!choice.market_barter, greeting: choice.market_greeting, farewell: choice.market_farewell, stock: choice.market_stock },
                       () => { if (holdNow() !== before) STATE._shoppedThisEvent = true; renderEncounterState({ instant: !choice.market_sinister }); });
     return;
   }

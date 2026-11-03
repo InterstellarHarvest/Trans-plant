@@ -219,7 +219,9 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
             MarketModal.close();
             await wait(400); finishAllTyping();
             const back = STATE.layerStack[STATE.layerStack.length - 1];
-            return { open, subject, back, layerBefore, shown: (STATE._shownChoices || []).length, outcome: !!STATE.currentOutcomeId };
+            // The black market's LEAVE walks back to the encounter's opening (demo sinister close).
+            const want = ch.market_sinister ? (ev.entryLayer || Object.keys(ev.layers)[0]) : layerBefore;
+            return { open, subject, back, layerBefore: want, shown: (STATE._shownChoices || []).length, outcome: !!STATE.currentOutcomeId };
           }
           const mounted = document.getElementById('screen-encounter').classList.contains('combat-mode');
           const narr = document.getElementById('enc-narrative').textContent;

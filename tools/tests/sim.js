@@ -94,9 +94,21 @@ function installHarness(policy) {
   // The market modal closes at once; a provisioning policy first takes
   // what it is short of off a station's or a lane trader's shelf (both
   // stock canisters and bricks; the black market and surplus bin don't).
+  // The black market (ruling 124): a careful player buys the best upgrade
+  // it can afford, the worst case for balance (prices: market.js
+  // blackMarketVendor; it never sells one you carry).
+  window.__grayNeed = () => { const R = STATE.resources; return { bulk_o2_tank: R.o2 < 70, hot_fuel_cell: R.fuel < 60, hull_foam: R.hull < 70, unlabeled_rations: R.food < 60, gray_medkit: peopleAboard().some(r => hpOf(r) < 50) }; };
+  const BLACK_MARKET = window.__BLACK_MARKET = [['drive_coil', 60], ['repair_fabricator', 50], ['o2_recycler', 45]];
   window.openMarket = (opts, onClose) => {
     opts = opts || {};
     if (window.__pol !== 'random' && !opts.sinister && opts.vendor !== 'surplus') window.__provision();
+    if (window.__pol !== 'random' && opts.sinister) {
+      // First the gray good on this shelf it is short of (keeping 30 gold back), then an upgrade.
+      const g = window.grayShelf(opts).find(id => window.__grayNeed()[id] && STATE.goldAmount >= (itemDef(id).base_price || 0) + 30);
+      if (g) { STATE.goldAmount -= itemDef(g).base_price; grantItem(g); S.blackMarket = (S.blackMarket || []).concat(g); }
+      const buy = BLACK_MARKET.find(([id, gold]) => !STATE.items.includes(id) && STATE.goldAmount >= gold);
+      if (buy) { STATE.goldAmount -= buy[1]; grantItem(buy[0]); S.blackMarket = (S.blackMarket || []).concat(buy[0]); }
+    }
     if (onClose) onClose();
   };
   const realEnd = window.endRun;
@@ -425,6 +437,8 @@ function step() {
       useIt('fuel_cell', R.fuel < resMax('fuel') - 15); useIt('ration_brick', R.food < 85); useIt('water_canister', R.water < 85);
       useIt('hull_patch', R.hull < 80); useIt('o2_canister', R.o2 < 80); useIt('medkit', peopleAboard().some(r => hpOf(r) < 50)); // the captain has real HP too (owner ruling 29)
       useIt('crop_treatment', STATE.cropGrowth && (STATE.cropGrowth.pest || STATE.cropGrowth.health < 60));
+      useIt('hot_fuel_cell', R.fuel < resMax('fuel') - 35); useIt('unlabeled_rations', R.food < 70); useIt('hull_foam', R.hull < 65);
+      useIt('bulk_o2_tank', R.o2 < 60); useIt('gray_medkit', peopleAboard().some(r => hpOf(r) < 50));
       // growbay
       if (STATE.cropGrowth && STATE.cropGrowth.health > 0 && typeof openGrowbay === 'function') {
         openGrowbay();
@@ -449,6 +463,7 @@ function step() {
       const cap = P === 'stopper' ? 4 : 2;
       if (acts.n < cap) {
         if (node.node_type === 'station' && peopleAboard().some(r => hpOf(r) < 60) && STATE.goldAmount >= 30 && !acts.did.medbay) { S.medbay++; if (doVerb(/MEDBAY/, 'medbay')) return { wait: 50 }; }
+        if (!acts.did.back_room && STATE.goldAmount >= 40 && (window.__BLACK_MARKET.some(([id]) => !STATE.items.includes(id)) || Object.values(window.__grayNeed()).some(Boolean)) && doVerb(/^BACK ROOM$/, 'back_room')) return { wait: 50 };
         if (R.hull < (P === 'stopper' ? 85 : 60) && (acts.did.repair || 0) < 2 && doVerb(/^REPAIR/, 'repair')) return { wait: 50 };
         if (crewMoraleRaw() != null && crewMoraleRaw() < (P === 'stopper' ? 80 : 40) && (acts.did.rest || 0) < 2 && doVerb(/^REST/, 'rest')) return { wait: 50 };
         const needSupply = R.fuel < (P === 'stopper' ? 80 : 55) || R.water < 40 || R.food < 40;

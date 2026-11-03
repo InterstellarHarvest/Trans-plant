@@ -453,6 +453,8 @@ let engineGrantedItems = {}; // filled by the item-sources block; read by the it
     fuel_cell: 'engine/js/combat.js', repair_kit: 'engine/js/combat.js',                     // combat loot
     logbook_fragment: 'engine/js/screens/cruise.js', medkit: 'engine/js/screens/cruise.js',  // forage rare finds (RARE_TO_REAL)
     fab_surplus: 'engine/js/screens/fabricator.js',                                          // fabricator misfires
+    bulk_o2_tank: 'engine/js/screens/market.js', hot_fuel_cell: 'engine/js/screens/market.js', gray_medkit: 'engine/js/screens/market.js', // black-market shelves (GRAY_GOODS, ruling 124)
+    hull_foam: 'engine/js/screens/market.js', unlabeled_rations: 'engine/js/screens/market.js',
   };
   // Items with an items.json find_odds turn up on SALVAGE / FORAGE
   // (cruise.js reads the odds), so the data itself is their source.
@@ -952,6 +954,9 @@ const eventOnTrail = (ev, trail) => {
         if ((ch.market_vendor != null || ch.market_barter) && !ch.open_market) err(`${cat}: choice "${label}" has market_vendor/market_barter but no open_market — it never opens a market`);
         if (ch.market_barter && !ev.npc) err(`${cat}: choice "${label}" market_barter needs the event's npc (the vendor's species decides the barter stock)`);
         if (ch.market_barter && ch.market_sinister) err(`${cat}: choice "${label}" market_barter on the black market — the sinister vendor never barters`);
+        if (ch.market_stock != null && (!ch.market_sinister || !Array.isArray(ch.market_stock) || !ch.market_stock.length || ch.market_stock.some(id => !(readJSON('modules/items/items.json').find(i => i.id && i.id.replace(/^item_/, '').replace(/_\d+$/, '') === id) || {}).tags?.includes('gray_market')))) err(`${cat}: choice "${label}" market_stock must list gray_market items, on the black market (market_sinister)`);
+        if ((ch.market_greeting != null || ch.market_farewell != null) && !ch.market_sinister) err(`${cat}: choice "${label}" market_greeting/market_farewell only reach the black market (market_sinister)`);
+        if ([ch.market_greeting, ch.market_farewell].some(t => t != null && (typeof t !== 'string' || !t.trim()))) err(`${cat}: choice "${label}" market_greeting/market_farewell must be a line of text`);
       }
     }
   }

@@ -784,7 +784,7 @@
     anomaly:                { label: 'ANOMALY',                mood: 'The instruments disagree with each other. None of them with reality.', verbs: ['scan', 'forage_food', 'repair', 'rest', 'fab'] },
     planet_orbit_habitable: { label: 'PLANET ORBIT · HABITABLE', mood: 'Green and blue and trying. A world that knows how to grow things.', verbs: ['forage_food', 'trade', 'wait_for_trader', 'scan', 'repair', 'rest', 'fab'] },
     planet_orbit_alien:     { label: 'PLANET ORBIT · ALIEN',   mood: 'Whatever evolved here did so without consulting Earth precedent.',   verbs: ['forage_food', 'trade', 'wait_for_trader', 'scan', 'repair', 'rest', 'fab'] },
-    station_approach:       { label: 'STATION APPROACH',       mood: 'Lights and traffic. Civilization, give or take.',                     verbs: ['trade', 'medbay', 'drydock', 'fab_service', 'repair', 'rest', 'fab'] },
+    station_approach:       { label: 'STATION APPROACH',       mood: 'Lights and traffic. Civilization, give or take.',                     verbs: ['trade', 'back_room', 'medbay', 'drydock', 'fab_service', 'repair', 'rest', 'fab'] },
   };
   const FORAGE_LABEL_BY_REGION = { planet_orbit_habitable: 'GATHER', planet_orbit_alien: 'FORAGE', asteroid_field: 'HUNT', debris_field: 'SCAVENGE', derelict: 'SCAVENGE', anomaly: 'FORAGE' };
   // Time labels say what the engine really charges: whole days (the
@@ -798,6 +798,8 @@
                     sub: (region) => region === 'planet_orbit_alien' ? 'Alien flora. Some of it bites back: someone aboard may be poisoned.' : 'Find something edible. Or interesting. Sometimes both.',
                     effort: 2, icon: 'forage', time: '1d', variantBy: (region) => region === 'planet_orbit_alien' ? 'risky' : null },
     trade:        { label: 'TRADE',     sub: () => atStation() ? 'Market Row is open. Haggle in person.' : 'A trader is in range. Haggle. Or pretend to.', effort: 1, icon: 'trade', time: '0-2d', requires: () => traderHere() }, // browsing is free; a deal takes a day or two
+    // The black market's back room (ruling 124): only at a station that keeps one (map.js back_room).
+    back_room:    { label: 'BACK ROOM', sub: 'No sign on the door. Off-manifest gear, and a buyer for odd cargo.', effort: 2, icon: 'trade', requires: () => { const n = STATE.byId[STATE.currentId]; return !!(n && n.node_type === 'station' && n.back_room); } },
     wait_for_trader: { label: 'WAIT FOR TRADER', sub: 'Park. Roll the dice. Days will pass. Things will hear you.', effort: 1, hint: true, icon: 'wait', time: '1-7d', hideWhen: () => traderHere() },
     scan:         { label: 'SCAN',      sub: 'Read the signals. Find what is coming.',           effort: 2, hint: true, icon: 'scan', time: '1d' },
     repair:       { label: 'REPAIR',    sub: () => 'Patch the hull: +' + Math.min(repairHullGain(), Math.ceil(resMax('hull') - STATE.resources.hull)) + ' hull for 2 metal + 1 scrap.', effort: 3, locked: repairLockReason, icon: 'repair', time: '1d', hideWhen: () => hullIntact() },
@@ -826,7 +828,7 @@
     if (!STATE.crew.length) return 'No crew aboard to rest';
     return STATE.crew.every(r => crewMoraleOf(r) >= 95) ? 'The crew is in good spirits' : null;
   }
-  const STATION_SERVICE_VERBS = new Set(['trade', 'medbay', 'drydock', 'fab_service']); // closed by a wave-off (owner ruling 2026-10-11)
+  const STATION_SERVICE_VERBS = new Set(['trade', 'back_room', 'medbay', 'drydock', 'fab_service']); // closed by a wave-off (owner ruling 2026-10-11)
   function effortPips(n) { n = Math.max(0, Math.min(5, n | 0)); return '●'.repeat(n) + '○'.repeat(5 - n); }
 
 
@@ -1149,6 +1151,12 @@
   // layered encounter rather than a bare market screen; the trader IS
   // the market). Only offered while a trader is in range (the stop's
   // presence roll, or one a WAIT brought in); stations always trade.
+  // BACK ROOM (ruling 124): the black market's own screen, straight from the
+  // Stop menu — no event, no days; the effort pips are its price of entry.
+  function handleBackRoomVerb() {
+    window.openMarket({ sinister: true, backRoom: true }, () => { renderHUD(); renderCruise(); renderStopMenu(); });
+  }
+
   function handleTradeVerb() {
     // Docked at a station, the market is the station's own Market Row
     // (a vendor in person at a stall); anywhere else a trader ship
@@ -1268,7 +1276,7 @@
 
   // REST and WAIT FOR TRADER aren't one-click handlers: they open the
   // 1–7 day picker and run as multi-day waits (below).
-  const VERB_HANDLERS = { condense: handleCondenseVerb, drydock: handleDrydockVerb, fab_service: handleFabServiceVerb, medbay: handleMedbayVerb, mine: handleMineVerb, scan: handleScanVerb, repair: handleRepairVerb, forage_food: handleForageVerb, salvage: handleSalvageVerb, fab: handleFabricatorVerb, trade: handleTradeVerb };
+  const VERB_HANDLERS = { condense: handleCondenseVerb, drydock: handleDrydockVerb, fab_service: handleFabServiceVerb, medbay: handleMedbayVerb, mine: handleMineVerb, scan: handleScanVerb, repair: handleRepairVerb, forage_food: handleForageVerb, salvage: handleSalvageVerb, fab: handleFabricatorVerb, trade: handleTradeVerb, back_room: handleBackRoomVerb };
   const WAIT_VERBS = { wait_for_trader: 1, rest: 1 };
 
   function currentRegionKey() {

@@ -270,7 +270,35 @@
     };
   }
 
-  function blackMarketVendor() {
+  // Black-market shelves (ruling 124): beside the upgrades, two gray-market
+  // goods that depend on who is selling — a door's own market_stock, or a
+  // back room's residents. Anyone else (a mixed station, the Long Dark Bar)
+  // keeps a random pair, the same all stop.
+  const GRAY_GOODS = ['bulk_o2_tank', 'hot_fuel_cell', 'gray_medkit', 'hull_foam', 'unlabeled_rations'];
+  const GRAY_SHELVES = {
+    insect: ['unlabeled_rations', 'gray_medkit'], rock: ['hull_foam', 'hot_fuel_cell'], water: ['bulk_o2_tank', 'unlabeled_rations'],
+    reptile: ['hot_fuel_cell', 'bulk_o2_tank'], robot: ['bulk_o2_tank', 'hull_foam'], unknown: ['gray_medkit', 'hot_fuel_cell'],
+  };
+  const BACK_ROOM_GREETING = {
+    insect: 'The hive does not sell. The hive has a surplus. You may relieve it of the surplus.',
+    rock: 'Old stock. Older than your ship, some of it. It keeps.',
+    water: 'Everything here was in the water once. It has mostly dried.',
+    reptile: 'Warm from the lamps. Do not ask where the lamps came from.',
+    robot: 'REFURBISHED. TESTED. TEST RESULTS WITHHELD.',
+    unknown: 'You were expected. The prices were not.',
+  };
+  function grayShelf(opts) {
+    if (Array.isArray(opts.stock)) return opts.stock;
+    const here = STATE.byId && STATE.byId[STATE.currentId];
+    if (here && GRAY_SHELVES[here.residents]) return GRAY_SHELVES[here.residents];
+    let h = 0; for (const c of String(STATE.currentId) + (STATE.artSeed || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    const a = h % GRAY_GOODS.length, b = (a + 1 + (h >>> 8) % (GRAY_GOODS.length - 1)) % GRAY_GOODS.length;
+    return [GRAY_GOODS[a], GRAY_GOODS[b]];
+  }
+  function blackMarketVendor(opts) {
+    opts = opts || {};
+    const here = STATE.byId && STATE.byId[STATE.currentId];
+    const speciesGreeting = opts.backRoom && here && BACK_ROOM_GREETING[here.residents];
     // Demo black_market ware slots (45/60/50g) refilled with real
     // loot_only ids — off-manifest gear no honest shop shelves. (Classified
     // cargo left the rack: bought here it had no courier job to pay it off.)
@@ -295,11 +323,17 @@
         desc: d.description || ''
       });
     }
+    for (const sid of grayShelf(opts)) {
+      const d = defBy(sid);
+      if (!d) continue;
+      wares.push({ id: sid, name: (d.name || sid).toUpperCase(), icon: iconOf(sid), cost: { gold: d.base_price }, desc: (d.description || '') + ' ' + (d.gameplay_effect || '') });
+    }
     return {
       name: 'BACK INVENTORY',
       sinister: true,
-      greeting: "No names. No manifest. And if anyone asks, I sell planters.",
-      farewell: "You were never here.",
+      // A door's own lines (choice market_greeting / market_farewell, ruling 124).
+      greeting: opts.greeting || speciesGreeting || "No names. No manifest. And if anyone asks, I sell planters.",
+      farewell: opts.farewell || "You were never here.",
       wares,
       // Fence mode: buys tagged curiosities only (items.json's
       // trade_good tag — the engine's stand-in for the demo's
@@ -476,7 +510,7 @@
     // A lane trader's market is its own hold (traderStock); a station's is the catalogue.
     const trader = traderEventId();
     const stock = trader ? traderStock(trader) : null;
-    const vendor = opts.sinister ? blackMarketVendor()
+    const vendor = opts.sinister ? blackMarketVendor(opts)
       : opts.vendor === 'surplus' ? surplusVendor()
       : opts.barter ? addBarterWares(stationVendor(stock))
       : stationVendor(stock);
@@ -530,7 +564,7 @@
         const log = $('market-log');
         if (log) { log.innerHTML = ''; log.classList.add('hidden'); }
         hideOverlay('overlay-market');
-        if (vendor.sinister && STATE.currentEvent && STATE.currentEvent.layers) {
+        if (vendor.sinister && !opts.backRoom && STATE.currentEvent && STATE.currentEvent.layers) {
           // Sinister close (demo): navigate back to the scenario entry with
           // the event's own speaker restored (nulling it blanked the
           // intro's and later outcomes' speaker names). npcCache keeps
@@ -557,6 +591,6 @@
 
   Object.assign(window, {
     // engine API
-    stationBuyPrice, stationBuyPriceNext, craftedPrice, craftedHeld, fenceBuyPrice, stationSellOne, openMarket,
+    stationBuyPrice, stationBuyPriceNext, craftedPrice, craftedHeld, fenceBuyPrice, stationSellOne, openMarket, grayShelf,
   });
 })();

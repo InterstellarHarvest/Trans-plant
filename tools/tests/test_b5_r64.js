@@ -54,7 +54,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
           const entry = ev.layers ? (ev.entryLayer || Object.keys(ev.layers)[0]) : null;
           if (ev.choices) ev.choices.forEach((ch, i) => out.push({ layer: null, i, via: -1, text: ch.text }));
           for (const [k, l] of Object.entries(ev.layers || {})) (l.choices || []).forEach((ch, i) => {
-            if (ch.back || ch.next || ch.triggerCombat) return;
+            if (ch.back || ch.next || ch.triggerCombat || ch.open_market) return; // a market door resolves nothing (test_black_market)
             out.push({ layer: k, i, via: k === entry ? -1 : ev.layers[entry].choices.findIndex(c => c.next === k), text: ch.text });
           });
           if (ev.leave_as) out.push({ layer: entry, i: -1, via: -1, text: ev.leave_label, leave: true });
