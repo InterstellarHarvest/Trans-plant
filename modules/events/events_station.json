@@ -816,7 +816,8 @@
             "text": "APPROACH THE ENGINEER",
             "effort": 1,
             "sub": "Quiet booth, third beer",
-            "next": "engineer"
+            "next": "engineer",
+            "hideFlag": "hired_dock_engineer"
           }
         ]
       },
@@ -904,7 +905,9 @@
         "npc": {
           "disposition": "station_crew",
           "job": "engineer",
-          "displayName": "OFF-DUTY ENGINEER"
+          "displayName": "OFF-DUTY ENGINEER",
+          "species": "human",
+          "crew_id": "dock_engineer_tal"
         },
         "pose": "listening",
         "body": "Their shift ended six hours ago. They're still on the same beer. The booth seat opposite is open. They glance at you once, then back at the beer.",
@@ -951,7 +954,9 @@
         "npc": {
           "disposition": "station_crew",
           "job": "engineer",
-          "displayName": "OFF-DUTY ENGINEER"
+          "displayName": "OFF-DUTY ENGINEER",
+          "species": "human",
+          "crew_id": "dock_engineer_tal"
         },
         "pose": "pleased",
         "body": "The engineer raises the new glass an inch in salute. The salute is sincere; the engineer is grateful. Five gold well spent — dock crews fix what they like you for.",
@@ -988,7 +993,9 @@
         "npc": {
           "disposition": "station_crew",
           "job": "engineer",
-          "displayName": "OFF-DUTY ENGINEER"
+          "displayName": "OFF-DUTY ENGINEER",
+          "species": "human",
+          "crew_id": "dock_engineer_tal"
         },
         "pose": "listening",
         "body": "They look at you for the first time, square on.",
@@ -1012,7 +1019,9 @@
         "npc": {
           "disposition": "station_crew",
           "job": "engineer",
-          "displayName": "OFF-DUTY ENGINEER"
+          "displayName": "OFF-DUTY ENGINEER",
+          "species": "human",
+          "crew_id": "dock_engineer_tal"
         },
         "pose": "listening",
         "body": "They snort once, set down the beer, and gesture vaguely at the ceiling.",
@@ -1069,7 +1078,7 @@
       "bar_hire": {
         "title": "SIGNED ON",
         "tone": "success",
-        "body": "You mention that your ship is short-handed. The engineer looks at the ceiling, at the cranes they will never be allowed to recalibrate, and then at you. They finish the beer in one go. Their kit is in a locker by the airlock, and it has been packed for some time.",
+        "body": "You mention that your ship could use an engineer. The engineer looks at the ceiling, at the cranes they will never be allowed to recalibrate, and then at you. They finish the beer in one go. Their kit is in a locker by the airlock, and it has been packed for some time.",
         "line": "Don't dock at berth seven. I mean it. Let's go.",
         "resources": {},
         "crew_join": {
@@ -3119,7 +3128,6 @@
     "scene_type": "station_interior",
     "once": true,
     "requires_item": "unidentified_bone",
-    "after_event": "event_voyage_quest_025",
     "ai_flavor": {
       "aria": "A COLLECTOR! Of our BONE! ARIA didn't know the bone was famous! ARIA is so proud of the bone!",
       "marv": "MARV notes the collector's offer will beat any trader's by a distance. He also notes she seems to know what the bone is. That information may be worth more than the money.",
@@ -3164,7 +3172,8 @@
           }
         }
       }
-    ]
+    ],
+    "unless_flag": "bone_on"
   },
   {
     "id": "event_station_028",

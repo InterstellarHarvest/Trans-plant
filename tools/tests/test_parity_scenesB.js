@@ -196,10 +196,13 @@ const settleSubject = page => page.waitForFunction(() => {
       enterEvent = (n, ev) => { entered = ev && ev.id; };
       travelTo(st.id);
       enterEvent = realEnter;
+      // She steps off where the ship berths (ruling 127): arriving is not docking.
+      const onArrival = STATE.passengers.length;
+      stationBerth(st);
       const log = (STATE.shipLog || []).map(e => e.text || '').join('\n');
-      return { pas: STATE.passengers.length, gold: STATE.goldAmount - g0, morale: crewMoraleRaw(), log: /Mira Kastel steps off at/.test(log) };
+      return { onArrival, pas: STATE.passengers.length, gold: STATE.goldAmount - g0, morale: crewMoraleRaw(), log: /Mira Kastel steps off at/.test(log) };
     });
-    ok(off.pas === 0 && off.gold === 20 && off.log, 'next station: she steps off, +20 gold reunification transfer, logged');
+    ok(off.onArrival === 1 && off.pas === 0 && off.gold === 20 && off.log, 'next station: still aboard on arrival; docked, she steps off, +20 gold reunification transfer, logged');
     ok(off.morale >= 50, 'and +4 morale (net of the leg: ' + off.morale + ')');
     await page.close();
   }

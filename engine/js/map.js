@@ -135,14 +135,19 @@ function flavorName(type) {
 
 const MIXED_FAR_SHARE = 0.4; // a far station that stays mixed
 // The black market's back room (ruling 124): a station past the human-only
-// stretch keeps one about half the time, and every run has at least one.
-// The Stop menu shows BACK ROOM there; the map does not say which.
+// stretch keeps one about half the time, and every run has at least one
+// on the route it must fly (a detour's station can be skipped; the spine's
+// cannot). The Stop menu shows BACK ROOM there; the map does not say which.
 const BACK_ROOM_SHARE = 0.5;
-function assignBackRooms(nodes, rules) {
+function assignBackRooms(nodes, lastStop, rules) {
   const open = nodes.filter(n => n.node_type === 'station' && n.connects_to && (Array.isArray(n.connects_to) ? n.connects_to.length : true)
     && speciesZone(n, rules) && speciesZone(n, rules) !== 'human');
   for (const n of open) n.back_room = Math.random() < BACK_ROOM_SHARE;
-  if (open.length && !open.some(n => n.back_room)) open[Math.floor(Math.random() * open.length)].back_room = true;
+  const spine = open.filter(n => !/^node_branch_/.test(n.id));
+  if (!spine.some(n => n.back_room)) {
+    const pick = spine.length ? spine : (open.length && lastStop) ? [lastStop] : []; // the last stop: every path passes it
+    if (pick.length) pick[Math.floor(Math.random() * pick.length)].back_room = true;
+  }
 }
 /* Who lives where (ruling 119). The route's species_zones (map_rules.json):
    human stations first, then mixed ones, then, far out, stations that belong
@@ -305,7 +310,7 @@ function generateMap(trailKey) {
   spine[spineLen - 1].connects_to = []; // arrival node — triggerArrival() fires on empty connects_to
 
   assignResidents(nodes, spine[spineLen - 2], rules);
-  assignBackRooms(nodes, rules);
+  assignBackRooms(nodes, spine[spineLen - 2], rules);
 
   STATE.trail       = trailKey;
   const mapNames = ((MOD.flavor && MOD.flavor.map_names) || {})[trailKey];

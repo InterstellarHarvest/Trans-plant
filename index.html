@@ -2796,7 +2796,7 @@ function crewNameOf(role) {
 }
 /* Newcomer sheets not delivered yet (ruling 126): a new stowaway or
    rescued identity is listed here until its spritesheet is in
-   sprites/crew_sprites/ (lint fails while a delivered sheet is still
+   sprites/crew_sprites/newcomers/ (lint fails while a delivered sheet is still
    listed). The first ten (ART_REQUESTS #29–#38) landed 2026-11-03. */
 const NO_CREW_ART = new Set([]);
 /* A newcomer's own sprite id (a stowaway or rescued identity), or null
@@ -2851,6 +2851,15 @@ function passengerNames() {
 function stowawayRiding() {
   const stow = STATE.stowaway && STATE.stowaway.identity;
   return (stow && STATE.flags.has('stowaway_passenger')) ? stow : null;
+}
+/* The welcomed stowaway is still with the ship: riding along, or holding a
+   crew role (crewIdentity, by their id). Death, desertion and the airlock
+   end it; stowaway_welcomed stays set as what happened. A follow-up that
+   talks about them as aboard waits on this. */
+function stowawayAboard() {
+  const stow = STATE.stowaway && STATE.stowaway.identity;
+  if (!stow) return false;
+  return !!stowawayRiding() || Object.values(STATE.crewIdentity || {}).some(i => i && i.id === stow.id);
 }
 /* Passengers (crew_join with no room aboard): ride to the next station,
    eat like anyone else (mouthsMult), and step off there — the rescued
@@ -3220,6 +3229,13 @@ function concernText(list) {
    authored recharges_at in crew_roster.json (all current skills author
    'station'). Runs on DOCK (station approach) or on arrival for stops
    that skip the approach. Not on a wave-off: no berth, no services. */
+/* The ship berths at a station: passengers step off (a rescued rider to
+   "the next station", a crew member who stepped down) and crew skills
+   recharge. Waved off or blown past, the riders stay aboard to the next. */
+function stationBerth(node) {
+  disembarkPassengers(node);
+  stationRecharge();
+}
 function stationRecharge() {
   ensureCrewSkillCharges();
   let restored = false;
@@ -3654,6 +3670,9 @@ function eventEligible(ev, node, triggers) {
     // Handoff) only fire while the story object is actually in cargo
     // (jettisoning it un-schedules the payoff, as it should).
     if (ev.requires_item && !STATE.items.includes(ev.requires_item)) return false;
+    // A follow-up about the welcomed stowaway ("a bunk that's theirs now")
+    // needs them still aboard.
+    if (ev.requires_flag === 'stowaway_welcomed' && !stowawayAboard()) return false;
     // Launch events are mutually exclusive: either one is the departure.
     if (/^event_launch_/.test(ev.id) && STATE.flags.has('departed')) return false;
     // …and the halfway moment happens once (ruling 90): one ungated
@@ -3744,10 +3763,26 @@ const RESCUE_PULL = 4;
 // that find them draw this much more often (Lunar runs are short; at 500
 // events a quarter of its stowaways were never found).
 const STOWAWAY_PULL = 3;
-const _bringsSomeone = new WeakMap();
+// Each event's crew_join outcomes, found once. An outcome whose own flag
+// the run already holds has brought its person aboard (The Long Dark Bar's
+// engineer: the bar stays in the pool, the hire is spent).
+const _rescueOutcomes = new WeakMap();
 function bringsSomeoneAboard(ev) {
-  if (!_bringsSomeone.has(ev)) _bringsSomeone.set(ev, JSON.stringify(ev).includes('"crew_join"'));
-  return _bringsSomeone.get(ev);
+  if (!_rescueOutcomes.has(ev)) {
+    const found = [];
+    (function walk(x) {
+      if (!x || typeof x !== 'object') return;
+      if (x.crew_join && x.crew_join.name) found.push(x);
+      for (const v of Object.values(x)) if (v && typeof v === 'object') walk(v);
+    })(ev);
+    _rescueOutcomes.set(ev, found);
+  }
+  return _rescueOutcomes.get(ev).some(o => ![].concat(o.sets_flag || []).some(f => STATE.flags.has(f)));
+}
+// Short-handed: below the crew it set out with, or a member has died and a
+// place is open (a newcomer may have filled the place first).
+function crewShortHanded() {
+  return STATE.crew.length < (STATE.startCrew || 0) || (STATE.flags.has('crew_lost') && STATE.crew.length < CREW_MAX);
 } // reaching a species' own station is the voyage's arrival: its event should usually be there
 // Minigames are the run's hands-on moments; pool 500 diluted them (1.30 → 1.02 a run).
 // An event any of whose choices launches one draws this much more often.
@@ -3789,7 +3824,7 @@ function drawWeightedEvent(candidates, triggers, baseWeights, branch) {
     if (ev.species_home) w *= HOME_PULL;
     if (ev.after_event) w *= QUEST_PULL;
     if (launchesMinigame(ev)) w *= MINIGAME_PULL;
-    if (bringsSomeoneAboard(ev)) w *= STATE.crew.length < (STATE.startCrew || 0) ? RESCUE_PULL : RESCUE_PULL_STANDING;
+    if (bringsSomeoneAboard(ev)) w *= crewShortHanded() ? RESCUE_PULL : RESCUE_PULL_STANDING;
     if (triggers.has('stowaway_aboard') && ((ev.trigger || []).includes('stowaway_aboard') || ev.stowaway_variant)) w *= STOWAWAY_PULL;
     const evTriggers = ev.trigger || ['any'];
     // Positional triggers (journey_start/journey_end) exist for
@@ -4890,16 +4925,16 @@ function arriveAtNode(node, opts) {
   // authored recharges_at in crew_roster.json (all current skills author
   // 'station'; a future 'leg' value would recharge in the leg tick above).
   if (node.node_type === 'station') {
-    disembarkPassengers(node); // a rescued passenger steps off at the next station
     // Per-crew morale (owner ruling 15): anyone warned at 0 and still at 0
     // walks off here — before the stop's event, never inside one.
     if (crewDesertions(node).length) renderHUD();
     STATE.researchReady = true; // Academic captain: a fresh Research preview each station leg
     // The chef's cookie tag lasts "one journey leg" — to the next station.
     for (const f of [...STATE.flags]) if (f.startsWith('friendly_with_pirate_')) STATE.flags.delete(f);
-    // Crew skills recharge when the ship DOCKS (owner ruling 2026-10-11,
-    // station approach): stationRecharge() runs on DOCK — or here below on
-    // the stops that skip the approach (delayed crisis, Push Engines).
+    // Crew skills recharge and passengers step off when the ship DOCKS
+    // (owner ruling 2026-10-11, station approach): stationBerth() runs on
+    // DOCK — or here below on the stops that skip the approach (a delayed
+    // crisis, no event). A wave-off or Push Engines' fly-by is no berth.
   }
 
   // Arrival node (no outgoing connections) ends the run with the
@@ -4941,10 +4976,10 @@ function arriveAtNode(node, opts) {
   if (node.node_type === 'station' && !crisis && StationVisit.available()) {
     StationVisit.arrive(node, ev);
   } else if (ev) {
-    if (node.node_type === 'station') stationRecharge();
+    if (node.node_type === 'station') stationBerth(node);
     enterEvent(node, ev);
   } else {
-    if (node.node_type === 'station') stationRecharge();
+    if (node.node_type === 'station') stationBerth(node);
     // No event matched this node/trigger combination. Just register the
     // visit and return to the hub so the player can advance again.
     STATE.visited.add(nodeId);
@@ -5038,8 +5073,10 @@ function enterEvent(node, ev, opts) {
   // stowaway_variant (event_shipboard_001) while a stowaway is hidden
   // IS the reveal. renderEncounterState() branches on revealed state,
   // so flip it here (enterEvent owns state changes; render stays pure).
+  // The variant waits for the reveal window too (its own trigger is
+  // 'any': drawn in the first fifth it plays its standard telling).
   if (STATE.stowaway && !STATE.stowaway.revealed &&
-      (ev.stowaway_variant || (ev.trigger || []).includes('stowaway_aboard'))) {
+      ((ev.stowaway_variant && activeTriggers().has('stowaway_aboard')) || (ev.trigger || []).includes('stowaway_aboard'))) {
     STATE.stowaway.revealed = true;
     STATE.stowaway.revealedByEvent = ev.id;
   }
@@ -5138,6 +5175,7 @@ function resolveLayerNpc(spec, evId, layerId) {
     quirk: '',
   };
   if (Number.isInteger(spec.variant)) ctx.variant = spec.variant; // pinned sprite folder (resolveNpc)
+  npcNewcomerFace(ctx, spec);
   STATE.npcCache[key] = ctx;
   return ctx;
 }
@@ -6618,8 +6656,17 @@ function resolveNpc(ev) {
   // — the void entity is drifter/unknown/1, never the other unknown face.
   if (Number.isInteger(ev.npc.variant)) ctx.variant = ev.npc.variant;
   if (met && met.species === species && met.artKey) ctx.artKey = met.artKey;
+  npcNewcomerFace(ctx, ev.npc);
   STATE.npcCache[npcKey] = ctx;
   return ctx;
+}
+/* npc.crew_id (ruling 126): the stranger in the scene is someone who can
+   come aboard (The Pod Garden's survivor, the bar's engineer), so they wear
+   their own crew sheet here too, not a rolled face; until the sheet is in
+   (newcomerSpriteId) the rolled face stands in. */
+function npcNewcomerFace(ctx, spec) {
+  const cid = spec && spec.crew_id ? newcomerSpriteId({ id: spec.crew_id }) : null;
+  if (cid) ctx.crewId = cid;
 }
 /* npc.recall's memory: when an outcome sets a flag some event recalls
    (npc.recall), the event NPC on screen is kept in npcCache under

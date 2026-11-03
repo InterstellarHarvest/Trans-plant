@@ -215,7 +215,12 @@
     let scorePara = (m.score_paragraphs && (m.score_paragraphs[bracket] || m.score_paragraphs.any)) || '';
     if (!punctualOk(scorePara)) scorePara = (m.late_score_paragraphs && m.late_score_paragraphs[bracket]) || '';
     const cropPara = (m.crop_paragraphs && m.crop_paragraphs[cropInfo.status]) || '';
-    const crewPara = (m.crew_paragraphs && m.crew_paragraphs[crewKeyFor(stats.crew)]) || '';
+    // No crew left but someone rides along (a welcomed stowaway, a rescue):
+    // not "alone" (ruling 126, as the failures' body_passengers).
+    const crewKey = crewKeyFor(stats.crew), riders = passengerNames();
+    const crewPara = (crewKey === 'solo' && riders.length && m.crew_paragraphs && m.crew_paragraphs.solo_passengers)
+      ? passengerText(riders)(m.crew_paragraphs.solo_passengers)
+      : (m.crew_paragraphs && m.crew_paragraphs[crewKey]) || '';
     const reportNum = 1000 + Math.floor(Math.random() * 9000);
     body = body
       .replaceAll('{score_paragraph}', scorePara)

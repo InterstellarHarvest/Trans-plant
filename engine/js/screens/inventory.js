@@ -101,11 +101,13 @@ function invCropTreatGain() {
 // `odds` of landing only `bad`, plus the backfire's own harm. The tooltip
 // says it can go wrong, never the odds.
 const GRAY_BACKFIRE = { bulk_o2_tank: 0.25, hot_fuel_cell: 0.2, gray_medkit: 0.2, hull_foam: 0.25, unlabeled_rations: 0.2 };
+// What can go wrong, as the tooltip warns it: the harm too, where there is one.
+const GRAY_WARN = { hot_fuel_cell: 'it may not all go in, and a bad one cooks off against the hull.', unlabeled_rations: 'some of it may have turned, and the crew will taste it.' };
 function grayRefill(id, k, n, bad, tag, item, full, goodLine, badLine, harm) {
   const base = invRefill(k, n, tag, item, full, goodLine);
   return {
     label: base.label,
-    tip: () => base.tip() + ' Black-market goods: it may not all go in.',
+    tip: () => base.tip() + ' Black-market goods: ' + (GRAY_WARN[id] || 'it may not all go in.'),
     can: base.can,
     use: () => {
       if (Math.random() >= GRAY_BACKFIRE[id]) return base.use();
@@ -128,7 +130,7 @@ const ITEM_USE = {
   hull_foam:      grayRefill('hull_foam', 'hull', 30, 10, 'HULL', 'can of hull foam', 'Hull is intact', g => 'Hull foam sprayed into the worst seams and set hard. +' + g + ' hull.',
                     g => 'The hull foam set in the nozzle before it reached the seam. +' + g + ' hull from what got through.'),
   unlabeled_rations: grayRefill('unlabeled_rations', 'food', 25, 5, 'FOOD', 'unlabeled ration crate', 'Food stores are full', g => 'Unlabeled ration crate opened. The bricks are fine. +' + g + ' food.',
-                    (g, h) => 'The unlabeled crate had turned. +' + g + ' food from the bricks at the top' + h + '.', () => { addCrewMorale(-3); return ', and the crew loses 3 morale'; }),
+                    (g, h) => 'The unlabeled crate had turned. +' + g + ' food from the bricks at the top' + h + '.', () => { if (!STATE.crew.length) return ''; addCrewMorale(-3); return ', and the crew loses 3 morale'; }),
   medkit: {
     label: () => 'HEAL',
     tip: () => { const r = worstHurtCrew(); return r ? 'Restores ' + PersonName(r) + ' (the worst hurt aboard) to full health.' : 'Restores the worst hurt aboard to full health.'; },
@@ -142,8 +144,10 @@ const ITEM_USE = {
     use: () => {
       const r = worstHurtCrew();
       if (Math.random() >= GRAY_BACKFIRE.gray_medkit) { setHP(r, 100); delete crewPendingOf()[r]; return 'Gray-market medkit opened. ' + PersonName(r) + ' is patched up and back on their feet.'; }
-      setHP(r, Math.min(100, hpOf(r) + Math.ceil((100 - hpOf(r)) / 2))); addCrewMorale(-3);
-      return 'The gray-market medkit\'s dose was wrong. ' + PersonName(r) + ' is half mended, and the crew loses 3 morale watching.';
+      setHP(r, Math.min(100, hpOf(r) + Math.ceil((100 - hpOf(r)) / 2)));
+      const watched = STATE.crew.length > 0; // no crew aboard, nobody's morale to lose
+      if (watched) addCrewMorale(-3);
+      return 'The gray-market medkit\'s dose was wrong. ' + PersonName(r) + ' is half mended' + (watched ? ', and the crew loses 3 morale watching.' : '.');
     },
   },
   crop_treatment: {
@@ -562,7 +566,7 @@ function invResourceStats(key) {
     tip = 'Fuel burns only in flight: ' + leg.fuel + ' per leg at ' + ordersPace().name + ' (~' + leg.exactDays.toFixed(1) + ' days). About ' + (leg.fuel > 0 ? Math.floor(level / leg.fuel) : '∞') + ' legs left.';
   } else if (key === 'food') {
     perDay = ORDERS_BASE.foodPerDay * ordersRations().foodMult * foodBurnMult() * mouthsMult();
-    tip = 'Eaten every day at ' + ordersRations().name + ' rations by ' + (STATE.crew.length + 1) + ' aboard.';
+    tip = 'Eaten every day at ' + ordersRations().name + ' rations by ' + (STATE.crew.length + 1 + passengerNames().length) + ' aboard.'; // passengers eat too (mouthsMult)
   } else if (key === 'water') {
     perDay = dailyDraw().water; // the crop's saving (botanist / purifier) included
     tip = 'Drawn every day; crew and crop share the tank.';
@@ -891,6 +895,9 @@ function invSetSort(key) {
     const msg = iu.use();
     renderHUD();
     window.pushCruiseLog('◆ ' + msg);
+    // A black-market good's backfire can do harm (ruling 124): hull or the
+    // crew's morale at 0 ends the run here, as anywhere else.
+    if (checkFailure()) { closeInventory(); return; }
     if (!STATE.items.includes(id)) _invSelected = null;
     renderInventory();
     if (document.getElementById('screen-cruise').classList.contains('active')) window.renderCruise();

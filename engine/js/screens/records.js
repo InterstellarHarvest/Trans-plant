@@ -157,7 +157,7 @@
     return `<div class="rec-best"><span class="rec-dest">${DEST_LABEL[trail]}</span>` +
       `<span class="rec-score">${e.score}</span>` +
       `<span class="rec-what"><span class="rec-tone" style="${toneStyle(e)}">${escapeHTML(e.title)}</span>` +
-      `<span class="rec-sub">${escapeHTML(e.ship)} · ${escapeHTML(cropName(e.crop))} · ${escapeHTML(captainName(e.captain))} · day ${e.days} of ${e.baseDays} · crew ${e.crew}/${e.startCrew}</span></span></div>`;
+      `<span class="rec-sub">${escapeHTML(e.ship)} · ${escapeHTML(cropName(e.crop))} · ${escapeHTML(captainName(e.captain))} · day ${e.days} of ${e.baseDays} · ${e.crew > e.startCrew ? `crew ${e.crew} (launched with ${e.startCrew})` : `crew ${e.crew}/${e.startCrew}`}</span></span></div>`;
   }
   function runRow(e) {
     return `<div class="rec-run">` +

@@ -671,6 +671,8 @@ function trailCoverage() {
     if (/!/.test(p.epilogue || '')) err(`flag_payoffs.${f}: epilogue uses "!"`);
   }
   for (const f of Object.keys(pay)) if (!sets.has(f)) err(`flag_payoffs.${f}: no content sets this flag`);
+  // "aboard": the callback waits on someone still with the ship (cruise.js maybePushCallback).
+  for (const [f, p] of Object.entries(pay)) if ('aboard' in p && p.aboard !== 'stowaway') err(`flag_payoffs.${f}: aboard "${p.aboard}" is not one the engine knows (stowaway)`);
 }
 
 // ── Shared helpers for the 2026-10-11 open-loop checks ─────────────
@@ -1329,7 +1331,7 @@ const hardChoiceCost = (() => {
 const CLAIMS_ON_TIME = /\bahead of schedule\b|\bon time\b|\bon schedule\b|\bdays? early\b/i; // endings.js
 {
   const brackets = new Set(Object.keys((registry.ending_score || {}).values || {}));
-  const CROP_KEYS = new Set(['thriving', 'sick', 'dead']), CREW_KEYS = new Set(['full', 'partial', 'solo']);
+  const CROP_KEYS = new Set(['thriving', 'sick', 'dead']), CREW_KEYS = new Set(['full', 'partial', 'solo', 'solo_passengers']);
   for (const e of readJSON('modules/endings/endings.json')) {
     if (e._section || e.active === false) continue;
     const at = `endings.json ${e.id}`, body = e.body_template || '';
@@ -1338,7 +1340,9 @@ const CLAIMS_ON_TIME = /\bahead of schedule\b|\bon time\b|\bon schedule\b|\bdays
       for (const k of Object.keys(e.crop_paragraphs)) if (!CROP_KEYS.has(k)) err(`${at}: crop_paragraphs key "${k}" is not thriving/sick/dead`);
       if ('dead' in e.crop_paragraphs && e.ending_score !== 'hollow' && e.ending_score !== 'any') warn(`${at}: crop_paragraphs.dead on a "${e.ending_score}" ending is unreachable — a dead crop forces the hollow bracket`);
     }
-    for (const k of Object.keys(e.crew_paragraphs || {})) if (!CREW_KEYS.has(k)) err(`${at}: crew_paragraphs key "${k}" is not full/partial/solo`);
+    for (const k of Object.keys(e.crew_paragraphs || {})) if (!CREW_KEYS.has(k)) err(`${at}: crew_paragraphs key "${k}" is not full/partial/solo/solo_passengers`);
+    // Ruling 126: a captain with no crew left but a rider aboard is not alone.
+    if (e.crew_paragraphs && e.crew_paragraphs.solo && !/\{passengers\}/.test(e.crew_paragraphs.solo_passengers || '')) err(`${at}: crew_paragraphs.solo needs a solo_passengers that names {passengers} (no crew left, a rider aboard)`);
     for (const k of Object.keys(e.score_paragraphs || {})) if (!brackets.has(k)) err(`${at}: score_paragraphs key "${k}" is not a registered ending_score bracket`);
     // A late arrival keeps its bracket (ruling 94) and endings.js leaves a
     // paragraph claiming punctuality out of it (CLAIMS_ON_TIME, same

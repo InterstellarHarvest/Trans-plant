@@ -154,7 +154,7 @@ const hud = page => page.evaluate(() => document.getElementById('combat-num-foe'
     ok(await page.evaluate(() => crewNameOf('diplomat') === 'Wembly Voss'), 'identity survives save/load');
     await page.evaluate(() => { killCrew('diplomat'); });
     const log = await page.evaluate(() => STATE.shipLog.filter(e => e && e.type === 'death').slice(-1)[0]);
-    ok(/Wembly/.test(log.text) && !log.crewId, 'epitaph names Wembly, no Hargrove portrait');
+    ok(/Wembly/.test(log.text) && /^stowaway_/.test(log.crewId || ''), 'epitaph names Wembly, with their own portrait, not Hargrove\'s (ruling 126)');
     ok(await page.evaluate(() => !STATE.crewIdentity.diplomat), 'identity cleared on death');
     ok(!page._errs.length, 'no page errors' + (page._errs.length ? ': ' + page._errs.join(' | ') : ''));
     await page.close();

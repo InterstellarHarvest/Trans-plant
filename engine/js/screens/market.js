@@ -272,8 +272,8 @@
 
   // Black-market shelves (ruling 124): beside the upgrades, two gray-market
   // goods that depend on who is selling — a door's own market_stock, or a
-  // back room's residents. Anyone else (a mixed station, the Long Dark Bar)
-  // keeps a random pair, the same all stop.
+  // back room's residents. Anyone else (a mixed station's back room, the
+  // Long Dark Bar wherever it is) keeps a random pair, the same all stop.
   const GRAY_GOODS = ['bulk_o2_tank', 'hot_fuel_cell', 'gray_medkit', 'hull_foam', 'unlabeled_rations'];
   const GRAY_SHELVES = {
     insect: ['unlabeled_rations', 'gray_medkit'], rock: ['hull_foam', 'hot_fuel_cell'], water: ['bulk_o2_tank', 'unlabeled_rations'],
@@ -290,7 +290,7 @@
   function grayShelf(opts) {
     if (Array.isArray(opts.stock)) return opts.stock;
     const here = STATE.byId && STATE.byId[STATE.currentId];
-    if (here && GRAY_SHELVES[here.residents]) return GRAY_SHELVES[here.residents];
+    if (opts.backRoom && here && GRAY_SHELVES[here.residents]) return GRAY_SHELVES[here.residents];
     let h = 0; for (const c of String(STATE.currentId) + (STATE.artSeed || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0;
     const a = h % GRAY_GOODS.length, b = (a + 1 + (h >>> 8) % (GRAY_GOODS.length - 1)) % GRAY_GOODS.length;
     return [GRAY_GOODS[a], GRAY_GOODS[b]];
@@ -326,8 +326,13 @@
     for (const sid of grayShelf(opts)) {
       const d = defBy(sid);
       if (!d) continue;
-      wares.push({ id: sid, name: (d.name || sid).toUpperCase(), icon: iconOf(sid), cost: { gold: d.base_price }, desc: (d.description || '') + ' ' + (d.gameplay_effect || '') });
+      // Consumables: buy as many as you can carry, as at Market Row.
+      wares.push({ id: sid, name: (d.name || sid).toUpperCase(), icon: iconOf(sid), cost: { gold: d.base_price }, stackable: true, desc: (d.description || '') + ' ' + (d.gameplay_effect || '') });
     }
+    // CHIP's and the Merchant's standing discounts apply at every market
+    // (ruling 110), this one too.
+    const standing = stationPriceMult();
+    if (standing < 1) for (const w of wares) w.cost.gold = Math.max(1, Math.round(w.cost.gold * standing));
     return {
       name: 'BACK INVENTORY',
       sinister: true,
@@ -519,6 +524,10 @@
     if (marketEl) marketEl.classList.toggle('sinister', !!vendor.sinister);
     const closeBtn = $('market-close-btn');
     if (closeBtn) closeBtn.textContent = vendor.sinister ? 'LEAVE.' : 'STEP BACK';
+    // The back room opens over the cruise hub, not an encounter frame: the
+    // hub dims behind it as behind any cruise modal, so its log doesn't read
+    // through the greeting column (an encounter's market keeps its scene lit).
+    $('overlay-market').classList.toggle('dim-behind', !!opts.backRoom);
     showOverlay('overlay-market');
 
     MarketModal.mount({

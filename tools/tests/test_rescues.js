@@ -72,7 +72,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     const der = STATE.nodes.find(n => n.node_type === 'derelict' && n.position > 3) || STATE.nodes.find(n => n.node_type === 'derelict');
     const rescue = ev => bringsSomeoneAboard(ev);
     const atDer = lost => () => { STATE.seenEventIds = new Set(); STATE.hardStreak = 0; STATE.pityRelief = 0; STATE.currentId = der.id; STATE.crew = lost ? ['pilot'] : ['engineer', 'pilot']; };
-    const full = der ? draws(3000, atDer(false), rescue) : null, short = der ? draws(3000, atDer(true), rescue) : null;
+    const full = der ? draws(9000, atDer(false), rescue) : null, short = der ? draws(9000, atDer(true), rescue) : null;
     // A captain who set out alone gets no pull.
     base('mars', []);
     const solo = der ? draws(6000, () => { STATE.seenEventIds = new Set(); STATE.hardStreak = 0; STATE.pityRelief = 0; STATE.currentId = der.id; }, rescue) : null;

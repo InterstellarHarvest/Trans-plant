@@ -1880,7 +1880,8 @@
     const leg = STATE.visited ? STATE.visited.size : 0;
     for (const f of STATE.flags) if (pay[f] && !(f in STATE.flagFirstSeen)) STATE.flagFirstSeen[f] = leg;
     const ready = [...STATE.flags].filter(f => pay[f] && !STATE.calledBack.includes(f) && leg - STATE.flagFirstSeen[f] >= 2
-      && pay[f].callback && pay[f].callback[STATE.activeAI]);
+      && pay[f].callback && pay[f].callback[STATE.activeAI]
+      && !(pay[f].aboard === 'stowaway' && !stowawayAboard())); // "aboard": the line talks about them as still with the ship
     if (!ready.length) return false;
     // Pacing (measured over 36 real runs): 35% per new stop, at least two
     // legs apart, and guaranteed after four quiet legs while a memory is

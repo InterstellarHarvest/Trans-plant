@@ -42,16 +42,16 @@ const CREW_ATLAS = {
   // crew_join). Same sheet layout as the roster crew. Until a sheet is
   // delivered its id sits in index.html NO_CREW_ART and the game shows
   // the emoji silhouette.
-  stowaway_inspector:    { sheet:'sprites/crew_sprites/spritesheet_stowaway_inspector.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
-  stowaway_auditor:      { sheet:'sprites/crew_sprites/spritesheet_stowaway_auditor.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
-  stowaway_kid:          { sheet:'sprites/crew_sprites/spritesheet_stowaway_kid.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
-  stowaway_gardener:     { sheet:'sprites/crew_sprites/spritesheet_stowaway_gardener.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
-  stowaway_wrongship:    { sheet:'sprites/crew_sprites/spritesheet_stowaway_wrongship.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
-  stowaway_chef:         { sheet:'sprites/crew_sprites/spritesheet_stowaway_chef.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
-  stowaway_cartographer: { sheet:'sprites/crew_sprites/spritesheet_stowaway_cartographer.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
-  survivor_mira:         { sheet:'sprites/crew_sprites/spritesheet_survivor_mira.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
-  survivor_hester:       { sheet:'sprites/crew_sprites/spritesheet_survivor_hester.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
-  dock_engineer_tal:     { sheet:'sprites/crew_sprites/spritesheet_dock_engineer_tal.png', icon:[295,195,48,48], portrait:[295,1,80,192] }
+  stowaway_inspector:    { sheet:'sprites/crew_sprites/newcomers/spritesheet_stowaway_inspector.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
+  stowaway_auditor:      { sheet:'sprites/crew_sprites/newcomers/spritesheet_stowaway_auditor.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
+  stowaway_kid:          { sheet:'sprites/crew_sprites/newcomers/spritesheet_stowaway_kid.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
+  stowaway_gardener:     { sheet:'sprites/crew_sprites/newcomers/spritesheet_stowaway_gardener.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
+  stowaway_wrongship:    { sheet:'sprites/crew_sprites/newcomers/spritesheet_stowaway_wrongship.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
+  stowaway_chef:         { sheet:'sprites/crew_sprites/newcomers/spritesheet_stowaway_chef.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
+  stowaway_cartographer: { sheet:'sprites/crew_sprites/newcomers/spritesheet_stowaway_cartographer.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
+  survivor_mira:         { sheet:'sprites/crew_sprites/newcomers/spritesheet_survivor_mira.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
+  survivor_hester:       { sheet:'sprites/crew_sprites/newcomers/spritesheet_survivor_hester.png', icon:[295,195,48,48], portrait:[295,1,80,192] },
+  dock_engineer_tal:     { sheet:'sprites/crew_sprites/newcomers/spritesheet_dock_engineer_tal.png', icon:[295,195,48,48], portrait:[295,1,80,192] }
 };
 
 // Build a CSS background string for a loose image file (used by
@@ -1057,7 +1057,8 @@ const PauseMenu = (() => {
     const crop = !cg ? 'no readout' : cg.health <= 0 ? 'lost' : 'health ' + Math.round(cg.health) + '%' + (cg.pest ? ', pests' : '');
     const nLog = (S.shipLog || []).length;
     return '[ SHIP STATUS ]\n' +
-      '> CREW         · ' + (n ? n + ' aboard' : 'captain alone') + (lost ? ', losses logged' : ', all hands accounted for') + '\n' +
+      // a rider with no crew place (index.html passengerNames, ruling 126) means not alone
+      '> CREW         · ' + (n ? n + ' aboard' : (typeof passengerNames === 'function' && passengerNames().length) ? 'no crew, passengers aboard' : 'captain alone') + (lost ? ', losses logged' : ', all hands accounted for') + '\n' +
       '> CROP         · ' + escapeHTML(String(S.crop).replace(/_/g, ' ')) + ', ' + crop + '\n' +
       '> TRAIL        · day ' + Math.round(S.daysElapsed || 0) + (S.baseDays ? ' of ~' + S.baseDays : '') + '\n' +
       '> SHIP\'S LOG   · ' + nLog + (nLog === 1 ? ' entry' : ' entries') + '\n\n';

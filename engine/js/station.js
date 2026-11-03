@@ -210,7 +210,7 @@
         return false; // its next: 'hail' carries on
       case 'dock': {
         v.docked = true; v.captainHere = true;
-        stationRecharge();
+        stationBerth(here()); // passengers step off, skills recharge
         if (v.kind === 'docking' && v.roomEv && EVENTS[v.roomEv] && !v.roomsDone.includes(v.roomEv)) {
           v.phase = 'docking';
           enterEvent(here(), EVENTS[v.roomEv]);

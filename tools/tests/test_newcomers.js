@@ -92,6 +92,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     if (waiting) NO_CREW_ART.add('stowaway_chef');
     const n = STATE.nodes.find(x => x.node_type !== 'station' && x.node_type !== 'fork' && x !== STATE.nodes[0]);
     STATE.currentId = n.id;
+    // The reveal window is open: past the first fifth of the legs (activeTriggers).
+    STATE.visited = new Set(STATE.nodes.slice(0, Math.ceil(0.45 * pathLegs())).map(x => x.id));
     enterEvent(n, EVENTS.event_shipboard_001); finishAllTyping();
     return { revealed: STATE.stowaway.revealed, by: STATE.stowaway.revealedByEvent };
   }, waiting);

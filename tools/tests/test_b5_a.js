@@ -128,6 +128,7 @@ async function defeat(page, setup, rnd, before) {
     const page = await boot({ crew: ['pilot', 'engineer'], ai: 'aria' });
     await page.evaluate(() => {
       STATE.stowaway = { identity: MOD.flavor.stowaway_identities.find(x => x.id === 'stowaway_kid'), revealed: false };
+      STATE.visited = new Set(STATE.nodes.slice(0, Math.ceil(0.45 * pathLegs())).map(n => n.id)); // the reveal window is open (ruling 127)
       enterEvent(STATE.byId[STATE.currentId], EVENTS.event_shipboard_001);
     });
     await page.waitForTimeout(300);
@@ -145,6 +146,7 @@ async function defeat(page, setup, rnd, before) {
     const page = await boot({ crew: ['pilot', 'engineer'] });
     await page.evaluate(() => {
       STATE.stowaway = { identity: MOD.flavor.stowaway_identities.find(x => x.id === 'stowaway_chef'), revealed: false };
+      STATE.visited = new Set(STATE.nodes.slice(0, Math.ceil(0.45 * pathLegs())).map(n => n.id)); // the reveal window is open (ruling 127)
       enterEvent(STATE.byId[STATE.currentId], EVENTS.event_shipboard_001);
     });
     await page.waitForTimeout(300);
