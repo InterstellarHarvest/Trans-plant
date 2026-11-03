@@ -107,6 +107,36 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   ok(r1.revealed && r1.by === 'event_shipboard_001' && p1.shown && /BASTIAN OKE/.test(p1.name) && /spritesheet_stowaway_chef/.test(p1.html), `the reveal shows the stowaway's own face (plate "${p1.name}")`);
   ok(r0.revealed && !p0.shown, 'a stowaway still waiting on art: the reveal stays as written, no one in the frame');
 
+  console.log('— the growbay (stills for now)');
+  await setup([]);
+  const gb = await page.evaluate(async () => {
+    applyOutcomeEffects(EVENTS.event_derelict_010.choices.find(c => c.text === 'Knock on the last pod').outcome);
+    applyOutcomeEffects(EVENTS.event_station_009.outcomes.bar_hire);
+    renderCruise(); openGrowbay();
+    await new Promise(r => setTimeout(r, 300));
+    const sp = document.getElementById('crew-sprite');
+    const out = { bg: sp.style.backgroundImage, pos: sp.style.backgroundPosition, w: sp.style.width, h: sp.style.height, empty: sp.classList.contains('empty') };
+    // No animation plays for a still: the frame holds after a while.
+    await new Promise(r => setTimeout(r, 2500));
+    out.posLater = sp.style.backgroundPosition;
+    document.getElementById('tender-slot').click();
+    out.rows = [...document.querySelectorAll('#tender-picker .gb-picker-row')].map(r => ({ name: r.querySelector('.gb-picker-name').textContent, css: r.querySelector('.gb-tender-portrait').getAttribute('style') || '', emoji: r.querySelector('.gb-tender-portrait').textContent }));
+    document.getElementById('tender-slot').classList.remove('open');
+    // Waiting on art: the bay stands empty and the picker shows the emoji.
+    NO_CREW_ART.add('survivor_hester');
+    closeGrowbay(); openGrowbay();
+    await new Promise(r => setTimeout(r, 200));
+    out.waitingEmpty = document.getElementById('crew-sprite').classList.contains('empty');
+    NO_CREW_ART.delete('survivor_hester');
+    closeGrowbay();
+    return out;
+  });
+  ok(!gb.empty && /spritesheet_survivor_hester/.test(gb.bg) && gb.pos === '-295px -1px' && gb.w === '80px' && gb.h === '192px', `the botanist rescue tends in the bay as her still portrait (${gb.pos}, ${gb.w}×${gb.h})`);
+  ok(gb.posLater === gb.pos, 'a still plays no animation');
+  const hRow = gb.rows.find(r => r.name === 'Hester Quill'), tRow = gb.rows.find(r => r.name === 'Tal Okafor');
+  ok(hRow && /spritesheet_survivor_hester/.test(hRow.css) && tRow && /spritesheet_dock_engineer_tal/.test(tRow.css), 'the tender picker shows their own icons');
+  ok(gb.waitingEmpty, 'a newcomer still waiting on art: the bay keeps its old empty look');
+
   console.log('— the gardener’s name');
   const names = await page.evaluate(() => {
     const ch = EVENTS.event_derelict_010.choices.find(c => c.text === 'Knock on the last pod');

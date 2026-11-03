@@ -151,8 +151,9 @@
     'none':              { name: 'Nobody',      role: 'Untended',       crewId: null,       growth: 0,  yield: 0, emoji: '—' }
   };
   // A tender entry as shown: the crew member's live name (crewNameOf); a
-  // joined stowaway holding the role keeps their own and has no sprite
-  // (index.html crewIdentityOf).
+  // joined stowaway or rescue holding the role keeps their own name and
+  // shows their own still (index.html newcomerSpriteId; ruling 126), or
+  // the emoji while their art isn't in.
   function tenderOf(id) {
     // A tender who died or left (or a captain-botanist slot without a
     // botanist captain) tends nothing.
@@ -166,7 +167,8 @@
     const m = who ? woundedMult(who) : 1;
     if (m < 1) c = Object.assign({}, c, { growth: c.growth * m, yield: c.yield * m, wounded: true });
     if (!role) return c;
-    return Object.assign({}, c, { name: crewNameOf(role) }, crewIdentityOf(role) ? { crewId: null, emoji: '🧑' } : null);
+    const idn = crewIdentityOf(role);
+    return Object.assign({}, c, { name: crewNameOf(role) }, idn ? { crewId: newcomerSpriteId(idn), newcomer: true, emoji: '🧑' } : null);
   }
   // Owner ruling 41: a botanist tends by default — a crew botanist (Osei
   // or whoever holds the role), else a botanist captain. The player can
@@ -188,6 +190,9 @@
   function tenderSheetKey(id) {
     const t = tenderOf(id);
     if (t === CREW.none || !t.crewId) return null;
+    // A newcomer has no growbay sheet: their crew portrait stands still in
+    // the bay (ruling 126, stills for now).
+    if (t.newcomer) return 'still:' + t.crewId;
     return CREW_SHEET_KEY[id] || null;
   }
   function growbayTenderOf() { return STATE.cropGrowth ? tenderOf(STATE.cropGrowth.tenderId) : CREW.none; }
@@ -738,6 +743,13 @@
 
   function sheetFor(crewId) {
     const key = tenderSheetKey(crewId);
+    if (key && key.startsWith('still:')) {
+      // The newcomer's full-body portrait from their crew sheet (shared.js
+      // CREW_ATLAS), one frame: they tend without moving.
+      const a = CREW_ATLAS[key.slice(6)];
+      const [x, y, w, h] = a.portrait;
+      return { sheet: a.sheet, w, h, frames: Array(9).fill([x, y]), idle: [x, y], still: true };
+    }
     return key ? CREW_SHEETS[key] : null;
   }
   // Who is really standing in the bay — the animation restarts when this
@@ -786,6 +798,7 @@
     stopCrewAnimation();
     setCrewFrame(crewId, 'idle');
     if (!sheetFor(crewId)) return;  // no sheet → stay empty
+    if (sheetFor(crewId).still) return; // a still (a newcomer's portrait): nothing to play
     if (GSTATE.health <= 0) return; // a dead crop: the tender stands idle — nothing to tend
     const key = tenderKey();
     const loop = () => {
