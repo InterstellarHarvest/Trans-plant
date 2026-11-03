@@ -46,7 +46,8 @@ const TRAILS = ['lunar', 'mars', 'interstellar'];
           return node;
         },
         mult(trail, k) { const m = MOD.map_rules.trails[trail].event_supply_cost_mult; return (m && m[k]) || 1; },
-        scaled(trail, k, v) { return -Math.round(-v * this.mult(trail, k)); },
+        // …and no one outcome past event_supply_cost_cap (ruling 121).
+        scaled(trail, k, v) { return -Math.min(Math.round(-v * this.mult(trail, k)), MOD.map_rules.event_supply_cost_cap || Infinity); },
         wait: ms => new Promise(res => setTimeout(res, ms)),
         btnOf(c) { const i = (STATE._shownChoices || []).indexOf(c); return [...document.querySelectorAll('#enc-choices .enc-choice:not(.leave):not(.advance):not(.locked)')][i]; },
       };
