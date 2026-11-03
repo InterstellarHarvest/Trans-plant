@@ -600,6 +600,18 @@
     const members = [];
     if (STATE.captain) members.push({ key: 'captain', label: 'CAPTAIN', role: capWord(STATE.captain), crewId: 'captain' });
     for (const role of STATE.crew) members.push({ key: role, label: crewNameOf(role).toUpperCase(), role: capWord(role), crewId: crewSpriteIdOf(role) });
+    // Passengers (ruling 126): rescued riders to the next station, a crew
+    // member who stepped down, a welcomed stowaway with no crew place.
+    // They eat like crew (index.html mouthsMult), so the player sees them.
+    const riders = passengerNames();
+    const pass = $('cruise-passengers');
+    if (pass) {
+      const stow = stowawayRiding();
+      pass.innerHTML = riders.length
+        ? '<span class="pass-label">' + (riders.length === 1 ? 'PASSENGER' : 'PASSENGERS') + '</span>' + riders.map(escapeHTML).join(', ')
+        : '';
+      pass.title = riders.map(n => n + (stow && stow.name === n ? ' rides the rest of the way.' : ' steps off at the next station.')).join(' ') + (riders.length ? ' Passengers eat like crew.' : '');
+    }
     // Always three slots — captain + the two crew places (the cap,
     // crewJoinRole). An empty place keeps its card-sized spot, so the crop
     // card and everything right of it never shift (owner).

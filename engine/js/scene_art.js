@@ -655,9 +655,12 @@
   ];
   const _crewSheetCache = new Map();
   async function pickCrewSheet(crewId) {
-    if (!CREW_SHEET_IDS.includes(crewId)) return null;
+    // The roster crew, and a newcomer whose sheet is in (shared.js
+    // CREW_ATLAS, index.html newcomerSpriteId; ruling 126).
+    const atlas = CREW_ATLAS[crewId];
+    if (!CREW_SHEET_IDS.includes(crewId) && !(atlas && atlas.sheet)) return null;
     if (_crewSheetCache.has(crewId)) return _crewSheetCache.get(crewId);
-    const url = 'sprites/crew_sprites/spritesheet_' + crewId + '.png';
+    const url = (atlas && atlas.sheet) || 'sprites/crew_sprites/spritesheet_' + crewId + '.png';
     const desc = await new Promise(res => {
       const img = new Image();
       img.onload = () => res({ url, idleIdx: 0, talkIdxs: [1, 2, 3, 4, 5, 6, 7, 8], crew: true,

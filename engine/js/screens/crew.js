@@ -441,10 +441,11 @@
     }
     const r = rosterOf(key) || {};
     // A joined stowaway holds the role (skills, passive) but not the
-    // roster member's identity — their own name/story, emoji portrait.
+    // roster member's identity — their own name/story, and their own
+    // sheet once delivered (else the emoji portrait; ruling 126).
     const idn = crewIdentityOf(key);
     return {
-      key, isCaptain: false, crewId: idn ? null : CREWID_OF_ROLE[key], emoji: CD_ROLE_EMOJI[key] || '👤',
+      key, isCaptain: false, crewId: crewSpriteIdOf(key), emoji: CD_ROLE_EMOJI[key] || '👤',
       name: idn ? idn.name : (r.name || key), role: key.charAt(0).toUpperCase() + key.slice(1), bgTag: idn ? (idn.origin === 'rescued' ? 'Rescued' : 'Stowaway') : 'Crew', // a rescued survivor isn't a stowaway
       bio: idn ? idn.story : (r.bio || ''), hint: idn ? '' : hintLine(key),
       passiveName: PASSIVE_NAME[key] || 'Passive',

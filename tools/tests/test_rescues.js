@@ -50,8 +50,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     returnToHub();
     return out;
   });
-  ok(doors.podJoin.crew.includes('botanist') && doors.podJoin.id && doors.podJoin.id.name === 'Ines Varga' && /botanist/.test(doors.podJoin.note || ''), `Pod Garden, a slot open: Ines Varga joins as botanist (${doors.podJoin.note})`);
-  ok(!doors.podRide.crew.includes('botanist') && doors.podRide.passengers.includes('Ines Varga'), `Pod Garden, a full crew: she rides as a passenger (${doors.podRide.note})`);
+  ok(doors.podJoin.crew.includes('botanist') && doors.podJoin.id && doors.podJoin.id.name === 'Hester Quill' && /botanist/.test(doors.podJoin.note || ''), `Pod Garden, a slot open: Hester Quill joins as botanist (${doors.podJoin.note})`);
+  ok(!doors.podRide.crew.includes('botanist') && doors.podRide.passengers.includes('Hester Quill'), `Pod Garden, a full crew: she rides as a passenger (${doors.podRide.note})`);
   ok(doors.podPaid === 15, `and her passage pays 15 gold at the next station (${doors.podPaid})`);
   ok(doors.barJoin.crew.includes('engineer') && doors.barJoin.name === 'Tal Okafor' && doors.barJoin.flag, 'the bar: Tal Okafor signs on as engineer');
   ok(doors.barHidden && doors.barShown, 'once hired, the offer is gone; a fresh run offers it again');

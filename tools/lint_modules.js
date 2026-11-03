@@ -1661,6 +1661,40 @@ const CLAIMS_ON_TIME = /\bahead of schedule\b|\bon time\b|\bon schedule\b|\bdays
   }
 }
 
+// ── Newcomer portraits (ruling 126) ─────────────────────────────────
+// Every stowaway identity and every crew_join identity has a CREW_ATLAS
+// entry (resources/shared.js) at the roster's sheet size. A sheet not
+// delivered yet is listed in index.html NO_CREW_ART (the game shows the
+// emoji silhouette); one that has landed must come off that list.
+{
+  const shared = fs.readFileSync(path.join(ROOT, 'resources/shared.js'), 'utf8');
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const atlas = new Map();
+  for (const m of shared.matchAll(/^  (\w+):\s*\{ sheet:'([^']+)'/gm)) atlas.set(m[1], m[2]);
+  const na = html.match(/const NO_CREW_ART = new Set\(\[([\s\S]*?)\]\);/);
+  const noArt = new Set(na ? [...na[1].matchAll(/'(\w+)'/g)].map(m => m[1]) : []);
+  if (!na) err('index.html: NO_CREW_ART not found (lint parses it for newcomer portraits)');
+  const newcomers = new Map(); // id -> where
+  for (const s of (readJSON('modules/flavor/flavor_pools.json').stowaway_identities || [])) if (s.id) newcomers.set(s.id, 'flavor_pools stowaway_identities');
+  for (const { event: ev } of eventsById.values()) {
+    const str = JSON.stringify(ev);
+    for (const m of str.matchAll(/"crew_join":\{"id":"(\w+)"/g)) newcomers.set(m[1], ev.id + ' crew_join');
+  }
+  for (const [id, where] of newcomers) if (!atlas.has(id)) err(`${where} ${id}: no CREW_ATLAS entry in resources/shared.js (add one, and list it in NO_CREW_ART until its sheet lands)`);
+  for (const id of noArt) {
+    if (!atlas.has(id)) err(`index.html NO_CREW_ART ${id}: not a CREW_ATLAS id`);
+    else if (fs.existsSync(path.join(ROOT, 'resources', atlas.get(id)))) err(`index.html NO_CREW_ART ${id}: ${atlas.get(id)} is delivered — remove it from NO_CREW_ART`);
+  }
+  for (const [id, sheet] of atlas) {
+    if (noArt.has(id)) continue;
+    const f = path.join(ROOT, 'resources', sheet);
+    if (!fs.existsSync(f)) { err(`resources/shared.js CREW_ATLAS ${id}: ${sheet} is missing (list it in NO_CREW_ART until it lands)`); continue; }
+    const b = Buffer.alloc(24), fd = fs.openSync(f, 'r'); fs.readSync(fd, b, 0, 24, 0); fs.closeSync(fd);
+    const w = b.readUInt32BE(16), h = b.readUInt32BE(20);
+    if (w !== 376 || h !== 294) err(`${sheet}: ${w}×${h}, crew sheets are 376×294 (resources/ART_REQUESTS.md)`);
+  }
+}
+
 // ── Scene backdrops (added 2026-10-11, owner ruling "unused backdrops") ──
 // Every backdrop path an event names — layer bg / bgBase / bgSprite
 // (demo names, 'inherit' allowed) and outcome scene_bg / scene_bg_base /

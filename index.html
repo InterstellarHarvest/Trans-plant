@@ -795,6 +795,8 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
             </div>
             <div id="wait-flash"><div class="wait-flash-label"></div></div>
             <div id="ship-silhouette"></div>
+            <!-- Who rides along without a crew place (ruling 126; cruise.js). -->
+            <div id="cruise-passengers"></div>
             <!-- The AI's speech bubble at a stop (ruling 91; cruise.js syncAiBubble). -->
             <div id="ai-bubble" role="status" aria-live="polite">
               <div class="ai-bubble-avatar"></div>
@@ -2792,10 +2794,22 @@ function crewNameOf(role) {
   if (idn) return idn.name;
   return ((MOD.crew_roster || []).find(c => c.role === role) || {}).name || role;
 }
+/* Newcomer sheets not delivered yet (ruling 126): a new stowaway or
+   rescued identity is listed here until its spritesheet is in
+   sprites/crew_sprites/ (lint fails while a delivered sheet is still
+   listed). The first ten (ART_REQUESTS #29–#38) landed 2026-11-03. */
+const NO_CREW_ART = new Set([]);
+/* A newcomer's own sprite id (a stowaway or rescued identity), or null
+   while their sheet isn't delivered (shared.js CREW_ATLAS). */
+function newcomerSpriteId(idn) {
+  return (idn && idn.id && CREW_ATLAS[idn.id] && !NO_CREW_ART.has(idn.id)) ? idn.id : null;
+}
 /* Sprite id for a crew role, or null when the holder has no sprite
-   (a joined stowaway) — callers fall back to the emoji portrait. */
+   (a newcomer whose sheet isn't in yet) — callers fall back to the emoji
+   portrait. A joined stowaway or rescue shows their own sheet. */
 function crewSpriteIdOf(role) {
-  return crewIdentityOf(role) ? null : (CREWID_OF_ROLE[role] || null);
+  const idn = crewIdentityOf(role);
+  return idn ? newcomerSpriteId(idn) : (CREWID_OF_ROLE[role] || null);
 }
 
 /* One way aboard for a named newcomer: a welcomed
@@ -2827,9 +2841,16 @@ function joinAsCrew(idn, hp) {
    order (a failure that leaves only them aboard says who they are). */
 function passengerNames() {
   const names = (STATE.passengers || []).map(p => p.name).filter(Boolean);
-  const stow = STATE.stowaway && STATE.stowaway.identity;
-  if (STATE.flags.has('stowaway_passenger') && stow && stow.name && !names.includes(stow.name)) names.unshift(stow.name);
+  const stow = stowawayRiding();
+  if (stow && stow.name && !names.includes(stow.name)) names.unshift(stow.name);
   return names;
+}
+/* A welcomed stowaway with no crew place rides the rest of the way as a
+   passenger (ruling 126): they eat like one (mouthsMult) and the cruise
+   screen lists them (cruise.js passenger tag). The identity, or null. */
+function stowawayRiding() {
+  const stow = STATE.stowaway && STATE.stowaway.identity;
+  return (stow && STATE.flags.has('stowaway_passenger')) ? stow : null;
 }
 /* Passengers (crew_join with no room aboard): ride to the next station,
    eat like anyone else (mouthsMult), and step off there — the rescued
@@ -4576,6 +4597,7 @@ function mouthsMult() {
     mouths += (c && c.eats_double && !crewIdentityOf(r)) ? 2 : 1; // a stowaway in the role eats normally
   }
   mouths += (STATE.passengers || []).length; // a rescued passenger eats too
+  if (stowawayRiding()) mouths += 1; // and so does a stowaway riding along (ruling 126)
   return mouths / 3;
 }
 // items.json gameplay_effect prose: insulated_cargo_bay "Food consumption
@@ -5487,6 +5509,12 @@ function renderEncounterState(opts) {
     const r = STATE.eventSpeaker;
     layerNpcCtx = { crewId: crewSpriteIdOf(r), displayName: crewNameOf(r).toUpperCase(), species: null, disposition: 'crew', job: r, quirk: '' };
   }
+  // The stowaway's reveal (ruling 126): the one they were found by shows
+  // their face, once their sheet is in (newcomerSpriteId); until then the
+  // scene stays as written, with no one in the frame.
+  const stowFace = STATE.stowaway && STATE.stowaway.revealedByEvent === ev.id && !layerNpcCtx && !ev.npc
+    && newcomerSpriteId(STATE.stowaway.identity);
+  if (stowFace) layerNpcCtx = { crewId: stowFace, displayName: String(STATE.stowaway.identity.name || '').toUpperCase(), species: null, disposition: 'crew', quirk: '' };
 
   let body    = layer ? layer.body : ev.body;
   // This firing's telling of the opening (ruling 90); a revisit keeps its own text.
