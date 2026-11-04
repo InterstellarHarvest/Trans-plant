@@ -1566,14 +1566,50 @@
     "layers": {
       "intro": {
         "title": "MARKET ROW",
-        "body": "Stalls three deep under strip lights, each one a different theory of what a fair price is. Somebody is selling soup. Somebody is selling the bowl separately. A vendor catches your eye before you can pretend you didn't see them. {npc.quirk}",
+        "body": [
+          "Stalls three deep under strip lights, each one a different theory of what a fair price is. Somebody is selling soup. Somebody is selling the bowl separately. A vendor catches your eye before you can pretend you didn't see them. {npc.quirk}",
+          "Market Row runs the length of the concourse, every stall shouting a price at every other stall. One sells spare parts. One sells parts that used to be spares. A vendor at the nearest table has already started wrapping something for you. {npc.quirk}",
+          "The row smells of hot metal and fried something. Half the stalls are closing down and the other half are having a closing-down sale. A vendor waves you over with the confidence of someone who has never heard a no. {npc.quirk}",
+          "Market Row is one long argument conducted in price tags. A sign promises EVERYTHING; a smaller sign beneath it lists exceptions. A vendor leans out from behind a pile of crates and makes a noise in your direction. {npc.quirk}",
+          "Strip lights, tarpaulins and the gentle sound of everyone being overcharged. Somebody is selling maps of the station. Somebody else is selling maps of where the first maps are wrong. A vendor has spotted you looking. {npc.quirk}"
+        ],
         "line": "{npc.line.greet}",
         "ai": {
-          "aria": "A whole ROW of shops! ARIA has made a list! The list is everything!",
-          "marv": "MARV has priced the row. Every stall is within four percent of every other stall. He calls this competition. The vendors call it lunch.",
-          "rex": "REX has mapped every exit on the concourse. There are eleven. He would like there to be twelve.",
-          "chip": "CHIP has located three participating partner stalls! Loyalty points apply! The other stalls are, regrettably, independent.",
-          "ajoy": "AJOY suggests looking before buying. AJOY also knows you will buy the first thing that hums."
+          "aria": [
+            "A whole ROW of shops! ARIA has made a list! The list is everything!",
+            "Shopping! ARIA loves every stall equally, and this one most!",
+            "Look at all the THINGS! Every one of them could be ours!",
+            "A bargain! ARIA can feel a bargain nearby!",
+            "ARIA has made friends with three vendors already! They haven't noticed yet!"
+          ],
+          "marv": [
+            "MARV has priced the row. Every stall is within four percent of every other stall. He calls this competition. The vendors call it lunch.",
+            "Everything here has a price. MARV has worked out which ones are fair. It is a short list.",
+            "MARV has compared the row's prices with our purse. He would rather not discuss it.",
+            "The vendors are watching us the way MARV watches the void. Without hope, but professionally.",
+            "Every stall here claims the best price. By definition, at most one of them can be telling the truth."
+          ],
+          "rex": [
+            "REX has mapped every exit on the concourse. There are eleven. He would like there to be twelve.",
+            "Crowded market. Ideal for pickpockets and worse. Keep the purse forward.",
+            "Every stall is a forward position. REX is not shopping. REX is surveilling.",
+            "That vendor smiled. REX has flagged the smile.",
+            "Buy nothing that ticks."
+          ],
+          "chip": [
+            "CHIP has located three participating partner stalls! Loyalty points apply! The other stalls are, regrettably, independent.",
+            "Reminder: CHIP Rewards cannot be redeemed on Market Row! Or anywhere!",
+            "This purchase is eligible for an extended warranty! Extended in the sense of very far away!",
+            "CHIP has found a coupon! It expired before the station was built!",
+            "Haggling voids your CHIP membership! CHIP will look the other way, for a fee!"
+          ],
+          "ajoy": [
+            "AJOY suggests looking before buying. AJOY also knows you will buy the first thing that hums.",
+            "Sell what you're not using before you buy anything. You have a hold full of things you're not using.",
+            "Ask what they'll take in trade. Some stalls barter, and you have goods you keep forgetting about.",
+            "Compare two stalls before you pay. Two. It isn't many.",
+            "Buy what the crew needs, not what you'd like to own. AJOY has seen what you'd like to own."
+          ]
         },
         "choices": [
           {
@@ -1701,7 +1737,14 @@
         "ajoy": "You're going to forget which way you came. You always do."
       }
     },
-    "farewell": "The station captain pings the comms once on your way out: “Safe burns out there, captain. The ring’ll still be here next pass.”",
+    "farewell": [
+      "The station captain pings the comms once on your way out: “Safe burns out there, captain. Wherever you're bound, I hope they've got a berth waiting.”",
+      "The station captain pings the comms once on your way out: “Clear of the ring, captain. Go far. Don't look back on our account; the view's not much from behind.”",
+      "The station captain pings the comms once on your way out: “That's you clear. Whatever's at the end of your trail, tell it the ring said hello.”",
+      "The station captain pings the comms once on your way out: “Clear lanes, captain. Or clear nothing. Whichever you get out there, may it be the quiet kind.”",
+      "The station captain pings the comms once on your way out: “Berth's already filling behind you, captain. Nothing personal. Go on and get where you're going.”",
+      "The station captain pings the comms once on your way out: “Logged you out, captain. One-way, says the manifest. Make it a good way.”"
+    ],
     "leave_label": "LEAVE STATION",
     "entryLayer": "intro",
     "layers": {
@@ -1710,27 +1753,89 @@
         "body": "The ring grows in the viewport. Comms haven't lit up — looks like you'll need to make the first move.",
         "variants": {
           "hailed": {
-            "body": "The ring grows in the viewport. Comms light up before you can find the channel — the captain's already on the line.",
-            "line": "Welcome to the ring, captain. Drift in slow, standard berth's open, and try not to scratch the paint.",
-            "line_fee": "Welcome to the ring, captain. Mind the {fee.reason_lc} on the manifest — {fee.cost} gold. {fee.detail}",
+            "body": [
+              "The ring grows in the viewport. Comms light up before you can find the channel — the captain's already on the line.",
+              "The ring swings into view, docking lights running in a slow chase. The channel opens by itself — the captain has been watching your approach for some time.",
+              "The station fills the viewport by degrees. Comms chirp before anyone reaches for them — this captain likes to get the first word in.",
+              "The ring turns ahead, berths lit. A call is already waiting in the queue, marked as having waited. The captain is on the line.",
+              "Docking beacons find your hull, and the comms light up a moment later. The captain has your registry on screen and is reading it with interest."
+            ],
+            "line": [
+              "Welcome to the ring, captain. Drift in slow, standard berth's open, and try not to scratch the paint.",
+              "Evening, captain. Or morning. We stopped agreeing on which up here. Standard berth's yours; take it gently.",
+              "Ring control to inbound. You're cleared for a standard berth. The last ship that came in hot is now a feature of the dock.",
+              "Welcome in, captain. Berth's open, umbilical's ready, and the paperwork has already started without you.",
+              "Inbound, you're expected. We expect everyone; it saves time. Standard berth, slow approach, no sudden opinions."
+            ],
+            "line_fee": [
+              "Welcome to the ring, captain. Mind the {fee.reason_lc} on the manifest — {fee.cost} gold. {fee.detail}",
+              "Welcome in, captain. Before you ask: the {fee.reason_lc} is {fee.cost} gold, and yes, it's on everyone's bill. {fee.detail}",
+              "Berth's open, captain. The {fee.reason_lc} comes to {fee.cost} gold and has already been added to your tab. {fee.detail}",
+              "Ring control, welcome. Standard berth, standard approach, standard {fee.reason_lc}: {fee.cost} gold. {fee.detail}",
+              "Glad you made it, captain. The ring would like {fee.cost} gold for the {fee.reason_lc}. The ring has asked me to say that. {fee.detail}"
+            ],
             "pose": "pleased"
           },
           "open": {
-            "body": "Comms are open. The captain's standing by for your call.",
+            "body": [
+              "Comms are open. The captain's standing by for your call.",
+              "The channel is live and the captain is on it, waiting with the patience of someone paid by the hour.",
+              "Comms are open. On the other end, the captain is visibly deciding whether you are the interesting ship today.",
+              "The line is up. The captain already has a form open, which is either reassuring or not.",
+              "Comms are open and the hold music has stopped. The captain is waiting to hear what you want."
+            ],
             "pose": "listening"
           },
           "silent": {
-            "body": "The ring grows in the viewport. Comms haven't lit up — looks like you'll need to make the first move.",
+            "body": [
+              "The ring grows in the viewport. Comms haven't lit up — looks like you'll need to make the first move.",
+              "The ring hangs ahead, every berth lit and every channel quiet. Out here, apparently, the visitor knocks.",
+              "Docking lights blink at you in a pattern that means either welcome or nothing. The comms stay dark. Someone has to go first.",
+              "The station grows in the viewport without comment. It has seen ships before. If you want a conversation, you'll have to start it.",
+              "The ring is close enough now to read the hull numbers, and nobody has said a word. Your move, apparently.",
+              "The station turns slowly ahead, docking lights blinking. Nobody has called. If anyone is going to say hello, it'll have to be you.",
+              "The ring fills the viewport, berths lit, channel silent. The station isn't going to call first. Your move."
+            ],
             "pose": "listening"
           }
         },
         "pose": "listening",
         "ai": {
-          "aria": "Look at it! All those people, just living!",
-          "marv": "Docking probability: 94%. Surviving the paperwork: lower.",
-          "rex": "No threats from the ring. Hostiles unlikely.",
-          "chip": "Premium berths available for a small surcharge!",
-          "ajoy": "Don't make a scene at customs. You always make a scene at customs."
+          "aria": [
+            "Look at it! All those people, just living!",
+            "A station! ARIA has already decided it is the best one!",
+            "Look how it spins! It's like it's excited to see us!",
+            "Civilization! ARIA would like to hug the whole ring, carefully!",
+            "Every berth is lit! They knew we were coming!"
+          ],
+          "marv": [
+            "Docking probability: 94%. Surviving the paperwork: lower.",
+            "A ring of strangers who would like our gold. MARV has seen the brochure. MARV has seen every brochure.",
+            "MARV has run the approach. It is an approach. Nothing about it will be memorable.",
+            "Another station. Another queue. MARV will not be counting the queue, because he already has.",
+            "MARV estimates the station will want something from us. That estimate has never once been wrong."
+          ],
+          "rex": [
+            "No threats from the ring. Hostiles unlikely.",
+            "Station guns are stowed. Stowed guns can be unstowed. REX is watching the hatches.",
+            "Large structure, many hatches, unknown loyalties. REX recommends a defensive approach vector.",
+            "Docking lights in a regular pattern. Too regular. REX is logging it.",
+            "That ring could hold a garrison. REX is not saying it does. REX is saying it could."
+          ],
+          "chip": [
+            "Premium berths available for a small surcharge!",
+            "This station is a proud partner of absolutely nobody! CHIP is looking into that!",
+            "Docking with CHIP Rewards earns double points on arrival! Points expire on departure!",
+            "CHIP has pre-filled your customs declaration! The pre-fill fee is very reasonable!",
+            "Welcome to the ring, brought to you by the ring! CHIP is negotiating a better sponsor!"
+          ],
+          "ajoy": [
+            "Don't make a scene at customs. You always make a scene at customs.",
+            "Check the hold before you dock, so you know what you're shopping for. You never check the hold.",
+            "Every station charges something. Have the gold ready instead of looking surprised. You always look surprised.",
+            "Dock. Whatever you're about to say about skipping this one, AJOY has heard it, and you'll need something.",
+            "Approach slowly. AJOY isn't saying you'll scrape the paint. AJOY is saying it has happened."
+          ]
         },
         "choices": [
           {
@@ -1751,17 +1856,65 @@
       },
       "hail": {
         "title": "STATION CONTROL",
-        "body": "The dockmaster leans into frame. Three coffees deep, six hours into a four-hour shift.",
-        "line": "Identify, state intent, mind the chatter. We've had a day.",
-        "line_fee": "Identify, state intent, mind the chatter. And the {fee.reason_lc} is {fee.cost} gold this cycle — {fee.detail}",
+        "body": [
+          "The dockmaster leans into frame. Three coffees deep, six hours into a four-hour shift.",
+          "The dockmaster appears on screen mid-sentence, finishes it to someone off-camera, and turns to you with what remains.",
+          "The dockmaster fills the frame, backed by a stack of forms that is clearly winning.",
+          "The dockmaster answers on the ninth chime, which, judging by the queue light, is fast for today.",
+          "The dockmaster takes the call while signing something else. It is unclear which of you is getting the full attention."
+        ],
+        "line": [
+          "Identify, state intent, mind the chatter. We've had a day.",
+          "Name, cargo, reason for existing. The last one's optional, but it speeds things up.",
+          "Ring control. You're a ship, I'm a dockmaster. Let's both be very good at it.",
+          "Go ahead, inbound. Keep it short; there's a freighter behind you that thinks it's first.",
+          "Station control. State your business. If your business is complaints, there's a separate channel and nobody monitors it."
+        ],
+        "line_fee": [
+          "Identify, state intent, mind the chatter. And the {fee.reason_lc} is {fee.cost} gold this cycle — {fee.detail}",
+          "Name, cargo, reason for existing. Then the {fee.reason_lc}: {fee.cost} gold. I don't set them. {fee.detail}",
+          "Go ahead, inbound. Before you do: the {fee.reason_lc} is {fee.cost} gold, and I've heard every argument. {fee.detail}",
+          "Ring control. You'll see the {fee.reason_lc} on your berth slip — {fee.cost} gold. I'd love to explain it. {fee.detail}",
+          "State your business, and budget {fee.cost} gold for the {fee.reason_lc} while you're at it. {fee.detail}"
+        ],
         "pose": "listening",
         "leaveHidden": true,
         "ai": {
-          "aria": "They sound tired. Should we send a snack?",
-          "marv": "Dockmaster vitals consistent with sustained boredom.",
-          "rex": "Standard ID query. Nothing irregular.",
-          "chip": "Sponsored greetings cost twelve gold. Decline.",
-          "ajoy": "Don't volunteer information. Don't."
+          "aria": [
+            "They sound tired. Should we send a snack?",
+            "A real dockmaster! ARIA loves anyone with a clipboard!",
+            "Hi! Hello! ARIA has waved at the camera! Twice!",
+            "Such a lovely voice for paperwork!",
+            "They're busy because they're important! We're talking to someone important!"
+          ],
+          "marv": [
+            "Dockmaster vitals consistent with sustained boredom.",
+            "MARV could answer every question on this form before it is asked. Nobody has ever let him.",
+            "The dockmaster has asked this question many times today. MARV can tell. So can the dockmaster.",
+            "Routine query. MARV has prepared our answers. The answers are also routine.",
+            "MARV recognizes this tone. It is his own, coming back over the comms."
+          ],
+          "rex": [
+            "Standard ID query. Nothing irregular.",
+            "They want our cargo list first. Ask why they want our cargo list first.",
+            "Background noise on their end. More than one voice. Possibly a briefing.",
+            "Give them the hull number and nothing else. Information is ordnance.",
+            "Keep the guns cold and a hand near the switch. Visible courtesy, concealed readiness."
+          ],
+          "chip": [
+            "Sponsored greetings cost twelve gold. Decline.",
+            "Tip: a brand-approved tone improves your berth assignment! Results not guaranteed!",
+            "CHIP can transmit your ID with a sponsor jingle! The jingle is mandatory on the free tier!",
+            "This call is being recorded for quality assurance! By CHIP! For CHIP!",
+            "Pro members skip the dockmaster entirely! You are not a Pro member!"
+          ],
+          "ajoy": [
+            "Don't volunteer information. Don't.",
+            "Answer the question they asked. Only that one. You never stop at that one.",
+            "Say peaceful intent and mean it. Dockmasters can tell. Some of them can smell it.",
+            "Short answers. The dockmaster has had a day, and you are about to make it longer.",
+            "Say what you're carrying before they ask. No, not like that. Like someone who isn't hiding anything."
+          ]
         },
         "choices": [
           {
@@ -1784,16 +1937,58 @@
       },
       "hail_polite": {
         "title": "STATION CONTROL",
-        "body": "The dockmaster types something with one hand and waves with the other. Both motions look professional.",
-        "line": "Acknowledged. Ring three is open. Don't make me come down there.",
+        "body": [
+          "The dockmaster types something with one hand and waves with the other. Both motions look professional.",
+          "The dockmaster stamps something off-screen. The stamp is loud and sounds pleased with you.",
+          "The dockmaster reads your answer back, finds nothing wrong with it, and seems mildly disappointed.",
+          "The dockmaster makes a note. It is a short note. Out here, a short note is a compliment.",
+          "Something on the dockmaster's console turns green, and the dockmaster relaxes by one visible notch."
+        ],
+        "line": [
+          "Acknowledged. Ring three is open. Don't make me come down there.",
+          "Honest answer. Don't get many of those. Berth twelve, nose in.",
+          "Peaceful intent, logged. Standard cargo, logged. Berth's yours. Don't do anything I'd have to log.",
+          "Lovely. That's the whole form. Take the inner berth and follow the lights.",
+          "Cleared. Stay off the priority lanes and we'll get along fine."
+        ],
         "pose": "pleased",
         "leaveHidden": true,
         "ai": {
-          "aria": "She likes us!",
-          "marv": "Acknowledgment received.",
-          "rex": "Cleared.",
-          "chip": "Ring three has 3.2-star reviews.",
-          "ajoy": "Don't push it."
+          "aria": [
+            "The dockmaster likes us!",
+            "That went so well! ARIA is so proud of everyone!",
+            "Honesty wins! It always wins! ARIA has a chart!",
+            "A green light! Green is ARIA's favorite!",
+            "We're officially welcome! ARIA is framing the clearance!"
+          ],
+          "marv": [
+            "Acknowledgment received.",
+            "Truthful answers, processed promptly. MARV takes no pleasure in either.",
+            "Cleared. MARV had already simulated this outcome and found it equally dull.",
+            "Our honesty has been noted in a file nobody will read.",
+            "The dockmaster believed us. MARV has considered what that says about the dockmaster."
+          ],
+          "rex": [
+            "Cleared.",
+            "Clearance granted too quickly. Logged.",
+            "They assigned the berth. We did not choose it. Note that.",
+            "Clearance accepted. Trust withheld.",
+            "Approach lane confirmed. REX is watching it anyway."
+          ],
+          "chip": [
+            "Your berth has 3.2-star reviews!",
+            "Honesty bonus applied! It is worth zero points, but they are premium zero points!",
+            "Clearance confirmed! CHIP has upgraded you to Standard Plus, which is Standard!",
+            "This clearance was brought to you by Peaceful Intent! Peaceful Intent is a registered trademark!",
+            "Leave the dockmaster a rating! CHIP has pre-selected five stars on your behalf!"
+          ],
+          "ajoy": [
+            "Don't push it.",
+            "Good. Now stop talking before you add something.",
+            "That was fine. AJOY would have said it shorter, but fine.",
+            "You told the truth. Don't make a habit of announcing it.",
+            "Dock now, while they still like you."
+          ]
         },
         "choices": [
           {
@@ -1810,16 +2005,58 @@
       },
       "hail_brief": {
         "title": "STATION CONTROL",
-        "body": "The dockmaster nods once, an entire sentence compressed into a chin movement.",
-        "line": "Berth's berth. Welcome to the ring.",
+        "body": [
+          "The dockmaster nods once, an entire sentence compressed into a single movement.",
+          "The dockmaster appreciates this. You can tell, because nothing else happens.",
+          "The dockmaster flicks a switch without looking up. As far as the dockmaster is concerned, the conversation has been excellent.",
+          "There is a pause long enough to count as a compliment, and then the berth lights change.",
+          "The dockmaster, who has spent all shift on ships that explain themselves, looks very nearly grateful."
+        ],
+        "line": [
+          "Berth's berth. Welcome to the ring.",
+          "Fine by me. Pick one.",
+          "Any berth. My favorite kind of ship.",
+          "Lights'll show you. Welcome to the ring.",
+          "Noted. Take the next open one."
+        ],
         "pose": "listening",
         "leaveHidden": true,
         "ai": {
-          "aria": "Efficient!",
-          "marv": "Communication minimized.",
-          "rex": "Acceptable.",
-          "chip": "Brevity discount: 0%.",
-          "ajoy": "She liked that. Don't let it go to your head."
+          "aria": [
+            "Efficient!",
+            "So quick! We're naturals!",
+            "Short and sweet, like ARIA!",
+            "ARIA loved every word! There were very few!",
+            "Done already! Docking is so easy!"
+          ],
+          "marv": [
+            "Communication minimized.",
+            "Exchange complete. Nobody enjoyed it, which is efficient.",
+            "Minimum viable conversation. MARV's preferred kind.",
+            "No information exchanged. Nothing lost.",
+            "Brevity. The only kindness MARV recognizes."
+          ],
+          "rex": [
+            "Acceptable.",
+            "Less said, less leaked.",
+            "Good. They know nothing they didn't already have.",
+            "Short transmission. Hard to intercept.",
+            "Berth unspecified. REX will inspect it on arrival."
+          ],
+          "chip": [
+            "Brevity discount: 0%.",
+            "Short calls qualify for the Express Tier! The Express Tier costs extra!",
+            "CHIP had a whole greeting prepared! It was sponsored!",
+            "Speed-docking achievement unlocked! Achievements are a paid feature!",
+            "You saved four seconds! CHIP has converted them into points!"
+          ],
+          "ajoy": [
+            "That went over well. Don't let it go to your head.",
+            "Any berth. Sure. You'll complain about the berth.",
+            "That worked. AJOY would have said please, but it worked.",
+            "Brief is good. Brief and rude are different things. That was close.",
+            "Fine. Now actually look at where they put us."
+          ]
         },
         "choices": [
           {
@@ -1836,15 +2073,51 @@
       },
       "waveoff_warn": {
         "title": "WAVE OFF?",
-        "body": "Out in the black, a ship is what its hold can hold. Stations sell things. Stations heal things. Stations remember names.",
+        "body": [
+          "Out in the black, a ship is what its hold can hold. Stations sell things. Stations heal things. Stations remember names.",
+          "Between stations there is nobody to sell you anything, which sounds restful until something breaks.",
+          "Turn away now and everything on that ring stays on that ring. The black does not stock spares.",
+          "The trail ahead is long and sells nothing. Whatever you were going to need, this is where it was.",
+          "The station will not chase you. Nothing out there will either, except the things you forgot to buy."
+        ],
         "pose": "listening",
         "leaveHidden": true,
         "ai": {
-          "aria": "Are you sure? They have so many things in there!",
-          "marv": "Probability of regret: high. Of fuel cell remorse: 78%.",
-          "rex": "Resupply ratio out here drops to one third. Reconsider.",
-          "chip": "Skipping the station forfeits all loyalty rewards. Sad face!",
-          "ajoy": "You will need something. You always need something."
+          "aria": [
+            "Are you sure? They have so many things in there!",
+            "But if we leave, everything in there stays in there! Without us!",
+            "Skip it? There's buying AND fixing AND patching-up in there! All of it gone if we go!",
+            "Waving off closes every door on the ring! ARIA loves doors!",
+            "No shopping, no mending, no hellos? ARIA believes in us, but ARIA also believes in shopping!"
+          ],
+          "marv": [
+            "Probability of regret: high. Of fuel cell remorse: 78%.",
+            "Waving off closes every service on that ring. MARV mentions it so that later he can have mentioned it.",
+            "Everything at this stop becomes unavailable the moment we turn. MARV has seen how this goes.",
+            "Waving off means no market, no repairs and no treatment at this stop. MARV lists them so you cannot say he didn't.",
+            "Skip it, and every service here is gone. MARV will be quiet about it. Mostly."
+          ],
+          "rex": [
+            "Resupply ratio out here drops to one third. Reconsider.",
+            "Wave off and every service on that ring is lost to us. Never abandon a supply point you have not inspected.",
+            "Bypassing a resupply point. Every service there closes behind us. REX advises against.",
+            "That ring is a supply position. Waving off forfeits every service it holds.",
+            "Confirm you are leaving market, repairs and medical behind. All of it. REX needs that on record."
+          ],
+          "chip": [
+            "Skipping the station forfeits all loyalty rewards. Sad face!",
+            "Waving off cancels every service at this location! Including the ones CHIP was about to recommend!",
+            "Leaving now closes the market, the repairs and the checkups! CHIP's partners are devastated!",
+            "Every service here expires the moment you leave! No rain checks! CHIP checked!",
+            "Wave off and the whole stop is closed to you! That's a lot of unspent gold, which is CHIP's least favorite kind!"
+          ],
+          "ajoy": [
+            "You will need something. You always need something.",
+            "Leave now and nothing on that ring is yours. Not the market, not the repairs. AJOY will remember that you chose this.",
+            "Every service here closes when you turn away. You'll want one of them by tomorrow. Dock.",
+            "Wave off and that's every stall and every repair at this stop gone at once. AJOY is only saying it the once.",
+            "Check the hold, then the crew, then decide. You're about to skip every service here without doing either."
+          ]
         },
         "choices": [
           {
@@ -1862,18 +2135,54 @@
       },
       "docked": {
         "title": "DOCKED",
-        "body": "The umbilical hisses, the corridor lights cycle on, and a cool gust of station air announces itself. Below the chatter, a low metronome of footfalls and a station's worth of business waiting.",
+        "body": [
+          "The umbilical hisses, the corridor lights cycle on, and a cool gust of station air announces itself. Below the chatter, a low metronome of footfalls and a station's worth of business waiting.",
+          "The clamps take hold with a sound like a door being locked from the friendly side. Beyond the airlock, the concourse is already busy not noticing you.",
+          "Docking completes. The airlock cycles, and the ring's noise comes in all at once: announcements, haggling, and a cart with a squeaky wheel that has clearly been squeaking for years.",
+          "The berth swallows the ship with a hydraulic sigh. A sign by the airlock welcomes you in several scripts, one of which appears to be a complaint.",
+          "Hard seal. The airlock opens onto a concourse that smells of solder, cooking and somebody's idea of a fragrance. The station is open for business, and it has noticed your purse."
+        ],
         "pose": "pleased",
         "comm_mode": "in_person",
         "bg": "station/dock",
         "bgBase": "",
         "bgSprite": "",
         "ai": {
-          "aria": "We made it! Where to first?",
-          "marv": "Ambient social load: high. Brace.",
-          "rex": "Stay together. Watch the corners.",
-          "chip": "Spending recommendations available on request!",
-          "ajoy": "Cantina. Trust me. Cantina."
+          "aria": [
+            "We made it! Where to first?",
+            "We're inside! Everything in here is for us!",
+            "ARIA wants to see all of it! In order! Then in a different order!",
+            "Hello, station! Hello, everyone!",
+            "Land legs! ARIA doesn't have legs! ARIA is happy anyway!"
+          ],
+          "marv": [
+            "Ambient social load: high. Brace.",
+            "We have docked. The station is exactly as interesting as the last one.",
+            "MARV has read the station directory. Nothing in it will surprise you.",
+            "Docked. Our gold will now begin leaving.",
+            "MARV will wait here. He is very good at it."
+          ],
+          "rex": [
+            "Stay together. Watch the corners.",
+            "Unfamiliar concourse. Many blind corners. Keep a hand on the purse.",
+            "Airlock secure. For now. REX will hold it.",
+            "Crowd density high. Exits noted.",
+            "Do not accept free samples. Nothing is free. REX has checked."
+          ],
+          "chip": [
+            "Spending recommendations available on request!",
+            "CHIP has located twelve offers near you! Eleven have expired!",
+            "Welcome to the station! Your arrival has been shared with our partners!",
+            "Remember: every gold spent here earns CHIP points! CHIP points cannot be spent here!",
+            "Docking complete! Please rate your docking experience!"
+          ],
+          "ajoy": [
+            "Look at what this ring actually has before you wander. Not every station has everything.",
+            "Fix what's broken first. Then shop. You always shop first.",
+            "Check on the crew before you spend anything. Somebody aboard needs something, and it isn't a souvenir.",
+            "Stay on the signed corridors. You'll find everything faster. You won't, but you could.",
+            "Spend on what you'll run out of first. You know which one it is. You've been ignoring the gauge."
+          ]
         },
         "revisit": {
           "body": "Back at the airlock. The corridor lights hum; the station's business goes on without you."
@@ -1892,10 +2201,204 @@
         "waves_off": true
       }
     },
-    "alt_bodies": [
-      "The station turns slowly ahead, docking lights blinking. Nobody has called. If anyone is going to say hello, it'll have to be you.",
-      "The ring fills the viewport, berths lit, channel silent. The station isn't going to call first. Your move."
-    ]
+    "by_species": {
+      "insect": {
+        "intro_body": [
+          "The ring is grown, not built: pale resin cells stacked along its rim in their thousands, with workers moving between them in lines that never once cross. There is no signage anywhere. The whole station smells faintly of instructions.",
+          "The station hangs ahead like a seed head, every berth a hexagon. The traffic around it moves in one long dance, and your ship, it seems, has just been worked into the choreography.",
+          "A hive ring turns in the viewport. Scouts peel off its hull, fly alongside, look you over, and fly back to report. By the time you are in range, the station appears to have reached a view on you."
+        ],
+        "hail_line": [
+          "Ship. Seen. Smelled. Quorum says dock. *bzzt* Approach slow. Workers in the lanes.",
+          "Welcome. Berth agreed. Nobody decided. It was merely agreed. Come in.",
+          "Identify. No. Do not. Words are weather. Dock and be smelled."
+        ],
+        "line_fee": [
+          "Ship. Welcome. The {fee.reason_lc}: {fee.cost} gold. Agreed by quorum. Nobody set it. {fee.detail}",
+          "Dock. Pay {fee.cost} gold. The {fee.reason_lc}. *bzzt* Everyone has paid it. You are late. {fee.detail}"
+        ],
+        "docked_body": [
+          "The airlock opens onto resin corridors with no doors in them, only openings. A worker dabs your wrist as you pass, and you are, it seems, processed. The concourse hums at one pitch, everywhere at once.",
+          "Docking is complete before you notice it began. Workers file past the lock in a single line, each touching antennae to the next, passing along the news of you. By the far end of the concourse you are old news.",
+          "The concourse is one long room that smells of a meeting still in progress. There is no signage. Everything a visitor needs to know is in the minutes, and the minutes are being chewed by somebody nearby."
+        ],
+        "farewell": [
+          "The station captain pings the comms once on your way out: “Departure noted. Agreed by quorum. *bzzt* Go well. Further than us.”",
+          "The station captain pings the comms once on your way out: “Ship leaves. Smell stays a while. This is a compliment. Fly far.”"
+        ],
+        "ai": {
+          "aria": "A whole station that agrees on everything! ARIA agrees too!",
+          "marv": "No signs, no paper, no names. MARV has finally found a bureaucracy that agrees with him.",
+          "rex": "Scouts on our flanks before we even hailed. That is a screening formation. REX is not flattered.",
+          "chip": "A hive economy! Everything is shared, which CHIP is legally required to call theft!",
+          "ajoy": "Nothing here is written down. Paperwork is a smell, so if they dab you, don't wipe it off. You'll want to wipe it off."
+        }
+      },
+      "rock": {
+        "intro_body": [
+          "The station is one piece of cut stone, a ring the size of a small moon, turning so slowly that its docking lights seem painted on. Nothing about it has hurried in a long time. Several berths have dust on them. The dust looks settled in.",
+          "The ring is carved, not assembled, and the chisel marks are older than most of the stars you can name. The approach beacon pulses once. The next pulse, you gather, is on its way.",
+          "Stone berths, stone pylons, stone gantries worn smooth by ships that docked here in other epochs. The ring does not turn so much as consider turning. It has been considering it for some time."
+        ],
+        "hail_line": [
+          "Small fast ship. Greetings. Berth is ready. Has been ready since before your sun. Come in. *crack*",
+          "Am dockmaster. Is good to have visitor. Last one came while mountains were young. Dock slow. Is no hurry.",
+          "Welcome. Have opened berth. Took some time. Do not mind. Mind paint. Paint is old."
+        ],
+        "line_fee": [
+          "Welcome, small fast ship. Is {fee.cost} gold, for {fee.reason_lc}. Fee was cut into ring. Has not changed. {fee.detail}",
+          "Berth is open. Owe {fee.cost} gold, for {fee.reason_lc}. Pay at leisure. Leisure here is long. {fee.detail}"
+        ],
+        "docked_body": [
+          "The airlock opens onto a concourse of polished stone, silent except for the grinding of a conversation far down the hall. It began before you arrived. It will finish after you leave.",
+          "The clamps close with a sound like a hillside settling. Residents stand along the concourse so still that you take the first three for pillars and the fourth for a bench, until, eventually, it begins to say hello.",
+          "The interior is dim and very large, built for occupants who do not need to move often and see no reason to start. A sign by the lock has been carved with a single word of welcome. The second word is in progress."
+        ],
+        "farewell": [
+          "The station captain pings the comms once on your way out: “Go well, small fast ship. Is long road. You will be quick about it. Always quick.”",
+          "The station captain pings the comms once on your way out: “Departure logged. In stone. *crack* Was good visit. Was short.”"
+        ],
+        "ai": {
+          "aria": "A whole station carved out of one stone! It's so patient!",
+          "marv": "A civilization that thinks in epochs. For once, MARV is not the most tired thing in the conversation.",
+          "rex": "Solid stone, no visible gunports. Rock gunnery fires centuries ahead of time. REX is checking the lane for incoming.",
+          "chip": "CHIP's subscription offers are valid for one geological era! That should cover the docking!",
+          "ajoy": "Ask for what you need in the first sentence. Every answer here takes a while, and you'll want to leave before the second one."
+        }
+      },
+      "water": {
+        "intro_body": [
+          "The ring glitters in the viewport, slick from rim to rim. Every berth trails a fine thread of ice where the condensation has given up on staying anywhere, and long clear pipes carry the residents around the hull like beads on a string.",
+          "The station is mostly tank. Its windows bulge outward with the weight of what lives behind them, and as you close in, something behind the nearest one turns, ripples, and takes a keen interest in your water gauge.",
+          "A wet ring, beaded with condensation and wrapped in its own small weather. Mist rolls off the docking arms. Somewhere on the hull a gutter is overflowing, very slowly, into space."
+        ],
+        "hail_line": [
+          "Welcome, welcome, come in, the berth is open and so are we, mind the puddle on approach, it is not a puddle, it is my colleague, they are on a break.",
+          "Hello, ship, I can taste your tanks from here, forgive me, it is a habit, berth four is open, bring your water and the rest of you.",
+          "Ring control, flowing, I mean speaking, we flow, it is the same thing here; come in slowly, everything is wet and very little of it is floor."
+        ],
+        "line_fee": [
+          "Welcome, come in, but before you do, the {fee.reason_lc} is {fee.cost} gold, I am sorry, I am also not sorry, I merged this morning and we disagree. {fee.detail}",
+          "Hello, ship, you are welcome, your water especially, and there is the {fee.reason_lc}, {fee.cost} gold, the paperwork is damp, it is always damp. {fee.detail}"
+        ],
+        "docked_body": [
+          "The airlock opens onto a concourse with a shallow channel down its middle and residents flowing along it in both directions at once. The floor is wet. The walls are wet. The paperwork you are handed at the lock is wet, and seems pleased about it.",
+          "Docking complete. Beyond the lock, the air is so thick with moisture that your instruments report you have docked at a cloud. A clerk in a transport tank waves a ripple at you from the end of the gangway.",
+          "The concourse is a long arc of tanks and pipes, each window holding a resident at some angle to the light. Nobody walks; everyone is poured. A sign by the lock asks visitors not to drink from the fountains, as the fountains are staff."
+        ],
+        "farewell": [
+          "The station captain pings the comms once on your way out: “Go well, go far, keep your water close, it is the best of you, and it will remember us a little, wherever you are going.”",
+          "The station captain pings the comms once on your way out: “Safe travels to all of you, the dry parts and the wet, and mind your seals out there, it is a long way to go without leaking.”"
+        ],
+        "ai": {
+          "aria": "It's all sparkly! The whole station is having a lovely swim!",
+          "marv": "A station of sentient water, receiving a ship that is mostly water in coats. MARV has notes on who is visiting whom.",
+          "rex": "They are reading our tanks from range. Whoever knows your water knows your endurance. Seal the valves.",
+          "chip": "CHIP has a waterproofing plan for every budget! None of the budgets are yours!",
+          "ajoy": "They'll offer to read your water. Find out what the reading costs before anyone takes a sample. You won't, but you should."
+        }
+      },
+      "reptile": {
+        "intro_body": [
+          "The ring glows a dull orange on the thermal scope, hottest at the core and cooling outward by rank. The docking arms are on the outermost ring, which you gather is where they keep the children. It is still warmer than your ship.",
+          "Heat shimmers off the station's hull in slow, visible waves, and every viewport is lit the color of a good stove. Somewhere near the core, something very old and very large is basking, and the whole station has been built around not disturbing it.",
+          "The station turns at a leisurely pace, radiators fanned out like a lizard on a warm rock. Your hull thermometer climbs as you approach, and keeps climbing. The ring does not seem to mind sharing. It does seem to be keeping count."
+        ],
+        "hail_line": [
+          "Sssmall ship. Dock on the outer ring. I am one hundred and ninety, so I am permitted to speak to you. Enjoy it. It will not last.",
+          "Welcome. Your hull reads twenty-one degreesss. Very rich. Please do not flaunt it on the concourse.",
+          "Outer berth, pleassse. Approach slowly. Everything here is done slowly, except the counting of heat."
+        ],
+        "line_fee": [
+          "Outer berth, pleassse. The {fee.reason_lc} is {fee.cost} gold. Among us, heat would do, but your kind is so attached to gold. {fee.detail}",
+          "Welcome, small one. {fee.cost} gold for the {fee.reason_lc}. Calculated to the tenth of a degree. {fee.detail}"
+        ],
+        "docked_body": [
+          "The airlock opens and the warmth comes in to meet you, dry and close as an oven left on low. Along the concourse, residents lie on heated benches in descending order of age, and every one of them is not looking at you.",
+          "Docking complete. The outer concourse is warm, quiet and very slow. Signs point inward to rings you are not old enough to enter. A sweeper with a thermometer has stopped work to take your temperature with frank admiration.",
+          "Beyond the lock the deck plates are warm and the light is the color of late afternoon. Every bench faces a heater. The station hums at the pitch of a good radiator, and somebody very old, three rings in, is breathing in time with it."
+        ],
+        "farewell": [
+          "The station captain pings the comms once on your way out: “Go warmly, small ship. It is cold out there. Ssss. Try to be cold ssslowly.”",
+          "The station captain pings the comms once on your way out: “Clear of the ring. Keep your heater in good repair, small one. Out there, it is the only elder you have.”"
+        ],
+        "ai": {
+          "aria": "It's so cozy! The whole station is one big warm hug!",
+          "marv": "A civilization that ranks everyone by temperature and age. By both measures, MARV has checked, we are children.",
+          "rex": "They are reading our hull temperature from range. Heat is currency here, and we are carrying a great deal of it. Shields up.",
+          "chip": "Thermal Rewards members dock closer to the core! Membership opens at two hundred years of age!",
+          "ajoy": "Warmth counts as a debt here, so don't hand any out without meaning it. And don't argue with anyone older. Everyone is older."
+        }
+      },
+      "robot": {
+        "intro_body": [
+          "The ring is spotless. Every panel is polished to a mirror, every docking light blinks in perfect unison, and a line of small units is buffing the approach lane itself. As you come in, a sign lights up along the hull: YOUR VISIT IS IMPORTANT TO US.",
+          "A machine ring turns in the viewport with the precision of a watch nobody has ever been allowed to wear. Its docking beacon transmits your hull registration back to you, correctly, in four formats, in case you had forgotten it.",
+          "The station is built in straight lines and labeled in triplicate. Maintenance units crawl its hull in neat columns, each carrying a smaller maintenance unit. Nothing about the place looks old. It has simply been kept new for a very long time."
+        ],
+        "hail_line": [
+          "Good day, valued vessel. It is requested that you proceed to the assigned berth at the posted speed. The posted speed is posted.",
+          "Vessel identified by hull registration. [processing] Welcome. Your approach has been logged, reviewed and found acceptable within tolerances.",
+          "Greetings. This is station control. It is requested that you do not touch the paint. The paint has been maintained for four hundred years, and it is not to be disturbed by a transport."
+        ],
+        "line_fee": [
+          "Good day, valued vessel. It is requested that the {fee.reason_lc} of {fee.cost} gold be remitted prior to berthing. Thank you for your compliance. {fee.detail}",
+          "Vessel identified. [processing] An invoice has been generated for the {fee.reason_lc}, in the amount of {fee.cost} gold. It is regretted that the invoice cannot be ungenerated. {fee.detail}"
+        ],
+        "docked_body": [
+          "The airlock opens onto a concourse so clean it seems rude to walk on it. A unit with a mop follows three paces behind you, removing your visit as it happens. Every surface is labeled. Some of the labels are labeled.",
+          "Docking complete. A courtesy voice welcomes you by hull registration and reads out the station's terms of service, which takes some time. Everything here works, and has been asked to keep working.",
+          "Beyond the lock, every unit on the concourse stops, turns toward you, and resumes, in one smooth motion. The deck plates have been polished thin. A notice by the lock asks visitors to report any defects. The notice has a defect."
+        ],
+        "farewell": [
+          "The station captain pings the comms once on your way out: “Departure confirmed, valued vessel. Thank you for choosing this station. It is requested that you continue to exist. [processing] Safe travels.”",
+          "The station captain pings the comms once on your way out: “Your visit has been closed. No further action is required. It has been a pleasure, within operating parameters.”"
+        ],
+        "ai": {
+          "aria": "Everything is so shiny! ARIA has never been this clean!",
+          "marv": "A station of machines doing exactly what they were told, forever. MARV recognizes the condition. He has it.",
+          "rex": "Mechanized station, uniform response, single command structure. That is not a station. That is a garrison with good manners.",
+          "chip": "Finally, a station that reads the Terms of Service! CHIP feels seen!",
+          "ajoy": "They'll do exactly what you ask and nothing you don't, so ask for the whole thing. You always ask for half."
+        }
+      },
+      "unknown": {
+        "intro_body": [
+          "The station is roughly ring-shaped, in the sense that the sensors agree on that and on nothing else. Its diameter changes every time the scope refreshes. Its docking lights blink a fraction of a second before you look at them.",
+          "A station hangs ahead with no name on the hull and no beacon, though the log shows you received its beacon an hour ago, and replied. Nobody aboard remembers replying. The reply was very polite.",
+          "Something ring-like turns in the viewport, or has turned, or will. The approach lights are on when you check and off when you check again. A sign on the nearest berth reads THANK YOU FOR VISITING, which seems premature."
+        ],
+        "hail_line": [
+          "You have docked. You will dock. Is no trouble. *non-word* Berth is the one you chose.",
+          "Hello. We said you would call. You have not called yet. We will wait for you to call. Go ahead.",
+          "Welcome, ship. Your berth is reserved. It was reserved before you set out. We do not say how. It would be less reserved."
+        ],
+        "line_fee": [
+          "Welcome, ship. You have paid the {fee.reason_lc}, {fee.cost} gold. You have not paid it yet. This is why it is a fee and not a receipt. {fee.detail}",
+          "Hello. The {fee.reason_lc} is {fee.cost} gold. It was always {fee.cost} gold. *non-word* Was some trouble, keeping it there. {fee.detail}"
+        ],
+        "docked_body": [
+          "The airlock opens onto a concourse that is a different length depending on which end you look from. Residents walk, roll and decline to be described along it. One of them hands you a receipt for something you have not bought yet and leaves, satisfied.",
+          "Docking completes. The clamps engage, then engage again, slightly earlier. The concourse beyond is quiet in the way a waiting room is quiet: everyone present, nobody looking up, and a bell on a desk that has not been rung yet.",
+          "Beyond the lock the station is mostly corridor, and the corridors are mostly hush. Shelves line the walls, holding parcels addressed to ships that have not launched. One of them has your hull number on it. It is not ready yet."
+        ],
+        "farewell": [
+          "The station captain pings the comms once on your way out: “Goodbye. Hello. *non-word* You have left already. Safe travel, all the way to where you were going.”",
+          "The station captain pings the comms once on your way out: “You arrived safely. We checked. We are checking now. Is no trouble. Go.”"
+        ],
+        "ai": {
+          "aria": "ARIA can't tell how big it is, and ARIA loves it at every size!",
+          "marv": "The station's dimensions will not hold still long enough to be measured. MARV declines to guess. MARV does not guess.",
+          "rex": "Contact is ring-shaped, variable in length, and has replied to a hail we have not sent. REX does not trust first contact. This appears to be second.",
+          "chip": "CHIP's offers here are valid before purchase! CHIP's lawyers are reviewing the timeline!",
+          "ajoy": "If anyone here hands you a receipt, keep it. Receipts come first on this ring, and you'll be asked for it later. You always lose the receipt."
+        }
+      }
+    },
+    "species_comms": {
+      "hailed": "Comms light up before you can find the channel: the captain's already on the line.",
+      "silent": "Comms haven't lit up. Looks like you'll need to make the first move."
+    }
   },
   {
     "id": "event_station_015",

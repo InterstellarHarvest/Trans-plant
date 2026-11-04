@@ -1696,6 +1696,32 @@ const CLAIMS_ON_TIME = /\bahead of schedule\b|\bon time\b|\bon schedule\b|\bdays
   }
 }
 
+// Text pools (read-through review): only the station approach and Market Row
+// may hold a list where a string goes (engine/js/station.js resolves them);
+// every entry is a string, and MARV / REX / AJOY entries carry no "!".
+{
+  const POOLED = new Set(['event_station_014', 'event_station_013']);
+  for (const { event: ev } of eventsById.values()) {
+    for (const [lk, l] of Object.entries(ev.layers || {})) {
+      const fields = [['body', l.body], ['line', l.line], ['line_fee', l.line_fee]]
+        .concat(Object.entries(l.variants || {}).flatMap(([vn, vr]) => ['body', 'line', 'line_fee'].map(k => [vn + '.' + k, vr[k]])))
+        .concat(Object.entries(l.ai || {}).map(([who, x]) => ['ai.' + who, x]));
+      for (const [k, v] of fields) {
+        if (!Array.isArray(v)) continue;
+        const at = `${ev.id}/${lk}.${k}`;
+        if (!POOLED.has(ev.id)) { err(`${at}: a list here is only read for the station approach and Market Row`); continue; }
+        if (!v.length || v.some(x => typeof x !== 'string' || !x.trim())) err(`${at}: every pool entry must be text`);
+        if (/^ai\.(marv|rex|ajoy)$/.test(k) && v.some(x => /!/.test(x))) err(`${at}: "!" (only ARIA and CHIP use it)`);
+      }
+    }
+    for (const [sp, t] of Object.entries(ev.by_species || {})) {
+      if (!POOLED.has(ev.id)) err(`${ev.id}: by_species is only read for the station approach`);
+      for (const who of ['marv', 'rex', 'ajoy']) if (t.ai && /!/.test(t.ai[who] || '')) err(`${ev.id}: by_species.${sp}.ai.${who}: "!" (only ARIA and CHIP use it)`);
+      for (const x of [].concat(t.line_fee || [])) if (!/\{fee\.cost\}/.test(x)) err(`${ev.id}: by_species.${sp}.line_fee must state {fee.cost}`);
+    }
+  }
+}
+
 // ── Newcomer portraits (ruling 126) ─────────────────────────────────
 // Every stowaway identity and every crew_join identity has a CREW_ATLAS
 // entry (resources/shared.js) at the roster's sheet size. A sheet not

@@ -1178,7 +1178,7 @@
     const ev = (here && here.node_type === 'station' && EVENTS['event_station_013']) || familyEvent('trader', here) || EVENTS['event_encounter_trader_001'];
     if (!ev) { pushLogEntry('◆ No traders registered on this route.'); return; }
     closeStopMenu();
-    enterEvent(STATE.byId[STATE.currentId], ev);
+    enterEvent(STATE.byId[STATE.currentId], StationVisit.pooled(ev));
   }
 
 

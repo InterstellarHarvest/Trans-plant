@@ -78,7 +78,7 @@
       phase: 'approach', captainHere: false, wavedOff: false, docked: false,
       roomsDone: [], inRoom: null,
       // Which station of the run this is (1, 2, …): the text pools' turn.
-      no: [...(STATE.visited || [])].filter(id => STATE.byId[id] && STATE.byId[id].node_type === 'station').length || 1,
+      no: [...(STATE.visited || [])].filter(id => id !== node.id && STATE.byId[id] && STATE.byId[id].node_type === 'station').length + 1,
     };
     const v = STATE.stationVisit;
     v.captainHere = v.hailedFirst;
@@ -169,12 +169,12 @@
       // on the intro later (NEVERMIND, BACK) comms are simply open.
       const firstLook = !(STATE._layerVisits && STATE._layerVisits.intro);
       const variant = v.hailedFirst && firstLook ? 'hailed' : v.captainHere ? 'open' : 'silent';
-      const vr = (layer.variants || {})[variant] || {};
+      const vr = (L.variants || {})[variant] || {};
       L.body = vr.body || L.body;
       L.line = v.fee && vr.line_fee ? vr.line_fee : vr.line;
       // A one-species station: its own approach, greeting and fee line.
       const spBody = speciesText('intro_body'), spLine = speciesText(v.fee ? 'line_fee' : 'hail_line');
-      if (spBody && variant !== 'open') L.body = spBody;
+      if (spBody && variant !== 'open') L.body = spBody + ((a.species_comms && a.species_comms[variant]) ? '\n\n' + a.species_comms[variant] : '');
       if (spLine && variant === 'hailed') L.line = spLine;
       const spAi = residentSpecies() && a.by_species && a.by_species[residentSpecies()] && a.by_species[residentSpecies()].ai;
       if (spAi && firstLook) L.ai = Object.assign({}, L.ai, spAi);
@@ -350,7 +350,16 @@
     return !!(v && v.wavedOff);
   }
 
-  const StationVisit = { available, arrive, approachLayer, wrap, act, afterEvent, afterQuit, waveOff, servicesClosed, roomOf, kindOf, rooms };
+  // An event with pooled text opened outside a visit (the hub's TRADE at a
+  // station opens Market Row directly): a copy with this stop's picks.
+  function pooled(ev) {
+    if (!ev || !ev.layers) return ev;
+    const w = Object.assign({}, ev, { layers: {} });
+    for (const [k, l] of Object.entries(ev.layers)) w.layers[k] = resolvePools(Object.assign({}, l), ev.id + '.' + k);
+    return w;
+  }
+
+  const StationVisit = { pooled, available, arrive, approachLayer, wrap, act, afterEvent, afterQuit, waveOff, servicesClosed, roomOf, kindOf, rooms };
 
   Object.assign(window, {
     // engine API

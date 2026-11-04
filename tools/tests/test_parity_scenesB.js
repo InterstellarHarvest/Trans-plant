@@ -414,6 +414,16 @@ const settleSubject = page => page.waitForFunction(() => {
     finishAllTyping();
     return s.id;
   }, [evId, set || null]);
+  // Station text is pooled (read-through review): the shown line is one of the
+  // pool's, and the pool still holds the demo's own line.
+  const inPool = (page, path, text) => page.evaluate(([path, text]) => {
+    let v = EVENTS.event_station_014; for (const k of path) v = v && v[k];
+    return [].concat(v || []).some(x => String(text || '').includes(String(x).replace(/\{[^}]*\}.*$/, '').slice(0, 30)));
+  }, [path, text]);
+  const poolHolds = (page, path, text) => page.evaluate(([path, text]) => {
+    let v = EVENTS.event_station_014; for (const k of path) v = v && v[k];
+    return [].concat(v || []).some(x => String(x).includes(text));
+  }, [path, text]);
   const leaveRow = page => page.evaluate(() => {
     const l = document.querySelector('#enc-choices .enc-choice.leave');
     return l ? { text: l.querySelector('.ch-text').textContent, sub: (l.querySelector('.ch-sub') || {}).textContent || '' } : null;
@@ -501,23 +511,24 @@ const settleSubject = page => page.waitForFunction(() => {
     const art = await page.evaluate(() => ({ base: document.getElementById('enc-backdrop-base').classList.contains('hidden') ? null : 'shown', station: document.getElementById('enc-approach-sprite').dataset.station, comm: document.getElementById('screen-encounter').classList.contains('comm-screen') }));
     ok(v.title === 'STATION INBOUND' && v.scene === 'our_ship/bridge' && art.base && art.station && art.comm, 'arrival: our bridge, space behind, the node\'s station in the viewport (' + art.station + '), comm screen' + (v.title === 'STATION INBOUND' && v.scene === 'our_ship/bridge' && art.base && art.comm ? '' : ' — ' + JSON.stringify({ title: v.title, scene: v.scene, base: art.base, comm: art.comm })));
     // the silent opening, or one of its alternate tellings (ruling 90)
-    ok(v.noSubject && /make the first move|it'll have to be you|Your move\./.test(v.body) && v.line === null, 'nobody on comms yet (2 in 3): no subject, the silent body');
+    ok(v.noSubject && await inPool(page, ['layers', 'intro', 'variants', 'silent', 'body'], v.body) && v.line === null, 'nobody on comms yet (2 in 3): no subject, the silent body');
     ok(JSON.stringify(v.choices) === '["HAIL"]', 'only HAIL until comms open');
     let lr = await leaveRow(page);
     ok(lr && lr.text === 'LEAVE STATION' && /Skip the stop · risky/.test(lr.sub), 'leave row: LEAVE STATION · Skip the stop · risky');
-    ok(/All those people/.test(v.ai), 'ARIA voices the demo line');
+    ok(await inPool(page, ['layers', 'intro', 'ai', 'aria'], v.ai) && await poolHolds(page, ['layers', 'intro', 'ai', 'aria'], 'All those people, just living'), 'ARIA voices a line from the pool, which holds the demo line');
     await shot(page, 'station_approach_silent');
     await click(page, 'HAIL');
     await settleSubject(page);
     v = await view(page);
-    ok(v.layer === 'hail' && v.plate === 'STATION CAPTAIN' && /Identify, state intent/.test(v.line || '') && /Three coffees deep/.test(v.body), 'HAIL: the station captain on screen, the demo line');
+    ok(v.layer === 'hail' && v.plate === 'STATION CAPTAIN' && await inPool(page, ['layers', 'hail', 'line'], v.line) && await inPool(page, ['layers', 'hail', 'body'], v.body), 'HAIL: the station captain on screen, a line and body from the pool');
+    ok(await poolHolds(page, ['layers', 'hail', 'line'], 'Identify, state intent') && await poolHolds(page, ['layers', 'hail', 'body'], 'Three coffees deep'), 'the hail pools hold the demo line and body');
     ok(!(await leaveRow(page)), 'hail layers hide the leave row (demo leaveHidden)');
     await click(page, '"Standard cargo, peaceful intent."');
     v = await view(page);
-    ok(v.layer === 'hail_polite' && /Ring three is open/.test(v.line || '') && JSON.stringify(v.choices) === '["DOCK","BACK"]', 'polite reply → "Ring three is open", DOCK right there');
+    ok(v.layer === 'hail_polite' && await inPool(page, ['layers', 'hail_polite', 'line'], v.line) && JSON.stringify(v.choices) === '["DOCK","BACK"]', 'polite reply → a berth line from the pool, DOCK right there');
     await click(page, 'BACK'); await click(page, 'BACK');
     v = await view(page);
-    ok(v.layer === 'intro' && /Comms are open/.test(v.body) && JSON.stringify(v.choices) === '["DOCK"]' && !v.noSubject, 'back on the intro: comms open, the captain stays, DOCK replaces HAIL');
+    ok(v.layer === 'intro' && await inPool(page, ['layers', 'intro', 'variants', 'open', 'body'], v.body) && JSON.stringify(v.choices) === '["DOCK"]' && !v.noSubject, 'back on the intro: comms open, the captain stays, DOCK replaces HAIL');
     const d0 = await page.evaluate(() => STATE.daysElapsed);
     await click(page, 'DOCK');
     await page.waitForTimeout(200);
@@ -562,7 +573,7 @@ const settleSubject = page => page.waitForFunction(() => {
     ok(v.layer === 'docked' && await page.evaluate(() => STATE.stationVisit && STATE.stationVisit.phase === 'docked' && STATE.stationVisit.roomsDone.includes('event_station_009')), 'a reload in the dock comes back to the dock, the visit intact');
     await clickLeave(page);
     const hub = await page.evaluate(() => ({ ev: STATE.currentEvent, scr: document.querySelector('#screen-cruise.active') ? 'cruise' : null, log: STATE.shipLog.slice(-4).map(e => e.text).join('|'), station: document.getElementById('cruise-station').dataset.station || null }));
-    ok(!hub.ev && hub.scr === 'cruise' && /Safe burns out there/.test(hub.log), 'LEAVE STATION → the hub (intro_returning): the captain\'s farewell on the log');
+    ok(!hub.ev && hub.scr === 'cruise' && await inPool(page, ['farewell'], hub.log), 'LEAVE STATION → the hub (intro_returning): the captain\'s farewell on the log');
     const sv = await stopVerbs(page);
     ok(sv.trade === 'open' && !/Waved off/.test(sv.medbay || '') && !/Waved off/.test(sv.drydock || ''), 'after docking the Stop menu keeps TRADE / MEDBAY / DRYDOCK / FAB SERVICE');
     await page.waitForTimeout(400);
@@ -576,8 +587,8 @@ const settleSubject = page => page.waitForFunction(() => {
     await settleSubject(page);
     const disc = await page.evaluate(() => eventGold(5));
     let v = await view(page);
-    ok(!v.noSubject && v.plate === 'STATION CAPTAIN' && /Comms light up/.test(v.body), 'the dockmaster hails first: on screen as we arrive');
-    ok(new RegExp('Mind the air-tax on the manifest — ' + disc + ' gold').test(v.line || ''), 'their welcome names the fee: "' + v.line + '"');
+    ok(!v.noSubject && v.plate === 'STATION CAPTAIN' && await inPool(page, ['layers', 'intro', 'variants', 'hailed', 'body'], v.body), 'the dockmaster hails first: on screen as we arrive');
+    ok(/air-tax/.test(v.line || '') && new RegExp('\\b' + disc + ' gold').test(v.line || '') && await inPool(page, ['layers', 'intro', 'variants', 'hailed', 'line_fee'], v.line), 'their welcome names the fee and its price: "' + v.line + '"');
     const dk = await choiceInfo(page, 'DOCK');
     ok(JSON.stringify(v.choices) === '["DOCK"]' && new RegExp('AIR-TAX · ' + disc + ' gold').test(dk.sub), 'DOCK carries the fee (CHIP-discounted: ' + disc + 'g): ' + dk.sub.trim());
     await shot(page, 'station_approach_hailed_fee');
@@ -621,7 +632,7 @@ const settleSubject = page => page.waitForFunction(() => {
     await arriveAt(page, 'event_station_007', { hailedFirst: false, fee: null });
     await clickLeave(page);
     let v = await view(page);
-    ok(v.layer === 'waveoff_warn' && v.title === 'WAVE OFF?' && v.noSubject && /Probability of regret/.test(v.ai), 'LEAVE STATION → WAVE OFF? (the AI pleads; nobody on comms)');
+    ok(v.layer === 'waveoff_warn' && v.title === 'WAVE OFF?' && v.noSubject && await inPool(page, ['layers', 'waveoff_warn', 'ai', 'marv'], v.ai), 'LEAVE STATION → WAVE OFF? (the AI pleads; nobody on comms)');
     ok(!(await leaveRow(page)) && JSON.stringify(v.choices) === '["CONFIRM · WAVE OFF","NEVER MIND"]', 'CONFIRM · WAVE OFF / NEVER MIND');
     await shot(page, 'station_waveoff_warn');
     await click(page, 'NEVER MIND');
