@@ -5218,6 +5218,14 @@ function interpolateStowawayTokens(text) {
   // {branch.alpha.label} / {branch.alpha.first} (and beta): a fork event
   // describes the real branches ahead — the map label (or "unmarked" for
   // a ??? branch) and the first stop on it.
+  // A ??? branch's "marked {branch.x.label}" reads "unmarked", not
+  // "marked unmarked".
+  if (text && text.indexOf('{branch.') !== -1) text = text.replace(/\bmarked \{branch\.(alpha|beta)\.label\}/g, (m, key) => {
+    const fork = STATE.byId && STATE.byId[STATE.currentId];
+    const firstId = fork && fork.connects_to && fork.connects_to[key] && fork.connects_to[key][0];
+    const first = firstId && STATE.byId[firstId];
+    return !first || first.branch_hidden || !first.branch_flavor ? 'unmarked' : m;
+  });
   if (text && text.indexOf('{branch.') !== -1) text = text.replace(/\{branch\.(alpha|beta)\.(label|first)\}/g, (m, key, part) => {
     const fork = STATE.byId && STATE.byId[STATE.currentId];
     const firstId = fork && fork.connects_to && fork.connects_to[key] && fork.connects_to[key][0];
@@ -5786,6 +5794,15 @@ function eventOutcomeTitle() {
 
 /* AJOY's passive (ai_companions hindsight_reveal): after an outcome,
    name one choice the player didn't pick and what it would have done. */
+// A preview fact in AJOY's words: "13 H2O" → "13 water", "LOGBOOK FRAGMENT"
+// → "a Logbook Fragment" (the item's own name), "A DEATH RISK" → "a death risk".
+function hindsightWords(t) {
+  t = String(t).replace(/\bH2O\b/g, 'WATER').replace(/\bO2\b/g, 'AIR');
+  if (/^\d/.test(t)) return t.toLowerCase();
+  const it = (MOD.items || []).find(d => d && d.name && d.name.toUpperCase() === t);
+  if (it) return (/^[AEIOU]/i.test(it.name) ? 'an ' : 'a ') + it.name;
+  return t.toLowerCase();
+}
 function showHindsight() {
   if (STATE.activeAI !== 'ajoy' || !STATE.lastPick) return null;
   const { picked, shown } = STATE.lastPick;
@@ -5795,11 +5812,12 @@ function showHindsight() {
   const facts = outcomeFacts(choiceOutcome(ch), choiceTax(ch));
   const top = facts[0];
   const result = !top ? 'changed nothing you could measure'
-    : top.good ? 'got you ' + top.text.replace(/^\+/, '').toLowerCase()
-    : /^−/.test(top.text) ? 'cost you ' + top.text.slice(1).toLowerCase()
-    : 'meant ' + top.text.toLowerCase();
+    : top.good ? 'got you ' + hindsightWords(top.text.replace(/^\+/, ''))
+    : /^−/.test(top.text) ? 'cost you ' + hindsightWords(top.text.slice(1))
+    : 'meant ' + hindsightWords(top.text);
   const pool = (MOD.flavor && MOD.flavor.ajoy_hindsight) || ['For the record, “{choice}” would have {result}.'];
-  const label = String(interpolateStowawayTokens(ch.text || ch.label || '')).replace(/\s+/g, ' ').trim();
+  // The template wraps the label in quotes: a quoted dialog label loses its own.
+  const label = String(pricedText(interpolateStowawayTokens(ch.text || ch.label || ''), ch)).replace(/\s+/g, ' ').trim().replace(/^["“'‘]+|["”'’]+$/g, '');
   const line = pool[Math.floor(Math.random() * pool.length)]
     .replaceAll('{choice}', label.length > 48 ? label.slice(0, 46) + '…' : label)
     .replaceAll('{result}', result);
@@ -6926,7 +6944,7 @@ function handleChoiceClick(choice) {
     // Back on the same layer → paint it whole; the sinister close walks
     // you back to the entry layer, which is new text again.
     window.openMarket({ sinister: !!choice.market_sinister, vendor: choice.market_vendor || null, barter: !!choice.market_barter, greeting: choice.market_greeting, farewell: choice.market_farewell, stock: choice.market_stock },
-                      () => { if (holdNow() !== before) STATE._shoppedThisEvent = true; renderEncounterState({ instant: !choice.market_sinister }); });
+                      () => { if (holdNow() !== before) { STATE._shoppedThisEvent = true; ShipLog.shopped(ev); } renderEncounterState({ instant: !choice.market_sinister }); });
     return;
   }
 

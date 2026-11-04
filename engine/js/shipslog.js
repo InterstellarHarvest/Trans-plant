@@ -59,8 +59,11 @@
   // "{effects}." leading ("nothing aboard changed." → "Nothing aboard
   // changed."), and a token can open any sentence after . ! ? or …
   // (closing quotes/brackets allowed). Only lowercase a–z is raised.
+  // A full stop after an honorific or short form ("Dr. Osei", "(Ret.)")
+  // ends no sentence: the first-sentence cut and the capitals skip it.
+  const ABBREV = /(?:^|[\s("'“‘])(?:Dr|Mr|Mrs|Ms|Mx|St|Lt|Sgt|Capt|Cpt|Col|Gen|Cmdr|Prof|Ret|No|vs|approx|etc|Jr|Sr)\.["'”’)]*$/;
   const capSentences = s => s.replace(/^([\s"'“‘(]*)([a-z])/, (m, p, c) => p + c.toUpperCase())
-    .replace(/([.!?…]["'”’)]*\s+["'“‘(]*)([a-z])/g, (m, p, c) => p + c.toUpperCase());
+    .replace(/([.!?…]["'”’)]*\s+["'“‘(]*)([a-z])/g, (m, p, c, at, all) => ABBREV.test(all.slice(0, at) + p.replace(/\s+["'“‘(]*$/, '')) ? m : p + c.toUpperCase());
   function fill(t, tok) {
     return capSentences(String(t).replace(/\{(\w+)\}/g, (m, k) => (k in tok ? String(tok[k]) : '')).replace(/\s+/g, ' ').replace(/\s+([.,!?])/g, '$1').trim());
   }
@@ -77,12 +80,31 @@
   // First sentence of a narrative, cut at a word to fit `max`.
   function oneLine(text, max, o) {
     let s = interp(text, o).replace(/\s*\n+\s*/g, ' ');
-    const m = s.match(/^.+?[.!?](?=\s|$)/);
-    if (m) s = m[0];
+    const re = /[.!?](?=\s|$)/g;
+    for (let m; (m = re.exec(s));) { if (!ABBREV.test(s.slice(0, m.index + 1))) { s = s.slice(0, m.index + 1); break; } }
     if (s.length <= max) return s;
     if (max < 12) return '';
     const cut = s.slice(0, max - 1);
     return cut.slice(0, Math.max(cut.lastIndexOf(' '), max - 12)).replace(/[\s,;:—-]+$/, '') + '…';
+  }
+  // The scene as the player saw it named: a layered event's entry layer
+  // title ("THIS BRANCH IS OPEN", not the authoring title "I Am a Branch"),
+  // in title case; a flat event's own title.
+  const KEEP_CAPS = new Set(Object.values(AI_NAMES).concat(['AI', 'O2', 'H2O', 'FTL', 'HQ', 'OK', 'ID', 'DNA', 'UV', 'II', 'III', 'IV', 'SOS']));
+  const SMALL = new Set(['a', 'an', 'the', 'and', 'or', 'but', 'of', 'in', 'on', 'at', 'to', 'for', 'by', 'as', 'is', 'it', 'with', 'from']);
+  function titleCase(t) {
+    if (t !== t.toUpperCase()) return t;
+    return t.split(/(\s+)/).map((w, i) => {
+      const bare = w.replace(/[^A-Z0-9]/g, '');
+      if (KEEP_CAPS.has(bare)) return w;
+      const lw = w.toLowerCase();
+      return i && SMALL.has(lw) ? lw : lw.replace(/[a-z]/, c => c.toUpperCase());
+    }).join('');
+  }
+  function sceneTitle(ev) {
+    if (!ev) return null;
+    const entry = ev.layers && (ev.layers[ev.entryLayer] || ev.layers[Object.keys(ev.layers)[0]]);
+    return entry && entry.title ? titleCase(String(entry.title)) : ev.title || null;
   }
   function clip(s, max) { s = String(s || ''); return s.length <= max ? s : s.slice(0, max - 1).replace(/\s+\S*$/, '') + '…'; }
   function trailLabel() { return String((STATE.trail || 'deep')).toUpperCase() + ' TRAIL'; }
@@ -208,7 +230,8 @@
     const title = clip(interp(info.title || 'The stop'), 34);
     const opts = { ai: true, instant: true };
     if (info.choice) {
-      let ch = clip(interp(info.choice).replace(/[.!?]+$/, ''), 60);
+      // The template quotes the label: a quoted dialog label loses its own.
+      let ch = clip(interp(info.choice).replace(/^["“'‘]+|["”'’]+$/g, '').replace(/[.!?]+$/, ''), 60);
       let text = voiced('choice', { title, choice: ch });
       if (text.length > MAX_ENTRY) text = voiced('choice', { title, choice: clip(ch, Math.max(12, ch.length - (text.length - MAX_ENTRY))) });
       push({ text, type: 'choice', day }, opts);
@@ -256,10 +279,19 @@
     // An event begins: the record measures from here.
     eventStart() { eventSnap = snapshot(); fightChoice = null; },
     eventEnd() { eventSnap = null; fightChoice = null; },
+    // A market session closed with something bought or sold: its own line,
+    // so the choice that walks away doesn't wear the shopping as its cost.
+    shopped(ev) {
+      if (!eventSnap || rec) return;
+      const where = clip(interp(sceneTitle(ev) || 'The market'), 34);
+      const list = facts(eventSnap, snapshot());
+      if (list.length) push({ text: clip(cap1(where) + ': traded ' + factText(list) + '.', MAX_ENTRY), type: 'event', day: STATE.daysElapsed }, { ai: true, instant: true });
+      eventSnap = snapshot();
+    },
     // A resolved event choice (flat, layered, minigame, ram/flee, leave).
     resolved(r, ev, choice, outcome, extra) {
       if (!r) return;
-      const info = Object.assign({ kind: 'event', title: (ev && ev.title) || 'The stop', choice: choice && (choice.text || choice.label), outcome: outcome || {}, lore: loreOf(outcome) }, extra || {});
+      const info = Object.assign({ kind: 'event', title: sceneTitle(ev) || 'The stop', choice: choice && pricedText(interpolateStowawayTokens(choice.text || choice.label || ''), choice), outcome: outcome || {}, lore: loreOf(outcome) }, extra || {});
       finish(r, info);
       eventSnap = null;
     },
@@ -267,7 +299,7 @@
     fightEnd(r, result, title) {
       if (!r) return;
       const ev = STATE.currentEvent;
-      finish(r, { kind: 'fight', fight: FIGHT_KIND[result] || 'won', title: (ev && ev.title) || title || 'The fight', choice: fightChoice, outcome: {} });
+      finish(r, { kind: 'fight', fight: FIGHT_KIND[result] || 'won', title: sceneTitle(ev) || title || 'The fight', choice: fightChoice, outcome: {} });
       fightChoice = null; eventSnap = null;
     },
     // A crew member dies (killCrew / the airlock). Called BEFORE they are
@@ -319,10 +351,12 @@
         // clip used to drop them first — they are listed last).
         // "The leg cost …" lists costs only; a gain the leg brought (the
         // chef's morale, a regen) goes on the "Also:" line.
-        const isGain = f => /^\+/.test(f.text);
+        const isGain = f => /(^|\s)\+/.test(f.text); // "+2 MORALE" and "KAZUKI +2 MORALE"
         const shown = list.filter(f => !isGain(f)), rest = list.filter(isGain);
         if (!shown.length) shown.push({ text: 'nothing', w: 0 });
-        const build = () => voiced('arrival', { place, costs: factText(shown) });
+        // A leg that cost a life is recorded plain: no AI sign-off on a death.
+        const grave = list.some(f => /^LOST |^CAPTAIN LOST$/.test(f.text));
+        const build = () => grave ? fill(FALLBACK.arrival, { place, costs: factText(shown) }) : voiced('arrival', { place, costs: factText(shown) });
         const dayFact = shown.length && / DAYS?$/.test(shown[shown.length - 1].text);
         while (shown.length > (dayFact ? 2 : 1) && build().length > MAX_ENTRY) rest.unshift(shown.splice(shown.length - (dayFact ? 2 : 1), 1)[0]);
         const opts = { ai: true, instant: true };
@@ -360,7 +394,7 @@
 
   function causeOfDeath() {
     const ev = STATE.currentEvent;
-    if (ev && ev.title) return 'during “' + interp(ev.title) + '”';
+    if (ev && sceneTitle(ev)) return 'during “' + interp(sceneTitle(ev)) + '”';
     const dep = STATE.deprived || {};
     const why = [['food', 'hunger'], ['water', 'thirst'], ['o2', 'thin air']].filter(([k]) => dep[k] > 0).map(([, w]) => w);
     if (why.length) return 'of ' + why.join(' and ');
@@ -521,6 +555,8 @@
   function closeShipsLogExpand() { const m = $('slog-expand-modal'); if (m) m.style.display = 'none'; }
 
   const shipsLogExpandOpen = () => { const m = $('slog-expand-modal'); return !!m && m.style.display === 'flex'; };
+
+  ShipLog.text = { oneLine, capSentences, sceneTitle }; // the text helpers, for the batteries
 
   Object.assign(window, {
     // engine API

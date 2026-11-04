@@ -180,8 +180,13 @@
       // along — "no living crew" alone would erase them).
       const riders = passengerNames();
       const ride = riders.length && f.body_passengers ? passengerText(riders) : null;
-      const body = ride ? ride(f.body_passengers) : f.body;
-      const epitaph = ride && f.epitaph_passengers ? ride(f.epitaph_passengers) : f.epitaph;
+      // {dry_days} / {Dry_days}: how long the ship really went without (the
+      // count runs past the failure line on a long leg), in words.
+      const res = { starvation: 'food', dehydration: 'water', suffocation: 'o2' }[f.failure_type];
+      const dry = res ? Math.max((STATE.deprived && STATE.deprived[res]) || 0, DEPRIVATION[res].failAfter) : 0;
+      const days = str => str == null ? str : String(str).replace(/\{dry_days\}/g, numberWords(dry)).replace(/\{Dry_days\}/g, () => { const w = numberWords(dry); return w.charAt(0).toUpperCase() + w.slice(1); });
+      const body = days(ride ? ride(f.body_passengers) : f.body);
+      const epitaph = days(ride && f.epitaph_passengers ? ride(f.epitaph_passengers) : f.epitaph);
       return {
         category: 'failure',
         toneId: f.failure_type,
@@ -609,6 +614,6 @@
     // engine API
     renderEndScreen, endBackToCinematic,
     // test hooks: tools/tests drive and read these through page.evaluate
-    showEndReport, endContinueRun,
+    showEndReport, endContinueRun, buildEndView,
   });
 })();
