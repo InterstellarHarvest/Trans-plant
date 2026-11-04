@@ -77,6 +77,14 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
           }
           for (const f of [ch && ch.requires_flag, ...vias.map(v => v.requires_flag), ev.requires_flag].filter(Boolean)) STATE.flags.add(f);
           if (ev.requires_item && !STATE.items.includes(ev.requires_item)) grantItem(ev.requires_item);
+          // A leave row on an entry layer whose every row is routed by a flag
+          // an earlier quest step set: in play the step before always sets one
+          // route, so set the first. With none, the layer shows a lone
+          // CONTINUE and no leave row.
+          if (ch === ev.leave_as && ev.layers) {
+            const rows = ev.layers[ev.entryLayer || Object.keys(ev.layers)[0]].choices || [];
+            if (rows.length && rows.every(c => c.requires_flag)) STATE.flags.add(rows[0].requires_flag);
+          }
           // The shortest path to a layer may set the flag that hides this row;
           // the row is reached down another branch. Keep that one flag unset.
           const hide = new Set([ch, ...vias].map(c => c && c.hideFlag).filter(Boolean));

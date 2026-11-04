@@ -463,9 +463,10 @@ const openDossier = async (page, role) => {
       const ev = dueDelayedCrisis();
       // event_crisis_021 opens a sentence with the name and uses it mid-sentence too.
       const body = interpolateStowawayTokens(EVENTS.event_crisis_021.body);
-      return { pend, patient: STATE.crisisPatient, ev: ev && ev.id, body: body.slice(0, 260) };
+      return { pend, patient: STATE.crisisPatient, ev: ev && ev.id, delayed: !!ev && (ev.trigger || []).includes('delayed_crisis'), body: body.slice(0, 260) };
     });
-    ok(r.pend && r.patient === 'captain' && /^event_crisis_0(21|22|58)$/.test(r.ev), 'a delayed wound on the captain comes due as their own crisis (' + r.ev + ')');
+    // Any delayed-crisis event will do: pool 500 added event_voyage_trigger_005 to the three.
+    ok(r.pend && r.patient === 'captain' && r.delayed, 'a delayed wound on the captain comes due as their own crisis (' + r.ev + ')');
     ok(/^The captain has insisted/.test(r.body) && /looks at the captain,/.test(r.body) && !/\{patient/.test(r.body), '{patient.name} → "The captain" opening a sentence, "the captain" inside one');
     // The crisis kill choice on the captain: softer landings, else captain_lost.
     const r2 = await page.evaluate(() => {
