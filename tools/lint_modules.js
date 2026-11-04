@@ -871,6 +871,7 @@ const eventOnTrail = (ev, trail) => {
     for (const [k, r] of Object.entries(ap.station_rooms || {})) for (const f of ['label', 'sub', 'nav', 'back']) if (typeof r[f] !== 'string' || !r[f]) err(`${at}: station_rooms.${k}.${f} missing`);
     if (!Array.isArray(ap.parking_fees) || !ap.parking_fees.length || !ap.parking_fees.every(f => f.reason && f.detail)) err(`${at}: parking_fees must be [{reason, detail}, …]`);
     if (!(Number.isInteger(ap.parking_cost) && ap.parking_cost > 0)) err(`${at}: parking_cost must be a positive integer`);
+    if (!(ap.parking_waived && ap.parking_waived.sub && ap.parking_waived.detail)) err(`${at}: parking_waived must be {sub, detail} (ruling 131: the fee is waived for a ship that can't pay)`);
     if (!ap.station_captain || ap.station_captain.job !== 'captain') err(`${at}: station_captain must be a station_crew captain npc spec`);
     for (const l of ['intro', 'hail', 'hail_polite', 'hail_brief', 'waveoff_warn', 'docked']) if (!(ap.layers || {})[l]) err(`${at}: layer "${l}" missing (station.js shapes it)`);
   }

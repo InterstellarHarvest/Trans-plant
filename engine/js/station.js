@@ -99,7 +99,13 @@
   function dockChoice(base) {
     const v = visit();
     const ch = Object.assign({}, base);
-    if (v && v.fee) {
+    // Ruling 131: a ship that can't cover the fee is waved in free (a
+    // locked DOCK left a broke, dry crew no way to sell its cargo).
+    const a = approachEv(), w = a && a.parking_waived;
+    if (v && v.fee && w && STATE.goldAmount < eventGold(v.fee.cost)) {
+      ch.sub = v.fee.reason + ' ' + w.sub;
+      ch.detail = w.detail;
+    } else if (v && v.fee) {
       ch.gate = { gold: v.fee.cost };
       ch.gold_cost = v.fee.cost;
       ch.sub = v.fee.reason + ' · ' + v.fee.cost + ' gold'; // pricedText applies the discount; one line (owner rule: sub-labels fit one line)
@@ -210,6 +216,7 @@
         return false; // its next: 'hail' carries on
       case 'dock': {
         v.docked = true; v.captainHere = true;
+        v.feePaid = choice.gold_cost ? eventGold(choice.gold_cost) : 0; // refunded if the queue then sends you off
         stationBerth(here()); // passengers step off, skills recharge
         if (v.kind === 'docking' && v.roomEv && EVENTS[v.roomEv] && !v.roomsDone.includes(v.roomEv)) {
           v.phase = 'docking';
@@ -287,8 +294,15 @@
     let v = visit();
     if (!v) { STATE.stationVisit = v = { node: STATE.currentId, roomsDone: [], phase: 'left' }; }
     v.wavedOff = true;
-    const n = here();
-    log('◆ Waved off at ' + ((n && n.name) || 'the station') + ' — no berth, so no market, medbay, drydock or fab service this stop.');
+    const n = here(), name = (n && n.name) || 'the station';
+    // Sent off after DOCK (a docking event's queue): the fee comes back.
+    if (v.docked) log('◆ Sent away from ' + name + ' before the berth was yours — no market, medbay, drydock or fab service this stop.');
+    else log('◆ Waved off at ' + name + ' — no berth, so no market, medbay, drydock or fab service this stop.');
+    if (v.feePaid > 0) {
+      STATE.goldAmount += v.feePaid;
+      log('◆ The docking fee comes back: ' + v.feePaid + ' gold.');
+      v.feePaid = 0;
+    }
   }
   function servicesClosed() {
     const v = visit();

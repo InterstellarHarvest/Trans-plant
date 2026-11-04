@@ -590,13 +590,28 @@ const settleSubject = page => page.waitForFunction(() => {
     await page.close();
   }
   {
-    // Broke + fee: DOCK locked, the leave row is the way out (no stray Continue).
+    // Broke + fee (ruling 131): the fee is waived, DOCK stays open and free.
     const page = await boot({ crew: ['engineer', 'pilot'], ai: 'aria' });
     await page.evaluate(() => { STATE.goldAmount = 2; });
     await arriveAt(page, null, { hailedFirst: true, fee: { reason: 'BERTHING FEE', detail: 'Standard. Probably.', cost: 5 } });
     const dk = await choiceInfo(page, 'DOCK');
-    const adv = await page.evaluate(() => !!document.querySelector('#enc-choices .enc-choice.advance'));
-    ok(dk && dk.locked && /Need: 5g/.test(dk.sub) && !adv && (await leaveRow(page)).text === 'LEAVE STATION', 'broke: DOCK locked "Need: 5g", the leave row still there');
+    ok(dk && !dk.locked && /BERTHING FEE waived/.test(dk.sub) && (await leaveRow(page)).text === 'LEAVE STATION', 'broke: DOCK open, the fee waived: ' + (dk && dk.sub.trim()));
+    await click(page, 'DOCK');
+    ok(await page.evaluate(() => STATE.goldAmount === 2 && STATE.stationVisit.docked), 'broke: docked without paying');
+    await page.close();
+  }
+  {
+    // Ruling 131: a paid fee comes back when the docking queue sends you off.
+    const page = await boot({ crew: ['engineer', 'pilot'], ai: 'aria' });
+    await page.evaluate(() => { STATE.goldAmount = 50; });
+    await arriveAt(page, 'event_station_004', { hailedFirst: true, fee: { reason: 'BERTHING FEE', detail: 'Standard. Probably.', cost: 5 } });
+    await page.evaluate(() => { window.__lines = []; const real = window.pushCruiseLog; window.pushCruiseLog = (t, o) => { __lines.push(typeof t === 'string' ? t : (t && t.text) || ''); return real(t, o); }; });
+    await click(page, 'DOCK');
+    const paid = await page.evaluate(() => STATE.goldAmount);
+    await click(page, 'Skip the station entirely');
+    const r = await page.evaluate(() => ({ gold: STATE.goldAmount, log: __lines.join('\n') }));
+    ok(paid === 45 && r.gold === 50, 'the fee is refunded on the send-off (paid → ' + paid + ', after → ' + r.gold + ')');
+    ok(/docking fee comes back: 5 gold/.test(r.log) && /Sent away from/.test(r.log) && !/Waved off at/.test(r.log), 'the log says the berth was lost and the fee came back');
     await page.close();
   }
   {
