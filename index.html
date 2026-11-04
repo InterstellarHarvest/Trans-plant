@@ -5962,7 +5962,7 @@ function renderChoicesInner(choices) {
       const gd = itemDef(gateItem);
       if (gd && gd.analysis) subText = 'ANALYZED · ' + gd.analysis;
     }
-    if (!locked && choiceStandIn(ch)) subText = 'Captain stands in · half the gains';
+    if (!locked && choiceStandIn(ch)) subText = subText ? subText + ' · captain, half gains' : 'Captain stands in · half the gains';
     // Welcoming a stowaway: say what it means (flavor_pools join_role /
     // join_note — the note goes in the tooltip, the sub stays one line).
     const stowOut = choiceOutcome(ch);
@@ -6173,11 +6173,11 @@ function runChoiceAction(action) {
 function choiceOutcome(choice) {
   if (!choice || choice.launch_minigame || choice.triggerCombat || choice.combat_trigger ||
       choice.triggerRamResolve || choice.triggerFleeResolve || choice.open_market || choice.next) return null;
-  const o = choice.outcome;
-  if (o && typeof o === 'object') return o;
-  const ev = STATE.currentEvent;
-  if (typeof o === 'string' && ev && ev.outcomes) return ev.outcomes[o] || null;
-  return null;
+  const o0 = choice.outcome, ev = STATE.currentEvent;
+  const o = o0 && typeof o0 === 'object' ? o0 : typeof o0 === 'string' && ev && ev.outcomes ? ev.outcomes[o0] || null : null;
+  // A captain standing in gets half the gains (ruling 130): every preview
+  // reads the outcome through _half, as applyOutcomeEffects' halfEffect does.
+  return o && choiceStandIn(choice) ? Object.assign({}, o, { _half: true }) : o;
 }
 const RES_LABEL = { fuel: 'FUEL', food: 'FOOD', water: 'H2O', o2: 'O2', hull: 'HULL', morale: 'MORALE', gold: 'GOLD' };
 const SEVERITY_LABEL = { injury: 'AN INJURY', delayed: 'A BAD WOUND', lethal: 'A DEATH RISK' };
@@ -6249,6 +6249,7 @@ function outcomeFacts(o, tax) {
   for (const [k, v0] of Object.entries(o.resources || {})) {
     if (!Number.isFinite(v0) || !v0 || !RES_LABEL[k]) continue;
     let v = k === 'gold' ? (v0 < 0 ? -eventGold(-v0) : v0) : effectiveResDelta(k, v0, o);
+    if (o._half && v > 0 && !o.combat_net) v = Math.floor(v / 2); // captain standing in (ruling 130)
     const taxHere = k === 'morale' && !taxed && !o.morale_to;
     if (taxHere) { v -= tax; taxed = true; }
     if (!v) continue;
@@ -6276,8 +6277,9 @@ function outcomeFacts(o, tax) {
     else facts.push({ text: concernText(concerns) + ' MORALE', weight: w, good: !bad });
   }
   // Materials are cargo: a gain shows only what the hold can take now.
-  const matLand = materialLandings(o.materials || {});
-  for (const [m, q] of Object.entries(o.materials || {})) {
+  const mats = o._half ? Object.fromEntries(Object.entries(o.materials || {}).map(([m, q]) => [m, q > 0 ? Math.floor(q / 2) : q])) : (o.materials || {});
+  const matLand = materialLandings(mats);
+  for (const [m, q] of Object.entries(mats)) {
     if (!Number.isFinite(q) || !q) continue;
     if (q < 0) { facts.push({ text: '−' + Math.abs(q) + ' ' + m.toUpperCase(), weight: Math.abs(q) * 2, good: false }); continue; }
     const g = matLand[m] || 0;
@@ -6392,10 +6394,11 @@ function choicePreviews(choices) {
   }
   return out;
 }
-// A crew-gated choice the captain covers alone (Xenobiologist captain
-// standing in for a missing xenobiologist — Bible §4.30, half strength).
+// A crew-gated choice the captain covers alone: a captain whose background
+// is that crew role stands in for a missing specialist at half the gains
+// (Bible §4.30; ruling 130 — every background, not only the xenobiologist).
 function captainStandsIn(role) {
-  return role === 'xenobiologist' && STATE.captain === role && !STATE.crew.includes(role);
+  return !!role && role !== 'any' && STATE.captain === role && !STATE.crew.includes(role) && role in CREWID_OF_ROLE;
 }
 // requires_crew "any": anyone in the crew (not the captain) will do.
 function hasRoleFor(role) { return role === 'any' ? STATE.crew.length > 0 : STATE.crew.includes(role) || captainStandsIn(role); }
@@ -7001,7 +7004,9 @@ function applyOutcomeEffects(o) {
     for (const [k, v] of Object.entries(o.resources)) {
       if (!Number.isFinite(v)) continue; // authored typo can't NaN-poison STATE
       if (k === 'gold') {
-        STATE.goldAmount = Math.max(0, STATE.goldAmount + (v < 0 && !o.combat_net ? -eventGold(-v) : v));
+        // A captain standing in gets half of a gold gain too (ruling 130).
+        const gv = v > 0 && !o.combat_net && STATE.halfEffect ? Math.floor(v / 2) : v;
+        STATE.goldAmount = Math.max(0, STATE.goldAmount + (v < 0 && !o.combat_net ? -eventGold(-v) : gv));
       } else if (k === 'hull' && o.combat_net) {
         // Combat's net hull change: every hit and patch already happened
         // inside the fight (the emergency patch absorbs one landed hit
