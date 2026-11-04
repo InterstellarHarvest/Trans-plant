@@ -8,7 +8,7 @@ const { chromium } = require('playwright');
 const URL = process.env.URL || 'http://localhost:8177/index.html';
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } };
-const REP = 'event_shipboard_018';
+const REP = 'event_shipboard_019'; // a repeatable event (018 is once a run since ruling 134)
 
 (async () => {
   const browser = await chromium.launch();

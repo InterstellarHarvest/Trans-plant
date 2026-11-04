@@ -172,6 +172,8 @@ const FIRE = `(id) => {
     const mids = Object.values(EVENTS).filter(e => (e.trigger || []).includes('journey_mid'));
     const ungated = mids.filter(e => !e.requires_flag), gated = mids.filter(e => e.requires_flag);
     const node = STATE.nodes.find(n => n.node_type !== 'station' && n.node_type !== 'fork' && connectionsOf(n).length);
+    // Halfway flown: the scenes that state the midpoint wait for it (ruling 133).
+    for (const n of STATE.nodes) { if (journeyFrac() >= 0.5) break; STATE.visited.add(n.id); }
     const trig = new Set(['any', 'journey_mid']);
     const before = ungated.filter(e => eventEligible(e, node, trig)).length;
     enterEvent(node, ungated[0]);

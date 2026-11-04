@@ -3229,12 +3229,10 @@ function outcomeConcerns(o) {
   return merged;
 }
 // "ENGINEER −4 · IF LOST, MEDIC −10"
-// Whole points (a lone crew member's half concern is −12.5 inside; the
-// screen never shows a fraction), and inside the crew's MORALE fact the
-// wounded one's reaction names MORALE again: beside the wound it read as HP.
+// Inside the crew's MORALE fact the wounded one's reaction names MORALE
+// again: beside the wound it read as HP (read-through review).
 function concernText(list, inMorale) {
-  const fig = v => { const a = Math.abs(v); return a >= 1 ? Math.round(a) : Math.round(a * 10) / 10; }; // a per-day share stays a decimal
-  return list.map(c => (c.maybe ? 'IF LOST, ' : '') + c.label + ' ' + (c.v > 0 ? '+' : '−') + fig(c.v) + (inMorale && c.label === 'INJURED' ? ' MORALE' : '')).join(' · ');
+  return list.map(c => (c.maybe ? 'IF LOST, ' : '') + c.label + ' ' + (c.v > 0 ? '+' : '−') + Math.abs(c.v) + (inMorale && c.label === 'INJURED' ? ' MORALE' : '')).join(' · ');
 }
 
 /* Station services recharge the crew's active skills — per each skill's

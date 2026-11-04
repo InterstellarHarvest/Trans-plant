@@ -255,7 +255,7 @@ const snap = page => page.evaluate(() => ({
     const half = ch.find(c => c.text === '"Take the fuel. Leave."');
     ok(half && /Give them half|−50% FUEL/.test(half.sub + half.tip), `"Take the fuel" promises half (${half && half.sub})`);
     const marv = ch.find(c => /MARV ·/.test(c.sub));
-    ok(marv && /−50% FUEL|INJURY|HULL/.test(marv.sub), `MARV previews the costliest line: ${marv && marv.sub}`);
+    ok(marv && /−50% FUEL|INJURY|INJURED|HULL/.test(marv.sub), `MARV previews the costliest line: ${marv && marv.sub}`);
     const s0 = await snap(page);
     await click(page, '"Take the fuel. Leave."');
     const s1 = await snap(page);

@@ -205,7 +205,7 @@ const toPlainStop = page => page.evaluate(() => {
           cineBody: vis($('end-cine-body')) ? $('end-cine-body').textContent : null, cineQuote: vis($('end-cine-quote')) ? $('end-cine-quote').textContent : null };
         if (o.btn === 'View Report') {
           window.showEndReport(); await w(60);
-          const paras = f.body.split(/\n\s*\n/);
+          const paras = buildEndView({ kind: 'failure', module: f }).body.split(/\n\s*\n/); // tokens filled ({dry_days})
           o.report = { title: $('end-report-title').textContent, color: getComputedStyle($('end-report-title')).color, lead: $('end-report-arrival').textContent, wantLead: paras[0].trim(),
             leadVis: vis($('end-report-arrival')), rest: $('end-report-body').textContent, wantRest: paras.slice(1).join('\n\n').trim(), more: $('end-report-more').textContent,
             extras: !!document.querySelector('#end-day-line .score-extras'), dayLine: $('end-day-line').textContent, cardBorder: getComputedStyle($('end-report-card')).borderTopColor, wantBorder: border ? toRgb(border) : null,

@@ -159,7 +159,8 @@ const near = (a, b, tol) => Math.abs(a - b) <= (tol == null ? 1 : tol);
     ok(nd === 'Need: Diplomat', 'flag set, no diplomat: locked "Need: Diplomat" (' + nd + ')');
     // sim.js judges the same visible list.
     const fs = require('fs');
-    ok(/ch\.requires_flag && !STATE\.flags\.has\(ch\.requires_flag\)/.test(fs.readFileSync(path.join(__dirname, 'sim.js'), 'utf8')), 'sim.js hides requires_flag choices too');
+    // The sim reads the game's own visibility rule (choiceShown), which hides requires_flag rows.
+    ok(/choices\.filter\(choiceShown\)/.test(fs.readFileSync(path.join(__dirname, 'sim.js'), 'utf8')) && /function choiceShown[\s\S]{0,200}ch\.requires_flag && !STATE\.flags\.has\(ch\.requires_flag\)/.test(fs.readFileSync(path.join(__dirname, '..', '..', 'index.html'), 'utf8')), 'sim.js hides requires_flag choices too');
     await page.close();
   }
 

@@ -42,6 +42,10 @@ const stationAhead = page => page.evaluate(() => {
   return n;
 });
 
+// The log's wording is a pool per key (read-through review): any variant's
+// fixed words, in order, with the filled tokens between.
+const voiceIn = (page, key, ai, text) => page.evaluate(([key, ai, text]) => [].concat(MOD.ai_companions.find(a => a.id === 'ai_' + ai).log_templates[key]).some(t =>
+  new RegExp(t.split(/\{\w+\}/).map(p => p.replace(/\s+/g, ' ').trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).filter(Boolean).join('[\\s\\S]*'), 'i').test(text)), [key, ai, text]);
 (async () => {
   browser = await chromium.launch();
 
@@ -148,7 +152,7 @@ const stationAhead = page => page.evaluate(() => {
       return { warned: !!(STATE.moraleWarned || {}).medic, zeroCls: !!(bar && bar.classList.contains('zero')), labelColor: bar ? getComputedStyle(bar.querySelector('.crew-bar-label')).color : '', status, passive: passiveMult('medic') };
     });
     let log = await logText(page);
-    ok(r0.warned && /Expect them to leave at the next station/.test(log), 'the warning comes first: MARV voices it in the log');
+    ok(r0.warned && await voiceIn(page, 'morale_zero', 'marv', log), 'the warning comes first: MARV voices it in the log');
     ok(r0.zeroCls && r0.labelColor === 'rgb(204, 85, 85)', 'their MO label goes red on the crew card (' + r0.labelColor + ')');
     ok(/Deserting/.test(r0.status) && /next station/.test(r0.status), 'dossier status: Deserting · leaves at the next station');
     await shot(page, 'morale_01_warned');
@@ -169,7 +173,7 @@ const stationAhead = page => page.evaluate(() => {
     }, st);
     log = await logText(page);
     ok(!r2.crew.includes('medic') && r2.crew.includes('engineer') && !r2.ended, 'at the station the medic walked off; the engineer stays; the run goes on');
-    ok(/Vasquez walked off at .+ medic post vacant\. Crew now 1\. Predictable\./i.test(log), "Ship's Log entry in MARV's voice (names, role, place, crew left)");
+    ok(/Vasquez/.test(log) && /Crew now 1/.test(log) && await voiceIn(page, 'desertion', 'marv', log), "Ship's Log entry in MARV's voice (names, role, place, crew left)");
     ok(!r2.hp && !r2.mo && !r2.warned && !r2.charges, 'their HP / morale / warning / skill charges are gone with them');
     ok(r0.passive > 0 && r2.passive === 0, 'role freed: the medic passive went from ' + r0.passive + ' to 0');
     ok(r2.slots.filter(Boolean).length === 1, 'their card is now an empty slot');
@@ -194,7 +198,7 @@ const stationAhead = page => page.evaluate(() => {
     const r = await page.evaluate(() => { Math.random = window.__rnd; renderCruise(); return { mo: crewMoraleOf('medic'), warned: !!(STATE.moraleWarned || {}).medic }; });
     const log = await logText(page);
     ok(r.mo >= 25 && !r.warned, 'REST lifted the medic to ' + r.mo + ': back to 25, the warning is cleared');
-    ok(/Desertion risk cleared/.test(log), "REX's all-clear line is in the log");
+    ok(await voiceIn(page, 'morale_back', 'rex', log), "REX's all-clear line is in the log");
     const st = await stationAhead(page);
     const crew = await page.evaluate(n => { document.body.classList.remove('stop-active'); travelTo(n, { skipEvent: true }); return STATE.crew.slice(); }, st);
     ok(crew.includes('medic'), 'next station: the medic stays aboard');
