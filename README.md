@@ -40,7 +40,7 @@ funnier than a trip this doomed has any right to be.
 | **500** hand-written events | so a run rarely repeats itself |
 | **3** trails | from a gentle lunar hop to ten months past the edge of the charts |
 | **7** species | each with its own grammar, its own customs, and its own idea of a bribe |
-| **5** multi-stop quests | that follow you down the route and come due near the end |
+| **11** multi-stop quests | five that can turn up on any run, and one for each alien species, offered only in its space |
 | **5** ship AIs, **10** captains, **7** crew | and a lot of strong opinions about each other |
 | **9** hands-on minigames | plus turn-based ship combat |
 | **10** people who can turn up mid-trip | 7 stowaways and 3 people worth rescuing |
@@ -127,6 +127,15 @@ ONES*. A gray hardback held up to your camera with kitchen tongs. One
 exhibit from Earth's natural history collection, which is leaving the
 planet a piece at a time. Take one on and it keeps coming back, stop after
 stop, until it pays off or comes due near journey's end.
+
+Every alien species has a quest of its own, and you'll only be offered it
+on a trip through its space. Carry Earth's place in an insect queue, in a
+jar, to the front of the line. Swear humanity's forty-second apology to a
+rock who filed the first forty-one as weather. Take a census of a people
+who merge and part. Argue that humans should be legally allowed to grow
+up. Deliver "the next model" to robots whose manual says it will end
+them. Settle an insurance claim on thirty-one percent of your own ship.
+One quest at a time, so a run gets a story, not a to-do list.
 
 ### The back room
 
