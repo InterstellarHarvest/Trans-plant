@@ -133,6 +133,36 @@ function flavorName(type) {
   return _namesLeft[key].pop() || null;
 }
 
+// Planet names by place (owner 2026-11-04): a Lunar run's bodies are named
+// for the Moon and its neighbours (planet_names_by_trail), a planet in the
+// voyage species' far space for that species (planet_names_by_species),
+// and about one in three is a bare survey designation instead
+// (planet_name_patterns: {L} a letter, {N} a digit, {b} a planet letter).
+const GENERATED_PLANET_SHARE = 0.3;
+function expandNamePattern(p) {
+  const pick = s => s.charAt(Math.floor(Math.random() * s.length));
+  return String(p).replace(/\{L\}/g, () => pick('ABCDEFGHJKLMNPRSTVWXZ')).replace(/\{N\}/g, () => pick('123456789'))
+    .replace(/\{b\}/g, () => pick('bcdefg'));
+}
+function namePlanets(nodes, trailKey, rules) {
+  const F = MOD.flavor || {};
+  const used = new Set(nodes.map(n => n.name));
+  for (const n of nodes) {
+    if (n.node_type !== 'planet' || n.position === rules.total_nodes - 1) continue;
+    const sp = STATE.voyageSpecies && speciesZone(n, rules) === 'far' ? STATE.voyageSpecies : null;
+    const pool = (sp && (F.planet_names_by_species || {})[sp]) || ((F.planet_names_by_trail || {})[trailKey]) || null;
+    const pats = (F.planet_name_patterns || {})[sp || trailKey] || (F.planet_name_patterns || {}).any || [];
+    let name = null;
+    if (pats.length && Math.random() < GENERATED_PLANET_SHARE) {
+      for (let i = 0; i < 5 && (!name || used.has(name)); i++) name = expandNamePattern(pats[Math.floor(Math.random() * pats.length)]);
+    } else if (pool) {
+      const left = pool.filter(x => !used.has(x));
+      if (left.length) name = left[Math.floor(Math.random() * left.length)];
+    }
+    if (name && !used.has(name)) { used.delete(n.name); n.name = name; used.add(name); }
+  }
+}
+
 const MIXED_FAR_SHARE = 0.4; // a far station that stays mixed
 // The black market's back room (ruling 124): a station past the human-only
 // stretch keeps one about half the time, and every run has at least one
@@ -311,6 +341,7 @@ function generateMap(trailKey) {
 
   assignResidents(nodes, spine[spineLen - 2], rules);
   assignBackRooms(nodes, spine[spineLen - 2], rules);
+  namePlanets(nodes, trailKey, rules);
 
   STATE.trail       = trailKey;
   const mapNames = ((MOD.flavor && MOD.flavor.map_names) || {})[trailKey];
