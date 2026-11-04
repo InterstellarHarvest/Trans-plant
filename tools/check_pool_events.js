@@ -235,6 +235,7 @@ for (const ev of events) {
   checkEvent(ev, set);
   if (ev.requires_flag) read.add(ev.requires_flag);
   for (const f of JSON.stringify(ev).matchAll(/"(?:requires_flag|hideFlag|showFlag|flag)":"([a-z0-9_]+)"/g)) read.add(f[1]);
+  for (const m of JSON.stringify(ev).matchAll(/"hideFlag":\[([^\]]*)\]/g)) for (const f of m[1].matchAll(/"([a-z0-9_]+)"/g)) read.add(f[1]); // a hideFlag list
   const n = notes[ev.id];
   if (!n || !n.inspired_by || !n.how) err(ev.id, 'notes need inspired_by and how (the batch report reads them)');
   if (ev.science_link && !(n && n.science)) err(ev.id, 'notes need science: the claim, as checked');

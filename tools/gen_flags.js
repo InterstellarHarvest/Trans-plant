@@ -115,7 +115,7 @@ function scan() {
         add(setBy, o ? o.sets_flag : ch.sets_flag, setter);
         add(setBy, ch.setFlag, setter); // open_market choices
         add(checkedBy, ch.requires_flag, ev.id);
-        add(checkedBy, ch.hideFlag, ev.id); // choice hidden once the flag is set
+        for (const f of [].concat(ch.hideFlag || [])) add(checkedBy, f, ev.id); // choice hidden once the flag is set (a flag or a list)
         add(checkedBy, ch.gate && ch.gate.flag, ev.id);
       }
       for (const o of Object.values(ev.outcomes || {})) if (o) add(setBy, o.sets_flag, setter);

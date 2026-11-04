@@ -87,7 +87,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
           }
           // The shortest path to a layer may set the flag that hides this row;
           // the row is reached down another branch. Keep that one flag unset.
-          const hide = new Set([ch, ...vias].map(c => c && c.hideFlag).filter(Boolean));
+          const hide = new Set([ch, ...vias].flatMap(c => [].concat((c && c.hideFlag) || [])));
           const add = STATE.flags.add.bind(STATE.flags);
           STATE.flags.add = f => (hide.has(f) ? STATE.flags : add(f));
           if (STATE.cropGrowth) { STATE.cropGrowth.health = 80; STATE.cropGrowth.growth = 60; }

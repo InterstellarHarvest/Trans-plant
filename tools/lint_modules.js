@@ -649,7 +649,7 @@ function trailCoverage() {
     if (event.sets_flag) sets.add(event.sets_flag);
     (function walk(o) {
       if (!o || typeof o !== 'object') return;
-      for (const k of ['hideFlag', 'requires_flag']) if (typeof o[k] === 'string') reads.add(o[k]);
+      for (const k of ['hideFlag', 'requires_flag']) for (const f of [].concat(o[k] || [])) if (typeof f === 'string') reads.add(f);
       if (o.gate && o.gate.flag) reads.add(o.gate.flag);
       if (typeof o.setFlag === 'string') sets.add(o.setFlag);
       if (typeof o.sets_flag === 'string') sets.add(o.sets_flag);
@@ -740,6 +740,19 @@ const eventOnTrail = (ev, trail) => {
       else {
         const dir = ['resources/sprites/npc', npc.disposition, ...(npc.disposition === 'station_crew' ? [npc.job || 'janitor'] : []), npc.species, String(npc.variant)].join('/');
         if (!fs.existsSync(path.join(ROOT, dir, 'spritesheet.png'))) err(`${at}: npc.variant ${npc.variant} → ${dir}/spritesheet.png does not exist`);
+      }
+    }
+    // recall_event (read-through review): the NPC met in that event comes
+    // back, whichever way it ended — a quest's returning character.
+    if (npc.recall_event != null) {
+      const src = typeof npc.recall_event === "string" && eventsById.has(npc.recall_event) && eventsById.get(npc.recall_event).event;
+      if (!src) err(`${at}: npc.recall_event "${npc.recall_event}" is not an event id`);
+      else if (!src.npc || (src.npc.species || null) !== (npc.species || null)) err(`${at}: npc.recall_event "${npc.recall_event}" has no npc of the same species — nobody to bring back`);
+      else if (ev) {
+        // It must come after that event: somewhere up its after_event chain.
+        let cur = ev, ok = false;
+        for (let i = 0; i < 8 && cur && cur.after_event && !ok; i++) { ok = [].concat(cur.after_event).includes(npc.recall_event); cur = eventsById.has([].concat(cur.after_event)[0]) && eventsById.get([].concat(cur.after_event)[0]).event; }
+        if (!ok) warn(`${at}: npc.recall_event "${npc.recall_event}" on an event that doesn't wait for it (after_event chain)`);
       }
     }
     if (npc.recall != null) {

@@ -5910,7 +5910,7 @@ function renderChoices(choices) {
 // Which rows a player sees at all (the balance sim reads the same rule).
 function choiceShown(ch) {
   return !(ch.requires_flag && !STATE.flags.has(ch.requires_flag)) &&
-    !(ch.hideFlag && STATE.flags.has(ch.hideFlag)) &&
+    !(ch.hideFlag && [].concat(ch.hideFlag).some(f => STATE.flags.has(f))) && // a flag or a list
     !(ch.unless_item && STATE.items.includes(ch.unless_item)); // ruling 122: a row for when it is gone
 }
 function renderChoicesInner(choices) {
@@ -6692,7 +6692,10 @@ function resolveNpc(ev) {
   // CAPTAIN"): the NPC who was on screen when that flag was set comes
   // back — same species (so the same face), same quirk, same ship image
   // (artKey = the instance their ship was first painted under).
-  const met = ev.npc.recall ? STATE.npcCache[FLAG_NPC_PREFIX + ev.npc.recall] : null;
+  const met = ev.npc.recall ? STATE.npcCache[FLAG_NPC_PREFIX + ev.npc.recall]
+    // npc.recall_event: whoever was on screen in that event, however it ended
+    // (a quest's returning character keeps one face and one quirk).
+    : ev.npc.recall_event ? STATE.npcCache[Object.keys(STATE.npcCache).find(k => k.startsWith(ev.npc.recall_event + '@'))] || null : null;
   // One crew member per station job per stop (station approach): the dockmaster who hailed you is the one at the desk.
   const twin = !ev.npc.species && !ev.npc.displayName && !met && stationCrewHere(ev.npc.disposition, ev.npc.job);
   if (twin) { STATE.npcCache[npcKey] = twin; return twin; }
