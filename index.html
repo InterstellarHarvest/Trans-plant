@@ -5968,11 +5968,14 @@ function renderChoicesInner(choices) {
     const stowOut = choiceOutcome(ch);
     const idn = STATE.stowaway && STATE.stowaway.identity;
     const welcomes = stowOut && /^welcome/.test(stowOut.stowaway_resolve || '') && idn;
-    if (!locked && welcomes && !subText) {
-      subText = !idn.join_role ? 'Rides along as a passenger'
-        : stowOut.stowaway_resolve === 'welcome_replace' ? 'Joins as ' + idn.join_role + ' · one crew steps down'
-        : (STATE.crew.length < CREW_MAX && !STATE.crew.includes(idn.join_role)) ? 'Joins the crew as ' + idn.join_role
-        : 'Rides along as a passenger';
+    // Ruling 132: an offer's own sub-label says the deal; where they land
+    // follows it, so two offers never read the same.
+    if (!locked && welcomes) {
+      const where = !idn.join_role ? 'passenger'
+        : stowOut.stowaway_resolve === 'welcome_replace' ? idn.join_role + ', one crew steps down'
+        : (STATE.crew.length < CREW_MAX && !STATE.crew.includes(idn.join_role)) ? 'joins as ' + idn.join_role
+        : 'passenger';
+      subText = subText ? subText + ' · ' + where : where.charAt(0).toUpperCase() + where.slice(1);
     }
     // A rescue (crew_join): say where they'll land — crew or passenger.
     const cj = stowOut && stowOut.crew_join;
@@ -6004,7 +6007,7 @@ function renderChoicesInner(choices) {
     // Ruling 129: a big water or food cost goes on the row for everyone,
     // unless the preview already says it.
     const bigCost = !locked && bigSupplyCost(ch);
-    if (bigCost && !(subText || '').includes(bigCost)) subText = subText ? subText + ' · ' + bigCost : bigCost;
+    if (bigCost && !(subText || '').includes(bigCost)) subText = subText ? bigCost + ' · ' + subText : bigCost; // first, so a long line never clips it
     if (ch.effort || subText) {
       const sub = document.createElement('div');
       sub.className = 'ch-sub';
