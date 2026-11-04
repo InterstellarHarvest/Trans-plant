@@ -19,6 +19,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
       plain: F({}), cap: F({ captain_background: 'veteran' }), capList: F({ captain_background: ['medic', 'veteran'] }), capNo: F({ captain_background: 'medic' }),
       crop: F({ crop_type: 'tomato' }), cropNo: F({ crop_type: 'wheat' }), ai: F({ requires_ai: 'rex' }), aiNo: F({ requires_ai: 'aria' }),
       early: F({ after_progress: 0.5 }), wreckNone: F({ requires_past_run: true }),
+      voyage: F({ voyage_species: STATE.voyageSpecies }), voyageList: F({ voyage_species: ['human', STATE.voyageSpecies] }),
+      voyageNo: F({ voyage_species: NPC_ALIENS.find(sp => sp !== STATE.voyageSpecies) }),
     };
     STATE.visited = new Set(STATE.nodes.slice(0, Math.ceil(pathLegs() * 0.6) + 1).map(n => n.id));
     out.late = F({ after_progress: 0.5 });
@@ -63,6 +65,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   ok(r.plain && r.cap && r.capList && !r.capNo, 'captain_background: one value or a list');
   ok(r.crop && !r.cropNo, 'crop_type gates on the run\'s crop');
   ok(r.ai && !r.aiNo, 'requires_ai gates on the run\'s AI');
+  ok(r.voyage && r.voyageList && !r.voyageNo, 'voyage_species gates on the run\'s voyage species (ruling 128)');
   ok(!r.early && r.late, 'after_progress holds an event back until that share of the route');
   ok(!r.stepEarly && r.stepDue, 'a quest step waits for the step before it');
   ok(!r.openerBlocked && r.openerFree, 'an opener stands aside for a quest under way');

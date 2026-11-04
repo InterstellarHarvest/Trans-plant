@@ -37,7 +37,7 @@
 // (insulated_cargo_bay's file is extra_cargo.png), everything else in
 // sprites/cargo/items. null when no art exists yet (emoji fallback).
 const UPGRADE_SPRITES = { expanded_fuel_tank: 'expanded_fuel_tank', hull_plating: 'hull_plating', insulated_cargo_bay: 'extra_cargo', drive_coil: 'drive_coil', o2_recycler: 'o2_recycler', repair_fabricator: 'repair_fabricator', atmospheric_condenser: 'atmospheric_condenser', shield_module_upgrade: 'shield_module_upgrade' };
-const NO_ITEM_ART = {}; // ids awaiting art (resources/ART_REQUESTS.md) — emoji until it lands
+const NO_ITEM_ART = { earths_place: '🫙', majority_petition: '📜', next_model: '🔋', witness_zircon: '🧪', settled_claim: '📋', census_return: '🗳️' }; // ids awaiting art (resources/ART_REQUESTS.md) — emoji until it lands
 function itemSpritePath(id) {
   if (UPGRADE_SPRITES[id]) return 'sprites/cargo/upgrades/' + UPGRADE_SPRITES[id] + '.png';
   if (NO_ITEM_ART[id]) return null;

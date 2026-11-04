@@ -3721,10 +3721,14 @@ function eventEligible(ev, node, triggers) {
 /* Events about who this run is (ruling 120): captain_background, crop_type
    and requires_ai take one value or a list; after_progress holds an event
    back until that share of the route is flown, so a quest's beats land
-   mid-run or near arrival; requires_past_run needs a lost ship on record. */
+   mid-run or near arrival; requires_past_run needs a lost ship on record;
+   voyage_species (ruling 128) needs the run's voyage species. */
 function fitsThisRun(ev) {
   const one = (want, have) => want == null || [].concat(want).includes(have);
   if (!one(ev.captain_background, STATE.captain) || !one(ev.crop_type, STATE.crop) || !one(ev.requires_ai, STATE.activeAI)) return false;
+  // Ruling 128: voyage_species holds an event for runs that cross that
+  // species' space (a species quest's opener, which fires near Earth).
+  if (!one(ev.voyage_species, STATE.voyageSpecies)) return false;
   if (ev.after_progress && journeyFrac() < ev.after_progress) return false;
   // A quest runs in order, one at a time: a step waits for the step before
   // it (after_event), an opener stands aside for a quest under way (unless_flag).

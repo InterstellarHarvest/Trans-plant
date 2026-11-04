@@ -2,6 +2,7 @@
 usage: python3 -I tools/pool_merge.py b1
 Reads resources/pool500/drafts/<batch>_*.json. Events go to
 modules/events/events_species.json or events_voyage.json by id (a repeat id
+replaces), new items to modules/items/items.json (ruling 128; a repeat id
 replaces), flag payoffs and flavor_additions to flavor_pools.json, the writers' notes (tagged with the batch) to
 resources/pool500/notes.json for the check and the batch report.
 """
@@ -14,9 +15,11 @@ if not drafts:
 EV = 'modules/events/events_species.json'
 VO = 'modules/events/events_voyage.json'
 FL = 'modules/flavor/flavor_pools.json'
+IT = 'modules/items/items.json'
 NO = 'resources/pool500/notes.json'
 files = {f: {e['id']: e for e in json.load(open(f, encoding='utf8'))} for f in (EV, VO)}
 flavor = json.load(open(FL, encoding='utf8'))
+items = json.load(open(IT, encoding='utf8'))
 notes = json.load(open(NO, encoding='utf8')) if os.path.exists(NO) else {}
 added = 0
 for p in drafts:
@@ -25,6 +28,10 @@ for p in drafts:
         home = files[VO if e['id'].startswith('event_voyage_') else EV]
         added += e['id'] not in home
         home[e['id']] = e
+    for it in d.get('items') or []:
+        at = next((i for i, x in enumerate(items) if x.get('id') == it['id']), None)
+        if at is None: items.append(it)
+        else: items[at] = it
     flavor['flag_payoffs'].update(d.get('flag_payoffs') or {})
     for pool, lines in (d.get('flavor_additions') or {}).items():
         flavor[pool] += [x for x in lines if x not in flavor[pool]]
@@ -33,6 +40,8 @@ for p in drafts:
 for f, home in files.items():
     json.dump([home[k] for k in sorted(home)], open(f, 'w', encoding='utf8'), ensure_ascii=False, indent=2)
     open(f, 'a').write('\n')
+json.dump(items, open(IT, 'w', encoding='utf8'), ensure_ascii=False, indent=2)
+open(IT, 'a').write('\n')
 json.dump(flavor, open(FL, 'w', encoding='utf8'), ensure_ascii=False, indent=2)
 open(FL, 'a').write('\n')
 json.dump(notes, open(NO, 'w', encoding='utf8'), ensure_ascii=False, indent=1)

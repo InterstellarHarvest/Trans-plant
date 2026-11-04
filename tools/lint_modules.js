@@ -796,14 +796,21 @@ const eventOnTrail = (ev, trail) => {
     // scene never fires for a captain flying alone.
     if (ev.requires_crew_aboard != null && ev.requires_crew_aboard !== true) err(`${at}: requires_crew_aboard must be true (or absent)`);
     if (ev.requires_crop_alive != null && ev.requires_crop_alive !== true) err(`${at}: requires_crop_alive must be true (or absent)`);
-    if (ev.draw_weight != null && !(Number.isFinite(ev.draw_weight) && ev.draw_weight > 0 && ev.draw_weight <= 5)) err(`${at}: draw_weight must be a number in (0, 5]`);
+    // A voyage_species event fires on one run in six by design (ruling 128),
+    // so a species quest's opener may draw up to 10.
+    const dwMax = ev.voyage_species ? 10 : 5;
+    if (ev.draw_weight != null && !(Number.isFinite(ev.draw_weight) && ev.draw_weight > 0 && ev.draw_weight <= dwMax)) err(`${at}: draw_weight must be a number in (0, ${dwMax}]`);
     if (ev.after_progress != null && !(ev.after_progress > 0 && ev.after_progress < 1)) err(`${at}: after_progress must be a share of the route, above 0 and below 1`);
     if (ev.after_event != null && !eventFiles.some(f => readJSON('modules/events/' + f).some(x => x && x.id === ev.after_event))) err(`${at}: after_event "${ev.after_event}" is not an event`);
     if (ev.requires_past_run != null && ev.requires_past_run !== true) err(`${at}: requires_past_run must be true (or absent)`);
     for (const [field, dim] of [['captain_background', 'captain_background'], ['crop_type', 'crop_type'], ['requires_ai', 'requires_ai']]) {
       for (const v of ev[field] == null ? [] : [].concat(ev[field])) if (!(registry[dim].values || {})[v]) err(`${at}: ${field} "${v}" is not registered`);
     }
-    const narrowRun = ev.captain_background || ev.crop_type || ev.requires_ai || ev.requires_past_run || ev.requires_role
+    // voyage_species (ruling 128): an alien species, the run's voyage species.
+    for (const v of ev.voyage_species == null ? [] : [].concat(ev.voyage_species)) {
+      if (v === 'human' || !((registry.npc_species || {}).values || {})[v]) err(`${at}: voyage_species "${v}" is not an alien species (a run's voyage species is never human)`);
+    }
+    const narrowRun = ev.captain_background || ev.crop_type || ev.requires_ai || ev.requires_past_run || ev.requires_role || ev.voyage_species
       || ev.requires_flag || ev.requires_item || ev.trail || ev.after_progress || ev.species_lane || ev.unless_flag;
     if (ev.draw_weight > 1 && !ev.biome && !ev.family && !ev.species_home && !narrowRun) warn(`${at}: draw_weight above 1 without a biome gate — only narrow gates should need it`);
     if (ev.crew_speaker != null) {
