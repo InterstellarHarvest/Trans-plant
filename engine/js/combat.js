@@ -826,7 +826,7 @@
     COMBAT.state = 'TARGETING';
     fxScreen().classList.add('combat-targeting');
     document.getElementById('enc-subject').classList.add('combat-locking');
-    setAiCombat('Weapons hot. Pick your shot.');
+    setAiCombat(combatLine('targeting'));
     renderCombatActions();
   }
 
@@ -835,7 +835,7 @@
     COMBAT.state = 'PLAYER_TURN';
     fxScreen().classList.remove('combat-targeting');
     document.getElementById('enc-subject').classList.remove('combat-locking');
-    setAiCombat('Targeting canceled.');
+    setAiCombat(combatLine('targeting_canceled'));
     renderCombatActions();
   }
 
@@ -1361,7 +1361,7 @@
     saveFightPoint({ defeat: { cargoLoss, crewDied: cas.died, crewInjured: cas.injured,
       morale: COMBAT.player.morale == null ? null : COMBAT.player.morale - COMBAT.player.moraleStart } });
     setAiCombat(combatLine('player_defeated'));
-    setNarrCombat('LIMP-AWAY STATE', combatLine('player_defeated'),
+    setNarrCombat('LIMPING AWAY', combatLine('player_defeated'),
       `Hull set to 1. ${cargoLossText(cargoLoss)}.${cas.died || cas.injured ? ' Casualty reports coming in.' : ' All crew accounted for.'}`);
     renderCombatHud();
     later(() => endCombatToOutcome({ outcome: 'defeated', cargoLoss, crewDied: cas.died, crewInjured: cas.injured }), 800);

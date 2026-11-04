@@ -1416,6 +1416,7 @@
     STATE.flags.delete('ai_noted_crop_sick');
     STATE.flags.delete('ai_noted_crop_died');
     STATE.flags.delete('ai_noted_crop_planted');
+    STATE.flags.add('crop_replanted'); // the first planting's lines don't come round again
 
     // The active AI marks the harvest in the cruise log
     // (ai_universal.crop_lifecycle.harvested).

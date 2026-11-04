@@ -35,9 +35,9 @@ async function boot(setup) {
 // Template → regex: the fixed words of the active AI's template, any
 // token text in between (the voice is the template's own words).
 const voiceRe = (page, key, ai) => page.evaluate(([key, ai]) => {
-  const t = MOD.ai_companions.find(a => a.id === 'ai_' + ai).log_templates[key];
-  const esc = t.split(/\{\w+\}/).map(p => p.replace(/\s+/g, ' ').trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  return esc.filter(Boolean).join('[\\s\\S]*');
+  // A key may hold a pool (read-through review): any of its variants.
+  const ts = [].concat(MOD.ai_companions.find(a => a.id === 'ai_' + ai).log_templates[key]);
+  return '(?:' + ts.map(t => t.split(/\{\w+\}/).map(p => p.replace(/\s+/g, ' ').trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).filter(Boolean).join('[\\s\\S]*')).join('|') + ')';
 }, [key, ai]).then(s => new RegExp(s));
 const sinceMark = page => page.evaluate(() => STATE.shipLog.slice(window.__mark || 0));
 const mark = page => page.evaluate(() => { window.__mark = STATE.shipLog.length; });
@@ -97,7 +97,7 @@ const mark = page => page.evaluate(() => { window.__mark = STATE.shipLog.length;
     ok(ch && (await voiceRe(page, 'choice', 'rex')).test(ch.text), 'choice entry in REX\'s voice');
     ok(out && out.type === 'event' && /You seal the unused compartments/.test(out.text), 'outcome entry follows with the outcome in one line — ' + (out && out.text));
     ok(out && out.text.includes('+' + r2.o2 + ' O2') && /−5 MORALE/.test(out.text) && /1 DAY/.test(out.text), `outcome states the real effects (+${r2.o2} O2, −5 MORALE, 1 DAY)`);
-    ok(out && (/Threat level (green|amber)/.test(out.text)), 'outcome in REX\'s voice (sitrep threat level)');
+    ok(out && ((await voiceRe(page, 'outcome_good', 'rex')).test(out.text) || (await voiceRe(page, 'outcome_bad', 'rex')).test(out.text)), 'outcome in REX\'s voice (one of his outcome templates) — ' + (out && out.text));
     ok(ch && ch.day === r2.day0 && out.day === r2.day0, 'choice + outcome carry the day the choice was made');
     ok(e2.every(e => e.text.length <= 120 || !e.voice), 'voiced entries within the 120-char cap');
 
@@ -151,7 +151,8 @@ const mark = page => page.evaluate(() => { window.__mark = STATE.shipLog.length;
       advanceAfterEvent();
     });
     const e5 = await sinceMark(page); run.push(...e5);
-    const st = e5.find(e => /New recruit: Wembly Voss, medic\. Strength 2/.test(e.text));
+    const joinRe = await voiceRe(page, 'stowaway_join', 'rex');
+    const st = e5.find(e => joinRe.test(e.text) && /Wembly Voss/.test(e.text) && /medic/.test(e.text) && /\b2\b/.test(e.text));
     ok(st && st.type === 'event' && st.voice === 'rex', 'stowaway joining logged in REX\'s voice: ' + (st && st.text));
     ok(e5.indexOf(st) > e5.findIndex(e => e.type === 'choice'), 'stowaway entry follows the choice that welcomed them');
     ok(e5.some(e => /\+WEMBLY VOSS ABOARD/.test(e.text)), 'outcome effects name the real join (+WEMBLY VOSS ABOARD)');
@@ -182,8 +183,9 @@ const mark = page => page.evaluate(() => { window.__mark = STATE.shipLog.length;
       STATE.cropGrowth.growth = 100; STATE.cropGrowth.lastTickDay = STATE.daysElapsed; renderCruise();
     });
     const e7 = await sinceMark(page); run.push(...e7);
-    const fl = e7.find(e => /Growbay sitrep: Wheat at FLOWERING, 60%, health \d+/.test(e.text));
-    const rd = e7.find(e => /Growbay: Wheat ready for harvest/.test(e.text));
+    const stageRe = await voiceRe(page, 'crop_stage', 'rex'), readyRe = await voiceRe(page, 'crop_ready', 'rex');
+    const fl = e7.find(e => stageRe.test(e.text) && /wheat/i.test(e.text) && /FLOWERING/.test(e.text) && /60%/.test(e.text));
+    const rd = e7.find(e => readyRe.test(e.text) && /wheat/i.test(e.text));
     ok(fl && fl.voice === 'rex', 'crop milestone: FLOWERING at the real 60% — ' + (fl && fl.text));
     ok(rd && rd.expand && /THE REAL SCIENCE/.test(rd.expand.title) && /domesticated/.test(rd.expand.text), 'harvest-ready entry carries the crop\'s real_science page');
 

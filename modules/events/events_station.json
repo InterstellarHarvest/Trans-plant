@@ -3183,10 +3183,10 @@
       "chip": "CHIP notes that the station's loyalty points are DOUBLED during the quarantine! It is the worst promotion CHIP has ever seen! CHIP is still tempted!",
       "ajoy": "AJOY says the station needs a medic more than the ship needs the market. If you have one, she'd send them. She suspects you'll go shopping first."
     },
-    "body": "The station is in quarantine.\n\nThe docking queue is a single line of ships holding at a distance, and the dockmaster's hail is tired and very polite: a fever is moving through the ring. Not lethal, mostly. Bad enough. Dock if you must, they say. Masks are at the airlock. The medbay is full. The market is open, because it has to be, and so is everything else, at your own risk.\n\nBehind the dockmaster's voice, somebody is coughing.",
+    "body": "The station is in quarantine, which nobody mentions until the clamps are on.\n\nThe dockmaster's hail is tired and very polite: a fever is moving through the ring. Not lethal, mostly. Bad enough. Come aboard if you must, they say. Masks are at the airlock. The medbay is full. The market is open, because it has to be, and so is everything else, at your own risk.\n\nBehind the dockmaster's voice, somebody is coughing.",
     "choices": [
       {
-        "text": "Dock with masks and keep it short",
+        "text": "Go aboard with masks, keep it short",
         "outcome": {
           "resources": {
             "morale": -2
@@ -3197,7 +3197,7 @@
           },
           "severity": "injury",
           "time_cost": "trivial",
-          "narrative": "You dock, mask up and keep every errand short. It isn't short enough. Not long after you leave, one of the crew comes down with the fever: aching, shivering, useless for a week. It will pass. It takes its time."
+          "narrative": "You mask up and keep every errand short. It isn't short enough. Not long after you leave, one of the crew comes down with the fever: aching, shivering, useless for a week. It will pass. It takes its time."
         }
       },
       {
@@ -3233,14 +3233,16 @@
         }
       },
       {
-        "text": "Wave off and keep going",
+        "text": "Stay sealed and ask to leave",
+        "sub": "Four days · no services",
+        "detail": "Quarantine holds every departing ship for four days, and closes the market, medbay and drydock to you this stop.",
         "outcome": {
           "resources": {
             "morale": -3
           },
           "time_cost": "medium",
           "waves_off": true,
-          "narrative": "You wave off and hold well clear while the queue thins, then give up and go. Four days lost to waiting for a station you never reached. The crew understands. The crew is also very, very tired of the ship."
+          "narrative": "You keep the hatch sealed and ask for clearance to leave. Quarantine holds every departing ship four days for observation, so you spend them clamped to a station you never set foot on, and none of its services open to you. The crew understands. The crew is also very, very tired of the ship."
         }
       }
     ]

@@ -336,7 +336,7 @@ const gameRect = page => page.evaluate(() => { const r = document.getElementById
     ok(scrSamples.every(([a, b, f]) => a === 'none' && b === 'none' && f === 'none'), 'the screen itself never pulses or gets an inset shadow');
     // drive to defeat
     for (let i = 0; i < 6; i++) {
-      if (await page.evaluate(() => /LIMP-AWAY|LIMP AWAY/.test(document.getElementById('enc-narr-title').textContent))) break;
+      if (await page.evaluate(() => /LIMP-AWAY|LIMP AWAY|LIMPING AWAY/.test(document.getElementById("enc-narr-title").textContent))) break;
       if (await has(page, 'EVASIVE')) await click(page, 'EVASIVE');
       await page.waitForTimeout(1000);
     }

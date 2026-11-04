@@ -58,6 +58,29 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
     return JSON.stringify([v.body, v.epitaph || v.quote || '']);
   });
   ok(/eight days/.test(end) && /Eight days without water/.test(end) && !/dry_days/i.test(end), 'dehydration ending says eight days: ' + end.slice(0, 160));
+  // A second TRADE with the same trader at a stop skips the first pitch.
+  const tr = await page.evaluate(() => {
+    localStorage.removeItem('transplant_save_v1');
+    applySetupToState({ trail: 'mars', ai: 'marv', captain: 'veteran', crew: ['medic', 'chef'], crop: 'wheat', ship: 'B' });
+    STATE.flags.add('departed');
+    const n = STATE.nodes.find(x => x.node_type === 'asteroid_field' || x.node_type === 'planet');
+    STATE.currentId = n.id; STATE.traderAt = { [n.id]: true };
+    showScreen('screen-cruise'); renderCruise();
+    const first = () => { finishAllTyping(); return document.getElementById('enc-narr-body').textContent; };
+    window.handleTradeVerb ? handleTradeVerb() : null;
+    const a = first(), id = STATE.currentEvent && STATE.currentEvent.id;
+    STATE.currentEvent = null; returnToHub();
+    window.handleTradeVerb ? handleTradeVerb() : null;
+    const b = first();
+    return { a, b, id, exported: !!window.handleTradeVerb, back: MOD.flavor.trader_return };
+  });
+  if (tr.exported) {
+    ok(tr.id && tr.a && !tr.back.some(x => tr.a.startsWith(x)), 'first TRADE: the trader\'s own pitch (' + tr.id + ')');
+    ok(tr.back.some(x => tr.b.startsWith(x)), 'second TRADE at the stop: a "back again" opening — ' + tr.b.slice(0, 80));
+  } else ok(false, 'handleTradeVerb is not reachable from the page');
+  // Combat targeting lines follow the AI.
+  const tl = await page.evaluate(() => ['aria', 'marv', 'rex', 'chip', 'ajoy'].map(a => (MOD.flavor.combat_log.targeting[a] || []).length && (MOD.flavor.combat_log.targeting_canceled[a] || []).length));
+  ok(tl.every(Boolean), 'every AI has its own targeting lines');
   ok(!errors.length, 'no page errors: ' + errors.slice(0, 3).join(' | '));
   console.log('runread text: ' + pass + ' passed, ' + fail + ' failed');
   await browser.close();

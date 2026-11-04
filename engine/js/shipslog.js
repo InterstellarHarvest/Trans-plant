@@ -395,7 +395,7 @@
       if (idx < cg.logStage) { cg.logStage = idx; return; }               // harvested & replanted
       if (idx === cg.logStage) return;
       cg.logStage = idx;
-      const crop = cap1(cropName());
+      const crop = cropName(); // capSentences raises it where it opens a sentence ("The sweet potato hit…")
       const tok = { crop, growth: Math.min(100, Math.round(g)), health: Math.round(cg.health) };
       if (idx >= STAGES.length) {
         // Harvest-ready is the crop's science moment: its crops.json

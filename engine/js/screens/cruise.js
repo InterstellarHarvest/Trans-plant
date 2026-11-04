@@ -1064,7 +1064,7 @@
         const line = poisonLine(ALIEN_POISON_HP);
         if (line) gained += ' ' + line;
       }
-      if (fungus) gained += ' Also: a fungus nobody can name. The chef has asked to keep it.';
+      if (fungus) gained += ' Also: a fungus nobody can name. ' + (STATE.crew.includes('chef') ? 'The chef has asked to keep it.' : 'Nobody has asked to keep it, which is a first.');
       settleMinigame('◆ ' + label + ' — ' + gained);
     });
   }
@@ -1175,8 +1175,16 @@
     // answers the call.
     const here = STATE.byId[STATE.currentId];
     // Away from a station: this stop's trader (ruling 90 — one of the trader family, the same one all stop).
-    const ev = (here && here.node_type === 'station' && EVENTS['event_station_013']) || familyEvent('trader', here) || EVENTS['event_encounter_trader_001'];
+    let ev = (here && here.node_type === 'station' && EVENTS['event_station_013']) || familyEvent('trader', here) || EVENTS['event_encounter_trader_001'];
     if (!ev) { pushLogEntry('◆ No traders registered on this route.'); return; }
+    // The same trader a second time at this stop skips the first-meeting
+    // pitch (read-through review): a short "back again" opening instead.
+    STATE.tradersMet = STATE.tradersMet || {};
+    const back = MOD.flavor && MOD.flavor.trader_return;
+    if (ev.layers && STATE.tradersMet[STATE.currentId] === ev.id && Array.isArray(back) && back.length) {
+      const entry = ev.entryLayer || Object.keys(ev.layers)[0];
+      ev = Object.assign({}, ev, { alt_bodies: null, layers: Object.assign({}, ev.layers, { [entry]: Object.assign({}, ev.layers[entry], { body: back[Math.floor(Math.random() * back.length)] + ' {npc.quirk}', line: null, ai: null }) }) });
+    }
     closeStopMenu();
     enterEvent(STATE.byId[STATE.currentId], StationVisit.pooled(ev));
   }
@@ -1219,7 +1227,7 @@
     for (const x of treated) { setHP(x, 100); if (STATE.crewPending) delete STATE.crewPending[x]; }
     const who = treated.map((x, i) => i ? personName(x) : PersonName(x));
     const list = who.length > 1 ? who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1] : who[0]; // "A, B and C"
-    pushLogEntry('◆ MEDBAY — ' + list + (treated.length > 1 ? ' are' : ' is') + ' treated, stitched and discharged with a lollipop each. −' + medbayFee() + 'g.');
+    pushLogEntry('◆ MEDBAY — ' + list + (treated.length > 1 ? ' are' : ' is') + ' treated, stitched and discharged with ' + (treated.length > 1 ? 'a lollipop each' : 'a lollipop') + '. −' + medbayFee() + 'g.');
     renderHUD();
     renderCruise();
     renderStopMenu(); // the verb re-gates (nobody hurt / can't afford)
@@ -1862,12 +1870,20 @@
      the cruise AI log. All draws keyed to STATE.activeAI. Called from
      renderCruise() — cheap, idempotent per condition (each warning
      fires once per downward threshold crossing, ambient once per node). */
-  function aiPool(path) {
+  function aiPool(path, fresh) {
     let node = MOD.flavor && MOD.flavor.ai_universal;
     for (const k of path) { node = node && node[k]; }
     const pool = node && node[STATE.activeAI];
-    return (Array.isArray(pool) && pool.length) ? pool[Math.floor(Math.random() * pool.length)] : null;
+    if (!(Array.isArray(pool) && pool.length)) return null;
+    // fresh: a line not said yet this run while any are left (the crop's
+    // lifecycle comes round every growth cycle — read-through review).
+    const seen = fresh ? (aiSaid[path.join('.')] = aiSaid[path.join('.')] || new Set()) : null;
+    const open = seen ? pool.filter(l => !seen.has(l)) : pool;
+    const line = (open.length ? open : pool)[Math.floor(Math.random() * (open.length || pool.length))];
+    if (seen) seen.add(line);
+    return line;
   }
+  const aiSaid = {};
 
   // Story-flag callbacks (owner ruling 2026-10-10): the AI brings up a
   // past choice (flavor_pools.flag_payoffs[flag].callback[ai]) — at least
@@ -2031,20 +2047,24 @@
     const health = STATE.cropGrowth.health;
     // A fresh growth cycle (launch, or the replant after a harvest —
     // growbay.js re-arms the flag) gets its "planted" line once.
+    // The "planted" lines are the mission's first planting ("the true
+    // beginning of the mission"): a replant after a harvest says nothing.
     if (health > 0 && growth < 75 && !STATE.flags.has('ai_noted_crop_planted')) {
       STATE.flags.add('ai_noted_crop_planted');
-      const line = aiPool(['crop_lifecycle', 'planted']);
+      const line = !STATE.flags.has('crop_replanted') && aiPool(['crop_lifecycle', 'planted'], true);
       if (line) pushLogEntry('◆ ' + line, { ai: true });
     }
     if (growth > 75 && !STATE.flags.has('ai_noted_crop_mature')) {
       STATE.flags.add('ai_noted_crop_mature');
-      const line = aiPool(['crop_lifecycle', 'mature']);
+      const line = aiPool(['crop_lifecycle', 'mature'], true);
       if (line) pushLogEntry('◆ ' + line, { ai: true });
       // Maturity is the crop's science moment — attach the real-world
-      // tie-in from the science_links pool (Bible §18 link schema).
+      // tie-in from the science_links pool (Bible §18 link schema), once a
+      // run: the second crop is the same crop.
       const sci = MOD.flavor && MOD.flavor.science_links && MOD.flavor.science_links.crops
         && MOD.flavor.science_links.crops[STATE.crop];
-      if (sci && sci.url) {
+      if (sci && sci.url && !STATE.flags.has('crop_science_linked')) {
+        STATE.flags.add('crop_science_linked');
         pushLogEntry({ text: '◆ ' + (sci.text || 'The ship computer files the crop\'s real history for curious minds.'), link: { url: sci.url, label: sci.label || 'Learn more' } }, { ai: true });
       }
     }
@@ -2100,7 +2120,7 @@
     // engine API
     rebuildCruiseLog, paintCruiseBars, refundVerbTax, holdVerbTax, onJobBegun, onJobHarm,
     applyAbandonHarm, abortCruiseWait, openStopMenu, renderCruise, clearAiBubble,
-    refreshStopMenu, pushCruiseLog: pushLogEntry, arrivalCommentary,
+    refreshStopMenu, pushCruiseLog: pushLogEntry, arrivalCommentary, handleTradeVerb,
     // test hooks: tools/tests drive and read these through page.evaluate
     cruiseStarState, cruiseSceneAlert: showSceneAlert,
     cruiseDisplayLine: displayLine, derelictFormOf,

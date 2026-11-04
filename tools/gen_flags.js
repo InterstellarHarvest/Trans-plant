@@ -32,6 +32,8 @@ const ENGINE_FLAG_NOTES = {
   midpoint_marked: 'index.html enterEvent (ruling 90) — the first ungated journey_mid scene marks the halfway; eventEligible keeps every other ungated halfway scene out for the run (flag-gated follow-ups still fire)',
   ai_noted_crop_planted: { set: 'checkCropMilestones — once per growth cycle (growbay.js harvest re-arms it); index.html marks it on old-save load', check: 'cruise.js (announce once)' },
   ai_noted_crop_mature: { set: 'checkCropMilestones', check: 'cruise.js (announce once); growbay.js harvest clears it' },
+  crop_replanted: { set: 'growbay.js harvest (the replant)', check: 'cruise.js checkCropMilestones: the first-planting lines stay with the first cycle' },
+  crop_science_linked: { set: 'cruise.js checkCropMilestones (the crop\'s science link, once a run)', check: 'cruise.js (said once a run)' },
   ai_noted_crop_sick: { set: 'checkCropMilestones', check: 'cruise.js (announce once; cleared on recovery); growbay.js harvest clears it' },
   ai_noted_crop_died: { set: 'checkCropMilestones', check: 'cruise.js (announce once); growbay.js harvest clears it' },
   ai_noted_pest: { set: 'checkCropMilestones', check: 'cruise.js (announce once); TREAT / crop_treatment / clears_pest clear it' },

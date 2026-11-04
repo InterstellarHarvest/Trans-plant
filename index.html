@@ -1954,6 +1954,7 @@ const SAVED_FIELDS = [
   'stationVisit', // station approach: this stop's rolls (hail-first, fee), drawn event, docked / waved off
   'alertedNode', // cruise.js: the stop whose arrival alert has shown (a reload logged it again)
   'traderAt', 'forcedEvent', // cruise.js: the trader-presence roll per stop; a during-wait event waiting on the player (a reload can't dodge either)
+  'tradersMet', // cruise.js: the trader already met at a stop (a second TRADE skips the first-meeting pitch)
 ];
 // The Stop-menu and event jobs a save may not land in the middle of. The
 // fabricator is not one: its craft is saved state, resumed on a reload.
@@ -2030,7 +2031,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, engineStrain: () => false, tipsShown: () => [], pendingArrival: () => null, waitInProgress: () => null, eventDraws: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { tradersMet: () => ({}), flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, engineStrain: () => false, tipsShown: () => [], pendingArrival: () => null, waitInProgress: () => null, eventDraws: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2247,7 +2248,7 @@ function applySetupToState(sel) {
   STATE.crisisPatient = null; STATE.lastAmbientNode = null; STATE.alertedNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.goneNames = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0; STATE.eventLastStop = {};
-  STATE.traderAt = {}; STATE.forcedEvent = null; // cruise.js: trader-presence rolls, during-wait event
+  STATE.traderAt = {}; STATE.tradersMet = {}; STATE.forcedEvent = null; // cruise.js: trader-presence rolls, during-wait event
   STATE.passengers = []; STATE.eventSpeaker = null; STATE.joinNote = null; STATE.stationVisit = null;
   STATE.flagFirstSeen = {}; STATE.calledBack = []; STATE.lastCallbackLeg = null;
   STATE.variantIndex = 0; STATE.layerStack = null; STATE.currentNode = null; STATE.deprived = {}; STATE.crewIdentity = {};
@@ -3228,8 +3229,12 @@ function outcomeConcerns(o) {
   return merged;
 }
 // "ENGINEER −4 · IF LOST, MEDIC −10"
-function concernText(list) {
-  return list.map(c => (c.maybe ? 'IF LOST, ' : '') + c.label + ' ' + (c.v > 0 ? '+' : '−') + Math.abs(c.v)).join(' · ');
+// Whole points (a lone crew member's half concern is −12.5 inside; the
+// screen never shows a fraction), and inside the crew's MORALE fact the
+// wounded one's reaction names MORALE again: beside the wound it read as HP.
+function concernText(list, inMorale) {
+  const fig = v => { const a = Math.abs(v); return a >= 1 ? Math.round(a) : Math.round(a * 10) / 10; }; // a per-day share stays a decimal
+  return list.map(c => (c.maybe ? 'IF LOST, ' : '') + c.label + ' ' + (c.v > 0 ? '+' : '−') + fig(c.v) + (inMorale && c.label === 'INJURED' ? ' MORALE' : '')).join(' · ');
 }
 
 /* Station services recharge the crew's active skills — per each skill's
@@ -4217,6 +4222,8 @@ function nextAvailableNodes() {
 /* Shows the hub (screen-cruise) and re-renders it. Called whenever
    travel/event-resolution has nothing further to do and control
    returns to the player outside an encounter. */
+// Science links of the scenes since the hub, filed when the ship is back there.
+const sciPending = [];
 function returnToHub() {
   // Back at the hub, no event is in progress. Uncleared, these make
   // saveRun() (which refuses mid-event) silently stop autosaving after
@@ -4224,6 +4231,14 @@ function returnToHub() {
   STATE.currentEvent = null; STATE.currentNode = null;
   STATE.layerStack = null; STATE.currentOutcomeId = null; STATE.outcomeMode = false;
   ShipLog.eventEnd();
+  for (const ev of sciPending.splice(0)) {
+    if (STATE.flags.has('sci_' + ev.id)) continue;
+    STATE.flags.add('sci_' + ev.id);
+    window.pushCruiseLog({
+      text: '◆ ' + (ev.science_link.text || 'The ship computer files a reference for later reading.'),
+      link: { url: ev.science_link.url, label: ev.science_link.label || 'Learn more' },
+    });
+  }
   STATE.npcCtx = null;
   STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.effortScale = 1; STATE.effortCon = null;
   STATE.goneNames = null;
@@ -4509,19 +4524,27 @@ function captainBonus() { const c = captainDef(); return c && c.starting_bonus; 
    hooks to the log now and then — a line, no swing. */
 const CROP_NOTE_CHANCE = 0.08;
 let lastCropHook = null;
+const cropHooksTold = new Set(); // this page's run: a reload may tell one again
 function cropDrama() {
   const cg = STATE.cropGrowth;
   const def = ((MOD.crops && MOD.crops.crops) || []).find(c => c.id === 'crop_' + STATE.crop);
   if (!def || !cg || cg.health <= 0) return;
-  const hooks = (def.narrative_hooks || []).filter(h => h !== lastCropHook || def.narrative_hooks.length < 2);
+  // A calm crop's notes are said once a run each; a drama crop's incident
+  // prefers one not told yet (read-through review: three lines a crop came
+  // round all run).
+  const told = cropHooksTold;
+  const unsaid = (def.narrative_hooks || []).filter(h => !told.has(h));
+  const hooks = unsaid.length ? unsaid : (def.narrative_hooks || []).filter(h => h !== lastCropHook || def.narrative_hooks.length < 2);
   if (!def.triggers_extra_events) {
-    if (!hooks.length || Math.random() >= CROP_NOTE_CHANCE) return;
-    lastCropHook = hooks[Math.floor(Math.random() * hooks.length)];
+    if (!unsaid.length || Math.random() >= CROP_NOTE_CHANCE) return;
+    lastCropHook = unsaid[Math.floor(Math.random() * unsaid.length)];
+    told.add(lastCropHook);
     window.pushCruiseLog('◆ ' + lastCropHook);
     return;
   }
   if (Math.random() >= (def.extra_event_chance || 0)) return;
   const line = hooks.length ? (lastCropHook = hooks[Math.floor(Math.random() * hooks.length)]) : 'The crop is having a moment.';
+  told.add(line);
   // No crew aboard: nobody's mood to swing — the crop takes the drama.
   const swings = STATE.crew.length ? [['crop', 5], ['crop', -5], ['morale', 2], ['morale', -2]] : [['crop', 5], ['crop', -5]];
   const [k, v] = swings[Math.floor(Math.random() * swings.length)];
@@ -5018,6 +5041,12 @@ function arriveAtNode(node, opts) {
      object — the two schemas are disambiguated by ev.layers presence.
    ──────────────────────────────────────────────────────────────── */
 function enterEvent(node, ev, opts) {
+  // Pooled station text (station.js) resolves on every way in, so a list
+  // never reaches the screen (Market Row from the hub's TRADE, a reload).
+  if (ev && ev.layers && !ev.station_approach && Object.values(ev.layers).some(l => l && (Array.isArray(l.body) || Array.isArray(l.line)))) ev = StationVisit.pooled(ev);
+  // A trader met here (drawn, waited for or called up by TRADE): the next
+  // TRADE at this stop skips the first-meeting pitch (cruise.js).
+  if (ev && /^event_encounter_trader_/.test(ev.id) && node) { STATE.tradersMet = STATE.tradersMet || {}; STATE.tradersMet[node.id] = ev.id; }
   // Owner ruling 2026-10-10: save at event entry, so a reload comes back
   // into this same event — never a refunded leg and a re-rolled encounter
   // (an undo for any bad outcome). Written below, once the NPC and variant
@@ -5049,16 +5078,10 @@ function enterEvent(node, ev, opts) {
   STATE.lastSpeaker = null;
 
   // Educational tie-in (Bible §18's reserved link schema): events can
-  // author science_link {url, label, text} — pushed into the cruise AI
-  // log once per run when the event fires, waiting there when the
-  // player returns from the encounter. 🔗 convention, new tab.
-  if (ev.science_link && ev.science_link.url && !STATE.flags.has('sci_' + ev.id)) {
-    STATE.flags.add('sci_' + ev.id);
-    window.pushCruiseLog({
-      text: '◆ ' + (ev.science_link.text || 'The ship computer files a reference for later reading.'),
-      link: { url: ev.science_link.url, label: ev.science_link.label || 'Learn more' },
-    });
-  }
+  // author science_link {url, label, text} — filed in the cruise AI log
+  // once per run, after the scene (read-through review: posted as the
+  // event opened, it ran ahead of the choice it explains). 🔗, new tab.
+  if (ev.science_link && ev.science_link.url && !STATE.flags.has('sci_' + ev.id) && !sciPending.includes(ev)) sciPending.push(ev);
 
   // Standard variants (event_shipboard_001's "noise in Cargo Bay 3"):
   // one is drawn uniformly per firing (owner ruling 2026-10-09) and
@@ -6024,7 +6047,11 @@ function renderChoicesInner(choices) {
       displaced = subText;
       // A hands-on job keeps its odds beside the preview (the preview shows
       // the clean result; short of effort is about half).
-      subText = preview + (effort && effort.check ? ' · ' + Math.round(effort.chance * 100) + '% clean' : '');
+      // A preview that pushes out the sub-label still says a long time cost
+      // (read-through review: "Fourteen days. It is the express" vanished).
+      const po = choiceCostOutcome(ch), pd = po ? outcomeDays(po, effort ? effort.ratio : 1) : 0;
+      const longDays = pd >= TIME_COST_DAYS.medium && !/\bDAYS?\b/i.test(preview) ? ' · ' + pd + ' DAYS' : '';
+      subText = preview + longDays + (effort && effort.check ? ' · ' + Math.round(effort.chance * 100) + '% clean' : '');
       btn.classList.add('previewed');
     }
     // Ruling 129: a big water or food cost goes on the row for everyone,
@@ -6301,7 +6328,7 @@ function outcomeFacts(o, tax) {
   if (concerns.length) {
     const mf = facts.find(f => f.morale);
     const w = concerns.reduce((a, c) => a + Math.abs(c.v), 0), bad = concerns.some(c => c.v < 0);
-    if (mf) { mf.text += ' · ' + concernText(concerns); mf.weight += w; mf.good = mf.good && !bad; }
+    if (mf) { mf.text += ' · ' + concernText(concerns, true); mf.weight += w; mf.good = mf.good && !bad; }
     else facts.push({ text: concernText(concerns) + ' MORALE', weight: w, good: !bad });
   }
   // Materials are cargo: a gain shows only what the hold can take now.
