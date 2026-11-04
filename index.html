@@ -1688,6 +1688,9 @@ const WELL_FUNDED_GOLD = 70;
 const ENGINE_STRAIN_BASE = 0.055;
 const ENGINE_STRAIN_MAX = 0.95;
 const MORALE_CRISIS = 25;
+// Ruling 129: an event's water or food cost this big (after the trail's
+// scaling) is written on the choice row, so a fatal price never hides.
+const BIG_SUPPLY_COST = 15;
 // The captain plus at most this many chosen crew (owner ruling 23).
 const CREW_MAX = 2;
 // A warned member walks off at the next station unless their own morale
@@ -5881,6 +5884,12 @@ function renderChoices(choices) {
   fitEncounterColumns();
   resaveEventProgress();
 }
+// Which rows a player sees at all (the balance sim reads the same rule).
+function choiceShown(ch) {
+  return !(ch.requires_flag && !STATE.flags.has(ch.requires_flag)) &&
+    !(ch.hideFlag && STATE.flags.has(ch.hideFlag)) &&
+    !(ch.unless_item && STATE.items.includes(ch.unless_item)); // ruling 122: a row for when it is gone
+}
 function renderChoicesInner(choices) {
   const col = document.getElementById('enc-choices');
   col.innerHTML = '';
@@ -5891,10 +5900,7 @@ function renderChoicesInner(choices) {
   // them — "Need: Diplomat" on a choice the diplomat alone could never
   // unlock would be a false promise.
   // The A8 softlock guard MUST judge the visible list, not the raw one.
-  const visible = choices.filter(ch =>
-    !(ch.requires_flag && !STATE.flags.has(ch.requires_flag)) &&
-    !(ch.hideFlag && STATE.flags.has(ch.hideFlag)) &&
-    !(ch.unless_item && STATE.items.includes(ch.unless_item))); // ruling 122: a row for when it is gone
+  const visible = choices.filter(choiceShown);
   const anyUnlocked = visible.some(ch => !lockReason(ch));
   // The station approach always has a way out (its leave row → the
   // wave-off warning): a DOCK the fee locks stays on screen, locked.
@@ -5995,6 +6001,10 @@ function renderChoicesInner(choices) {
       subText = preview + (effort && effort.check ? ' · ' + Math.round(effort.chance * 100) + '% clean' : '');
       btn.classList.add('previewed');
     }
+    // Ruling 129: a big water or food cost goes on the row for everyone,
+    // unless the preview already says it.
+    const bigCost = !locked && bigSupplyCost(ch);
+    if (bigCost && !(subText || '').includes(bigCost)) subText = subText ? subText + ' · ' + bigCost : bigCost;
     if (ch.effort || subText) {
       const sub = document.createElement('div');
       sub.className = 'ch-sub';
@@ -6413,6 +6423,20 @@ function outcomeDays(o, ratio) {
 /* The fixed outcome whose costs a choice's tooltip lists: the plain
    outcome, or Flee / Ram's own (they resolve to an authored outcome; Ram
    only when it gets through — the tooltip says so). */
+// "−31 H2O · −26 FOOD": the scaled water and food costs of BIG_SUPPLY_COST
+// or more a choice's outcome carries (ruling 129), else null.
+function bigSupplyCost(ch) {
+  const o = choiceCostOutcome(ch);
+  if (!o || !o.resources) return null;
+  const p = withPctPreview(o), out = [];
+  for (const k of ['water', 'food']) {
+    const v0 = p.resources[k];
+    if (!Number.isFinite(v0) || v0 >= 0) continue;
+    const v = effectiveResDelta(k, v0, p);
+    if (-v >= BIG_SUPPLY_COST) out.push('−' + (-v) + ' ' + RES_LABEL[k]);
+  }
+  return out.length ? out.join(' · ') : null;
+}
 function choiceCostOutcome(ch) {
   const o = choiceOutcome(ch);
   if (o) return o;
