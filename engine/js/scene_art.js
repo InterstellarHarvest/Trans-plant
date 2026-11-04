@@ -938,7 +938,7 @@
     _activeSheet = null;
   }
 
-  const SceneArt = { beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, talk, sceneSpecFor, layerSpecFor, biomeFor,
+  const SceneArt = { hashStr, beginEvent, render, renderOutcome, subjectFX, clearRunCaches, stopTalking, talk, sceneSpecFor, layerSpecFor, biomeFor,
     stationApproachFor, paintStationView, stablePick };
 
   Object.assign(window, {

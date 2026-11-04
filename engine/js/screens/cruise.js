@@ -1941,19 +1941,23 @@
     return false;
   }
 
+  // map_commentary.node_entering (authored for station / derelict): said as
+  // the ship arrives, with the arrival record and before the stop's scene
+  // opens — posted from the hub afterwards it read "Station coming up"
+  // after the visit, even after a wave-off.
+  function arrivalCommentary(node) {
+    if (!node) return;
+    const nodeLine = aiPool(['map_commentary', 'node_entering', node.node_type]);
+    if (nodeLine && Math.random() < 0.6) pushLogEntry('◆ ' + nodeLine, { ai: true });
+  }
+
   function maybePushAmbient() {
     if (STATE.lastAmbientNode === STATE.currentId) return;
     STATE.lastAmbientNode = STATE.currentId;
     if (maybePushTip()) return;
     if (maybePushCallback()) return;
-    // Node-specific commentary (map_commentary.node_entering — currently
-    // authored for station/derelict) takes priority over generic ambient
-    // when this node type has a pool.
-    const node = STATE.byId && STATE.byId[STATE.currentId];
-    if (node) {
-      const nodeLine = aiPool(['map_commentary', 'node_entering', node.node_type]);
-      if (nodeLine && Math.random() < 0.6) { pushLogEntry('◆ ' + nodeLine, { ai: true }); return; }
-    }
+    // (Node-specific "approaching" commentary posts on arrival instead,
+    // before the stop's scene: arrivalCommentary.)
     if (Math.random() < 0.45) {
       // One ambient beat in four is the ship computer's own note on the
       // living crop (flavor_pools.ship_computer_crop_comments, per crop).
@@ -2096,7 +2100,7 @@
     // engine API
     rebuildCruiseLog, paintCruiseBars, refundVerbTax, holdVerbTax, onJobBegun, onJobHarm,
     applyAbandonHarm, abortCruiseWait, openStopMenu, renderCruise, clearAiBubble,
-    refreshStopMenu, pushCruiseLog: pushLogEntry,
+    refreshStopMenu, pushCruiseLog: pushLogEntry, arrivalCommentary,
     // test hooks: tools/tests drive and read these through page.evaluate
     cruiseStarState, cruiseSceneAlert: showSceneAlert,
     cruiseDisplayLine: displayLine, derelictFormOf,

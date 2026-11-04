@@ -1691,6 +1691,10 @@ const MORALE_CRISIS = 25;
 // Ruling 129: an event's water or food cost this big (after the trail's
 // scaling) is written on the choice row, so a fatal price never hides.
 const BIG_SUPPLY_COST = 15;
+// journey_mid (ruling 133): the halfway moment, around the middle of the
+// route by legs flown — the middle third let "the exact midpoint" fire at 35%.
+const JOURNEY_MID_FROM = 0.4;
+const JOURNEY_MID_TO = 0.6;
 // The captain plus at most this many chosen crew (owner ruling 23).
 const CREW_MAX = 2;
 // A warned member walks off at the next station unless their own morale
@@ -3404,13 +3408,13 @@ function activeTriggers() {
   if (mo != null && mo < MORALE_LOW) active.add('low_morale');
   // Position-based (not threshold-based): first/last ~15% of the
   // journey by LEGS flown (registry: "first/final two legs"); journey_mid
-  // covers the long middle third. (Days elapsed stopped working once the
+  // is the stretch around halfway (ruling 133). (Days elapsed stopped working once the
   // balance pass flew only 60% of baseDays: journey_end never fired.)
   const legs = STATE.visited ? STATE.visited.size : 0, P = pathLegs();
   const frac = legs / P;
   if (frac <= 0.15 || legs <= 2) active.add('journey_start');
   if (frac >= 0.85 || P - legs <= 2) active.add('journey_end');
-  if (frac >= 0.35 && frac <= 0.65) active.add('journey_mid');
+  if (frac >= JOURNEY_MID_FROM && frac <= JOURNEY_MID_TO) active.add('journey_mid');
   // Behind schedule (rulings 82, 108): Orders' own ARRIVAL projection
   // (projectedArrivalDay: the legs left at the pace in force) lands past
   // the deadline. Only once a quarter of the trail is flown.
@@ -4909,6 +4913,7 @@ function travelTo(nodeId, opts) {
     arrivalPassives(node);
     cropDrama();
     if (legLog) ShipLog.arrival(legLog, node);
+    arrivalCommentary(node); // the AI's "approaching" line, before the stop's scene
     renderHUD();
     // A failure on the leg in (crop dead, the tank dry) stops here; if the
     // player presses on (Keep flying, the beacon), the arrival still plays
@@ -6153,7 +6158,9 @@ function renderLeaveRow(col) {
       STATE._shoppedThisEvent = false;
       passDays(1);
     }
-    if (slog) ShipLog.resolved(slog, ev, { text: label.textContent }, { narrative: '' });
+    // BACK TO DOCK / LEAVE STATION only walk: logged only if the visit cost something.
+    const nav = !!(STATE.stationVisit && STATE.stationVisit.node === STATE.currentId && STATE.stationVisit.phase === 'docked');
+    if (slog) ShipLog.resolved(slog, ev, { text: label.textContent }, { narrative: '' }, nav ? { nav: true } : undefined);
     if (shopped) {
       renderHUD();
       if (checkFailure()) return;

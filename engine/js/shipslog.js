@@ -45,15 +45,31 @@
     morale_zero: '{name} is at zero morale: leaves at the next station.', morale_back: '{name} is back to 25. Staying.',
     desertion: '{name} ({role}) walked off at {place}. {crew_left}.',
     crop_stage: '{crop}: {stage}, {growth}% grown, health {health}.', crop_ready: '{crop} ready to harvest. Health {health}.',
-    arrival: 'Arrived at {place}. The leg cost {costs}.',
+    arrival: 'Arrived at {place}. The leg cost {costs}.', outcome_none: '{line} Nothing aboard changed.',
     fight_won: '{title}: won. {effects}.', fight_lost: '{title}: lost. {effects}.', fight_fled: '{title}: fled. {effects}.', fight_paid: '{title}: paid them off. {effects}.',
   };
 
   const ai = () => String(STATE.activeAI || 'marv');
   function aiDef(id) { return (MOD.ai_companions || []).find(x => x.id === 'ai_' + (id || ai())) || null; }
+  // A template key may hold a pool (read-through review: one fixed sign-off
+  // repeated 35 times a run). The pick holds until the next entry is pushed,
+  // so an entry measured and rebuilt to fit keeps one wording, and the last
+  // few picks of a key are skipped.
+  const recentPicks = {};
+  let held = {};
   function template(key) {
     const a = aiDef();
-    return (a && a.log_templates && a.log_templates[key]) || FALLBACK[key] || '';
+    const t = a && a.log_templates && a.log_templates[key];
+    if (!Array.isArray(t)) return t || FALLBACK[key] || '';
+    const k = ai() + ':' + key;
+    if (held[k] != null && t[held[k]] != null) return t[held[k]];
+    const recent = recentPicks[k] || (recentPicks[k] = []);
+    const avoid = recent.slice(-Math.min(3, t.length - 1));
+    const open = t.map((_, i) => i).filter(i => !avoid.includes(i));
+    const i = open[Math.floor(Math.random() * open.length)];
+    recent.push(i); if (recent.length > 6) recent.shift();
+    held[k] = i;
+    return t[i] || FALLBACK[key] || '';
   }
   // Every filled sentence starts with a capital: an empty {line} leaves
   // "{effects}." leading ("nothing aboard changed." → "Nothing aboard
@@ -203,6 +219,7 @@
   function timeEnd()   { if (rec && rec.t0 && !rec.t1) rec.t1 = snapshot(); }
 
   function push(entry, opts) {
+    held = {}; // the next entry draws fresh wordings
     window.pushCruiseLog(entry, opts);
   }
   // minDay: lines held during a leg read as the arrival day (they
@@ -226,6 +243,9 @@
   function compose(r, info) {
     const after = snapshot();
     const list = facts(r.snap, after, r.t0 && r.t1 ? { a: r.t0, b: r.t1 } : null);
+    // Walking between a station's rooms and the bridge is not a decision:
+    // with nothing changed it leaves no entry (read-through review).
+    if (info.nav && !list.length) return;
     const day = r.snap.day;
     const title = clip(interp(info.title || 'The stop'), 34);
     const opts = { ai: true, instant: true };
@@ -239,6 +259,7 @@
     const o = info.outcome || {};
     let key, tok = { title };
     if (info.kind === 'fight') key = 'fight_' + (info.fight || 'won');
+    else if (!list.length && template('outcome_none')) key = 'outcome_none';
     else key = (isBad(list, o) ? 'outcome_bad' : 'outcome_good');
     // Fit: effects never truncated mid-fact; the line gives way first,
     // then any facts that still don't fit go to a follow-up line.

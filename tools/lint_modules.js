@@ -1659,15 +1659,25 @@ const CLAIMS_ON_TIME = /\bahead of schedule\b|\bon time\b|\bon schedule\b|\bdays
     arrival: ['place', 'costs'],
     fight_won: ['title', 'effects'], fight_lost: ['title', 'effects'], fight_fled: ['title', 'effects'], fight_paid: ['title', 'effects'],
     morale_zero: ['name'], morale_back: ['name'], desertion: ['name', 'role', 'place', 'crew_left'], // per-crew morale (owner ruling 15)
+    outcome_none: ['line'],
   };
   for (const a of ais) {
     const t = a.log_templates;
     if (!t || typeof t !== 'object') { err(`ai_companions.json ${a.id}: log_templates missing (the Ship's Log voices every entry from it)`); continue; }
+    // A key holds one template or a pool of them (read-through review): every
+    // variant carries the tokens and fits. outcome_none (nothing changed) is
+    // optional: the engine falls back to a neutral line.
     for (const [k, toks] of Object.entries(LOG_TEMPLATE_TOKENS)) {
-      if (typeof t[k] !== 'string' || !t[k].trim()) { err(`ai_companions.json ${a.id}: log_templates.${k} missing`); continue; }
-      for (const tok of toks) if (!t[k].includes('{' + tok + '}')) err(`ai_companions.json ${a.id}: log_templates.${k} must use {${tok}} (states the real effect)`);
-      const fixed = t[k].replace(/\{\w+\}/g, '').length;
-      if (fixed > 60) err(`ai_companions.json ${a.id}: log_templates.${k} fixed text is ${fixed} chars (≤ 60 leaves room under the 120 cap)`);
+      const list = Array.isArray(t[k]) ? t[k] : [t[k]];
+      if (k === 'outcome_none' && t[k] == null) continue;
+      if (!list.length || list.some(x => typeof x !== 'string' || !x.trim())) { err(`ai_companions.json ${a.id}: log_templates.${k} missing`); continue; }
+      list.forEach((x, i) => {
+        const at = `ai_companions.json ${a.id}: log_templates.${k}` + (list.length > 1 ? `[${i}]` : '');
+        for (const tok of toks) if (!x.includes('{' + tok + '}')) err(`${at} must use {${tok}} (states the real effect)`);
+        const fixed = x.replace(/\{\w+\}/g, '').length;
+        if (fixed > 60) err(`${at} fixed text is ${fixed} chars (≤ 60 leaves room under the 120 cap)`);
+        if (['marv', 'rex', 'ajoy'].includes(a.id.replace(/^ai_/, '')) && x.includes('!')) err(`${at} has a "!" (only ARIA and CHIP use them)`);
+      });
     }
     for (const k of Object.keys(t)) if (!(k in LOG_TEMPLATE_TOKENS)) err(`ai_companions.json ${a.id}: log_templates.${k} is not a key the engine reads`);
   }

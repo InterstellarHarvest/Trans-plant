@@ -77,6 +77,8 @@
       kind: kindOf(ev),
       phase: 'approach', captainHere: false, wavedOff: false, docked: false,
       roomsDone: [], inRoom: null,
+      // Which station of the run this is (1, 2, …): the text pools' turn.
+      no: [...(STATE.visited || [])].filter(id => STATE.byId[id] && STATE.byId[id].node_type === 'station').length || 1,
     };
     const v = STATE.stationVisit;
     v.captainHere = v.hailedFirst;
@@ -95,6 +97,34 @@
     const cost = eventGold(f.cost);
     return String(str).replace(/\{fee\.reason\}/g, f.reason).replace(/\{fee\.reason_lc\}/g, f.reason.toLowerCase())
       .replace(/\{fee\.cost\}/g, cost).replace(/\{fee\.detail\}/g, f.detail);
+  }
+  /* Text pools (read-through review: every visit read word for word the
+     same). A string field of the approach or Market Row may be a list; each
+     station of the run takes the next one in a per-run shuffled order, so
+     nothing repeats until the pool is spent. A station run wholly by one
+     species reads its `by_species` text instead where it has some. */
+  function poolPick(val, salt) {
+    if (!Array.isArray(val)) return val;
+    if (!val.length) return '';
+    const v = visit(), n = val.length;
+    const order = val.map((_, i) => i).sort((a, b) => SceneArt.hashStr(STATE.artSeed + '|' + salt + '|' + a) - SceneArt.hashStr(STATE.artSeed + '|' + salt + '|' + b));
+    return val[order[(((v && v.no) || 1) - 1) % n]];
+  }
+  function residentSpecies() {
+    const n = here();
+    return n && n.residents && n.residents !== 'human' && n.residents !== 'mixed' ? n.residents : null;
+  }
+  function speciesText(key) {
+    const a = approachEv(), sp = residentSpecies();
+    const t = sp && a && a.by_species && a.by_species[sp];
+    return t && t[key] != null ? poolPick(t[key], 'sp.' + key) : null;
+  }
+  // A layer copy with every pooled field resolved (ai lines included).
+  function resolvePools(L, salt) {
+    for (const k of ['body', 'line', 'line_fee']) if (Array.isArray(L[k])) L[k] = poolPick(L[k], salt + '.' + k);
+    if (L.ai) L.ai = Object.fromEntries(Object.entries(L.ai).map(([who, x]) => [who, poolPick(x, salt + '.ai.' + who)]));
+    if (L.variants) L.variants = Object.fromEntries(Object.entries(L.variants).map(([vn, vr]) => [vn, resolvePools(Object.assign({}, vr), salt + '.' + vn)]));
+    return L;
   }
   function dockChoice(base) {
     const v = visit();
@@ -132,7 +162,7 @@
     const v = visit();
     if (!v) return layer;
     const a = approachEv();
-    const L = Object.assign({}, layer);
+    const L = resolvePools(Object.assign({}, layer), id);
     const captain = a.station_captain;
     if (id === 'intro') {
       // First look: the dockmaster's welcome when they hailed first; back
@@ -140,18 +170,28 @@
       const firstLook = !(STATE._layerVisits && STATE._layerVisits.intro);
       const variant = v.hailedFirst && firstLook ? 'hailed' : v.captainHere ? 'open' : 'silent';
       const vr = (layer.variants || {})[variant] || {};
-      L.body = vr.body || layer.body;
+      L.body = vr.body || L.body;
       L.line = v.fee && vr.line_fee ? vr.line_fee : vr.line;
+      // A one-species station: its own approach, greeting and fee line.
+      const spBody = speciesText('intro_body'), spLine = speciesText(v.fee ? 'line_fee' : 'hail_line');
+      if (spBody && variant !== 'open') L.body = spBody;
+      if (spLine && variant === 'hailed') L.line = spLine;
+      const spAi = residentSpecies() && a.by_species && a.by_species[residentSpecies()] && a.by_species[residentSpecies()].ai;
+      if (spAi && firstLook) L.ai = Object.assign({}, L.ai, spAi);
       L.pose = vr.pose || layer.pose;
       L.npc = v.captainHere ? captain : null;
       L.choices = (layer.choices || []).filter(c => c.station === 'hail' ? !v.captainHere : c.station === 'dock' ? v.captainHere : true)
         .map(c => c.station === 'dock' ? dockChoice(c) : c);
     } else if (id === 'hail' || id === 'hail_polite' || id === 'hail_brief') {
       L.npc = captain;
-      if (v.fee && layer.line_fee) L.line = layer.line_fee;
+      if (v.fee && L.line_fee) L.line = L.line_fee;
+      const spLine = id === 'hail' && speciesText(v.fee ? 'line_fee' : 'hail_line');
+      if (spLine) L.line = spLine;
       L.choices = (layer.choices || []).map(c => c.station === 'dock' ? dockChoice(c) : c);
     } else if (id === 'docked') {
       L.npc = null;
+      const spBody = speciesText('docked_body');
+      if (spBody) L.body = spBody;
       L.choices = rooms().map(r => {
         const d = roomDef(r.key);
         const lock = doneLock(v, r.ev);
@@ -173,7 +213,7 @@
     const myKey = mine ? mine.key : roomOf(ev);
     const others = rooms().filter(r => r.ev !== ev.id && !doneLock(v, r.ev));
     const w = Object.assign({}, ev, { layers: {} });
-    for (const [k, l] of Object.entries(ev.layers)) { w.layers[k] = Object.assign({}, l); delete w.layers[k].leave_label; }
+    for (const [k, l] of Object.entries(ev.layers)) { w.layers[k] = resolvePools(Object.assign({}, l), ev.id + '.' + k); delete w.layers[k].leave_label; }
     w.leave_label = 'BACK TO DOCK';
     w.leave_sub = roomDef(myKey).back;
     if (others.length) {
@@ -266,7 +306,8 @@
         // LEAVE STATION: back on the bridge (the hub = intro_returning);
         // the dockmaster pings the comms once, as in the demo.
         const a = approachEv();
-        if (a && a.farewell) log('◆ ' + a.farewell);
+        const bye = a && (speciesText('farewell') || poolPick(a.farewell, 'farewell'));
+        if (bye) log('◆ ' + feeText(bye));
       }
       v.phase = 'left';
     }
