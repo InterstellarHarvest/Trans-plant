@@ -23,7 +23,8 @@ const POOL_BEFORE = { lunar: { water: 83, food: 80 }, mars: { water: 83, food: 8
 // Re-recorded 2026-10-14 (ruling 85): Rot Bloom's treatment option adds 8 water.
 // Re-recorded 2026-10-23 hunt (station_024 coffee costs food).
 // Re-recorded 2026-11-02 (pool 500): 500 events, the hard pool more than doubled.
-const POOL_AFTER = { lunar: { water: 506, food: 496 }, mars: { water: 529, food: 521 } };
+// Re-recorded 2026-11-03 (ruling 128): the six species quests' hard steps.
+const POOL_AFTER = { lunar: { water: 552, food: 534 }, mars: { water: 575, food: 559 } };
 const RES = ['fuel', 'food', 'water', 'o2', 'hull'];
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + m); } };

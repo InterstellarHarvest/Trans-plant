@@ -136,6 +136,11 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
         }
         if (ev.leave_as) {
           const node = __r60.setup(null, ev);
+          // A quest step whose entry layer is routed only by flags the step
+          // before set (ruling 128): in play one route is always set, so set
+          // the first; with none the layer shows a lone CONTINUE, no leave row.
+          const rows = ev.layers && ev.layers[entry] ? ev.layers[entry].choices || [] : [];
+          if (rows.length && rows.every(c => c.requires_flag)) STATE.flags.add(rows[0].requires_flag);
           // An opening layer may hide the row (answer the hail first): read it where it shows.
           const shown = ev.layers && ev.layers[entry] && ev.layers[entry].leaveHidden ? Object.keys(ev.layers).find(k => !ev.layers[k].leaveHidden) : null;
           enterEvent(node, ev, shown ? { layerStack: [entry, shown] } : undefined);
