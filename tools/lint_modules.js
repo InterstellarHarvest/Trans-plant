@@ -1431,15 +1431,17 @@ const CLAIMS_ON_TIME = /\bahead of schedule\b|\bon time\b|\bon schedule\b|\bdays
 // ── Event families (ruling 90) ─────────────────────────────────────
 // A family (the traders, the pirates) shares one old event's odds: its
 // draw_weights sum to 1, and its members share difficulty, node_type,
-// trigger and once (so the split is a change of face, not of frequency).
+// trigger (so the split is a change of face, not of frequency). Once may
+// differ (ruling 136): the members still in play share the family's odds.
 {
   const fam = {};
   for (const [id, { event: ev }] of eventsById) if (ev.family) (fam[ev.family] = fam[ev.family] || []).push(ev);
   for (const [f, list] of Object.entries(fam)) {
     const sum = list.reduce((s, e) => s + (Number.isFinite(e.draw_weight) ? e.draw_weight : 1), 0);
     if (Math.abs(sum - 1) > 0.02) err(`family "${f}": draw_weights sum to ${sum.toFixed(2)} (must be 1 — the family shares one event's odds)`);
-    const sig = e => JSON.stringify([e.difficulty, [...(e.node_type || [])].sort(), [...(e.trigger || [])].sort(), !!e.once]);
-    for (const e of list) if (sig(e) !== sig(list[0])) err(`family "${f}": ${e.id} differs from ${list[0].id} in difficulty / node_type / trigger / once`);
+    const sig = e => JSON.stringify([e.difficulty, [...(e.node_type || [])].sort(), [...(e.trigger || [])].sort()]);
+    for (const e of list) if (sig(e) !== sig(list[0])) err(`family "${f}": ${e.id} differs from ${list[0].id} in difficulty / node_type / trigger`);
+    if (!list.some(e => !e.once)) err(`family "${f}": every member is once a run — keep one repeatable (ruling 136)`);
   }
 }
 
@@ -1673,6 +1675,7 @@ const CLAIMS_ON_TIME = /\bahead of schedule\b|\bon time\b|\bon schedule\b|\bdays
     fight_won: ['title', 'effects'], fight_lost: ['title', 'effects'], fight_fled: ['title', 'effects'], fight_paid: ['title', 'effects'],
     morale_zero: ['name'], morale_back: ['name'], desertion: ['name', 'role', 'place', 'crew_left'], // per-crew morale (owner ruling 15)
     outcome_none: ['line'],
+    morale_full: [], // ruling 137: a morale gain the 100 cap swallowed
   };
   for (const a of ais) {
     const t = a.log_templates;

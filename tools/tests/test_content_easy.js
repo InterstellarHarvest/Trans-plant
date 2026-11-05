@@ -202,7 +202,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
   const links = meta.filter(m => m.link).length, mgs = meta.reduce((a, m) => a + m.mg.length, 0), once = meta.filter(m => m.once).length;
   ok(links === 7, `seven events carry a real-world science link (${links})`);
   ok(mgs === 4, `four hands-on minigame choices (${meta.flatMap(m => m.mg).join(', ')})`);
-  ok(once === 12, `mostly one-shot: ${once} of 14 once, the rest repeatable`);
+  ok(once === 13, `mostly one-shot: ${once} of 14 once, the rest repeatable (Lights Behind the Eyes once a run, ruling 136)`);
   // morale_to "speaker": the bar message lands on the crew member it is about, and the preview names them.
   const sp = await page.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms));

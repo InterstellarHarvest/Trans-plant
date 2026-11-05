@@ -3365,7 +3365,7 @@ function applySeverity(role, severity) {
   } else if (cap) {
     log('The captain is wounded. Your own hands count half on hands-on work until it heals.');
   } else {
-    log(name + ' is wounded. Their skill is offline until they recover.');
+    log(name + ' is wounded: their skill is offline and they work at half strength until they recover.');
   }
 }
 
@@ -3555,8 +3555,20 @@ function repeatKey(ev) { return ev && ev.family ? 'family:' + ev.family : ev.id;
 /* The family's face for this stop: a weighted pick (draw_weight) seeded on
    the run and the stop, so TRADE / a WAIT's trader at one stop is always
    the same ship. */
+// Ruling 136: a family's named ships happen once a run; the members still
+// in play share the family's whole odds, so meeting one doesn't make
+// traders or pirates rarer.
+function familyLive(family) {
+  return Object.values(EVENTS).filter(e => e.family === family && e.active !== false && (!e.trail || e.trail.includes(STATE.trail))
+    && !(e.once && STATE.seenEventIds && STATE.seenEventIds.has(e.id)));
+}
+function familyShareMult(ev) {
+  if (!ev || !ev.family) return 1;
+  const live = familyLive(ev.family).reduce((s, e) => s + (Number.isFinite(e.draw_weight) && e.draw_weight > 0 ? e.draw_weight : 1), 0);
+  return live > 0 ? 1 / live : 1;
+}
 function familyEvent(family, node) {
-  const list = Object.values(EVENTS).filter(e => e.family === family && e.active !== false && (!e.trail || e.trail.includes(STATE.trail)));
+  const list = familyLive(family);
   if (!list.length) return null;
   const slots = [];
   for (const e of list) for (let i = 0; i < Math.max(1, Math.round((e.draw_weight || 1) * 100)); i++) slots.push(e);
@@ -3598,7 +3610,9 @@ function repeatGaps(stop) {
 function noteEventDrawn(ev) {
   // A pending engine strain (ruling 83) is spent by the strain event it drew.
   if (ev && (ev.trigger || []).includes('engine_strain')) STATE.engineStrain = false;
-  if (!ev || ev.once) return;
+  // A once-a-run family member still cools its family (ruling 136): the
+  // generic trader doesn't turn up the stop after the Museum ship.
+  if (!ev || (ev.once && !ev.family)) return;
   STATE.eventLastStop = STATE.eventLastStop || {};
   STATE.eventLastStop[repeatKey(ev)] = currentStop();
 }
@@ -3830,6 +3844,7 @@ function drawWeightedEvent(candidates, triggers, baseWeights, branch) {
     // type (event_planet_006 — habitable planets only, ~1 in 6) is scaled
     // back up so it still turns up; 1 when unauthored.
     if (Number.isFinite(ev.draw_weight) && ev.draw_weight > 0) w *= ev.draw_weight;
+    w *= familyShareMult(ev); // ruling 136: the members left keep the family's odds
     // A consequence the run has earned should arrive: an event gated on a
     // flag or an item it holds is not one more face in a growing pool.
     if (ev.requires_flag || ev.requires_item) w *= PAYOFF_PULL;
@@ -5770,7 +5785,9 @@ function renderOutcomeView(outcome, src) {
   // A lethal outcome the medic/medkit turned into an injury still reads
   // as a death in authored text — say what actually happened.
   if (STATE.lethalSaved) bodyText += '\n\n' + STATE.lethalSaved;
-  if (STATE.effortCon) bodyText += '\n\n' + STATE.effortCon.line;
+  // The authored prose keeps its own day count; the failure says what it
+  // added (read-through review 36).
+  if (STATE.effortCon) { const d = STATE.effortCon.days || 2; bodyText += '\n\n' + STATE.effortCon.line + ' It added ' + (d === 1 ? 'a day' : d === 2 ? 'two days' : d + ' days') + '.'; }
   if (STATE.joinNote) bodyText += '\n\n' + STATE.joinNote; // crew_join: crew or passenger, as it landed
   const narr = document.getElementById('enc-narrative');
   narr.classList.remove('tone-success', 'tone-danger');
@@ -7082,8 +7099,12 @@ function applyOutcomeEffects(o) {
         let dv = v;
         if (!o.combat_net && STATE.halfEffect && dv > 0) dv = Math.floor(dv / 2);
         if (!o.combat_net && STATE.effortCon && dv > 0) dv = Math.floor(dv / 2);
-        if (o.morale_to) { const who = moraleTargetRole(o.morale_to); if (who) addCrewMorale(dv, who); }
-        else addCrewMorale(dv);
+        const who = o.morale_to ? moraleTargetRole(o.morale_to) : null;
+        const moved = o.morale_to ? (who ? addCrewMorale(dv, who) : 0) : addCrewMorale(dv);
+        // Ruling 137: a gain the 100 cap swallowed (some or all of it) gets
+        // the AI's "morale is full" line in the log, so the prose's lift
+        // doesn't read as a missing number.
+        if (dv > 0 && (who || (!o.morale_to && STATE.crew.length)) && moved < dv - 0.005) STATE.moraleFull = true;
       } else if (k in STATE.resources) {
         let dv = effectiveResDelta(k, v, o);
         if (STATE.halfEffect && dv > 0) dv = Math.floor(dv / 2); // captain standing in: half the gains (rounded down)

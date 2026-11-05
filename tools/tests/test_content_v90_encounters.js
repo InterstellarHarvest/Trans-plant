@@ -265,11 +265,14 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
     // Truthiness, as branchEventMult reads them (a flat event with no npc tags
     // corporate as undefined, not false).
     const tags = a => a.map(e => JSON.stringify(Object.fromEntries(Object.entries(eventBranchTags(e)).map(([k, v]) => [k, !!v]))));
-    return { tSum: sum(T), pSum: sum(P), tSame: ['difficulty', 'node_type', 'trigger', 'once'].every(k => same(T, k)), pSame: ['difficulty', 'node_type', 'trigger', 'once'].every(k => same(P, k)),
+    return { tSum: sum(T), pSum: sum(P), tSame: ['difficulty', 'node_type', 'trigger'].every(k => same(T, k)), pSame: ['difficulty', 'node_type', 'trigger'].every(k => same(P, k)),
+      // Ruling 136: the generic first member stays repeatable; the named ships happen once a run.
+      tOnce: T.map(e => e.once).join(), pOnce: P.map(e => e.once).join(),
       tShare, pShare, tTags: tags(T), pTags: tags(P) };
   });
   ok(w.tSum === 1 && w.pSum === 1, `draw weights sum to one old event: traders ${w.tSum}, pirates ${w.pSum}`);
-  ok(w.tSame && w.pSame, 'each family shares difficulty, node_type, trigger and once with its original');
+  ok(w.tSame && w.pSame, 'each family shares difficulty, node_type, trigger with its original');
+  ok(w.tOnce === 'false,true,false,true' && w.pOnce === 'false,true,true,false', `ruling 136: generic trader/pirate repeatable, named ships once a run (traders ${w.tOnce}; pirates ${w.pOnce})`);
   ok(Math.abs(w.tShare - 0.5) < 0.01 && Math.abs(w.pShare - 0.5) < 0.01, `against one weight-1 filler the family wins half the draws, as the single event did (traders ${w.tShare}, pirates ${w.pShare})`);
   ok(new Set(w.tTags).size === 1 && new Set(w.pTags).size === 1, `branch tags match within each family (traders ${[...new Set(w.tTags)]}, pirates ${[...new Set(w.pTags)]})`);
 

@@ -46,6 +46,7 @@
     desertion: '{name} ({role}) walked off at {place}. {crew_left}.',
     crop_stage: '{crop}: {stage}, {growth}% grown, health {health}.', crop_ready: '{crop} ready to harvest. Health {health}.',
     arrival: 'Arrived at {place}. The leg cost {costs}.', outcome_none: '{line} Nothing aboard changed.',
+    morale_full: 'Morale is already full. The lift had nowhere to go.',
     fight_won: '{title}: won. {effects}.', fight_lost: '{title}: lost. {effects}.', fight_fled: '{title}: fled. {effects}.', fight_paid: '{title}: paid them off. {effects}.',
   };
 
@@ -207,6 +208,7 @@
   // opts.fresh: measure from now (a travel leg), not from the event's start.
   function begin(opts) {
     if (rec) return null; // nested: the outer record owns the buffer
+    STATE.moraleFull = false; // ruling 137: set by a capped morale gain inside this record
     const r = { snap: (!(opts && opts.fresh) && eventSnap) || snapshot(), buf: [], t0: null, t1: null };
     rec = r;
     // Safety net: if the caller never closes it (an exception mid-apply),
@@ -275,6 +277,9 @@
     if (info.lore) entry.expand = info.lore;
     push(entry, opts);
     if (rest.length) push({ text: 'Also: ' + factText(rest) + '.', type: 'event', day }, opts);
+    // Ruling 137: the crew was already at 100 — the AI says so.
+    if (STATE.moraleFull && info.kind !== 'fight') push({ text: voiced('morale_full', {}), type: 'event', day }, opts);
+    STATE.moraleFull = false;
   }
   function isBad(list, o) {
     if (o && (o.tone === 'danger')) return true;
