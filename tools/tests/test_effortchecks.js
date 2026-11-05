@@ -30,9 +30,9 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   const bare = await run(['chef'], [], 0.0, 'event_asteroid_001', 'standard equipment');
   const drill = await run(['chef'], ['portable_drill'], 0.0, 'event_asteroid_001', 'standard equipment');
   const pct = s => +((s.match(/(\d+)% clean/) || [])[1]);
-  ok(/Effort \d+ \/ 30 · \d+% clean/.test(bare.sub), `button shows effort and odds (${bare.sub.slice(0, 70)})`);
+  ok(/Hands \d+ \/ 30 · \d+% clean/.test(bare.sub), `button shows effort and odds (${bare.sub.slice(0, 70)})`);
   ok(pct(drill.sub) > pct(bare.sub), `the drill raises the odds (${pct(bare.sub)}% → ${pct(drill.sub)}%)`);
-  ok(/Short of effort/.test(bare.tip), 'tooltip explains the downside');
+  ok(/Short-handed/.test(bare.tip), 'tooltip explains the downside');
   await page.waitForTimeout(100);
   const clean = await run(['chef'], [], 0.0, 'event_asteroid_001', 'standard equipment');
   const short = await run(['chef'], [], 0.99, 'event_asteroid_001', 'standard equipment');
@@ -43,7 +43,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   const body = await page.evaluate(() => document.getElementById('enc-narr-body').textContent);
   ok(/bit binds/i.test(body), 'outcome text says what went wrong');
   const wr = await run(['engineer', 'pilot'], ['repair_kit'], 0.5, 'event_crisis_011', 'Weld patch');
-  ok(pct(wr.sub) === 90 || /Effort/.test(wr.sub), `engineer + kit: near-certain (${wr.sub.slice(0, 60)})`);
+  ok(pct(wr.sub) === 90 || /Hands/.test(wr.sub), `engineer + kit: near-certain (${wr.sub.slice(0, 60)})`);
   // Previews equal outcomes (owner rule): the effort tax rides in the
   // MORALE figure of MARV's read and of the tooltip's Costs line — one
   // total, not listed again on the Effort line.

@@ -137,7 +137,7 @@ flowchart TD
 <figure><img src="img/play/w-outcome.png" alt="The outcome of the choice: the story panel describes signing the contract, and a single CONTINUE button"><figcaption>The outcome. CONTINUE takes you back to the hub.</figcaption></figure>
 </div>
 
-<p>Click a choice (or press its number key, <kbd>1</kbd> to <kbd>9</kbd>) and the outcome plays. What it did to the ship is summed up in the AI log and the Ship's Log: in this run, "+12 GOLD, −2 MORALE, 1 DAY". Some choices lead to a second set of choices before the outcome; some start a hands-on minigame or a ship-to-ship fight.</p>
+<p>Click a choice (or press its number key, <kbd>1</kbd> to <kbd>9</kbd>) and the outcome plays. What it did to the ship is summed up in the AI log and the Ship's Log: in this run, "+12 GOLD, −2 MORALE, 1 DAY". Morale tops out at 100; when a lift has nowhere to go, the AI says so in the log. Some choices lead to a second set of choices before the outcome; some start a hands-on minigame or a ship-to-ship fight.</p>
 
 <h3>7 · Traveling on, and forks</h3>
 
@@ -260,7 +260,7 @@ flowchart TD
 <ul>
 <li><strong>The sub-label</strong> is the small line under a choice. It is always one line, and the full story is in the tooltip. It may say what the choice needs, preview what it does, or describe the job.</li>
 <li><strong>Effort pips</strong> <span class="pips">●●○○○</span> show how much work a choice is, from one to five. <strong>Every pip costs morale</strong>: each crew member pays the effort tax when you pick it, and more pips cost more morale, climbing faster than the pips do. The cost is in the tooltip, on Stop-menu jobs and event choices alike. With no crew aboard there is nobody to tax.</li>
-<li><strong>Effort checks.</strong> Hands-on jobs show <code>Effort 65 / 40 · 2 days · 90% clean</code>: the effort you can bring against the effort the job needs, the time it takes, and the chance it goes cleanly. Your own hands, every crew member, the right specialist and the right tool all add effort. A one-use tool (a repair kit, say) is spent when it counts. Short of effort, the job still gets done, just worse: the tooltip spells out exactly what "worse" costs. Even a well-equipped crew is never certain.</li>
+<li><strong>Hands checks.</strong> Hands-on jobs show <code>Hands 65 / 40 · 2 days · 90% clean</code>: the hands you can bring against the hands the job needs, the time it takes, and the chance it goes cleanly. (The dots beside a choice are its <em>effort</em>, how tiring it is; hands are who and what you put on the job.) Your own hands, every crew member, the right specialist and the right tool all count. A one-use tool (a repair kit, say) is spent when it counts. Short-handed, the job still gets done, just worse: the tooltip spells out exactly what "worse" costs. Even a well-equipped crew is never certain.</li>
 <li><strong>Locked choices</strong> show a padlock and <code>Need: …</code>: a crew role, an item, an amount of gold, or several at once. A crew member who is too badly hurt cannot help, and the lock says so. Some choices stay hidden entirely until something earlier in the voyage opens them.</li>
 <li><strong>Gate icons.</strong> An unlocked choice that uses something you have shows its icon: the crew member's portrait, the item, the gold.</li>
 <li><strong>Previews.</strong> Some choices show what they will do before you pick them. Your AI might (MARV flags the most expensive option), a clean SCAN does, some items do, and an Academic captain gets one research preview per station leg.</li>
@@ -431,7 +431,7 @@ flowchart TD
 
 <h4>HP, wounds and morale</h4>
 <ul>
-<li><strong>Health (HP)</strong> runs from 100 down. Below 40 a person is <strong>wounded</strong>: their skills work at half strength and their HP bar turns amber. At 25 or below it turns red, and they are too hurt to help with choices that need them. At zero they die. The captain has real health too.</li>
+<li><strong>Health (HP)</strong> runs from 100 down. Below 40 a person is <strong>wounded</strong>: their active skill goes offline, everything else they do works at half strength, and their HP bar turns amber. At 25 or below it turns red, and they are too hurt to help with choices that need them. At zero they die. The captain has real health too.</li>
 <li><strong>Healing:</strong> everyone recovers a little each leg (faster with a medic aboard). The medic's Treatment, a medkit, and MEDBAY at a station heal properly.</li>
 <li><strong>Morale is per person.</strong> Changes to "the crew" hit everyone, but each specialist also reacts to their own concern: the botanist to the crop's health, the engineer to hull damage (and cheers up at a finished repair), the chef to short rations, the medic to injuries and deaths, the pilot to the pace, the xenobiologist to alien finds, the diplomat to fighting, and everyone to their own wounds. Hover a morale bar to see why it moved. With only one crew member aboard, those personal concerns count half.</li>
 <li><strong>Desertion.</strong> When someone's morale hits zero you are warned, and they will walk off at the next station unless their morale is back up to 25 by then. The morale bar and dossier say so.</li>
@@ -910,7 +910,7 @@ flowchart TD
 <p>Every event is tagged easy, medium, hard or ultra. Each trail has a difficulty table for its early stops. Past a point in the journey, the table slides steadily toward a harsher one by the time you reach the destination. The shift only changes the odds; it never adds or removes events. On the Interstellar trail, the ultra tier shows up only on the late legs.</p>
 
 <h3>Repeat cooldown and families</h3>
-<p>An event that can repeat sits out for the next few stops after it fires. Some events belong to a <strong>family</strong>, such as the traders or the pirates. A family cools down as one, so meeting one pirate crew keeps all the pirates away for a while. Within a family, which face you meet at a stop is fixed for that stop, so TRADE and a WAIT at the same stop bring the same trader. If every eligible event is cooling down, the stop still gets one, the one drawn longest ago, rather than going empty. Events locked in by a SCAN count as drawn for this purpose, so a scan can't line up the same scene twice in a row.</p>
+<p>Most events happen once a run: every event that tells one particular story (a named ship, a running joke, a discovery, a set-piece in a species' space). Routine situations can repeat: low supplies, pests, wounds, breakdowns, station services, the everyday trader and pirate. An event that can repeat sits out for the next four stops after it fires. Some events belong to a <strong>family</strong>, such as the traders or the pirates. A family cools down as one, so meeting one pirate crew keeps all the pirates away for a while. A family's named ships (the Museum, the closing-down sale, the learner pirate) are met once a run; the rest of the family takes over their odds, so traders and pirates turn up as often as ever. Within a family, which face you meet at a stop is fixed for that stop, so TRADE and a WAIT at the same stop bring the same trader. If every eligible event is cooling down, the stop still gets one, the one drawn longest ago, rather than going empty. Events locked in by a SCAN count as drawn for this purpose, so a scan can't line up the same scene twice in a row.</p>
 
 <h3>The hard-streak relief</h3>
 <p>The game counts hard (and ultra) events in a row. After a run of several, it eases off: the next couple of draws lean heavily toward easy and medium, and the late-trail shift is suspended for them. It is a pity timer for death spirals. A SCAN's look ahead doesn't count toward the streak.</p>
@@ -978,7 +978,7 @@ flowchart TD
 
 <h3>Effort checks and pips</h3>
 <p>Many choices carry <strong>effort pips</strong> (<span class="pips">●●●○○</span>). Each pip level costs every crew member some morale the moment you commit, and the cost climbs steeply as the pips go up. With no crew aboard, there is no morale to tax.</p>
-<p>Hands-on jobs (a wrench job, a calibration, a negotiation that might wobble) also have an <strong>effort check</strong>. The effort you bring is the captain's own hands, plus each listed specialist at their full value (half if wounded, half for a captain of that background), plus general help from everyone else, plus the right tool from the hold. The button shows the odds. Short of effort, you get a costlier version: thinner gains, extra days, and the job's own setback (or, for some jobs, a different outcome written for the botched attempt). Even a perfect crew keeps a little risk. Some repair jobs also scale their <em>time</em> by effort: a crew that can't contribute much takes up to twice as long, and a strong one finishes faster. A one-use kit is spent only when it actually changes the result.</p>
+<p>Hands-on jobs (a wrench job, a calibration, a negotiation that might wobble) also have a <strong>hands check</strong> (the choice shows <code>Hands 45 / 30</code>; the dots are the separate effort cost). The hands you bring are the captain's own hands, plus each listed specialist at their full value (half if wounded, half for a captain of that background), plus general help from everyone else, plus the right tool from the hold. The button shows the odds. Short-handed, you get a costlier version: thinner gains, extra days, and the job's own setback (or, for some jobs, a different outcome written for the botched attempt). Even a perfect crew keeps a little risk. Some repair jobs also scale their <em>time</em> by effort: a crew that can't contribute much takes up to twice as long, and a strong one finishes faster. A one-use kit is spent only when it actually changes the result.</p>
 
 <h3>What an outcome can change</h3>
 <p>An outcome can move any supply or gold (as a fixed amount or a share of what you have), morale (for the whole crew or one person), crop health, items and materials (as far as the hold has room), fabricator wear or repair, pests, standing orders, flags, and people: an injury, a bad wound, a death risk, healing, someone joining, a stowaway's fate. It also takes time, from no time at all up to a couple of weeks, and that time passes through the daily clock like any other day.</p>
@@ -1503,7 +1503,7 @@ flowchart LR
 
 
 <footer style="margin-top:64px;color:var(--muted);font-size:14px;border-top:1px solid var(--line);padding-top:16px">
-  Trans-plant manual · generated from the game at <code>68b1dfa</code> on 2026-11-04.
+  Trans-plant manual · generated from the game at <code>b258c6a</code> on 2026-11-05.
 </footer>
 
 </div>

@@ -450,7 +450,7 @@ const openDossier = async (page, role) => {
     ok(/The captain is wounded/.test(r.log), 'the log says the captain is wounded');
     await openDossier(page, 'captain');
     const st = await page.evaluate(() => ({ st: document.getElementById('cd-status-active').innerText, warn: document.getElementById('cd-passive-warn').classList.contains('hidden') }));
-    ok(/Wounded/.test(st.st) && /Hands count half \(effort \+5\)/.test(st.st) && st.warn, 'captain dossier: Wounded with the captain\'s real effect; background not shown as halved');
+    ok(/Wounded/.test(st.st) && /Hands count half \(\+5, not \+10\)/.test(st.st) && st.warn, 'captain dossier: Wounded with the captain\'s real effect; background not shown as halved');
     await shot(page, 'b4_captain_wounded');
     await page.close();
   }

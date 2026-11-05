@@ -458,7 +458,7 @@
   // captainHandsEffort / growbay tenderOf): the background keeps its half
   // strength, the captain's own hands count half.
   function captainWoundEffect() {
-    return 'Hands count half (effort +' + EFFORT_HANDS * WOUNDED_SKILL_MULT + ')' + (STATE.captain === 'botanist' ? ' · tending halved' : '');
+    return 'Hands count half (+' + EFFORT_HANDS * WOUNDED_SKILL_MULT + ', not +' + EFFORT_HANDS + ')' + (STATE.captain === 'botanist' ? ' · tending halved' : '');
   }
   function computeStatuses(hp, mo, role) {
     const fired = new Set();
