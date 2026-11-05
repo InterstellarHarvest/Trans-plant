@@ -3568,6 +3568,10 @@ function familyShareMult(ev) {
   return live > 0 ? 1 / live : 1;
 }
 function familyEvent(family, node) {
+  // The face already met at this stop stays this stop's face (ruling 90),
+  // even a named ship that is once a run (ruling 136) and so now seen.
+  const met = node && STATE.tradersMet && EVENTS[STATE.tradersMet[node.id]];
+  if (met && met.family === family && met.active !== false) return met;
   const list = familyLive(family);
   if (!list.length) return null;
   const slots = [];

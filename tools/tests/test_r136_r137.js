@@ -1,6 +1,6 @@
 // Ruling 136: one-off stories happen once a run; a family's named ships
 // step out once met and the members left keep the family's odds (and a
-// named ship still cools its family). Ruling 137: an event's morale gain
+// named ship still cools its family). A met trader stays its stop's face. Ruling 137: an event's morale gain
 // that runs into the 100 cap gets the AI's "morale is full" log line.
 // Read-through 36: a failed effort check says the days it added; the
 // wound line states both effects.
@@ -53,19 +53,26 @@ const ONE_OFFS = ['event_anomaly_005', 'event_asteroid_007', 'event_crisis_006',
     // familyEvent never hands back a met named ship.
     const faces = new Set();
     for (let i = 0; i < 60; i++) { const e = familyEvent('trader', { id: 'n' + i }); if (e) faces.add(e.id); }
+    // The trader met at a stop stays that stop's face, even a named ship
+    // now seen (a second TRADE there is the same ship, ruling 90).
+    const node = STATE.nodes.find(x => x.node_type === 'planet');
+    STATE.tradersMet = { [node.id]: 'event_encounter_trader_004' };
+    const keeps = familyEvent('trader', node).id === 'event_encounter_trader_004';
+    STATE.tradersMet = {};
     // A named ship cools its family like the single trader did.
     STATE.eventLastStop = {};
     noteEventDrawn(EVENTS.event_encounter_pirate_003);
     const cooled = Object.keys(STATE.eventLastStop).includes('family:pirate');
     noteEventDrawn(EVENTS.event_void_001);
     const plainOnce = Object.keys(STATE.eventLastStop).includes('event_void_001');
-    return { notOnce, rep, before, after, faces: [...faces], cooled, plainOnce };
+    return { notOnce, rep, before, after, faces: [...faces], keeps, cooled, plainOnce };
   }, ONE_OFFS);
   ok(!r.notOnce.length, `the ${ONE_OFFS.length} one-off stories are once: true` + (r.notOnce.length ? ' — not: ' + r.notOnce.join(', ') : ''));
   ok(r.rep === 69, `69 routine events stay repeatable (${r.rep})`);
   ok(Math.abs(r.before.t - 0.5) < 0.01 && Math.abs(r.before.p - 0.5) < 0.01, `families keep one old event's odds (traders ${r.before.t}, pirates ${r.before.p})`);
   ok(Math.abs(r.after.t - 0.5) < 0.01 && Math.abs(r.after.p - 0.5) < 0.01, `and still do once named ships are met (traders ${r.after.t}, pirates ${r.after.p})`);
   ok(r.faces.length && !r.faces.some(id => /trader_00[24]$/.test(id)), 'a TRADE face is never a met named ship: ' + r.faces.join(', '));
+  ok(r.keeps, 'the trader met at a stop is still that stop\'s trader once seen (a second TRADE is the same ship)');
   ok(r.cooled, 'a named pirate cools the pirate family for the repeat cooldown');
   ok(!r.plainOnce, 'a plain once-a-run event takes no cooldown slot (it never comes back)');
   await page.close();
