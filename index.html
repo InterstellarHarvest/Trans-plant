@@ -5916,13 +5916,17 @@ function fitEncounterColumns() {
   // and pushes the last choice (the pirate's BREAK OFF row, ruling 39)
   // below a scroll; 190 leaves six gated choices room at the demo's 8px
   // gap.
-  const MIN_NARR = Math.max(130, Math.min(190, narr.offsetHeight)), GAP = 8;
-  const room = Math.max(80, narrBottom - MIN_NARR - GAP - ch.offsetTop);
+  let MIN_NARR = Math.max(130, Math.min(190, narr.offsetHeight)), GAP = 8;
+  let room = Math.max(80, narrBottom - MIN_NARR - GAP - ch.offsetTop);
   // The column sizes to its rows, up to that room (its CSS bottom would
   // stop it short of the panel); rows that still don't fit pack tighter,
   // so the last row (the leave row) is never cut through.
   ch.style.bottom = 'auto';
   if (ch.scrollHeight > room) ch.classList.add('tight');
+  // Seven or eight rows packed tight still overran 190 (a quest step's
+  // intro hid its leave row below a scroll): the panel gives its reserve
+  // back down to its 130px floor, and its text scrolls (▾ MORE) instead.
+  if (ch.scrollHeight > room) { MIN_NARR = 130; room = Math.max(80, narrBottom - MIN_NARR - GAP - ch.offsetTop); }
   ch.style.maxHeight = room + 'px';
   // The panel grows up to the LAST BUTTON, not to the column's box (the box
   // always reaches its CSS bottom, so the panel never grew and 3 in 4
@@ -6076,7 +6080,9 @@ function renderChoicesInner(choices) {
     // Ruling 129: a big water or food cost goes on the row for everyone,
     // unless the preview already says it.
     const bigCost = !locked && bigSupplyCost(ch);
-    if (bigCost && !(subText || '').includes(bigCost)) subText = subText ? bigCost + ' · ' + subText : bigCost; // first, so a long line never clips it
+    // What the cost pushes along the row may end in "…": the tooltip keeps it whole.
+    let pushedOn = null;
+    if (bigCost && !(subText || '').includes(bigCost)) { pushedOn = subText || null; subText = subText ? bigCost + ' · ' + subText : bigCost; } // first, so a long line never clips it
     if (ch.effort || subText) {
       const sub = document.createElement('div');
       sub.className = 'ch-sub';
@@ -6120,6 +6126,7 @@ function renderChoicesInner(choices) {
       if (ch.risky) tip.push('Risky — outcomes can go badly');
       if (preview && !((/^MARV · /.test(preview) || ch.preview) && costs.length)) tip.push(preview); // MARV's read / posted terms: the Costs line says it already
       if (displaced) tip.push(displaced);
+      if (pushedOn && !tip.some(t => t.includes(pushedOn))) tip.push(pushedOn);
       if (effort && effort.kit) tip.push('Uses up one ' + prettyItem(effort.kit) + ' — it counts toward the hands.');
       if (welcomes && idn.join_note) tip.push(idn.join_note);
       if (cj && cj.name) tip.push(crewJoinRole(cj) ? cj.name + ' joins the crew as ' + cj.join_role + (cj.join_note ? ' — ' + cj.join_note : '') : 'No room in the crew: ' + cj.name + ' rides to the next station as a passenger and eats with everyone' + ((cj.passenger && cj.passenger.reward && cj.passenger.reward.gold) ? '; their family pays ' + cj.passenger.reward.gold + ' gold there' : '') + '.');
