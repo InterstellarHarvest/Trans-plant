@@ -19,6 +19,8 @@
  *   NOEND     the run used its budget without reaching an ending
  *   ESCAPED   the page navigated away from the game
  *   INJECTED  a typed ship name rendered as HTML (the soak types <i data-soak-inj>)
+ *   TIP       a hover box (ruling 146) up for a button that is gone, or the
+ *             cruise AI bubble left faded with no box up
  *
  * Run (serves the repo itself when URL is not given):
  *   NODE_PATH=$HOME/.nvm/versions/node/v20.20.2/lib/node_modules \
@@ -175,6 +177,11 @@ const snapshot = () => {
     inj: inj.length ? inj.join(',') : null,
     screen: act ? act.id : '', overlays: ovs.join(','), body: document.body.className, text, hash: h,
     tok: (() => { const m = text.match(TOKEN_RE); return m ? text.slice(Math.max(0, m.index - 60), m.index + 60) : null; })(),
+    tip: (() => { const T = window.Tooltip, b = document.getElementById('ai-bubble');
+      const vis = !!(T && T.panel && T.panel.classList.contains('visible'));
+      if (vis && T.current && !T.current.isConnected) return 'a hover box is up for a button that is gone';
+      if (b && b.classList.contains('tip-dimmed') && !vis) return 'the AI bubble stays faded with no hover box up';
+      return null; })(),
     bad, modalNoOverlay: modal && !shownOverlay && !confirm && !document.body.classList.contains('pause-open'),
     ended: !!(S && S.ended), trail: S && S.trail, captain: S && S.captain, ai: S && S.ai, day: S && S.daysElapsed,
     ev: S && S.currentEvent && S.currentEvent.id, layer: S && S.layerStack ? S.layerStack.join('>') : '', node: S && S.currentId,
@@ -247,6 +254,12 @@ async function runSeed(browserObj, url, seed, replay) {
     if (snap.tok) await flag('TOKEN', snap.tok, snap);
     if (snap.inj) await flag('INJECTED', 'a typed name became HTML inside #' + snap.inj, snap);
     if (snap.bad.length) await flag('STATE', snap.bad.join(' | '), snap);
+    if (snap.tip) {
+      // a hide can be one frame behind a re-render: look again
+      await page.waitForTimeout(600);
+      const s2 = await page.evaluate(snapshot).catch(() => null);
+      if (s2 && s2.tip) await flag('TIP', `${s2.tip} (screen ${s2.screen})`, s2);
+    }
     if (snap.modalNoOverlay) {
       // the class can lag one frame behind a closing overlay: look again
       await page.waitForTimeout(600);
@@ -346,6 +359,12 @@ async function selfTest(browserObj, url) {
     if (!(await page.evaluate(snapshot)).inj) fails.push('planted markup from a typed name not caught');
     await page.evaluate(() => { document.getElementById('soak-canary').remove(); document.body.classList.add('modal-open'); });
     if (!(await page.evaluate(snapshot)).modalNoOverlay) fails.push('planted modal-open with no overlay not caught');
+    // a hover box left up for a button that is gone, and a faded bubble with no box
+    await page.evaluate(() => { document.body.classList.remove('modal-open'); const el = document.createElement('button'); el.dataset.tipChoice = JSON.stringify({ desc: ['canary'], costs: [], notes: [] }); document.getElementById('game').appendChild(el); Tooltip.show(el); el.remove(); });
+    if (!/gone/.test((await page.evaluate(snapshot)).tip || '')) fails.push('planted hover box on a removed button not caught');
+    await page.evaluate(() => { Tooltip.hide(); const b = document.getElementById('ai-bubble'); if (b) b.classList.add('tip-dimmed'); });
+    if (!/faded/.test((await page.evaluate(snapshot)).tip || '')) fails.push('planted faded AI bubble not caught');
+    await page.evaluate(() => { const b = document.getElementById('ai-bubble'); if (b) b.classList.remove('tip-dimmed'); });
   } catch (e) { fails.push('self-test threw: ' + e.message.slice(0, 300)); }
   await ctx.close();
   return fails;
@@ -399,7 +418,7 @@ async function perform(page, a) {
   console.log(`clicker soak: ${BROWSER} ${url} → ${OUT}`);
   const st = await selfTest(browserObj, url);
   if (st.length) { console.log('SELF-TEST FAILED:', st); await browserObj.close(); if (srv) srv.close(); process.exit(2); }
-  console.log('self-test: detectors catch a planted token, NaN, injected markup and a stray modal-open');
+  console.log('self-test: detectors catch a planted token, NaN, injected markup, a stray modal-open and a stale hover box / faded bubble');
   const results = [];
   if (process.env.REPLAY) {
     const rec = JSON.parse(fs.readFileSync(process.env.REPLAY, 'utf8'));
