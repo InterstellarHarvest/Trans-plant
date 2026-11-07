@@ -246,6 +246,8 @@ node tools/fuzz_playthrough.js   # randomized full-run audits
 node tools/ui_sweep.js           # real-click UI sweep
 bash tools/tests/run_all.sh      # every regression battery (SMOKE=1 for the quick set,
                                  # PW_BROWSER=firefox for Firefox)
+SEEDS=1-12 node tools/clicker_soak.js  # seeded random player on the real UI, whole runs
+                                 # (serves itself; ~15 min a run; findings in tools/soak_out)
 ```
 
 Served over http, the engine reads the JSON directly. Opened from disk, it

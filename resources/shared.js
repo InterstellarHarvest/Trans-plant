@@ -1176,7 +1176,7 @@ const PauseMenu = (() => {
           return (
             '<div class="pause-slot' + (empty ? ' empty' : '') + '" data-slot="' + s.n + '">' +
               '<span class="pause-slot-n">SLOT ' + s.n + '</span>' +
-              '<span class="pause-slot-meta">' + label + (empty ? '' : ' · ' + ts) + '</span>' +
+              '<span class="pause-slot-meta">' + escapeHTML(label) + (empty ? '' : ' · ' + ts) + '</span>' + // the ship's name is the player's own text
               (mode === 'save'
                 ? '<button type="button" class="pause-btn" data-act="save">SAVE</button>'
                 : '<button type="button" class="pause-btn"' + (empty ? ' disabled' : '') + ' data-act="load">LOAD</button>') +
