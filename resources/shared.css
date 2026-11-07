@@ -896,6 +896,77 @@ html, body { cursor: var(--cursor-pointer, default); }
 .ui-tip.tone-good   .ui-tip-title { color: var(--tip-good); }
 .ui-tip.tone-good   .ui-tip-list li.current .mk { color: var(--tip-good); }
 
+/* ── Event-choice tooltip (ruling 146, owner 2026-11-07) ──────
+   shared.js choiceHTML: a description box over a WHAT IT TAKES box,
+   left of the hovered choice with an arrow on it. Day blocks (solid =
+   certain, hollow = maybe), effort pips, cost chips (red loss / green
+   gain), one odds bar with each result named. A change from
+   demo-tooltip (docs/RULINGS.md ruling 146); the demo stays as it is. */
+:root { --tip-bad: #e5604f; }
+.ui-tip.tip-choice {
+  width: 300px; max-width: none;
+  background: none; border: 0; box-shadow: none; padding: 0;
+  font-size: 15px; line-height: 1.2;
+}
+.tc-box {
+  position: relative;
+  background: rgba(17,22,34,0.96);
+  border: var(--tip-border-w) solid var(--gold);
+  border-radius: 2px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.55);
+  padding: 9px 10px;
+}
+.tc-box + .tc-box { margin-top: 5px; }
+.tc-box.risky { border-color: var(--tip-bad); }
+.tc-box.locked { border-color: rgba(200,168,90,0.45); }
+.tc-desc { color: var(--tip-cream); }
+.tc-desc + .tc-desc { margin-top: 6px; color: rgba(232,216,160,0.72); }
+.tc-h {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: 'Press Start 2P', monospace; font-size: 8px; letter-spacing: 1.5px;
+  color: var(--gold); margin: 0 0 8px;
+}
+.tc-h.tc-sub { margin: 12px 0 8px; color: rgba(200,168,90,0.75); }
+.tc-risk { color: var(--tip-bad); }
+.tc-grid { display: grid; grid-template-columns: 70px 1fr; row-gap: 6px; align-items: center; }
+.tc-l { font-family: 'Press Start 2P', monospace; font-size: 7px; letter-spacing: 1px; color: rgba(200,168,90,0.7); }
+.tc-v { display: flex; align-items: center; gap: 7px; color: var(--tip-cream); min-width: 0; }
+.tc-dim { color: rgba(232,216,160,0.6); }
+.tc-who span { white-space: nowrap; }
+.tc-days { display: inline-flex; gap: 2px; align-items: center; flex-wrap: wrap; }
+.tc-days b { display: inline-block; width: 6px; height: 9px; background: var(--gold); }
+.tc-days b.maybe { background: transparent; box-shadow: inset 0 0 0 1px var(--gold); }
+.tc-pips { letter-spacing: 1px; color: var(--gold); }
+.tc-pips i { font-style: normal; color: #4a4636; }
+.tc-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.tc-chip { font-family: 'Press Start 2P', monospace; font-size: 7px; letter-spacing: 0.5px; padding: 3px 4px 2px; border: 1px solid; line-height: 1; }
+.tc-chip.b { color: var(--tip-bad); border-color: #7a3028; background: rgba(229,96,79,0.08); }
+.tc-chip.g { color: var(--tip-good); border-color: #2e6650; background: rgba(108,200,160,0.08); }
+.tc-chip.n { color: var(--tip-cream); border-color: #5a5440; }
+.tc-note { margin-top: 7px; font-size: 14px; color: rgba(232,216,160,0.62); }
+.tc-grid + .tc-note { margin-top: 9px; }
+.tc-bar { display: flex; gap: 2px; height: 8px; margin: 0 0 7px; }
+.tc-bar span, .tc-sw { display: block; background: #6b6550; }
+.tc-bar span.g, .tc-sw.g { background: #5aa886; }
+.tc-bar span.b, .tc-sw.b { background: #c4503f; }
+.tc-odd { display: grid; grid-template-columns: 9px 1fr auto; column-gap: 7px; align-items: center; margin: 0 0 5px; }
+.tc-sw { width: 7px; height: 7px; }
+.tc-t { font-family: 'Press Start 2P', monospace; font-size: 7px; letter-spacing: 1px; color: var(--tip-cream); }
+.tc-p { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--tip-cream); }
+.tc-fx { grid-column: 2 / 4; font-size: 14px; line-height: 1.1; margin-top: 1px; display: flex; flex-wrap: wrap; gap: 0 9px; }
+.tc-fx .g { color: var(--tip-good); }
+.tc-fx .b { color: var(--tip-bad); }
+.tc-fx .n { color: rgba(232,216,160,0.55); }
+.tc-arrow {
+  position: absolute; right: -8px; width: 0; height: 0; margin-top: -7px;
+  border: 7px solid transparent; border-right-width: 0; border-left: 8px solid var(--gold);
+}
+.tc-arrow.risky { border-left-color: var(--tip-bad); }
+.tc-arrow::after {
+  content: ''; position: absolute; left: -9px; top: -6px;
+  border: 6px solid transparent; border-right-width: 0; border-left: 7px solid rgba(17,22,34,0.96);
+}
+
 /* tpConfirm — the game's yes/no dialog (shared.js), the pause terminal's look. */
 .tp-confirm-overlay { position: absolute; inset: 0; z-index: 100001; background: rgba(2,4,8,0.78); display: flex; align-items: center; justify-content: center; }
 .tp-confirm-overlay.fixed { position: fixed; }

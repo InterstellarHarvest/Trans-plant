@@ -136,10 +136,11 @@ const ONE_OFFS = ['event_anomaly_005', 'event_asteroid_007', 'event_crisis_006',
   }
   const html = require('fs').readFileSync(require('path').join(__dirname, '../../index.html'), 'utf8');
   ok(html.includes("is wounded: their skill is offline and they work at half strength until they recover.") && !html.includes('Their skill is offline until they recover'), 'the wound line says both: skill offline, half strength');
-  // Ruling 138 in the manual: crew-power numbers read "Hands", never "Effort N / M".
+  // Ruling 138 in the manual: crew-power numbers never read "Effort N / M";
+  // ruling 146 then dropped the score itself: the tooltip names who's helping.
   const man = require('fs').readdirSync(require('path').join(__dirname, '../../docs/manual/src')).filter(f => f.endsWith('.html'))
     .map(f => require('fs').readFileSync(require('path').join(__dirname, '../../docs/manual/src', f), 'utf8')).join('\n');
-  ok(!/Effort \d+ \/ \d+/.test(man) && /Hands 45 \/ 30/.test(man) && /Hands sub-label/.test(man), 'the manual says Hands for the crew-power numbers (text, picture description, caption)');
+  ok(!/Effort \d+ \/ \d+/.test(man) && !/Hands \d+ \/ \d+/.test(man) && /HELPING/.test(man) && /2 days · 90% clean/.test(man), 'the manual shows no hands score, names HELPING and the days · odds sub-label (text, picture description, caption)');
   await page.close();
 
   ok(!errors.length, 'no page errors: ' + errors.slice(0, 3).join(' | '));

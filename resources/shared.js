@@ -1844,6 +1844,16 @@ const MarketModal = (function() {
              list?: [{text, current?}], tone?, anchor?: 'element'|'cursor' }
    Element attrs: data-tip="<key>", data-tip-title, data-tip-description,
      data-tip-tone, data-tip-anchor, data-tip-rows / data-tip-list (JSON).
+   data-tip-choice (JSON, ruling 146): an event choice's drawn tooltip —
+     { desc[], risky, locked, time{lo,hi}, effort, helping[], preview{l,chips},
+       gains[{t,c}], costs[{t,c}], notes[], odds{head, rows[{p,t,tone,fx[{t,c}]}], note} }
+     Event choices, the cruise Stop-menu jobs (and their day steps) and
+     combat actions use it. While one is up, the cruise AI speech bubble
+     (#ai-bubble) fades if the box would cover it (owner 2026-11-07).
+     (c / tone: g good, b bad, n neutral). It sits LEFT of the element,
+     centred on it, its arrow on the element even when clamped.
+   NEVER over the AI quote banner (#enc-ai-bar, owner 2026-11-07: "ever"):
+     every tooltip keeps below its live bottom edge.
 
    NATIVE title= IS UPGRADED AUTOMATICALLY: a MutationObserver moves any
    title attribute set anywhere in the page (markup or `el.title = …`
@@ -1866,6 +1876,7 @@ window.Tooltip = (() => {
   let mouseX = 0, mouseY = 0;
   const OPEN_DELAY = 50;   // ms — near-instant, guards fly-throughs
   const OFFSET = 10, EDGE = 8;
+  const CHOICE_GAP = 13, BANNER_GAP = 6;
 
   function register(key, def) { REGISTRY[key] = def; return def; }
   function get(key) { return REGISTRY[key]; }
@@ -1905,7 +1916,8 @@ window.Tooltip = (() => {
     if ('tipAnchor'      in el.dataset) base.anchor      = el.dataset.tipAnchor;
     if ('tipRows'        in el.dataset) base.rows        = tryJSON(el.dataset.tipRows, base.rows);
     if ('tipList'        in el.dataset) base.list        = tryJSON(el.dataset.tipList, base.list);
-    if (!base.title && !base.description && !(base.rows && base.rows.length) && !(base.list && base.list.length)) return null;
+    if ('tipChoice'      in el.dataset) base.choice      = tryJSON(el.dataset.tipChoice, null);
+    if (!base.title && !base.description && !(base.rows && base.rows.length) && !(base.list && base.list.length) && !base.choice) return null;
     base.tone = base.tone || 'default';
     base.anchor = base.anchor || 'element';
     return base;
@@ -1915,7 +1927,8 @@ window.Tooltip = (() => {
   function render(def) {
     const p = ensurePanel();
     const wasVisible = p.classList.contains('visible');
-    p.className = 'ui-tip tone-' + def.tone + (wasVisible ? ' visible' : '');
+    p.className = 'ui-tip tone-' + def.tone + (def.choice ? ' tip-choice' : '') + (wasVisible ? ' visible' : '');
+    if (def.choice) { p.innerHTML = choiceHTML(def.choice); return p; }
     let html = '';
     if (def.title) html += '<div class="ui-tip-title">' + escapeHTML(def.title) + '</div>';
     if (def.description) html += '<div class="ui-tip-desc">' + escapeHTML(def.description) + '</div>';
@@ -1931,6 +1944,76 @@ window.Tooltip = (() => {
     }
     p.innerHTML = html;
     return p;
+  }
+
+  /* Ruling 146: an event choice's drawn tooltip — a description box and
+     a WHAT IT TAKES box (index.html choiceTipSpec builds the data). */
+  const esc = v => escapeHTML(v == null ? '' : String(v));
+  // The pixel font has no U+2212: chips and labels use the ASCII minus.
+  const pix = v => esc(v).replace(/−/g, '-');
+  const DAY_BLOCKS_MAX = 14;
+  function choiceHTML(c) {
+    let h = '';
+    if (c.desc && c.desc.length) {
+      h += '<div class="tc-box tc-about' + (c.locked ? ' locked' : '') + '">';
+      for (const d of c.desc) h += '<div class="tc-desc">' + esc(d) + '</div>';
+      h += '</div>';
+    }
+    const rows = [];
+    const row = (l, v) => rows.push('<span class="tc-l">' + l + '</span><span class="tc-v">' + v + '</span>');
+    const chips = list => '<span class="tc-chips">' + list.map(x => '<span class="tc-chip ' + (x.c || 'b') + '">' + pix(x.t) + '</span>').join('') + '</span>';
+    if (c.time) {
+      const lo = c.time.lo, hi = c.time.hi;
+      if (!hi) row('TIME', '<span class="tc-dim">no time</span>');
+      else {
+        const solid = Math.min(lo, DAY_BLOCKS_MAX), maybe = Math.min(hi, DAY_BLOCKS_MAX) - solid;
+        row('TIME', '<span class="tc-days">' + '<b></b>'.repeat(solid) + '<b class="maybe"></b>'.repeat(maybe) + '</span><span>' + (lo === hi ? lo : lo + '–' + hi) + (hi === 1 ? ' day' : ' days') + '</span>');
+      }
+    }
+    if (c.effort) row('EFFORT', '<span class="tc-pips">' + '●'.repeat(c.effort) + '<i>' + '●'.repeat(5 - c.effort) + '</i></span>');
+    if (c.helping && c.helping.length) row('HELPING', '<span class="tc-who">' + c.helping.map(w => '<span>' + esc(w) + '</span>').join(' · ') + '</span>');
+    if (c.preview && c.preview.chips.length) row(esc(c.preview.l), chips(c.preview.chips));
+    if (c.gains && c.gains.length) row('GAINS', chips(c.gains));
+    if (c.costs && c.costs.length) row('COSTS', chips(c.costs));
+    const notes = (c.notes || []).map(n => '<div class="tc-note">' + esc(n) + '</div>').join('');
+    let odds = '';
+    if (c.odds && c.odds.rows && c.odds.rows.length) {
+      const o = c.odds;
+      odds += '<div class="tc-h tc-sub"><span>' + esc(o.head) + '</span></div><div class="tc-bar">'
+        + o.rows.map(r => '<span class="' + (r.tone || 'n') + '" style="flex:' + Math.max(1, r.p) + '"></span>').join('') + '</div>';
+      for (const r of o.rows) {
+        odds += '<div class="tc-odd"><span class="tc-sw ' + (r.tone || 'n') + '"></span><span class="tc-t">' + pix(r.t) + '</span><span class="tc-p">' + r.p + '%</span>'
+          + '<div class="tc-fx">' + (r.fx || []).map(f => '<span class="' + (f.c || 'n') + '">' + esc(f.t) + '</span>').join('') + '</div></div>';
+      }
+      if (o.note) odds += '<div class="tc-note">' + esc(o.note) + '</div>';
+    }
+    if (rows.length || notes || odds) {
+      h += '<div class="tc-box tc-takes' + (c.risky ? ' risky' : '') + '"><div class="tc-h"><span>WHAT IT TAKES</span>' + (c.risky ? '<span class="tc-risk">▲ RISKY</span>' : '') + '</div>'
+        + (rows.length ? '<div class="tc-grid">' + rows.join('') + '</div>' : '') + notes + odds + '</div>';
+    }
+    return h + '<div class="tc-arrow"></div>';
+  }
+
+  // The cruise AI speech bubble fades while a choice's box covers it
+  // (owner 2026-11-07), and comes back on hide.
+  function dimBubble(x, y, pw, ph, f) {
+    const b = document.getElementById('ai-bubble');
+    if (!b) return;
+    const r = b.getBoundingClientRect();
+    const bx = (r.left - f.x0) / f.s, by = (r.top - f.y0) / f.s, bw = r.width / f.s, bh = r.height / f.s;
+    const over = r.width > 0 && x < bx + bw && x + pw > bx && y < by + bh && y + ph > by;
+    b.classList.toggle('tip-dimmed', over);
+  }
+  function undimBubble() { const b = document.getElementById('ai-bubble'); if (b) b.classList.remove('tip-dimmed'); }
+
+  // The AI quote banner's live box in frame coords, or null when it isn't
+  // showing (owner 2026-11-07: tooltips never cover it).
+  function bannerBox(f) {
+    const bar = document.getElementById('enc-ai-bar');
+    if (!bar) return null;
+    const r = bar.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    return { left: (r.left - f.x0) / f.s, right: (r.right - f.x0) / f.s, top: (r.top - f.y0) / f.s, bottom: (r.bottom - f.y0) / f.s };
   }
 
   // Frame the panel is positioned in: the game's 960×640 space (the
@@ -1949,7 +2032,12 @@ window.Tooltip = (() => {
     if (!panel) return;
     const f = frame();
     const pw = panel.offsetWidth, ph = panel.offsetHeight;
+    const ban = bannerBox(f);
     let x, y;
+    if (def.choice && def.anchor !== 'cursor' && positionChoice(el, f, pw, ph, ban)) return;
+    undimBubble();
+    const arrow = panel.querySelector('.tc-arrow');
+    if (arrow) arrow.style.display = 'none'; // no room on the left: above / below, no arrow
     if (def.anchor === 'cursor') {
       const mx = (mouseX - f.x0) / f.s, my = (mouseY - f.y0) / f.s;
       x = mx + 14; y = my + 18;
@@ -1967,8 +2055,44 @@ window.Tooltip = (() => {
     }
     if (y < EDGE) y = EDGE;
     if (y + ph > f.h - EDGE) y = f.h - EDGE - ph;
+    // Never over the AI banner: below it (and below the element it
+    // belongs to, so the flip never lands on that), whatever the clamp said.
+    if (ban && x < ban.right && x + pw > ban.left && y < ban.bottom && y + ph > ban.top) {
+      const below = def.anchor === 'cursor' ? 0 : (el.getBoundingClientRect().bottom - f.y0) / f.s + OFFSET;
+      y = Math.max(ban.bottom + BANNER_GAP, below);
+    }
     panel.style.left = Math.round(x) + 'px';
     panel.style.top = Math.round(y) + 'px';
+  }
+
+  // Ruling 146: left of the choice, centred on it, clamped below the AI
+  // banner and above the floor; the arrow sits on whichever box is level
+  // with the button's middle, so it always points at the hovered button.
+  // false when there's no room on the left (the caller goes above/below).
+  function positionChoice(el, f, pw, ph, ban) {
+    const c = el.getBoundingClientRect();
+    // A part of a choice (a day step inside a Stop-menu job) sits beside
+    // the whole row: left of the row, level with the part.
+    const host = (el.parentElement && el.parentElement.closest('.stop-choice, .enc-choice')) || el;
+    const left = (host.getBoundingClientRect().left - f.x0) / f.s, top = (c.top - f.y0) / f.s, h = c.height / f.s;
+    const x = left - pw - CHOICE_GAP;
+    if (x < EDGE) return false;
+    const cy = top + h / 2;
+    const ceil = ban && x < ban.right && x + pw > ban.left ? Math.max(EDGE, ban.bottom + BANNER_GAP) : EDGE;
+    const y = Math.max(ceil, Math.min(f.h - EDGE - ph, cy - ph / 2));
+    panel.style.left = Math.round(x) + 'px';
+    panel.style.top = Math.round(y) + 'px';
+    dimBubble(x, y, pw, ph, f);
+    const arrow = panel.querySelector('.tc-arrow');
+    const boxes = [...panel.querySelectorAll('.tc-box')];
+    if (arrow && boxes.length) {
+      const ay = cy - Math.round(y);
+      const box = boxes.find(b => ay <= b.offsetTop + b.offsetHeight) || boxes[boxes.length - 1];
+      arrow.style.display = '';
+      arrow.className = 'tc-arrow' + (box.classList.contains('risky') ? ' risky' : '');
+      arrow.style.top = Math.round(Math.max(box.offsetTop + 9, Math.min(box.offsetTop + box.offsetHeight - 9, ay))) + 'px';
+    }
+    return true;
   }
 
   function show(el, overrideDef) {
@@ -1983,6 +2107,7 @@ window.Tooltip = (() => {
 
   function hide() {
     currentTarget = null; currentDef = null;
+    undimBubble();
     if (panel) panel.classList.remove('visible');
     if (openTimer) { clearTimeout(openTimer); openTimer = 0; }
   }

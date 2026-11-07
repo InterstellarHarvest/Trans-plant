@@ -107,7 +107,7 @@ flowchart TD
 <p>Back to that departure. Hover over a choice to see what it really costs: the days it takes and any supplies it spends. Here, signing up a breakfast-cereal sponsor takes a day and costs a little morale.</p>
 
 <div class="shots">
-<figure><img src="img/play/w-choice.png" alt="The Sponsor event with the mouse over the first choice: a tooltip reads Takes 1 day, Costs −2 MORALE"><figcaption>Hovering a choice shows its time and resource costs.</figcaption></figure>
+<figure><img src="img/play/w-choice.png" alt="The Sponsor event with the mouse over the first choice: a tooltip to its left, with an arrow pointing at the choice, reads WHAT IT TAKES, TIME one day block and 1 day, COSTS a red −2 MORALE chip"><figcaption>Hovering a choice shows its time and resource costs.</figcaption></figure>
 <figure><img src="img/play/w-outcome.png" alt="The outcome of the choice: the story panel describes signing the contract, and a single CONTINUE button"><figcaption>The outcome. CONTINUE takes you back to the hub.</figcaption></figure>
 </div>
 
@@ -191,7 +191,7 @@ flowchart TD
 </table>
 
 <h4>The AI's speech bubble</h4>
-<p>While you are stopped the Stop menu covers the log column, so your AI talks to you in a <strong>speech bubble</strong> over the ship instead: its portrait and its newest three lines for this stop (tips, comments, warnings, memories of earlier choices). Click the bubble or its <strong>×</strong> to dismiss it; RESUME clears it too. Every line is also kept in the log and the Ship's Log, so nothing is lost. You can see the bubble in the <a href="#play-first-run">walkthrough</a>'s hub screenshot.</p>
+<p>While you are stopped the Stop menu covers the log column, so your AI talks to you in a <strong>speech bubble</strong> over the ship instead: its portrait and its newest three lines for this stop (tips, comments, warnings, memories of earlier choices). Click the bubble or its <strong>×</strong> to dismiss it; RESUME clears it too. Every line is also kept in the log and the Ship's Log, so nothing is lost. You can see the bubble in the <a href="#play-first-run">walkthrough</a>'s hub screenshot. Hovering a Stop-menu job fades the bubble while the job's box would cover it.</p>
 
 <h3>The Stop menu</h3>
 
@@ -227,19 +227,20 @@ flowchart TD
 <p>Every stop has one event. Some are quick decisions, some have several rounds of choices, some put you face to face with someone on a screen or in a corridor, and some turn into minigames or fights. The choices column is where the decisions are made, and it tells you a lot if you know how to read it.</p>
 
 <div class="shots">
-<figure><img src="img/play/s-choices-effort.png" alt="A choices column: a locked choice with a padlock and Need: Hull Patch; FABRICATE A HULL PATCH with two pips and Hands 45 / 30 · 90% clean; ATTEMPT MANUAL REPAIR with two pips and Hands 65 / 40 · 2 days · 90% clean; IGNORE IT AND HOPE"><figcaption>Hands-on jobs: pips, the Hands sub-label and the clean odds.</figcaption></figure>
+<figure><img src="img/play/s-choices-effort.png" alt="A choices column: a locked choice with a padlock and Need: Hull Patch; FABRICATE A HULL PATCH with two pips and 2 days · 90% clean; ATTEMPT MANUAL REPAIR with two pips and 2 days · 90% clean; IGNORE IT AND HOPE"><figcaption>Hands-on jobs: pips, the days and the clean odds.</figcaption></figure>
+<figure><img src="img/play/s-choice-tooltip.png" alt="The mouse over ATTEMPT MANUAL REPAIR: the tooltip to its left reads WHAT IT TAKES, TIME two solid day blocks and one hollow, 2–3 days, EFFORT two pips, HELPING you · engineer · pilot · repair kit, COSTS −2 MORALE and USES REPAIR KIT chips; under HOW IT GOES a bar mostly green, CLEAN 90% goes as planned, SHORT-HANDED 10% half the gains, +1 DAY, −3 HULL, ENGINEER −1 MORALE"><figcaption>A hands-on job's tooltip: who's helping, what it costs, and how it goes.</figcaption></figure>
 <figure><img src="img/play/s-choices-gates.png" alt="A choices column in a pirate encounter: a tribute choice with a gold icon, a locked choice needing a diplomat, a choice with MARV's warning −15% FUEL, OPEN FIRE and FLEE with red risky sub-labels, and a red BREAK OFF row"><figcaption>Gates, a locked choice, an AI preview, risky choices and the leave row.</figcaption></figure>
 </div>
 
 <ul>
 <li><strong>The sub-label</strong> is the small line under a choice. It is always one line, and the full story is in the tooltip. It may say what the choice needs, preview what it does, or describe the job.</li>
 <li><strong>Effort pips</strong> <span class="pips">●●○○○</span> show how much work a choice is, from one to five. <strong>Every pip costs morale</strong>: each crew member pays the effort tax when you pick it, and more pips cost more morale, climbing faster than the pips do. The cost is in the tooltip, on Stop-menu jobs and event choices alike. With no crew aboard there is nobody to tax.</li>
-<li><strong>Hands checks.</strong> Hands-on jobs show <code>Hands 65 / 40 · 2 days · 90% clean</code>: the hands you can bring against the hands the job needs, the time it takes, and the chance it goes cleanly. (The dots beside a choice are its <em>effort</em>, how tiring it is; hands are who and what you put on the job.) Your own hands, every crew member, the right specialist and the right tool all count. A one-use tool (a repair kit, say) is spent when it counts. Short-handed, the job still gets done, just worse: the tooltip spells out exactly what "worse" costs. Even a well-equipped crew is never certain.</li>
+<li><strong>Hands-on jobs</strong> show <code>2 days · 90% clean</code>: the time the job takes and the chance it goes cleanly. Your own hands, every crew member, the right specialist and the right tool all count toward the odds; the tooltip's HELPING line names who and what is on the job, and it says what missing help would change ("A portable drill would make it 90%."). A one-use tool (a repair kit, say) is spent when it counts. Short-handed, the job still gets done, just worse: the tooltip spells out exactly what "worse" costs. Even a well-equipped crew is never certain.</li>
 <li><strong>Locked choices</strong> show a padlock and <code>Need: …</code>: a crew role, an item, an amount of gold, or several at once. A crew member who is too badly hurt cannot help, and the lock says so. Some choices stay hidden entirely until something earlier in the voyage opens them.</li>
 <li><strong>Gate icons.</strong> An unlocked choice that uses something you have shows its icon: the crew member's portrait, the item, the gold.</li>
 <li><strong>Previews.</strong> Some choices show what they will do before you pick them. Your AI might (MARV flags the most expensive option), a clean SCAN does, some items do, and an Academic captain gets one research preview per station leg.</li>
 <li><strong>Risky choices</strong> have red sub-labels: they can go badly.</li>
-<li><strong>Tooltips.</strong> Hover any choice for the full picture: the days it takes, everything it costs, the effort and its morale tax, the odds, and what happens if you fall short.</li>
+<li><strong>Tooltips.</strong> Hover any choice for the full picture, to the left of the choice with an arrow pointing at it. The top box says what the choice is. The WHAT IT TAKES box below shows the days as blocks (solid for certain, hollow for maybe), the effort pips, who's helping, every cost as a red chip, and a red ▲ RISKY tag when it can go badly. A choice left to chance, or a hands-on job, adds one bar split by the odds with each result named, its chance and its biggest effects. Stop-menu jobs and combat actions use the same box, with a green GAINS row where the job says what it gives; a day in a job's day picker has its own. While a box covers the AI's speech bubble on the cruise screen, the bubble fades until you move off.</li>
 <li><strong>Leaving.</strong> Many layered events have a red leave row at the bottom (LEAVE, NOT NOW, BACK TO DOCK…). It ends the scene with no outcome, unless its own sub-label or tooltip says otherwise: some leave rows are an exit with a price (backing off from a fight is never free). A few emergencies cannot be left, and their leave row is locked.</li>
 </ul>
 

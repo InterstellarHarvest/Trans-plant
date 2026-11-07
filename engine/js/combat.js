@@ -371,7 +371,16 @@
     if (!opts.locked && opts.onClick) btn.addEventListener('click', opts.onClick);
     // An ending's tooltip: what it costs in full, its days included.
     if (opts.tip) Tooltip.attach(btn, { description: opts.tip, tone: opts.tipTone });
+    // Ruling 146: the drawn hover, as for event choices (the text form stays).
+    if (opts.spec && tipSpecShows(opts.spec)) btn.dataset.tipChoice = JSON.stringify(opts.spec);
     return btn;
+  }
+  // A combat action's drawn hover: the days its ending takes, chips, notes.
+  function actionSpec(o) {
+    const s = { desc: [], risky: !!o.risky, gains: o.gains || [], costs: o.costs || [], notes: o.notes || [] };
+    if (o.days) { const n = endDays(o.days); s.time = { lo: n, hi: n }; }
+    if (o.odds) s.odds = o.odds;
+    return s;
   }
 
   function renderCombatActions() {
@@ -408,6 +417,8 @@
         sub: yields ? 'Yield a toll: −25% fuel, −20% gold · ' + daysText('yielded') : 'They won\'t take a yield: limp away · ' + daysText('defeated'),
         tip: yields ? 'They let you go for a toll: a quarter of the fuel and a fifth of the gold, no loot. Takes ' + daysText('yielded') + '.'
           : 'They won\'t accept a yield: the ship limps away at hull 1 and loses cargo, as a lost fight does. Takes ' + daysText('defeated') + '.',
+        spec: yields ? actionSpec({ days: 'yielded', risky: true, costs: [{ t: '−25% FUEL', c: 'b' }, { t: '−20% GOLD', c: 'b' }], notes: ['They let you go for a toll. No loot.'] })
+          : actionSpec({ days: 'defeated', risky: true, costs: [{ t: 'HULL TO 1', c: 'b' }, { t: 'CARGO LOST', c: 'b' }], notes: ['They won\'t take a yield: the ship limps away, as a lost fight does.'] }),
         cls: 'combat-danger', onClick: resolveMutinyStandDown }));
       return;
     }
@@ -415,9 +426,11 @@
       const crewMo = COMBAT.player.morale != null; // no crew aboard: no morale to promise
       wrap.appendChild(makeActionBtn({ verb: 'ACCEPT SURRENDER', sub: '40% loot' + (crewMo ? ' · morale +5' : '') + ' · ' + daysText('victory_surrendered'),
         tip: 'Strip their ship and let them go: about 40% of the loot' + (crewMo ? ', crew morale +5' : '') + '. Takes ' + daysText('victory_surrendered') + '.',
+        spec: actionSpec({ days: 'victory_surrendered', gains: [{ t: 'ABOUT 40% OF THE LOOT', c: 'g' }].concat(crewMo ? [{ t: '+5 MORALE', c: 'g' }] : []), notes: ['Strip their ship and let them go.'] }),
         cls: 'combat-tribute', onClick: acceptSurrender }));
       wrap.appendChild(makeActionBtn({ verb: 'FINISH THEM', sub: 'Full loot' + (crewMo ? ' · morale -10' : '') + ' · ' + daysText('victory_executed'),
         tip: 'Destroy the surrendered ship: the full loot' + (crewMo ? ', crew morale −10' : '') + ', and the deed is remembered (later events know). Takes ' + daysText('victory_executed') + '.',
+        spec: actionSpec({ days: 'victory_executed', risky: true, gains: [{ t: 'FULL LOOT', c: 'g' }], costs: crewMo ? [{ t: '−10 MORALE', c: 'b' }] : [], notes: ['The deed is remembered: later events know.'] }),
         tipTone: 'danger', cls: 'combat-danger', onClick: finishSurrendered }));
       return;
     }
@@ -446,10 +459,10 @@
     // captain of that background offers at half strength).
     const tribPct = k => Math.round(tributeTerms(k).odds * 100);
     if (COMBAT.openingTurn && tributeTerms('botanist')) {
-      wrap.appendChild(makeActionBtn({ verb: 'OFFER HARVEST', sub: 'Botanist · ' + tribPct('botanist') + '% · -' + tributeTerms('botanist').cfg.tribute_food_cost + ' food · opening only', tip: tributeTip('botanist'), cls: 'combat-tribute', gate: { crew: 'botanist' }, onClick: () => offerTribute('botanist') }));
+      wrap.appendChild(makeActionBtn({ verb: 'OFFER HARVEST', sub: 'Botanist · ' + tribPct('botanist') + '% · -' + tributeTerms('botanist').cfg.tribute_food_cost + ' food · opening only', tip: tributeTip('botanist'), spec: tributeSpec('botanist'), cls: 'combat-tribute', gate: { crew: 'botanist' }, onClick: () => offerTribute('botanist') }));
     }
     if (COMBAT.openingTurn && tributeTerms('chef')) {
-      wrap.appendChild(makeActionBtn({ verb: 'OFFER COOKIES', sub: 'Chef · ' + tribPct('chef') + '% · -' + tributeTerms('chef').cfg.tribute_food_cost + ' food · they remember you', tip: tributeTip('chef'), cls: 'combat-tribute', gate: { crew: 'chef' }, onClick: () => offerTribute('chef') }));
+      wrap.appendChild(makeActionBtn({ verb: 'OFFER COOKIES', sub: 'Chef · ' + tribPct('chef') + '% · -' + tributeTerms('chef').cfg.tribute_food_cost + ' food · they remember you', tip: tributeTip('chef'), spec: tributeSpec('chef'), cls: 'combat-tribute', gate: { crew: 'chef' }, onClick: () => offerTribute('chef') }));
     }
 
     const fireBonusTags = [];
@@ -495,6 +508,7 @@
     wrap.appendChild(makeActionBtn({
       verb: 'ATTEMPT ESCAPE', sub: `${ftlTurnsLabel()}-turn FTL charge · -15 fuel · ${daysText('escape')}`,
       tip: `The drive spools for ${ftlTurnsLabel()} turns while they keep firing; if it jumps, −15 fuel and the escape takes ${daysText('escape')}.`,
+      spec: actionSpec({ days: 'escape', risky: true, costs: [{ t: '−15 FUEL', c: 'b' }], notes: [`The drive spools for ${ftlTurnsLabel()} turns while they keep firing; the fuel and the days are spent only if it jumps.`] }),
       cls: 'combat-special', onClick: beginFtlCharge
     }));
   }
@@ -974,6 +988,14 @@
     const t = tributeTerms(kind);
     return Math.round(t.odds * 100) + '% they take it: −' + t.cfg.tribute_food_cost + ' food either way. Taken, the fight ends' + (kind === 'chef' ? ' and they remember you' : '') + ': ' + daysText('tribute') + '. Refused, the fight goes on.';
   }
+  // Ruling 146: the same, drawn: the food as a cost, one odds bar.
+  function tributeSpec(kind) {
+    const t = tributeTerms(kind), p = Math.round(t.odds * 100);
+    return actionSpec({ costs: [{ t: '−' + t.cfg.tribute_food_cost + ' FOOD', c: 'b' }], notes: ['The food is spent either way.'],
+      odds: { head: 'CHANCE DECIDES', rows: [
+        { p, t: 'THEY TAKE IT', tone: 'g', fx: [{ t: 'the fight ends', c: 'g' }, { t: daysText('tribute'), c: 'n' }].concat(kind === 'chef' ? [{ t: 'they remember you', c: 'g' }] : []) },
+        { p: 100 - p, t: 'THEY REFUSE', tone: 'b', fx: [{ t: 'the fight goes on', c: 'b' }] }] } });
+  }
   function offerTribute(kind) {
     if (!COMBAT.active || COMBAT.state !== 'PLAYER_TURN' || COMBAT.tributeUsed || !COMBAT.openingTurn || !tributeTerms(kind)) return;
     COMBAT.tributeUsed = true; COMBAT.openingTurn = false;
@@ -1267,11 +1289,13 @@
     wrap.appendChild(makeActionBtn({
       verb: 'SALVAGE WRECKAGE', sub: 'Full loot · bonus crate roll · ' + daysText('salvaged'), cls: 'combat-special',
       tip: 'Crack the wreck open: the full loot and a bonus crate roll. Takes ' + daysText('salvaged') + '.',
+      spec: actionSpec({ days: 'salvaged', gains: [{ t: 'FULL LOOT', c: 'g' }, { t: 'BONUS CRATE ROLL', c: 'g' }] }),
       onClick: () => resolveVictoryChoice({ outcome: 'victory_destroyed', salvaged: true })
     }));
     wrap.appendChild(makeActionBtn({
       verb: 'LEAVE IT', sub: 'Partial loot · back sooner · ' + daysText('departed'),
       tip: 'Take what floats free and go: partial loot, back on course sooner. Takes ' + daysText('departed') + '.',
+      spec: actionSpec({ days: 'departed', gains: [{ t: 'PARTIAL LOOT', c: 'g' }], notes: ['Take what floats free; back on course sooner.'] }),
       onClick: () => resolveVictoryChoice({ outcome: 'victory_destroyed', salvaged: false })
     }));
   }

@@ -6117,12 +6117,12 @@ function renderChoicesInner(choices) {
       subText = (subText ? subText + ' · ' : '') + (r ? 'joins as ' + r : 'rides to the next station');
     }
     const effort = !locked && choiceEffort(ch);
+    let effortLine = null;
     if (effort && !subText) {
-      const o = choiceOutcome(ch);
-      const days = outcomeDays(o, effort.ratio);
-      const authoredTime = Number.isFinite(ch.effort_required);
-      subText = 'Hands ' + effort.available + ' / ' + effort.required
-        + (authoredTime || !effort.check ? ' · ' + days + (days === 1 ? ' day' : ' days') : '')
+      // Ruling 146: the days and the clean odds — no "Hands N / M" score
+      // (the tooltip says who's helping and what would raise the odds).
+      const days = outcomeDays(choiceOutcome(ch), effort.ratio);
+      subText = effortLine = days + (days === 1 ? ' day' : ' days')
         + (effort.check ? ' · ' + Math.round(effort.chance * 100) + '% clean' : '');
       // (the kit it spends is in the tooltip — sub-labels stay one line)
     }
@@ -6191,7 +6191,7 @@ function renderChoicesInner(choices) {
       if (preview && !((/^MARV · /.test(preview) || ch.preview) && costs.length)) tip.push(preview); // MARV's read / posted terms: the Costs line says it already
       if (displaced) tip.push(displaced);
       if (pushedOn && !tip.some(t => t.includes(pushedOn))) tip.push(pushedOn);
-      if (effort && effort.kit) tip.push('Uses up one ' + prettyItem(effort.kit) + ' — it counts toward the hands.');
+      if (effort && effort.kit) tip.push('Uses up one ' + prettyItem(effort.kit) + '.');
       if (welcomes && idn.join_note) tip.push(idn.join_note);
       if (cj && cj.name) tip.push(crewJoinRole(cj) ? cj.name + ' joins the crew as ' + cj.join_role + (cj.join_note ? ' — ' + cj.join_note : '') : 'No room in the crew: ' + cj.name + ' rides to the next station as a passenger and eats with everyone' + ((cj.passenger && cj.passenger.reward && cj.passenger.reward.gold) ? '; their family pays ' + cj.passenger.reward.gold + ' gold there' : '') + '.');
       // An authored sub-label displaces the odds: the tooltip says them.
@@ -6200,11 +6200,18 @@ function renderChoicesInner(choices) {
       if (failO) { const f = outcomeFacts(withPctPreview(failO)).map(x => x.text); tip.push(odds + 'Short-handed: ' + ((failO.title || 'it goes worse') + (f.length ? ' — ' + f.join(', ') : '')) + '. Crew and tools raise the odds.'); }
       else if (effort && effort.check) { const con = Object.entries(effort.check.con).filter(([k]) => k !== 'morale' || STATE.crew.length).map(([k, v]) => (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k)).concat(STATE.crew.includes('engineer') && hullConcern(-(effort.check.con.hull || 0)) ? [concernText([{ label: 'ENGINEER', v: concernAmount(hullConcern(-effort.check.con.hull)) }]) + ' MORALE'] : []).join(', '); tip.push(odds + 'Short-handed: half the resource gains, ' + (effort.authored ? 'a day more' : 'two more days') + (con ? ', ' + con : '') + '. Crew and tools raise the odds.'); } // no crew aboard: a morale setback lands on nobody
       if (tip.length) btn.title = tip.join('\n');
+      // Ruling 146: the drawn tooltip (shared.js Tooltip, choice layout);
+      // the text form above stays as the plain-text data.
+      const spec = choiceTipSpec(ch, { preview, displaced, pushedOn, effortLine, welcomes: welcomes && idn, cj });
+      if (tipSpecShows(spec)) btn.dataset.tipChoice = JSON.stringify(spec); // nothing to say: no tooltip, as before
     }
     // Held until the text lands, then the cascade (prepareDelivery /
     // revealChoices); the click pulse + 180ms beat live in bindEncButton.
     // A locked row's "Need: …" can run past one line: hover reads it whole.
-    if (locked) btn.title = pricedText(interpolateStowawayTokens(ch.text || ch.label), ch) + '\n' + locked;
+    if (locked) {
+      btn.title = pricedText(interpolateStowawayTokens(ch.text || ch.label), ch) + '\n' + locked;
+      btn.dataset.tipChoice = JSON.stringify({ locked: true, desc: [locked] });
+    }
     if (!locked) bindEncButton(btn, () => handleChoiceClick(ch));
     col.appendChild(btn);
   }
@@ -6248,6 +6255,8 @@ function renderLeaveRow(col) {
     const tip = choiceCostLines(as);
     if (as.risky) tip.push('Risky — outcomes can go badly');
     if (tip.length) leave.title = tip.join('\n');
+    const spec = choiceTipSpec(as, {});
+    if (tipSpecShows(spec)) leave.dataset.tipChoice = JSON.stringify(spec);
     bindEncButton(leave, () => handleChoiceClick(as));
     col.appendChild(leave);
     return;
@@ -6607,55 +6616,223 @@ function fightConcernLine() {
   if (STATE.crew.includes('engineer') && concernDef('engineer', 'hull_damage')) parts.push('ENGINEER minds every hull hit');
   return parts.length ? 'Any fight: ' + parts.join(' · ') : null;
 }
-function choiceCostLines(ch) {
-  const lines = [];
-  if (ch.triggerCombat || ch.combat_trigger) {
-    lines.push('Ship-to-ship combat: the fight decides what it costs');
-    if (fightConcernLine()) lines.push(fightConcernLine());
-    return lines;
-  }
+/* Ruling 146: what a choice's cost lines say, as data — the drawn
+   tooltip (choiceTipSpec) and the text form (choiceCostLines) read the
+   same numbers. kind: combat | outcome | minigame | roll. */
+function choiceCostInfo(ch) {
+  if (ch.triggerCombat || ch.combat_trigger) return { kind: 'combat', fight: fightConcernLine() };
   const o = choiceCostOutcome(ch);
   if (o) {
     const eff = choiceEffort(ch);
     const days = outcomeDays(o, eff ? eff.ratio : 1);
-    lines.push(days ? 'Takes ' + days + (days === 1 ? ' day' : ' days') : 'Takes no time');
     // The effort tax rides in the MORALE figure (one total; the tooltip's
     // Effort line then leaves it out).
-    const costs = outcomeFacts(withPctPreview(o), choiceTax(ch)).filter(f => !f.good).map(f => f.text);
-    if (costs.length) lines.push('Costs: ' + costs.join(' · '));
-    if (ch.triggerRamResolve) {
-      const fail = Math.round(((window.RAM_FAIL_CHANCE != null) ? window.RAM_FAIL_CHANCE : 0.3) * 100);
-      lines.push(fail + '% they hold: −' + (ch.hull || 18) + ' hull and a fight');
-      if (fightConcernLine()) lines.push(fightConcernLine());
-    }
-  } else if (ch.launch_minigame) {
+    const info = { kind: 'outcome', lo: days, hi: days, costs: outcomeFacts(withPctPreview(o), choiceTax(ch)).filter(f => !f.good) };
+    if (ch.triggerRamResolve) info.ram = { fail: Math.round(((window.RAM_FAIL_CHANCE != null) ? window.RAM_FAIL_CHANCE : 0.3) * 100), hull: ch.hull || 18, fight: fightConcernLine() };
+    return info;
+  }
+  if (ch.launch_minigame) {
     const base = ch.outcome && typeof ch.outcome === 'object' ? ch.outcome : null;
     const tierTime = Object.values(ch.tier_outcomes || {}).some(t => t && (t.time_cost || Number.isFinite(t.time_days)));
-    if (base && !tierTime) { const d = outcomeDays(base, 1); lines.push(d ? 'Takes ' + d + (d === 1 ? ' day' : ' days') : 'Takes no time'); }
+    const info = { kind: 'minigame', lo: null, hi: null, timed: ch.launch_minigame === 'breach' };
+    if (base && !tierTime) info.lo = info.hi = outcomeDays(base, 1);
     else if (tierTime) {
       // Each result takes its own time: say the range.
       const ds = ['perfect', 'good', 'poor'].map(t => outcomeDays(mergedTierOutcome(ch, t), 1));
-      const lo = Math.min(...ds), hi = Math.max(...ds);
-      lines.push(hi === 0 ? 'Takes no time' : 'Takes ' + (lo === hi ? lo : lo + '–' + hi) + (hi === 1 ? ' day' : ' days') + (lo === hi ? '' : ', by how it goes'));
+      info.lo = Math.min(...ds); info.hi = Math.max(...ds);
     }
-    lines.push('A minigame: how well you play decides the result');
-    // Ruling 76: the breach countdown is a real clock, said up front.
-    if (ch.launch_minigame === 'breach') lines.push('Timed: a real clock — about 3 seconds a breach, 4 with an engineer');
-  } else if (Array.isArray(ch.roll) && ch.roll.length && STATE.currentEvent && STATE.currentEvent.outcomes) {
+    return info;
+  }
+  if (Array.isArray(ch.roll) && ch.roll.length && STATE.currentEvent && STATE.currentEvent.outcomes) {
     // Ruling 144: a chance choice says its time range and every way it
     // can go, with the odds — the roll is fixed, the player just can't pick.
     const ev = STATE.currentEvent, tot = ch.roll.reduce((t, r) => t + (r.weight || 0), 0) || 1;
     const rows = ch.roll.map(r => ({ p: Math.round(100 * (r.weight || 0) / tot), o: ev.outcomes[r.outcome] })).filter(r => r.o);
+    if (!rows.length) return null;
     const ds = rows.map(r => outcomeDays(r.o, 1));
-    const lo = Math.min(...ds), hi = Math.max(...ds);
-    lines.push(hi === 0 ? 'Takes no time' : 'Takes ' + (lo === hi ? lo : lo + '–' + hi) + (hi === 1 ? ' day' : ' days') + (lo === hi ? '' : ', by how it goes'));
+    return { kind: 'roll', lo: Math.min(...ds), hi: Math.max(...ds), rows: rows.map(r => ({ p: r.p, o: r.o, facts: outcomeFacts(withPctPreview(r.o), 0) })) };
+  }
+  return null;
+}
+function takesText(lo, hi) {
+  return hi === 0 ? 'Takes no time' : 'Takes ' + (lo === hi ? lo : lo + '–' + hi) + (hi === 1 ? ' day' : ' days') + (lo === hi ? '' : ', by how it goes');
+}
+function choiceCostLines(ch) {
+  const i = choiceCostInfo(ch), lines = [];
+  if (!i) return lines;
+  if (i.kind === 'combat') {
+    lines.push('Ship-to-ship combat: the fight decides what it costs');
+    if (i.fight) lines.push(i.fight);
+  } else if (i.kind === 'outcome') {
+    lines.push(takesText(i.lo, i.hi));
+    if (i.costs.length) lines.push('Costs: ' + i.costs.map(f => f.text).join(' · '));
+    if (i.ram) {
+      lines.push(i.ram.fail + '% they hold: −' + i.ram.hull + ' hull and a fight');
+      if (i.ram.fight) lines.push(i.ram.fight);
+    }
+  } else if (i.kind === 'minigame') {
+    if (i.lo != null) lines.push(takesText(i.lo, i.hi));
+    lines.push('A minigame: how well you play decides the result');
+    // Ruling 76: the breach countdown is a real clock, said up front.
+    if (i.timed) lines.push('Timed: a real clock — about 3 seconds a breach, 4 with an engineer');
+  } else if (i.kind === 'roll') {
+    lines.push(takesText(i.lo, i.hi));
     lines.push('Chance decides:');
-    for (const r of rows) {
-      const fx = outcomeFacts(withPctPreview(r.o), 0).map(f => f.text);
+    for (const r of i.rows) {
+      const fx = r.facts.map(f => f.text);
       lines.push(r.p + '% · ' + (fx.length ? fx.join(' · ') : 'nothing changes'));
     }
   }
   return lines;
+}
+
+/* Ruling 146: the drawn choice tooltip (owner 2026-11-07). Left of the
+   button, two boxes: what the choice is (description) and WHAT IT TAKES —
+   day blocks (solid certain, hollow maybe), effort pips, who's HELPING
+   (never a hands score), cost chips, a RISKY tag, and for chance choices
+   and hands-on jobs one odds bar with each result named. Gains show only
+   where the game already reveals them (previews, chance results, joins):
+   everyone sees time and costs (ruling 34), outcomes stay a perk.
+   shared.js Tooltip draws it (data-tip-choice). It changes demo-tooltip /
+   demo-encounter's plain-text choice tip (docs/RULINGS.md, Changes from
+   the demos); the demo files stay as they are. */
+const TIP_PREVIEW_SOURCES = ['MARV', 'SCAN', 'SCANNER', 'GEIGER', 'RESEARCH'];
+function tipFactTone(t) {
+  if (/WEAR|DEATH|INJURY|HAZARD|NO ROOM|^USES/.test(t)) return 'b';
+  if (/^\+|PATCH STOPS|HEALING|CLEARED|REPAIRED|GOOD AS NEW/.test(t)) return 'g';
+  return /−/.test(t) ? 'b' : 'n';
+}
+// One chip per figure: "−2 MORALE · ENGINEER −10" (a morale fact with its
+// role concern) is two chips, each coloured by its own sign.
+const tipChips = f => f.text.split(' · ').map(t => { const c = tipFactTone(t); return { t, c: c === 'n' ? (f.good ? 'g' : 'b') : c }; });
+// Whoever and whatever counts toward a hands-on job right now.
+function effortSources(ch) {
+  if (Number.isFinite(ch.effort_required) && Array.isArray(ch.requires_effort_from)) return ch.requires_effort_from;
+  const check = effortCheckOf(ch);
+  return check ? check.from : [];
+}
+function effortHelpers(ch, eff) {
+  const hurt = r => woundedMult(r) < 1 ? ' (hurt)' : '';
+  const out = [];
+  if (captainHandsEffort() > 0) out.push('you' + hurt('captain'));
+  for (const r of STATE.crew) out.push(r + hurt(r));
+  for (const src of effortSources(ch)) {
+    if (!src.startsWith('item:')) continue;
+    const id = src.slice(5), d = itemDef(id);
+    if (!d || !STATE.items.includes(id)) continue;
+    if ((d.item_behavior || []).includes('one_use') && eff.kit !== id) continue; // a kit the job doesn't need stays in the hold
+    out.push(prettyItem(id));
+  }
+  return out;
+}
+// "A portable drill would make it 90%." — the listed help that isn't
+// aboard, and what it would change (choiceEffort's own formulas).
+function effortRaiseNote(ch, eff) {
+  const alts = [];
+  const o = choiceOutcome(ch);
+  const ratioOf = a => Math.min(2, Math.max(0.5, eff.required / Math.max(1, a)));
+  const chanceOf = a => Math.max(0.15, Math.min(0.90, a / (eff.required * 1.3)));
+  for (const src of effortSources(ch)) {
+    let v, name;
+    if (src.startsWith('item:')) {
+      const id = src.slice(5), d = itemDef(id);
+      if (!d || STATE.items.includes(id)) continue;
+      v = (d.effort_contribution && d.effort_contribution.value) || 20; name = prettyItem(id);
+    } else {
+      if (STATE.crew.includes(src) || STATE.captain === src) continue;
+      const c = (MOD.crew_roster || []).find(x => x.role === src);
+      v = (c && c.passive_skill && c.passive_skill.effort_contribution && c.passive_skill.effort_contribution.value) || 25; name = src;
+    }
+    if (eff.check) {
+      const now = Math.round(eff.chance * 100), then = Math.round(chanceOf(eff.available + v) * 100);
+      if (then > now) alts.push({ name, txt: then + '%' });
+    } else if (o) {
+      const now = outcomeDays(o, eff.ratio), then = outcomeDays(o, ratioOf(eff.available + v));
+      if (then < now) alts.push({ name, txt: then + (then === 1 ? ' day' : ' days') });
+    }
+  }
+  if (!alts.length) return null;
+  const a = (n, cap) => (/^[aeiou]/i.test(n) ? (cap ? 'An ' : 'an ') : (cap ? 'A ' : 'a ')) + n;
+  return a(alts[0].name, true) + ' would make it ' + alts[0].txt + (alts[1] ? '; ' + a(alts[1].name) + ', ' + alts[1].txt : '') + '.';
+}
+function tipSpecShows(s) {
+  return !!(s.locked || s.desc.length || s.time || s.effort || (s.helping && s.helping.length) || s.preview || s.costs.length || s.notes.length || s.odds);
+}
+function choiceTipSpec(ch, x) {
+  x = x || {};
+  const s = { desc: [], risky: !!ch.risky, costs: [], notes: [] };
+  const info = choiceCostInfo(ch);
+  const eff = choiceEffort(ch);
+  // The description box: the choice's own detail, the sub-label a preview
+  // or a big supply cost pushed off the button, who joins.
+  if (ch.detail) s.desc.push(ch.detail);
+  const pushedSub = x.preview ? x.displaced : x.pushedOn;
+  if (pushedSub && pushedSub !== x.effortLine && !s.desc.includes(pushedSub)) s.desc.push(pushedSub);
+  if (x.welcomes && x.welcomes.join_note) s.desc.push(x.welcomes.join_note);
+  const cj = x.cj;
+  if (cj && cj.name) s.desc.push(crewJoinRole(cj) ? cj.name + ' joins the crew as ' + cj.join_role + (cj.join_note ? ' — ' + cj.join_note : '') : 'No room in the crew: ' + cj.name + ' rides to the next station as a passenger and eats with everyone' + ((cj.passenger && cj.passenger.reward && cj.passenger.reward.gold) ? '; their family pays ' + cj.passenger.reward.gold + ' gold there' : '') + '.');
+  // WHAT IT TAKES
+  if (info && info.lo != null) s.time = { lo: info.lo, hi: info.hi };
+  if (ch.effort) s.effort = Math.min(5, ch.effort);
+  if (eff) s.helping = effortHelpers(ch, eff);
+  if (x.preview) {
+    const parts = x.preview.split(' · ');
+    const src = TIP_PREVIEW_SOURCES.includes(parts[0]) ? parts.shift() : 'TERMS';
+    // MARV's read is the costs row already (it stays his sub-label perk).
+    if (parts.length && !(src === 'MARV' && info && info.costs && info.costs.length)) s.preview = { l: src, chips: parts.map(t => ({ t, c: tipFactTone(t) })) };
+  }
+  // Costs: the tax (unless the MORALE figure carries it), gold, the outcome's costs, a kit.
+  const tax = choiceTax(ch), co = tax && choiceCostOutcome(ch);
+  const tf = co ? outcomeFacts(withPctPreview(co), tax).find(f => f.taxed) : null;
+  const taxShown = !!tf && (!tf.good || (!!x.preview && x.preview.includes(tf.text.split(' · ')[0])));
+  if (tax && !taxShown && STATE.crew.length) s.costs.push({ t: '−' + tax + ' MORALE', c: 'b' });
+  if (ch.gold_cost) s.costs.push({ t: '−' + eventGold(ch.gold_cost) + ' GOLD', c: 'b' });
+  if (ch.gate && ch.gate.gold && !ch.gold_cost && !(info && info.costs && info.costs.some(f => / GOLD\b/.test(f.text)))) s.costs.push({ t: '−' + eventGold(ch.gate.gold) + ' GOLD', c: 'b' });
+  if (info && info.costs) s.costs.push(...info.costs.flatMap(tipChips));
+  if (eff && eff.kit) s.costs.push({ t: 'USES ' + prettyItem(eff.kit).toUpperCase(), c: 'b' });
+  if (info && info.kind === 'combat') { s.notes.push('Ship-to-ship combat: the fight decides what it costs.'); if (info.fight) s.notes.push(info.fight + '.'); }
+  if (info && info.kind === 'minigame') {
+    s.notes.push('A minigame: how well you play decides the result.');
+    if (info.timed) s.notes.push('Timed: a real clock — about 3 seconds a breach, 4 with an engineer.');
+  }
+  // Odds: one bar, each result named with its % and 2–3 headline facts.
+  const tone = o => o && o.tone === 'success' ? 'g' : o && o.tone === 'danger' ? 'b' : 'n';
+  if (info && info.ram) {
+    s.odds = { head: 'CHANCE DECIDES', note: info.ram.fight ? info.ram.fight + '.' : null, rows: [
+      { p: 100 - info.ram.fail, t: 'YOU GET THROUGH', tone: 'g', fx: [{ t: info.costs.length ? 'the costs above' : 'clear', c: 'n' }] },
+      { p: info.ram.fail, t: 'THEY HOLD', tone: 'b', fx: [{ t: '−' + info.ram.hull + ' HULL', c: 'b' }, { t: 'A FIGHT', c: 'b' }] }] };
+  } else if (info && info.kind === 'roll') {
+    // A fact every result shares (the beacon is spent either way) is a cost, said once.
+    const shared = info.rows.length > 1 ? info.rows[0].facts.filter(f => info.rows.every(r => r.facts.some(g => g.text === f.text))).map(f => f.text) : [];
+    for (const t of shared) s.costs.push({ t, c: tipFactTone(t) });
+    s.odds = { head: 'CHANCE DECIDES', rows: info.rows.map(r => {
+      const fx = r.facts.filter(f => !shared.includes(f.text)).slice(0, 3).flatMap(tipChips); // the three biggest facts (a morale fact may carry its role's figure)
+      return { p: r.p, t: r.o.title || 'ANOTHER WAY', tone: tone(r.o), fx: fx.length ? fx : [{ t: 'nothing changes', c: 'n' }] };
+    }) };
+  } else if (eff && eff.check) {
+    const p = Math.round(eff.chance * 100), failO = failOutcomeOf(ch);
+    let fail;
+    if (failO) {
+      const fx = outcomeFacts(withPctPreview(failO)).slice(0, 3).flatMap(tipChips);
+      fail = { p: 100 - p, t: failO.title || 'IT GOES WORSE', tone: 'b', fx: fx.length ? fx : [{ t: 'it goes worse', c: 'n' }] };
+      const fd = outcomeDays(failO, 1);
+      if (s.time && fd > s.time.hi) s.time.hi = fd;
+    } else {
+      const extra = eff.authored ? 1 : 2;
+      const fx = [{ t: 'half the gains', c: 'b' }, { t: '+' + extra + (extra === 1 ? ' DAY' : ' DAYS'), c: 'b' }];
+      for (const [k, v] of Object.entries(eff.check.con)) if (k !== 'morale' || STATE.crew.length) fx.push({ t: (v > 0 ? '+' : '−') + Math.abs(v) + ' ' + (RES_LABEL[k] || k), c: v > 0 ? 'g' : 'b' });
+      if (STATE.crew.includes('engineer') && hullConcern(-(eff.check.con.hull || 0))) fx.push({ t: concernText([{ label: 'ENGINEER', v: concernAmount(hullConcern(-eff.check.con.hull)) }]) + ' MORALE', c: 'b' });
+      fail = { p: 100 - p, t: 'SHORT-HANDED', tone: 'b', fx };
+      if (s.time) s.time.hi = s.time.lo + extra;
+    }
+    s.odds = { head: 'HOW IT GOES', note: effortRaiseNote(ch, eff), rows: [{ p, t: 'CLEAN', tone: 'g', fx: [{ t: 'goes as planned', c: 'n' }] }, fail] };
+  } else if (eff) {
+    const n = effortRaiseNote(ch, eff);
+    if (n) s.notes.push(n);
+  }
+  // A risky step with nothing else to show (it opens another layer): the tag, said.
+  if (s.risky && !s.time && !s.effort && !s.costs.length && !s.notes.length && !s.odds && !s.preview) s.notes.push('It can go badly.');
+  return s;
 }
 // outcomeFacts shows a resources_pct share as "−30% FUEL"; the tooltip
 // says what that is aboard right now (the amount applyOutcomeEffects takes).

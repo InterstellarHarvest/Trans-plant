@@ -74,7 +74,7 @@ async function boot(setup) {
     const strong = await run({ crew: ['engineer', 'pilot'] });   // engineer + kit + pilot + captain
     const weak = await run({ crew: ['chef'] });
     ok(strong.eff.available > strong.eff.required && strong.days < weak.days, `engineer + kit finish faster (${strong.days}d vs ${weak.days}d; effort ${strong.eff.available} vs ${weak.eff.available} / ${strong.eff.required})`);
-    ok(/Hands \d+ \/ \d+ · \d+ days?/.test(strong.sub), `choice shows its effort (${strong.sub.replace(/\s+/g, ' ').slice(0, 70)})`);
+    ok(/\d+ days? · \d+% clean|\b\d+ days?\b/.test(strong.sub) && !/Hands/.test(strong.sub), `choice shows its days, no Hands score (ruling 146) (${strong.sub.replace(/\s+/g, ' ').slice(0, 70)})`);
     ok(strong.kitsUsed === 1, 'the repair kit is used up');
   }
 

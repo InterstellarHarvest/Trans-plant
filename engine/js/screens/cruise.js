@@ -843,6 +843,44 @@
   const STATION_SERVICE_VERBS = new Set(['trade', 'back_room', 'medbay', 'drydock', 'fab_service']); // closed by a wave-off (owner ruling 2026-10-11)
   function effortPips(n) { n = Math.max(0, Math.min(5, n | 0)); return '●'.repeat(n) + '○'.repeat(5 - n); }
 
+  /* Ruling 146: a Stop-menu job's drawn hover (shared.js choice layout):
+     the days as blocks, the pips, the morale tax and what the job spends
+     as chips, what it gives when the row already says so, and how it
+     works. index.html choiceTipSpec does the same for event choices. */
+  const MINIGAME_VERBS = new Set(['mine', 'salvage', 'scan', 'forage_food', 'repair']);
+  function verbTime(t) {
+    const m = /^(\d+)(?:-(\d+))?d(\/run)?$/.exec(t || '');
+    return m ? { lo: +m[1], hi: +(m[2] || m[1]) } : null;
+  }
+  function verbTipSpec(verbId, verb) {
+    const s = { desc: [], risky: false, gains: [], costs: [], notes: [] };
+    const t = verbTime(verb.time);
+    if (t) s.time = t;
+    if (verb.effort) s.effort = verb.effort;
+    const tax = verb.effort ? effortTax(verb.effort) : 0;
+    if (tax && STATE.crew.length) s.costs.push({ t: '−' + tax + ' MORALE', c: 'b' });
+    if (verbId === 'repair') {
+      s.gains.push({ t: '+' + Math.min(repairHullGain(), Math.ceil(resMax('hull') - STATE.resources.hull)) + ' HULL', c: 'g' });
+      s.costs.push({ t: '−' + REPAIR_COST.metal + ' METAL', c: 'b' }, { t: '−' + REPAIR_COST.scrap + ' SCRAP', c: 'b' });
+      s.notes.push('The metal and scrap are spent only when the patch is done.');
+    }
+    if (verbId === 'drydock') { s.gains.push({ t: '+' + Math.min(30, Math.ceil(resMax('hull') - STATE.resources.hull)) + ' HULL', c: 'g' }); s.costs.push({ t: '−' + drydockFee() + ' GOLD', c: 'b' }); }
+    if (verbId === 'medbay') { s.gains.push({ t: 'EVERYONE TREATED', c: 'g' }); s.costs.push({ t: '−' + medbayFee() + ' GOLD', c: 'b' }); }
+    if (verbId === 'fab_service') { s.gains.push({ t: 'WEAR TO ZERO', c: 'g' }); s.costs.push({ t: '−' + fabServiceFee() + ' GOLD', c: 'b' }); }
+    if (verbId === 'condense') s.gains.push({ t: '+12 H2O', c: 'g' });
+    if (verbId === 'rest') s.gains.push({ t: '+' + restPerDay() + ' MORALE A DAY', c: 'g' });
+    // Ruling 77: a finished repair lifts the engineer.
+    const lift = (verbId === 'repair' || verbId === 'drydock') && STATE.crew.includes('engineer') && concernDef('engineer', 'repair_done');
+    if (lift) s.gains.push({ t: concernText([{ label: 'ENGINEER', v: concernAmount(lift.morale) }]) + ' MORALE', c: lift.morale < 0 ? 'b' : 'g' });
+    if (verbId === 'forage_food' && verb.variantBy && verb.variantBy(currentRegionKey()) === 'risky') { s.risky = true; s.notes.push('Someone aboard may be poisoned.'); }
+    if (MINIGAME_VERBS.has(verbId)) s.notes.push('A minigame: how well you play decides the result.');
+    if (verbId === 'mine') s.notes.push('Each run takes a day.');
+    if (verbId === 'trade') s.notes.push('Browsing is free; a deal takes a day or two.');
+    if (verbId === 'fab' && tax) s.notes.push('The morale is paid for each craft.');
+    if (WAIT_VERBS[verbId]) s.notes.push('You pick the days, up to ' + WAIT_DAY_MAX + '; the morale is paid once for the whole wait.');
+    return tipSpecShows(s) ? s : null;
+  }
+
 
   // ── Stop Menu verb → minigame wiring (Phase 4) ────────────────
   // Applies a minigame's tier-based effects to real STATE, checks for
@@ -1467,6 +1505,9 @@
       step.tabIndex = 0;
       step.textContent = String(d);
       step.title = d + ' day' + (d === 1 ? '' : 's') + (verbId === 'rest' ? ' · +' + restPerDay() * d + ' morale if you sleep it through' : '');
+      // Ruling 146: the step's drawn hover, beside the job's row.
+      step.dataset.tipChoice = JSON.stringify({ desc: [], costs: [], notes: verbId === 'rest' ? ['If you sleep it through.'] : [], time: { lo: d, hi: d },
+        gains: verbId === 'rest' ? [{ t: '+' + restPerDay() * d + ' MORALE', c: 'g' }] : [] });
       step.addEventListener('click', e => { e.stopPropagation(); startWait(verbId, d); });
       step.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); startWait(verbId, d); } });
       stepper.appendChild(step);
@@ -1752,6 +1793,9 @@
       if (lockReason) { btn.classList.add('locked'); btn.tabIndex = -1; btn.setAttribute('aria-disabled', 'true'); }
       if (lockReason) Tooltip.attach(btn, lockTip(labelStr, lockReason));
       btn.setAttribute('data-verb-id', verbId);
+      // Ruling 146: the drawn hover, as for event choices (the text form stays).
+      const vspec = lockReason ? { locked: true, desc: [lockReason], costs: [], notes: [] } : verbTipSpec(verbId, verb);
+      if (vspec) btn.dataset.tipChoice = JSON.stringify(vspec);
       if (!lockReason && verb.effort) btn.title = 'Effort ' + verb.effort + '/5' + (effortTax(verb.effort) ? ' · costs ' + effortTax(verb.effort) + ' morale' + (verbId === 'fab' ? ' per craft' : WAIT_VERBS[verbId] ? ' for the whole wait' : '') : '') + ((verbId === 'repair' || verbId === 'drydock') ? repairLiftTip() : ''); // no crew aboard: no tax to state
       btn.addEventListener('click', () => {
         if (lockReason) return;
