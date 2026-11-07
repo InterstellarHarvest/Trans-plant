@@ -2150,7 +2150,7 @@ window.Tooltip = (() => {
   function findTipTarget(node) {
     while (node && node.nodeType === 1) {
       const d = node.dataset;
-      if (d && (d.tip != null || 'tipTitle' in d || 'tipDescription' in d || 'tipRows' in d || 'tipList' in d)) return node;
+      if (d && (d.tip != null || 'tipTitle' in d || 'tipDescription' in d || 'tipRows' in d || 'tipList' in d || 'tipChoice' in d)) return node; // a drawn choice box alone is enough (ruling 146)
       node = node.parentElement;
     }
     return null;

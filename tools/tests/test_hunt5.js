@@ -219,6 +219,15 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   console.log('— economy (hunt 5 sim findings)');
   {
     const page = await boot({ crew: ['engineer', 'pilot'] });
+    // The map is random: about 1 in 37 has no asteroid field. This block
+    // needs one and a station, so roll again until it has both.
+    await page.evaluate(() => {
+      for (let i = 0; i < 60 && !['asteroid_field', 'station'].every(t => STATE.nodes.some(x => x.node_type === t)); i++) {
+        localStorage.removeItem('transplant_save_v1');
+        applySetupToState({ trail: 'mars', ai: 'marv', captain: 'veteran', crew: ['engineer', 'pilot'], crop: 'wheat', ship: 'T' });
+        STATE.stowaway = null; setCrewMorale(80);
+      }
+    });
     const r = await page.evaluate(async () => {
       const verbAt = async (type, name) => {
         const n = STATE.nodes.find(x => x.node_type === type); STATE.currentId = n.id; renderCruise();

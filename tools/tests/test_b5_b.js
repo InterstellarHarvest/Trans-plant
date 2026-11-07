@@ -245,9 +245,11 @@ const MATS = { metal: 20, scrap: 20, minerals: 10, biocomponent: 10, exotic: 2 }
   }
 
   console.log('— B9: the required part leaves mid-craft — the job finishes without its wear discount');
+  // Wear 10 leaves a ~1% misfire chance (fabricator.js MISFIRE_CURVE), and a
+  // misfire owes nothing: these two blocks pin the roll so the print lands.
   {
     const page = await boot();
-    await page.evaluate(m => { STATE.materials = Object.assign({}, m); STATE.items = ['repair_fabricator']; STATE.fabricator.wear = 10; window.fabSetDayMs(600); openFabricator(); }, MATS);
+    await page.evaluate(m => { STATE.materials = Object.assign({}, m); STATE.items = ['repair_fabricator']; STATE.fabricator.wear = 10; Math.random = () => 0.999; window.fabSetDayMs(600); openFabricator(); }, MATS);
     await pickRecipe(page, 'O2 Canister');
     const a = await page.evaluate(() => { craftSelected(); const c = window.fabCraftState(); STATE.items = STATE.items.filter(x => x !== 'repair_fabricator'); return { c, wear: STATE.fabricator.wear }; });
     await page.waitForFunction(() => !window.fabCraftState(), null, { timeout: 5000 });
@@ -260,7 +262,7 @@ const MATS = { metal: 20, scrap: 20, minerals: 10, biocomponent: 10, exotic: 2 }
   {
     // With the part still aboard: the discount stands.
     const page = await boot();
-    await page.evaluate(m => { STATE.materials = Object.assign({}, m); STATE.items = ['repair_fabricator']; STATE.fabricator.wear = 10; window.fabSetDayMs(300); openFabricator(); }, MATS);
+    await page.evaluate(m => { STATE.materials = Object.assign({}, m); STATE.items = ['repair_fabricator']; STATE.fabricator.wear = 10; Math.random = () => 0.999; window.fabSetDayMs(300); openFabricator(); }, MATS);
     await pickRecipe(page, 'O2 Canister');
     await page.evaluate(() => craftSelected());
     await page.waitForFunction(() => !window.fabCraftState(), null, { timeout: 5000 });

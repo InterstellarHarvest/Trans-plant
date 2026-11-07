@@ -181,6 +181,46 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   const laser = await tipFor(/FIRE LASER/);
   ok(laser && !laser.hasSpec && !laser.visible, 'an action with nothing to add has no box (as before)');
 
+  console.log('— a real mouse');
+  // The checks above call Tooltip.show; these move the mouse, as a player does.
+  const mouseOn = async (sel, re) => {
+    await page.mouse.move(5, 600); await page.waitForTimeout(150);
+    const h = await page.evaluateHandle(({ sel, src }) => [...document.querySelectorAll(sel)].find(b => new RegExp(src).test(b.textContent)) || null, { sel, src: re.source });
+    const el = h.asElement(); if (!el) return null;
+    await el.scrollIntoViewIfNeeded(); await page.waitForTimeout(150);
+    const r = await el.boundingBox();
+    await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2, { steps: 4 }); await page.waitForTimeout(700);
+    return page.evaluate(({ top, bottom }) => { const p = Tooltip.panel, a = p.querySelector('.tc-arrow'), ar = a && a.style.display !== 'none' ? a.getBoundingClientRect() : null;
+      return { vis: p.classList.contains('visible') && p.classList.contains('tip-choice'), on: !!ar && (ar.top + ar.bottom) / 2 >= top && (ar.top + ar.bottom) / 2 <= bottom, text: p.innerText }; }, { top: r.y, bottom: r.y + r.height });
+  };
+  const away = async () => { await page.mouse.move(400, 600, { steps: 3 }); await page.waitForTimeout(300); return page.evaluate(() => ({ vis: Tooltip.panel.classList.contains('visible'), dim: !!document.querySelector('#ai-bubble.tip-dimmed') })); };
+  let m = await mouseOn('#enc-choices .enc-choice', /ATTEMPT ESCAPE/);
+  ok(m && m.vis && m.on, 'mouse on a combat action: the box, arrow on it');
+  await open('event_asteroid_001', { crew: ['pilot', 'engineer'] });
+  await page.waitForTimeout(1500);
+  m = await mouseOn('#enc-choices .enc-choice', /standard equipment/);
+  ok(m && m.vis && m.on && /HELPING/.test(m.text), 'mouse on an event choice: the box, arrow on it');
+  await stopAt('asteroid_field', true);
+  m = await mouseOn(SC, /^\s*FABRICATOR/);
+  ok(m && m.vis && m.on, 'mouse on the last Stop job (scrolled into view): the box, arrow on it');
+  m = await mouseOn(SC, /^\s*REPAIR/);
+  ok(m && m.vis && m.on && await page.evaluate(() => !!document.querySelector('#ai-bubble.tip-dimmed')), 'mouse on REPAIR: the box, and the bubble fades');
+  let gone = await away();
+  ok(!gone.vis && !gone.dim, 'mouse away: the box goes, the bubble comes back');
+  await page.evaluate(async () => { [...document.querySelectorAll('#stop-choices .stop-choice')].find(b => /^\s*REST/.test(b.textContent)).click(); await new Promise(r => setTimeout(r, 300)); });
+  m = await mouseOn('.day-step', /^3$/);
+  ok(m && m.vis && m.on && /3 days/.test(m.text), 'mouse on a day step: its own box');
+  m = await mouseOn('.day-step', /^6$/);
+  ok(m && m.vis && /6 days/.test(m.text), 'mouse on another step: the box swaps');
+  await away();
+  // An element with a drawn box and nothing else is still found by the mouse.
+  await page.evaluate(() => { const el = document.createElement('button'); el.id = 'tc-only'; el.textContent = 'ONLY A BOX';
+    el.style.cssText = 'position:absolute;left:700px;top:300px;width:200px;height:40px;z-index:9999';
+    el.dataset.tipChoice = JSON.stringify({ desc: ['Only a drawn box.'], costs: [], notes: [], time: { lo: 1, hi: 1 } }); document.getElementById('game').appendChild(el); });
+  m = await mouseOn('#tc-only', /ONLY A BOX/);
+  ok(m && m.vis && /Only a drawn box/.test(m.text), 'a drawn box alone is enough for the mouse');
+  await away(); await page.evaluate(() => document.getElementById('tc-only').remove());
+
   ok(!errors.length, 'no page errors: ' + errors.slice(0, 3).join(' | '));
   await browser.close();
   console.log(`\n${pass} passed, ${fail} failed`);
