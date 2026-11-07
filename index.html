@@ -1016,6 +1016,10 @@ body:not(.modal-open) #fb-modal, body:not(.modal-open) #gb-modal,
   </div>
 
   <!-- OVERLAYS — mounted on top of screen-cruise; Phase 4 fills the rest in -->
+  <!-- Mishap popup (ruling 142, engine/js/mishaps.js fills it): the cruise
+       stops on it until the player acknowledges. -->
+  <div id="overlay-mishap" class="overlay dim-behind"></div>
+
   <div id="overlay-map" class="overlay dim-behind">
     <div id="ovmap-header"></div>
     <div id="ovmap-viewport">
@@ -1717,6 +1721,9 @@ const WOUND_LANDING_HP = CREW_WOUNDED_HP - 5;
 const WOUND_KNOCK_HP = 15;
 const HURT_FLOOR_HP = 5;
 const INJURE_HP = 35;            // crew_effect injure: the lighter knock (medic-softened)
+// A festering ("delayed") wound left untreated loses this much HP every
+// travel leg until it's treated (ruling 145; medic-softened, as any hurt).
+const FESTER_HP_PER_LEG = 7;
 const HEAL_ALL_INJURED_HP = 40;  // crew_effect heal, all_injured: each hurt person
 const MEDKIT_SAVE_HP = 20;       // a medkit's lethal save leaves them here
 const MEDICAL_HEAL_HP = Object.freeze({ perfect: 25, good: 10 }); // the MEDICAL minigame's result on the patient (demo contract)
@@ -1757,6 +1764,7 @@ const CROP_MATURITY_DEFAULT = 90;
 <script src="engine/js/screens/records.js"></script>
 <script src="engine/js/shipslog.js"></script>
 <script src="engine/js/screens/inventory.js"></script> <!-- cargo hold -->
+<script src="engine/js/mishaps.js"></script><!-- ruling 142: travel-leg mishaps and their popup -->
 
 <script>
 'use strict';
@@ -1794,6 +1802,7 @@ const MODULE_PATHS = {
   crops:         'modules/crops/crops.json',
   materials:     'modules/materials/materials.json',
   recipes:       'modules/recipes/recipes.json',
+  mishaps:       'modules/mishaps/mishaps.json', // ruling 142: engine/js/mishaps.js
 };
 
 const MOD = {};       // raw loaded modules
@@ -1907,6 +1916,9 @@ const STATE = {
   plaidLegs:    0,          // drive heat: PLAID legs, cooled one per slower leg (engine_strain, ruling 83)
   engineStrain: false,      // a strain roll came up: the next stop draws an engine_strain event (ruling 83)
   crafted:      {},         // item id → copies aboard that the fabricator printed (ruling 79: a station pays their materials' value)
+  pendingMishap: null,      // ruling 142: the mishap popup waiting on the player (its effects already applied)
+  mishapLastLeg: null,      // the leg (STATE.visited size) the last mishap happened on (cooldown)
+  mishapCount:  0,          // mishaps this run
 };
 
 /* ────────────────────────────────────────────────────────────────
@@ -1955,6 +1967,7 @@ const SAVED_FIELDS = [
   'alertedNode', // cruise.js: the stop whose arrival alert has shown (a reload logged it again)
   'traderAt', 'forcedEvent', // cruise.js: the trader-presence roll per stop; a during-wait event waiting on the player (a reload can't dodge either)
   'tradersMet', // cruise.js: the trader already met at a stop (a second TRADE skips the first-meeting pitch)
+  'pendingMishap', 'mishapLastLeg', 'mishapCount', // ruling 142: a reload shows the same popup, applies nothing twice
 ];
 // The Stop-menu and event jobs a save may not land in the middle of. The
 // fabricator is not one: its craft is saved state, resumed on a reload.
@@ -2013,7 +2026,7 @@ function hasSave() {
    LOAD can fire mid-combat, mid-minigame, with the Stop menu open…):
    none of it may resolve into, or linger over, the loaded run. */
 function teardownLiveUI() {
-  for (const fn of ['abortCombat', 'abortMinigame', 'abortMining', 'abortEngineRepair', 'abortFabricator', 'abortCruiseWait']) { // abortCruiseWait: cruise.js multi-day WAIT/REST
+  for (const fn of ['abortCombat', 'abortMinigame', 'abortMining', 'abortEngineRepair', 'abortFabricator', 'abortCruiseWait', 'abortMishap']) { // abortCruiseWait: cruise.js multi-day WAIT/REST
     if (typeof window[fn] === 'function') { try { window[fn](); } catch (_) {} }
   }
   document.querySelectorAll('#game .overlay.active').forEach(o => o.classList.remove('active'));
@@ -2031,7 +2044,7 @@ function loadRun(key) {
   for (const k of SAVED_FIELDS) if (k in snap) STATE[k] = snap[k];
   // A save from before a field existed must not inherit the run that was
   // in memory (Continue after a finished run kept its callbacks/carry).
-  const FRESH = { tradersMet: () => ({}), flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, engineStrain: () => false, tipsShown: () => [], pendingArrival: () => null, waitInProgress: () => null, eventDraws: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
+  const FRESH = { pendingMishap: () => null, mishapLastLeg: () => null, mishapCount: () => 0, tradersMet: () => ({}), flagFirstSeen: () => ({}), calledBack: () => [], lastCallbackLeg: () => null, dayCarry: () => 0, soilSurveys: () => 0, researchReady: () => true, researchKey: () => null, crisisPatient: () => null, scanIntelEvent: () => null, itemValues: () => ({}), itemPickups: () => ({}), crafted: () => ({}), plaidLegs: () => 0, engineStrain: () => false, tipsShown: () => [], pendingArrival: () => null, waitInProgress: () => null, eventDraws: () => ({}), itemSeq: () => 0, materialPickups: () => ({}), artSeed: rollArtSeed, traderAt: () => ({}), forcedEvent: () => null, alertedNode: () => null, passengers: () => [], stationVisit: () => null, eventLastStop: () => ({}), captainHP: () => 100, moraleWhy: () => ({}) }; // traderAt/forcedEvent: cruise.js; captainHP: pre-ruling-29 saves start the captain at full HP
   for (const [k, mk] of Object.entries(FRESH)) if (!(k in snap)) STATE[k] = mk();
   STATE.visited = new Set(snap.visited || []);
   STATE.flags = new Set(snap.flags || []);
@@ -2081,6 +2094,8 @@ function loadRun(key) {
   if (pf) { endRun({ kind: 'failure', module: pf }); return true; }
   renderCruise();
   showScreen('screen-cruise');
+  // Saved on a mishap's popup (ruling 142): the same popup, nothing applied twice.
+  if (STATE.pendingMishap) { window.showMishap(); return true; }
   // Saved mid REST / WAIT: the reload called it off (a quit: the days are
   // spent, the rest didn't land) — say so; it used to vanish silently.
   if (STATE.waitInProgress) {
@@ -2244,7 +2259,7 @@ function applySetupToState(sel) {
   // Every other per-run field starts clean too (a run started in-page
   // after another used to inherit its log, fabricator, sectors…).
   STATE.shipLog = []; STATE.fabricator = { wear: 0, broken: false };
-  STATE.postCombatLegs = 0; STATE.plaidLegs = 0; STATE.engineStrain = false; STATE.tipsShown = []; STATE.eventDraws = {}; STATE.pendingArrival = null; STATE.waitInProgress = null; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
+  STATE.postCombatLegs = 0; STATE.plaidLegs = 0; STATE.engineStrain = false; STATE.tipsShown = []; STATE.eventDraws = {}; STATE.pendingArrival = null; STATE.pendingMishap = null; STATE.mishapLastLeg = null; STATE.mishapCount = 0; STATE.waitInProgress = null; STATE.miningSectors = {}; STATE.miningLifetime = null; STATE.aiWarnLevels = {};
   STATE.crisisPatient = null; STATE.lastAmbientNode = null; STATE.alertedNode = null;
   STATE.researchReady = true; STATE.researchKey = null; STATE.lastPick = null; STATE.halfEffect = false; STATE.lethalSaved = null; STATE.goneNames = null;
   STATE.scouted = {}; STATE.scanIntelEvent = null; STATE.soilSurveys = 0; STATE.dayCarry = 0; STATE.eventLastStop = {};
@@ -3210,7 +3225,8 @@ function outcomeConcerns(o) {
   const hurts = severity === 'injury' || severity === 'delayed' || (!severity && ce.type === 'injure');
   if ((hurts || severity === 'lethal') && peopleAboard().length) {
     const named = ce.target === 'specific_role' ? (peopleAboard().includes(ce.role) ? ce.role : null)
-      : ce.target === 'patient' && peopleAboard().includes(STATE.crisisPatient) ? STATE.crisisPatient : null;
+      : ce.target === 'patient' && peopleAboard().includes(STATE.crisisPatient) ? STATE.crisisPatient
+      : ce.target === 'captain' && peopleAboard().includes('captain') ? 'captain' : null; // ruling 145
     if (hurts) {
       // Every role takes a wound alike (lint_modules checks), so a
       // random target's reaction is known.
@@ -3366,6 +3382,21 @@ function applySeverity(role, severity) {
     log('The captain is wounded. Your own hands count half on hands-on work until it heals.');
   } else {
     log(name + ' is wounded: their skill is offline and they work at half strength until they recover.');
+  }
+}
+
+/* Ruling 145: a festering ("delayed") wound gets worse every leg it stays
+   open — the captain's too. Treated (back over the wound line: a medic, a
+   heal, the MEDBAY, rest) it closes quietly as before; untreated it can
+   kill before the next station's crisis ever fires. */
+function festerWounds() {
+  const pend = crewPendingOf();
+  for (const role of Object.keys(pend)) {
+    if (!peopleAboard().includes(role)) { delete pend[role]; continue; }
+    if (hpOf(role) >= CREW_WOUNDED_HP) continue; // treated: dueDelayedCrisis closes it at the station
+    damageCrew(role, FESTER_HP_PER_LEG);
+    // (a death here is logged and mourned by killCrew / killCaptain)
+    if (peopleAboard().includes(role)) window.pushCruiseLog('◆ ' + (role === 'captain' ? 'Your wound is' : crewNameOf(role) + '’s wound is') + ' worse today. It needs a medic, the MEDBAY or a medkit.');
   }
 }
 
@@ -4899,6 +4930,9 @@ function passDays(days, opts) {
 
 function travelTo(nodeId, opts) {
   opts = opts || {};
+  // Ruling 144: an empty tank goes nowhere — the Adrift scene opens instead
+  // (burn the plating, crack the water, the beacon, or the end).
+  if (STATE.resources.fuel <= 0 && !STATE.ended) { openAdrift(); return; }
   // Mark current node visited, move pointer, fire the new node's event.
   STATE.visited.add(STATE.currentId);
   STATE.currentId = nodeId;
@@ -4918,6 +4952,7 @@ function travelTo(nodeId, opts) {
     // Everyone aboard heals — the captain too (owner ruling 29).
     for (const r of peopleAboard()) setHP(r, hpOf(r) + regen + (hpOf(r) < CREW_WOUNDED_HP ? scan : 0));
   }
+  festerWounds();
 
   // The leg itself costs real days + fuel, scaled by the ENGINES pace
   // (Restoration item 5). Paid on every leg — including the final hop
@@ -4943,6 +4978,9 @@ function travelTo(nodeId, opts) {
     passDays(leg.days, { travel: true });
     // Engine strain (ruling 82): legs in a row at PLAID; any slower leg resets it.
     STATE.engineStrain = rollEngineStrain(ordersPace().id) || !!STATE.engineStrain;
+    // Ruling 142: something can just happen on the way (never the leg into
+    // the destination). Applied now; the popup waits for the arrival below.
+    const mishap = connectionsOf(node).length > 0 ? window.rollMishap(node) : null;
     // ARIA's passive (ai_companions morale_bonus): +1 morale per leg.
     const ariaMorale = aiPassive('morale_bonus');
     if (ariaMorale) addCrewMorale(ariaMorale); // every crew member
@@ -4960,10 +4998,36 @@ function travelTo(nodeId, opts) {
     // — the stop's event or the station approach, never a skipped (free)
     // stop. STATE.pendingArrival is saved for that.
     STATE.pendingArrival = { id: nodeId, skipEvent: !!opts.skipEvent };
+    // A mishap stops the cruise on its popup first (saved: a reload shows
+    // it again); acknowledging it checks failure and plays the arrival
+    // (mishaps.js ackMishap).
+    if (mishap) {
+      STATE.pendingMishap = mishap;
+      saveRun();
+      window.showMishap();
+      return;
+    }
     if (checkFailure({ arriving: connectionsOf(node).length === 0 })) return;
     STATE.pendingArrival = null;
   }
   arriveAtNode(node, opts);
+}
+
+/* Ruling 144: out of fuel short of the destination. The leg that ran the
+   tank dry still arrives (the ship coasts in: a station's fuel or a trader
+   can still save it); trying to fly on with nothing in the tank opens the
+   Adrift scene (events_crisis.json, trigger "adrift": never pool-drawn).
+   Giving up there sets adrift_gave_up, and checkFailure ends the run. */
+function openAdrift() {
+  const ev = EVENTS.event_adrift_001;
+  const node = STATE.byId[STATE.currentId];
+  if (!ev || !node) return;
+  document.body.classList.remove('stop-active');
+  // The first time it is the whole opening; after that, the short one
+  // (alt_bodies[0]): the crew has been here before.
+  const again = (STATE.eventDraws || {})[ev.id] || 0;
+  STATE.eventDraws = Object.assign(STATE.eventDraws || {}, { [ev.id]: again + 1 });
+  enterEvent(node, ev, { bodyPick: again ? 1 : 0 });
 }
 
 /* The arrival half of travelTo: the stop's station business, the
@@ -6374,13 +6438,15 @@ function outcomeFacts(o, tax) {
   // Orders the outcome sets, named as they will land (ruling 82): no fact
   // for a setting already in force (pace "faster" at PLAID changes nothing).
   for (const ch of ordersChanges(o)) facts.push({ text: ch, weight: 4, good: false });
-  if (o.severity && SEVERITY_LABEL[o.severity]) facts.push({ text: SEVERITY_LABEL[o.severity], weight: o.severity === 'lethal' ? 40 : 15, good: false });
+  // Ruling 145: a risk aimed at the captain says whose it is.
+  const youAt = o.crew_effect && o.crew_effect.target === 'captain' && peopleAboard().includes('captain') ? 'YOU — ' : '';
+  if (o.severity && SEVERITY_LABEL[o.severity]) facts.push({ text: youAt + SEVERITY_LABEL[o.severity], weight: o.severity === 'lethal' ? 40 : 15, good: false });
   // With a severity the crew_effect only picks who (applyOutcomeEffects):
   // the severity's own fact says what happens — a kill authored with
   // severity lethal is a saveable death, A DEATH RISK, not both.
   const ce = !o.severity && o.crew_effect;
-  if (ce && ce.type === 'kill') facts.push({ text: 'A DEATH', weight: 50, good: false });
-  else if (ce && ce.type === 'injure') facts.push({ text: 'AN INJURY', weight: 15, good: false });
+  if (ce && ce.type === 'kill') facts.push({ text: youAt + 'A DEATH', weight: 50, good: false });
+  else if (ce && ce.type === 'injure') facts.push({ text: youAt + 'AN INJURY', weight: 15, good: false });
   else if (ce && ce.type === 'heal' && healReach(ce).some(r => hpOf(r) < 100)) facts.push({ text: 'HEALING', weight: 10, good: true });
   // "Someone has to go": a crew member steps down for the stowaway.
   if (o.stowaway_resolve === 'welcome_replace' && STATE.stowaway && STATE.stowaway.identity && STATE.stowaway.identity.join_role && STATE.crew.length) facts.push({ text: '−1 CREW', weight: 30, good: false });
@@ -6575,6 +6641,19 @@ function choiceCostLines(ch) {
     lines.push('A minigame: how well you play decides the result');
     // Ruling 76: the breach countdown is a real clock, said up front.
     if (ch.launch_minigame === 'breach') lines.push('Timed: a real clock — about 3 seconds a breach, 4 with an engineer');
+  } else if (Array.isArray(ch.roll) && ch.roll.length && STATE.currentEvent && STATE.currentEvent.outcomes) {
+    // Ruling 144: a chance choice says its time range and every way it
+    // can go, with the odds — the roll is fixed, the player just can't pick.
+    const ev = STATE.currentEvent, tot = ch.roll.reduce((t, r) => t + (r.weight || 0), 0) || 1;
+    const rows = ch.roll.map(r => ({ p: Math.round(100 * (r.weight || 0) / tot), o: ev.outcomes[r.outcome] })).filter(r => r.o);
+    const ds = rows.map(r => outcomeDays(r.o, 1));
+    const lo = Math.min(...ds), hi = Math.max(...ds);
+    lines.push(hi === 0 ? 'Takes no time' : 'Takes ' + (lo === hi ? lo : lo + '–' + hi) + (hi === 1 ? ' day' : ' days') + (lo === hi ? '' : ', by how it goes'));
+    lines.push('Chance decides:');
+    for (const r of rows) {
+      const fx = outcomeFacts(withPctPreview(r.o), 0).map(f => f.text);
+      lines.push(r.p + '% · ' + (fx.length ? fx.join(' · ') : 'nothing changes'));
+    }
   }
   return lines;
 }
@@ -6935,6 +7014,13 @@ function handleChoiceClick(choice) {
   // An authored failure (fail_outcome) replaces the generic one whole: its
   // own text and effects, no halving, no extra days, no setback line.
   let outcomeId = choice.outcome;
+  // Ruling 144: a choice whose result is chance (who answers the beacon) —
+  // `roll: [{ weight, outcome }]` picks the outcome as it is taken.
+  if (Array.isArray(choice.roll) && choice.roll.length) {
+    const tot = choice.roll.reduce((t, r) => t + (r.weight || 0), 0);
+    let u = Math.random() * tot;
+    outcomeId = (choice.roll.find(r => (u -= (r.weight || 0)) <= 0) || choice.roll[choice.roll.length - 1]).outcome;
+  }
   if (STATE.effortCon && failOutcomeOf(choice)) { outcomeId = choice.fail_outcome; STATE.effortCon = null; }
   if (eff && eff.kit) {
     const i = STATE.items.indexOf(eff.kit);
@@ -7053,6 +7139,7 @@ function healReach(ce) {
   if (!ce) return [];
   if (ce.target === 'specific_role') return ce.role && people.includes(ce.role) ? [ce.role] : [];
   if (ce.target === 'patient') return STATE.crisisPatient && people.includes(STATE.crisisPatient) ? [STATE.crisisPatient] : [];
+  if (ce.target === 'captain') return people.includes('captain') ? ['captain'] : []; // ruling 145
   if (ce.target === 'all_injured') return people.filter(r => hpOf(r) < 100);
   return [];
 }
@@ -7279,6 +7366,7 @@ function applyOutcomeEffects(o) {
     const ce = o.crew_effect || {};
     const named = (ce.target === 'specific_role' && ce.role && people.includes(ce.role)) ? ce.role
       : (ce.target === 'patient' && STATE.crisisPatient && people.includes(STATE.crisisPatient)) ? STATE.crisisPatient
+      : (ce.target === 'captain' && people.includes('captain')) ? 'captain' // ruling 145: the captain in harm's way
       : (ce.target === 'crew' && STATE.crew.length) ? STATE.crew[Math.floor(Math.random() * STATE.crew.length)]
       : null;
     const targetRole = named || (ce.target === 'crew' ? null : people[Math.floor(Math.random() * people.length)]);
@@ -7607,7 +7695,9 @@ function checkFailure(opts) {
   window.tickCropGrowth();
   const r = STATE.resources;
   let type = null;
-  if (r.fuel   <= 0 && !arriving) type = 'no_fuel';
+  // Out of fuel ends the run only when the crew gives up in the Adrift
+  // scene (ruling 144); before that the ship coasts and the scene opens.
+  if (r.fuel   <= 0 && !arriving && STATE.flags.has('adrift_gave_up')) type = 'no_fuel';
   else if (r.hull   <= 0) type = 'hull_zero';
   // The captain is dead (owner rulings 29/30): captain_lost with anyone
   // else still aboard; crew_gone ("Autopilot — nobody left to fly the

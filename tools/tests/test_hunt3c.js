@@ -74,7 +74,9 @@ const endInfo = page => page.evaluate(() => ({
     const a = await endInfo(page);
     if (a.btn2) { await page.click('#end-cine-btn2'); await page.waitForTimeout(500); }
     const b = await endInfo(page);
-    ok(a.btn2 && b.screen === 'screen-end' && b.ended && b.title !== a.title, `fuel+hull both out: beacon → hull failure, not the hub (${a.title} → ${b.title})`);
+    // Ruling 144: an empty tank is no failure by itself (the Adrift scene
+    // comes first), so the broken hull is the run's end, with no beacon to mask it.
+    ok(!a.btn2 && a.screen === 'screen-end' && a.ended && /breach/i.test(a.title) && b.title === a.title, `fuel+hull both out: the hull failure, straight away, no beacon offered (${a.title})`);
     await page.close();
   }
 

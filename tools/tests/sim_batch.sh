@@ -20,7 +20,7 @@ for i in $(seq 0 $((W - 1))); do
 done
 sleep 1
 for i in $(seq 0 $((W - 1))); do
-  SIM_URL="http://localhost:$((BASE + i))/index.html?debug=econ" $NVM/bin/node tools/tests/sim.js "$N" "$POL" "$TR" "$LOGS/w$i.json" > "$LOGS/w$i.log" 2>&1 & pids+=($!)
+  SIM_URL="http://localhost:$((BASE + i))/index.html?debug=econ&mishaps=1" $NVM/bin/node tools/tests/sim.js "$N" "$POL" "$TR" "$LOGS/w$i.json" > "$LOGS/w$i.log" 2>&1 & pids+=($!)
 done
 for i in "${!pids[@]}"; do
   wait "${pids[$i]}"; st=$?

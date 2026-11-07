@@ -68,7 +68,7 @@ const ONE_OFFS = ['event_anomaly_005', 'event_asteroid_007', 'event_crisis_006',
     return { notOnce, rep, before, after, faces: [...faces], keeps, cooled, plainOnce };
   }, ONE_OFFS);
   ok(!r.notOnce.length, `the ${ONE_OFFS.length} one-off stories are once: true` + (r.notOnce.length ? ' — not: ' + r.notOnce.join(', ') : ''));
-  ok(r.rep === 69, `69 routine events stay repeatable (${r.rep})`);
+  ok(r.rep === 70, `70 routine events stay repeatable, the Adrift scene (ruling 144) among them (${r.rep})`);
   ok(Math.abs(r.before.t - 0.5) < 0.01 && Math.abs(r.before.p - 0.5) < 0.01, `families keep one old event's odds (traders ${r.before.t}, pirates ${r.before.p})`);
   ok(Math.abs(r.after.t - 0.5) < 0.01 && Math.abs(r.after.p - 0.5) < 0.01, `and still do once named ships are met (traders ${r.after.t}, pirates ${r.after.p})`);
   ok(r.faces.length && !r.faces.some(id => /trader_00[24]$/.test(id)), 'a TRADE face is never a met named ship: ' + r.faces.join(', '));

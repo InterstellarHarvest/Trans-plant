@@ -18,7 +18,7 @@ const RUNS = parseInt(process.argv[2] || '10', 10);
 const POLICIES = (process.argv[3] || 'random,greedy,stopper').split(',');
 const TRAILS = (process.argv[4] || 'lunar,mars,interstellar').split(',');
 const OUT = process.argv[5] || __dirname + '/results.json';
-const URL = process.env.SIM_URL || 'http://localhost:8177/index.html?debug=econ';
+const URL = process.env.SIM_URL || 'http://localhost:8177/index.html?debug=econ&mishaps=1';
 
 const CAPTAINS = ['botanist', 'engineer', 'medic', 'pilot', 'chef', 'xenobiologist', 'diplomat', 'merchant', 'academic', 'veteran'];
 const CREWPOOL = ['botanist', 'engineer', 'medic', 'pilot', 'chef', 'xenobiologist', 'diplomat'];
@@ -233,6 +233,12 @@ function step() {
     S.keptFlying = STATE.daysElapsed; window.__end = null; endContinueRun(); return { wait: 300 };
   }
   if (STATE.ended || scr === 'screen-end') return { done: true };
+  // A mishap's popup (ruling 142): note it and acknowledge, as a player must.
+  if (STATE.pendingMishap) {
+    (S.mishaps = S.mishaps || []).push([STATE.pendingMishap.id, STATE.pendingMishap.tier, STATE.pendingMishap.fixedBy || null]);
+    ackMishap();
+    return { wait: 80 };
+  }
   for (const ov of document.querySelectorAll('.overlay.active')) { if (ov.id !== 'overlay-market') ov.classList.remove('active'); }
   document.body.classList.remove('modal-open');
 

@@ -5047,5 +5047,218 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_adrift_001",
+    "active": true,
+    "title": "Adrift",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "adrift"
+    ],
+    "scene_type": "ship_interior",
+    "bg": "our_ship/bridge",
+    "bgBase": "space/deep",
+    "comm_mode": "in_person",
+    "once": false,
+    "leave_label": "CAN'T LEAVE (NO FUEL)",
+    "leave_disabled": true,
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "ADRIFT",
+        "body": "The tank reads zero and means it. The engines cough once, politely, and stop. The ship keeps moving, because nothing out here stops anything, but it is moving where it was already going, at the speed it was already going, which is the wrong speed for anywhere.\n\nThere are ways to make a ship go that do not involve fuel. None of them are good.",
+        "ai": {
+          "aria": "We're not stranded, we're stationary with purpose! Let's pick a plan!",
+          "marv": "Zero fuel. I could tell you the odds of a rescue out here. You would prefer I didn't.",
+          "rex": "Dead in the water. Every option is a bad one. Pick the bad one that keeps us breathing.",
+          "chip": "Sorry to hear you've run dry! Premium Roadside Assist would have you moving in minutes. You have Basic.",
+          "ajoy": "The fuel gauge has been yellow for three legs. Now, the plating will burn. Or the water. Your choice, for once."
+        },
+        "choices": [
+          {
+            "text": "BURN THE HULL PLATING",
+            "sub": "Strip outer plates into the reactor",
+            "detail": "The outer plating is mostly reaction-grade alloy. Fed into the chamber it will push the ship a good way, and leave less of it between you and space. A weak hull may not survive the stripping.",
+            "effort": 2,
+            "risky": true,
+            "outcome": "adrift_burn"
+          },
+          {
+            "text": "CRACK THE WATER",
+            "sub": "A third of the tanks into propellant",
+            "detail": "Run the drinking water through the electrolysis rig and burn what comes out. Four days of work and a third of the water aboard, for enough fuel to limp on.",
+            "effort": 3,
+            "outcome": "adrift_crack"
+          },
+          {
+            "text": "TRIGGER THE EMERGENCY BEACON",
+            "sub": "Someone always answers this one",
+            "detail": "The beacon is loud enough to be heard by somebody every time. Who that somebody is, is up to them.",
+            "gate": {
+              "item": "emergency_beacon"
+            },
+            "roll": [
+              {
+                "weight": 45,
+                "outcome": "adrift_beacon_friendly"
+              },
+              {
+                "weight": 35,
+                "outcome": "adrift_beacon_corporate"
+              },
+              {
+                "weight": 20,
+                "outcome": "adrift_beacon_hostile"
+              }
+            ]
+          },
+          {
+            "text": "CALL FOR HELP AND WAIT",
+            "sub": "Days pass · someone may answer",
+            "detail": "Broadcast on every channel and wait. Each day costs food, water and air. Someone may come. They may want paying. They may not be the sort of someone you wanted.",
+            "risky": true,
+            "roll": [
+              {
+                "weight": 40,
+                "outcome": "adrift_rescued"
+              },
+              {
+                "weight": 20,
+                "outcome": "adrift_pirates"
+              },
+              {
+                "weight": 40,
+                "outcome": "adrift_unanswered"
+              }
+            ]
+          },
+          {
+            "text": "SHUT IT ALL DOWN",
+            "sub": "Stop trying · the end of the voyage",
+            "risky": true,
+            "outcome": "adrift_give_up"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "adrift_burn": {
+        "title": "BURNING THE FURNITURE",
+        "tone": "danger",
+        "body": "The crew unbolts the outer plating panel by panel and feeds it to the reactor. The ship shudders forward on its own skin. The hull readout drops with every panel, and nobody looks at it directly.",
+        "resources": {
+          "hull": -25,
+          "fuel": 15
+        },
+        "time_cost": "low"
+      },
+      "adrift_crack": {
+        "title": "WATER INTO FIRE",
+        "tone": "success",
+        "body": "Four days at the electrolysis rig. The water tanks go down, the fuel gauge comes up off zero, and everyone takes very short showers in their imagination.",
+        "resources_pct": {
+          "water": -35
+        },
+        "resources": {
+          "fuel": 12
+        },
+        "time_days": 4
+      },
+      "adrift_beacon_friendly": {
+        "title": "PASS IT ON",
+        "tone": "success",
+        "body": "A long-hauler heard you inside a day. They transfer fuel, refuse payment, and burn off before anyone can thank them properly. \"Pass it on,\" they said.",
+        "resources": {
+          "fuel": 25,
+          "morale": 4
+        },
+        "item_consume": "emergency_beacon",
+        "time_days": 2
+      },
+      "adrift_beacon_corporate": {
+        "title": "YOUR CALL IS IMPORTANT",
+        "tone": "success",
+        "body": "A StellarAssist recovery tug arrives with fuel, an invoice and a satisfaction survey, in that order. The survey is mandatory.",
+        "resources": {
+          "fuel": 25,
+          "morale": -2
+        },
+        "resources_pct": {
+          "gold": -40
+        },
+        "item_consume": "emergency_beacon",
+        "time_days": 2
+      },
+      "adrift_beacon_hostile": {
+        "title": "RESCUED, TECHNICALLY",
+        "tone": "danger",
+        "body": "The people who answer refuel you at gunpoint and then take half your gold as a rescue fee. You are alive to resent it, which is the service they provide.",
+        "resources": {
+          "fuel": 20,
+          "morale": -5
+        },
+        "resources_pct": {
+          "gold": -50
+        },
+        "item_consume": "emergency_beacon",
+        "time_days": 2
+      },
+      "adrift_rescued": {
+        "title": "SOMEBODY CAME",
+        "tone": "success",
+        "body": "On the sixth day a freight tug answers. They tow you clear, top up the tank and send the bill to the colony office, which will love that.",
+        "resources": {
+          "fuel": 20
+        },
+        "resources_pct": {
+          "gold": -30
+        },
+        "time_days": 6
+      },
+      "adrift_pirates": {
+        "title": "THE WRONG SOMEBODY",
+        "tone": "danger",
+        "body": "Five days of waiting, and then a ship with no name on its hull. They put a little fuel in the tank, a lot of your gold in theirs, and a dent in the airlock on the way out.",
+        "resources": {
+          "fuel": 10,
+          "hull": -5,
+          "morale": -4
+        },
+        "resources_pct": {
+          "gold": -60
+        },
+        "time_days": 5
+      },
+      "adrift_unanswered": {
+        "title": "NOBODY",
+        "tone": "danger",
+        "body": "Ten days on every channel. The static answers. The stars do not. The tank still reads zero, and the ship still goes nowhere, steadily.",
+        "resources": {
+          "morale": -6
+        },
+        "time_days": 10
+      },
+      "adrift_give_up": {
+        "title": "LIGHTS OUT",
+        "tone": "danger",
+        "body": "You shut the engines down for good and log the position for whoever comes looking.",
+        "sets_flag": "adrift_gave_up",
+        "time_cost": "none",
+        "resources": {
+          "morale": -10
+        }
+      }
+    },
+    "alt_bodies": [
+      "The tank still reads zero. The ship is still going nowhere in particular, very steadily. The same bad options are still the only ones, and each of them is a little more expensive than it was."
+    ]
   }
 ]

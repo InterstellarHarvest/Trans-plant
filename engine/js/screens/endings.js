@@ -551,6 +551,7 @@
     if (idx < 0) return;
     STATE.items.splice(idx, 1); // one use, consumed regardless of who answers
     STATE.ended = false;
+    STATE.flags.delete('adrift_gave_up'); // rescued after giving up (ruling 144): a later empty tank opens the scene again
 
     const roll = Math.random();
     let logLines;

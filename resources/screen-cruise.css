@@ -616,3 +616,34 @@ body.stop-active #cruise-resrow { filter: brightness(0.55) saturate(0.7); transi
 #ai-bubble .ai-bubble-x { position: absolute; right: 6px; top: 4px; background: none; border: 0; color: var(--ai-name-color); font-family: 'VT323', monospace; font-size: 20px; line-height: 1; cursor: var(--cursor-hand, pointer); padding: 2px 4px; }
 #ai-bubble .ai-bubble-x:hover { color: #e8d8a0; }
 @media (prefers-reduced-motion: reduce) { #ai-bubble { transition: none; } }
+
+/* ── Mishaps (ruling 142, engine/js/mishaps.js) ──────────────────
+   The cruise log keeps them red; the popup is the pause terminal's box
+   with a red head. One button, no ✕: it must be acknowledged. */
+.ai-entry.mishap { color: #e5604f; }
+#overlay-mishap { display: flex; align-items: center; justify-content: center; background: rgba(2,4,8,0.72); z-index: 70; }
+#overlay-mishap .mishap-card {
+  width: 520px; max-width: calc(100% - 60px); padding: 18px 24px 20px;
+  background: var(--pause-bg, #0a0a15);
+  border: 2px solid #7a2a24;
+  box-shadow: 0 0 0 1px rgba(204,51,51,0.45), 0 0 26px rgba(204,51,51,0.25), 0 8px 30px rgba(0,0,0,0.7);
+  color: var(--pause-amber-bright, #e8d8a0);
+  scale: 0.96; transition: scale 0.25s ease;
+}
+#overlay-mishap.active .mishap-card { scale: 1; }
+#overlay-mishap .mishap-head {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'Press Start 2P', monospace; font-size: 8px; letter-spacing: 2px; color: #e5604f;
+  padding-bottom: 8px; border-bottom: 1px dashed rgba(204,51,51,0.45); margin-bottom: 10px;
+}
+#overlay-mishap .mishap-led { width: 8px; height: 8px; border-radius: 50%; background: #e5402f; box-shadow: 0 0 6px #e5402f; animation: mishap-blink 0.9s steps(2, start) infinite; }
+@keyframes mishap-blink { to { visibility: hidden; } }
+#overlay-mishap .mishap-sev { margin-left: auto; color: var(--pause-amber, #c8a85a); }
+#overlay-mishap .mishap-severe .mishap-sev { color: #ff6a55; }
+#overlay-mishap .mishap-title { margin: 0 0 8px; font-family: 'Press Start 2P', monospace; font-size: 13px; line-height: 1.4; color: #ff7a66; letter-spacing: 1px; }
+#overlay-mishap .mishap-text { margin: 0 0 12px; font-family: 'VT323', monospace; font-size: 21px; line-height: 1.22; color: var(--pause-amber-bright, #e8d8a0); }
+#overlay-mishap .mishap-effects { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+#overlay-mishap .mishap-fx { font-family: 'Press Start 2P', monospace; font-size: 9px; padding: 5px 7px; border: 1px solid #7a2a24; color: #ff8a76; background: rgba(204,51,51,0.10); }
+#overlay-mishap .mishap-fx.good, #overlay-mishap .mishap-fx.none { border-color: #2f6a3f; color: #8fd0a0; background: rgba(47,106,63,0.12); }
+#overlay-mishap .mishap-fixed { margin: 0 0 12px; font-family: 'VT323', monospace; font-size: 19px; color: #8fd0a0; }
+#overlay-mishap .mishap-ack { display: block; margin: 4px auto 0; min-width: 200px; }

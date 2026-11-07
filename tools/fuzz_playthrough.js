@@ -115,7 +115,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
       // Engine-forced exemption: delayed_crisis events are never
       // pool-drawn — travelTo() fires one on station arrival for an
       // untreated delayed wound (dueDelayedCrisis sets the patient).
-      const forcedCrisis = evTrig.includes('delayed_crisis') && STATE.crisisPatient;
+      const forcedCrisis = (evTrig.includes('delayed_crisis') && STATE.crisisPatient) || (evTrig.includes('adrift') && STATE.resources.fuel <= 0); // adrift: ruling 144, opened by travelTo
       // Engine-forced too: the station approach (trigger station_arrival)
       // opens every station stop — engine/js/station.js, never pool-drawn.
       const forcedApproach = ev.station_approach && evTrig.includes('station_arrival') && node.node_type === 'station';

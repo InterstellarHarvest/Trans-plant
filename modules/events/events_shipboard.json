@@ -3045,5 +3045,143 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_shipboard_040",
+    "active": true,
+    "title": "Below the Waterline",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "any"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "ship_interior",
+    "bg": "our_ship/corridor",
+    "once": true,
+    "leave_label": "CAN'T LEAVE (THE DECK IS FLOODING)",
+    "leave_disabled": true,
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "BELOW THE WATERLINE",
+        "body": "The main water tank has split along a weld on the lower deck. Not a leak: a split. The lower deck is a long, low compartment with one hatch, and it is filling. The shutoff valve is at the far end, on the floor, under a meter and a half of very cold water and rising.\n\nThe tank does not have a second shutoff. Whoever designed it believed in the first one.",
+        "ai": {
+          "aria": "Indoor swimming! ARIA has always said this ship needed a pool! The valve is right at the bottom, so it's basically a treasure dive!",
+          "marv": "MARV has the fill rate. The compartment is full in forty minutes and the tank is empty in ninety. The valve is eleven meters from the hatch. Water at four degrees gives a person about ten minutes of useful hands. He has done the subtraction.",
+          "rex": "REX wants one person in the water and everyone else on the line at the hatch. Nobody goes under without a line. He has seen what happens. He would prefer not to say where.",
+          "chip": "AquaLock™ shutoffs never fail! This is not an AquaLock™! CHIP can sell you one at the next station, for installation in a dry compartment!",
+          "ajoy": "AJOY would go under on a line, with every spare hand hauling and the suit on if there is one. Two dives, maybe three. Sealing the deck loses a third of the water. But you'll want to think about it first, as usual."
+        },
+        "choices": [
+          {
+            "text": "Swim down and shut the valve yourself",
+            "effort": 3,
+            "risky": true,
+            "microgame_type": "wrench",
+            "effort_required": 30,
+            "requires_effort_from": [
+              "engineer",
+              "item:pressure_suit",
+              "item:repair_kit"
+            ],
+            "detail": "You go under on a line and the crew hauls. Hands on the line, an engineer calling the valve or a pressure suit raise the odds. If it goes wrong down there, it can kill you.",
+            "outcome": "flood_shut",
+            "fail_outcome": "flood_drowned"
+          },
+          {
+            "text": "{crew.engineer} cuts the feed from next door",
+            "sub": "Slower · through the bulkhead",
+            "gate": {
+              "crew": "engineer"
+            },
+            "effort": 2,
+            "outcome": "flood_cut"
+          },
+          {
+            "text": "Pump it into the reserve cells",
+            "sub": "The pumps run off the drive",
+            "outcome": "flood_pumped"
+          },
+          {
+            "text": "Seal the deck and let it fill",
+            "sub": "Lose what's in the tank",
+            "outcome": "flood_sealed"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "flood_shut": {
+        "title": "SHUT",
+        "tone": "success",
+        "body": "You go down the ladder on a line with the cold already in your teeth, and find the valve by feel on the second dive. It turns the way valves never do, which is the right way, first time. The crew pulls you out blue and swearing. The tank kept most of what it had. The lower deck will be damp for a month, and so will you.",
+        "resources": {},
+        "resources_pct": {
+          "water": -8
+        },
+        "repair_done": true,
+        "time_cost": "low",
+        "narrative": "Swam to the bottom of the flooded lower deck and shut the water tank's valve by hand. The tank kept most of its water."
+      },
+      "flood_drowned": {
+        "title": "THE THIRD DIVE",
+        "tone": "danger",
+        "body": "The valve is stiffer than the manual promised. You get it halfway on the first dive and all the way on the third, and somewhere in the third the cold takes your hands, and then your breath. The line goes taut. The crew hauls on it with everything they have.",
+        "resources": {},
+        "resources_pct": {
+          "water": -15
+        },
+        "severity": "lethal",
+        "crew_effect": {
+          "type": "injure",
+          "target": "captain"
+        },
+        "repair_done": true,
+        "time_cost": "low",
+        "narrative": "Shut the flooded deck's water valve on the third dive. The crew hauled the captain out on the line."
+      },
+      "flood_cut": {
+        "title": "CUT OFF",
+        "body": "{crew.engineer} goes into the compartment next door with a cutter and a great deal of bad language, and takes the feed line apart through the bulkhead. It takes four days of rigging, cutting and re-routing. The lower deck drains slowly behind it, and the tank loses more on the way than anyone wanted to watch.",
+        "resources": {},
+        "resources_pct": {
+          "water": -15
+        },
+        "repair_done": true,
+        "time_cost": "medium",
+        "narrative": "{crew.engineer} cut the split tank's feed from the next compartment. Four days, and a fair share of the water."
+      },
+      "flood_pumped": {
+        "title": "PUMPED",
+        "body": "You run the transfer pumps flat out and push what you can into the reserve cells before the split empties the tank. The pumps draw off the drive, and the drive charges for it. Most of the water is saved. The fuel gauge has a new low line.",
+        "resources": {
+          "fuel": -10
+        },
+        "resources_pct": {
+          "water": -12
+        },
+        "time_cost": "low",
+        "narrative": "Pumped the split tank into the reserve cells. Saved most of the water and spent ten points of fuel doing it."
+      },
+      "flood_sealed": {
+        "title": "SEALED",
+        "tone": "danger",
+        "body": "You dog the hatch on the lower deck and let the tank empty into it. A third of the ship's water ends up in a room nobody will open until a station crew comes aboard with a pump and an invoice. The deck sloshes on every turn for the rest of the voyage.",
+        "resources": {
+          "morale": -3
+        },
+        "resources_pct": {
+          "water": -35
+        },
+        "time_cost": "trivial",
+        "narrative": "Sealed the flooding lower deck and let the water tank empty into it. A third of the water is on the wrong side of a hatch."
+      }
+    }
   }
 ]

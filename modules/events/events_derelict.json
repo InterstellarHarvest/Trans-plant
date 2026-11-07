@@ -1415,5 +1415,143 @@
       "label": "Radioisotope thermoelectric generators",
       "url": "https://en.wikipedia.org/wiki/Radioisotope_thermoelectric_generator"
     }
+  },
+  {
+    "id": "event_derelict_015",
+    "active": true,
+    "title": "Eleven Hours of Air",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "heartwarming"
+    ],
+    "node_type": [
+      "derelict"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "derelict_interior",
+    "bg": "ship_interior/derelict",
+    "comm_mode": "screen",
+    "once": true,
+    "npc": {
+      "disposition": "drifter",
+      "species": null,
+      "displayName": "SURVIVOR"
+    },
+    "leave_label": "LEAVE THEM KNOCKING",
+    "leave_as": {
+      "outcome": "air_left"
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "ELEVEN HOURS OF AIR",
+        "body": "The derelict is dead from bow to stern, except for one emergency locker on the far side of a section that something large has folded in half. Inside the locker, someone is knocking. The only way through is a crawlway: forty meters of crushed corridor, unpowered, unpressurized and one person wide.",
+        "line": "Hello? Is that a ship? Don't be a ship that leaves. I've had four of those. I've got eleven hours of air and I've been rationing the knocking.",
+        "pose": "listening",
+        "ai": {
+          "aria": "A survivor! ARIA LOVES a rescue! The crawlway looks cozy, and cozy is just another word for safe!",
+          "marv": "MARV has mapped the crawlway: forty meters, no power, no pressure, and every edge in it is a cut. It fits one person. He notes that 'one person' is doing a great deal of work in that sentence.",
+          "rex": "REX does not trust a voice in a box. Could be a survivor. Could be bait. Whoever goes in goes on a line and comes back on it.",
+          "chip": "RescueReady™ certification takes six weeks and 300 gold! You have neither! CHIP believes in you anyway, in a non-binding way!",
+          "ajoy": "AJOY would go through with an engineer on the comm and a suit that fits. Cutting in from our hull is safe and takes eight days. You'll pick the crawlway. Everybody always picks the crawlway."
+        },
+        "revisit": {
+          "body": "The knocking has slowed to one every few minutes. It has not stopped."
+        },
+        "choices": [
+          {
+            "text": "Go through the crawlway yourself",
+            "effort": 3,
+            "risky": true,
+            "microgame_type": "bypass",
+            "effort_required": 35,
+            "requires_effort_from": [
+              "engineer",
+              "item:pressure_suit"
+            ],
+            "detail": "Forty meters of crushed corridor on your elbows. An engineer talking you through, a pressure suit or hands on the line raise the odds. If the section shifts, it is a bad wound.",
+            "outcome": "air_out",
+            "fail_outcome": "air_cut"
+          },
+          {
+            "text": "Cut in from your own hull",
+            "sub": "Safe, slow and loud",
+            "outcome": "air_long"
+          },
+          {
+            "text": "Talk them through the crawlway",
+            "sub": "They do the crawling",
+            "effort": 1,
+            "outcome": "air_alone"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "air_out": {
+        "title": "OUT",
+        "tone": "success",
+        "body": "The crawlway is worse inside than it looked from outside, which is saying something. You go through it on your elbows with the line paying out behind you, past things that used to be rooms. The locker opens from the inside on the third knock. Its occupant is small, furious with relief, and has kept, through everything, a chart of the route ahead, which they hand you before they will give you their name.",
+        "resources": {
+          "o2": -4,
+          "morale": 4
+        },
+        "item_grant": "star_chart_fragment",
+        "time_cost": "low",
+        "narrative": "Went through a crushed derelict's crawlway and got a survivor out of an emergency locker. They paid in a chart of the route ahead."
+      },
+      "air_cut": {
+        "title": "THE SECTION SHIFTS",
+        "tone": "danger",
+        "body": "You get there. You get them out. On the way back the section shifts, the way crushed things do, and a sheet of torn plate opens your leg from knee to ankle through the suit. The crew hauls you both out on the line. The survivor gives you their chart and keeps pressing on the dressing, which is already the wrong color.",
+        "resources": {
+          "o2": -8,
+          "morale": 2
+        },
+        "item_grant": "star_chart_fragment",
+        "severity": "delayed",
+        "crew_effect": {
+          "type": "injure",
+          "target": "captain"
+        },
+        "time_cost": "low",
+        "narrative": "Got a survivor out of a crushed derelict. On the way back a torn plate opened the captain's leg, and the wound is going bad."
+      },
+      "air_long": {
+        "title": "THE SAFE WAY",
+        "body": "You drill a hole, push an air line through it, and then cut in the safe way: your nose to their hull, plate by plate. It takes eight days of station-keeping and argument. When the last plate comes away the survivor spends the first hour not talking, then hands you a chart of the route ahead, for the trouble.",
+        "resources": {
+          "fuel": -6,
+          "o2": -4
+        },
+        "item_grant": "star_chart_fragment",
+        "time_cost": "high",
+        "narrative": "Cut through a derelict's hull to reach a survivor in a locker. Eight days, and a chart of the route ahead for the trouble."
+      },
+      "air_alone": {
+        "title": "ON THEIR OWN",
+        "tone": "danger",
+        "body": "You talk them through it, meter by meter, on the suit band. It takes them four hours and a good deal of skin. They come out of the far end shaking and too proud to show it, eat {cost.food} points of your food in one sitting and leave in the derelict's last lifeboat without saying where. The chart they mentioned is somewhere in the crawlway.",
+        "resources": {
+          "food": -6,
+          "morale": -2
+        },
+        "time_cost": "low",
+        "narrative": "Talked a trapped survivor through a crushed derelict's crawlway. They made it, ate, and left without a word."
+      },
+      "air_left": {
+        "title": "LEFT",
+        "tone": "danger",
+        "body": "You leave. The knocking follows you down the docking tube and stops, as these things do, when the hatch closes. Nobody aboard mentions it. Everybody aboard hears it again around the third watch.",
+        "resources": {
+          "morale": -6
+        },
+        "time_cost": "trivial",
+        "narrative": "Left a derelict with someone still knocking inside it. Nobody mentions it."
+      }
+    }
   }
 ]

@@ -10756,5 +10756,166 @@
       "label": "Triple point",
       "url": "https://en.wikipedia.org/wiki/Triple_point"
     }
+  },
+  {
+    "id": "event_species_reptile_010",
+    "species_lane": "reptile",
+    "active": true,
+    "title": "The Long Bask",
+    "difficulty": "hard",
+    "tone": [
+      "absurd",
+      "grim"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "ship_exterior",
+    "comm_mode": "screen",
+    "once": true,
+    "npc": {
+      "disposition": "drifter",
+      "species": "reptile",
+      "displayName": "SUN-WARDEN"
+    },
+    "leave_label": "BREAK OFF",
+    "leave_as": {
+      "triggerFleeResolve": true,
+      "outcome": "bask_fled",
+      "effort": 1,
+      "risky": true
+    },
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE LONG BASK",
+        "body": "A reptile ship has matched course and turned its broad side to you, which you are told is formal. For eleven minutes on the last leg, your ship's shadow fell across its hull. You did not notice. It did. In reptile space a shadow is not an accident. It is a statement about who deserves the light. {npc.quirk}",
+        "line": "It will be settled the old way. The captains lie on the warm stone. The first to rise pays. Only the captain. Nobody lies down for anybody else.",
+        "pose": "hostile",
+        "ai": {
+          "aria": "A spa day with a new friend! ARIA has read that heat is wonderful for the skin, and skin is the body's biggest organ, so this is really a health opportunity!",
+          "marv": "MARV has the stone at fifty-eight degrees. Reptiles are comfortable there. People begin to cook there, slowly, from the side touching it. The warden will not rise. The question is how long you can be wrong about that.",
+          "rex": "REX notes this is a contest on the enemy's ship, by the enemy's rules, at the enemy's temperature. He has never liked a fair fight. This is not one.",
+          "chip": "Thermal endurance events are excluded from your policy! CHIP can offer HeatShield™ Gel at a 40% markup, which is the markup!",
+          "ajoy": "AJOY would take a medic across to keep you wet and count your pulse, and lie down. The fine is thirty gold, or the long way round. A Basking Chit would end it. You don't have to listen. It's only your back."
+        },
+        "revisit": {
+          "body": "The reptile ship is still broadside on. The warden has not blinked."
+        },
+        "choices": [
+          {
+            "text": "Lie down on the stone",
+            "effort": 3,
+            "risky": true,
+            "microgame_type": "override",
+            "effort_required": 30,
+            "requires_effort_from": [
+              "medic",
+              "item:medical_scanner"
+            ],
+            "detail": "Captains only. Your crew keeps you wet and counts your pulse from the edge of the stone: a medic, a medical scanner or more hands raise the odds. Stay too long and the burns go bad.",
+            "outcome": "bask_won",
+            "fail_outcome": "bask_burned"
+          },
+          {
+            "text": "Hold up the Basking Chit",
+            "sub": "A debt of warmth outranks a shadow",
+            "gate": {
+              "item": "basking_chit"
+            },
+            "effort": 1,
+            "outcome": "bask_chit"
+          },
+          {
+            "text": "Pay for the shadow",
+            "sub": "30 gold, at the old rate",
+            "gate": {
+              "gold": 30
+            },
+            "outcome": "bask_paid"
+          },
+          {
+            "text": "Burn for the far side of the star",
+            "sub": "Out of their light, the long way",
+            "effort": 1,
+            "risky": true,
+            "triggerFleeResolve": true,
+            "outcome": "bask_fled"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "bask_won": {
+        "title": "THE WARDEN RISES",
+        "tone": "success",
+        "body": "You lie down beside the warden on a slab of black stone the temperature of a bath someone forgot about. It closes its eyes. Your crew sits at the edge with wet cloths and a stopwatch. Four hours in, the warden opens one eye, studies you, and rises, slowly, with the air of a creature that has never been so surprised. It pays you in fuel at the old rate, and gives you a small hot disc that says it owes you a seat by the fire.",
+        "line": "Nobody has outlain me in ninety years. Get off my stone.",
+        "pose": "listening",
+        "resources": {
+          "fuel": 8,
+          "morale": 3
+        },
+        "item_grant": "basking_chit",
+        "time_cost": "low",
+        "narrative": "Outlay a reptile sun-warden on its own warm stone, four hours, captain to captain. It paid in fuel and a Basking Chit."
+      },
+      "bask_burned": {
+        "title": "FIRST TO RISE",
+        "tone": "danger",
+        "body": "You last three hours and ten minutes, which the warden later calls respectable for a mammal. Then your crew lifts you off the stone, because you can no longer do it yourself, and the burns along your back come away with the stone's pattern in them. By the next day they are weeping and hot to the touch, the way burns are when they intend to stay. The warden collects its fine in fuel, without malice.",
+        "resources": {},
+        "resources_pct": {
+          "fuel": -15
+        },
+        "severity": "delayed",
+        "crew_effect": {
+          "type": "injure",
+          "target": "captain"
+        },
+        "time_cost": "low",
+        "narrative": "Lost a basking contest to a reptile sun-warden. Paid the fine in fuel, and the burns on the captain's back are going bad."
+      },
+      "bask_chit": {
+        "title": "OWED A SEAT",
+        "tone": "success",
+        "body": "You hold the disc up to the camera. The warden goes very still, then lowers itself in the slow, formal way of a creature caught by its own manners. A debt of warmth outranks a shadow. There is no contest. There is, however, a ceremony of apology, on its stone, at its temperature, for three days, during which you sit in a chair it has had brought out for you.",
+        "line": "Sit. Sit. You are owed. I hate it. Sit.",
+        "pose": "listening",
+        "resources": {
+          "morale": -1
+        },
+        "time_days": 3,
+        "narrative": "Held up a Basking Chit to a reptile sun-warden. No contest; three days of formal apology at its temperature instead."
+      },
+      "bask_paid": {
+        "title": "THE SHADOW FINE",
+        "body": "You pay the shadow fine at the old rate: thirty gold, sent across in a sealed box, because handing money over directly is considered warm-blooded. The warden turns its broad side away, which you are told is also formal, and lets you go.",
+        "resources": {
+          "gold": -30
+        },
+        "time_cost": "trivial",
+        "narrative": "Paid a reptile sun-warden thirty gold for letting our shadow fall on its hull."
+      },
+      "bask_fled": {
+        "title": "THE LONG WAY ROUND",
+        "tone": "danger",
+        "body": "You burn for the far side of the star, out of the warden's light and its jurisdiction. It does not chase you. It fires once, a long low shot across your stern, to make the point that it could have. The far side of a star is a long way round.",
+        "resources": {
+          "fuel": -10,
+          "hull": -4
+        },
+        "time_cost": "low",
+        "narrative": "Ran from a reptile sun-warden's basking contest. It put one shot across the stern to make its point."
+      }
+    }
   }
 ]

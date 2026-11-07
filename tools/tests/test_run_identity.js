@@ -81,7 +81,8 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   ok(r.unlessHeld === 1 && r.unlessGone === 2, 'an unless_item row shows only while the item is gone');
   ok(r.airPlain === 'lost ten' && r.airRecycled === 'lost seven', '{cost.o2} states the air an outcome really costs, recycler included: ' + r.airPlain + ' / ' + r.airRecycled);
   ok(r.costBig === -60, 'one event never costs more than the cap: ' + r.costBig);
-  ok(r.costSmall === -13, 'the trail multiplier still applies below it: ' + r.costSmall);
+  ok(r.costSmall === -10, // Mars ×5 since ruling 141
+     'the trail multiplier still applies below it: ' + r.costSmall);
   ok(errors.length === 0, 'no page errors ' + errors.join(' | '));
   await browser.close();
   console.log(`\nrun identity: ${pass} passed, ${fail} failed`);

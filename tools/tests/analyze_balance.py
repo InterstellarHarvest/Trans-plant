@@ -37,3 +37,8 @@ for trail in ['lunar', 'mars', 'interstellar']:
               f" | score p10/50/90 {q(scores, .1)}/{q(scores, .5)}/{q(scores, .9)} | days/base p50 {q([d * 100 for d in days], .5)}% p90 {q([d * 100 for d in days], .9)}%"
               f" | effort tax per crew: events {ev_tax:.1f} verbs {verb_tax:.1f}")
         print(f"{'':21} failures {dict(fails.most_common())}")
+        # Rulings 142–145: mishaps a run (and how bad), Adrift scenes, the captain lost.
+        mis = [r['stats'].get('mishaps') or [] for r in rs]
+        tiers_m = collections.Counter(m[1] for ms in mis for m in ms)
+        adrift = sum(1 for r in rs if 'event_adrift_001' in ids(r))
+        print(f"{'':21} mishaps/run {st.mean(len(m) for m in mis):.2f} (none {pct(sum(1 for m in mis if not m), n)}) tiers {dict(tiers_m)} fixed {sum(1 for ms in mis for m in ms if m[2])} | adrift scene {pct(adrift, n)}")

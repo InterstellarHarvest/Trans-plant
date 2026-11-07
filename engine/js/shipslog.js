@@ -467,7 +467,7 @@
   }
 
   // ── The journal ───────────────────────────────────────────────────
-  const rowType = e => (e.type === 'death' || e.type === 'choice' || e.type === 'event') ? e.type : (e.type === 'sci' ? 'event' : 'note');
+  const rowType = e => (e.type === 'death' || e.type === 'choice' || e.type === 'event' || e.type === 'mishap') ? e.type : (e.type === 'sci' ? 'event' : 'note'); // mishap: red (ruling 142)
   function expandOf(e) {
     if (!e || !e.expand) return null;
     if (typeof e.expand === 'string') return { title: e.type === 'death' ? 'IN MEMORIAM' : 'FROM THE LOG', text: e.expand, kind: e.type === 'death' ? 'memorial' : 'lore' };

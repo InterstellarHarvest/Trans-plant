@@ -877,5 +877,146 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_nebula_012",
+    "active": true,
+    "title": "The Growbay Is Burning",
+    "difficulty": "ultra",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "nebula"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "trail": [
+      "interstellar"
+    ],
+    "requires_crop_alive": true,
+    "scene_type": "growbay",
+    "bg": "our_ship/growbay/{crop}",
+    "once": true,
+    "leave_label": "CAN'T LEAVE (THE GROWBAY IS ON FIRE)",
+    "leave_disabled": true,
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE GROWBAY IS BURNING",
+        "body": "The growbay draws a trickle of outside gas through a filter, for the carbon, the way the manual intended. The manual did not intend this nebula. Something in the cloud got through the filter, met a grow lamp, and liked it.\n\nThe back half of the growbay is on fire. The whole nebula is feeding it through the intake. The intake valve is on the back wall, behind the {crop.name}, behind the fire.",
+        "ai": {
+          "aria": "The growbay has never been so warm and bright! The {crop.name} loves light, and this is a LOT of light! We just need to turn it down a smidge!",
+          "marv": "MARV notes that the fire has an unlimited supply of fuel, delivered to its door. Venting the bay kills it and half the crop. Shutting the intake kills it and keeps most of the crop. The intake is four meters from the hatch, through the fire.",
+          "rex": "REX says go through low and fast, in a suit, with a hose on your back and someone on the hatch. He has done this. He did not like it then.",
+          "chip": "BloomGuard™ growbay fire cover was listed under Optional Extras! You opted out! CHIP is legally required to remind you, gently, now!",
+          "ajoy": "AJOY would go through low, in the suit, with the engineer or the botanist calling the valve. You'll get burned either way. Venting loses half the crop. Burning out of the cloud costs eighteen fuel and still loses a fifth. But stand there and think, by all means."
+        },
+        "choices": [
+          {
+            "text": "Go through the fire and shut the intake",
+            "effort": 3,
+            "risky": true,
+            "microgame_type": "airlock_seal",
+            "effort_required": 35,
+            "requires_effort_from": [
+              "engineer",
+              "botanist",
+              "item:pressure_suit"
+            ],
+            "detail": "Four meters through the fire to the valve, and you will be burned either way. An engineer or a botanist calling the valve, a pressure suit and hands on the hose raise the odds. If it goes wrong in there, it can kill you.",
+            "outcome": "fire_shut",
+            "fail_outcome": "fire_caught"
+          },
+          {
+            "text": "{crew.engineer} kills the intake from below",
+            "sub": "Slower · the bay burns meanwhile",
+            "gate": {
+              "crew": "engineer"
+            },
+            "effort": 2,
+            "outcome": "fire_plant_room"
+          },
+          {
+            "text": "Burn out of the cloud",
+            "sub": "Starve it of nebula",
+            "outcome": "fire_burn_out"
+          },
+          {
+            "text": "Vent the growbay to space",
+            "sub": "The fire goes. So does half the crop",
+            "outcome": "fire_vented"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "fire_shut": {
+        "title": "SHUT",
+        "tone": "success",
+        "body": "You go in low with the hose over your shoulder and the hatch crew counting. The heat is a wall and then a room. The valve is where the voice in your ear says it is. It turns. Cut off from the nebula, the fire gives up all at once, as if it had only been staying for the company. You come out with your sleeves gone and the skin under them sorry about it. The back rows are lost. The rest of the {crop.name} will live.",
+        "resources": {
+          "o2": -4
+        },
+        "crop_health": -10,
+        "crew_effect": {
+          "type": "injure",
+          "target": "captain"
+        },
+        "time_cost": "low",
+        "narrative": "Went through the growbay fire and shut the nebula intake by hand. Lost the back rows and the captain's sleeves. The rest of the crop lives."
+      },
+      "fire_caught": {
+        "title": "THE LAMP ARRAY",
+        "tone": "danger",
+        "body": "You reach the valve and turn it, and the fire, in its last minute, finds the lamp array above your head. It comes down in a sheet. The hatch crew goes in after you with the hose, which is against every rule anyone ever wrote, and drags you out by the suit collar into the corridor.",
+        "resources": {
+          "o2": -8
+        },
+        "crop_health": -20,
+        "severity": "lethal",
+        "crew_effect": {
+          "type": "injure",
+          "target": "captain"
+        },
+        "time_cost": "low",
+        "narrative": "Shut the growbay's nebula intake by hand. The lamp array came down on the captain on the way out."
+      },
+      "fire_plant_room": {
+        "title": "FROM BELOW",
+        "body": "{crew.engineer} goes into the plant room under the growbay and takes the intake apart from below, bolt by bolt, while the fire overhead eats the back rows. When the intake closes the fire dies in a minute. Rigging it all back together takes four days.",
+        "resources": {
+          "o2": -6
+        },
+        "crop_health": -25,
+        "time_cost": "medium",
+        "narrative": "{crew.engineer} shut the growbay's nebula intake from the plant room below while the fire ate the back rows."
+      },
+      "fire_burn_out": {
+        "title": "STARVED",
+        "tone": "danger",
+        "body": "You seal the growbay hatch and burn hard for the edge of the cloud. The fire keeps going as long as the nebula does, and goes out, sulking, at the edge, with a fifth of the {crop.name} gone with it.",
+        "resources": {
+          "fuel": -18,
+          "hull": -3
+        },
+        "crop_health": -20,
+        "time_cost": "low",
+        "narrative": "Burned eighteen points of fuel to get out of the nebula and starve the growbay fire. It took a fifth of the crop first."
+      },
+      "fire_vented": {
+        "title": "VENTED",
+        "tone": "danger",
+        "body": "You open the growbay to space. The fire goes out at once. So does the air, the warmth and the water in every leaf. You close it again inside a minute, which is a long time for a plant. About half of the {crop.name} pulls through.",
+        "resources": {
+          "o2": -10
+        },
+        "crop_health": -45,
+        "time_cost": "trivial",
+        "narrative": "Vented the burning growbay to space. The fire went out. About half the crop came through."
+      }
+    }
   }
 ]

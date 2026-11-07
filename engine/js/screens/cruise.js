@@ -481,7 +481,7 @@
     log.querySelectorAll('.ai-entry.latest').forEach(e => e.classList.remove('latest'));
     if (day !== markerDay) appendDayMarker(log, day);
     const entry = document.createElement('div');
-    entry.className = 'ai-entry latest' + (voice ? ' voice' : ' system');
+    entry.className = 'ai-entry latest' + (voice ? ' voice' : ' system') + (stored.type === 'mishap' ? ' mishap' : ''); // ruling 142: a mishap reads red
     log.appendChild(entry);
     const saved = STATE.shipLog[STATE.shipLog.length - 1];
     armPayload(entry, saved);
@@ -526,7 +526,7 @@
       if (!en) return;
       if (en.day !== markerDay) appendDayMarker(log, en.day);
       const d = document.createElement('div');
-      d.className = 'ai-entry' + (en.voice ? ' voice' : ' system') + (i === list.length - 1 ? ' latest' : '');
+      d.className = 'ai-entry' + (en.voice ? ' voice' : ' system') + (en.type === 'mishap' ? ' mishap' : '') + (i === list.length - 1 ? ' latest' : '');
       d.textContent = displayLine(en.text, en.voice);
       armPayload(d, en);
       addPayloadIcon(d, en);

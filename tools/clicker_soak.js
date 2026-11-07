@@ -392,7 +392,8 @@ async function perform(page, a) {
 
 (async () => {
   const { srv, url: own } = process.env.URL ? { srv: null, url: process.env.URL } : await serve();
-  const url = process.env.URL || own;
+  // mishaps on (ruling 142): automated browsers get none unless they ask
+  const url = (process.env.URL || own).replace(/index\.html.*$/, 'index.html') + '?mishaps=1';
   let browserObj = await pw[BROWSER].launch({ headless: !process.env.HEADED });
   fs.mkdirSync(OUT, { recursive: true });
   console.log(`clicker soak: ${BROWSER} ${url} → ${OUT}`);

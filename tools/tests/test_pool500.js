@@ -28,6 +28,8 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
       window.RES_KEYS = ['fuel', 'food', 'water', 'o2', 'hull'];
       window.__t = {
         resolutions(ev, ch) {
+          // Ruling 144: a chance choice resolves to each of its roll's outcomes.
+          if (Array.isArray(ch.__roll || ch.roll)) return (ch.__roll || ch.roll).map((r, i) => [r.outcome, ev.outcomes[r.outcome], 'roll:' + i]);
           if (typeof ch.outcome === 'string') return [[ch.outcome, ev.outcomes[ch.outcome], null]];
           const base = ch.outcome || {};
           if (!ch.launch_minigame) return [['outcome', base, null]];
@@ -117,14 +119,16 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + 
       ok(opts.every(p => p.path), `${trail} ${id}: every layer is reachable from the entry`);
       let resolved = 0;
       for (const p of opts) {
-        const tiers = await page.evaluate(({ id, p }) => { const ch = __t.choiceOf(EVENTS[id], p); return ch.launch_minigame ? ['perfect', 'good', 'poor'] : [null]; }, { id, p });
+        const tiers = await page.evaluate(({ id, p }) => { const ch = __t.choiceOf(EVENTS[id], p); const roll = ch.__roll || ch.roll; return ch.launch_minigame ? ['perfect', 'good', 'poor'] : Array.isArray(roll) ? roll.map((r, i) => 'roll:' + i) : [null]; }, { id, p });
         for (const tier of tiers) {
           const r = await page.evaluate(async ({ id, p, tier, trail }) => {
             const ev = EVENTS[id];
             const ch = __t.choiceOf(ev, p);
+            // A chance choice: pin its roll to the one outcome under test (restored on the next pass).
+            if (ch.roll) { ch.__roll = ch.__roll || ch.roll; ch.roll = tier && tier.startsWith('roll:') ? [ch.__roll[+tier.slice(5)]] : ch.__roll; }
             const vias = (p.path || []).map(([k, i]) => ev.layers[k].choices[i]);
             const node = __t.setup(trail, ev, ch, vias);
-            if (tier) window.openMinigame = (mg, o, cb) => setTimeout(() => cb(tier, {}), 10);
+            if (tier && !tier.startsWith('roll:')) window.openMinigame = (mg, o, cb) => setTimeout(() => cb(tier, {}), 10);
             enterEvent(node, ev);
             finishAllTyping();
             const wait = ms => new Promise(res => setTimeout(res, ms));

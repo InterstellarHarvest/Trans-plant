@@ -2757,5 +2757,160 @@
       }
     },
     "family": "pirate"
+  },
+  {
+    "id": "event_encounter_boarding_003",
+    "active": true,
+    "title": "The One Who Signs",
+    "difficulty": "hard",
+    "tone": [
+      "grim",
+      "absurd"
+    ],
+    "node_type": [
+      "planet",
+      "derelict",
+      "asteroid_field",
+      "anomaly",
+      "nebula",
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "scene_type": "ship_interior",
+    "bg": "our_ship/cargo",
+    "comm_mode": "screen",
+    "once": true,
+    "requires_crew_aboard": true,
+    "crew_speaker": [
+      "any"
+    ],
+    "npc": {
+      "disposition": "pirate",
+      "species": null,
+      "displayName": "BOARDING PARTY"
+    },
+    "leave_label": "CAN'T LEAVE (THEY HAVE A HOSTAGE)",
+    "leave_disabled": true,
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "THE ONE WHO SIGNS",
+        "body": "They came in through the forward airlock while the ship was asleep, and they did not come for the cargo. They have {speaker.name} on the inside of the lock with an arm up their back. There are four of them on the feed. One is holding a clipboard. {npc.quirk}",
+        "line": "Not this one. We want whoever signs for the ship. Captains fetch a price. Crew fetch a shrug.",
+        "pose": "hostile",
+        "ai": {
+          "aria": "They want YOU! That's so flattering! ARIA always knew you were the most valuable thing aboard, and now there's a price to prove it!",
+          "marv": "MARV has their numbers. A colony captain resells for a modest sum to people he would rather not name. Whether you get back depends on who is at the lock and who is at the helm when you run for it.",
+          "rex": "REX counts four hostiles, one hostage, one clipboard. A swap is a standard tactic. So is shooting whoever walks over. He wants the pilot at the helm and every hand at the lock.",
+          "chip": "Kidnap and Ransom cover is a Platinum feature! You're on Bronze! CHIP can upgrade you now, for a fee CHIP would need you alive to collect!",
+          "ajoy": "AJOY would walk over, wait for them to argue about your price, and run for the lock with the pilot holding us alongside. More of us at the hatch, better odds. Or pay the forty. You won't, but you could."
+        },
+        "choices": [
+          {
+            "text": "Walk over and take {speaker.name}'s place",
+            "effort": 3,
+            "risky": true,
+            "microgame_type": "override",
+            "effort_required": 30,
+            "requires_effort_from": [
+              "pilot",
+              "item:pressure_suit"
+            ],
+            "detail": "You cross and {speaker.name} comes back. Then you run for it while the crew holds the ship alongside. Hands at the lock, a pilot at the helm or a pressure suit raise the odds. If they catch you, it is a bad wound.",
+            "outcome": "hostage_swap",
+            "fail_outcome": "hostage_caught"
+          },
+          {
+            "text": "Pay what they ask",
+            "sub": "40 gold, counted on camera",
+            "gate": {
+              "gold": 40
+            },
+            "outcome": "hostage_paid"
+          },
+          {
+            "text": "Let them strip the hold instead",
+            "sub": "Fuel and food for a crewmate",
+            "outcome": "hostage_stripped"
+          },
+          {
+            "text": "Rush the airlock",
+            "sub": "Everyone at once · risky",
+            "effort": 3,
+            "risky": true,
+            "outcome": "hostage_rushed"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "hostage_swap": {
+        "title": "BACK THROUGH THE LOCK",
+        "tone": "success",
+        "body": "You walk across with your hands where they can see them. {speaker.name} walks the other way and does not look at you, which is correct. Their leader is halfway through a sentence about your resale value when you go for the lock. The crew has it open. The ship is alongside close enough to scrape paint. You land on your own deck with the hatch already closing and their clipboard still in your hand. Getting clear takes a hard burn.",
+        "resources": {
+          "fuel": -6
+        },
+        "time_cost": "low",
+        "narrative": "Traded places with {speaker.name}, then ran back through the lock while the crew held the ship alongside. Came away with their clipboard."
+      },
+      "hostage_caught": {
+        "title": "CAUGHT AT THE HATCH",
+        "tone": "danger",
+        "body": "The swap goes cleanly. The run does not. They catch you two meters from the lock, and the one with the clipboard turns out to have a knife as well. Your crew drags you through by the collar, bleeding from a cut along the ribs that any medical manual would call dirty. On the way out the boarders help themselves to a stack of stores, as a deposit.",
+        "resources": {},
+        "resources_pct": {
+          "food": -15
+        },
+        "severity": "delayed",
+        "crew_effect": {
+          "type": "injure",
+          "target": "captain"
+        },
+        "time_cost": "low",
+        "narrative": "Swapped places with {speaker.name} and ran for it. Caught at the hatch and cut along the ribs. The wound is not clean."
+      },
+      "hostage_paid": {
+        "title": "PAID",
+        "body": "You count forty gold onto the airlock deck under the camera. The leader checks it twice, ticks something on the clipboard and lets {speaker.name} go with a small bow. They are gone in minutes. {speaker.name} spends the evening telling everyone they were fine, at length.",
+        "resources": {
+          "gold": -40
+        },
+        "time_cost": "trivial",
+        "narrative": "Paid boarders forty gold to give {speaker.name} back. They ticked a box and left."
+      },
+      "hostage_stripped": {
+        "title": "STRIPPED",
+        "tone": "danger",
+        "body": "You open the hold to them. They take fuel by the drum and food by the crate, and when they are done they hand {speaker.name} back the way you return a library book: on time, slightly worn, with nothing to say about it. The hold echoes now.",
+        "resources": {
+          "morale": -3
+        },
+        "resources_pct": {
+          "fuel": -20,
+          "food": -25
+        },
+        "time_cost": "low",
+        "narrative": "Let boarders strip the hold in exchange for {speaker.name}. They took a fifth of the fuel and a quarter of the food."
+      },
+      "hostage_rushed": {
+        "title": "EVERYONE AT ONCE",
+        "tone": "danger",
+        "body": "You open the inner door and everyone goes through it at once, with whatever came to hand. It is short and loud and nobody would call it tactics. The boarders fall back to their own ship and cut loose, taking a strip of your docking collar with them. Someone on your side took a blade getting {speaker.name} back.",
+        "resources": {
+          "hull": -6,
+          "morale": -3
+        },
+        "severity": "injury",
+        "crew_effect": {
+          "type": "injure",
+          "target": "crew"
+        },
+        "time_cost": "low",
+        "narrative": "Rushed the airlock to get {speaker.name} back. The boarders ran, the docking collar didn't, and one of the crew was cut."
+      }
+    }
   }
 ]

@@ -24,7 +24,8 @@ const POOL_BEFORE = { lunar: { water: 83, food: 80 }, mars: { water: 83, food: 8
 // Re-recorded 2026-10-23 hunt (station_024 coffee costs food).
 // Re-recorded 2026-11-02 (pool 500): 500 events, the hard pool more than doubled.
 // Re-recorded 2026-11-03 (ruling 128): the six species quests' hard steps.
-const POOL_AFTER = { lunar: { water: 552, food: 534 }, mars: { water: 575, food: 559 } };
+// Re-recorded 2026-11-06 (ruling 145): the captain-in-harm's-way events' hard steps.
+const POOL_AFTER = { lunar: { water: 552, food: 540 }, mars: { water: 575, food: 565 } };
 const RES = ['fuel', 'food', 'water', 'o2', 'hull'];
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  ✗ ' + m); } };

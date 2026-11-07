@@ -84,7 +84,7 @@ const STOWAWAY_RESOLVES = new Set(['welcome', 'welcome_replace', 'refuse']);
 // {patient.*} text tokens) only make sense inside those events. "crew" =
 // one of the crew, never the captain (a choice that sends a crew member).
 const CREW_EFFECT_TYPES = new Set(['injure', 'kill', 'heal']);
-const CREW_EFFECT_TARGETS = new Set(['random', 'specific_role', 'all_injured', 'patient', 'crew']);
+const CREW_EFFECT_TARGETS = new Set(['random', 'specific_role', 'all_injured', 'patient', 'crew', 'captain']); // captain: ruling 145
 const severityValues = new Set(Object.keys((registry.severity || {}).values || {}));
 const TIER_KEYS = new Set(['perfect', 'good', 'poor']);
 
@@ -1059,6 +1059,17 @@ const TALK_CHOICE = /\b(haggl\w*|negotiat\w*|question\w*|ask\w*|bluff\w*|talks?|
         }
         // fail_outcome: a hands-on job's authored failure — needs an
         // EFFORT_CHECKS job to roll it and a layered outcome to play.
+        // roll (ruling 144): a chance result — every entry a positive weight
+        // and an outcome id of this event; no other navigation alongside.
+        if (ch.roll != null) {
+          if (!Array.isArray(ch.roll) || !ch.roll.length) err(`${at}: choice "${label}" roll must be a non-empty list of { weight, outcome }`);
+          else for (const r of ch.roll) {
+            if (!(r && r.weight > 0)) err(`${at}: choice "${label}" roll entry needs a positive weight`);
+            if (!(r && typeof r.outcome === 'string' && ev.outcomes && ev.outcomes[r.outcome])) err(`${at}: choice "${label}" roll outcome "${r && r.outcome}" is not an id in this event's outcomes`);
+          }
+          if (ch.outcome != null || ch.next != null || ch.back) err(`${at}: choice "${label}" has roll and another way on (outcome/next/back) — one only`);
+          if (!ev.layers) err(`${at}: choice "${label}" roll works on layered events only`);
+        }
         if (ch.fail_outcome != null) {
           if (!(job && EFFORT_CHECKS.has(job))) err(`${at}: choice "${label}" has fail_outcome but no EFFORT_CHECKS microgame_type/minigame_type — nothing rolls a failure`);
           if (typeof ch.fail_outcome !== 'string' || !(ev.outcomes && ev.outcomes[ch.fail_outcome])) err(`${at}: choice "${label}" fail_outcome "${ch.fail_outcome}" is not an id in this event's outcomes`);

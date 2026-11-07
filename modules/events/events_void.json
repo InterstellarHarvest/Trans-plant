@@ -868,5 +868,165 @@
         }
       }
     ]
+  },
+  {
+    "id": "event_void_011",
+    "active": true,
+    "title": "Blind Mast",
+    "difficulty": "ultra",
+    "tone": [
+      "grim",
+      "cosmic"
+    ],
+    "node_type": [
+      "void"
+    ],
+    "trigger": [
+      "any"
+    ],
+    "trail": [
+      "interstellar"
+    ],
+    "scene_type": "deep_void",
+    "once": true,
+    "leave_label": "CAN'T LEAVE (WHICH WAY IS OUT?)",
+    "leave_disabled": true,
+    "entryLayer": "intro",
+    "layers": {
+      "intro": {
+        "title": "BLIND MAST",
+        "body": "The star tracker on the dorsal mast has been knocked a few degrees off true by something nobody saw. Out here there are almost no stars to check it against. For a day and a half the navigation computer has been steering, with complete confidence, in a direction that is slowly becoming wrong.\n\nThe mast can be reset by hand. The hand has to be outside. Outside, in the void, there is no light to see by, and nothing to fall towards but further.",
+        "ai": {
+          "aria": "A spacewalk in the darkest place there is! ARIA hears the view is incredible! Mostly black, which goes with everything!",
+          "marv": "MARV has the drift at two degrees and widening. Left alone it costs about a week and a tank. The mast is nine meters from the airlock along a rail. In this dark a dropped tool is gone for good. So is anything else.",
+          "rex": "REX wants the pilot at the helm holding us dead steady and an engineer on the line. One person out. Two clips on the rail at all times. He has buried people who used one.",
+          "chip": "TetherTrust™ clips are rated for nine thousand hours! Your clips are the free ones! CHIP is not saying anything! CHIP has said it!",
+          "ajoy": "AJOY would have the pilot hold us steady, an engineer on the line and the suit on, and go now. Or burn for the nearest star and fix it in the light: twenty fuel and four days. You'll go out. Use both clips."
+        },
+        "choices": [
+          {
+            "text": "Go out to the mast yourself",
+            "effort": 3,
+            "risky": true,
+            "microgame_type": "calibration",
+            "effort_required": 40,
+            "requires_effort_from": [
+              "pilot",
+              "engineer",
+              "item:pressure_suit"
+            ],
+            "detail": "Nine meters along the rail in the dark. A pilot holding the ship steady, an engineer on the line, a pressure suit and every hand at the lock raise the odds. If it goes wrong out there, it can kill you.",
+            "outcome": "mast_set",
+            "fail_outcome": "mast_lost"
+          },
+          {
+            "text": "Send a crewmate out instead",
+            "sub": "Their risk, not yours",
+            "requires_crew": "any",
+            "effort": 3,
+            "risky": true,
+            "microgame_type": "calibration",
+            "effort_required": 40,
+            "requires_effort_from": [
+              "pilot",
+              "engineer",
+              "item:pressure_suit"
+            ],
+            "detail": "The same walk, the same odds, and it is someone else on the rail. Nobody enjoys being volunteered. If it goes wrong out there, it can kill them.",
+            "outcome": "mast_set_crew",
+            "fail_outcome": "mast_lost_crew"
+          },
+          {
+            "text": "Steer by dead reckoning",
+            "sub": "Guess well, for a week",
+            "outcome": "mast_reckon"
+          },
+          {
+            "text": "Burn for the nearest star",
+            "sub": "Fix it in the light",
+            "outcome": "mast_star"
+          }
+        ]
+      }
+    },
+    "outcomes": {
+      "mast_set": {
+        "title": "TRUE AGAIN",
+        "tone": "success",
+        "body": "You go out along the rail with both clips on and nothing in any direction. The mast is where the diagram said it would be, which in the dark is a small miracle. You find the tracker by touch, set it against the faint smudge of a galaxy that is the only light out here, and torque it down. The helm swings a degree and a half, as if remembering something. Coming back along the rail, you do not look out. Nobody who has been out there does.",
+        "resources": {
+          "o2": -5
+        },
+        "repair_done": true,
+        "time_cost": "low",
+        "narrative": "Went out along the rail in the void and reset the star tracker by hand. The helm swung back a degree and a half."
+      },
+      "mast_lost": {
+        "title": "ONE CLIP",
+        "tone": "danger",
+        "body": "The tracker goes back true on the second try. On the way back along the rail, a clip you were sure of opens. You turn over once, slowly, into a black so complete that the ship is only a voice in your helmet, counting. The line is the only thing that knows where the ship is. The crew hauls on it, hand over hand, for longer than anyone will say.",
+        "resources": {
+          "o2": -8
+        },
+        "severity": "lethal",
+        "crew_effect": {
+          "type": "injure",
+          "target": "captain"
+        },
+        "repair_done": true,
+        "time_cost": "low",
+        "narrative": "Reset the star tracker on the mast by hand in the void. A clip opened on the way back, and the crew hauled the captain in on the line."
+      },
+      "mast_set_crew": {
+        "title": "TRUE AGAIN",
+        "tone": "success",
+        "body": "Your crewmate goes out along the rail without a word, which is its own kind of word. They find the tracker by touch, set it against the faint smudge of a galaxy and torque it down. The helm swings a degree and a half. They come back in, take off the helmet and go to bed without dinner, and nobody brings up who was asked.",
+        "resources": {
+          "o2": -5,
+          "morale": -3
+        },
+        "repair_done": true,
+        "time_cost": "low",
+        "narrative": "Sent a crewmate out along the rail in the void to reset the star tracker. It worked. Nobody brings up who was asked."
+      },
+      "mast_lost_crew": {
+        "title": "ONE CLIP",
+        "tone": "danger",
+        "body": "The tracker goes back true. On the way back, one of the clips opens, and the voice in everyone's headset goes very calm, which is worse. The line is the only thing that knows where the ship is. You haul on it, all of you, hand over hand, for longer than anyone will say.",
+        "resources": {
+          "o2": -8,
+          "morale": -3
+        },
+        "severity": "lethal",
+        "crew_effect": {
+          "type": "injure",
+          "target": "crew"
+        },
+        "repair_done": true,
+        "time_cost": "low",
+        "narrative": "Sent a crewmate out to reset the star tracker in the void. A clip opened on the way back."
+      },
+      "mast_reckon": {
+        "title": "NEAR ENOUGH",
+        "tone": "danger",
+        "body": "You steer by dead reckoning: the last good fix, the clock, the burn logs and a great deal of arithmetic, done twice by people who disagree. It works, in the sense that a week later the ship arrives somewhere near where it meant to be. Getting from near to there costs fuel.",
+        "resources": {
+          "fuel": -10,
+          "morale": -3
+        },
+        "time_cost": "high",
+        "narrative": "Steered through the void by dead reckoning with the star tracker off true. A week, and ten points of fuel to close the gap."
+      },
+      "mast_star": {
+        "title": "IN THE LIGHT",
+        "body": "You burn for the nearest star, a dim red one well off the line, and fix the tracker in its light from inside the airlock with the outer door open and a very long screwdriver. Getting there and back takes four days and twenty points of fuel. Everyone agrees it was the sensible choice. Nobody sounds pleased about it.",
+        "resources": {
+          "fuel": -20
+        },
+        "repair_done": true,
+        "time_cost": "medium",
+        "narrative": "Burned twenty points of fuel to reach a dim star and reset the star tracker in its light, from inside the airlock."
+      }
+    }
   }
 ]

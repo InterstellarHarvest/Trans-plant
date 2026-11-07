@@ -1,0 +1,733 @@
+{
+  "_meta": {
+    "description": "Mishaps (ruling 142): things that happen to the ship on a travel leg that nobody chose. The cruise screen stops on a popup the player must acknowledge, and the Ship's Log records it in red. Rolled once per leg (never the leg into the destination) by engine/js/mishaps.js. A mishap's tier is minor, moderate or severe; a tier's `fixed` version plays instead when its role is aboard and comes through (a crew specialist always, a captain of that background or a wounded specialist half the time). Low hull makes hull mishaps likelier and worse (ruling 143).",
+    "tier_fields": "text (narrator, deadpan, no '!'), resources {fuel,food,water,o2,hull,gold} (costs scale by odds.cost_mult per trail), crop_health, hurt {who: captain|crew|anyone, hp: n} or {who, severity: injury|delayed|lethal}, fixed {role, text, resources?, crop_health?, hurt?}",
+    "tokens": "{crew.<role>} (whoever holds the role; 'the captain' when the captain does), {who} / {Who} (the one hurt)"
+  },
+  "odds": {
+    "per_leg": {
+      "lunar": 0.06,
+      "mars": 0.08,
+      "interstellar": 0.09
+    },
+    "late_mult": 0.7,
+    "pace_mult": {
+      "light": 0.7,
+      "ridiculous": 1.0,
+      "ludicrous": 1.3,
+      "plaid": 1.7
+    },
+    "hull_bands": [
+      {
+        "below": 50,
+        "odds_mult": 1.5,
+        "kind_mult": {
+          "hull": 3
+        },
+        "severe_mult": 1.5
+      },
+      {
+        "below": 25,
+        "odds_mult": 2.4,
+        "kind_mult": {
+          "hull": 6
+        },
+        "severe_mult": 3
+      }
+    ],
+    "severity": {
+      "lunar": {
+        "minor": 72,
+        "moderate": 26,
+        "severe": 2
+      },
+      "mars": {
+        "minor": 40,
+        "moderate": 42,
+        "severe": 18
+      },
+      "interstellar": {
+        "minor": 24,
+        "moderate": 44,
+        "severe": 32
+      }
+    },
+    "late_severe_mult": 1.0,
+    "cost_mult": {
+      "lunar": 0.6,
+      "mars": 1.15,
+      "interstellar": 1.45
+    },
+    "cooldown_legs": 1,
+    "max_per_leg": 0.95
+  },
+  "mishaps": [
+    {
+      "id": "mishap_hull_pinhole",
+      "kind": "hull",
+      "title": "PINHOLE BREACH",
+      "weight": 3,
+      "minor": {
+        "text": "A thin whistle from the aft corridor. A grain of something has put a hole in the hull roughly the size of a regret. Someone covers it with chewing gum. It holds.",
+        "resources": {
+          "o2": -1
+        }
+      },
+      "moderate": {
+        "text": "The hole is the size of a coin and does not respond to gum. The air finds it before anyone else does.",
+        "resources": {
+          "o2": -6,
+          "hull": -3
+        },
+        "fixed": {
+          "role": "engineer",
+          "text": "{crew.engineer} has a patch on it before the alarm finishes its first sentence.",
+          "resources": {
+            "o2": -2,
+            "hull": -1
+          }
+        }
+      },
+      "severe": {
+        "text": "Something small and fast goes through two bulkheads and out the other side. The ship vents for eleven seconds, which is a long time to listen to air leave.",
+        "resources": {
+          "o2": -15,
+          "hull": -8
+        },
+        "fixed": {
+          "role": "engineer",
+          "text": "Something small and fast goes through two bulkheads. {crew.engineer} seals the inner hole by leaning on it until the foam sets. The outer one is left to the auto-patch, which tries.",
+          "resources": {
+            "o2": -8,
+            "hull": -5
+          }
+        }
+      }
+    },
+    {
+      "id": "mishap_hull_seam",
+      "kind": "hull",
+      "title": "WELD SEAM CRACK",
+      "weight": 3,
+      "minor": {
+        "text": "A seam in the cargo bay creaks in a new key. On inspection it is a hairline crack. It is noted, photographed and left to think about what it has done.",
+        "resources": {
+          "hull": -1
+        }
+      },
+      "moderate": {
+        "text": "A weld seam along the port spine gives up a few centimetres of its commitment. The hull readout drops and stays dropped.",
+        "resources": {
+          "hull": -5
+        },
+        "fixed": {
+          "role": "engineer",
+          "text": "A weld seam starts to open. {crew.engineer} rewelds it in the time it takes everyone else to find the manual.",
+          "resources": {
+            "hull": -2
+          }
+        }
+      },
+      "severe": {
+        "text": "The spine seam opens along a metre of its length with a sound like a door the size of a ship. Frost forms on the inside of the cargo bay. Then it stops, mostly.",
+        "resources": {
+          "hull": -12,
+          "o2": -5
+        },
+        "fixed": {
+          "role": "engineer",
+          "text": "The spine seam opens along a metre of its length. {crew.engineer} bolts a strongback across it and declares it structural, which is a lie the ship believes.",
+          "resources": {
+            "hull": -6,
+            "o2": -2
+          }
+        }
+      }
+    },
+    {
+      "id": "mishap_hull_hatch",
+      "kind": "hull",
+      "title": "HATCH SEAL",
+      "weight": 2,
+      "minor": {
+        "text": "The cargo hatch seal sighs. Someone kicks it. It stops sighing."
+      },
+      "moderate": {
+        "text": "The cargo hatch seal fails quietly overnight. By morning the hold is cold and the oxygen reading has a lower opinion of the ship.",
+        "resources": {
+          "o2": -5
+        }
+      },
+      "severe": {
+        "text": "The forward hatch seal blows out with a bang that knocks the coffee off every surface aboard. The emergency door drops in time. Most of the air stays on the right side of it.",
+        "resources": {
+          "o2": -12,
+          "hull": -4
+        }
+      }
+    },
+    {
+      "id": "mishap_hull_debris",
+      "kind": "hull",
+      "title": "DEBRIS STRIKE",
+      "weight": 3,
+      "minor": {
+        "text": "Something pings off the bow. The sensors call it debris. The debris does not comment.",
+        "resources": {
+          "hull": -2
+        }
+      },
+      "moderate": {
+        "text": "A tumbling chunk of somebody's old satellite catches the hull broadside. Paint, plating and a commemorative plaque are lost.",
+        "resources": {
+          "hull": -6
+        }
+      },
+      "severe": {
+        "text": "Debris hits hard enough to throw everyone sideways. {Who} goes into a bulkhead shoulder first. The hull takes it worse.",
+        "resources": {
+          "hull": -14
+        },
+        "hurt": {
+          "who": "anyone",
+          "hp": 12
+        }
+      }
+    },
+    {
+      "id": "mishap_hull_plating",
+      "kind": "hull",
+      "title": "LOOSE PLATING",
+      "weight": 2,
+      "minor": {
+        "text": "A hull plate starts to rattle at cruising speed. It sounds like a polite knock. It is ignored, like most polite things."
+      },
+      "moderate": {
+        "text": "A rattling hull plate shakes itself free and leaves. The ship is a little lighter and a little less armoured.",
+        "resources": {
+          "hull": -4
+        }
+      },
+      "severe": {
+        "text": "Three plates go in a row, peeling off like scales. What was under them was not designed to be looked at.",
+        "resources": {
+          "hull": -9
+        },
+        "fixed": {
+          "role": "engineer",
+          "text": "Plates start peeling off the hull in a row. {crew.engineer} goes out on a tether and staples the rest down with the riveter and a great deal of language.",
+          "resources": {
+            "hull": -4
+          }
+        }
+      }
+    },
+    {
+      "id": "mishap_fuel_spill",
+      "kind": "fuel",
+      "title": "SPILLED FUEL",
+      "weight": 3,
+      "minor": {
+        "text": "Someone carrying a fuel sample trips in the corridor. Most of it ends up on the floor and some of it ends up on the ceiling, which nobody can explain.",
+        "resources": {
+          "fuel": -2
+        }
+      },
+      "moderate": {
+        "text": "A transfer canister tips over in the engine room and empties itself into the deck drain with the efficiency of a thing that has wanted this for a long time.",
+        "resources": {
+          "fuel": -6
+        }
+      },
+      "severe": {
+        "text": "A full transfer canister ruptures on its way to the tank. The engine room smells of it for days. The tank does not.",
+        "resources": {
+          "fuel": -12
+        }
+      }
+    },
+    {
+      "id": "mishap_fuel_line",
+      "kind": "fuel",
+      "title": "FUEL LINE LEAK",
+      "weight": 3,
+      "minor": {
+        "text": "A drip under the main fuel line. A rag is wedged under it. The rag is now the most valuable fabric aboard.",
+        "resources": {
+          "fuel": -1
+        }
+      },
+      "moderate": {
+        "text": "The main fuel line weeps at a coupling for most of the leg before anyone thinks to check why the gauge is shy.",
+        "resources": {
+          "fuel": -7
+        },
+        "fixed": {
+          "role": "engineer",
+          "text": "The main fuel line starts weeping at a coupling. {crew.engineer} smells it, finds it and torques it shut before it costs much.",
+          "resources": {
+            "fuel": -3
+          }
+        }
+      },
+      "severe": {
+        "text": "A fuel line splits clean through. The feed shuts itself off, eventually. The word 'eventually' is doing a great deal of work.",
+        "resources": {
+          "fuel": -16
+        },
+        "fixed": {
+          "role": "engineer",
+          "text": "A fuel line splits clean through. {crew.engineer} clamps it with both hands and a belt until the bypass comes on.",
+          "resources": {
+            "fuel": -8
+          }
+        }
+      }
+    },
+    {
+      "id": "mishap_fuel_valve",
+      "kind": "fuel",
+      "title": "STUCK VALVE",
+      "weight": 2,
+      "minor": {
+        "text": "A vent valve sticks open for a few seconds and then remembers itself.",
+        "resources": {
+          "fuel": -2
+        }
+      },
+      "moderate": {
+        "text": "A vent valve sticks open and stays there, venting fuel into space at a steady, unbothered rate.",
+        "resources": {
+          "fuel": -8
+        },
+        "fixed": {
+          "role": "pilot",
+          "text": "A vent valve sticks open. {crew.pilot} sees the burn go lopsided, cuts the feed by hand and trims the ship around the loss.",
+          "resources": {
+            "fuel": -3
+          }
+        }
+      },
+      "severe": {
+        "text": "The vent valve jams wide open mid-burn. The ship spins a quarter turn on the escaping fuel before the cutoff trips, and something structural complains about it.",
+        "resources": {
+          "fuel": -15,
+          "hull": -3
+        },
+        "fixed": {
+          "role": "pilot",
+          "text": "The vent valve jams wide open mid-burn. {crew.pilot} catches the spin on the thrusters and kills the feed by hand. The ship never quite turns.",
+          "resources": {
+            "fuel": -7
+          }
+        }
+      }
+    },
+    {
+      "id": "mishap_fuel_batch",
+      "kind": "fuel",
+      "title": "BAD BATCH",
+      "weight": 2,
+      "minor": {
+        "text": "The last refill was cut with something. The engine notices. It burns a little extra to make its point.",
+        "resources": {
+          "fuel": -3
+        }
+      },
+      "moderate": {
+        "text": "The last refill was mostly fuel and partly a decision someone else made. The engine burns through it like it is angry.",
+        "resources": {
+          "fuel": -8
+        }
+      },
+      "severe": {
+        "text": "The last refill was barely fuel at all. The engine coughs, burns twice what it should, and fouls an injector doing it.",
+        "resources": {
+          "fuel": -14,
+          "hull": -2
+        }
+      }
+    },
+    {
+      "id": "mishap_o2_scrubber",
+      "kind": "o2",
+      "title": "SCRUBBER CLOG",
+      "weight": 3,
+      "minor": {
+        "text": "The CO2 scrubber wheezes. Someone pulls a sock out of it. Nobody claims the sock.",
+        "resources": {
+          "o2": -2
+        }
+      },
+      "moderate": {
+        "text": "The CO2 scrubber clogs overnight. Everyone wakes up with a headache and the same bad idea at once.",
+        "resources": {
+          "o2": -8
+        },
+        "fixed": {
+          "role": "engineer",
+          "text": "The CO2 scrubber clogs. {crew.engineer} has it apart and back together before the headaches set in.",
+          "resources": {
+            "o2": -3
+          }
+        }
+      },
+      "severe": {
+        "text": "The scrubber's bed cracks and dumps its whole load back into the air. The ship spends two days on the reserve and everyone talks slowly.",
+        "resources": {
+          "o2": -18
+        },
+        "fixed": {
+          "role": "engineer",
+          "text": "The scrubber's bed cracks. {crew.engineer} rigs a spare from the growbay's filter stack and the reserve only takes half the hit.",
+          "resources": {
+            "o2": -9
+          }
+        }
+      }
+    },
+    {
+      "id": "mishap_o2_valve",
+      "kind": "o2",
+      "title": "O2 TANK VALVE",
+      "weight": 2,
+      "minor": {
+        "text": "An oxygen tank valve ticks open and shut on its own. It is told to stop. It stops.",
+        "resources": {
+          "o2": -3
+        }
+      },
+      "moderate": {
+        "text": "An oxygen tank bleeds through a bad valve into the vacuum side of the bulkhead for most of a day.",
+        "resources": {
+          "o2": -9
+        }
+      },
+      "severe": {
+        "text": "An oxygen tank's valve shears off. The tank empties in under a minute. The other tanks watch.",
+        "resources": {
+          "o2": -20
+        }
+      }
+    },
+    {
+      "id": "mishap_o2_fire",
+      "kind": "o2",
+      "title": "GALLEY FIRE",
+      "weight": 2,
+      "minor": {
+        "text": "Toast, but in the sense of a small fire. It is put out with a lid.",
+        "resources": {
+          "o2": -1
+        }
+      },
+      "moderate": {
+        "text": "A grease fire in the galley. The suppressant works, the extractor works, and lunch does not survive.",
+        "resources": {
+          "o2": -6,
+          "food": -3
+        },
+        "fixed": {
+          "role": "chef",
+          "text": "A grease fire in the galley. {crew.chef} smothers it with a pan without putting down the other pan.",
+          "resources": {
+            "o2": -2
+          }
+        }
+      },
+      "severe": {
+        "text": "The galley catches properly. By the time the suppressant wins, the stores behind it are smoke and {who} has burns up one arm.",
+        "resources": {
+          "o2": -12,
+          "food": -6
+        },
+        "hurt": {
+          "who": "anyone",
+          "hp": 14
+        }
+      }
+    },
+    {
+      "id": "mishap_captain_slip",
+      "kind": "captain",
+      "title": "WET DECK",
+      "weight": 2,
+      "minor": {
+        "text": "You slip on a wet patch of corridor and land with dignity, or near it.",
+        "hurt": {
+          "who": "captain",
+          "hp": 3
+        }
+      },
+      "moderate": {
+        "text": "You slip on a wet patch of corridor and land on the edge of a step. It hurts in a way that has opinions.",
+        "hurt": {
+          "who": "captain",
+          "hp": 10
+        }
+      },
+      "severe": {
+        "text": "You go down a ladder faster than the ladder intended. Something cracks, and it is not the ladder.",
+        "hurt": {
+          "who": "captain",
+          "severity": "injury"
+        }
+      }
+    },
+    {
+      "id": "mishap_captain_burn",
+      "kind": "captain",
+      "title": "HOT PIPE",
+      "weight": 2,
+      "minor": {
+        "text": "You put a hand on a coolant return that is not, it turns out, returning anything cool.",
+        "hurt": {
+          "who": "captain",
+          "hp": 4
+        }
+      },
+      "moderate": {
+        "text": "A steam line lets go beside you in the engine room. You get out with most of your skin.",
+        "hurt": {
+          "who": "captain",
+          "hp": 12
+        }
+      },
+      "severe": {
+        "text": "A steam line lets go in your face. The burns are bad, and by the next day they are not healing the way burns should.",
+        "hurt": {
+          "who": "captain",
+          "severity": "delayed"
+        }
+      }
+    },
+    {
+      "id": "mishap_captain_locker",
+      "kind": "captain",
+      "title": "LOOSE LOCKER",
+      "weight": 2,
+      "minor": {
+        "text": "A locker door you did not latch swings out on a turn and introduces itself to your elbow.",
+        "hurt": {
+          "who": "captain",
+          "hp": 5
+        }
+      },
+      "moderate": {
+        "text": "A locker you did not latch empties itself across the corridor at you during a burn. You stop most of it with your ribs.",
+        "hurt": {
+          "who": "captain",
+          "hp": 14
+        }
+      },
+      "severe": {
+        "text": "An unsecured equipment rack comes off its rail in a hard burn with you between it and the wall.",
+        "hurt": {
+          "who": "captain",
+          "hp": 25
+        }
+      }
+    },
+    {
+      "id": "mishap_crew_shock",
+      "kind": "crew",
+      "title": "LIVE WIRE",
+      "weight": 2,
+      "requires_crew_aboard": true,
+      "minor": {
+        "text": "{Who} grabs a junction box that was supposed to be dead. It was not. Hair, briefly, is interesting.",
+        "hurt": {
+          "who": "crew",
+          "hp": 4
+        }
+      },
+      "moderate": {
+        "text": "{Who} takes a proper jolt off a frayed conduit and spends the afternoon not feeling one hand.",
+        "hurt": {
+          "who": "crew",
+          "hp": 12
+        }
+      },
+      "severe": {
+        "text": "{Who} is thrown clear of a shorting panel and does not get up for a long, quiet minute.",
+        "hurt": {
+          "who": "crew",
+          "severity": "injury"
+        }
+      }
+    },
+    {
+      "id": "mishap_crew_stew",
+      "kind": "crew",
+      "title": "SOMETHING IN THE STEW",
+      "weight": 2,
+      "minor": {
+        "text": "Lunch was off. Everybody knew. Everybody ate it anyway. A day of regret follows.",
+        "resources": {
+          "food": -2
+        }
+      },
+      "moderate": {
+        "text": "A batch of rations had turned. {Who} ate the most of it, by a margin nobody wants to discuss.",
+        "resources": {
+          "food": -4
+        },
+        "hurt": {
+          "who": "anyone",
+          "hp": 8
+        },
+        "fixed": {
+          "role": "chef",
+          "text": "{crew.chef} sniffs the stew, says one word, and puts the whole pot out the airlock. Nobody gets sick.",
+          "resources": {
+            "food": -4
+          }
+        }
+      },
+      "severe": {
+        "text": "Half the cold store had spoiled without the alarm saying so. {Who} is properly sick for days.",
+        "resources": {
+          "food": -8
+        },
+        "hurt": {
+          "who": "anyone",
+          "severity": "injury"
+        },
+        "fixed": {
+          "role": "chef",
+          "text": "Half the cold store had spoiled without the alarm saying so. {crew.chef} catches it before anyone eats from it, and saves what can be saved.",
+          "resources": {
+            "food": -6
+          }
+        }
+      }
+    },
+    {
+      "id": "mishap_water_tank",
+      "kind": "supply",
+      "title": "WATER TANK CRACK",
+      "weight": 2,
+      "minor": {
+        "text": "A water tank weeps at a fitting. It is tightened. Everyone feels a little thirstier anyway.",
+        "resources": {
+          "water": -2
+        }
+      },
+      "moderate": {
+        "text": "A water tank cracks along a seam and empties a good part of itself into the bilge, where it cannot be drunk without a great deal of courage.",
+        "resources": {
+          "water": -7
+        },
+        "fixed": {
+          "role": "engineer",
+          "text": "A water tank cracks along a seam. {crew.engineer} pumps it across to the spare before the bilge gets much.",
+          "resources": {
+            "water": -3
+          }
+        }
+      },
+      "severe": {
+        "text": "A water tank splits wide. By the time anyone gets there it is a puddle with ambitions.",
+        "resources": {
+          "water": -15
+        },
+        "fixed": {
+          "role": "engineer",
+          "text": "A water tank splits wide. {crew.engineer} saves half of it with a pump, a hose and a lot of running.",
+          "resources": {
+            "water": -8
+          }
+        }
+      }
+    },
+    {
+      "id": "mishap_food_spoil",
+      "kind": "supply",
+      "title": "SPOILAGE",
+      "weight": 2,
+      "minor": {
+        "text": "A crate of rations turns out to be a crate of opinions about rations. It goes out the airlock.",
+        "resources": {
+          "food": -2
+        }
+      },
+      "moderate": {
+        "text": "The cold store's seal failed sometime last week. A shelf of food is now a shelf of chemistry.",
+        "resources": {
+          "food": -6
+        },
+        "fixed": {
+          "role": "chef",
+          "text": "The cold store's seal failed. {crew.chef} salvages most of it into a soup nobody asks about.",
+          "resources": {
+            "food": -2
+          }
+        }
+      },
+      "severe": {
+        "text": "The cold store's compressor died days ago and told no one. Most of what was in there is gone.",
+        "resources": {
+          "food": -12
+        },
+        "fixed": {
+          "role": "chef",
+          "text": "The cold store's compressor died days ago. {crew.chef} cooks, dries and pickles what can be saved in one long night.",
+          "resources": {
+            "food": -6
+          }
+        }
+      }
+    },
+    {
+      "id": "mishap_power_surge",
+      "kind": "crop",
+      "title": "POWER SURGE",
+      "weight": 2,
+      "minor": {
+        "text": "The lights flicker. The ship carries on as if it had not noticed, which is how ships deal with feelings."
+      },
+      "moderate": {
+        "text": "A power surge trips the growbay lamps for most of a day. The crop spends it in the dark, wondering.",
+        "crop_health": -5
+      },
+      "severe": {
+        "text": "A surge cooks a bus bar. The growbay goes dark and cold for two days and a junction in the wall melts into modern art.",
+        "crop_health": -12,
+        "resources": {
+          "hull": -3
+        }
+      }
+    },
+    {
+      "id": "mishap_crop_pump",
+      "kind": "crop",
+      "title": "IRRIGATION PUMP STALL",
+      "weight": 2,
+      "minor": {
+        "text": "The growbay pump stalls and restarts. The crop does not seem to mind. It may not have noticed.",
+        "crop_health": -2
+      },
+      "moderate": {
+        "text": "The growbay pump stalls overnight. By morning the soil is dry and the crop looks betrayed.",
+        "crop_health": -6,
+        "fixed": {
+          "role": "botanist",
+          "text": "The growbay pump stalls. {crew.botanist} hears the silence where the trickle should be and hand-waters until it is fixed.",
+          "crop_health": -1
+        }
+      },
+      "severe": {
+        "text": "The growbay pump seizes and floods one bed while starving the rest.",
+        "crop_health": -12,
+        "resources": {
+          "water": -4
+        },
+        "fixed": {
+          "role": "botanist",
+          "text": "The growbay pump seizes. {crew.botanist} drains the flooded bed, hand-waters the others, and sleeps in the growbay.",
+          "crop_health": -4
+        }
+      }
+    }
+  ]
+}
