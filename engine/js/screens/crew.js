@@ -456,9 +456,10 @@
 
   // What a wound really does to the captain (owner ruling 29; index.html
   // captainHandsEffort / growbay tenderOf): the background keeps its half
-  // strength, the captain's own hands count half.
+  // strength, the captain's own hands count half. Said without the points
+  // (ruling 146: no hands score anywhere; the tooltip says "you (hurt)").
   function captainWoundEffect() {
-    return 'Hands count half (+' + EFFORT_HANDS * WOUNDED_SKILL_MULT + ', not +' + EFFORT_HANDS + ')' + (STATE.captain === 'botanist' ? ' · tending halved' : '');
+    return 'Half help on hands-on jobs' + (STATE.captain === 'botanist' ? ' · tending halved' : '');
   }
   function computeStatuses(hp, mo, role) {
     const fired = new Set();
