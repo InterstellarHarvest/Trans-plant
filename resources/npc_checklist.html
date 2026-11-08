@@ -45,7 +45,7 @@
 <body>
 
 <h1>Trans-plant NPC Sprite Checklist</h1>
-<div class="subtitle">Target: 5 per species per role (bartender is a one-off). Disk re-scanned 2026-10-14. Checks persist in localStorage.</div>
+<div class="subtitle">Target: 5 per species per role (bartender: robot only, 2 portraits). Disk re-scanned 2026-11-01. Checks persist in localStorage.</div>
 
 <div class="totals">
   <div><div class="big" id="total-pkg" style="color:#6ec4d8;">0</div><div class="label">Packaged</div></div>
@@ -70,26 +70,26 @@
 const SPECIES = ['human', 'insect', 'reptile', 'robot', 'rock', 'water', 'unknown'];
 const PER_SPECIES = 5;
 
-// One-off characters outside the 5-per-species target. Only the listed
+// Special roles outside the 5-per-species target. Only the listed
 // species render, each with `slots` checkboxes, and only those count in totals.
-const UNIQUE_ROLES = { bartender: { species: ['robot'], slots: 1 } };
+const UNIQUE_ROLES = { bartender: { species: ['robot'], slots: 2 } };
 const speciesFor = role => (UNIQUE_ROLES[role] || { species: SPECIES }).species;
 const slotsFor   = role => (UNIQUE_ROLES[role] || { slots: PER_SPECIES }).slots;
 
-// Disk re-scanned 2026-10-14. 97 packaged folders on disk.
-// (demo-npc.html's NPC_DATA is in sync at 97 entries as of the same scan.)
+// Disk re-scanned 2026-11-01. 99 packaged folders on disk.
+// (demo-npc.html's NPC_DATA is in sync at 99 entries as of the same scan.)
 //   pkg     = folder has BOTH spritesheet.png + spritesheet.json (demo-ready)
 //   done    = folder has 9+ source images but no spritesheet pack yet
 //   waiting = folder exists with some files but <9 (source partial)
 // Auto-checked when slot is pkg or done. PKG slots get the cyan highlight.
 const DISK = {
   drifter: {
-    human:   { pkg: [1],    done: [], waiting: [] },
-    insect:  { pkg: [1],    done: [], waiting: [] },
-    reptile: { pkg: [1],    done: [], waiting: [] },
-    robot:   { pkg: [1],    done: [], waiting: [] },
-    rock:    { pkg: [1],    done: [], waiting: [] },
-    water:   { pkg: [1],    done: [], waiting: [] },
+    human:   { pkg: [1],    done: [], waiting: [2] },
+    insect:  { pkg: [1],    done: [], waiting: [2] },
+    reptile: { pkg: [1],    done: [], waiting: [2] },
+    robot:   { pkg: [1],    done: [], waiting: [2] },
+    rock:    { pkg: [1],    done: [], waiting: [2] },
+    water:   { pkg: [1],    done: [], waiting: [2] },
     unknown: { pkg: [1, 2], done: [], waiting: [] }
   },
   pirate: {
@@ -98,8 +98,8 @@ const DISK = {
     reptile: { pkg: [1, 2, 3], done: [], waiting: [] },
     robot:   { pkg: [1, 2, 3], done: [], waiting: [] },
     rock:    { pkg: [1, 2],    done: [], waiting: [] },
-    water:   { pkg: [1],       done: [], waiting: [] },
-    unknown: { pkg: [1],       done: [], waiting: [] }
+    water:   { pkg: [1],       done: [], waiting: [2] },
+    unknown: { pkg: [1],       done: [], waiting: [2] }
   },
   trader: {
     human:   { pkg: [1, 2, 3],    done: [], waiting: [] },
@@ -113,60 +113,60 @@ const DISK = {
   station_crew: {
     botanist: {
       human:   { pkg: [1, 2],    done: [], waiting: [] },
-      insect:  { pkg: [1],       done: [], waiting: [] },
-      reptile: { pkg: [1],       done: [], waiting: [] },
-      robot:   { pkg: [1],       done: [], waiting: [] },
-      rock:    { pkg: [1],       done: [], waiting: [] },
-      water:   { pkg: [1],       done: [], waiting: [2] },
+      insect:  { pkg: [1],       done: [], waiting: [2] },
+      reptile: { pkg: [1],       done: [], waiting: [2] },
+      robot:   { pkg: [1],       done: [], waiting: [2] },
+      rock:    { pkg: [1],       done: [], waiting: [2] },
+      water:   { pkg: [1, 2],    done: [], waiting: [] },
       unknown: { pkg: [1, 2, 3], done: [], waiting: [] }
     },
     captain: {
-      human:   { pkg: [1],    done: [], waiting: [] },
-      insect:  { pkg: [1],    done: [], waiting: [] },
+      human:   { pkg: [1],    done: [], waiting: [2] },
+      insect:  { pkg: [1],    done: [], waiting: [2] },
       reptile: { pkg: [1, 2], done: [], waiting: [] },
-      robot:   { pkg: [1],    done: [], waiting: [] },
-      rock:    { pkg: [1],    done: [], waiting: [] },
-      water:   { pkg: [1],    done: [], waiting: [] },
-      unknown: { pkg: [1],    done: [], waiting: [] }
+      robot:   { pkg: [1],    done: [], waiting: [2] },
+      rock:    { pkg: [1],    done: [], waiting: [2] },
+      water:   { pkg: [1],    done: [], waiting: [2] },
+      unknown: { pkg: [1],    done: [], waiting: [2] }
     },
     engineer: {
       human:   { pkg: [1, 2], done: [], waiting: [] },
-      insect:  { pkg: [1],    done: [], waiting: [] },
-      reptile: { pkg: [1],    done: [], waiting: [] },
-      robot:   { pkg: [1],    done: [], waiting: [] },
-      rock:    { pkg: [1],    done: [], waiting: [] },
-      water:   { pkg: [1],    done: [], waiting: [] },
+      insect:  { pkg: [1],    done: [], waiting: [2] },
+      reptile: { pkg: [1],    done: [], waiting: [2] },
+      robot:   { pkg: [1],    done: [], waiting: [2] },
+      rock:    { pkg: [1],    done: [], waiting: [2] },
+      water:   { pkg: [1],    done: [], waiting: [2] },
       unknown: { pkg: [1, 2], done: [], waiting: [] }
     },
     janitor: {
-      human:   { pkg: [1],    done: [], waiting: [] },
-      insect:  { pkg: [1],    done: [], waiting: [] },
+      human:   { pkg: [1],    done: [], waiting: [2] },
+      insect:  { pkg: [1],    done: [], waiting: [2] },
       reptile: { pkg: [1, 2], done: [], waiting: [] },
-      robot:   { pkg: [1, 2], done: [], waiting: [3] },
-      rock:    { pkg: [1],    done: [], waiting: [] },
-      water:   { pkg: [1],    done: [], waiting: [] },
-      unknown: { pkg: [2],    done: [], waiting: [1] }
+      robot:   { pkg: [1, 2], done: [], waiting: [] },
+      rock:    { pkg: [1],    done: [], waiting: [2] },
+      water:   { pkg: [1],    done: [], waiting: [2] },
+      unknown: { pkg: [1, 2], done: [], waiting: [] }
     },
     medic: {
       human:   { pkg: [1, 2],    done: [], waiting: [] },
-      insect:  { pkg: [1],       done: [], waiting: [] },
-      reptile: { pkg: [1],       done: [], waiting: [] },
-      robot:   { pkg: [1],       done: [], waiting: [] },
-      rock:    { pkg: [1],       done: [], waiting: [] },
-      water:   { pkg: [1],       done: [], waiting: [] },
+      insect:  { pkg: [1],       done: [], waiting: [2] },
+      reptile: { pkg: [1],       done: [], waiting: [2] },
+      robot:   { pkg: [1],       done: [], waiting: [2] },
+      rock:    { pkg: [1],       done: [], waiting: [2] },
+      water:   { pkg: [1],       done: [], waiting: [2] },
       unknown: { pkg: [1, 2, 3], done: [], waiting: [] }
     },
     security: {
       human:   { pkg: [1, 2], done: [], waiting: [] },
-      insect:  { pkg: [1],    done: [], waiting: [] },
-      reptile: { pkg: [1],    done: [], waiting: [] },
-      robot:   { pkg: [1],    done: [], waiting: [] },
-      rock:    { pkg: [1],    done: [], waiting: [] },
-      water:   { pkg: [1],    done: [], waiting: [] },
-      unknown: { pkg: [1],    done: [], waiting: [] }
+      insect:  { pkg: [1],    done: [], waiting: [2] },
+      reptile: { pkg: [1],    done: [], waiting: [2] },
+      robot:   { pkg: [1],    done: [], waiting: [2] },
+      rock:    { pkg: [1],    done: [], waiting: [2] },
+      water:   { pkg: [1],    done: [], waiting: [2] },
+      unknown: { pkg: [1],    done: [], waiting: [2] }
     },
     bartender: {
-      robot:   { pkg: [1], done: [], waiting: [] }
+      robot:   { pkg: [1], done: [], waiting: [2] }
     }
   }
 };
