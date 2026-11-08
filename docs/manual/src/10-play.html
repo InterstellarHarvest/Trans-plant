@@ -408,6 +408,7 @@ flowchart TD
 <ul>
 <li><strong>Health (HP)</strong> runs from 100 down. Below 40 a person is <strong>wounded</strong>: their active skill goes offline, everything else they do works at half strength, and their HP bar turns amber. At 25 or below it turns red, and they are too hurt to help with choices that need them. At zero they die. The captain has real health too.</li>
 <li><strong>Healing:</strong> everyone recovers a little each leg (faster with a medic aboard). The medic's Treatment, a medkit, and MEDBAY at a station heal properly.</li>
+<li><strong>Festering wounds.</strong> A bad wound stays open: it loses HP every leg until a medic, a medkit, the MEDBAY or rest gets the person back over the wound line, and if it is still open at the next station a wound crisis plays there. The log says each leg that it is getting worse.</li>
 <li><strong>Morale is per person.</strong> Changes to "the crew" hit everyone, but each specialist also reacts to their own concern: the botanist to the crop's health, the engineer to hull damage (and cheers up at a finished repair), the chef to short rations, the medic to injuries and deaths, the pilot to the pace, the xenobiologist to alien finds, the diplomat to fighting, and everyone to their own wounds. Hover a morale bar to see why it moved. With only one crew member aboard, those personal concerns count half.</li>
 <li><strong>Desertion.</strong> When someone's morale hits zero you are warned, and they will walk off at the next station unless their morale is back up to 25 by then. The morale bar and dossier say so.</li>
 <li><strong>Mutiny.</strong> If the crew's <em>average</em> morale reaches zero, they take the ship, and the run ends.</li>
@@ -539,6 +540,28 @@ flowchart TD
 
 <div class="warn"><p><strong>Quitting a minigame</strong> once it has begun keeps nothing and still spends the time. In an emergency, quitting means the worst result lands. Closing on the briefing, before BEGIN, is always free.</p></div>
 
+<h3 id="play-dangers">Mishaps, a cracked hull, and running dry</h3>
+
+<p><strong>Mishaps.</strong> Not everything is an event you choose. On a travel leg something can simply happen: a pinhole breach someone plugs with chewing gum, fuel spilled in a corridor, a clogged scrubber, a grease fire in the galley, the captain slipping on a wet deck. The cruise stops on a popup you have to acknowledge (it has no ✕, so you can't miss it), and the Ship's Log records it in red. On Lunar most are small. Elsewhere they can cost real hull, oxygen, fuel, supplies or health; they come more often at faster paces, and they hit harder on Mars and hardest on Interstellar. The right person aboard turns a bad one into a small one: the engineer for the hull, air and tanks, the pilot for the fuel, the chef for the galley and the stores, the botanist for the growbay. A crew specialist always comes through; a captain of that background, or a wounded specialist, half the time. Not every run has a mishap, a run can have several, but never on two legs in a row, and never on the leg into the destination.</p>
+
+<p><strong>A cracked hull cracks further.</strong> Below 50 hull, mishaps come more often and lean towards the hull, and a breach costs air as well as hull. Below 25 they are likely, and the severe ones much likelier, so a neglected hull can spiral into suffocation or a breach. REPAIR, the DRYDOCK and hull plating are how a careful captain stays out of that spiral.</p>
+
+<figure><img src="img/play/s-mishap.png" alt="A mishap popup over the dimmed cruise screen: a red-bordered card headed SHIPBOARD INCIDENT · DAY 7 and MODERATE, titled PINHOLE BREACH, the line &quot;The hole is the size of a coin and does not respond to gum. The air finds it before anyone else does.&quot;, red chips −7 O2 and −3 HULL, and an ACKNOWLEDGED button"><figcaption>A mishap. It has to be acknowledged; the Ship's Log keeps it in red.</figcaption></figure>
+
+<p><strong>Adrift.</strong> Running out of fuel no longer ends the run on the spot. The leg that empties the tank still arrives, so a station or a trader there can still save you. Try to fly on with nothing in the tank and the <strong>Adrift</strong> scene opens instead:</p>
+<ul>
+<li><strong>Burn the hull plating</strong>: thrust from your own skin, at a real cost in hull.</li>
+<li><strong>Crack the water</strong>: four days at the electrolysis rig turns a third of the tanks into fuel.</li>
+<li><strong>Trigger the emergency beacon</strong>, if you carry one: someone always answers. A friendly hauler, a recovery tug with an invoice, or people who refuel you at gunpoint and take half your gold.</li>
+<li><strong>Call for help and wait</strong>: days pass, and every day costs food, water and air. Someone may come (and want paying), the wrong someone may come, or nobody does, and you are back where you started, ten days poorer.</li>
+<li><strong>Shut it all down</strong>: the end of the voyage.</li>
+</ul>
+<p>The tooltips show each option's days, costs and odds before you pick. Shutting it all down is the Adrift ending. Run out of food, water or air while you wait, and the run ends the way it would anywhere else.</p>
+
+<figure><img src="img/play/s-adrift.png" alt="The Adrift scene at a derelict: the viewport onto empty stars, the ADRIFT text box below, and the choices BURN THE HULL PLATING, CRACK THE WATER, TRIGGER THE EMERGENCY BEACON, CALL FOR HELP AND WAIT, SHUT IT ALL DOWN and a locked CAN'T LEAVE (NO FUEL)"><figcaption>Adrift: out of fuel short of the destination, with a few hard ways on.</figcaption></figure>
+
+<p><strong>The captain in harm's way.</strong> Some hard scenes put the captain personally on the line: an EVA, a boarding, volunteering for the dangerous part. And a <strong>festering wound</strong> (the kind that stays open) gets worse every leg until it is treated, the captain's included. Losing the captain is a real way to lose.</p>
+
 <h3 id="play-deadline">Deadlines and arriving late</h3>
 
 <p>Each trail has a deadline: the day the colony expects you. The day counter shows the days left, and ORDERS projects your arrival day at the pace you have set. If that projection drifts past the deadline, you are behind schedule, and the trail may let you know.</p>
@@ -551,7 +574,7 @@ flowchart TD
 
 <p><strong>Ending early.</strong> A run can also end on the way:</p>
 <ul>
-<li>the <strong>fuel</strong> runs out and the ship is adrift;</li>
+<li>the ship is <strong>adrift</strong> with no fuel and you shut it all down (see <a href="#play-dangers">Adrift</a>);</li>
 <li>the <strong>hull</strong> fails;</li>
 <li>the <strong>captain</strong> dies (whether or not anyone else is left aboard);</li>
 <li>the crew's average <strong>morale</strong> hits zero and they mutiny;</li>
@@ -559,7 +582,7 @@ flowchart TD
 <li>the <strong>crop</strong> dies.</li>
 </ul>
 <p>Each has its own screen: nine in all, since food, water and air each get one, and a lost captain reads differently with or without anyone left aboard.</p>
-<p>Some of these leave a door open. When the crop dies you can choose to keep flying, though your arrival can then only be the hollow kind. And a certain item can give a stranded ship one last chance. If the whole crew is lost but the captain lives, the captain flies on alone (or with whatever passengers are still aboard).</p>
+<p>Some of these leave a door open. When the crop dies you can choose to keep flying, though your arrival can then only be the hollow kind. An empty tank is not the end by itself: the Adrift scene gives you ways on, and an emergency beacon makes sure someone answers. If the whole crew is lost but the captain lives, the captain flies on alone (or with whatever passengers are still aboard).</p>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <h2 id="play-tips">Tips for surviving</h2>
@@ -574,6 +597,8 @@ flowchart TD
 <li><strong>Use your specialists' active skills.</strong> They recharge at the next station, so an unused one is wasted.</li>
 <li><strong>Watch the ORDERS projection.</strong> It tells you the day you will arrive and the day each supply runs out at your current settings.</li>
 <li><strong>SCAN before a fork</strong> when you can spare the day.</li>
+<li><strong>Keep the hull above 50.</strong> Below that, mishaps come more often and hit the hull harder; below 25 they snowball.</li>
+<li><strong>Treat a festering wound before you fly on.</strong> It loses HP every leg, the captain's too.</li>
 <li><strong>Do not burn Plaid forever.</strong> Fast is tempting; the engines, the fuel and the crew all pay for it.</li>
 </ul>
 
@@ -598,7 +623,8 @@ flowchart TD
 <li>The crew starts less cheerful. Keep morale healthy early; it is much harder to rebuild later.</li>
 <li>The hardest events wait for the final stretch. Bank fuel, hull and spare consumables for the end.</li>
 <li>The fabricator earns its keep here: keep some materials and service it at stations.</li>
-<li>Fuel matters over this distance. A pilot, sensible engine settings and a stock of fuel cells keep you from drifting.</li>
+<li>Fuel matters over this distance. A pilot, sensible engine settings and a stock of fuel cells keep you from drifting, and an emergency beacon makes drifting survivable.</li>
+<li>Mishaps come about as often as on Mars but hit much harder: about a third of them are severe. An engineer aboard pays for itself.</li>
 </ul>
 
 </section>

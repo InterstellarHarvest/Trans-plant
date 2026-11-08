@@ -373,7 +373,7 @@ sequenceDiagram
 </pre><figcaption>Resolving a choice, in order. If the failure check says yes, the end screen replaces the outcome card.</figcaption></figure>
 
 <h3>Severity: injury, bad wound, death risk</h3>
-<p>Harm to people comes in three grades. An <strong>injury</strong> drops someone below the wound line. A <strong>bad wound</strong> does the same and stays open: unless it's treated before the next station, a wound crisis fires there. A <strong>death risk</strong> kills, unless a medic's training turns it into a bad injury (a crew medic often, a medic captain less often, neither can save themselves), or, failing that, a carried medkit sometimes does, and is used up.</p>
+<p>Harm to people comes in three grades. An <strong>injury</strong> drops someone below the wound line. A <strong>bad wound</strong> does the same and stays open: it loses HP every leg, and unless it's treated before the next station, a wound crisis fires there. A <strong>death risk</strong> kills, unless a medic's training turns it into a bad injury (a crew medic often, a medic captain less often, neither can save themselves), or, failing that, a carried medkit sometimes does, and is used up.</p>
 
 <h3>Flags that come back</h3>
 <p>Choices leave flags behind, and flags echo. The diagram shows the four ways one decision can return.</p>
@@ -433,12 +433,17 @@ flowchart TD
   Fuel --> Days["The leg's days pass, a fraction carried to the next leg"]
   Days --> Strain["At PLAID the drive heats up and may strain"]
   Strain --> Per["Per-leg perks: ARIA, the chef, solar array, purifier, soil sampler, crop mood"]
-  Per --> Chk{{"Failure check"}}
+  Per --> Mis["Mishap roll: maybe a popup, never on the hop into the destination"]
+  Mis --> Chk{{"Failure check"}}
   Chk -->|"a failure"| Fail["Failure screen, the stop waits"]
   Chk -->|"all fine"| Arr["Arrive at the stop"]
 </pre><figcaption>What one RESUME costs. The final hop into the destination can't fail you for an empty tank: you made it.</figcaption></figure>
 
 <p>Each trail has a travel-day budget and a fuel budget, spread evenly over the legs you'll actually fly (a fork's detour included). Pace scales both: faster means fewer days and more fuel. PLAID also builds up <strong>drive heat</strong>: each PLAID leg in a row makes a strain more likely (the chance doubles each time), a slower leg cools it a step, and LIGHT SPEED rests it fully. A strain means the next stop draws an engine-strain event.</p>
+
+<h3 id="eng-mishaps">Mishaps</h3>
+<p>Every leg also rolls for a <strong>mishap</strong> (ruling 142): something nobody chose, from a list of 21 in <code>modules/mishaps/mishaps.json</code>, rolled by <code>engine/js/mishaps.js</code>. The base chance is 6% a leg on Lunar, 8% on Mars and 9% on Interstellar, times the pace (×0.7 at LIGHT SPEED up to ×1.7 at PLAID). There's never one on two legs running, and never on the leg into the destination. Each mishap has three tiers; how often each comes depends on the trail (Lunar 72% minor, 26% moderate, 2% severe; Mars 40/42/18; Interstellar 24/44/32), and their costs scale by trail too. A tier can have a <em>fixed</em> version that plays instead when the right role is aboard and comes through: a crew specialist always, a captain of that background or a wounded specialist half the time. The engineer covers the hull, the air and the tanks, the pilot fuel, the chef the galley and the stores, the botanist the growbay.</p>
+<p>The hull changes the odds (ruling 143). Below 50 hull the chance of a mishap is ×1.5, hull mishaps count three times over in the draw, and severe tiers ×1.5. Below 25 those become ×2.4, six times over, and ×3. The popup must be acknowledged (no ✕, no ESC), the Ship's Log records it in red, and a reload shows the same popup without applying anything twice.</p>
 
 <h3>Wear</h3>
 <p>The hull doesn't wear out on its own; it only loses points to events, fights and the odd drive-coil misfire. The fabricator wears with every print and breaks at full wear (it misfires more as it wears).</p>
@@ -467,6 +472,7 @@ flowchart LR
 
 <h3>Health</h3>
 <p>Everyone aboard has HP, the captain included. Below the <strong>wound line</strong> someone is <em>wounded</em>: their active skill is offline and their passive works at half strength (a wounded captain's own hands count half on hands-on jobs). Further down they're <em>too hurt to help</em> with crew-gated choices. At zero they die. Everyone heals a little each leg, more with a medic aboard and more again for the wounded with a medical scanner. The medic's Treatment, MEDBAY at a station, medkits and healing outcomes do the rest. A medic aboard also softens the direct damage people take, from poisoning, thirst, going without, or a fight.</p>
+<p>A <strong>festering wound</strong> (a bad wound left open, ruling 145) loses 7 HP every leg until it's treated: a medic, a heal, the MEDBAY, a medkit or rest that brings the person back over the wound line closes it. That goes for the captain too, so an untreated wound can kill before the next station's crisis ever fires. Some hard and ultra scenes also put the captain personally in harm's way.</p>
 
 <figure class="diagram"><pre class="mermaid">
 stateDiagram-v2
@@ -480,6 +486,8 @@ stateDiagram-v2
   H --> W : an injury
   H --> O : a bad wound
   O --> W : treated before the next station
+  O --> O : loses 7 HP each leg
+  O --> D : festers to zero
   O --> X : still open at the next station
   X --> W : it goes well
   X --> T : it goes badly
@@ -808,21 +816,21 @@ flowchart LR
 
 <figure class="diagram"><pre class="mermaid">
 flowchart LR
-  Chk["After every change"] --> F1["Fuel empty, not on the last hop"]
+  Chk["After every change"] --> F1["Adrift: shut down, no fuel"]
   Chk --> F2["Hull at zero"]
   Chk --> F3["Captain dead"]
   Chk --> F4["Crew morale averages zero: mutiny"]
   Chk --> F5["Too many days without food, water or air"]
   Chk --> F6["Crop dead"]
-  F1 -->|"carrying a beacon"| Way["A way on"]
-  F6 -->|"Keep flying"| Way
+  F6 -->|"Keep flying"| Way["A way on"]
+  F1 --> Over
   F2 --> Over["The voyage ends"]
   F3 --> Over
   F4 --> Over
   F5 --> Over
-</pre><figcaption>The ways to lose. Only two offer a way on. They come to nine failure screens: food, water and air each have their own, and a dead captain reads as <em>captain lost</em> with crew aboard or <em>autopilot</em> without.</figcaption></figure>
+</pre><figcaption>The ways to lose. Only a dead crop offers a way on; an empty tank opens the Adrift scene first. They come to nine failure screens: food, water and air each have their own, and a dead captain reads as <em>captain lost</em> with crew aboard or <em>autopilot</em> without.</figcaption></figure>
 
-<p>The <strong>emergency beacon</strong> is one use: someone answers, and who it is is a roll. A friendly hauler refuels you for nothing, a corporate tug refuels you and sends an invoice, and the wrong people refuel you and then help themselves to your gold and a crate. <strong>Keep flying</strong> after a dead crop carries on toward a hollow arrival. Either way, the stop the failure interrupted still plays.</p>
+<p><strong>Adrift</strong> (ruling 144): an empty tank is not a failure by itself. The leg that runs the tank dry still arrives, so a station's fuel or a trader can still save the ship. Trying to fly on with nothing in the tank opens the Adrift scene (<code>event_adrift_001</code> in <code>events_crisis.json</code>, never drawn from the pool): burn hull plating (−25 hull, +15 fuel), crack the water (4 days, −35% water, +12 fuel), trigger the emergency beacon if carried (someone always answers: a friendly hauler with free fuel, a corporate tug that bills 40% of your gold, or people who take half of it at gunpoint), call for help and wait (40% a tug tows you clear for 30% of your gold in 6 days, 20% the wrong people in 5 days, 40% nobody in 10 days), or shut it all down. Only shutting down ends the run as the Adrift failure; running out of food, water or air while waiting ends it the usual way. <strong>Keep flying</strong> after a dead crop carries on toward a hollow arrival, and the stop the failure interrupted still plays.</p>
 
 <h3>Records and bests</h3>
 <p>A voyage goes into the records once its ending is final: at once for an arrival or a terminal failure, or, for a failure that offers a way on, when you accept it (by reading the report, or by launching a new voyage over its save). The records keep the last ten voyages, newest first, and each destination's <strong>best</strong> arrival. Only arrivals with a living crop count for a best, a higher score wins, and on a tie the faster voyage does. Beating the best shows NEW BEST on the report. A best's crew reads "crew 2/2", or "crew 2 (launched with 1)" when newcomers outnumber the losses. Records live apart from saves, so starting over never clears them. They also feed the game: a voyage that ended in failure can turn up in a later run as a wreck.</p>
