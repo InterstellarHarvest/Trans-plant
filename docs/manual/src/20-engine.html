@@ -816,7 +816,7 @@ flowchart LR
 
 <figure class="diagram"><pre class="mermaid">
 flowchart LR
-  Chk["After every change"] --> F1["Adrift: shut down, no fuel"]
+  Chk["After every change"] --> F1["Adrift: shut down, or out of supplies while waiting"]
   Chk --> F2["Hull at zero"]
   Chk --> F3["Captain dead"]
   Chk --> F4["Crew morale averages zero: mutiny"]
@@ -827,10 +827,11 @@ flowchart LR
   F2 --> Over["The voyage ends"]
   F3 --> Over
   F4 --> Over
+  F5 -->|"while adrift"| F1
   F5 --> Over
 </pre><figcaption>The ways to lose. Only a dead crop offers a way on; an empty tank opens the Adrift scene first. They come to nine failure screens: food, water and air each have their own, and a dead captain reads as <em>captain lost</em> with crew aboard or <em>autopilot</em> without.</figcaption></figure>
 
-<p><strong>Adrift</strong> (ruling 144): an empty tank is not a failure by itself. The leg that runs the tank dry still arrives, so a station's fuel or a trader can still save the ship. Trying to fly on with nothing in the tank opens the Adrift scene (<code>event_adrift_001</code> in <code>events_crisis.json</code>, never drawn from the pool): burn hull plating (−25 hull, +15 fuel), crack the water (4 days, −35% water, +12 fuel), trigger the emergency beacon if carried (someone always answers: a friendly hauler with free fuel, a corporate tug that bills 40% of your gold, or people who take half of it at gunpoint), call for help and wait (40% a tug tows you clear for 30% of your gold in 6 days, 20% the wrong people in 5 days, 40% nobody in 10 days), or shut it all down. Only shutting down ends the run as the Adrift failure; running out of food, water or air while waiting ends it the usual way. <strong>Keep flying</strong> after a dead crop carries on toward a hollow arrival, and the stop the failure interrupted still plays.</p>
+<p><strong>Adrift</strong> (ruling 144): an empty tank is not a failure by itself. The leg that runs the tank dry still arrives, so a station's fuel or a trader can still save the ship. Trying to fly on with nothing in the tank opens the Adrift scene (<code>event_adrift_001</code> in <code>events_crisis.json</code>, never drawn from the pool): burn hull plating (−25 hull, +15 fuel), crack the water (4 days, −35% water, +12 fuel), trigger the emergency beacon if carried (someone always answers: a friendly hauler with free fuel, a corporate tug that bills 40% of your gold, or people who take half of it at gunpoint), call for help and wait (40% a tug tows you clear for 30% of your gold in 6 days, 20% the wrong people in 5 days, 40% nobody in 10 days), or shut it all down. Shutting down ends the run as the Adrift failure, and so does running out of food, water or air while waiting in the scene: no starvation, thirst or suffocation screen, but Adrift with its own text, and no beacon on offer, because nobody is left to rescue. <strong>Keep flying</strong> after a dead crop carries on toward a hollow arrival, and the stop the failure interrupted still plays.</p>
 
 <h3>Records and bests</h3>
 <p>A voyage goes into the records once its ending is final: at once for an arrival or a terminal failure, or, for a failure that offers a way on, when you accept it (by reading the report, or by launching a new voyage over its save). The records keep the last ten voyages, newest first, and each destination's <strong>best</strong> arrival. Only arrivals with a living crop count for a best, a higher score wins, and on a tie the faster voyage does. Beating the best shows NEW BEST on the report. A best's crew reads "crew 2/2", or "crew 2 (launched with 1)" when newcomers outnumber the losses. Records live apart from saves, so starting over never clears them. They also feed the game: a voyage that ended in failure can turn up in a later run as a wreck.</p>

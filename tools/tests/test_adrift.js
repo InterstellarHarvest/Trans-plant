@@ -131,6 +131,42 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   const end = await page.evaluate(() => ({ ended: !!STATE.ended, scr: document.querySelector('.screen.active').id, title: (document.getElementById('end-title') || document.querySelector('#screen-end h1') || {}).textContent || document.getElementById('screen-end').innerText.slice(0, 80) }));
   ok(end.ended && end.scr === 'screen-end' && /ADRIFT/i.test(end.title), 'SHUT IT ALL DOWN ends the run: ' + String(end.title).replace(/\s+/g, ' ').trim().slice(0, 40));
 
+  console.log('— running out of everything while waiting');
+  // Ruling 144 (owner 2026-11-08): starving, going dry or running out of air
+  // while waiting in the scene is the Adrift ending, not the usual one, and
+  // a beacon still aboard has nobody left to save.
+  const starveRun = async (u, beacon) => {
+    await fresh({ fuel: 0, food: 0 });
+    await page.evaluate(b => { STATE.deprived = { food: 8 }; if (b) STATE.items.push('emergency_beacon'); document.body.classList.remove('stop-active'); travelTo([...nextAvailableNodes()][0]); }, beacon);
+    await settle(); await page.waitForTimeout(300);
+    await page.evaluate(u => {
+      const real = Math.random; let first = true;
+      Math.random = () => { if (first) { first = false; return u; } return real(); };
+      [...document.querySelectorAll('#enc-choices .enc-choice:not(.locked)')].find(x => /CALL FOR HELP/.test(x.textContent)).click();
+      Math.random = real;
+    }, u);
+    await page.waitForTimeout(800);
+    return page.evaluate(() => { const b2 = document.getElementById('end-cine-btn2'); const scr = document.getElementById('screen-end');
+      return { ended: !!STATE.ended, scr: document.querySelector('.screen.active').id, text: scr.textContent.replace(/\s+/g, ' '), beaconBtn: !!b2 && b2.style.display !== 'none' && /Beacon/i.test(b2.textContent) }; })
+      .then(async r => { await page.evaluate(() => { const v = document.getElementById('end-cine-btn'); if (/VIEW REPORT/i.test(v.textContent)) v.click(); }); await page.waitForTimeout(400);
+        r.report = await page.evaluate(() => document.getElementById('end-report').textContent.replace(/\s+/g, ' ')); return r; });
+  };
+  const st = await starveRun(0.95, true);
+  ok(st.ended && st.scr === 'screen-end' && /ADRIFT/i.test(st.text) && !/EMPTY LARDER/i.test(st.text), 'out of food while nobody answers: the Adrift ending, not Empty Larder');
+  ok(/supplies ran out before anyone answered/.test(st.report) && /did not wait with them/.test(st.report) && /four hundred years/.test(st.report), 'it says why: the starved Adrift copy and epitaph');
+  ok(!st.beaconBtn, 'a beacon still aboard is not offered: nobody is left to save');
+  await fresh({ fuel: 0 });
+  await page.evaluate(() => { STATE.items.push('emergency_beacon'); document.body.classList.remove('stop-active'); travelTo([...nextAvailableNodes()][0]); });
+  await pick('SHUT IT ALL DOWN'); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => { const b2 = document.getElementById('end-cine-btn2'); return b2.style.display !== 'none' && /Beacon/i.test(b2.textContent); }), 'whereas shutting down with a beacon aboard still offers it');
+  const st2 = await starveRun(0.1, false);
+  ok(st2.ended && /ADRIFT/i.test(st2.text), 'out of food before the rescue tug arrives (6 days): also Adrift');
+  await fresh({ food: 0 });
+  const home = await page.evaluate(() => { STATE.deprived = { food: 8 }; passDays(3); checkFailure(); return { ended: !!STATE.ended, text: document.getElementById('screen-end').innerText.replace(/\s+/g, ' ') }; });
+  await page.waitForTimeout(800);
+  ok(home.ended && !/ADRIFT/i.test(await page.evaluate(() => document.getElementById('screen-end').innerText)), 'starving anywhere else still ends the usual way');
+  await page.evaluate(() => STATE.flags.delete('adrift_starved'));
+
   ok(!errors.length, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
   console.log(`\n${pass} passed, ${fail} failed`);
   await browser.close();

@@ -185,8 +185,11 @@
       const res = { starvation: 'food', dehydration: 'water', suffocation: 'o2' }[f.failure_type];
       const dry = res ? Math.max((STATE.deprived && STATE.deprived[res]) || 0, DEPRIVATION[res].failAfter) : 0;
       const days = str => str == null ? str : String(str).replace(/\{dry_days\}/g, numberWords(dry)).replace(/\{Dry_days\}/g, () => { const w = numberWords(dry); return w.charAt(0).toUpperCase() + w.slice(1); });
-      const body = days(ride ? ride(f.body_passengers) : f.body);
-      const epitaph = days(ride && f.epitaph_passengers ? ride(f.epitaph_passengers) : f.epitaph);
+      // Adrift after the supplies ran out while waiting (ruling 144):
+      // no_fuel's own starved copy, with no beacon to offer.
+      const starved = STATE.flags.has('adrift_starved') && f.body_starved;
+      const body = days(starved ? f.body_starved : ride ? ride(f.body_passengers) : f.body);
+      const epitaph = days(starved && f.epitaph_starved ? f.epitaph_starved : ride && f.epitaph_passengers ? ride(f.epitaph_passengers) : f.epitaph);
       return {
         category: 'failure',
         toneId: f.failure_type,
@@ -206,7 +209,9 @@
         // no_fuel authors emergency_beacon_option — live only if the
         // player actually carries the beacon (items.json: "Triggers
         // rescue event — rescue may be friendly, hostile, or corporate").
-        beaconOption: !!(f.emergency_beacon_option && STATE.items.includes('emergency_beacon')),
+        // …and never after the crew ran out of supplies waiting adrift
+        // (ruling 144's adrift_starved): nobody is left to rescue.
+        beaconOption: !!(f.emergency_beacon_option && STATE.items.includes('emergency_beacon') && !STATE.flags.has('adrift_starved')),
         stats,
       };
     }
