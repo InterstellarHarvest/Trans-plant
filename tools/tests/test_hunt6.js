@@ -61,7 +61,9 @@ const choiceText = (page, t) => page.evaluate(t => {
     const page = await boot();
     const r = await page.evaluate(() => ({ mult: ORDERS_PACE && ORDERS_PACE[ORDERS_PACE.length - 1] && ORDERS_PACE[ORDERS_PACE.length - 1].fuelMult }));
     const src = await page.evaluate(async () => (await fetch('engine/js/screens/orders.js')).text());
-    ok(r.mult === 3 && /up 200%/.test(src) && !/up 140%/.test(src), 'PLAID ×3.0 quoted as +200%');
+    const lud = await page.evaluate(() => ORDERS_PACE.find(p => p.id === 'ludicrous').fuelMult);
+    ok(r.mult === 4 && /up 300%/.test(src) && !/up 200%/.test(src), 'PLAID ×4.0 quoted as +300% (ruling 148)');
+    ok(lud === 1.8 && /80% more burn/.test(src) && !/60% more burn/.test(src), 'LUDICROUS ×1.8 quoted as 80% more (ruling 148)');
     await page.close();
   }
 

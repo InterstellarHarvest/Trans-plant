@@ -49,7 +49,7 @@
         'Slow is safe. Safety is a warm hug.',
         'Steady as she goes. An acceptable compromise.',
         'Bold. I support boldness, even when it is alarming.',
-        'PLAID selected. Fuel consumption up 200%. I am personally excited about this.'
+        'PLAID selected. Fuel consumption up 300%. I am personally excited about this.'
       ],
       rations: [
         'Vending Machine mode. A proud tradition of thin men.',
@@ -64,8 +64,8 @@
       pace: [
         'Slow. We will arrive eventually. I have modeled "eventually." You will not enjoy the model.',
         'The default setting. Statistically the least bad option. That is the entire compliment.',
-        'Faster arrival, 60% more burn. I ran the numbers twice. They did not improve.',
-        'PLAID. Fuel consumption up 200%. I have pre-drafted the distress beacon message.'
+        'Faster arrival, 80% more burn. I ran the numbers twice. They did not improve.',
+        'PLAID. Fuel consumption up 300%. I have pre-drafted the distress beacon message.'
       ],
       rations: [
         'Half rations. Morale will decline. I have charted it. The chart is very straight.',
