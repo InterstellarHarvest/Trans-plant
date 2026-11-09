@@ -4816,6 +4816,32 @@ function deprivationFailure() {
   for (const [res, d] of Object.entries(DEPRIVATION)) if ((dep[res] || 0) >= d.failAfter) return d.fail;
   return null;
 }
+/* Ruling 147: a choice's hover box warns, in red, when the days it takes
+   would run out food, water or air, or when a supply already gone would
+   end the run before they are up. Same arithmetic as passDays: the stock
+   lasts floor(stock / draw) days; a supply that runs out within a span
+   can't end the run in that span (the onset grace), so only one already
+   at 0 can, after failAfter days at 0 in all. delta: what the choice
+   itself adds or takes first (CRACK THE WATER's third of the tanks). */
+const SUPPLY_NAME = { food: 'Food', water: 'Water', o2: 'Air' };
+function supplyWarnings(days, delta) {
+  days = Math.round(days || 0);
+  if (!(days > 0) || !STATE.resources) return [];
+  const r = STATE.resources, draw = dailyDraw(), dep = STATE.deprived || {}, out = [];
+  const n = k => k + (k === 1 ? ' day' : ' days');
+  for (const [res, d] of Object.entries(DEPRIVATION)) {
+    const stock = Math.max(0, (r[res] || 0) + ((delta && delta[res]) || 0));
+    if (stock > 0) {
+      if (!(draw[res] > 0)) continue;
+      const lasted = Math.floor(stock / draw[res]);
+      if (lasted < days) out.push(SUPPLY_NAME[res] + ' runs out ' + (lasted ? 'after ' + n(lasted) : 'on the first day') + '. Every day without it hurts everyone aboard.');
+    } else if ((dep[res] || 0) > 0) {
+      const left = Math.max(1, d.failAfter - dep[res]);
+      if (left <= days) out.push('No ' + SUPPLY_NAME[res].toLowerCase() + ' aboard: ' + left + ' more ' + (left === 1 ? 'day' : 'days') + ' without it ends the run.');
+    }
+  }
+  return out;
+}
 
 // items.json o2_recycler (prose): "O2 consumption halved … and O2 losses
 // from events reduced 25%" — the daily draw here, event losses in
@@ -6756,7 +6782,7 @@ function effortRaiseNote(ch, eff) {
   return a(alts[0].name, true) + ' would make it ' + alts[0].txt + (alts[1] ? '; ' + a(alts[1].name) + ', ' + alts[1].txt : '') + '.';
 }
 function tipSpecShows(s) {
-  return !!(s.locked || s.desc.length || s.time || s.effort || (s.helping && s.helping.length) || s.preview || s.costs.length || s.notes.length || s.odds);
+  return !!(s.locked || s.desc.length || s.time || s.effort || (s.helping && s.helping.length) || s.preview || s.costs.length || s.notes.length || (s.warn && s.warn.length) || s.odds);
 }
 function choiceTipSpec(ch, x) {
   x = x || {};
@@ -6829,6 +6855,12 @@ function choiceTipSpec(ch, x) {
   } else if (eff) {
     const n = effortRaiseNote(ch, eff);
     if (n) s.notes.push(n);
+  }
+  // Ruling 147: supplies that won't last the days (the longest it can take).
+  if (s.time && s.time.hi > 0) {
+    const so = info && info.kind === 'outcome' ? withPctPreview(choiceCostOutcome(ch)) : null;
+    const w = supplyWarnings(s.time.hi, so && so.resources);
+    if (w.length) s.warn = w;
   }
   // A risky step with nothing else to show (it opens another layer): the tag, said.
   if (s.risky && !s.time && !s.effort && !s.costs.length && !s.notes.length && !s.odds && !s.preview) s.notes.push('It can go badly.');

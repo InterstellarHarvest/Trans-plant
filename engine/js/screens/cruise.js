@@ -878,6 +878,8 @@
     if (verbId === 'trade') s.notes.push('Browsing is free; a deal takes a day or two.');
     if (verbId === 'fab' && tax) s.notes.push('The morale is paid for each craft.');
     if (WAIT_VERBS[verbId]) s.notes.push('You pick the days, up to ' + WAIT_DAY_MAX + '; the morale is paid once for the whole wait.');
+    // Ruling 147 (a picked wait warns on its own day steps instead).
+    else if (t && t.hi > 0) { const w = supplyWarnings(t.hi, verbId === 'condense' ? { water: 12 } : null); if (w.length) s.warn = w; }
     return tipSpecShows(s) ? s : null;
   }
 
@@ -1507,7 +1509,7 @@
       step.title = d + ' day' + (d === 1 ? '' : 's') + (verbId === 'rest' ? ' · +' + restPerDay() * d + ' morale if you sleep it through' : '');
       // Ruling 146: the step's drawn hover, beside the job's row.
       step.dataset.tipChoice = JSON.stringify({ desc: [], costs: [], notes: verbId === 'rest' ? ['If you sleep it through.'] : [], time: { lo: d, hi: d },
-        gains: verbId === 'rest' ? [{ t: '+' + restPerDay() * d + ' MORALE', c: 'g' }] : [] });
+        gains: verbId === 'rest' ? [{ t: '+' + restPerDay() * d + ' MORALE', c: 'g' }] : [], warn: supplyWarnings(d) });
       step.addEventListener('click', e => { e.stopPropagation(); startWait(verbId, d); });
       step.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); startWait(verbId, d); } });
       stepper.appendChild(step);

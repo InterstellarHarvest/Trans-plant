@@ -266,7 +266,7 @@ flowchart TD
 <li><strong>Gate icons.</strong> An unlocked choice that uses something you have shows its icon: the crew member's portrait, the item, the gold.</li>
 <li><strong>Previews.</strong> Some choices show what they will do before you pick them. Your AI might (MARV flags the most expensive option), a clean SCAN does, some items do, and an Academic captain gets one research preview per station leg.</li>
 <li><strong>Risky choices</strong> have red sub-labels: they can go badly.</li>
-<li><strong>Tooltips.</strong> Hover any choice for the full picture, to the left of the choice with an arrow pointing at it. The top box says what the choice is. The WHAT IT TAKES box below shows the days as blocks (solid for certain, hollow for maybe), the effort pips, who's helping, every cost as a red chip, and a red ▲ RISKY tag when it can go badly. A choice left to chance, or a hands-on job, adds one bar split by the odds with each result named, its chance and its biggest effects. Stop-menu jobs and combat actions use the same box, with a green GAINS row where the job says what it gives; a day in a job's day picker has its own. While a box covers the AI's speech bubble on the cruise screen, the bubble fades until you move off.</li>
+<li><strong>Tooltips.</strong> Hover any choice for the full picture, to the left of the choice with an arrow pointing at it. The top box says what the choice is. The WHAT IT TAKES box below shows the days as blocks (solid for certain, hollow for maybe), the effort pips, who's helping, every cost as a red chip, and a red ▲ RISKY tag when it can go badly. A choice left to chance, or a hands-on job, adds one bar split by the odds with each result named, its chance and its biggest effects. Stop-menu jobs and combat actions use the same box, with a green GAINS row where the job says what it gives; a day in a job's day picker has its own. While a box covers the AI's speech bubble on the cruise screen, the bubble fades until you move off. If the days a choice takes would run out your food, water or air, the box says so in red under the days, and if a supply is already gone and the wait would end the run, it says that.</li>
 <li><strong>Leaving.</strong> Many layered events have a red leave row at the bottom (LEAVE, NOT NOW, BACK TO DOCK…). It ends the scene with no outcome, unless its own sub-label or tooltip says otherwise: some leave rows are an exit with a price (backing off from a fight is never free). A few emergencies cannot be left, and their leave row is locked.</li>
 </ul>
 
@@ -582,7 +582,7 @@ flowchart TD
 <li><strong>Call for help and wait</strong>: days pass, and every day costs food, water and air. Someone may come (and want paying), the wrong someone may come, or nobody does, and you are back where you started, ten days poorer.</li>
 <li><strong>Shut it all down</strong>: the end of the voyage.</li>
 </ul>
-<p>The tooltips show each option's days, costs and odds before you pick. Shutting it all down is the Adrift ending. Run out of food, water or air while you wait, and that is the Adrift ending too.</p>
+<p>The tooltips show each option's days, costs and odds before you pick, and warn in red when your food, water or air won't last the wait. Shutting it all down is the Adrift ending. Run out of food, water or air while you wait, and that is the Adrift ending too.</p>
 
 <figure><img src="img/play/s-adrift.png" alt="The Adrift scene at a derelict: the viewport onto empty stars, the ADRIFT text box below, and the choices BURN THE HULL PLATING, CRACK THE WATER, TRIGGER THE EMERGENCY BEACON, CALL FOR HELP AND WAIT, SHUT IT ALL DOWN and a locked CAN'T LEAVE (NO FUEL)"><figcaption>Adrift: out of fuel short of the destination, with a few hard ways on.</figcaption></figure>
 
@@ -1106,7 +1106,9 @@ flowchart TD
 <p>The hull doesn't wear out on its own; it only loses points to events, fights and the odd drive-coil misfire. The fabricator wears with every print and breaks at full wear (it misfires more as it wears).</p>
 
 <h3>When something runs out</h3>
-<p>A day at zero food, water or air hurts everyone aboard, the captain included, and drains morale. Each resource keeps a count of days in a row at zero, and enough of them in a row is a failure of its own: starvation, dehydration or suffocation. Air runs out fastest, food slowest. There's a grace rule: the span in which a resource first runs dry can never by itself reach the failure, so you always get at least one stop to react. The count resets the moment the resource is above zero again.</p>
+<p>A day at zero food, water or air hurts everyone aboard, the captain included, and drains morale. Each resource keeps a count of days in a row at zero, and enough of them in a row is a failure of its own: starvation, dehydration or suffocation. Air runs out fastest, food slowest. There's a grace rule: the span in which a resource first runs dry can never by itself reach the failure, so you always get at least one stop to react. The count resets the moment the resource is above zero again. (Inside the Adrift scene the same failure is the Adrift ending instead; see Failures.)</p>
+
+<p>The hover boxes use the same arithmetic (ruling 147). A choice whose days would empty a supply says <em>Water runs out after 4 days</em> in red, counting what the choice itself takes first. One whose days would reach the failure for a supply that's already gone says <em>No water aboard: 2 more days without it ends the run</em>. Thanks to the grace rule, that second warning only ever appears when the supply is already at zero. Stop-menu jobs with a set time and each day step of a wait get the same lines.</p>
 
 <h3>The deadline and the behind-schedule warning</h3>
 <p>Each trail has a deadline, a little longer than a careful run takes. Passing it never ends a voyage: the AI says so once, the ship keeps flying, and the score pays for every day late.</p>
@@ -1539,7 +1541,7 @@ flowchart LR
 
 
 <footer style="margin-top:64px;color:var(--muted);font-size:14px;border-top:1px solid var(--line);padding-top:16px">
-  Trans-plant manual · generated from the game at <code>3535704</code> on 2026-11-08.
+  Trans-plant manual · generated from the game at <code>c6af5f4</code> on 2026-11-08.
 </footer>
 
 </div>

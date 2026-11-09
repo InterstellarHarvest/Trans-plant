@@ -188,8 +188,13 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
     const h = await page.evaluateHandle(({ sel, src }) => [...document.querySelectorAll(sel)].find(b => new RegExp(src).test(b.textContent)) || null, { sel, src: re.source });
     const el = h.asElement(); if (!el) return null;
     await el.scrollIntoViewIfNeeded(); await page.waitForTimeout(150);
-    const r = await el.boundingBox();
-    await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2, { steps: 4 }); await page.waitForTimeout(700);
+    // Under load a scroll can still be settling: measure until it holds still.
+    let r = await el.boundingBox();
+    for (let i = 0; i < 20; i++) { await page.waitForTimeout(50); const r2 = await el.boundingBox(); if (r2 && r && r2.y === r.y && r2.x === r.x) break; r = r2; }
+    await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2, { steps: 4 });
+    // Wait for the box (and whatever it fades) rather than a fixed time.
+    await page.waitForFunction(() => Tooltip.panel.classList.contains('visible') && Tooltip.panel.classList.contains('tip-choice'), null, { timeout: 3000 }).catch(() => {});
+    await page.waitForTimeout(150);
     return page.evaluate(({ top, bottom }) => { const p = Tooltip.panel, a = p.querySelector('.tc-arrow'), ar = a && a.style.display !== 'none' ? a.getBoundingClientRect() : null;
       return { vis: p.classList.contains('visible') && p.classList.contains('tip-choice'), on: !!ar && (ar.top + ar.bottom) / 2 >= top && (ar.top + ar.bottom) / 2 <= bottom, text: p.innerText }; }, { top: r.y, bottom: r.y + r.height });
   };
@@ -204,7 +209,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m); } else { fail
   m = await mouseOn(SC, /^\s*FABRICATOR/);
   ok(m && m.vis && m.on, 'mouse on the last Stop job (scrolled into view): the box, arrow on it');
   m = await mouseOn(SC, /^\s*REPAIR/);
-  ok(m && m.vis && m.on && await page.evaluate(() => !!document.querySelector('#ai-bubble.tip-dimmed')), 'mouse on REPAIR: the box, and the bubble fades');
+  ok(m && m.vis && m.on && await page.waitForFunction(() => !!document.querySelector('#ai-bubble.tip-dimmed'), null, { timeout: 2000 }).then(() => true, () => false), 'mouse on REPAIR: the box, and the bubble fades');
   let gone = await away();
   ok(!gone.vis && !gone.dim, 'mouse away: the box goes, the bubble comes back');
   await page.evaluate(async () => { [...document.querySelectorAll('#stop-choices .stop-choice')].find(b => /^\s*REST/.test(b.textContent)).click(); await new Promise(r => setTimeout(r, 300)); });

@@ -1975,7 +1975,9 @@ window.Tooltip = (() => {
     if (c.preview && c.preview.chips.length) row(esc(c.preview.l), chips(c.preview.chips));
     if (c.gains && c.gains.length) row('GAINS', chips(c.gains));
     if (c.costs && c.costs.length) row('COSTS', chips(c.costs));
-    const notes = (c.notes || []).map(n => '<div class="tc-note">' + esc(n) + '</div>').join('');
+    // Ruling 147: supplies that won't last the days, in red, before the notes.
+    const notes = (c.warn || []).map(n => '<div class="tc-note tc-warn">' + esc(n) + '</div>').join('')
+      + (c.notes || []).map(n => '<div class="tc-note">' + esc(n) + '</div>').join('');
     let odds = '';
     if (c.odds && c.odds.rows && c.odds.rows.length) {
       const o = c.odds;
