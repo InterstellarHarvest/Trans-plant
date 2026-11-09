@@ -42,3 +42,11 @@ for trail in ['lunar', 'mars', 'interstellar']:
         tiers_m = collections.Counter(m[1] for ms in mis for m in ms)
         adrift = sum(1 for r in rs if 'event_adrift_001' in ids(r))
         print(f"{'':21} mishaps/run {st.mean(len(m) for m in mis):.2f} (none {pct(sum(1 for m in mis if not m), n)}) tiers {dict(tiers_m)} fixed {sum(1 for ms in mis for m in ms if m[2])} | adrift scene {pct(adrift, n)}")
+        # Ruling 144 (the :nofuel study): what the crew did adrift, and how those runs ended.
+        ad = [r for r in rs if r['stats'].get('adrift')]
+        if ad:
+            picks = collections.Counter(a[1] or a[0] for r in ad for a in r['stats']['adrift'] if a[0] != "CAN'T LEAVE (NO FUEL)")
+            ends = collections.Counter(('WIN ' + r['end']['bracket']) if r['end'] and r['end']['kind'] == 'ending' else ('starved adrift' if r.get('adriftStarved') else 'gave up adrift' if r.get('adriftGaveUp') else str((r['end'] or {}).get('type'))) for r in ad)
+            visits = [len([a for a in r['stats']['adrift'] if a[1]]) for r in ad]
+            print(f"{'':21} adrift: {len(ad)} runs, {st.mean(visits):.1f} choices a run | outcomes {dict(picks.most_common())}")
+            print(f"{'':21} adrift runs ended: {dict(ends.most_common())}")

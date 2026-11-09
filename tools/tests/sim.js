@@ -11,6 +11,9 @@
 // takes crop_dead's "Keep flying". :shop is the full market visit on top
 // of that: at every station it sells spare materials and trade goods and
 // tops fuel, food and water up to its targets whatever they stand at.
+// :nofuel (2026-11-08, ruling 144 study) never buys, mines or uses fuel;
+// with plaid's pace the tank runs dry and the Adrift scene is played.
+// :adriftwait then always calls for help and waits there.
 // usage: node sim.js <runsPerCell> <policies,comma> <trails,comma> [outfile]
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -29,6 +32,9 @@ function installHarness(policy) {
   /* eslint-disable no-undef */
   const P = policy.split(':')[0];
   window.__pol = P; window.__mineRuns = +(policy.split(':')[1] || 1); window.__shop = policy.includes(':shop'); window.__arcs = policy.includes(':arcs'); window.__farm = policy.includes(':farm'); window.__salvage = policy.includes(':salvage');
+  // :nofuel (ruling 144 study): a careful player who never buys, mines or
+  // uses fuel, so the tank runs dry and the Adrift scene gets played.
+  window.__nofuel = policy.includes(':nofuel'); window.__adriftWait = policy.includes(':adriftwait');
   const T = () => { const r = Math.random(); return r < 0.3 ? 'perfect' : r < 0.7 ? 'good' : r < 0.95 ? 'poor' : 'abandoned'; };
   const S = window.__stats = {
     forageFood: 0, harvests: 0, harvestFood: 0, harvestMorale: 0, verbs: {}, events: 0, eventDays: 0, verbDays: 0, travelDays: 0,
@@ -97,7 +103,7 @@ function installHarness(policy) {
   // The black market (ruling 124): a careful player buys the best upgrade
   // it can afford, the worst case for balance (prices: market.js
   // blackMarketVendor; it never sells one you carry).
-  window.__grayNeed = () => { const R = STATE.resources; return { bulk_o2_tank: R.o2 < 70, hot_fuel_cell: R.fuel < 60, hull_foam: R.hull < 70, unlabeled_rations: R.food < 60, gray_medkit: peopleAboard().some(r => hpOf(r) < 50) }; };
+  window.__grayNeed = () => { const R = STATE.resources; return { bulk_o2_tank: R.o2 < 70, hot_fuel_cell: !window.__nofuel && R.fuel < 60, hull_foam: R.hull < 70, unlabeled_rations: R.food < 60, gray_medkit: peopleAboard().some(r => hpOf(r) < 50) }; };
   const BLACK_MARKET = window.__BLACK_MARKET = [['drive_coil', 60], ['repair_fabricator', 50], ['o2_recycler', 45]];
   window.openMarket = (opts, onClose) => {
     opts = opts || {};
@@ -296,15 +302,18 @@ function step() {
         // Water is only on the trader's shelf (BROWSE THE WARES: the
         // openMarket stub buys it); food is in the menus and on the shelf.
         const shelf = c => c.open_market && !c.gate;
-        const want = chs.find(c => fuelRe.test(c.text || '') && STATE.resources.fuel < 75)
+        const want = chs.find(c => !window.__nofuel && fuelRe.test(c.text || '') && STATE.resources.fuel < 75)
           || chs.find(c => foodRe.test(c.text || '') && STATE.resources.food < 40)
-          || chs.find(c => STATE.resources.fuel < 75 && leadsTo(c, fuelRe))
+          || chs.find(c => !window.__nofuel && STATE.resources.fuel < 75 && leadsTo(c, fuelRe))
           || chs.find(c => STATE.resources.food < 40 && leadsTo(c, foodRe))
           || chs.find(c => (STATE.resources.water < 40 || STATE.resources.food < 40) && shelf(c))
           || (ev.id === 'event_encounter_trader_001' ? chs.find(c => /pitch/i.test(c.text || '')) : null);
         if (want) { if (/fuel cell/i.test(want.text)) { S.traderBuys++; S.fuelBought++; } else if (/rations/i.test(want.text) || shelf(want)) S.traderBuys++; ch = want; }
         if (!want) window.__wantBuy = false;
       }
+      // :adriftwait — adrift, this crew always calls for help and waits (the
+      // scoring below reads a chance choice as 0, so it would never wait).
+      if (!ch && window.__adriftWait && ev && ev.id === 'event_adrift_001') ch = chs.find(c => /CALL FOR HELP/.test(c.text || ''));
       if (!ch) {
         const w = k => k === 'gold' ? 0.25 : k === 'morale' ? (crewMoraleRaw() == null ? 0 : 1 + (100 - crewMoraleRaw()) / 30) : 1 + (100 - Math.min(100, R[k])) / 20;
         const dayCost = { trivial: 1, low: 2, medium: 4, high: 8, extreme: 14 };
@@ -355,7 +364,10 @@ function step() {
     }
     if (ch) V.taken[layerKey + '|' + ch.text] = true;
     // runChoiceAction lock bypass: call directly
+    const adriftHere = STATE.currentEvent && STATE.currentEvent.id === 'event_adrift_001';
     handleChoiceClick(ch);
+    // Ruling 144: what the crew does in the Adrift scene, and what came of it.
+    if (adriftHere && ch) (S.adrift = S.adrift || []).push([(ch.text || '').trim(), STATE.currentOutcomeId || null, STATE.daysElapsed, Math.round(STATE.resources.food), Math.round(STATE.resources.water), Math.round(STATE.resources.o2)]);
     return { wait: 80 };
   }
 
@@ -428,7 +440,7 @@ function step() {
         const buy = window.__buySupply;
         const cnt = id => STATE.items.filter(x => x === id).length;
         const fuelNeed = (P === 'fast' || P === 'plaid') ? 90 : P === 'ludi' ? 70 : 50;
-        buy('fuel_cell', (window.__prices || {}).fuel_cell || 12, () => R.fuel + 15 * cnt('fuel_cell') < fuelNeed + 30);
+        if (!window.__nofuel) buy('fuel_cell', (window.__prices || {}).fuel_cell || 12, () => R.fuel + 15 * cnt('fuel_cell') < fuelNeed + 30);
         buy('ration_brick', 6, () => R.food + 10 * cnt('ration_brick') < 70);
         buy('water_canister', 8, () => R.water + 10 * cnt('water_canister') < 70);
       }
@@ -440,10 +452,10 @@ function step() {
         if (!cond || !STATE.items.includes(id) || !ITEM_USE[id] || ITEM_USE[id].can()) return;
         window.__ctxTag = 'item:' + id; ITEM_USE[id].use(); window.__ctxTag = ''; STATE.items.splice(STATE.items.indexOf(id), 1); S.itemUses[id] = (S.itemUses[id] || 0) + 1;
       };
-      useIt('fuel_cell', R.fuel < resMax('fuel') - 15); useIt('ration_brick', R.food < 85); useIt('water_canister', R.water < 85);
+      useIt('fuel_cell', !window.__nofuel && R.fuel < resMax('fuel') - 15); useIt('ration_brick', R.food < 85); useIt('water_canister', R.water < 85);
       useIt('hull_patch', R.hull < 80); useIt('o2_canister', R.o2 < 80); useIt('medkit', peopleAboard().some(r => hpOf(r) < 50)); // the captain has real HP too (owner ruling 29)
       useIt('crop_treatment', STATE.cropGrowth && (STATE.cropGrowth.pest || STATE.cropGrowth.health < 60));
-      useIt('hot_fuel_cell', R.fuel < resMax('fuel') - 35); useIt('unlabeled_rations', R.food < 70); useIt('hull_foam', R.hull < 65);
+      useIt('hot_fuel_cell', !window.__nofuel && R.fuel < resMax('fuel') - 35); useIt('unlabeled_rations', R.food < 70); useIt('hull_foam', R.hull < 65);
       useIt('bulk_o2_tank', R.o2 < 60); useIt('gray_medkit', peopleAboard().some(r => hpOf(r) < 50));
       // growbay
       if (STATE.cropGrowth && STATE.cropGrowth.health > 0 && typeof openGrowbay === 'function') {
@@ -472,7 +484,7 @@ function step() {
         if (!acts.did.back_room && STATE.goldAmount >= 40 && (window.__BLACK_MARKET.some(([id]) => !STATE.items.includes(id)) || Object.values(window.__grayNeed()).some(Boolean)) && doVerb(/^BACK ROOM$/, 'back_room')) return { wait: 50 };
         if (R.hull < (P === 'stopper' ? 85 : 60) && (acts.did.repair || 0) < 2 && doVerb(/^REPAIR/, 'repair')) return { wait: 50 };
         if (crewMoraleRaw() != null && crewMoraleRaw() < (P === 'stopper' ? 80 : 40) && (acts.did.rest || 0) < 2 && doVerb(/^REST/, 'rest')) return { wait: 50 };
-        const needSupply = R.fuel < (P === 'stopper' ? 80 : 55) || R.water < 40 || R.food < 40;
+        const needSupply = (!window.__nofuel && R.fuel < (P === 'stopper' ? 80 : 55)) || R.water < 40 || R.food < 40;
         if (needSupply && STATE.goldAmount >= 8 && !acts.did.trade) { window.__wantBuy = true; if (doVerb(/^TRADE$/, 'trade')) return { wait: 50 };
           // No trader in range (presence roll): wait for one, once per stop.
           if (!acts.did.wait_for_trader && doVerb(/^WAIT FOR TRADER$/, 'wait_for_trader')) return { wait: 50 }; }
@@ -480,7 +492,7 @@ function step() {
           if (!acts.did.forage && R.food < 90 && doVerb(/^(GATHER|HUNT|SCAVENGE|FORAGE)$/, 'forage')) return { wait: 50 };
           if (!acts.did.salvage && doVerb(/^SALVAGE/, 'salvage')) return { wait: 50 };
           if (!acts.did.mine && doVerb(/^MINE/, 'mine')) return { wait: 50 };
-        } else if (node.node_type === 'nebula' && R.fuel < 70 && !acts.did.mine && doVerb(/^MINE/, 'mine')) return { wait: 50 };
+        } else if (!window.__nofuel && node.node_type === 'nebula' && R.fuel < 70 && !acts.did.mine && doVerb(/^MINE/, 'mine')) return { wait: 50 };
         else if (node.node_type === 'asteroid_field' && R.water < 60 && !acts.did.mine && doVerb(/^MINE/, 'mine')) return { wait: 50 };
         else if (R.food < 40 && !acts.did.forage && doVerb(/^(GATHER|HUNT|SCAVENGE|FORAGE)$/, 'forage')) return { wait: 50 };
       }
@@ -540,7 +552,7 @@ if (require.main === module) (async () => {
       crew: STATE.crew.length, crewHP: Object.assign({}, STATE.crewHP), captainHP: captainHPOf(), mats: Object.values(STATE.materials).reduce((a, b) => a + b, 0), items: STATE.items.slice(),
       crop: STATE.cropGrowth ? { g: Math.round(STATE.cropGrowth.growth), h: Math.round(STATE.cropGrowth.health) } : null,
       nodes: STATE.nodes.length, visited: STATE.visited.size, stats: window.__stats, morale: crewMoraleRaw(), startCrew: STATE.startCrew, surveys: STATE.soilSurveys || 0, voyage: STATE.voyageSpecies,
-      stow: STATE.stowaway ? (STATE.stowaway.revealed ? 'revealed' : 'hidden') : null, joined: Object.values(STATE.crewIdentity || {}).map(i => i.origin || 'stowaway'), passengersSeen: (STATE.flags.has('stowaway_passenger') ? 1 : 0),
+      stow: STATE.stowaway ? (STATE.stowaway.revealed ? 'revealed' : 'hidden') : null, joined: Object.values(STATE.crewIdentity || {}).map(i => i.origin || 'stowaway'), passengersSeen: (STATE.flags.has('stowaway_passenger') ? 1 : 0), adriftStarved: STATE.flags.has('adrift_starved'), adriftGaveUp: STATE.flags.has('adrift_gave_up'),
     }));
     res.policy = policy; res.trail = trail; res.cfg = cfg; res.steps = steps;
     results.push(res);
