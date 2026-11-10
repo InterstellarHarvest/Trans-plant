@@ -13,7 +13,7 @@
    Content and every number: modules/mishaps/mishaps.json (odds per trail,
    route progress, pace and hull band; severity weights per trail; cost
    scale per trail). Automated browsers get none unless they ask
-   (?mishaps=1 or window.TP_MISHAPS = true): the regression batteries fly
+   (?mishaps=1): the regression batteries fly
    legs and expect the stop's arrival, the sims and the soak opt in.
 
    Load-order note: loads before index.html's inline script; reads MOD /
@@ -27,7 +27,6 @@
     const q = new URLSearchParams(location.search).get('mishaps');
     if (q === '1' || q === 'on') return true;
     if (q === '0' || q === 'off') return false;
-    if (window.TP_MISHAPS != null) return !!window.TP_MISHAPS;
     return !navigator.webdriver;
   }
   const data = () => (MOD.mishaps || {});
